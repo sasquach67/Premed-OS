@@ -384,6 +384,19 @@ describe('migrations never write to frozen input', () => {
     for (const key of ['reviewEvents', 'contacts']) delete center[key]
     ;(data.notes as Record<string, string>)['home-ideas'] = 'A legacy scratchpad note'
 
+    // Put the class centre back into its pre-v4 shape (`classes`, not
+    // `workspaces`) so academicsV4 takes its real migration branch — course
+    // creation, journal writes, workspace rebuild — instead of the cheap
+    // already-migrated path that skips every mutation site.
+    academics.classCenter = {
+      classes: [
+        { id: 'legacy-biol', courseCode: 'BIOL103', courseTitle: 'How Cells Function', semester: 'Fall 2026', order: 0 },
+        { id: 'legacy-unknown', courseCode: '', courseTitle: 'Missing identity', semester: '', order: 1 },
+      ],
+      topics: [], notes: [], assignments: [], files: [], contacts: [], weakAreas: [],
+      practiceExams: [], practiceQuestions: [], reviewEvents: [],
+    }
+
     const frozen = deepFreeze(data) as unknown as AppData
     expect(() => migrateAll(frozen)).not.toThrow()
 

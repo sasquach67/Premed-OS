@@ -311,17 +311,35 @@ export function syncCurrentTermWorkspaces(data: AppData, now = Date.now()): AppD
 /** v4 is deliberately shape-detected as well as version-gated so imported
  * backups receive the same lossless migration as local hydration. */
 export function migrateAcademicsV4(data: AppData, now = Date.now()): AppData {
-  data.academics ??= {} as AppData['academics']
-  data.academics.migrationJournal ??= []
-  const journal = data.academics.migrationJournal
-  const legacy = (data.academics.classCenter ?? {}) as unknown as UnknownRecord
+  // Pure with respect to `data` — see the note on `migrateAcademicTags`.
+  // Everything this migration (or syncCurrentTermWorkspaces below) writes to is
+  // rebuilt as a fresh object first, so a frozen input tree is never touched.
+  const academicsSource = data.academics ?? ({} as AppData['academics'])
+  const journal: AcademicMigrationJournalEntry[] = [...(academicsSource.migrationJournal ?? [])]
+  const legacy = (academicsSource.classCenter ?? {}) as unknown as UnknownRecord
 
   if (Array.isArray(legacy.workspaces)) {
-    const current = data.academics.classCenter
-    current.keyPoints ??= []
-    current.sourceChunks ??= []
-    return syncCurrentTermWorkspaces(data, now)
+    const current = academicsSource.classCenter
+    // Fresh containers: syncCurrentTermWorkspaces mutates what it is handed.
+    const alreadyMigrated: AppData = {
+      ...data,
+      academics: {
+        ...academicsSource,
+        migrationJournal: journal,
+        classCenter: {
+          ...current,
+          workspaces: [...(current.workspaces ?? [])],
+          keyPoints: current.keyPoints ?? [],
+          sourceChunks: current.sourceChunks ?? [],
+          reviewEvents: current.reviewEvents ?? [],
+        },
+      },
+    }
+    return syncCurrentTermWorkspaces(alreadyMigrated, now)
   }
+
+  // Courses may gain rows below, so work on a copy.
+  const courses = [...data.courses]
 
   const legacyWorkspaces = Array.isArray(legacy.classes) ? legacy.classes as LegacyWorkspace[] : []
   const resolvedByWorkspace = new Map<string, string>()
@@ -329,13 +347,13 @@ export function migrateAcademicsV4(data: AppData, now = Date.now()): AppData {
 
   for (const workspace of legacyWorkspaces) {
     const hasIdentity = normalizeCourseCodes(workspace.courseCode).length > 0 && Boolean(normalizeAcademicTerm(workspace.semester))
-    const candidates = hasIdentity ? data.courses.filter((course) => courseMatches(workspace, course)) : []
+    const candidates = hasIdentity ? courses.filter((course) => courseMatches(workspace, course)) : []
     if (candidates.length === 1) {
       preliminary.set(workspace.id, { workspace, courseId: candidates[0].id, kind: 'linked', candidates })
     } else if (candidates.length === 0 && hasIdentity) {
-      const created = courseFromWorkspace(workspace, data.courses.length)
-      const existing = data.courses.find((course) => course.id === created.id)
-      if (!existing) data.courses.push(created)
+      const created = courseFromWorkspace(workspace, courses.length)
+      const existing = courses.find((course) => course.id === created.id)
+      if (!existing) courses.push(created)
       preliminary.set(workspace.id, { workspace, courseId: (existing ?? created).id, kind: 'created', candidates: [] })
     } else {
       preliminary.set(workspace.id, { workspace, candidates })
@@ -382,7 +400,7 @@ export function migrateAcademicsV4(data: AppData, now = Date.now()): AppData {
   const workspaces: ClassWorkspace[] = []
   for (const [workspaceId, courseId] of resolvedByWorkspace) {
     const result = preliminary.get(workspaceId)!
-    const course = data.courses.find((item) => item.id === courseId)
+    const course = courses.find((item) => item.id === courseId)
     const current = course && normalizeAcademicTerm(course.term) === normalizeAcademicTerm(currentTerm)
     const kind = current
       ? result.kind === 'created' ? 'workspace-course-created' : 'workspace-linked'
@@ -402,14 +420,22 @@ export function migrateAcademicsV4(data: AppData, now = Date.now()): AppData {
     })
   }
 
-  data.academics.classCenter = {
-    workspaces,
-    ...related,
-    keyPoints: [],
-    sourceChunks: [],
-    reviewEvents: [],
+  const migrated: AppData = {
+    ...data,
+    courses,
+    academics: {
+      ...academicsSource,
+      migrationJournal: journal,
+      classCenter: {
+        workspaces,
+        ...related,
+        keyPoints: [],
+        sourceChunks: [],
+        reviewEvents: [],
+      },
+    },
   }
-  return syncCurrentTermWorkspaces(data, now)
+  return syncCurrentTermWorkspaces(migrated, now)
 }
 
 function appendUniqueRows(target: UnknownRecord[], incoming: UnknownRecord[], subject: string) {
