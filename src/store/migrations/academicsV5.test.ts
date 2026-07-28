@@ -20,15 +20,15 @@ describe('Academics v5 migration', () => {
       order: 1,
     })
 
-    migrateAcademicsV5(data, 100)
-    const once = JSON.stringify(data)
-    migrateAcademicsV5(data, 200)
+    const first = migrateAcademicsV5(data, 100)
+    const once = JSON.stringify(first)
+    const second = migrateAcademicsV5(first, 200)
 
     expect(normalizePersonName(' Prof.   Ott ')).toBe('prof. ott')
     expect(normalizePersonEmail(' OTT@Example.com ')).toBe('ott@example.com')
-    expect(data.persons).toHaveLength(1)
-    expect(data.academics.classCenter.contacts.every((contact) => contact.personId === data.persons[0].id)).toBe(true)
-    expect(JSON.stringify(data)).toBe(once)
+    expect(second.persons).toHaveLength(1)
+    expect(second.academics.classCenter.contacts.every((contact) => contact.personId === second.persons[0].id)).toBe(true)
+    expect(JSON.stringify(second)).toBe(once)
   })
 
   it('requires review for the same name with a different email', () => {
@@ -45,10 +45,10 @@ describe('Academics v5 migration', () => {
     const contact = data.academics.classCenter.contacts[0]
     contact.email = 'second@example.com'
 
-    migrateAcademicsV5(data, 100)
-    const pending = data.academics.migrationJournal.find((entry) => entry.kind === 'contact-conflict')
+    const out = migrateAcademicsV5(data, 100)
+    const pending = out.academics.migrationJournal.find((entry) => entry.kind === 'contact-conflict')
 
-    expect(contact.personId).toBeUndefined()
+    expect(out.academics.classCenter.contacts[0].personId).toBeUndefined()
     expect(pending).toMatchObject({
       status: 'pending',
       legacyContactId: contact.id,
@@ -56,18 +56,19 @@ describe('Academics v5 migration', () => {
     })
     expect(pending?.legacyContact).toMatchObject({ email: 'second@example.com' })
 
-    resolveAcademicContactMigration(data, pending!.id, { type: 'create-person' }, 200)
-    expect(contact.personId).toBeTruthy()
-    expect(contact.personId).not.toBe('existing-prof')
+    resolveAcademicContactMigration(out, pending!.id, { type: 'create-person' }, 200)
+    const resolved = out.academics.classCenter.contacts[0]
+    expect(resolved.personId).toBeTruthy()
+    expect(resolved.personId).not.toBe('existing-prof')
     expect(pending?.status).toBe('resolved')
-    expect(data.persons).toHaveLength(2)
+    expect(out.persons).toHaveLength(2)
   })
 
   it('adds append-only review history in signed-out mode', () => {
     const data = structuredClone(createSeedData())
     data.profile.email = ''
     delete (data.academics.classCenter as Partial<typeof data.academics.classCenter>).reviewEvents
-    expect(() => migrateAcademicsV5(data)).not.toThrow()
-    expect(data.academics.classCenter.reviewEvents).toEqual([])
+    const out = migrateAcademicsV5(data)
+    expect(out.academics.classCenter.reviewEvents).toEqual([])
   })
 })

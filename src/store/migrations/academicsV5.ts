@@ -37,16 +37,13 @@ function personFromContact(contact: ClassContact, order: number, now: number): P
   }
 }
 
-function addConflict(
-  journal: AcademicMigrationJournalEntry[],
+function conflictEntry(
   contact: ClassContact,
   candidates: Person[],
   now: number,
-) {
-  const id = `academics-v5:contact-conflict:${contact.id}`
-  if (journal.some((entry) => entry.id === id)) return
-  journal.push({
-    id,
+): AcademicMigrationJournalEntry {
+  return {
+    id: `academics-v5:contact-conflict:${contact.id}`,
     kind: 'contact-conflict',
     status: 'pending',
     reason: `${compact(contact.name) || 'This contact'} matches an existing Person by name, but the email differs. Choose the correct canonical Person or keep both people.`,
@@ -54,35 +51,55 @@ function addConflict(
     legacyContact: { ...contact },
     candidatePersonIds: candidates.map((person) => person.id),
     createdAt: now,
-  })
+  }
 }
 
-function linkContact(contact: ClassContact, person: Person, now: number) {
+/** In-place link, for the user-invoked resolver only. That path runs inside an
+ *  immer `update()` draft, which IS writable — unlike hydration-time migrations. */
+function linkContactInPlace(contact: ClassContact, person: Person, now: number) {
   contact.personId = person.id
   if (!person.email && compact(contact.email)) person.email = compact(contact.email)
   if (!person.role && contact.role) person.role = contact.role
   person.updatedAt = Math.max(person.updatedAt || 0, contact.updatedAt || now)
 }
 
+/** Returns the linked pair as new objects — neither input is written to. */
+function linkedPair(contact: ClassContact, person: Person, now: number) {
+  return {
+    contact: { ...contact, personId: person.id },
+    person: {
+      ...person,
+      email: !person.email && compact(contact.email) ? compact(contact.email) : person.email,
+      role: !person.role && contact.role ? contact.role : person.role,
+      updatedAt: Math.max(person.updatedAt || 0, contact.updatedAt || now),
+    },
+  }
+}
+
 /** Assigns every legacy class contact one canonical Person identity while
  * retaining the original ClassContact and journal snapshots losslessly. */
 export function migrateAcademicsV5(data: AppData, now = Date.now()): AppData {
-  data.persons ??= []
-  data.academics.migrationJournal ??= []
-  data.academics.classCenter.reviewEvents ??= []
-  data.academics.classCenter.contacts ??= []
+  // Working copies — the input tree is never written to (immer freezes it).
+  const persons: Person[] = [...(data.persons ?? [])]
+  const journal: AcademicMigrationJournalEntry[] = [...(data.academics.migrationJournal ?? [])]
+  const replacePerson = (person: Person) => {
+    const index = persons.findIndex((entry) => entry.id === person.id)
+    if (index >= 0) persons[index] = person
+    else persons.push(person)
+  }
 
-  for (const contact of data.academics.classCenter.contacts) {
-    if (contact.personId && data.persons.some((person) => person.id === contact.personId)) continue
+  const contacts = (data.academics.classCenter.contacts ?? []).map((contact) => {
+    if (contact.personId && persons.some((person) => person.id === contact.personId)) return contact
 
     const name = normalizePersonName(contact.name)
     const email = normalizePersonEmail(contact.email)
-    const sameName = data.persons.filter((person) => normalizePersonName(person.name) === name)
+    const sameName = persons.filter((person) => normalizePersonName(person.name) === name)
     const exact = sameName.filter((person) => normalizePersonEmail(person.email) === email)
 
     if (exact.length === 1) {
-      linkContact(contact, exact[0], now)
-      continue
+      const linked = linkedPair(contact, exact[0], now)
+      replacePerson(linked.person)
+      return linked.contact
     }
 
     const compatibleMissingEmail = sameName.filter((person) => {
@@ -95,20 +112,37 @@ export function migrateAcademicsV5(data: AppData, now = Date.now()): AppData {
     })
 
     if (exact.length > 1 || conflicting.length > 0 || compatibleMissingEmail.length > 1) {
-      addConflict(data.academics.migrationJournal, contact, sameName, now)
-      continue
+      // Ambiguous — record it for review and leave the contact unlinked.
+      const entry = conflictEntry(contact, sameName, now)
+      if (!journal.some((item) => item.id === entry.id)) journal.push(entry)
+      return contact
     }
     if (compatibleMissingEmail.length === 1) {
-      linkContact(contact, compatibleMissingEmail[0], now)
-      continue
+      const linked = linkedPair(contact, compatibleMissingEmail[0], now)
+      replacePerson(linked.person)
+      return linked.contact
     }
 
-    const created = personFromContact(contact, data.persons.length, now)
-    const existing = data.persons.find((person) => person.id === created.id)
-    if (!existing) data.persons.push(created)
-    linkContact(contact, existing ?? created, now)
+    const created = personFromContact(contact, persons.length, now)
+    const existing = persons.find((person) => person.id === created.id)
+    const linked = linkedPair(contact, existing ?? created, now)
+    replacePerson(linked.person)
+    return linked.contact
+  })
+
+  return {
+    ...data,
+    persons,
+    academics: {
+      ...data.academics,
+      migrationJournal: journal,
+      classCenter: {
+        ...data.academics.classCenter,
+        reviewEvents: data.academics.classCenter.reviewEvents ?? [],
+        contacts,
+      },
+    },
   }
-  return data
 }
 
 export function resolveAcademicContactMigration(
@@ -138,7 +172,7 @@ export function resolveAcademicContactMigration(
   }
   if (!person) return data
 
-  linkContact(contact, person, now)
+  linkContactInPlace(contact, person, now)
   entry.status = 'resolved'
   entry.resolvedAt = now
   entry.reason = `Linked ${compact(contact.name) || 'contact'} to canonical Person ${person.name}. The original contact snapshot remains in the journal.`

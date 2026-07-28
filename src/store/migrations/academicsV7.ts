@@ -8,29 +8,36 @@ import { assignPendingChunks } from '@/lib/academics/chunkAssignment'
  * (semantic → positional → document-specific) instead of being parked at
  * `pending`, which left the coverage meter permanently understated. Every
  * automatic assignment lands with `assignmentConfirmed: false`, so the user
- * still confirms it — nothing is presented as settled fact. */
+ * still confirms it — nothing is presented as settled fact.
+ *
+ * Pure — see the note on `migrateAcademicTags`. */
 export function migrateAcademicsV7(data: AppData): AppData {
   const center = data.academics.classCenter
 
-  for (const chunk of center.sourceChunks ?? []) {
-    chunk.characterStart ??= 0
-    chunk.characterEnd ??= chunk.content.length
-  }
+  const ranged = (center.sourceChunks ?? []).map((chunk) => {
+    const characterStart = chunk.characterStart ?? 0
+    const characterEnd = chunk.characterEnd ?? chunk.content.length
+    if (characterStart === chunk.characterStart && characterEnd === chunk.characterEnd) return chunk
+    return { ...chunk, characterStart, characterEnd }
+  })
 
-  for (const file of center.files ?? []) {
-    if (file.processingStatus) continue
-    file.processingStatus = center.sourceChunks.some((chunk) => chunk.fileId === file.id)
-      ? 'ready'
-      : 'pending'
-  }
+  const files = (center.files ?? []).map((file) => {
+    if (file.processingStatus) return file
+    const processingStatus = ranged.some((chunk) => chunk.fileId === file.id) ? 'ready' as const : 'pending' as const
+    return { ...file, processingStatus }
+  })
 
   const { chunks, topics } = assignPendingChunks({
-    sourceChunks: center.sourceChunks ?? [],
+    sourceChunks: ranged,
     topics: center.topics ?? [],
-    files: center.files ?? [],
+    files,
   })
-  center.sourceChunks = chunks
-  center.topics = topics
 
-  return data
+  return {
+    ...data,
+    academics: {
+      ...data.academics,
+      classCenter: { ...center, sourceChunks: chunks, topics, files },
+    },
+  }
 }

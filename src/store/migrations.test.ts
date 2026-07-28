@@ -1,7 +1,7 @@
 /* Tests for the data-migration functions that run on every load/import.
    These are the functions most likely to corrupt user data if broken. */
 import { describe, expect, it } from 'vitest'
-import { migrateAcademicTags, migrateMascotNotes, migrateOrgReflections, migrateOverviewSchema, migrateRequirementMetadata, migrateSafetyNets } from '@/store/store'
+import { migrateAcademicTags, migrateAll, migrateMascotNotes, migrateOrgReflections, migrateOverviewSchema, migrateRequirementMetadata, migrateSafetyNets } from '@/store/store'
 import { createSeedData } from '@/data/seed'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
 
@@ -286,5 +286,117 @@ describe('migrateOrgReflections', () => {
     const twice = migrateOrgReflections(JSON.parse(JSON.stringify(once)) as AppData)
     expect(twice.orgs[0].reflections).toHaveLength(1)
     expect(twice.orgs[0].reflections).toEqual(once.orgs[0].reflections)
+  })
+})
+
+/* The contract that ties every migration together: `migrateAll` runs against
+   state produced by immer, which is deeply frozen. Any migration that writes
+   to its input throws the moment a user interacts with the app. These are the
+   regression guards — the chain test alone would have caught all four. */
+
+/** Freeze every object and array in the tree, the way immer does. */
+function deepFreeze<T>(value: T, seen = new WeakSet<object>()): T {
+  if (value === null || typeof value !== 'object') return value
+  if (seen.has(value as object)) return value
+  seen.add(value as object)
+  for (const key of Object.getOwnPropertyNames(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key)
+    // Skip getters (the classCenter `classes` view) — reading is enough.
+    if (descriptor && 'value' in descriptor) deepFreeze(descriptor.value, seen)
+  }
+  return Object.freeze(value)
+}
+
+describe('migrations never write to frozen input', () => {
+  it('migrateSafetyNets rebuilds missing containers without mutating', () => {
+    const data = structuredClone(freshData())
+    delete (data as Partial<AppData>).trash
+    delete (data.meta as Partial<AppData['meta']>).recoveryStack
+    deepFreeze(data)
+
+    const out = migrateSafetyNets(data)
+    expect(out.trash).toEqual([])
+    expect(out.meta.recoveryStack).toEqual([])
+    expect(data.trash).toBeUndefined()
+    expect(out).not.toBe(data)
+  })
+
+  it('migrateOverviewSchema backfills tasks and captures without mutating', () => {
+    const data = structuredClone(freshData())
+    delete (data as Partial<AppData>).captures
+    data.notes['home-ideas'] = 'A thought worth keeping'
+    data.tasks = [
+      { id: 't1', title: 'Legacy', type: 'Personal', progress: 'Not started', kanban: 'todo', archived: false, order: 0 },
+    ] as unknown as TaskItem[]
+    deepFreeze(data)
+
+    const out = migrateOverviewSchema(data)
+    expect(out.tasks[0].important).toBe(false)
+    expect(out.tasks[0].horizon).toBe('soon')
+    expect(out.captures).toHaveLength(1)
+    // Caller untouched.
+    expect(data.tasks[0].important).toBeUndefined()
+    expect(data.captures).toBeUndefined()
+  })
+
+  it('migrateOrgReflections imports the legacy note without mutating', () => {
+    const data = structuredClone(freshData())
+    data.orgs = [
+      { id: 'o1', name: 'Club', reflection: 'An old reflection', order: 0 },
+    ] as unknown as Org[]
+    deepFreeze(data)
+
+    const out = migrateOrgReflections(data)
+    expect(out.orgs[0].reflections).toHaveLength(1)
+    expect(out.orgs[0].reflections?.[0].body).toBe('An old reflection')
+    expect(data.orgs[0].reflections).toBeUndefined()
+    expect(out.orgs[0]).not.toBe(data.orgs[0])
+  })
+
+  it('the whole migrateAll chain survives a deep-frozen tree', () => {
+    const data = deepFreeze(structuredClone(freshData()))
+    // The real failure mode: this threw on interaction, not on load.
+    expect(() => migrateAll(data)).not.toThrow()
+    const out = migrateAll(data)
+    // Still a usable tree, and the caller's copy is untouched.
+    expect(out.academics.classCenter).toBeDefined()
+    expect(out.trash).toBeDefined()
+    expect(Object.isFrozen(data)).toBe(true)
+  })
+
+  it('the chain survives a deep-frozen LEGACY tree, where every backfill fires', () => {
+    // A current seed already has these containers, so the `??=` branches never
+    // run and the chain test passes without exercising them. Strip them to make
+    // every migration actually write something.
+    const data = structuredClone(freshData()) as unknown as Record<string, unknown>
+    const settings = data.settings as Record<string, unknown>
+    const meta = data.meta as Record<string, unknown>
+    const academics = data.academics as Record<string, unknown>
+    const center = academics.classCenter as Record<string, unknown>
+
+    for (const key of ['trash', 'captures', 'persons', 'organizations']) delete data[key]
+    for (const key of [
+      'listPreferences', 'savedViews', 'activeSavedViewIds', 'attentionSnoozedUntil',
+      'recommendationState', 'mutedRecommendationRules', 'projectionDismissals', 'mascotNoteDismissals',
+    ]) delete settings[key]
+    delete meta.recoveryStack
+    delete academics.migrationJournal
+    for (const key of ['reviewEvents', 'contacts']) delete center[key]
+    ;(data.notes as Record<string, string>)['home-ideas'] = 'A legacy scratchpad note'
+
+    const frozen = deepFreeze(data) as unknown as AppData
+    expect(() => migrateAll(frozen)).not.toThrow()
+
+    const out = migrateAll(frozen)
+    // Containers restored on the copy...
+    expect(out.trash).toEqual([])
+    expect(out.meta.recoveryStack).toEqual([])
+    expect(out.settings.recommendationState).toEqual({})
+    expect(out.settings.mascotNoteDismissals).toEqual({})
+    expect(out.academics.migrationJournal).toBeDefined()
+    expect(out.academics.classCenter.reviewEvents).toEqual([])
+    expect(out.captures.some((capture) => capture.id === 'capture-legacy-home-ideas')).toBe(true)
+    // ...and never on the caller's frozen tree.
+    expect((frozen as unknown as Record<string, unknown>).trash).toBeUndefined()
   })
 })

@@ -118,42 +118,54 @@ function classCenterDefaults() {
   return createSeedData().academics.classCenter
 }
 
-/** Additive L4 migration: legacy backups gain recovery containers without reshaping records. */
+/** Additive L4 migration: legacy backups gain recovery containers without
+ *  reshaping records. Pure — see the note on `migrateAcademicTags`. */
 export function migrateSafetyNets(data: AppData): AppData {
-  data.trash ??= []
-  data.settings.listPreferences ??= {}
-  data.settings.savedViews ??= {}
-  data.settings.activeSavedViewIds ??= {}
-  data.settings.attentionSnoozedUntil ??= {}
-  data.meta.recoveryStack ??= []
-  return data
+  return {
+    ...data,
+    trash: data.trash ?? [],
+    settings: {
+      ...data.settings,
+      listPreferences: data.settings.listPreferences ?? {},
+      savedViews: data.settings.savedViews ?? {},
+      activeSavedViewIds: data.settings.activeSavedViewIds ?? {},
+      attentionSnoozedUntil: data.settings.attentionSnoozedUntil ?? {},
+    },
+    meta: { ...data.meta, recoveryStack: data.meta.recoveryStack ?? [] },
+  }
 }
 
 /** Additive L6 migration: legacy backups gain the deterministic-intelligence
  *  containers without reshaping any record. Idempotent (`??=`) and lossless —
  *  it only ever adds empty maps, never drops or rewrites user data. */
 export function migrateIntelligence(data: AppData): AppData {
-  data.settings.recommendationState ??= {}
-  data.settings.mutedRecommendationRules ??= {}
-  return data
+  return {
+    ...data,
+    settings: {
+      ...data.settings,
+      recommendationState: data.settings.recommendationState ?? {},
+      mutedRecommendationRules: data.settings.mutedRecommendationRules ?? {},
+    },
+  }
 }
 
 /** Version 2: add Overview's planning and capture fields without deleting or
  * rewriting any legacy value. The old `home-ideas` note remains intact even
  * after it is copied into the local capture inbox. */
 export function migrateOverviewSchema(data: AppData): AppData {
-  data.captures ??= []
-  data.settings.projectionDismissals ??= {}
+  // Rows are only rebuilt when a field is actually added.
+  const tasks = (data.tasks ?? []).map((task) => {
+    const important = task.important ?? false
+    const horizon = task.horizon ?? (task.kanban === 'doing' || Boolean(task.deadline) ? 'now' : 'soon')
+    if (important === task.important && horizon === task.horizon) return task
+    return { ...task, important, horizon }
+  })
 
-  for (const task of data.tasks ?? []) {
-    task.important ??= false
-    task.horizon ??= task.kanban === 'doing' || Boolean(task.deadline) ? 'now' : 'soon'
-  }
-
+  const captures = [...(data.captures ?? [])]
   const legacy = data.notes?.['home-ideas']?.trim()
-  if (legacy && !data.captures.some((capture) => capture.id === 'capture-legacy-home-ideas')) {
+  if (legacy && !captures.some((capture) => capture.id === 'capture-legacy-home-ideas')) {
     const at = data.meta?.lastOpenedAt || Date.now()
-    data.captures.push({
+    captures.push({
       id: 'capture-legacy-home-ideas',
       kind: /^https?:\/\//i.test(legacy) ? 'source' : 'idea',
       content: legacy,
@@ -161,18 +173,25 @@ export function migrateOverviewSchema(data: AppData): AppData {
       createdAt: at,
       updatedAt: at,
       origin: 'overview',
-      order: data.captures.length,
+      order: captures.length,
     })
   }
 
-  return data
+  return {
+    ...data,
+    tasks,
+    captures,
+    settings: { ...data.settings, projectionDismissals: data.settings.projectionDismissals ?? {} },
+  }
 }
 
 /** Version 3: add persisted MascotNote dismissal keys without rewriting any
  * existing setting or record. */
 export function migrateMascotNotes(data: AppData): AppData {
-  data.settings.mascotNoteDismissals ??= {}
-  return data
+  return {
+    ...data,
+    settings: { ...data.settings, mascotNoteDismissals: data.settings.mascotNoteDismissals ?? {} },
+  }
 }
 
 /** Pure: never writes to `data`, so it is safe on frozen (immer-produced) state.
@@ -274,24 +293,22 @@ export function migrateAcademicTags(data: AppData): AppData {
   }
 }
 
+/** Pure — see the note on `migrateAcademicTags`. */
 export function migrateOrgReflections(data: AppData): AppData {
-  data.orgs ??= []
   const today = new Date().toISOString().slice(0, 10)
 
-  for (const org of data.orgs) {
+  const orgs = (data.orgs ?? []).map((org) => {
     const legacy = typeof org.reflection === 'string' ? org.reflection.trim() : ''
-    org.reflections ??= []
-    if (legacy && org.reflections.length === 0) {
-      org.reflections.push({
-        id: uid(),
-        date: today,
-        title: 'Imported note',
-        body: legacy,
-      })
-    }
-  }
+    const existing = org.reflections ?? []
+    // Nothing to add and the container is already there — keep identity.
+    if (existing === org.reflections && !(legacy && existing.length === 0)) return org
+    const reflections = legacy && existing.length === 0
+      ? [...existing, { id: uid(), date: today, title: 'Imported note', body: legacy }]
+      : existing
+    return { ...org, reflections }
+  })
 
-  return data
+  return { ...data, orgs }
 }
 
 const REQUIREMENT_SOURCE_BY_GROUP: Record<string, Pick<RequirementItem, 'sourceType' | 'sourceLabel' | 'sourceUrl' | 'lastVerified' | 'verificationStatus'>> = {
@@ -397,11 +414,12 @@ const REQUIREMENT_SOURCE_BY_GROUP: Record<string, Pick<RequirementItem, 'sourceT
 
 export function migrateRequirementMetadata(data: AppData): AppData {
   const migrationNote = 'Migration note: Carolina Compass-style “Organismal” labels are treated only as optional planner/course tags, not a standalone Neuroscience B.S. requirement.'
-  data.requirements = (data.requirements ?? [])
+  let removedOrganismal = false
+  const requirements = (data.requirements ?? [])
     .filter((requirement) => {
       const standaloneOrganismal = /organismal/i.test(requirement.group) || /^organismal$/i.test(requirement.label.trim())
       if (!standaloneOrganismal) return true
-      data.notes['tar-heel-organismal-migration'] = migrationNote
+      removedOrganismal = true
       return false
     })
     .map((requirement) => {
@@ -418,10 +436,19 @@ export function migrateRequirementMetadata(data: AppData): AppData {
         verificationStatus: requirement.verificationStatus ?? (uncertain ? 'needs-verification' : fallback.verificationStatus),
       }
     })
-  return data
+
+  return {
+    ...data,
+    requirements,
+    notes: removedOrganismal
+      ? { ...data.notes, 'tar-heel-organismal-migration': migrationNote }
+      : data.notes,
+  }
 }
 
-function migrateAll(data: AppData): AppData {
+/** The full hydration chain. Exported so the frozen-input contract can be
+ *  tested end to end: every link must be pure, or immer state throws. */
+export function migrateAll(data: AppData): AppData {
   return migrateFoundationV8(migrateAcademicsV7(migrateAcademicsV6(migrateAcademicsV5(migrateAcademicsV4(migrateMascotNotes(
     migrateOverviewSchema(
       migrateIntelligence(
