@@ -174,6 +174,7 @@ function createClassCenterSeed(): AcademicTagSettings['classCenter'] {
       courseId: byCourse('BIOL 103', 'Fall 2026'),
       title: 'Lecture 1 — What cells do',
       type: 'lecture',
+      kind: 'about-class',
       date: '2026-08-24',
       unit: 'Unit 1',
       topicIds: ['topic-biol-103-intro', 'topic-biol-103-cell-structure'],

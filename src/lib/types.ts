@@ -161,6 +161,13 @@ export type LegacyTopicStatus = TopicStatus | 'cards-made' | 'mastered'
 export type TopicConfidence = 1 | 2 | 3
 export type ReviewGrade = 'again' | 'hard' | 'good' | 'easy'
 export type ClassNoteType = 'lecture' | 'reading' | 'lab' | 'study-guide' | 'exam-review' | 'question-log' | 'other'
+/** Which of the two note surfaces a note belongs to. Both surfaces share the
+ *  ClassNote entity, so the distinction has to live in the model rather than
+ *  in whichever screen happened to create the row:
+ *    `about-class`    — exam intel, questions, priming, lecture capture
+ *    `on-material`    — notes written against a specific `Mine` file
+ *  Derivable defaults are applied by the v8 migration, never re-inferred. */
+export type ClassNoteKind = 'about-class' | 'on-material'
 export type ClassNoteSyncStatus = 'local-only' | 'sync-ready' | 'synced' | 'error'
 export type ClassAssignmentType = 'homework' | 'quiz' | 'exam' | 'project' | 'reading' | 'lab' | 'discussion' | 'other'
 export type ClassAssignmentStatus = 'not-started' | 'in-progress' | 'submitted' | 'graded' | 'dropped'
@@ -249,6 +256,8 @@ export interface ClassNote {
   courseId: ID
   title: string
   type: ClassNoteType
+  /** Structural surface discriminator — see ClassNoteKind. */
+  kind: ClassNoteKind
   date?: string
   unit?: string
   topicIds: ID[]

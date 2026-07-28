@@ -259,7 +259,7 @@ function assignment(id: string, courseId: string, title: string, type: ClassAssi
 }
 
 function note(id: string, courseId: string, title: string, date: string, unit: string, topicIds: string[], now: number): ClassNote {
-  return { id, courseId, title, type: 'lecture', date, unit, topicIds, content: 'Key mechanism, one uncertainty to resolve, and the next recall question.', syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: 0 }
+  return { id, courseId, title, type: 'lecture', kind: 'about-class', date, unit, topicIds, content: 'Key mechanism, one uncertainty to resolve, and the next recall question.', syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: 0 }
 }
 
 function experience(id: string, category: ExperienceEntry['category'], org: string, role: string, startDate: string, hours: number, description: string, tags: string[], order: number): ExperienceEntry {

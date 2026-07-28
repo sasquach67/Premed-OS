@@ -72,13 +72,19 @@ export function migrateFoundationV8(data: AppData, now = Date.now()): AppData {
   const files = (data.academics?.classCenter?.files ?? []).map((file) =>
     file.owner ? file : { ...file, owner: classifyFileOwner(file) })
 
+  // Note kind becomes structural. Legacy rows are classified once, here: a note
+  // written against a specific file is "on the material"; everything else is
+  // "about the class". After this, the screen never decides the kind.
+  const notes = (data.academics?.classCenter?.notes ?? []).map((note) =>
+    note.kind ? note : { ...note, kind: note.linkedFileIds?.length ? 'on-material' as const : 'about-class' as const })
+
   return {
     ...data,
     letters,
     persons: createdPersons.length ? [...existingPersons, ...createdPersons] : existingPersons,
     academics: {
       ...data.academics,
-      classCenter: { ...data.academics.classCenter, files },
+      classCenter: { ...data.academics.classCenter, files, notes },
     },
   }
 }

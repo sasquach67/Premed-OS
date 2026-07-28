@@ -837,7 +837,7 @@ function addQuestionNote(courseId: string, unit: string) {
   const now = Date.now()
   useStore.getState().update((draft) => {
     const notes = draft.academics.classCenter.notes
-    notes.unshift({ id: uid(), courseId, title: `Prime: ${unit}`, type: 'reading', date: isoToday(), unit, topicIds: [], content: '', syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: notes.length })
+    notes.unshift({ id: uid(), courseId, title: `Prime: ${unit}`, type: 'reading', kind: 'about-class', date: isoToday(), unit, topicIds: [], content: '', syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: notes.length })
   })
 }
 
@@ -845,7 +845,7 @@ function addBlankNote(courseId: string) {
   const now = Date.now()
   useStore.getState().update((draft) => {
     const notes = draft.academics.classCenter.notes
-    notes.unshift({ id: uid(), courseId, title: 'Untitled class note', type: 'lecture', date: isoToday(), unit: '', topicIds: [], content: '', syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: notes.length })
+    notes.unshift({ id: uid(), courseId, title: 'Untitled class note', type: 'lecture', kind: 'about-class', date: isoToday(), unit: '', topicIds: [], content: '', syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: notes.length })
   })
 }
 

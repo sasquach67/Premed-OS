@@ -1,4 +1,5 @@
 import { uid } from '@/lib/id'
+import { assertGenerationAllowed, type GenerationContext, type RetiredGenerationContext } from '@/lib/academics/generationPolicy'
 import type {
   AcademicFile,
   ClassNote,
@@ -10,6 +11,9 @@ import type {
 } from '@/lib/types'
 
 export interface GeneratePracticeExamRequest {
+  /** Which allow-listed surface asked for this. Generation outside the
+   *  allow-list throws — see lib/academics/generationPolicy. */
+  context: GenerationContext | RetiredGenerationContext
   courseId: string
   topicIds: string[]
   sourceNoteIds: string[]
@@ -50,6 +54,8 @@ export const aiPracticeService = {
     request: GeneratePracticeExamRequest,
     context: LocalPracticeGenerationContext = {},
   ): Promise<GeneratePracticeExamResponse> {
+    // One gate for every generation path.
+    assertGenerationAllowed(request.context)
     const now = Date.now()
     const topicMap = new Map((context.topics ?? []).map((topic) => [topic.id, topic]))
     const pickedTopics = request.topicIds.length ? request.topicIds : (context.topics ?? []).slice(0, 3).map((topic) => topic.id)

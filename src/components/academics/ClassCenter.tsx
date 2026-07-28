@@ -648,7 +648,6 @@ function ClassCard({
         <div className="flex flex-wrap gap-1.5 text-xs font-bold">
           {stats.weakCount > 0 && <Badge variant="danger">{stats.weakCount} weak</Badge>}
           {row.bcpm && <Badge variant="secondary">BCPM</Badge>}
-          {row.ankiDeckName && <Badge variant="outline">Anki</Badge>}
         </div>
 
         <div>
@@ -1784,10 +1783,12 @@ function PracticeExamGenerator({
   const [questionCount, setQuestionCount] = useState(6)
   const [questionTypes, setQuestionTypes] = useState<PracticeQuestionType[]>(['multiple-choice'])
   const [generating, setGenerating] = useState(false)
+  const [policyError, setPolicyError] = useState('')
 
   async function generate() {
     setGenerating(true)
     const request: GeneratePracticeExamRequest = {
+      context: 'practice-exam',
       courseId: row.id,
       topicIds,
       sourceNoteIds,
@@ -1796,10 +1797,18 @@ function PracticeExamGenerator({
       questionCount,
       questionTypes,
     }
-    const response = await aiPracticeService.generatePracticeExam(request, { topics, notes, files })
-    setGenerating(false)
-    onGenerated(response.exam, response.questions)
-    onOpenChange(false)
+    try {
+      const response = await aiPracticeService.generatePracticeExam(request, { topics, notes, files })
+      onGenerated(response.exam, response.questions)
+      onOpenChange(false)
+      setPolicyError('')
+    } catch (error) {
+      // The generation allow-list rejected this surface. Say so plainly rather
+      // than failing silently or pretending the request is still running.
+      setPolicyError(error instanceof Error ? error.message : 'Generation is not available here.')
+    } finally {
+      setGenerating(false)
+    }
   }
 
   return (
@@ -1840,6 +1849,11 @@ function PracticeExamGenerator({
             </div>
           )}
         </div>
+        {policyError && (
+          <p role="alert" className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm font-semibold text-foreground">
+            {policyError}
+          </p>
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={generate} disabled={generating || !topicIds.length || !questionTypes.length}>{generating ? 'Generating...' : 'Create exam'}</Button>
@@ -2046,7 +2060,6 @@ function ClassEditorDialog({
               <Field label="Canvas"><Input value={form.canvasUrl ?? ''} onChange={(e) => onChange({ canvasUrl: e.target.value })} placeholder="Paste URL" /></Field>
               <Field label="Drive folder"><Input value={form.driveFolderUrl ?? ''} onChange={(e) => onChange({ driveFolderUrl: e.target.value })} placeholder="Paste URL" /></Field>
               <Field label="GoodNotes"><Input value={form.goodNotesUrl ?? ''} onChange={(e) => onChange({ goodNotesUrl: e.target.value })} placeholder="Paste URL" /></Field>
-              <Field label="Anki deck"><Input value={form.ankiDeckName ?? ''} onChange={(e) => onChange({ ankiDeckName: e.target.value })} placeholder="Deck name or link" /></Field>
               <Field label="Notes doc"><Input value={form.notesDocUrl ?? ''} onChange={(e) => onChange({ notesDocUrl: e.target.value })} placeholder="Paste URL" /></Field>
             </div>
           </details>
@@ -2121,6 +2134,7 @@ function addNote(courseId: string, mutate: ClassTabProps['mutate']) {
       courseId,
       title: 'Untitled note',
       type: 'lecture',
+      kind: 'about-class',
       date: new Date().toISOString().slice(0, 10),
       unit: '',
       topicIds: [],
