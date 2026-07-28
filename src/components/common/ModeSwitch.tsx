@@ -32,18 +32,16 @@ export function ModeSwitch<T extends string>({
 
   const checked = value === right.id
 
+  /* A single binary switch announces only "on/off", which never says WHICH
+   * mode is selected. A radiogroup of two named radios announces the label of
+   * the active option, so the control is self-describing. Roving tabindex
+   * keeps it one tab stop, with arrow keys moving between options. */
   return (
-    <m.button
-      type="button"
-      role="switch"
+    <div
+      role="radiogroup"
       aria-label={label}
-      aria-checked={checked}
-      onClick={() => onChange(checked ? left.id : right.id)}
-      onKeyDown={onKeyDown}
-      whileTap={{ scale: 0.985 }}
-      transition={MOTION_TRANSITION.micro}
       className={cn(
-        'relative inline-grid min-w-56 grid-cols-2 items-stretch gap-1 rounded-full border border-white/15 bg-slate-950/50 p-1 shadow-sm backdrop-blur-md transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none',
+        'relative inline-grid min-w-56 grid-cols-2 items-stretch gap-1 rounded-full border border-white/15 bg-slate-950/50 p-1 shadow-sm backdrop-blur-md transition-colors duration-150 ease-out motion-reduce:transition-none',
         className,
       )}
     >
@@ -53,12 +51,28 @@ export function ModeSwitch<T extends string>({
         animate={{ x: checked ? '100%' : '0%' }}
         transition={MOTION_TRANSITION.standard}
       />
-      <span className={cn('relative z-10 flex min-w-20 items-center justify-center rounded-full px-5 py-2 font-display text-sm font-bold text-white/75 transition-colors duration-150 ease-out motion-reduce:transition-none', !checked && 'font-extrabold text-slate-900')}>
-        {left.label}
-      </span>
-      <span className={cn('relative z-10 flex min-w-20 items-center justify-center rounded-full px-5 py-2 font-display text-sm font-bold text-white/75 transition-colors duration-150 ease-out motion-reduce:transition-none', checked && 'font-extrabold text-slate-900')}>
-        {right.label}
-      </span>
-    </m.button>
+      {[left, right].map((option) => {
+        const selected = value === option.id
+        return (
+          <m.button
+            key={option.id}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            tabIndex={selected ? 0 : -1}
+            onClick={() => onChange(option.id)}
+            onKeyDown={onKeyDown}
+            whileTap={{ scale: 0.985 }}
+            transition={MOTION_TRANSITION.micro}
+            className={cn(
+              'relative z-10 flex min-w-20 items-center justify-center rounded-full px-5 py-2 font-display text-sm font-bold text-white/75 transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none',
+              selected && 'font-extrabold text-slate-900',
+            )}
+          >
+            {option.label}
+          </m.button>
+        )
+      })}
+    </div>
   )
 }
