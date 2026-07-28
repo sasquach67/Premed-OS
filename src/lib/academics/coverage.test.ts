@@ -38,7 +38,7 @@ describe('coverage ledger', () => {
     const proposal = proposeChunkAssignment({
       chunk: chunk('c1'),
       file: {
-        id: 'f1', courseId: 'course-1', sourceType: 'upload', title: 'Lecture 14',
+        id: 'f1', courseId: 'course-1', sourceType: 'upload', owner: 'course', title: 'Lecture 14',
         type: 'lecture-slides', linkedTopicIds: [], createdAt: 1, updatedAt: 1, order: 0,
       },
     })

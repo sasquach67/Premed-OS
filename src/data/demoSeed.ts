@@ -76,25 +76,25 @@ export function createDemoData(seedTime = Date.now()): AppData {
   const files = [
     {
       id: 'demo-file-biol-syllabus', courseId: courses[3].id, sourceType: 'upload' as const,
-      title: 'BIOL 252 parsed syllabus', type: 'syllabus' as const, fileName: 'BIOL252-syllabus.pdf',
+      title: 'BIOL 252 parsed syllabus', type: 'syllabus' as const, owner: 'course' as const, fileName: 'BIOL252-syllabus.pdf',
       linkedTopicIds: ['demo-topic-synapse', 'demo-topic-potentials'], processingStatus: 'ready' as const,
       createdAt: stamp(-24), updatedAt: stamp(-24), order: 0,
     },
     {
       id: 'demo-file-biol-lecture', courseId: courses[3].id, sourceType: 'upload' as const,
-      title: 'Lecture 5 — Electrical signaling', type: 'lecture-slides' as const, fileName: 'lecture-05.pdf',
+      title: 'Lecture 5 — Electrical signaling', type: 'lecture-slides' as const, owner: 'course' as const, fileName: 'lecture-05.pdf',
       linkedTopicIds: ['demo-topic-synapse', 'demo-topic-potentials'], processingStatus: 'ready' as const,
       createdAt: stamp(-8), updatedAt: stamp(-8), order: 1,
     },
     {
       id: 'demo-file-unassigned', courseId: courses[3].id, sourceType: 'upload' as const,
-      title: 'Guest lecture — glial modulation', type: 'lecture-slides' as const, fileName: 'guest-glia.pdf',
+      title: 'Guest lecture — glial modulation', type: 'lecture-slides' as const, owner: 'course' as const, fileName: 'guest-glia.pdf',
       linkedTopicIds: [], processingStatus: 'ready' as const,
       createdAt: stamp(-2), updatedAt: stamp(-2), order: 2,
     },
     {
       id: 'demo-file-chem-reading', courseId: courses[4].id, sourceType: 'link' as const,
-      title: 'Chapter 6 reaction mechanisms', type: 'reading' as const, linkedTopicIds: ['demo-topic-sn2'],
+      title: 'Chapter 6 reaction mechanisms', type: 'reading' as const, owner: 'course' as const, linkedTopicIds: ['demo-topic-sn2'],
       processingStatus: 'ready' as const, createdAt: stamp(-5), updatedAt: stamp(-5), order: 3,
     },
   ]

@@ -111,7 +111,19 @@ function AvatarUpload({ value, name, onChange }: { value?: string; name: string;
 function AutoCv() {
   const profile = useStore((s) => s.profile)
   const experiences = useStore((s) => s.experiences)
+  const persons = useStore((s) => s.persons)
+  const letters = useStore((s) => s.letters)
   const update = useStore((s) => s.update)
+
+  /** Contacts feed the CV from the canonical Person records. Anyone already
+   *  carrying a letter request is marked, so both surfaces tell one story. */
+  const references = useMemo(() => {
+    const letterPersonIds = new Set((letters ?? []).map((entry) => entry.recommenderId).filter(Boolean) as string[])
+    return (persons ?? [])
+      .filter((person) => !person.archived && !person.deletedAt)
+      .map((person) => ({ person, isLetterWriter: letterPersonIds.has(person.id) }))
+      .sort((a, b) => Number(b.isLetterWriter) - Number(a.isLetterWriter) || a.person.name.localeCompare(b.person.name))
+  }, [persons, letters])
 
   const byCat = useMemo(() => {
     const map = new Map<ExperienceCategory, typeof experiences>()
@@ -162,7 +174,34 @@ function AutoCv() {
             </section>
           ))}
 
-          {experiences.length === 0 && (
+          {references.length > 0 && (
+            <section>
+              <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-primary">References &amp; contacts</h3>
+              <ul className="space-y-2">
+                {references.map(({ person, isLetterWriter }) => (
+                  <li key={person.id} className="text-sm">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="font-semibold">
+                        {person.name}{person.role ? `, ${person.role}` : ''}
+                      </span>
+                      {isLetterWriter && (
+                        <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">
+                          Letter requested
+                        </span>
+                      )}
+                    </div>
+                    {(person.title || person.email) && (
+                      <p className="text-muted-foreground">
+                        {[person.title, person.email].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {experiences.length === 0 && references.length === 0 && (
             <p className="rounded-lg border border-dashed border-border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
               Log roles in the experience pillars and they’ll appear here automatically, formatted as a CV.
             </p>

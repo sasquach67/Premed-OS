@@ -288,6 +288,8 @@ export interface ClassAssignment {
 }
 
 export type AcademicFileSourceType = 'upload' | 'link' | 'embed'
+/** Materials ownership. Structural, never inferred from file type at read time. */
+export type AcademicFileOwner = 'course' | 'mine' | 'generated'
 
 export interface AcademicFile {
   id: ID
@@ -302,6 +304,10 @@ export interface AcademicFile {
   mimeType?: string
   notes?: string
   linkedTopicIds: ID[]
+  /** Where the material came from, structurally rather than inferred:
+   *  `course` — handed out by the class · `mine` — the student's own work ·
+   *  `generated` — produced by the app. Backfilled by the v8 migration. */
+  owner: AcademicFileOwner
   processingStatus?: 'pending' | 'ready' | 'failed'
   processingError?: string
   createdAt: number
@@ -509,8 +515,12 @@ export type LetterStatus = 'identified' | 'asked' | 'agreed' | 'submitted' | 'de
 
 export interface LetterEntry {
   id: ID
+  /** Retained verbatim even after linking — the migration is lossless. */
   recommender: string
   recommenderId?: ID
+  /** Set when the recommender string matched more than one Person. The link is
+   *  deliberately left unmade so the user resolves it — never a silent merge. */
+  recommenderCandidateIds?: ID[]
   role: string            // "Gen Chem professor", "Research PI"
   relationship: string
   type: string            // "Science faculty", "Committee", "Other"

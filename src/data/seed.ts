@@ -224,6 +224,7 @@ function createClassCenterSeed(): AcademicTagSettings['classCenter'] {
       id: 'file-biol-103-syllabus',
       courseId: byCourse('BIOL 103', 'Fall 2026'),
       sourceType: 'link',
+      owner: 'course',
       title: 'Syllabus',
       type: 'syllabus',
       url: '',

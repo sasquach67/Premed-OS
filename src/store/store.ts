@@ -25,6 +25,7 @@ import { migrateAcademicsV4, syncCurrentTermWorkspaces } from '@/store/migration
 import { migrateAcademicsV5 } from '@/store/migrations/academicsV5'
 import { migrateAcademicsV6 } from '@/store/migrations/academicsV6'
 import { migrateAcademicsV7 } from '@/store/migrations/academicsV7'
+import { migrateFoundationV8 } from '@/store/migrations/foundationV8'
 
 const DEMO_MODE = isDemoMode()
 
@@ -40,7 +41,7 @@ if (!DEMO_MODE && typeof localStorage !== 'undefined' && !localStorage.getItem(R
 if (DEMO_MODE) clearUnstampedDemoNamespace()
 
 export const STORAGE_KEY = activeStorageKey()
-const SEED_VERSION = 7
+const SEED_VERSION = 8
 
 function createInitialData() {
   if (!DEMO_MODE) return structuredClone(createSeedData())
@@ -174,15 +175,15 @@ export function migrateMascotNotes(data: AppData): AppData {
   return data
 }
 
+/** Pure: never writes to `data`, so it is safe on frozen (immer-produced) state.
+ *  Returns a new tree; unchanged rows keep their identity. */
 export function migrateAcademicTags(data: AppData): AppData {
-  data.academics ??= { courseOptions: [], assignmentTypeOptions: [], classCenter: classCenterDefaults(), migrationJournal: [] }
-  data.academics.courseOptions ??= []
-  data.academics.assignmentTypeOptions ??= []
-  data.academics.migrationJournal ??= []
-  data.academics.classCenter ??= classCenterDefaults()
+  const academics = data.academics ?? { courseOptions: [], assignmentTypeOptions: [], classCenter: classCenterDefaults(), migrationJournal: [] }
+  const classCenterSource = academics.classCenter ?? classCenterDefaults()
 
-  const courseOptions = data.academics.courseOptions as AcademicCourseOption[]
-  const typeOptions = data.academics.assignmentTypeOptions as AcademicTypeOption[]
+  // Copies — `ensureCourse`/`ensureType` append here rather than to caller state.
+  const courseOptions = [...(academics.courseOptions ?? [])] as AcademicCourseOption[]
+  const typeOptions = [...(academics.assignmentTypeOptions ?? [])] as AcademicTypeOption[]
 
   const courseByName = new Map(courseOptions.map((option) => [normalizeLabel(option.name), option]))
   const typeByName = new Map(typeOptions.map((option) => [normalizeLabel(option.name), option]))
@@ -225,14 +226,17 @@ export function migrateAcademicTags(data: AppData): AppData {
     if (label) ensureCourse(label, course.title)
   }
 
-  for (const task of data.tasks ?? []) {
-    if (task.course && !task.courseId) task.courseId = ensureCourse(task.course).id
-    if (task.type && !task.typeId) task.typeId = ensureType(task.type).id
-  }
+  // Rows only get rebuilt when a tag id is actually added.
+  const tasks = (data.tasks ?? []).map((task) => {
+    const courseId = task.course && !task.courseId ? ensureCourse(task.course).id : task.courseId
+    const typeId = task.type && !task.typeId ? ensureType(task.type).id : task.typeId
+    if (courseId === task.courseId && typeId === task.typeId) return task
+    return { ...task, courseId, typeId }
+  })
 
   // Keep the older additive safeguards available to direct migration callers.
   // The v4 reconciliation immediately follows this function during hydration.
-  data.academics.classCenter.topics = (data.academics.classCenter.topics ?? []).map((topic) => ({
+  const topics = (classCenterSource.topics ?? []).map((topic) => ({
     ...topic,
     confidence: Math.max(1, Math.min(3, Number(topic.confidence) || 1)) as typeof topic.confidence,
     status: (topic.status as string) === 'mastered'
@@ -242,23 +246,32 @@ export function migrateAcademicTags(data: AppData): AppData {
     linkedAssignmentIds: topic.linkedAssignmentIds ?? [],
     linkedFileIds: topic.linkedFileIds ?? [],
   }))
-  data.academics.classCenter.weakAreas = (data.academics.classCenter.weakAreas ?? []).map((area) => ({
+  const weakAreas = (classCenterSource.weakAreas ?? []).map((area) => ({
     ...area,
     severity: Math.max(1, Math.min(3, Number(area.severity) || 1)) as typeof area.severity,
   }))
 
   // A non-enumerable compatibility view lets old callers detect that the
   // container exists without serializing duplicate course/workspace data.
-  const center = data.academics.classCenter as ClassCenterData & { classes?: unknown[] }
-  if (!Object.prototype.hasOwnProperty.call(center, 'classes')) {
-    Object.defineProperty(center, 'classes', {
-      configurable: true,
-      enumerable: false,
-      get: () => center.workspaces ?? [],
-    })
-  }
+  // Defined on the fresh container: object spread never carries it across.
+  const center = { ...classCenterSource, topics, weakAreas } as ClassCenterData & { classes?: unknown[] }
+  Object.defineProperty(center, 'classes', {
+    configurable: true,
+    enumerable: false,
+    get: () => center.workspaces ?? [],
+  })
 
-  return data
+  return {
+    ...data,
+    tasks,
+    academics: {
+      ...academics,
+      courseOptions,
+      assignmentTypeOptions: typeOptions,
+      migrationJournal: academics.migrationJournal ?? [],
+      classCenter: center,
+    },
+  }
 }
 
 export function migrateOrgReflections(data: AppData): AppData {
@@ -409,7 +422,7 @@ export function migrateRequirementMetadata(data: AppData): AppData {
 }
 
 function migrateAll(data: AppData): AppData {
-  return migrateAcademicsV7(migrateAcademicsV6(migrateAcademicsV5(migrateAcademicsV4(migrateMascotNotes(
+  return migrateFoundationV8(migrateAcademicsV7(migrateAcademicsV6(migrateAcademicsV5(migrateAcademicsV4(migrateMascotNotes(
     migrateOverviewSchema(
       migrateIntelligence(
         migrateSafetyNets(
@@ -421,7 +434,7 @@ function migrateAll(data: AppData): AppData {
         ),
       ),
     ),
-  )))))
+  ))))))
 }
 
 function nextOrder(arr: AnyRow[]): number {

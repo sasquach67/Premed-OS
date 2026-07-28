@@ -9,7 +9,7 @@
  * maps architecture/02's notification thresholds: Critical → blocking,
  * Important → important, Helpful/Informational → suggested.
  */
-import type { AppData, TaskItem } from '@/lib/types'
+import type { AppData, ClassAssignment, TaskItem } from '@/lib/types'
 import { dataHealthWarnings } from '@/lib/intelligence/dataHealth'
 import { dedupCandidates } from '@/lib/intelligence/dedup'
 import type { Severity } from '@/lib/intelligence/types'
@@ -53,10 +53,47 @@ function deadlineItem(task: TaskItem, today: Date): AttentionItem | null {
   return { id: `deadline:${task.id}`, source: 'deadline', priority, title: task.title, why, route: '/timeline', actionLabel: 'Open task', date: task.deadline, daysLeft }
 }
 
+/** Finished or abandoned work can't be due. */
+const CLOSED_ASSIGNMENT_STATUS = new Set<ClassAssignment['status']>(['submitted', 'graded', 'dropped'])
+
+/** Class assignments carry real deadlines, so they belong in attention.
+ *  They deliberately do NOT join Home's to-do widget — that widget stays
+ *  `data.tasks` only; coursework reaches the user through the bell. */
+function assignmentDeadlineItem(
+  assignment: ClassAssignment, courseLabel: string, today: Date,
+): AttentionItem | null {
+  if (!assignment.dueDate || CLOSED_ASSIGNMENT_STATUS.has(assignment.status)) return null
+  const deadline = dayStart(new Date(`${assignment.dueDate}T00:00:00`))
+  const daysLeft = Math.round((deadline.getTime() - today.getTime()) / 86_400_000)
+  if (daysLeft > 10) return null
+  const priority: AttentionPriority = daysLeft < 0 ? 'blocking' : daysLeft <= 2 ? 'important' : 'suggested'
+  const when = daysLeft < 0
+    ? `Overdue by ${Math.abs(daysLeft)} day${Math.abs(daysLeft) === 1 ? '' : 's'}`
+    : daysLeft === 0 ? 'Due today' : `Due in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`
+  return {
+    id: `deadline:assignment:${assignment.id}`,
+    source: 'deadline',
+    priority,
+    title: assignment.title,
+    why: courseLabel ? `${when} · ${courseLabel}` : when,
+    route: '/academics?tab=assignments',
+    actionLabel: 'Open assignment',
+    date: assignment.dueDate,
+    daysLeft,
+  }
+}
+
 export const deadlinesFeed: AttentionFeed = (data) => {
   const today = dayStart(new Date())
-  return data.tasks
-    .map((task) => deadlineItem(task, today))
+  const courseLabel = new Map(
+    (data.courses ?? []).map((course) => [course.id, course.code || course.title || '']),
+  )
+  const assignments = data.academics?.classCenter?.assignments ?? []
+  return [
+    ...data.tasks.map((task) => deadlineItem(task, today)),
+    ...assignments.map((assignment) =>
+      assignmentDeadlineItem(assignment, courseLabel.get(assignment.courseId) ?? '', today)),
+  ]
     .filter((item): item is AttentionItem => Boolean(item))
     .sort((a, b) => (a.daysLeft ?? 0) - (b.daysLeft ?? 0))
 }

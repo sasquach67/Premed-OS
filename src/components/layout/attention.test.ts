@@ -16,6 +16,8 @@ function quietSeed(): AppData {
   data.schools = []
   data.persons = []
   data.organizations = []
+  // Class assignments are a deadline source too, so they must be quiet here.
+  data.academics.classCenter.assignments = []
   data.settings.backup.enabled = true
   return data
 }
@@ -32,6 +34,33 @@ describe('attention deadlines feed', () => {
     ]
     const items = buildAttention(data).filter((item) => item.source === 'deadline')
     expect(items.map((item) => item.priority)).toEqual(['blocking', 'important', 'suggested'])
+    vi.useRealTimers()
+  })
+
+  it('includes class-assignment deadlines, skipping closed work', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-07-23T12:00:00'))
+    const data = quietSeed()
+    data.courses = [
+      { id: 'c1', term: 'Fall 2026', code: 'BIOL 252', title: 'Neurobiology', credits: 3, grade: 'IP', bcpm: true, status: 'in-progress', inResidence: true, satisfies: [], order: 0 },
+    ]
+    data.academics.classCenter.assignments = [
+      { id: 'a-overdue', courseId: 'c1', title: 'Lab report', type: 'lab', dueDate: '2026-07-21', status: 'not-started', linkedTopicIds: [], linkedFileIds: [], createdAt: 0, updatedAt: 0, order: 0 },
+      { id: 'a-soon', courseId: 'c1', title: 'Midterm', type: 'exam', dueDate: '2026-07-24', status: 'in-progress', linkedTopicIds: [], linkedFileIds: [], createdAt: 0, updatedAt: 0, order: 1 },
+      { id: 'a-graded', courseId: 'c1', title: 'Quiz 1', type: 'quiz', dueDate: '2026-07-22', status: 'graded', linkedTopicIds: [], linkedFileIds: [], createdAt: 0, updatedAt: 0, order: 2 },
+      { id: 'a-dropped', courseId: 'c1', title: 'Dropped set', type: 'homework', dueDate: '2026-07-22', status: 'dropped', linkedTopicIds: [], linkedFileIds: [], createdAt: 0, updatedAt: 0, order: 3 },
+    ]
+
+    const deadlines = buildAttention(data).filter((item) => item.source === 'deadline')
+    expect(deadlines.map((item) => item.id)).toEqual([
+      'deadline:assignment:a-overdue',
+      'deadline:assignment:a-soon',
+    ])
+    expect(deadlines[0].priority).toBe('blocking')
+    expect(deadlines[0].why).toContain('BIOL 252')
+    expect(deadlines[0].route).toBe('/academics?tab=assignments')
+    // Home's to-do widget renders `state.tasks`; coursework must not land there.
+    expect(data.tasks).toHaveLength(0)
     vi.useRealTimers()
   })
 

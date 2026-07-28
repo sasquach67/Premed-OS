@@ -62,6 +62,25 @@ export function WhereIStand() {
   const reachSchools = state.schools.filter((school) => school.category === 'reach').length
   const examDays = daysUntil(state.mcat.targetDate)
 
+  /* Class-level state reaches Overview instead of stopping at Academics:
+     what's due, what's shaky, what's open, and what is still unfiled. */
+  const center = state.academics.classCenter
+  const nowMs = Date.now()
+  const dueTopics = (center.topics ?? []).filter((topic) =>
+    topic.status !== 'ready' && (topic.fsrs?.due ?? Infinity) <= nowMs).length
+  const weakTopics = (center.weakAreas ?? []).filter((area) => area.status === 'active').length
+  const openAssignments = (center.assignments ?? []).filter((assignment) =>
+    assignment.status !== 'graded' && assignment.status !== 'submitted' && assignment.status !== 'dropped').length
+  const coverageGaps = (center.sourceChunks ?? []).filter((chunk) => !chunk.topicId).length
+    + (center.files ?? []).filter((file) => file.processingStatus === 'pending').length
+
+  const classSignals = [
+    dueTopics ? `${dueTopics} due` : '',
+    weakTopics ? `${weakTopics} weak` : '',
+    openAssignments ? `${openAssignments} open` : '',
+    coverageGaps ? `${coverageGaps} unfiled` : '',
+  ].filter(Boolean)
+
   const hourRow = (
     label: string,
     category: ExperienceCategory,
@@ -97,8 +116,14 @@ export function WhereIStand() {
       group: 'Foundation', label: 'Academics', route: '/academics', icon: GraduationCap, accent: 'var(--cat-gpa)',
       value: graded ? `${fmtGpa(gpa.cum)} cum · ${fmtGpa(gpa.science)} sci` : 'Not started',
       progress: graded && state.goals.gpaTarget ? percent(gpa.cum, state.goals.gpaTarget) : undefined,
-      pace: !graded ? 'not enough data' : gpa.cum >= state.goals.gpaTarget ? 'on track' : 'at risk',
-      tone: !graded ? 'neutral' : gpa.cum >= state.goals.gpaTarget ? 'success' : 'warning',
+      // Class work outranks the GPA summary here: an unreviewed backlog is the
+      // thing you can still act on today, where a posted grade is already set.
+      pace: classSignals.length
+        ? classSignals.join(' · ')
+        : !graded ? 'not enough data' : gpa.cum >= state.goals.gpaTarget ? 'on track' : 'at risk',
+      tone: dueTopics || weakTopics
+        ? 'warning'
+        : !graded ? 'neutral' : gpa.cum >= state.goals.gpaTarget ? 'success' : 'warning',
     },
     {
       group: 'Foundation', label: 'MCAT', route: '/mcat', icon: Brain, accent: 'var(--cat-mcat)',

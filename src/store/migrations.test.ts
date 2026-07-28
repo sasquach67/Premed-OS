@@ -10,6 +10,37 @@ function freshData(): AppData {
 }
 
 describe('migrateAcademicTags', () => {
+  it('never writes to frozen input (immer-produced state is read-only)', () => {
+    // Deep clone first: createSeedData() shares structure, and freezing it
+    // would leak into every other test in this file.
+    const data = structuredClone(freshData())
+    data.academics.classCenter.topics = [
+      { id: 'frozen-topic', confidence: 5, status: 'mastered' },
+    ] as unknown as Topic[]
+    data.tasks = [
+      { id: 'frozen-task', course: 'BIOL 252', type: 'Exam', title: 'Midterm' },
+    ] as unknown as TaskItem[]
+
+    // Freeze the way immer does: the rows the migration wants to rewrite.
+    Object.freeze(data.academics.classCenter.topics[0])
+    Object.freeze(data.academics.classCenter.topics)
+    Object.freeze(data.tasks[0])
+    Object.freeze(data.tasks)
+    Object.freeze(data.academics.classCenter)
+    Object.freeze(data.academics)
+
+    const out = migrateAcademicTags(data)
+
+    // Normalisation still happened — on copies.
+    expect(out.academics.classCenter.topics[0].confidence).toBe(3)
+    expect(out.academics.classCenter.topics[0].status).toBe('ready')
+    expect(out.tasks[0].courseId).toBeTruthy()
+    // The caller's objects are untouched.
+    expect(data.academics.classCenter.topics[0].confidence).toBe(5)
+    expect(data.tasks[0].courseId).toBeUndefined()
+    expect(out.academics.classCenter.topics[0]).not.toBe(data.academics.classCenter.topics[0])
+  })
+
   it('recreates missing academics containers on legacy data', () => {
     const data = freshData()
     // simulate a pre-classCenter backup (no academics, no sources to backfill from)
