@@ -1,47 +1,121 @@
-/* The single allow-list for generated practice material.
+/* Generation policy — SCOPED. Read this before adding any generator.
  *
- * The locked decision is narrow: the app may generate practice items ONLY for
- * missed-to-mastery drills and flashcards. Everything else — full practice
- * exams, "generate a study guide", legacy one-off generators — is outside the
- * allow-list and must either be removed or routed through here.
+ * There are two different rules in this app, and they were previously
+ * conflated into one app-wide restriction. They are not the same rule and
+ * they exist for different reasons:
  *
- * This module is the proof. Generation paths call `assertGenerationAllowed`
- * (or check `isGenerationAllowed`) so the boundary is enforced in one place
- * rather than re-argued at each call site, and so a new generator cannot be
- * added without either appearing in this list or throwing.
+ *   ACADEMICS (tabs/01-academics.md §6.3) — PERMISSIVE.
+ *     AI may generate ANY study artifact for a specific class. Coursework has
+ *     no standardized-exam constraint, so the old blanket ban was simply wrong
+ *     here and is lifted.
+ *
+ *   MCAT (tabs/02-mcat.md §2a) — RESTRICTED, and unchanged.
+ *     MCAT practice must mirror a real standardized exam, so QBank questions
+ *     and CARS passages must be externally sourced, never generated. AI there
+ *     stays limited to missed-to-mastery drills and flashcards.
+ *
+ * The scope is therefore part of every request. A generator cannot be written
+ * without saying which world it lives in, which is what stops the two rules
+ * being merged again.
  */
+import type { AcademicFile, AcademicFileOwner } from '@/lib/types'
 
-/** Contexts permitted to produce generated practice items. */
-export const ALLOWED_GENERATION_CONTEXTS = ['missed-to-mastery', 'flashcards'] as const
+export type GenerationScope = 'academics' | 'mcat'
 
-export type GenerationContext = (typeof ALLOWED_GENERATION_CONTEXTS)[number]
+/** Academics: any study artifact, for a specific class. */
+export const ACADEMICS_ARTIFACTS = [
+  'practice-exam', 'practice-problems', 'problem-set', 'quiz', 'worksheet',
+  'study-guide', 'summary', 'explanation', 'flashcards', 'recall-prompts',
+] as const
 
-/** Contexts that previously generated content and are deliberately closed.
- *  Kept named (rather than deleted silently) so the audit stays legible. */
-export const RETIRED_GENERATION_CONTEXTS = ['practice-exam', 'study-guide'] as const
+/** MCAT: unchanged — drills and flashcards only. */
+export const MCAT_ARTIFACTS = ['missed-to-mastery', 'flashcards'] as const
 
-export type RetiredGenerationContext = (typeof RETIRED_GENERATION_CONTEXTS)[number]
+/** Named so the boundary is legible, and so a test can assert they stay out. */
+export const MCAT_FORBIDDEN_ARTIFACTS = ['qbank-questions', 'cars-passages'] as const
 
-export function isGenerationAllowed(context: string): context is GenerationContext {
-  return (ALLOWED_GENERATION_CONTEXTS as readonly string[]).includes(context)
+export type AcademicsArtifact = (typeof ACADEMICS_ARTIFACTS)[number]
+export type McatArtifact = (typeof MCAT_ARTIFACTS)[number]
+export type GenerationArtifact = AcademicsArtifact | McatArtifact
+
+const ALLOWED_BY_SCOPE: Record<GenerationScope, readonly string[]> = {
+  academics: ACADEMICS_ARTIFACTS,
+  mcat: MCAT_ARTIFACTS,
+}
+
+/** Generated artifacts always carry this ownership marker (guardrail 2). */
+export const GENERATED_OWNER: AcademicFileOwner = 'generated'
+
+export interface GenerationRequest {
+  scope: GenerationScope
+  artifact: string
+  /** Academics only: generation is always for ONE class. */
+  courseId?: string
+  /** Ids of the class's own materials/topics the artifact derives from
+   *  (guardrail 1). Empty means "invented from thin air", which is refused. */
+  groundedIn?: readonly string[]
+}
+
+export function isGenerationAllowed(scope: GenerationScope, artifact: string): boolean {
+  return ALLOWED_BY_SCOPE[scope]?.includes(artifact) ?? false
 }
 
 export class GenerationNotAllowedError extends Error {
-  readonly context: string
+  readonly scope: GenerationScope
+  readonly artifact: string
 
-  constructor(context: string) {
-    super(
-      `Generated practice is limited to ${ALLOWED_GENERATION_CONTEXTS.join(' and ')}. `
-      + `"${context}" is outside the allow-list — route it through an approved `
-      + 'context or remove it.',
-    )
+  constructor(scope: GenerationScope, artifact: string, detail: string) {
+    super(detail)
     this.name = 'GenerationNotAllowedError'
-    this.context = context
+    this.scope = scope
+    this.artifact = artifact
   }
 }
 
-/** Throws unless `context` is on the allow-list. Call at the top of any path
- *  that produces generated study material. */
-export function assertGenerationAllowed(context: string): asserts context is GenerationContext {
-  if (!isGenerationAllowed(context)) throw new GenerationNotAllowedError(context)
+/** Phrases that would present generated work as the genuine article
+ *  (guardrail 3). Deliberately narrow: it targets claims of authenticity,
+ *  not ordinary words like "exam" or "midterm". */
+const PRESENTED_AS_REAL = /\b(past paper|previous exam|actual exam|real exam|official exam|the upcoming exam|last year'?s exam|professor'?s exam)\b/i
+
+export function presentsAsRealExam(title: string): boolean {
+  return PRESENTED_AS_REAL.test(title)
+}
+
+/** The one gate. Throws unless the request satisfies its scope's rule and,
+ *  in Academics, all three guardrails. */
+export function assertGenerationAllowed(request: GenerationRequest): void {
+  const { scope, artifact } = request
+
+  if (!isGenerationAllowed(scope, artifact)) {
+    const allowed = ALLOWED_BY_SCOPE[scope]?.join(', ') ?? '(unknown scope)'
+    const why = scope === 'mcat'
+      ? `MCAT practice must mirror a real standardized exam, so "${artifact}" has to be externally sourced. Generation here is limited to: ${allowed}.`
+      : `"${artifact}" is not a recognised study artifact. Academics generation covers: ${allowed}.`
+    throw new GenerationNotAllowedError(scope, artifact, why)
+  }
+
+  if (scope !== 'academics') return
+
+  // Guardrail 1 — grounded in that class's own materials.
+  if (!request.courseId) {
+    throw new GenerationNotAllowedError(scope, artifact,
+      'Academics generation is always for one specific class; no course was given.')
+  }
+  if (!request.groundedIn?.length) {
+    throw new GenerationNotAllowedError(scope, artifact,
+      "Generated work must derive from this class's own materials — select the syllabus, slides, readings, notes, or topics it should be built from.")
+  }
+}
+
+/** Guardrail 2 — stamp the ownership marker on a generated artifact. */
+export function markGenerated<T extends Partial<AcademicFile>>(file: T): T & { owner: AcademicFileOwner } {
+  return { ...file, owner: GENERATED_OWNER }
+}
+
+/** Guardrail 3 — a generated title never claims to be the genuine article.
+ *  Returns a safe title rather than throwing, so a user's wording can't block
+ *  their own work; the claim is simply removed and the label made explicit. */
+export function generatedTitle(title: string): string {
+  const cleaned = presentsAsRealExam(title) ? title.replace(PRESENTED_AS_REAL, 'practice material') : title
+  return /^generated\b/i.test(cleaned) ? cleaned : `Generated · ${cleaned}`
 }

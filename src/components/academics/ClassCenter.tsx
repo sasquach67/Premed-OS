@@ -1788,7 +1788,6 @@ function PracticeExamGenerator({
   async function generate() {
     setGenerating(true)
     const request: GeneratePracticeExamRequest = {
-      context: 'practice-exam',
       courseId: row.id,
       topicIds,
       sourceNoteIds,

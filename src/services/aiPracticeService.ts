@@ -1,5 +1,5 @@
 import { uid } from '@/lib/id'
-import { assertGenerationAllowed, type GenerationContext, type RetiredGenerationContext } from '@/lib/academics/generationPolicy'
+import { assertGenerationAllowed, generatedTitle } from '@/lib/academics/generationPolicy'
 import type {
   AcademicFile,
   ClassNote,
@@ -11,9 +11,6 @@ import type {
 } from '@/lib/types'
 
 export interface GeneratePracticeExamRequest {
-  /** Which allow-listed surface asked for this. Generation outside the
-   *  allow-list throws — see lib/academics/generationPolicy. */
-  context: GenerationContext | RetiredGenerationContext
   courseId: string
   topicIds: string[]
   sourceNoteIds: string[]
@@ -54,8 +51,15 @@ export const aiPracticeService = {
     request: GeneratePracticeExamRequest,
     context: LocalPracticeGenerationContext = {},
   ): Promise<GeneratePracticeExamResponse> {
-    // One gate for every generation path.
-    assertGenerationAllowed(request.context)
+    // One gate for every generation path. Academics is permissive, but the
+    // three guardrails still apply — this must be grounded in the class's
+    // own materials (tabs/01-academics.md §6.3).
+    assertGenerationAllowed({
+      scope: 'academics',
+      artifact: 'practice-exam',
+      courseId: request.courseId,
+      groundedIn: [...request.topicIds, ...request.sourceNoteIds, ...request.sourceFileIds],
+    })
     const now = Date.now()
     const topicMap = new Map((context.topics ?? []).map((topic) => [topic.id, topic]))
     const pickedTopics = request.topicIds.length ? request.topicIds : (context.topics ?? []).slice(0, 3).map((topic) => topic.id)
@@ -105,7 +109,7 @@ export const aiPracticeService = {
       exam: {
         id: examId,
         courseId: request.courseId,
-        title: `${request.difficulty === 'mixed' ? 'Mixed' : request.difficulty} practice set`,
+        title: generatedTitle(`${request.difficulty === 'mixed' ? 'Mixed' : request.difficulty} practice set`),
         topicIds: pickedTopics,
         sourceNoteIds: request.sourceNoteIds,
         sourceFileIds: request.sourceFileIds,
