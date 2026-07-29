@@ -1,10 +1,10 @@
-import { useMemo, useState, type DragEvent, type MouseEvent } from 'react'
+import { useMemo, useState, type CSSProperties, type DragEvent, type MouseEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  Archive, ArrowLeft, Atom, BarChart3, BookOpen, Brain, Calculator, CalendarClock, CalendarDays,
+  AlertTriangle, Archive, ArrowLeft, Atom, BarChart3, BookOpen, Brain, Calculator, CalendarClock, CalendarDays,
   CheckCircle2, Circle, Dna, Edit3, FlaskConical, FolderOpen, Leaf, Mail, Microscope,
   MoreHorizontal, NotebookText, PenLine, Play, Plus, Search, Stethoscope, Target,
-  Grid2X2, List, ListChecks, Timer, TrendingUp,
+  Grid2X2, List, ListChecks, Loader2, Timer, TrendingUp,
   Trash2, Upload, Users, type LucideIcon,
 } from 'lucide-react'
 import { useStore } from '@/store/store'
@@ -103,6 +103,36 @@ const PILL_STYLES: Record<AcademicTagColor, string> = {
   purple: 'bg-violet-500/12 text-violet-700 dark:text-violet-200',
   pink: 'bg-pink-500/12 text-pink-700 dark:text-pink-200',
   red: 'bg-red-500/12 text-red-700 dark:text-red-200',
+}
+
+/** Raw accent per class colour. The hover recipe (border, ring, glow, bar
+ *  ignition) is CSS in index.css and reads this through `--class-accent`,
+ *  so the literal _visual-recipes values apply rather than a Tailwind
+ *  approximation of them. */
+const CARD_ACCENT_HEX: Record<AcademicTagColor, string> = {
+  gray: '#94a3b8', brown: '#78716c', orange: '#f97316', yellow: '#eab308',
+  green: '#10b981', blue: '#0ea5e9', purple: '#8b5cf6', pink: '#ec4899', red: '#f43f5e',
+}
+
+/** The recipe mixes the accent at 45% (ring/glow) and 75% (bar glow). Those are
+ *  precomputed here rather than written as `color-mix(... , transparent)` in CSS:
+ *  the build's CSS minifier folds that form down to the bare colour, silently
+ *  dropping the alpha and rendering both effects at full strength. */
+function accentAlpha(hex: string, alpha: number): string {
+  const value = hex.replace('#', '')
+  const r = parseInt(value.slice(0, 2), 16)
+  const g = parseInt(value.slice(2, 4), 16)
+  const b = parseInt(value.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+function cardAccentVars(color: AcademicTagColor): CSSProperties {
+  const hex = CARD_ACCENT_HEX[color]
+  return {
+    '--class-accent': hex,
+    '--class-accent-45': accentAlpha(hex, 0.45),
+    '--class-accent-75': accentAlpha(hex, 0.75),
+  } as CSSProperties
 }
 
 const CARD_ACCENTS: Record<AcademicTagColor, { dot: string; border: string; bar: string; glow: string }> = {
@@ -616,9 +646,9 @@ function ClassCard({
       onDragLeave={onDragLeave}
       onDrop={onDrop}
       onDragEnd={onDragEnd}
+      style={cardAccentVars(row.color)}
       className={cn(
         'academics-class-card group/class relative cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
-        !actionHovered && [accent.border, accent.glow],
         actionHovered && 'action-hovered',
         compact && 'min-h-0',
         dragging && 'scale-[0.98] opacity-55',
@@ -626,7 +656,7 @@ function ClassCard({
       )}
     >
       <span className={cn(
-        'absolute inset-y-0 left-0 w-1 origin-left scale-x-0 transition-transform duration-150 ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none',
+        'academics-class-bar absolute inset-y-0 left-0 w-1 origin-left scale-x-0 transition-transform duration-150 ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none',
         accent.bar,
         !actionHovered && 'group-hover/class:scale-x-100',
       )} aria-hidden="true" />
@@ -647,6 +677,18 @@ function ClassCard({
 
         <div className="flex flex-wrap gap-1.5 text-xs font-bold">
           {stats.weakCount > 0 && <Badge variant="danger">{stats.weakCount} weak</Badge>}
+          {stats.processingCount > 0 && (
+            <Badge variant="muted" aria-live="polite">
+              <Loader2 className="size-3 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              {stats.processingCount} processing
+            </Badge>
+          )}
+          {stats.failedCount > 0 && (
+            <Badge variant="danger" title="Some material could not be processed. Open the class to retry.">
+              <AlertTriangle className="size-3" aria-hidden="true" />
+              {stats.failedCount} failed
+            </Badge>
+          )}
           {row.bcpm && <Badge variant="secondary">BCPM</Badge>}
         </div>
 
@@ -2299,6 +2341,10 @@ function classStats(courseId: string, data: ClassCenterViewData) {
     weakCount: data.weakAreas.filter((item) => item.courseId === courseId && item.status !== 'resolved').length,
     notesCount: data.notes.filter((item) => item.courseId === courseId).length,
     filesCount: data.files.filter((item) => item.courseId === courseId).length,
+    // Remote material processing — the one place on this page where work can
+    // still be running or have failed, so the card has to say so.
+    processingCount: data.files.filter((item) => item.courseId === courseId && item.processingStatus === 'pending').length,
+    failedCount: data.files.filter((item) => item.courseId === courseId && item.processingStatus === 'failed').length,
     nextDeadline: upcoming[0],
   }
 }

@@ -41,7 +41,7 @@ export function ModeSwitch<T extends string>({
       role="radiogroup"
       aria-label={label}
       className={cn(
-        'relative inline-grid min-w-56 grid-cols-2 items-stretch gap-1 rounded-full border border-white/15 bg-slate-950/50 p-1 shadow-sm backdrop-blur-md transition-colors duration-150 ease-out motion-reduce:transition-none',
+        'glass-surface glass-surface--pill relative inline-grid min-w-56 grid-cols-2 items-stretch gap-1 p-1 transition-colors duration-150 ease-out motion-reduce:transition-none',
         className,
       )}
     >

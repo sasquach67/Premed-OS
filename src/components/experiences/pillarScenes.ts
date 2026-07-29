@@ -50,7 +50,15 @@ export const PILLAR_SCENES: Record<SceneKey, PillarScene> = {
   home: warm('rgba(75,156,211,0.20)', 'var(--primary)'),
 
   // Foundation
-  academics: warm('rgba(75,156,211,0.22)', 'var(--cat-gpa)', { overlay: 0 }),
+  // Literal banner recipe (_visual-recipes.md): two radial blooms over the
+  // linear base. A flat fill is explicitly wrong.
+  academics: {
+    ...warm('rgba(75,156,211,0.22)', 'var(--cat-gpa)', { overlay: 0 }),
+    fallbackGradient:
+      'radial-gradient(340px 200px at 88% 6%, rgba(75,156,211,.34), transparent 70%), '
+      + 'radial-gradient(260px 180px at 10% 130%, rgba(111,192,168,.18), transparent 70%), '
+      + 'linear-gradient(115deg, #233448 0%, #2c3a4a 45%, #3a3730 100%)',
+  },
   mcat: warm('rgba(140,123,212,0.24)', 'var(--cat-mcat)'),
   letters: warm('rgba(213,155,106,0.22)', 'var(--cat-letters)'),
 

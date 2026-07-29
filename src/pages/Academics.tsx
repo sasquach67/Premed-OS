@@ -201,7 +201,7 @@ export function Academics() {
               onChange={changeMode}
               label="Academics mode"
             />
-            <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-white/15 bg-slate-950/50 text-white shadow-sm backdrop-blur-md sm:grid-cols-4">
+            <div className="glass-surface grid grid-cols-2 overflow-hidden text-white sm:grid-cols-4">
               <BannerStat
                 label="Term GPA"
                 value={fmtGpa(currentTermGpa.cum)}
@@ -349,7 +349,7 @@ function AcademicsTab({
       className="academics-banner-tab"
     >
       <Icon className="size-4" /> {children}
-      <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-xs font-bold tabular-nums">
+      <span className="tab-count">
         {count}
       </span>
     </TabsTrigger>
