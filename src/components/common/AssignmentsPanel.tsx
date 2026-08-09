@@ -907,7 +907,11 @@ function AssignmentCalendar({
       <CalendarDayButton
         {...props}
         className={cn(
-          'min-h-24 items-stretch justify-start gap-1 overflow-hidden rounded-xl border border-border p-1.5 text-left',
+          // aspect-auto: the base button is aspect-square, which ties row
+          // height to column width — cells grow taller as the viewport widens
+          // and refuse to shrink as it narrows. Height comes from min-h-24.
+          // min-w-0 lets the seven columns actually share the row.
+          'aspect-auto min-h-24 min-w-0 items-stretch justify-start gap-1 overflow-hidden rounded-xl border border-border p-1.5 text-left',
           total > 30 && 'bg-destructive/10',
         )}
       >
@@ -935,8 +939,12 @@ function AssignmentCalendar({
           onMonthChange={onCursor}
           selected={selectedDay}
           onSelect={(date) => date && onSelectDay(date)}
-          className="w-full bg-transparent p-0 [--cell-size:6rem]"
-          classNames={{ month: 'w-full', month_grid: 'w-full', day: 'h-24 w-full p-0' }}
+          // --cell-size is a *minimum* on every day button, so raising it to
+          // 6rem floored the grid at 7x96px and pushed it off the page on any
+          // narrow column. Row height is set by min-h-24 on the button below;
+          // the default cell size keeps the nav arrows a sane size too.
+          className="w-full bg-transparent p-0"
+          classNames={{ month: 'w-full', month_grid: 'w-full', day: 'min-w-0 flex-1 p-0' }}
           components={{ DayButton: AssignmentDayButton }}
         />
       </section>
