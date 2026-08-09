@@ -329,12 +329,18 @@ export function McatStatTile() {
 export function HoursStatTile() {
   const experiences = useStore((state) => state.experiences)
   const totals = hourTotals(experiences)
+  /* Clinical, Volunteering and Research only (03-overview §6.5a, corrected
+   * Aug 2026). Shadowing and Extracurriculars are excluded because their own
+   * specs reject an hours-first metric: Shadowing's headline is coverage, not
+   * total — "breadth is the metric, not volume" (05-shadowing §2, points 1-2)
+   * — and on Extracurriculars "hours are the weakest signal here and are
+   * never centered… must not be a headline metric, a goal, or a projection"
+   * (07-extracurriculars §2, point 1). Drawing bars those pillars reject
+   * makes the app contradict itself. */
   const rows = [
     { label: 'Clinical', value: totals.clinical, color: 'var(--cat-clinical)' },
     { label: 'Volunteer', value: totals.volunteering, color: 'var(--cat-volunteer)' },
-    { label: 'Shadowing', value: totals.shadowing, color: 'var(--cat-shadow)' },
     { label: 'Research', value: totals.research, color: 'var(--cat-research)' },
-    { label: 'Activities', value: totals.leadership, color: 'var(--cat-activities)' },
   ]
   const max = Math.max(1, ...rows.map((row) => row.value))
   const total = rows.reduce((sum, row) => sum + row.value, 0)
