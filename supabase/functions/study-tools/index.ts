@@ -170,9 +170,21 @@ async function callAnthropic(response: string, chunks: Chunk[]) {
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: Deno.env.get('ANTHROPIC_MODEL') || 'claude-sonnet-4-5',
-      max_tokens: 1800,
-      system: 'Compare recall only against the supplied topic sources. Return JSON matching the schema. Never invent a source or offset.',
+      model: Deno.env.get('ANTHROPIC_MODEL') || 'claude-opus-5',
+      // Thinking is on by default on Opus 5 and counts against max_tokens, so
+      // this budget covers reasoning + the report, not the report alone.
+      max_tokens: 8000,
+      output_config: { effort: 'medium' },
+      // Structured outputs (`output_config.format`) cannot be combined with
+      // document citations — the pair returns a 400. Citations are the
+      // load-bearing half here: they are what makes a "from your materials"
+      // chip verifiable rather than an unchecked model claim, so the schema
+      // moves into the prompt and `validateResult` stays the enforcement.
+      system: [
+        'Compare recall only against the supplied topic sources. Never invent a source or offset.',
+        'Reply with a single JSON object and nothing else — no prose, no markdown fences.',
+        `It must match this JSON Schema: ${JSON.stringify(resultSchema)}`,
+      ].join('\n'),
       messages: [{
         role: 'user',
         content: [
@@ -185,7 +197,6 @@ async function callAnthropic(response: string, chunks: Chunk[]) {
           { type: 'text', text: `Student recall:\n${response}` },
         ],
       }],
-      output_config: { format: { type: 'json_schema', schema: resultSchema } },
     }),
   })
   if (!result.ok) throw new Error(`Anthropic ${result.status}`)
@@ -207,7 +218,23 @@ async function callAnthropic(response: string, chunks: Chunk[]) {
         end: Number(citation.end_char_index),
       }]
     })
-  return { value: JSON.parse(text), trustedCitations }
+  return { value: parseJsonObject(text), trustedCitations }
+}
+
+/** Without a schema constraint the reply is *asked* for bare JSON but is not
+ *  *guaranteed* to be, so recover the object rather than throwing on a stray
+ *  fence or preamble. A malformed body still fails, and `validateResult`
+ *  remains the gate on shape — this only widens what reaches it. */
+function parseJsonObject(text: string): unknown {
+  const withoutFences = text.replace(/```(?:json)?/gi, '').trim()
+  try {
+    return JSON.parse(withoutFences)
+  } catch {
+    const start = withoutFences.indexOf('{')
+    const end = withoutFences.lastIndexOf('}')
+    if (start < 0 || end <= start) throw new Error('No JSON object in provider response')
+    return JSON.parse(withoutFences.slice(start, end + 1))
+  }
 }
 
 async function callOpenAI(response: string, chunks: Chunk[]) {
