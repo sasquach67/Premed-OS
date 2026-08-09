@@ -1,6 +1,8 @@
 import { Suspense, lazy } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
+import { RootRoute } from '@/components/public/RootRoute'
+import { MergeGate } from '@/components/public/MergeGate'
 
 /* Route-level code splitting: each page loads on demand, so the initial
    bundle stays small (recharts, dnd-kit, etc. arrive with the page that
@@ -23,6 +25,17 @@ const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m
 const Atlas = lazy(() => import('@/pages/Atlas').then((m) => ({ default: m.Atlas })))
 const Upgrade = lazy(() => import('@/pages/Upgrade').then((m) => ({ default: m.Upgrade })))
 
+/* The public layer. Seven routes outside the app shell — they have their
+   own nav, their own footer, and their own scoped stylesheet. `/` itself
+   is decided by RootRoute: a first-time visitor gets the landing page,
+   everyone else gets their dashboard (05 §0.1 — a front door, not a gate). */
+const AuthPage = lazy(() => import('@/pages/public/AuthPage').then((m) => ({ default: m.AuthPage })))
+const MergePage = lazy(() => import('@/pages/public/MergePage').then((m) => ({ default: m.MergePage })))
+const AboutPage = lazy(() => import('@/pages/public/AboutPage').then((m) => ({ default: m.AboutPage })))
+const PrivacyPage = lazy(() => import('@/pages/public/PrivacyPage').then((m) => ({ default: m.PrivacyPage })))
+const TermsPage = lazy(() => import('@/pages/public/TermsPage').then((m) => ({ default: m.TermsPage })))
+const PricingPage = lazy(() => import('@/pages/public/PricingPage').then((m) => ({ default: m.PricingPage })))
+
 /** Quiet, theme-neutral loading state shown between page chunks. */
 function PageFallback() {
   return (
@@ -36,12 +49,28 @@ function PageFallback() {
 function App() {
   return (
     <HashRouter>
+      <MergeGate />
       <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="mcat/session" element={<McatFocusSession />} />
           <Route path="academics/review/:courseId" element={<AcademicRecallSession />} />
-          <Route element={<AppShell />}>
+
+          {/* Public layer — outside the shell, own nav and footer. */}
+          <Route path="auth" element={<AuthPage />} />
+          <Route path="auth/merge" element={<MergePage />} />
+          <Route path="about" element={<AboutPage />} />
+          <Route path="privacy" element={<PrivacyPage />} />
+          <Route path="terms" element={<TermsPage />} />
+          <Route path="pricing" element={<PricingPage />} />
+
+          {/* `/` — landing page for a first-time visitor, dashboard for
+              everyone else. RootRoute renders AppShell in the second case,
+              so Home still mounts inside the shell exactly as before. */}
+          <Route path="/" element={<RootRoute />}>
             <Route index element={<Home />} />
+          </Route>
+
+          <Route element={<AppShell />}>
             <Route path="northstar" element={<Navigate to="/?guide=open" replace />} />
             <Route path="overview/tasks" element={<OverviewTasksPage />} />
             <Route path="academics" element={<Academics />} />

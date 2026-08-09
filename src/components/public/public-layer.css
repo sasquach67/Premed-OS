@@ -1,0 +1,640 @@
+/* ============================================================
+   public-layer.css — the PUBLIC LAYER ONLY (/, /auth, /auth/merge,
+   /about, /privacy, /terms, /pricing).
+
+   Every selector is scoped under `.pl`. Nothing here reaches an in-app
+   surface, which is what keeps P1 §3's four scoped departures — pill
+   buttons, the floating pill nav, the 46px headline, and glass on every
+   floating surface — from leaking past this route group.
+
+   Values are `_shared/_visual-recipes.md` verbatim. The glass recipe's
+   `inset 0 1px 0 rgba(255,255,255,.16)` is what makes glass read as glass
+   rather than as a translucent box: never drop it (`_visual-recipes.md:34`).
+
+   Theme: the hero/title band is ART — a dark gradient with light type,
+   in both themes, the same way a photograph doesn't invert. Everything
+   BELOW it uses the app's own tokens, so the light "paper" theme works.
+   ============================================================ */
+
+.pl {
+  /* below-the-hero surfaces follow the app's theme */
+  --pl-bg: var(--background);
+  --pl-card: var(--card);
+  --pl-fg: var(--foreground);
+  --pl-mut: var(--muted-foreground);
+  --pl-bd: var(--border);
+  --pl-soft: var(--muted);
+  --pl-pri: var(--primary);
+  --pl-success: var(--success);
+  --pl-warning: var(--warning);
+  --pl-dim: color-mix(in srgb, var(--muted-foreground) 78%, var(--background));
+
+  background: var(--pl-bg);
+  color: var(--pl-fg);
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  min-height: 100vh;
+}
+
+/* ── THE glass recipe (_visual-recipes.md §Glass) ─────────────────────── */
+.pl-glass {
+  background: rgba(20, 26, 34, 0.5);
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  border-radius: 13px;
+}
+.pl-glass-pill { border-radius: 999px; }
+/* feTurbulence displacement — the edge refracts instead of only blurring */
+.pl-glassfx { filter: url(#hq-glass); }
+
+/* ── Entrance: staggered fade + rise, six steps, ~90ms apart ──────────── */
+@keyframes pl-fade-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
+}
+.pl-an { opacity: 0; animation: pl-fade-rise 0.62s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.pl-an1 { animation-delay: 0.05s; }
+.pl-an2 { animation-delay: 0.14s; }
+.pl-an3 { animation-delay: 0.23s; }
+.pl-an4 { animation-delay: 0.32s; }
+.pl-an5 { animation-delay: 0.44s; }
+.pl-an6 { animation-delay: 0.56s; }
+
+/* ── Animated mesh — CSS stand-in for the reference's WebGL MeshGradient ─ */
+.pl-mesh { position: absolute; inset: -25%; pointer-events: none; filter: blur(46px); opacity: 0.9; }
+.pl-mesh i { position: absolute; display: block; border-radius: 50%; }
+.pl-mesh .m1 {
+  width: 48%; height: 64%; left: 6%; top: -8%;
+  background: radial-gradient(closest-side, rgba(111, 179, 222, 0.5), transparent 72%);
+  animation: pl-drift1 26s ease-in-out infinite alternate;
+}
+.pl-mesh .m2 {
+  width: 42%; height: 56%; right: 2%; top: 6%;
+  background: radial-gradient(closest-side, rgba(140, 123, 212, 0.34), transparent 72%);
+  animation: pl-drift2 32s ease-in-out infinite alternate;
+}
+.pl-mesh .m3 {
+  width: 52%; height: 52%; left: 22%; bottom: -16%;
+  background: radial-gradient(closest-side, rgba(224, 164, 88, 0.26), transparent 72%);
+  animation: pl-drift3 29s ease-in-out infinite alternate;
+}
+@keyframes pl-drift1 { to { transform: translate(16%, 10%) scale(1.14); } }
+@keyframes pl-drift2 { to { transform: translate(-13%, 9%) scale(1.1); } }
+@keyframes pl-drift3 { to { transform: translate(9%, -11%) scale(1.16); } }
+
+/* ── Two-weight headline (PublicHeadline) ─────────────────────────────── */
+.pl-hl { margin: 0; letter-spacing: -0.6px; line-height: 1.06; }
+.pl-hl .l1 {
+  display: block; font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 600;
+  color: rgba(255, 255, 255, 0.82); letter-spacing: 0.2px;
+}
+.pl-hl .l2 {
+  display: block; font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800;
+  background: linear-gradient(120deg, #ffffff 0%, #a9d3ee 38%, #e0a458 78%, #ffffff 100%);
+  background-size: 220% auto;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  animation: pl-sheen 9s linear infinite;
+}
+@keyframes pl-sheen { to { background-position: 220% center; } }
+/* On a solid page background the white setup line and the white-to-blue
+   payoff gradient both disappear — badly in the paper theme, where the
+   page is cream. `tone="page"` re-cuts the same two-weight device out of
+   theme tokens so it reads in both themes. The device is the contrast
+   between the two lines, not the specific colours. */
+.pl-hl-page .l1 { color: var(--pl-mut); }
+.pl-hl-page .l2 {
+  background-image: linear-gradient(
+    120deg,
+    var(--pl-fg) 0%,
+    var(--pl-pri) 38%,
+    var(--pl-warning) 78%,
+    var(--pl-fg) 100%
+  );
+}
+/* three sizes, one component: hero 27/46 · section 19/33 · about 26/56 */
+.pl-hl-hero { margin-top: 20px; }
+.pl-hl-hero .l1 { font-size: 27px; margin-bottom: 5px; }
+.pl-hl-hero .l2 { font-size: 46px; }
+.pl-hl-section .l1 { font-size: 19px; margin-bottom: 3px; }
+.pl-hl-section .l2 { font-size: 33px; }
+.pl-hl-about .l1 { font-size: 26px; margin-bottom: 5px; }
+.pl-hl-about .l2 { font-size: 56px; letter-spacing: -1.4px; }
+
+/* ── Floating pill nav ────────────────────────────────────────────────── */
+.pl-navbar {
+  position: relative; z-index: 3; display: flex; align-items: center;
+  justify-content: space-between; padding: 18px 0 0; gap: 14px; text-align: left;
+}
+.pl-navbrand {
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 17px;
+  color: #fff; letter-spacing: -0.2px; background: none; border: 0; padding: 0; cursor: pointer;
+}
+.pl-navpill {
+  display: inline-flex; align-items: center; gap: 2px; border-radius: 999px; padding: 4px;
+  background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px) saturate(1.1); -webkit-backdrop-filter: blur(12px) saturate(1.1);
+}
+.pl-navlk {
+  padding: 7px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 700;
+  color: rgba(255, 255, 255, 0.7); cursor: pointer; text-decoration: none;
+  background: none; border: 0; font-family: inherit;
+  transition: background 0.18s, color 0.18s;
+}
+.pl-navlk:hover, .pl-navlk[aria-current='page'] { background: rgba(255, 255, 255, 0.11); color: #fff; }
+/* below 900px the link pill collapses; brand + CTA stay */
+@media (max-width: 900px) { .pl-navpill { display: none; } }
+
+/* ── Gooey CTA — label pill + arrow pill fused mid-slide ──────────────── */
+.pl-gooey { position: relative; display: inline-flex; align-items: center; filter: url(#hq-gooey); }
+.pl-gooey .lead {
+  position: relative; z-index: 2; border-radius: 999px; background: #fff; color: #17222c;
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 12.5px;
+  padding: 8px 17px; height: 32px; display: inline-flex; align-items: center;
+  border: none; cursor: pointer;
+}
+.pl-gooey .tail {
+  position: absolute; right: 0; z-index: 1; border-radius: 999px; background: #fff; color: #17222c;
+  height: 32px; width: 32px; display: inline-flex; align-items: center; justify-content: center;
+  border: none; cursor: pointer; transform: translateX(-30px);
+  transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pl-gooey:hover .tail, .pl-gooey:focus-within .tail { transform: translateX(6px); }
+.pl-gooey .tail svg { width: 13px; height: 13px; }
+
+/* ── Pill buttons — PUBLIC LAYER ONLY (reverses 04 §6's 10px radius) ──── */
+.pl-btn {
+  border-radius: 999px; font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 700;
+  font-size: 13.5px; padding: 11px 22px; display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; border: 1px solid transparent; text-decoration: none;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+.pl-btn svg { width: 14px; height: 14px; }
+.pl-btn-solid { background: #fff; color: #17222c; border-color: #fff; }
+.pl-btn-solid:hover { background: rgba(255, 255, 255, 0.9); }
+.pl-btn-ghost {
+  background: rgba(255, 255, 255, 0.08); color: #fff; border-color: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.pl-btn-ghost:hover { background: rgba(255, 255, 255, 0.15); border-color: rgba(111, 179, 222, 0.5); }
+.pl-btn-sm { font-size: 12.5px; padding: 8px 17px; }
+.pl-btn-sm svg { width: 13px; height: 13px; }
+
+/* ── HERO ─────────────────────────────────────────────────────────────── */
+.pl-hero {
+  position: relative; padding: 0 22px 46px; overflow: hidden; text-align: center;
+  background:
+    radial-gradient(680px 380px at 50% -12%, rgba(111, 179, 222, 0.3), transparent 72%),
+    radial-gradient(420px 300px at 8% 108%, rgba(111, 192, 168, 0.14), transparent 70%),
+    radial-gradient(380px 260px at 96% 88%, rgba(224, 164, 88, 0.12), transparent 70%),
+    linear-gradient(115deg, #233448 0%, #2a3646 44%, #3a3730 100%);
+}
+.pl-hero::before {
+  content: ''; position: absolute; left: 50%; top: -190px; width: 760px; height: 380px;
+  transform: translateX(-50%); pointer-events: none;
+  background: radial-gradient(closest-side, rgba(111, 179, 222, 0.34), transparent 70%);
+  filter: blur(18px);
+}
+.pl-hero-in { max-width: 720px; margin: 58px auto 0; position: relative; }
+.pl-navwrap { max-width: 1180px; margin: 0 auto; position: relative; z-index: 3; }
+
+.pl-chip {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;
+  padding: 5px 6px 5px 14px; color: rgba(255, 255, 255, 0.82);
+}
+.pl-chip .tagpill {
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 10px;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.9); color: #17222c; border-radius: 999px; padding: 2.5px 9px;
+}
+.pl-lede {
+  font-size: 14.5px; color: rgba(255, 255, 255, 0.76); line-height: 1.65;
+  margin: 13px auto 0; max-width: 560px;
+}
+.pl-ctarow { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+.pl-noacct { font-size: 12.5px; color: rgba(255, 255, 255, 0.6); font-weight: 700; margin: 12px 0 0; }
+.pl-disc { font-size: 11.5px; color: rgba(255, 255, 255, 0.55); font-weight: 600; margin: 30px 0 0; }
+
+/* ── FEATURES — glass tiles ───────────────────────────────────────────── */
+/* The Features section is part of the hero's ART region — glass tiles with
+   white titles — so it stays dark in BOTH themes. The fade into the page
+   background lives in the bottom padding, below the last tile: running the
+   gradient under the tiles the way the mockup did puts white text on cream
+   in the paper theme, which is where the bottom row became unreadable. */
+.pl-feat {
+  position: relative; overflow: hidden; padding: 42px 22px 130px;
+  background: linear-gradient(180deg, #252b31 0%, #242019 70%, #242019 100%);
+}
+.pl-feat::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 130px;
+  background: linear-gradient(180deg, transparent, var(--pl-bg));
+  pointer-events: none; z-index: 1;
+}
+.pl-feat .pl-mesh { opacity: 0.5; }
+.pl-featin { position: relative; z-index: 2; text-align: center; max-width: 1180px; margin: 0 auto; }
+.pl-eyebrow {
+  display: inline-flex; align-items: center; gap: 9px; margin-bottom: 14px;
+  padding: 5px 13px; color: rgba(255, 255, 255, 0.72);
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 9.5px;
+  letter-spacing: 0.11em; text-transform: uppercase;
+}
+.pl-feats { font-size: 13.5px; color: rgba(255, 255, 255, 0.68); font-weight: 600; margin: 12px auto 26px; max-width: 520px; }
+.pl-ftiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; text-align: left; }
+@media (max-width: 1080px) { .pl-ftiles { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 720px) { .pl-ftiles { grid-template-columns: repeat(2, 1fr); } }
+.pl-ftile {
+  position: relative; border-radius: 14px; padding: 15px 14px 16px;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.11);
+  backdrop-filter: blur(14px) saturate(1.1); -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  transition: background 0.2s, border-color 0.2s;
+}
+.pl-ftile:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2); }
+.pl-ficon {
+  width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--c, #6fb3de) 20%, rgba(255, 255, 255, 0.05));
+  border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  color: var(--c, #a9d3ee);
+}
+.pl-ficon svg { width: 17px; height: 17px; stroke-width: 1.9; }
+.pl-ftile-soon { border-color: rgba(231, 176, 106, 0.3); }
+.pl-soonmark {
+  position: absolute; top: 11px; right: 11px;
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 8px;
+  letter-spacing: 0.07em; text-transform: uppercase; color: #e7b06a;
+  background: rgba(231, 176, 106, 0.18); border-radius: 5px; padding: 2.5px 6px;
+}
+.pl-ftl {
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 700; font-size: 13.5px;
+  color: #fff; margin-top: 12px; line-height: 1.32;
+}
+
+/* ── GUIDED TOUR — annotated screenshot ───────────────────────────────── */
+.pl-tour { position: relative; overflow: hidden; padding: 44px 22px 48px; background: var(--pl-bg); }
+.pl-tourin { position: relative; z-index: 2; max-width: 1180px; margin: 0 auto; text-align: center; }
+.pl-eyebrow-solid {
+  background: color-mix(in srgb, var(--pl-fg) 5%, transparent);
+  border: 1px solid var(--pl-bd); color: var(--pl-dim); border-radius: 999px;
+}
+.pl-tourtabs {
+  display: inline-flex; gap: 3px; border-radius: 999px; padding: 4px; margin: 20px 0 26px;
+  background: var(--pl-soft); border: 1px solid var(--pl-bd);
+}
+.pl-ttab {
+  padding: 7px 16px; border-radius: 999px; font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 700; font-size: 12.5px; color: var(--pl-mut); cursor: pointer;
+  background: none; border: 0;
+}
+.pl-ttab[aria-selected='true'] { background: var(--pl-fg); color: var(--pl-bg); font-weight: 800; }
+.pl-shotstage {
+  position: relative; border-radius: 16px; background: var(--pl-card);
+  border: 1px solid var(--pl-bd); box-shadow: 0 26px 60px -30px rgba(0, 0, 0, 0.8); padding: 9px;
+}
+.pl-shotwin {
+  position: relative; border-radius: 11px; overflow: hidden; background: #1d1a17;
+  border: 1px solid rgba(255, 255, 255, 0.07); aspect-ratio: 16 / 9; min-height: 260px;
+  display: flex; align-items: center; justify-content: center;
+  /* the window is a fixed dark surface in both themes, so its own
+     placeholder copy is light — a theme token goes invisible here */
+  color: rgba(236, 227, 212, 0.55); font-size: 12.5px; font-weight: 700;
+  text-align: center; padding: 0 40px;
+}
+.pl-shotwin img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+.pl-call { position: absolute; z-index: 3; display: flex; align-items: flex-start; gap: 9px; max-width: 262px; text-align: left; }
+.pl-bubble {
+  border-radius: 13px; padding: 10px 13px; font-size: 12.5px; font-weight: 700; line-height: 1.45;
+  color: #fff; background: rgba(20, 26, 34, 0.62);
+  backdrop-filter: blur(15px) saturate(1.1); -webkit-backdrop-filter: blur(15px) saturate(1.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 12px 28px -14px rgba(0, 0, 0, 0.7);
+}
+.pl-bubble b { color: #a9d3ee; font-weight: 800; }
+/* The guide is an ILLUSTRATION beside the callout — never the marker,
+   the button, or the bullet (P1 §4.4). It is a doctor, never a ram. */
+.pl-guide {
+  width: 40px; height: 40px; flex: none; border-radius: 50%; overflow: hidden;
+  background: radial-gradient(circle at 34% 28%, #3d4a58, #232b34);
+  border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.pl-guide svg { width: 34px; height: 34px; color: #e9dcc4; }
+.pl-pin {
+  position: absolute; width: 11px; height: 11px; border-radius: 50%; background: #6fb3de;
+  box-shadow: 0 0 0 4px rgba(111, 179, 222, 0.24), 0 0 14px rgba(111, 179, 222, 0.7); z-index: 3;
+}
+.pl-pin::after {
+  content: ''; position: absolute; inset: -4px; border-radius: 50%;
+  border: 1px solid rgba(111, 179, 222, 0.55); animation: pl-ping 2.4s ease-out infinite;
+}
+@keyframes pl-ping { 0% { transform: scale(0.8); opacity: 0.9; } 70%, 100% { transform: scale(2.1); opacity: 0; } }
+.pl-tourfoot { font-size: 12.5px; color: var(--pl-dim); font-weight: 700; margin-top: 20px; }
+/* callouts stack under the shot on narrow screens rather than covering it */
+@media (max-width: 860px) {
+  .pl-call { position: static !important; max-width: none; margin-top: 10px; }
+  .pl-pin { display: none; }
+  .pl-shotwin { min-height: 180px; }
+}
+
+/* ── Below the hero: SOLID with depth. No glass past this line. ───────── */
+.pl-body { padding: 18px 22px 22px; max-width: 1180px; margin: 0 auto; }
+.pl-bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+.pl-c4 { grid-column: span 4; }
+.pl-c5 { grid-column: span 5; }
+.pl-c7 { grid-column: span 7; }
+.pl-c12 { grid-column: span 12; }
+@media (max-width: 900px) { .pl-c4, .pl-c5, .pl-c7, .pl-c12 { grid-column: span 12; } }
+.pl-card {
+  background: var(--pl-card); border: 1px solid var(--pl-bd); border-radius: 16px;
+  box-shadow: 0 10px 26px -14px rgba(0, 0, 0, 0.55);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.pl-hd { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 10px; gap: 10px; flex-shrink: 0; }
+.pl-ti { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 18px; }
+.pl-ti-sm { font-size: 16px; }
+.pl-sub { font-size: 12.5px; color: var(--pl-dim); font-weight: 700; }
+.pl-bd { padding: 4px 18px 18px; display: flex; flex-direction: column; gap: 11px; flex: 1; min-height: 0; align-items: flex-start; }
+.pl-tag {
+  display: inline-flex; font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800;
+  font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 6px; padding: 3px 7px;
+  background: color-mix(in srgb, var(--c, var(--pl-pri)) 16%, transparent); color: var(--c, var(--pl-pri));
+}
+.pl-pitchp { font-size: 13px; color: var(--pl-mut); line-height: 1.6; margin: 0; }
+.pl-privtext { font-size: 13.5px; color: var(--pl-mut); line-height: 1.7; margin: 0; }
+.pl-privtext b { color: var(--pl-fg); font-weight: 700; }
+.pl-costbig { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 22px; }
+.pl-lk {
+  font-size: 12.5px; font-weight: 800; color: var(--pl-pri);
+  font-family: 'Baloo 2', system-ui, sans-serif; text-decoration: none;
+}
+.pl-lk:hover { text-decoration: underline; }
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+.pl-foot {
+  border-top: 1px solid var(--pl-bd); background: var(--pl-card); padding: 18px 22px;
+  display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap;
+}
+.pl-foot .fl { display: flex; gap: 16px; flex-wrap: wrap; }
+.pl-nlk { font-size: 13px; color: var(--pl-mut); font-weight: 700; text-decoration: none; }
+.pl-nlk:hover { color: var(--pl-fg); }
+.pl-foot .fd { flex: 1; min-width: 340px; font-size: 11.5px; color: var(--pl-dim); line-height: 1.6; margin: 0; }
+
+/* ── Auth ─────────────────────────────────────────────────────────────── */
+.pl-authwrap { padding: 38px 22px; display: flex; align-items: center; justify-content: center; min-height: 62vh; }
+.pl-authcard { width: 100%; max-width: 372px; }
+.pl-field { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.pl-lbl {
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 10.5px;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--pl-dim);
+}
+.pl-inp {
+  width: 100%; background: var(--pl-soft); border: 1px solid var(--pl-bd); border-radius: 10px;
+  padding: 10px 12px; color: var(--pl-fg); font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 14px; outline: none;
+}
+.pl-inp::placeholder { color: var(--pl-dim); }
+.pl-inp:focus-visible { border-color: var(--pl-pri); box-shadow: 0 0 0 2px color-mix(in srgb, var(--pl-pri) 30%, transparent); }
+/* the auth/merge buttons keep the SYSTEM 10px radius — pills are for the
+   hero and the nav, where they float over art (P1 §3). */
+.pl-sbtn {
+  border-radius: 10px; padding: 7px 14px; font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 700; font-size: 13px; border: 1px solid transparent;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+}
+.pl-sbtn svg { width: 14px; height: 14px; }
+.pl-sbtn-p { background: var(--pl-pri); color: var(--primary-foreground); }
+.pl-sbtn-g { background: var(--pl-soft); border-color: var(--pl-bd); color: var(--pl-mut); }
+.pl-sbtn-lg { padding: 10px 18px; font-size: 14px; }
+.pl-sbtn-full { width: 100%; justify-content: center; padding: 11px; }
+.pl-sbtn:disabled { opacity: 0.55; cursor: not-allowed; }
+.pl-orbar { display: flex; align-items: center; gap: 11px; width: 100%; }
+.pl-orbar i { flex: 1; height: 1px; background: var(--pl-bd); }
+.pl-orbar span { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.06em; color: var(--pl-dim); }
+.pl-fine { font-size: 11.5px; color: var(--pl-dim); line-height: 1.6; margin: 0; }
+.pl-fine b { color: var(--pl-mut); font-weight: 700; }
+.pl-mailbadge {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: color-mix(in srgb, var(--pl-pri) 16%, transparent);
+  display: flex; align-items: center; justify-content: center; color: var(--pl-pri);
+}
+.pl-mailbadge svg { width: 21px; height: 21px; }
+.pl-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+  background: var(--pl-soft); border: 1px solid var(--pl-bd); border-radius: 10px;
+  padding: 10px 12px; font-size: 13.5px; font-weight: 700;
+}
+.pl-alert {
+  width: 100%; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.55;
+  background: color-mix(in srgb, var(--pl-warning) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pl-warning) 34%, transparent); color: var(--pl-fg);
+}
+.pl-alert-bad {
+  background: color-mix(in srgb, var(--destructive) 12%, transparent);
+  border-color: color-mix(in srgb, var(--destructive) 34%, transparent);
+}
+.pl-alert-ok {
+  background: color-mix(in srgb, var(--pl-success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--pl-success) 34%, transparent);
+}
+
+/* ── Merge ────────────────────────────────────────────────────────────── */
+.pl-mergewrap { padding: 30px 22px; display: flex; justify-content: center; }
+.pl-mergecard { width: 100%; max-width: 600px; }
+.pl-frow { display: flex; align-items: center; gap: 11px; padding: 8px 0; border-top: 1px solid var(--pl-bd); font-size: 13.5px; }
+.pl-frow:first-of-type { border-top: none; }
+.pl-dot { width: 9px; height: 9px; border-radius: 3px; background: var(--c, var(--cat-gpa)); flex: none; }
+.pl-frow .fn { flex: 1; font-weight: 700; }
+.pl-frow .fv { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; color: var(--pl-mut); font-variant-numeric: tabular-nums; }
+.pl-opt {
+  display: flex; gap: 12px; align-items: flex-start; width: 100%; text-align: left;
+  background: var(--pl-soft); border: 1px solid var(--pl-bd); border-radius: 12px;
+  padding: 13px 14px; cursor: pointer; font-family: inherit; color: inherit;
+}
+.pl-opt[data-on='true'] {
+  border-color: var(--pl-pri); background: color-mix(in srgb, var(--pl-pri) 8%, var(--pl-soft));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pl-pri) 35%, transparent);
+}
+.pl-radio { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--pl-bd); flex: none; margin-top: 2px; position: relative; }
+.pl-opt[data-on='true'] .pl-radio { border-color: var(--pl-pri); }
+.pl-opt[data-on='true'] .pl-radio::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--pl-pri); }
+.pl-ot { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 7px; }
+.pl-om { font-size: 12.5px; color: var(--pl-mut); margin-top: 4px; line-height: 1.55; }
+.pl-rec {
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 9px;
+  letter-spacing: 0.05em; text-transform: uppercase; color: var(--pl-success);
+  background: color-mix(in srgb, var(--pl-success) 16%, transparent); border-radius: 5px; padding: 2px 6px;
+}
+/* the safety property lives IN the panel, never in a tooltip (05 §0.2) */
+.pl-pace {
+  width: 100%; background: color-mix(in srgb, var(--pl-success) 10%, var(--pl-soft));
+  border: 1px solid color-mix(in srgb, var(--pl-success) 26%, var(--pl-bd));
+  border-radius: 9px; padding: 11px 13px; font-size: 12.5px; font-weight: 700;
+  color: var(--pl-mut); line-height: 1.6; margin: 0;
+}
+.pl-pace b { color: var(--pl-fg); }
+
+/* ── DOC PAGES — one shell, four routes ──────────────────────────────── */
+.pl-band {
+  position: relative; overflow: hidden; padding: 0 22px 34px;
+  background:
+    radial-gradient(560px 300px at 50% -18%, rgba(111, 179, 222, 0.24), transparent 72%),
+    linear-gradient(160deg, #243542 0%, #2a2f33 52%, #242019 100%);
+}
+.pl-bandin { position: relative; z-index: 2; max-width: 940px; margin: 38px auto 0; }
+.pl-doctitle { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 34px; color: #fff; letter-spacing: -0.5px; margin: 0; }
+.pl-docsub { font-size: 14px; color: rgba(255, 255, 255, 0.68); margin: 9px 0 0; max-width: 620px; line-height: 1.6; }
+.pl-updated {
+  display: inline-flex; align-items: center; gap: 7px; margin-top: 16px; border-radius: 999px; padding: 5px 13px;
+  font-size: 11.5px; font-weight: 700; color: rgba(255, 255, 255, 0.78);
+  background: rgba(20, 26, 34, 0.5); border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16); backdrop-filter: blur(14px);
+}
+.pl-docwrap {
+  display: grid; grid-template-columns: 196px minmax(0, 720px); gap: 44px;
+  justify-content: center; padding: 34px 22px 42px;
+}
+.pl-toc { position: sticky; top: 20px; align-self: start; }
+.pl-toclab {
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 9.5px;
+  letter-spacing: 0.11em; text-transform: uppercase; color: var(--pl-dim); margin-bottom: 10px;
+}
+.pl-toc a {
+  display: block; font-size: 12.5px; font-weight: 700; color: var(--pl-mut);
+  padding: 6px 0 6px 11px; border-left: 2px solid var(--pl-bd); text-decoration: none;
+}
+.pl-toc a:hover, .pl-toc a[aria-current='true'] { color: var(--pl-fg); border-left-color: var(--pl-pri); }
+/* rail collapses to inline chips below 1100px (decision 2) */
+@media (max-width: 1100px) {
+  .pl-docwrap { grid-template-columns: minmax(0, 720px); gap: 20px; }
+  .pl-toc { position: static; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .pl-toclab { width: 100%; margin-bottom: 4px; }
+  .pl-toc a { border-left: 0; border: 1px solid var(--pl-bd); border-radius: 999px; padding: 5px 11px; }
+  .pl-toc a[aria-current='true'] { border-color: var(--pl-pri); }
+}
+.pl-doc h2 { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 19px; margin: 34px 0 10px; scroll-margin-top: 20px; }
+.pl-doc h2:first-child { margin-top: 0; }
+.pl-doc p { font-size: 15px; line-height: 1.75; color: var(--pl-mut); margin: 0 0 13px; }
+.pl-doc p b, .pl-doc li b { color: var(--pl-fg); font-weight: 700; }
+.pl-doc ul { margin: 0 0 15px; padding-left: 19px; }
+.pl-doc li { font-size: 15px; line-height: 1.7; color: var(--pl-mut); margin-bottom: 7px; }
+.pl-doc a.pl-inline { color: var(--pl-pri); font-weight: 700; text-decoration: none; }
+.pl-doc a.pl-inline:hover { text-decoration: underline; }
+/* Plain-English summary strip — required above EVERY section (§6.4) */
+.pl-plain {
+  display: flex; gap: 11px; align-items: flex-start; border-radius: 11px; padding: 11px 13px; margin: 0 0 15px;
+  background: color-mix(in srgb, var(--pl-pri) 9%, var(--pl-card));
+  border: 1px solid color-mix(in srgb, var(--pl-pri) 24%, var(--pl-bd));
+}
+.pl-plain .k {
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 9px;
+  letter-spacing: 0.07em; text-transform: uppercase; color: var(--pl-pri); flex: none; padding-top: 3px;
+}
+.pl-plain p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--pl-fg); font-weight: 600; }
+.pl-tbl { width: 100%; border-collapse: collapse; margin: 0 0 16px; font-size: 13.5px; }
+.pl-tbl th {
+  text-align: left; font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 10px;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--pl-dim);
+  padding: 0 12px 8px 0; border-bottom: 1px solid var(--pl-bd);
+}
+.pl-tbl td { padding: 11px 12px 11px 0; border-bottom: 1px solid var(--pl-bd); color: var(--pl-mut); vertical-align: top; line-height: 1.6; }
+.pl-tbl td b { color: var(--pl-fg); }
+.pl-tblwrap { overflow-x: auto; }
+.pl-callout {
+  border-radius: 12px; padding: 14px 16px; margin: 0 0 16px; background: var(--pl-card);
+  border: 1px solid var(--pl-bd); border-left: 3px solid var(--pl-warning);
+}
+.pl-callout p { margin: 0; font-size: 13.5px; line-height: 1.65; }
+.pl-callout-good { border-left-color: var(--pl-success); }
+.pl-changelog { border-top: 1px solid var(--pl-bd); margin-top: 34px; padding-top: 18px; }
+.pl-clrow { display: flex; gap: 14px; padding: 8px 0; font-size: 13px; color: var(--pl-mut); }
+.pl-cldate {
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 11.5px;
+  color: var(--pl-dim); width: 78px; flex: none; font-variant-numeric: tabular-nums; padding-top: 2px;
+}
+
+/* ── ABOUT ────────────────────────────────────────────────────────────── */
+.pl-aboutgrid { max-width: 640px; margin: 0 auto; padding: 36px 22px 6px; }
+.pl-prose p { font-size: 17px; line-height: 1.85; color: var(--pl-mut); margin: 0 0 20px; }
+.pl-prose p b { color: var(--pl-fg); font-weight: 700; }
+/* right-floated, prose wraps around it, whole and uncropped, UNCAPTIONED */
+.pl-figure { float: right; width: 226px; margin: 5px 0 18px 28px; shape-margin: 18px; }
+.pl-figure img {
+  width: 100%; display: block; border-radius: 13px; border: 1px solid var(--pl-bd);
+  box-shadow: 0 16px 34px -18px rgba(0, 0, 0, 0.8);
+}
+@media (max-width: 560px) { .pl-figure { float: none; width: 100%; max-width: 260px; margin: 0 0 20px; } }
+.pl-clearfix::after { content: ''; display: block; clear: both; }
+.pl-social { display: flex; gap: 9px; margin: 2px 0 0; }
+.pl-sq {
+  width: 40px; height: 40px; border-radius: 11px; background: var(--pl-card); border: 1px solid var(--pl-bd);
+  display: flex; align-items: center; justify-content: center; color: var(--pl-mut);
+  text-decoration: none; transition: color 0.18s, border-color 0.18s;
+}
+.pl-sq:hover, .pl-sq:focus-visible { color: var(--pl-fg); border-color: var(--pl-mut); }
+.pl-sq svg { width: 17px; height: 17px; }
+.pl-fbpanel {
+  max-width: 640px; margin: 20px auto 0; background: var(--pl-card);
+  border: 1px solid var(--pl-bd); border-radius: 16px; padding: 22px 24px;
+}
+.pl-fbk {
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 9.5px;
+  letter-spacing: 0.11em; text-transform: uppercase; color: var(--pl-pri); margin-bottom: 8px;
+}
+.pl-fbh { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 22px; margin: 0 0 7px; color: var(--pl-fg); }
+.pl-fbp { font-size: 14px; color: var(--pl-mut); line-height: 1.65; margin: 0 0 16px; }
+.pl-flbl {
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 9.5px;
+  letter-spacing: 0.07em; text-transform: uppercase; color: var(--pl-dim); margin-bottom: 7px;
+}
+.pl-fta {
+  width: 100%; min-height: 96px; background: var(--pl-soft); border: 1px solid var(--pl-bd);
+  border-radius: 11px; padding: 12px 14px; color: var(--pl-fg);
+  font-family: 'Nunito', system-ui, sans-serif; font-size: 14.5px; line-height: 1.6; resize: vertical;
+}
+.pl-fta::placeholder { color: var(--pl-dim); }
+.pl-finp {
+  flex: 1; min-width: 200px; background: var(--pl-soft); border: 1px solid var(--pl-bd);
+  border-radius: 11px; padding: 11px 13px; color: var(--pl-fg);
+  font-family: 'Nunito', system-ui, sans-serif; font-size: 14px;
+}
+.pl-finp::placeholder { color: var(--pl-dim); }
+.pl-fbfoot { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.pl-fbnote { font-size: 11.5px; color: var(--pl-dim); font-weight: 700; line-height: 1.55; margin: 10px 0 0; }
+.pl-fbnote b { color: var(--pl-mut); }
+
+/* ── PRICING — coming soon. No plan cards, no tiers, no fake numbers. ─── */
+.pl-soonwrap { max-width: 640px; margin: 0 auto; padding: 44px 22px 52px; text-align: center; }
+.pl-soonbadge {
+  display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 5px 14px;
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 10px;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--pl-success);
+  background: color-mix(in srgb, var(--pl-success) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pl-success) 30%, transparent);
+}
+.pl-soonp { font-size: 16px; line-height: 1.8; color: var(--pl-mut); margin: 18px 0 0; }
+.pl-soonp b { color: var(--pl-fg); font-weight: 700; }
+.pl-soonlist { max-width: 470px; margin: 24px auto 0; text-align: left; }
+.pl-soonrow {
+  display: flex; gap: 11px; align-items: flex-start; padding: 11px 0;
+  border-top: 1px solid var(--pl-bd); font-size: 14px; color: var(--pl-mut); line-height: 1.6;
+}
+.pl-soonrow:first-child { border-top: none; }
+.pl-soonrow b { color: var(--pl-fg); font-weight: 700; }
+.pl-tick { width: 16px; height: 16px; flex: none; margin-top: 3px; color: var(--pl-success); }
+
+/* ── Focus visibility, everywhere in the group ────────────────────────── */
+.pl a:focus-visible, .pl button:focus-visible, .pl textarea:focus-visible, .pl input:focus-visible {
+  outline: 2px solid #a9d3ee; outline-offset: 2px; border-radius: 6px;
+}
+
+/* ── REDUCED MOTION: everything shows INSTANTLY. Not faster — none. ───── */
+@media (prefers-reduced-motion: reduce) {
+  .pl-an { animation: none; opacity: 1; transform: none; }
+  .pl-hl .l2 { animation: none; }
+  .pl-mesh i { animation: none; }
+  .pl-pin::after { animation: none; }
+  .pl-hero::before { filter: none; }
+  .pl-gooey .tail, .pl-btn, .pl-navlk, .pl-ftile, .pl-sq { transition: none; }
+}

@@ -12,6 +12,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { useStore, snapshotData } from '@/store/store'
 import { supabase, isSupabaseConfigured, authRedirectTo, type DashboardRow } from '@/lib/supabase'
+import { hasLocalWork, hasSeenMerge } from '@/lib/publicLayer'
 import type { AppData } from '@/lib/types'
 
 const DEBOUNCE_MS = 4000
@@ -128,6 +129,14 @@ export function useCloudSync() {
       const u = session?.user ?? null
       setUser(u)
       if (u && reconciledFor.current !== u.id) {
+        // 05 §0.2: a signed-out user with work on this device decides what
+        // happens to it BEFORE any reconciliation runs. Reconcile is
+        // newest-wins, which is exactly the "last write wins" the merge
+        // rules forbid — so it waits for the merge screen's answer.
+        if (!hasSeenMerge(u.id) && hasLocalWork(snapshotData())) {
+          setStatus('idle')
+          return
+        }
         reconciledFor.current = u.id
         void reconcile(u)
       }
