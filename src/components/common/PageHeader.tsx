@@ -9,9 +9,11 @@ import { PILLAR_SCENES, type SceneKey } from '@/components/experiences/pillarSce
  *  `image` to supply/override art, `subtitle` for an optional line, and
  *  `actions` for top-right controls. No explainer copy by default. */
 export function PageHeader({
-  title, actions, image, scene, subtitle, children, footer, contentGlass,
+  title, titleAdornment, actions, image, scene, subtitle, children, footer, contentGlass,
 }: {
   title: string
+  /** Inline mark before the title (e.g. the class colour dot on a class hub). */
+  titleAdornment?: ReactNode
   actions?: ReactNode
   image?: string
   scene?: SceneKey
@@ -29,6 +31,7 @@ export function PageHeader({
       <PillarSceneHeader
         scene={resolved}
         title={title}
+        titleAdornment={titleAdornment}
         subtitle={subtitle}
         actions={actions}
         image={image}

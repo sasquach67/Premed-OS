@@ -12,12 +12,15 @@ import { cn } from '@/lib/utils'
 import { PILLAR_SCENES, type SceneKey } from './pillarScenes'
 
 export function PillarSceneHeader({
-  scene, accent, title, subtitle, addLabel, onAdd, actions, image, children, footer, compact, contentGlass = true,
+  scene, accent, title, titleAdornment, subtitle, addLabel, onAdd, actions, image, children, footer, compact, contentGlass = true,
 }: {
   scene: SceneKey
   /** Override the scene's default accent. */
   accent?: string
   title: string
+  /** Inline mark rendered before the title (e.g. a class colour dot). Kept
+   *  separate from `title` so the string stays available for the aria-label. */
+  titleAdornment?: ReactNode
   subtitle?: string
   /** Built-in "Add …" button (pillar layouts). */
   addLabel?: string
@@ -81,9 +84,9 @@ export function PillarSceneHeader({
           {!isAcademicsRecipe && <span className="mt-1 h-7 w-2.5 shrink-0 rounded-full" style={{ background: ink }} />}
           <div className="min-w-0">
             <h1 className={cn(
-              'font-display text-[1.7rem] font-extrabold leading-none text-[#f4ede0] drop-shadow-[0_1px_10px_rgba(0,0,0,0.55)] sm:text-3xl',
+              'flex min-w-0 items-center gap-2.5 font-display text-[1.7rem] font-extrabold leading-none text-[#f4ede0] drop-shadow-[0_1px_10px_rgba(0,0,0,0.55)] sm:text-3xl',
               isAcademicsRecipe && 'text-[30px] font-extrabold tracking-[-0.4px] text-white sm:text-[30px]',
-            )}>{title}</h1>
+            )}>{titleAdornment}{title}</h1>
             {subtitle && <p className="mt-1.5 text-[0.82rem] font-bold text-[#e7dccb]/85 drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]">{subtitle}</p>}
           </div>
           <div className="ml-auto flex flex-wrap items-center gap-2">

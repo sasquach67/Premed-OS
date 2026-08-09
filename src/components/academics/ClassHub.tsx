@@ -16,6 +16,8 @@ import { createTopicFsrsState, topicRetrievability } from '@/lib/academics/fsrs'
 import { calculateCourseCoverage } from '@/lib/academics/coverage'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/components/common/useToast'
+import { InfoTip } from '@/components/common/InfoTip'
+import { PageHeader } from '@/components/common/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -118,63 +120,72 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
   return (
     <div className="space-y-5">
       <Tabs value={tab} onValueChange={changeTab}>
-        <section className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-          <div className="px-4 pt-4 sm:px-6">
-            <button
-              type="button"
-              onClick={() => navigate('/academics?mode=daily&tab=class-center')}
-              className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-sm font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <ArrowLeft className="size-4" /> Class Center
-            </button>
-            <div className="mt-2 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0">
-                <div className="flex items-center gap-3">
-                  <span className={cn('size-3 rounded-full', COLOR_DOT[workspace.color] ?? COLOR_DOT.blue)} aria-hidden="true" />
-                  <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
-                    {course.code} <span className="text-muted-foreground">{course.title}</span>
-                  </h1>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold text-muted-foreground">
-                  <span><UserRound className="mr-1 inline size-3.5" />{workspace.instructor || 'Instructor not set'}</span>
-                  <span><Clock3 className="mr-1 inline size-3.5" />{meetingText(workspace)}</span>
-                  <span><MapPin className="mr-1 inline size-3.5" />{workspace.location || 'Location not set'}</span>
-                  <Badge variant="outline">{course.bcpm ? 'BCPM' : 'Non-BCPM'}</Badge>
-                  <LinksMenu workspace={workspace} contacts={courseContacts} />
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <Button onClick={startReview}><Play className="size-4" /> Start review</Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" aria-label="Class actions"><MoreHorizontal className="size-4" /></Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Study tools</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => toast({ title: 'Choose your sources', description: 'Open Materials and select the files to include.' })}>
-                      <Sparkles className="size-4" /> Generate study guide
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={addTopic}><Plus className="size-4" /> Add topic</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+        {/* The class hub wears the same banner as every other Academics
+         *  surface (04 §0c): themed art → scrim → glass stat strip floating
+         *  over it → underline tabs on the banner's lower edge. The strip is
+         *  the only glass here, so the header's own glass wrapper is off. */}
+        <PageHeader
+          scene="academics"
+          title={course.code}
+          titleAdornment={<span className={cn('size-3 shrink-0 rounded-full', COLOR_DOT[workspace.color] ?? COLOR_DOT.blue)} aria-hidden="true" />}
+          subtitle={course.title}
+          actions={(
+            <div className="flex shrink-0 items-center gap-2">
+              <Button onClick={startReview}><Play className="size-4" /> Start review</Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" aria-label="Class actions" className="border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white"><MoreHorizontal className="size-4" /></Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Study tools</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => toast({ title: 'Choose your sources', description: 'Open Materials and select the files to include.' })}>
+                    <Sparkles className="size-4" /> Generate study guide
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={addTopic}><Plus className="size-4" /> Add topic</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <div className="mt-5 grid overflow-hidden rounded-2xl border border-white/25 bg-card/62 shadow-lg backdrop-blur-md sm:grid-cols-4">
-              <Stat label="Grade" value={stats.grade} />
-              <Stat label="Ready" value={`${stats.ready}/${courseTopics.length}`} />
-              <Stat label="Due today" value={String(stats.dueToday)} />
-              <Stat label="Next exam" value={stats.examCountdown} />
+          )}
+          footer={(
+            <TabsList className="h-auto w-full justify-start gap-5 overflow-x-auto rounded-none border-0 bg-transparent p-0">
+              <HubTabTrigger value="overview" label="Overview" />
+              <HubTabTrigger value="materials" label="Materials" count={counts.materials} />
+              <HubTabTrigger value="topics" label="Topics" count={counts.topics} />
+              <HubTabTrigger value="assignments" label="Assignments" count={counts.assignments} />
+              <HubTabTrigger value="notes" label="Notes" count={counts.notes} />
+            </TabsList>
+          )}
+          contentGlass={false}
+        >
+          <div className="flex flex-col gap-3 p-2 lg:flex-row lg:items-center lg:justify-between">
+            {/* Class facts are a LINE, not a panel (01 §4b-ii) — fixed facts
+             *  don't earn banner space, so only the strip carries metrics. */}
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm font-semibold text-white/72">
+              <button
+                type="button"
+                onClick={() => navigate('/academics?mode=daily&tab=class-center')}
+                className="inline-flex min-h-8 items-center gap-1 rounded-lg pr-2 font-bold text-white/72 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <ArrowLeft className="size-4" /> Class Center
+              </button>
+              <span><UserRound className="mr-1 inline size-3.5" />{workspace.instructor || 'Instructor not set'}</span>
+              <span><Clock3 className="mr-1 inline size-3.5" />{meetingText(workspace)}</span>
+              <span><MapPin className="mr-1 inline size-3.5" />{workspace.location || 'Location not set'}</span>
+              <span className="inline-flex items-center gap-1 font-bold">
+                {course.bcpm ? 'BCPM' : 'Non-BCPM'}
+                <InfoTip field="course.bcpm" value={course.bcpm} className="border-white/30 text-white/70 hover:bg-white/15 hover:text-white" />
+              </span>
+              <LinksMenu workspace={workspace} contacts={courseContacts} />
+            </div>
+            <div className="glass-surface grid shrink-0 grid-cols-2 overflow-hidden text-white sm:grid-cols-4">
+              <BannerStat label="Grade" value={stats.grade} />
+              <BannerStat label="Ready" value={`${stats.ready}/${courseTopics.length}`} />
+              <BannerStat label="Due today" value={String(stats.dueToday)} />
+              <BannerStat label="Next exam" value={stats.examCountdown} />
             </div>
           </div>
-          <TabsList className="mt-4 flex h-auto w-full justify-start overflow-x-auto rounded-none border-t border-border bg-transparent px-4 py-0 sm:px-6">
-            <HubTabTrigger value="overview" label="Overview" />
-            <HubTabTrigger value="materials" label="Materials" count={counts.materials} />
-            <HubTabTrigger value="topics" label="Topics" count={counts.topics} />
-            <HubTabTrigger value="assignments" label="Assignments" count={counts.assignments} />
-            <HubTabTrigger value="notes" label="Notes" count={counts.notes} />
-          </TabsList>
-        </section>
+        </PageHeader>
 
         <TabsContent value="overview"><Overview course={course} data={data} topics={courseTopics} assignments={courseAssignments} notes={courseNotes} contacts={courseContacts} persons={persons} onTab={changeTab} /></TabsContent>
         <TabsContent value="materials"><Materials courseId={course.id} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} onTab={changeTab} /></TabsContent>
@@ -773,8 +784,16 @@ function LinksMenu({ workspace, contacts }: { workspace: ClassWorkspace; contact
   )
 }
 
+/** Level 2 of the three-level nav (01 §4b-i): underline tabs on the banner's
+ *  lower edge. Same `.academics-banner-tab` treatment the Academics page tabs
+ *  use — one component per job, so the two never drift apart again. */
 function HubTabTrigger({ value, label, count }: { value: HubTab; label: string; count?: number }) {
-  return <TabsTrigger value={value} className="min-h-12 rounded-none border-b-2 border-transparent bg-transparent px-4 font-extrabold shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none">{label}{count != null && <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums">{count}</span>}</TabsTrigger>
+  return (
+    <TabsTrigger value={value} className="academics-banner-tab">
+      {label}
+      {count != null && <span className="tab-count">{count}</span>}
+    </TabsTrigger>
+  )
 }
 
 function Panel({ title, action, className, children }: { title: string; action?: React.ReactNode; className?: string; children: React.ReactNode }) {
@@ -805,6 +824,19 @@ function StudyToolActions({ onOpenNotes }: { onOpenNotes: () => void }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return <div className="border-b border-border/70 p-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"><p className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">{label}</p><p className="mt-1 font-display text-xl font-extrabold tabular-nums">{value}</p></div>
+}
+
+/** Banner-borne variable metric — the only glass surface on this page, because
+ *  it is the only one floating over the banner art (04 §0c). */
+function BannerStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-24 border-r border-white/10 px-4 py-2 last:border-r-0">
+      <p className="whitespace-nowrap text-xs font-bold text-white/70">{label}</p>
+      {/* Values here are open-ended ("Not scheduled", "6d", "B+"), so the row
+       *  shrinks the long ones rather than clipping or wrapping them. */}
+      <p className="truncate font-display text-lg font-extrabold leading-tight tabular-nums text-white" title={value}>{value}</p>
+    </div>
+  )
 }
 
 function StatusMetric({ label, value }: { label: string; value: string }) {
@@ -864,7 +896,9 @@ function hubStats(course: Course, topics: Topic[], assignments: ClassAssignment[
     grade: course.grade || (coursePercent(assignments) == null ? '—' : `${formatNumber(coursePercent(assignments)!)}%`),
     ready: topics.filter((item) => item.status === 'ready').length,
     dueToday: assignments.filter((item) => item.dueDate === today && !isComplete(item)).length,
-    examCountdown: exam?.dueDate ? relativeDate(exam.dueDate) : 'Not scheduled',
+    // Banner metrics are short by design (04 §0c "6d"), so the empty case is a
+    // dash rather than a sentence that has to truncate inside the strip.
+    examCountdown: exam?.dueDate ? relativeDate(exam.dueDate) : '—',
   }
 }
 

@@ -1762,7 +1762,7 @@ function StudyCenterTab({ row, data, mutate }: ClassTabProps) {
       </div>
       <PracticeExamGenerator
         open={generatorOpen}
-        row={row}
+        courseId={row.id}
         data={data}
         onOpenChange={setGeneratorOpen}
         onGenerated={(exam, questions) => {
@@ -1806,15 +1806,18 @@ function TopicMatrixRow({ topic, data, mutate }: { topic: Topic; data: ClassCent
   )
 }
 
-function PracticeExamGenerator({
-  open, row, data, onOpenChange, onGenerated,
+/** Exported so the live class hub owns it. Keyed by `courseId` and the plain
+ *  `ClassCenterData` so it has no dependency on Class Center's joined view. */
+export function PracticeExamGenerator({
+  open, courseId, data, onOpenChange, onGenerated,
 }: {
   open: boolean
-  row: ClassWorkspaceView
-  data: ClassCenterViewData
+  courseId: string
+  data: ClassCenterData
   onOpenChange: (open: boolean) => void
   onGenerated: (exam: PracticeExam, questions: PracticeQuestion[]) => void
 }) {
+  const row = { id: courseId }
   const topics = data.topics.filter((topic) => topic.courseId === row.id).sort((a, b) => a.order - b.order)
   const notes = data.notes.filter((note) => note.courseId === row.id)
   const files = data.files.filter((file) => file.courseId === row.id)
