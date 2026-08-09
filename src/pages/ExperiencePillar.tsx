@@ -225,11 +225,20 @@ type ApprovedPillarProps = {
 }
 
 function ApprovedPillarPage(props: ApprovedPillarProps) {
-  const { category, onAddEntity, onAddEntry } = props
+  const { category, rows, entities, goal, totalHours, selectedEntity, onSelect, onAddEntity, onAddEntry } = props
 
   return (
     <ApprovedExperienceLayout
       category={category as Exclude<ExperienceCategory, 'leadership'>}
+      rows={rows}
+      entities={entities}
+      goal={goal}
+      totalHours={totalHours}
+      selectedKey={selectedEntity?.key}
+      onSelectEntity={(key) => {
+        const match = entities.find((entity) => entity.key === key)
+        if (match) onSelect(match)
+      }}
       onAddEntity={onAddEntity}
       onAddEntry={onAddEntry}
     />

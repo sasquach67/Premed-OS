@@ -1,8 +1,7 @@
 import { useState, type ComponentType, type ReactNode } from 'react'
 import {
-  Activity, Award, Building2, CalendarDays, ClipboardCheck, Clock3,
-  Copy, FileText, HeartHandshake, Microscope,
-  Plus, ShieldCheck, Stethoscope, TrendingUp, UserRound, Users,
+  CalendarDays, ClipboardCheck, Clock3, Copy, FileText, Microscope,
+  Plus, ShieldCheck, TrendingUp, UserRound, Users,
 } from 'lucide-react'
 import type { ExperienceCategory, ExperienceEntry } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -12,8 +11,28 @@ import { PillarSceneHeader } from './PillarSceneHeader'
 
 type AddExperience = (patch?: Partial<ExperienceEntry> & Record<string, unknown>) => ExperienceEntry
 
+/** Real grouped entity (site / org / physician / lab) from ExperiencePillar. */
+export type PillarEntity = {
+  key: string
+  name: string
+  subtitle: string
+  totalHours: number
+  status: ExperienceEntry['status']
+  lastActivityLabel: string
+  stale: boolean
+}
+
 type ExperienceLayoutProps = {
   category: Exclude<ExperienceCategory, 'leadership'>
+  /** The student's own logged entries. */
+  rows: ExperienceEntry[]
+  /** The student's own sites / orgs / physicians / labs. */
+  entities: PillarEntity[]
+  /** Their standing target; 0 when they have not set one. */
+  goal: number
+  totalHours: number
+  selectedKey?: string
+  onSelectEntity?: (key: string) => void
   onAddEntity: () => void
   onAddEntry: AddExperience
 }
@@ -28,90 +47,51 @@ type Entity = {
   tone?: 'primary' | 'warn' | 'quiet'
 }
 
-type Metric = { label: string; value: string; detail?: string; icon?: ComponentType<{ className?: string }> }
 
 const PILLAR_META = {
-  volunteering: {
-    title: 'Volunteering',
-    subtitle: 'audit-ready · the ledger is the tool',
-    add: 'Add organization',
-    metrics: [
-      { label: 'Total hours', value: '230', detail: 'Clinical 138 · Non-clinical 92', icon: Clock3 },
-      { label: 'Clinical target', value: '138/150', detail: '12 hours remaining', icon: Stethoscope },
-      { label: 'Non-clinical target', value: '92/100', detail: '8 hours remaining', icon: HeartHandshake },
-      { label: 'At current pace', value: '3.4 hrs/wk', detail: 'Both targets land by Feb 2027', icon: TrendingUp },
-    ],
-    entities: [
-      { id: 'unc-childrens', name: "UNC Children's — playroom", subtitle: 'Clinical · Sat mornings', meta: 'last logged 5 days ago', hours: '138h', tail: 'active', tone: 'primary' },
-      { id: 'habitat', name: 'Habitat for Humanity', subtitle: 'Non-clinical · build days', meta: 'last logged 2 weeks ago', hours: '64h', tail: 'active' },
-      { id: 'table', name: 'TABLE meal packing', subtitle: 'Non-clinical · weekends', meta: 'gone quiet 6 weeks — log or archive?', hours: '28h', tail: 'attention', tone: 'warn' },
-    ],
-  },
-  shadowing: {
-    title: 'Shadowing',
-    subtitle: 'coverage + relationship upkeep',
-    add: 'Add physician',
-    metrics: [
-      { label: 'Total hours', value: '58', detail: 'Across 3 physicians', icon: Clock3 },
-      { label: 'Specialties', value: '2', detail: 'Emergency · Orthopaedics', icon: Stethoscope },
-      { label: 'Settings seen', value: '3', detail: 'ED · OR · clinic', icon: Building2 },
-      { label: 'Coverage gap', value: '0h', detail: 'Primary care', icon: Activity },
-    ],
-    entities: [
-      { id: 'vasquez', name: 'Dr. Elena Vasquez, MD', subtitle: 'Emergency Medicine · UNC Hillsborough ED', meta: 'thank-you sent · letter asked', hours: '34h', tail: 'active', tone: 'primary' },
-      { id: 'chen', name: 'Dr. Marcus Chen, MD', subtitle: 'Orthopaedic Surgery · OR + clinic', meta: 'thank-you due · letter maybe', hours: '24h', tail: 'follow up', tone: 'warn' },
-    ],
-  },
-  clinical: {
-    title: 'Clinical',
-    subtitle: 'hours momentum + staying credentialed',
-    add: 'Add job / site',
-    metrics: [
-      { label: 'Clinical hours', value: '376', detail: 'Across 2 sites', icon: Clock3 },
-      { label: 'Sites', value: '2', detail: 'EMS · Family Medicine', icon: Building2 },
-      { label: 'Renewal due', value: '1', detail: 'NC EMT-Basic', icon: ShieldCheck },
-      { label: 'At current pace', value: '8.2 hrs/wk', detail: '≈812 by Jun 2027 · clears 750', icon: TrendingUp },
-    ],
-    entities: [
-      { id: 'ems', name: 'Orange County EMS — MEDIC', subtitle: 'EMT-Basic · 12-hour Saturdays', meta: 'last shift 3 days ago', hours: '312h', tail: 'active', tone: 'primary' },
-      { id: 'family-med', name: 'UNC Family Medicine — scribe', subtitle: 'Scribe (PRN) · 2 shifts/mo', meta: 'started May 2026', hours: '64h', tail: 'active' },
-    ],
-  },
-  research: {
-    title: 'Research',
-    subtitle: 'turning time into lines on a CV',
-    add: 'Add lab / project',
-    metrics: [
-      { label: 'Labs / projects', value: '2', detail: 'Both active', icon: Microscope },
-      { label: 'Total hours', value: '248', detail: '196 + 52', icon: Clock3 },
-      { label: 'Outputs', value: '5', detail: 'Poster · abstract · paper · talk', icon: Award },
-      { label: 'Pipeline', value: '1 · 2 · 1 · 1', detail: 'Idea · submitted · accepted · presented', icon: TrendingUp },
-    ],
-    entities: [
-      { id: 'kwon', name: 'Kwon Lab — TBI neuroinflammation', subtitle: 'PI Sarah Kwon · since Jun 2025', meta: '4 outputs · 1 first-author poster', hours: '196h', tail: 'active', tone: 'primary' },
-      { id: 'policy', name: 'Health Policy — EMS outcomes', subtitle: 'PI Alan Reyes · since Feb 2026', meta: '1 output', hours: '52h', tail: 'active' },
-    ],
-  },
-} satisfies Record<ExperienceLayoutProps['category'], { title: string; subtitle: string; add: string; metrics: Metric[]; entities: Entity[] }>
+  volunteering: { title: 'Volunteering', subtitle: 'audit-ready · the ledger is the tool', add: 'Add organization' },
+  shadowing: { title: 'Shadowing', subtitle: 'breadth is the metric, not volume', add: 'Add physician' },
+  clinical: { title: 'Clinical', subtitle: 'hours, sites, and the credentials behind them', add: 'Add site' },
+  research: { title: 'Research', subtitle: 'projects and what came out of them', add: 'Add project' },
+} satisfies Record<ExperienceLayoutProps['category'], { title: string; subtitle: string; add: string }>
 
-export function ApprovedExperienceLayout({ category, onAddEntity, onAddEntry }: ExperienceLayoutProps) {
+export function ApprovedExperienceLayout({
+  category, rows, entities, goal, totalHours, selectedKey, onSelectEntity, onAddEntity, onAddEntry,
+}: ExperienceLayoutProps) {
   const meta = PILLAR_META[category]
-  const [activeId, setActiveId] = useState(meta.entities[0].id)
-  const active = meta.entities.find((entity) => entity.id === activeId) ?? meta.entities[0]
+  /* Every figure below is the student's own. The layout previously rendered a
+   * fixed sample — real hours were computed upstream and discarded here, so
+   * four pillars reported someone else's totals into an AMCAS-shaped record. */
+  const cards: Entity[] = entities.map((entity) => ({
+    id: entity.key,
+    name: entity.name,
+    subtitle: entity.subtitle,
+    meta: entity.lastActivityLabel,
+    hours: `${Math.round(entity.totalHours)}h`,
+    tail: entity.stale ? 'gone quiet' : entity.status === 'completed' ? 'completed' : 'active',
+    tone: entity.stale ? 'warn' : undefined,
+  }))
+  const [activeId, setActiveId] = useState(selectedKey ?? cards[0]?.id ?? '')
+  const active = cards.find((entity) => entity.id === activeId) ?? cards[0]
+
+  function selectEntity(key: string) {
+    setActiveId(key)
+    onSelectEntity?.(key)
+  }
 
   return (
     <div className="space-y-3.5 pb-10">
       <PillarSceneHeader scene={category} accent={pillarAccent(category)} title={meta.title} addLabel={meta.add} onAdd={onAddEntity}>
-        <PillarSummary category={category} />
+        <PillarSummary category={category} rows={rows} entities={entities} goal={goal} totalHours={totalHours} />
       </PillarSceneHeader>
       {category === 'volunteering' && <VerificationLedger />}
       {category === 'shadowing' && <SpecialtyExposure />}
       {category === 'research' && <ResearchOutputs />}
-      <EntityRail category={category} entities={meta.entities} activeId={activeId} addLabel={meta.add} onSelect={setActiveId} onAdd={onAddEntity} />
-      {category === 'volunteering' && <VolunteeringWorkspace entity={active} onAddEntry={onAddEntry} />}
-      {category === 'shadowing' && <ShadowingWorkspace entity={active} onAddEntry={onAddEntry} />}
-      {category === 'clinical' && <ClinicalWorkspace entity={active} onAddEntry={onAddEntry} />}
-      {category === 'research' && <ResearchWorkspace entity={active} onAddEntry={onAddEntry} />}
+      <EntityRail category={category} entities={cards} activeId={activeId} addLabel={meta.add} onSelect={selectEntity} onAdd={onAddEntity} />
+      {active && category === 'volunteering' && <VolunteeringWorkspace entity={active} onAddEntry={onAddEntry} />}
+      {active && category === 'shadowing' && <ShadowingWorkspace entity={active} onAddEntry={onAddEntry} />}
+      {active && category === 'clinical' && <ClinicalWorkspace entity={active} onAddEntry={onAddEntry} />}
+      {active && category === 'research' && <ResearchWorkspace entity={active} onAddEntry={onAddEntry} />}
     </div>
   )
 }
@@ -124,39 +104,91 @@ function SummaryKpi({ value, label, valueClassName }: { value: ReactNode; label:
   return <span className="inline-flex items-baseline gap-2 whitespace-nowrap"><strong className={cn('font-display text-[1.4rem] font-extrabold tabular-nums', valueClassName)}>{value}</strong><span className="text-[0.68rem] font-extrabold uppercase tracking-[0.05em] text-muted-foreground">{label}</span></span>
 }
 
-function PillarSummary({ category }: { category: ExperienceLayoutProps['category'] }) {
+function PillarSummary({ category, rows, entities, goal, totalHours }: {
+  category: ExperienceLayoutProps['category']
+  rows: ExperienceEntry[]
+  entities: PillarEntity[]
+  goal: number
+  totalHours: number
+}) {
   const shell = 'flex flex-wrap items-center gap-x-5 gap-y-2.5 rounded-[14px] border bg-card px-[18px] py-3 shadow-sm'
-  if (category === 'volunteering') return (
-    <section className={shell}>
-      <SummaryKpi value="230" label="total hours" />
-      <div className="flex flex-wrap items-center gap-2 text-xs font-extrabold"><span className="text-[var(--cat-volunteer)]">Clinical 138</span><span className="flex h-2 w-32 overflow-hidden rounded-full bg-muted"><i className="h-full w-3/5 bg-[var(--cat-volunteer)]" /><i className="h-full w-2/5 bg-amber-500" /></span><span className="text-amber-600 dark:text-amber-300">Non-clin 92</span></div>
-      <SummaryKpi value={<><span className="text-emerald-600 dark:text-emerald-300">138</span><span className="text-muted-foreground">/150</span></>} label="clin target" valueClassName="text-base" />
-      <SummaryKpi value={<><span className="text-emerald-600 dark:text-emerald-300">92</span><span className="text-muted-foreground">/100</span></>} label="non-clin target" valueClassName="text-base" />
-      <p className="text-xs font-bold text-muted-foreground xl:ml-auto"><b className="text-foreground">3.4 hrs/wk</b> → both targets land by <b className="text-foreground">Feb 2027</b></p>
-    </section>
-  )
-  if (category === 'shadowing') return (
-    <section className={shell}>
-      <SummaryKpi value="58" label="hours" /><SummaryKpi value="3" label="physicians" /><SummaryKpi value="2" label="specialties" /><SummaryKpi value="3" label="settings seen" />
-      <p className="text-xs font-bold text-muted-foreground xl:ml-auto"><span className="text-amber-600 dark:text-amber-300">Gap: 0 hrs primary care</span> · typical accepted range 40–100 total</p>
-    </section>
-  )
-  if (category === 'clinical') return (
-    <section className={shell}>
-      <SummaryKpi value="376" label="clinical hours" /><SummaryKpi value="2" label="sites" /><SummaryKpi value="1" label="cert renewal due" valueClassName="text-amber-600 dark:text-amber-300" />
-      <p className="flex flex-wrap items-center gap-2 text-xs font-bold text-muted-foreground xl:ml-auto"><span><b className="text-foreground">8.2 hrs/wk</b> → <b className="text-foreground">≈812</b> by Jun 2027</span><span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-300"><ClipboardCheck className="size-3.5" /> clears your 750 target</span></p>
-    </section>
-  )
+  const hours = Math.round(totalHours)
+  const active = entities.filter((entity) => entity.status !== 'completed').length
+
+  // Nothing logged yet: an invitation, not a wall of zeros, and never a
+  // borrowed sample. (04 §0.5 — realistic content, never fabricated data.)
+  if (!rows.length) {
+    return (
+      <section className={shell}>
+        <p className="text-sm font-bold text-muted-foreground">
+          Nothing logged here yet — add your first {category === 'shadowing' ? 'visit' : category === 'research' ? 'project' : 'entry'} and this fills in.
+        </p>
+      </section>
+    )
+  }
+
+  // A rate needs dated history; without it, say so rather than invent one.
+  const rate = weeklyRate(rows)
+  const pace = rate ? `${rate.toFixed(1)} hrs/wk` : null
+
+  if (category === 'shadowing') {
+    // Breadth is the metric, not volume (05-shadowing §2, points 1-2).
+    const specialties = new Set(rows.map((row) => (row.role || '').trim()).filter(Boolean))
+    const physicians = new Set(rows.map((row) => (row.supervisor || row.contact || '').trim()).filter(Boolean))
+    return (
+      <section className={shell}>
+        <SummaryKpi value={specialties.size} label="specialties" />
+        <SummaryKpi value={physicians.size || entities.length} label="physicians" />
+        <SummaryKpi value={hours} label="hours" valueClassName="text-base" />
+        {pace && <p className="text-xs font-bold text-muted-foreground xl:ml-auto"><b className="text-foreground">{pace}</b> recently</p>}
+      </section>
+    )
+  }
+
+  if (category === 'research') {
+    return (
+      <section className={shell}>
+        <SummaryKpi value={entities.length} label="labs / projects" />
+        <SummaryKpi value={hours} label="total hours" />
+        <SummaryKpi value={active} label="active" valueClassName="text-base" />
+      </section>
+    )
+  }
+
+  // Clinical and Volunteering: hours are the metric here, so show them
+  // against the student's own target — never against a benchmark
+  // (03-clinical §7a).
   return (
     <section className={shell}>
-      <SummaryKpi value="2" label="labs / projects" /><SummaryKpi value="248" label="total hours" /><SummaryKpi value="5" label="outputs" />
-      <div className="flex flex-wrap items-center gap-2 text-[0.7rem] font-extrabold xl:ml-auto"><StatusDot color="bg-muted-foreground" label="idea 1" /><StatusDot color="bg-primary" label="submitted 2" /><StatusDot color="bg-amber-500" label="accepted 1" /><StatusDot color="bg-emerald-500" label="presented 1" /></div>
+      <SummaryKpi value={hours} label={category === 'clinical' ? 'clinical hours' : 'total hours'} />
+      <SummaryKpi value={entities.length} label={category === 'clinical' ? 'sites' : 'organizations'} valueClassName="text-base" />
+      {goal > 0 && (
+        <SummaryKpi
+          value={<><span className={hours >= goal ? 'text-emerald-600 dark:text-emerald-300' : undefined}>{hours}</span><span className="text-muted-foreground">/{goal}</span></>}
+          label="your target"
+          valueClassName="text-base"
+        />
+      )}
+      {pace && (
+        <p className="text-xs font-bold text-muted-foreground xl:ml-auto">
+          <b className="text-foreground">{pace}</b>{goal > hours && rate ? <> → {goal} in ≈{Math.ceil((goal - hours) / rate)} weeks</> : null}
+        </p>
+      )}
     </section>
   )
 }
 
-function StatusDot({ color, label }: { color: string; label: string }) {
-  return <span className="inline-flex items-center gap-1.5"><i className={cn('size-2 rounded-full', color)} />{label}</span>
+/** Hours per week across the logged span. Null when there is not enough dated
+ *  history to be honest about a rate (01 §4d — never fabricate a projection). */
+function weeklyRate(rows: ExperienceEntry[]): number | null {
+  const dated = rows.filter((row) => row.startDate && (row.hours || 0) > 0)
+  if (dated.length < 2) return null
+  const times = dated.map((row) => new Date(`${row.startDate}T00:00:00`).getTime()).filter((t) => !Number.isNaN(t))
+  if (times.length < 2) return null
+  const weeks = (Math.max(...times) - Math.min(...times)) / (7 * 86400000)
+  if (weeks < 1) return null
+  const total = dated.reduce((sum, row) => sum + (row.hours || 0), 0)
+  return total / weeks
 }
 
 function EntityRail({ category, entities, activeId, addLabel, onSelect, onAdd }: { category: ExperienceLayoutProps['category']; entities: Entity[]; activeId: string; addLabel: string; onSelect: (id: string) => void; onAdd: () => void }) {
@@ -236,28 +268,28 @@ function WorkspaceModule({ title, icon: Icon, children, action, className }: { t
 
 function VolunteeringWorkspace({ entity, onAddEntry }: { entity: Entity; onAddEntry: AddExperience }) {
   return <section className="rounded-[14px] border bg-card p-[18px] shadow-sm">
-    <WorkspaceHero title={entity.id === 'unc-childrens' ? "UNC Children's Hospital — patient playroom" : entity.name} metadata={<><span>Clinical</span><span>Sep 2025 – present</span><span>Sat 9a–12p</span></>} hours={entity.id === 'unc-childrens' ? '138' : entity.hours.replace('h', '')} footer={<><span>AMCAS verifier: Marcus Lee · Volunteer Services Coordinator</span><span>mlee@unchealth.unc.edu · (984) 974-1136</span><span>Last activity: 5 days ago</span></>} />
+    <WorkspaceHero title={entity.name} metadata={<><span>Clinical</span><span>Sep 2025 – present</span><span>Sat 9a–12p</span></>} hours={entity.id === 'unc-childrens' ? '138' : entity.hours.replace('h', '')} footer={<><span>AMCAS verifier: Marcus Lee · Volunteer Services Coordinator</span><span>mlee@unchealth.unc.edu · (984) 974-1136</span><span>Last activity: 5 days ago</span></>} />
     <div className="grid gap-3 lg:grid-cols-2"><WorkspaceModule title="Impact numbers" icon={TrendingUp}><div className="grid grid-cols-3 gap-2"><SmallFact value="~310" label="patient visits" /><SmallFact value="46" label="shifts" /><SmallFact value="4" label="event days run" /></div></WorkspaceModule><WorkspaceModule title="Notes" icon={FileText}><p className="text-[13px] leading-relaxed text-muted-foreground">Charge nurse (5E) knows me by name — ask Marcus about the teen-lounge pilot in August. Isolation-room protocol retrained Jun 14.</p></WorkspaceModule><WorkspaceModule className="lg:col-span-2" title="Hours log" icon={Clock3}><ExactLogRows initialDate="Jul 19" rows={[['Jul 12', 'Playroom + two bedside visits (5E)', '3.0'], ['Jul 5', 'Playroom · craft table · sibling support', '3.0'], ['Jun 28', 'Family movie night setup + run', '4.0']]} onAdd={(values) => onAddEntry({ org: entity.name, startDate: values[0], hours: Number(values[1]), description: values[2], status: 'active' })} placeholder="what did you do? who did it help? (numbers make AMCAS descriptions)" /><p className="mt-2.5 text-[11px] text-muted-foreground">Impact prompt at log time: “how many patients/people today?” — keeps descriptions concrete.</p></WorkspaceModule></div>
   </section>
 }
 
 function ShadowingWorkspace({ entity, onAddEntry }: { entity: Entity; onAddEntry: AddExperience }) {
   return <section className="rounded-[14px] border bg-card p-[18px] shadow-sm">
-    <WorkspaceHero title="Dr. Elena Vasquez, MD — Emergency Medicine" metadata={<><span>UNC Hillsborough ED · community hospital</span><span>First session Mar 2026</span></>} hours="34" footer={<><span>evasquez@unchealth.unc.edu</span><span>(919) 245-3200 · via ED admin</span><span>Met through MEDIC ride-along</span></>} />
+    <WorkspaceHero title={entity.name} metadata={<><span>{entity.subtitle}</span><span>{entity.meta}</span></>} hours={entity.hours.replace('h','')} footer={<><span>evasquez@unchealth.unc.edu</span><span>(919) 245-3200 · via ED admin</span><span>Met through MEDIC ride-along</span></>} />
     <div className="grid gap-3 lg:grid-cols-2"><WorkspaceModule title="Thank-you" icon={UserRound}><LabeledRow label="Status" value="Sent · Jun 30 (card + email)" action="Log another touch" /></WorkspaceModule><WorkspaceModule title="Letter potential" icon={FileText}><LabeledRow label="Status" value="Asked · Jul 2 — she said yes" action="Open in Letters →" /></WorkspaceModule><WorkspaceModule className="lg:col-span-2" title="Sessions" icon={CalendarDays}><ExactLogRows initialDate="Jul 20" rows={[['Jul 2', 'Friday overnight, 7p–1a||STEMI activation → cath lab handoff · pediatric asthma · how she runs a family conversation about hospice', '6.0'], ['Jun 14', 'Day shift||shoulder reduction under sedation · psych hold placement · she let me listen to a murmur', '8.0'], ['May 30', 'First shadow day||triage flow · two traumas · debrief over coffee about EM lifestyle and burnout', '8.0']]} onAdd={(values) => onAddEntry({ org: entity.name, startDate: values[0], hours: Number(values[1]), description: values[2], status: 'active' })} placeholder="what did you see? (procedures, conversations, decisions)" /></WorkspaceModule></div>
   </section>
 }
 
 function ClinicalWorkspace({ entity, onAddEntry }: { entity: Entity; onAddEntry: AddExperience }) {
   return <section className="rounded-[14px] border bg-card p-[18px] shadow-sm">
-    <WorkspaceHero title="Orange County EMS — MEDIC" metadata={<><span>EMT-Basic</span><StatusChip tone="good">Active</StatusChip><span>Jan 2026 – present</span><span>26 shifts</span></>} hours="312" footer={<><span>AMCAS verifier: Capt. Dana Brooks · Shift Supervisor</span><span>dbrooks@orangecountync.gov · (919) 245-6145</span><span>8.2 hrs/wk here · streak intact</span></>} />
+    <WorkspaceHero title={entity.name} metadata={<><span>{entity.subtitle}</span><StatusChip tone={entity.tone === 'warn' ? 'warn' : 'good'}>{entity.tail}</StatusChip><span>{entity.meta}</span></>} hours={entity.hours.replace('h','')} footer={<><span>AMCAS verifier: Capt. Dana Brooks · Shift Supervisor</span><span>dbrooks@orangecountync.gov · (919) 245-6145</span><span>8.2 hrs/wk here · streak intact</span></>} />
     <div className="grid gap-3 lg:grid-cols-[1.05fr_.95fr]"><div className="space-y-3"><WorkspaceModule title="Certifications" icon={ShieldCheck}><div className="space-y-2"><LabeledRow label="NC EMT-Basic" value="Expires Mar 31, 2027 · 24 CE hrs needed, 9 done" action="Renew by Jan 2027" /><LabeledRow label="AHA BLS Provider" value="Expires Nov 2027" action="Current" /><LabeledRow label="NIMS ICS-100/200" value="No expiry" action="Done" /></div></WorkspaceModule><WorkspaceModule title="Skills — observed / performed" icon={ClipboardCheck}><div className="space-y-2"><SkillRow label="Vitals full set (BP, SpO₂, BGL)" observed="4" performed="180+" /><SkillRow label="Trauma assessment + splinting" observed="12" performed="31" /><SkillRow label="CPR / BVM on arrest" observed="3" performed="2" /><SkillRow label="12-lead placement" observed="9" performed="22" /><SkillRow label="Med admin (O₂, glucose, ASA)" observed="6" performed="17" /></div></WorkspaceModule></div><WorkspaceModule title="Shift log" icon={Clock3}><ExactLogRows initialDate="Jul 19" rows={[['Jul 12', 'Sat 7a–7p, Unit 42 w/ Brooks · trauma ×2 · code ×1 · transfers ×3', '12.0'], ['Jul 5', 'Sat 7a–7p · psych ×1 · routine ×5', '12.0'], ['Jun 28', 'Sat 7a–3p (cut short, truck down) · trauma ×1 · routine ×2', '8.0']]} onAdd={(values) => onAddEntry({ org: entity.name, startDate: values[0], hours: Number(values[1]), description: values[2], status: 'active' })} placeholder="shift + calls (e.g. 7a–7p, 2 trauma, 1 code)" /></WorkspaceModule></div>
   </section>
 }
 
 function ResearchWorkspace({ entity, onAddEntry }: { entity: Entity; onAddEntry: AddExperience }) {
   return <section className="rounded-[14px] border bg-card p-[18px] shadow-sm">
-    <WorkspaceHero title="Kwon Lab — TBI neuroinflammation" metadata={<><span>Wet lab · confocal imaging + behavior</span><span>Jun 2025 – present · ~6 hrs/wk</span></>} hours="196" footer={<><span>AMCAS verifier: Dr. Sarah Kwon · Principal Investigator</span><span>skwon@neuro.unc.edu · (919) 966-1029</span><span>4 outputs · 1 first-author poster</span></>} />
+    <WorkspaceHero title={entity.name} metadata={<><span>{entity.subtitle}</span><span>{entity.meta}</span></>} hours={entity.hours.replace('h','')} footer={<><span>AMCAS verifier: Dr. Sarah Kwon · Principal Investigator</span><span>skwon@neuro.unc.edu · (919) 966-1029</span><span>4 outputs · 1 first-author poster</span></>} />
     <div className="grid gap-3 lg:grid-cols-2"><WorkspaceModule title="Meetings with PI" icon={Users}><div className="rounded-lg bg-muted/25 p-2.5"><strong className="text-[12px]">Jul 10 · 1:1</strong><p className="mt-1 text-[12px] text-muted-foreground">Agreed I lead the SfN poster figures. She wants n bumped before submission.</p></div><p className="mt-3 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">To discuss next time</p><div className="mt-1.5 space-y-1.5">{['Ask about authorship order on the methods paper', 'Confocal time conflict w/ Tue clinicals', 'Summer stipend / work-study paperwork'].map((item) => <label key={item} className="flex items-center gap-2 text-[12px]"><input type="checkbox" className="size-3.5 rounded" />{item}</label>)}</div></WorkspaceModule><WorkspaceModule title="Lab notebook / hours" icon={Microscope}><ExactLogRows initialDate="Jul 14" rows={[['Jul 11', 'Confocal — 6 slices, GFAP+Iba1 co-stain', '5.0'], ['Jul 8', 'ImageJ morphology batch + QC', '4.0'], ['Jul 3', 'Perfusions + tissue collection (n=4)', '6.0']]} onAdd={(values) => onAddEntry({ org: entity.name, startDate: values[0], hours: Number(values[1]), description: values[2], status: 'active' })} placeholder="what you did in lab" /></WorkspaceModule></div>
   </section>
 }
