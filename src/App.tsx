@@ -6,6 +6,7 @@ import { AppShell } from '@/components/layout/AppShell'
    bundle stays small (recharts, dnd-kit, etc. arrive with the page that
    needs them). Pages use named exports, hence the .then() shims. */
 const Home = lazy(() => import('@/pages/Home').then((m) => ({ default: m.Home })))
+const OverviewTasksPage = lazy(() => import('@/pages/OverviewTasksPage').then((m) => ({ default: m.OverviewTasksPage })))
 const Academics = lazy(() => import('@/pages/Academics').then((m) => ({ default: m.Academics })))
 const AcademicRecallSession = lazy(() => import('@/pages/AcademicRecallSession').then((m) => ({ default: m.AcademicRecallSession })))
 const Mcat = lazy(() => import('@/pages/Mcat').then((m) => ({ default: m.Mcat })))
@@ -42,6 +43,7 @@ function App() {
           <Route element={<AppShell />}>
             <Route index element={<Home />} />
             <Route path="northstar" element={<Navigate to="/?guide=open" replace />} />
+            <Route path="overview/tasks" element={<OverviewTasksPage />} />
             <Route path="academics" element={<Academics />} />
             <Route path="academics/classes/:courseId" element={<Academics />} />
             <Route path="mcat" element={<Mcat />} />

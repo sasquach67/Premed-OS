@@ -8,7 +8,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   Home, Compass, GraduationCap, Brain, Mail, Stethoscope, HeartHandshake,
   Eye, Microscope, Trophy, BookOpenText, School, CalendarDays, IdCard,
-  LifeBuoy, Settings, Archive, Orbit,
+  LifeBuoy, ListChecks, Settings, Archive, Orbit,
 } from 'lucide-react'
 
 export interface RouteDef {
@@ -34,7 +34,11 @@ export const ROUTES: RouteDef[] = [
   { id: 'schools', label: 'School List', group: 'Application', icon: School, tagline: 'Build a realistic list against your stats + mission.' },
   { id: 'essays', label: 'Essays & Story Bank', group: 'Application', icon: BookOpenText, tagline: 'Reflections, personal statement, secondaries.' },
   { id: 'letters', label: 'Letters of Rec', group: 'Application', icon: Mail, tagline: 'Who, when asked, and where each letter stands.' },
-  { id: 'timeline', label: 'Timeline & Tasks', group: 'Application', icon: CalendarDays, tagline: 'The cycle as a graphic + your assignment tracker.' },
+  { id: 'timeline', label: 'Timeline', group: 'Application', icon: CalendarDays, tagline: 'The roadmap for your whole premed journey.' },
+  // Tasks are Overview's (03-overview §0), so the expanded list is a sub-route
+  // of Overview rather than a sidebar entry — the URL states the ownership.
+  // Precedent: /academics/classes/:courseId.
+  { id: 'overview/tasks', label: 'Tasks', group: 'Home', icon: ListChecks, tagline: 'Everything on your plate.', nav: false },
   { id: 'atlas', label: 'Atlas', group: 'Atlas', icon: Orbit, tagline: 'Your connected admissions knowledge space.' },
   { id: 'archive', label: 'Archive', group: 'Application', icon: Archive, tagline: 'Finished tasks & focus targets — restorable.', nav: false },
   { id: 'profile', label: 'Profile / CV', group: 'Account', icon: IdCard, tagline: 'Auto-CV from your logged roles + editable resume.', nav: false },

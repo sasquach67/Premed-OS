@@ -6,6 +6,7 @@ import {
   Ellipsis,
   GripVertical,
   NotebookPen,
+  Search,
   Star,
   Tag,
   Trash2,
@@ -60,13 +61,16 @@ const TABS: Array<{ value: OverviewTaskTab; label: string }> = [
 ]
 const CATEGORIES = ['Personal', 'Application', 'Advising', 'MCAT', 'Academics', 'Clinical', 'Letters', 'Essays']
 
-export function OverviewTasks() {
+export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {}) {
   const tasks = useStore((state) => state.tasks)
   const addItem = useStore((state) => state.addItem)
   const update = useStore((state) => state.update)
   const logActivity = useStore((state) => state.logActivity)
   const [tab, setTab] = useState<OverviewTaskTab>('now')
   const [quickTitle, setQuickTitle] = useState('')
+  /* The expansion adds room to filter and search and NOTHING else — any
+   * behaviour here that the widget lacks is a defect (03-overview §6.4). */
+  const [query, setQuery] = useState('')
   const reduceMotion = useReducedMotion()
 
   const counts = useMemo(() => ({
@@ -74,7 +78,12 @@ export function OverviewTasks() {
     soon: overviewTasks(tasks, 'soon').length,
     done: overviewTasks(tasks, 'done').length,
   }), [tasks])
-  const visible = useMemo(() => overviewTasks(tasks, tab), [tab, tasks])
+  const visible = useMemo(() => {
+    const forTab = overviewTasks(tasks, tab)
+    const needle = query.trim().toLowerCase()
+    if (!needle) return forTab
+    return forTab.filter((task) => `${task.title} ${task.type} ${task.notes ?? ''}`.toLowerCase().includes(needle))
+  }, [query, tab, tasks])
   const important = visible.filter((task) => task.important)
   const everythingElse = visible.filter((task) => !task.important)
   const overdue = visible.filter((task) => {
@@ -114,7 +123,7 @@ export function OverviewTasks() {
   }
 
   return (
-    <Card className="h-full min-h-[34rem]" role="region" aria-labelledby="overview-tasks-heading">
+    <Card className={cn('h-full', expanded ? 'min-h-[70vh]' : 'min-h-[34rem]')} role="region" aria-labelledby="overview-tasks-heading">
       <CardHeader className="flex-row items-start justify-between gap-3">
         <div>
           <CardTitle id="overview-tasks-heading" className="text-lg">Tasks</CardTitle>
@@ -122,7 +131,7 @@ export function OverviewTasks() {
             {important.length} important{overdue ? ` · ${overdue} overdue` : ''}
           </p>
         </div>
-        <Button asChild size="sm" variant="outline"><Link to="/overview/tasks">Expand</Link></Button>
+        {!expanded && <Button asChild size="sm" variant="outline"><Link to="/overview/tasks">Expand</Link></Button>}
       </CardHeader>
       <CardContent className="flex h-[calc(100%-5rem)] flex-col">
         <Tabs value={tab} onValueChange={(value) => setTab(value as OverviewTaskTab)}>
@@ -136,6 +145,18 @@ export function OverviewTasks() {
           </TabsList>
         </Tabs>
 
+        {expanded && (
+          <div className="relative mt-3">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search titles, categories, notes…"
+              aria-label="Search tasks"
+              className="pl-9"
+            />
+          </div>
+        )}
         <div className="relative mt-4 min-h-0 flex-1">
           <AnimatePresence initial={false} mode="popLayout">
             <m.div
@@ -160,8 +181,8 @@ export function OverviewTasks() {
                 </MascotNote>
               ) : (
                 <Reorder.Group axis="y" values={visible} onReorder={applyOrder} className="space-y-3">
-                  <TaskGroup label="Important" tasks={important} tab={tab} reduceMotion={Boolean(reduceMotion)} />
-                  <TaskGroup label={important.length ? 'Everything else' : undefined} tasks={everythingElse} tab={tab} reduceMotion={Boolean(reduceMotion)} />
+                  <TaskGroup label="Important" tasks={important} tab={tab} reduceMotion={Boolean(reduceMotion)} expanded={expanded} />
+                  <TaskGroup label={important.length ? 'Everything else' : undefined} tasks={everythingElse} tab={tab} reduceMotion={Boolean(reduceMotion)} expanded={expanded} />
                 </Reorder.Group>
               )}
             </m.div>
@@ -191,12 +212,15 @@ function TaskGroup({
   tasks,
   tab,
   reduceMotion,
+  expanded,
 }: {
   label?: string
   tasks: CollectionRecord<TaskItem>[]
   tab: OverviewTaskTab
   reduceMotion: boolean
+  expanded: boolean
 }) {
+  const cap = expanded ? tasks.length : 7
   if (!tasks.length) return null
   return (
     <section aria-label={label}>
@@ -207,12 +231,12 @@ function TaskGroup({
           <span className="h-px flex-1 bg-border" />
         </div>
       )}
-      {tasks.slice(0, 7).map((task) => (
+      {tasks.slice(0, cap).map((task) => (
         <TaskRow key={task.id} task={task} tab={tab} reduceMotion={reduceMotion} />
       ))}
-      {tasks.length > 7 && (
+      {tasks.length > cap && (
         <Link to="/overview/tasks" className="mt-2 block px-2 text-xs font-bold text-primary">
-          +{tasks.length - 7} more →
+          +{tasks.length - cap} more →
         </Link>
       )}
     </section>
@@ -329,7 +353,9 @@ function TaskRow({
         ariaLabel={task.deadline ? `Due ${fmtRelative(task.deadline)}. Change it` : `Set a due date for ${task.title}`}
         align="end"
         className={cn(
-          'h-7 rounded-full border-0 px-2 text-xs font-bold shadow-none',
+          // DateField's trigger is w-full by default; unconstrained it eats the
+          // row and squeezes the title to nothing.
+          'h-7 w-auto shrink-0 rounded-full border-0 px-2 text-xs font-bold shadow-none',
           task.deadline
             ? days != null && days < 0 ? 'bg-destructive/12 text-destructive' : days != null && days <= 3 ? 'bg-warning/15 text-warning-foreground' : 'bg-muted text-muted-foreground'
             : 'bg-transparent text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
