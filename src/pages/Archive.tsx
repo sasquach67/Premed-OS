@@ -16,7 +16,9 @@ export function Archive() {
   const patchItem = useStore((s) => s.patchItem)
   const removeItem = useStore((s) => s.removeItem)
 
-  const doneTasks = tasks.filter((t) => t.archived || t.progress === 'Finished')
+  // Milestones live in `tasks` with `milestone: true`; a completed roadmap
+  // node is not a finished task and must not be restorable from here (S7).
+  const doneTasks = tasks.filter((t) => !t.milestone && (t.archived || t.progress === 'Finished'))
   const doneFocus = focusTargets.filter((f) => f.done)
 
   return (

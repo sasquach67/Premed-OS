@@ -90,7 +90,10 @@ export const deadlinesFeed: AttentionFeed = (data) => {
   )
   const assignments = data.academics?.classCenter?.assignments ?? []
   return [
-    ...data.tasks.map((task) => deadlineItem(task, today)),
+    // Roadmap milestones live in `tasks` with `milestone: true` (S7 will
+    // separate them). Without this filter a dated milestone surfaces in the
+    // bell as a deadline offering "Open task", which it is not.
+    ...data.tasks.filter((task) => !task.milestone).map((task) => deadlineItem(task, today)),
     ...assignments.map((assignment) =>
       assignmentDeadlineItem(assignment, courseLabel.get(assignment.courseId) ?? '', today)),
   ]
