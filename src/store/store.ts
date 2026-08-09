@@ -26,6 +26,7 @@ import { migrateAcademicsV5 } from '@/store/migrations/academicsV5'
 import { migrateAcademicsV6 } from '@/store/migrations/academicsV6'
 import { migrateAcademicsV7 } from '@/store/migrations/academicsV7'
 import { migrateFoundationV8 } from '@/store/migrations/foundationV8'
+import { migrateShellV9 } from '@/store/migrations/shellV9'
 
 const DEMO_MODE = isDemoMode()
 
@@ -449,7 +450,7 @@ export function migrateRequirementMetadata(data: AppData): AppData {
 /** The full hydration chain. Exported so the frozen-input contract can be
  *  tested end to end: every link must be pure, or immer state throws. */
 export function migrateAll(data: AppData): AppData {
-  return migrateFoundationV8(migrateAcademicsV7(migrateAcademicsV6(migrateAcademicsV5(migrateAcademicsV4(migrateMascotNotes(
+  return migrateShellV9(migrateFoundationV8(migrateAcademicsV7(migrateAcademicsV6(migrateAcademicsV5(migrateAcademicsV4(migrateMascotNotes(
     migrateOverviewSchema(
       migrateIntelligence(
         migrateSafetyNets(
@@ -461,7 +462,7 @@ export function migrateAll(data: AppData): AppData {
         ),
       ),
     ),
-  ))))))
+  )))))))
 }
 
 function nextOrder(arr: AnyRow[]): number {

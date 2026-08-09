@@ -882,6 +882,46 @@ export interface Settings {
   projectionDismissals: Record<string, boolean>
   /** Persisted one-time MascotNote dismissals, keyed by stable concept id. */
   mascotNoteDismissals: Record<string, number>
+  /** The one weekly hour pool every plan generator claims against. */
+  weeklyCapacity: WeeklyCapacity
+}
+
+/** A stretch where the usual weekly shape does not hold — finals, a travel
+ *  week, a family obligation, a heavier shift rota. `hoursOverride` replaces
+ *  the weekday total for every day in the range. */
+export interface BusyPeriod {
+  id: ID
+  label: string
+  /** ISO date, inclusive. */
+  startDate: string
+  /** ISO date, inclusive. */
+  endDate: string
+  hoursOverride: number
+}
+
+/**
+ * `WeeklyCapacity` — shell-owned, per `specifications/00-product-shell.md` §11b.
+ *
+ * The problem it exists to prevent: when MCAT prep overlaps a semester,
+ * Academics and MCAT bid for the same evenings. Two independently reasonable
+ * plans sum to something impossible, the student fails both, and the app
+ * caused it. So capacity lives here, at the shell, and both generators are
+ * *consumers* of one pool rather than owners of their own.
+ *
+ * It is NOT a calendar. It is a weekly shape plus exceptions; calendar reading
+ * informs the shape but never replaces it (`01` §6.9).
+ *
+ * It is NOT a productivity target. The pool describes what a student *has*,
+ * not what they *should* use — HQ never nudges anyone to fill unclaimed hours.
+ */
+export interface WeeklyCapacity {
+  /** Available study hours per weekday, Sunday-first to match the app's
+   *  calendars. Absent/zero is a legitimate answer for a day, not missing data. */
+  hoursByWeekday: [number, number, number, number, number, number, number]
+  busyPeriods: BusyPeriod[]
+  /** Epoch ms. Zero means never captured — generators must ask before
+   *  planning rather than assume a default (§11b "check before generating"). */
+  updatedAt: number
 }
 
 /** Outcome of a single recommendation instance (architecture/02 lifecycle). */

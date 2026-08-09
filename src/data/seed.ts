@@ -725,6 +725,10 @@ export function createSeedData(): AppData {
       mutedRecommendationRules: {},
       projectionDismissals: {},
       mascotNoteDismissals: {},
+      // Deliberately un-captured: updatedAt 0 means "nobody has been asked",
+      // and generators must ask rather than plan against a made-up week
+      // (00 §11b — check before generating, not after).
+      weeklyCapacity: { hoursByWeekday: [0, 0, 0, 0, 0, 0, 0], busyPeriods: [], updatedAt: 0 },
     },
     meta: {
       recentRoutes: [],
