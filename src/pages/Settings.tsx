@@ -14,6 +14,7 @@ import { fmtDate, fmtTimeAgo } from '@/lib/date'
 import { VISUAL_THEMES } from '@/lib/themeAssets'
 import type { AppData } from '@/lib/types'
 import { PageHeader } from '@/components/common/PageHeader'
+import { WeeklyCapacityCard } from '@/components/common/WeeklyCapacityCard'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -187,6 +188,8 @@ export function Settings() {
         <CloudSyncSection onMessage={setMsg} />
 
         <CalendarIntegrationSection onMessage={setMsg} />
+
+        <WeeklyCapacityCard />
 
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><Palette className="size-4 text-primary" /> Preferences</CardTitle></CardHeader>
