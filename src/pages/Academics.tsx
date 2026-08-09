@@ -13,6 +13,7 @@ import { gpaStats, fmtGpa, GRADE_POINTS } from '@/lib/selectors'
 import type { Course, LetterGrade, RequirementItem } from '@/lib/types'
 import { uid } from '@/lib/id'
 import { PageHeader } from '@/components/common/PageHeader'
+import { InfoTip } from '@/components/common/InfoTip'
 import { Ring } from '@/components/common/Ring'
 import { TrackerTable, type ColumnDef } from '@/components/common/TrackerTable'
 import { Collapsible } from '@/components/common/Collapsible'
@@ -43,8 +44,8 @@ const COURSE_COLUMNS: ColumnDef[] = [
   { key: 'title', header: 'Title', type: 'text', placeholder: 'Course title' },
   { key: 'credits', header: 'Cr', type: 'number', width: '60px', align: 'right' },
   { key: 'grade', header: 'Grade', type: 'select', width: '80px', options: GRADES as string[] },
-  { key: 'bcpm', header: 'AMCAS', type: 'toggle', width: '76px', toggleLabels: ['AO', 'BCPM'] },
-  { key: 'status', header: 'Status', type: 'select', width: '120px', options: ['planned', 'in-progress', 'completed'] },
+  { key: 'bcpm', header: 'AMCAS', type: 'toggle', width: '76px', toggleLabels: ['AO', 'BCPM'], glossaryField: 'course.bcpm' },
+  { key: 'status', header: 'Status', type: 'select', width: '120px', options: ['planned', 'in-progress', 'completed'], glossaryField: 'course.status' },
 ]
 
 export function Academics() {
@@ -552,12 +553,17 @@ function SourceBadge({ reqs }: { reqs: RequirementItem[] }) {
   const official = meta.sourceType === 'official'
   const premed = meta.sourceType === 'premed-advice'
   return (
-    <span className={cn(
-      'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide',
-      official ? 'border-primary/30 bg-primary/10 text-primary' : premed ? 'border-purple-400/30 bg-purple-500/10 text-purple-700 dark:text-purple-200' : 'border-warning/35 bg-warning/15 text-warning-foreground'
-    )}>
-      {official ? <ShieldCheck className="size-3" /> : premed ? <Sparkles className="size-3" /> : <AlertTriangle className="size-3" />}
-      {meta.sourceLabel}{meta.verificationStatus === 'needs-verification' ? ' · needs verification' : ''}
+    <span className="inline-flex items-center gap-1">
+      <span className={cn(
+        'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide',
+        official ? 'border-primary/30 bg-primary/10 text-primary' : premed ? 'border-purple-400/30 bg-purple-500/10 text-purple-700 dark:text-purple-200' : 'border-warning/35 bg-warning/15 text-warning-foreground'
+      )}>
+        {official ? <ShieldCheck className="size-3" /> : premed ? <Sparkles className="size-3" /> : <AlertTriangle className="size-3" />}
+        {meta.sourceLabel}{meta.verificationStatus === 'needs-verification' ? ' · needs verification' : ''}
+      </span>
+      {/* Official-vs-advice is the Category A/B trust split — the one thing a
+          student must not have to guess at (knowledge-sources.md). */}
+      <InfoTip field="requirement.sourceType" value={meta.sourceType} />
     </span>
   )
 }

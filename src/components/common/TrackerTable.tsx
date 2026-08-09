@@ -20,6 +20,7 @@ import type { CollectionKey } from '@/lib/types'
 import { useStore } from '@/store/store'
 import { cn } from '@/lib/utils'
 import { DateField } from './DateField'
+import { InfoTip } from '@/components/common/InfoTip'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -65,6 +66,9 @@ export interface ColumnDef {
   align?: 'left' | 'right'
   placeholder?: string
   wrap?: boolean
+  /** Glossary key (`src/lib/glossary.ts`) defining this column's term of
+   *  art, surfaced as an InfoTip beside the header (01 §4f-i). */
+  glossaryField?: string
   read?: (row: Row) => ReactNode
   render?: (ctx: { row: Row; value: unknown; checked: boolean; onChange: (v: unknown) => void }) => ReactNode
   validate?: (value: unknown, row: Row) => string | undefined
@@ -274,20 +278,26 @@ export function TrackerTable({
             )}
             {visibleColumns.map((c) => (
               <th key={c.key} className={cn('px-3 py-3', c.align === 'right' && 'text-right')} style={{ width: c.width }}>
-                <button type="button" onClick={() => dataTable.getColumn(c.key)?.toggleSorting()} className={cn('inline-flex items-center gap-1.5 whitespace-nowrap rounded-md hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', c.align === 'right' && 'justify-end')}>
-                  {(() => {
-                    const Icon = CELL_TYPE_ICON[c.type]
-                    return <Icon className="size-3.5 opacity-65" aria-hidden="true" />
-                  })()}
-                  {c.header}
-                  <m.span
-                    animate={{ rotate: dataTable.getColumn(c.key)?.getIsSorted() === 'desc' ? 180 : 0 }}
-                    transition={MOTION_TRANSITION.micro}
-                    className="inline-flex"
-                  >
-                    <ArrowUpDown className={cn('size-3 opacity-35', dataTable.getColumn(c.key)?.getIsSorted() && 'text-primary opacity-100')} aria-hidden="true" />
-                  </m.span>
-                </button>
+                {/* The InfoTip is a sibling of the sort button, never inside
+                    it — a button within a button is invalid and unreachable
+                    by keyboard. */}
+                <span className={cn('inline-flex items-center gap-1', c.align === 'right' && 'justify-end')}>
+                  <button type="button" onClick={() => dataTable.getColumn(c.key)?.toggleSorting()} className={cn('inline-flex items-center gap-1.5 whitespace-nowrap rounded-md hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', c.align === 'right' && 'justify-end')}>
+                    {(() => {
+                      const Icon = CELL_TYPE_ICON[c.type]
+                      return <Icon className="size-3.5 opacity-65" aria-hidden="true" />
+                    })()}
+                    {c.header}
+                    <m.span
+                      animate={{ rotate: dataTable.getColumn(c.key)?.getIsSorted() === 'desc' ? 180 : 0 }}
+                      transition={MOTION_TRANSITION.micro}
+                      className="inline-flex"
+                    >
+                      <ArrowUpDown className={cn('size-3 opacity-35', dataTable.getColumn(c.key)?.getIsSorted() && 'text-primary opacity-100')} aria-hidden="true" />
+                    </m.span>
+                  </button>
+                  {c.glossaryField && <InfoTip field={c.glossaryField} />}
+                </span>
               </th>
             ))}
             <th className="w-16 px-2 py-3" />
@@ -335,7 +345,10 @@ export function TrackerTable({
               <dl className="space-y-3">
                 {visibleColumns.map((column) => (
                   <div key={column.key}>
-                    <dt className="mb-1 text-xs font-extrabold uppercase tracking-wide text-muted-foreground">{column.header}</dt>
+                    <dt className="mb-1 flex items-center gap-1 text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
+                      {column.header}
+                      {column.glossaryField && <InfoTip field={column.glossaryField} />}
+                    </dt>
                     <dd>
                       <Cell row={row} column={column} value={field(row, column.key)} checked={checkKey ? Boolean(field(row, checkKey)) : false} onChange={(value) => patch(row.id, column.key, value)} />
                       {column.validate?.(field(row, column.key), row) && <p className="mt-1 text-xs font-semibold text-destructive" role="alert">{column.validate(field(row, column.key), row)}</p>}
