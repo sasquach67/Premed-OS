@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 232 142" role="img" aria-label="Premed OS">
+  <title>Premed OS</title>
+  <desc>Four ascending rounded bars, the tallest in brand blue.</desc>
+  <g fill="currentColor">
+    <rect x="0"   y="110" width="30" height="32"  rx="15" opacity="0.42"/>
+    <rect x="68"  y="72"  width="30" height="70"  rx="15" opacity="0.42"/>
+    <rect x="136" y="39"  width="30" height="103" rx="15" opacity="0.42"/>
+  </g>
+  <rect x="204" y="0" width="28" height="142" rx="14" fill="#2E6CB8"/>
+</svg>
