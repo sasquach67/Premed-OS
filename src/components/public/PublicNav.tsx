@@ -12,10 +12,11 @@
    landing page's Features section into view, navigating home first when
    the visitor is on a doc page. Every other item is a real route.
    ============================================================ */
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import { useEnterApp } from '@/components/public/useEnterApp'
+import { supabase } from '@/lib/supabase'
 
 interface NavLink {
   label: string
@@ -37,6 +38,26 @@ export function PublicNav() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const enterApp = useEnterApp()
+
+  /* ⭐ Aug 2026 — sign-out lives HERE too, not only in the app sidebar and
+     `/auth`. Andy could not sign out to re-test the sign-in flow, because
+     every existing control was behind the very session he was trying to
+     leave. A public page that cannot end a session is a dead end. */
+  const [signedIn, setSignedIn] = useState(false)
+  useEffect(() => {
+    if (!supabase) return
+    let alive = true
+    void supabase.auth.getSession().then(({ data }) => {
+      if (alive) setSignedIn(Boolean(data.session?.user))
+    })
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (alive) setSignedIn(Boolean(session?.user))
+    })
+    return () => {
+      alive = false
+      sub.subscription.unsubscribe()
+    }
+  }, [])
 
   const goToFeatures = useCallback(
     (event: React.MouseEvent) => {
@@ -75,6 +96,19 @@ export function PublicNav() {
             ),
           )}
         </nav>
+
+        {signedIn ? (
+          <button
+            type="button"
+            className="pl-navlk"
+            style={{ marginLeft: 'auto' }}
+            onClick={() => {
+              void supabase?.auth.signOut()
+            }}
+          >
+            Sign out
+          </button>
+        ) : null}
 
         {/* Gooey CTA. Both halves do the same thing, so the arrow is
             decorative to assistive tech and the label carries the name. */}

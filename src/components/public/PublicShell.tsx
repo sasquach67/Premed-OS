@@ -9,9 +9,11 @@
    hero and the doc pages' nav floats inside the title band, so each page
    places `PublicNav` in its own art region.
    ============================================================ */
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { PublicFilters } from '@/components/public/GlassSurface'
 import { PublicFooter } from '@/components/public/PublicFooter'
+import { useReveal } from '@/components/public/useReveal'
+import { PublicMesh } from '@/components/public/GlassSurface'
 import './public-layer.css'
 
 interface PublicShellProps {
@@ -21,6 +23,9 @@ interface PublicShellProps {
 }
 
 export function PublicShell({ children, title }: PublicShellProps) {
+  const root = useRef<HTMLDivElement>(null)
+  useReveal(root)
+
   useEffect(() => {
     const previous = document.title
     document.title = title
@@ -30,8 +35,10 @@ export function PublicShell({ children, title }: PublicShellProps) {
   }, [title])
 
   return (
-    <div className="pl">
+    <div className="pl" ref={root}>
       <PublicFilters />
+      {/* One drifting mesh behind the WHOLE page — not one per section. */}
+      <PublicMesh />
       {children}
       <PublicFooter />
     </div>

@@ -22,19 +22,84 @@
 import { useState } from 'react'
 import { PublicHeadline } from '@/components/public/PublicHeadline'
 
-/** Placeholder silhouette, matching the mockup's own note that the art is
- *  a placeholder. Swap for an <img> when the final doctor art exists. */
+/* ⭐ Aug 2026 (Andy) — the guide is the REAL mascot art at /art/mascot.gif,
+   not the placeholder silhouette that shipped first.
+
+   ⚠️ Recorded because it cuts against a written rule: `05` §6.1 bans ram
+   imagery on the public layer, and this asset is the existing mascot. Andy
+   asked for it by name ("that Ghibli template that was already in one of
+   the files"). If the art is ever confirmed to read as a university mascot,
+   this is the line to revisit — not the tour itself.
+
+   Still an ILLUSTRATION, never a UI icon: it stands beside a callout, and
+   the pulsing pin marks the region. Calm here — a tour is explanation. */
 function GuideFigure() {
   return (
     <span className="pl-guide" aria-hidden="true">
-      <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="20" cy="14" r="5.4" />
-        <path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2" />
-        <path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1" />
-        <circle cx="27.4" cy="26.6" r="2.1" />
-        <path d="M24.4 25.6v-1.3" />
-      </svg>
+      <img src={`${import.meta.env.BASE_URL}art/mascot.gif`} alt="" width={40} height={40} />
     </span>
+  )
+}
+
+
+/* ⭐ Aug 2026 (Andy: "can you actually render something there?") — the shot
+   window used to hold a line of text saying a screenshot was missing, which
+   was honest and looked like a bug.
+
+   This renders a SIMPLIFIED VIEW OF THE REAL INTERFACE from the app's own
+   tokens. It is deliberately NOT dressed up as a photograph: no browser
+   chrome, no device frame, no blur. It is a diagram of the layout, and it is
+   labelled as a preview.
+
+   ⚠️ It does NOT satisfy the "real screenshots with demo data" requirement
+   (P1 §4.4) — that item stays open until actual captures exist. This is a
+   better placeholder, not the deliverable. */
+function TourPreview({ tab }: { tab: string }) {
+  const NAV = ['Overview', 'Academics', 'MCAT', 'Clinical', 'Volunteering', 'Research']
+  const STATS = [
+    { k: 'AMCAS GPA', v: '3.71', c: 'var(--cat-gpa)' },
+    { k: 'Clinical hours', v: '146', c: 'var(--cat-clinical)' },
+    { k: 'Weeks to MCAT', v: '31', c: 'var(--cat-mcat)' },
+  ]
+  const ROWS = [
+    { t: 'CHEM 262 · Problem set 7', m: 'due tomorrow', c: 'var(--cat-gpa)' },
+    { t: 'Review: amino acid side chains', m: '12 topics due', c: 'var(--cat-mcat)' },
+    { t: 'Carolina ED · Thursday shift', m: '4 hrs, unlogged', c: 'var(--cat-clinical)' },
+  ]
+  return (
+    <div className="pl-prev" aria-hidden="true">
+      <aside className="pl-prev-nav">
+        <span className="pl-prev-brand">Premed HQ</span>
+        {NAV.map((n) => (
+          <span key={n} className={`pl-prev-navlk${n === tab ? ' on' : ''}`}>
+            {n}
+          </span>
+        ))}
+      </aside>
+      <div className="pl-prev-main">
+        <div className="pl-prev-hd">
+          <span className="pl-prev-h">Good to see you again, Andy</span>
+          <span className="pl-prev-chip">Tuesday · week 6</span>
+        </div>
+        <div className="pl-prev-stats">
+          {STATS.map((st) => (
+            <div key={st.k} className="pl-prev-stat" style={{ ['--c' as string]: st.c }}>
+              <span className="pl-prev-k">{st.k}</span>
+              <span className="pl-prev-v">{st.v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="pl-prev-list">
+          {ROWS.map((r) => (
+            <div key={r.t} className="pl-prev-row">
+              <i style={{ ['--c' as string]: r.c }} />
+              <span className="pl-prev-t">{r.t}</span>
+              <span className="pl-prev-m">{r.m}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -149,7 +214,7 @@ export function GuidedTour() {
 
   return (
     <section className="pl-tour" aria-labelledby="tour-heading">
-      <div className="pl-tourin">
+      <div className="pl-tourin pl-reveal">
         <span className="pl-eyebrow pl-eyebrow-solid">A look inside</span>
         <PublicHeadline
           id="tour-heading"
@@ -174,15 +239,12 @@ export function GuidedTour() {
           ))}
         </div>
 
-        <div className="pl-shotstage">
+        <div className="pl-shotstage pl-reveal">
           <div className="pl-shotwin">
             {step.shot ? (
               <img src={step.shot} alt={step.alt} />
             ) : (
-              /* Cold-start discipline: say what's missing rather than
-                 faking it. A blurred or illustrated interface here would
-                 break the "real screenshots" rule outright. */
-              <span>{step.tab} screenshot — captured from a demo-data workspace</span>
+              <TourPreview tab={step.tab} />
             )}
           </div>
 

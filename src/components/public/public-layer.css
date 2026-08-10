@@ -17,24 +17,42 @@
    ============================================================ */
 
 .pl {
-  /* below-the-hero surfaces follow the app's theme */
-  --pl-bg: var(--background);
-  --pl-card: var(--card);
-  --pl-fg: var(--foreground);
-  --pl-mut: var(--muted-foreground);
-  --pl-bd: var(--border);
-  --pl-soft: var(--muted);
-  --pl-pri: var(--primary);
-  --pl-success: var(--success);
-  --pl-warning: var(--warning);
-  --pl-dim: color-mix(in srgb, var(--muted-foreground) 78%, var(--background));
+  /* ⭐ Aug 2026 (Andy): the public layer is ART, end to end. ONE continuous
+     blue-glass field behind every section and every public route — the hero,
+     features, tour, cards, and all four doc pages. It does NOT follow the
+     app's light/dark theme, the same way a photograph doesn't invert.
 
-  background: var(--pl-bg);
+     Consequence, and it is the whole reason this is safe: because the field
+     is always dark, EVERY text colour below is a fixed light value. Nothing
+     here reads from --foreground. Reintroducing an app token for text is how
+     the paper theme breaks (white on cream), which already happened once. */
+  --pl-fg: #ece3d4;
+  --pl-mut: rgba(255, 255, 255, 0.72);
+  --pl-dim: rgba(255, 255, 255, 0.5);
+  --pl-bd: rgba(255, 255, 255, 0.14);
+  --pl-card: rgba(255, 255, 255, 0.055);
+  --pl-soft: rgba(255, 255, 255, 0.07);
+  --pl-pri: #6fb3de;
+  --pl-success: #6fc0a8;
+  --pl-warning: #e7b06a;
+
+  position: relative;
+  isolation: isolate;
   color: var(--pl-fg);
   font-family: 'Nunito', system-ui, sans-serif;
   font-size: 15px;
   line-height: 1.45;
   min-height: 100vh;
+  background:
+    radial-gradient(1200px 700px at 50% -8%, rgba(111, 179, 222, 0.3), transparent 70%),
+    radial-gradient(900px 600px at 4% 38%, rgba(111, 192, 168, 0.12), transparent 70%),
+    radial-gradient(900px 600px at 98% 68%, rgba(224, 164, 88, 0.1), transparent 70%),
+    linear-gradient(168deg, #233448 0%, #26303c 38%, #2a2b2c 72%, #242019 100%);
+  background-attachment: fixed;
+}
+/* the drifting mesh now sits behind the WHOLE page, not per-section */
+.pl > .pl-mesh {
+  position: fixed; inset: -25%; z-index: -1; opacity: 0.55;
 }
 
 /* ── THE glass recipe (_visual-recipes.md §Glass) ─────────────────────── */
@@ -186,11 +204,7 @@
 /* ── HERO ─────────────────────────────────────────────────────────────── */
 .pl-hero {
   position: relative; padding: 0 22px 46px; overflow: hidden; text-align: center;
-  background:
-    radial-gradient(680px 380px at 50% -12%, rgba(111, 179, 222, 0.3), transparent 72%),
-    radial-gradient(420px 300px at 8% 108%, rgba(111, 192, 168, 0.14), transparent 70%),
-    radial-gradient(380px 260px at 96% 88%, rgba(224, 164, 88, 0.12), transparent 70%),
-    linear-gradient(115deg, #233448 0%, #2a3646 44%, #3a3730 100%);
+  background: none;
 }
 .pl-hero::before {
   content: ''; position: absolute; left: 50%; top: -190px; width: 760px; height: 380px;
@@ -225,15 +239,9 @@
    gradient under the tiles the way the mockup did puts white text on cream
    in the paper theme, which is where the bottom row became unreadable. */
 .pl-feat {
-  position: relative; overflow: hidden; padding: 42px 22px 130px;
-  background: linear-gradient(180deg, #252b31 0%, #242019 70%, #242019 100%);
+  position: relative; overflow: hidden; padding: 42px 22px 90px;
+  background: none;
 }
-.pl-feat::after {
-  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 130px;
-  background: linear-gradient(180deg, transparent, var(--pl-bg));
-  pointer-events: none; z-index: 1;
-}
-.pl-feat .pl-mesh { opacity: 0.5; }
 .pl-featin { position: relative; z-index: 2; text-align: center; max-width: 1180px; margin: 0 auto; }
 .pl-eyebrow {
   display: inline-flex; align-items: center; gap: 9px; margin-bottom: 14px;
@@ -252,7 +260,28 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
   transition: background 0.2s, border-color 0.2s;
 }
-.pl-ftile:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2); }
+.pl-ftile { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.pl-ftile:hover { background: rgba(255, 255, 255, 0.09); border-color: rgba(255, 255, 255, 0.24); }
+.pl-ftile:focus-visible { outline: 2px solid #6fb3de; outline-offset: 2px; }
+.pl-ftile.is-open { background: rgba(255, 255, 255, 0.11); border-color: rgba(255, 255, 255, 0.3); }
+.pl-ftwrap { display: contents; }
+/* "See how" — the affordance. Hidden until hover/open so the grid at rest
+   is still titles only (decisions §4c). */
+.pl-fthint {
+  display: block; margin-top: 9px; font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 800; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.34); transition: color 0.18s;
+}
+.pl-ftile:hover .pl-fthint, .pl-ftile.is-open .pl-fthint { color: #a9d3ee; }
+/* The example spans the full grid row beneath the tile that opened it. */
+.pl-ftex {
+  grid-column: 1 / -1; margin: 2px 0 6px; border-radius: 14px; padding: 15px 17px;
+  font-size: 14.5px; line-height: 1.7; color: rgba(255, 255, 255, 0.86);
+  background: color-mix(in srgb, var(--c, #6fb3de) 13%, rgba(255, 255, 255, 0.05));
+  border: 1px solid color-mix(in srgb, var(--c, #6fb3de) 34%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  animation: pl-fade-rise 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
 .pl-ficon {
   width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
   background: color-mix(in srgb, var(--c, #6fb3de) 20%, rgba(255, 255, 255, 0.05));
@@ -273,7 +302,7 @@
 }
 
 /* ── GUIDED TOUR — annotated screenshot ───────────────────────────────── */
-.pl-tour { position: relative; overflow: hidden; padding: 44px 22px 48px; background: var(--pl-bg); }
+.pl-tour { position: relative; overflow: hidden; padding: 44px 22px 48px; background: none; }
 .pl-tourin { position: relative; z-index: 2; max-width: 1180px; margin: 0 auto; text-align: center; }
 .pl-eyebrow-solid {
   background: color-mix(in srgb, var(--pl-fg) 5%, transparent);
@@ -288,19 +317,22 @@
   font-weight: 700; font-size: 12.5px; color: var(--pl-mut); cursor: pointer;
   background: none; border: 0;
 }
-.pl-ttab[aria-selected='true'] { background: var(--pl-fg); color: var(--pl-bg); font-weight: 800; }
+.pl-ttab[aria-selected='true'] { background: #fff; color: #17222c; font-weight: 800; }
 .pl-shotstage {
   position: relative; border-radius: 16px; background: var(--pl-card);
   border: 1px solid var(--pl-bd); box-shadow: 0 26px 60px -30px rgba(0, 0, 0, 0.8); padding: 9px;
 }
 .pl-shotwin {
   position: relative; border-radius: 11px; overflow: hidden; background: #1d1a17;
-  border: 1px solid rgba(255, 255, 255, 0.07); aspect-ratio: 16 / 9; min-height: 260px;
-  display: flex; align-items: center; justify-content: center;
-  /* the window is a fixed dark surface in both themes, so its own
-     placeholder copy is light — a theme token goes invisible here */
+  border: 1px solid rgba(255, 255, 255, 0.07); aspect-ratio: 16 / 9; min-height: 380px;
+  display: flex; align-items: stretch; justify-content: stretch;
+  /* ⚠️ NO PADDING. This used to be `padding: 0 40px` with centred text,
+     from when the window held a one-line "screenshot missing" placeholder.
+     It now holds a rendered preview that must fill the frame edge to edge —
+     the leftover padding inset it and made it look broken. */
+  padding: 0;
+  /* fixed dark surface in both themes, so any text inside is light */
   color: rgba(236, 227, 212, 0.55); font-size: 12.5px; font-weight: 700;
-  text-align: center; padding: 0 40px;
 }
 .pl-shotwin img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
 .pl-call { position: absolute; z-index: 3; display: flex; align-items: flex-start; gap: 9px; max-width: 262px; text-align: left; }
@@ -348,6 +380,8 @@
 @media (max-width: 900px) { .pl-c4, .pl-c5, .pl-c7, .pl-c12 { grid-column: span 12; } }
 .pl-card {
   background: var(--pl-card); border: 1px solid var(--pl-bd); border-radius: 16px;
+  backdrop-filter: blur(14px) saturate(1.1); -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.13);
   box-shadow: 0 10px 26px -14px rgba(0, 0, 0, 0.55);
   display: flex; flex-direction: column; overflow: hidden;
 }
@@ -373,7 +407,8 @@
 
 /* ── Footer ───────────────────────────────────────────────────────────── */
 .pl-foot {
-  border-top: 1px solid var(--pl-bd); background: var(--pl-card); padding: 18px 22px;
+  border-top: 1px solid var(--pl-bd); background: rgba(255, 255, 255, 0.04); padding: 18px 22px;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap;
 }
 .pl-foot .fl { display: flex; gap: 16px; flex-wrap: wrap; }
@@ -477,10 +512,7 @@
 
 /* ── DOC PAGES — one shell, four routes ──────────────────────────────── */
 .pl-band {
-  position: relative; overflow: hidden; padding: 0 22px 34px;
-  background:
-    radial-gradient(560px 300px at 50% -18%, rgba(111, 179, 222, 0.24), transparent 72%),
-    linear-gradient(160deg, #243542 0%, #2a2f33 52%, #242019 100%);
+  position: relative; overflow: hidden; padding: 0 22px 34px; background: none;
 }
 .pl-bandin { position: relative; z-index: 2; max-width: 940px; margin: 38px auto 0; }
 .pl-doctitle { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 34px; color: #fff; letter-spacing: -0.5px; margin: 0; }
@@ -576,6 +608,7 @@
 .pl-sq svg { width: 17px; height: 17px; }
 .pl-fbpanel {
   max-width: 640px; margin: 20px auto 0; background: var(--pl-card);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--pl-bd); border-radius: 16px; padding: 22px 24px;
 }
 .pl-fbk {
@@ -638,3 +671,343 @@
   .pl-hero::before { filter: none; }
   .pl-gooey .tail, .pl-btn, .pl-navlk, .pl-ftile, .pl-sq { transition: none; }
 }
+
+/* ── SCROLL REVEAL (Andy, Aug 2026) ───────────────────────────────────────
+   The hero animates on load (.pl-an). EVERYTHING BELOW THE FOLD waits until
+   it enters the viewport and then uses the SAME fade-rise motion, so the page
+   reveals itself as you scroll rather than firing all at once behind the fold.
+
+   Same easing and distance as .pl-an on purpose — one motion system, two
+   triggers. Do not give the scroll reveal its own curve.
+
+   ⚠️ The default state is VISIBLE. `.pl-reveal` only hides once the observer
+   has attached (`data-reveal-ready` on the root). With no JS, a failed
+   observer, or reduced motion, every section renders normally — a reveal that
+   can strand content unread is worse than no reveal. */
+[data-reveal-ready='1'] .pl-reveal { opacity: 0; transform: translateY(22px); }
+[data-reveal-ready='1'] .pl-reveal.is-in {
+  opacity: 1; transform: none;
+  transition: opacity 0.66s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.66s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* children stagger inside a revealed block */
+[data-reveal-ready='1'] .pl-reveal .pl-stagger > * { opacity: 0; transform: translateY(16px); }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > * {
+  opacity: 1; transform: none;
+  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(1) { transition-delay: 0.04s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(2) { transition-delay: 0.09s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(3) { transition-delay: 0.14s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(4) { transition-delay: 0.19s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(5) { transition-delay: 0.24s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(n + 6) { transition-delay: 0.29s; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal-ready='1'] .pl-reveal,
+  [data-reveal-ready='1'] .pl-reveal .pl-stagger > * { opacity: 1 !important; transform: none !important; }
+}
+
+
+/* ── SCALE — second pass (Andy: "a lot of dead space and things could be
+   made bigger") ───────────────────────────────────────────────────────────
+   Two separate problems, fixed separately:
+
+   1. DEAD SPACE was vertical. The hero forced 100vh, sections carried
+      76-96px of padding, and the gaps between them read as emptiness rather
+      than breathing room. Vertical rhythm is tightened throughout.
+   2. TOO SMALL was horizontal. The mockup was authored in a 1400px review
+      frame, so the max-widths were sized for a canvas, not a browser. On a
+      1600-1920 display everything sat marooned in a narrow column.
+
+   In-app scale is untouched — this is the public layer only. */
+.pl-hero { min-height: 0; display: block; padding: 0 30px 56px; }
+.pl-hero-in { max-width: 940px; margin-top: 56px; }
+.pl-navwrap, .pl-featin, .pl-tourin, .pl-body { max-width: min(1560px, 92vw); }
+.pl-navbar { padding-top: 22px; }
+
+/* type */
+.pl-hl-page .l1, .pl-hl-hero .l1 { font-size: 34px; }
+.pl-hl-hero .l2 { font-size: 68px; letter-spacing: -2px; line-height: 1.02; }
+.pl-lede { font-size: 18px; max-width: 700px; margin-top: 18px; }
+.pl-noacct { font-size: 14px; }
+.pl-btn { font-size: 15.5px; padding: 14px 28px; }
+.pl-disc { font-size: 12.5px; margin-top: 26px; }
+
+/* sections: tighter vertically, wider horizontally */
+.pl-feat { padding: 40px 30px 56px; }
+.pl-tour { padding: 40px 30px 64px; }
+.pl-body { padding: 24px 30px 34px; }
+.pl-feats { font-size: 16px; max-width: 680px; margin-bottom: 30px; }
+
+/* tiles: bigger targets, bigger type */
+.pl-ftiles { gap: 16px; }
+.pl-ftile { padding: 20px 19px 21px; border-radius: 16px; }
+.pl-ftl { font-size: 16px; line-height: 1.35; margin-top: 15px; }
+.pl-ficon { width: 44px; height: 44px; border-radius: 13px; }
+.pl-ficon svg { width: 22px; height: 22px; }
+.pl-ftex { font-size: 15.5px; padding: 18px 20px; }
+
+/* the tour window is the proof the product exists — give it room */
+.pl-shotwin { min-height: 480px; }
+.pl-shotstage { padding: 11px; }
+.pl-tourtabs { margin: 22px 0 24px; }
+
+@media (max-width: 1100px) {
+  .pl-hl-hero .l2 { font-size: 46px; letter-spacing: -1.2px; }
+  .pl-shotwin { min-height: 340px; }
+}
+@media (max-width: 900px) {
+  .pl-hero { padding: 0 20px 40px; }
+  .pl-hero-in { margin-top: 38px; }
+  .pl-hl-hero .l2 { font-size: 38px; letter-spacing: -0.9px; }
+  .pl-hl-page .l1, .pl-hl-hero .l1 { font-size: 23px; }
+  .pl-lede { font-size: 16px; }
+  .pl-feat, .pl-tour { padding: 32px 20px 40px; }
+  .pl-shotwin { min-height: 240px; }
+}
+
+/* doc pages get the same treatment: less air above, larger title, wider
+   reading measure. 720px was a print-column measure; 820 reads better on
+   a screen at this type size. */
+.pl-bandin { max-width: min(1560px, 92vw); margin-top: 30px; }
+.pl-doctitle { font-size: 44px; letter-spacing: -1px; }
+.pl-docsub { font-size: 16px; max-width: 700px; }
+.pl-docwrap { grid-template-columns: 210px minmax(0, 820px); gap: 52px; padding: 26px 30px 44px; }
+.pl-doc p, .pl-doc li { font-size: 16.5px; line-height: 1.8; }
+.pl-doc h2 { font-size: 23px; margin: 40px 0 12px; }
+.pl-aboutgrid { max-width: 780px; padding: 26px 30px 6px; }
+.pl-prose p { font-size: 18px; line-height: 1.85; }
+.pl-soonwrap { max-width: 760px; padding: 30px 30px 56px; }
+.pl-fbpanel { max-width: 780px; }
+@media (max-width: 1100px) {
+  .pl-docwrap { grid-template-columns: minmax(0, 820px); }
+  .pl-doctitle { font-size: 34px; }
+}
+
+/* ── Third pass: the nav, the auth card, and the gap under the footer ─────
+   (Andy: "the bar at the top and the text… doesn't quite fill the page",
+   "this needs to be expanded", "the spacing is just awkward")
+
+   ⭐ THE DEAD SPACE UNDER THE FOOTER was the real bug, and it was structural
+   rather than a padding value. `.pl` is min-height:100vh, but its children
+   were static — so on a short page (auth, pricing) the footer sat wherever
+   the content ended and the remaining viewport was just empty field below
+   it. Making `.pl` a flex column and giving the footer `margin-top:auto`
+   pins it to the bottom on short pages and leaves it in flow on long ones. */
+.pl { display: flex; flex-direction: column; }
+.pl-foot { margin-top: auto; }
+
+/* nav: it was sized for a 1400px mockup frame and read as a toolbar on a
+   real display. Everything up one step. */
+.pl-navbrand { font-size: 21px; }
+.pl-navlk { font-size: 14.5px; padding: 9px 17px; }
+.pl-navpill { padding: 5px; }
+.pl-gooey .lead { font-size: 14.5px; padding: 10px 22px; height: 40px; }
+.pl-gooey .tail { height: 40px; width: 40px; transform: translateX(-38px); }
+.pl-gooey:hover .tail { transform: translateX(7px); }
+.pl-gooey .tail svg { width: 15px; height: 15px; }
+
+/* auth: a 372px card centred in a 1900px page reads as a dialog that lost
+   its page. Wider, larger type, and vertically centred in what's left of
+   the viewport after the nav and footer. */
+.pl-authwrap {
+  padding: 56px 30px 72px;
+  min-height: calc(100vh - 250px);
+  align-items: center;
+}
+.pl-authcard { max-width: 480px; }
+.pl-authcard .pl-ti { font-size: 30px; }
+.pl-authcard .pl-sub { font-size: 15px; }
+.pl-inp { font-size: 16px; padding: 14px 15px; border-radius: 12px; }
+.pl-lbl { font-size: 11.5px; }
+.pl-sbtn { font-size: 15px; padding: 14px 18px; border-radius: 12px; }
+.pl-fine { font-size: 13.5px; line-height: 1.7; }
+.pl-orbar span { font-size: 11.5px; }
+
+/* merge screen gets the same treatment — it is the highest-risk surface and
+   was the narrowest thing on the site */
+.pl-mergewrap { padding: 48px 30px 64px; min-height: calc(100vh - 250px); align-items: center; }
+.pl-mergecard { max-width: 720px; }
+
+@media (max-width: 900px) {
+  .pl-navbrand { font-size: 18px; }
+  .pl-navlk { font-size: 13px; padding: 7px 12px; }
+  .pl-authwrap, .pl-mergewrap { min-height: 0; padding: 34px 20px 44px; }
+  .pl-authcard .pl-ti { font-size: 25px; }
+}
+
+/* ── Hero width — FINAL, and it supersedes the three passes above ────────
+   (Andy, Aug 2026, three times: "too small", "a lot of dead space",
+   "widen this", "still not wide enough".)
+
+   The earlier passes kept nudging fixed px values, which was the wrong
+   tool: a fixed 68px headline in a fixed 1240px column looks right on one
+   display and marooned on every other. This uses FLUID type — the headline
+   scales with the viewport, so the hero fills the frame at any width and
+   the copy breaks where it should instead of where the column ran out.
+
+   ⚠️ Do not "clean this up" back into fixed px. The clamp() floors and
+   ceilings are the guardrails: 42px is the smallest readable payoff line on
+   a phone, 118px is where it starts to outrun a 1440p screen. */
+.pl-hero-in { max-width: min(1720px, 94vw); margin-top: 40px; }
+.pl-hl-hero .l1 {
+  font-size: clamp(22px, 2.9vw, 54px);
+  margin-bottom: 0.15em;
+}
+.pl-hl-hero .l2 {
+  font-size: clamp(42px, 6.6vw, 118px);
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+}
+.pl-lede {
+  font-size: clamp(16px, 1.35vw, 25px);
+  max-width: min(980px, 78vw);
+  margin-top: clamp(16px, 1.6vw, 30px);
+}
+.pl-ctarow { margin-top: clamp(22px, 2.4vw, 40px); gap: 14px; }
+.pl-btn { font-size: clamp(15px, 1.05vw, 19px); padding: clamp(13px, 1.05vw, 19px) clamp(24px, 2vw, 38px); }
+.pl-btn svg { width: 1.05em; height: 1.05em; }
+.pl-noacct { font-size: clamp(13px, 0.9vw, 17px); margin-top: 16px; }
+.pl-disc { font-size: clamp(12px, 0.78vw, 15px); }
+.pl-chip { font-size: clamp(12.5px, 0.85vw, 16px); padding: 7px 8px 7px 18px; }
+.pl-chip .tagpill { font-size: 0.82em; padding: 3px 11px; }
+
+/* the sections below follow the same fluid logic so the page reads as one
+   scale rather than a wide hero above narrow content */
+.pl-navwrap, .pl-featin, .pl-tourin, .pl-body { max-width: min(1720px, 94vw); }
+.pl-feats { font-size: clamp(15px, 1.05vw, 19px); max-width: min(760px, 80vw); }
+.pl-ftl { font-size: clamp(15px, 0.95vw, 18px); }
+.pl-ftex { font-size: clamp(14.5px, 0.95vw, 18px); }
+
+@media (max-width: 1000px) {
+  .pl-hero-in { max-width: 100%; margin-top: 32px; }
+  .pl-lede { max-width: 100%; }
+}
+
+/* ── THE HERO OWNS THE FIRST SCREEN (Andy: "the features should be out of
+   the page, and only appear when i scroll down") ─────────────────────────
+   The hero contains the nav, so a full-viewport hero puts the Features
+   section entirely below the fold. Nothing of it peeks in on load, which is
+   what makes the scroll reveal actually read as a reveal.
+
+   ⚠️ This was set once, removed during the "too much dead space" pass, and
+   is now back — the difference is that the hero type is fluid and much
+   larger, so it FILLS the screen instead of floating in it. If a future
+   pass finds dead space here again, the fix is bigger content, NOT a
+   shorter hero: shortening it lets Features peek back in and breaks this. */
+.pl-hero {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: clamp(28px, 3vw, 56px);
+}
+/* the nav sits at the top; the content block takes the rest and centres */
+.pl-hero-in {
+  margin-top: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+/* short laptops: don't let a 100vh hero crush the content off-screen */
+@media (max-height: 680px) {
+  .pl-hero { min-height: 0; padding-top: 24px; padding-bottom: 48px; }
+  .pl-hero-in { display: block; }
+}
+
+/* ═══ FRONT PAGE — TYPE + MOTION, consolidated pass (Aug 2026) ═══════════
+   ⚠️ THE BUG THIS FIXES: three earlier resize passes targeted `.pl-l1` and
+   `.pl-l2`. The real classes are `.l1` / `.l2` INSIDE `.pl-hl-*`, so every
+   one of those rules matched nothing and the hero stayed at its original
+   46px through three rounds of "still too small". Selectors corrected.
+
+   Everything below is fluid. Do not convert back to fixed px. */
+
+/* ── Display type ─────────────────────────────────────────────────────── */
+.pl-hl-hero { margin-top: 0; }
+.pl-hl-hero .l1 { font-size: clamp(21px, 2.5vw, 46px); margin-bottom: 0.14em; }
+.pl-hl-hero .l2 { font-size: clamp(40px, 5.9vw, 104px); letter-spacing: -0.035em; line-height: 0.99; }
+.pl-hl-section .l1 { font-size: clamp(18px, 1.75vw, 32px); margin-bottom: 0.14em; }
+.pl-hl-section .l2 { font-size: clamp(30px, 3.9vw, 68px); letter-spacing: -0.03em; line-height: 1.02; }
+.pl-hl-about .l1 { font-size: clamp(20px, 2vw, 36px); }
+.pl-hl-about .l2 { font-size: clamp(34px, 4.4vw, 76px); letter-spacing: -0.03em; }
+
+/* ── Section rhythm ───────────────────────────────────────────────────── */
+.pl-feat { padding: clamp(56px, 7vw, 132px) 30px clamp(48px, 5vw, 96px); }
+.pl-tour { padding: clamp(40px, 5vw, 96px) 30px clamp(56px, 6vw, 112px); }
+.pl-body { padding: clamp(20px, 2.5vw, 48px) 30px clamp(48px, 5vw, 88px); }
+.pl-eyebrow { font-size: clamp(10px, 0.72vw, 13px); letter-spacing: 0.13em; padding: 7px 16px; }
+.pl-feats { margin-top: clamp(12px, 1.2vw, 22px); margin-bottom: clamp(24px, 2.6vw, 48px); }
+
+/* ── Tiles ────────────────────────────────────────────────────────────── */
+.pl-ftiles { gap: clamp(12px, 1.1vw, 20px); }
+.pl-ftile { padding: clamp(17px, 1.4vw, 26px); border-radius: clamp(14px, 1.1vw, 20px); }
+.pl-ficon { width: clamp(40px, 3vw, 56px); height: clamp(40px, 3vw, 56px); border-radius: clamp(11px, 0.85vw, 16px); }
+.pl-ficon svg { width: 48%; height: 48%; }
+.pl-ftl { margin-top: clamp(12px, 1vw, 20px); }
+.pl-fthint { font-size: clamp(9.5px, 0.62vw, 12px); }
+
+/* ── Cards ────────────────────────────────────────────────────────────── */
+.pl-card { border-radius: clamp(14px, 1.1vw, 20px); }
+.pl-ti { font-size: clamp(17px, 1.25vw, 24px); }
+.pl-privtext, .pl-pitchp { font-size: clamp(14.5px, 1vw, 19px); line-height: 1.72; }
+.pl-costbig { font-size: clamp(28px, 2.4vw, 46px); }
+
+/* ═══ MOTION — the pop, and it keeps going all the way down ══════════════
+   Andy: "it should have that pop in animation and it should continue as we
+   keep scrolling." Every block below the fold reveals as it arrives, and
+   children inside a block stagger. Scale is what makes it read as a POP
+   rather than a slide — 0.965 → 1 is enough; more looks like a bounce. */
+[data-reveal-ready='1'] .pl-reveal {
+  opacity: 0;
+  transform: translateY(30px) scale(0.965);
+}
+[data-reveal-ready='1'] .pl-reveal.is-in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-reveal-ready='1'] .pl-reveal .pl-stagger > * {
+  opacity: 0;
+  transform: translateY(20px) scale(0.97);
+}
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > * {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.58s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.58s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* ten tiles need ten steps, not five */
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(1)  { transition-delay: 0.03s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(2)  { transition-delay: 0.07s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(3)  { transition-delay: 0.11s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(4)  { transition-delay: 0.15s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(5)  { transition-delay: 0.19s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(6)  { transition-delay: 0.23s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(7)  { transition-delay: 0.27s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(8)  { transition-delay: 0.31s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(9)  { transition-delay: 0.35s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(n + 10) { transition-delay: 0.39s; }
+
+/* ── Fixes, Aug 2026 ─────────────────────────────────────────────────────
+
+   1. THE BADGE WAS COLLIDING WITH THE HEADLINE. The consolidated type pass
+      set `.pl-hl-hero { margin-top: 0 }` while the headline grew to ~104px,
+      so it butted straight into the "Built for UNC pre-meds" chip. Spacing
+      restored, and it scales with the type instead of being a fixed 20px.
+
+   2. ⚠️ THE FOOTER MUST NEVER BE REVEAL-GATED. It was given `.pl-reveal`,
+      which meant the independence and AAMC disclaimers — required by
+      05 §6.1 and §6.2 — started at opacity 0 and could stay there if the
+      observer never fired for the last element on the page. A required
+      legal line hidden behind a scroll animation is a compliance problem,
+      not a visual one. The class is removed and must not come back.
+      Nothing legally required is ever animated in. */
+.pl-hl-hero { margin-top: clamp(18px, 2vw, 40px); }
+.pl-hero .pl-chip { margin-bottom: 0; }
+.pl-foot { opacity: 1 !important; transform: none !important; }

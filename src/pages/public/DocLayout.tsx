@@ -101,7 +101,7 @@ export function DocLayout({
         </div>
       </div>
 
-      <div className="pl-docwrap">
+      <div className="pl-docwrap pl-reveal">
         <nav className="pl-toc" aria-label="On this page">
           <div className="pl-toclab">On this page</div>
           {sections.map((section) => (

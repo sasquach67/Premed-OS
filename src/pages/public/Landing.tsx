@@ -16,7 +16,7 @@
      • Glass stops at the bottom of the Features section. Everything below
        is solid-with-depth.
    ============================================================ */
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   ArrowRight, CalendarDays, ClipboardCheck, FileText, GraduationCap,
@@ -38,26 +38,95 @@ import { useEnterApp } from '@/components/public/useEnterApp'
    NO PILLAR LABELS — the colour tint carries the grouping, because a
    visitor doesn't know HQ's pillar names yet (decisions §4d). */
 const TILES = [
-  { icon: LayoutGrid, title: 'Every part of the application, one place', tint: 'var(--cat-gpa)' },
-  { icon: FileText, title: 'Upload a syllabus, get your semester', tint: 'var(--cat-gpa)' },
-  { icon: Repeat, title: 'Study sessions with spaced repetition', tint: 'var(--cat-gpa)' },
-  { icon: CalendarDays, title: 'One weekly plan across classes and MCAT', tint: 'var(--cat-volunteer)' },
-  { icon: History, title: "Flags what you've forgotten before the exam", tint: 'var(--cat-mcat)' },
-  { icon: GraduationCap, title: 'UNC graduation and major requirements', tint: 'var(--cat-gpa)' },
-  { icon: ClipboardCheck, title: 'Everything logged AMCAS-ready', tint: 'var(--cat-letters)' },
+  {
+    icon: LayoutGrid,
+    title: 'Every part of the application, one place',
+    tint: 'var(--cat-gpa)',
+    example:
+      'Classes, grades, MCAT prep, clinical and volunteer hours, shadowing, research, extracurriculars, letters, essays, school list. One record set, so the parts can read each other.',
+  },
+  {
+    icon: FileText,
+    title: 'Upload a syllabus, get your semester',
+    tint: 'var(--cat-gpa)',
+    example:
+      'Drop in the CHEM 262 syllabus and the semester builds itself: units, due dates, exam dates, grading weights, late policy. One person in your section uploads it and everyone else imports the same structure.',
+  },
+  {
+    icon: Repeat,
+    title: 'Study sessions with spaced repetition',
+    tint: 'var(--cat-gpa)',
+    example:
+      'A session knows which topics are due, times itself, and logs the hours as you work. Your misses become tagged cards you export to Anki in one click — HQ never becomes a second flashcard app.',
+  },
+  {
+    icon: CalendarDays,
+    title: 'One weekly plan across classes and MCAT',
+    tint: 'var(--cat-volunteer)',
+    example:
+      "Two study plans that each look reasonable add up to 34 hours a week. HQ builds both against the same calendar and says so before you commit. Miss a week and the plan reflows instead of becoming a backlog.",
+  },
+  {
+    icon: History,
+    title: "Flags what you've forgotten before the exam",
+    tint: 'var(--cat-mcat)',
+    example:
+      "You took psych freshman year and sit the MCAT in 2029. HQ models what you'll be relearning from zero, weighted by how much of the exam it actually is, and schedules it back before it costs you.",
+  },
+  {
+    icon: GraduationCap,
+    title: 'UNC graduation and major requirements',
+    tint: 'var(--cat-gpa)',
+    example:
+      'Every requirement, what satisfies it, and what a course you are about to drop would break. Prereq order, term load, and the withdrawal deadline you did not know was this week.',
+  },
+  {
+    icon: ClipboardCheck,
+    title: 'Everything logged AMCAS-ready',
+    tint: 'var(--cat-letters)',
+    example:
+      'Course titles exactly as the transcript prints them, hours by activity, verifiers attached. When the cycle opens you export it instead of reconstructing three years from memory.',
+  },
   // The ONE marker on the grid, and it is an honesty gate rather than
   // decoration: Atlas is a placeholder route (00 §2.1). Do not remove
   // this until Atlas actually ships.
-  { icon: MessagesSquare, title: 'Advice from people ahead of you', tint: '#e7b06a', soon: true },
+  {
+    icon: MessagesSquare,
+    title: 'Advice from people ahead of you',
+    tint: '#e7b06a',
+    soon: true,
+    example:
+      'What pre-meds, med students and physicians actually say, attributed and dated, never presented as fact. Plus a place to keep the twenty minutes an M2 gave you over coffee.',
+  },
   // Names Canvas and says NOTHING about grades — only the calendar-feed
   // path exists (integration-map §2). Do not add a grades claim here.
-  { icon: Unplug, title: 'Google Calendar, Canvas, Drive, dictation', tint: 'var(--cat-research)' },
-  { icon: Shield, title: 'Works signed out. Your data stays yours.', tint: 'var(--cat-clinical)' },
+  {
+    icon: Unplug,
+    title: 'Google Calendar, Canvas, Drive, dictation',
+    tint: 'var(--cat-research)',
+    example:
+      'Canvas due dates arrive through your calendar feed. Drive holds the files. Dictate into any field with the tools you already use. Nothing here asks you to move house.',
+  },
+  {
+    icon: Shield,
+    title: 'Works signed out. Your data stays yours.',
+    tint: 'var(--cat-clinical)',
+    example:
+      'The whole app runs with no account, stored in your browser. An account adds sync across devices and nothing else. Export any time, delete in one action, no third-party analytics.',
+  },
 ] as const
 
 export function Landing() {
   const enterApp = useEnterApp()
   const location = useLocation()
+
+  /* ⭐ Aug 2026 (Andy) — the three pitch cards are GONE. Their job now
+     belongs to the tiles: open one and it shows how that feature actually
+     works, in place. Three cards could only ever explain three of ten, and
+     they sat far below the grid they were explaining.
+     Titles-only still holds on the CLOSED tile — the example appears on
+     interaction, so the grid at rest is exactly what it was. */
+  const [openTile, setOpenTile] = useState<string | null>(null)
 
   // `Features` in the nav navigates home first when the visitor is on a
   // doc page; the section only exists once this component has mounted.
@@ -71,11 +140,6 @@ export function Landing() {
     <PublicShell title="Premed HQ — your whole pre-med application, in one place">
       {/* ── HERO: five elements, full stop ─────────────────────────────── */}
       <section className="pl-hero">
-        <div className="pl-mesh" aria-hidden="true">
-          <i className="m1" />
-          <i className="m2" />
-          <i className="m3" />
-        </div>
 
         <PublicNav />
 
@@ -124,12 +188,7 @@ export function Landing() {
 
       {/* ── FEATURES: ten glass tiles ──────────────────────────────────── */}
       <section className="pl-feat" id="features" aria-labelledby="features-heading">
-        <div className="pl-mesh" aria-hidden="true">
-          <i className="m1" />
-          <i className="m2" />
-          <i className="m3" />
-        </div>
-        <div className="pl-featin">
+        <div className="pl-featin pl-reveal">
           <GlassSurface pill refract className="pl-eyebrow" as="span">
             Features
           </GlassSurface>
@@ -143,19 +202,32 @@ export function Landing() {
             Every part of the application, in one system that can read across all of it.
           </p>
 
-          <ul className="pl-ftiles">
+          <ul className="pl-ftiles pl-stagger pl-reveal">
             {TILES.map((tile) => {
               const Icon = tile.icon
+              const isOpen = openTile === tile.title
               return (
-                <li
-                  key={tile.title}
-                  className={`pl-ftile${'soon' in tile && tile.soon ? ' pl-ftile-soon' : ''}`}
-                >
-                  {'soon' in tile && tile.soon ? <span className="pl-soonmark">Soon</span> : null}
-                  <div className="pl-ficon" style={{ ['--c' as string]: tile.tint }}>
-                    <Icon aria-hidden="true" />
-                  </div>
-                  <div className="pl-ftl">{tile.title}</div>
+                <li key={tile.title} className="pl-ftwrap">
+                  <button
+                    type="button"
+                    className={`pl-ftile${'soon' in tile && tile.soon ? ' pl-ftile-soon' : ''}${isOpen ? ' is-open' : ''}`}
+                    aria-expanded={isOpen}
+                    onClick={() => setOpenTile(isOpen ? null : tile.title)}
+                  >
+                    {'soon' in tile && tile.soon ? <span className="pl-soonmark">Soon</span> : null}
+                    <div className="pl-ficon" style={{ ['--c' as string]: tile.tint }}>
+                      <Icon aria-hidden="true" />
+                    </div>
+                    <div className="pl-ftl">{tile.title}</div>
+                    <span className="pl-fthint" aria-hidden="true">
+                      {isOpen ? 'Close' : 'See how'}
+                    </span>
+                  </button>
+                  {isOpen ? (
+                    <p className="pl-ftex" style={{ ['--c' as string]: tile.tint }}>
+                      {tile.example}
+                    </p>
+                  ) : null}
                 </li>
               )
             })}
@@ -168,83 +240,12 @@ export function Landing() {
 
       {/* ── Below here: SOLID with depth. No glass past this line. ─────── */}
       <div className="pl-body">
-        <div className="pl-bento">
-          {/* The three specifics EXPAND feature tiles 2, 4 and 5.
-              They must never restate them. */}
-          <article className="pl-card pl-c4">
-            <div className="pl-hd">
-              <h2 className="pl-ti pl-ti-sm">You type the syllabus in once. Never.</h2>
-            </div>
-            <div className="pl-bd">
-              <span className="pl-tag">Upload a PDF</span>
-              <p className="pl-pitchp">
-                Drop in the CHEM 262 syllabus and the semester builds itself: units, due dates, exam
-                dates, grading weights, late policy. One person in your section uploads it and
-                everyone else imports the same structure.
-              </p>
-            </div>
-          </article>
-
-          <article className="pl-card pl-c4">
-            <div className="pl-hd">
-              <h2 className="pl-ti pl-ti-sm">Classes and prep can't both win</h2>
-            </div>
-            <div className="pl-bd">
-              <span className="pl-tag" style={{ ['--c' as string]: 'var(--cat-mcat)' }}>
-                One hour budget
-              </span>
-              <p className="pl-pitchp">
-                Two study plans that each look reasonable add up to 34 hours a week. HQ builds both
-                against the same calendar and says so before you commit to either. Miss a week and
-                the plan reflows instead of becoming a backlog.
-              </p>
-            </div>
-          </article>
-
-          <article className="pl-card pl-c4">
-            <div className="pl-hd">
-              <h2 className="pl-ti pl-ti-sm">It tells you what's gone stale</h2>
-            </div>
-            <div className="pl-bd">
-              <span className="pl-tag" style={{ ['--c' as string]: 'var(--cat-clinical)' }}>
-                Before the exam, not after
-              </span>
-              <p className="pl-pitchp">
-                You took psych freshman year and sit the MCAT in 2029. HQ models what you'll be
-                relearning from zero, weighted by how much of the exam it actually is, and schedules
-                it back before it costs you.
-              </p>
-            </div>
-          </article>
-
-          {/* ABOUT — first person, and it STAYS first person. A beta with
-              no users has exactly one honest trust signal: who made it and
-              why. Third-person company voice reads as a fake team. */}
-          <article className="pl-card pl-c12">
-            <div className="pl-hd">
-              <div>
-                <h2 className="pl-ti pl-ti-sm">Who makes this</h2>
-                <div className="pl-sub">One student · Chapel Hill</div>
-              </div>
-              <Link className="pl-lk" to="/about">
-                Read the whole note →
-              </Link>
-            </div>
-            <div className="pl-bd">
-              <p className="pl-privtext">
-                I'm a pre-med at UNC. I built HQ because I was running my whole application out of a
-                spreadsheet and a notes app, and neither of them could tell me anything I didn't
-                already type in myself. Every feature here exists because I wanted it at 1am the
-                night before something was due.
-              </p>
-              <p className="pl-privtext">
-                <b>It isn't a company.</b> No investors, no ads, no affiliate links, and nothing on
-                this page is sponsored. When a paid resource is the right answer HQ says so and
-                points at the free option first. If it ever needs to cost money, that will be said
-                plainly and long before it happens.
-              </p>
-            </div>
-          </article>
+        <div className="pl-bento pl-stagger pl-reveal">
+          {/* The three pitch cards lived here and were REMOVED (Andy, Aug
+              2026) — the tiles now carry the examples. The About card was
+              removed with them: /about holds the note, and repeating it
+              here made the landing page end on a second, thinner copy.
+              Do not reinstate either without reading decisions §4c. */}
 
           <article className="pl-card pl-c7">
             <div className="pl-hd">

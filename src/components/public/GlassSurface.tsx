@@ -78,3 +78,17 @@ export function PublicFilters() {
     </svg>
   )
 }
+
+
+/** The drifting mesh. Mounted ONCE by PublicShell, behind the entire public
+ *  layer — not per section. Sections used to carry their own, which is what
+ *  made each one look like a different page. */
+export function PublicMesh() {
+  return (
+    <div className="pl-mesh" aria-hidden="true">
+      <i className="m1" />
+      <i className="m2" />
+      <i className="m3" />
+    </div>
+  )
+}
