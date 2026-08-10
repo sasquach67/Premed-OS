@@ -324,3 +324,15 @@ Unresolved design/product questions (TBD).
 ### 4. `one record, two doors` applies here too
 
 **§125 already uses the pattern. Keep it consistent with `09` §2 — and note that after Aug 2026 there is NO GATE in the Story Bank instance.** **If Timeline ever adds one, the two instances have diverged.**
+
+---
+
+## ⚠️ INHERITED Aug 2026 — transcript requests (`P-50`, from Profile/CV)
+
+**Ruled into this tab, not Profile/CV.** *"Profile/CV holds records, not errands."*
+
+**AMCAS requires an official transcript from EVERY institution attended** — including dual-enrolment and summer courses at another school. **Requesting them late is a genuine cycle-killer, and nobody warns first-timers about it.**
+
+**It is a dated task with a deadline**, which is what this tab's roadmap nodes are for.
+
+**⚠️ This must actually land here.** A feature moved between tabs is a feature that evaporates in the handoff unless someone writes it down on the receiving side — which is what this section is.

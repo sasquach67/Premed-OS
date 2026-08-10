@@ -110,7 +110,12 @@
 
 ### ⚠️ HQ MUST NOT BUILD
 
-**A medical school database. Median GPA/MCAT figures. Acceptance rates. In-state percentages. A comparison table.** **Two reasons and either is sufficient:** **MSAR's data is licensed and republishing it is not HQ's to do**, and **any hand-maintained copy will be stale in a year, which is worse than absent.**
+**A medical school database. Median GPA/MCAT figures. Acceptance rates. In-state percentages. A comparison table.** **Two reasons were given. ⚠️ CORRECTED Aug 2026 — only one of them holds:**
+
+1. ~~*"MSAR's data is licensed and republishing it is not HQ's to do."*~~ **OVERSTATED.** It forbids copying MSAR; **it does not forbid compiling the same facts from schools' own public pages. Facts are not copyrightable.**
+2. **✅ HOLDS: any hand-maintained copy will be stale in a year, which is worse than absent.** 227 schools × ~15 fields, re-verified annually, by one student.
+
+**The ruling stands — Andy re-confirmed it after the correction** (`tabs/08-school-list-board.md` §1). **It now rests on maintenance, which is true, rather than licensing, which was not.**
 
 ### What HQ keeps
 

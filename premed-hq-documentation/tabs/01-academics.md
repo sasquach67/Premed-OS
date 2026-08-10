@@ -1252,7 +1252,7 @@ All rules-based and **explainable** (`02`); each states why it fired. Confirmed 
 
 13. **Post-lecture capture window** — within 24h of a scheduled lecture, one tap to mark what was covered. Coverage decays because people forget to log, not because they refuse; this is the highest-leverage nudge in the tab.
 14. **Pre-lecture priming reminder** — lecture tomorrow → surfaces that module's priming/pretest/predict prompts (§6.6). Without this the pre-lecture features never fire at the moment they'd work.
-15. **Office-hours nudge** — you have N open "Questions to ask" saved and office hours are tomorrow. Connects a note you already wrote to the moment it's useful.
+15. **Office-hours nudge** — you have N open "Questions to ask" saved and office hours are tomorrow. Connects a note you already wrote to the moment it's useful. **⭐ Aug 2026 — this nudge is now load-bearing for Letters (`10-letters.md` `LT-30`).** Questions may arrive **suggested** from a person's record in Letters (accept or ignore, never auto-accepted, never pre-checked, **no second notification** — it rides this trigger). **Checking one off bumps `lastContactAt` on that person and appends what was discussed to their notes.** **Do not add a reflection prompt on check** — `LT-25` was cut for that.
 16. **Interleaving check** — five consecutive sessions in one class; interleaving beats blocking for retention. Suggests a mix, never blocks.
 17. **Exam autopsy** — after a graded exam, compare topics you'd flagged weak against those that actually appeared. Calibration at *exam* level, not card level: "you predicted 3 of the 5 hardest."
 18. **Deadline collision** — three items due the same day across classes, surfaced a week out while it's still fixable.

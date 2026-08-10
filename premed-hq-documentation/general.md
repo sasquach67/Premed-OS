@@ -37,10 +37,36 @@ Premed HQ should function as a production-ready, intelligent pre-med operating s
 | **U-7** | **HQ does not track non-events.** Rejected three times — shadowing asks (`S-7`), lost elections (`E-9`), declined event prospects (`EV-1`). **Reflection attaches to things that happened, never their absence** | |
 | **U-8** | **HQ may decline to ASSERT. It may not WITHHOLD a capability.** Targets exist and default off; **HQ never suggests a number, and never gates the student out of finishing something.** The line that overturned the sufficiency call, both target bans, `You're free`, and `#45a`'s exchange minimum | |
 | **U-9** | **Nothing is scored, ranked, or compared** — not against a bar, not against other students, not against the student's own past. **No invented composites** (`01` §6.12) | |
+| **U-13** ⭐ | **A FACT about the record is allowed. A JUDGEMENT about the person is not.** The two look identical at the point of writing them and are not. **Derived Aug 2026 after the same line was re-derived in three separate tabs** — promote it rather than re-argue it a fourth time |
 
 **Two more with a narrower but still cross-tab reach**, recorded here so a catalog author knows they exist: **text entry is a plain `input`/`textarea` with no dictation affordance** (`implementation/integration-map.md` §1) and **`PlaceLine` on every place-bearing record** (`specifications/07-campus-layer-board.md` §2e).
 
 **Rules specific to the five experience pillars** — the shared frame, the three reads, and the `RM-1`–`RM-6` reflection mechanism — **stay in `specifications/05-experience-pillar.md`**, which is their correct scope.
+
+
+## U-13 · Fact about the record, not judgement about the person (LOCKED Aug 2026)
+
+**`U-9` says nothing is scored. `U-13` is the working test for the cases where that is genuinely hard to apply**, because the useful-sounding version of a feature is usually the one that crosses.
+
+**It was derived three separate times in one session before being noticed:**
+
+| Tab | Allowed — a fact | Forbidden — a judgement |
+|---|---|---|
+| **Profile/CV `P-28`** | *"These 7 records are not in any slot."* | *"These 3 are your weakest."* Hours as a proxy for worth |
+| **Profile/CV `P-37`** | *"This activity has no verifier."* Structural incompleteness of the FORM | *"You have no research."* An opinion about what an application should contain |
+| **School List `SL-16`** | *"Submitted 94 days ago."* | *"Ghosted."* A verdict on a non-event (`U-7`) |
+| **Profile/CV `P-29b`** | *"Same organisation, adjacent dates — these look like one entry."* Organisational identity | Ordering the slots by importance |
+
+**The test, and it is checkable rather than a matter of taste:**
+
+> **Could the student dispute it with evidence?** *"No verifier on this activity"* is either true or false and they can look. **"Your research is thin" cannot be disputed, because it was never a claim about the record — it was an opinion about them.**
+
+**Two corollaries worth stating, because both were argued in-session:**
+
+1. **Arithmetic on numbers the student supplied is a fact.** *"Your MCAT is 6 below their median"* is subtraction. It becomes a judgement the moment it is expressed as a probability or a verdict.
+2. **A grouping is a fact; an ordering is a judgement.** Same data, different claim.
+
+**⚠️ The failure mode is drift, not a bad initial decision.** Every one of the allowed rows above is one small change away from the forbidden version, and the change always looks like an improvement.
 
 ## U-10 · Manual first. AI is invoked, never assumed. (LOCKED Aug 2026)
 

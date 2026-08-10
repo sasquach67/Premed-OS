@@ -72,7 +72,9 @@
 | **Overview** | ✅ | — | — | — | — |
 | **Campus layer** | board only | — | — | — | — |
 | **Story Bank** | ✅ | ✅ | ✅ | — | ✅ |
-| **Letters · Profile/CV · School List · Timeline · Settings · Help** | **scaffold** | ❌ | ❌ | — | ⚠️ partial |
+| **Letters** | ✅ | ✅ **30 rows, 0 open** | ✅ | — | ✅ |
+| **Profile/CV** | ✅ **SPECCED Aug 2026** | board ruled (43 rows, 0 open) | ✅ | — | ✅ |
+| **School List · Timeline · Settings · Help** | **scaffold** | ❌ | ❌ | — | ⚠️ partial |
 
 ### Cross-cutting, settled August 2026
 
@@ -136,13 +138,45 @@
 
 **⚠️ This closes the fold-into-Profile/CV question.** **Profile/CV holds finished artifacts; none of the above is an artifact.**
 
-### → NEXT: real passes on Profile/CV and School List. Everything else has its hard edges.
+### ✅ LETTERS IS DONE — Aug 2026. Spec + catalog both written.
 
-### ⚠️ Research asks now number TWELVE
+**30 rows, 28 ruled.** `LT-4`/`LT-5` cut on primary source (no committee at UNC). **Two new rows came out of the last batch and they are the tab's spine:**
 
-**UNC labs · buildings + Concept3D IDs · org registration · UNC Health programmes · EMT/CNA pathways · Orange County service orgs · UNC Health shadowing · NPPES CORS · the seven themes' prompts · the school secondary sample · the arc scaffold · ⭐ UNC's prehealth COMMITTEE LETTER process.**
+- **⭐ `LT-29` — the phase gate.** Before the cycle is near, **the letter machinery does not render at all.** Not greyed out, ABSENT. A first-year sees people, what they work on, what to say, and when they last spoke. **A greyed-out pipeline still frames every professor as a future signature**, which is the instrumentalisation `LT-22`/`LT-28` exist to prevent, reintroduced through the UI. **For two or three years this is a relationship tab, and it teaches relationship-building because it is all it offers.**
+- **⭐ `LT-30` — the loop, both directions.** Letters sends a topic into Academics' existing "Questions to ask"; **checking it off bumps `lastContactAt` and appends to the person's notes.** No new surface, no new notification — it rides feature #15's existing trigger. **The relationship history builds itself from something the student was already doing.**
+
+**Also settled:** status lives on a `LetterRequest`, not the person — which is what makes **`LT-27` mentors free** (a mentor is a person with zero requests). **No event log** (`LT-23` cut): one `lastContactAt` + running notes. **`LT-2` is facts, never prose**, and dropped from `●` to `○`. **The dossier links out; it never fetches** (`LT-20`, `○` not `◑`).
+
+**⚠️ Two things still open:** `LT-21`'s input (a conflict between two of Andy's own answers, resolved by me, **needs his confirm**), and the tab's NAME — it holds all your people now. **Decide that rename alongside Story Bank's.**
+
+### ✅ PROFILE / CV IS DONE — Aug 2026. Board fully ruled across four batches.
+
+**43 rows, nothing open.** **Two rows emerged during the batches and neither was on the original board:**
+
+- **⭐ `P-29b` grouping suggestions** — same org + adjacent dates → *"these two look like one AMCAS entry."* **Without it a student hand-maps 22 records into 15 slots and goes back to a spreadsheet.**
+- **⭐ `P-42` Fee Assistance** — the AAMC programme waives most of the AMCAS fee and includes free MCAT prep. **HQ states the thresholds and links out; it stores NO income data.** Andy's *"it's good information"* instinct, pointed at a mechanism that holds nothing.
+
+**The three rulings that shaped the tab:** it **renders and exports a real CV** (the word-processor cede was about collaboration, not printing your own data) · **no public profile** (the need is met by the PDF, and it is the one thing that cannot be un-leaked) · **the writing desk opens OVER this tab** (one editor, two entry points).
+
+**Cut:** publish-all · CV variants · one-page mode · **all demographics and income** · advisor summary. **Moved:** disadvantaged narrative → Story Bank, which already has `SB-73`'s keep-local flag.
+
+**⚠️ `P-39` is not a new packet builder.** `RO-3` · `E-16` · `LT-1` · `P-39` are **four callers of ONE assembler.** Verify by grep — two builders is how they drift.
+
+**⚠️ The two rows most likely to rot are `P-28` and `P-37`**, because the useful-sounding version of each crosses `U-9`. **Structural incompleteness is a fact about the form; a content gap is a judgement about the application.**
+
+### → NEXT: School List, then Timeline · Settings · Help.
+
+**Profile/CV still needs its feature catalog** (43 rows) — same gap Letters had. Mechanical, no decisions.
+
+### ⚠️ Research asks now number ELEVEN — ⭐ #12 CLOSED Aug 2026
+
+**UNC labs · buildings + Concept3D IDs · org registration · UNC Health programmes · EMT/CNA pathways · Orange County service orgs · UNC Health shadowing · NPPES CORS · the seven themes' prompts · the school secondary sample · the arc scaffold.**
+
+**⭐ ~~UNC's prehealth COMMITTEE LETTER process~~ — CLOSED.** **UNC has NO pre-medical committee** (`hpa.unc.edu/admissions-process/recommendation-letters/`, primary source, mod. 2024-06-17). **`LT-4`/`LT-5` CUT.** The same page also **sourced `LT-19`'s coverage shape, anchored `LT-9`'s timing, and independently validated `LT-17` and `LT-27`** — see `tabs/10-letters.md`.
 
 **None is an engineering task. Seven features are blocked on them. This pass is its own project.**
+
+**⚠️ Method note from closing #12:** the answer was **one fetch away** and had been recorded as *unverified* because the first hit was a consulting blog. **`reference-sources.md`'s order says which source to GO CHECK, not which claim to disbelieve.** A low-trust source pointing at a checkable fact is a lead, not noise.
 
 **Letters carries a staleness warning (AAMC Letter Writer Portal). Profile/CV inherits the `draft | ready` boundary from Story Bank §8.**
 
