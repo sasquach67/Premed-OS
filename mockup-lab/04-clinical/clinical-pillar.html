@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clinical — experience pillar (concept, ECs-style)</title>
+<style>
+  :root{
+    --bg:#131211; --s2:#1e1d1b; --s3:#262523; --border:#302f2c; --border2:#3a3936;
+    --text:#f3f1ec; --muted:#9d9a93; --hint:#75726b;
+    --accent:#5b9bd5; --accent-dim:#2b4258;
+    --paid:#6ea8de; --paid-bg:#20313f; --vol:#6cc39a; --vol-bg:#1a2c22;
+    --warn:#d99b3a; --warn-bg:#332711; --danger:#d97a63; --danger-bg:#331f1a;
+    --radius:14px;
+  }
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:1.5rem 1.75rem;line-height:1.5;font-size:15px}
+  .wrap{max-width:1120px;margin:0 auto}
+
+  /* sub-tabs (like Organizations / Initiatives) */
+  .subtabs{display:flex;gap:28px;border-bottom:0.5px solid var(--border);padding-bottom:0;margin-bottom:22px}
+  .subtabs .t{display:flex;align-items:center;gap:9px;padding:2px 0 14px;font-size:19px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .subtabs .t.on{color:var(--accent);border-bottom-color:var(--accent)}
+  .subtabs .t .ic{opacity:.8;font-size:16px}
+  .count{font-size:12px;font-weight:600;background:var(--s3);color:var(--muted);border-radius:999px;padding:2px 9px;min-width:22px;text-align:center}
+  .subtabs .t.on .count{background:var(--accent-dim);color:var(--accent)}
+
+  /* pill stat chips (compact, rounded — not big boxes) */
+  .stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+  .pill{display:flex;align-items:center;gap:10px;border:0.5px solid var(--border2);border-radius:999px;padding:11px 18px;background:transparent}
+  .pill .n{font-size:16px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+  .pill .l{font-size:14px;color:var(--muted)}
+
+  /* filter row */
+  .filters{display:inline-flex;gap:4px;background:var(--s2);border-radius:999px;padding:5px;margin-bottom:26px}
+  .filters .f{font-size:14px;color:var(--muted);padding:7px 16px;border-radius:999px;cursor:pointer}
+  .filters .f.on{background:var(--s3);color:var(--text);font-weight:600}
+
+  /* grouped section header */
+  .ghead{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:700;letter-spacing:.09em;color:var(--hint);text-transform:uppercase;margin:6px 2px 12px}
+  .ghead .gc{font-size:11px;font-weight:700;background:var(--s3);color:var(--muted);border-radius:999px;padding:1px 8px}
+
+  /* card grid */
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:30px}
+  .card{background:var(--s2);border:0.5px solid var(--border);border-radius:var(--radius);padding:22px 24px;cursor:pointer;transition:border-color .15s}
+  .card:hover{border-color:var(--border2)}
+  .card .r1{display:flex;align-items:flex-start;gap:16px}
+  .av{width:56px;height:56px;border-radius:50%;background:var(--s3);color:var(--muted);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;border:0.5px solid var(--border2)}
+  .card h3{margin:0;font-size:21px;font-weight:700}
+  .card .sub{color:var(--muted);font-size:15px;margin-top:2px}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:4px 11px;border-radius:999px;margin-top:12px}
+  .chip.paid{background:var(--paid-bg);color:var(--paid)}
+  .chip.vol{background:var(--vol-bg);color:var(--vol)}
+  .spark{display:flex;align-items:flex-end;gap:2px;height:26px;margin-left:auto}
+  .spark i{width:5px;background:var(--accent);border-radius:1px;opacity:.5}
+  .metrics{display:flex;gap:18px;margin-top:16px;font-size:13.5px;color:var(--muted)}
+  .metrics b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+  .status{display:flex;align-items:center;gap:9px;margin-top:16px;font-size:14px}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .status.ok{color:var(--vol)} .status.ok .dot{background:var(--vol)}
+  .status.warn{color:var(--warn)} .status.warn .dot{background:var(--warn)}
+  .status.flag{color:var(--danger)} .status.flag .dot{background:var(--danger)}
+  .status .x{color:var(--hint);font-size:13px;margin-left:2px}
+
+  /* ghost add card */
+  .add{border:1px dashed var(--border2);border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);cursor:pointer;min-height:150px;background:transparent}
+  .add .plus{font-size:30px;font-weight:300;line-height:1}
+  .add span{font-size:16px;font-weight:600}
+
+  .foot{font-size:12px;color:var(--hint);text-align:center;margin-top:8px}
+  @media (max-width:760px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- sub-tabs -->
+  <div class="subtabs">
+    <div class="t on"><span class="ic">🩺</span> Experiences <span class="count">3</span></div>
+    <div class="t"><span class="ic">🗓</span> Shift log <span class="count">64</span></div>
+  </div>
+
+  <!-- pill stat chips -->
+  <div class="stats">
+    <div class="pill"><span class="n">312</span><span class="l">patient-contact hrs</span></div>
+    <div class="pill"><span class="n">208<span style="color:var(--muted);font-weight:600">/104</span></span><span class="l">paid · volunteer</span></div>
+    <div class="pill"><span class="n">3d</span><span class="l">since last shift</span></div>
+    <div class="pill"><span class="n">2<span style="color:var(--muted);font-weight:600">/3</span></span><span class="l">verified</span></div>
+  </div>
+
+  <!-- filters -->
+  <div class="filters">
+    <span class="f on">All</span>
+    <span class="f">Active</span>
+    <span class="f">Paid</span>
+    <span class="f">Volunteer</span>
+    <span class="f">Needs attention</span>
+    <span class="f">Past</span>
+  </div>
+
+  <!-- group: active -->
+  <div class="ghead">Active <span class="gc">2</span></div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="r1">
+        <div class="av">OC</div>
+        <div style="flex:1;min-width:0">
+          <h3>EMT — Basic</h3>
+          <div class="sub">Orange County EMS · EMS</div>
+          <span class="chip paid">● Paid clinical</span>
+        </div>
+        <div class="spark" title="hours / month">
+          <i style="height:40%"></i><i style="height:65%"></i><i style="height:55%"></i><i style="height:80%"></i><i style="height:70%"></i><i style="height:92%"></i>
+        </div>
+      </div>
+      <div class="metrics"><span><b>186</b> hrs</span><span><b>31</b> shifts</span><span>since Sep 2025</span></div>
+      <div class="status ok"><span class="dot"></span> Last shift 3d ago · verified <span class="x">Capt. Rivera</span></div>
+    </div>
+
+    <div class="card">
+      <div class="r1">
+        <div class="av">UN</div>
+        <div style="flex:1;min-width:0">
+          <h3>ED Volunteer</h3>
+          <div class="sub">UNC Medical Center · Emergency Dept.</div>
+          <span class="chip vol">● Volunteer clinical</span>
+        </div>
+        <div class="spark">
+          <i style="height:70%"></i><i style="height:60%"></i><i style="height:45%"></i><i style="height:30%"></i><i style="height:15%"></i><i style="height:8%"></i>
+        </div>
+      </div>
+      <div class="metrics"><span><b>104</b> hrs</span><span><b>26</b> shifts</span><span>since Jan 2025</span></div>
+      <div class="status warn"><span class="dot"></span> No shift in 9 weeks · add a verifier</div>
+    </div>
+
+  </div>
+
+  <!-- group: needs attention -->
+  <div class="ghead">Needs attention <span class="gc">1</span></div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="r1">
+        <div class="av">CH</div>
+        <div style="flex:1;min-width:0">
+          <h3>Front Desk</h3>
+          <div class="sub">Campus Health Services · Clinic</div>
+          <span class="chip vol">● Volunteer</span>
+        </div>
+      </div>
+      <div class="metrics"><span><b>22</b> hrs</span><span><b>7</b> shifts</span></div>
+      <div class="status flag"><span class="dot"></span> May not count as clinical — no patient contact · reclassify as Volunteering?</div>
+    </div>
+
+    <div class="add">
+      <div class="plus">＋</div>
+      <span>Add clinical experience</span>
+    </div>
+
+  </div>
+
+  <div class="foot">Concept mockup · Clinical pillar in the ECs-style shared layout (sub-tabs · pill stats · filters · grouped cards · ghost add). Structure/flow only — visual defers to Premed HQ's design system. See <code>tabs/03-clinical.md</code> + <code>specifications/05-experience-pillar.md</code>.</div>
+</div>
+</body>
+</html>

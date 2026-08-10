@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timeline — the four-year quest spine</title>
+<!--
+  ============================================================================
+  TIMELINE - FOUR-YEAR QUEST SPINE   (rebuild 2, Aug 2026)
+  ============================================================================
+  Status: DRAFT. Spec: tabs/11-timeline-tasks.md
+
+  REBUILD 1 WAS REJECTED. Structure survived, the drawing did not.
+  Root cause was the same as the Sauce mockup: I read 04 §10 (the
+  anti-pattern list) and _visual-recipes.md, and never opened 04 §0c,
+  the LOCKED design north star. What §0c actually requires:
+   · "every tab gets a banner hero, not just Overview"  -> v1 had NONE
+   · "glassmorphic cards... they FLOAT over the banner - dimensional,
+     NEVER FLAT OPAQUE BOXES"                            -> v1 was flat
+   · §0 directive 1: "modern polish + layered depth + bold Baloo...
+     NOT flat minimalism. 'Make it flat/plain' is a DEFECT"
+   · "Motion (nothing static)"
+  Fixed here: banner hero + glass stat strip over it, tinted and nested
+  panels, real shadows, hover lift and accent ignite on every node.
+
+  THE SIX FLAWS FROM v1, AND WHAT EACH BECAME
+
+  1. FUTURE NODES LOOKED DISABLED. They were at .5 opacity - the exact
+     treatment UIs use for "you cannot touch this" - which contradicts
+     the copy law in the spec.
+     FIX: opacity is gone. A future node is SMALLER, quieter, and set on
+     --muted instead of --card, so it reads as FAR AWAY rather than
+     switched off. Full border, full hover lift, fully clickable.
+  2. COLLAPSED NODES WERE THIN - a title and two chips. Andy: "each point
+     should have a lot of information in it."
+     FIX: every node previews its payload - a line of what the phase is,
+     plus a steps/notes count. You can tell what is inside without
+     opening it.
+  3. ACHIEVEMENTS WERE TOO QUIET, reading as metadata.
+     FIX: they keep their own shape (not a prescribed-node card) but gain
+     a warm tinted surface, a filled marker, and the date they actually
+     happened. They interrupt the spine, which is the point - they are
+     the part no template could have predicted.
+  4. THE SPINE WAS A GRADIENT RULE, which is not in 04's graphic
+     vocabulary (stacked bars, progress pills, status chips, heatmaps,
+     ring gauges).
+     FIX: the spine is now a PROGRESS PILL run vertically - a track with
+     a filled segment - which is in the vocabulary.
+  5. NO EMPTY STATE. A freshman on day one is the most common first run.
+     FIX: frame 2.
+  6. FRAME 2 DODGED THE STRUCTURAL QUESTION - it drew an opened node as a
+     floating panel with no relationship to the spine.
+     FIX: expansion is INLINE. The node grows in place on the spine, so
+     you never lose your position in four years of roadmap. Not a peek,
+     not a separate route.
+
+  STILL TRUE FROM v1
+   · Vertical, deliberately. Overview's compact spine stays HORIZONTAL
+     and locked (03-overview §6.7). Two jobs, two axes.
+   · No progress headline. No "3 of 11 milestones", no percentage, no
+     ring. It converts "where am I" into "how far behind am I".
+   · Copy law: "Not yet", never "Locked". Dates read "Pacing", never
+     "Due" - §6.7 sets pacing deliberately early, so being past one is
+     normal, and rendering it as overdue would be wrong and cruel.
+   · Steps flow to Overview -> Soon; notes never leave the node.
+   · --cat-timeline:#4fa3a8 must be ADDED to src/index.css (deferred S8).
+
+  DELIBERATELY EXCLUDED - do not add back
+   · Deadlines, exam dates, assignments. They have owners now.
+   · A task list. Tasks are Overview's, entity and surface.
+   · Any locked/disabled state on any node.
+   · Sub-tabs. One subject; a tab row would imply otherwise.
+   · Kind labels on note vs step - the shapes differ (checkbox vs rule).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --pri:#6fb3de; --pri-ink:#0f2330; --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f; --star:#e7b06a;
+  --cat:#4fa3a8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.frame{width:1180px;margin:0 auto 30px;padding:24px;background:var(--bg);border-radius:20px}
+.flabel{width:1180px;margin:0 auto 10px;padding:0 26px;font-family:'Baloo 2';font-weight:800;font-size:12px;
+  color:var(--dim);text-transform:uppercase;letter-spacing:.09em}
+
+/* ── HERO BANNER (04 §0c — every tab gets one) ───────────────────────── */
+.hero{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--bd);height:186px;
+  padding:22px;display:flex;flex-direction:column;justify-content:space-between;
+  background:
+    radial-gradient(160px 160px at 86% 20%,rgba(150,232,226,.42),transparent 70%),
+    radial-gradient(280px 190px at 14% 120%,rgba(79,163,168,.34),transparent 70%),
+    linear-gradient(120deg,#2c3a4a 0%,#3c5b60 42%,#7a6a54 74%,#c9a05e 100%)}
+.hill{position:absolute;left:0;right:0;bottom:-2px;height:95px;
+  background:linear-gradient(180deg,transparent,rgba(28,20,16,.62));border-radius:50% 50% 0 0/100% 100% 0 0}
+.hdate{position:relative;z-index:2;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.8)}
+.hgreet{position:relative;z-index:2;font-family:'Baloo 2';font-weight:800;font-size:32px;color:#fff;
+  letter-spacing:-.5px;margin-top:4px;text-shadow:0 3px 16px rgba(0,0,0,.4)}
+.hsub{position:relative;z-index:2;font-size:13.5px;font-weight:700;color:rgba(255,255,255,.72);margin-top:5px}
+.hrow{position:relative;z-index:2;display:flex;gap:11px;margin-top:auto;align-items:flex-end}
+/* GLASS — floating over the banner ONLY */
+.glass{background:rgba(26,20,17,.42);backdrop-filter:blur(18px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.15);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 20px 44px -24px rgba(0,0,0,.65);border-radius:13px}
+.here{padding:12px 18px;max-width:430px}
+.here .lbl{font-family:'Baloo 2';font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--cat)}
+.here .nm{font-family:'Baloo 2';font-weight:800;font-size:17px;color:#fff;margin-top:2px;line-height:1.2}
+.here .mt{font-size:12px;font-weight:700;color:rgba(255,255,255,.62);margin-top:3px}
+.gchips{display:flex;padding:4px;gap:3px}
+.gchip{padding:8px 15px;font-family:'Baloo 2';font-weight:700;font-size:12.5px;color:rgba(255,255,255,.7);
+  cursor:pointer;border-radius:10px;transition:.15s cubic-bezier(.16,1,.3,1)}
+.gchip:hover{color:#fff}
+.gchip.on{background:#fff;color:#17222c;font-weight:800}
+
+/* ── THE SPINE — a progress pill run vertically (04 graphic vocabulary) ─ */
+.wrap{margin-top:18px;position:relative;padding-left:52px}
+.track{position:absolute;left:15px;top:8px;bottom:14px;width:6px;border-radius:999px;background:#272420;overflow:hidden}
+.fill{position:absolute;left:0;right:0;top:0;height:47%;border-radius:999px;
+  background:linear-gradient(180deg,var(--success),var(--cat));
+  box-shadow:0 0 16px color-mix(in srgb,var(--cat) 60%,transparent)}
+
+.band{display:flex;align-items:center;gap:10px;margin:26px 0 13px}
+.band:first-child{margin-top:2px}
+.band b{font-family:'Baloo 2';font-weight:800;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.band span{font-size:11.5px;font-weight:700;color:var(--dim)}
+.band .ln{flex:1;height:1px;background:var(--bd)}
+
+.dot{position:absolute;left:-45px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;
+  box-shadow:0 0 0 5px var(--bg)}
+.dot svg{width:12px;height:12px}
+
+/* NODE — solid with depth, hover ignites (01 §4e) */
+.node{position:relative;margin-bottom:13px;background:var(--card);border:1px solid var(--bd);
+  border-radius:15px;padding:15px 18px;box-shadow:0 10px 26px -14px rgba(0,0,0,.55);
+  transition:.15s cubic-bezier(.16,1,.3,1);cursor:pointer}
+.node:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--cat) 45%,var(--bd));
+  box-shadow:0 20px 36px -16px rgba(0,0,0,.78),0 0 24px -8px color-mix(in srgb,var(--cat) 45%,transparent)}
+.nt{font-family:'Baloo 2';font-weight:800;font-size:17.5px;letter-spacing:-.2px;line-height:1.2}
+.nd{font-size:13px;color:var(--mut);font-weight:600;margin-top:5px;line-height:1.5}
+.nrow{display:flex;align-items:center;gap:9px;margin-top:11px;flex-wrap:wrap}
+.chip{font-family:'Baloo 2';font-weight:800;font-size:10.5px;border-radius:999px;padding:3px 10px}
+.c-met{background:color-mix(in srgb,var(--success) 18%,transparent);color:var(--success)}
+.c-pace{background:#272420;color:var(--dim)}
+.c-now{background:color-mix(in srgb,var(--cat) 20%,transparent);color:var(--cat)}
+.c-soon{background:var(--muted);color:var(--mut)}
+
+/* met — receded but still solid, not ghosted */
+.node.met{background:var(--muted);box-shadow:0 6px 16px -12px rgba(0,0,0,.5)}
+.node.met .nt{font-size:15.5px;color:var(--mut)}
+.dot.d-met{background:var(--success);color:#12241f}
+
+/* current — raised, tinted, glowing. the one loud thing on the page. */
+.node.now{background:linear-gradient(165deg,color-mix(in srgb,var(--cat) 13%,var(--card)),var(--card) 58%);
+  border-color:color-mix(in srgb,var(--cat) 52%,var(--bd));
+  box-shadow:0 22px 44px -18px rgba(0,0,0,.8),0 0 30px -10px color-mix(in srgb,var(--cat) 45%,transparent)}
+.node.now .nt{font-size:21px}
+.eyebrow{font-family:'Baloo 2';font-weight:800;font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--cat);margin-bottom:4px}
+.dot.d-now{background:var(--cat);color:#0d1f20;
+  box-shadow:0 0 0 5px var(--bg),0 0 0 10px color-mix(in srgb,var(--cat) 26%,transparent),0 0 22px color-mix(in srgb,var(--cat) 60%,transparent)}
+
+/* NOT YET — smaller and quieter, NEVER faded. reads far away, not off. */
+.node.next{background:var(--muted);padding:12px 16px;box-shadow:0 5px 14px -10px rgba(0,0,0,.5)}
+.node.next .nt{font-size:15px;color:var(--mut)}
+.node.next .nd{font-size:12.5px;color:var(--dim);margin-top:4px}
+.dot.d-next{background:#272420;border:2px solid var(--bd);color:var(--dim);width:20px;height:20px;left:-43px}
+
+/* ACHIEVEMENT — its own shape. earned, not assigned. */
+.ach{position:relative;margin-bottom:13px;display:flex;align-items:center;gap:13px;
+  background:linear-gradient(100deg,color-mix(in srgb,var(--star) 15%,var(--card)),var(--card) 62%);
+  border:1px solid color-mix(in srgb,var(--star) 34%,var(--bd));border-radius:14px;padding:13px 17px;
+  box-shadow:0 10px 24px -14px rgba(0,0,0,.6);transition:.15s cubic-bezier(.16,1,.3,1)}
+.ach:hover{transform:translateY(-2px);box-shadow:0 18px 32px -16px rgba(0,0,0,.75),0 0 22px -8px color-mix(in srgb,var(--star) 45%,transparent)}
+.ach .txt b{display:block;font-family:'Baloo 2';font-weight:800;font-size:16px;letter-spacing:-.1px}
+.ach .txt span{font-size:12px;font-weight:700;color:var(--mut)}
+.ach .when{margin-left:auto;font-family:'Baloo 2';font-weight:800;font-size:12.5px;color:var(--star);
+  font-variant-numeric:tabular-nums}
+.dot.d-ach{background:var(--star);color:#241c10;
+  box-shadow:0 0 0 5px var(--bg),0 0 18px color-mix(in srgb,var(--star) 55%,transparent)}
+
+/* ── INLINE EXPANSION — the node grows in place ──────────────────────── */
+.open{margin-top:16px;border-top:1px solid color-mix(in srgb,var(--cat) 26%,var(--bd));padding-top:15px}
+.sh{display:flex;align-items:baseline;gap:9px;margin:0 0 8px}
+.sh b{font-family:'Baloo 2';font-weight:800;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.sh span{font-size:12px;color:var(--dim);font-weight:700}
+/* step — nested panel inside the card. this is the layering §0c wants. */
+.step{display:flex;align-items:center;gap:12px;background:var(--muted);border:1px solid var(--bd);
+  border-radius:11px;padding:11px 13px;margin-bottom:7px;transition:.15s cubic-bezier(.16,1,.3,1)}
+.step:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--cat) 40%,var(--bd));
+  box-shadow:0 10px 20px -12px rgba(0,0,0,.65)}
+.cbx{width:19px;height:19px;border-radius:6px;border:2px solid var(--bd);background:var(--card);
+  flex-shrink:0;display:grid;place-items:center}
+.cbx.on{background:var(--success);border-color:var(--success)}
+.cbx svg{width:11px;height:11px;color:#16120e}
+.step p{flex:1;font-size:13.5px;font-weight:600}
+.step.done p{color:var(--dim);text-decoration:line-through}
+.soon{font-family:'Baloo 2';font-weight:800;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--pri);background:color-mix(in srgb,var(--pri) 15%,transparent);border-radius:999px;
+  padding:3px 10px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.soon svg{width:10px;height:10px}
+/* note — a statement, ruled. no checkbox, so no label needed. */
+.nte{display:flex;gap:12px;padding:11px 14px;margin-bottom:7px;border-radius:0 11px 11px 0;
+  border-left:2px solid color-mix(in srgb,var(--warning) 55%,transparent);
+  background:color-mix(in srgb,var(--warning) 6%,transparent)}
+.nte svg{width:16px;height:16px;color:var(--warning);flex:none;margin-top:2px}
+.nte p{font-size:13.5px;font-weight:700;line-height:1.5}
+.nte small{display:block;margin-top:5px;font-size:11px;font-weight:700;color:var(--dim)}
+
+/* empty state */
+.empty{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:34px 30px;
+  box-shadow:0 10px 26px -14px rgba(0,0,0,.55);display:flex;gap:20px;align-items:flex-start}
+.ram{width:62px;height:62px;border-radius:50%;flex:none;
+  background:radial-gradient(circle at 35% 30%,#d8c3a0,#a8875c);box-shadow:inset 0 -6px 14px rgba(0,0,0,.28)}
+.empty h3{font-family:'Baloo 2';font-weight:800;font-size:21px;margin:0}
+.empty p{font-size:14px;color:var(--mut);font-weight:600;margin:7px 0 0;line-height:1.6;max-width:620px}
+.btn{margin-top:15px;border-radius:11px;padding:9px 17px;font-family:'Baloo 2';font-weight:800;font-size:13.5px;
+  border:none;background:var(--cat);color:#0d1f20;cursor:pointer;transition:.15s cubic-bezier(.16,1,.3,1)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 14px 26px -12px color-mix(in srgb,var(--cat) 60%,transparent)}
+</style>
+</head>
+<body>
+
+<p class="flabel">Frame 1 — the spine. Current node expanded inline; achievements interrupt it.</p>
+<div class="frame">
+
+  <div class="hero">
+    <div class="hill"></div>
+    <div>
+      <div class="hdate">Timeline</div>
+      <div class="hgreet">The road to medical school</div>
+      <div class="hsub">Four years, laid out. Nothing here is late.</div>
+    </div>
+    <div class="hrow">
+      <div class="glass here">
+        <div class="lbl">You are here</div>
+        <div class="nm">Request your letters of recommendation</div>
+        <div class="mt">Year 3 · 1 of 4 steps done</div>
+      </div>
+      <div class="glass gchips">
+        <span class="gchip">Year 1</span>
+        <span class="gchip">Year 2</span>
+        <span class="gchip on">Year 3</span>
+        <span class="gchip">Application</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="track"><div class="fill"></div></div>
+
+    <div class="band"><b>Year 2</b><span>2025 – 2026</span><span class="ln"></span></div>
+
+    <div class="node met">
+      <span class="dot d-met"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <div class="nt">Build your prerequisite plan</div>
+      <div class="nrow"><span class="chip c-met">Met · Aug 2025</span></div>
+    </div>
+
+    <div class="ach">
+      <span class="dot d-ach"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2 9.2 8.6 2 9.2l5.5 4.8L5.8 21 12 17.3 18.2 21l-1.7-7 5.5-4.8-7.2-.6z"/></svg></span>
+      <div class="txt">
+        <b>BLS certification earned</b>
+        <span>American Heart Association · valid two years</span>
+      </div>
+      <span class="when">Nov 2025</span>
+    </div>
+
+    <div class="node met">
+      <span class="dot d-met"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <div class="nt">Choose your MCAT date</div>
+      <div class="nrow"><span class="chip c-met">Met · Jan 2026</span></div>
+    </div>
+
+    <div class="band"><b>Year 3</b><span>2026 – 2027</span><span class="ln"></span></div>
+
+    <div class="node now">
+      <span class="dot d-now"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="12" r="5"/></svg></span>
+      <div class="eyebrow">You are here</div>
+      <div class="nt">Request your letters of recommendation</div>
+      <div class="nd">Who writes for you, when you ask them, and what each writer needs from you before they can start.</div>
+      <div class="nrow">
+        <span class="chip c-now">1 of 4 steps done</span>
+        <span class="chip c-pace">Pacing · Sep 2026</span>
+      </div>
+
+      <div class="open">
+        <div class="sh"><b>Steps</b><span>These appear in your Overview tasks under Soon.</span></div>
+
+        <div class="step done">
+          <span class="cbx on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <p>Identify four people who can write for you</p>
+        </div>
+        <div class="step">
+          <span class="cbx"></span>
+          <p>Ask each one, in person or by email</p>
+          <span class="soon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Soon</span>
+        </div>
+        <div class="step">
+          <span class="cbx"></span>
+          <p>Send each writer your CV and a personal statement draft</p>
+          <span class="soon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Soon</span>
+        </div>
+        <div class="step">
+          <span class="cbx"></span>
+          <p>Confirm each letter has been submitted</p>
+          <span class="soon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Soon</span>
+        </div>
+
+        <div class="sh" style="margin-top:16px"><b>What to know</b><span>Nothing to check off.</span></div>
+
+        <div class="nte">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          <p>Your letters must be received before AMCAS will verify your application.
+            <small>AAMC · checked Aug 2026</small></p>
+        </div>
+        <div class="nte">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          <p>AMCAS accepts letters through Interfolio, from a committee, or sent directly by the writer.
+            <small>AAMC · checked Aug 2026</small></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="node next">
+      <span class="dot d-next"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="12" r="4"/></svg></span>
+      <div class="nt">Draft your personal statement</div>
+      <div class="nd">What the essay is actually asked to do, and how early drafting changes it.</div>
+      <div class="nrow"><span class="chip c-soon">Not yet · 5 steps</span><span class="chip c-pace">Pacing · Nov 2026</span></div>
+    </div>
+
+    <div class="node next">
+      <span class="dot d-next"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="12" r="4"/></svg></span>
+      <div class="nt">Build your school list</div>
+      <div class="nd">Reach, target, and likely — and why mission fit moves a school between them.</div>
+      <div class="nrow"><span class="chip c-soon">Not yet · 4 steps</span><span class="chip c-pace">Pacing · Feb 2027</span></div>
+    </div>
+
+    <div class="band"><b>Application year</b><span>2027 – 2028</span><span class="ln"></span></div>
+
+    <div class="node next">
+      <span class="dot d-next"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="12" r="4"/></svg></span>
+      <div class="nt">Submit your AMCAS primary</div>
+      <div class="nd">What the application asks for, and what verification does after you send it.</div>
+      <div class="nrow"><span class="chip c-soon">Not yet · 6 steps</span><span class="chip c-pace">Pacing · May 2027</span></div>
+    </div>
+
+    <div class="node next">
+      <span class="dot d-next"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="12" r="4"/></svg></span>
+      <div class="nt">Secondary applications</div>
+      <div class="nd">They arrive together, within days of verification, and they arrive fast.</div>
+      <div class="nrow"><span class="chip c-soon">Not yet · 3 steps</span><span class="chip c-pace">Pacing · Jun 2027</span></div>
+    </div>
+
+  </div>
+</div>
+
+<p class="flabel">Frame 2 — first run. A freshman has no achievements and nothing met. It must not read as failure.</p>
+<div class="frame">
+
+  <div class="hero" style="height:170px">
+    <div class="hill"></div>
+    <div>
+      <div class="hdate">Timeline</div>
+      <div class="hgreet">The road to medical school</div>
+      <div class="hsub">Four years, laid out. Nothing here is late.</div>
+    </div>
+    <div class="hrow">
+      <div class="glass here">
+        <div class="lbl">Starting out</div>
+        <div class="nm">Start logging your experiences</div>
+        <div class="mt">Year 1 · your first step</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap" style="margin-top:18px">
+    <div class="track"><div class="fill" style="height:0"></div></div>
+
+    <div class="band"><b>Year 1</b><span>2026 – 2027</span><span class="ln"></span></div>
+
+    <div class="node now">
+      <span class="dot d-now"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="12" r="5"/></svg></span>
+      <div class="eyebrow">Start here</div>
+      <div class="nt">Start logging your experiences</div>
+      <div class="nd">Hours are far easier to record as they happen than to reconstruct in three years. This is the habit everything else rests on.</div>
+      <div class="nrow">
+        <span class="chip c-now">3 steps</span>
+        <span class="chip c-pace">Pacing · Oct 2026</span>
+      </div>
+    </div>
+
+    <div class="node next">
+      <span class="dot d-next"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="12" r="4"/></svg></span>
+      <div class="nt">Build your prerequisite plan</div>
+      <div class="nd">Which courses medical schools require, and the order that keeps your options open.</div>
+      <div class="nrow"><span class="chip c-soon">Not yet · 4 steps</span><span class="chip c-pace">Pacing · Mar 2027</span></div>
+    </div>
+
+    <div class="empty" style="margin-top:20px">
+      <div class="ram"></div>
+      <div>
+        <h3>Your achievements will show up here</h3>
+        <p>As you hit real milestones — your first certification, your hundredth clinical hour, a first publication — they land on this line at the date they happened. <b>The roadmap ahead is the same for everyone on your track. This part is what makes it yours.</b></p>
+        <button class="btn">Log your first hours</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clinical — role type-to-create (supersedes the preset grid)</title>
+<!--
+  ============================================================================
+  CLINICAL — ROLE FIELD, TYPE-TO-CREATE — VISUAL REFERENCE
+  ============================================================================
+  Status: PROPOSED (Aug 2026). Spec: tabs/03-clinical-feature-catalog.md R3.
+  SUPERSEDES Frame 1 of `clinical-role-presets.html` (the 9-card grid).
+
+  WHY THE CARD GRID WAS REJECTED (Andy, Aug 2026)
+  "For some people who will never become a phlebotomist, they have to always
+  see it as an option." A fixed catalog shows every user eight roles they will
+  never hold, and it makes HQ the owner of a curated role taxonomy that goes
+  stale. The Notion select-property model is the right one: type it once, it
+  is saved, choose it from then on.
+
+  THE MODEL
+   · FREE TEXT IS THE PRIMARY PATH. Any string is valid and is remembered.
+   · SUGGESTIONS APPEAR AS YOU TYPE, so a new user with an empty list still
+     gets help. Typing "EM" offers EMT with what HQ knows about it.
+   · AN UNRECOGNISED ROLE SIMPLY SAVES AND IS LEARNED. No dead end, no
+     "Other" bucket, no apology.
+   · KNOWN roles carry a seeded classifier verdict and an inferred pay type.
+     UNKNOWN roles carry nothing — so HQ asks TWO questions, once, instead
+     of guessing. This is the "smell the patient" test made literal, and it
+     is the only version that is right about a role nobody anticipated.
+
+  PAID/VOLUNTEER IS INFERRED AND HIDDEN (catalog R2)
+  It stays in the data model because AMCAS files clinical work under both
+  "Paid Employment — Medical/Clinical" and "Community Service/Volunteer —
+  Medical/Clinical". But it is NEVER a chip the student manages: inferred
+  from the role, surfaced only in the export preview. No control appears in
+  normal logging anywhere on this page.
+
+  SKILLS ARE CUT (catalog R1)
+  The observed/performed counter is gone. In its place, ONE optional
+  free-text line: "What you actually do here." The count was false precision
+  — 180 vitals only exists if someone logs each one, and nobody will.
+
+  BANNER GRADIENT IS LOCKED — DO NOT RECOLOR PER PILLAR
+  An earlier pass tinted the banner green to match the clinical accent. That
+  is wrong. `_shared/_visual-recipes.md` fixes the banner as the blue bloom
+  top-right + warm shift bottom-right, identical on every page. CLAUDE.md is
+  explicit that the per-pillar `--cat-*` accent is carried in the SUBTAB
+  UNDERLINE, TITLE BAR, and HERO — not by restyling the banner base.
+  Clinical green (#6fae6e) therefore appears only on chips, buttons, focus
+  rings, verdict panels, and accent borders.
+
+  #12 WAS REDUCED (Andy, Aug 2026) — "classifier" -> "mis-filing catch"
+  The original feature classified EVERY experience and showed a verdict panel
+  on add. Two problems. (1) For an EMT, scribe, or MA it confirms what the
+  student already knew, at the cost of a step in every add flow. (2) The
+  confusion 03-clinical.md §2.1 cites — "the most confusing distinction in
+  all of pre-med" — is about WHICH JOB TO TAKE, a decision made months before
+  anything is logged. A classifier running at logging time arrives after the
+  decision it would have helped with.
+  What survives is smaller and honestly named: a MIS-FILING CATCH.
+    · CLEAR role      -> silent. No "Counts as" row renders at all.
+    · UNKNOWN role    -> two questions, once, then never again.
+    · LIKELY MIS-FILE -> one line, plus the offer to move it.
+  §2.1's claims should be cut to match. The real "which role should I look
+  for" guidance is a different feature that does not exist yet, and it belongs
+  nearer School List or Overview than in a logging flow.
+
+  DECISIONS THIS FILE ENCODES
+  1. ONE FIELD, NOT A PICKER. The role is a text input with a suggestion
+     list, not a grid, not a modal, not a wizard step.
+  2. THE SUGGESTION SHOWS WHAT IT WOULD FILL, BEFORE YOU PICK IT. Same
+     review-before-apply instinct as syllabus import (§4.1-M).
+  3. UNKNOWN ROLES ASK TWO QUESTIONS, ONCE. Patient contact? Responsible for
+     them? That is the whole classifier for a role HQ has never seen.
+  4. THE CLASSIFIER ALWAYS SHOWS ITS REASON, known role or answered
+     questions alike. A silent verdict is the failure the classifier exists
+     to prevent.
+  5. A "NOT CLINICAL" VERDICT OFFERS THE MOVE AND ACCEPTS BEING OVERRULED.
+     Flag-and-offer, never auto-move (Volunteering §7, resolved #3).
+  6. YOUR OWN ROLES COME BACK FIRST. Once saved, your roles sort above
+     HQ's suggestions — after one term the list is yours, not ours.
+
+  DELIBERATELY EXCLUDED — do not add these back
+   · The 9-card preset grid. Superseded; see above.
+   · An "Other" option. Free text IS the default path, so "Other" is
+     meaningless here.
+   · A paid/volunteer chip in the add flow or the log. R2 — inferred, and
+     surfaced only at export.
+   · Skill chips or observed/performed counters. R1 — cut.
+   · Auto-moving a record HQ judges non-clinical. Permission-first is law.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f;
+  --cat:#6fae6e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:13px;padding:26px;overflow:auto}
+.frame{width:1400px;background:var(--bg);border-radius:18px;overflow:hidden;box-shadow:0 30px 90px -30px rgba(0,0,0,.9);margin-bottom:34px}
+.framelabel{width:1400px;font-family:'Baloo 2';font-weight:800;font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;margin:0 0 10px 4px}
+
+.banner{background:
+  radial-gradient(340px 200px at 88% 6%, rgba(75,156,211,.34), transparent 70%),
+  radial-gradient(260px 180px at 10% 130%, rgba(111,192,168,.18), transparent 70%),
+  linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%);padding:16px 24px 18px}
+.exitrow{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.exit{background:rgba(20,26,34,.5);backdrop-filter:blur(16px) saturate(1.1);border:1px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16);border-radius:999px;padding:5px 14px 5px 10px;
+  font-family:'Baloo 2';font-weight:800;font-size:12px;color:rgba(255,255,255,.86);cursor:pointer}
+.modetag{font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:3px 10px}
+.h1{font-family:'Baloo 2';font-weight:800;font-size:30px;color:#fff;letter-spacing:-.4px;line-height:1.1}
+.subline{font-size:12px;color:rgba(255,255,255,.66);font-weight:700;margin-top:4px}
+
+.body{padding:20px 22px 26px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.state{font-family:'Baloo 2';font-weight:800;font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.state i{width:16px;height:16px;border-radius:5px;background:color-mix(in srgb,var(--cat) 22%,transparent);
+  color:var(--cat);font-style:normal;font-size:9px;display:grid;place-items:center;font-weight:800}
+
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:15px 16px;
+  box-shadow:0 10px 26px -14px rgba(0,0,0,.55)}
+.flabel{font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+
+/* the field */
+.field{background:var(--muted);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;
+  font-family:'Baloo 2';font-weight:800;font-size:13.5px;display:flex;align-items:center;gap:8px}
+.field.focus{border-color:var(--cat);box-shadow:0 0 0 1px color-mix(in srgb,var(--cat) 38%,transparent)}
+.field .ghost{color:var(--dim);font-weight:700}
+.caret{width:1.5px;height:15px;background:var(--cat);display:inline-block;margin-left:-3px}
+
+/* suggestion list — floats, so glass is correct */
+.suggest{margin-top:7px;border-radius:12px;overflow:hidden;
+  background:rgba(20,26,34,.72);backdrop-filter:blur(18px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 20px 44px -22px rgba(0,0,0,.9)}
+.sgroup{font-family:'Baloo 2';font-weight:800;font-size:9px;letter-spacing:.09em;text-transform:uppercase;
+  color:rgba(255,255,255,.42);padding:9px 12px 5px}
+.sitem{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer}
+.sitem:hover,.sitem.on{background:rgba(255,255,255,.07)}
+.sname{font-family:'Baloo 2';font-weight:800;font-size:12.5px;color:#fff}
+.smeta{margin-left:auto;font-size:10px;font-weight:700;color:rgba(255,255,255,.46)}
+.sitem.create{border-top:1px solid rgba(255,255,255,.1)}
+.sitem.create .sname{color:var(--cat)}
+.kbd{font-family:'Baloo 2';font-weight:800;font-size:9px;color:rgba(255,255,255,.42);
+  border:1px solid rgba(255,255,255,.18);border-radius:4px;padding:1px 5px}
+
+.note{font-size:11px;color:var(--dim);font-weight:600;line-height:1.5;margin-top:10px;
+  padding:8px 10px;background:rgba(255,255,255,.028);
+  border-left:2px solid color-mix(in srgb,var(--cat) 42%,transparent);border-radius:0 8px 8px 0}
+
+/* verdict + filled */
+.verdict{display:flex;align-items:flex-start;gap:10px;border-radius:11px;padding:11px 12px;
+  background:color-mix(in srgb,var(--success) 8%,var(--muted));border:1px solid color-mix(in srgb,var(--success) 34%,var(--bd))}
+.verdict.no{background:color-mix(in srgb,var(--danger) 7%,var(--muted));border-color:color-mix(in srgb,var(--danger) 34%,var(--bd))}
+.vt{font-family:'Baloo 2';font-weight:800;font-size:12.5px;margin-bottom:2px}
+.ask{display:inline-grid;place-items:center;width:14px;height:14px;border-radius:50%;
+  border:1px solid var(--bd);color:var(--dim);font-family:'Baloo 2';font-weight:800;font-size:9px;
+  cursor:help;vertical-align:1px;margin-left:4px}
+.ask:hover{border-color:var(--cat);color:var(--cat)}
+.quiet{font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.6;
+  padding:9px 11px;background:var(--muted);border:1px solid var(--bd);
+  border-left:2px solid color-mix(in srgb,var(--warning) 55%,transparent);
+  border-radius:0 10px 10px 0;margin:9px 0}
+.vb{font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.55}
+
+.frow{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid rgba(255,255,255,.06)}
+.frow:first-of-type{border-top:0}
+.fk{font-size:11.5px;font-weight:800;color:var(--dim);min-width:104px}
+.fv{flex:1;font-size:12px;font-weight:700}
+.edit{font-family:'Baloo 2';font-weight:800;font-size:10.5px;color:var(--cat);cursor:pointer}
+
+/* two questions */
+.q{background:var(--muted);border:1px solid var(--bd);border-radius:12px;padding:12px 13px;margin-bottom:9px}
+.qt{font-family:'Baloo 2';font-weight:800;font-size:13px;margin-bottom:8px}
+.qopts{display:flex;gap:7px}
+.qo{flex:1;text-align:center;background:var(--card);border:1px solid var(--bd);border-radius:9px;padding:8px;
+  font-family:'Baloo 2';font-weight:800;font-size:12px;color:var(--mut);cursor:pointer;transition:.15s cubic-bezier(.16,1,.3,1)}
+.qo:hover{border-color:color-mix(in srgb,var(--cat) 50%,var(--bd))}
+.qo.on{background:color-mix(in srgb,var(--cat) 16%,var(--card));border-color:var(--cat);color:var(--fg)}
+.qsub{font-size:10.5px;color:var(--dim);font-weight:700;margin-top:6px;line-height:1.45}
+
+.btn{font-family:'Baloo 2';font-weight:800;font-size:12.5px;border-radius:10px;padding:9px 14px;
+  border:1px solid var(--bd);background:var(--muted);color:var(--mut);cursor:pointer;text-align:center}
+.btn.pri{background:var(--cat);border-color:var(--cat);color:#10201a}
+.btn.sm{padding:6px 11px;font-size:11.5px;border-radius:8px}
+.btn.ghost{background:transparent}
+.chip{font-family:'Baloo 2';font-weight:800;border-radius:999px;padding:2px 8px;font-size:9.5px}
+.c-dim{background:rgba(255,255,255,.07);color:var(--dim)}
+.c-ok{background:color-mix(in srgb,var(--success) 18%,transparent);color:var(--success)}
+
+.mnote{display:flex;gap:11px;align-items:flex-start;background:color-mix(in srgb,var(--cat) 7%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 24%,var(--bd));border-radius:12px;padding:11px 13px;margin-top:14px}
+.ram{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--cat) 22%,transparent);display:grid;place-items:center;flex:none;font-size:15px}
+.mt{font-family:'Baloo 2';font-weight:800;font-size:12.5px;margin-bottom:2px}
+.mb{font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.55}
+.x{margin-left:auto;color:var(--dim);font-weight:800;font-size:13px;cursor:pointer;flex:none}
+</style>
+</head>
+<body>
+
+<!-- ============ FRAME 1 — the field, three states ============ -->
+<div class="framelabel">Frame 1 &middot; one text field &middot; empty, matching a known role, creating a new one</div>
+<div class="frame">
+  <div class="banner">
+    <div class="exitrow"><div class="exit">&larr; Cancel</div><div class="modetag">Add clinical experience</div></div>
+    <div class="h1">What's your role here?</div>
+    <div class="subline">Type it. If HQ knows the role it offers to fill in the rest. If not, it saves what you wrote.</div>
+  </div>
+
+  <div class="body"><div class="three">
+
+    <!-- STATE 1 — empty -->
+    <div>
+      <div class="state"><i>1</i> Empty, first time</div>
+      <div class="panel">
+        <div class="flabel">Role</div>
+        <div class="field focus"><span class="ghost">Type your role&hellip;</span><span class="caret"></span></div>
+        <div class="suggest">
+          <div class="sgroup">Common roles</div>
+          <div class="sitem"><span class="sname">EMT</span><span class="smeta">clinical</span></div>
+          <div class="sitem"><span class="sname">Medical assistant</span><span class="smeta">clinical</span></div>
+          <div class="sitem"><span class="sname">Scribe</span><span class="smeta">clinical</span></div>
+          <div class="sitem"><span class="sname">Hospital volunteer</span><span class="smeta">clinical</span></div>
+          <div class="sitem"><span class="sname">CNA / PCT</span><span class="smeta">clinical</span></div>
+        </div>
+        <div class="note">A short list, not a catalog, and it disappears once you start typing. Nobody scrolls nine roles they will never hold.</div>
+      </div>
+    </div>
+
+    <!-- STATE 2 — typing, known -->
+    <div>
+      <div class="state"><i>2</i> Typing, HQ knows this one</div>
+      <div class="panel">
+        <div class="flabel">Role</div>
+        <div class="field focus">EM<span class="caret"></span></div>
+        <div class="suggest">
+          <div class="sitem on">
+            <span class="sname">EMT</span>
+            <span class="smeta">fills 3 things &nbsp;<span class="kbd">&crarr;</span></span>
+          </div>
+          <div class="sitem"><span class="sname">Emergency department volunteer</span><span class="smeta">fills 3 things</span></div>
+          <div class="sitem create"><span class="sname">Use &ldquo;EM&rdquo; as its own role</span><span class="smeta"><span class="kbd">&#8984;&crarr;</span></span></div>
+        </div>
+        <div class="note">Highlighting a suggestion shows <b style="color:var(--mut)">what it would fill</b> before you commit. Same review-before-apply rule as syllabus import.</div>
+      </div>
+    </div>
+
+    <!-- STATE 3 — typing, unknown -->
+    <div>
+      <div class="state"><i>3</i> Typing, something new</div>
+      <div class="panel">
+        <div class="flabel">Role</div>
+        <div class="field focus">Cardiac rehab aide<span class="caret"></span></div>
+        <div class="suggest">
+          <div class="sitem create on">
+            <span class="sname">Use &ldquo;Cardiac rehab aide&rdquo;</span>
+            <span class="smeta">saved for next time &nbsp;<span class="kbd">&crarr;</span></span>
+          </div>
+        </div>
+        <div class="note">No "Other" bucket and no apology. Free text <i>is</i> the normal path. HQ remembers it, and it sits at the top of your list next term.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="max-width:1000px;margin:0 auto">
+    <div class="mnote">
+      <div class="ram">&#128015;</div>
+      <div>
+        <div class="mt">After one term, this list is yours</div>
+        <div class="mb">Roles you've saved sort above HQ's suggestions. Someone working as an EMT and a cardiac rehab aide sees exactly those two, not a menu of jobs they will never hold.</div>
+      </div>
+      <div class="x">&#10005;</div>
+    </div>
+  </div>
+  </div>
+</div>
+
+
+<!-- ============ FRAME 2 — the reduced model: silence / ask / catch ============ -->
+<div class="framelabel">Frame 2 &middot; silent for clear roles &middot; asks once for unknown ones &middot; speaks only to catch a mis-file</div>
+<div class="frame">
+  <div class="banner">
+    <div class="exitrow"><div class="exit">&larr; Back</div><div class="modetag">After you pick</div></div>
+    <div class="h1">Mostly, it says nothing</div>
+    <div class="subline">HQ only speaks when the answer would surprise you. An EMT never sees a classifier at all.</div>
+  </div>
+
+  <div class="body"><div class="three">
+
+    <!-- A. SILENT -->
+    <div>
+      <div class="state"><i>A</i> Clear role &middot; silent</div>
+      <div class="panel">
+        <div class="frow"><div class="fk">Role</div><div class="fv">EMT</div><div class="edit">Change</div></div>
+        <div class="frow"><div class="fk">Typical shift</div><div class="fv">12 hours <span class="chip c-dim">a default</span></div><div class="edit">Change</div></div>
+        <div style="margin-top:11px">
+          <div class="flabel">What you actually do here <span style="text-transform:none;letter-spacing:0;font-weight:700">(optional)</span></div>
+          <div class="field" style="font-family:'Nunito';font-weight:600;font-size:12.5px;color:var(--dim)">Vitals, patient assessment, transport, radio report&hellip;</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px"><div class="btn pri">Add this experience</div></div>
+        <div class="note"><b style="color:var(--mut)">No &ldquo;Counts as&rdquo; row at all.</b> You know an EMT does clinical work. Telling you so costs a step in every add and teaches you nothing. Two fields and one optional line is the whole form.</div>
+      </div>
+    </div>
+
+    <!-- B. ASK -->
+    <div>
+      <div class="state"><i>B</i> Unknown role &middot; asks once</div>
+      <div class="panel">
+        <div class="q">
+          <div class="qt">Do you work directly with patients?</div>
+          <div class="qopts"><div class="qo on">Yes</div><div class="qo">Sometimes</div><div class="qo">No</div></div>
+        </div>
+        <div class="q">
+          <div class="qt">Are you responsible for them, or observing?</div>
+          <div class="qopts"><div class="qo on">Responsible</div><div class="qo">Assisting</div><div class="qo">Observing</div></div>
+          <div class="qsub">The "close enough to smell the patient" test, which is the line schools actually draw.</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px"><div class="btn pri">Add this experience</div></div>
+        <div class="note">Only for a role HQ has never seen, and only once. &ldquo;Cardiac rehab aide&rdquo; joins your list and never asks again. Guessing from words in a job title is how a classifier gets it wrong about work nobody anticipated.</div>
+      </div>
+    </div>
+
+    <!-- C. CATCH -->
+    <div>
+      <div class="state"><i>C</i> Likely mis-filed &middot; speaks</div>
+      <div class="panel">
+        <div class="frow"><div class="fk">Role</div><div class="fv">Hospital front desk</div><div class="edit">Change</div></div>
+        <div class="quiet">
+          <b style="color:var(--fg)">This probably isn't clinical.</b> Front-desk and wayfinding roles are real service, but you have no responsibility for a patient. Schools read these as volunteering, and filing them as clinical is the mistake students find out about at submission.
+        </div>
+        <div style="display:flex;gap:8px;margin-top:2px">
+          <div class="btn pri" style="flex:1">Log under Volunteering</div>
+          <div class="btn">Keep it here</div>
+        </div>
+        <div class="note"><b style="color:var(--mut)">Keep it here</b> is remembered and never asked again. HQ flags and offers; it never moves your records for you. If your front-desk role does involve patient contact, you know that and HQ doesn't.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="max-width:1060px;margin:16px auto 0">
+    <div class="mnote">
+      <div class="ram">&#128015;</div>
+      <div>
+        <div class="mt">Why this shrank</div>
+        <div class="mb">The original version classified every experience and showed a verdict panel each time. For an EMT, a scribe, or an MA that just confirms what you already knew, and the real confusion (which job to take) happens months before anything gets logged. What survives is a mis-filing catch, which is smaller and honest about its size.</div>
+      </div>
+      <div class="x">&#10005;</div>
+    </div>
+  </div>
+  </div>
+</div>
+
+</body>
+</html>

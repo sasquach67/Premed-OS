@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Premed HQ mockup variant lab</title>
+<script>
+/*
+  Variant injection needs a shared local origin. Opening this file directly gives
+  the parent and its iframe opaque file:// origins, so switching can silently fail.
+*/
+if(location.protocol==="file:"){
+  const supportedUrl=new URL("/variant-lab.html","http://localhost:8765");
+  supportedUrl.search=location.search;
+  supportedUrl.hash=location.hash;
+  location.replace(supportedUrl.href);
+}
+</script>
+<!--
+  PROTOTYPE REVIEW LAB — never an implementation reference.
+
+  Loads every user-facing HTML mockup without modifying the approved original.
+  A = the original composition.
+  B/C = page-specific structural experiments injected into the same source.
+  Existing native prototypes keep their own fully-authored A/B/C variants.
+
+  Shareable URL: ?page=<page-id>&variant=A|B|C
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#171512;--panel:#211e1a;--card:#2b2722;--muted:#322e28;--bd:#3c352d;
+  --fg:#ece3d4;--mut:#a89c8c;--dim:#7c7264;--cat:#4b9cd3;--ok:#6fc0a8;
+  --warn:#e7b06a;--legacy:#c98ac9;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:'Nunito',system-ui,sans-serif;overflow:hidden}
+button{font:inherit}
+.lab{height:100%;display:grid;grid-template-columns:270px minmax(0,1fr)}
+.side{background:var(--panel);border-right:1px solid var(--bd);display:flex;flex-direction:column;min-height:0}
+.brand{padding:17px 17px 14px;border-bottom:1px solid var(--bd)}
+.brand h1{font-family:'Baloo 2';font-size:19px;line-height:1;margin:0;font-weight:800}
+.brand p{font-size:10.5px;color:var(--dim);font-weight:700;margin:5px 0 0}
+.progress{margin-top:11px;height:5px;background:#141210;border-radius:999px;overflow:hidden}
+.progress i{height:100%;display:block;background:var(--cat);width:100%;box-shadow:0 0 10px color-mix(in srgb,var(--cat) 55%,transparent)}
+.nav{padding:10px;overflow:auto;display:flex;flex-direction:column;gap:3px}
+.group{font-family:'Baloo 2';font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:800;padding:10px 8px 4px}
+.subgroup{font-family:'Baloo 2';font-size:9px;color:#c4b9aa;font-weight:800;padding:7px 8px 2px 17px}
+.pagebtn{width:100%;border:1px solid transparent;background:transparent;color:var(--mut);border-radius:9px;padding:8px 9px;
+  display:grid;grid-template-columns:1fr auto;gap:7px;text-align:left;cursor:pointer}
+.pagebtn.depth1{padding-left:18px}.pagebtn.depth2{padding-left:29px}
+.pagebtn:hover{background:var(--muted);color:var(--fg)}
+.pagebtn.on{background:color-mix(in srgb,var(--cat) 12%,var(--muted));border-color:color-mix(in srgb,var(--cat) 35%,var(--bd));color:var(--fg)}
+.pname{display:block;font-family:'Baloo 2';font-size:11.5px;font-weight:800;line-height:1.2}
+.pmeta{display:block;font-size:8.5px;color:var(--dim);font-weight:700;margin-top:2px}
+.status{align-self:center;font-family:'Baloo 2';font-size:7.5px;font-weight:800;border-radius:999px;padding:2px 6px;
+  background:#171512;color:var(--dim);text-transform:uppercase}
+.status.approved{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.status.proposed{color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
+.status.legacy{color:var(--legacy);background:color-mix(in srgb,var(--legacy) 12%,transparent)}
+.status.native{color:var(--cat);background:color-mix(in srgb,var(--cat) 12%,transparent)}
+.status.soon{color:var(--dim);background:#171512}
+.status.draft{color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
+
+.main{min-width:0;display:grid;grid-template-rows:auto auto minmax(0,1fr);background:#11100e}
+.top{grid-row:1;background:var(--panel);border-bottom:1px solid var(--bd);padding:10px 14px;display:flex;align-items:center;gap:12px;min-width:0}
+.arrow{width:31px;height:31px;border:1px solid var(--bd);background:var(--muted);color:var(--fg);border-radius:9px;display:grid;place-items:center;cursor:pointer}
+.arrow svg{width:14px;height:14px}.arrow:disabled{opacity:.35}
+.title{min-width:0;flex:1}.title h2{font-family:'Baloo 2';font-weight:800;font-size:15px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.title p{font-size:9.5px;color:var(--dim);font-weight:700;margin:1px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.original{font-family:'Baloo 2';font-size:10.5px;font-weight:800;color:var(--cat);text-decoration:none;border:1px solid var(--bd);
+  border-radius:8px;padding:6px 9px;background:var(--muted)}
+.fullscreen-toggle{height:31px;border:1px solid var(--bd);background:var(--muted);color:var(--fg);border-radius:9px;padding:0 10px;
+  display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Baloo 2';font-size:10.5px;font-weight:800;white-space:nowrap}
+.fullscreen-toggle svg{width:14px;height:14px}
+.viewbar{grid-row:2;display:none;align-items:center;gap:10px;padding:8px 14px;background:#181613;border-bottom:1px solid var(--bd);min-width:0}
+.viewbar.on{display:flex}
+.viewbar-label{font-family:'Baloo 2';font-size:9px;font-weight:800;color:var(--dim);letter-spacing:.09em;text-transform:uppercase;white-space:nowrap}
+.view-options{display:flex;align-items:center;gap:5px;min-width:0;overflow:auto}
+.view-option{border:1px solid var(--bd);border-radius:8px;background:#211e1a;color:var(--mut);padding:5px 10px;
+  font-family:'Baloo 2';font-size:10.5px;font-weight:800;white-space:nowrap;cursor:pointer}
+.view-option:hover{color:var(--fg);background:var(--muted)}
+.view-option.on{color:#101820;background:var(--cat);border-color:var(--cat)}
+.stage{grid-row:3;position:relative;min-height:0;padding:12px 12px 76px}
+.viewport{width:100%;height:100%;border:1px solid var(--bd);border-radius:14px;background:#1a1714;overflow:hidden;
+  box-shadow:0 18px 50px rgba(0,0,0,.38)}
+iframe{width:100%;height:100%;border:0;background:#1a1714}
+.placeholder-view{width:100%;height:100%;display:none;align-items:center;justify-content:center;padding:40px;background:
+  radial-gradient(circle at 70% 18%,rgba(75,156,211,.12),transparent 34%),#1a1714}
+.placeholder-view.on{display:flex}
+.placeholder-card{width:min(760px,100%);border:1px solid #3c352d;border-radius:22px;background:#24201b;padding:34px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.placeholder-crumb{font-size:10px;color:#8f8475;font-weight:800;text-transform:uppercase;letter-spacing:.1em}
+.placeholder-card h3{font-family:'Baloo 2';font-size:34px;line-height:1.04;margin:12px 0 8px}
+.placeholder-card p{color:#b5aa9a;font-size:14px;line-height:1.6;margin:0;max-width:600px}
+.placeholder-pill{display:inline-flex;margin-top:22px;border-radius:999px;padding:7px 11px;background:rgba(75,156,211,.12);color:#7fc1e9;
+  font-family:'Baloo 2';font-size:11px;font-weight:800}
+/* Not-yet-drawn tabs still carry three named design directions so the bottom
+   A/B/C switcher is present everywhere WITHOUT faking a mockup. The dashed
+   border and the "not yet drawn" pill are the honesty signal — never remove
+   them from a direction that has no source HTML behind it. */
+.placeholder-direction{margin-top:24px;border:1px dashed #4a4238;border-radius:14px;background:#1e1a16;padding:16px 18px}
+.pd-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.pd-letter{font-family:'Baloo 2';font-size:11px;font-weight:800;color:#101820;background:var(--cat);border-radius:999px;padding:2px 9px}
+.pd-name{font-family:'Baloo 2';font-size:16px;font-weight:800;color:var(--fg)}
+.pd-status{font-family:'Baloo 2';font-size:9px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#c9a05e;
+  background:rgba(231,176,106,.13);border-radius:999px;padding:3px 8px}
+.pd-desc{margin:9px 0 0;color:#a1968a;font-size:12.5px;line-height:1.55;max-width:620px}
+.loading{position:absolute;inset:12px 12px 76px;display:grid;place-items:center;color:var(--dim);font-family:'Baloo 2';font-weight:800;pointer-events:none}
+.loading.hide{display:none}
+
+.switcher{position:absolute;left:50%;bottom:17px;transform:translateX(-50%);display:flex;align-items:center;gap:7px;padding:6px;
+  background:#f7f3ec;color:#211e1a;border-radius:999px;box-shadow:0 15px 38px rgba(0,0,0,.5);z-index:4}
+.switcher button{width:34px;height:34px;border:0;border-radius:50%;background:#27231f;color:#fff;display:grid;place-items:center;cursor:pointer}
+.switcher button svg{width:14px;height:14px}
+.switcher.off{display:none}
+.lab.fullscreen{grid-template-columns:1fr}
+.lab.fullscreen .side{display:none}
+.lab.fullscreen .main{grid-template-rows:minmax(0,1fr)}
+.lab.fullscreen .top{position:fixed;right:12px;top:12px;z-index:20;background:transparent;border:0;padding:0;pointer-events:none}
+.lab.fullscreen .top>*:not(.fullscreen-toggle){display:none}
+.lab.fullscreen .fullscreen-toggle{pointer-events:auto;background:rgba(33,30,26,.92);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.lab.fullscreen .stage{grid-row:1;padding:0}
+.lab.fullscreen .viewbar{position:fixed;left:12px;top:12px;z-index:20;border:1px solid var(--bd);border-radius:10px;
+  background:rgba(24,22,19,.94);box-shadow:0 10px 30px rgba(0,0,0,.45);max-width:calc(100vw - 190px)}
+.lab.fullscreen .viewport{border:0;border-radius:0}
+.lab.fullscreen .loading{inset:0}
+/* The A/B/C switcher stays available in full screen too — comparing layouts at
+   realistic width is exactly when you need it. It floats and fades back until
+   hovered so it never competes with the mockup. */
+.lab.fullscreen .switcher{bottom:14px;opacity:.34;transition:opacity .16s ease}
+.lab.fullscreen .switcher:hover,.lab.fullscreen .switcher:focus-within{opacity:1}
+.lab.fullscreen .switcher{display:none}
+.vtext{width:300px;text-align:center;line-height:1.1}.vtext b{font-family:'Baloo 2';font-size:12.5px;font-weight:800}
+.vtext span{display:block;font-size:8.5px;color:#776f65;font-weight:800;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button:focus-visible,a:focus-visible{outline:2px solid #fff;outline-offset:2px}
+@media(max-width:780px){
+  .lab{grid-template-columns:1fr}.side{display:none}.top{padding:8px}.stage{padding:7px 7px 72px}.loading{inset:7px 7px 72px}
+  .vtext{width:230px}.original{display:none}
+}
+</style>
+</head>
+<body>
+<div class="lab">
+  <aside class="side">
+    <div class="brand">
+      <h1>Mockup variant lab</h1>
+      <p>Product order · completed work gets A / B / C</p>
+      <div class="progress"><i></i></div>
+    </div>
+    <nav class="nav" id="page-nav" aria-label="Mockup pages"></nav>
+  </aside>
+
+  <main class="main">
+    <header class="top">
+      <button class="arrow" id="prev-page" aria-label="Previous page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m15 18-6-6 6-6"/></svg></button>
+      <button class="arrow" id="next-page" aria-label="Next page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg></button>
+      <div class="title"><h2 id="page-title"></h2><p id="page-description"></p></div>
+      <a class="original" id="original-link" target="_blank">Open untouched original ↗</a>
+      <button class="fullscreen-toggle" id="fullscreen-toggle" aria-pressed="false" aria-label="Enter full screen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+        <span>Full screen</span>
+      </button>
+    </header>
+    <div class="viewbar" id="viewbar" aria-label="Product view selector">
+      <span class="viewbar-label" id="viewbar-label">View</span>
+      <div class="view-options" id="view-options"></div>
+    </div>
+    <section class="stage">
+      <div class="viewport">
+        <iframe id="preview" title="Selected mockup variant"></iframe>
+        <div class="placeholder-view" id="placeholder-view">
+          <article class="placeholder-card">
+            <div class="placeholder-crumb" id="placeholder-crumb"></div>
+            <h3 id="placeholder-title"></h3>
+            <p id="placeholder-copy"></p>
+            <span class="placeholder-pill">Mockup coming soon</span>
+            <div class="placeholder-direction" id="placeholder-direction">
+              <div class="pd-head">
+                <span class="pd-letter" id="pd-letter">A</span>
+                <span class="pd-name" id="pd-name"></span>
+                <span class="pd-status">Direction only · not yet drawn</span>
+              </div>
+              <p class="pd-desc" id="pd-desc"></p>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="loading" id="loading">Loading mockup…</div>
+      <div class="switcher" id="variant-switcher" aria-label="Variant switcher">
+        <button id="prev-variant" aria-label="Previous variant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div class="vtext"><b id="variant-title"></b><span id="variant-description"></span></div>
+        <button id="next-variant" aria-label="Next variant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg></button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const BASE_INJECTED_CSS = `
+  html{scrollbar-color:#4a4238 #211e1a}
+  body{transition:none!important}
+  body::before{
+    content:attr(data-lab-label);position:fixed;right:12px;top:12px;z-index:99999;
+    background:rgba(20,18,15,.86);color:#ece3d4;border:1px solid #4a4238;border-radius:999px;
+    padding:5px 9px;font:800 9px 'Baloo 2',sans-serif;letter-spacing:.04em;box-shadow:0 8px 20px rgba(0,0,0,.35)
+  }
+  .psw{display:none!important}
+  .frame,.wrap,.split,.wide,.page-head,.head,.note{max-width:100%!important}
+  @media(max-width:720px){body::before{display:none}}
+`;
+
+const profiles = [
+  {
+    id:"empty-states",group:"Academics",name:"Empty states",status:"native",
+    path:"01-academics/academics-empty-states-prototype.html",native:true,
+    desc:"Zero-class cold start using the MascotNote empty-state pattern.",
+    variants:[
+      ["Guided launchpad","One calm day-one action with outcomes underneath."],
+      ["Setup explained","Action-first split with a practical setup guide."],
+      ["In-place collection","The empty state lives where the class collection will appear."]
+    ]
+  },
+  {
+    id:"planner",group:"Academics",name:"Planner",status:"native",
+    path:"01-academics/academics-planner-prototype.html",native:true,
+    desc:"Future-term sequencing with requirement effects and live GPA outcomes.",
+    variants:[
+      ["Timeline first","The whole plan and MCAT divider lead."],
+      ["Next-term builder","One semester becomes the working surface."],
+      ["Decision inspector","Selected-course effects and provenance lead."]
+    ]
+  },
+  {
+    id:"assignments",group:"Academics",name:"Assignments",status:"approved",
+    path:"01-academics/academics-assignments.html",
+    desc:"Agenda, weekly board, calendar, and projected workload.",
+    variants:[
+      ["Agenda","The day-to-day assignment queue fills one review canvas."],
+      ["Weekly board","The same workload is organized across the week."],
+      ["Calendar","Month planning and its detail rail fill one review canvas."]
+    ],
+    b:`
+      .vlabel,.vnote{display:none!important}
+      .frame>.fbar,.frame>.body{display:none!important}
+      .frame>.fbar:nth-child(5),.frame>.body:nth-child(6){display:flex!important}
+      .frame>.body:nth-child(6){display:block!important}
+      .frame>.body{padding:18px 28px 40px!important}
+      .frame>.body>.card{max-width:1180px;margin:auto;min-height:620px}
+    `,
+    c:`
+      .vlabel,.vnote{display:none!important}
+      .frame>.fbar,.frame>.body{display:none!important}
+      .frame>.fbar:nth-child(13),.frame>.body:nth-child(14){display:flex!important}
+      .frame>.body:nth-child(14){display:block!important}
+      .frame>.body{padding:18px 28px 40px!important}
+      .frame>.body>.card{max-width:1180px;margin:auto;min-height:650px}
+    `
+  },
+  {
+    id:"daily-main",group:"Academics",name:"Daily · Class Center",status:"approved",
+    path:"01-academics/academics-daily-main-page.html",
+    desc:"The populated Academics landing page and cross-class study outlook.",
+    variants:[
+      ["Approved bento","The approved mixed-size control panel."],
+      ["Study cockpit","Queue and weak topics lead; supporting panels form a right rail."],
+      ["Class-first canvas","Class cards lead, with compact intelligence below."]
+    ],
+    b:`
+      .bento{grid-template-columns:minmax(0,1.65fr) minmax(300px,.75fr)!important}
+      .bento>.c12{grid-column:1/-1!important}
+      .bento>.c7{grid-column:1!important}.bento>.c5,.bento>.c4{grid-column:2!important}
+      .bento>.card:nth-child(n+7){grid-column:1/-1!important}
+    `,
+    c:`
+      .bento{display:flex!important;flex-direction:column!important}
+      .bento>.card:nth-child(2){order:-3}.bento>.card:nth-child(4){order:-2}.bento>.card:nth-child(1){order:-1}
+      .ccards{display:grid!important;grid-template-columns:repeat(3,minmax(190px,1fr))!important}
+      .cc{width:auto!important}.smart .bd>div{grid-template-columns:repeat(3,1fr)!important}
+    `
+  },
+  {
+    id:"class-hub",group:"Academics",name:"Class hub",status:"approved",
+    path:"01-academics/academics-class-hub.html",
+    desc:"Five-tab per-class workspace and study loop.",
+    keys:["A","B","C","D","E"],
+    variants:[
+      ["Overview","The class overview appears as one complete workspace."],
+      ["Materials","The weekly materials library opens as its own view."],
+      ["Topics","The course topic map opens as its own view."],
+      ["Assignments","Class-scoped work is grouped by syllabus category with grades and what-if."],
+      ["Notes","Class intel, questions, priming, and lecture notes open as their own view."]
+    ],
+    b:`
+      .frame>.lab,.frame>.wrap{display:none!important}
+      .frame>.wrap:nth-child(3){display:block!important;padding:18px 28px 50px!important}
+      .frame>.wrap:nth-child(3) .bento{grid-template-columns:1.5fr 1fr!important}
+    `,
+    c:`
+      .frame{width:min(1700px,100%)!important;display:grid!important;grid-template-columns:1fr 1fr;align-items:start}
+      .frame>.ban,.frame>h1{grid-column:1/-1}
+      .frame>.lab{display:none!important}
+      .frame>.wrap{padding:10px!important}
+      .frame>.wrap:nth-child(3){grid-column:1/-1}
+      .frame>.wrap .bento{grid-template-columns:1fr 1fr!important}
+    `
+  },
+  {
+    id:"class-types",group:"Academics",name:"Class types",status:"proposed",
+    path:"01-academics/academics-class-types.html",
+    desc:"STEM, Writing, and General parity across class workspaces.",
+    variants:[
+      ["Class-type comparison","STEM and Writing are compared on one fitted canvas."],
+      ["STEM class","The STEM workspace opens by itself."],
+      ["Writing class","The writing workspace opens by itself."]
+    ],
+    b:`
+      .split{grid-template-columns:1fr!important;max-width:1180px!important}
+      .half{min-height:auto!important}.page-head{position:sticky;top:0;z-index:5}
+    `,
+    c:`
+      body{display:flex!important;flex-direction:column}
+      .wide{order:-1!important}.page-head{order:-2!important}
+      .split{grid-template-columns:1fr 1fr!important}
+      .split .body{display:none!important}
+      .note{display:none!important}
+    `
+  },
+  {
+    id:"exam-prep",group:"Academics",name:"Exam-plan builder",status:"proposed",
+    path:"01-academics/academics-exam-prep-mode.html",
+    desc:"Accelerated, steady, and catch-up exam preparation states.",
+    variants:[
+      ["Accelerated","The default nine-day plan opens as one complete screen."],
+      ["Steady","The steady-mode plan and clocked-out state open separately."],
+      ["Catch-up","The detected three-day catch-up plan opens separately."]
+    ],
+    b:`
+      body>.framelabel,body>.frame{display:none!important}
+      body>.framelabel:nth-child(1),body>.frame:nth-child(2){display:block!important}
+      body>.frame:nth-child(2){margin-bottom:50px!important}
+    `,
+    c:`
+      body{display:grid!important;grid-template-columns:repeat(3,minmax(420px,1fr));align-items:start;gap:14px;padding:14px!important}
+      body>.framelabel{width:auto!important;margin:0!important}
+      body>.frame{width:100%!important;margin:0!important}
+      body>.framelabel:nth-child(1){grid-column:1}body>.frame:nth-child(2){grid-column:1}
+      body>.framelabel:nth-child(3){grid-column:2;grid-row:1}body>.frame:nth-child(4){grid-column:2;grid-row:2}
+      body>.framelabel:nth-child(5){grid-column:3;grid-row:1}body>.frame:nth-child(6){grid-column:3;grid-row:2}
+    `
+  },
+  {
+    id:"review-session",group:"Academics",name:"Review session",status:"approved",
+    path:"01-academics/academics-review-session.html",
+    desc:"Active-recall cue, composer, confidence, reveal, and grading loop.",
+    variants:[
+      ["Session start","The scenic queue introduction opens as one screen."],
+      ["Recall","The active recall composer opens as one focused screen."],
+      ["Gap report","The missed-concept report and cited source open as one screen."]
+    ],
+    b:`
+      .frame>.lab{display:none!important}
+      .frame>.scene,.frame>.focus{display:none!important}
+      .frame>.focus:nth-child(5){display:block!important;min-height:100vh}
+    `,
+    c:`
+      .frame{width:min(1600px,100%)!important;display:grid!important;grid-template-columns:1fr 1fr;gap:12px;padding:12px!important}
+      .frame>.lab{display:none!important}
+      .frame>.scene,.frame>.focus{margin:0!important;min-height:620px}
+    `
+  },
+  {
+    id:"syllabus-import",group:"Academics",name:"Syllabus import",status:"proposed",
+    path:"01-academics/academics-syllabus-import.html",
+    desc:"Upload, parse, review-before-apply, diff, and failure recovery.",
+    variants:[
+      ["Upload","The cold-start upload and parsing state opens alone."],
+      ["Review before apply","The consequential review workspace opens alone."],
+      ["Re-import diff","The safe diff and failure-recovery state opens alone."]
+    ],
+    b:`
+      body>.framelabel,body>.frame{display:none!important}
+      body>.framelabel:nth-child(3),body>.frame:nth-child(4){display:block!important}
+      body>.frame:nth-child(4){margin-bottom:50px!important}
+    `,
+    c:`
+      body{display:grid!important;grid-template-columns:repeat(3,minmax(430px,1fr));align-items:start;gap:14px;padding:14px!important}
+      body>.framelabel{width:auto!important;margin:0!important}
+      body>.frame{width:100%!important;margin:0!important}
+      body>.framelabel:nth-child(1){grid-column:1}body>.frame:nth-child(2){grid-column:1}
+      body>.framelabel:nth-child(3){grid-column:2;grid-row:1}body>.frame:nth-child(4){grid-column:2;grid-row:2}
+      body>.framelabel:nth-child(5){grid-column:3;grid-row:1}body>.frame:nth-child(6){grid-column:3;grid-row:2}
+    `
+  },
+  {
+    id:"mode-switch",group:"Academics · legacy",name:"Daily / Planning concept",status:"legacy",
+    path:"01-academics/academics-mode-switch.html",
+    desc:"Superseded flow concept retained for historical comparison.",
+    variants:[
+      ["Original interaction","The old switchable Daily/Planning concept."],
+      ["Planning focus","The planning side opens as the sole working surface."],
+      ["Split comparison","Daily and Planning appear together to expose the old model."]
+    ],
+    /* The segmented control is .seg > button (there is no .pill here). */
+    b:`
+      #daily{display:none!important}#plan{display:block!important}
+      .seg button:first-child{background:transparent!important;color:var(--muted)!important}
+      .seg button:last-child{background:var(--surface2)!important;color:var(--text)!important}
+    `,
+    c:`
+      .wrap{max-width:1500px!important;display:grid!important;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+      #daily,#plan{display:block!important}
+      .topbar,.hint{grid-column:1/-1}
+    `
+  },
+  {
+    id:"old-study-hub",group:"Academics · legacy",name:"Study hub concept",status:"legacy",
+    path:"01-academics/class-center-study-hub.html",
+    desc:"Superseded single-page study hub retained for flow reference.",
+    variants:[
+      ["Original concept","The historical all-in-one hub."],
+      ["Review-first rail","Review queue leads, supporting files and tools form a side rail."],
+      ["Resource-first canvas","Materials and tools lead; review stays visible but secondary."]
+    ],
+    /* .grid holds two unclassed divs (review column, materials column) — there
+       are no .card children here, which is why the old rules were inert. */
+    b:`
+      .wrap{max-width:1040px!important}
+      .grid{grid-template-columns:minmax(0,1fr) 210px!important}
+      .coach{padding:9px 12px!important}
+      .coach .steps{display:none!important}
+    `,
+    c:`
+      .wrap{max-width:1100px!important;display:flex!important;flex-direction:column}
+      .hd{order:1}
+      .grid{order:2;grid-template-columns:1fr 1fr!important;align-items:start}
+      .grid>div:first-child{order:2!important}
+      .grid>div:nth-child(2){order:1!important}
+      .coach{order:3;margin:16px 0 0!important}
+      .foot{order:4}
+    `
+  },
+  {
+    id:"requirements",group:"Academics",name:"Requirements",status:"proposed",
+    path:"01-academics/academics-requirements.html",
+    desc:"Requirement audit, on-pace verdict against the MCAT, and prior credit.",
+    variants:[
+      ["Gap & pace","The default audit: verdict first, requirement sets below."],
+      ["All requirements","The full sets with their confidence labelling."],
+      ["Prior credit","AP, transfer and dual enrolment, stored transcript-exact."]
+    ]
+  },
+  {
+    id:"grades-archive",group:"Academics",name:"Grades & Archive",status:"proposed",
+    path:"01-academics/academics-grades-archive.html",
+    desc:"The full record, dual UNC/AMCAS GPA, and weight-aware what-if.",
+    variants:[
+      ["Ledger","Every course ever taken, with status as a filter."],
+      ["GPA","Dual UNC/AMCAS numbers and the year-by-year trend."],
+      ["What-if","Scenario mode and the inverse solve."]
+    ]
+  },
+  {
+    id:"overview",group:"Overview",name:"Overview control panel",status:"approved",
+    path:"03-overview/overview-bento-control-panel.html",
+    desc:"Cross-pillar command center, roadmap, tasks, and readiness.",
+    variants:[
+      ["Approved bento","The approved mixed-size overview composition."],
+      ["Graphite precision","The same bento, rebuilt with quiet graphite surfaces and restrained status color."],
+      ["Obsidian studio","The same information architecture with sharper contrast, thinner chrome, and near-monochrome instrumentation."]
+    ],
+    b:`
+      :root{
+        --bg:#101113!important;--card:#17191c!important;--muted:#1d2024!important;--bd:#2b2f34!important;
+        --fg:#f2f3f4!important;--mut:#a5aab0!important;--dim:#70767e!important;--pri:#69aeda!important;
+        --pri-ink:#0d1d27!important;--success:#78b59c!important;--warning:#d0a36b!important;--danger:#ca7c70!important;
+        --star:#d0a36b!important;--gpa:#69aeda!important;--mcat:#9688c8!important;--shadow:#c59a62!important;
+        --volunteer:#72a996!important;--activities:#b5818c!important;--clinical:#78a97a!important;
+        --research:#a782ad!important;--letters:#bd8d69!important;
+      }
+      body,.frame{background:#101113!important}
+      .frame{padding:28px!important}
+      .bento{gap:14px!important;margin-top:14px!important}
+      .card{background:#17191c!important;border-color:#2b2f34!important;border-radius:12px!important;box-shadow:none!important}
+      .hero{
+        background:
+          radial-gradient(600px 220px at 92% -20%,rgba(255,255,255,.10),transparent 62%),
+          linear-gradient(132deg,#17191c 0%,#202328 54%,#2b3036 100%)!important;
+        border-color:#343941!important;border-radius:12px!important
+      }
+      .hill{background:linear-gradient(180deg,transparent,rgba(0,0,0,.38))!important}
+      .glass{background:rgba(12,13,15,.58)!important;border-color:rgba(255,255,255,.11)!important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.06)!important;border-radius:11px!important;backdrop-filter:blur(18px)!important}
+      .hgreet,.ti,.tbig{letter-spacing:-.025em!important;text-shadow:none!important}
+      .ti{font-size:17px!important}.hd{padding:15px 17px 9px!important}.bd{padding:4px 17px 17px!important}
+      .btn,.bsm,.tabs,.tab,.rec,.row,.qw,.mc,.ctx{border-radius:8px!important}
+      .btn.p,.bsm.p{background:#69aeda!important;color:#0d1d27!important}
+      .smart,.rmap{background:#17191c!important;border-color:#2b2f34!important}
+      .spk,.qwi,.wic{filter:saturate(.62)!important}
+      .tag,.wpc{filter:saturate(.58)!important}
+      .row.imp{border-left-color:#8e9399!important;background:#1d2024!important}
+      .tab.on{box-shadow:none!important;background:#24272b!important}
+      .mile.cur .mdot{box-shadow:0 0 0 4px rgba(215,220,225,.10)!important}
+    `,
+    c:`
+      :root{
+        --bg:#08090a!important;--card:#0d0f11!important;--muted:#131518!important;--bd:#25282c!important;
+        --fg:#f7f7f6!important;--mut:#a7aaad!important;--dim:#656a70!important;--pri:#5da8d8!important;
+        --pri-ink:#071722!important;--success:#72b295!important;--warning:#d1a365!important;--danger:#ce776c!important;
+        --star:#d1a365!important;--gpa:#5da8d8!important;--mcat:#8f80c5!important;--shadow:#c89759!important;
+        --volunteer:#68a78f!important;--activities:#b47b88!important;--clinical:#70a873!important;
+        --research:#a57bac!important;--letters:#bb8763!important;
+      }
+      body,.frame{background:#08090a!important}
+      .frame{padding:24px!important}
+      .bento{gap:12px!important;margin-top:12px!important}
+      .card{background:#0d0f11!important;border:1px solid #25282c!important;border-radius:8px!important;
+        box-shadow:0 1px 0 rgba(255,255,255,.025)!important}
+      .hero{
+        background:
+          radial-gradient(520px 180px at 88% -15%,rgba(93,168,216,.13),transparent 68%),
+          linear-gradient(135deg,#0c0e10,#171a1e)!important;
+        border-color:#2d3136!important;border-radius:8px!important
+      }
+      .hill{display:none!important}
+      .glass{background:rgba(7,8,9,.78)!important;border:1px solid #30343a!important;border-radius:8px!important;
+        box-shadow:none!important;backdrop-filter:blur(14px)!important}
+      .hdate,.tlab,.wghl,.grpl{letter-spacing:.13em!important}
+      .hgreet{font-size:32px!important;letter-spacing:-.035em!important;text-shadow:none!important}
+      .ti,.tbig{letter-spacing:-.035em!important}.ti{font-size:16.5px!important}
+      .hd{padding:14px 16px 8px!important}.bd{padding:3px 16px 16px!important}
+      .btn,.bsm,.tabs,.tab,.rec,.row,.qw,.mc,.ctx,.qadd{border-radius:6px!important}
+      .btn.p,.bsm.p{background:#5da8d8!important;color:#071722!important}
+      .tabs,.rec,.row,.qw,.mc,.qadd{background:#131518!important}
+      .smart,.rmap{background:#0d0f11!important;border-color:#25282c!important}
+      .spk,.qwi,.wic,.tag,.wpc,.ad{filter:saturate(.58)!important}
+      .row.imp{border-left:2px solid #d1a365!important;background:#131518!important}
+      .tab.on{background:#5da8d8!important;color:#071722!important;border-color:#5da8d8!important;box-shadow:none!important}
+      .tab.on .cnt{background:rgba(7,23,34,.18)!important;color:#071722!important}
+      .ctx{background:rgba(13,15,17,.94)!important;border-color:#30343a!important;box-shadow:0 24px 60px rgba(0,0,0,.55)!important}
+      .mile.cur .mdot{background:#5da8d8!important;border-color:#5da8d8!important;box-shadow:0 0 0 3px rgba(93,168,216,.16)!important}
+      .mile.cur .mc{box-shadow:none!important;border-color:#555b62!important}
+    `
+  },
+  {
+    id:"public-landing",group:"Landing & auth",name:"Landing · auth · merge",status:"proposed",
+    path:"05-public/public-landing-and-auth.html",
+    desc:"Front door, sign-in, and the local\u2192account merge. Primary action is Start tracking, not Sign up.",
+    variants:[
+      ["Stacked review","All three surfaces stacked as authored \u2014 landing, auth pair, merge."],
+      ["Landing only","Hero, features and the guided tour fill the canvas; auth and merge recede."],
+      ["Auth + merge first","The two account surfaces lead; the landing page drops below."]
+    ],
+    b:`
+      .frame .seclab:nth-of-type(2),.frame .seclab:nth-of-type(3){opacity:.35!important}
+      .frame>.page:nth-of-type(2),.frame>.page:nth-of-type(3){opacity:.35!important}
+    `
+  },
+  {
+    id:"public-docs",group:"Landing & auth",name:"About · Privacy · Terms · Pricing",status:"proposed",
+    path:"05-public/public-legal-about-pricing.html",
+    desc:"The four doc pages on one shell. About is first person; Pricing is a coming-soon page, deliberately.",
+    variants:[
+      ["All four","About, Privacy, Terms and Pricing stacked as authored."],
+      ["About only","The note from the creator fills the canvas; the legal pages recede."],
+      ["Legal only","Privacy and Terms lead for a plain-language read; About and Pricing recede."]
+    ],
+    b:`
+      .frame .seclab:nth-of-type(1),.frame .seclab:nth-of-type(4){opacity:.35!important}
+      .frame>.page:nth-of-type(1),.frame>.page:nth-of-type(4){opacity:.35!important}
+    `
+  },
+  {
+    id:"mcat-bookshelf",group:"MCAT",name:"Bookshelf",status:"proposed",
+    path:"02-mcat/mcat-bookshelf.html",
+    desc:"Owned-resource catalog and schedule-aware recommendation.",
+    variants:[
+      ["Catalog reference","The authored recommendation plus grouped resource list."],
+      ["Recommendation first","Today’s matched resource and missing-resource alerts lead beside the catalog."],
+      ["Library index","Resource groups become a dense two-column searchable library."]
+    ],
+    b:`
+      .wrap{max-width:1380px!important;display:grid!important;grid-template-columns:minmax(0,1.5fr) 360px;gap:14px}
+      .tabs,.sub,.kicker,.note{grid-column:1/-1}
+      .hero{grid-column:1}.alerts{grid-column:2;grid-row:3/span 3}
+      .grp,.gap{grid-column:1}
+    `,
+    c:`
+      .wrap{max-width:1500px!important;display:grid!important;grid-template-columns:1fr 1fr;gap:12px}
+      .tabs,.sub,.hero,.alerts,.kicker,.note,.gap{grid-column:1/-1}
+      .grp{margin:0!important}
+    `
+  },
+  {
+    id:"mcat-plan",group:"MCAT · legacy",name:"Plan concept",status:"legacy",
+    path:"02-mcat/mcat-plan.html",
+    desc:"Older generated-plan flow retained for sequencing reference.",
+    variants:[
+      ["Original weekly plan","Today and the week remain in one authored stack."],
+      ["Today first","Today’s schedule fills the canvas; the week becomes secondary."],
+      ["Week board","The weekly sequence leads with today as a compact side rail."]
+    ],
+    b:`
+      .wrap{max-width:1100px!important}.week,h2{display:none!important}
+      .today{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}
+    `,
+    c:`
+      .wrap{max-width:1400px!important;display:grid!important;grid-template-columns:360px 1fr;gap:14px}
+      .top,.sub,.legend,.foot{grid-column:1/-1}
+      .banner,.day{grid-column:1}.week,h2{grid-column:2}.week{grid-row:4/span 2}
+    `
+  },
+  {
+    id:"mcat-drills",group:"MCAT",name:"Section-aware drills",status:"proposed",
+    path:"02-mcat/mcat-section-aware-drills.html",
+    desc:"One M2M runner with section-specific generator cadence.",
+    /* Source uses .split > .win (x2) + .head + .note. There is no .phone class —
+       the previous treatments targeted one and silently did nothing. */
+    variants:[
+      ["Side-by-side comparison","Two section templates appear together — parity is the argument."],
+      ["Runner focus","One drill runner fills the page; the second template and commentary recede."],
+      ["Vertical comparison","Section templates stack full-width for line-by-line comparison."]
+    ],
+    b:`
+      .split{grid-template-columns:1fr!important;max-width:960px!important}
+      .split>.win:nth-child(2){display:none!important}
+      .note,.head p{display:none!important}
+    `,
+    c:`
+      .split{grid-template-columns:1fr!important;max-width:960px!important;gap:14px!important}
+      .split>.win{min-height:auto!important}
+      .head p,.note{max-width:960px!important}
+    `
+  },
+  {
+    id:"clinical",group:"Clinical · legacy",name:"Clinical pillar concept",status:"legacy",
+    path:"04-clinical/clinical-pillar.html",
+    desc:"Older experience-pillar concept retained for interaction reference.",
+    variants:[
+      ["Original card grid","Active and completed experiences remain grouped."],
+      ["Active experience focus","Current roles lead; completed history becomes compact."],
+      ["Experience ledger","Cards become a single dense record stream."]
+    ],
+    /* .wrap children are all divs, so :first-of-type/:last-of-type resolved to
+       .subtabs and .foot rather than the two .grid blocks. Address them by
+       position instead: [5] = Active grid, [7] = Needs-attention grid. */
+    b:`
+      .wrap{max-width:1320px!important}
+      .wrap>div:nth-child(5){grid-template-columns:2fr 1fr!important}
+      .wrap>div:nth-child(6),.wrap>div:nth-child(7){opacity:.62!important}
+      .wrap>div:nth-child(7){grid-template-columns:repeat(3,1fr)!important}
+      .wrap>div:nth-child(7) .card{padding:13px 15px!important}
+    `,
+    c:`
+      .grid{display:flex!important;flex-direction:column!important;gap:8px!important;margin-bottom:16px!important}
+      .card{padding:12px 18px!important;border-radius:10px!important}
+      .card .r1{align-items:center!important;gap:14px!important}
+      .card h3{font-size:16px!important}
+      .card .sub{font-size:12.5px!important;margin-top:0!important}
+    `
+  }
+];
+
+/*
+  Review order follows the actual Premed HQ navigation, not the mockup folders.
+  Only completed Overview and Academics work is presented as an A/B/C decision.
+  Draft sources remain inspectable, and unmocked product areas are honest placeholders.
+*/
+/* ---------------------------------------------------------------------------
+   VIEW-LEVEL DESIGN VARIANTS  (added Aug 2026)
+
+   Resolution order, per CLAUDE-HANDOFF "Architecture note":
+       page -> product view -> design variant -> layout treatment
+   Pages WITHOUT product views keep their flat page-level `variants`/`b`/`c`.
+   Pages WITH product views resolve here, keyed by view slug, so the named
+   product-view selector and the A/B/C switcher stay independent.
+
+   RULE: because product-view pages are isolated by isolateAuthoredView()
+   BEFORE this CSS lands, every treatment below must only target DESCENDANTS
+   of the isolated view. Never toggle sibling frames/views from here.
+--------------------------------------------------------------------------- */
+const VIEW_VARIANTS = {
+  assignments:{
+    agenda:{v:[["Bucketed queue","Time buckets stack in one column; position alone encodes urgency."],
+               ["Two-column triage","The same buckets run in two columns so a whole week is visible without scrolling."],
+               ["Dense ledger","Cards compress to scannable rows for weeks with a lot of small work."]],
+      b:`.frame>.body .card{max-width:none!important}
+         .frame>.body .card>div:last-child{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;align-items:start!important}`,
+      c:`.frame>.body .acard{padding:7px 10px!important;border-radius:8px!important}
+         .frame>.body .acard .acmeta{font-size:10px!important;opacity:.8}
+         .frame>.body .acbar{display:none!important}`},
+    /* Day columns are .wkcol inside .wkgrid; .wkd is only the label inside a
+       column. Target .wkgrid/.wkcol — never .wkd — for weekly layout work. */
+    weekly:{v:[["Seven lanes","Every weekday gets equal width — the honest shape of the week."],
+               ["Weekday focus","Weekends compress so the five working days carry the space."],
+               ["Day rows","Days become full-width rows so a heavy day can show all of its work."]],
+      b:`.frame>.body .wkgrid{grid-template-columns:.62fr repeat(5,1fr) .62fr!important}
+         .frame>.body .wkcol:first-child,.frame>.body .wkcol:last-child{opacity:.5!important}
+         .frame>.body .wkcol.today{box-shadow:0 0 0 1px var(--pri)!important}`,
+      c:`.frame>.body .wkgrid{display:flex!important;flex-direction:column!important;gap:7px!important}
+         .frame>.body .wkcol{display:grid!important;grid-template-columns:132px minmax(0,1fr)!important;
+           align-items:center!important;gap:12px!important;min-height:0!important;padding:8px 12px!important}
+         .frame>.body .wkcol .wkd{font-size:11px!important;letter-spacing:.05em!important}`},
+    /* The authored calendar is ALREADY month + rail (.calwrap is 1fr 290px),
+       so A is named for what it actually is. B/C move the rail, not invent it. */
+    calendar:{v:[["Month + detail rail","The authored composition: month grid with a persistent day rail."],
+                 ["Full-width month","The rail drops below so the month itself gets the whole canvas."],
+                 ["Compact month + agenda","Day cells shrink and the rail grows into a dense linked agenda."]],
+      b:`.frame>.body .calwrap{grid-template-columns:minmax(0,1fr)!important}
+         .frame>.body .calday{min-height:88px!important}`,
+      c:`.frame>.body .calwrap{grid-template-columns:minmax(0,1fr) 360px!important}
+         .frame>.body .calday{min-height:52px!important;padding:4px!important}
+         .frame>.body .caln{font-size:10px!important}
+         .frame>.body .calev{font-size:8px!important;padding:1px 3px!important}`}
+  },
+  "class-hub":{
+    overview:{v:[["Bento status board","Mixed-size panels; the approved composition."],
+                 ["Study-first column","Due-today and weak topics lead in one wide column; status demotes."],
+                 ["Two-pane workspace","Status left, study right — nothing stacks below the fold."]],
+      b:`.frame>.wrap .bento{display:flex!important;flex-direction:column!important}
+         .frame>.wrap .bento>.card:nth-child(2),.frame>.wrap .bento>.card:nth-child(3){order:-1}`,
+      c:`.frame>.wrap .bento{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+         .frame>.wrap .bento>.card{grid-column:auto!important}`},
+    /* Each Class Hub view is one .frame > .wrap. Their children differ, so C
+       treatments place children explicitly rather than using nth-child sweeps:
+         materials  .fb .grp .warn
+         topics     .fb .grp .grp
+         assignments .fb .grp .grp .pace [what-if]
+         notes      [filter] .card                                        */
+    materials:{v:[["Weekly modules","Grouped by week, the way the syllabus orders them."],
+                  ["Library index","A flat, filterable index for finding one file fast."],
+                  ["List + side pane","Files on the left, unmapped-file triage pinned beside them."]],
+      b:`.frame>.wrap .grp{border:0!important;background:transparent!important;padding:0!important}
+         .frame>.wrap .gh{position:sticky;top:0;z-index:3}
+         .frame>.wrap .row{border-radius:7px!important;padding:6px 9px!important}`,
+      c:`.frame>.wrap{display:grid!important;grid-template-columns:minmax(0,1.3fr) minmax(250px,.7fr)!important;
+           gap:12px!important;align-items:start!important}
+         .frame>.wrap>.fb{grid-column:1/-1!important}
+         .frame>.wrap>.grp{grid-column:1!important;margin-bottom:0!important}
+         .frame>.wrap>.warn{grid-column:2!important;position:sticky;top:10px}`},
+    topics:{v:[["Unit sections","Topics grouped into units in course order."],
+               ["Mastery table","One flat table sorted by weakness rather than by unit."],
+               ["Two-column map","Units run in two columns to expose the whole course at once."]],
+      b:`.frame>.wrap .grp{border:0!important;background:transparent!important;margin-bottom:4px!important}
+         .frame>.wrap .gh{display:none!important}
+         .frame>.wrap .row{border-radius:0!important;border-left:0!important;border-right:0!important}`,
+      c:`.frame>.wrap{columns:2!important;column-gap:14px!important}
+         .frame>.wrap>.fb{column-span:all!important}
+         .frame>.wrap>.grp{break-inside:avoid!important}`},
+    assignments:{v:[["Category groups","Grouped by syllabus category, because that is how the grade computes."],
+                    ["Weight ledger","Categories become a weight-and-average ledger; items collapse."],
+                    ["Split with what-if","Categories left, the what-if calculator pinned right."]],
+      b:`.frame>.wrap .row{display:none!important}
+         .frame>.wrap .gh{padding:11px 13px!important}
+         .frame>.wrap .grp{margin-bottom:8px!important}`,
+      c:`.frame>.wrap{display:grid!important;grid-template-columns:minmax(0,1.4fr) minmax(290px,.6fr)!important;
+           gap:12px!important;align-items:start!important}
+         .frame>.wrap>.fb{grid-column:1/-1!important}
+         .frame>.wrap>.grp{grid-column:1!important;margin-bottom:0!important}
+         .frame>.wrap>.pace{grid-column:1!important}
+         .frame>.wrap>*:last-child{grid-column:2!important;grid-row:2/span 3!important;position:sticky;top:10px}`},
+    notes:{v:[["Filed by kind","Exam intel, questions, priming and lecture notes stay separated."],
+              ["Single stream","One chronological stream with kind as a chip."],
+              ["Two-column desk","The kind filter and per-topic notes sit side by side."]],
+      b:`.frame>.wrap .grp{border:0!important;background:transparent!important;padding:0!important;margin-bottom:6px!important}
+         .frame>.wrap .gh{display:none!important}`,
+      c:`.frame>.wrap{display:grid!important;grid-template-columns:minmax(260px,.42fr) minmax(0,1fr)!important;
+           gap:12px!important;align-items:start!important}
+         .frame>.wrap>*:first-child{position:sticky;top:10px}
+         .frame>.wrap>.card{margin-top:0!important}`}
+  },
+  "review-session":{
+    /* B was originally opacity-only, which the handoff rules out as a variant.
+       It now also drops the mascot note and widens the queue column, so the
+       difference is structural. C's collapse must clear .sinner's min-height
+       too — .scene alone will not shrink while .sinner holds 600px. */
+    start:{v:[["Scenic queue","The full scene and the mascot note set the tone before a session."],
+              ["Quiet start","Art recedes, the mascot note drops, and the queue widens to carry the screen."],
+              ["Queue-first","Scene collapses to a thin band; what you are about to review leads."]],
+      b:`.frame>.scene .sun,.frame>.scene .hill,.frame>.scene .water,.frame>.scene .field{opacity:.22!important}
+         .frame>.scene .veil{opacity:.95!important}
+         .frame>.scene .mascot{display:none!important}
+         .frame>.scene .col{width:min(1120px,92%)!important}`,
+      c:`.frame>.scene{min-height:0!important}
+         .frame>.scene .sinner{min-height:0!important;padding-top:10px!important}
+         .frame>.scene .sun,.frame>.scene .hill,.frame>.scene .water,.frame>.scene .field{height:130px!important;opacity:.45!important}
+         .frame>.scene .sbody{align-items:flex-start!important;padding-top:14px!important}
+         .frame>.scene .col{width:min(1000px,94%)!important}`},
+    /* NOTE: .col / .sbody / .sc2 / .qr live inside .scene, NOT .focus. The
+       recall and gap-report views are .focus > .ftop + .stage > .cardw, so
+       every treatment below hangs off .stage / .cardw. */
+    recall:{v:[["Centered composer","One centred column; nothing competes with recall."],
+               ["Full-bleed composer","The composer takes the whole width for long free-recall."],
+               ["Composer + scope rail","Scope stays pinned beside the composer instead of above it."]],
+      b:`.frame>.focus .stage{padding:26px 5%!important}
+         .frame>.focus .cardw{width:100%!important;max-width:none!important}
+         .frame>.focus .comp{min-height:240px!important}`,
+      c:`.frame>.focus .stage{padding:26px 3%!important}
+         .frame>.focus .cardw{width:min(1180px,100%)!important;max-width:none!important;
+           display:grid!important;grid-template-columns:minmax(0,1fr) minmax(210px,.34fr)!important;
+           column-gap:20px!important;align-items:start!important}
+         .frame>.focus .cardw>*{grid-column:1!important}
+         .frame>.focus .cardw>.scope{grid-column:2!important;grid-row:1/span 7!important;
+           flex-direction:column!important;align-items:flex-start!important;gap:7px!important;margin-top:0!important}`},
+    "gap-report":{v:[["Report with citations","Gaps and the cited source drawer together, as authored."],
+                     ["Gap list first","Only what you missed; the source drawer opens on demand."],
+                     ["Side-by-side source","The gap breakdown and the cited source sit side by side."]],
+      b:`.frame>.focus .drawer{display:none!important}
+         .frame>.focus .cardw{width:min(840px,100%)!important}
+         .frame>.focus .gapc:first-child{opacity:.5!important}`,
+      c:`.frame>.focus .stage{padding:26px 3%!important}
+         .frame>.focus .cardw{width:min(1200px,100%)!important;max-width:none!important;
+           display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,.92fr)!important;
+           column-gap:18px!important;align-items:start!important}
+         .frame>.focus .cardw>*{grid-column:1!important}
+         .frame>.focus .cardw>.drawer{grid-column:2!important;grid-row:1/span 6!important;margin-top:0!important}`}
+  },
+  "exam-prep":{
+    accelerated:{v:[["Full plan","Scope, projection, hours, then the day-by-day plan and its rail."],
+                    ["Today-first","Today fills the screen; the rest of the plan compresses beneath it."],
+                    ["Plan + evidence split","The plan and the evidence behind it sit side by side."]],
+      b:`.frame .top3{display:none!important}
+         .frame .split{grid-template-columns:1fr!important}
+         .frame .today{padding:20px 20px!important}
+         .frame .day{padding:8px 12px!important}
+         .frame .day .dwhy{display:none!important}`,
+      c:`.frame .split{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+         .frame .top3{grid-template-columns:1fr 1fr 1fr!important}`},
+    steady:{v:[["Plan and clocked-out","The lighter plan beside the state that ends the day."],
+               ["Plan only","Just the Steady plan, at full width."],
+               ["Outcome-first","The clocked-out promise leads; the plan supports it."]],
+      b:`.frame .split{grid-template-columns:1fr!important}
+         .frame .split>*:last-child{display:none!important}`,
+      c:`.frame .split{grid-template-columns:minmax(300px,.62fr) minmax(0,1fr)!important;direction:rtl!important}
+         .frame .split>*{direction:ltr!important}`},
+    "catch-up":{v:[["Triage then plan","The abandon decision leads, the rebuilt plan follows."],
+                   ["Triage only","Only the keep-or-skip decision, at full width."],
+                   ["Decision-first split","Triage left, the consequence and rebuilt plan right."]],
+      b:`.frame .split{display:none!important}
+         .frame .triage{grid-template-columns:1fr 1fr!important}
+         .frame .body>.panel{margin-bottom:0!important}`,
+      c:`.frame .body{display:grid!important;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr)!important;gap:13px!important;align-items:start!important}
+         .frame .body>.panel{margin-bottom:0!important}
+         .frame .split{grid-template-columns:1fr!important}
+         .frame .triage{grid-template-columns:1fr!important}`}
+  },
+  "syllabus-import":{
+    upload:{v:[["Centered dropzone","One calm target with the parsing state beneath."],
+               ["Dropzone only","Everything but the drop target is removed."],
+               ["Upload + expectations","The dropzone sits beside what will be extracted."]],
+      b:`.frame .center>.mnote,.frame .center>.parsing,.frame .center>.framelabel{display:none!important}
+         .frame .center>.dropzone:not(:first-of-type){display:none!important}
+         .frame .center>.dropzone{padding:96px 24px!important}`,
+      c:`.frame .center{max-width:none!important;display:grid!important;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)!important;gap:14px!important;align-items:start!important}
+         .frame .center>*{margin-bottom:0!important}`},
+    /* A is now the authored single column of findings beside the apply rail —
+       the two-column arrangement used to be baked into isolation, which made A
+       and B the same screen. B owns it now. */
+    review:{v:[["Groups + apply rail","Findings stack in one column beside the consequence of applying."],
+               ["Two-column groups","Findings run in two columns; flagged groups keep the left."],
+               ["Flagged-first","Clean groups recede entirely; only the decisions read."]],
+      b:`.frame .split>*:first-child{display:grid!important;grid-template-columns:1fr 1fr!important;align-items:start!important;gap:11px!important}
+         .frame .split>*:first-child>.group{margin-bottom:0!important}
+         .frame .split>*:first-child>.group.flagged{grid-column:1!important;grid-row:1/span 6!important}`,
+      c:`.frame .split>*:first-child>.group:not(.flagged){opacity:.42!important}
+         .frame .split>*:first-child>.group:not(.flagged) .ghead{padding:7px 12px!important}
+         .frame .split>*:first-child>.group.flagged{box-shadow:0 12px 28px -16px rgba(0,0,0,.8)!important}`},
+    "re-import":{v:[["Diff and recovery","Changes first, the failure path documented beneath."],
+                    ["Diff only","Only the three-way diff, at full width."],
+                    ["Two-column diff","Changes left, apply and rationale right, nothing below the fold."]],
+      b:`.frame .failbox,.frame .framelabel{display:none!important}
+         .frame .split{grid-template-columns:1fr!important}
+         .frame .split>*:last-child{display:none!important}`,
+      c:`.frame .failbox,.frame .framelabel{display:none!important}
+         .frame .split{grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr)!important}
+         .frame .diffrow{padding:8px 11px!important}`}
+  },
+  /* Both Planning pages use the Class Hub DOM contract: .frame > .wrap per
+     product view, .lab labels between. Treatments target .frame>.wrap only. */
+  "requirements":{
+    audit:{v:[["Verdict-led bento","Progress, status row, pace, next term and overlap in mixed-size panels."],
+              ["Pace as the surface","The on-pace verdict leads full width; supporting panels compress beneath it."],
+              ["Two-column audit","Gap on the left, the actions it implies on the right — nothing below the fold."]],
+      b:`.frame>.wrap .bento>*:nth-child(1){order:2!important}
+         .frame>.wrap .bento>*:nth-child(2){order:3!important}
+         .frame>.wrap .bento>*:nth-child(3){grid-column:span 12!important;order:1!important}
+         .frame>.wrap .bento>*:nth-child(4){grid-column:span 4!important;order:4!important}
+         .frame>.wrap .bento>*:nth-child(5){grid-column:span 8!important;order:4!important}
+         .frame>.wrap .bento>*:nth-child(6){display:none!important}`,
+      c:`.frame>.wrap .bento{grid-template-columns:repeat(2,minmax(0,1fr))!important;align-items:start!important}
+         .frame>.wrap .bento>*{grid-column:auto!important}
+         .frame>.wrap .bento>*:nth-child(1){grid-column:1/-1!important}
+         .frame>.wrap .tiles{grid-template-columns:repeat(2,1fr)!important}`},
+    requirements:{v:[["Grouped sets","Each requirement set keeps its own card, header and progress bar."],
+                     ["Gap-first","Met requirements recede and group chrome flattens — only what is left reads."],
+                     ["Two-column sets","Sets run in two columns so the whole audit fits one screen."]],
+      b:`.frame>.wrap .grp{border:0!important;background:transparent!important;margin-bottom:5px!important}
+         .frame>.wrap .gh{background:transparent!important;padding:9px 4px!important}
+         .frame>.wrap .glist{padding:7px 0!important}
+         .frame>.wrap .row:has(.chip.met){opacity:.38!important}
+         .frame>.wrap .row:has(.chip.met) .also{display:none!important}`,
+      c:`.frame>.wrap>div:last-child{columns:2!important;column-gap:14px!important}
+         .frame>.wrap .grp{break-inside:avoid!important}`},
+    "prior-credit":{v:[["Ledger with context","Why the strings matter, the ledger, then the AMCAS rules."],
+                       ["Ledger only","The explanation panels drop; the transcript table takes the screen."],
+                       ["Entry-first","Adding a course leads, with the rules pinned beside the ledger."]],
+      b:`.frame>.wrap .bento>*:nth-child(1),.frame>.wrap .bento>*:nth-child(3){display:none!important}`,
+      c:`.frame>.wrap .bento>*:nth-child(2){grid-column:span 8!important}
+         .frame>.wrap .bento>*:nth-child(1){grid-column:span 4!important;order:2!important}
+         .frame>.wrap .bento>*:nth-child(3){grid-column:span 4!important;order:3!important}
+         .frame>.wrap .addrow{order:-1!important;margin-top:0!important;margin-bottom:12px!important;
+           border-color:var(--cat)!important;color:var(--fg)!important}`}
+  },
+  "grades-archive":{
+    ledger:{v:[["Terms as cards","Each term keeps its own card, GPA readout and table."],
+               ["Dense transcript","Term chrome flattens into one continuous scannable record."],
+               ["Two-column terms","Terms run in two columns so the whole record fits one screen."]],
+      b:`.frame>.wrap .grp{border:0!important;border-radius:0!important;margin-bottom:0!important;border-bottom:1px solid var(--bd)!important}
+         .frame>.wrap .gh{background:transparent!important;padding:9px 4px!important}
+         .frame>.wrap .lc{padding:6px 8px!important;font-size:11.5px!important}
+         .frame>.wrap .lh{padding:6px 8px!important}
+         .frame>.wrap .lc .disp{display:none!important}`,
+      /* .grp:last-of-type resolves to the trailing .note div, not a term card
+         — same :last-of-type trap that broke the old clinical treatment. */
+      c:`.frame>.wrap .bento>*:nth-child(2){columns:2!important;column-gap:14px!important}
+         .frame>.wrap .grp{break-inside:avoid!important}
+         .frame>.wrap .ltable{grid-template-columns:78px 1fr 44px 44px 62px 86px!important}
+         .frame>.wrap .lc,.frame>.wrap .lh{padding:6px 8px!important;font-size:11px!important}`},
+    gpa:{v:[["Dual hero","Both numbers lead, then the breakdown and the year trend."],
+            ["Trend first","The year-by-year trajectory becomes the working surface."],
+            ["Instrument panel","Every number reads at once as one dense cluster."]],
+      b:`.frame>.wrap .bento>*:nth-child(3){grid-column:span 12!important;order:-1!important}
+         .frame>.wrap .trend{grid-template-columns:repeat(4,1fr)!important}
+         .frame>.wrap .tbar{height:200px!important}
+         .frame>.wrap .bento>*:nth-child(4){display:none!important}`,
+      c:`.frame>.wrap .bento>*:nth-child(1){grid-column:span 7!important}
+         .frame>.wrap .bento>*:nth-child(2){grid-column:span 5!important}
+         .frame>.wrap .bento>*:nth-child(3){grid-column:span 7!important}
+         .frame>.wrap .bento>*:nth-child(4){grid-column:span 5!important}
+         .frame>.wrap .gpanum{font-size:32px!important}
+         .frame>.wrap .tbar{height:86px!important}`},
+    "what-if":{v:[["Landing then inputs","Where the term lands you leads; the grade pickers follow."],
+                  ["Inputs first","The pickers take the screen — this is the surface you actually touch."],
+                  ["Solve-first","What you need in order to hit the grade leads; the scenario supports it."]],
+      b:`.frame>.wrap .bento>*:nth-child(2){grid-column:span 12!important;order:-1!important}
+         .frame>.wrap .wrow{padding:13px 15px!important}
+         .frame>.wrap .gopt{padding:6px 14px!important;font-size:13px!important}
+         .frame>.wrap .bento>*:nth-child(4){display:none!important}`,
+      c:`.frame>.wrap .bento>*:nth-child(3){grid-column:span 12!important;order:-1!important}
+         .frame>.wrap .bento>*:nth-child(3) .bd{display:grid!important;grid-template-columns:minmax(0,1.2fr) minmax(0,.9fr)!important;
+           align-items:start!important;gap:10px!important}
+         .frame>.wrap .bento>*:nth-child(3) .solve{grid-row:1/span 2!important}
+         .frame>.wrap .bento>*:nth-child(1){order:2!important}
+         .frame>.wrap .bento>*:nth-child(2){grid-column:span 12!important;order:3!important}`}
+  },
+  "class-types":{
+    comparison:{v:[["Side by side","STEM and Writing on one canvas — parity is the point."],
+                   ["Stacked comparison","The same two classes stack for narrow screens."],
+                   ["Parity table","Chrome strips away so only the differing regions read."]],
+      b:`.split{grid-template-columns:1fr!important}
+         .split>.win{min-height:auto!important}`,
+      c:`.split>.win .panel:nth-child(n+3){display:none!important}
+         .split>.win .banner{padding-bottom:8px!important}`},
+    /* STEM has 2 body panels, Writing has 3 — nth-child(n+4) matched neither.
+       Treatments hang off .win > .body > .panel and must stay count-agnostic. */
+    stem:{v:[["STEM workspace","The full memory layer as authored: due topics, then exam scope."],
+             ["Topic layer only","Supporting panels drop so the memory layer carries the screen."],
+             ["Two-column workspace","Panels run side by side so the whole class state reads at once."]],
+      b:`.split>.win .body>.panel:nth-child(n+2){display:none!important}
+         .split>.win .body>.panel:first-child{margin-bottom:0!important}`,
+      c:`.split>.win .body{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+           gap:12px!important;align-items:start!important}
+         .split>.win .body>.panel{margin-bottom:0!important}`},
+    writing:{v:[["Writing workspace","Draft stages, readings, and the recurring-feedback log."],
+                ["Draft stages only","The current paper alone — the writing class's real working surface."],
+                ["Two-column workspace","The current paper leads a column; readings and feedback share the other."]],
+      b:`.split>.win .body>.panel:nth-child(n+2){display:none!important}
+         .split>.win .body>.panel:first-child{margin-bottom:0!important}`,
+      c:`.split>.win .body{display:grid!important;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr)!important;
+           gap:12px!important;align-items:start!important}
+         .split>.win .body>.panel{margin-bottom:0!important}
+         .split>.win .body>.panel:first-child{grid-row:1/span 2!important}`}
+  }
+};
+
+/* ---------------------------------------------------------------------------
+   DESIGN DIRECTIONS FOR NOT-YET-MOCKED TABS  (added Aug 2026)
+
+   The bottom A/B/C switcher is now present on EVERY tab. On tabs that have no
+   source mockup it carries three *named layout directions* instead of three
+   rendered designs, and the preview states plainly that nothing is drawn yet.
+
+   RULE: never let one of these graduate into a rendered variant without an
+   actual source file behind it. The dashed "not yet drawn" block in
+   #placeholder-direction is what keeps this honest — if you draw the mockup,
+   move the page out of placehold() entirely rather than faking the state here.
+
+   Each set follows the same A/B/C philosophy as the drawn pages:
+     A - the structure the page most likely wants by default
+     B - the page's primary job promoted to the working surface
+     C - a different credible composition worth arguing about
+--------------------------------------------------------------------------- */
+const PLACEHOLDER_DIRECTIONS = {
+  /* Requirements and Grades & Archive used to live here as directions.
+     They are drawn now, so they graduated out of placehold() entirely rather
+     than keeping a dressed-up placeholder. Do the same for the next page. */
+  "mcat-dashboard":[
+    ["Phase bento","Current phase and test-day countdown lead a mixed-size panel set covering plan, content, and readiness."],
+    ["Today's block","The single prescribed study block fills the screen; readiness metrics compress into a right rail."],
+    ["Readiness instrument","Section scores, stamina, and content coverage read as one instrument cluster with the plan beneath."]
+  ],
+  "mcat-content":[
+    ["Subject shelf","The content areas as cards carrying mastery rings and last-touched dates."],
+    ["Weakness queue","Weakest topics lead as a worklist; subject structure demotes to a filter."],
+    ["Outline explorer","A two-pane subject to topic to concept outline with detail and resources on the right."]
+  ],
+  "mcat-questions":[
+    ["Build then run","Set configuration is its own step, then the runner takes over the screen."],
+    ["Runner first","The question runner is the page; configuration collapses into a single header control."],
+    ["Runner with readout","The runner shares the canvas with live accuracy, pacing, and flag state."]
+  ],
+  "mcat-mistakes":[
+    ["Mistake inbox","Untriaged misses queue up for classification, newest first."],
+    ["Cause clusters","Misses group by error cause rather than by date, so patterns lead."],
+    ["Remediation board","Columns for logged, drilling, and cleared make the loop's state visible."]
+  ],
+  "mcat-stats":[
+    ["Trend board","Total and section score trends lead; supporting analytics sit beneath."],
+    ["Section deep-dive","One section fills the canvas with its own subscores and question-type breakdown."],
+    ["Diagnostic grid","Small-multiple charts put every metric on one screen for comparison."]
+  ],
+  "mcat-advisor":[
+    ["Advice feed","Ranked recommendations, each with its explain-line and act or dismiss controls."],
+    ["One next action","A single recommendation fills the screen with the evidence that produced it."],
+    ["Dialogue and evidence","Advisor conversation on the left, the cited data it is reasoning over on the right."]
+  ],
+  letters:[
+    ["Request pipeline","Writers grouped by stage: asked, drafting, submitted, waived."],
+    ["Writer cards","One card per recommender carrying status, deadline, contact history, and packet contents."],
+    ["Deadline timeline","Letters plotted against school deadlines so the binding constraint is obvious."]
+  ],
+  "experiences-clinical":[
+    ["Pillar bento","Total hours, active roles, and recent shifts in a mixed-size panel set."],
+    ["Log-first","The fast hour-logging surface leads; roles and totals compress into a header strip."],
+    ["Experience ledger","Every shift as one dense chronological record stream, with roles as filters."]
+  ],
+  volunteering:[
+    ["Pillar bento","Hours by cause area, active commitments, and recent entries in mixed-size panels."],
+    ["Log-first","Logging a session leads; commitments and totals compress into a header strip."],
+    ["Commitment ledger","Organizations become rows carrying cumulative hours and consistency over time."]
+  ],
+  shadowing:[
+    ["Pillar bento","Hours, specialty coverage, and recent sessions in mixed-size panels."],
+    ["Specialty coverage first","A coverage map of specialties seen versus unseen leads the page."],
+    ["Physician ledger","Each physician becomes a row with hours, specialty, dates, and letter potential."]
+  ],
+  research:[
+    ["Pillar bento","Active projects, hours, and outputs such as posters and publications in mixed-size panels."],
+    ["Project workspace","One project fills the canvas with its timeline, role, and outputs."],
+    ["Output ledger","Publications, posters, and presentations lead as the citable record."]
+  ],
+  extracurriculars:[
+    ["Pillar bento","Activities, hours, and leadership roles in mixed-size panels."],
+    ["Leadership first","Roles and their scope lead; hour totals become supporting detail."],
+    ["Activity ledger","One dense list of every activity with dates, hours, and AMCAS category."]
+  ],
+  essays:[
+    ["Bank and drafts","The story bank leads with essay drafts beside it."],
+    ["Draft workspace","One essay fills the canvas; the story bank pulls out as a side rail."],
+    ["Story to essay map","Stories on the left link visibly to the essays that already use them."]
+  ],
+  "school-list":[
+    ["School grid","Schools as cards carrying fit, median stats, mission, and application status."],
+    ["Comparison table","A dense sortable table across stats, cost, mission fit, and deadlines."],
+    ["Fit plot","Schools plotted against your GPA and MCAT, with the working list beneath."]
+  ],
+  "timeline-tasks":[
+    ["Cycle roadmap","The application cycle as a horizontal roadmap with tasks hung on their milestones."],
+    ["Task queue","What is due now leads; the cycle compresses to a thin progress strip."],
+    ["Month board","Tasks laid out month by month across the whole cycle."]
+  ],
+  profile:[
+    ["CV preview","The generated CV leads, edited in place section by section."],
+    ["Section editor","A form-first editor on the left with a live CV preview on the right."],
+    ["Completeness audit","Gaps and missing fields lead; the assembled CV follows underneath."]
+  ],
+  help:[
+    ["Guide index","Help topics as cards grouped by product pillar."],
+    ["Search first","One search field leads with the most-asked answers beneath it."],
+    ["Contextual rail","Help opens as a rail beside the page you were already on."]
+  ],
+  settings:[
+    ["Grouped stack","Settings sections stacked in one readable column."],
+    ["Two-pane","A category rail on the left with the selected panel on the right."],
+    ["Searchable list","Every setting in one flat, searchable list."]
+  ]
+};
+
+const byId = Object.fromEntries(profiles.map(page => [page.id,page]));
+/* Placeholder pages are real tabs with no source HTML. They still get three
+   named directions so the bottom switcher exists on every tab, and the preview
+   labels them as undrawn rather than pretending a mockup is there. */
+const placehold = (id,group,name,desc,section="",depth=0) => ({
+  id,group,name,desc,section,depth,status:"soon",placeholder:true,
+  variants:PLACEHOLDER_DIRECTIONS[id] || [["Direction pending","No layout direction has been proposed for this tab yet."]]
+});
+const asProductViews = (page,kind,slugs) => {
+  page.views=page.variants.map((view,index)=>({slug:slugs[index],name:view[0],desc:view[1]}));
+  page.viewKind=kind;
+  /* Each product view carries its OWN A/B/C set (VIEW_VARIANTS above), so the
+     named view selector and the bottom design switcher stay independent.
+     Falls back to a single honest entry if a view has not been explored yet. */
+  page.viewVariants=VIEW_VARIANTS[page.id] || null;
+  page.variants=[["Current design","The approved authored layout for the selected product view."]];
+  delete page.keys;
+  return page;
+};
+const orderedProfiles = [
+  Object.assign(byId["public-landing"],{group:"Landing & auth",name:"Landing \u00b7 auth \u00b7 merge",section:"",depth:0,fitCanvas:true}),
+  Object.assign(byId["public-docs"]||{},{group:"Landing & auth",name:"About \u00b7 Privacy \u00b7 Terms \u00b7 Pricing",section:"",depth:0,fitCanvas:true}),
+
+  Object.assign(byId.overview,{group:"Overview",name:"Overview",section:"",depth:0,fitCanvas:true}),
+
+  Object.assign(byId["daily-main"],{group:"Academics & GPA",name:"Class Center",section:"Daily",depth:1,fitCanvas:true}),
+  Object.assign(asProductViews(byId.assignments,"Assignment view",["agenda","weekly","calendar"]),
+    {group:"Academics & GPA",section:"Daily",depth:1,fitCanvas:true,authoredViews:"assignments"}),
+  Object.assign(byId["empty-states"],{group:"Academics & GPA",section:"Daily",depth:1}),
+  Object.assign(asProductViews(byId["class-hub"],"Class Hub tab",["overview","materials","topics","assignments","notes"]),
+    {group:"Academics & GPA",section:"Daily · supporting flows",depth:2,fitCanvas:true,authoredViews:"wrap-per-view"}),
+  Object.assign(asProductViews(byId["review-session"],"Session state",["start","recall","gap-report"]),
+    {group:"Academics & GPA",section:"Daily · supporting flows",depth:2,fitCanvas:true,authoredViews:"review-session"}),
+  Object.assign(asProductViews(byId["exam-prep"],"Plan mode",["accelerated","steady","catch-up"]),
+    {group:"Academics & GPA",section:"Daily · supporting flows",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
+  Object.assign(asProductViews(byId["syllabus-import"],"Import step",["upload","review","re-import"]),
+    {group:"Academics & GPA",section:"Daily · supporting flows",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
+  Object.assign(asProductViews(byId["class-types"],"Class example",["comparison","stem","writing"]),
+    {group:"Academics & GPA",section:"Daily · supporting flows",depth:2,fitCanvas:true,authoredViews:"class-types"}),
+  Object.assign(byId.planner,{group:"Academics & GPA",name:"Planner",section:"Planning",depth:1,fitCanvas:true}),
+  Object.assign(asProductViews(byId["requirements"],"Tracker section",["audit","requirements","prior-credit"]),
+    {group:"Academics & GPA",section:"Planning",depth:1,fitCanvas:true,authoredViews:"wrap-per-view"}),
+  Object.assign(asProductViews(byId["grades-archive"],"Record view",["ledger","gpa","what-if"]),
+    {group:"Academics & GPA",section:"Planning",depth:1,fitCanvas:true,authoredViews:"wrap-per-view"}),
+
+  placehold("mcat-dashboard","MCAT","Dashboard",
+    "The phase-aware MCAT home and test-day panel have not been mocked yet."),
+  Object.assign(byId["mcat-plan"],{group:"MCAT",name:"Plan",section:"",depth:0,status:"draft",single:true,
+    desc:"Existing early Plan concept, retained as a draft source rather than a finished variant set."}),
+  placehold("mcat-content","MCAT","Content",
+    "Content mastery will contain the subject structure and learning workflow."),
+  Object.assign(byId["mcat-bookshelf"],{group:"MCAT",name:"Bookshelf",section:"Content",depth:1,status:"draft",single:true,
+    desc:"Existing Bookshelf draft, correctly nested inside the Content tab."}),
+  placehold("mcat-questions","MCAT","Questions",
+    "Question practice and runner states have not been mocked yet."),
+  placehold("mcat-mistakes","MCAT","Mistakes",
+    "Mistake-to-Mastery review will live in this tab."),
+  Object.assign(byId["mcat-drills"],{group:"MCAT",name:"M2M drills",section:"Mistakes",depth:1,status:"draft",single:true,
+    desc:"Existing section-aware remediation draft, nested under Mistakes."}),
+  placehold("mcat-stats","MCAT","Stats",
+    "Performance trends, stamina, and section-level analytics have not been mocked yet."),
+  placehold("mcat-advisor","MCAT","Advisor",
+    "Advisor guidance and recommendations have not been mocked yet."),
+
+  placehold("letters","Letters of Rec","Letters of Rec",
+    "Recommendation-letter workflows will be mocked after the current Academics and MCAT work."),
+  placehold("experiences-clinical","Experiences","Clinical",
+    "This product area is organized here but is outside the current mockup pass."),
+  placehold("volunteering","Experiences","Volunteering",
+    "This product area is organized here but is outside the current mockup pass."),
+  placehold("shadowing","Experiences","Shadowing",
+    "This product area is organized here but is outside the current mockup pass."),
+  placehold("research","Experiences","Research",
+    "This product area is organized here but is outside the current mockup pass."),
+  placehold("extracurriculars","Experiences","Extracurriculars",
+    "This product area is organized here but is outside the current mockup pass."),
+  placehold("essays","Your Story","Essays & Story Bank",
+    "Story-bank and essay workflows will be mocked in a later pass."),
+  placehold("school-list","Application","School List",
+    "School research and list-building will be mocked in a later pass."),
+  placehold("timeline-tasks","Application","Timeline & Tasks",
+    "Application planning and task management will be mocked in a later pass."),
+  placehold("profile","Profile","Profile / CV",
+    "Profile and CV surfaces will be mocked in a later pass."),
+  placehold("help","Support","Help",
+    "Help and guidance surfaces will be mocked in a later pass."),
+  placehold("settings","Support","Settings",
+    "Settings will be mocked in a later pass."),
+
+  Object.assign(byId["mode-switch"],{group:"Archived concepts",name:"Old Daily / Planning concept",section:"",depth:0,single:true}),
+  Object.assign(byId["old-study-hub"],{group:"Archived concepts",name:"Old study hub concept",section:"",depth:0,single:true}),
+  Object.assign(byId.clinical,{group:"Archived concepts",name:"Old clinical pillar concept",section:"",depth:0,single:true})
+];
+profiles.splice(0,profiles.length,...orderedProfiles);
+
+const variants = ["A","B","C"];
+const lab = document.querySelector(".lab");
+const preview = document.getElementById("preview");
+const loading = document.getElementById("loading");
+const placeholderView = document.getElementById("placeholder-view");
+const variantSwitcher = document.getElementById("variant-switcher");
+const viewbar = document.getElementById("viewbar");
+const viewbarLabel = document.getElementById("viewbar-label");
+const viewOptions = document.getElementById("view-options");
+const fullscreenToggle = document.getElementById("fullscreen-toggle");
+const params = new URLSearchParams(location.search);
+let pageIndex = Math.max(0, profiles.findIndex(p => p.id === params.get("page")));
+let viewIndex = Math.max(0, (profiles[pageIndex].views || []).findIndex(view => view.slug === params.get("view")));
+let variantIndex = Math.max(0, variants.indexOf((params.get("variant") || "A").toUpperCase()));
+
+function current(){ return profiles[pageIndex] }
+function currentView(){ return current().views?.[viewIndex] }
+/* page -> product view -> design variant. Product-view pages resolve their
+   A/B/C from VIEW_VARIANTS keyed by the SELECTED view; flat pages keep their
+   page-level set. Never collapse these two back into one array. */
+function currentVariantSet(){
+  const page=current(), view=currentView();
+  const perView=view && page.viewVariants?.[view.slug];
+  if(perView) return {variants:perView.v, b:perView.b, c:perView.c};
+  return {variants:page.variants, b:page.b, c:page.c};
+}
+function currentKeys(){ return variants.slice(0,currentVariantSet().variants?.length || 1) }
+function currentKey(){ return currentKeys()[variantIndex] || currentKeys()[0] }
+function writeUrl(){
+  const url = new URL(location.href);
+  url.searchParams.set("page",current().id);
+  url.searchParams.set("variant",currentKey());
+  if(currentView()) url.searchParams.set("view",currentView().slug);
+  else url.searchParams.delete("view");
+  history.replaceState({},"",url);
+}
+function renderNav(){
+  const nav = document.getElementById("page-nav");
+  nav.innerHTML = "";
+  let lastGroup = "", lastSection = "";
+  profiles.forEach((page,index) => {
+    if(page.group !== lastGroup){
+      const label = document.createElement("div"); label.className="group"; label.textContent=page.group; nav.append(label); lastGroup=page.group;
+      lastSection="";
+    }
+    if(page.section && page.section !== lastSection){
+      const sub = document.createElement("div"); sub.className="subgroup"; sub.textContent=page.section; nav.append(sub); lastSection=page.section;
+    }
+    const button = document.createElement("button");
+    button.className=`pagebtn depth${page.depth||0} ${index===pageIndex?"on":""}`;
+    /* Every entry now advertises three A/B/C slots. Placeholders say "directions"
+       because nothing is drawn behind them yet; drafts say so too. */
+    const meta=page.placeholder ? `Not mocked · ${page.variants.length} directions`
+      : page.single ? `Draft source · ${page.variants.length} variants`
+      : page.views ? `${page.views.length} views · A/B/C each`
+      : `${page.variants.length} variants`;
+    const statusLabel=page.status==="soon" ? "soon" : page.status==="native" ? "prototype" : page.status;
+    button.innerHTML=`<span><span class="pname">${page.name}</span><span class="pmeta">${meta}</span></span><span class="status ${page.status}">${statusLabel}</span>`;
+    button.addEventListener("click",()=>selectPage(index));
+    nav.append(button);
+  });
+}
+function selectPage(index){
+  pageIndex=(index+profiles.length)%profiles.length;
+  variantIndex=0;
+  viewIndex=0;
+  writeUrl(); renderAll(true);
+}
+function selectView(index){
+  const views=current().views;
+  if(!views?.length) return;
+  viewIndex=(index+views.length)%views.length;
+  /* Variant sets are per-view, so clamp rather than carry an out-of-range index. */
+  variantIndex=Math.min(variantIndex,Math.max(0,currentKeys().length-1));
+  writeUrl(); renderViewbar(); renderMeta(); loadOrApply(false);
+}
+function cyclePage(direction){selectPage(pageIndex+direction)}
+/* The switcher is live on every tab, including placeholders — on those it moves
+   between named directions rather than between rendered layouts. */
+function cycleVariant(direction){
+  if(currentKeys().length<=1) return;
+  const keys=currentKeys();
+  variantIndex=(variantIndex+direction+keys.length)%keys.length;
+  writeUrl(); renderMeta(); loadOrApply(false);
+}
+function renderViewbar(){
+  const page=current(), views=page.views || [];
+  viewbar.classList.toggle("on",views.length>0);
+  viewbarLabel.textContent=page.viewKind || "View";
+  viewOptions.innerHTML="";
+  views.forEach((view,index)=>{
+    const button=document.createElement("button");
+    button.className=`view-option ${index===viewIndex ? "on" : ""}`;
+    button.textContent=view.name;
+    button.title=view.desc;
+    button.setAttribute("aria-pressed",String(index===viewIndex));
+    button.addEventListener("click",()=>selectView(index));
+    viewOptions.append(button);
+  });
+}
+function renderMeta(){
+  const page=current(), letter=currentKey();
+  const detail=currentVariantSet().variants?.[variantIndex] || ["Coming soon","This surface is not part of the current variant pass."];
+  document.getElementById("page-title").textContent=`${pageIndex+1} of ${profiles.length} · ${page.name}`;
+  document.getElementById("page-description").textContent=currentView()
+    ? `${page.viewKind}: ${currentView().name} · ${currentView().desc}`
+    : page.desc;
+  document.getElementById("variant-title").textContent=`${letter} — ${detail[0]}`;
+  document.getElementById("variant-description").textContent=detail[1];
+  const original=document.getElementById("original-link");
+  original.hidden=!!page.placeholder;
+  if(page.path) original.href=page.path;
+  /* Present on every tab. Only hidden if a surface genuinely has one option. */
+  variantSwitcher.classList.toggle("off",currentKeys().length<=1);
+  document.getElementById("prev-page").disabled=pageIndex===0;
+  document.getElementById("next-page").disabled=pageIndex===profiles.length-1;
+}
+function injectedCss(page,letter){
+  if(letter==="A") return BASE_INJECTED_CSS;
+  const set=currentVariantSet();
+  /* Product-view pages are isolated by isolateAuthoredView() BEFORE this lands,
+     so their treatments only ever target descendants of the isolated view. */
+  return BASE_INJECTED_CSS + ((letter==="B" ? set.b : set.c) || "");
+}
+/* Hide the siblings, but do NOT force a display on the survivor.
+   An inline `display:block !important` beats stylesheet `!important`, so the
+   old version silently defeated any variant treatment that tried to make the
+   isolated view a grid or a multi-column layout. Clearing the property lets
+   the source's own CSS apply and leaves variant CSS free to override it. */
+function showOnly(elements,index){
+  elements.forEach((element,itemIndex)=>{
+    if(itemIndex===index) element.style.removeProperty("display");
+    else element.style.setProperty("display","none","important");
+  });
+  return elements[index];
+}
+function isolateAuthoredView(page,doc,index){
+  if(page.authoredViews==="class-types"){
+    const split=doc.querySelector(".split"), halves=[...doc.querySelectorAll(".split > .win")];
+    doc.querySelectorAll(".page-head,.wide,.note").forEach(item=>item.style.setProperty("display","none","important"));
+    if(index===0){
+      split.style.setProperty("display","grid","important");
+      halves.forEach(item=>item.style.setProperty("display","block","important"));
+    }else{
+      split.style.setProperty("display","block","important");
+      halves.forEach((item,itemIndex)=>item.style.setProperty("display",itemIndex===index-1 ? "block" : "none","important"));
+    }
+    return split;
+  }
+  const frame=doc.querySelector(".frame");
+  if(!frame) return null;
+  if(page.authoredViews==="top-frames"){
+    doc.querySelectorAll("body > .framelabel").forEach(label=>label.style.setProperty("display","none","important"));
+    const selected=showOnly([...doc.querySelectorAll("body > .frame")],index);
+    if(page.id==="exam-prep" && index===0){
+      selected.querySelectorAll(".day").forEach((day,dayIndex)=>{
+        if(dayIndex>=3) day.style.setProperty("display","none","important");
+      });
+    }
+    /* Syllabus import "Review before apply" used to be forced into a two-column
+       grid here. That is a LAYOUT decision, not an isolation concern, and it
+       made design A identical to design B. The two-column arrangement now lives
+       where it belongs — in that view's B treatment. Isolation only isolates. */
+    return selected;
+  }
+  if(page.authoredViews==="assignments"){
+    frame.querySelectorAll(":scope > .vlabel,:scope > .vnote").forEach(item=>item.style.setProperty("display","none","important"));
+    const bars=[...frame.querySelectorAll(":scope > .fbar")];
+    const bodies=[...frame.querySelectorAll(":scope > .body")];
+    bars.forEach((item,itemIndex)=>item.style.setProperty("display",itemIndex===index ? "flex" : "none","important"));
+    bodies.forEach((item,itemIndex)=>item.style.setProperty("display",itemIndex===index ? "block" : "none","important"));
+    if(index===0){
+      bodies[0]?.querySelectorAll(".acard").forEach((card,cardIndex)=>{
+        if(cardIndex>=4) card.style.setProperty("display","none","important");
+      });
+    }
+    return frame;
+  }
+  /* The ".wrap-per-view" DOM contract: .frame holds a banner plus one .wrap
+     per product view, with .lab captions between them. Class Hub established
+     it; Requirements and Grades & Archive reuse it. A new page only has
+     to match that shape — no new isolation branch needed. */
+  if(page.authoredViews==="class-hub" || page.authoredViews==="wrap-per-view"){
+    frame.querySelectorAll(":scope > .lab").forEach(item=>item.style.setProperty("display","none","important"));
+    showOnly([...frame.querySelectorAll(":scope > .wrap")],index);
+    frame.querySelectorAll(".tb").forEach((tab,tabIndex)=>tab.classList.toggle("on",tabIndex===index));
+    return frame;
+  }
+  if(page.authoredViews==="review-session"){
+    frame.querySelectorAll(":scope > .lab").forEach(item=>item.style.setProperty("display","none","important"));
+    showOnly([...frame.querySelectorAll(":scope > .scene,:scope > .focus")],index);
+    return frame;
+  }
+  return frame;
+}
+function fitCanvas(doc,canvas){
+  if(!canvas) return;
+  const body=doc.body, root=doc.documentElement, win=doc.defaultView;
+  const exploring=lab.classList.contains("fullscreen");
+  root.style.setProperty("height",exploring ? "auto" : "100%","important");
+  root.style.setProperty("min-height","100%","important");
+  root.style.setProperty("overflow-x","hidden","important");
+  root.style.setProperty("overflow-y",exploring ? "auto" : "hidden","important");
+  body.style.setProperty("height",exploring ? "auto" : "100%","important");
+  body.style.setProperty("min-height",exploring ? "100%" : "0","important");
+  body.style.setProperty("min-width","0","important");
+  body.style.setProperty("width","100%","important");
+  body.style.setProperty("overflow",exploring ? "visible" : "hidden","important");
+  body.style.setProperty("padding","0","important");
+  body.style.setProperty("margin","0","important");
+  body.style.setProperty("display","flex","important");
+  body.style.setProperty("align-items","flex-start","important");
+  body.style.setProperty("justify-content","center","important");
+  const resize=()=>{
+    canvas.style.zoom="1";
+    canvas.style.margin="0";
+    const width=Math.max(canvas.scrollWidth,canvas.offsetWidth,1);
+    const height=Math.max(canvas.scrollHeight,canvas.offsetHeight,1);
+    const scale=exploring
+      ? Math.min(win.innerWidth/width,1)
+      : Math.min(win.innerWidth/width,win.innerHeight/height,1);
+    /* Floor was .35, which silently CLIPPED the tallest single-column views
+       (Syllabus import → Review before apply needs ~.30). Clipping is worse
+       than small here: the lab's job in normal mode is to show a whole
+       composition at a glance, and full screen exists for reading detail. */
+    canvas.style.zoom=String(Math.max(.24,scale));
+  };
+  if(canvas.__labFitFrame) win.cancelAnimationFrame(canvas.__labFitFrame);
+  canvas.__labFitFrame=win.requestAnimationFrame(()=>{
+    resize();
+    canvas.__labFitFrame=0;
+  });
+}
+function applyVariant(){
+  const page=current(), letter=currentKey();
+  const doc=preview.contentDocument;
+  if(!doc?.body) return;
+  let style=doc.getElementById("variant-lab-style");
+  if(!style){ style=doc.createElement("style"); style.id="variant-lab-style"; doc.head.append(style); }
+  style.textContent=injectedCss(page,letter);
+  doc.body.dataset.labVariant=letter;
+  doc.body.dataset.labLabel=currentView()
+    ? `${currentView().name.toUpperCase()} · DESIGN ${letter} — ${(currentVariantSet().variants[variantIndex]||[""])[0].toUpperCase()}`
+    : `VARIANT ${letter} · ${currentVariantSet().variants[variantIndex][0].toUpperCase()}`;
+  const isolated=page.authoredViews ? isolateAuthoredView(page,doc,viewIndex) : doc.querySelector(".frame");
+  if(page.fitCanvas) fitCanvas(doc,isolated);
+  loading.classList.add("hide");
+}
+function desiredSrc(){
+  const page=current();
+  return page.native ? `${page.path}?variant=${currentKey()}` : page.path;
+}
+function loadOrApply(force){
+  const page=current();
+  if(page.placeholder){
+    preview.style.display="none";
+    placeholderView.classList.add("on");
+    document.getElementById("placeholder-crumb").textContent=page.group + (page.section ? ` · ${page.section}` : "");
+    document.getElementById("placeholder-title").textContent=page.name;
+    document.getElementById("placeholder-copy").textContent=page.desc;
+    /* Reflect the selected A/B/C direction without implying a drawn mockup. */
+    const direction=currentVariantSet().variants?.[variantIndex];
+    const block=document.getElementById("placeholder-direction");
+    block.hidden=!direction;
+    if(direction){
+      document.getElementById("pd-letter").textContent=currentKey();
+      document.getElementById("pd-name").textContent=direction[0];
+      document.getElementById("pd-desc").textContent=direction[1];
+    }
+    loading.classList.add("hide");
+    return;
+  }
+  preview.style.display="block";
+  placeholderView.classList.remove("on");
+  const next=desiredSrc();
+  const currentPath=preview.getAttribute("src") || "";
+  const mustReload=force || current().native || currentPath.split("?")[0]!==next.split("?")[0];
+  if(mustReload){
+    loading.classList.remove("hide");
+    preview.src=next;
+  }else applyVariant();
+}
+function renderAll(force){
+  renderNav(); renderViewbar(); renderMeta(); loadOrApply(force);
+}
+function refreshCanvasFit(){
+  if(current().placeholder) return;
+  requestAnimationFrame(()=>applyVariant());
+}
+function setFullscreen(enabled){
+  lab.classList.toggle("fullscreen",enabled);
+  fullscreenToggle.setAttribute("aria-pressed",String(enabled));
+  fullscreenToggle.setAttribute("aria-label",enabled ? "Exit full screen" : "Enter full screen");
+  fullscreenToggle.querySelector("span").textContent=enabled ? "Exit full screen" : "Full screen";
+  refreshCanvasFit();
+}
+preview.addEventListener("load",applyVariant);
+document.getElementById("prev-page").addEventListener("click",()=>cyclePage(-1));
+document.getElementById("next-page").addEventListener("click",()=>cyclePage(1));
+document.getElementById("prev-variant").addEventListener("click",()=>cycleVariant(-1));
+document.getElementById("next-variant").addEventListener("click",()=>cycleVariant(1));
+fullscreenToggle.addEventListener("click",()=>setFullscreen(!lab.classList.contains("fullscreen")));
+addEventListener("keydown",event=>{
+  const tag=document.activeElement?.tagName;
+  if(tag==="INPUT"||tag==="TEXTAREA"||document.activeElement?.isContentEditable)return;
+  if(event.key==="Escape" && lab.classList.contains("fullscreen")){ setFullscreen(false); return; }
+  if(event.key==="ArrowLeft")cycleVariant(-1);
+  if(event.key==="ArrowRight")cycleVariant(1);
+  if(event.key==="ArrowUp")cyclePage(-1);
+  if(event.key==="ArrowDown")cyclePage(1);
+});
+addEventListener("popstate",()=>{
+  const next=new URLSearchParams(location.search);
+  pageIndex=Math.max(0,profiles.findIndex(p=>p.id===next.get("page")));
+  viewIndex=Math.max(0,(profiles[pageIndex].views || []).findIndex(view => view.slug === next.get("view")));
+  variantIndex=Math.max(0,variants.indexOf((next.get("variant")||"A").toUpperCase()));
+  variantIndex=Math.min(variantIndex,Math.max(0,currentKeys().length-1));
+  renderAll(true);
+});
+renderAll(true);
+</script>
+</body>
+</html>

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Academics — Planning → Grades &amp; Archive (PROPOSED)</title>
+<!--
+  ============================================================================
+  ACADEMICS — PLANNING → GRADES &amp; ARCHIVE — PROPOSED VISUAL REFERENCE
+  ============================================================================
+  Status: PROPOSED (Aug 2026). Spec: tabs/01-academics.md §4.2 tab table,
+  §6.8 "Grade ledger, done properly", §4.2-D "The record must be
+  AMCAS-shaped from day one", §6.9 structural decisions.
+
+  Visual language inherited from:
+   · 01-academics/academics-daily-main-page.html   — APPROVED reference
+   · 01-academics/academics-tar-heel-tracker.html  — sibling Planning tab
+
+  THE ONE QUESTION THIS TAB ANSWERS
+    "What have I earned?"
+
+  DECISIONS THIS FILE ENCODES
+  1. ARCHIVE IS A FILTER, NOT A DESTINATION. Withdrawn, completed and
+     superseded are status filters on the one ledger. There is no separate
+     Archive page — that was the old split, and it was a thin destination.
+  2. DUAL GPA, PERMANENTLY SIDE BY SIDE. UNC's number and the AMCAS number
+     are different, and students discover the gap in May of their
+     application year. Both are shown continuously, with the delta
+     explained in one line. Never one number alone.
+  3. AMCAS TRUNCATES RATHER THAN ROUNDS — 3.667 reports as 3.66. Shown as
+     computed, never rounded up to look better.
+  4. EVERY ATTEMPT OF A REPEAT COUNTS toward AMCAS. There is no AMCAS grade
+     replacement, unlike UNC's policy. A superseded attempt stays visible
+     in the ledger and stays in the AMCAS math.
+  5. GRADE TREND BY ACADEMIC YEAR. AMCAS reports GPA broken out by year and
+     committees read the trajectory, not the endpoint. The shape is
+     rendered — a rough freshman fall inside a rising trend is a materially
+     different situation from a flat 3.4.
+  6. TRANSCRIPT FIDELITY. Course number and title are stored exactly as the
+     transcript prints them; HQ's display name is a separate field.
+  7. WHAT-IF IS WEIGHT-AWARE AND INVERSE-SOLVING. "You need 84 on the final
+     for an A−", plus which remaining items are mathematically irrelevant
+     and which single item has the most leverage.
+  8. THREE LEVELS, THREE FORMS. Mode = glass pill, tabs = underline, this
+     tab's own sections = a SOLID segmented control in the filter bar.
+  9. ONE HERO GRAPHIC PER VIEW. One primary action per view, accent pill.
+
+  DELIBERATELY EXCLUDED
+   · No separate Archive destination (see decision 1).
+   · No single "academic score". Components stay transparent (§5).
+   · No projection that ignores a syllabus policy — a projection that
+     ignores a drop-lowest rule is simply wrong, so policies are shown
+     and editable rather than assumed.
+   · No celebration on a GPA number. Celebrations are for real milestones.
+
+  PRODUCT VIEWS IN THIS FILE (each is one .frame > .wrap)
+   1. Ledger   — the full record, with status as a filter
+   2. GPA      — dual UNC/AMCAS, BCPM, and the year-by-year trend
+   3. What-if  — scenario mode and the inverse solve
+  ============================================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a;--card:#2b2722;--fg:#ece3d4;--mut:#a89c8c;--dim:#7c7264;
+  --pri:#6fb3de;--pri-ink:#0f2330;--bd:#3c352d;--muted:#322e28;
+  --success:#6fc0a8;--warning:#e7b06a;--danger:#e8806f;--star:#e7b06a;
+  --cat:#4b9cd3;--mcat:#8c7bd4;--amcas:#c9a4e8;--planned:#89a7c4;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.frame{width:1400px;margin:0 auto;background:var(--bg);min-height:100vh;padding-bottom:30px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.lab{font-family:'Baloo 2';font-weight:800;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);padding:22px 24px 0}
+
+/* ══ BANNER ═══════════════════════════════════════════════════════════ */
+.ban{position:relative;padding:18px 24px 0;overflow:hidden;
+  background:radial-gradient(340px 200px at 88% 6%,rgba(75,156,211,.34),transparent 70%),
+  radial-gradient(260px 180px at 10% 130%,rgba(111,192,168,.18),transparent 70%),
+  linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%)}
+.bantop{display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative;z-index:2}
+.h1{font-family:'Baloo 2';font-weight:800;font-size:30px;color:#fff;letter-spacing:-.4px;margin:0}
+.bstats{display:flex;border-radius:13px;overflow:hidden;background:rgba(20,26,34,.5);
+  backdrop-filter:blur(16px) saturate(1.1);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}
+.bs{padding:8px 15px;display:flex;flex-direction:column;gap:1px;border-right:1px solid rgba(255,255,255,.12);min-width:88px}
+.bs:last-child{border-right:none}
+.bsv{font-family:'Baloo 2';font-weight:800;font-size:18px;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;display:flex;align-items:baseline;gap:4px}
+.bsl{font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.mswitch{display:inline-flex;padding:4px;border-radius:999px;gap:4px;margin-top:14px;position:relative;z-index:2;
+  background:rgba(20,26,34,.5);backdrop-filter:blur(16px) saturate(1.1);border:1px solid rgba(255,255,255,.16)}
+.mo{padding:7px 22px;border-radius:999px;font-family:'Baloo 2';font-weight:700;font-size:13.5px;color:rgba(255,255,255,.72);display:flex;align-items:center;gap:7px}
+.mo.on{background:#fff;color:#17222c;font-weight:800}
+.mo svg{width:14px;height:14px}
+.utabs{display:flex;gap:24px;padding:0 24px;position:relative;z-index:2;margin-top:13px;border-bottom:1px solid rgba(255,255,255,.13);margin-left:-24px;margin-right:-24px}
+.ut{padding:10px 2px 11px;font-family:'Baloo 2';font-weight:700;font-size:14px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:7px;position:relative}
+.ut svg{width:15px;height:15px}
+.ut.on{color:#fff;font-weight:800}
+.ut.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;border-radius:3px 3px 0 0;
+  background:var(--cat);box-shadow:0 0 12px color-mix(in srgb,var(--cat) 60%,transparent)}
+.ut .cnt{font-size:10.5px;font-weight:800;background:rgba(255,255,255,.14);border-radius:999px;padding:1px 7px}
+
+/* ══ LEVEL 3 FILTER BAR ═══════════════════════════════════════════════ */
+.fbar{display:flex;align-items:center;gap:11px;padding:11px 24px;background:var(--card);border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.segsm{display:inline-flex;background:var(--muted);border:1px solid var(--bd);border-radius:9px;padding:3px;gap:3px}
+.ss{padding:5px 11px;border-radius:7px;font-size:11.5px;font-weight:800;font-family:'Baloo 2';color:var(--dim);display:flex;align-items:center;gap:5px}
+.ss.on{background:var(--card);color:var(--fg)}
+.ss svg{width:12px;height:12px}
+.sel{display:inline-flex;align-items:center;gap:8px;background:var(--muted);border:1px solid var(--bd);border-radius:10px;padding:7px 12px;font-size:13px;font-weight:700}
+.sel svg{width:13px;height:13px;color:var(--dim)}
+.sel .v{font-family:'Baloo 2';font-weight:800}
+.srch{display:flex;align-items:center;gap:8px;background:var(--muted);border:1px solid var(--bd);border-radius:10px;padding:7px 13px;flex:1;max-width:250px;color:var(--dim);font-size:13px;font-weight:600}
+.srch svg{width:14px;height:14px}
+.fchip{border:1px solid var(--bd);background:var(--muted);border-radius:999px;padding:5px 11px;font-size:11.5px;font-weight:800;color:var(--dim);display:inline-flex;align-items:center;gap:6px}
+.fchip.on{background:color-mix(in srgb,var(--cat) 16%,var(--muted));border-color:color-mix(in srgb,var(--cat) 45%,var(--bd));color:var(--fg)}
+.fchip .n{font-variant-numeric:tabular-nums;opacity:.75}
+.pbtn{margin-left:auto;background:var(--cat);color:#08202e;border-radius:999px;padding:8px 15px;font-family:'Baloo 2';
+  font-weight:800;font-size:12.5px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 8px 20px -10px var(--cat)}
+.pbtn svg{width:14px;height:14px}
+.gbtn{border:1px solid var(--bd);background:var(--muted);color:var(--mut);border-radius:9px;padding:6px 11px;
+  font-family:'Baloo 2';font-weight:800;font-size:11.5px;display:inline-flex;align-items:center;gap:6px}
+.gbtn svg{width:12px;height:12px}
+
+/* ══ LAYOUT ═══════════════════════════════════════════════════════════ */
+.wrap{padding:15px 24px 0}
+.bento{display:grid;grid-template-columns:repeat(12,1fr);gap:15px}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 10px 26px -14px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden}
+.hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;gap:9px;flex-shrink:0}
+.ti{font-family:'Baloo 2';font-weight:800;font-size:16.5px}.ti.sm{font-size:14.5px}
+.sub{font-size:11.5px;color:var(--dim);font-weight:700}
+.bd{padding:4px 16px 16px;display:flex;flex-direction:column;gap:9px}
+.note{font-size:11.5px;color:var(--dim);font-weight:700;line-height:1.6}
+.note b{color:var(--mut)}
+
+/* ══ HERO ═════════════════════════════════════════════════════════════ */
+.hero{background:linear-gradient(128deg,#26313d 0%,#2b2c2a 58%,#332c25 100%);border:1px solid #43413a;border-radius:16px;padding:17px 19px}
+.herolab{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#9fb3c4}
+.heroval{font-family:'Baloo 2';font-weight:800;font-size:27px;letter-spacing:-.4px;line-height:1.1;margin-top:2px}
+.herotop{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.stack{display:flex;height:16px;border-radius:999px;overflow:hidden;margin-top:13px;background:#1d1b18;border:1px solid #443c33}
+.stack i{display:block;height:100%}
+.legend{display:flex;gap:16px;margin-top:10px;flex-wrap:wrap}
+.lg{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--mut)}
+.lgd{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+
+/* ══ DUAL GPA — the permanent side-by-side ════════════════════════════ */
+.dual{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.gpabox{border-radius:14px;padding:15px 17px;border:1px solid var(--bd);background:var(--muted)}
+.gpabox.amcas{border-color:color-mix(in srgb,var(--amcas) 38%,var(--bd));background:color-mix(in srgb,var(--amcas) 9%,var(--muted))}
+.gpalab{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:7px}
+.gpanum{font-family:'Baloo 2';font-weight:800;font-size:40px;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums;margin-top:6px}
+.gpabox.amcas .gpanum{color:#d9c2f2}
+.gpasub{font-size:11.5px;color:var(--dim);font-weight:700;margin-top:5px}
+.delta{display:flex;gap:11px;align-items:flex-start;background:color-mix(in srgb,var(--amcas) 8%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--amcas) 28%,var(--bd));border-left:3px solid var(--amcas);border-radius:12px;padding:11px 14px;margin-top:13px}
+.delta svg{width:15px;height:15px;color:var(--amcas);flex-shrink:0;margin-top:2px}
+.delta .t{font-size:13px;font-weight:700;line-height:1.5}
+.delta .t b{font-weight:800}
+
+/* ══ YEAR TREND ═══════════════════════════════════════════════════════ */
+.trend{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:end;padding-top:6px}
+.tcol{display:flex;flex-direction:column;align-items:center;gap:7px}
+.tbar{width:100%;background:#1d1b18;border:1px solid var(--bd);border-radius:9px;display:flex;align-items:flex-end;height:118px;overflow:hidden}
+.tfill{width:100%;border-radius:0;background:linear-gradient(180deg,#7fd0b8,#5fae98)}
+.tval{font-family:'Baloo 2';font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+.tyr{font-size:10.5px;font-weight:800;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
+.tnote{font-size:10.5px;color:var(--dim);font-weight:700}
+
+/* ══ LEDGER ═══════════════════════════════════════════════════════════ */
+.grp{border:1px solid var(--bd);border-radius:14px;background:var(--card);overflow:hidden;margin-bottom:11px}
+.gh{display:flex;align-items:center;gap:11px;padding:11px 15px;background:#2f2a24;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.gname{font-family:'Baloo 2';font-weight:800;font-size:14.5px}
+.gmeta{font-size:11.5px;color:var(--dim);font-weight:700}
+.gspacer{margin-left:auto;display:flex;align-items:center;gap:14px}
+.gstat{text-align:right}
+.gsv{font-family:'Baloo 2';font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;line-height:1.1}
+.gsl{font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.ltable{display:grid;grid-template-columns:96px 1fr 56px 52px 78px 108px}
+.lh{font-size:9.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);padding:8px 12px;border-bottom:1px solid var(--bd)}
+.lc{padding:9px 12px;border-bottom:1px solid #332e28;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px;min-width:0}
+.lc.mono{font-family:'Baloo 2';font-weight:800;font-variant-numeric:tabular-nums}
+.lc .exact{color:var(--fg)}
+.lc .disp{font-size:10.5px;color:var(--dim);font-weight:700}
+.rowmut{opacity:.62}
+
+/* ══ CHIPS ════════════════════════════════════════════════════════════ */
+.chip{border-radius:999px;padding:2px 9px;font-size:10.5px;font-weight:800;font-family:'Baloo 2';display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.chip.bcpm{background:color-mix(in srgb,var(--cat) 17%,transparent);color:#8fc6e8}
+.chip.other{background:#241f1b;color:var(--dim);border:1px solid var(--bd)}
+.chip.wd{background:color-mix(in srgb,var(--warning) 15%,transparent);color:var(--warning)}
+.chip.sup{background:color-mix(in srgb,var(--amcas) 16%,transparent);color:#d0b3ee}
+.chip.prog{background:color-mix(in srgb,var(--planned) 20%,transparent);color:#b6cbdd}
+.chip.good{background:color-mix(in srgb,var(--success) 16%,transparent);color:var(--success)}
+.chip.warn{background:color-mix(in srgb,var(--warning) 16%,transparent);color:var(--warning)}
+
+/* ══ WHAT-IF ══════════════════════════════════════════════════════════ */
+.wrow{display:flex;align-items:center;gap:11px;background:var(--muted);border:1px solid var(--bd);border-radius:11px;padding:9px 12px}
+.wrow .mainc{flex:1;min-width:0}
+.wt{font-family:'Baloo 2';font-weight:800;font-size:13.5px;display:flex;align-items:center;gap:8px}
+.ws{font-size:11.5px;color:var(--dim);font-weight:700;margin-top:2px}
+.gpick{display:inline-flex;background:#241f1b;border:1px solid var(--bd);border-radius:9px;padding:3px;gap:2px}
+.gopt{padding:4px 9px;border-radius:6px;font-family:'Baloo 2';font-weight:800;font-size:11.5px;color:var(--dim)}
+.gopt.on{background:var(--cat);color:#08202e}
+.solve{display:flex;gap:11px;align-items:flex-start;background:color-mix(in srgb,var(--cat) 8%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 30%,var(--bd));border-left:3px solid var(--cat);border-radius:12px;padding:12px 14px}
+.solve svg{width:15px;height:15px;color:var(--cat);flex-shrink:0;margin-top:2px}
+.solve .t{font-size:13.5px;font-weight:700;line-height:1.5}
+.solve .t b{font-weight:800}
+.solve .d{font-size:11.5px;color:var(--dim);font-weight:700;margin-top:3px}
+.landing{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.lbox{background:var(--muted);border:1px solid var(--bd);border-radius:12px;padding:12px 14px}
+.lv{font-family:'Baloo 2';font-weight:800;font-size:24px;line-height:1.1;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:7px}
+.lchange{font-size:12px;font-weight:800}
+.lchange.up{color:var(--success)}.lchange.down{color:var(--danger)}
+.ll{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-top:4px}
+.policy{display:flex;align-items:center;gap:9px;background:var(--muted);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700}
+.policy .pl{color:var(--mut);flex:1}
+.policy .pe{font-family:'Baloo 2';font-weight:800;font-size:11px;color:var(--cat)}
+</style>
+</head>
+<body>
+<div class="frame">
+<h1 class="sr-only">Academics — Planning — Grades and Archive</h1>
+
+<!-- ══════════ BANNER ══════════ -->
+<div class="ban">
+  <div class="bantop">
+    <div class="h1">Academics</div>
+    <div class="bstats">
+      <div class="bs"><div class="bsv">3.71</div><div class="bsl">UNC cumulative</div></div>
+      <div class="bs"><div class="bsv" style="color:#d9c2f2">3.66</div><div class="bsl">AMCAS cumulative</div></div>
+      <div class="bs"><div class="bsv" style="color:#8fc6e8">3.58</div><div class="bsl">AMCAS BCPM</div></div>
+      <div class="bs"><div class="bsv">3.84</div><div class="bsl">This term</div></div>
+    </div>
+  </div>
+  <div class="mswitch">
+    <div class="mo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Daily</div>
+    <div class="mo on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 6h18M3 12h18M3 18h12"/></svg>Planning</div>
+  </div>
+  <div class="utabs">
+    <div class="ut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Planner</div>
+    <div class="ut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Tar Heel Tracker</div>
+    <div class="ut on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Grades &amp; Archive<span class="cnt">24 courses</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     PRODUCT VIEW 1 — LEDGER  (archive is a filter, not a destination)
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="lab">Product view 1 — Ledger</div>
+<div class="wrap">
+  <div class="fbar">
+    <div class="segsm">
+      <div class="ss on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Ledger</div>
+      <div class="ss">GPA</div>
+      <div class="ss">What-if</div>
+    </div>
+    <div class="sel"><span class="v">All terms</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m6 9 6 6 6-6"/></svg></div>
+    <span class="fchip on">All <span class="n">24</span></span>
+    <span class="fchip">Completed <span class="n">21</span></span>
+    <span class="fchip">Withdrawn <span class="n">1</span></span>
+    <span class="fchip">Superseded <span class="n">2</span></span>
+    <div class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search the ledger</div>
+    <div class="pbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M4 19h16"/></svg>Export transcript</div>
+  </div>
+
+  <div class="bento" style="margin-top:15px">
+    <!-- HERO — credits by AMCAS classification -->
+    <div class="c12">
+      <div class="hero">
+        <div class="herotop">
+          <div>
+            <div class="herolab">The record</div>
+            <div class="heroval">24 courses · 78 credits · 8 terms</div>
+          </div>
+          <div style="text-align:right">
+            <div class="herolab">Counting toward AMCAS BCPM</div>
+            <div class="heroval" style="color:#8fc6e8">41 credits</div>
+          </div>
+        </div>
+        <div class="stack">
+          <i style="width:53%;background:linear-gradient(90deg,#4b9cd3,#6fb3de)"></i>
+          <i style="width:25%;background:#5b5348"></i>
+          <i style="width:22%;background:linear-gradient(90deg,#a98cc9,#c9a4e8)"></i>
+        </div>
+        <div class="legend">
+          <div class="lg"><span class="lgd" style="background:#6fb3de"></span>BCPM · 41 cr</div>
+          <div class="lg"><span class="lgd" style="background:#5b5348"></span>All other · 20 cr</div>
+          <div class="lg"><span class="lgd" style="background:#c9a4e8"></span>Prior credit · 17 cr</div>
+          <div class="lg" style="margin-left:auto">Longitudinal — every term you have ever taken, never scoped to one semester</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="c12">
+      <!-- FALL 2026 — in progress -->
+      <div class="grp">
+        <div class="gh">
+          <div><div class="gname">Fall 2026</div><div class="gmeta">in progress · 15 credits</div></div>
+          <div class="gspacer">
+            <span class="chip prog">◐ in progress</span>
+            <div class="gstat"><div class="gsv">3.84</div><div class="gsl">projected term</div></div>
+          </div>
+        </div>
+        <div class="ltable">
+          <div class="lh">Course</div><div class="lh">Title — as printed</div><div class="lh">Credits</div><div class="lh">Grade</div><div class="lh">AMCAS</div><div class="lh">Status</div>
+
+          <div class="lc mono">CHEM 262</div>
+          <div class="lc"><span style="min-width:0"><span class="exact">Organic Chemistry II</span><br><span class="disp">display name: Orgo II</span></span></div>
+          <div class="lc mono">3</div><div class="lc mono">—</div><div class="lc"><span class="chip bcpm">BCPM</span></div><div class="lc"><span class="chip prog">In progress</span></div>
+
+          <div class="lc mono">NSCI 222</div>
+          <div class="lc"><span class="exact">Learning and Memory</span></div>
+          <div class="lc mono">3</div><div class="lc mono">—</div><div class="lc"><span class="chip bcpm">BCPM</span></div><div class="lc"><span class="chip prog">In progress</span></div>
+
+          <div class="lc mono">ENGL 105</div>
+          <div class="lc"><span class="exact">English Composition and Rhetoric</span></div>
+          <div class="lc mono">3</div><div class="lc mono">—</div><div class="lc"><span class="chip other">Other</span></div><div class="lc"><span class="chip prog">In progress</span></div>
+        </div>
+      </div>
+
+      <!-- SPRING 2026 -->
+      <div class="grp">
+        <div class="gh">
+          <div><div class="gname">Spring 2026</div><div class="gmeta">completed · 16 credits</div></div>
+          <div class="gspacer">
+            <div class="gstat"><div class="gsv">3.77</div><div class="gsl">term GPA</div></div>
+            <div class="gstat"><div class="gsv" style="color:#8fc6e8">3.70</div><div class="gsl">term BCPM</div></div>
+          </div>
+        </div>
+        <div class="ltable">
+          <div class="lh">Course</div><div class="lh">Title — as printed</div><div class="lh">Credits</div><div class="lh">Grade</div><div class="lh">AMCAS</div><div class="lh">Status</div>
+
+          <div class="lc mono">CHEM 261</div>
+          <div class="lc"><span class="exact">Organic Chemistry I</span></div>
+          <div class="lc mono">3</div><div class="lc mono">B+</div><div class="lc"><span class="chip bcpm">BCPM</span></div><div class="lc"><span class="chip good">Completed</span></div>
+
+          <div class="lc mono">BIOL 202</div>
+          <div class="lc"><span class="exact">Molecular Biology and Genetics</span></div>
+          <div class="lc mono">4</div><div class="lc mono">A−</div><div class="lc"><span class="chip bcpm">BCPM</span></div><div class="lc"><span class="chip good">Completed</span></div>
+
+          <div class="lc rowmut mono">MATH 233</div>
+          <div class="lc rowmut"><span class="exact">Calculus of Functions of Several Variables</span></div>
+          <div class="lc rowmut mono">4</div><div class="lc rowmut mono">W</div><div class="lc rowmut"><span class="chip other">Excluded</span></div><div class="lc"><span class="chip wd">Withdrawn</span></div>
+        </div>
+      </div>
+
+      <!-- FALL 2025 — includes a repeat, both attempts count -->
+      <div class="grp">
+        <div class="gh">
+          <div><div class="gname">Fall 2025</div><div class="gmeta">completed · 15 credits · includes one repeated course</div></div>
+          <div class="gspacer">
+            <div class="gstat"><div class="gsv">3.52</div><div class="gsl">term GPA</div></div>
+            <div class="gstat"><div class="gsv" style="color:#8fc6e8">3.40</div><div class="gsl">term BCPM</div></div>
+          </div>
+        </div>
+        <div class="ltable">
+          <div class="lh">Course</div><div class="lh">Title — as printed</div><div class="lh">Credits</div><div class="lh">Grade</div><div class="lh">AMCAS</div><div class="lh">Status</div>
+
+          <div class="lc mono">PHYS 104</div>
+          <div class="lc"><span class="exact">General Physics I: For Students of the Life Sciences</span></div>
+          <div class="lc mono">4</div><div class="lc mono">A−</div><div class="lc"><span class="chip bcpm">BCPM</span></div><div class="lc"><span class="chip good">Completed</span></div>
+
+          <div class="lc mono">CHEM 102</div>
+          <div class="lc"><span class="exact">General Descriptive Chemistry II</span></div>
+          <div class="lc mono">3</div><div class="lc mono">A</div><div class="lc"><span class="chip bcpm">BCPM</span></div><div class="lc"><span class="chip good">Completed</span></div>
+
+          <div class="lc mono">BIOL 101</div>
+          <div class="lc"><span class="exact">Principles of Biology</span> <span class="chip sup">attempt 2 of 2</span></div>
+          <div class="lc mono">4</div><div class="lc mono">A−</div><div class="lc"><span class="chip bcpm">BCPM</span></div><div class="lc"><span class="chip good">Completed</span></div>
+
+          <div class="lc rowmut mono">BIOL 101</div>
+          <div class="lc rowmut"><span class="exact">Principles of Biology</span> <span class="chip sup">attempt 1 of 2</span></div>
+          <div class="lc rowmut mono">4</div><div class="lc rowmut mono">C+</div><div class="lc rowmut"><span class="chip bcpm">BCPM</span></div><div class="lc"><span class="chip sup">Superseded at UNC</span></div>
+        </div>
+        <div style="padding:10px 15px;border-top:1px solid var(--bd)">
+          <div class="note"><b>Both attempts count toward AMCAS.</b> UNC's grade replacement removed the C+ from your UNC GPA; AMCAS has no grade replacement, so it stays in the AMCAS math. That is most of the 0.05 gap between the two numbers.</div>
+        </div>
+      </div>
+
+      <div class="note" style="padding:2px 2px 20px">
+        Withdrawn, completed and superseded are <b>filters on this one ledger</b> — there is no separate archive to go find.
+        Course numbers and titles are shown exactly as each transcript prints them.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     PRODUCT VIEW 2 — GPA
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="lab">Product view 2 — GPA</div>
+<div class="wrap">
+  <div class="fbar">
+    <div class="segsm">
+      <div class="ss">Ledger</div>
+      <div class="ss on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M3 17l6-6 4 4 7-7"/></svg>GPA</div>
+      <div class="ss">What-if</div>
+    </div>
+    <div class="sel"><span class="v">All institutions</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m6 9 6 6 6-6"/></svg></div>
+    <span class="chip other">AAMC guide · 2026 edition</span>
+    <div class="pbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M4 19h16"/></svg>Export GPA report</div>
+  </div>
+
+  <div class="bento" style="margin-top:15px">
+    <!-- HERO — the dual number, permanently side by side -->
+    <div class="c12">
+      <div class="hero">
+        <div class="dual">
+          <div class="gpabox">
+            <div class="gpalab">UNC cumulative</div>
+            <div class="gpanum">3.71</div>
+            <div class="gpasub">78 credits · grade replacement applied · rounded</div>
+          </div>
+          <div class="gpabox amcas">
+            <div class="gpalab">AMCAS cumulative <span class="chip sup">what schools see</span></div>
+            <div class="gpanum">3.66</div>
+            <div class="gpasub">95 credits · every attempt · truncated, not rounded</div>
+          </div>
+        </div>
+        <div class="delta">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/></svg>
+          <div class="t">The <b>0.05 gap</b> is your repeated BIOL 101 — AMCAS counts both attempts — plus 17 credits of prior coursework AMCAS includes and UNC does not. Your true value is <b>3.667</b>; AMCAS truncates it to <b>3.66</b>, not 3.67.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BREAKDOWN -->
+    <div class="c5">
+      <div class="card">
+        <div class="hd"><div><div class="ti">AMCAS breakdown</div><div class="sub">computed separately, never one number</div></div></div>
+        <div class="bd">
+          <div class="landing" style="grid-template-columns:1fr 1fr">
+            <div class="lbox"><div class="lv" style="color:#8fc6e8">3.58</div><div class="ll">BCPM — science</div></div>
+            <div class="lbox"><div class="lv">3.79</div><div class="ll">AO — all other</div></div>
+            <div class="lbox"><div class="lv">3.66</div><div class="ll">Cumulative</div></div>
+            <div class="lbox"><div class="lv">3.61</div><div class="ll">Postbac / undergrad</div></div>
+          </div>
+          <div class="note">Plus/minus scale, credit-hour weighted, pass/fail excluded, every attempt of a repeat included. Get this wrong once and the number stops being believed.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- YEAR TREND — committees read the trajectory -->
+    <div class="c7">
+      <div class="card">
+        <div class="hd">
+          <div><div class="ti">Grade trend by academic year</div><div class="sub">AMCAS reports GPA broken out by year</div></div>
+          <span class="chip good">↗ rising</span>
+        </div>
+        <div class="bd">
+          <div class="trend">
+            <div class="tcol"><div class="tval">3.31</div><div class="tbar"><div class="tfill" style="height:44%;background:linear-gradient(180deg,#e0b478,#c9964f)"></div></div><div class="tyr">Freshman</div></div>
+            <div class="tcol"><div class="tval">3.62</div><div class="tbar"><div class="tfill" style="height:66%"></div></div><div class="tyr">Sophomore</div></div>
+            <div class="tcol"><div class="tval">3.79</div><div class="tbar"><div class="tfill" style="height:84%"></div></div><div class="tyr">Junior</div></div>
+            <div class="tcol"><div class="tval">3.84</div><div class="tbar"><div class="tfill" style="height:92%;opacity:.55"></div></div><div class="tyr">Senior · partial</div></div>
+          </div>
+          <div class="note" style="margin-top:11px">A rough freshman year inside a rising trend reads very differently from a flat 3.4. The shape is the point — this is why the record is longitudinal from day one, never scoped to a term.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="c12">
+      <div class="card">
+        <div class="hd"><div><div class="ti sm">How these numbers are produced</div><div class="sub">rules are data, not logic — re-verify in your application year</div></div></div>
+        <div class="bd">
+          <div class="note">
+            <b>AMCAS truncates rather than rounds.</b> 3.667 reports as 3.66.<br>
+            <b>Every attempt of a repeated course counts.</b> There is no AMCAS grade replacement, unlike UNC's policy.<br>
+            <b>All postsecondary institutions are included</b>, not just UNC.<br>
+            <b>Classification follows course content</b>, not the title or the department — the live question for a neuroscience major, where some courses classify as Biology and some as Other.
+          </div>
+          <div class="note" style="border-top:1px solid var(--bd);padding-top:9px">
+            AMCAS mechanics change between cycles and this is a snapshot. Every rule above is configurable data with a cited guide version, so a rule change is a data edit rather than a rebuild.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     PRODUCT VIEW 3 — WHAT-IF
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="lab">Product view 3 — What-if</div>
+<div class="wrap">
+  <div class="fbar">
+    <div class="segsm">
+      <div class="ss">Ledger</div>
+      <div class="ss">GPA</div>
+      <div class="ss on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 3v18M3 12h18"/></svg>What-if</div>
+    </div>
+    <div class="sel"><span class="v">Fall 2026</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m6 9 6 6 6-6"/></svg></div>
+    <span class="chip other">3 courses in progress</span>
+    <div class="pbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save scenario</div>
+  </div>
+
+  <div class="bento" style="margin-top:15px">
+    <!-- HERO — where this term lands you -->
+    <div class="c12">
+      <div class="hero">
+        <div class="herotop">
+          <div>
+            <div class="herolab">If this term goes A · A− · B+</div>
+            <div class="heroval">AMCAS cumulative lands at 3.68</div>
+          </div>
+          <div style="text-align:right">
+            <div class="herolab">Change from today</div>
+            <div class="heroval" style="color:var(--success)">+0.02</div>
+          </div>
+        </div>
+        <div class="landing" style="margin-top:14px">
+          <div class="lbox"><div class="lv">3.68 <span class="lchange up">+0.02</span></div><div class="ll">AMCAS cumulative</div></div>
+          <div class="lbox"><div class="lv" style="color:#8fc6e8">3.62 <span class="lchange up">+0.04</span></div><div class="ll">AMCAS BCPM</div></div>
+          <div class="lbox"><div class="lv">3.74 <span class="lchange up">+0.03</span></div><div class="ll">UNC cumulative</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENARIO ROWS -->
+    <div class="c7">
+      <div class="card">
+        <div class="hd">
+          <div><div class="ti">Assume a grade</div><div class="sub">Fall 2026 · 9 credits in progress</div></div>
+          <div class="gbtn">Reset</div>
+        </div>
+        <div class="bd">
+          <div class="wrow">
+            <div class="mainc">
+              <div class="wt">CHEM 262 <span class="chip bcpm">BCPM</span></div>
+              <div class="ws">Organic Chemistry II · 3 cr · currently 88.4%</div>
+            </div>
+            <div class="gpick"><span class="gopt">A</span><span class="gopt on">A−</span><span class="gopt">B+</span><span class="gopt">B</span></div>
+          </div>
+          <div class="wrow">
+            <div class="mainc">
+              <div class="wt">NSCI 222 <span class="chip bcpm">BCPM</span></div>
+              <div class="ws">Learning and Memory · 3 cr · currently 93.1%</div>
+            </div>
+            <div class="gpick"><span class="gopt on">A</span><span class="gopt">A−</span><span class="gopt">B+</span><span class="gopt">B</span></div>
+          </div>
+          <div class="wrow">
+            <div class="mainc">
+              <div class="wt">ENGL 105 <span class="chip other">Other</span></div>
+              <div class="ws">English Composition and Rhetoric · 3 cr · currently 86.0%</div>
+            </div>
+            <div class="gpick"><span class="gopt">A</span><span class="gopt">A−</span><span class="gopt on">B+</span><span class="gopt">B</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVERSE SOLVE -->
+    <div class="c5">
+      <div class="card">
+        <div class="hd">
+          <div><div class="ti">What do I need?</div><div class="sub">CHEM 262 · weight-aware</div></div>
+        </div>
+        <div class="bd">
+          <div class="solve">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3v18M3 12h18"/></svg>
+            <div>
+              <div class="t">You need <b>84 on the final</b> for an A−.</div>
+              <div class="d">Final is 30% of the grade. You are at 88.4% with 70% of the grade recorded.</div>
+            </div>
+          </div>
+          <div class="wrow">
+            <div class="mainc">
+              <div class="wt">Highest leverage <span class="chip warn">moves 0.6 letters</span></div>
+              <div class="ws">The final — nothing else remaining comes close.</div>
+            </div>
+          </div>
+          <div class="wrow">
+            <div class="mainc">
+              <div class="wt">Mathematically irrelevant</div>
+              <div class="ws">Problem set 8 can no longer change your letter grade.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POLICIES -->
+    <div class="c12">
+      <div class="card">
+        <div class="hd">
+          <div><div class="ti sm">Syllabus policies in this calculation</div><div class="sub">shown and editable — a projection that ignores a drop-lowest rule is simply wrong</div></div>
+        </div>
+        <div class="bd">
+          <div class="policy"><span class="pl"><b>CHEM 262</b> — lowest problem set dropped</span><span class="chip good">applied</span><span class="pe">Edit</span></div>
+          <div class="policy"><span class="pl"><b>CHEM 262</b> — final may replace the lowest midterm</span><span class="chip good">applied</span><span class="pe">Edit</span></div>
+          <div class="policy"><span class="pl"><b>NSCI 222</b> — curve at instructor discretion</span><span class="chip warn">not modelled</span><span class="pe">Edit</span></div>
+          <div class="policy"><span class="pl"><b>ENGL 105</b> — attendance capped at 5%</span><span class="chip good">applied</span><span class="pe">Edit</span></div>
+          <div class="note" style="padding-top:4px">Parsed from each syllabus, then confirmed by you. A curve cannot be predicted, so it is named and excluded rather than guessed at.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

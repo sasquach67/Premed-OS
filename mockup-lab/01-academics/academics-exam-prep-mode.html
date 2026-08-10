@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Academics — Exam prep mode (§4.1-R)</title>
+<!--
+  ============================================================================
+  ACADEMICS — EXAM PREP MODE — VISUAL REFERENCE
+  ============================================================================
+  Status: PROPOSED (July 2026). Spec: tabs/01-academics.md §4.1-R.
+  This is the destination `Build exam plan` (§4.1-I) never had.
+
+  RELATED
+   · mockups/01-academics/academics-class-hub.html      — entered from its banner
+   · mockups/01-academics/academics-daily-main-page.html — the tab it leaves
+   · mockups/_shared/_visual-recipes.md                 — literal visual values
+   · mockups/03-overview/overview-bento-control-panel.html — design language
+
+  IT IS A MODE, NOT A TAB
+  Full-screen, temporary, ends when the exam does. Entered from `Build exam
+  plan` on the class banner or offered as an exam approaches. A student is in
+  it for ~10 days, 3-4 times a term. There is NO sixth Academics tab, and the
+  app shell's sidebar is REPLACED, not nested inside. `Exit` returns to the
+  class page and the plan persists.
+
+  THE DAY IS A 9-5 (§6.15-A — GOVERNING)
+  Andy, July 2026: "Treat the day like a 9-5: lock in from 9, get all
+  necessary work done, then leave the rest of the night guilt-free."
+  Front-loading is only half the stance; the other half is that finishing
+  must actually END. So every day here is expressed as a FINISH TIME
+  ("9:00-11:30, free after 11:30"), not merely as a quantity of hours.
+  Hours answer "how much"; the finish time answers "when am I free" — which
+  is the question that actually governs behaviour. When the day is done the
+  surface SAYS SO and stops asking for anything. See the "clocked out" state
+  on the Today card. Offering bonus work after completion would silently
+  revoke the promise and is forbidden.
+
+  TWO MODES, NOT THREE (§6.15-B — LOCKED)
+  `Accelerated` (DEFAULT) and `Steady`. Accelerated front-loads and finishes early each
+  day; Steady spreads the same scope wider for an overwhelming week and is
+  STILL ON PACE — never worded as behind. A three-level model
+  (Steady/Accelerated/Push) was designed and REJECTED July 2026: it put a real
+  decision in front of a student who just wanted a plan. Spare hours stay
+  spare rather than becoming a third mode that claims them.
+  CATCH-UP IS NOT A MODE — it is detected, never chosen (see FRAME 3).
+
+  MODE SCOPE — GLOBAL VALUE, LOCAL CONTROL (§6.15-B, LOCKED July 2026)
+  Intensity is a property of the student's WEEK, not of one exam plan. One
+  value, stored at the shell beside `WeeklyCapacity` (00-product-shell §11b).
+  Per-plan scope was considered and REJECTED: Academics and MCAT claim hours
+  against ONE shared pool, so two generators at different intensities bid
+  incoherently against it — the exact failure §11b exists to prevent.
+  Settings-only was also rejected: nobody opens Settings at the moment they
+  are overwhelmed, which is when the control must be reachable.
+  So the SAME control appears in exam prep mode, the Daily main page, and
+  MCAT's session planner, all reading/writing one value.
+  The FIRST flip states its reach once (see the 🌐 notice in Frame 2) and
+  never again. HQ NEVER flips it automatically — it may OFFER Steady once
+  when the pool is oversubscribed, dismissible, counting against the §6.11
+  attention budget. Reverting to Accelerated is SILENT: no welcome-back, no praise.
+
+  DECISIONS THIS FILE ENCODES
+  1. ASSEMBLES, NEVER INVENTS. Every number on this screen already exists
+     somewhere else in the app: scope (§4.1-I), per-topic state (§6.4),
+     exam-day band (#32/§4.1-L), review-debt vs hours (#33/§6.16), past exams
+     (§4.1-P), lecture guidance (§4.1-Q). There is NO new score, NO blended
+     "prepared %", and no readiness number that isn't #32's.
+  2. PROJECTIONS ARE BANDS. "68-79% on exam day", never "73%". (§6.12)
+  3. THE PLAN IS DAY-BY-DAY, NOT A CHECKLIST. Ordered by what decays soonest
+     against what's weakest, INTERLEAVED across units rather than blocked (#16).
+  4. EVERY DAY STATES ITS OWN WHY. A day with no reason to exist is a day the
+     student deletes. The why-line is not decoration; it is the feature.
+  5. SIZED TO REAL HOURS. Hours come from WeeklyCapacity minus MCAT's claims
+     (§6.16), not an idealised week. Oversubscription is reported BEFORE
+     generating, not discovered on day six.
+  6. TODAY IS THE HERO. The bento rule: today's card is large and expanded;
+     future days are compact rows. A uniform stack of 9 identical day cards
+     would be the flat-rectangles defect (03-overview §5).
+  7. RE-PLANS, NEVER ACCUMULATES BACKLOG. Falling behind reflows the remaining
+     days. There is no "3 overdue" badge anywhere in this mode, by design
+     (§6.10-B — the plan is never a debt ledger).
+  8. CATCH-UP IS A STATE OF THIS MODE, NOT A SEPARATE SURFACE (#73).
+     See FRAME 3 below. It NAMES WHAT TO ABANDON — the single most useful
+     thing to hear in that position, and the thing no other study app says.
+  9. CLOSES INTO THE AUTOPSY. The exam-day card ends the plan and offers the
+     autopsy (#17) + schedules the decay check (#41). Both skippable, one tap.
+
+  THE PACE CONTROL IS A BOX, NOT A PILL (revised July 2026)
+  A segmented glass pill was built and REJECTED. Two reasons:
+   1. FORM COLLISION. The banner already uses a glass pill for the VIEW mode
+      (Daily / Planning, §4b-i). A second pill makes "which view am I in" and
+      "how hard am I going" look like the same kind of control.
+   2. A PILL ANSWERS NOTHING. It displays two options and no state. The
+      question a student actually has is "how's my pace?", and a toggle
+      cannot answer it.
+  The replacement is a small banner STATUS BOX that answers at rest —
+  `Pace / Accelerated · 2 days early` — and opens a menu on hover/click with the
+  current state in words, the diff if you switched, one action, and the
+  scope note. Glass is correct on both halves: the box is banner-borne
+  chrome and the menu floats (04 §0c).
+  The box also carries the catch-up signal WITHOUT changing the setting —
+  see Frame 3, where it reads `Steady · catching up`.
+
+  WHERE THE MODE COMPARISON LIVES (revised July 2026)
+  A standing "Accelerated vs Steady" panel in the right rail was built and REMOVED.
+  The diagnosis: it is TRANSIENT INFO IN PERMANENT FURNITURE. You compare
+  modes once, in about two seconds, so a panel spends rail space forever on a
+  decision already made — and it read as awkward because it was.
+  Replaced by a HOVER PREVIEW on the mode switch itself, showing the diff
+  (load, finish date, buffer, exam-day band) with strikethrough from → to.
+  This reuses the Planner's locked preview-before-committing pattern
+  (§4.2-C2). It is a PREVIEW, NOT A CONFIRM STEP — clicking switches
+  immediately, because §6.15-B forbids a confirmation dialog on this control.
+  The popover is one of the few places on this page where GLASS IS CORRECT:
+  it floats above the plan (04 §0c).
+  The only PERSISTENT trace of the mode is one clause in the plan header's
+  subtitle — "finishes Oct 12, two days before the exam" — which is a fact
+  about your plan rather than a comparison.
+
+  DELIBERATELY EXCLUDED — do not add these back
+   · A THIRD intensity mode ("Push"). Designed and rejected — see above.
+   · A standing mode-comparison panel. Built and removed — see above.
+   · A segmented pill for pace. Built and removed — see above.
+   · Any "you could also…" / bonus-work offer on a COMPLETED day. This is the
+     single thing that would break §6.15-A. The evening is the payoff.
+   · A single "readiness %" or letter grade. Rejected: it would be a new
+     invented score, and §4.1-R's first rule is that this mode assembles only.
+   · A progress bar across the whole plan. Rejected: it turns a re-planning
+     surface into a completion surface, which is exactly what creates backlog
+     guilt when the plan reflows.
+   · Merging two exams in one week into one plan. Rejected explicitly in spec:
+     merging hides which exam is in trouble. Two exams = two entries.
+   · Streaks, "days studied", or any motivational counter. Not in this mode.
+   · Blocked (non-interleaved) study order. Contradicts #16.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --bd:#3c352d; --muted:#322e28; --pri:#6fb3de;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f; --star:#e7b06a;
+  --cat:#4b9cd3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#14120f; color:var(--fg);
+  font-family:'Nunito',system-ui,sans-serif; font-size:13px;
+  padding:26px; overflow:auto;
+}
+.frame{
+  width:1400px; background:var(--bg); border-radius:18px; overflow:hidden;
+  box-shadow:0 30px 90px -30px rgba(0,0,0,.9); margin-bottom:38px;
+}
+.framelabel{
+  width:1400px; font-family:'Baloo 2'; font-weight:800; font-size:13px;
+  color:var(--dim); text-transform:uppercase; letter-spacing:.09em;
+  margin:0 0 10px 4px;
+}
+h1,h2,h3,h4,.num,.btn,.chip,.tab{font-family:'Baloo 2'}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- MODE BANNER — distinct from the app shell banner ---------- */
+.banner{
+  overflow:visible;
+  background:
+    radial-gradient(340px 200px at 88% 6%, rgba(75,156,211,.34), transparent 70%),
+    radial-gradient(260px 180px at 10% 130%, rgba(231,176,106,.16), transparent 70%),
+    linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%);
+  padding:16px 24px 18px;
+}
+.banner.urgent{
+  background:
+    radial-gradient(340px 200px at 88% 6%, rgba(232,128,111,.34), transparent 70%),
+    radial-gradient(260px 180px at 10% 130%, rgba(231,176,106,.20), transparent 70%),
+    linear-gradient(115deg,#3d2b2a 0%,#432f2c 45%,#3a3730 100%);
+}
+.brow{position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.exitrow{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+.exit{
+  background:rgba(20,26,34,.5); backdrop-filter:blur(16px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+  border-radius:999px; padding:5px 14px 5px 10px;
+  font-weight:800; font-size:12px; color:rgba(255,255,255,.86);
+  display:flex; align-items:center; gap:6px; cursor:pointer;
+}
+.modetag{
+  font-family:'Baloo 2'; font-weight:800; font-size:9.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:rgba(255,255,255,.62);
+  border:1px solid rgba(255,255,255,.2); border-radius:999px; padding:3px 10px;
+}
+.h1{font-weight:800;font-size:29px;color:#fff;letter-spacing:-.4px;line-height:1.1}
+.subline{font-size:12px;color:rgba(255,255,255,.66);font-weight:700;margin-top:4px}
+.statstrip{
+  display:flex; border-radius:13px; overflow:hidden;
+  background:rgba(20,26,34,.5); backdrop-filter:blur(16px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+}
+.stat{padding:8px 15px;border-right:1px solid rgba(255,255,255,.12);min-width:88px}
+.stat:last-child{border-right:0}
+.stat .value{font-family:'Baloo 2';font-weight:800;font-size:18px;color:#fff;font-variant-numeric:tabular-nums;line-height:1.15}
+.stat .label{font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:1px}
+.stat .value small{font-size:11px;font-weight:700;color:rgba(255,255,255,.62)}
+
+/* ---------- LAYOUT ---------- */
+.body{padding:18px 22px 24px}
+.top3{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:13px;margin-bottom:13px}
+.split{display:grid;grid-template-columns:1fr 400px;gap:13px;align-items:start}
+
+/* ---------- PANELS ---------- */
+.panel{
+  background:var(--card); border:1px solid var(--bd); border-radius:16px;
+  box-shadow:0 10px 26px -14px rgba(0,0,0,.55);
+}
+.ph{padding:14px 16px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.pt{font-weight:800;font-size:16.5px;line-height:1.15}
+.ps{font-size:11.5px;color:var(--dim);font-weight:700}
+.pb{padding:3px 16px 16px;display:flex;flex-direction:column;gap:8px}
+
+/* ---------- CHIPS ---------- */
+.chip{
+  font-weight:800;border-radius:999px;padding:2px 8px;font-size:9.5px;
+  display:inline-flex;align-items:center;gap:4px;white-space:nowrap;
+}
+.c-cat{background:color-mix(in srgb,var(--cat) 18%,transparent);color:var(--cat)}
+.c-ok{background:color-mix(in srgb,var(--success) 18%,transparent);color:var(--success)}
+.c-warn{background:color-mix(in srgb,var(--warning) 18%,transparent);color:var(--warning)}
+.c-bad{background:color-mix(in srgb,var(--danger) 18%,transparent);color:var(--danger)}
+.c-dim{background:rgba(255,255,255,.07);color:var(--dim)}
+
+/* ---------- SCOPE ---------- */
+.unit{
+  display:flex;align-items:center;gap:10px;background:var(--muted);
+  border:1px solid var(--bd);border-radius:11px;padding:9px 11px;
+}
+.unit .nm{font-weight:700;font-size:12.5px;flex:1;color:var(--fg)}
+.unit .wt{font-family:'Baloo 2';font-weight:800;font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+.why{
+  font-size:11px;color:var(--dim);font-weight:600;line-height:1.5;
+  padding:8px 10px;background:rgba(255,255,255,.028);
+  border-left:2px solid color-mix(in srgb,var(--cat) 42%,transparent);
+  border-radius:0 8px 8px 0;
+}
+
+/* ---------- PROJECTION BAND ---------- */
+.bandwrap{padding:6px 2px 2px}
+.bandrail{position:relative;height:34px;background:var(--muted);border:1px solid var(--bd);border-radius:9px;overflow:hidden}
+.bandfill{
+  position:absolute;top:0;bottom:0;left:68%;right:21%;
+  background:linear-gradient(90deg,
+    color-mix(in srgb,var(--success) 34%,transparent),
+    color-mix(in srgb,var(--success) 20%,transparent));
+  border-left:2px solid var(--success);border-right:2px solid var(--success);
+}
+.bandticks{display:flex;justify-content:space-between;font-size:9.5px;font-weight:800;color:var(--dim);margin-top:5px;padding:0 1px}
+.bandnum{font-family:'Baloo 2';font-weight:800;font-size:25px;color:var(--fg);font-variant-numeric:tabular-nums;line-height:1}
+.bandnum span{font-size:13px;color:var(--mut);font-weight:700}
+
+/* ---------- HOURS ---------- */
+.hrow{display:flex;align-items:center;gap:9px}
+.hbar{flex:1;height:9px;background:var(--muted);border:1px solid var(--bd);border-radius:999px;overflow:hidden;display:flex}
+.hseg{height:100%}
+.hlab{font-size:11px;font-weight:700;color:var(--mut);display:flex;align-items:center;gap:6px}
+.dotk{width:8px;height:8px;border-radius:3px;flex:none}
+
+/* ---------- THE PLAN ---------- */
+.planhead{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;gap:10px}
+.today{
+  background:linear-gradient(180deg,color-mix(in srgb,var(--cat) 8%,var(--muted)),var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 34%,var(--bd));
+  border-radius:14px;padding:14px 15px;position:relative;overflow:hidden;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--cat) 14%,transparent),
+             0 14px 30px -18px rgba(0,0,0,.8);
+}
+.today::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cat);
+  box-shadow:0 0 14px color-mix(in srgb,var(--cat) 75%,transparent);
+}
+.tdrow{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:11px}
+.tdlabel{font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cat)}
+.tdtitle{font-family:'Baloo 2';font-weight:800;font-size:19px;margin-top:3px}
+.tdhrs{font-family:'Baloo 2';font-weight:800;font-size:19px;color:var(--fg);font-variant-numeric:tabular-nums;text-align:right;line-height:1.1}
+.tdhrs small{display:block;font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);font-weight:800}
+.tasks{display:flex;flex-direction:column;gap:7px;margin:11px 0}
+.task{
+  display:flex;align-items:center;gap:10px;background:var(--card);
+  border:1px solid var(--bd);border-radius:10px;padding:9px 11px;
+}
+.tick{width:16px;height:16px;border-radius:5px;border:1.6px solid var(--dim);flex:none}
+.tick.done{background:var(--success);border-color:var(--success)}
+.task .tn{flex:1;font-weight:700;font-size:12.5px}
+.task .tm{font-size:10.5px;color:var(--dim);font-weight:700;font-variant-numeric:tabular-nums}
+.task.doneRow .tn{color:var(--dim);text-decoration:line-through}
+
+.day{
+  display:grid;grid-template-columns:74px 1fr auto;gap:13px;align-items:center;
+  background:var(--muted);border:1px solid var(--bd);border-radius:12px;padding:11px 13px;
+  transition:.15s cubic-bezier(.16,1,.3,1);cursor:pointer;
+}
+.day:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--cat) 50%,var(--bd))}
+.dnum{font-family:'Baloo 2';font-weight:800;font-size:13px;color:var(--fg);line-height:1.2}
+.dnum small{display:block;font-size:9.5px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+.dtop{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:3px}
+.dtop .u{font-weight:800;font-size:12.5px;font-family:'Baloo 2'}
+.dwhy{font-size:11px;color:var(--dim);font-weight:600;line-height:1.45}
+.dhrs{font-family:'Baloo 2';font-weight:800;font-size:13px;color:var(--fg);font-variant-numeric:tabular-nums;text-align:right;line-height:1.25;white-space:nowrap}
+.dhrs small{display:block;font-size:10px;font-weight:800;color:var(--dim)}
+.dhrs em{display:block;font-style:normal;font-size:10px;font-weight:800;color:var(--success)}
+.examday{
+  display:flex;align-items:center;gap:13px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--star) 13%,var(--muted)),var(--muted));
+  border:1px solid color-mix(in srgb,var(--star) 38%,var(--bd));
+  border-radius:12px;padding:13px;
+}
+.examday .big{font-family:'Baloo 2';font-weight:800;font-size:15px}
+.divider{display:flex;align-items:center;gap:10px;margin:3px 0}
+.divider .ln{flex:1;height:1px;background:var(--bd)}
+.divider .tx{font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+
+/* ---------- TOPIC STATES ---------- */
+.tgrid{display:flex;flex-direction:column;gap:6px}
+.trow{display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--muted);border:1px solid var(--bd);border-radius:9px}
+.trow .tnm{flex:1;font-weight:700;font-size:12px}
+.trow .tu{font-size:9.5px;font-weight:800;color:var(--dim)}
+.sdot{width:9px;height:9px;border-radius:3px;flex:none}
+.legend{display:flex;flex-wrap:wrap;gap:10px;padding-top:4px}
+.legend div{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--dim)}
+
+/* ---------- LISTS ---------- */
+.lrow{display:flex;align-items:center;gap:10px;background:var(--muted);border:1px solid var(--bd);border-radius:10px;padding:9px 11px}
+.lrow .ln2{flex:1;font-weight:700;font-size:12.5px}
+.quote{
+  font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.55;font-style:italic;
+  padding:9px 11px;background:var(--muted);border:1px solid var(--bd);border-radius:10px;
+}
+.quote .src{display:block;font-style:normal;font-size:10px;color:var(--dim);font-weight:800;margin-top:5px}
+
+/* ---------- BUTTONS ---------- */
+.btn{
+  font-weight:800;font-size:11.5px;border-radius:9px;padding:7px 13px;
+  border:1px solid var(--bd);background:var(--muted);color:var(--mut);cursor:pointer;
+}
+.btn.pri{background:var(--cat);border-color:var(--cat);color:#0f1b24}
+.btn.sm{padding:5px 10px;font-size:11px}
+.btn.ghost{background:transparent}
+
+/* ---------- MASCOT NOTE ---------- */
+.mnote{
+  display:flex;gap:11px;align-items:flex-start;
+  background:color-mix(in srgb,var(--cat) 7%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 24%,var(--bd));
+  border-radius:12px;padding:11px 13px;
+}
+.ram{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--cat) 22%,transparent);
+  display:flex;align-items:center;justify-content:center;flex:none;font-size:15px}
+.mnote .mt{font-family:'Baloo 2';font-weight:800;font-size:12.5px;margin-bottom:2px}
+.mnote .mb{font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.55}
+.x{margin-left:auto;color:var(--dim);font-weight:800;font-size:13px;cursor:pointer;flex:none}
+
+/* ---------- MODE PREVIEW POPOVER ----------
+   Glass is CORRECT here and almost nowhere else on this page: it FLOATS
+   above the plan (04 §0c — glass only on surfaces that float).
+   It is a HOVER PREVIEW, not a confirm step. Clicking the switch switches
+   immediately; §6.15-B forbids a confirmation dialog.                     */
+.popwrap{position:relative}
+.popover{
+  position:absolute; top:calc(100% + 9px); right:0; width:310px; z-index:20;
+  background:rgba(20,26,34,.72); backdrop-filter:blur(18px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 22px 48px -20px rgba(0,0,0,.9);
+  border-radius:14px; padding:13px 14px;
+}
+.popover::before{
+  content:""; position:absolute; top:-5px; right:44px; width:9px; height:9px;
+  background:rgba(30,38,48,.92); border-left:1px solid rgba(255,255,255,.16);
+  border-top:1px solid rgba(255,255,255,.16); transform:rotate(45deg);
+}
+.pophead{font-family:'Baloo 2';font-weight:800;font-size:13px;color:#fff;margin-bottom:2px}
+.popsub{font-size:10.5px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:10px}
+.diff{display:flex;align-items:center;gap:8px;padding:5px 0}
+.diff .dl{flex:1;font-size:11.5px;font-weight:700;color:rgba(255,255,255,.66)}
+.diff .from{font-family:'Baloo 2';font-weight:800;font-size:11.5px;color:rgba(255,255,255,.4);text-decoration:line-through;font-variant-numeric:tabular-nums}
+.diff .arw{color:rgba(255,255,255,.32);font-size:10px}
+.diff .to{font-family:'Baloo 2';font-weight:800;font-size:11.5px;color:#fff;font-variant-numeric:tabular-nums}
+.diff .to.warn{color:var(--warning)}
+.popfoot{
+  font-size:11px;font-weight:600;line-height:1.55;color:rgba(255,255,255,.62);
+  border-top:1px solid rgba(255,255,255,.12); margin-top:9px; padding-top:9px;
+}
+
+.popscope{
+  font-size:10px;font-weight:800;color:rgba(255,255,255,.46);
+  margin-top:8px;display:flex;align-items:center;gap:5px;
+}
+
+/* ---------- FIRST-FLIP SCOPE NOTICE (shown once, ever) ---------- */
+.firstflip{
+  display:flex;align-items:flex-start;gap:11px;
+  background:color-mix(in srgb,var(--cat) 9%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 30%,var(--bd));
+  border-radius:12px;padding:11px 13px;margin-bottom:9px;
+}
+.firstflip .gl{font-size:15px;flex:none;margin-top:1px}
+.firstflip .ft{font-family:'Baloo 2';font-weight:800;font-size:12.5px;margin-bottom:2px}
+.firstflip .fb{font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.55}
+
+/* ---------- CALENDAR CHANGE PROPOSAL ---------- */
+.calnote{
+  background:color-mix(in srgb,var(--warning) 8%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--warning) 32%,var(--bd));
+  border-radius:11px;padding:10px 11px;
+}
+.calhead{font-family:'Baloo 2';font-weight:800;font-size:11.5px;color:var(--warning);margin-bottom:7px}
+.calrow{display:flex;align-items:center;gap:8px;padding:3px 0}
+.calrow .cdot{width:6px;height:6px;border-radius:2px;background:var(--warning);flex:none}
+.calrow .cn{flex:1;font-size:11.5px;font-weight:700;color:var(--mut)}
+.calrow .ch{font-family:'Baloo 2';font-weight:800;font-size:11.5px;color:var(--mut);font-variant-numeric:tabular-nums}
+
+/* ---------- PACE CONTROL — a BOX that answers, not a pill that toggles ----
+   REJECTED: a segmented glass pill. The banner already uses that exact form
+   for the VIEW mode (Daily / Planning), so a second pill makes two different
+   questions look like one control. A pill is also a bare toggle: it shows
+   two options and answers nothing.
+   THIS instead reads as a small status box — "how's my pace?" answered at
+   rest — that opens a menu on hover/click. Glass is correct on both: the box
+   is banner-borne chrome and the menu floats (04 §0c).                     */
+.pacebox{
+  display:flex; align-items:center; gap:11px; cursor:pointer;
+  background:rgba(20,26,34,.5); backdrop-filter:blur(16px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+  border-radius:13px; padding:7px 12px 8px 14px;
+  transition:.15s cubic-bezier(.16,1,.3,1);
+}
+.pacebox:hover{border-color:rgba(255,255,255,.34)}
+.pacebox .plabel{
+  font-family:'Baloo 2'; font-weight:800; font-size:9px; letter-spacing:.07em;
+  text-transform:uppercase; color:rgba(255,255,255,.6);
+}
+.pacebox .pvalue{
+  font-family:'Baloo 2'; font-weight:800; font-size:18px; color:#fff; line-height:1.15;
+  display:flex; align-items:center; gap:7px;
+}
+.pacebox .pstate{
+  font-size:9.5px; font-weight:800; border-radius:999px; padding:2px 8px;
+  background:rgba(111,192,168,.2); color:#8fd6c1;
+}
+.pacebox .pstate.warn{background:rgba(231,176,106,.2);color:#f0c68d}
+.pacebox .chev{color:rgba(255,255,255,.5);font-size:11px;margin-left:2px}
+
+/* ---------- PACE MENU (opens from the box) ---------- */
+.pacewrap{position:relative}
+.pacemenu{
+  position:absolute; top:calc(100% + 9px); right:0; width:330px; z-index:30;
+  background:rgba(20,26,34,.74); backdrop-filter:blur(18px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 22px 48px -20px rgba(0,0,0,.9);
+  border-radius:14px; padding:13px 14px 12px; text-align:left;
+}
+.pacemenu::before{
+  content:""; position:absolute; top:-5px; right:34px; width:9px; height:9px;
+  background:rgba(30,38,48,.94); border-left:1px solid rgba(255,255,255,.16);
+  border-top:1px solid rgba(255,255,255,.16); transform:rotate(45deg);
+}
+.pmnow{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.pmnow .t{font-family:'Baloo 2';font-weight:800;font-size:15px;color:#fff}
+.pmline{font-size:11.5px;font-weight:600;line-height:1.55;color:rgba(255,255,255,.66)}
+.pmsplit{border-top:1px solid rgba(255,255,255,.12);margin:11px 0 10px}
+.pmalt{font-family:'Baloo 2';font-weight:800;font-size:11px;letter-spacing:.06em;
+  text-transform:uppercase;color:rgba(255,255,255,.46);margin-bottom:8px}
+.diff{display:flex;align-items:center;gap:8px;padding:4px 0}
+.diff .dl{flex:1;font-size:11.5px;font-weight:700;color:rgba(255,255,255,.66)}
+.diff .from{font-family:'Baloo 2';font-weight:800;font-size:11.5px;color:rgba(255,255,255,.4);text-decoration:line-through;font-variant-numeric:tabular-nums}
+.diff .arw{color:rgba(255,255,255,.32);font-size:10px}
+.diff .to{font-family:'Baloo 2';font-weight:800;font-size:11.5px;color:#fff;font-variant-numeric:tabular-nums}
+.pmbtn{
+  display:block; width:100%; text-align:center; margin-top:11px;
+  font-family:'Baloo 2'; font-weight:800; font-size:12.5px;
+  background:#fff; color:#17222c; border-radius:9px; padding:8px; cursor:pointer;
+}
+.pmfoot{
+  font-size:10.5px;font-weight:700;color:rgba(255,255,255,.46);
+  margin-top:9px;display:flex;align-items:flex-start;gap:5px;line-height:1.5;
+}
+
+/* ---------- FINISH LINE / 9-5 ---------- */
+.window{
+  display:flex;align-items:center;gap:9px;background:var(--card);
+  border:1px solid var(--bd);border-radius:10px;padding:8px 11px;
+}
+.wtime{font-family:'Baloo 2';font-weight:800;font-size:13.5px;font-variant-numeric:tabular-nums}
+.wfree{font-size:11px;font-weight:800;color:var(--success);margin-left:auto;display:flex;align-items:center;gap:5px}
+.wtrack{flex:1;height:7px;background:var(--muted);border:1px solid var(--bd);border-radius:999px;overflow:hidden;display:flex}
+.wdone{background:var(--success);height:100%}
+.wleft{background:color-mix(in srgb,var(--cat) 55%,transparent);height:100%}
+
+/* ---------- CLOCKED OUT ---------- */
+.clockedout{
+  background:linear-gradient(180deg,color-mix(in srgb,var(--success) 12%,var(--muted)),var(--muted));
+  border:1px solid color-mix(in srgb,var(--success) 42%,var(--bd));
+  border-radius:14px;padding:18px 16px;position:relative;overflow:hidden;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--success) 16%,transparent),
+             0 14px 30px -18px rgba(0,0,0,.8);
+}
+.clockedout::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--success);
+  box-shadow:0 0 14px color-mix(in srgb,var(--success) 75%,transparent);
+}
+.cotitle{font-family:'Baloo 2';font-weight:800;font-size:21px;color:var(--fg)}
+.cosub{font-size:12.5px;color:var(--mut);font-weight:600;line-height:1.55;margin-top:5px;max-width:560px}
+
+/* ---------- CATCH-UP ---------- */
+.triage{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.tcol{background:var(--muted);border:1px solid var(--bd);border-radius:13px;padding:12px}
+.tcol.keep{border-color:color-mix(in srgb,var(--success) 40%,var(--bd));background:color-mix(in srgb,var(--success) 6%,var(--muted))}
+.tcol.drop{border-color:color-mix(in srgb,var(--danger) 34%,var(--bd));background:color-mix(in srgb,var(--danger) 5%,var(--muted))}
+.tcolh{font-family:'Baloo 2';font-weight:800;font-size:13px;margin-bottom:3px}
+.tcols{font-size:10.5px;color:var(--dim);font-weight:700;margin-bottom:9px;line-height:1.45}
+.titem{display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--card);border:1px solid var(--bd);border-radius:9px;margin-bottom:6px}
+.titem .tin{flex:1;font-weight:700;font-size:12px}
+.consequence{
+  font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.6;
+  padding:11px 13px;background:var(--muted);border:1px solid var(--bd);
+  border-left:3px solid var(--warning);border-radius:0 11px 11px 0;
+}
+</style>
+</head>
+<body>
+<!-- =====================================================================
+     FRAME 1 — AHEAD MODE (default) · 9 days out · enough time
+     ===================================================================== -->
+<div class="framelabel">Frame 1 — Accelerated mode (default) · 9 days out</div>
+<div class="frame">
+
+  <div class="banner">
+    <div class="exitrow">
+      <div class="exit">&larr; Exit to CHEM 262</div>
+      <div class="modetag">Exam prep mode &middot; ends Oct 14</div>
+    </div>
+    <div class="brow">
+      <div>
+        <div class="h1">Exam 2 &mdash; CHEM 262</div>
+        <div class="subline">Tue Oct 14 &middot; 8:00 AM &middot; Murphey 116 &middot; covers units 4&ndash;6 &middot; 25% of your grade</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:14px">
+        <!-- THE MODE SWITCH. Banner-level glass pill, per the 3-level nav
+             rule (§4b-i): mode = glass pill on banner. It reads a SHELL-OWNED
+             value, so the label says "whole week". -->
+        <!-- PACE CONTROL, at rest. It ANSWERS "how's my pace?" without being
+             opened, then explains + offers the switch on hover/click. -->
+        <div class="pacebox">
+          <div>
+            <div class="plabel">Pace</div>
+            <div class="pvalue">Accelerated <span class="pstate">2 days early</span></div>
+          </div>
+          <div class="chev">&#9662;</div>
+        </div>
+        <div class="statstrip">
+          <div class="stat"><div class="value num">9</div><div class="label">Days left</div></div>
+          <div class="stat"><div class="value num">14<small>/16h</small></div><div class="label">Planned</div></div>
+          <div class="stat"><div class="value num">18</div><div class="label">Topics in scope</div></div>
+          <div class="stat"><div class="value num">4</div><div class="label">Weak</div></div>
+          <div class="stat"><div class="value num">68&ndash;79<small>%</small></div><div class="label">Exam-day recall</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <div class="top3">
+
+      <div class="panel">
+        <div class="ph">
+          <div><div class="pt">What's on it</div><div class="ps">Units 4&ndash;6 &middot; from your syllabus</div></div>
+          <div class="btn sm ghost">Edit scope</div>
+        </div>
+        <div class="pb">
+          <div class="unit"><span class="sdot" style="background:var(--danger)"></span><span class="nm">Unit 4 &mdash; Carbonyl chemistry</span><span class="wt">7 topics</span></div>
+          <div class="unit"><span class="sdot" style="background:var(--warning)"></span><span class="nm">Unit 5 &mdash; Enols &amp; enolates</span><span class="wt">6 topics</span></div>
+          <div class="unit"><span class="sdot" style="background:var(--success)"></span><span class="nm">Unit 6 &mdash; Carboxylic acid derivatives</span><span class="wt">5 topics</span></div>
+          <div class="why"><b style="color:var(--mut)">Why these units:</b> your syllabus lists &ldquo;Exam 2 &mdash; Ch. 19&ndash;22&rdquo; and Prof. Wexler's Oct 2 announcement moved the ester section into scope. Both are confirmed.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><div><div class="pt">Exam-day recall</div><div class="ps">Projected for Oct 14</div></div></div>
+        <div class="pb">
+          <div class="bandwrap">
+            <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:9px">
+              <div class="bandnum">68&ndash;79<span>%</span></div>
+              <div style="font-size:11px;font-weight:700;color:var(--dim);padding-bottom:3px">of in-scope<br>material</div>
+            </div>
+            <div class="bandrail"><div class="bandfill"></div></div>
+            <div class="bandticks"><span>0%</span><span>50%</span><span>100%</span></div>
+          </div>
+          <div class="why">A range, not a number &mdash; this is what your review history supports, and the honest width of it. It moves as you work through the plan.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph">
+          <div><div class="pt">Time you actually have</div><div class="ps">Next 9 days &middot; from your calendar</div></div>
+          <div class="btn sm ghost">Breakdown</div>
+        </div>
+        <div class="pb">
+          <div style="display:flex;align-items:baseline;gap:7px">
+            <div class="bandnum" style="font-size:25px">16<span>h</span></div>
+            <div style="font-size:11px;font-weight:700;color:var(--dim)">free after class, MCAT<br>blocks, shifts, and events</div>
+          </div>
+          <div class="hbar" style="margin:4px 0 2px">
+            <div class="hseg" style="width:74%;background:var(--cat)"></div>
+            <div class="hseg" style="width:12%;background:color-mix(in srgb,var(--cat) 40%,transparent)"></div>
+          </div>
+          <div style="display:flex;gap:13px;flex-wrap:wrap">
+            <div class="hlab"><span class="dotk" style="background:var(--cat)"></span>14h planned</div>
+            <div class="hlab"><span class="dotk" style="background:color-mix(in srgb,var(--cat) 40%,transparent)"></span>2h spare</div>
+          </div>
+          <div class="calnote">
+            <div class="calhead">2 events added since this plan was built</div>
+            <div class="calrow"><span class="cdot"></span><span class="cn">Frat chapter &mdash; Thu 4:00&ndash;6:00 PM</span><span class="ch">&minus;2h</span></div>
+            <div class="calrow"><span class="cdot"></span><span class="cn">Advisor meeting &mdash; Mon 3:00&ndash;3:30 PM</span><span class="ch">&minus;0.5h</span></div>
+            <div style="display:flex;align-items:center;gap:7px;margin-top:9px">
+              <div class="btn sm pri" style="padding:5px 11px">Re-plan around them</div>
+              <div class="btn sm ghost" style="padding:5px 9px">Keep as is</div>
+            </div>
+          </div>
+          <div class="why">Your plan still fits &mdash; none of those overlap a study block. Nothing has changed yet; re-planning is your call.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="split">
+
+      <div class="panel">
+        <div class="planhead">
+          <div>
+            <div class="pt">Your plan to Oct 14</div>
+            <div class="ps">Interleaved across units &middot; finishes Oct 12, two days before the exam</div>
+          </div>
+          <div class="btn sm">Edit</div>
+        </div>
+        <div class="pb" style="gap:9px">
+
+          <div class="today">
+            <div class="tdrow">
+              <div>
+                <div class="tdlabel">Today &middot; Sunday Oct 5</div>
+                <div class="tdtitle">Aldol condensation + amide hydrolysis</div>
+              </div>
+              <div class="tdhrs">2.0h<small>planned</small></div>
+            </div>
+            <div class="window" style="margin-bottom:10px">
+              <div class="wtime">9:00 &ndash; 11:30 AM</div>
+              <div class="wtrack"><div class="wdone" style="width:25%"></div><div class="wleft" style="width:75%"></div></div>
+              <div class="wfree">&#10003; free after 11:30</div>
+            </div>
+            <div class="dwhy" style="font-size:11.5px;color:var(--mut)">
+              <b style="color:var(--fg)">Why today:</b> aldol is your weakest in-scope topic and it's decayed furthest &mdash; you last recalled it 16 days ago at 40%. Amide hydrolysis is paired with it deliberately: the mechanisms look alike and students lose points confusing them.
+            </div>
+            <div class="tasks">
+              <div class="task doneRow"><span class="tick done"></span><span class="tn">Aldol condensation &mdash; recall session</span><span class="tm">25 min</span></div>
+              <div class="task"><span class="tick"></span><span class="tn">Mixed aldol &mdash; never reviewed</span><span class="chip c-bad">new</span><span class="tm">30 min</span></div>
+              <div class="task"><span class="tick"></span><span class="tn">Amide hydrolysis &mdash; recall session</span><span class="tm">25 min</span></div>
+              <div class="task"><span class="tick"></span><span class="tn">Practice: Exam 2 (Fa 2024) Q1&ndash;Q8</span><span class="tm">40 min</span></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="btn pri">Start today's session</div>
+              <div class="btn sm ghost">Swap a topic</div>
+              <div style="margin-left:auto;font-size:11px;font-weight:800;color:var(--dim)" class="num">1 of 4 done</div>
+            </div>
+          </div>
+
+          <div class="divider"><div class="ln"></div><div class="tx">Then</div><div class="ln"></div></div>
+
+          <div class="day">
+            <div class="dnum">Mon 6<small>Oct</small></div>
+            <div>
+              <div class="dtop"><span class="u">Enolate alkylation</span><span class="chip c-warn">weak</span><span class="chip c-dim">unit 5</span></div>
+              <div class="dwhy">Follows today's aldol work while the enolate mechanism is fresh &mdash; same intermediate, different outcome.</div>
+            </div>
+            <div class="dhrs">9:00&ndash;10:30<small>1.5h</small><em>free after</em></div>
+          </div>
+
+          <div class="day">
+            <div class="dnum">Tue 7<small>Oct</small></div>
+            <div>
+              <div class="dtop"><span class="u">Ester reactions + Claisen</span><span class="chip c-bad">never reviewed</span></div>
+              <div class="dwhy">Prof. Wexler spent 22 minutes on Claisen on Sep 30 and it has appeared on all three past Exam 2s. You've never reviewed it.</div>
+            </div>
+            <div class="dhrs">9:00&ndash;11:00<small>2.0h</small><em>free after</em></div>
+          </div>
+
+          <div class="day">
+            <div class="dnum">Wed 8<small>Oct</small></div>
+            <div>
+              <div class="dtop"><span class="u">Unit 4 mixed practice</span><span class="chip c-cat">interleaved</span></div>
+              <div class="dwhy">Mixed rather than blocked &mdash; you'll have to pick the mechanism, which is what the exam asks.</div>
+            </div>
+            <div class="dhrs">9:00&ndash;10:30<small>1.5h</small><em>free after</em></div>
+          </div>
+
+          <div class="day">
+            <div class="dnum">Thu 9<small>Oct</small></div>
+            <div>
+              <div class="dtop"><span class="u">Light day &mdash; acid derivatives recall</span><span class="chip c-dim">1 topic</span></div>
+              <div class="dwhy">You work 4&ndash;9pm Thursdays, so this day is deliberately small.</div>
+            </div>
+            <div class="dhrs">2:00&ndash;2:30<small>0.5h</small><em>shift at 4</em></div>
+          </div>
+
+          <div class="day">
+            <div class="dnum">Fri 10<small>Oct</small></div>
+            <div>
+              <div class="dtop"><span class="u">Past exam &mdash; Fa 2023, full &amp; timed</span><span class="chip c-cat">practice</span></div>
+              <div class="dwhy">Far enough out that what it exposes can still be fixed.</div>
+            </div>
+            <div class="dhrs">9:00&ndash;11:00<small>2.0h</small><em>free after</em></div>
+          </div>
+
+          <div class="day">
+            <div class="dnum">Sat 11<small>Oct</small></div>
+            <div>
+              <div class="dtop"><span class="u">Fix what the practice exam found</span><span class="chip c-warn">adaptive</span></div>
+              <div class="dwhy">Left deliberately unassigned &mdash; Friday's results decide it.</div>
+            </div>
+            <div class="dhrs">10:00&ndash;12:00<small>2.0h</small><em>free after</em></div>
+          </div>
+
+          <div class="day">
+            <div class="dnum">Sun 12<small>Oct</small></div>
+            <div>
+              <div class="dtop"><span class="u">Full-scope interleaved recall</span></div>
+              <div class="dwhy">Everything in scope, mixed, one pass &mdash; timed to land two days before the exam.</div>
+            </div>
+            <div class="dhrs">10:00&ndash;11:30<small>1.5h</small><em>free after</em></div>
+          </div>
+
+          <div class="day">
+            <div class="dnum">Mon 13<small>Oct</small></div>
+            <div>
+              <div class="dtop"><span class="u">Light touch on the 4 weakest</span><span class="chip c-ok">low load</span></div>
+              <div class="dwhy">Short and deliberately easy the night before. Nothing new is introduced.</div>
+            </div>
+            <div class="dhrs">9:00&ndash;10:00<small>1.0h</small><em>early night</em></div>
+          </div>
+
+          <div class="examday">
+            <div style="font-size:19px">&#128204;</div>
+            <div style="flex:1">
+              <div class="big">Tue Oct 14 &mdash; Exam 2, 8:00 AM</div>
+              <div class="ps" style="margin-top:2px">Exam prep mode closes after this. You'll be offered a 3-minute autopsy &mdash; what you flagged weak vs what actually appeared &mdash; and a decay check two weeks out.</div>
+            </div>
+            <div class="btn sm ghost">Skip both</div>
+          </div>
+
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:13px">
+
+        <div class="panel">
+          <div class="ph"><div><div class="pt">Where you stand</div><div class="ps">18 topics in scope</div></div>
+            <div class="btn sm ghost">All</div></div>
+          <div class="pb">
+            <div class="tgrid">
+              <div class="trow"><span class="sdot" style="background:var(--danger)"></span><span class="tnm">Aldol condensation</span><span class="tu">U4</span><span class="chip c-bad">weak</span></div>
+              <div class="trow"><span class="sdot" style="background:var(--danger)"></span><span class="tnm">Claisen condensation</span><span class="tu">U5</span><span class="chip c-bad">never</span></div>
+              <div class="trow"><span class="sdot" style="background:var(--danger)"></span><span class="tnm">Mixed aldol</span><span class="tu">U4</span><span class="chip c-bad">never</span></div>
+              <div class="trow"><span class="sdot" style="background:var(--warning)"></span><span class="tnm">Enolate alkylation</span><span class="tu">U5</span><span class="chip c-warn">weak</span></div>
+              <div class="trow"><span class="sdot" style="background:var(--warning)"></span><span class="tnm">Amide hydrolysis</span><span class="tu">U6</span><span class="chip c-warn">reviewing</span></div>
+              <div class="trow"><span class="sdot" style="background:var(--success)"></span><span class="tnm">Ketone nomenclature</span><span class="tu">U4</span><span class="chip c-ok">ready</span></div>
+              <div class="trow"><span class="sdot" style="background:var(--success)"></span><span class="tnm">Ester saponification</span><span class="tu">U6</span><span class="chip c-ok">ready</span></div>
+            </div>
+            <div class="legend">
+              <div><span class="dotk" style="background:var(--success)"></span>7 ready</div>
+              <div><span class="dotk" style="background:var(--warning)"></span>5 reviewing</div>
+              <div><span class="dotk" style="background:var(--danger)"></span>4 weak</div>
+              <div><span class="dotk" style="background:var(--dim)"></span>2 never touched</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="ph"><div><div class="pt">Past exams</div><div class="ps">Covering units 4&ndash;6</div></div></div>
+          <div class="pb">
+            <div class="lrow"><span class="ln2">Exam 2 &mdash; Fall 2024</span><span class="chip c-ok">taken &middot; 78%</span></div>
+            <div class="lrow"><span class="ln2">Exam 2 &mdash; Fall 2023</span><span class="chip c-dim">scheduled Oct 10</span></div>
+            <div class="lrow"><span class="ln2">Exam 2 &mdash; Fall 2022</span><span class="chip c-dim">not taken</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="ph"><div><div class="pt">What Wexler emphasised</div><div class="ps">From your lecture captures</div></div></div>
+          <div class="pb">
+            <div class="quote">&ldquo;If you only take one thing from this unit &mdash; know why the enolate attacks where it does.&rdquo;<span class="src">Lecture 18 &middot; Sep 30 &middot; 22:14</span></div>
+            <div class="why">Descriptive only. This is what was said and when &mdash; HQ isn't predicting what's on the exam.</div>
+          </div>
+        </div>
+
+        <div class="mnote">
+          <div class="ram">&#128015;</div>
+          <div>
+            <div class="mt">Why the days look uneven</div>
+            <div class="mb">Topics are mixed across units instead of studied one unit at a time. It feels worse and tests better &mdash; you're forced to pick the mechanism, which is what the exam asks you to do.</div>
+          </div>
+          <div class="x">&#10005;</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- =====================================================================
+     FRAME 2 — STEADY MODE + the CLOCKED-OUT state (§6.15-A / §6.15-B)
+     The mode pill is shown WITH ITS HOVER PREVIEW OPEN so the diff is
+     visible in a static file. In the app it appears on hover only.
+     ===================================================================== -->
+<div class="framelabel">Frame 2 &mdash; Steady mode &middot; hover preview open &middot; the clocked-out state</div>
+<div class="frame">
+
+  <div class="banner">
+    <div class="exitrow">
+      <div class="exit">&larr; Exit to CHEM 262</div>
+      <div class="modetag">Exam prep mode &middot; ends Oct 14</div>
+    </div>
+    <div class="brow">
+      <div>
+        <div class="h1">Exam 2 &mdash; CHEM 262</div>
+        <div class="subline">Tue Oct 14 &middot; 8:00 AM &middot; covers units 4&ndash;6 &middot; 25% of your grade</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:14px">
+        <!-- Shown OPEN so the menu is visible in a static file.
+             In the app it opens on hover/click of the box. -->
+        <div class="pacewrap">
+          <div class="pacebox">
+            <div>
+              <div class="plabel">Pace</div>
+              <div class="pvalue">Steady <span class="pstate">on pace</span></div>
+            </div>
+            <div class="chev">&#9662;</div>
+          </div>
+
+          <div class="pacemenu">
+            <div class="pmnow"><div class="t">You're on Steady</div></div>
+            <div class="pmline">A lighter daily load across more days. Same 18 topics, same exam &mdash; the plan finishes Oct 13, the day before.</div>
+
+            <div class="pmsplit"></div>
+
+            <div class="pmalt">If you switched to Accelerated</div>
+            <div class="diff"><span class="dl">Daily load</span><span class="from">1.2h</span><span class="arw">&rarr;</span><span class="to">1.6h</span></div>
+            <div class="diff"><span class="dl">Plan finishes</span><span class="from">Oct 13</span><span class="arw">&rarr;</span><span class="to">Oct 12</span></div>
+            <div class="diff"><span class="dl">Buffer before exam</span><span class="from">1 day</span><span class="arw">&rarr;</span><span class="to">2 days</span></div>
+            <div class="diff"><span class="dl">Exam-day recall</span><span class="from">66&ndash;77%</span><span class="arw">&rarr;</span><span class="to">68&ndash;79%</span></div>
+            <div class="pmline" style="margin-top:8px">The projection barely moves. What you'd gain is a second day of buffer if Friday's practice exam turns something up.</div>
+
+            <div class="pmbtn">Switch to Accelerated</div>
+
+            <div class="pmfoot"><span>&#127760;</span><span>Applies to your whole week, not just CHEM 262 &mdash; MCAT sessions included.</span></div>
+          </div>
+        </div>
+        <div class="statstrip">
+          <div class="stat"><div class="value num">9</div><div class="label">Days left</div></div>
+          <div class="stat"><div class="value num">11<small>/16h</small></div><div class="label">Planned</div></div>
+          <div class="stat"><div class="value num">18</div><div class="label">Topics in scope</div></div>
+          <div class="stat"><div class="value num">4</div><div class="label">Weak</div></div>
+          <div class="stat"><div class="value num">66&ndash;77<small>%</small></div><div class="label">Exam-day recall</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="split">
+
+      <div class="panel">
+        <div class="planhead">
+          <div>
+            <div class="pt">Your plan to Oct 14</div>
+            <div class="ps">Same 18 topics &middot; spread wider &middot; finishes Oct 13</div>
+          </div>
+          <div class="btn sm">Edit</div>
+        </div>
+        <div class="pb" style="gap:9px">
+
+          <!-- Shown ONCE, on the very first switch to Steady, ever. -->
+          <div class="firstflip">
+            <div class="gl">&#127760;</div>
+            <div>
+              <div class="ft">Steady applies to your whole week</div>
+              <div class="fb">Not just CHEM 262 &mdash; your MCAT sessions and daily review get lighter too. One setting, everywhere. You'll only see this note once.</div>
+            </div>
+            <div class="x">&#10005;</div>
+          </div>
+
+          <div class="mnote" style="background:color-mix(in srgb,var(--success) 6%,var(--muted));border-color:color-mix(in srgb,var(--success) 26%,var(--bd))">
+            <div class="ram" style="background:color-mix(in srgb,var(--success) 20%,transparent)">&#128015;</div>
+            <div>
+              <div class="mt">Still on pace &mdash; just a lighter shape</div>
+              <div class="mb">Same scope, same exam, same 18 topics. Steady spreads them over more days at a smaller daily load, finishing the day before instead of two days early. You haven't lowered the target and nothing is behind.</div>
+            </div>
+            <div class="x">&#10005;</div>
+          </div>
+
+          <div class="today">
+            <div class="tdrow">
+              <div>
+                <div class="tdlabel">Today &middot; Sunday Oct 5</div>
+                <div class="tdtitle">Aldol condensation</div>
+              </div>
+              <div class="tdhrs">1.0h<small>planned</small></div>
+            </div>
+            <div class="window" style="margin-bottom:10px">
+              <div class="wtime">9:00 &ndash; 10:00 AM</div>
+              <div class="wtrack"><div class="wleft" style="width:100%"></div></div>
+              <div class="wfree">&#10003; free after 10:00</div>
+            </div>
+            <div class="dwhy" style="font-size:11.5px;color:var(--mut)">
+              <b style="color:var(--fg)">Why today:</b> one topic instead of two. Aldol is still first because it's weakest and has decayed furthest &mdash; Steady changes the load, never the order.
+            </div>
+            <div class="tasks">
+              <div class="task"><span class="tick"></span><span class="tn">Aldol condensation &mdash; recall session</span><span class="tm">25 min</span></div>
+              <div class="task"><span class="tick"></span><span class="tn">Mixed aldol &mdash; never reviewed</span><span class="chip c-bad">new</span><span class="tm">30 min</span></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="btn pri">Start today's session</div>
+              <div style="margin-left:auto;font-size:11px;font-weight:800;color:var(--dim)" class="num">0 of 2 done</div>
+            </div>
+          </div>
+
+          <div class="divider"><div class="ln"></div><div class="tx">Then</div><div class="ln"></div></div>
+
+          <div class="day">
+            <div class="dnum">Mon 6<small>Oct</small></div>
+            <div><div class="dtop"><span class="u">Amide hydrolysis</span><span class="chip c-warn">weak</span></div>
+            <div class="dwhy">Moved off today so each day stays near an hour.</div></div>
+            <div class="dhrs">9:00&ndash;10:00<small>1.0h</small><em>free after</em></div>
+          </div>
+          <div class="day">
+            <div class="dnum">Tue 7<small>Oct</small></div>
+            <div><div class="dtop"><span class="u">Enolate alkylation</span><span class="chip c-warn">weak</span></div>
+            <div class="dwhy">Follows the aldol work while the mechanism is still fresh.</div></div>
+            <div class="dhrs">9:00&ndash;10:00<small>1.0h</small><em>free after</em></div>
+          </div>
+          <div class="day">
+            <div class="dnum">Wed 8<small>Oct</small></div>
+            <div><div class="dtop"><span class="u">Ester reactions + Claisen</span><span class="chip c-bad">never reviewed</span></div>
+            <div class="dwhy">Still gets a full slot &mdash; it's never been reviewed and it's on every past exam.</div></div>
+            <div class="dhrs">9:00&ndash;10:30<small>1.5h</small><em>free after</em></div>
+          </div>
+          <div class="day" style="opacity:.62">
+            <div class="dnum">Thu 9<small>Oct</small></div>
+            <div><div class="dtop"><span class="u">+ 5 more days to Oct 13</span></div>
+            <div class="dwhy">Same topics, 1&ndash;1.5h each, finishing the day before the exam.</div></div>
+            <div class="dhrs">&asymp;1.2h<small>avg</small></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:13px">
+
+        <div class="panel">
+          <div class="ph"><div><div class="pt">When the day is done</div><div class="ps">What Today's card becomes</div></div></div>
+          <div class="pb">
+            <div class="clockedout">
+              <div style="font-size:26px;margin-bottom:7px">&#10003;</div>
+              <div class="cotitle">You're done for today.</div>
+              <div class="cosub">Finished at 11:20 &mdash; ten minutes early. Nothing else is due today, and tomorrow's plan doesn't start until 9:00&nbsp;AM.</div>
+              <div style="display:flex;gap:8px;margin-top:13px">
+                <div class="btn ghost">See tomorrow</div>
+              </div>
+            </div>
+            <div class="why" style="margin-top:9px;border-left-color:color-mix(in srgb,var(--success) 45%,transparent)">
+              There is deliberately <b style="color:var(--mut)">no &ldquo;you could also&hellip;&rdquo;</b> here, no suggested extra topic, and no next-item-up. The free evening is the payoff for front-loading; offering bonus work would quietly take it back.
+            </div>
+          </div>
+        </div>
+
+        <div class="mnote">
+          <div class="ram">&#128015;</div>
+          <div>
+            <div class="mt">Why a box and not a pill</div>
+            <div class="mb">The banner already uses a glass pill for <b style="color:var(--mut)">Daily / Planning</b> &mdash; a second one would make two different questions look like one control. A pill is also just a toggle: it shows two options and answers nothing. This box <i>answers</i> &mdash; &ldquo;Accelerated, 2 days early&rdquo; &mdash; and only explains when you ask.</div>
+          </div>
+          <div class="x">&#10005;</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- =====================================================================
+     FRAME 3 — CATCH-UP STATE (#73)
+     A STATE of this mode, NOT a mode you can pick and NOT a separate
+     surface. HQ detects it; the student never selects it. Note the pace
+     pill is still present and still says Steady — catch-up is orthogonal
+     to intensity and does not replace it.
+     ===================================================================== -->
+<div class="framelabel">Frame 3 &mdash; catch-up state &middot; 3 days out &middot; detected, never chosen</div>
+<div class="frame">
+
+  <div class="banner urgent">
+    <div class="exitrow">
+      <div class="exit">&larr; Exit to CHEM 262</div>
+      <div class="modetag">Exam prep mode &middot; catch-up</div>
+    </div>
+    <div class="brow">
+      <div>
+        <div class="h1">Exam 2 &mdash; CHEM 262</div>
+        <div class="subline">Tue Oct 14 &middot; 8:00 AM &middot; 9 of 18 topics still uncovered</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:14px">
+        <!-- Still says Steady. Catch-up did NOT change your pace setting —
+             it is orthogonal, detected rather than chosen. -->
+        <div class="pacebox">
+          <div>
+            <div class="plabel">Pace</div>
+            <div class="pvalue">Steady <span class="pstate warn">catching up</span></div>
+          </div>
+          <div class="chev">&#9662;</div>
+        </div>
+        <div class="statstrip">
+          <div class="stat"><div class="value num">3</div><div class="label">Days left</div></div>
+          <div class="stat"><div class="value num">6<small>h</small></div><div class="label">Available</div></div>
+          <div class="stat"><div class="value num">9</div><div class="label">Uncovered</div></div>
+          <div class="stat"><div class="value num">41&ndash;58<small>%</small></div><div class="label">Exam-day recall</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <div class="panel" style="margin-bottom:13px">
+      <div class="ph">
+        <div>
+          <div class="pt">You can't cover nine topics in three days &mdash; so don't try</div>
+          <div class="ps">6 hours available &middot; 9 topics uncovered &middot; roughly 40 minutes each if you split them evenly, which is not enough for any of them</div>
+        </div>
+      </div>
+      <div class="pb">
+        <div class="triage">
+          <div class="tcol keep">
+            <div class="tcolh">Do these five</div>
+            <div class="tcols">Highest weight on past exams, and recoverable in the time you have.</div>
+            <div class="titem"><span class="sdot" style="background:var(--danger)"></span><span class="tin">Aldol condensation</span><span class="chip c-warn">on all 3 past exams</span></div>
+            <div class="titem"><span class="sdot" style="background:var(--danger)"></span><span class="tin">Claisen condensation</span><span class="chip c-warn">on all 3</span></div>
+            <div class="titem"><span class="sdot" style="background:var(--warning)"></span><span class="tin">Enolate alkylation</span><span class="chip c-dim">on 2 of 3</span></div>
+            <div class="titem"><span class="sdot" style="background:var(--warning)"></span><span class="tin">Amide hydrolysis</span><span class="chip c-dim">on 2 of 3</span></div>
+            <div class="titem"><span class="sdot" style="background:var(--warning)"></span><span class="tin">Ester reactions</span><span class="chip c-dim">on 2 of 3</span></div>
+          </div>
+          <div class="tcol drop">
+            <div class="tcolh">Skip these four</div>
+            <div class="tcols">Low weight, or too big to learn properly in what's left. Skipping is the decision &mdash; not an accident.</div>
+            <div class="titem"><span class="sdot" style="background:var(--dim)"></span><span class="tin">Wittig reaction</span><span class="chip c-dim">1 of 3 exams</span></div>
+            <div class="titem"><span class="sdot" style="background:var(--dim)"></span><span class="tin">Baeyer&ndash;Villiger</span><span class="chip c-dim">0 of 3</span></div>
+            <div class="titem"><span class="sdot" style="background:var(--dim)"></span><span class="tin">Thioester chemistry</span><span class="chip c-dim">0 of 3</span></div>
+            <div class="titem"><span class="sdot" style="background:var(--dim)"></span><span class="tin">Conjugate addition variants</span><span class="chip c-dim">too large for 3 days</span></div>
+          </div>
+        </div>
+
+        <div class="consequence" style="margin-top:11px">
+          <b style="color:var(--fg)">What this costs you, plainly.</b> Three days of concentrated review produces exam-day recall and close to total loss afterwards. That matters here beyond the grade: carbonyl chemistry is MCAT content, so this material comes back. After the exam, HQ will put the four skipped topics &mdash; and the five crammed ones &mdash; into your review queue rather than letting them disappear.
+          <div style="margin-top:7px;color:var(--dim)">Being behind at this point is ordinary, not a failure. Most of your classmates are here too.</div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:11px;align-items:center">
+          <div class="btn pri">Use this plan</div>
+          <div class="btn">Adjust what to skip</div>
+          <div class="btn ghost">I have more time than that</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="panel">
+        <div class="planhead">
+          <div><div class="pt">Three days, five topics</div><div class="ps">Rebuilt around what you kept</div></div>
+        </div>
+        <div class="pb" style="gap:9px">
+          <div class="today">
+            <div class="tdrow">
+              <div>
+                <div class="tdlabel">Today &middot; Saturday Oct 11</div>
+                <div class="tdtitle">Aldol + Claisen &mdash; the two that always appear</div>
+              </div>
+              <div class="tdhrs">2.5h<small>planned</small></div>
+            </div>
+            <div class="window" style="margin-bottom:10px">
+              <div class="wtime">9:00 &ndash; 11:30 AM</div>
+              <div class="wtrack"><div class="wleft" style="width:100%"></div></div>
+              <div class="wfree">&#10003; free after 11:30</div>
+            </div>
+            <div class="dwhy" style="font-size:11.5px;color:var(--mut)"><b style="color:var(--fg)">Why today:</b> both appear on every past Exam 2 and both are mechanisms you can rebuild in an evening. They're also the two most likely to carry partial credit even if you're shaky.</div>
+            <div class="tasks">
+              <div class="task"><span class="tick"></span><span class="tn">Aldol &mdash; mechanism walkthrough, then recall</span><span class="tm">50 min</span></div>
+              <div class="task"><span class="tick"></span><span class="tn">Claisen &mdash; mechanism walkthrough, then recall</span><span class="tm">50 min</span></div>
+              <div class="task"><span class="tick"></span><span class="tn">Past-exam questions on both only</span><span class="tm">45 min</span></div>
+            </div>
+            <div style="display:flex;gap:8px"><div class="btn pri">Start today's session</div></div>
+          </div>
+          <div class="day">
+            <div class="dnum">Sun 12<small>Oct</small></div>
+            <div><div class="dtop"><span class="u">Enolate alkylation + amide hydrolysis</span></div>
+            <div class="dwhy">Paired because the mechanisms are confusable and the exam has punished that before.</div></div>
+            <div class="dhrs">9:00&ndash;11:00<small>2.0h</small><em>free after</em></div>
+          </div>
+          <div class="day">
+            <div class="dnum">Mon 13<small>Oct</small></div>
+            <div><div class="dtop"><span class="u">Ester reactions, then stop</span><span class="chip c-ok">low load</span></div>
+            <div class="dwhy">Deliberately short. Nothing new after 8pm &mdash; sleep is worth more than a sixth topic at this point.</div></div>
+            <div class="dhrs">9:00&ndash;10:30<small>1.5h</small><em>early night</em></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:13px">
+        <div class="panel">
+          <div class="ph"><div><div class="pt">Exam-day recall</div><div class="ps">With this plan vs. spreading thin</div></div></div>
+          <div class="pb">
+            <div class="lrow"><span class="ln2">Five topics, properly</span><span class="chip c-ok">41&ndash;58%</span></div>
+            <div class="lrow"><span class="ln2">All nine, thinly</span><span class="chip c-bad">28&ndash;44%</span></div>
+            <div class="why">Fewer topics done properly projects higher than all nine done badly. That's the whole argument for skipping.</div>
+          </div>
+        </div>
+        <div class="mnote">
+          <div class="ram">&#128015;</div>
+          <div>
+            <div class="mt">This plan doesn't carry a backlog</div>
+            <div class="mb">The six days you missed aren't stored anywhere or counted against you. The plan just rebuilt itself around the time that's actually left.</div>
+          </div>
+          <div class="x">&#10005;</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Academics — Planning → Tar Heel Tracker (PROPOSED)</title>
+<!--
+  ============================================================================
+  ACADEMICS — PLANNING → TAR HEEL TRACKER — PROPOSED VISUAL REFERENCE
+  ============================================================================
+  Status: PROPOSED (Aug 2026). Spec: tabs/01-academics.md §4.2-A
+  ("Tracker layout — gap-and-pace first, everything still present",
+  APPROVED July 2026) and §4.2 tab table.
+
+  Visual language inherited from:
+   · 01-academics/academics-daily-main-page.html   — APPROVED reference
+   · 03-overview/overview-bento-control-panel.html — the design language
+
+  THE ONE QUESTION THIS TAB ANSWERS
+    "What's left, and am I on pace?"  — measured against the MCAT DATE,
+    not graduation. A requirement audit is normally a dead checklist; this
+    one leads with the answers and keeps the full lists below.
+
+  DECISIONS THIS FILE ENCODES
+  1. GAP-AND-PACE FIRST. Status row → on-pace verdict → what to take next
+     → overlap → full requirement sets. Never a bare checklist.
+  2. PACE IS MEASURED AGAINST THE MCAT, and states the verdict plainly.
+     Anything unscheduled is flagged by name, not buried in a count.
+  3. OVERLAP IS THE DIFFERENTIATOR. One course often satisfies a major
+     requirement, a med prereq and a gen-ed at once. The count and the
+     "boxes cleared for free" total are shown, and every requirement row
+     carries its `also:` line.
+  4. DATA CONFIDENCE IS LABELLED, NEVER HIDDEN (architecture/02).
+     Verified sets carry ✓ Verified + the date. Unverified majors carry
+     ◑ Not yet verified, a plain warning, and a one-tap "I confirmed this".
+     They are still shown and usable — never hidden, never silently
+     presented as fact.
+  5. THREE LEVELS, THREE FORMS (01 §4b-i). Mode = glass pill on the banner,
+     tabs = underline on the banner edge, the Tracker's own sections =
+     a SOLID segmented control in the filter bar. Never a fourth nav level.
+  6. TRANSCRIPT FIDELITY (§4.2-D). Prior credit stores course number and
+     title EXACTLY as the transcript prints them. Not normalised, not
+     prettified. HQ's display name is a separate field.
+  7. ONE HERO GRAPHIC PER VIEW — here, the degree-progress stacked bar.
+     Graphic vocabulary stays: stacked bars, progress pills, status chips.
+  8. ONE PRIMARY ACTION per view, accent pill, top right of the filter bar.
+
+  DELIBERATELY EXCLUDED
+   · No single "degree completion score". Requirement completion is shown
+     with transparent components (§5), never collapsed to one number.
+   · No advice against taking a course (§4.2-E "Must not").
+   · No retention percentage for untracked courses — rank is defensible,
+     a number is not.
+   · No term-building here. That is the Planner; these stay separate
+     surfaces (§4.2-C2). The Tracker is the audit.
+
+  PRODUCT VIEWS IN THIS FILE (each is one .frame > .wrap)
+   1. Gap & pace      — the default audit
+   2. All requirements — the full sets, with confidence labelling
+   3. Prior credit    — AP, transfer and dual enrolment, transcript-exact
+  ============================================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a;--card:#2b2722;--fg:#ece3d4;--mut:#a89c8c;--dim:#7c7264;
+  --pri:#6fb3de;--pri-ink:#0f2330;--bd:#3c352d;--muted:#322e28;
+  --success:#6fc0a8;--warning:#e7b06a;--danger:#e8806f;--star:#e7b06a;
+  --cat:#4b9cd3;   /* --cat-gpa : Academics pillar accent */
+  --mcat:#8c7bd4;--planned:#89a7c4;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.frame{width:1400px;margin:0 auto;background:var(--bg);min-height:100vh;padding-bottom:30px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.lab{font-family:'Baloo 2';font-weight:800;font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--dim);padding:22px 24px 0}
+
+/* ══ BANNER — title + VARIABLE stats only + level 1/2 nav ══════════════ */
+.ban{position:relative;padding:18px 24px 0;overflow:hidden;
+  background:radial-gradient(340px 200px at 88% 6%,rgba(75,156,211,.34),transparent 70%),
+  radial-gradient(260px 180px at 10% 130%,rgba(111,192,168,.18),transparent 70%),
+  linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%)}
+.bantop{display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative;z-index:2}
+.h1{font-family:'Baloo 2';font-weight:800;font-size:30px;color:#fff;letter-spacing:-.4px;margin:0}
+.bstats{display:flex;border-radius:13px;overflow:hidden;background:rgba(20,26,34,.5);
+  backdrop-filter:blur(16px) saturate(1.1);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}
+.bs{padding:8px 15px;display:flex;flex-direction:column;gap:1px;border-right:1px solid rgba(255,255,255,.12);min-width:86px}
+.bs:last-child{border-right:none}
+.bsv{font-family:'Baloo 2';font-weight:800;font-size:18px;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;display:flex;align-items:baseline;gap:4px}
+.bsd{font-size:10px;font-weight:800}
+.bsl{font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.mswitch{display:inline-flex;padding:4px;border-radius:999px;gap:4px;margin-top:14px;position:relative;z-index:2;
+  background:rgba(20,26,34,.5);backdrop-filter:blur(16px) saturate(1.1);border:1px solid rgba(255,255,255,.16)}
+.mo{padding:7px 22px;border-radius:999px;font-family:'Baloo 2';font-weight:700;font-size:13.5px;color:rgba(255,255,255,.72);display:flex;align-items:center;gap:7px}
+.mo.on{background:#fff;color:#17222c;font-weight:800}
+.mo svg{width:14px;height:14px}
+.utabs{display:flex;gap:24px;padding:0 24px;position:relative;z-index:2;margin-top:13px;border-bottom:1px solid rgba(255,255,255,.13);margin-left:-24px;margin-right:-24px}
+.ut{padding:10px 2px 11px;font-family:'Baloo 2';font-weight:700;font-size:14px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:7px;position:relative}
+.ut svg{width:15px;height:15px}
+.ut.on{color:#fff;font-weight:800}
+.ut.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;border-radius:3px 3px 0 0;
+  background:var(--cat);box-shadow:0 0 12px color-mix(in srgb,var(--cat) 60%,transparent)}
+.ut .cnt{font-size:10.5px;font-weight:800;background:rgba(255,255,255,.14);border-radius:999px;padding:1px 7px}
+
+/* ══ LEVEL 3 — solid filter bar (controls, not nav) ════════════════════ */
+.fbar{display:flex;align-items:center;gap:11px;padding:11px 24px;background:var(--card);border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.segsm{display:inline-flex;background:var(--muted);border:1px solid var(--bd);border-radius:9px;padding:3px;gap:3px}
+.ss{padding:5px 11px;border-radius:7px;font-size:11.5px;font-weight:800;font-family:'Baloo 2';color:var(--dim);display:flex;align-items:center;gap:5px}
+.ss.on{background:var(--card);color:var(--fg)}
+.ss svg{width:12px;height:12px}
+.sel{display:inline-flex;align-items:center;gap:8px;background:var(--muted);border:1px solid var(--bd);border-radius:10px;padding:7px 12px;font-size:13px;font-weight:700}
+.sel svg{width:13px;height:13px;color:var(--dim)}
+.sel .v{font-family:'Baloo 2';font-weight:800}
+.srch{display:flex;align-items:center;gap:8px;background:var(--muted);border:1px solid var(--bd);border-radius:10px;padding:7px 13px;flex:1;max-width:270px;color:var(--dim);font-size:13px;font-weight:600}
+.srch svg{width:14px;height:14px}
+.fchip{border:1px solid var(--bd);background:var(--muted);border-radius:999px;padding:5px 11px;font-size:11.5px;font-weight:800;color:var(--dim);display:inline-flex;align-items:center;gap:6px}
+.fchip.on{background:color-mix(in srgb,var(--cat) 16%,var(--muted));border-color:color-mix(in srgb,var(--cat) 45%,var(--bd));color:var(--fg)}
+.fchip .n{font-variant-numeric:tabular-nums;opacity:.75}
+.pbtn{margin-left:auto;background:var(--cat);color:#08202e;border-radius:999px;padding:8px 15px;font-family:'Baloo 2';
+  font-weight:800;font-size:12.5px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 8px 20px -10px var(--cat)}
+.pbtn svg{width:14px;height:14px}
+.gbtn{border:1px solid var(--bd);background:var(--muted);color:var(--mut);border-radius:9px;padding:6px 11px;
+  font-family:'Baloo 2';font-weight:800;font-size:11.5px;display:inline-flex;align-items:center;gap:6px}
+.gbtn svg{width:12px;height:12px}
+
+/* ══ LAYOUT ═══════════════════════════════════════════════════════════ */
+.wrap{padding:15px 24px 0}
+.bento{display:grid;grid-template-columns:repeat(12,1fr);gap:15px}
+.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 10px 26px -14px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden}
+.hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;gap:9px;flex-shrink:0}
+.ti{font-family:'Baloo 2';font-weight:800;font-size:16.5px}.ti.sm{font-size:14.5px}
+.sub{font-size:11.5px;color:var(--dim);font-weight:700}
+.bd{padding:4px 16px 16px;display:flex;flex-direction:column;gap:9px}
+
+/* ══ HERO — degree progress stacked bar (one per view) ═════════════════ */
+.hero{background:linear-gradient(128deg,#26313d 0%,#2b2c2a 58%,#332c25 100%);border:1px solid #43413a;border-radius:16px;padding:17px 19px}
+.herotop{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.herolab{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#9fb3c4}
+.heroval{font-family:'Baloo 2';font-weight:800;font-size:27px;letter-spacing:-.4px;line-height:1.1;margin-top:2px}
+.stack{display:flex;height:16px;border-radius:999px;overflow:hidden;margin-top:13px;background:#1d1b18;border:1px solid #443c33}
+.stack i{display:block;height:100%}
+.legend{display:flex;gap:16px;margin-top:10px;flex-wrap:wrap}
+.lg{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--mut)}
+.lgd{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+
+/* ══ STAT TILES ═══════════════════════════════════════════════════════ */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.tile{background:var(--muted);border:1px solid var(--bd);border-radius:13px;padding:12px 14px}
+.tv{font-family:'Baloo 2';font-weight:800;font-size:23px;line-height:1.1;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:5px}
+.tvs{font-size:12px;color:var(--dim);font-weight:800}
+.tl{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-top:4px}
+.tile.hot .tv{color:var(--warning)}
+.tile.good .tv{color:var(--success)}
+
+/* ══ PACE VERDICT ═════════════════════════════════════════════════════ */
+.verdict{display:flex;gap:12px;align-items:flex-start;background:color-mix(in srgb,var(--success) 9%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--success) 32%,var(--bd));border-left:3px solid var(--success);border-radius:12px;padding:12px 14px}
+.vico{width:26px;height:26px;border-radius:50%;background:color-mix(in srgb,var(--success) 22%,transparent);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--success)}
+.vico svg{width:14px;height:14px}
+.vtxt{font-size:13.5px;font-weight:700;line-height:1.5}
+.vtxt b{font-weight:800}
+.vsub{font-size:11.5px;color:var(--dim);font-weight:700;margin-top:3px}
+.warnrow{display:flex;gap:12px;align-items:flex-start;background:color-mix(in srgb,var(--warning) 9%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--warning) 32%,var(--bd));border-left:3px solid var(--warning);border-radius:12px;padding:11px 14px}
+.warnrow .vico{background:color-mix(in srgb,var(--warning) 22%,transparent);color:var(--warning)}
+.termline{display:flex;align-items:center;gap:7px;margin-top:11px;flex-wrap:wrap}
+.tchip{border:1px solid var(--bd);background:#241f1b;border-radius:9px;padding:5px 10px;font-size:11.5px;font-weight:800;
+  font-family:'Baloo 2';color:var(--mut);display:inline-flex;align-items:center;gap:6px}
+.tchip .dot{width:6px;height:6px;border-radius:50%;background:var(--planned)}
+.tchip.mcat{border-color:color-mix(in srgb,var(--mcat) 45%,var(--bd));background:color-mix(in srgb,var(--mcat) 14%,#241f1b);color:#c8bcf0}
+.tchip.mcat .dot{background:var(--mcat)}
+.arrow{color:var(--dim);font-size:11px}
+
+/* ══ ROWS ═════════════════════════════════════════════════════════════ */
+.row{display:flex;align-items:center;gap:11px;background:var(--muted);border:1px solid var(--bd);border-radius:11px;padding:9px 12px}
+.row .mainc{flex:1;min-width:0}
+.rt{font-family:'Baloo 2';font-weight:800;font-size:13.5px;display:flex;align-items:center;gap:8px}
+.rs{font-size:11.5px;color:var(--dim);font-weight:700;margin-top:2px}
+.also{font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.also b{color:var(--fg);font-weight:800}
+.rank{width:22px;height:22px;border-radius:7px;background:#241f1b;border:1px solid var(--bd);display:flex;align-items:center;
+  justify-content:center;font-family:'Baloo 2';font-weight:800;font-size:11.5px;color:var(--mut);flex-shrink:0}
+.clears{font-family:'Baloo 2';font-weight:800;font-size:12px;color:var(--success);white-space:nowrap}
+
+/* ══ STATUS CHIPS ═════════════════════════════════════════════════════ */
+.chip{border-radius:999px;padding:2px 9px;font-size:10.5px;font-weight:800;font-family:'Baloo 2';display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.chip.met{background:color-mix(in srgb,var(--success) 16%,transparent);color:var(--success)}
+.chip.planned{background:color-mix(in srgb,var(--planned) 20%,transparent);color:#b6cbdd}
+.chip.open{background:#241f1b;color:var(--dim);border:1px solid var(--bd)}
+.chip.flag{background:color-mix(in srgb,var(--warning) 16%,transparent);color:var(--warning)}
+.chip.bcpm{background:color-mix(in srgb,var(--cat) 17%,transparent);color:#8fc6e8}
+.chip.ver{background:color-mix(in srgb,var(--success) 13%,transparent);color:var(--success)}
+.chip.unver{background:color-mix(in srgb,var(--warning) 14%,transparent);color:var(--warning)}
+.chip.free{background:color-mix(in srgb,var(--star) 15%,transparent);color:var(--star)}
+
+/* ══ REQUIREMENT GROUPS ═══════════════════════════════════════════════ */
+.grp{border:1px solid var(--bd);border-radius:14px;background:var(--card);overflow:hidden;margin-bottom:11px}
+.gh{display:flex;align-items:center;gap:11px;padding:12px 15px;background:#2f2a24;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.gname{font-family:'Baloo 2';font-weight:800;font-size:15px}
+.gmeta{font-size:11.5px;color:var(--dim);font-weight:700}
+.gbar{width:132px;height:7px;border-radius:999px;background:#1d1b18;overflow:hidden;display:flex;margin-left:auto}
+.gbar i{height:100%;display:block}
+.gcount{font-family:'Baloo 2';font-weight:800;font-size:12.5px;color:var(--mut);font-variant-numeric:tabular-nums;white-space:nowrap}
+.glist{padding:9px 12px;display:flex;flex-direction:column;gap:7px}
+.unverwarn{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:color-mix(in srgb,var(--warning) 8%,transparent);
+  border-bottom:1px solid var(--bd);font-size:11.5px;color:var(--mut);font-weight:700;line-height:1.5}
+.unverwarn svg{width:14px;height:14px;color:var(--warning);flex-shrink:0;margin-top:2px}
+.confirm{margin-left:auto;border:1px solid color-mix(in srgb,var(--warning) 45%,var(--bd));background:color-mix(in srgb,var(--warning) 12%,transparent);
+  color:var(--warning);border-radius:9px;padding:5px 11px;font-family:'Baloo 2';font-weight:800;font-size:11.5px;white-space:nowrap}
+
+/* ══ OVERLAP ══════════════════════════════════════════════════════════ */
+.ovtop{display:flex;align-items:baseline;gap:9px;padding:2px 0 4px}
+.ovbig{font-family:'Baloo 2';font-weight:800;font-size:29px;color:var(--star);line-height:1}
+.ovlab{font-size:12px;font-weight:700;color:var(--mut);line-height:1.4}
+.ovrow{display:flex;align-items:center;gap:10px;padding:8px 11px;background:var(--muted);border:1px solid var(--bd);border-radius:10px}
+.ovcode{font-family:'Baloo 2';font-weight:800;font-size:13px;min-width:74px}
+.ovtags{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+.tag{border-radius:6px;padding:2px 7px;font-size:10px;font-weight:800;background:#241f1b;border:1px solid var(--bd);color:var(--mut)}
+.tag.prereq{color:#8fc6e8;border-color:color-mix(in srgb,var(--cat) 35%,var(--bd))}
+.tag.major{color:#c8bcf0;border-color:color-mix(in srgb,var(--mcat) 35%,var(--bd))}
+.tag.gened{color:var(--success);border-color:color-mix(in srgb,var(--success) 32%,var(--bd))}
+
+/* ══ SUMMARY PILLS (view 1 tail) ══════════════════════════════════════ */
+.sumgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.sumcell{background:var(--muted);border:1px solid var(--bd);border-radius:11px;padding:10px 12px}
+.sumname{font-family:'Baloo 2';font-weight:800;font-size:12.5px;display:flex;align-items:center;gap:7px}
+.sumbar{height:6px;border-radius:999px;background:#1d1b18;overflow:hidden;display:flex;margin-top:8px}
+.sumbar i{height:100%;display:block}
+.sumfoot{display:flex;justify-content:space-between;font-size:10.5px;color:var(--dim);font-weight:800;margin-top:6px}
+
+/* ══ PRIOR CREDIT ═════════════════════════════════════════════════════ */
+.fidelity{display:flex;gap:11px;align-items:flex-start;background:color-mix(in srgb,var(--cat) 8%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 28%,var(--bd));border-radius:12px;padding:12px 14px}
+.fidelity svg{width:15px;height:15px;color:var(--cat);flex-shrink:0;margin-top:2px}
+.fidelity .t{font-family:'Baloo 2';font-weight:800;font-size:13px}
+.fidelity .d{font-size:11.5px;color:var(--mut);font-weight:700;line-height:1.55;margin-top:3px}
+.ctable{display:grid;grid-template-columns:118px 1fr 62px 58px 96px 104px;gap:0}
+.ch{font-size:9.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);padding:7px 10px;border-bottom:1px solid var(--bd)}
+.cc{padding:9px 10px;border-bottom:1px solid #332e28;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px;min-width:0}
+.cc.mono{font-family:'Baloo 2';font-weight:800}
+.cc .exact{color:var(--fg)}
+.cc .disp{font-size:10.5px;color:var(--dim);font-weight:700}
+.scan{width:20px;height:20px;border-radius:6px;background:#241f1b;border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;color:var(--dim);flex-shrink:0}
+.scan svg{width:11px;height:11px}
+.addrow{display:flex;align-items:center;gap:9px;border:1px dashed var(--bd);border-radius:11px;padding:10px 13px;color:var(--dim);font-weight:700;font-size:12.5px}
+.addrow svg{width:14px;height:14px}
+.field{background:#241f1b;border:1px solid var(--bd);border-radius:8px;padding:5px 9px;font-size:11.5px;color:var(--dim);font-weight:700}
+.note{font-size:11.5px;color:var(--dim);font-weight:700;line-height:1.6;padding:2px 0}
+.note b{color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="frame">
+<h1 class="sr-only">Academics — Planning — Tar Heel Tracker</h1>
+
+<!-- ══════════ BANNER: title + VARIABLE stats + level 1 / level 2 nav ══════════ -->
+<div class="ban">
+  <div class="bantop">
+    <div class="h1">Academics</div>
+    <div class="bstats">
+      <div class="bs"><div class="bsv">14</div><div class="bsl">Reqs left</div></div>
+      <div class="bs"><div class="bsv" style="color:#f0c489">3</div><div class="bsl">Prereqs · MCAT</div></div>
+      <div class="bs"><div class="bsv">61</div><div class="bsl">Credits</div></div>
+      <div class="bs"><div class="bsv" style="color:#f2d08a">5</div><div class="bsl">Double-counted</div></div>
+    </div>
+  </div>
+  <div class="mswitch">
+    <div class="mo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Daily</div>
+    <div class="mo on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 6h18M3 12h18M3 18h12"/></svg>Planning</div>
+  </div>
+  <div class="utabs">
+    <div class="ut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Planner</div>
+    <div class="ut on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Tar Heel Tracker<span class="cnt">14 left</span></div>
+    <div class="ut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Grades &amp; Archive</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     PRODUCT VIEW 1 — GAP &amp; PACE  (the default audit)
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="lab">Product view 1 — Gap &amp; pace</div>
+<div class="wrap">
+  <div class="fbar">
+    <div class="segsm">
+      <div class="ss on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M3 17l6-6 4 4 7-7"/></svg>Gap &amp; pace</div>
+      <div class="ss">All requirements</div>
+      <div class="ss">Prior credit</div>
+    </div>
+    <div class="sel"><span class="v">Neuroscience B.S.</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m6 9 6 6 6-6"/></svg></div>
+    <span class="chip ver">✓ Verified · gen ed + med prereqs · Jul 28 2026</span>
+    <div class="gbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Re-check</div>
+    <div class="pbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M4 19h16"/></svg>Export for advisor</div>
+  </div>
+
+  <div class="bento" style="margin-top:15px">
+
+    <!-- HERO — the one graphic for this view -->
+    <div class="c12">
+      <div class="hero">
+        <div class="herotop">
+          <div>
+            <div class="herolab">Degree progress</div>
+            <div class="heroval">34 met · 7 planned · 14 open</div>
+          </div>
+          <div style="text-align:right">
+            <div class="herolab">Prereqs done before your MCAT</div>
+            <div class="heroval" style="color:var(--success)">6 of 9</div>
+          </div>
+        </div>
+        <div class="stack">
+          <i style="width:62%;background:linear-gradient(90deg,#5fae98,#6fc0a8)"></i>
+          <i style="width:13%;background:linear-gradient(90deg,#7d99b4,#89a7c4)"></i>
+          <i style="width:25%;background:#3b352e"></i>
+        </div>
+        <div class="legend">
+          <div class="lg"><span class="lgd" style="background:#6fc0a8"></span>Met · 34</div>
+          <div class="lg"><span class="lgd" style="background:#89a7c4"></span>Planned · 7</div>
+          <div class="lg"><span class="lgd" style="background:#3b352e"></span>Open · 14</div>
+          <div class="lg" style="margin-left:auto;color:var(--star)">5 requirements are double-counted — 11 boxes cleared for free</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATUS ROW -->
+    <div class="c12">
+      <div class="tiles">
+        <div class="tile"><div class="tv">14</div><div class="tl">Requirements left</div></div>
+        <div class="tile hot"><div class="tv">3</div><div class="tl">Prereqs before MCAT</div></div>
+        <div class="tile"><div class="tv">61<span class="tvs">/ 120</span></div><div class="tl">Credits earned</div></div>
+        <div class="tile good"><div class="tv">5</div><div class="tl">Double-counted</div></div>
+      </div>
+    </div>
+
+    <!-- AM I ON PACE? -->
+    <div class="c7">
+      <div class="card">
+        <div class="hd">
+          <div><div class="ti">Am I on pace?</div><div class="sub">measured against your MCAT date, not graduation</div></div>
+          <span class="chip bcpm">MCAT · Jan 16 2028</span>
+        </div>
+        <div class="bd">
+          <div class="verdict">
+            <div class="vico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 13 4 4L19 7"/></svg></div>
+            <div>
+              <div class="vtxt">The <b>3 remaining prereqs</b> fit in Spring 2027 + Fall 2027 — finished <b>5 months before</b> your MCAT.</div>
+              <div class="vsub">Assumes your current plan holds. Nothing here is enforced.</div>
+            </div>
+          </div>
+          <div class="termline">
+            <span class="tchip"><span class="dot"></span>Spring 2027 · BIOC 430, PHYS 105</span>
+            <span class="arrow">→</span>
+            <span class="tchip"><span class="dot"></span>Fall 2027 · BIOL 252</span>
+            <span class="arrow">→</span>
+            <span class="tchip mcat"><span class="dot"></span>MCAT · Jan 2028</span>
+          </div>
+          <div class="warnrow" style="margin-top:3px">
+            <div class="vico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+            <div>
+              <div class="vtxt"><b>BIOL 252 — Vertebrate Physiology</b> is not currently scheduled.</div>
+              <div class="vsub">It is a med prereq and it is fall-only. Missing Fall 2027 pushes it past your test date.</div>
+            </div>
+            <div class="gbtn" style="margin-left:auto;align-self:center">Place it →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OVERLAP — the thing no UNC tool does -->
+    <div class="c5">
+      <div class="card">
+        <div class="hd">
+          <div><div class="ti">Overlap</div><div class="sub">one course, several boxes</div></div>
+          <span class="chip free">11 free</span>
+        </div>
+        <div class="bd">
+          <div class="ovtop">
+            <div class="ovbig">6</div>
+            <div class="ovlab">courses clear more than one requirement,<br>clearing <b>11 boxes for free</b></div>
+          </div>
+          <div class="ovrow">
+            <div class="ovcode">CHEM 262</div>
+            <div class="ovtags"><span class="tag prereq">Med prereq</span><span class="tag major">Major core</span></div>
+          </div>
+          <div class="ovrow">
+            <div class="ovcode">PSYC 101</div>
+            <div class="ovtags"><span class="tag prereq">Med prereq</span><span class="tag gened">Power &amp; Society</span></div>
+          </div>
+          <div class="ovrow">
+            <div class="ovcode">BIOL 202</div>
+            <div class="ovtags"><span class="tag prereq">Med prereq</span><span class="tag major">Major core</span><span class="tag gened">Natural Science</span></div>
+          </div>
+          <div class="note" style="padding-top:2px">UNC caps how many requirements one course may satisfy. The cap is applied — the count is never inflated.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WHAT TO TAKE NEXT TERM -->
+    <div class="c7">
+      <div class="card">
+        <div class="hd">
+          <div><div class="ti">What to take next term</div><div class="sub">ranked by boxes cleared · Spring 2027</div></div>
+          <div class="gbtn">Open in Planner →</div>
+        </div>
+        <div class="bd">
+          <div class="row">
+            <div class="rank">1</div>
+            <div class="mainc">
+              <div class="rt">BIOC 430 <span class="chip bcpm">BCPM</span> <span class="chip flag">❄ spring-only</span></div>
+              <div class="rs">Introduction to Biochemistry · 3 cr</div>
+              <div class="also">also clears <b>Major core</b> · <b>Focus: Natural Science</b></div>
+            </div>
+            <div class="clears">clears 3</div>
+          </div>
+          <div class="row">
+            <div class="rank">2</div>
+            <div class="mainc">
+              <div class="rt">PHYS 105 <span class="chip bcpm">BCPM</span></div>
+              <div class="rs">General Physics I · 4 cr</div>
+              <div class="also">also clears <b>Quantitative Reasoning</b></div>
+            </div>
+            <div class="clears">clears 2</div>
+          </div>
+          <div class="row">
+            <div class="rank">3</div>
+            <div class="mainc">
+              <div class="rt">ENGL 268</div>
+              <div class="rs">Medicine and Literature · 3 cr</div>
+              <div class="also">also clears <b>Reflection &amp; Integration</b> — and matches your saved interests</div>
+            </div>
+            <div class="clears">clears 2</div>
+          </div>
+          <div class="note">Every suggestion is optional. Sequencing is one input among many — HQ sees only some of them.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REQUIREMENT SETS — summary, full lists live in view 2 -->
+    <div class="c5">
+      <div class="card">
+        <div class="hd">
+          <div><div class="ti">Requirement sets</div><div class="sub">full lists in All requirements</div></div>
+        </div>
+        <div class="bd">
+          <div class="sumgrid" style="grid-template-columns:1fr">
+            <div class="sumcell">
+              <div class="sumname">Med prerequisites <span class="chip ver">✓</span></div>
+              <div class="sumbar"><i style="width:67%;background:#6fc0a8"></i><i style="width:11%;background:#89a7c4"></i></div>
+              <div class="sumfoot"><span>6 met · 1 planned</span><span>3 open</span></div>
+            </div>
+            <div class="sumcell">
+              <div class="sumname">Major — Neuroscience B.S. <span class="chip unver">◑</span></div>
+              <div class="sumbar"><i style="width:55%;background:#6fc0a8"></i><i style="width:18%;background:#89a7c4"></i></div>
+              <div class="sumfoot"><span>6 met · 2 planned</span><span>3 open</span></div>
+            </div>
+            <div class="sumcell">
+              <div class="sumname">IDEAs in Action <span class="chip ver">✓</span></div>
+              <div class="sumbar"><i style="width:74%;background:#6fc0a8"></i><i style="width:9%;background:#89a7c4"></i></div>
+              <div class="sumfoot"><span>22 met · 4 planned</span><span>8 open</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     PRODUCT VIEW 2 — ALL REQUIREMENTS
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="lab">Product view 2 — All requirements</div>
+<div class="wrap">
+  <div class="fbar">
+    <div class="segsm">
+      <div class="ss">Gap &amp; pace</div>
+      <div class="ss on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>All requirements</div>
+      <div class="ss">Prior credit</div>
+    </div>
+    <span class="fchip on">All <span class="n">55</span></span>
+    <span class="fchip">Open <span class="n">14</span></span>
+    <span class="fchip">Planned <span class="n">7</span></span>
+    <span class="fchip">Met <span class="n">34</span></span>
+    <div class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search requirements or courses</div>
+    <div class="pbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M4 19h16"/></svg>Export for advisor</div>
+  </div>
+
+  <div style="margin-top:15px">
+
+    <!-- MED PREREQUISITES — verified -->
+    <div class="grp">
+      <div class="gh">
+        <div>
+          <div class="gname">Med prerequisites</div>
+          <div class="gmeta">9 requirements · every attempt counts toward AMCAS BCPM</div>
+        </div>
+        <span class="chip ver">✓ Verified · Jul 28 2026</span>
+        <div class="gbar"><i style="width:67%;background:#6fc0a8"></i><i style="width:11%;background:#89a7c4"></i></div>
+        <div class="gcount">6 / 9</div>
+      </div>
+      <div class="glist">
+        <div class="row">
+          <div class="mainc">
+            <div class="rt">General Chemistry I &amp; II <span class="chip met">✓ met</span></div>
+            <div class="rs">CHEM 101 · CHEM 102 — A−, A · Fall 2024, Spring 2025</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="mainc">
+            <div class="rt">Organic Chemistry I &amp; II <span class="chip met">✓ met</span></div>
+            <div class="rs">CHEM 261 · CHEM 262 — B+, in progress</div>
+            <div class="also">also clears <b>Major core</b></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="mainc">
+            <div class="rt">Biochemistry <span class="chip planned">◐ planned</span></div>
+            <div class="rs">BIOC 430 — Spring 2027 · ❄ spring-only</div>
+            <div class="also">also clears <b>Major core</b> · <b>Focus: Natural Science</b></div>
+          </div>
+          <span class="clears">clears 3</span>
+        </div>
+        <div class="row">
+          <div class="mainc">
+            <div class="rt">Physics I &amp; II <span class="chip open">○ open</span></div>
+            <div class="rs">PHYS 105 · PHYS 116 — not yet scheduled</div>
+            <div class="also">also clears <b>Quantitative Reasoning</b></div>
+          </div>
+        </div>
+        <div class="row" style="border-color:color-mix(in srgb,var(--warning) 35%,var(--bd))">
+          <div class="mainc">
+            <div class="rt">Vertebrate Physiology <span class="chip flag">⚑ unscheduled</span></div>
+            <div class="rs">BIOL 252 — fall-only · required before your MCAT</div>
+            <div class="also">Missing Fall 2027 pushes this past your test date.</div>
+          </div>
+          <div class="gbtn">Place it →</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAJOR — NOT VERIFIED -->
+    <div class="grp">
+      <div class="gh">
+        <div>
+          <div class="gname">Major — Neuroscience B.S.</div>
+          <div class="gmeta">11 requirements · some courses classify as Biology, some as Other</div>
+        </div>
+        <span class="chip unver">◑ Not yet verified</span>
+        <div class="gbar"><i style="width:55%;background:#6fc0a8"></i><i style="width:18%;background:#89a7c4"></i></div>
+        <div class="gcount">6 / 11</div>
+      </div>
+      <div class="unverwarn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+        <div>This major has not been verified against the official degree audit. It is shown and usable, but confirm it with your advisor before planning around it — a wrong mapping costs a semester.</div>
+        <div class="confirm">I confirmed this</div>
+      </div>
+      <div class="glist">
+        <div class="row">
+          <div class="mainc">
+            <div class="rt">Neuroscience core — NSCI 175, 222 <span class="chip met">✓ met</span></div>
+            <div class="rs">A, A− · Spring 2025, Fall 2025</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="mainc">
+            <div class="rt">Upper-level BIOL elective <span class="chip open">○ open</span></div>
+            <div class="rs">any 300+ BIOL — not currently scheduled</div>
+            <div class="also">3 options also clear <b>a med prereq</b></div>
+          </div>
+          <div class="gbtn">Show options</div>
+        </div>
+        <div class="row">
+          <div class="mainc">
+            <div class="rt">Statistics <span class="chip planned">◐ planned</span></div>
+            <div class="rs">STOR 155 — Fall 2027</div>
+            <div class="also">also clears <b>Quantitative Reasoning</b></div>
+          </div>
+          <span class="clears">clears 2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- IDEAS IN ACTION -->
+    <div class="grp">
+      <div class="gh">
+        <div>
+          <div class="gname">IDEAs in Action — Focus Capacities</div>
+          <div class="gmeta">9 capacities · IDEAs courses cannot be taken Pass/Fail</div>
+        </div>
+        <span class="chip ver">✓ Verified · Jul 28 2026</span>
+        <div class="gbar"><i style="width:78%;background:#6fc0a8"></i></div>
+        <div class="gcount">7 / 9</div>
+      </div>
+      <div class="glist">
+        <div class="row">
+          <div class="mainc">
+            <div class="rt">Power, Difference &amp; Inequality <span class="chip met">✓ met</span></div>
+            <div class="rs">PSYC 101 — A · Fall 2024</div>
+            <div class="also">also clears <b>Med prereq — Psychology</b></div>
+          </div>
+          <span class="clears">cleared 2</span>
+        </div>
+        <div class="row">
+          <div class="mainc">
+            <div class="rt">Ways of Knowing <span class="chip open">○ open</span></div>
+            <div class="rs">no course selected</div>
+            <div class="also">ENGL 268 would clear this — and matches your saved interests</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="mainc">
+            <div class="rt">Aesthetic &amp; Interpretive Analysis <span class="chip open">○ open</span></div>
+            <div class="rs">no course selected</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note" style="padding:4px 2px 20px">
+      Requirement data last verified <b>Jul 28 2026</b> against catalog.unc.edu. UNC's live curriculum is
+      <b>IDEAs in Action</b>. Requirements shift between catalog years — re-check before you register.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     PRODUCT VIEW 3 — PRIOR CREDIT
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="lab">Product view 3 — Prior credit</div>
+<div class="wrap">
+  <div class="fbar">
+    <div class="segsm">
+      <div class="ss">Gap &amp; pace</div>
+      <div class="ss">All requirements</div>
+      <div class="ss on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>Prior credit</div>
+    </div>
+    <span class="fchip on">All <span class="n">7</span></span>
+    <span class="fchip">AP <span class="n">4</span></span>
+    <span class="fchip">Transfer <span class="n">2</span></span>
+    <span class="fchip">Dual enrolment <span class="n">1</span></span>
+    <div class="pbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>Add a course</div>
+  </div>
+
+  <div class="bento" style="margin-top:15px">
+    <div class="c12">
+      <div class="fidelity">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/></svg>
+        <div>
+          <div class="t">Stored exactly as your transcript prints it</div>
+          <div class="d">AMCAS makes you hand-enter every course from every institution — the exact number, the title as printed, credit hours and grade as recorded.
+            HQ captures those strings now so the section becomes an export later. <b>Nothing here is normalised or prettified</b>; the display name you see elsewhere in HQ is a separate field.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="c12">
+      <div class="card">
+        <div class="hd">
+          <div><div class="ti">Prior credit ledger</div><div class="sub">every postsecondary institution, not just UNC</div></div>
+          <span class="chip bcpm">17 credits · 8 BCPM</span>
+        </div>
+        <div class="bd" style="gap:0">
+          <div class="ctable">
+            <div class="ch">Institution</div><div class="ch">Course — as printed</div><div class="ch">Credits</div><div class="ch">Grade</div><div class="ch">Term</div><div class="ch">Type</div>
+
+            <div class="cc">College Board</div>
+            <div class="cc"><span class="scan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m8 13 3 3 5-6"/></svg></span>
+              <span style="min-width:0"><span class="exact">BIOL 101 &nbsp;Principles of Biology</span><br><span class="disp">display name: Intro Bio</span></span></div>
+            <div class="cc mono">4</div><div class="cc mono">CR</div><div class="cc">2023</div><div class="cc"><span class="chip open">AP</span></div>
+
+            <div class="cc">College Board</div>
+            <div class="cc"><span class="scan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m8 13 3 3 5-6"/></svg></span>
+              <span class="exact">MATH 231 &nbsp;Calculus of Functions of One Variable</span></div>
+            <div class="cc mono">4</div><div class="cc mono">CR</div><div class="cc">2023</div><div class="cc"><span class="chip open">AP</span></div>
+
+            <div class="cc">Wake Tech CC</div>
+            <div class="cc"><span class="scan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m8 13 3 3 5-6"/></svg></span>
+              <span class="exact">CHM 151 &nbsp;General Chemistry I</span></div>
+            <div class="cc mono">4</div><div class="cc mono">A</div><div class="cc">Fall 2022</div><div class="cc"><span class="chip planned">Dual</span></div>
+
+            <div class="cc">NC State</div>
+            <div class="cc"><span style="width:20px;flex-shrink:0"></span><span class="exact">PSY 200 &nbsp;Introduction to Psychology</span></div>
+            <div class="cc mono">3</div><div class="cc mono">A−</div><div class="cc">Sum 2024</div><div class="cc"><span class="chip planned">Transfer</span></div>
+          </div>
+
+          <div class="addrow" style="margin-top:12px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>
+            Add a course —
+            <span class="field">institution</span>
+            <span class="field">number as printed</span>
+            <span class="field">title as printed</span>
+            <span class="field">credits</span>
+            <span class="field">grade</span>
+            <span class="field">term</span>
+            <span class="field">type</span>
+            <span class="field">＋ transcript scan</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="c12">
+      <div class="card">
+        <div class="hd"><div><div class="ti sm">Why this is captured now</div><div class="sub">capture now, or reconstruct badly in three years</div></div></div>
+        <div class="bd">
+          <div class="note">
+            <b>Every attempt of a repeated course counts toward AMCAS.</b> There is no AMCAS grade replacement, unlike UNC's policy — so a retake adds an attempt rather than replacing one.<br>
+            <b>AMCAS truncates rather than rounds.</b> 3.667 reports as 3.66, not 3.67.<br>
+            <b>Classification follows course content, not the title or the department</b> — which is the live question for a neuroscience major. Each course is classified when you take it, with the syllabus and your reasoning stored alongside it.
+          </div>
+          <div class="note" style="border-top:1px solid var(--bd);padding-top:9px">
+            AMCAS mechanics change between cycles. These rules are data, not logic — verify against the official Course Classification Guide in your application year.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

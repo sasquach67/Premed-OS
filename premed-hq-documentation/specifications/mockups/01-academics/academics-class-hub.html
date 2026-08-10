@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Academics — class page, five sub-tabs (APPROVED)</title>
+<!--
+  ============================================================================
+  ACADEMICS — PER-CLASS PAGE (center peek → EXPAND) — APPROVED
+  ============================================================================
+  Status: APPROVED (July 2026). REVISED from the original single-bento hub —
+  a semester of material does not fit on one screen. Spec: tabs/01-academics.md §4.1-I.
+
+  RELATED: academics-daily-main-page.html (opens from a class card) ·
+           academics-review-session.html (Start review) ·
+           mascot-note-pattern.html · overview-bento-control-panel.html
+
+  DECISIONS THIS FILE ENCODES
+  1. FIVE SUB-TABS: Overview · Materials · Topics · Assignments · Notes,
+     sharing ONE banner (crumb, class dot+code+name, compact info line,
+     glass stat strip, single primary action "Start review", ⋯).
+     Class info is a LINE not a panel (01 §4b-ii) — fixed facts don't earn space.
+  2. OVERVIEW is a master view of THIS class — NOT a copy of Class Center
+     (which is cross-class). Leads with a status row, then due-today,
+     exam scope, coming up, recently-covered, grade breakdown, contacts,
+     mastery trend.
+  3. EXAM SCOPE: segmented bar + LABELLED legend + an on-screen explanation
+     of how scope was derived. An unlabelled stacked bar was REJECTED —
+     it implied proportions of something unnamed. Do not reintroduce.
+  4. EVERYTHING IS GROUPED — no flat piles:
+     · Materials by week/module (module header shows unit range AND study
+       state), with 3-way ownership: Course / Mine / Generated.
+     · Topics into unit sections in course order, each with its own progress.
+     · Assignments by SYLLABUS CATEGORY (that's how the grade is computed),
+       each with weight, completion, and your average in that category.
+     · Notes by kind: Exam intel · Questions to ask · Priming · Lecture.
+  5. TWO KINDS OF NOTES, never merged:
+     · Notes tab = notes ABOUT the class (meta/intel).
+     · Materials → My notes = notes ON the material (your own pages),
+       tagged "Mine" and citable by the active-recall gap report.
+  6. PRIMING block per Materials module — questions to hold in mind BEFORE
+     reading; rolls up as a Notes category.
+  7. NOTE INGEST via watched folder (Goodnotes Auto Backup → Drive/Dropbox).
+     Structure INFERRED and pre-filled, confirmed ONCE, silent thereafter.
+     One-way; never writes back. Unplaceable pages import flagged "confirm week".
+  8. Anki decoupled — no sync chips, no scheduler. Optional "Send to Anki"
+     only when AnkiConnect is detected.
+  9. Study tools = ONE primary "Generate study guide" + overflow, plus
+     contextual entry (a topic's ⋯ → "Quiz me on this").
+
+  GLASS (04 §0c): frosted only on the banner stat strip. Everything else solid.
+  Build from library components (01-academics.md §7a), never copy this markup.
+  ============================================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#211e1a;--card:#2b2722;--fg:#ece3d4;--mut:#a89c8c;--dim:#7c7264;
+ --bd:#3c352d;--muted:#322e28;--cat:#4b9cd3;--success:#6fc0a8;--warning:#e7b06a;
+ --danger:#e8806f;--mcat:#8c7bd4;--research:#c98ac9}
+*{box-sizing:border-box}
+body{margin:0;background:#151310;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.frame{width:1400px;margin:0 auto;background:var(--bg)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.d{font-family:'Baloo 2';font-weight:800;font-variant-numeric:tabular-nums}
+.lab{font-family:'Baloo 2';font-weight:800;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#6b6862;padding:18px 24px 8px;background:#151310}
+/* banner */
+.ban{padding:15px 24px 0;background:radial-gradient(340px 200px at 88% 6%,rgba(75,156,211,.32),transparent 70%),linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%)}
+.crumb{font-family:'Baloo 2';font-weight:700;font-size:12.5px;color:rgba(255,255,255,.72);margin-bottom:9px}
+.h1{font-family:'Baloo 2';font-weight:800;font-size:31px;color:#fff;display:flex;align-items:center;gap:11px;letter-spacing:-.4px}
+.cdot{width:12px;height:12px;border-radius:4px;background:var(--cat);box-shadow:0 0 12px rgba(75,156,211,.7)}
+.subn{font-family:'Nunito';font-weight:700;font-size:17px;color:rgba(255,255,255,.84)}
+.info{font-size:12.5px;color:rgba(255,255,255,.62);font-weight:600;margin-top:6px}
+.info u{border-bottom:1px dotted rgba(255,255,255,.4);text-decoration:none}
+.bstats{display:flex;border-radius:13px;overflow:hidden;background:rgba(20,26,34,.5);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.16)}
+.bs{padding:8px 15px;border-right:1px solid rgba(255,255,255,.12);min-width:76px}
+.bs:last-child{border-right:none}
+.bsv{font-family:'Baloo 2';font-weight:800;font-size:18px;color:#fff}
+.bsl{font-size:9px;font-family:'Baloo 2';font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.startb{border-radius:12px;padding:11px 19px;font-family:'Baloo 2';font-weight:800;font-size:14px;background:#fff;color:#16222c}
+.ib{width:38px;height:38px;border-radius:11px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);display:grid;place-items:center;color:#fff}
+.tabs{display:flex;gap:26px;margin-top:15px;border-bottom:1px solid rgba(255,255,255,.13)}
+.tb{padding:11px 2px 12px;font-family:'Baloo 2';font-weight:700;font-size:14.5px;color:rgba(255,255,255,.6);position:relative;display:flex;gap:8px;align-items:center}
+.tb.on{color:#fff;font-weight:800}
+.tb.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--cat);box-shadow:0 0 12px rgba(75,156,211,.6)}
+.cnt{font-size:10.5px;font-family:'Baloo 2';font-weight:800;background:rgba(255,255,255,.14);border-radius:999px;padding:1px 8px}
+/* content */
+.wrap{padding:15px 24px 24px}
+.bento{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:15px 17px}
+.ti{font-family:'Baloo 2';font-weight:800;font-size:15.5px}
+.sb{font-size:11.5px;color:var(--dim);font-weight:700}
+.hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px}
+.lk{font-size:11.5px;font-family:'Baloo 2';font-weight:800;color:var(--cat)}
+.big{font-family:'Baloo 2';font-weight:800;font-size:30px;line-height:1}
+.l{font-size:9px;font-family:'Baloo 2';font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-top:3px}
+.row{display:flex;align-items:center;gap:10px;padding:8px 2px;border-top:1px solid var(--bd);font-size:12.5px;font-weight:700}
+.row:first-of-type{border-top:none}
+.bar{height:5px;border-radius:999px;background:#272420;overflow:hidden;display:flex}
+.unit{font-size:9px;font-family:'Baloo 2';font-weight:800;color:var(--dim);background:var(--muted);border:1px solid var(--bd);border-radius:5px;padding:1px 6px}
+.st{font-size:9.5px;font-family:'Baloo 2';font-weight:800;border-radius:999px;padding:2px 8px}
+.pct{font-family:'Baloo 2';font-weight:800;font-size:11px;width:32px;text-align:right}
+.seg{display:flex;height:11px;border-radius:999px;overflow:hidden;background:#272420}
+.lg{display:flex;gap:15px;margin-top:9px;flex-wrap:wrap}
+.lgi{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--mut)}
+.dot{width:9px;height:9px;border-radius:3px}
+.expl{font-size:11px;color:var(--dim);font-weight:600;line-height:1.5;margin-top:10px;padding-top:9px;border-top:1px solid var(--bd)}
+.warn{display:flex;gap:8px;align-items:center;background:rgba(231,176,106,.11);border:1px solid rgba(231,176,106,.3);border-radius:10px;padding:8px 11px;font-size:11.5px;font-weight:700;color:var(--mut)}
+.pace{display:flex;gap:8px;align-items:center;background:rgba(111,192,168,.1);border:1px solid rgba(111,192,168,.26);border-radius:10px;padding:8px 11px;font-size:11.5px;font-weight:700;color:var(--mut)}
+.pace b,.warn b{color:var(--fg);font-family:'Baloo 2';font-weight:800}
+.av{width:30px;height:30px;border-radius:50%;background:var(--muted);border:1px solid var(--bd);display:grid;place-items:center;font-family:'Baloo 2';font-weight:800;font-size:11px;color:var(--mut)}
+/* groups */
+.fb{display:flex;gap:8px;margin-bottom:11px;flex-wrap:wrap;align-items:center}
+.f{font-size:11.5px;font-weight:700;background:var(--muted);border:1px solid var(--bd);border-radius:999px;padding:5px 12px;color:var(--mut)}
+.f.on{background:#3c4a52;color:var(--fg);border-color:#4b6572}
+.grp{border:1px solid var(--bd);border-radius:13px;margin-bottom:11px;overflow:hidden;background:#262320}
+.gh{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--muted);border-bottom:1px solid var(--bd)}
+.gt{font-family:'Baloo 2';font-weight:800;font-size:13.5px}
+.gm{font-size:11.5px;color:var(--dim);font-weight:700}
+.gr{display:flex;align-items:center;gap:11px;padding:9px 14px;border-top:1px solid var(--muted);font-size:12.5px;font-weight:700}
+.gr:first-of-type{border-top:none}
+.gr.mine{background:rgba(111,192,168,.06)}
+.ic{width:26px;height:26px;border-radius:7px;background:var(--card);border:1px solid var(--bd);display:grid;place-items:center;font-size:12px}
+.ic.mine{background:rgba(111,192,168,.16);border-color:rgba(111,192,168,.4)}
+.own{font-size:9px;font-family:'Baloo 2';font-weight:800;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;padding:2px 8px}
+.kind{font-size:9px;font-family:'Baloo 2';font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
+.prime{background:rgba(140,123,212,.09);border-top:1px solid rgba(140,123,212,.26);padding:11px 14px}
+.ph{display:flex;align-items:center;gap:8px;font-family:'Baloo 2';font-weight:800;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:#c4b6f2}
+.pq{font-size:12.5px;color:#bdb3a4;font-weight:600;padding:5px 0 5px 18px;line-height:1.5}
+.note{padding:10px 14px;border-top:1px solid var(--muted)}
+.nt{font-family:'Baloo 2';font-weight:800;font-size:13px}
+.nb{font-size:12px;color:var(--mut);font-weight:600;margin-top:3px;line-height:1.5}
+.inp{background:var(--muted);border:1px solid #4b6572;border-radius:9px;padding:6px 10px;font-family:'Baloo 2';font-weight:800;font-size:14px;width:62px;text-align:center;color:var(--fg)}
+.wcol{font-family:'Baloo 2';font-weight:800;font-size:12.5px;color:var(--mut);width:52px;text-align:right}
+</style>
+</head>
+<body>
+<div class="frame">
+<h1 class="sr-only">CHEM 262 class page — Overview, Materials, Topics, Assignments, Notes</h1>
+
+<!-- ══ SHARED BANNER (identical on every sub-tab) ════════════════════════ -->
+<div class="ban">
+ <div class="crumb">‹ Class Center</div>
+ <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:18px">
+  <div>
+   <div class="h1"><span class="cdot"></span>CHEM 262 <span class="subn">Organic Chemistry II</span></div>
+   <div class="info">Dr. Elamin · MWF 10:10a · Kenan B12 · BCPM · <u>office hours, links ⌄</u></div>
+  </div>
+  <div style="display:flex;gap:11px;align-items:center">
+   <div class="bstats">
+    <div class="bs"><div class="bsv" style="color:var(--warning)">B+</div><div class="bsl">Grade</div></div>
+    <div class="bs"><div class="bsv">8<span style="font-size:12px;color:rgba(255,255,255,.6)">/18</span></div><div class="bsl">Ready</div></div>
+    <div class="bs"><div class="bsv" style="color:#f0c68a">2</div><div class="bsl">Due today</div></div>
+    <div class="bs"><div class="bsv" style="color:#f0a08f">6d</div><div class="bsl">Midterm 2</div></div>
+   </div>
+   <div class="startb">▶ Start review</div><div class="ib">⋯</div>
+  </div>
+ </div>
+ <div class="tabs">
+  <div class="tb on">Overview</div><div class="tb">Materials <span class="cnt">38</span></div>
+  <div class="tb">Topics <span class="cnt">18</span></div><div class="tb">Assignments <span class="cnt">9</span></div>
+  <div class="tb">Notes <span class="cnt">14</span></div>
+ </div>
+</div>
+
+<!-- ══ TAB 1 — OVERVIEW ══════════════════════════════════════════════════ -->
+<div class="wrap"><div class="bento">
+ <div class="card" style="grid-column:span 12;display:flex;gap:28px;align-items:center">
+  <div><div class="big" style="color:var(--warning)">B+</div><div class="l">87.4% · 37% graded</div></div>
+  <div><div class="big">8<span style="font-size:16px;color:var(--dim)">/18</span></div><div class="l">Topics ready</div></div>
+  <div><div class="big" style="color:var(--danger)">6d</div><div class="l">Midterm 2</div></div>
+  <div><div class="big" style="color:var(--success)">13</div><div class="l">Day streak</div></div>
+  <div><div class="big" style="color:var(--mcat)">11</div><div class="l">MCAT-relevant</div></div>
+  <div style="flex:1;max-width:300px"><div class="sb" style="margin-bottom:5px">Course coverage · units 1–8 of 12</div>
+   <div class="bar" style="height:9px"><div style="width:67%;background:var(--cat)"></div></div>
+   <div class="sb" style="margin-top:5px">94% of material mapped · 3 unassigned</div></div>
+ </div>
+
+ <div class="card" style="grid-column:span 4">
+  <div class="hd"><span class="ti">Due today</span><span class="sb">2 · ~12 min</span></div>
+  <div class="row"><span style="flex:1">SN1 / SN2 mechanisms</span><span class="pct" style="color:var(--danger)">54%</span></div>
+  <div class="row"><span style="flex:1">Stereochemistry — chirality</span><span class="pct" style="color:var(--warning)">87%</span></div>
+  <div class="pace" style="margin-top:10px">↗ At <b>3 topics/day</b> you're <b>exam-ready by Thursday</b>.</div>
+ </div>
+
+ <!-- exam scope: LABELLED legend + explanation. No unlabelled stacked bar. -->
+ <div class="card" style="grid-column:span 4">
+  <div class="hd"><span class="ti">Midterm 2 scope</span><span class="sb">Units 4–7 · Friday</span></div>
+  <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:9px"><span class="d" style="font-size:22px;color:var(--warning)">4</span><span class="sb">of 9 topics exam-ready</span></div>
+  <div class="seg"><div style="width:44.4%;background:var(--success)"></div><div style="width:22.2%;background:var(--cat)"></div><div style="width:33.4%;background:var(--danger)"></div></div>
+  <div class="lg">
+   <span class="lgi"><span class="dot" style="background:var(--success)"></span>Ready 4</span>
+   <span class="lgi"><span class="dot" style="background:var(--cat)"></span>Reviewing 2</span>
+   <span class="lgi"><span class="dot" style="background:var(--danger)"></span>Weak 3</span>
+  </div>
+  <div class="expl">Scope comes from your syllabus: the exam covers <b style="color:var(--mut)">Units 4–7</b>, so every topic in those units counts — 9 in total. The bar is those 9 by review state.</div>
+ </div>
+
+ <div class="card" style="grid-column:span 4">
+  <div class="hd"><span class="ti">Coming up</span><span class="lk">All →</span></div>
+  <div class="row"><span style="flex:1">Midterm 2 · 20%</span><span style="color:var(--danger)">Fri</span></div>
+  <div class="row"><span style="flex:1">Problem set 6 · 2.5%</span><span style="color:var(--warning)">Wed</span></div>
+  <div class="row"><span style="flex:1">Post-lab writeup 4 · 4%</span><span style="color:var(--dim)">Nov 12</span></div>
+  <div class="row"><span style="flex:1">Final exam · 30%</span><span style="color:var(--dim)">Dec 14</span></div>
+ </div>
+
+ <div class="card" style="grid-column:span 5">
+  <div class="hd"><span class="ti">Recently covered</span><span class="sb">have you reviewed it yet?</span></div>
+  <div class="row"><span class="unit">U7</span><span style="flex:1">Alcohols &amp; ethers</span><span class="sb">Lec 17 · Nov 4</span><span class="st" style="background:var(--muted);color:var(--mut)">Seen</span></div>
+  <div class="row"><span class="unit">U6</span><span style="flex:1">Zaitsev &amp; Hofmann</span><span class="sb">Lec 16 · Nov 1</span><span class="st" style="background:rgba(75,156,211,.22);color:var(--cat)">Reviewing</span></div>
+  <div class="row"><span class="unit">U6</span><span style="flex:1">E1 / E2 elimination</span><span class="sb">Lec 16 · Nov 1</span><span class="st" style="background:rgba(232,128,111,.2);color:var(--danger)">Weak</span></div>
+  <div class="warn" style="margin-top:10px">◑ <b>Unit 8</b> was covered Nov 6 and has <b>never been reviewed</b>.</div>
+ </div>
+
+ <div class="card" style="grid-column:span 4">
+  <div class="hd"><span class="ti">Grade breakdown</span><span class="lk">What-if →</span></div>
+  <div class="row"><span style="flex:1">Problem sets</span><span class="sb">15%</span><span class="d" style="color:var(--success)">88%</span></div>
+  <div class="row"><span style="flex:1">Labs</span><span class="sb">20%</span><span class="d" style="color:var(--success)">91%</span></div>
+  <div class="row"><span style="flex:1">Midterms</span><span class="sb">35%</span><span class="d" style="color:var(--warning)">84%</span></div>
+  <div class="row" style="color:var(--dim)"><span style="flex:1">Final</span><span class="sb">30%</span><span class="d">—</span></div>
+  <div class="expl">Weights parsed from your syllabus and they sum to <b style="color:var(--success)">100%</b> ✓</div>
+ </div>
+
+ <div class="card" style="grid-column:span 3">
+  <div class="hd"><span class="ti">Class contacts</span><span class="lk">All →</span></div>
+  <div class="row"><span class="av">DE</span><div style="flex:1"><div>Dr. Elamin</div><div class="sb">Office hrs Tue 2–4</div></div></div>
+  <div class="row"><span class="av">MR</span><div style="flex:1"><div>Maya Reyes · TA</div><div class="sb">Recitation Thu 3pm</div></div></div>
+  <div class="row"><span class="av">AK</span><div style="flex:1"><div>Study group</div><div class="sb">Sun 6pm · Davis</div></div></div>
+ </div>
+
+ <div class="card" style="grid-column:span 12">
+  <div class="hd"><span class="ti">Mastery over the semester</span><span class="sb">topics ready · actual vs projected</span></div>
+  <svg viewBox="0 0 1300 90" style="width:100%;height:88px">
+   <line x1="0" y1="74" x2="1300" y2="74" stroke="#3c352d"/><line x1="0" y1="12" x2="1300" y2="12" stroke="#3c352d" stroke-dasharray="3 6"/>
+   <path d="M20 70 L180 66 L340 58 L500 50 L660 42 L820 30 L900 26 L900 78 L20 78 Z" fill="rgba(111,192,168,.16)"/>
+   <path d="M20 70 L180 66 L340 58 L500 50 L660 42 L820 30 L900 26" fill="none" stroke="#6fc0a8" stroke-width="2.5" stroke-linecap="round"/>
+   <circle cx="900" cy="26" r="4" fill="#6fc0a8"/>
+   <path d="M900 26 L1060 20 L1220 12" fill="none" stroke="#4b9cd3" stroke-width="2.5" stroke-dasharray="5 4"/>
+   <circle cx="1220" cy="12" r="3.5" fill="none" stroke="#4b9cd3" stroke-width="2"/>
+   <text x="874" y="88" fill="#a89c8c" font-size="10" font-family="Nunito" font-weight="700">today · 8</text>
+   <text x="1160" y="88" fill="#4b9cd3" font-size="10" font-family="Nunito" font-weight="700">Dec 8 · all 18</text>
+  </svg>
+ </div>
+</div></div>
+
+<!-- ══ TAB 2 — MATERIALS ═════════════════════════════════════════════════ -->
+<div class="lab">Tab 2 · Materials — by week · ownership markers · priming per module</div>
+<div class="wrap">
+ <div class="fb"><span class="f on">All 38</span><span class="f">From the course 26</span>
+  <span class="f" style="background:rgba(111,192,168,.16);color:var(--success);border-color:rgba(111,192,168,.4)">My notes 12</span>
+  <span class="f">Generated 4</span><span class="f">Unassigned 3</span>
+  <span class="f" style="margin-left:auto">By week ⌄</span><span class="f">＋ Import from Canvas</span><span class="f">＋ Add file</span></div>
+
+ <div class="grp">
+  <div class="gh"><span class="unit">Week 9</span><span class="gt">Elimination reactions</span><span class="gm">Units 6–7</span><span class="st" style="background:rgba(75,156,211,.2);color:#8fc4ea;margin-left:auto">Current</span></div>
+  <div class="gr"><span class="ic">🗂</span><span style="flex:1">Lecture 16 — E1 vs E2</span><span class="own" style="background:var(--card);color:var(--dim)">Course</span><span class="kind">Slides · 42p</span></div>
+  <div class="gr"><span class="ic">📄</span><span style="flex:1">Reading — Klein ch. 8.4–8.9</span><span class="own" style="background:var(--card);color:var(--dim)">Course</span><span class="kind">PDF</span></div>
+  <div class="gr mine"><span class="ic mine">✎</span><span style="flex:1">Lecture 16 — my handwritten notes</span><span class="own" style="background:rgba(111,192,168,.18);color:var(--success)">Mine</span><span class="kind">Goodnotes · synced 2h ago</span></div>
+  <div class="gr"><span class="ic" style="color:var(--cat)">✦</span><span style="flex:1">Study guide — Units 6–7</span><span class="own" style="background:rgba(75,156,211,.16);color:#8fc4ea">Generated</span><span class="kind">From these files</span></div>
+  <div class="prime">
+   <div class="ph">◈ Prime yourself <span style="color:var(--dim);font-weight:700;text-transform:none;letter-spacing:0;font-size:11px;font-family:Nunito">— questions to hold in mind before you read</span><span class="lk" style="margin-left:auto">＋ Add</span></div>
+   <div class="pq">· If both E1 and E2 remove the same H, why does base strength decide which happens?</div>
+   <div class="pq">· What would make a bulky base give a <i>different</i> alkene than a small one?</div>
+  </div>
+ </div>
+ <div class="warn">◑ <b>3 files</b> from the Lecture 12 deck aren't mapped to a unit yet — they'll still be reviewed, filed under Unit 5 by position. <span class="lk">Review mapping</span></div>
+</div>
+
+<!-- ══ TAB 3 — TOPICS ════════════════════════════════════════════════════ -->
+<div class="lab">Tab 3 · Topics — grouped into unit sections, course order</div>
+<div class="wrap">
+ <div class="fb"><span class="f on">All 18</span><span class="f">Weak 3</span><span class="f">Due 2</span><span class="f">Never reviewed 1</span><span class="f">In exam scope 9</span><span class="f" style="margin-left:auto">Group: by unit ⌄</span></div>
+ <div class="grp">
+  <div class="gh"><span class="unit">Unit 5</span><span class="gt">Substitution mechanisms</span><span class="gm">Weeks 7–8 · in exam scope</span>
+   <span style="margin-left:auto;display:flex;gap:9px;align-items:center"><span class="gm">1 of 3 ready</span><div class="bar" style="width:80px"><div style="width:33%;background:var(--success)"></div></div></span></div>
+  <div class="gr"><span style="flex:1">Nucleophilic substitution basics</span><span class="sb">recall 3d ago</span><div class="bar" style="width:70px"><div style="width:90%;background:var(--success)"></div></div><span class="pct" style="color:var(--success)">90%</span><span class="st" style="background:rgba(111,192,168,.2);color:var(--success)">Ready</span><span class="st" style="background:rgba(140,123,212,.2);color:#c4b6f2">MCAT</span></div>
+  <div class="gr"><span style="flex:1">SN1 / SN2 mechanisms</span><span class="sb">recall 4d ago</span><div class="bar" style="width:70px"><div style="width:54%;background:var(--danger)"></div></div><span class="pct" style="color:var(--danger)">54%</span><span class="st" style="background:rgba(232,128,111,.2);color:var(--danger)">Weak</span><span class="st" style="background:rgba(140,123,212,.2);color:#c4b6f2">MCAT</span></div>
+ </div>
+ <div class="grp">
+  <div class="gh"><span class="unit">Unit 8</span><span class="gt">Conjugation &amp; dienes</span><span class="gm">Week 10 · covered Nov 6</span>
+   <span style="margin-left:auto;display:flex;gap:9px;align-items:center"><span class="gm">0 of 2 ready</span><div class="bar" style="width:80px"></div></span></div>
+  <div class="gr"><span style="flex:1">Conjugated systems &amp; stability</span><span class="sb" style="color:#8fc4ea">never reviewed</span><div class="bar" style="width:70px"></div><span class="pct" style="color:var(--dim)">—</span><span class="st" style="background:rgba(75,156,211,.22);color:#8fc4ea">Not started</span></div>
+  <div class="gr" style="color:var(--dim)"><span style="flex:1">＋ Covered a topic today (starts its review clock)</span></div>
+ </div>
+</div>
+
+<!-- ══ TAB 4 — ASSIGNMENTS ═══════════════════════════════════════════════ -->
+<div class="lab">Tab 4 · Assignments — grouped by syllabus category (how the grade is computed) + what-if</div>
+<div class="wrap">
+ <div class="fb"><span class="f on">By category</span><span class="f">By date</span><span class="f">Ungraded 3</span><span class="f" style="margin-left:auto">What-if calculator →</span></div>
+ <div class="grp">
+  <div class="gh"><span class="gt">Problem sets</span><span class="gm">15% of grade · 4 of 6 graded</span><span class="gm" style="margin-left:auto">avg <b class="d" style="color:var(--success);font-size:14px">88%</b></span></div>
+  <div class="gr"><span style="flex:1">Problem set 4</span><span class="sb">Oct 24</span><span class="d" style="color:var(--success)">48 / 50</span></div>
+  <div class="gr"><span style="flex:1">Problem set 5</span><span class="sb">Oct 31</span><span class="d" style="color:var(--danger)">36 / 50</span></div>
+ </div>
+ <div class="grp">
+  <div class="gh"><span class="gt">Exams</span><span class="gm">Midterms 35% · Final 30% · 1 of 3 taken</span><span class="gm" style="margin-left:auto">avg <b class="d" style="color:var(--warning);font-size:14px">84%</b></span></div>
+  <div class="gr"><span style="flex:1">Midterm 1</span><span class="sb">15% · Oct 3</span><span class="d" style="color:var(--warning)">84 / 100</span></div>
+  <div class="gr" style="color:var(--dim)"><span style="flex:1">Midterm 2</span><span class="sb">20% · Friday</span><span class="d">—</span></div>
+ </div>
+ <div class="pace">✓ Category weights sum to <b>100%</b> · <b>37%</b> of the grade is in · standing <b>87.4% · B+</b></div>
+
+ <div style="display:grid;grid-template-columns:1fr 400px;gap:14px;margin-top:14px">
+  <div class="card">
+   <div class="hd"><span class="ti">What if…</span><span class="sb">assume a score for what's left</span></div>
+   <div class="row" style="padding:10px 0;color:var(--dim)"><span style="flex:1;color:var(--mut)">Locked in so far</span><span class="wcol">37%</span><span class="d" style="font-size:14px;color:var(--fg)">32.3 pts</span></div>
+   <div class="row" style="padding:10px 0"><span style="flex:1">Remaining problem sets <span class="sb">(2)</span></span><span class="wcol">5%</span><span class="inp">90</span><span class="sb">%</span></div>
+   <div class="row" style="padding:10px 0"><span style="flex:1">Midterm 2 <span class="sb">Friday</span></span><span class="wcol">20%</span><span class="inp" style="border-color:var(--success)">95</span><span class="sb">%</span></div>
+   <div class="row" style="padding:10px 0"><span style="flex:1">Final exam <span class="sb">Dec 14</span></span><span class="wcol">30%</span><span class="inp" style="border-color:var(--success)">93</span><span class="sb">%</span></div>
+  </div>
+  <div class="card">
+   <div class="ti">Result</div>
+   <div style="display:flex;align-items:baseline;gap:10px;margin-top:8px"><span class="big" style="color:var(--success)">90.9%</span><span class="d" style="font-size:19px;color:var(--success)">A−</span></div>
+   <div class="sb" style="margin-top:4px">up from <b style="color:var(--fg)">87.4% · B+</b> today</div>
+   <div class="pace" style="margin-top:12px">To land an <b>A−</b> you need <b>91.6%</b> average across everything remaining — <b>63%</b> of the grade is still unearned.</div>
+   <div class="sb" style="margin-top:9px">Moves cumulative <b style="color:var(--success)">3.71 → 3.74</b> · science <b style="color:var(--success)">3.68 → 3.72</b>. Hypothetical — nothing is saved.</div>
+  </div>
+ </div>
+</div>
+
+<!-- ══ TAB 5 — NOTES ═════════════════════════════════════════════════════ -->
+<div class="lab">Tab 5 · Notes — notes ABOUT the class, filed by kind (notes ON the material live in Materials)</div>
+<div class="wrap" style="display:grid;grid-template-columns:1fr 330px;gap:14px">
+ <div>
+  <div class="fb"><span class="f on">All 14</span><span class="f">Exam intel 3</span><span class="f">Questions 2</span><span class="f">Priming 4</span><span class="f">Lecture 8</span><span class="f" style="margin-left:auto">＋ New note</span></div>
+  <div class="grp">
+   <div class="gh"><span class="gt" style="color:var(--warning)">◈ Exam intel</span><span class="gm">what this professor actually tests</span><span class="gm" style="margin-left:auto">3</span></div>
+   <div class="note"><div class="nt">Elamin tests mechanisms, not memorization</div><div class="nb">Said twice he "doesn't care about memorizing pKa tables" but always asks you to predict the major product and justify it. Midterm 1 had 3 mechanism-drawing questions worth 40%.</div></div>
+  </div>
+  <div class="grp">
+   <div class="gh"><span class="gt" style="color:#8fc4ea">◈ Questions to ask</span><span class="gm">office hours Tue 2–4</span><span class="gm" style="margin-left:auto">2 open</span></div>
+   <div class="note"><div class="nb">☐ Why does the Hofmann product win with bulky bases — sterics at the base or the substrate?</div></div>
+  </div>
+  <div class="grp">
+   <div class="gh"><span class="gt" style="color:#c4b6f2">◈ Priming questions</span><span class="gm">pulled from your Materials modules</span><span class="gm" style="margin-left:auto">4</span></div>
+   <div class="note"><div class="nb"><span class="unit">Wk 9</span> If both E1 and E2 remove the same H, why does base strength decide which happens?</div></div>
+  </div>
+ </div>
+ <div class="card">
+  <div class="hd"><span class="ti">Per-topic notes</span><span class="sb">11 of 18</span></div>
+  <div class="row"><span class="unit">U5</span><span style="flex:1">SN1 / SN2 mechanisms</span><span style="color:var(--dim)">📝</span></div>
+  <div class="row"><span class="unit">U6</span><span style="flex:1">E1 / E2 elimination</span><span style="color:var(--dim)">📝</span></div>
+  <div class="row" style="color:var(--dim)"><span style="flex:1">7 topics have no notes</span></div>
+ </div>
+</div>
+
+</div>
+</body>
+</html>

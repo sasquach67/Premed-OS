@@ -1,0 +1,1069 @@
+{
+  "meta": {
+    "curriculum": "IDEAs in Action",
+    "curriculumVersion": "2026-2027",
+    "appliesTo": "degree-seeking undergraduates matriculating Fall 2022 or later",
+    "retrievedAt": "2026-07-22",
+    "producedBy": "Merged: gen-ed + med prereqs + Neuroscience verified live by Claude (catalog.unc.edu); other 5 majors from ChatGPT (sources normalized, flagged for spot-check)",
+    "verificationNote": "ChatGPT's gen-ed drifted to the retired 2022 curriculum (e.g. 'Power, Difference, and Inequality', Triple-I). This merge uses Claude's live-verified gen-ed instead. ChatGPT's majors are included for breadth but carry verificationStatus='needs spot-check'.",
+    "sources": [
+      "https://catalog.unc.edu/undergraduate/ideas-in-action/"
+    ],
+    "freshness": {
+      "refreshCadence": "annual",
+      "reason": "UNC publishes a new academic catalog each summer",
+      "sourceToMonitor": "https://catalog.unc.edu/undergraduate/ideas-in-action/",
+      "lastVerified": "2026-07-21",
+      "reviewBy": "2027-08-01",
+      "churn": "low"
+    }
+  },
+  "genEd": [
+    {
+      "id": "fyf-college-thriving",
+      "group": "First-Year Foundations",
+      "name": "College Thriving",
+      "description": "First-year transition/thriving course. Honors students may use HNRS 101 to fulfill it.",
+      "credits": 1,
+      "howSatisfied": "IDST 101 (or HNRS 101 for Honors)",
+      "exampleCourses": [
+        "IDST 101",
+        "HNRS 101"
+      ],
+      "grading": "Offered Pass/Low Pass/Fail (exception to the no-P/F rule)",
+      "notes": "Complete within first academic year.",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/"
+    },
+    {
+      "id": "fyf-data-literacy-lab",
+      "group": "First-Year Foundations",
+      "name": "Data Literacy Lab",
+      "description": "One-credit data literacy lab.",
+      "credits": 1,
+      "howSatisfied": "IDST 111L",
+      "exampleCourses": [
+        "IDST 111L"
+      ],
+      "grading": "",
+      "notes": "",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/"
+    },
+    {
+      "id": "fyf-first-year-seminar-launch",
+      "group": "First-Year Foundations",
+      "name": "First-Year Seminar or First-Year Launch",
+      "description": "A First-Year Seminar or First-Year Launch course.",
+      "credits": 3,
+      "creditsRange": [
+        3,
+        4
+      ],
+      "howSatisfied": "one First-Year Seminar or First-Year Launch",
+      "exampleCourses": [],
+      "grading": "",
+      "notes": "",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/first-year-seminars-launches/"
+    },
+    {
+      "id": "fyf-english-composition",
+      "group": "First-Year Foundations",
+      "name": "English Composition and Rhetoric",
+      "description": "University writing requirement.",
+      "credits": 3,
+      "howSatisfied": "ENGL 105",
+      "exampleCourses": [
+        "ENGL 105"
+      ],
+      "grading": "Cannot be Pass/Low Pass/Fail; cannot be dropped after week 2 without a dean's approval",
+      "notes": "",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/"
+    },
+    {
+      "id": "fyf-global-language",
+      "group": "First-Year Foundations",
+      "name": "Global Language (through level 3)",
+      "description": "Global language proficiency through level 3; some majors require additional levels.",
+      "credits": null,
+      "howSatisfied": "language coursework through level 3, or placement/by-exam/transfer credit",
+      "exampleCourses": [],
+      "grading": "Cannot be Pass/Low Pass/Fail when used to fulfill this requirement; continuous enrollment required until complete",
+      "notes": "Strongly encouraged to begin in first year. Some majors require higher levels.",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/global-language/"
+    },
+    {
+      "id": "fc-aesthetic-interpretive-analysis",
+      "group": "Focus Capacities",
+      "name": "Aesthetic and Interpretive Analysis",
+      "description": "One of nine Focus Capacity areas (one course each).",
+      "credits": 3,
+      "howSatisfied": "one approved course",
+      "exampleCourses": [],
+      "grading": "Cannot be Pass/Low Pass/Fail",
+      "notes": "Up to 5 of the 9 Focus Capacities (+lab) may be fulfilled by by-exam credit. A course may satisfy only one Focus Capacity even if approved for two.",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/aesthetic-interpretive-analysis/"
+    },
+    {
+      "id": "fc-creative-expression",
+      "group": "Focus Capacities",
+      "name": "Creative Expression, Practice, and Production",
+      "description": "One of nine Focus Capacity areas.",
+      "credits": 3,
+      "howSatisfied": "one approved course",
+      "exampleCourses": [],
+      "grading": "Cannot be Pass/Low Pass/Fail",
+      "notes": "",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/creative-expression"
+    },
+    {
+      "id": "fc-human-past",
+      "group": "Focus Capacities",
+      "name": "Engagement with the Human Past",
+      "description": "One of nine Focus Capacity areas.",
+      "credits": 3,
+      "howSatisfied": "one approved course",
+      "exampleCourses": [],
+      "grading": "Cannot be Pass/Low Pass/Fail",
+      "notes": "",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/human-past"
+    },
+    {
+      "id": "fc-ethical-civic-values",
+      "group": "Focus Capacities",
+      "name": "Ethical and Civic Values",
+      "description": "One of nine Focus Capacity areas.",
+      "credits": 3,
+      "howSatisfied": "one approved course",
+      "exampleCourses": [],
+      "grading": "Cannot be Pass/Low Pass/Fail",
+      "notes": "",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/ethical-civic-values"
+    },
+    {
+      "id": "fc-global-understanding",
+      "group": "Focus Capacities",
+      "name": "Global Understanding and Engagement",
+      "description": "One of nine Focus Capacity areas.",
+      "credits": 3,
+      "howSatisfied": "one approved course",
+      "exampleCourses": [],
+      "grading": "Cannot be Pass/Low Pass/Fail",
+      "notes": "",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/global-understanding"
+    },
+    {
+      "id": "fc-natural-scientific-investigation",
+      "group": "Focus Capacities",
+      "name": "Natural Scientific Investigation",
+      "description": "One of nine Focus Capacity areas. Pre-med science courses often satisfy this.",
+      "credits": 3,
+      "howSatisfied": "one approved course",
+      "exampleCourses": [],
+      "grading": "Cannot be Pass/Low Pass/Fail",
+      "notes": "The one-credit Empirical Investigation Lab attaches to one Focus Capacity course.",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/natural-scientific"
+    },
+    {
+      "id": "fc-power-society",
+      "group": "Focus Capacities",
+      "name": "Power and Society",
+      "description": "One of nine Focus Capacity areas.",
+      "credits": 3,
+      "howSatisfied": "one approved course",
+      "exampleCourses": [],
+      "grading": "Cannot be Pass/Low Pass/Fail",
+      "notes": "",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/power-society"
+    },
+    {
+      "id": "fc-quantitative-reasoning",
+      "group": "Focus Capacities",
+      "name": "Quantitative Reasoning",
+      "description": "One of nine Focus Capacity areas.",
+      "credits": 3,
+      "howSatisfied": "one approved course",
+      "exampleCourses": [],
+      "grading": "Cannot be Pass/Low Pass/Fail",
+      "notes": "",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/quantitative"
+    },
+    {
+      "id": "fc-ways-of-knowing",
+      "group": "Focus Capacities",
+      "name": "Ways of Knowing",
+      "description": "One of nine Focus Capacity areas.",
+      "credits": 3,
+      "howSatisfied": "one approved course",
+      "exampleCourses": [],
+      "grading": "Cannot be Pass/Low Pass/Fail",
+      "notes": "",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/ways-of-knowing"
+    },
+    {
+      "id": "fc-empirical-investigation-lab",
+      "group": "Focus Capacities",
+      "name": "Empirical Investigation Lab",
+      "description": "A one-credit lab associated with one Focus Capacity course.",
+      "credits": 1,
+      "howSatisfied": "one approved lab attached to a Focus Capacity course",
+      "exampleCourses": [],
+      "grading": "",
+      "notes": "Students complete nine Focus Capacity courses plus this one-credit lab.",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/lab"
+    },
+    {
+      "id": "ri-research-and-discovery",
+      "group": "Reflection and Integration",
+      "name": "Research and Discovery",
+      "description": "One Research and Discovery course.",
+      "credits": null,
+      "creditsRange": [
+        1,
+        3
+      ],
+      "howSatisfied": "one approved course",
+      "exampleCourses": [],
+      "grading": "Some Research and Discovery courses are offered only Pass/Low Pass/Fail",
+      "notes": "The same course cannot count for both Research and Discovery and High-Impact Experience.",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/research-discovery"
+    },
+    {
+      "id": "ri-high-impact-experience",
+      "group": "Reflection and Integration",
+      "name": "High-Impact Experience (or a second Research and Discovery)",
+      "description": "One High-Impact Experience course/experience, or a second Research and Discovery.",
+      "credits": null,
+      "creditsRange": [
+        1,
+        3
+      ],
+      "howSatisfied": "one approved High-Impact Experience, or a second Research and Discovery",
+      "exampleCourses": [],
+      "grading": "Some High-Impact Experience courses are offered only Pass/Low Pass/Fail",
+      "notes": "Carolina Global Launch transfer students may use that experience to fulfill this.",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/high-impact"
+    },
+    {
+      "id": "ri-communication-beyond-carolina",
+      "group": "Reflection and Integration",
+      "name": "Communication Beyond Carolina",
+      "description": "One Communication Beyond Carolina course.",
+      "credits": 3,
+      "howSatisfied": "one approved course",
+      "exampleCourses": [],
+      "grading": "Cannot be Pass/Low Pass/Fail",
+      "notes": "Required for the 2024-25, 2025-26, and 2026-27 cohort classes; earlier cohorts may substitute a Making Connections Communication-Intensive course.",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/communication-beyond"
+    },
+    {
+      "id": "ri-interdisciplinary",
+      "group": "Reflection and Integration",
+      "name": "Interdisciplinary",
+      "description": "One interdisciplinary course.",
+      "credits": 3,
+      "howSatisfied": "one approved course",
+      "exampleCourses": [],
+      "grading": "",
+      "notes": "Marked with \u2020 in the catalog (cohort-dependent \u2014 verify applicability by cohort).",
+      "confidence": "medium",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/interdisciplinary/"
+    },
+    {
+      "id": "ri-lifetime-fitness",
+      "group": "Reflection and Integration",
+      "name": "Lifetime Fitness",
+      "description": "One lifetime fitness course.",
+      "credits": 1,
+      "howSatisfied": "one approved Lifetime Fitness course",
+      "exampleCourses": [],
+      "grading": "Offered Pass/Low Pass/Fail",
+      "notes": "",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/lifetime-fitness"
+    },
+    {
+      "id": "ri-campus-life-experience",
+      "group": "Reflection and Integration",
+      "name": "Campus Life Experience",
+      "description": "Attend 8 events across four categories.",
+      "credits": 0,
+      "howSatisfied": "8 events from four categories",
+      "exampleCourses": [],
+      "grading": "Non-credit",
+      "notes": "",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/campus-life-experience/"
+    },
+    {
+      "id": "add-foundations-american-democracy",
+      "group": "Additional Requirements",
+      "name": "Foundations of American Democracy",
+      "description": "A Foundations of American Democracy course.",
+      "credits": 3,
+      "howSatisfied": "one approved course",
+      "exampleCourses": [],
+      "grading": "",
+      "notes": "Marked \u2020 \u2014 added for Fall 2025+ cohorts; verify applicability by cohort.",
+      "confidence": "medium",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/foundations-american-democracy/"
+    },
+    {
+      "id": "add-supplemental-gen-ed",
+      "group": "Additional Requirements",
+      "name": "Supplemental General Education (B.A. only)",
+      "description": "Additional gen-ed for B.A. degrees, broadening the major's relationship to other fields.",
+      "credits": null,
+      "howSatisfied": "varies; B.A. degrees only",
+      "exampleCourses": [],
+      "grading": "A Focus Capacity course may not double-count as a Supplemental Gen Ed course",
+      "notes": "Applies to B.A. degrees, not B.S.",
+      "confidence": "high",
+      "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/supplemental-general-education/"
+    }
+  ],
+  "medPrereqs": [
+    {
+      "id": "prereq-biology",
+      "name": "Biology with lab (1 year)",
+      "category": "biology",
+      "typicalUncCourses": [
+        "BIOL 101 + 101L",
+        "BIOL 103",
+        "BIOL 202"
+      ],
+      "notes": "Most MD/DO schools expect ~1 year of intro biology with lab. UNC neuroscience majors satisfy the core via BIOL 101/101L, 103, 220.",
+      "confidence": "medium",
+      "source": "https://students-residents.aamc.org/applying-medical-school/preparing-medical-school-coursework"
+    },
+    {
+      "id": "prereq-gen-chem",
+      "name": "General Chemistry with lab (1 year)",
+      "category": "chemistry",
+      "typicalUncCourses": [
+        "CHEM 101 + 101L",
+        "CHEM 102 + 102L"
+      ],
+      "notes": "Standard MD/DO expectation.",
+      "confidence": "medium",
+      "source": "https://students-residents.aamc.org/applying-medical-school/preparing-medical-school-coursework"
+    },
+    {
+      "id": "prereq-orgo",
+      "name": "Organic Chemistry with lab (1 year)",
+      "category": "chemistry",
+      "typicalUncCourses": [
+        "CHEM 261",
+        "CHEM 262",
+        "CHEM 262L"
+      ],
+      "notes": "UNC intro organic sequence. CHEM 241/241L (analytical) is separate.",
+      "confidence": "medium",
+      "source": "https://students-residents.aamc.org/applying-medical-school/preparing-medical-school-coursework"
+    },
+    {
+      "id": "prereq-biochem",
+      "name": "Biochemistry",
+      "category": "chemistry",
+      "typicalUncCourses": [
+        "CHEM 430",
+        "BIOL 433"
+      ],
+      "notes": "Recommended by most schools and heavily tested on the MCAT. UNC neuro advising suggests CHEM 430 as a knowledge elective.",
+      "confidence": "medium",
+      "source": "https://students-residents.aamc.org/applying-medical-school/preparing-medical-school-coursework"
+    },
+    {
+      "id": "prereq-physics",
+      "name": "Physics with lab (1 year)",
+      "category": "physics",
+      "typicalUncCourses": [
+        "PHYS 114 + 115",
+        "PHYS 118 + 119"
+      ],
+      "notes": "Life-sciences (114/115) or calculus-based (118/119) sequence both accepted.",
+      "confidence": "medium",
+      "source": "https://students-residents.aamc.org/applying-medical-school/preparing-medical-school-coursework"
+    },
+    {
+      "id": "prereq-math-stats",
+      "name": "Math / Statistics",
+      "category": "math",
+      "typicalUncCourses": [
+        "MATH 231",
+        "STOR 155",
+        "PSYC 210"
+      ],
+      "notes": "Many schools want calculus and/or statistics; requirements vary by school.",
+      "confidence": "medium",
+      "source": "https://students-residents.aamc.org/applying-medical-school/preparing-medical-school-coursework"
+    },
+    {
+      "id": "prereq-english",
+      "name": "English / Writing (1 year)",
+      "category": "english",
+      "typicalUncCourses": [
+        "ENGL 105",
+        "ENGL 105i"
+      ],
+      "notes": "Most schools expect ~1 year of English/writing-intensive coursework.",
+      "confidence": "medium",
+      "source": "https://students-residents.aamc.org/applying-medical-school/preparing-medical-school-coursework"
+    },
+    {
+      "id": "prereq-psychology",
+      "name": "Psychology",
+      "category": "psychology",
+      "typicalUncCourses": [
+        "PSYC 101"
+      ],
+      "notes": "Common expectation and MCAT Psych/Soc content.",
+      "confidence": "medium",
+      "source": "https://students-residents.aamc.org/applying-medical-school/preparing-medical-school-coursework"
+    },
+    {
+      "id": "prereq-sociology",
+      "name": "Sociology",
+      "category": "sociology",
+      "typicalUncCourses": [
+        "SOCI 101"
+      ],
+      "notes": "Supports the MCAT Psych/Soc section; required by some schools.",
+      "confidence": "medium",
+      "source": "https://students-residents.aamc.org/applying-medical-school/preparing-medical-school-coursework"
+    }
+  ],
+  "majors": [
+    {
+      "major": "Neuroscience",
+      "degree": "B.S.",
+      "totalHours": "78-79",
+      "generalNotes": "Min cumulative GPA 2.0 overall and in major core; \u226545 credit hours at UNC; \u2265half of major core at UNC. Grade of C or better required in NSCI 175 and all Additional Requirement courses. Pre-med advising suggests adding BIOL 252/252L and CHEM 430 as electives.",
+      "requirements": [
+        {
+          "id": "nsci-core-intro",
+          "group": "Core",
+          "name": "Introduction to Neuroscience",
+          "courses": [
+            "NSCI 175"
+          ],
+          "credits": 3,
+          "notes": "Grade of C or better required.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
+        },
+        {
+          "id": "nsci-core-stats",
+          "group": "Core",
+          "name": "One statistics course",
+          "courses": [
+            "PSYC 210",
+            "STOR 120",
+            "STOR 155"
+          ],
+          "credits": 3,
+          "notes": "Select one.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
+        },
+        {
+          "id": "nsci-core-research-methods",
+          "group": "Core",
+          "name": "One research methods course",
+          "courses": [
+            "NSCI 270",
+            "NSCI 271",
+            "NSCI 272",
+            "NSCI 273",
+            "NSCI 274",
+            "NSCI 275",
+            "NSCI 277",
+            "NSCI 278",
+            "NSCI 279",
+            "PSYC 270"
+          ],
+          "credits": 3,
+          "notes": "NSCI 27* prioritized; PSYC 270 for PSYC double majors only.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
+        },
+        {
+          "id": "nsci-core-two-topics",
+          "group": "Core",
+          "name": "Select two topic courses",
+          "courses": [
+            "NSCI 221",
+            "NSCI 222",
+            "NSCI 225"
+          ],
+          "credits": 6,
+          "notes": "Select two.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
+        },
+        {
+          "id": "nsci-knowledge-electives",
+          "group": "Core",
+          "name": "Knowledge Electives",
+          "courses": [],
+          "credits": 6,
+          "notes": "Select \u22656 credit hours from the catalog's Knowledge Electives list (BIOL 205/240/425/431/433/440, etc.). Full list at source; enumerate later.",
+          "confidence": "medium",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
+        },
+        {
+          "id": "nsci-math-methods-electives",
+          "group": "Core",
+          "name": "Mathematics, Methods, Statistics Electives",
+          "courses": [],
+          "credits": 6,
+          "notes": "Select \u22656 credit hours from the catalog list. Enumerate later.",
+          "confidence": "medium",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
+        },
+        {
+          "id": "nsci-add-bio",
+          "group": "Additional (C or better)",
+          "name": "Biology",
+          "courses": [
+            "BIOL 101 + 101L",
+            "BIOL 103",
+            "BIOL 220"
+          ],
+          "credits": 10,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
+        },
+        {
+          "id": "nsci-add-chem",
+          "group": "Additional (C or better)",
+          "name": "Chemistry (gen + orgo)",
+          "courses": [
+            "CHEM 101 + 101L",
+            "CHEM 102 + 102L",
+            "CHEM 241",
+            "CHEM 241L",
+            "CHEM 261",
+            "CHEM 262",
+            "CHEM 262L"
+          ],
+          "credits": 19,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
+        },
+        {
+          "id": "nsci-add-comp",
+          "group": "Additional (C or better)",
+          "name": "Programming",
+          "courses": [
+            "COMP 110",
+            "COMP 116"
+          ],
+          "credits": 3,
+          "notes": "COMP 110 or COMP 116.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
+        },
+        {
+          "id": "nsci-add-math",
+          "group": "Additional (C or better)",
+          "name": "Calculus",
+          "courses": [
+            "MATH 231",
+            "MATH 232"
+          ],
+          "credits": 8,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
+        },
+        {
+          "id": "nsci-add-physics-1",
+          "group": "Additional (C or better)",
+          "name": "Physics I",
+          "courses": [
+            "PHYS 114",
+            "PHYS 118"
+          ],
+          "credits": 4,
+          "notes": "Select one.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
+        },
+        {
+          "id": "nsci-add-physics-2",
+          "group": "Additional (C or better)",
+          "name": "Physics II",
+          "courses": [
+            "PHYS 115",
+            "PHYS 119"
+          ],
+          "credits": 4,
+          "notes": "Select one.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
+        },
+        {
+          "id": "nsci-add-psyc",
+          "group": "Additional (C or better)",
+          "name": "General Psychology",
+          "courses": [
+            "PSYC 101"
+          ],
+          "credits": 3,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
+        }
+      ],
+      "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/",
+      "verificationStatus": "verified-live (Claude fetched catalog.unc.edu 2026-07-21)"
+    },
+    {
+      "major": "Biology",
+      "degree": "B.S.",
+      "requirements": [
+        {
+          "id": "biol-gateway",
+          "name": "Gateway",
+          "courses": [
+            "BIOL 101",
+            "BIOL 101L"
+          ],
+          "credits": 4,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/biology-major-bs/"
+        },
+        {
+          "id": "biol-fundamentals",
+          "name": "Fundamentals core",
+          "courses": [
+            "BIOL 103",
+            "BIOL 104",
+            "BIOL 105L"
+          ],
+          "credits": 9,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/biology-major-bs/"
+        },
+        {
+          "id": "biol-intermediate",
+          "name": "Intermediate core",
+          "courses": [
+            "Choose required intermediate biology core courses from the current catalog"
+          ],
+          "credits": null,
+          "notes": "The exact B.S. selection structure and organismal options should be parsed from the live catalog table before enforcing individual elective combinations.",
+          "confidence": "medium",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/biology-major-bs/"
+        },
+        {
+          "id": "biol-electives",
+          "name": "Upper-level biology electives and laboratory depth",
+          "courses": [
+            "Approved BIOL electives above 200"
+          ],
+          "credits": 14,
+          "notes": "At least two courses in the major must include a laboratory, excluding BIOL 101L and BIOL 105L. Apply catalog exclusions.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/biology-major-bs/"
+        },
+        {
+          "id": "biol-chem",
+          "name": "Chemistry support",
+          "courses": [
+            "CHEM 101",
+            "CHEM 101L",
+            "CHEM 102",
+            "CHEM 102L",
+            "CHEM 261"
+          ],
+          "credits": 11,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/biology-major-bs/"
+        },
+        {
+          "id": "biol-math",
+          "name": "Mathematics",
+          "courses": [
+            "MATH 231"
+          ],
+          "credits": 4,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/biology-major-bs/"
+        },
+        {
+          "id": "biol-two-support",
+          "name": "Two additional quantitative/science courses",
+          "courses": [
+            "Choose two from the catalog list, including options such as MATH 232 and PHYS 115"
+          ],
+          "credits": "6-8",
+          "notes": "The catalog list contains additional choices; enforce from a separately maintained approved-options table.",
+          "confidence": "medium",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/biology-major-bs/"
+        }
+      ],
+      "source": "https://catalog.unc.edu/undergraduate/programs-study/biology-major-bs/",
+      "verificationStatus": "chatgpt-sourced \u2014 spot-check against live catalog before trusting"
+    },
+    {
+      "major": "Chemistry",
+      "degree": "B.S.",
+      "requirements": [
+        {
+          "id": "chem-gateway",
+          "name": "Gateway",
+          "courses": [
+            "CHEM 101",
+            "CHEM 101L"
+          ],
+          "credits": 4,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/chemistry-major-bs/"
+        },
+        {
+          "id": "chem-core-sequence",
+          "name": "Chemistry core sequence",
+          "courses": [
+            "CHEM 102 or CHEM 102H",
+            "Required intermediate chemistry sequence per catalog"
+          ],
+          "credits": null,
+          "notes": "The catalog presents a highly structured sequence; this grouped record should be expanded into course-level records before a strict audit.",
+          "confidence": "medium",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/chemistry-major-bs/"
+        },
+        {
+          "id": "chem-advanced-electives",
+          "name": "Advanced chemistry electives",
+          "courses": [
+            "15 hours of CHEM 420 or higher and other approved options; CHEM 395 may count"
+          ],
+          "credits": 15,
+          "notes": "One laboratory course is required within the advanced elective work. CHEM 692H is excluded.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/chemistry-major-bs/"
+        },
+        {
+          "id": "chem-capstone-lab",
+          "name": "Capstone laboratory",
+          "courses": [
+            "CHEM 520L",
+            "CHEM 530L",
+            "CHEM 541L",
+            "CHEM 550L",
+            "CHEM 551L"
+          ],
+          "credits": 2,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/chemistry-major-bs/"
+        },
+        {
+          "id": "chem-biology",
+          "name": "Biology support",
+          "courses": [
+            "BIOL 101"
+          ],
+          "credits": 3,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/chemistry-major-bs/"
+        },
+        {
+          "id": "chem-math",
+          "name": "Mathematics support",
+          "courses": [
+            "MATH 232",
+            "MATH 233",
+            "MATH 383"
+          ],
+          "credits": 11,
+          "notes": "Placement credit for MATH 232, 233, or 383 does not satisfy the chemistry-major requirement.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/chemistry-major-bs/"
+        },
+        {
+          "id": "chem-physics",
+          "name": "Calculus-based physics",
+          "courses": [
+            "PHYS 118",
+            "PHYS 119"
+          ],
+          "credits": 8,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/chemistry-major-bs/"
+        },
+        {
+          "id": "chem-total",
+          "name": "Published major total",
+          "courses": [],
+          "credits": 72,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/chemistry-major-bs/"
+        }
+      ],
+      "source": "https://catalog.unc.edu/undergraduate/programs-study/chemistry-major-bs/",
+      "verificationStatus": "chatgpt-sourced \u2014 spot-check against live catalog before trusting"
+    },
+    {
+      "major": "Psychology",
+      "degree": "B.S.",
+      "requirements": [
+        {
+          "id": "psyc-gateway",
+          "name": "Gateway",
+          "courses": [
+            "PSYC 101"
+          ],
+          "credits": 3,
+          "notes": "Must be completed with a grade of C or better.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/psychology-major-bs/"
+        },
+        {
+          "id": "psyc-stats",
+          "name": "Statistics",
+          "courses": [
+            "PSYC 210"
+          ],
+          "credits": 3,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/psychology-major-bs/"
+        },
+        {
+          "id": "psyc-methods",
+          "name": "Research methods",
+          "courses": [
+            "PSYC 270"
+          ],
+          "credits": 3,
+          "notes": "Approved substitutions apply for certain double majors, including NSCI 27* for Psychology/Neuroscience double majors.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/psychology-major-bs/"
+        },
+        {
+          "id": "psyc-program-areas",
+          "name": "Psychology program-area breadth",
+          "courses": [
+            "Approved courses below 400 across required program areas"
+          ],
+          "credits": null,
+          "notes": "NSCI 225 may satisfy behavioral-neuroscience or cognitive breadth, but not both.",
+          "confidence": "medium",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/psychology-major-bs/"
+        },
+        {
+          "id": "psyc-allied-science",
+          "name": "Allied science coursework",
+          "courses": [
+            "Approved allied-science courses"
+          ],
+          "credits": null,
+          "notes": "At least one allied-science selection must include the required laboratory component; a 3-credit course plus matching 1-credit lab may satisfy a 4-credit requirement.",
+          "confidence": "medium",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/psychology-major-bs/"
+        },
+        {
+          "id": "psyc-biology",
+          "name": "Biology foundation",
+          "courses": [
+            "BIOL 101",
+            "BIOL 101L"
+          ],
+          "credits": 4,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/psychology-major-bs/"
+        },
+        {
+          "id": "psyc-quant",
+          "name": "Additional quantitative reasoning",
+          "courses": [
+            "One approved non-PSYC/NSCI FC-QUANT course not used elsewhere"
+          ],
+          "credits": "3-4",
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/psychology-major-bs/"
+        },
+        {
+          "id": "psyc-dept-cap",
+          "name": "Department credit cap",
+          "courses": [
+            "PSYC and NSCI combined"
+          ],
+          "credits": 45,
+          "notes": "No more than 45 PSYC/NSCI hours may be submitted toward the B.S.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/psychology-major-bs/"
+        }
+      ],
+      "source": "https://catalog.unc.edu/undergraduate/programs-study/psychology-major-bs/",
+      "verificationStatus": "chatgpt-sourced \u2014 spot-check against live catalog before trusting"
+    },
+    {
+      "major": "Exercise and Sport Science",
+      "degree": "B.S.",
+      "requirements": [
+        {
+          "id": "exss-anatomy",
+          "name": "Human anatomy and physiology",
+          "courses": [
+            "EXSS 155",
+            "EXSS 256"
+          ],
+          "credits": 6,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/exercise-sport-science-major-bs/"
+        },
+        {
+          "id": "exss-foundations",
+          "name": "Exercise and sport science foundation",
+          "courses": [
+            "EXSS 180",
+            "EXSS 181",
+            "EXSS 273",
+            "EXSS 288"
+          ],
+          "credits": 12,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/exercise-sport-science-major-bs/"
+        },
+        {
+          "id": "exss-performance",
+          "name": "Human performance core",
+          "courses": [
+            "EXSS 376",
+            "EXSS 380",
+            "EXSS 385"
+          ],
+          "credits": 10,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/exercise-sport-science-major-bs/"
+        },
+        {
+          "id": "exss-biology",
+          "name": "Biology support",
+          "courses": [
+            "BIOL 101",
+            "BIOL 101L"
+          ],
+          "credits": 4,
+          "notes": "",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/exercise-sport-science-major-bs/"
+        },
+        {
+          "id": "exss-bs-difference",
+          "name": "B.S.-specific additional science and quantitative work",
+          "courses": [
+            "See current EXSS B.S. catalog table"
+          ],
+          "credits": null,
+          "notes": "Search indexing did not expose the complete 2026-27 B.S. table. Do not enforce B.S.-specific additions from this grouped record until the live table is manually verified.",
+          "confidence": "low",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/exercise-sport-science-major-bs/"
+        }
+      ],
+      "source": "https://catalog.unc.edu/undergraduate/programs-study/exercise-sport-science-major-bs/",
+      "verificationStatus": "chatgpt-sourced \u2014 spot-check against live catalog before trusting"
+    },
+    {
+      "major": "Nutrition",
+      "degree": "B.S.P.H.",
+      "requirements": [
+        {
+          "id": "nutr-admission",
+          "name": "Gillings admission",
+          "courses": [
+            "Competitive application to the Nutrition B.S.P.H."
+          ],
+          "credits": 0,
+          "notes": "Students typically apply during sophomore year for entry in junior year. Requirements are tied to the catalog year of admission to Gillings.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/nutrition-major-bsph/"
+        },
+        {
+          "id": "nutr-grade-rule",
+          "name": "Minimum grades",
+          "courses": [
+            "All prerequisite, core, and additional courses"
+          ],
+          "credits": 0,
+          "notes": "A grade of C, not C-, or better is required.",
+          "confidence": "high",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/nutrition-major-bsph/"
+        },
+        {
+          "id": "nutr-public-health-core",
+          "name": "Public health core",
+          "courses": [
+            "SPHG 351",
+            "SPHG 352",
+            "EPID 600",
+            "approved biostatistics course"
+          ],
+          "credits": 13,
+          "notes": "The exact statistics option and nutrition-specific sequencing must be checked in the current Nutrition B.S.P.H. table.",
+          "confidence": "medium",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/nutrition-major-bsph/"
+        },
+        {
+          "id": "nutr-major-core",
+          "name": "Nutrition science core",
+          "courses": [
+            "NUTR courses specified by the current catalog"
+          ],
+          "credits": null,
+          "notes": "Search indexing did not expose the full 2026-27 Nutrition B.S.P.H. requirement table. This record intentionally does not invent course numbers.",
+          "confidence": "low",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/nutrition-major-bsph/"
+        },
+        {
+          "id": "nutr-prereqs",
+          "name": "Science prerequisites",
+          "courses": [
+            "Biology, chemistry, organic chemistry, physiology, and quantitative prerequisites as listed by Gillings"
+          ],
+          "credits": null,
+          "notes": "Verify the current admission prerequisite table before implementing an automated audit.",
+          "confidence": "low",
+          "source": "https://catalog.unc.edu/undergraduate/programs-study/nutrition-major-bsph/"
+        }
+      ],
+      "source": "https://catalog.unc.edu/undergraduate/programs-study/nutrition-major-bsph/",
+      "verificationStatus": "chatgpt-sourced \u2014 spot-check against live catalog before trusting"
+    }
+  ]
+}

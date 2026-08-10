@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sauce — the card and the feed</title>
+<!--
+  ============================================================================
+  ROUNDS - ONE SYSTEM, TWO DOORS   (rebuild 3, Aug 2026)
+  ============================================================================
+  Status: DRAFT. Board: specifications/06-knowledge-delivery-board.md
+  NOT SPECCED - Sauce has no spec and HQ<->Atlas transport is open (02 §98).
+
+  REBUILDS 1 AND 2 WERE REJECTED. What was wrong, and what changed here:
+
+  1. FLAT MINIMALISM. 04 §0 directive 1: "the target is a HYBRID - modern
+     polish + layered depth + bold Baloo, kept clean - NOT flat minimalism.
+     'Make it flat/plain' is a DEFECT." I had read §10 (anti-patterns) and
+     stopped, never opening §0c, the LOCKED north star.
+     FIXED: banner hero, glass over it, gradient-tinted panels, panels
+     nested inside cards, real shadows, hover lift on everything.
+  2. NO BANNER. §0c: "every tab gets a banner hero, not just Overview."
+     Both earlier drafts drew bare cards in a void.
+     FIXED: frame 1 sits under the Overview hero; frame 2 has its own.
+  3. KIND LABELS. Andy: "there's just too much labeling... separating by
+     tip and fact and all that is not necessary, users just want to read
+     info." And he had already killed a taxonomy in the board.
+     FIXED: THE TYPE STAYS IN THE DATA - it drives the shape and the
+     filters - AND IS NEVER PRINTED. A quote already looks like a quote.
+  4. TIMELINE-LOOKALIKE. v1 was a vertical stack of identical bordered
+     cards, which is also 04 §10's "rows of identical icon + title +
+     blurb cards". FIXED in v2 and kept: full-width, three across.
+
+  GLASS JUDGMENT (04 §0c, and it is a judgment, not "glass everywhere")
+   · Hero cards floating over the banner -> FULL FROSTED GLASS.
+   · Sauce itself sits on a solid content area -> SOLID WITH DEPTH.
+     Its richness comes from a gradient tint + tinted border + NESTED
+     panels + shadow, exactly how the approved .smart block is built.
+     Blur there would muddy text and buy nothing.
+
+  THE THREE REGISTERS, DIFFERENTIATED BY SHAPE ALONE
+    instruction -> icon chip + sentence   (borrows .rec from Smart actions)
+    statement   -> left rule, no chip, denser
+    quote       -> display Baloo, quote marks, attribution
+  If they ever need a label to be told apart, the shapes have failed.
+
+  THE PILLAR CHIP IS THE MECHANISM. Andy: "it should show up in a page I
+  always see... I would then be motivated or reminded to access the LOR
+  tab." ROUNDS IS A REASON TO GO SOMEWHERE, NOT A REWARD FOR BEING THERE.
+  Shuffle across every pillar, weighted toward the ones opened least
+  (board §5b). The weight is invisible; copy never mentions it.
+
+  DELIBERATELY EXCLUDED - do not add back
+   · Unread counts, badges, streaks. "All it takes is for it to be there."
+   · Kind labels (see 3).
+   · Likes/comments/other students - deferred.md N-1.
+   · The word "feed" in the UI.
+   · Glass on the dense list - 04 §0c says solid there.
+
+  OPEN: placement (drawn as a full-width row; the bento already has 8
+  blocks) · the name "Sauce" · blurbs per day (3 drawn).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --pri:#6fb3de; --pri-ink:#0f2330; --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f; --star:#e7b06a;
+  --gpa:#4b9cd3; --mcat:#8c7bd4; --shadow:#e0a458; --volunteer:#5fb49c;
+  --activities:#e08b9b; --clinical:#6fae6e; --research:#c98ac9; --letters:#d59b6a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.frame{width:1400px;margin:0 auto 30px;padding:24px;background:var(--bg);border-radius:20px}
+.flabel{width:1400px;margin:0 auto 10px;padding:0 26px;font-family:'Baloo 2';font-weight:800;font-size:12px;
+  color:var(--dim);text-transform:uppercase;letter-spacing:.09em}
+
+/* ── HERO BANNER — every surface gets one (04 §0c) ───────────────────── */
+.hero{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--bd);
+  padding:22px;display:flex;flex-direction:column;justify-content:space-between;
+  background:
+    radial-gradient(150px 150px at 84% 22%,rgba(255,214,150,.5),transparent 70%),
+    radial-gradient(280px 190px at 16% 118%,rgba(111,174,110,.32),transparent 70%),
+    linear-gradient(120deg,#3b2f4a 0%,#7a4f5a 40%,#c98a5e 72%,#e7b06a 100%)}
+.hero.tall{height:190px}
+.hill{position:absolute;left:0;right:0;bottom:-2px;height:95px;
+  background:linear-gradient(180deg,transparent,rgba(28,20,16,.6));border-radius:50% 50% 0 0/100% 100% 0 0}
+.hdate{position:relative;z-index:2;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.8)}
+.hgreet{position:relative;z-index:2;font-family:'Baloo 2';font-weight:800;font-size:34px;color:#fff;
+  letter-spacing:-.5px;margin-top:4px;text-shadow:0 3px 16px rgba(0,0,0,.4)}
+.hsub{position:relative;z-index:2;font-size:13.5px;font-weight:700;color:rgba(255,255,255,.72);margin-top:5px}
+.hrow{position:relative;z-index:2;display:flex;gap:10px;margin-top:auto;align-items:center}
+
+/* GLASS — floating over the banner ONLY (04 §0c) */
+.glass{background:rgba(26,20,17,.42);backdrop-filter:blur(18px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.15);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 20px 44px -24px rgba(0,0,0,.65);border-radius:13px}
+.gchip{padding:8px 15px;font-family:'Baloo 2';font-weight:700;font-size:13px;color:rgba(255,255,255,.72);cursor:pointer;
+  transition:.15s cubic-bezier(.16,1,.3,1)}
+.gchip:hover{color:#fff}
+.gchip.on{background:#fff;color:#17222c;font-weight:800;border-color:transparent;border-radius:13px}
+.gstat{padding:11px 17px;display:flex;gap:20px;align-items:center}
+.gs b{display:block;font-family:'Baloo 2';font-weight:800;font-size:21px;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1}
+.gs span{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.62)}
+
+/* ── SOLID PANELS with depth (04 §0c: solid on content areas) ────────── */
+.bento{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:16px}
+.c4{grid-column:span 4}.c12{grid-column:span 12}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;
+  box-shadow:0 10px 26px -14px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden}
+.hd{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 10px;gap:10px}
+.ti{font-family:'Baloo 2';font-weight:800;font-size:18px}
+.sub{font-size:12.5px;color:var(--dim);font-weight:700}
+.bd{padding:4px 18px 18px;display:flex;flex-direction:column;gap:11px;flex:1}
+.lk{font-family:'Baloo 2';font-weight:800;font-size:12.5px;color:var(--pri);cursor:pointer}
+.bsm{border-radius:9px;padding:6px 13px;font-family:'Baloo 2';font-weight:700;font-size:12.5px;
+  border:1px solid var(--bd);background:var(--muted);color:var(--mut);cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;transition:.15s cubic-bezier(.16,1,.3,1)}
+.bsm svg{width:13px;height:13px}
+.bsm:hover{color:var(--fg);transform:translateY(-1px);box-shadow:0 8px 16px -8px rgba(0,0,0,.6)}
+.ghost{opacity:.22}
+
+/* the Sauce block — tinted like the approved .smart panel, not plain */
+.sauce{background:linear-gradient(180deg,color-mix(in srgb,var(--pri) 8%,var(--card)),var(--card) 62%);
+  border-color:color-mix(in srgb,var(--pri) 24%,var(--bd))}
+
+/* three NESTED panels inside the card — this is the layering §0c asks for */
+.strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.b{background:var(--muted);border:1px solid var(--bd);border-radius:13px;padding:15px 16px;
+  display:flex;flex-direction:column;min-width:0;position:relative;overflow:hidden;
+  transition:.15s cubic-bezier(.16,1,.3,1);cursor:pointer}
+.b::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--acc);
+  opacity:0;transition:.15s cubic-bezier(.16,1,.3,1)}
+.b:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--acc) 45%,var(--bd));
+  box-shadow:0 18px 34px -16px rgba(0,0,0,.75),0 0 22px -6px color-mix(in srgb,var(--acc) 40%,transparent)}
+.b:hover::after{opacity:1;box-shadow:0 0 14px color-mix(in srgb,var(--acc) 75%,transparent)}
+.foot{display:flex;align-items:center;gap:9px;margin-top:auto;padding-top:13px}
+.tag{font-family:'Baloo 2';font-weight:800;font-size:10.5px;border-radius:999px;padding:2px 9px;
+  background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc)}
+.src{font-size:11.5px;font-weight:700;color:var(--dim);margin-left:auto}
+.sv{width:27px;height:27px;border-radius:8px;display:grid;place-items:center;color:var(--dim);cursor:pointer;
+  transition:.15s cubic-bezier(.16,1,.3,1)}
+.sv:hover{background:var(--card);color:var(--mut)}
+.sv.on{color:var(--star)}
+.sv.on svg{fill:var(--star)}
+.sv svg{width:15px;height:15px}
+
+/* SHAPE 1 — instruction: icon chip + sentence */
+.b.ins .body{display:flex;gap:12px}
+.spk{width:34px;height:34px;border-radius:11px;flex-shrink:0;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--acc) 26%,transparent);color:color-mix(in srgb,var(--acc) 55%,#fff);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+.spk svg{width:18px;height:18px}
+.b.ins p{font-size:13.5px;font-weight:600;line-height:1.5}
+
+/* SHAPE 2 — statement: left rule, no chip, denser */
+.b.st .body{border-left:2px solid color-mix(in srgb,var(--acc) 55%,transparent);padding-left:14px}
+.b.st p{font-size:14px;font-weight:700;line-height:1.48}
+
+/* SHAPE 3 — quote: display type. the punctuation is the distinction. */
+.b.qt{background:linear-gradient(160deg,color-mix(in srgb,var(--star) 9%,var(--muted)),var(--muted) 60%)}
+.b.qt p{font-family:'Baloo 2';font-weight:700;font-size:17.5px;line-height:1.32;color:var(--fg);letter-spacing:-.2px}
+.b.qt .by{font-family:'Baloo 2';font-weight:700;font-size:12.5px;color:var(--mut);margin-top:10px}
+
+/* ── frame 2: the fuller view — rows, not a card stack ───────────────── */
+.filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:2px 0 6px}
+.chip{background:var(--muted);border:1px solid var(--bd);border-radius:9px;padding:7px 14px;
+  font-family:'Baloo 2';font-weight:700;font-size:13px;color:var(--mut);cursor:pointer;
+  transition:.15s cubic-bezier(.16,1,.3,1)}
+.chip:hover{color:var(--fg);transform:translateY(-1px)}
+.chip.on{background:var(--card);color:var(--fg);font-weight:800;box-shadow:0 4px 10px -4px rgba(0,0,0,.55)}
+.cnt{margin-left:auto;font-size:12px;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums}
+.grp{display:flex;align-items:center;gap:9px;padding:14px 2px 6px}
+.grpl{font-family:'Baloo 2';font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+  display:flex;align-items:center;gap:6px;color:var(--dim)}
+.grpl svg{width:12px;height:12px}
+.grpline{flex:1;height:1px;background:var(--bd)}
+.fr{display:flex;gap:14px;padding:15px 12px;border-radius:12px;align-items:flex-start;
+  transition:.15s cubic-bezier(.16,1,.3,1);cursor:pointer;border:1px solid transparent}
+.fr + .fr{border-top:1px solid var(--bd);border-radius:12px}
+.fr:hover{background:var(--muted);border-color:var(--bd);border-top-color:var(--bd);
+  transform:translateY(-1px);box-shadow:0 12px 24px -14px rgba(0,0,0,.7)}
+.fr .main{flex:1;min-width:0}
+.fr.ins p{font-size:13.5px;font-weight:600;line-height:1.5}
+.fr.st .main{border-left:2px solid color-mix(in srgb,var(--acc) 55%,transparent);padding-left:14px}
+.fr.st p{font-size:14px;font-weight:700;line-height:1.48}
+.fr.qt p{font-family:'Baloo 2';font-weight:700;font-size:17.5px;line-height:1.32;letter-spacing:-.2px}
+.fr.qt .by{font-family:'Baloo 2';font-weight:700;font-size:12.5px;color:var(--mut);margin-top:8px}
+.frfoot{display:flex;align-items:center;gap:9px;margin-top:10px}
+.frfoot .src{margin-left:0}
+
+.note{margin-top:20px;border:1px dashed var(--bd);border-radius:13px;padding:15px 18px;
+  font-size:13px;color:var(--dim);font-weight:600;line-height:1.62}
+.note b{color:var(--mut);font-weight:800}
+.note i{color:var(--mut);font-style:italic}
+</style>
+</head>
+<body>
+
+<p class="flabel">Frame 1 — door one: Sauce under the Overview hero. Three registers, no labels.</p>
+<div class="frame">
+
+  <div class="hero tall">
+    <div class="hill"></div>
+    <div>
+      <div class="hdate">Thursday, 6 August · 9:12 AM</div>
+      <div class="hgreet">Good to see you again, Eric!</div>
+    </div>
+    <div class="hrow">
+      <div class="glass gstat">
+        <div class="gs"><b>3.71</b><span>Cumulative GPA</span></div>
+        <div class="gs"><b>184</b><span>Clinical hours</span></div>
+        <div class="gs"><b>62</b><span>Days to MCAT</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bento">
+    <div class="card c4 ghost" style="height:70px"><div class="hd"><div class="ti">Quick access</div></div></div>
+    <div class="card c4 ghost" style="height:70px"><div class="hd"><div class="ti">Quarterly goals</div></div></div>
+    <div class="card c4 ghost" style="height:70px"><div class="hd"><div class="ti">Recent activity</div></div></div>
+
+    <div class="card sauce c12">
+      <div class="hd">
+        <div>
+          <div class="ti">Sauce</div>
+          <div class="sub">Thursday, 6 August</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="bsm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
+            Shuffle
+          </button>
+          <span class="lk">See all →</span>
+        </div>
+      </div>
+
+      <div class="bd">
+        <div class="strip">
+
+          <div class="b ins" style="--acc:var(--letters)">
+            <div class="body">
+              <span class="spk">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+              </span>
+              <p>Give your letter writers your CV and a draft personal statement when you ask. They write faster, and more specifically, with it.</p>
+            </div>
+            <div class="foot">
+              <span class="tag">Letters</span>
+              <span class="src">Atlas</span>
+              <span class="sv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></span>
+            </div>
+          </div>
+
+          <div class="b st" style="--acc:var(--letters)">
+            <div class="body">
+              <p>Your letters must be received before AMCAS will verify your application.</p>
+            </div>
+            <div class="foot">
+              <span class="tag">Letters</span>
+              <span class="src">AAMC · checked Aug 2026</span>
+              <span class="sv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></span>
+            </div>
+          </div>
+
+          <div class="b qt" style="--acc:var(--star)">
+            <div class="body">
+              <p>“Twenty years is going to pass either way. Might as well be a doctor at the end of it.”</p>
+              <div class="by">— @premedwithsam</div>
+            </div>
+            <div class="foot">
+              <span class="src">Atlas</span>
+              <span class="sv on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="card c12 ghost" style="height:70px"><div class="hd"><div class="ti">Premed roadmap</div></div></div>
+  </div>
+</div>
+
+<p class="flabel">Frame 2 — door two: /overview/sauce. Its own banner; filters float on glass; rows, not cards.</p>
+<div class="frame">
+
+  <div class="hero" style="height:172px">
+    <div class="hill"></div>
+    <div>
+      <div class="hdate">Sauce</div>
+      <div class="hgreet" style="font-size:30px">Everything you have been shown</div>
+      <div class="hsub">Nothing expires. Skipping a day costs you nothing.</div>
+    </div>
+    <div class="hrow">
+      <div class="glass" style="display:flex;padding:4px;gap:3px">
+        <span class="gchip on">All</span>
+        <span class="gchip">Saved</span>
+        <span class="gchip">Letters</span>
+        <span class="gchip">MCAT</span>
+        <span class="gchip">Clinical</span>
+        <span class="gchip">Research</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bento">
+    <div class="card c12">
+      <div class="bd" style="padding-top:14px">
+
+        <div class="filters">
+          <span class="cnt">142 shown · 9 saved</span>
+        </div>
+
+        <div class="grp" style="padding-top:0">
+          <span class="grpl" style="color:var(--star)">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            Saved
+          </span>
+          <span class="grpline"></span>
+        </div>
+
+        <div>
+          <div class="fr qt" style="--acc:var(--star)">
+            <div class="main">
+              <p>“Twenty years is going to pass either way. Might as well be a doctor at the end of it.”</p>
+              <div class="by">— @premedwithsam</div>
+              <div class="frfoot"><span class="src">Atlas · seen today</span></div>
+            </div>
+            <span class="sv on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></span>
+          </div>
+
+          <div class="fr ins" style="--acc:var(--mcat)">
+            <span class="spk">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+            </span>
+            <div class="main">
+              <p>Take a full-length practice exam at your real test start time. Most people never practise being awake and sharp at 7am.</p>
+              <div class="frfoot"><span class="tag">MCAT</span><span class="src">Atlas · seen yesterday</span></div>
+            </div>
+            <span class="sv on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></span>
+          </div>
+        </div>
+
+        <div class="grp">
+          <span class="grpl">Yesterday</span>
+          <span class="grpline"></span>
+        </div>
+
+        <div>
+          <div class="fr st" style="--acc:var(--clinical)">
+            <div class="main">
+              <p>Scribing counts as clinical experience. Shadowing does not, because you are observing rather than contributing to care.</p>
+              <div class="frfoot"><span class="tag">Clinical</span><span class="src">AAMC · checked Aug 2026</span></div>
+            </div>
+            <span class="sv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></span>
+          </div>
+
+          <div class="fr ins" style="--acc:var(--research)">
+            <span class="spk">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+            </span>
+            <div class="main">
+              <p>Ask your PI what authorship would look like before the project ends, not after. The conversation is much easier early.</p>
+              <div class="frfoot"><span class="tag">Research</span><span class="src">Atlas</span></div>
+            </div>
+            <span class="sv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></span>
+          </div>
+        </div>
+
+        <div class="note">
+          <b>No labels, on purpose.</b> An instruction, a statement of fact, and someone else's words are told apart by <i>shape</i> — a chip and a sentence, a ruled statement, display type in quotation marks. Andy: <i>“users just want to read info.”</i> The type still exists in the record; it drives the shape and the filters, and is never printed.
+          <br><br>
+          <b>The pillar chip is the way in.</b> Selection shuffles across every pillar, weighted toward the ones you open least, so the material you are avoiding is the material most likely to surface. The weight is invisible and the copy never mentions it — no <i>“you haven't opened Letters in a month.”</i> It just shows up.
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

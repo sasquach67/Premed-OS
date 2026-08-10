@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<!--
+  MOCKUP — Calendar overlay, FULL SEQUENCE (00-product-shell §7.9). NOT FILED YET.
+  Five steps, as a user actually experiences it:
+    1. On Overview. Week strip panel visible. Calendar toggle in global top bar.
+    2. Navigated away to Academics. Toggle still there.
+    3. Toggle pressed → overlay opens ON TOP. Underlying page stays visible behind the veil.
+    4. Clicked an event → overlay closes, deep-links to the owner.
+    5. Esc from step 3 instead → returns to exactly where you were. Nothing lost.
+  Read-mostly: no create, no drag. Owned by Overview, reachable from anywhere.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Calendar overlay — the sequence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f;
+  --cat:#4b9cd3; --mcat:#8c7bd4; --clinical:#6fae6e; --ext:#6b6459;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#171512;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;padding:24px;min-width:1300px}
+h1,h2,h3,.btn,.chip,.seg,.dow,.num,.step-n,.kick,.nav-i,.pt{font-family:'Baloo 2',system-ui,sans-serif}
+.num{font-variant-numeric:tabular-nums}
+.wrap{max-width:1240px;margin:0 auto}
+
+.head{margin-bottom:22px}
+.head h1{font-size:24px;font-weight:800;letter-spacing:-.3px}
+.head p{color:var(--mut);font-size:13px;margin-top:6px;max-width:860px;line-height:1.55}
+.head b{color:var(--fg)}
+
+/* step scaffolding */
+.step{margin-bottom:26px}
+.step-h{display:flex;align-items:center;gap:11px;margin-bottom:9px}
+.step-n{width:24px;height:24px;border-radius:7px;background:var(--cat);color:#0f1c26;
+  font-weight:800;font-size:12.5px;display:flex;align-items:center;justify-content:center;flex:none}
+.step-t{font-family:'Baloo 2';font-weight:800;font-size:15px}
+.step-s{font-size:12px;color:var(--dim);font-weight:700}
+.arrow{text-align:center;color:var(--dim);font-size:18px;margin:-14px 0 10px}
+
+/* app frame */
+.app{background:var(--bg);border:1px solid var(--bd);border-radius:14px;overflow:hidden;position:relative}
+.bar{display:flex;align-items:center;gap:11px;background:var(--card);border-bottom:1px solid var(--bd);padding:8px 13px}
+.logo{font-family:'Baloo 2';font-weight:800;font-size:13px}
+.crumbs{font-size:11.5px;color:var(--mut);font-weight:700}
+.sp{flex:1}
+.ic{width:27px;height:27px;border-radius:7px;background:var(--muted);border:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:12px}
+.ic.hi{background:var(--cat);border-color:var(--cat);color:#0f1c26}
+.ic.ring{box-shadow:0 0 0 3px rgba(75,156,211,.3)}
+.nav{display:flex;gap:16px;padding:8px 13px;border-bottom:1px solid var(--bd);background:var(--card)}
+.nav-i{font-size:12px;font-weight:700;color:var(--dim);position:relative;padding-bottom:7px;margin-bottom:-8px}
+.nav-i.on{color:var(--fg);font-weight:800}
+.nav-i.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2.5px;border-radius:3px 3px 0 0;background:var(--cat)}
+
+.page{padding:14px;min-height:190px}
+.bento{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pan{background:var(--card);border:1px solid var(--bd);border-radius:11px;padding:11px 12px}
+.pt{font-size:12px;font-weight:800}
+.ps{font-size:10.5px;color:var(--dim);font-weight:700;margin-top:3px}
+.pan.wide{grid-column:span 3}
+.pan.hl{border-color:var(--cat);box-shadow:0 0 0 1px rgba(75,156,211,.3)}
+
+/* mini week strip inside Overview panel */
+.strip{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:9px}
+.sd{background:var(--muted);border:1px solid var(--bd);border-radius:7px;padding:5px 6px;min-height:52px}
+.sd.today{border-color:var(--cat);background:color-mix(in srgb,var(--cat) 8%,var(--muted))}
+.sd .n{font-size:9.5px;font-weight:800;font-family:'Baloo 2';color:var(--dim)}
+.sd.today .n{color:var(--cat)}
+.sd .b{height:4px;border-radius:2px;background:var(--c,var(--cat));margin-top:4px}
+.expand{font-size:10.5px;color:var(--cat);font-weight:800;font-family:'Baloo 2';margin-top:8px;display:inline-block}
+
+/* overlay */
+.veil{position:absolute;inset:0;background:rgba(8,7,6,.62);backdrop-filter:blur(1.5px);
+  display:flex;align-items:flex-start;justify-content:center;padding:34px 22px 22px}
+.sheet{background:var(--bg);border:1px solid var(--bd);border-radius:13px;overflow:hidden;width:100%;
+  box-shadow:0 28px 60px -24px rgba(0,0,0,.95)}
+.sh-top{display:flex;align-items:center;gap:10px;padding:10px 13px;border-bottom:1px solid var(--bd);background:var(--card)}
+.sh-t{font-family:'Baloo 2';font-weight:800;font-size:13.5px}
+.rng{font-size:11px;color:var(--mut);font-weight:700}
+.segw{display:flex;gap:3px;background:var(--muted);border:1px solid var(--bd);border-radius:999px;padding:2px}
+.seg{font-weight:800;font-size:10.5px;padding:3px 11px;border-radius:999px;color:var(--mut)}
+.seg.on{background:#fff;color:#17222c}
+.esc{font-size:10px;color:var(--dim);font-weight:700}
+
+.wk{display:grid;grid-template-columns:36px repeat(7,1fr)}
+.dowr{display:grid;grid-template-columns:36px repeat(7,1fr);border-bottom:1px solid var(--bd);background:var(--card)}
+.dow{padding:5px 4px;text-align:center;font-size:9px;font-weight:800;color:var(--mut)}
+.dow .d{display:block;font-size:12px;color:var(--fg)}
+.dow.today{background:color-mix(in srgb,var(--cat) 9%,transparent)}
+.dow.today .d{color:var(--cat)}
+.hcol{border-right:1px solid var(--bd)}
+.h{height:26px;border-bottom:1px solid rgba(255,255,255,.04);font-size:8px;color:var(--dim);text-align:right;padding-right:4px;font-weight:700}
+.c{border-right:1px solid rgba(255,255,255,.05);position:relative}
+.c.today{background:color-mix(in srgb,var(--cat) 4%,transparent)}
+.s{height:26px;border-bottom:1px solid rgba(255,255,255,.04)}
+.e{position:absolute;left:2px;right:2px;border-radius:5px;padding:2px 4px;overflow:hidden;
+  border-left:2.5px solid var(--c,var(--cat));background:color-mix(in srgb,var(--c,var(--cat)) 17%,var(--card))}
+.e-t{font-size:9px;font-weight:800;font-family:'Baloo 2';line-height:1.2}
+.e-m{font-size:8px;color:var(--mut);font-weight:700}
+.e.m{--c:var(--mcat)} .e.cl{--c:var(--clinical)} .e.w{--c:var(--warning)}
+.e.x{--c:var(--ext);border-left-style:dashed;background:var(--muted)}
+.e.x .e-t{color:var(--mut)}
+.e.click{box-shadow:0 0 0 2px #fff, 0 0 16px rgba(255,255,255,.35);z-index:9}
+.due{display:grid;grid-template-columns:36px repeat(7,1fr);border-bottom:1px solid var(--bd);background:var(--card)}
+.dl{font-size:7.5px;color:var(--dim);font-weight:800;text-align:right;padding:5px 4px 0 0}
+.dc{padding:4px 3px;border-left:1px solid rgba(255,255,255,.05);min-height:24px}
+.dp{display:block;border-radius:4px;padding:2px 4px;font-size:8px;font-weight:800;font-family:'Baloo 2';
+  border-left:2.5px solid var(--c,var(--warning));background:color-mix(in srgb,var(--c,var(--warning)) 18%,var(--card));margin-bottom:2px}
+.dp.ex{--c:var(--danger)}
+
+/* cursor + callout */
+.cur{position:absolute;width:15px;height:15px;pointer-events:none;z-index:20}
+.cur::before{content:"";position:absolute;inset:0;border-radius:50%;background:#fff;box-shadow:0 0 0 5px rgba(255,255,255,.22)}
+.callout{position:absolute;z-index:21;background:#fff;color:#17222c;border-radius:8px;padding:6px 10px;
+  font-family:'Baloo 2';font-weight:800;font-size:10.5px;white-space:nowrap;box-shadow:0 10px 24px -8px rgba(0,0,0,.7)}
+.callout::after{content:"";position:absolute;width:7px;height:7px;background:#fff;transform:rotate(45deg)}
+.callout.up::after{top:-3px;left:14px}
+.callout.dn::after{bottom:-3px;left:14px}
+
+.kick{font-size:9px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+.note{margin-top:22px;background:var(--card);border:1px solid var(--bd);border-left:3px solid var(--cat);border-radius:12px;padding:14px 17px}
+.note h4{font-size:13.5px;font-weight:800;margin-bottom:8px}
+.note p{font-size:12.5px;color:var(--mut);line-height:1.65}
+.note p+p{margin-top:7px}
+.note b{color:var(--fg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="head">
+  <h1>Calendar overlay — the sequence</h1>
+  <p>Five steps as a user actually experiences it. <b>Owned by Overview</b> (it spans every pillar), <b>reachable from the global top bar</b> (so checking your week never costs you your place).</p>
+</div>
+
+<!-- ================= STEP 1 ================= -->
+<div class="step">
+  <div class="step-h"><span class="step-n">1</span><span class="step-t">You're on Overview</span><span class="step-s">the week strip is a panel here — this is the calendar's home</span></div>
+  <div class="app">
+    <div class="bar">
+      <span class="logo">Premed HQ</span><span class="crumbs">Overview</span>
+      <span class="sp"></span><div class="ic">⌘K</div><div class="ic">＋</div><div class="ic">▦</div><div class="ic">🔔</div>
+    </div>
+    <div class="nav">
+      <span class="nav-i on">Overview</span><span class="nav-i">Academics</span><span class="nav-i">MCAT</span>
+      <span class="nav-i">Clinical</span><span class="nav-i">Research</span><span class="nav-i">Atlas</span>
+    </div>
+    <div class="page">
+      <div class="bento">
+        <div class="pan"><div class="pt">Next actions</div><div class="ps">3 items · exam in 6 days</div></div>
+        <div class="pan"><div class="pt">Roadmap</div><div class="ps">MCAT · Apr 2029</div></div>
+        <div class="pan"><div class="pt">Hours this week</div><div class="ps">22 of 34 planned</div></div>
+        <div class="pan wide hl">
+          <div class="pt">This week</div><div class="ps">Oct 20 – 26 · classes, deadlines, MCAT, shifts</div>
+          <div class="strip">
+            <div class="sd"><span class="n">M 20</span><i class="b"></i><i class="b" style="--c:var(--mcat)"></i></div>
+            <div class="sd"><span class="n">T 21</span><i class="b"></i><i class="b" style="--c:var(--clinical)"></i></div>
+            <div class="sd today"><span class="n">W 22</span><i class="b"></i><i class="b" style="--c:var(--warning)"></i></div>
+            <div class="sd"><span class="n">T 23</span><i class="b"></i><i class="b" style="--c:var(--ext)"></i></div>
+            <div class="sd"><span class="n">F 24</span><i class="b" style="--c:var(--danger)"></i></div>
+            <div class="sd"><span class="n">S 25</span><i class="b" style="--c:var(--mcat)"></i></div>
+            <div class="sd"><span class="n">S 26</span><i class="b" style="--c:var(--mcat)"></i></div>
+          </div>
+          <span class="expand">Open full calendar ›</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="arrow">↓ &nbsp;you navigate away to work on something</div>
+
+<!-- ================= STEP 2 ================= -->
+<div class="step">
+  <div class="step-h"><span class="step-n">2</span><span class="step-t">Now you're deep in Academics</span><span class="step-s">the toggle is still in the top bar — that's the point</span></div>
+  <div class="app">
+    <div class="bar">
+      <span class="logo">Premed HQ</span><span class="crumbs">Academics · Class Center · CHEM 261</span>
+      <span class="sp"></span><div class="ic">⌘K</div><div class="ic">＋</div>
+      <div class="ic ring" style="background:var(--muted);color:var(--fg)">▦</div><div class="ic">🔔</div>
+      <div class="callout dn" style="right:56px;top:-30px">Same toggle, every screen</div>
+    </div>
+    <div class="nav">
+      <span class="nav-i">Overview</span><span class="nav-i on">Academics</span><span class="nav-i">MCAT</span>
+      <span class="nav-i">Clinical</span><span class="nav-i">Research</span><span class="nav-i">Atlas</span>
+    </div>
+    <div class="page">
+      <div class="bento">
+        <div class="pan"><div class="pt">CHEM 261 · Topics</div><div class="ps">4 of 9 ready · Exam 2 in 6d</div></div>
+        <div class="pan"><div class="pt">Due today</div><div class="ps">3 topics</div></div>
+        <div class="pan"><div class="pt">Coverage</div><div class="ps">82% mapped</div></div>
+      </div>
+      <div style="margin-top:10px" class="pan"><div class="pt">Materials · Week 9</div><div class="ps">Lecture 14 slides · problem set 6 key · past exam 2022</div></div>
+    </div>
+    <div class="cur" style="right:60px;top:16px"></div>
+  </div>
+</div>
+
+<div class="arrow">↓ &nbsp;press it (or the keyboard shortcut)</div>
+
+<!-- ================= STEP 3 ================= -->
+<div class="step">
+  <div class="step-h"><span class="step-n">3</span><span class="step-t">Overlay opens on top</span><span class="step-s">Academics is still there behind the veil — you never left it</span></div>
+  <div class="app">
+    <div class="bar">
+      <span class="logo">Premed HQ</span><span class="crumbs">Academics · Class Center · CHEM 261</span>
+      <span class="sp"></span><div class="ic">⌘K</div><div class="ic">＋</div><div class="ic hi">▦</div><div class="ic">🔔</div>
+    </div>
+    <div class="nav">
+      <span class="nav-i">Overview</span><span class="nav-i on">Academics</span><span class="nav-i">MCAT</span>
+      <span class="nav-i">Clinical</span><span class="nav-i">Research</span><span class="nav-i">Atlas</span>
+    </div>
+    <div class="page" style="min-height:340px">
+      <div class="bento">
+        <div class="pan"><div class="pt">CHEM 261 · Topics</div><div class="ps">4 of 9 ready</div></div>
+        <div class="pan"><div class="pt">Due today</div><div class="ps">3 topics</div></div>
+        <div class="pan"><div class="pt">Coverage</div><div class="ps">82% mapped</div></div>
+      </div>
+    </div>
+
+    <div class="veil">
+      <div class="sheet">
+        <div class="sh-top">
+          <span class="sh-t">Your week</span><span class="rng num">Oct 20 – 26</span>
+          <span class="sp"></span>
+          <div class="segw"><span class="seg on">Week</span><span class="seg">Month</span><span class="seg">Agenda</span></div>
+          <span class="esc">Esc</span>
+        </div>
+        <div class="due">
+          <div class="dl">DUE</div>
+          <div class="dc"></div><div class="dc"><span class="dp">Pset 6</span></div><div class="dc"></div>
+          <div class="dc"><span class="dp">ENGL draft</span></div><div class="dc"><span class="dp ex">CHEM Exam 2</span></div>
+          <div class="dc"></div><div class="dc"></div>
+        </div>
+        <div class="dowr">
+          <div class="dow"></div>
+          <div class="dow">M<span class="d num">20</span></div><div class="dow">T<span class="d num">21</span></div>
+          <div class="dow today">W<span class="d num">22</span></div><div class="dow">T<span class="d num">23</span></div>
+          <div class="dow">F<span class="d num">24</span></div><div class="dow">S<span class="d num">25</span></div><div class="dow">S<span class="d num">26</span></div>
+        </div>
+        <div class="wk">
+          <div class="hcol"><div class="h">8a</div><div class="h">9</div><div class="h">10</div><div class="h">11</div><div class="h">12p</div><div class="h">1</div><div class="h">2</div><div class="h">3</div></div>
+          <div class="c"><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+            <div class="e" style="top:52px;height:26px"><div class="e-t">CHEM 261</div></div>
+            <div class="e m" style="top:156px;height:52px"><div class="e-t">MCAT session</div><div class="e-m">2h</div></div></div>
+          <div class="c"><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+            <div class="e cl" style="top:0;height:52px"><div class="e-t">EMT shift</div></div>
+            <div class="e" style="top:156px;height:39px"><div class="e-t">ENGL 105</div></div></div>
+          <div class="c today"><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+            <div class="e" style="top:52px;height:26px"><div class="e-t">CHEM 261</div></div>
+            <div class="e x" style="top:104px;height:26px"><div class="e-t">Lunch w/ Priya</div></div>
+            <div class="e w" style="top:182px;height:39px"><div class="e-t">Exam prep</div><div class="e-m">Units 4–7</div></div></div>
+          <div class="c"><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+            <div class="e x" style="top:26px;height:26px"><div class="e-t">Lab meeting</div></div>
+            <div class="e" style="top:156px;height:39px"><div class="e-t">ENGL 105</div></div></div>
+          <div class="c"><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+            <div class="e" style="top:52px;height:26px"><div class="e-t">CHEM 261</div></div></div>
+          <div class="c"><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+            <div class="e m" style="top:0;height:182px"><div class="e-t">AAMC FL3</div><div class="e-m">7.5h · 8:00 start</div></div></div>
+          <div class="c"><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+            <div class="e m" style="top:52px;height:78px"><div class="e-t">FL3 review</div><div class="e-m">reserved</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="arrow">↓ &nbsp;two ways out</div>
+
+<!-- ================= STEP 4 ================= -->
+<div class="step">
+  <div class="step-h"><span class="step-n">4a</span><span class="step-t">Click an event → it deep-links to its owner</span><span class="step-s">overlay closes; editing happens where the thing lives</span></div>
+  <div class="app">
+    <div class="bar">
+      <span class="logo">Premed HQ</span><span class="crumbs">MCAT · Full-lengths · AAMC FL3</span>
+      <span class="sp"></span><div class="ic">⌘K</div><div class="ic">＋</div><div class="ic">▦</div><div class="ic">🔔</div>
+    </div>
+    <div class="nav">
+      <span class="nav-i">Overview</span><span class="nav-i">Academics</span><span class="nav-i on" style="--cat:var(--mcat)">MCAT</span>
+      <span class="nav-i">Clinical</span><span class="nav-i">Research</span><span class="nav-i">Atlas</span>
+    </div>
+    <div class="page">
+      <div class="pan hl" style="border-color:var(--mcat);box-shadow:0 0 0 1px rgba(140,123,212,.3)">
+        <div class="pt">AAMC FL3 — Saturday Oct 25, 8:00 AM</div>
+        <div class="ps">7.5h · real breaks · scheduled at your exam start time · review block reserved Sunday 10–1</div>
+      </div>
+      <div class="bento" style="margin-top:10px">
+        <div class="pan"><div class="pt">Reschedule</div><div class="ps">move the FL and its review together</div></div>
+        <div class="pan"><div class="pt">Log results</div><div class="ps">section scores required</div></div>
+        <div class="pan"><div class="pt">Validity flags</div><div class="ps">one sitting · timed · real breaks</div></div>
+      </div>
+      <div class="callout up" style="left:14px;top:104px">Rescheduling happens HERE, not in the calendar</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= STEP 5 ================= -->
+<div class="step">
+  <div class="step-h"><span class="step-n">4b</span><span class="step-t">Or press Esc → straight back to where you were</span><span class="step-s">same scroll position, same class, nothing lost</span></div>
+  <div class="app">
+    <div class="bar">
+      <span class="logo">Premed HQ</span><span class="crumbs">Academics · Class Center · CHEM 261</span>
+      <span class="sp"></span><div class="ic">⌘K</div><div class="ic">＋</div><div class="ic">▦</div><div class="ic">🔔</div>
+    </div>
+    <div class="nav">
+      <span class="nav-i">Overview</span><span class="nav-i on">Academics</span><span class="nav-i">MCAT</span>
+      <span class="nav-i">Clinical</span><span class="nav-i">Research</span><span class="nav-i">Atlas</span>
+    </div>
+    <div class="page">
+      <div class="bento">
+        <div class="pan"><div class="pt">CHEM 261 · Topics</div><div class="ps">4 of 9 ready · Exam 2 in 6d</div></div>
+        <div class="pan"><div class="pt">Due today</div><div class="ps">3 topics</div></div>
+        <div class="pan"><div class="pt">Coverage</div><div class="ps">82% mapped</div></div>
+      </div>
+      <div style="margin-top:10px" class="pan"><div class="pt">Materials · Week 9</div><div class="ps">Lecture 14 slides · problem set 6 key · past exam 2022</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <h4>What the sequence settles</h4>
+  <p><b>Overview owns it, the top bar reaches it.</b> Step 1 shows the week strip as an Overview panel — that's the calendar's home, and it spans every pillar because Overview is the cross-pillar surface. Step 2 shows the same toggle still sitting in the top bar three screens away.</p>
+  <p><b>Step 3 is the whole argument for an overlay.</b> Academics is still visible behind the veil. You checked your week without leaving CHEM 261, and step 4b returns you to the exact same scroll position. If the calendar were Overview-only, that glance would cost you two navigations and your place.</p>
+  <p><b>Step 4a is the read-mostly rule made concrete.</b> Clicking FL3 doesn't open an edit popover in the calendar — it takes you to the full-length record in MCAT, where rescheduling and logging actually live. The calendar never edits anything.</p>
+  <p><b>The two entry points are not redundant.</b> The Overview panel answers "how is my week shaped" when you're already surveying. The toggle answers "wait, when is that" mid-task. Different questions, same data, one component.</p>
+</div>
+
+</div>
+</body>
+</html>

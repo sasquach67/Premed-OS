@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<!--
+  MOCKUP — The Bookshelf (P2). Lives INSIDE the Content sub-tab.
+  Structure, top to bottom:
+    1. Hero — ONE recommendation with its reason. Not a grid of logos.
+    2. Attention — at most two lines, and only on a real collision.
+    3. Shelf — grouped BY PURPOSE (content review / banks / decks / full-lengths).
+       Expiry tracking appears ONLY on paid items. Free items carry no expiry at all.
+    4. Gap notice — what your shelf doesn't cover.
+  Values from decisions/_visual-recipes.md. MCAT accent = --mcat.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MCAT Bookshelf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f;
+  --mcat:#8c7bd4;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:'Nunito',system-ui,sans-serif;padding:26px;min-width:1120px}
+h1,h2,h3,h4,.btn,.chip,.kicker,.grp-t,.item-n,.num,.mini{font-family:'Baloo 2',system-ui,sans-serif}
+.num{font-variant-numeric:tabular-nums}
+.wrap{max-width:1060px;margin:0 auto}
+
+/* tab strip context */
+.tabs{display:flex;gap:20px;padding-bottom:11px;border-bottom:1px solid var(--bd);margin-bottom:20px}
+.tab{font-family:'Baloo 2';font-weight:700;font-size:13.5px;color:var(--dim);position:relative;padding-bottom:11px;margin-bottom:-12px}
+.tab.on{color:var(--fg);font-weight:800}
+.tab.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--mcat);box-shadow:0 0 12px color-mix(in srgb,var(--mcat) 60%,transparent)}
+.sub{display:flex;gap:7px;margin-bottom:20px}
+.pill{font-family:'Baloo 2';font-weight:800;font-size:11.5px;padding:5px 13px;border-radius:999px;background:var(--muted);border:1px solid var(--bd);color:var(--mut)}
+.pill.on{background:#fff;color:#17222c;border-color:#fff}
+
+.kicker{font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+
+/* 1. HERO */
+.hero{
+  background:
+    radial-gradient(340px 190px at 90% 8%, rgba(140,123,212,.28), transparent 70%),
+    linear-gradient(115deg,#2b2740 0%,#302c46 48%,#3a3730 100%);
+  border:1px solid var(--bd);border-radius:16px;padding:18px 20px;margin-bottom:14px;
+}
+.hero .k{font-family:'Baloo 2';font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.hero h2{font-size:22px;font-weight:800;color:#fff;margin-top:7px;letter-spacing:-.3px}
+.hero .why{font-size:13px;color:rgba(255,255,255,.74);margin-top:8px;line-height:1.6;max-width:640px}
+.hero .why b{color:#fff;font-weight:700}
+.hero .role{display:flex;align-items:center;gap:9px;margin-top:9px;flex-wrap:wrap}
+.rchip{font-family:'Baloo 2';font-weight:800;font-size:10px;letter-spacing:.05em;text-transform:uppercase;
+  background:rgba(111,192,168,.2);color:#8ddcc3;border-radius:999px;padding:3px 10px}
+.rmut{font-size:11.5px;color:rgba(255,255,255,.6);font-weight:700}
+.hero .row{display:flex;align-items:center;gap:9px;margin-top:14px;flex-wrap:wrap}
+.btn{border:none;border-radius:999px;padding:9px 18px;font-size:12.5px;font-weight:800;cursor:pointer;background:#fff;color:#1d1830}
+.btn.ghost{background:rgba(255,255,255,.13);color:#fff}
+.hero .then{font-size:11.5px;color:rgba(255,255,255,.6);font-weight:700}
+
+/* 2. ATTENTION */
+.alerts{display:flex;flex-direction:column;gap:8px;margin-bottom:22px}
+.alert{display:flex;align-items:flex-start;gap:11px;border-radius:11px;padding:11px 13px;
+  background:color-mix(in srgb,var(--c,var(--warning)) 9%,var(--card));
+  border:1px solid color-mix(in srgb,var(--c,var(--warning)) 26%,var(--bd))}
+.alert .t{font-size:12.5px;line-height:1.55;flex:1}
+.alert .t b{font-weight:700}
+.alert .act{font-family:'Baloo 2';font-weight:800;font-size:11px;color:var(--mut);white-space:nowrap;align-self:center}
+.burn{margin-top:8px;height:7px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden;max-width:340px}
+.burn>i{display:block;height:100%;width:60%;background:var(--warning);border-radius:99px}
+.burn-l{display:flex;justify-content:space-between;max-width:340px;font-size:10.5px;color:var(--dim);font-weight:700;margin-top:5px}
+
+/* 3. SHELF */
+.grp{margin-bottom:20px}
+.grp-h{display:flex;align-items:baseline;gap:9px;margin-bottom:9px}
+.grp-t{font-size:14px;font-weight:800}
+.grp-s{font-size:11px;color:var(--dim);font-weight:700;flex:1}
+.list{display:flex;flex-direction:column;gap:7px}
+.item{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--bd);border-radius:11px;padding:11px 13px;
+  transition:.15s cubic-bezier(.16,1,.3,1);cursor:pointer}
+.item:hover{transform:translateY(-2px);border-color:var(--mcat);box-shadow:0 14px 26px -16px rgba(0,0,0,.7)}
+.dot{width:8px;height:8px;border-radius:3px;flex:none;background:rgba(255,255,255,.14)}
+.dot.now{background:var(--mcat);box-shadow:0 0 9px color-mix(in srgb,var(--mcat) 70%,transparent)}
+.item .mid{flex:1;min-width:0}
+.item-n{font-size:13.5px;font-weight:800}
+.item-m{font-size:11px;color:var(--dim);font-weight:600;margin-top:2px}
+.chip{font-weight:800;border-radius:999px;padding:2px 9px;font-size:9.5px;white-space:nowrap;
+  background:color-mix(in srgb,var(--c,var(--mcat)) 18%,transparent);color:var(--c,var(--mcat))}
+.chip.free{--c:var(--success)} .chip.life{--c:var(--success)} .chip.warn{--c:var(--warning)}
+.chip.bad{--c:var(--danger)} .chip.mut{--c:var(--dim)}
+.chips{display:flex;gap:5px;align-items:center;flex:none}
+
+/* 4. GAP */
+.gap{background:var(--card);border:1px dashed var(--bd);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.gap .t{flex:1;font-size:12.5px;color:var(--mut);line-height:1.55}
+.gap .t b{color:var(--fg);font-weight:700}
+.mini{border:none;border-radius:8px;padding:7px 13px;font-weight:800;font-size:11px;cursor:pointer;background:rgba(140,123,212,.16);color:#b3a4ec;white-space:nowrap}
+
+.note{margin-top:22px;background:var(--card);border:1px solid var(--bd);border-left:3px solid var(--mcat);border-radius:12px;padding:14px 17px}
+.note h4{font-size:13.5px;font-weight:800;margin-bottom:8px}
+.note p{font-size:12.5px;color:var(--mut);line-height:1.65}
+.note p+p{margin-top:7px}
+.note b{color:var(--fg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="tabs">
+    <div class="tab">Dashboard</div><div class="tab">Plan</div>
+    <div class="tab on">Content</div><div class="tab">Questions</div>
+    <div class="tab">Mistakes</div><div class="tab">Stats</div><div class="tab">Advisor</div>
+  </div>
+  <div class="sub">
+    <span class="pill">Content mastery</span>
+    <span class="pill on">Bookshelf</span>
+    <span class="pill">Study guides</span>
+  </div>
+
+  <!-- 1. HERO -->
+  <div class="hero">
+    <div class="k">For today's B/B block · 10:30–11:15</div>
+    <h2>Khan Academy — Biological Molecules</h2>
+    <div class="why">Today's block is <b>amino acids and protein structure</b> — Khan Academy covers both, and it's the resource that moved these categories for you before. Free.</div>
+    <div class="row">
+      <button class="btn">Open</button>
+      
+      <span class="then">also relevant · MilesDown amino-acid deck (48 due)</span>
+    </div>
+  </div>
+
+  <!-- 2. ATTENTION -->
+  <div class="alerts">
+    <div class="alert">
+      <div class="t"><b>UWorld expires Mar 3.</b> Your heaviest practice block is Mar 10 – Apr 18 — you'd lose it six days before it matters most.
+        <div class="burn-l" style="margin-top:7px"><span>90-day pass · 41 days left</span><span>renew or shift the block</span></div>
+      </div>
+      <span class="act">Shift block ›</span>
+    </div>
+    <div class="alert" style="--c:var(--warning)">
+      <div class="t"><b>AAMC material — 60% used, 4 months out.</b> It's finite and it's the best predictor of your score, so the plan is holding the rest for Polish.
+        <div class="burn"><i></i></div>
+        <div class="burn-l"><span class="num">3 of 5 FLs · section bank started</span><span class="num">60%</span></div>
+      </div>
+      <span class="act">See plan ›</span>
+    </div>
+  </div>
+
+  <!-- 3. SHELF -->
+  <div class="kicker">Your shelf</div>
+
+  <div class="grp">
+    <div class="grp-h"><span class="grp-t">Content review</span><span class="grp-s">used in Foundation</span></div>
+    <div class="list">
+      <div class="item">
+        <span class="dot now"></span>
+        <div class="mid"><div class="item-n">Khan Academy — MCAT collection</div><div class="item-m">All sections · used 2 days ago</div></div>
+        <div class="chips"><span class="chip free">Free</span></div>
+      </div>
+      <div class="item">
+        <span class="dot"></span>
+        <div class="mid"><div class="item-n">Kaplan review books (7-book set)</div><div class="item-m">All sections · last opened 6 weeks ago</div></div>
+        <div class="chips"><span class="chip life">Owned · lifetime</span><span class="chip mut">untouched 6w</span></div>
+      </div>
+      <div class="item">
+        <span class="dot"></span>
+        <div class="mid"><div class="item-n">Bootcamp — content videos</div><div class="item-m">C/P, B/B · opened twice since you bought it</div></div>
+        <div class="chips"><span class="chip warn">Expires Aug 14</span><span class="chip mut">$249</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grp">
+    <div class="grp-h"><span class="grp-t">Question banks</span><span class="grp-s">used in Practice · Polish</span></div>
+    <div class="list">
+      <div class="item">
+        <span class="dot"></span>
+        <div class="mid"><div class="item-n">UWorld — MCAT QBank</div><div class="item-m">All sections · 412 of 2,000 questions done</div></div>
+        <div class="chips"><span class="chip bad">Expires Mar 3</span><span class="chip mut">90-day</span></div>
+      </div>
+      <div class="item">
+        <span class="dot"></span>
+        <div class="mid"><div class="item-n">AAMC Section Bank</div><div class="item-m">Reported harder than the real exam · 22% used</div></div>
+        <div class="chips"><span class="chip warn">Hold for Polish</span><span class="chip life">lifetime</span></div>
+      </div>
+      <div class="item">
+        <span class="dot now"></span>
+        <div class="mid"><div class="item-n">Jack Westin — daily CARS</div><div class="item-m">CARS · 6-day streak</div></div>
+        <div class="chips"><span class="chip free">Free</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grp">
+    <div class="grp-h"><span class="grp-t">Decks</span><span class="grp-s">reviewed in Anki, tracked here</span></div>
+    <div class="list">
+      <div class="item">
+        <span class="dot now"></span>
+        <div class="mid"><div class="item-n">MilesDown</div><div class="item-m">Content · 1,840 of 4,100 seen · 48 due today</div></div>
+        <div class="chips"><span class="chip free">Free</span><span class="chip mut">in Anki</span></div>
+      </div>
+      <div class="item">
+        <span class="dot"></span>
+        <div class="mid"><div class="item-n">Pankow</div><div class="item-m">P/S · not started</div></div>
+        <div class="chips"><span class="chip free">Free</span><span class="chip mut">in Anki</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grp">
+    <div class="grp-h"><span class="grp-t">Full-lengths</span><span class="grp-s">AAMC drives the projection</span></div>
+    <div class="list">
+      <div class="item">
+        <span class="dot"></span>
+        <div class="mid"><div class="item-n">AAMC FL1–5</div><div class="item-m">3 taken · FL4 scheduled Mar 22</div></div>
+        <div class="chips"><span class="chip">Trend line</span><span class="chip life">lifetime</span></div>
+      </div>
+      <div class="item">
+        <span class="dot"></span>
+        <div class="mid"><div class="item-n">Blueprint — 4 full-lengths</div><div class="item-m">1 taken · runs harder than the real exam</div></div>
+        <div class="chips"><span class="chip mut">Directional only</span><span class="chip warn">Expires Jun 1</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. GAP -->
+  <div class="gap">
+    <div class="t"><b>Nothing on your shelf covers P/S content review.</b> Psych/Soc is ~30% of a section and mostly terminology — Pankow is on your shelf but unstarted, and it's free.</div>
+    <button class="mini">Start Pankow</button>
+  </div>
+
+  <div class="note">
+    <h4>What this is doing</h4>
+    <p><b>The hero is one recommendation, not a catalog.</b> HQ already knows your phase, your weakest categories, and what you own — so it answers instead of listing. The shelf below is for browsing, not deciding.</p>
+  <p><b>It reads what's scheduled and links out.</b> The recommendation is derived from the block you're already scheduled to do, and <code>Open</code> takes you to the resource. No role labels, no durations, no inserting things into your session — the student knows whether they're learning it or brushing up. If nothing scheduled maps to a resource, the hero says so in one line rather than inventing a suggestion.</p>
+    <p><b>Expiry appears only on paid items.</b> Free resources carry no expiry field at all — Khan Academy and Jack Westin just show <span class="chip free">Free</span>. Only things you paid for enter the subscription tracker, and a warning fires <b>only when the expiry actually collides with a planned block</b>, not on a countdown.</p>
+    <p><b>Grouped by purpose, not by price.</b> Content review · Question banks · Decks · Full-lengths — matching the plan's phases, so the group you need is the group that's lit.</p>
+    <p><b>No prices except on things you already bought</b>, no affiliate links, no "upgrade" anywhere. Free options lead where they're competitive. The gap notice points at Pankow because it's free and unstarted — not at something to buy.</p>
+  </div>
+
+</div>
+</body>
+</html>

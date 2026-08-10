@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Premed HQ — Shadowing · Specialty Exposure (Session 3)</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#282420; --card:#322d27; --card2:#3a342d; --fg:#ece3d4; --muted-fg:#a89a86;
+    --border:#453e35; --primary:#4b9cd3; --primary-soft:rgba(75,156,211,.16);
+    --accent:#e0a458; --accent-soft:rgba(224,164,88,.15);   /* --cat-shadow */
+    --success:#5fb49c; --warning:#e0a458; --destructive:#e26d5c;
+    --shadow:0 1px 2px rgba(0,0,0,.25),0 8px 22px -10px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:Nunito,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .display{font-family:'Baloo 2',cursive;font-variant-numeric:tabular-nums}
+  .wrap{max-width:1120px;margin:0 auto;padding:26px 22px 70px}
+  svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+
+  .titlebar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .titlebar .swatch{width:10px;height:26px;border-radius:5px;background:var(--accent)}
+  .titlebar h1{margin:0;font-family:'Baloo 2';font-size:24px;font-weight:800}
+  .titlebar .sub{color:var(--muted-fg);font-size:12.5px;font-weight:700;margin-left:auto}
+
+  .summary{display:flex;align-items:center;gap:22px;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);
+    border-radius:14px;box-shadow:var(--shadow);padding:12px 18px;margin-bottom:14px}
+  .kpi{display:flex;align-items:baseline;gap:7px}
+  .kpi .n{font-family:'Baloo 2';font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+  .kpi .l{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted-fg)}
+  .pace{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--muted-fg)}
+  .pace b{color:var(--fg)} .pace .gap{color:var(--warning)}
+
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px}
+  .panel h2{margin:0 0 4px;display:flex;align-items:center;gap:8px;font-family:'Baloo 2';font-size:16px;font-weight:800}
+  .panel .hint{font-size:11.5px;font-weight:700;color:var(--muted-fg);margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;font-weight:700}
+  th{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-fg);text-align:left;padding:6px 10px;border-bottom:1px solid var(--border)}
+  td{padding:9px 10px;border-bottom:1px dashed var(--border)}
+  tr:last-child td{border-bottom:0}
+  .nums{font-variant-numeric:tabular-nums}
+  .bar{height:8px;border-radius:4px;background:var(--card2);overflow:hidden;min-width:110px}
+  .bar i{display:block;height:100%;background:var(--accent)}
+  .chip{display:inline-flex;align-items:center;border-radius:999px;padding:2px 9px;font-size:10.5px;font-weight:800;white-space:nowrap;margin-right:4px}
+  .chip.set{background:var(--card2);color:var(--muted-fg)}
+  .gaprow td{color:var(--warning)}
+  .gaprow .fix{color:var(--primary);cursor:pointer;font-weight:800;font-size:11px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:14px}
+  .ecard{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px;cursor:pointer}
+  .ecard.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow)}
+  .ecard .top{display:flex;align-items:center;gap:8px}
+  .ecard .nm{font-weight:800;font-size:13.5px;flex:1}
+  .ecard .hrs{font-family:'Baloo 2';font-weight:800;font-size:18px;color:var(--accent);font-variant-numeric:tabular-nums}
+  .ecard .meta{font-size:11px;font-weight:700;color:var(--muted-fg);margin-top:5px}
+  .ecard .flags{display:flex;gap:6px;margin-top:7px}
+  .flag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;border-radius:999px;padding:2px 8px}
+  .flag.ok{background:rgba(95,180,156,.15);color:var(--success)}
+  .flag.due{background:rgba(226,109,92,.15);color:var(--destructive)}
+  .flag.letter{background:var(--primary-soft);color:var(--primary)}
+  .ecard.add{border-style:dashed;display:grid;place-items:center;color:var(--primary);font-weight:800;font-size:13px;min-height:84px}
+
+  .workspace{background:var(--card);border:1px solid var(--accent);border-radius:14px;box-shadow:var(--shadow);padding:18px}
+  .hero{display:grid;grid-template-columns:1fr auto;gap:16px;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:15px 17px;margin-bottom:14px}
+  .hero h3{margin:0;font-family:'Baloo 2';font-size:19px;font-weight:800}
+  .hero .meta{display:flex;flex-wrap:wrap;gap:6px 15px;margin-top:7px;font-size:12.5px;font-weight:700;color:var(--muted-fg)}
+  .hero .hours .n{font-family:'Baloo 2';font-size:38px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+  .hero .hours .l{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-fg)}
+  .hero .contact{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px 16px;border-top:1px dashed var(--border);padding-top:10px;font-size:12.5px;font-weight:700;color:var(--muted-fg)}
+
+  .statusrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .status{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 15px;display:flex;align-items:center;gap:10px}
+  .status .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center}
+  .status .t{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted-fg)}
+  .status .v{font-size:13.5px;font-weight:800}
+  .status .act{margin-left:auto;color:var(--primary);font-size:11px;font-weight:800;cursor:pointer}
+
+  .module{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 15px}
+  .module h4{margin:0 0 8px;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-fg)}
+  .row{display:flex;align-items:flex-start;gap:12px;padding:8px 10px;border-radius:9px;font-size:13px;font-weight:700}
+  .row:hover{background:var(--card)}
+  .row .date{color:var(--muted-fg);font-size:11.5px;font-weight:800;width:60px;flex:0 0 auto;font-variant-numeric:tabular-nums;padding-top:1px}
+  .row .hrs{font-family:'Baloo 2';font-weight:800;color:var(--accent);width:40px;text-align:right;flex:0 0 auto;font-variant-numeric:tabular-nums}
+  .row .saw{color:var(--muted-fg);font-size:11.5px;font-weight:600;display:block;margin-top:2px}
+  .addrow{display:flex;gap:8px;align-items:center;margin-top:8px;background:var(--card);border:1px dashed var(--border);border-radius:10px;padding:7px 10px}
+  .addrow input{background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--fg);font:inherit;font-size:12.5px;font-weight:700;padding:6px 9px;min-width:0}
+  .addrow .go{background:var(--primary);border:0;color:#fff;border-radius:8px;font:inherit;font-weight:800;font-size:12.5px;padding:6px 13px;cursor:pointer}
+
+  .note{max-width:1120px;margin:14px auto 0;padding:0 22px;font-size:11.5px;color:var(--muted-fg);font-weight:600;line-height:1.6}
+  @media(max-width:760px){.statusrow{grid-template-columns:1fr}.hero{grid-template-columns:1fr}.pace{margin-left:0;width:100%}
+    .panel{overflow-x:auto}.panel table{min-width:640px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="titlebar">
+    <span class="swatch"></span><h1>Shadowing</h1>
+    <span class="sub">coverage + relationship upkeep</span>
+  </div>
+
+  <div class="summary">
+    <span class="kpi"><span class="n display">58</span><span class="l">hours</span></span>
+    <span class="kpi"><span class="n display">3</span><span class="l">physicians</span></span>
+    <span class="kpi"><span class="n display">2</span><span class="l">specialties</span></span>
+    <span class="kpi"><span class="n display">3</span><span class="l">settings seen</span></span>
+    <span class="pace"><span class="gap">Gap: 0 hrs primary care</span> · typical accepted range 40–100 total</span>
+  </div>
+
+  <!-- THE TOOL: Specialty Exposure table -->
+  <div class="panel">
+    <h2><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg> Specialty exposure</h2>
+    <p class="hint">A plain table so gaps are facts, not vibes. Settings: OR · clinic · ED · rural.</p>
+    <table>
+      <thead><tr><th>Specialty</th><th class="nums">Hours</th><th style="width:38%">Share</th><th>Settings seen</th><th></th></tr></thead>
+      <tbody>
+        <tr>
+          <td style="font-weight:800">Emergency Medicine</td>
+          <td class="nums display">34</td>
+          <td><div class="bar"><i style="width:59%"></i></div></td>
+          <td><span class="chip set">ED</span><span class="chip set">rural ED</span></td><td></td>
+        </tr>
+        <tr>
+          <td style="font-weight:800">Orthopaedic Surgery</td>
+          <td class="nums display">24</td>
+          <td><div class="bar"><i style="width:41%"></i></div></td>
+          <td><span class="chip set">OR</span><span class="chip set">clinic</span></td><td></td>
+        </tr>
+        <tr class="gaprow">
+          <td style="font-weight:800">Primary care / Family Med</td>
+          <td class="nums display">0</td>
+          <td><div class="bar"><i style="width:0%"></i></div></td>
+          <td>— none · adcoms ask about this one</td>
+          <td><span class="fix">find a doc →</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- physician catalog (entities) -->
+  <div class="cards">
+    <div class="ecard active">
+      <div class="top"><span class="nm">Dr. Elena Vasquez, MD</span><span class="hrs display">34</span></div>
+      <div class="meta">Emergency Medicine · UNC Hillsborough ED</div>
+      <div class="flags"><span class="flag ok">thank-you sent</span><span class="flag letter">letter: asked ✓</span></div>
+    </div>
+    <div class="ecard">
+      <div class="top"><span class="nm">Dr. Marcus Chen, MD</span><span class="hrs display">24</span></div>
+      <div class="meta">Ortho Surgery · UNC Orthopaedics, OR + clinic</div>
+      <div class="flags"><span class="flag due">thank-you due</span><span class="flag letter">letter: maybe</span></div>
+    </div>
+    <div class="ecard add"><span>+ add physician</span></div>
+  </div>
+
+  <!-- workspace: Dr. Vasquez -->
+  <div class="workspace">
+    <div class="hero">
+      <div>
+        <h3>Dr. Elena Vasquez, MD — Emergency Medicine</h3>
+        <div class="meta">
+          <span><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg> UNC Hillsborough ED · community hospital</span>
+          <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> first session Mar 2026</span>
+        </div>
+      </div>
+      <div class="hours"><div class="n display">34</div><div class="l">hours with her</div></div>
+      <div class="contact">
+        <span style="color:var(--fg)">evasquez@unchealth.unc.edu</span>
+        <span>(919) 245-3200 · via ED admin</span>
+        <span style="margin-left:auto;color:var(--success)">met through MEDIC ride-along</span>
+      </div>
+    </div>
+
+    <!-- the two status fields that do real work -->
+    <div class="statusrow">
+      <div class="status">
+        <span class="ic" style="background:rgba(95,180,156,.15);color:var(--success)"><svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg></span>
+        <span><span class="t">Thank-you</span><br/><span class="v">Sent · Jun 30 (card + email)</span></span>
+        <span class="act">log another touch</span>
+      </div>
+      <div class="status">
+        <span class="ic" style="background:var(--primary-soft);color:var(--primary)"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="m22 6-10 7L2 6"/></svg></span>
+        <span><span class="t">Letter potential</span><br/><span class="v">Asked · Jul 2 — she said yes</span></span>
+        <span class="act">open in Letters →</span>
+      </div>
+    </div>
+
+    <div class="module">
+      <h4><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Sessions</h4>
+      <div class="row"><span class="date">Jul 2</span>
+        <span>Friday overnight, 7p–1a<span class="saw">Saw: STEMI activation → cath lab handoff · pediatric asthma · how she runs a family conversation about hospice</span></span>
+        <span style="margin-left:auto" class="hrs display">6.0</span></div>
+      <div class="row"><span class="date">Jun 14</span>
+        <span>Day shift<span class="saw">Saw: shoulder reduction under sedation · psych hold placement · she let me listen to a murmur</span></span>
+        <span style="margin-left:auto" class="hrs display">8.0</span></div>
+      <div class="row"><span class="date">May 30</span>
+        <span>First shadow day<span class="saw">Saw: triage flow · two traumas · debrief over coffee about EM lifestyle and burnout</span></span>
+        <span style="margin-left:auto" class="hrs display">8.0</span></div>
+      <div class="addrow">
+        <input style="width:92px" value="Jul 20" /><input style="width:52px" placeholder="hrs" />
+        <input style="flex:1" placeholder="what did you see? (procedures, conversations, decisions)" />
+        <button class="go">Log</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note"><b>380px:</b> exposure table scrolls in-panel; physician cards stack; status fields stack. Letter-potential links into the central Letters page (no per-pillar LOR boards). Thank-you/letter statuses live on the card faces too, so upkeep debt is visible from the catalog.</div>
+</body>
+</html>

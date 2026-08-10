@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clinical — setting an hour target (#31)</title>
+<!--
+  ============================================================================
+  CLINICAL - THE HOUR TARGET - VISUAL REFERENCE
+  ============================================================================
+  Status: PROPOSED (Aug 2026). Spec: tabs/03-clinical.md §7a · catalog #31.
+  Resolves board C3 without waiting on the blocked hours research.
+
+  THE PROBLEM
+  paceProjection() is real and computes correctly, but it computes against
+  Goals.clinical, which is a number the student typed with nothing behind it.
+  The projection then reads as authoritative: "on pace for 812, clears your
+  target." Clears WHOSE target? No sourced figure for expected clinical hours
+  has been verified (board §8), so the app was quietly implying an admissions
+  standard that does not exist.
+
+  THE FIX: INFORM IT FROM INSIDE THE APP
+  Day one has NO target. Cold start gets one action, "add your first
+  experience". A student with zero hours typing a total is inventing it, and
+  every projection for two years then runs against a fiction.
+
+  The offer comes AFTER a few logged shifts, when HQ can suggest from
+  something real, and it asks the question a person can actually answer:
+      NOT  "what is your total goal?"        (nobody knows)
+      BUT  "how much can you keep up weekly?" (one shift a week)
+  The total is then DERIVED and the arithmetic is shown:
+      5 hrs/wk  x  ~40 weeks/yr  x  2.5 yrs to your application  =  ~500h
+
+  TWO WAYS IN, ONE FIELD
+  Weekly-first is suggested. Total-first is always available for someone who
+  already knows the number they want. Whichever is set, the other is shown,
+  so neither is a black box.
+
+  DECISIONS THIS FILE ENCODES
+  1. NO TARGET ON DAY ONE, and no mention of one. Frame 1.
+  2. THE SUGGESTION COMES FROM OBSERVED RATE where shifts exist. "You have
+     averaged 5.2 hrs/week over two months. Make that the plan?"
+  3. NOTHING IS PRE-FILLED. HQ suggests in copy; the field starts empty. A
+     default number becomes the standard in the student's head regardless of
+     the caption, which is exactly what C3 forbids.
+  4. WEEKLY AND TOTAL ARE LINKED AND BOTH VISIBLE. Change one, the other
+     moves. The arithmetic line is always shown.
+  5. WeeklyCapacity SANITY-CHECKS IT before the target is set, not after the
+     student fails against it. 12 hrs/wk against 6 free hours is flagged.
+  6. RUNWAY COMES FROM THE PROFILE. Change your application year, the total
+     moves.
+  7. ALWAYS LABELLED "YOUR TARGET", never "the target", everywhere.
+  8. A TARGET IS OPTIONAL FOREVER. With none set, the projection still
+     describes rate and total honestly and shows NO pace judgment.
+  9. HQ MAY SAY THE TARGET IS MET AND STOP. "You have enough of this" is a
+     legitimate thing to say (§6.15, and Shadowing's precedent).
+
+  DELIBERATELY EXCLUDED - do not add these back
+   · Any pre-filled or default hour number, anywhere, ever.
+   · A national median, community figure, or "typical applicant" number. No
+     sourced figure has been verified. R7: cut rather than approximate.
+   · Comparison to other applicants. Standing non-goal.
+   · A target prompt on day one or in the cold-start flow.
+   · Blocking the log or the projection when no target exists.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f;
+  --cat:#6fae6e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:13px;padding:26px;overflow:auto}
+.frame{width:1400px;background:var(--bg);border-radius:18px;overflow:hidden;box-shadow:0 30px 90px -30px rgba(0,0,0,.9);margin-bottom:30px}
+.framelabel{width:1400px;font-family:'Baloo 2';font-weight:800;font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;margin:0 0 10px 4px}
+
+.banner{background:
+  radial-gradient(340px 200px at 88% 6%, rgba(75,156,211,.34), transparent 70%),
+  radial-gradient(260px 180px at 10% 130%, rgba(111,192,168,.18), transparent 70%),
+  linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%);padding:16px 24px 18px}
+.h1{font-family:'Baloo 2';font-weight:800;font-size:30px;color:#fff;letter-spacing:-.4px;line-height:1.1}
+.subline{font-size:12px;color:rgba(255,255,255,.66);font-weight:700;margin-top:4px}
+.modetag{font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:3px 10px;
+  display:inline-block;margin-bottom:11px}
+
+.body{padding:20px 22px 26px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.state{font-family:'Baloo 2';font-weight:800;font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.state i{width:16px;height:16px;border-radius:5px;background:color-mix(in srgb,var(--cat) 22%,transparent);
+  color:var(--cat);font-style:normal;font-size:9px;display:grid;place-items:center;font-weight:800}
+
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:15px 16px;
+  box-shadow:0 10px 26px -14px rgba(0,0,0,.55)}
+.pt{font-family:'Baloo 2';font-weight:800;font-size:16.5px;margin-bottom:2px}
+.ps{font-size:11.5px;color:var(--dim);font-weight:700;margin-bottom:12px}
+.flabel{font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+
+/* the two linked inputs */
+.pair{display:grid;grid-template-columns:1fr 22px 1fr;gap:9px;align-items:end}
+.numfield{background:var(--muted);border:1px solid var(--bd);border-radius:11px;padding:10px 12px;
+  display:flex;align-items:baseline;gap:7px}
+.numfield.focus{border-color:var(--cat);box-shadow:0 0 0 1px color-mix(in srgb,var(--cat) 38%,transparent)}
+.numfield.derived{background:rgba(255,255,255,.02);border-style:dashed}
+.numfield .n{font-family:'Baloo 2';font-weight:800;font-size:23px;font-variant-numeric:tabular-nums;line-height:1}
+.numfield .n.ph{color:var(--dim)}
+.numfield .u{font-size:11.5px;font-weight:700;color:var(--dim)}
+.caret{width:1.5px;height:19px;background:var(--cat);display:inline-block;margin-left:-4px}
+.eq{font-family:'Baloo 2';font-weight:800;font-size:15px;color:var(--dim);text-align:center;padding-bottom:11px}
+.tag{font-family:'Baloo 2';font-weight:800;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;
+  border-radius:999px;padding:2px 7px;margin-left:auto}
+.t-you{background:color-mix(in srgb,var(--cat) 20%,transparent);color:var(--cat)}
+.t-derived{background:rgba(255,255,255,.07);color:var(--dim)}
+
+/* arithmetic */
+.math{font-family:'Baloo 2';font-weight:800;font-size:11.5px;color:var(--mut);
+  background:rgba(255,255,255,.028);border:1px solid var(--bd);border-radius:9px;
+  padding:9px 11px;margin-top:10px;line-height:1.7;font-variant-numeric:tabular-nums}
+.math span{color:var(--dim);font-weight:700}
+.math b{color:var(--fg)}
+
+.sugg{background:color-mix(in srgb,var(--cat) 8%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 30%,var(--bd));border-radius:11px;padding:11px 12px;margin-bottom:12px}
+.sh{font-family:'Baloo 2';font-weight:800;font-size:13px;margin-bottom:3px}
+.sb{font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.55}
+.cap{display:flex;align-items:flex-start;gap:8px;padding:9px 11px;border-radius:10px;margin-top:10px;
+  background:color-mix(in srgb,var(--warning) 8%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--warning) 34%,var(--bd));
+  font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.55}
+.cap b{color:var(--warning);font-weight:800}
+
+.btn{font-family:'Baloo 2';font-weight:800;font-size:11.5px;border-radius:9px;padding:8px 13px;
+  border:1px solid var(--bd);background:var(--card);color:var(--mut);cursor:pointer;text-align:center}
+.btn.pri{background:var(--cat);border-color:var(--cat);color:#10201a}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--dim)}
+.arow{display:flex;gap:8px;margin-top:12px;align-items:center}
+
+.note{font-size:11.5px;color:var(--dim);font-weight:600;line-height:1.6;padding:9px 11px;
+  background:rgba(255,255,255,.028);border-left:2px solid color-mix(in srgb,var(--cat) 42%,transparent);
+  border-radius:0 9px 9px 0;margin-top:11px}
+.note b{color:var(--mut);font-weight:800}
+.mnote{display:flex;gap:11px;align-items:flex-start;background:color-mix(in srgb,var(--cat) 7%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 24%,var(--bd));border-radius:12px;padding:11px 13px;margin-top:14px}
+.ram{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--cat) 22%,transparent);
+  display:grid;place-items:center;flex:none;font-size:15px}
+.mt{font-family:'Baloo 2';font-weight:800;font-size:12.5px;margin-bottom:2px}
+.mb{font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.55}
+.x{margin-left:auto;color:var(--dim);font-weight:800;font-size:13px;cursor:pointer;flex:none}
+.bignum{font-family:'Baloo 2';font-weight:800;font-size:24px;font-variant-numeric:tabular-nums;line-height:1}
+.sub{font-size:11.5px;color:var(--mut);font-weight:700;margin-top:5px;line-height:1.5}
+.chip{font-family:'Baloo 2';font-weight:800;border-radius:999px;padding:2px 8px;font-size:9.5px}
+.c-ok{background:color-mix(in srgb,var(--success) 18%,transparent);color:var(--success)}
+.c-dim{background:rgba(255,255,255,.07);color:var(--dim)}
+</style>
+</head>
+<body>
+
+<!-- ============ FRAME 1 ============ -->
+<div class="framelabel">Frame 1 &middot; day one says nothing &middot; then the suggestion, from your own rate</div>
+<div class="frame">
+  <div class="banner">
+    <div class="modetag">Clinical &middot; hour target</div>
+    <div class="h1">The number comes from you</div>
+    <div class="subline">Not from a benchmark, because no verified one exists.</div>
+  </div>
+
+  <div class="body"><div class="three">
+
+    <div>
+      <div class="state"><i>1</i> Day one &middot; no target at all</div>
+      <div class="panel">
+        <div class="pt">Clinical</div>
+        <div class="ps">Nothing logged yet</div>
+        <div class="arow" style="margin-top:0"><div class="btn pri">Add your first experience</div></div>
+        <div class="note"><b>No target is offered and none is mentioned.</b> A freshman typing a total-hours number is inventing it, and then every projection for two years runs against a fiction. The log works fine without one.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="state"><i>2</i> After a few shifts</div>
+      <div class="panel">
+        <div class="sugg">
+          <div class="sh">You've averaged 5.2 hrs a week</div>
+          <div class="sb">Over the last two months, across 9 shifts. Want to make that the plan?</div>
+        </div>
+        <div class="arow" style="margin-top:0">
+          <div class="btn pri">Set a target</div>
+          <div class="btn ghost">Not now</div>
+        </div>
+        <div class="note">The suggestion comes from <b>something real</b>: your own observed rate. HQ waited until it had one rather than asking cold.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="state"><i>3</i> Weekly first, total derived</div>
+      <div class="panel">
+        <div class="flabel">How much can you keep up?</div>
+        <div class="pair">
+          <div>
+            <div class="numfield focus"><span class="n">5</span><span class="caret"></span><span class="u">hrs / week</span><span class="tag t-you">yours</span></div>
+          </div>
+          <div class="eq">=</div>
+          <div>
+            <div class="numfield derived"><span class="n">520</span><span class="u">hours</span><span class="tag t-derived">derived</span></div>
+          </div>
+        </div>
+        <div class="math">
+          5 hrs/week <span>&times;</span> ~40 weeks a year <span>&times;</span> 2.6 years to your application<br>
+          <span>=</span> <b>about 520 hours</b> by June 2029
+        </div>
+        <div class="note"><b>The question you can actually answer.</b> "One shift a week" is knowable. "My total goal is 600" is not, so HQ asks the first and works out the second.</div>
+      </div>
+    </div>
+
+  </div></div>
+</div>
+
+
+<!-- ============ FRAME 2 ============ -->
+<div class="framelabel">Frame 2 &middot; the reverse path, the capacity check, and no target at all</div>
+<div class="frame">
+  <div class="banner">
+    <div class="modetag">The other three states</div>
+    <div class="h1">Either direction works</div>
+    <div class="subline">And a target stays optional forever.</div>
+  </div>
+
+  <div class="body"><div class="three">
+
+    <div>
+      <div class="state"><i>4</i> Total first, weekly derived</div>
+      <div class="panel">
+        <div class="flabel">Or set the total yourself</div>
+        <div class="pair">
+          <div>
+            <div class="numfield derived"><span class="n">7.2</span><span class="u">hrs / week</span><span class="tag t-derived">derived</span></div>
+          </div>
+          <div class="eq">=</div>
+          <div>
+            <div class="numfield focus"><span class="n">750</span><span class="caret"></span><span class="u">hours</span><span class="tag t-you">yours</span></div>
+          </div>
+        </div>
+        <div class="math">
+          750 hours <span>&divide;</span> 2.6 years <span>&divide;</span> ~40 weeks a year<br>
+          <span>=</span> <b>7.2 hrs a week</b>, every week, from now
+        </div>
+        <div class="note">Someone who already knows the number they want can type it. HQ shows <b>what it costs weekly</b>, which is the part people skip when they pick a round number.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="state"><i>5</i> When it does not fit</div>
+      <div class="panel">
+        <div class="pair">
+          <div><div class="numfield focus"><span class="n">12</span><span class="caret"></span><span class="u">hrs / week</span><span class="tag t-you">yours</span></div></div>
+          <div class="eq">=</div>
+          <div><div class="numfield derived"><span class="n">1,250</span><span class="u">hours</span><span class="tag t-derived">derived</span></div></div>
+        </div>
+        <div class="cap">
+          <span>&#9888;</span>
+          <span><b>You have about 6 free hours a week.</b> After class, your two MCAT blocks, and Thursday's shift. 12 is possible some weeks, not every week.</span>
+        </div>
+        <div class="note">Checked <b>before</b> you commit to the number, not discovered six months later by falling behind it. Nothing is blocked, and you can set 12 anyway.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="state"><i>6</i> No target, ever</div>
+      <div class="panel">
+        <div class="bignum">486<span style="font-size:14px;color:var(--mut)">h</span></div>
+        <div class="sub">8.2 hrs a week, sustained across 14 months. Two roles, both active.</div>
+        <div class="arow"><span class="chip c-dim">no target set</span></div>
+        <div class="note">Everything true is still said. What is <b>missing</b> is any pace judgment, because there is nothing to be on pace toward. No "behind", no bar, no amber chip.</div>
+        <div class="arow"><div class="btn ghost">Set one if you want</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="max-width:1080px;margin:0 auto">
+    <div class="mnote">
+      <div class="ram">&#128015;</div>
+      <div>
+        <div class="mt">Why nothing is ever pre-filled</div>
+        <div class="mb">If HQ shipped a number in that box, it would become the bar in your head no matter what the caption underneath said, and you would spend two years measuring yourself against something the app made up. There is no verified figure for expected clinical hours, so the only honest starting point is your own rate and your own runway.</div>
+      </div>
+      <div class="x">&#10005;</div>
+    </div>
+  </div>
+  </div>
+</div>
+
+</body>
+</html>

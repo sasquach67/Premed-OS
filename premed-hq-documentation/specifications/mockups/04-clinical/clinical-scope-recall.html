@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clinical — scope recall aid (writing the AMCAS description)</title>
+<!--
+  ============================================================================
+  CLINICAL - SCOPE RECALL AID - VISUAL REFERENCE
+  ============================================================================
+  Status: PROPOSED (Aug 2026). Spec: catalog R1 revised, #27, inside #48.
+
+  WHAT THIS IS, AND WHAT IT REPLACED
+  R1 cut the observed/performed skill counter. That cut still stands: nobody
+  will tally 180 sets of vitals, and a number that only exists if someone
+  hand-maintains it is false precision.
+
+  R7 then changed a fact the cut rested on. The original argument was that a
+  skill list would be INVENTED. It no longer would be: scope of practice is
+  published. NHTSA maintains a National EMS Scope of Practice Model, states
+  publish their own, and what an EMT may legally do is a documented list.
+
+  So one narrow version comes back, and it is NOT a tracker:
+    A RECALL AID, SHOWN ONCE, AT WRITING TIME.
+  When the student writes the 700-character AMCAS description a year later,
+  HQ offers the sourced scope list as checkboxes. They tick what they
+  actually did, it seeds the draft, and the list closes.
+
+  THIS IS THE SAME MOVE AS #13
+  Judgment calls are tagged silently and surfaced once, in the pre-cycle
+  review, rather than interrogating the student at add time. Same pattern:
+  defer the question to the moment it is consequential.
+
+  DECISIONS THIS FILE ENCODES
+  1. IT LIVES INSIDE THE EXPORT PREVIEW (#48). It appears nowhere else in the
+     app. Not on the pillar page, not in the shift log, not in the site
+     workspace, not on Overview.
+  2. IT APPEARS ONCE PER ROLE. Tick, seed the draft, done. Reopenable on
+     demand from the description field, never pushed a second time.
+  3. NO COUNTS, EVER. No observed/performed, no per-shift tracking, no
+     frequency, no progress. A checkbox is binary: you did this or you did
+     not.
+  4. THE LIST IS SOURCED AND SAYS SO. "NC Office of EMS scope, EMT level,
+     checked Aug 2026" with a link. Category A per R7: sourced, dated,
+     jurisdiction-aware, and CUT rather than approximated.
+  5. NOTHING IS PRESELECTED. HQ does not know what you did. An empty set is
+     a valid answer and the student can skip entirely.
+  6. IT SEEDS A DRAFT, IT DOES NOT WRITE ONE. Ticked items become a plain
+     comma list in the description field, fully editable. HQ does not
+     generate prose here.
+  7. FREE TEXT REMAINS THE PRIMARY PATH (#27). The checklist is an optional
+     assist for people staring at a blank box. Someone who would rather just
+     type gets the same field with no list.
+  8. DORMANT WHERE UNSOURCED. A role with no published scope shows the
+     free-text field alone and says nothing, rather than offering a
+     plausible-sounding list HQ made up.
+
+  DELIBERATELY EXCLUDED - do not add these back
+   · Observed vs performed counts. R1, still cut.
+   · Any per-shift or ongoing skill tracking.
+   · A skills panel on the pillar page or the site workspace.
+   · Preselected or inferred ticks.
+   · AI-written description prose. The student writes it; HQ supplies recall.
+   · A list for any role whose scope HQ has not actually sourced.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f;
+  --cat:#6fae6e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:13px;padding:26px;overflow:auto}
+.frame{width:1400px;background:var(--bg);border-radius:18px;overflow:hidden;box-shadow:0 30px 90px -30px rgba(0,0,0,.9);margin-bottom:30px}
+.framelabel{width:1400px;font-family:'Baloo 2';font-weight:800;font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;margin:0 0 10px 4px}
+
+.banner{background:
+  radial-gradient(340px 200px at 88% 6%, rgba(75,156,211,.34), transparent 70%),
+  radial-gradient(260px 180px at 10% 130%, rgba(111,192,168,.18), transparent 70%),
+  linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%);padding:16px 24px 18px}
+.h1{font-family:'Baloo 2';font-weight:800;font-size:30px;color:#fff;letter-spacing:-.4px;line-height:1.1}
+.subline{font-size:12px;color:rgba(255,255,255,.66);font-weight:700;margin-top:4px}
+.modetag{font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:3px 10px;
+  display:inline-block;margin-bottom:11px}
+
+.body{padding:20px 22px 26px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.state{font-family:'Baloo 2';font-weight:800;font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.state i{width:16px;height:16px;border-radius:5px;background:color-mix(in srgb,var(--cat) 22%,transparent);
+  color:var(--cat);font-style:normal;font-size:9px;display:grid;place-items:center;font-weight:800}
+
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:15px 16px;
+  box-shadow:0 10px 26px -14px rgba(0,0,0,.55)}
+.pt{font-family:'Baloo 2';font-weight:800;font-size:16.5px;margin-bottom:2px}
+.ps{font-size:11.5px;color:var(--dim);font-weight:700;margin-bottom:12px}
+.flabel{font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+
+/* description box */
+.desc{background:var(--muted);border:1px solid var(--bd);border-radius:11px;padding:12px 13px;
+  font-size:12.5px;line-height:1.65;color:var(--fg);min-height:96px}
+.desc.empty{color:var(--dim);font-weight:600}
+.count{font-family:'Baloo 2';font-weight:800;font-size:10.5px;color:var(--dim);text-align:right;margin-top:6px;
+  font-variant-numeric:tabular-nums}
+.count b{color:var(--mut)}
+
+/* the assist */
+.assist{background:color-mix(in srgb,var(--cat) 7%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 28%,var(--bd));border-radius:12px;padding:12px 13px;margin-top:11px}
+.ahead{font-family:'Baloo 2';font-weight:800;font-size:13px;margin-bottom:3px}
+.asub{font-size:11px;color:var(--dim);font-weight:700;line-height:1.5;margin-bottom:10px}
+.asub a{color:var(--cat);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ck{display:flex;align-items:flex-start;gap:8px;background:var(--card);border:1px solid var(--bd);
+  border-radius:9px;padding:8px 10px;cursor:pointer;transition:.15s cubic-bezier(.16,1,.3,1)}
+.ck:hover{border-color:color-mix(in srgb,var(--cat) 45%,var(--bd))}
+.ck.on{border-color:var(--cat);background:color-mix(in srgb,var(--cat) 11%,var(--card))}
+.box{width:15px;height:15px;border-radius:4px;border:1.6px solid var(--dim);flex:none;margin-top:1px}
+.ck.on .box{background:var(--cat);border-color:var(--cat)}
+.ct{font-size:11.5px;font-weight:700;line-height:1.4}
+.arow{display:flex;align-items:center;gap:8px;margin-top:11px}
+.btn{font-family:'Baloo 2';font-weight:800;font-size:11.5px;border-radius:9px;padding:7px 12px;
+  border:1px solid var(--bd);background:var(--card);color:var(--mut);cursor:pointer}
+.btn.pri{background:var(--cat);border-color:var(--cat);color:#10201a}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--dim)}
+.src{font-size:10px;color:var(--dim);font-weight:700;margin-left:auto}
+
+.note{font-size:11.5px;color:var(--dim);font-weight:600;line-height:1.6;padding:9px 11px;
+  background:rgba(255,255,255,.028);border-left:2px solid color-mix(in srgb,var(--cat) 42%,transparent);
+  border-radius:0 9px 9px 0;margin-top:11px}
+.note b{color:var(--mut);font-weight:800}
+.mnote{display:flex;gap:11px;align-items:flex-start;background:color-mix(in srgb,var(--cat) 7%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 24%,var(--bd));border-radius:12px;padding:11px 13px;margin-top:14px}
+.ram{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--cat) 22%,transparent);
+  display:grid;place-items:center;flex:none;font-size:15px}
+.mt{font-family:'Baloo 2';font-weight:800;font-size:12.5px;margin-bottom:2px}
+.mb{font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.55}
+.x{margin-left:auto;color:var(--dim);font-weight:800;font-size:13px;cursor:pointer;flex:none}
+.tiny{font-family:'Baloo 2';font-weight:800;font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--dim);background:rgba(255,255,255,.06);border-radius:999px;padding:2px 8px}
+</style>
+</head>
+<body>
+
+<!-- ============ FRAME 1 ============ -->
+<div class="framelabel">Frame 1 &middot; inside the AMCAS export preview &middot; blank box, then the assist</div>
+<div class="frame">
+  <div class="banner">
+    <div class="modetag">AMCAS export preview &middot; Orange County EMS &middot; EMT</div>
+    <div class="h1">Describe what you did</div>
+    <div class="subline">700 characters, written by you. HQ can remind you what the role covers.</div>
+  </div>
+
+  <div class="body"><div class="two">
+
+    <div>
+      <div class="state"><i>1</i> The blank box, a year later</div>
+      <div class="panel">
+        <div class="flabel">Experience description</div>
+        <div class="desc empty">Start typing&hellip;</div>
+        <div class="count"><b>0</b> / 700</div>
+        <div class="note">This is the moment the whole thing exists for. It is eighteen months since your first shift, the box is empty, and "I was an EMT" is all that comes to mind. <b>Nothing in HQ helped until now</b>, and nothing needed to.</div>
+        <div class="arow" style="margin-top:12px">
+          <div class="btn">Remind me what this role covers</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="state"><i>2</i> The assist, opened</div>
+      <div class="panel">
+        <div class="flabel">Experience description</div>
+        <div class="desc empty">Start typing&hellip;</div>
+        <div class="count"><b>0</b> / 700</div>
+
+        <div class="assist">
+          <div class="ahead">What did you actually do?</div>
+          <div class="asub">Scope for an EMT in North Carolina. Tick anything you genuinely did. <a>NC Office of EMS &middot; checked Aug 2026</a></div>
+          <div class="checks">
+            <div class="ck on"><span class="box"></span><span class="ct">Patient assessment and vitals</span></div>
+            <div class="ck on"><span class="box"></span><span class="ct">Bleeding control and splinting</span></div>
+            <div class="ck"><span class="box"></span><span class="ct">Airway management, BVM</span></div>
+            <div class="ck on"><span class="box"></span><span class="ct">CPR and AED</span></div>
+            <div class="ck"><span class="box"></span><span class="ct">Oxygen administration</span></div>
+            <div class="ck on"><span class="box"></span><span class="ct">Patient movement and transport</span></div>
+            <div class="ck"><span class="box"></span><span class="ct">Assisting with patient medications</span></div>
+            <div class="ck on"><span class="box"></span><span class="ct">Radio report and handoff</span></div>
+          </div>
+          <div class="arow">
+            <div class="btn pri">Add 5 to my draft</div>
+            <div class="btn ghost">Skip, I'll write it</div>
+            <span class="src">nothing is preselected</span>
+          </div>
+        </div>
+
+        <div class="note"><b>Checkboxes, not counts.</b> You did it or you did not. There is no observed-versus-performed, no frequency, and no per-shift tracking anywhere behind this.</div>
+      </div>
+    </div>
+
+  </div></div>
+</div>
+
+
+<!-- ============ FRAME 2 ============ -->
+<div class="framelabel">Frame 2 &middot; what ticking produces &middot; and the role with no published scope</div>
+<div class="frame">
+  <div class="banner">
+    <div class="modetag">After</div>
+    <div class="h1">It seeds a draft. You write the rest.</div>
+    <div class="subline">And where HQ has no sourced scope, it says nothing at all.</div>
+  </div>
+
+  <div class="body"><div class="two">
+
+    <div>
+      <div class="state"><i>3</i> Seeded, then edited</div>
+      <div class="panel">
+        <div class="flabel">Experience description</div>
+        <div class="desc">Patient assessment and vitals, bleeding control and splinting, CPR and AED, patient movement and transport, radio report and handoff.<span style="color:var(--dim)"> |</span></div>
+        <div class="count"><b>141</b> / 700</div>
+        <div class="arow" style="margin-top:9px">
+          <span class="tiny">draft seeded</span>
+          <div class="btn ghost" style="margin-left:auto">Reopen the list</div>
+        </div>
+        <div class="note">A plain comma list, fully editable, and <b>that is the entire output</b>. HQ does not write prose here. The point was to get five true specifics in front of you so the blank page stops being blank.</div>
+        <div class="note">The list closes after this and does not come back on its own. <b>Reopen the list</b> stays available if you want it, which is the difference between an assist and a prompt.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="state"><i>4</i> A role HQ has not sourced</div>
+      <div class="panel">
+        <div class="flabel">Experience description <span style="text-transform:none;letter-spacing:0;font-weight:700;color:var(--dim)">&middot; Cardiac rehab aide</span></div>
+        <div class="desc empty">Start typing&hellip;</div>
+        <div class="count"><b>0</b> / 700</div>
+        <div class="note"><b>No list, and no apology for it.</b> There is no published scope HQ has verified for this role, so it offers nothing rather than a plausible-sounding set it made up. R7: sourced, dated, jurisdiction-aware, and cut rather than approximated.</div>
+        <div class="note">A confidently wrong scope list is worse than a blank field, because a student might put it in their application.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="max-width:1080px;margin:0 auto">
+    <div class="mnote">
+      <div class="ram">&#128015;</div>
+      <div>
+        <div class="mt">Why this is not the skills tracker you killed</div>
+        <div class="mb">That one asked you to maintain counts across two years so a number could exist. This asks you one question, once, at the only moment the answer is worth anything, and the source is the state's own scope document rather than a list HQ invented. If you would rather just type, the free-text field is unchanged and the assist never appears.</div>
+      </div>
+      <div class="x">&#10005;</div>
+    </div>
+  </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clinical — hours over time (#34) and setting mix (#36)</title>
+<!--
+  ============================================================================
+  CLINICAL - HOURS OVER TIME (#34) + SETTING MIX (#36)
+  ============================================================================
+  Status: PROPOSED (Aug 2026). Spec: tabs/03-clinical.md §8 · catalog #34/#36.
+
+  #34 IS NOT THE GPA CHART, AND THE DIFFERENCE MATTERS
+  The GPA tile (03-overview.md §6.5a) uses a term-by-term TREND LINE, which is
+  right for GPA: a GPA is a LEVEL and it moves both directions.
+
+  Cumulative hours only ever go UP. A cumulative line always slopes up and to
+  the right, cannot show a bad month, and flatters the student regardless of
+  what they actually did. It is a chart that says "well done" no matter what.
+
+  Clinical's real signals are RECENCY and STEADINESS (§2.3), so the chart is
+  HOURS PER MONTH AS BARS:
+    · even bars   -> sustained
+    · spiky bars  -> bursty
+    · empty bar   -> you stopped
+  CUMULATIVE IS A SECOND VIEW, NOT A REJECT (revised Aug 2026)
+  Andy: "i think the user could benefit from two different views. hours per
+  month being the default view, but if the user wants to see total hours,
+  what do they do?"
+  Right. The flattery problem was about cumulative being the DEFAULT. Nobody
+  is misled by a chart they explicitly asked for, and "when did I cross 250?"
+  is a real question at application time.
+    · DEFAULT  = hours per month (rate, consistency, gaps)
+    · ON REQUEST = running total (accumulation, crossing points)
+  A small SEGMENTED SWITCHER in the panel header toggles them. It is a
+  FILTER, not a mode, so per 01 §4b-i it is a solid form control, the same
+  component as the Assignments Agenda/Weekly/Calendar switcher, NOT a glass
+  mode pill.
+  HOVER SHOWS BOTH NUMBERS in either view ("31h in March / 284h total by
+  then"), so nobody switches views just to read one figure.
+  NOT a dual-axis combo chart: two scales in one frame is a well-known way to
+  mislead, and the reader picks whichever crossing looks meaningful.
+
+  #35 IS ABSORBED BY THIS CHART (Andy, Aug 2026)
+  "gap narratives are not realistic. nobody using premed hq is just gonna have
+  a gap all of a sudden." Correct. Nobody's record develops a hole out of
+  nowhere, and it does not deserve a feature. But an empty bar shows a gap IF
+  one happens, with no narrative machinery at all. #35 is demoted to a note on
+  this chart rather than a standalone feature.
+
+  #36 SETTING MIX IS SHOWN SO IT CAN BE JUDGED, NOT BECAUSE IT IS APPROVED
+  Carried open decision #3, leaning CUT. §8 already calls variety here "minor"
+  because Shadowing owns breadth as a signal. Frame 2 renders it honestly and
+  states the case against it. If it does not earn the space on sight, cut it.
+
+  DECISIONS THIS FILE ENCODES
+  1. BARS PER MONTH, NEVER A CUMULATIVE LINE.
+  2. ESTIMATED BLOCKS ARE VISUALLY SEPARATE. A backfill block is hatched and
+     sits behind the axis label, because it never feeds weekly pace.
+  3. BOUNDED HEIGHT. 01 §5c: the chart never grows to fill space. Roughly 12
+     months visible, older data reachable but not stretched.
+  4. NO TARGET LINE ON THE CHART. A target is optional (§7a) and drawing a
+     bar-height goal turns a description into a scoreboard.
+  5. THE AXIS IS HONEST. It starts at zero and is not truncated to make
+     variation look dramatic (04 craft standards).
+  6. NO SMOOTHING, NO TREND OVERLAY, NO PROJECTION ON THIS CHART. The pace
+     line (#32) says the forward-looking part in words. The chart is history.
+
+  DELIBERATELY EXCLUDED - do not add these back
+   · A cumulative hours line or area chart. See above.
+   · A goal line, target band, or shaded "on pace" region.
+   · A trend line or moving average over the bars.
+   · Comparison to any other student or cohort.
+   · A pie or donut for setting mix. Implies a correct balance; there is none.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f;
+  --cat:#6fae6e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:13px;padding:26px;overflow:auto}
+.frame{width:1400px;background:var(--bg);border-radius:18px;overflow:hidden;box-shadow:0 30px 90px -30px rgba(0,0,0,.9);margin-bottom:30px}
+.framelabel{width:1400px;font-family:'Baloo 2';font-weight:800;font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;margin:0 0 10px 4px}
+
+.banner{background:
+  radial-gradient(340px 200px at 88% 6%, rgba(75,156,211,.34), transparent 70%),
+  radial-gradient(260px 180px at 10% 130%, rgba(111,192,168,.18), transparent 70%),
+  linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%);padding:16px 24px 18px}
+.h1{font-family:'Baloo 2';font-weight:800;font-size:30px;color:#fff;letter-spacing:-.4px;line-height:1.1}
+.subline{font-size:12px;color:rgba(255,255,255,.66);font-weight:700;margin-top:4px}
+.modetag{font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:3px 10px;
+  display:inline-block;margin-bottom:11px}
+
+.body{padding:20px 22px 26px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.state{font-family:'Baloo 2';font-weight:800;font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.state.bad{color:var(--danger)}
+
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:15px 16px;
+  box-shadow:0 10px 26px -14px rgba(0,0,0,.55)}
+.panel.rejected{opacity:.72;border-style:dashed}
+/* view switcher: a FILTER, not a mode. Solid form control per 01 §4b-i,
+   same component as Assignments' Agenda/Weekly/Calendar switcher. */
+.vsw{display:flex;gap:2px;background:var(--muted);border:1px solid var(--bd);border-radius:9px;padding:2px}
+.vsw .v{font-family:'Baloo 2';font-weight:800;font-size:10.5px;padding:5px 11px;border-radius:7px;
+  color:var(--dim);cursor:pointer;white-space:nowrap}
+.vsw .v.on{background:var(--card);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.phead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:13px}
+/* hover readout: both numbers, whichever view you are in */
+.tip{position:absolute;top:-2px;right:0;background:rgba(20,26,34,.74);backdrop-filter:blur(14px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+  border-radius:9px;padding:7px 10px;font-family:'Baloo 2';font-weight:800;font-size:11px;color:#fff;
+  line-height:1.5;font-variant-numeric:tabular-nums;text-align:right}
+.tip span{display:block;color:rgba(255,255,255,.55);font-size:10px}
+.pt{font-family:'Baloo 2';font-weight:800;font-size:16.5px;margin-bottom:2px}
+.ps{font-size:11.5px;color:var(--dim);font-weight:700;margin-bottom:14px}
+
+/* ---- the bar chart ---- */
+.chart{height:132px;display:flex;align-items:flex-end;gap:6px;padding:0 2px;
+  border-bottom:1px solid var(--bd);position:relative}
+.gl{position:absolute;left:0;right:0;height:1px;background:rgba(255,255,255,.05)}
+.mo{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:0;height:100%;position:relative}
+.b{width:100%;background:var(--cat);border-radius:4px 4px 0 0;min-height:2px;
+  transition:.15s cubic-bezier(.16,1,.3,1)}
+.mo:hover .b{background:color-mix(in srgb,var(--cat) 78%,#fff)}
+.b.est{background:repeating-linear-gradient(45deg,
+  color-mix(in srgb,var(--cat) 40%,transparent) 0 4px, transparent 4px 8px);
+  border:1px dashed color-mix(in srgb,var(--cat) 55%,transparent)}
+.b.zero{background:transparent;border-bottom:2px solid var(--danger)}
+.xr{display:flex;gap:6px;padding:7px 2px 0}
+.xl{flex:1;text-align:center;font-family:'Baloo 2';font-weight:800;font-size:9px;color:var(--dim);
+  letter-spacing:.03em;text-transform:uppercase}
+.xl.zero{color:var(--danger)}
+.yax{position:absolute;left:-2px;top:-6px;font-family:'Baloo 2';font-weight:800;font-size:9px;color:var(--dim)}
+
+/* rejected cumulative line */
+.cum{height:132px;position:relative;border-bottom:1px solid var(--bd)}
+.cumline{position:absolute;left:0;bottom:0;width:100%;height:100%}
+
+.legend{display:flex;flex-wrap:wrap;gap:13px;margin-top:12px}
+.lg{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:var(--dim)}
+.sw{width:11px;height:8px;border-radius:2px;background:var(--cat);flex:none}
+.sw.est{background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--cat) 40%,transparent) 0 3px,transparent 3px 6px);
+  border:1px dashed color-mix(in srgb,var(--cat) 55%,transparent)}
+.sw.zero{background:transparent;border-bottom:2px solid var(--danger);border-radius:0}
+
+.read{font-family:'Baloo 2';font-weight:800;font-size:12.5px;color:var(--mut);margin-top:12px;
+  padding:9px 11px;background:rgba(255,255,255,.028);
+  border-left:2px solid color-mix(in srgb,var(--cat) 45%,transparent);border-radius:0 9px 9px 0;line-height:1.6}
+.read b{color:var(--fg)}
+
+.note{font-size:11.5px;color:var(--dim);font-weight:600;line-height:1.6;padding:9px 11px;
+  background:rgba(255,255,255,.028);border-left:2px solid color-mix(in srgb,var(--cat) 42%,transparent);
+  border-radius:0 9px 9px 0;margin-top:11px}
+.note.bad{border-left-color:color-mix(in srgb,var(--danger) 55%,transparent)}
+.note b{color:var(--mut);font-weight:800}
+
+/* setting mix */
+.setrow{display:grid;grid-template-columns:96px 1fr 54px;gap:11px;align-items:center;padding:6px 0}
+.sn{font-size:12px;font-weight:700}
+.strack{height:9px;background:var(--muted);border:1px solid var(--bd);border-radius:999px;overflow:hidden}
+.sfill{height:100%;background:var(--cat);border-radius:999px}
+.sv{font-family:'Baloo 2';font-weight:800;font-size:11.5px;color:var(--mut);text-align:right;font-variant-numeric:tabular-nums}
+
+.mnote{display:flex;gap:11px;align-items:flex-start;background:color-mix(in srgb,var(--cat) 7%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 24%,var(--bd));border-radius:12px;padding:11px 13px;margin-top:14px}
+.ram{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--cat) 22%,transparent);
+  display:grid;place-items:center;flex:none;font-size:15px}
+.mt{font-family:'Baloo 2';font-weight:800;font-size:12.5px;margin-bottom:2px}
+.mb{font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.55}
+.x{margin-left:auto;color:var(--dim);font-weight:800;font-size:13px;cursor:pointer;flex:none}
+.verdict{font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
+  border-radius:999px;padding:3px 9px}
+.v-cut{background:color-mix(in srgb,var(--danger) 18%,transparent);color:var(--danger)}
+.v-keep{background:color-mix(in srgb,var(--success) 18%,transparent);color:var(--success)}
+</style>
+</head>
+<body>
+
+<!-- ============ FRAME 1 ============ -->
+<div class="framelabel">Frame 1 &middot; #34 &middot; two views, monthly by default</div>
+<div class="frame">
+  <div class="banner">
+    <div class="modetag">Clinical &middot; &sect;8</div>
+    <div class="h1">Consistency by default, total on request</div>
+    <div class="subline">Both are true. Only one of them should be the first thing you see.</div>
+  </div>
+
+  <div class="body"><div class="two">
+
+    <div>
+      <div class="state">Default &middot; hours per month</div>
+      <div class="panel">
+        <div class="phead">
+          <div><div class="pt">Hours per month</div><div class="ps">Last 12 months</div></div>
+          <div class="vsw"><span class="v on">Monthly</span><span class="v">Total</span></div>
+        </div>
+        <div class="chart">
+          <span class="yax">40h</span>
+          <div class="gl" style="top:0"></div><div class="gl" style="top:50%"></div>
+          <div class="tip">31h in March<span>284h total by then</span></div>
+          <div class="mo"><div class="b est" style="height:38%"></div></div>
+          <div class="mo"><div class="b est" style="height:34%"></div></div>
+          <div class="mo"><div class="b" style="height:58%"></div></div>
+          <div class="mo"><div class="b" style="height:64%"></div></div>
+          <div class="mo"><div class="b zero" style="height:0%"></div></div>
+          <div class="mo"><div class="b" style="height:22%"></div></div>
+          <div class="mo"><div class="b" style="height:61%"></div></div>
+          <div class="mo"><div class="b" style="height:70%"></div></div>
+          <div class="mo"><div class="b" style="height:66%"></div></div>
+          <div class="mo"><div class="b" style="height:72%"></div></div>
+          <div class="mo"><div class="b" style="height:68%"></div></div>
+          <div class="mo"><div class="b" style="height:74%"></div></div>
+        </div>
+        <div class="xr">
+          <span class="xl">Aug</span><span class="xl">Sep</span><span class="xl">Oct</span><span class="xl">Nov</span>
+          <span class="xl zero">Dec</span><span class="xl">Jan</span><span class="xl">Feb</span><span class="xl">Mar</span>
+          <span class="xl">Apr</span><span class="xl">May</span><span class="xl">Jun</span><span class="xl">Jul</span>
+        </div>
+        <div class="legend">
+          <div class="lg"><span class="sw"></span>logged</div>
+          <div class="lg"><span class="sw est"></span>estimated block, not in pace</div>
+          <div class="lg"><span class="sw zero"></span>no shifts</div>
+        </div>
+        <div class="read"><b>December is empty and January is thin</b> because of finals, and the last six months are level at about 30 a month.</div>
+        <div class="note"><b>Hovering shows both numbers</b> whichever view you are in: what you did that month, and where the running total stood. You never have to switch views just to read one figure.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="state">On request &middot; running total</div>
+      <div class="panel">
+        <div class="phead">
+          <div><div class="pt">Total hours</div><div class="ps">486 as of July</div></div>
+          <div class="vsw"><span class="v">Monthly</span><span class="v on">Total</span></div>
+        </div>
+        <div class="cum">
+          <div class="tip">284h by March<span>31h that month</span></div>
+          <svg class="cumline" viewBox="0 0 400 132" preserveAspectRatio="none">
+            <polyline points="0,130 33,124 66,116 100,112 133,100 166,88 200,84 233,60 266,44 300,40 333,24 366,14 400,6"
+              fill="none" stroke="#6fae6e" stroke-width="2.5" stroke-linejoin="round"/>
+            <polyline points="0,130 33,124 66,116 100,112 133,100 166,88 200,84 233,60 266,44 300,40 333,24 366,14 400,6 400,132 0,132"
+              fill="rgba(111,174,110,.12)" stroke="none"/>
+          </svg>
+        </div>
+        <div class="xr">
+          <span class="xl">Aug</span><span class="xl">Sep</span><span class="xl">Oct</span><span class="xl">Nov</span>
+          <span class="xl">Dec</span><span class="xl">Jan</span><span class="xl">Feb</span><span class="xl">Mar</span>
+          <span class="xl">Apr</span><span class="xl">May</span><span class="xl">Jun</span><span class="xl">Jul</span>
+        </div>
+        <div class="read">Answers a real question: <b>when did I cross 250?</b> Around February, which is the kind of thing you want when writing dates into an application.</div>
+        <div class="note"><b>Fine as a chosen view, wrong as the default.</b> This line can only go up, so it looks like progress whether you worked every week or stopped for two months and crammed. December is invisible here. Nobody is misled by a chart they asked for, but a chart that greets you with praise regardless of what you did is a different thing.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="max-width:1080px;margin:0 auto">
+    <div class="mnote">
+      <div class="ram">&#128015;</div>
+      <div>
+        <div class="mt">Why a switcher and not one combined chart</div>
+        <div class="mb">Bars plus a cumulative line on a second axis would fit both in one frame, and it is a well-known way to mislead: two scales, and the reader picks whichever crossing looks meaningful. Two clean views with one toggle is more honest and easier to read. The toggle is a filter, so it uses the same solid segmented control as the Assignments view switcher rather than a glass mode pill.</div>
+      </div>
+      <div class="x">&#10005;</div>
+    </div>
+  </div>
+  </div>
+</div>
+
+
+<!-- ============ FRAME 2 ============ -->
+<div class="framelabel">Frame 2 &middot; #36 setting mix &middot; rendered honestly, with the case against it</div>
+<div class="frame">
+  <div class="banner">
+    <div class="modetag">Carried open decision #3</div>
+    <div class="h1">Setting mix, and whether it earns the space</div>
+    <div class="subline">Shown so it can be judged on sight rather than argued about.</div>
+  </div>
+
+  <div class="body"><div class="two">
+
+    <div>
+      <div class="state">What it would look like</div>
+      <div class="panel">
+        <div class="pt">Where your hours came from</div>
+        <div class="ps">486 hours across 4 settings</div>
+        <div class="setrow"><span class="sn">EMS / field</span><span class="strack"><span class="sfill" style="width:81%"></span></span><span class="sv">396h</span></div>
+        <div class="setrow"><span class="sn">Inpatient</span><span class="strack"><span class="sfill" style="width:28%"></span></span><span class="sv">138h</span></div>
+        <div class="setrow"><span class="sn">Emergency</span><span class="strack"><span class="sfill" style="width:9%"></span></span><span class="sv">44h</span></div>
+        <div class="setrow"><span class="sn">Clinic</span><span class="strack"><span class="sfill" style="width:4%"></span></span><span class="sv">18h</span></div>
+        <div class="read">That is the whole feature. Four rows, four numbers you could also read off the site list one screen away.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="state">The case for cutting it <span class="verdict v-cut">lean cut</span></div>
+      <div class="panel">
+        <div class="note"><b>Nobody judges it.</b> Clinical's signals are hours, recency, and continuity (&sect;2.3). Variety of setting is not one of them, and &sect;8 already calls it "minor".</div>
+        <div class="note"><b>Shadowing owns breadth.</b> Specialty coverage is a real metric there and the app already tracks it properly. Repeating the idea here, weakly, blurs which pillar answers which question.</div>
+        <div class="note"><b>It restates the site list.</b> Expanding your positions already shows Orange County EMS at 396h and UNC Children's at 138h. This is that, grouped.</div>
+        <div class="note"><b>It invites bucket-filling.</b> A student who sees "Clinic 18h" reads a gap and goes looking for clinic hours, chasing a balance nobody asked for.</div>
+        <div class="note"><b>The one argument for keeping it:</b> at application time, "EMS, inpatient, ED and clinic" is a sentence worth writing, and this is where you would notice you can write it. That is a <b>writing-time</b> use, which means it belongs in the export preview, not on the pillar page.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="max-width:1080px;margin:0 auto">
+    <div class="mnote">
+      <div class="ram">&#128015;</div>
+      <div>
+        <div class="mt">Where it would go if it survives</div>
+        <div class="mb">Not as a panel on Clinical. As one line inside the AMCAS export preview, next to the scope checklist, at the moment you are describing the role. Same pattern as everything else that turned out to be writing-time rather than tracking-time.</div>
+      </div>
+      <div class="x">&#10005;</div>
+    </div>
+  </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview — Where I stand, expandable rows (§6.5 amendment)</title>
+<!--
+  ============================================================================
+  OVERVIEW - WHERE I STAND - EXPANDABLE ROWS
+  ============================================================================
+  Status: PROPOSED (Aug 2026). Amendment to specifications/03-overview.md §6.5.
+  Does NOT replace overview-bento-control-panel.html, which stays approved.
+  This file shows one panel in two states so the change can be judged alone.
+
+  THE GAP IT CLOSES (Andy, Aug 2026)
+  "In overview it only displays hours, it doesn't show from where."
+  Correct. §6.5 currently says "clicking the row opens that domain's page",
+  so the only way to answer "from where" is to leave Overview. The row shows
+  124 hrs and nothing about which positions produced them.
+
+  WHAT CHANGED
+  A chevron expands the row in place to list the positions behind the number.
+  This is the one salvaged element from the rejected hours-map panel
+  (mockups/_shared/hours-map.html): every total should open to the records
+  behind it, or it is a vanity figure.
+
+  THREE CONSTRAINTS, OR IT BREAKS THE PANEL
+  1. ONE ROW OPEN AT A TIME. Where I stand is a TALL 5-col bento cell holding
+     nine domain rows. Several open at once grows unbounded inside a fixed
+     cell, which 01 §5c forbids. Opening a row closes the previous one.
+  2. CAPPED AT THREE POSITIONS, then "+N more" linking to the pillar page.
+     The panel answers "from where", not "show me everything".
+  3. TWO TARGETS IN ONE ROW. The chevron expands. The row body still
+     navigates to the domain page, which is the existing §6.5 behaviour and
+     must not be lost.
+
+  DECISIONS THIS FILE ENCODES
+  4. EACH POSITION SHOWS ITS OWN STATE, not just a number: active, ended,
+     estimated. An estimated backfill block is visually distinct because it
+     never feeds weekly pace (clinical catalog, bulk backfill rule).
+  5. THE CROSS-LINK ATTRIBUTION LINE LIVES HERE. "64h from Carolina Health
+     Access, counted once" is #18 made visible, and this is now the only
+     place in the app it speaks unprompted. Without it a club shows no hours
+     and reads as broken.
+  6. NON-HOUR PILLARS EXPAND TOO, into their own vocabulary. Shadowing lists
+     physicians and specialties. Extracurriculars lists roles and dates and
+     shows NO HOURS AT ALL, per its own §2.1 rule.
+  7. THE PACE CHIP IS UNCHANGED and stays on the collapsed row. Expanding
+     adds detail; it never adds judgment.
+
+  8. THREE LINK LEVELS, BROAD TO SPECIFIC. Every element in an expanded row
+     goes somewhere, and the destination gets more specific as you go down:
+       row body        -> the pillar page          (existing §6.5 behaviour)
+       position row    -> THAT RECORD's inspector, deep-linked
+       attribution org -> the OTHER pillar's record
+     Position rows are NOT titles. Someone expands Clinical to check
+     something about a position; landing them on the pillar page makes them
+     hunt for it again. The attribution link matters most: the whole point of
+     "64h come from Carolina Health Access" is that the hours live elsewhere,
+     so the name has to take you there. Naming a relationship without a way
+     to follow it is worse than not mentioning it.
+
+  DELIBERATELY EXCLUDED - do not add these back
+   · Multi-row expansion. See constraint 1.
+   · A full record list inside the panel. That is the pillar page's job.
+   · Any new metric introduced by expanding. Expansion reveals; it never
+     computes something the collapsed row did not already know.
+   · Hours on the Extracurriculars expansion, even though the data exists.
+     04 rule, restated in 07-extracurriculars.md §2.1.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f;
+  --cat:#4b9cd3;
+  --gpa:#4b9cd3; --mcat:#8c7bd4; --clinical:#6fae6e; --volunteer:#72a996;
+  --shadow:#e0a458; --research:#c98ac9; --activities:#e08b9b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:13px;padding:26px;overflow:auto}
+.frame{width:1400px;background:var(--bg);border-radius:18px;overflow:hidden;box-shadow:0 30px 90px -30px rgba(0,0,0,.9);margin-bottom:30px}
+.framelabel{width:1400px;font-family:'Baloo 2';font-weight:800;font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;margin:0 0 10px 4px}
+
+.banner{background:
+  radial-gradient(340px 200px at 88% 6%, rgba(75,156,211,.34), transparent 70%),
+  radial-gradient(260px 180px at 10% 130%, rgba(111,192,168,.18), transparent 70%),
+  linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%);padding:16px 24px 18px}
+.h1{font-family:'Baloo 2';font-weight:800;font-size:30px;color:#fff;letter-spacing:-.4px;line-height:1.1}
+.subline{font-size:12px;color:rgba(255,255,255,.66);font-weight:700;margin-top:4px}
+.modetag{font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:3px 10px;
+  display:inline-block;margin-bottom:11px}
+
+.body{padding:20px 22px 24px}
+.two{display:grid;grid-template-columns:430px 1fr;gap:18px;align-items:start}
+
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 10px 26px -14px rgba(0,0,0,.55)}
+.ph{padding:14px 16px 9px;display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.pt{font-family:'Baloo 2';font-weight:800;font-size:16.5px}
+.ps{font-size:11px;color:var(--dim);font-weight:700}
+.pb{padding:2px 12px 14px}
+
+.grp{font-family:'Baloo 2';font-weight:800;font-size:9px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--dim);padding:11px 4px 6px;display:flex;align-items:center;gap:8px}
+.grp::after{content:"";flex:1;height:1px;background:var(--bd)}
+
+/* ---- collapsed row: unchanged from §6.5, plus a chevron ---- */
+.row{display:grid;grid-template-columns:9px 1fr auto 20px;gap:9px;align-items:center;
+  padding:7px 8px;border-radius:9px;cursor:pointer;transition:.15s cubic-bezier(.16,1,.3,1)}
+.row:hover{background:var(--muted)}
+.row.open{background:var(--muted)}
+.dot{width:9px;height:9px;border-radius:3px;background:var(--accent)}
+.nm{font-weight:700;font-size:12.5px}
+.nm small{color:var(--dim);font-weight:700;margin-left:6px;font-variant-numeric:tabular-nums}
+.bar{width:52px;height:5px;background:var(--muted);border:1px solid var(--bd);border-radius:999px;overflow:hidden}
+.row.open .bar{background:var(--card)}
+.fill{height:100%;background:var(--accent)}
+.pace{font-family:'Baloo 2';font-weight:800;font-size:9px;border-radius:999px;padding:2px 7px;white-space:nowrap}
+.p-ok{background:color-mix(in srgb,var(--success) 18%,transparent);color:var(--success)}
+.p-warn{background:color-mix(in srgb,var(--warning) 20%,transparent);color:var(--warning)}
+.p-dim{background:rgba(255,255,255,.07);color:var(--dim)}
+.chev{color:var(--dim);font-size:10px;text-align:center;transition:.15s}
+.right{display:flex;align-items:center;gap:8px}
+
+/* ---- expansion ---- */
+.exp{margin:2px 8px 8px 26px;display:flex;flex-direction:column;gap:4px}
+.pos{display:grid;grid-template-columns:1fr auto 12px;gap:10px;align-items:center;
+  background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:7px 10px;
+  cursor:pointer;transition:.15s cubic-bezier(.16,1,.3,1)}
+.pos:hover{border-color:color-mix(in srgb,var(--accent) 55%,var(--bd));background:var(--muted)}
+.pos .go{font-family:'Baloo 2';font-weight:800;font-size:10px;color:var(--dim);opacity:0;transition:.15s}
+.pos:hover .go{opacity:1;color:var(--accent)}
+.attr a{color:var(--mut);font-weight:800;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.attr a:hover{color:var(--volunteer)}
+.pos.est{border-style:dashed;background:rgba(255,255,255,.02)}
+.pn{font-size:11.5px;font-weight:700;line-height:1.35}
+.pn span{display:block;font-size:10px;color:var(--dim);font-weight:700;margin-top:2px}
+.ph2{font-family:'Baloo 2';font-weight:800;font-size:11.5px;color:var(--mut);font-variant-numeric:tabular-nums;text-align:right}
+.attr{display:flex;gap:7px;align-items:flex-start;padding:6px 10px;font-size:10.5px;font-weight:700;color:var(--dim);
+  background:rgba(255,255,255,.026);border-left:2px solid color-mix(in srgb,var(--volunteer) 55%,transparent);
+  border-radius:0 8px 8px 0;line-height:1.5}
+.attr b{color:var(--mut);font-weight:800}
+.more{font-family:'Baloo 2';font-weight:800;font-size:10.5px;color:var(--cat);padding:3px 10px;cursor:pointer}
+
+.note{font-size:11.5px;color:var(--dim);font-weight:600;line-height:1.6;padding:9px 11px;
+  background:rgba(255,255,255,.028);border-left:2px solid color-mix(in srgb,var(--cat) 42%,transparent);
+  border-radius:0 9px 9px 0;margin-bottom:9px}
+.note b{color:var(--mut);font-weight:800}
+.mnote{display:flex;gap:11px;align-items:flex-start;background:color-mix(in srgb,var(--cat) 7%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 24%,var(--bd));border-radius:12px;padding:11px 13px}
+.ram{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--cat) 22%,transparent);
+  display:grid;place-items:center;flex:none;font-size:15px}
+.mt{font-family:'Baloo 2';font-weight:800;font-size:12.5px;margin-bottom:2px}
+.mb{font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.55}
+.x{margin-left:auto;color:var(--dim);font-weight:800;font-size:13px;cursor:pointer;flex:none}
+.state{font-family:'Baloo 2';font-weight:800;font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<div class="framelabel">Where I stand &middot; collapsed (left, unchanged) and expanded (right)</div>
+<div class="frame">
+  <div class="banner">
+    <div class="modetag">Overview &middot; block 4 &middot; &sect;6.5 amendment</div>
+    <div class="h1">Showing where the hours came from</div>
+    <div class="subline">The row already knows. It just never said.</div>
+  </div>
+
+  <div class="body"><div class="two">
+
+    <!-- ============ COLLAPSED (today) ============ -->
+    <div>
+      <div class="state">Today &middot; all nine rows, nothing opens</div>
+      <div class="panel">
+        <div class="ph"><div><div class="pt">Where I stand</div><div class="ps">1 behind &middot; 1 at risk</div></div></div>
+        <div class="pb">
+          <div class="grp">Foundation</div>
+          <div class="row" style="--accent:var(--gpa)"><span class="dot"></span>
+            <div class="nm">Academics <small>3.82 cum &middot; 3.71 sci</small></div>
+            <div class="right"><span class="pace p-ok">on track</span></div><div class="chev">&#9662;</div></div>
+          <div class="row" style="--accent:var(--mcat)"><span class="dot"></span>
+            <div class="nm">MCAT <small>best FL 508</small></div>
+            <div class="right"><span class="pace p-warn">180d out</span></div><div class="chev">&#9662;</div></div>
+
+          <div class="grp">Experiences</div>
+          <div class="row" style="--accent:var(--clinical)"><span class="dot"></span>
+            <div class="nm">Clinical <small>486 / 600 hrs</small></div>
+            <div class="right"><span class="bar"><span class="fill" style="width:81%"></span></span><span class="pace p-ok">on pace</span></div>
+            <div class="chev">&#9662;</div></div>
+          <div class="row" style="--accent:var(--volunteer)"><span class="dot"></span>
+            <div class="nm">Volunteering <small>210 hrs &middot; 3 orgs</small></div>
+            <div class="right"><span class="bar"><span class="fill" style="width:70%"></span></span><span class="pace p-ok">on pace</span></div>
+            <div class="chev">&#9662;</div></div>
+          <div class="row" style="--accent:var(--shadow)"><span class="dot"></span>
+            <div class="nm">Shadowing <small>41 hrs &middot; 5 specialties</small></div>
+            <div class="right"><span class="pace p-ok">enough</span></div><div class="chev">&#9662;</div></div>
+          <div class="row" style="--accent:var(--research)"><span class="dot"></span>
+            <div class="nm">Research <small>1 project &middot; poster stage</small></div>
+            <div class="right"><span class="pace p-dim">no goal</span></div><div class="chev">&#9662;</div></div>
+          <div class="row" style="--accent:var(--activities)"><span class="dot"></span>
+            <div class="nm">Extracurriculars <small>3 roles &middot; 1 leadership</small></div>
+            <div class="right"><span class="pace p-dim">no goal</span></div><div class="chev">&#9662;</div></div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:11px"><b>The complaint.</b> Clinical says 486 hours and stops. Which job? Are they recent? Is any of it the estimated block you entered in one go? The panel knows all of it and shows none of it.</div>
+    </div>
+
+    <!-- ============ EXPANDED ============ -->
+    <div>
+      <div class="state">Proposed &middot; one row open, capped at three</div>
+      <div class="panel">
+        <div class="ph"><div><div class="pt">Where I stand</div><div class="ps">1 behind &middot; 1 at risk</div></div></div>
+        <div class="pb">
+          <div class="grp">Foundation</div>
+          <div class="row" style="--accent:var(--gpa)"><span class="dot"></span>
+            <div class="nm">Academics <small>3.82 cum &middot; 3.71 sci</small></div>
+            <div class="right"><span class="pace p-ok">on track</span></div><div class="chev">&#9662;</div></div>
+          <div class="row" style="--accent:var(--mcat)"><span class="dot"></span>
+            <div class="nm">MCAT <small>best FL 508</small></div>
+            <div class="right"><span class="pace p-warn">180d out</span></div><div class="chev">&#9662;</div></div>
+
+          <div class="grp">Experiences</div>
+
+          <!-- OPEN -->
+          <div class="row open" style="--accent:var(--clinical)"><span class="dot"></span>
+            <div class="nm">Clinical <small>486 / 600 hrs</small></div>
+            <div class="right"><span class="bar"><span class="fill" style="width:81%"></span></span><span class="pace p-ok">on pace</span></div>
+            <div class="chev">&#9652;</div></div>
+          <div class="exp">
+            <div class="pos"><div class="pn">Orange County EMS <span>EMT &middot; active since Aug 2026</span></div><div class="ph2">396h</div><span class="go">&rarr;</span></div>
+            <div class="pos"><div class="pn">UNC Children's Hospital <span>patient playroom &middot; weekly</span></div><div class="ph2">138h</div><span class="go">&rarr;</span></div>
+            <div class="pos est"><div class="pn">Orange County EMS <span>estimated block, 2025 &middot; not in weekly pace</span></div><div class="ph2">90h</div><span class="go">&rarr;</span></div>
+          </div>
+
+          <div class="row" style="--accent:var(--volunteer)"><span class="dot"></span>
+            <div class="nm">Volunteering <small>210 hrs &middot; 3 orgs</small></div>
+            <div class="right"><span class="bar"><span class="fill" style="width:70%"></span></span><span class="pace p-ok">on pace</span></div>
+            <div class="chev">&#9662;</div></div>
+          <div class="row" style="--accent:var(--shadow)"><span class="dot"></span>
+            <div class="nm">Shadowing <small>41 hrs &middot; 5 specialties</small></div>
+            <div class="right"><span class="pace p-ok">enough</span></div><div class="chev">&#9662;</div></div>
+          <div class="row" style="--accent:var(--research)"><span class="dot"></span>
+            <div class="nm">Research <small>1 project &middot; poster stage</small></div>
+            <div class="right"><span class="pace p-dim">no goal</span></div><div class="chev">&#9662;</div></div>
+          <div class="row" style="--accent:var(--activities)"><span class="dot"></span>
+            <div class="nm">Extracurriculars <small>3 roles &middot; 1 leadership</small></div>
+            <div class="right"><span class="pace p-dim">no goal</span></div><div class="chev">&#9662;</div></div>
+        </div>
+      </div>
+
+      <div class="note" style="margin-top:11px"><b>Two targets in one row.</b> The chevron expands. The row itself still opens the pillar page, which is what &sect;6.5 already does and what most clicks want.</div>
+    </div>
+
+  </div>
+
+  <!-- ===== the other three expansions, shown small ===== -->
+  <div style="max-width:1180px;margin:18px auto 0">
+    <div class="state">The same chevron on pillars that do not measure in hours</div>
+    <div class="two" style="grid-template-columns:1fr 1fr 1fr;gap:13px">
+
+      <div class="panel"><div class="pb" style="padding-top:11px">
+        <div class="row open" style="--accent:var(--volunteer)"><span class="dot"></span>
+          <div class="nm">Volunteering <small>210 hrs</small></div>
+          <div class="right"><span class="pace p-ok">on pace</span></div><div class="chev">&#9652;</div></div>
+        <div class="exp">
+          <div class="pos"><div class="pn">TABLE <span>weekend meal packing</span></div><div class="ph2">96h</div><span class="go">&rarr;</span></div>
+          <div class="pos"><div class="pn">Habitat for Humanity <span>Orange County</span></div><div class="ph2">50h</div><span class="go">&rarr;</span></div>
+          <div class="pos"><div class="pn">Carolina Health Access <span>also a student org</span></div><div class="ph2">64h</div><span class="go">&rarr;</span></div>
+          <div class="attr"><span>&#8627;</span><span><b>64h</b> come from <a>Carolina Health Access</a>, which is also one of your student organizations. Counted here, once.</span></div>
+        </div>
+      </div></div>
+
+      <div class="panel"><div class="pb" style="padding-top:11px">
+        <div class="row open" style="--accent:var(--shadow)"><span class="dot"></span>
+          <div class="nm">Shadowing <small>5 specialties</small></div>
+          <div class="right"><span class="pace p-ok">enough</span></div><div class="chev">&#9652;</div></div>
+        <div class="exp">
+          <div class="pos"><div class="pn">Dr. Reyes <span>family medicine</span></div><div class="ph2">18h</div><span class="go">&rarr;</span></div>
+          <div class="pos"><div class="pn">Dr. Osei <span>cardiology</span></div><div class="ph2">12h</div><span class="go">&rarr;</span></div>
+          <div class="pos"><div class="pn">Dr. Whitfield <span>emergency</span></div><div class="ph2">6h</div><span class="go">&rarr;</span></div>
+          <div class="more">+2 more in Shadowing &rarr;</div>
+        </div>
+      </div></div>
+
+      <div class="panel"><div class="pb" style="padding-top:11px">
+        <div class="row open" style="--accent:var(--activities)"><span class="dot"></span>
+          <div class="nm">Extracurriculars <small>3 roles</small></div>
+          <div class="right"><span class="pace p-dim">no goal</span></div><div class="chev">&#9652;</div></div>
+        <div class="exp">
+          <div class="pos"><div class="pn">Carolina Health Access <span>Member to President &middot; 3 yrs</span></div><div class="ph2">&mdash;</div><span class="go">&rarr;</span></div>
+          <div class="pos"><div class="pn">Club water polo <span>Treasurer &middot; 2 yrs</span></div><div class="ph2">&mdash;</div><span class="go">&rarr;</span></div>
+          <div class="pos"><div class="pn">Campus radio <span>Host &middot; 1 yr</span></div><div class="ph2">&mdash;</div><span class="go">&rarr;</span></div>
+        </div>
+      </div></div>
+
+    </div>
+
+    <div class="mnote" style="margin-top:14px">
+      <div class="ram">&#128015;</div>
+      <div>
+        <div class="mt">Each pillar expands into its own vocabulary</div>
+        <div class="mb">Shadowing lists physicians and caps at three because breadth is its metric, not volume. Extracurriculars lists roles and dates with no hours column at all, which is its own rule and the strictest version of it in the app. Volunteering is the only one that needs the attribution line, because it is the only place a club's hours land somewhere other than the club.</div>
+      </div>
+      <div class="x">&#10005;</div>
+    </div>
+  </div>
+  </div>
+</div>
+
+</body>
+</html>

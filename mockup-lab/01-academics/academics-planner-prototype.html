@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Academics Planner — prototype</title>
+<!--
+  PROTOTYPE — NOT APPROVED FOR IMPLEMENTATION
+
+  QUESTION
+  Three compositions of the locked Academics Planner, switchable with
+  ?variant=A, ?variant=B, or ?variant=C inside the approved Planning shell.
+
+  IMPORTANT RESCOPE
+  This is the revised Planner tab, not the superseded "Planner & GPA" tab.
+  The Planner answers "what should I take next term?" and keeps projected GPA
+  beside the plan. The full ledger, dual UNC/AMCAS GPA, What-if, and archived
+  courses belong to the later Grades & Archive surface.
+
+  LOCKED IN EVERY VARIANT
+  · Horizontally scrolling term columns remain the plan's backbone.
+  · Every course states what it clears; mapping confidence is visible.
+  · MCAT is a divider in the timeline, not a detached stat.
+  · An unplaced tray is always visible.
+  · The live outcome rail includes projected cumulative + BCPM, graduation,
+    prereq-vs-MCAT verdict, remaining gaps, ranked suggestions, and watch-outs.
+  · No drag interaction is required to understand or use the plan.
+  · Suggestions are optional; nothing is silently enforced.
+
+  DATA BASIS
+  Course sequence and tags are adapted from src/data/seed.ts.
+  Requirement names and confidence vocabulary are adapted from
+  data/unc-requirements.json (IDEAs in Action 2026–27).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a;--card:#2b2722;--fg:#ece3d4;--mut:#a89c8c;--dim:#7c7264;
+  --bd:#3c352d;--muted:#322e28;--cat:#4b9cd3;--pri:#6fb3de;
+  --success:#6fc0a8;--warning:#e7b06a;--danger:#e8806f;--mcat:#8c7bd4;
+  --research:#c98ac9;--shadow:#e0a458;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#191613;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:15px;line-height:1.42}
+button{font:inherit}
+.frame{width:min(1500px,100%);margin:0 auto;background:var(--bg);min-height:100vh;padding-bottom:86px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+svg{display:block}
+
+/* Approved Academics banner */
+.ban{position:relative;padding:18px 24px 0;overflow:hidden;
+  background:radial-gradient(340px 200px at 88% 6%,rgba(75,156,211,.34),transparent 70%),
+  radial-gradient(260px 180px at 10% 130%,rgba(111,192,168,.18),transparent 70%),
+  linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%)}
+.bantop{display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative;z-index:2}
+.h1{font-family:'Baloo 2';font-weight:800;font-size:30px;color:#fff;letter-spacing:-.4px}
+.bstats{display:flex;border-radius:13px;overflow:hidden;background:rgba(20,26,34,.5);
+  backdrop-filter:blur(16px) saturate(1.1);border:1px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}
+.bs{padding:8px 15px;display:flex;flex-direction:column;gap:1px;border-right:1px solid rgba(255,255,255,.12);min-width:88px}
+.bs:last-child{border-right:0}
+.bsv{font-family:'Baloo 2';font-weight:800;font-size:18px;color:#fff;line-height:1.1;font-variant-numeric:tabular-nums}
+.bsl{font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.mswitch{display:inline-flex;padding:4px;border-radius:999px;gap:4px;margin-top:14px;position:relative;z-index:2;
+  background:rgba(20,26,34,.5);backdrop-filter:blur(16px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}
+.mo{padding:7px 22px;border-radius:999px;font-family:'Baloo 2';font-weight:700;font-size:13.5px;
+  color:rgba(255,255,255,.72);display:flex;align-items:center;gap:7px}
+.mo.on{background:#fff;color:#17222c;font-weight:800}
+.mo svg,.ut svg{width:14px;height:14px}
+.utabs{display:flex;gap:24px;padding:0 24px;position:relative;z-index:2;margin-top:13px;border-bottom:1px solid rgba(255,255,255,.13)}
+.ut{padding:10px 2px 11px;font-family:'Baloo 2';font-weight:700;font-size:14px;color:rgba(255,255,255,.6);
+  display:flex;align-items:center;gap:7px;position:relative}
+.ut.on{color:#fff;font-weight:800}
+.ut.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;border-radius:3px 3px 0 0;
+  background:var(--cat);box-shadow:0 0 12px color-mix(in srgb,var(--cat) 60%,transparent)}
+
+/* Planner controls — level 3 */
+.fbar{display:flex;align-items:center;gap:9px;padding:10px 24px;background:var(--card);border-bottom:1px solid var(--bd)}
+.control{display:inline-flex;align-items:center;gap:7px;background:var(--muted);border:1px solid var(--bd);
+  border-radius:9px;padding:6px 10px;color:var(--mut);font-size:11.5px;font-weight:800}
+.control svg{width:13px;height:13px;color:var(--dim)}
+.control strong{font-family:'Baloo 2';color:var(--fg)}
+.control.primary{background:color-mix(in srgb,var(--cat) 14%,var(--muted));border-color:color-mix(in srgb,var(--cat) 34%,var(--bd))}
+.spacer{margin-left:auto}
+
+.wrap{padding:15px 24px 0}
+.variant{display:none}.variant.on{display:block}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;
+  box-shadow:0 10px 26px -14px rgba(0,0,0,.55);overflow:hidden}
+.hd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px 8px}
+.ti{font-family:'Baloo 2';font-weight:800;font-size:16px}
+.sub{font-size:10.5px;color:var(--dim);font-weight:700}
+.bd{padding:3px 15px 15px}
+.link{color:var(--cat);font-family:'Baloo 2';font-size:11.5px;font-weight:800}
+.btn{border:1px solid var(--bd);background:var(--muted);color:var(--mut);border-radius:8px;padding:5px 9px;
+  font-family:'Baloo 2';font-size:11px;font-weight:800;display:inline-flex;gap:5px;align-items:center}
+.btn svg{width:12px;height:12px}.btn.p{background:var(--cat);border-color:var(--cat);color:#102432}
+
+/* Dense term column language */
+.boardscroll{overflow-x:auto;scrollbar-color:var(--bd) transparent;scrollbar-width:thin;padding-bottom:7px}
+.terms{display:flex;align-items:stretch;gap:10px;min-width:max-content}
+.term{width:238px;background:var(--muted);border:1px solid var(--bd);border-radius:13px;padding:11px;display:flex;flex-direction:column;gap:8px}
+.term.current{border-color:color-mix(in srgb,var(--cat) 55%,var(--bd));box-shadow:0 0 0 1px color-mix(in srgb,var(--cat) 20%,transparent)}
+.term.risk{border-color:color-mix(in srgb,var(--warning) 45%,var(--bd))}
+.th{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding-bottom:7px;border-bottom:1px solid var(--bd)}
+.tname{font-family:'Baloo 2';font-weight:800;font-size:13px}.tmeta{font-size:9.5px;color:var(--dim);font-weight:700;margin-top:1px}
+.lock{font-size:9px;font-family:'Baloo 2';font-weight:800;border-radius:999px;padding:2px 7px;background:#272420;color:var(--dim)}
+.lock.on{background:color-mix(in srgb,var(--cat) 17%,transparent);color:var(--cat)}
+.course{border:1px solid var(--bd);border-radius:10px;background:var(--card);padding:8px;position:relative}
+.course.selected{border-color:var(--cat);box-shadow:0 0 16px -7px color-mix(in srgb,var(--cat) 60%,transparent)}
+.ctop{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.code{font-family:'Baloo 2';font-weight:800;font-size:11.5px}.cr{font-size:9px;color:var(--dim);font-weight:800}
+.cname{font-size:9.5px;color:var(--mut);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.tag{font-family:'Baloo 2';font-size:8.5px;font-weight:800;border-radius:999px;padding:1px 6px;
+  background:color-mix(in srgb,var(--cat) 16%,transparent);color:var(--cat)}
+.tag.s{background:color-mix(in srgb,var(--success) 14%,transparent);color:var(--success)}
+.tag.w{background:color-mix(in srgb,var(--warning) 15%,transparent);color:var(--warning)}
+.tag.v{background:#272420;color:var(--dim)}
+.clear{font-size:8.8px;color:var(--dim);font-weight:700;margin-top:5px;line-height:1.3}
+.clear b{color:var(--mut)}
+.add{border:1px dashed var(--bd);border-radius:9px;padding:6px;text-align:center;color:var(--dim);font-family:'Baloo 2';font-weight:800;font-size:10px}
+.load{margin-top:auto;padding-top:7px;border-top:1px solid var(--bd);font-size:9.5px;color:var(--mut);font-weight:700}
+.load b{font-family:'Baloo 2';color:var(--fg)}.load.warn{color:var(--warning)}
+.mcatline{width:76px;border:1px solid color-mix(in srgb,var(--mcat) 42%,var(--bd));border-radius:13px;
+  background:color-mix(in srgb,var(--mcat) 9%,var(--muted));display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;padding:10px 7px;color:#d7cdf7}
+.mcatline svg{width:19px;height:19px;margin-bottom:7px}.mcatline b{font-family:'Baloo 2';font-size:11px}
+.mcatline span{font-size:8.5px;color:#aea2d6;font-weight:700;margin-top:2px}
+
+.tray{margin-top:10px;border:1px dashed var(--bd);border-radius:12px;padding:10px;background:color-mix(in srgb,var(--card) 65%,transparent)}
+.trayhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:7px}
+.traytitle{font-family:'Baloo 2';font-weight:800;font-size:12.5px}.traycopy{font-size:9.5px;color:var(--dim);font-weight:700}
+.trayitems{display:flex;gap:7px;flex-wrap:wrap}
+.traychip{border:1px solid var(--bd);background:var(--muted);border-radius:9px;padding:7px 9px;min-width:180px}
+.traychip b{font-family:'Baloo 2';font-size:10.5px}.traychip span{display:block;font-size:8.8px;color:var(--dim);font-weight:700;margin-top:1px}
+
+/* Live rail */
+.rail{display:flex;flex-direction:column;gap:10px}
+.rail .card{box-shadow:none}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.stat{background:var(--muted);border:1px solid var(--bd);border-radius:10px;padding:8px}
+.sv{font-family:'Baloo 2';font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+.sl{font-size:8.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);font-weight:800}
+.assume{font-size:8.8px;color:var(--dim);font-weight:700;margin-top:7px}
+.verdict{margin-top:8px;border:1px solid color-mix(in srgb,var(--warning) 28%,var(--bd));
+  background:color-mix(in srgb,var(--warning) 8%,var(--muted));border-radius:9px;padding:8px}
+.verdict b{font-family:'Baloo 2';font-size:10.5px;color:var(--warning)}
+.verdict p{font-size:9px;color:var(--mut);font-weight:700;margin:2px 0 0}
+.rlist{display:flex;flex-direction:column;gap:6px}
+.rrow{display:flex;gap:7px;align-items:flex-start;padding:7px;background:var(--muted);border:1px solid var(--bd);border-radius:9px}
+.ric{width:22px;height:22px;border-radius:7px;background:color-mix(in srgb,var(--cat) 16%,transparent);
+  color:var(--cat);display:grid;place-items:center;flex-shrink:0;font-family:'Baloo 2';font-size:9px;font-weight:800}
+.rrt{font-family:'Baloo 2';font-size:10.5px;font-weight:800}.rrd{font-size:8.8px;color:var(--dim);font-weight:700;margin-top:1px}
+.confidence{font-size:8px;font-family:'Baloo 2';font-weight:800;color:var(--success)}
+
+/* A — timeline first */
+.alayout{display:grid;grid-template-columns:minmax(0,1fr) 292px;gap:12px}
+.alayout>*,.btop>*,.clayout>*{min-width:0}
+.aboard .bd{padding-top:8px}
+
+/* B — next-term builder */
+.btop{display:grid;grid-template-columns:235px minmax(430px,1fr) 300px;gap:12px}
+.termnav{display:flex;flex-direction:column;gap:6px}
+.tn{padding:9px;border:1px solid var(--bd);border-radius:10px;background:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.tn.on{border-color:var(--cat);background:color-mix(in srgb,var(--cat) 10%,var(--muted))}
+.tn b{font-family:'Baloo 2';font-size:11px}.tn span{font-size:9px;color:var(--dim);font-weight:800}
+.focusTerm{min-height:430px}
+.focusTerm .bd{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding-top:7px}
+.focusTerm .course{min-height:106px}
+.suggestion{border:1px solid var(--bd);border-radius:10px;padding:9px;background:var(--muted)}
+.suggestion + .suggestion{margin-top:7px}
+.diff{font-size:9px;color:var(--success);font-weight:800;margin-top:5px}
+.miniTimeline{margin-top:12px;display:flex;gap:6px;align-items:center}
+.mininode{height:7px;flex:1;border-radius:999px;background:var(--bd);position:relative}
+.mininode.done{background:var(--success)}.mininode.current{background:var(--cat);box-shadow:0 0 10px color-mix(in srgb,var(--cat) 55%,transparent)}
+.minilabel{font-size:8.5px;color:var(--dim);font-weight:800}
+
+/* C — decision inspector */
+.coutcomes{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.metricCard .bd{padding-top:5px}
+.bigline{font-family:'Baloo 2';font-size:20px;font-weight:800}
+.plain{font-size:9.5px;color:var(--mut);font-weight:700}
+.clayout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px}
+.inspector{border-color:color-mix(in srgb,var(--cat) 30%,var(--bd))}
+.inspecthero{padding:10px;border:1px solid var(--cat);border-radius:11px;background:color-mix(in srgb,var(--cat) 9%,var(--muted))}
+.ihcode{font-family:'Baloo 2';font-size:15px;font-weight:800}.ihname{font-size:10px;color:var(--mut);font-weight:700}
+.diffgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.diffbox{background:var(--muted);border:1px solid var(--bd);border-radius:9px;padding:8px}
+.diffbox .sv{font-size:15px}.diffbox.good .sv{color:var(--success)}
+.unlock{margin-top:8px;font-size:9px;color:var(--mut);font-weight:700}.unlock b{color:var(--fg)}
+.imap{margin-top:9px;padding-top:8px;border-top:1px solid var(--bd);font-size:8.8px;color:var(--dim);font-weight:700}
+
+/* Prototype switcher */
+.psw{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:8px;
+  padding:7px;background:#f7f3ec;color:#201d19;border:1px solid rgba(0,0,0,.18);border-radius:999px;
+  box-shadow:0 16px 38px rgba(0,0,0,.42);font-family:'Baloo 2';font-weight:800}
+.psw button{width:34px;height:34px;border:0;border-radius:50%;background:#27231f;color:#fff;display:grid;place-items:center;cursor:pointer}
+.psw button svg{width:15px;height:15px}.plabel{min-width:250px;text-align:center;font-size:12.5px}
+.proto{font-size:8px;letter-spacing:.09em;text-transform:uppercase;color:#7a7167;display:block;line-height:1}
+.psw button:focus-visible,.btn:focus-visible{outline:2px solid #fff;outline-offset:3px}
+
+@media(max-width:1000px){
+  .bstats .bs:nth-child(n+3){display:none}.alayout,.clayout{grid-template-columns:1fr}.rail{display:grid;grid-template-columns:repeat(2,1fr)}
+  .btop{grid-template-columns:190px 1fr}.btop>.rail{grid-column:1/-1}.coutcomes{grid-template-columns:1fr 1fr}.coutcomes .metricCard:first-child{grid-column:1/-1}
+}
+@media(max-width:700px){
+  .frame{padding-bottom:96px}.bantop{align-items:flex-start}.bstats{display:none}.utabs{padding:0 4px;gap:16px;overflow-x:auto}
+  .fbar{padding:9px 12px;overflow-x:auto}.fbar .spacer{display:none}.wrap{padding:12px}
+  .btop{grid-template-columns:1fr}.termnav{display:grid;grid-template-columns:1fr 1fr}.focusTerm .bd{grid-template-columns:1fr}
+  .rail{grid-template-columns:1fr}.coutcomes{grid-template-columns:1fr}.coutcomes .metricCard:first-child{grid-column:auto}
+  .plabel{min-width:190px}.term{width:220px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="frame">
+  <h1 class="sr-only">Academics Planner prototype</h1>
+  <header class="ban">
+    <div class="bantop">
+      <div class="h1">Academics</div>
+      <div class="bstats" aria-label="Live plan outcomes">
+        <div class="bs"><span class="bsv">3.72</span><span class="bsl">Projected GPA</span></div>
+        <div class="bs"><span class="bsv">3.66</span><span class="bsl">Projected BCPM</span></div>
+        <div class="bs"><span class="bsv" style="color:#f0c68a">1</span><span class="bsl">Prereq open</span></div>
+        <div class="bs"><span class="bsv">May ’30</span><span class="bsl">Graduation</span></div>
+      </div>
+    </div>
+    <div class="mswitch" aria-label="Academics mode">
+      <div class="mo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Daily</div>
+      <div class="mo on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Planning</div>
+    </div>
+    <nav class="utabs" aria-label="Planning views">
+      <div class="ut on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7v10M12 10v7M16 6v11"/></svg>Planner</div>
+      <div class="ut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7H3V5h11"/></svg>Tar Heel Tracker</div>
+      <div class="ut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16M4 12h16M4 19h16"/></svg>Grades &amp; Archive</div>
+    </nav>
+  </header>
+
+  <div class="fbar">
+    <div class="control primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg><strong>Plan A — Balanced</strong>⌄</div>
+    <div class="control">Compare plans</div>
+    <div class="control"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-5"/></svg>MCAT · Jan 2029</div>
+    <span class="spacer"></span>
+    <div class="control">Export for advisor</div>
+    <div class="control">•••</div>
+  </div>
+
+  <main class="wrap">
+    <!-- A — all terms visible, live rail persistent -->
+    <section class="variant" data-variant="A">
+      <div class="alayout">
+        <div>
+          <div class="card aboard">
+            <div class="hd"><div><div class="ti">Your academic plan</div><div class="sub">past → registered → planned · scroll across terms</div></div><button class="btn">＋ Add term</button></div>
+            <div class="bd">
+              <div class="boardscroll"><div class="terms">
+                <div class="term current">
+                  <div class="th"><div><div class="tname">Fall 2026</div><div class="tmeta">Registered · 14 credits</div></div><span class="lock on">Locked</span></div>
+                  <div class="course"><div class="ctop"><span class="code">BIOL 103</span><span class="cr">3 cr</span></div><div class="cname">How Cells Function</div><div class="tags"><span class="tag">BCPM</span><span class="tag s">✓ verified</span></div><div class="clear"><b>Clears:</b> Major biology · Natural Scientific Investigation</div></div>
+                  <div class="course"><div class="ctop"><span class="code">ENGL 105</span><span class="cr">3 cr</span></div><div class="cname">Composition &amp; Rhetoric</div><div class="tags"><span class="tag v">AO</span><span class="tag s">✓ verified</span></div><div class="clear"><b>Clears:</b> University Writing · Med English</div></div>
+                  <div class="course"><div class="ctop"><span class="code">PSYC 101</span><span class="cr">3 cr</span></div><div class="cname">General Psychology</div><div class="tags"><span class="tag v">AO</span><span class="tag">MCAT P/S</span></div><div class="clear"><b>Clears:</b> Major core · Med psych</div></div>
+                  <div class="course"><div class="ctop"><span class="code">IDST 101 + 111L</span><span class="cr">2 cr</span></div><div class="cname">College Thriving + Data Literacy</div><div class="tags"><span class="tag s">✓ verified</span></div><div class="clear"><b>Clears:</b> 2 First-Year Foundations</div></div>
+                  <div class="add">＋ 3-credit First-Year Seminar</div>
+                  <div class="load"><b>14 credits</b> · balanced with 4 clinical hrs/wk</div>
+                </div>
+
+                <div class="term risk">
+                  <div class="th"><div><div class="tname">Spring 2027</div><div class="tmeta">Planned · 13 credits</div></div><span class="lock">Draft</span></div>
+                  <div class="course"><div class="ctop"><span class="code">CHEM 241 + L</span><span class="cr">4 cr</span></div><div class="cname">Modern Analytical Methods</div><div class="tags"><span class="tag">BCPM</span><span class="tag w">❄ Spring path</span></div><div class="clear"><b>Clears:</b> Major chemistry · Orgo lab chain</div></div>
+                  <div class="course selected"><div class="ctop"><span class="code">BIOL 220</span><span class="cr">3 cr</span></div><div class="cname">Molecular Genetics</div><div class="tags"><span class="tag">BCPM</span><span class="tag s">✓ verified</span></div><div class="clear"><b>Clears:</b> Major biology · Med biology · unlocks NSCI 27x</div></div>
+                  <div class="course"><div class="ctop"><span class="code">SOCI 101</span><span class="cr">3 cr</span></div><div class="cname">Introduction to Sociology</div><div class="tags"><span class="tag v">AO</span><span class="tag">MCAT P/S</span></div><div class="clear"><b>Clears:</b> Med sociology · Power and Society ◑</div></div>
+                  <div class="course"><div class="ctop"><span class="code">Focus elective</span><span class="cr">3 cr</span></div><div class="cname">Ways of Knowing</div><div class="tags"><span class="tag s">✓ verified</span></div><div class="clear"><b>Clears:</b> IDEAs Focus Capacity</div></div>
+                  <div class="add">＋ Add course</div>
+                  <div class="load warn"><b>13 credits</b> · one credit below on-time pace</div>
+                </div>
+
+                <div class="term risk">
+                  <div class="th"><div><div class="tname">Fall 2027</div><div class="tmeta">Planned · 9 credits</div></div><span class="lock">Draft</span></div>
+                  <div class="course"><div class="ctop"><span class="code">CHEM 261</span><span class="cr">3 cr</span></div><div class="cname">Organic Chemistry I</div><div class="tags"><span class="tag">BCPM</span><span class="tag w">Critical path</span></div><div class="clear"><b>Clears:</b> Major chemistry · Med orgo</div></div>
+                  <div class="course"><div class="ctop"><span class="code">NSCI 221</span><span class="cr">3 cr</span></div><div class="cname">Systems Neuroscience</div><div class="tags"><span class="tag">BCPM</span><span class="tag s">✓ verified</span></div><div class="clear"><b>Clears:</b> Major core 1 of 2</div></div>
+                  <div class="course"><div class="ctop"><span class="code">COMP 116</span><span class="cr">3 cr</span></div><div class="cname">Introduction to Programming</div><div class="tags"><span class="tag v">AO</span></div><div class="clear"><b>Clears:</b> Major methods</div></div>
+                  <div class="add">＋ Add course</div>
+                  <div class="load warn"><b>9 credits</b> · under pace by 5 credits</div>
+                </div>
+
+                <div class="term">
+                  <div class="th"><div><div class="tname">Spring 2028</div><div class="tmeta">Planned · 10 credits</div></div><span class="lock">Draft</span></div>
+                  <div class="course"><div class="ctop"><span class="code">CHEM 262 + L</span><span class="cr">4 cr</span></div><div class="cname">Organic Chemistry II + Lab</div><div class="tags"><span class="tag">BCPM</span><span class="tag w">Critical path</span></div><div class="clear"><b>Clears:</b> Med orgo · closes lab chain · unlocks CHEM 430</div></div>
+                  <div class="course"><div class="ctop"><span class="code">NSCI 27x</span><span class="cr">3 cr</span></div><div class="cname">Research Methods Lab</div><div class="tags"><span class="tag">BCPM</span></div><div class="clear"><b>Clears:</b> Major research methods</div></div>
+                  <div class="course"><div class="ctop"><span class="code">PSYC 210</span><span class="cr">3 cr</span></div><div class="cname">Statistical Principles</div><div class="tags"><span class="tag v">AO</span></div><div class="clear"><b>Clears:</b> Major methods · Med stats</div></div>
+                  <div class="add">＋ Add course</div>
+                  <div class="load warn"><b>10 credits</b> · 7 BCPM credits, but still under pace</div>
+                </div>
+
+                <div class="mcatline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/></svg><b>MCAT</b><span>Jan 2029</span><span>1 prereq open</span></div>
+
+                <div class="term">
+                  <div class="th"><div><div class="tname">Fall 2028</div><div class="tmeta">Planned · 6 credits</div></div><span class="lock">Draft</span></div>
+                  <div class="course"><div class="ctop"><span class="code">NSCI 222</span><span class="cr">3 cr</span></div><div class="cname">Behavioral Neuroscience</div><div class="tags"><span class="tag">BCPM</span></div><div class="clear"><b>Clears:</b> Major core 2 of 2</div></div>
+                  <div class="course"><div class="ctop"><span class="code">BIOL 240</span><span class="cr">3 cr</span></div><div class="cname">Cell Biology</div><div class="tags"><span class="tag">BCPM</span></div><div class="clear"><b>Clears:</b> Knowledge elective</div></div>
+                  <div class="add">＋ Add course</div>
+                  <div class="load"><b>6 credits</b> · deliberately light for MCAT prep</div>
+                </div>
+              </div></div>
+            </div>
+          </div>
+          <div class="tray">
+            <div class="trayhead"><div><span class="traytitle">Unplaced</span> <span class="traycopy">requirements and courses with no term yet</span></div><span class="link">Find a term →</span></div>
+            <div class="trayitems">
+              <div class="traychip"><b>CHEM 430 · Biochemistry</b><span>Med prerequisite · spring-only risk · needed before MCAT</span></div>
+              <div class="traychip"><b>Reflection &amp; Integration</b><span>IDEAs in Action · 1 course · ✓ verified</span></div>
+              <div class="traychip"><b>Power and Society</b><span>SOCI 101 mapping inferred · confirm before counting</span></div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="rail">
+          <div class="card">
+            <div class="hd"><div><div class="ti">If this plan holds</div><div class="sub">assuming your current averages</div></div></div>
+            <div class="bd">
+              <div class="stats"><div class="stat"><div class="sv">3.72</div><div class="sl">Cumulative</div></div><div class="stat"><div class="sv">3.66</div><div class="sl">BCPM</div></div><div class="stat"><div class="sv">May ’30</div><div class="sl">Graduate</div></div><div class="stat"><div class="sv">114</div><div class="sl">Credits</div></div></div>
+              <div class="assume">Projection is an interval in production; this mock uses the plan’s midpoint for layout.</div>
+              <div class="verdict"><b>Not MCAT-ready yet</b><p>Biochemistry has no term. Place it before January 2029 to complete your prerequisite sequence.</p></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="hd"><div><div class="ti">What this clears</div><div class="sub">after all placed courses</div></div></div>
+            <div class="bd"><div class="rlist">
+              <div class="rrow"><span class="ric">18</span><div><div class="rrt">Requirements cleared</div><div class="rrd">7 major · 6 med · 5 IDEAs</div></div></div>
+              <div class="rrow"><span class="ric">5</span><div><div class="rrt">Still open</div><div class="rrd">Biochem is the only open med prerequisite.</div></div></div>
+            </div></div>
+          </div>
+          <div class="card">
+            <div class="hd"><div><div class="ti">Best next move</div><div class="sub">ranked, never enforced</div></div></div>
+            <div class="bd"><div class="rlist">
+              <div class="rrow"><span class="ric">1</span><div><div class="rrt">Place CHEM 430</div><div class="rrd">Spring-only · closes the last MCAT prerequisite.</div></div></div>
+              <div class="rrow"><span class="ric">2</span><div><div class="rrt">Add 4 credits to Fall 2027</div><div class="rrd">Currently under the on-time pace.</div></div></div>
+            </div></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- B — next term is the working surface -->
+    <section class="variant" data-variant="B">
+      <div class="btop">
+        <div class="card">
+          <div class="hd"><div><div class="ti">Terms</div><div class="sub">choose where to work</div></div></div>
+          <div class="bd termnav">
+            <div class="tn"><b>Fall 2026</b><span>locked · 14 cr</span></div>
+            <div class="tn on"><b>Spring 2027</b><span>draft · 13 cr</span></div>
+            <div class="tn"><b>Fall 2027</b><span>draft · 9 cr</span></div>
+            <div class="tn"><b>Spring 2028</b><span>draft · 10 cr</span></div>
+            <div class="tn"><b>MCAT</b><span>Jan 2029</span></div>
+            <div class="tn"><b>Fall 2028</b><span>light · 6 cr</span></div>
+          </div>
+        </div>
+
+        <div class="card focusTerm">
+          <div class="hd"><div><div class="ti">Spring 2027</div><div class="sub">13 credits · one below on-time pace · draft</div></div><button class="btn p">＋ Add course</button></div>
+          <div class="bd">
+            <div class="course"><div class="ctop"><span class="code">CHEM 241 + L</span><span class="cr">4 cr</span></div><div class="cname">Modern Analytical Methods</div><div class="tags"><span class="tag">BCPM</span><span class="tag w">❄ Spring path</span></div><div class="clear"><b>Clears:</b> Major chemistry · starts orgo lab chain</div></div>
+            <div class="course selected"><div class="ctop"><span class="code">BIOL 220</span><span class="cr">3 cr</span></div><div class="cname">Molecular Genetics</div><div class="tags"><span class="tag">BCPM</span><span class="tag s">✓ verified</span></div><div class="clear"><b>Clears:</b> Major biology · Med biology · unlocks NSCI 27x</div></div>
+            <div class="course"><div class="ctop"><span class="code">SOCI 101</span><span class="cr">3 cr</span></div><div class="cname">Introduction to Sociology</div><div class="tags"><span class="tag v">AO</span><span class="tag">MCAT P/S</span></div><div class="clear"><b>Clears:</b> Med sociology · Power and Society ◑ inferred</div></div>
+            <div class="course"><div class="ctop"><span class="code">Focus elective</span><span class="cr">3 cr</span></div><div class="cname">Ways of Knowing</div><div class="tags"><span class="tag s">✓ verified</span></div><div class="clear"><b>Clears:</b> IDEAs Focus Capacity</div></div>
+          </div>
+          <div style="padding:0 15px 14px"><div class="verdict"><b>One credit below pace</b><p>Add a 1–3 credit course here or offset the gap in a later term. Nothing changes until you choose.</p></div></div>
+        </div>
+
+        <aside class="rail">
+          <div class="card">
+            <div class="hd"><div><div class="ti">Good fits here</div><div class="sub">ranked against this term</div></div></div>
+            <div class="bd">
+              <div class="suggestion"><div class="code">IDST 126 · 1 cr</div><div class="cname">Ideas in Action seminar</div><div class="diff">13 → 14 credits · closes pace gap</div><div class="clear">Does not add another BCPM course.</div></div>
+              <div class="suggestion"><div class="code">HNRS 201 · 3 cr</div><div class="cname">Modes of Inquiry</div><div class="diff">Clears Reflection &amp; Integration</div><div class="clear">◑ inferred — confirm with advisor</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="hd"><div><div class="ti">If this plan holds</div><div class="sub">live while you edit</div></div></div>
+            <div class="bd"><div class="stats"><div class="stat"><div class="sv">3.72</div><div class="sl">Cumulative</div></div><div class="stat"><div class="sv">3.66</div><div class="sl">BCPM</div></div></div><div class="verdict"><b>1 prereq still unplaced</b><p>CHEM 430 must land before the MCAT.</p></div></div>
+          </div>
+        </aside>
+      </div>
+      <div class="tray">
+        <div class="trayhead"><div><span class="traytitle">Unplaced</span> <span class="traycopy">always visible while building a term</span></div><span class="link">See all gaps →</span></div>
+        <div class="trayitems"><div class="traychip"><b>CHEM 430 · Biochemistry</b><span>Med prereq · spring-only risk</span></div><div class="traychip"><b>Reflection &amp; Integration</b><span>IDEAs requirement · verified</span></div><div class="traychip"><b>Power and Society</b><span>mapping needs confirmation</span></div></div>
+      </div>
+      <div class="miniTimeline" aria-label="Plan timeline"><span class="minilabel">Fall ’26</span><i class="mininode done"></i><span class="minilabel">Spring ’27</span><i class="mininode current"></i><span class="minilabel">Fall ’27</span><i class="mininode"></i><span class="minilabel">Spring ’28</span><i class="mininode"></i><span class="minilabel">MCAT</span></div>
+    </section>
+
+    <!-- C — select one course and see its marginal effect -->
+    <section class="variant" data-variant="C">
+      <div class="coutcomes">
+        <div class="card metricCard"><div class="hd"><div><div class="ti">Prerequisite path</div><div class="sub">the deadline the plan is built around</div></div></div><div class="bd"><div class="bigline" style="color:var(--warning)">1 course unplaced</div><div class="plain">Biochemistry must finish before the January 2029 MCAT.</div></div></div>
+        <div class="card metricCard"><div class="hd"><div><div class="ti">Projected GPA</div><div class="sub">assuming current averages</div></div></div><div class="bd"><div class="bigline">3.72 <span style="color:var(--dim);font-size:12px">cum</span></div><div class="plain">3.66 BCPM · interval shown in production</div></div></div>
+        <div class="card metricCard"><div class="hd"><div><div class="ti">Graduation pace</div><div class="sub">current credits + placed plan</div></div></div><div class="bd"><div class="bigline">May 2030</div><div class="plain">Fall 2027 is five credits under pace.</div></div></div>
+      </div>
+
+      <div class="clayout">
+        <div>
+          <div class="card">
+            <div class="hd"><div><div class="ti">Choose a course to inspect</div><div class="sub">the selected course shows its marginal effect beside the plan</div></div><button class="btn">＋ Add term</button></div>
+            <div class="bd"><div class="boardscroll"><div class="terms">
+              <div class="term current"><div class="th"><div><div class="tname">Fall 2026</div><div class="tmeta">Locked · 14 credits</div></div><span class="lock on">Locked</span></div>
+                <div class="course"><div class="ctop"><span class="code">BIOL 103</span><span class="cr">3 cr</span></div><div class="cname">How Cells Function</div><div class="tags"><span class="tag">BCPM</span></div></div>
+                <div class="course"><div class="ctop"><span class="code">ENGL 105</span><span class="cr">3 cr</span></div><div class="cname">Composition &amp; Rhetoric</div><div class="tags"><span class="tag v">AO</span></div></div>
+                <div class="course"><div class="ctop"><span class="code">PSYC 101</span><span class="cr">3 cr</span></div><div class="cname">General Psychology</div><div class="tags"><span class="tag">MCAT P/S</span></div></div>
+                <div class="load"><b>14 credits</b> · balanced</div>
+              </div>
+              <div class="term risk"><div class="th"><div><div class="tname">Spring 2027</div><div class="tmeta">Draft · 13 credits</div></div><span class="lock">Draft</span></div>
+                <div class="course"><div class="ctop"><span class="code">CHEM 241 + L</span><span class="cr">4 cr</span></div><div class="cname">Modern Analytical Methods</div><div class="tags"><span class="tag">BCPM</span></div></div>
+                <div class="course selected"><div class="ctop"><span class="code">BIOL 220</span><span class="cr">3 cr</span></div><div class="cname">Molecular Genetics</div><div class="tags"><span class="tag">BCPM</span><span class="tag s">✓ verified</span></div></div>
+                <div class="course"><div class="ctop"><span class="code">SOCI 101</span><span class="cr">3 cr</span></div><div class="cname">Introduction to Sociology</div><div class="tags"><span class="tag v">AO</span></div></div>
+                <div class="course"><div class="ctop"><span class="code">Focus elective</span><span class="cr">3 cr</span></div><div class="cname">Ways of Knowing</div></div>
+                <div class="load warn"><b>13 credits</b> · one below pace</div>
+              </div>
+              <div class="term risk"><div class="th"><div><div class="tname">Fall 2027</div><div class="tmeta">Draft · 9 credits</div></div><span class="lock">Draft</span></div>
+                <div class="course"><div class="ctop"><span class="code">CHEM 261</span><span class="cr">3 cr</span></div><div class="cname">Organic Chemistry I</div><div class="tags"><span class="tag w">Critical path</span></div></div>
+                <div class="course"><div class="ctop"><span class="code">NSCI 221</span><span class="cr">3 cr</span></div><div class="cname">Systems Neuroscience</div></div>
+                <div class="course"><div class="ctop"><span class="code">COMP 116</span><span class="cr">3 cr</span></div><div class="cname">Introduction to Programming</div></div>
+                <div class="load warn"><b>9 credits</b> · five under pace</div>
+              </div>
+              <div class="term"><div class="th"><div><div class="tname">Spring 2028</div><div class="tmeta">Draft · 10 credits</div></div><span class="lock">Draft</span></div>
+                <div class="course"><div class="ctop"><span class="code">CHEM 262 + L</span><span class="cr">4 cr</span></div><div class="cname">Organic Chemistry II + Lab</div><div class="tags"><span class="tag w">Critical path</span></div></div>
+                <div class="course"><div class="ctop"><span class="code">NSCI 27x</span><span class="cr">3 cr</span></div><div class="cname">Research Methods Lab</div></div>
+                <div class="course"><div class="ctop"><span class="code">PSYC 210</span><span class="cr">3 cr</span></div><div class="cname">Statistical Principles</div></div>
+                <div class="load warn"><b>10 credits</b> · under pace</div>
+              </div>
+              <div class="mcatline"><b>MCAT</b><span>Jan 2029</span><span>1 open</span></div>
+            </div></div></div>
+          </div>
+          <div class="tray"><div class="trayhead"><div><span class="traytitle">Unplaced</span> <span class="traycopy">dragging is optional; use “Choose term” too</span></div></div><div class="trayitems"><div class="traychip"><b>CHEM 430 · Biochemistry</b><span>last med prerequisite · spring-only risk</span></div><div class="traychip"><b>Reflection &amp; Integration</b><span>IDEAs in Action · verified</span></div></div></div>
+        </div>
+
+        <aside class="rail">
+          <div class="card inspector">
+            <div class="hd"><div><div class="ti">Selected course</div><div class="sub">preview before committing</div></div><span class="confidence">✓ VERIFIED</span></div>
+            <div class="bd">
+              <div class="inspecthero"><div class="ihcode">BIOL 220 · 3 credits</div><div class="ihname">Molecular Genetics · Spring 2027 · BCPM</div></div>
+              <div class="diffgrid">
+                <div class="diffbox"><div class="sv">14</div><div class="sl">Requirements left</div></div>
+                <div class="diffbox good"><div class="sv">12</div><div class="sl">After adding</div></div>
+              </div>
+              <div class="unlock"><b>Clears:</b> Neuroscience biology · Med biology</div>
+              <div class="unlock"><b>Unlocks:</b> NSCI 27x Research Methods Lab</div>
+              <div class="unlock"><b>Plan effect:</b> keeps the biology prerequisite complete 21 months before the MCAT.</div>
+              <div class="imap">Mapping source: UNC Neuroscience B.S. catalog · verified July 21, 2026.</div>
+              <div class="btns" style="display:flex;gap:7px;margin-top:10px"><button class="btn p">Keep in Spring 2027</button><button class="btn">Move term</button></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="hd"><div><div class="ti">Watch-outs</div><div class="sub">for the whole plan</div></div></div>
+            <div class="bd"><div class="rlist">
+              <div class="rrow"><span class="ric">!</span><div><div class="rrt">CHEM 430 is unplaced</div><div class="rrd">Last prerequisite before your MCAT.</div></div></div>
+              <div class="rrow"><span class="ric">9</span><div><div class="rrt">Fall 2027 is under-credit</div><div class="rrd">Add five credits or offset later.</div></div></div>
+            </div></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="psw" aria-label="Prototype variant switcher">
+  <button type="button" data-dir="-1" aria-label="Previous variant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m15 18-6-6 6-6"/></svg></button>
+  <div class="plabel"><span class="proto">Prototype only</span><span id="variant-label"></span></div>
+  <button type="button" data-dir="1" aria-label="Next variant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg></button>
+</div>
+
+<script>
+const variants = [
+  { key: "A", name: "Timeline first" },
+  { key: "B", name: "Next-term builder" },
+  { key: "C", name: "Decision inspector" }
+];
+function currentIndex() {
+  const key = (new URLSearchParams(location.search).get("variant") || "A").toUpperCase();
+  const index = variants.findIndex(item => item.key === key);
+  return index < 0 ? 0 : index;
+}
+function render() {
+  const active = variants[currentIndex()];
+  document.querySelectorAll("[data-variant]").forEach(el => el.classList.toggle("on", el.dataset.variant === active.key));
+  document.getElementById("variant-label").textContent = `${active.key} — ${active.name}`;
+  document.title = `Academics Planner — ${active.key} ${active.name}`;
+}
+function cycle(direction) {
+  const next = variants[(currentIndex() + direction + variants.length) % variants.length];
+  const url = new URL(location.href);
+  url.searchParams.set("variant", next.key);
+  history.replaceState({}, "", url);
+  render();
+}
+document.querySelectorAll("[data-dir]").forEach(button => button.addEventListener("click", () => cycle(Number(button.dataset.dir))));
+addEventListener("keydown", event => {
+  const tag = document.activeElement?.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable) return;
+  if (event.key === "ArrowLeft") cycle(-1);
+  if (event.key === "ArrowRight") cycle(1);
+});
+addEventListener("popstate", render);
+render();
+</script>
+</body>
+</html>

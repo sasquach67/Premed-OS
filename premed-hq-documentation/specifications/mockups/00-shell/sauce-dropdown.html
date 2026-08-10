@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sauce — top-bar dropdown</title>
+<!--
+  ============================================================================
+  ROUNDS - A TOP-BAR DROPDOWN. SMALL ON PURPOSE.
+  ============================================================================
+  Status: DRAFT (Aug 2026). Board: specifications/06-knowledge-delivery-board.md
+  Supersedes the bento-block drawing in 03-overview/sauce-two-doors.html.
+
+  THE SCOPE RULING (Andy, Aug 2026) - this is the important part
+  "I do want to make this small in scope. To build this would essentially
+  be to replace Atlas and I'm not tryna do that. I'm just tryna transfer a
+  small VIEW of what Atlas can show."
+
+  That collapses the design. Earlier drafts had TWO DOORS - a block on
+  Overview plus a full feed page at /overview/sauce. The feed page is
+  CUT. A browsable archive with filters and history IS Atlas, and building
+  it inside HQ duplicates the product it is supposed to be a window into.
+  The board already said so and the drawings ignored it: "not a second
+  Atlas - HQ front-loads and points; deep exploration stays in Atlas."
+
+  SO: ONE DOOR. Three blurbs, a shuffle, and a way out to Atlas.
+  No route. No feed. No bento block. One popover component.
+
+  WHY THE TOP BAR AND NOT THE PAGE (Andy)
+  "instead of a distracting box that would be above of tasks and other
+  important stuff - maybe like a pop up or a drop down originating in the
+  top menu."
+  Right, and it fixes a real problem: Overview's bento is already 8 blocks
+  (03-overview §5), and a full-width row would have pushed the roadmap
+  down and put "here's something interesting" ABOVE "here's what you have
+  to do" on a page whose whole job is now-and-soon.
+  It also earns glass honestly - 04 §0c puts frosted glass on floating
+  overlays, which is exactly what a popover is.
+
+  THE TRADE, STATED HONESTLY
+  Andy's original bar was "all it takes is for it to be there, and people
+  just look at it." A dropdown is NOT ambient - it needs a click. That is
+  the cost of not competing with tasks for space, and it is a real cost.
+  Mitigation drawn here: the trigger is a LABELLED PILL, not an icon, so
+  the word "Sauce" is ambient even when the panel is closed.
+
+  IT MUST NOT BECOME A SECOND ATTENTION BELL
+  The bell (shell §7.5) means THINGS THAT NEED YOU. Sauce means THINGS
+  YOU MIGHT LIKE. Two adjacent bell-ish icons would make Sauce inherit
+  obligation, which kills it. Hence:
+   · a labelled pill, never a bare icon
+   · NO badge, NO count, NO dot, ever
+   · a book icon, deliberately unlike the bell
+   · it sits on the far side of the search field, not beside the bell
+
+  THREE REGISTERS, NO LABELS (Andy: "there's just too much labeling...
+  users just want to read info")
+    instruction -> icon chip + sentence
+    statement   -> ruled, no chip, denser
+    quote       -> display Baloo, quote marks, attribution
+  The type still exists in the record - it drives the shape - and is
+  never printed.
+
+  DELIBERATELY EXCLUDED
+   · A feed page, an archive, history, or type filters. That is Atlas.
+   · Unread counts, badges, dots, streaks.
+   · Anything that opens on load. It opens when clicked, never before.
+   · Likes/comments/other students - deferred.md N-1.
+
+  OPEN: the name · 3 blurbs drawn · whether Save lives here or in Atlas.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --pri:#6fb3de; --pri-ink:#0f2330; --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --star:#e7b06a;
+  --mcat:#8c7bd4; --clinical:#6fae6e; --research:#c98ac9; --letters:#d59b6a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.flabel{width:1240px;margin:0 auto 10px;padding:0 26px;font-family:'Baloo 2';font-weight:800;font-size:12px;
+  color:var(--dim);text-transform:uppercase;letter-spacing:.09em}
+.stage{width:1240px;margin:0 auto 30px;background:var(--bg);border-radius:20px;overflow:hidden;
+  box-shadow:0 30px 90px -30px rgba(0,0,0,.9);position:relative}
+
+/* ── TOP BAR ─────────────────────────────────────────────────────────── */
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--bd);
+  background:var(--card);position:relative;z-index:30}
+.tb-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--mut);
+  cursor:pointer;transition:.15s cubic-bezier(.16,1,.3,1)}
+.tb-ic:hover{background:var(--muted);color:var(--fg)}
+.tb-ic svg{width:17px;height:17px}
+.search{flex:1;max-width:420px;background:var(--muted);border:1px solid var(--bd);border-radius:11px;
+  padding:8px 13px;display:flex;align-items:center;gap:9px;color:var(--dim);font-size:13.5px;font-weight:600}
+.search svg{width:15px;height:15px}
+.search .kbd{margin-left:auto;font-family:'Baloo 2';font-weight:800;font-size:10.5px;background:var(--card);
+  border:1px solid var(--bd);border-radius:6px;padding:2px 7px;color:var(--dim)}
+.spacer{flex:1}
+
+/* THE TRIGGER — a labelled pill, deliberately not a bell */
+.trig{display:inline-flex;align-items:center;gap:8px;background:var(--muted);border:1px solid var(--bd);
+  border-radius:999px;padding:7px 15px 7px 12px;font-family:'Baloo 2';font-weight:700;font-size:13px;
+  color:var(--mut);cursor:pointer;transition:.15s cubic-bezier(.16,1,.3,1)}
+.trig svg{width:16px;height:16px}
+.trig:hover{color:var(--fg);transform:translateY(-1px);box-shadow:0 8px 18px -8px rgba(0,0,0,.6)}
+.trig.open{background:var(--card);color:var(--fg);font-weight:800;
+  border-color:color-mix(in srgb,var(--pri) 45%,var(--bd));
+  box-shadow:0 0 20px -6px color-mix(in srgb,var(--pri) 45%,transparent)}
+.chip-lite{font-family:'Baloo 2';font-weight:800;font-size:10.5px;border-radius:999px;padding:2px 9px;
+  background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc)}
+
+/* ── PAGE BEHIND (dimmed, to show the overlay reads as floating) ─────── */
+.page{padding:20px;position:relative}
+.page.dim::after{content:"";position:absolute;inset:0;background:rgba(12,10,8,.5);z-index:20}
+.hero{border-radius:16px;height:120px;border:1px solid var(--bd);
+  background:radial-gradient(150px 150px at 84% 22%,rgba(255,214,150,.5),transparent 70%),
+    linear-gradient(120deg,#3b2f4a 0%,#7a4f5a 40%,#c98a5e 72%,#e7b06a 100%)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
+.pc{background:var(--card);border:1px solid var(--bd);border-radius:16px;height:96px;padding:16px 18px;
+  box-shadow:0 10px 26px -14px rgba(0,0,0,.55)}
+.pc b{font-family:'Baloo 2';font-weight:800;font-size:17px;color:var(--mut)}
+
+/* ── THE POPOVER — glass, because it floats (04 §0c) ─────────────────── */
+.pop{position:absolute;top:60px;right:112px;width:436px;z-index:40;border-radius:16px;overflow:hidden;
+  background:rgba(38,33,29,.74);backdrop-filter:blur(22px) saturate(1.12);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 34px 64px -26px rgba(0,0,0,.82)}
+.pop .ph{display:flex;align-items:center;justify-content:space-between;padding:15px 17px 11px}
+.pop .pt{font-family:'Baloo 2';font-weight:800;font-size:17px;color:#fff}
+.pop .ps{font-size:11.5px;font-weight:700;color:rgba(255,255,255,.55);margin-top:1px}
+.shf{display:inline-flex;align-items:center;gap:7px;border-radius:9px;padding:6px 12px;
+  font-family:'Baloo 2';font-weight:700;font-size:12.5px;cursor:pointer;
+  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);color:rgba(255,255,255,.78);
+  transition:.15s cubic-bezier(.16,1,.3,1)}
+.shf svg{width:13px;height:13px}
+.shf:hover{background:rgba(255,255,255,.16);color:#fff}
+
+.item{padding:14px 17px;border-top:1px solid rgba(255,255,255,.08);cursor:pointer;
+  transition:.15s cubic-bezier(.16,1,.3,1)}
+.item:hover{background:rgba(255,255,255,.06)}
+.ifoot{display:flex;align-items:center;gap:9px;margin-top:11px}
+.src{font-size:11px;font-weight:700;color:rgba(255,255,255,.42);margin-left:auto}
+.sv{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:rgba(255,255,255,.42);cursor:pointer}
+.sv:hover{background:rgba(255,255,255,.1);color:#fff}
+.sv.on{color:var(--star)}
+.sv.on svg{fill:var(--star)}
+.sv svg{width:15px;height:15px}
+
+/* shape 1 — instruction */
+.item.ins .body{display:flex;gap:12px}
+.spk{width:32px;height:32px;border-radius:10px;flex-shrink:0;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--acc) 30%,transparent);color:color-mix(in srgb,var(--acc) 45%,#fff);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
+.spk svg{width:17px;height:17px}
+.item.ins p{font-size:13.5px;font-weight:600;line-height:1.5;color:rgba(255,255,255,.9)}
+/* shape 2 — statement */
+.item.st .body{border-left:2px solid color-mix(in srgb,var(--acc) 60%,transparent);padding-left:13px}
+.item.st p{font-size:13.5px;font-weight:700;line-height:1.48;color:rgba(255,255,255,.93)}
+/* shape 3 — quote */
+.item.qt p{font-family:'Baloo 2';font-weight:700;font-size:17px;line-height:1.32;color:#fff;letter-spacing:-.2px}
+.item.qt .by{font-family:'Baloo 2';font-weight:700;font-size:12px;color:rgba(255,255,255,.55);margin-top:8px}
+
+.pfoot{padding:12px 17px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+.pfoot .out{margin-left:auto;font-family:'Baloo 2';font-weight:800;font-size:12.5px;color:var(--pri);cursor:pointer}
+.pfoot .hint{font-size:11.5px;font-weight:700;color:rgba(255,255,255,.4)}
+
+.note{width:1240px;margin:0 auto 30px;padding:16px 26px;border:1px dashed var(--bd);border-radius:14px;
+  font-size:13px;color:var(--dim);font-weight:600;line-height:1.62;background:var(--bg)}
+.note b{color:var(--mut);font-weight:800}
+.note i{color:var(--mut);font-style:italic}
+</style>
+</head>
+<body>
+
+<p class="flabel">Frame 1 — open. Glass, because it floats. Three registers, no labels, no badge.</p>
+<div class="stage">
+
+  <div class="topbar">
+    <div class="tb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      Search everything
+      <span class="kbd">⌘K</span>
+    </div>
+    <div class="spacer"></div>
+
+    <div class="trig open">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      Sauce
+    </div>
+
+    <div class="tb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/></svg></div>
+    <div class="tb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></div>
+    <div class="tb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></div>
+  </div>
+
+  <div class="page dim">
+    <div class="hero"></div>
+    <div class="grid">
+      <div class="pc"><b>Tasks</b></div>
+      <div class="pc"><b>Where I stand</b></div>
+      <div class="pc"><b>Quarterly goals</b></div>
+    </div>
+  </div>
+
+  <div class="pop">
+    <div class="ph">
+      <div>
+        <div class="pt">Sauce</div>
+        <div class="ps">Thursday, 6 August</div>
+      </div>
+      <span class="shf">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
+        Shuffle
+      </span>
+    </div>
+
+    <div class="item ins" style="--acc:var(--letters)">
+      <div class="body">
+        <span class="spk">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+        </span>
+        <p>Give your letter writers your CV and a draft personal statement when you ask. They write faster, and more specifically, with it.</p>
+      </div>
+      <div class="ifoot">
+        <span class="chip-lite" style="--acc:var(--letters)">Letters</span>
+        <span class="src">Atlas</span>
+        <span class="sv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></span>
+      </div>
+    </div>
+
+    <div class="item st" style="--acc:var(--clinical)">
+      <div class="body">
+        <p>Scribing counts as clinical experience. Shadowing does not, because you are observing rather than contributing to care.</p>
+      </div>
+      <div class="ifoot">
+        <span class="chip-lite" style="--acc:var(--clinical)">Clinical</span>
+        <span class="src">AAMC · checked Aug 2026</span>
+        <span class="sv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></span>
+      </div>
+    </div>
+
+    <div class="item qt">
+      <div class="body">
+        <p>“Twenty years is going to pass either way. Might as well be a doctor at the end of it.”</p>
+        <div class="by">— @premedwithsam</div>
+      </div>
+      <div class="ifoot">
+        <span class="src">Atlas</span>
+        <span class="sv on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></span>
+      </div>
+    </div>
+
+    <div class="pfoot">
+      <span class="hint">Three a day. Nothing to keep up with.</span>
+      <span class="out">Open in Atlas →</span>
+    </div>
+  </div>
+</div>
+
+<p class="flabel">Frame 2 — closed. A labelled pill, never a bell. No badge, no count, no dot, ever.</p>
+<div class="stage">
+  <div class="topbar">
+    <div class="tb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      Search everything
+      <span class="kbd">⌘K</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="trig">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      Sauce
+    </div>
+    <div class="tb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/></svg></div>
+    <div class="tb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></div>
+    <div class="tb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></div>
+  </div>
+  <div class="page">
+    <div class="hero"></div>
+    <div class="grid">
+      <div class="pc"><b>Tasks</b></div>
+      <div class="pc"><b>Where I stand</b></div>
+      <div class="pc"><b>Quarterly goals</b></div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <b>What the scope-down cut.</b> Earlier drafts had two doors — a full-width block on Overview <i>and</i> a feed page at <code>/overview/sauce</code> with filters, history, and saved items. <b>The feed page is gone.</b> A browsable archive of pre-med knowledge <i>is</i> Atlas, and building one inside HQ duplicates the product this is meant to be a window into. Andy: <i>“to build this would essentially be to replace Atlas and I'm not tryna do that.”</i> So HQ shows three and points out — <b>“Open in Atlas →”</b> is the only exit, and Atlas owns browsing.
+  <br><br>
+  <b>What it costs, honestly.</b> The original bar was <i>“all it takes is for it to be there, and people just look at it.”</i> <b>A dropdown is not ambient — it needs a click.</b> The labelled pill is the mitigation: the word <i>Sauce</i> stays visible even closed, so the thing is discoverable without occupying page space. <b>If it turns out nobody opens it, that is the trade failing</b>, and the answer would be one ambient line in the top bar rather than a bento block.
+  <br><br>
+  <b>Why it is a pill and not an icon.</b> The bell means <i>things that need you</i>. Sauce means <i>things you might like</i>. Two adjacent bell-shaped icons would make Sauce inherit obligation, and obligation is what kills it. Different shape, different side of the search field, and <b>never a badge, count, or dot</b>.
+</div>
+
+</body>
+</html>

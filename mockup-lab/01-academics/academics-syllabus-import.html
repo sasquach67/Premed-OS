@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Academics — Syllabus import (§4.1-M)</title>
+<!--
+  ============================================================================
+  ACADEMICS — SYLLABUS IMPORT — VISUAL REFERENCE
+  ============================================================================
+  Status: PROPOSED (July 2026).
+  Spec: tabs/01-academics.md §4.1-M (the keystone) + §4.1-M-a/b/c/d.
+
+  "Build this first. Without it, most of §6 is decorative." — §4.1-M
+
+  RELATED
+   · mockups/01-academics/academics-class-hub.html       — Materials tab hosts entry #2
+   · mockups/01-academics/academics-daily-main-page.html — Class Center hosts entry #3
+   · mockups/01-academics/academics-exam-prep-mode.html  — the other full-screen flow
+   · mockups/_shared/_visual-recipes.md                  — literal visual values
+
+  WHERE IT LIVES (§4.1-M-a) — NO NEW TAB
+  A temporary full-screen flow, like exam prep mode. FOUR entry points, ONE
+  destination:
+    1. Cold-start CTA (no classes yet)  → CREATES the class    ← primary path
+    2. Class page → Materials, top      → attaches
+    3. Class Center card overflow       → attaches
+    4. Add-a-class flow                 → attaches
+  Entry determines scope and changes exactly ONE block: unscoped leads with
+  "Which class is this?" (prefilled from the parsed code); scoped replaces it
+  with a static class header. Everything after is identical.
+
+  DECISIONS THIS FILE ENCODES
+  1. ONE DROPZONE, DROP AND CLICK EQUAL. Reuses `AnimatedFileUpload`, which
+     already exists and is already used in 3 places. NOT a forked variant.
+  2. NO WIZARD, NO STEP COUNTER. Upload → parse → review → apply is ONE
+     screen changing state. A 4-step wizard for a 40-second task is how this
+     feature gets abandoned.
+  3. PASTE TEXT IS A FIRST-CLASS PATH, not a fallback. Copying from Canvas is
+     common and must not require making a file first.
+  4. PARSING NAMES WHAT IT IS DOING and is cancellable. A 20-second silent
+     spinner reads as a hang.
+  5. REVIEW-BEFORE-APPLY IS NON-NEGOTIABLE (§4.1-M). Nothing is written
+     until Apply. A mis-parsed grade weight corrupts every downstream
+     projection and the student would never know why.
+  6. ATTENTION GOES WHERE IT IS NEEDED. Clean groups COLLAPSE to a summary
+     line; any group with a low-confidence item EXPANDS by default. Making a
+     student scroll 40 correct rows to find the 2 wrong ones guarantees they
+     confirm without reading.
+  7. EVERY ITEM SHOWS QUOTED SOURCE TEXT. This is what makes confirmation
+     meaningful rather than ceremonial — you cannot verify a weight you
+     cannot trace.
+  8. WEIGHTS ARE VALIDATED TO 100% and the gap is named. Highest-stakes
+     field on the screen.
+  9. PARTIAL SUCCESS IS SUCCESS. What parsed is kept; what didn't is named
+     with manual entry beside it. Never an all-or-nothing error.
+  10. APPLY STATES ITS CONSEQUENCE — "adds 9 units, 12 deadlines, 3 exam
+     dates, 5 grade categories to CHEM 262."
+  11. RE-IMPORT IS A THREE-WAY DIFF (added / changed / removed), per-item
+     accept-or-keep, unchanged items collapsed and counted. Confirmed data
+     is NEVER silently overwritten (#42).
+
+  DELIBERATELY EXCLUDED — do not add these back
+   · A multi-step wizard with a progress bar. See decision 2.
+   · An "auto-apply if confidence is high" shortcut. Review-before-apply is
+     non-negotiable; a silent wrong weight is the exact failure mode.
+   · A bare error screen when parsing fails. §4.1-M-d: go to manual entry
+     with the file retained. The app is never blocked on parsing.
+   · Hiding low-confidence items to make the result look cleaner.
+   · Uploading the source document to the shared-parse table. §4.1-M
+     security model: share extracted STRUCTURE only, never the document.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f;
+  --cat:#4b9cd3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:13px;padding:26px;overflow:auto}
+.frame{width:1400px;background:var(--bg);border-radius:18px;overflow:hidden;box-shadow:0 30px 90px -30px rgba(0,0,0,.9);margin-bottom:38px}
+.framelabel{width:1400px;font-family:'Baloo 2';font-weight:800;font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;margin:0 0 10px 4px}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- BANNER ---------- */
+.banner{
+  background:
+    radial-gradient(340px 200px at 88% 6%, rgba(75,156,211,.34), transparent 70%),
+    radial-gradient(260px 180px at 10% 130%, rgba(111,192,168,.18), transparent 70%),
+    linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%);
+  padding:16px 24px 18px;
+}
+.exitrow{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+.exit{
+  background:rgba(20,26,34,.5);backdrop-filter:blur(16px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+  border-radius:999px;padding:5px 14px 5px 10px;font-family:'Baloo 2';
+  font-weight:800;font-size:12px;color:rgba(255,255,255,.86);cursor:pointer;
+}
+.modetag{font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:3px 10px}
+.brow{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.h1{font-family:'Baloo 2';font-weight:800;font-size:29px;color:#fff;letter-spacing:-.4px;line-height:1.1}
+.subline{font-size:12px;color:rgba(255,255,255,.66);font-weight:700;margin-top:4px}
+.statstrip{display:flex;border-radius:13px;overflow:hidden;background:rgba(20,26,34,.5);
+  backdrop-filter:blur(16px) saturate(1.1);border:1px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}
+.stat{padding:8px 15px;border-right:1px solid rgba(255,255,255,.12);min-width:80px}
+.stat:last-child{border-right:0}
+.stat .value{font-family:'Baloo 2';font-weight:800;font-size:18px;color:#fff;font-variant-numeric:tabular-nums;line-height:1.15}
+.stat .label{font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:1px}
+
+/* ---------- LAYOUT ---------- */
+.body{padding:20px 22px 24px}
+.split{display:grid;grid-template-columns:1fr 372px;gap:14px;align-items:start}
+.center{max-width:840px;margin:0 auto}
+
+/* ---------- PANEL ---------- */
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 10px 26px -14px rgba(0,0,0,.55)}
+.ph{padding:14px 16px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.pt{font-family:'Baloo 2';font-weight:800;font-size:16.5px;line-height:1.15}
+.ps{font-size:11.5px;color:var(--dim);font-weight:700}
+.pb{padding:3px 16px 16px;display:flex;flex-direction:column;gap:9px}
+
+/* ---------- DROPZONE (AnimatedFileUpload) ---------- */
+.dropzone{
+  display:grid;place-items:center;text-align:center;
+  border:1.5px dashed var(--bd);background:var(--card);
+  border-radius:18px;padding:44px 24px;cursor:pointer;
+  transition:.15s cubic-bezier(.16,1,.3,1);
+}
+.dropzone:hover{border-color:color-mix(in srgb,var(--cat) 55%,transparent)}
+.dropzone.dragging{
+  border-color:var(--cat);background:color-mix(in srgb,var(--cat) 10%,var(--card));
+  transform:translateY(-3px) scale(1.006);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--cat) 40%,transparent),0 22px 44px -20px rgba(0,0,0,.8);
+}
+.dzicon{width:52px;height:52px;border-radius:16px;background:color-mix(in srgb,var(--cat) 16%,transparent);
+  display:grid;place-items:center;font-size:23px;margin-bottom:13px}
+.dztitle{font-family:'Baloo 2';font-weight:800;font-size:19px}
+.dzsub{font-size:12.5px;color:var(--mut);font-weight:600;margin-top:5px;line-height:1.55}
+.dztypes{display:flex;gap:6px;justify-content:center;margin-top:13px;flex-wrap:wrap}
+.ftype{font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.05em;
+  background:rgba(255,255,255,.06);color:var(--dim);border-radius:6px;padding:3px 8px}
+.altrow{display:flex;align-items:center;gap:9px;justify-content:center;margin-top:13px}
+.altlink{font-family:'Baloo 2';font-weight:800;font-size:12px;color:var(--cat);cursor:pointer}
+.altsep{color:var(--dim);font-size:11px}
+
+/* ---------- PARSING ---------- */
+.parsing{background:var(--muted);border:1px solid var(--bd);border-radius:14px;padding:15px 16px}
+.prow{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:12.5px;font-weight:700}
+.prow .ic{width:17px;flex:none;text-align:center;font-size:12px}
+.prow.done{color:var(--mut)}
+.prow.now{color:var(--fg)}
+.prow.wait{color:var(--dim)}
+.pbar{height:5px;background:var(--card);border-radius:999px;overflow:hidden;margin:9px 0 4px}
+.pfill{height:100%;width:62%;background:var(--cat);border-radius:999px}
+
+/* ---------- REVIEW GROUPS ---------- */
+.group{background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+.group.flagged{border-color:color-mix(in srgb,var(--warning) 42%,var(--bd))}
+.ghead{display:flex;align-items:center;gap:11px;padding:12px 14px;cursor:pointer}
+.group.flagged .ghead{background:color-mix(in srgb,var(--warning) 7%,transparent)}
+.gicon{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:13px;flex:none;
+  background:color-mix(in srgb,var(--cat) 16%,transparent)}
+.gtitle{font-family:'Baloo 2';font-weight:800;font-size:14px}
+.gsum{font-size:11.5px;color:var(--dim);font-weight:700;margin-top:1px}
+.gright{margin-left:auto;display:flex;align-items:center;gap:9px}
+.chip{font-family:'Baloo 2';font-weight:800;border-radius:999px;padding:2px 9px;font-size:9.5px;white-space:nowrap}
+.c-ok{background:color-mix(in srgb,var(--success) 18%,transparent);color:var(--success)}
+.c-warn{background:color-mix(in srgb,var(--warning) 20%,transparent);color:var(--warning)}
+.c-bad{background:color-mix(in srgb,var(--danger) 18%,transparent);color:var(--danger)}
+.c-cat{background:color-mix(in srgb,var(--cat) 18%,transparent);color:var(--cat)}
+.c-dim{background:rgba(255,255,255,.07);color:var(--dim)}
+.chev{color:var(--dim);font-size:11px}
+.gbody{padding:2px 14px 13px;display:flex;flex-direction:column;gap:7px}
+
+/* ---------- ITEM ROWS ---------- */
+.item{background:var(--muted);border:1px solid var(--bd);border-radius:10px;padding:10px 12px}
+.item.low{border-color:color-mix(in srgb,var(--warning) 45%,var(--bd));background:color-mix(in srgb,var(--warning) 6%,var(--muted))}
+.irow{display:flex;align-items:center;gap:10px}
+.iname{font-weight:700;font-size:12.5px;flex:1}
+.ival{font-family:'Baloo 2';font-weight:800;font-size:12.5px;font-variant-numeric:tabular-nums}
+.src{
+  font-size:11px;color:var(--dim);font-weight:600;line-height:1.5;font-style:italic;
+  margin-top:7px;padding:6px 9px;background:rgba(255,255,255,.028);
+  border-left:2px solid color-mix(in srgb,var(--cat) 40%,transparent);border-radius:0 7px 7px 0;
+}
+.src b{font-style:normal;color:var(--dim);font-weight:800}
+.fixrow{display:flex;align-items:center;gap:8px;margin-top:8px}
+.input{
+  background:var(--card);border:1px solid var(--bd);border-radius:8px;
+  padding:6px 10px;font-family:'Baloo 2';font-weight:800;font-size:12.5px;color:var(--fg);min-width:90px;
+}
+.input.focus{border-color:var(--cat);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--cat) 40%,transparent)}
+.hint{font-size:11px;color:var(--warning);font-weight:700}
+
+/* ---------- WEIGHT VALIDATION ---------- */
+.weightsum{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+  background:color-mix(in srgb,var(--danger) 8%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--danger) 38%,var(--bd));
+}
+.weightsum.ok{background:color-mix(in srgb,var(--success) 8%,var(--muted));border-color:color-mix(in srgb,var(--success) 34%,var(--bd))}
+.wtext{flex:1;font-size:12px;font-weight:700;color:var(--mut)}
+.wnum{font-family:'Baloo 2';font-weight:800;font-size:16px;font-variant-numeric:tabular-nums;color:var(--danger)}
+.weightsum.ok .wnum{color:var(--success)}
+
+/* ---------- RAIL ---------- */
+.applybox{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:15px 16px;
+  box-shadow:0 10px 26px -14px rgba(0,0,0,.55)}
+.abt{font-family:'Baloo 2';font-weight:800;font-size:16px;margin-bottom:3px}
+.abs{font-size:11.5px;color:var(--dim);font-weight:700;margin-bottom:11px}
+.cnt{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:12.5px;font-weight:700;color:var(--mut)}
+.cnt .n{font-family:'Baloo 2';font-weight:800;font-size:15px;color:var(--fg);min-width:24px;text-align:right;font-variant-numeric:tabular-nums}
+.btn{font-family:'Baloo 2';font-weight:800;font-size:12.5px;border-radius:10px;padding:10px 14px;
+  border:1px solid var(--bd);background:var(--muted);color:var(--mut);cursor:pointer;text-align:center}
+.btn.pri{background:var(--cat);border-color:var(--cat);color:#0f1b24}
+.btn.block{display:block;width:100%}
+.btn.sm{padding:6px 11px;font-size:11.5px;border-radius:8px}
+.btn.ghost{background:transparent}
+.consequence{font-size:11px;color:var(--dim);font-weight:600;line-height:1.5;margin-top:9px;text-align:center}
+.filecard{display:flex;align-items:center;gap:10px;background:var(--muted);border:1px solid var(--bd);
+  border-radius:11px;padding:10px 12px}
+.filecard .fi{width:28px;height:28px;border-radius:8px;background:color-mix(in srgb,var(--danger) 16%,transparent);
+  display:grid;place-items:center;font-size:11px;font-family:'Baloo 2';font-weight:800;color:var(--danger);flex:none}
+.filecard .fn{flex:1;font-weight:700;font-size:12px;line-height:1.35}
+.filecard .fs{font-size:10.5px;color:var(--dim);font-weight:700}
+
+/* ---------- MASCOT ---------- */
+.mnote{display:flex;gap:11px;align-items:flex-start;background:color-mix(in srgb,var(--cat) 7%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 24%,var(--bd));border-radius:12px;padding:11px 13px}
+.ram{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--cat) 22%,transparent);
+  display:grid;place-items:center;flex:none;font-size:15px}
+.mt{font-family:'Baloo 2';font-weight:800;font-size:12.5px;margin-bottom:2px}
+.mb{font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.55}
+.x{margin-left:auto;color:var(--dim);font-weight:800;font-size:13px;cursor:pointer;flex:none}
+
+/* ---------- DIFF ---------- */
+.diffrow{display:flex;align-items:center;gap:11px;background:var(--muted);border:1px solid var(--bd);
+  border-radius:10px;padding:10px 12px}
+.dtag{font-family:'Baloo 2';font-weight:800;font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+  border-radius:6px;padding:3px 7px;flex:none;min-width:62px;text-align:center}
+.dtag.add{background:color-mix(in srgb,var(--success) 18%,transparent);color:var(--success)}
+.dtag.chg{background:color-mix(in srgb,var(--warning) 20%,transparent);color:var(--warning)}
+.dtag.rem{background:color-mix(in srgb,var(--danger) 18%,transparent);color:var(--danger)}
+.dname{flex:1;font-weight:700;font-size:12.5px}
+.dold{font-family:'Baloo 2';font-weight:800;font-size:12px;color:var(--dim);text-decoration:line-through;font-variant-numeric:tabular-nums}
+.darw{color:var(--dim);font-size:10px}
+.dnew{font-family:'Baloo 2';font-weight:800;font-size:12px;font-variant-numeric:tabular-nums}
+.collapsed{display:flex;align-items:center;gap:9px;padding:9px 12px;background:rgba(255,255,255,.028);
+  border:1px dashed var(--bd);border-radius:10px;font-size:11.5px;font-weight:700;color:var(--dim)}
+
+/* ---------- FAILURE ---------- */
+.failbox{background:color-mix(in srgb,var(--warning) 7%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--warning) 34%,var(--bd));border-radius:14px;padding:15px 16px}
+.failt{font-family:'Baloo 2';font-weight:800;font-size:15px;margin-bottom:4px}
+.failb{font-size:12px;color:var(--mut);font-weight:600;line-height:1.6}
+</style>
+</head>
+<body>
+
+<!-- =====================================================================
+     FRAME 1 — UPLOAD (cold start, unscoped: this import CREATES the class)
+     ===================================================================== -->
+<div class="framelabel">Frame 1 &mdash; upload &middot; cold-start entry &middot; dropzone at rest, dragging, and parsing</div>
+<div class="frame">
+  <div class="banner">
+    <div class="exitrow">
+      <div class="exit">&larr; Cancel</div>
+      <div class="modetag">Import syllabus &middot; step 1 of 2</div>
+    </div>
+    <div class="brow">
+      <div>
+        <div class="h1">Add a class from its syllabus</div>
+        <div class="subline">Drop the file and HQ pulls out your units, exam dates, deadlines, and grade weights &mdash; then you confirm all of it before anything is saved.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="center">
+
+      <!-- REST -->
+      <div class="dropzone" style="margin-bottom:16px">
+        <div class="dzicon">&#128228;</div>
+        <div class="dztitle">Drop your syllabus here</div>
+        <div class="dzsub">or click to browse your files &mdash; both work the same</div>
+        <div class="dztypes">
+          <span class="ftype">PDF</span><span class="ftype">DOCX</span>
+          <span class="ftype">PNG / JPG</span><span class="ftype">PHOTO OF A PRINTOUT</span>
+        </div>
+        <div class="altrow">
+          <span class="altlink">Paste the text instead</span>
+          <span class="altsep">&middot;</span>
+          <span class="altlink">Enter everything manually</span>
+        </div>
+      </div>
+
+      <div class="mnote" style="margin-bottom:16px">
+        <div class="ram">&#128015;</div>
+        <div>
+          <div class="mt">Multiple files are fine</div>
+          <div class="mb">Syllabus plus a separate course schedule? Drop both at once &mdash; they get read together into one proposal rather than two passes. Copying from Canvas instead of downloading? Use <b style="color:var(--mut)">Paste the text</b>; it's an equal path, not a fallback.</div>
+        </div>
+        <div class="x">&#10005;</div>
+      </div>
+
+      <!-- DRAGGING -->
+      <div class="framelabel" style="width:auto;margin:22px 0 8px 2px">While dragging a file over it</div>
+      <div class="dropzone dragging" style="margin-bottom:22px">
+        <div class="dzicon" style="background:color-mix(in srgb,var(--cat) 26%,transparent)">&#128229;</div>
+        <div class="dztitle" style="color:#fff">Drop to read it</div>
+        <div class="dzsub">CHEM262_Fall2026_Syllabus.pdf</div>
+      </div>
+
+      <!-- PARSING -->
+      <div class="framelabel" style="width:auto;margin:0 0 8px 2px">While reading &mdash; names what it's doing, and can be stopped</div>
+      <div class="parsing">
+        <div class="filecard" style="margin-bottom:12px">
+          <div class="fi">PDF</div>
+          <div class="fn">CHEM262_Fall2026_Syllabus.pdf<div class="fs">248 KB &middot; 6 pages</div></div>
+          <div class="btn sm ghost">Cancel</div>
+        </div>
+        <div class="prow done"><span class="ic">&#10003;</span>Found the course &mdash; CHEM 262, Fall 2026</div>
+        <div class="prow done"><span class="ic">&#10003;</span>Read 9 units and their week structure</div>
+        <div class="prow done"><span class="ic">&#10003;</span>Found 3 exam dates</div>
+        <div class="prow now"><span class="ic">&#9679;</span>Reading grade weights&hellip;</div>
+        <div class="prow wait"><span class="ic">&#9675;</span>Deadlines and policies</div>
+        <div class="pbar"><div class="pfill"></div></div>
+        <div style="font-size:11px;color:var(--dim);font-weight:700">Usually about 20 seconds. Nothing is saved until you review it.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- =====================================================================
+     FRAME 2 — REVIEW BEFORE APPLY (§4.1-M-c) — the screen that matters
+     ===================================================================== -->
+<div class="framelabel">Frame 2 &mdash; review before apply &middot; clean groups collapsed, flagged groups expanded</div>
+<div class="frame">
+  <div class="banner">
+    <div class="exitrow">
+      <div class="exit">&larr; Back</div>
+      <div class="modetag">Import syllabus &middot; step 2 of 2 &middot; nothing saved yet</div>
+    </div>
+    <div class="brow">
+      <div>
+        <div class="h1">Here's what I found</div>
+        <div class="subline">Check it over and fix anything wrong. Nothing is written to your account until you press Add.</div>
+      </div>
+      <div class="statstrip">
+        <div class="stat"><div class="value num">41</div><div class="label">Items found</div></div>
+        <div class="stat"><div class="value num">3</div><div class="label">Need a look</div></div>
+        <div class="stat"><div class="value num">1</div><div class="label">Not found</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="split">
+
+      <div style="display:flex;flex-direction:column;gap:11px">
+
+        <!-- CLASS IDENTITY — only appears on the UNSCOPED entry -->
+        <div class="group">
+          <div class="ghead">
+            <div class="gicon">&#127891;</div>
+            <div>
+              <div class="gtitle">Which class is this?</div>
+              <div class="gsum">Prefilled from the syllabus &mdash; this import will create it</div>
+            </div>
+            <div class="gright"><span class="chip c-cat">new class</span></div>
+          </div>
+          <div class="gbody">
+            <div class="item">
+              <div class="irow">
+                <span class="iname">Course</span>
+                <span class="input">CHEM 262</span>
+                <span class="input" style="min-width:230px">Organic Chemistry II</span>
+              </div>
+              <div class="irow" style="margin-top:8px">
+                <span class="iname">Term &middot; credits &middot; type</span>
+                <span class="input">Fall 2026</span>
+                <span class="input" style="min-width:56px">3</span>
+                <span class="chip c-cat">STEM</span>
+              </div>
+              <div class="src"><b>From the syllabus:</b> &ldquo;CHEM 262 &mdash; Organic Chemistry II, Fall 2026, 3 credit hours. Instructor: Dr. Adaeze Elamin.&rdquo;</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRADE WEIGHTS — FLAGGED, expanded by default -->
+        <div class="group flagged">
+          <div class="ghead">
+            <div class="gicon" style="background:color-mix(in srgb,var(--warning) 20%,transparent)">&#9878;</div>
+            <div>
+              <div class="gtitle">Grade weights</div>
+              <div class="gsum">5 categories &middot; 2 need a look</div>
+            </div>
+            <div class="gright"><span class="chip c-warn">check these</span><span class="chev">&#9652;</span></div>
+          </div>
+          <div class="gbody">
+            <div class="item"><div class="irow"><span class="iname">Exams (2 midterms)</span><span class="ival">50%</span></div>
+              <div class="src"><b>p.2:</b> &ldquo;Two midterm examinations, 25% each.&rdquo;</div></div>
+            <div class="item"><div class="irow"><span class="iname">Final exam</span><span class="ival">25%</span></div>
+              <div class="src"><b>p.2:</b> &ldquo;Comprehensive final: 25%.&rdquo;</div></div>
+            <div class="item"><div class="irow"><span class="iname">Problem sets</span><span class="ival">15%</span></div>
+              <div class="src"><b>p.2:</b> &ldquo;Weekly problem sets collectively 15%. Lowest two dropped.&rdquo;</div></div>
+
+            <div class="item low">
+              <div class="irow"><span class="iname">Laboratory</span><span class="ival" style="color:var(--warning)">?</span></div>
+              <div class="src"><b>p.3:</b> &ldquo;The laboratory component is graded separately &mdash; see the CHEM 262L syllabus.&rdquo;</div>
+              <div class="fixrow">
+                <span class="hint">&#9888; Lab may be a separate course. Is it part of this grade?</span>
+              </div>
+              <div class="fixrow">
+                <span class="btn sm">It's separate</span>
+                <span class="btn sm">It's included &mdash;</span>
+                <span class="input focus" style="min-width:64px">10%</span>
+              </div>
+            </div>
+
+            <div class="item low">
+              <div class="irow"><span class="iname">Participation</span><span class="ival" style="color:var(--warning)">10%</span></div>
+              <div class="src"><b>p.3:</b> &ldquo;Attendance and participation may account for up to 10% at the instructor's discretion.&rdquo;</div>
+              <div class="fixrow"><span class="hint">&#9888; &ldquo;up to&rdquo; and &ldquo;discretion&rdquo; &mdash; confirm the real number</span></div>
+            </div>
+
+            <div class="weightsum">
+              <span class="wnum">90%</span>
+              <span class="wtext">These add up to 90%, not 100% &mdash; the missing 10% is probably the lab. Resolve it above, or set it yourself.</span>
+              <span class="btn sm">Fix manually</span>
+            </div>
+            <div class="src" style="border-left-color:color-mix(in srgb,var(--warning) 45%,transparent)">
+              Weights matter more than anything else here &mdash; every grade projection you'll ever see is computed from them, so a wrong number quietly corrupts all of it.
+            </div>
+          </div>
+        </div>
+
+        <!-- EXAM DATES — clean, collapsed -->
+        <div class="group">
+          <div class="ghead">
+            <div class="gicon">&#128197;</div>
+            <div><div class="gtitle">Exam dates</div><div class="gsum">Sep 23 &middot; Oct 14 &middot; Dec 9 (final, cumulative)</div></div>
+            <div class="gright"><span class="chip c-ok">3 &middot; all clear</span><span class="chev">&#9662;</span></div>
+          </div>
+        </div>
+
+        <!-- UNITS — clean, collapsed -->
+        <div class="group">
+          <div class="ghead">
+            <div class="gicon">&#128218;</div>
+            <div><div class="gtitle">Units and topics</div><div class="gsum">9 units mapped to weeks 1&ndash;15 &middot; 47 topics</div></div>
+            <div class="gright"><span class="chip c-ok">all clear</span><span class="chev">&#9662;</span></div>
+          </div>
+        </div>
+
+        <!-- DEADLINES — clean, collapsed -->
+        <div class="group">
+          <div class="ghead">
+            <div class="gicon">&#9203;</div>
+            <div><div class="gtitle">Deadlines</div><div class="gsum">12 problem sets, weekly on Fridays</div></div>
+            <div class="gright"><span class="chip c-ok">12 &middot; all clear</span><span class="chev">&#9662;</span></div>
+          </div>
+        </div>
+
+        <!-- POLICIES — one flagged item -->
+        <div class="group flagged">
+          <div class="ghead">
+            <div class="gicon" style="background:color-mix(in srgb,var(--warning) 20%,transparent)">&#128220;</div>
+            <div><div class="gtitle">Policies</div><div class="gsum">3 found &middot; 1 needs a look</div></div>
+            <div class="gright"><span class="chip c-warn">check this</span><span class="chev">&#9652;</span></div>
+          </div>
+          <div class="gbody">
+            <div class="item"><div class="irow"><span class="iname">Lowest 2 problem sets dropped</span><span class="chip c-ok">will be applied</span></div>
+              <div class="src"><b>p.2:</b> &ldquo;Your two lowest problem set scores are dropped.&rdquo;</div></div>
+            <div class="item"><div class="irow"><span class="iname">Late work: &minus;10% per day, 3 days max</span><span class="chip c-ok">will be applied</span></div>
+              <div class="src"><b>p.3:</b> &ldquo;Late submissions lose 10% per day up to three days, after which they receive zero.&rdquo;</div></div>
+            <div class="item low">
+              <div class="irow"><span class="iname">Curve</span><span class="ival" style="color:var(--warning)">unclear</span></div>
+              <div class="src"><b>p.4:</b> &ldquo;Final grades may be curved at the instructor's discretion.&rdquo;</div>
+              <div class="fixrow"><span class="hint">&#9888; Can't be computed &mdash; HQ will project without a curve and say so</span>
+                <span class="btn sm">OK</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOT FOUND — partial success framed as success -->
+        <div class="group">
+          <div class="ghead">
+            <div class="gicon" style="background:rgba(255,255,255,.07)">&#8212;</div>
+            <div><div class="gtitle">Office hours</div><div class="gsum">Not in this document &mdash; everything else was found</div></div>
+            <div class="gright"><span class="chip c-dim">add later</span><span class="btn sm">Add now</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===== APPLY RAIL ===== -->
+      <div style="display:flex;flex-direction:column;gap:13px;position:sticky;top:20px">
+
+        <div class="applybox">
+          <div class="abt">What this adds</div>
+          <div class="abs">To a new class, CHEM 262</div>
+          <div class="cnt"><span class="n">9</span> units</div>
+          <div class="cnt"><span class="n">47</span> topics</div>
+          <div class="cnt"><span class="n">12</span> deadlines</div>
+          <div class="cnt"><span class="n">3</span> exam dates</div>
+          <div class="cnt"><span class="n">5</span> grade categories</div>
+          <div class="cnt"><span class="n">3</span> policies</div>
+          <div class="btn pri block" style="margin-top:13px">Add all of this to CHEM 262</div>
+          <div class="btn block ghost" style="margin-top:7px">Save and finish later</div>
+          <div class="consequence">Everything stays editable afterwards, and the file stays attached so you can re-check any number.</div>
+        </div>
+
+        <div class="applybox" style="padding:13px 14px">
+          <div class="filecard">
+            <div class="fi">PDF</div>
+            <div class="fn">CHEM262_Fall2026_Syllabus.pdf<div class="fs">248 KB &middot; 6 pages</div></div>
+            <div class="btn sm ghost">View</div>
+          </div>
+        </div>
+
+        <div class="mnote">
+          <div class="ram">&#128015;</div>
+          <div>
+            <div class="mt">Why you're being asked</div>
+            <div class="mb">The three flagged items are ones I'd have to guess at. Everything else is quoted straight from your syllabus &mdash; open any group to see the exact sentence it came from.</div>
+          </div>
+          <div class="x">&#10005;</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- =====================================================================
+     FRAME 3 — RE-IMPORT DIFF (#42) + the nothing-parsed path (§4.1-M-d)
+     ===================================================================== -->
+<div class="framelabel">Frame 3 &mdash; re-import is a diff, never an overwrite &middot; and the failure path</div>
+<div class="frame">
+  <div class="banner">
+    <div class="exitrow">
+      <div class="exit">&larr; Back</div>
+      <div class="modetag">Re-import &middot; CHEM 262 &middot; comparing to what you confirmed Aug 19</div>
+    </div>
+    <div class="brow">
+      <div>
+        <div class="h1">6 things changed</div>
+        <div class="subline">Your professor posted a revised syllabus. Nothing you've already confirmed will be touched unless you accept it here.</div>
+      </div>
+      <div class="statstrip">
+        <div class="stat"><div class="value num">2</div><div class="label">Added</div></div>
+        <div class="stat"><div class="value num">3</div><div class="label">Changed</div></div>
+        <div class="stat"><div class="value num">1</div><div class="label">Removed</div></div>
+        <div class="stat"><div class="value num">35</div><div class="label">Untouched</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="split">
+      <div style="display:flex;flex-direction:column;gap:9px">
+
+        <div class="diffrow">
+          <span class="dtag chg">changed</span>
+          <span class="dname">Exam 2 date</span>
+          <span class="dold">Oct 14</span><span class="darw">&rarr;</span><span class="dnew" style="color:var(--warning)">Oct 21</span>
+          <span class="btn sm pri">Accept</span><span class="btn sm">Keep mine</span>
+        </div>
+        <div class="src" style="margin:0 0 4px 0">
+          <b>Heads up:</b> you have an exam plan built around Oct 14. Accepting this will reflow it &mdash; nothing is lost, the days just spread out.
+        </div>
+
+        <div class="diffrow">
+          <span class="dtag chg">changed</span>
+          <span class="dname">Problem sets weight</span>
+          <span class="dold">15%</span><span class="darw">&rarr;</span><span class="dnew">20%</span>
+          <span class="btn sm pri">Accept</span><span class="btn sm">Keep mine</span>
+        </div>
+        <div class="diffrow">
+          <span class="dtag chg">changed</span>
+          <span class="dname">Final exam weight</span>
+          <span class="dold">25%</span><span class="darw">&rarr;</span><span class="dnew">20%</span>
+          <span class="btn sm pri">Accept</span><span class="btn sm">Keep mine</span>
+        </div>
+        <div class="diffrow">
+          <span class="dtag add">added</span>
+          <span class="dname">Unit 10 &mdash; Pericyclic reactions (weeks 14&ndash;15)</span>
+          <span class="btn sm pri">Accept</span><span class="btn sm">Skip</span>
+        </div>
+        <div class="diffrow">
+          <span class="dtag add">added</span>
+          <span class="dname">Problem set 13 &mdash; due Dec 5</span>
+          <span class="btn sm pri">Accept</span><span class="btn sm">Skip</span>
+        </div>
+        <div class="diffrow">
+          <span class="dtag rem">removed</span>
+          <span class="dname">Unit 8 &mdash; Pericyclic reactions (was weeks 12&ndash;13)</span>
+          <span class="btn sm pri">Accept</span><span class="btn sm">Keep mine</span>
+        </div>
+        <div class="src" style="margin:0">
+          <b>Note:</b> that unit looks moved rather than deleted &mdash; the added Unit 10 has the same name. Your 6 topics and their review history will carry over if you accept both.
+        </div>
+
+        <div class="collapsed" style="margin-top:5px">
+          <span>&#9662;</span> 35 items are unchanged &mdash; 9 units, 11 deadlines, 3 policies and the rest. Nothing to do.
+        </div>
+
+        <!-- FAILURE PATH -->
+        <div class="framelabel" style="width:auto;margin:20px 0 8px 2px">When nothing parses &mdash; never a dead end (&sect;4.1-M-d)</div>
+        <div class="failbox">
+          <div class="failt">I couldn't read this one</div>
+          <div class="failb">
+            It looks like a scan without a text layer, so there's nothing for me to pull out. Two things that usually work: a photo taken straight-on in good light, or copying the text out of Canvas and pasting it.
+            <div style="margin-top:8px">Your file is saved to this class either way &mdash; it's in Materials now, and you can set the units and dates up yourself in about two minutes.</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <div class="btn pri">Enter it manually</div>
+            <div class="btn">Paste the text instead</div>
+            <div class="btn ghost">Try another file</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:13px;position:sticky;top:20px">
+        <div class="applybox">
+          <div class="abt">Apply changes</div>
+          <div class="abs">6 differences &middot; 0 decided</div>
+          <div class="btn block" style="margin-top:9px">Accept all 6</div>
+          <div class="btn block ghost" style="margin-top:7px">Keep everything as it is</div>
+          <div class="consequence">Decide them one at a time above, or take all of them at once. Either way it's one write, and it's reversible.</div>
+        </div>
+        <div class="mnote">
+          <div class="ram">&#128015;</div>
+          <div>
+            <div class="mt">Why this isn't automatic</div>
+            <div class="mb">You've already corrected things by hand since August. A re-import that overwrote them would quietly throw that work away &mdash; so a newer syllabus proposes, it never replaces.</div>
+          </div>
+          <div class="x">&#10005;</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

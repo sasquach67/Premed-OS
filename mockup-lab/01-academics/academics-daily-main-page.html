@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Academics — Daily mode, main page (APPROVED reference)</title>
+<!--
+  ============================================================================
+  ACADEMICS — DAILY MODE → CLASS CENTER — APPROVED VISUAL REFERENCE
+  ============================================================================
+  Status: APPROVED (July 2026) after review. This is the target for the
+  Academics Daily main page. Spec: tabs/01-academics.md.
+
+  RELATED APPROVED MOCKUPS
+   · mockups/03-overview/overview-bento-control-panel.html  — the design language
+   · mockups/_shared/nav-hierarchy-3-levels.html       — the 3-level nav rule
+
+  DECISIONS THIS FILE ENCODES  (all also written into the specs)
+  1. NAV = 3 levels, 3 forms (01 §4b-i): glass mode pill on banner →
+     underline tabs on banner edge → solid filter bar (term = Select).
+  2. BANNER CARRIES STATS. No "Foundation" crumb, no subtitle line.
+     ONLY VARIABLE metrics go in the banner strip — things that change
+     (term GPA, cumulative, due today, streak). Fixed facts (credits)
+     do NOT earn the space.
+  3. HEADS UP = the same component as Overview's Smart next actions.
+     Dismiss animates out; last dismissal unmounts the whole widget.
+  4. CLASS CARDS: at REST no left bar + neutral border (class identity =
+     small colored dot). On HOVER the left bar ignites + full border and
+     glow turn the class accent + card lifts + the deadline line swaps to
+     "Open class hub →". Hovering the Review button leaves the
+     card UNLIT so the two click targets never compete.
+     ONE primary action (Review) + overflow (⋯). No instructor/meeting
+     clutter. Cards WRAP. "8 of 18 topics ready" — one line, one bar.
+  5. STUDY TOOLS LIVE ON/IN THE CLASS, never floating on the page —
+     a tool with no class selected has no subject.
+  6. WHERE YOU'RE WEAK is EXAM-SCOPED by default (topics filtered to the
+     next exam's unit range), toggle → "All topics" grouped by class.
+     Organised by TOPIC, not class: a class isn't actionable, a topic is.
+  7. UP NEXT = dynamic "biggest thing on your plate" (exam / presentation
+     / deliverable) with a build-a-plan CTA that routes to the owner.
+  8. PACING / PROJECTIONS are a first-class treatment: "at THIS RATE →
+     THIS OUTCOME by THIS DATE", computed deterministically, never
+     guessed. RESTRAINT: max ONE pace line per panel, only where a
+     projection changes what you'd do. Each is DISMISSIBLE and collapses
+     to a "Show projection" pill (never deleted). Global toggles exist.
+  9. Removed: MCAT content-coverage panel, generic "Due soon" list,
+     floating quick-capture, cross-class study-tool panel.
+
+  GLASS (04 §0c): frosted glass ONLY on the mode pill + banner stat strip
+  (they float over banner art). Every panel/row/card/field is SOLID.
+  Build from library components (see 01-academics.md §7a), not this markup.
+  ============================================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a;--card:#2b2722;--fg:#ece3d4;--mut:#a89c8c;--dim:#7c7264;
+  --pri:#6fb3de;--pri-ink:#0f2330;--bd:#3c352d;--muted:#322e28;
+  --success:#6fc0a8;--warning:#e7b06a;--danger:#e8806f;--star:#e7b06a;
+  --cat:#4b9cd3;   /* --cat-gpa : Academics pillar accent */
+  --mcat:#8c7bd4;--research:#c98ac9;--clinical:#6fae6e;--shadow:#e0a458;--activities:#e08b9b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.frame{width:1400px;margin:0 auto;background:var(--bg);min-height:100vh;padding-bottom:30px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+/* ══ BANNER — title + VARIABLE stats only + level 1/2 nav ══════════════ */
+.ban{position:relative;padding:18px 24px 0;overflow:hidden;
+  background:radial-gradient(340px 200px at 88% 6%,rgba(75,156,211,.34),transparent 70%),
+  radial-gradient(260px 180px at 10% 130%,rgba(111,192,168,.18),transparent 70%),
+  linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%)}
+.bantop{display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative;z-index:2}
+.h1{font-family:'Baloo 2';font-weight:800;font-size:30px;color:#fff;letter-spacing:-.4px}
+/* glass — floats over banner art */
+.bstats{display:flex;border-radius:13px;overflow:hidden;background:rgba(20,26,34,.5);
+  backdrop-filter:blur(16px) saturate(1.1);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}
+.bs{padding:8px 15px;display:flex;flex-direction:column;gap:1px;border-right:1px solid rgba(255,255,255,.12);min-width:78px}
+.bs:last-child{border-right:none}
+.bsv{font-family:'Baloo 2';font-weight:800;font-size:18px;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;display:flex;align-items:baseline;gap:4px}
+.bsd{font-size:10px;font-weight:800}
+.bsl{font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.ghostbtn{border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:11px;padding:9px 13px;font-family:'Baloo 2';
+  font-weight:700;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08)}
+.ghostbtn svg{width:14px;height:14px}
+.mswitch{display:inline-flex;padding:4px;border-radius:999px;gap:4px;margin-top:14px;position:relative;z-index:2;
+  background:rgba(20,26,34,.5);backdrop-filter:blur(16px) saturate(1.1);border:1px solid rgba(255,255,255,.16)}
+.mo{padding:7px 22px;border-radius:999px;font-family:'Baloo 2';font-weight:700;font-size:13.5px;color:rgba(255,255,255,.72);display:flex;align-items:center;gap:7px}
+.mo.on{background:#fff;color:#17222c;font-weight:800}
+.mo svg{width:14px;height:14px}
+.utabs{display:flex;gap:24px;padding:0 24px;position:relative;z-index:2;margin-top:13px;border-bottom:1px solid rgba(255,255,255,.13)}
+.ut{padding:10px 2px 11px;font-family:'Baloo 2';font-weight:700;font-size:14px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:7px;position:relative}
+.ut svg{width:15px;height:15px}
+.ut.on{color:#fff;font-weight:800}
+.ut.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;border-radius:3px 3px 0 0;
+  background:var(--cat);box-shadow:0 0 12px color-mix(in srgb,var(--cat) 60%,transparent)}
+.ut .cnt{font-size:10.5px;font-weight:800;background:rgba(255,255,255,.14);border-radius:999px;padding:1px 7px}
+/* ══ LEVEL 3 — filter bar (controls, not nav) ══════════════════════════ */
+.fbar{display:flex;align-items:center;gap:11px;padding:11px 24px;background:var(--card);border-bottom:1px solid var(--bd)}
+.sel{display:inline-flex;align-items:center;gap:8px;background:var(--muted);border:1px solid var(--bd);border-radius:10px;padding:7px 12px;font-size:13px;font-weight:700}
+.sel svg{width:13px;height:13px;color:var(--dim)}
+.sel .v{font-family:'Baloo 2';font-weight:800}
+.srch{display:flex;align-items:center;gap:8px;background:var(--muted);border:1px solid var(--bd);border-radius:10px;padding:7px 13px;flex:1;max-width:300px;color:var(--dim);font-size:13px;font-weight:600}
+.srch svg{width:14px;height:14px}
+.count{font-size:12px;color:var(--dim);font-weight:700}
+.segsm{display:inline-flex;background:var(--muted);border:1px solid var(--bd);border-radius:9px;padding:3px;gap:3px;margin-left:auto}
+.ss{padding:5px 10px;border-radius:7px;font-size:11.5px;font-weight:800;font-family:'Baloo 2';color:var(--dim);display:flex;align-items:center;gap:5px}
+.ss.on{background:var(--card);color:var(--fg)}
+.ss svg{width:12px;height:12px}
+
+/* ══ BENTO ═════════════════════════════════════════════════════════════ */
+.wrap{padding:15px 24px 0}
+.bento{display:grid;grid-template-columns:repeat(12,1fr);gap:15px}
+.c4{grid-column:span 4}.c5{grid-column:span 5}.c7{grid-column:span 7}.c12{grid-column:span 12}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 10px 26px -14px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden}
+.hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;gap:9px;flex-shrink:0}
+.ti{font-family:'Baloo 2';font-weight:800;font-size:16.5px}.ti.sm{font-size:15px}
+.sub{font-size:11.5px;color:var(--dim);font-weight:700}
+.bd{padding:3px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1;min-height:0}
+.lk{font-size:11.5px;font-weight:800;color:var(--cat);font-family:'Baloo 2'}
+.btn{border-radius:9px;padding:6px 12px;font-family:'Baloo 2';font-weight:700;font-size:12px;border:1px solid transparent;display:inline-flex;align-items:center;gap:5px}
+.btn.g{background:var(--muted);border-color:var(--bd);color:var(--mut)}
+.btn.p{background:var(--cat);color:#0d1f2c}
+.btn svg{width:12px;height:12px}
+.eye{width:14px;height:14px;color:var(--dim)}
+.tog{display:inline-flex;background:var(--muted);border:1px solid var(--bd);border-radius:8px;padding:3px;gap:3px}
+.tg{padding:4px 9px;border-radius:6px;font-size:11px;font-weight:800;font-family:'Baloo 2';color:var(--dim)}
+.tg.on{background:var(--card);color:var(--fg)}
+
+/* ══ PACE CHIP — dismissible projection (max 1 per panel) ══════════════ */
+.pace{display:flex;align-items:center;gap:8px;background:color-mix(in srgb,var(--success) 10%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--success) 26%,var(--bd));border-radius:9px;padding:7px 9px 7px 10px;
+  font-size:11.5px;font-weight:700;color:var(--mut)}
+.pace svg.ic{width:13px;height:13px;color:var(--success);flex-shrink:0}
+.pace b{color:var(--fg);font-family:'Baloo 2';font-weight:800}
+.pace.warn{background:color-mix(in srgb,var(--warning) 10%,var(--muted));border-color:color-mix(in srgb,var(--warning) 28%,var(--bd))}
+.pace.warn svg.ic{color:var(--warning)}
+.pdis{width:18px;height:18px;border-radius:5px;display:grid;place-items:center;color:var(--dim);margin-left:auto;flex-shrink:0}
+.pdis svg{width:11px;height:11px}
+
+/* ══ HEADS UP (= Overview Smart next actions component) ════════════════ */
+.smart{background:linear-gradient(180deg,color-mix(in srgb,var(--mcat) 9%,var(--card)),var(--card));border-color:color-mix(in srgb,var(--mcat) 26%,var(--bd))}
+.rec{border:1px solid var(--bd);border-radius:11px;padding:10px;background:var(--muted);display:flex;gap:9px}
+.spk{width:27px;height:27px;border-radius:8px;flex-shrink:0;display:grid;place-items:center;background:color-mix(in srgb,var(--mcat) 26%,transparent);color:#d9cffc}
+.spk svg{width:14px;height:14px}
+.rt{font-family:'Baloo 2';font-weight:700;font-size:12.5px}
+.why{font-size:10.5px;color:var(--mut);margin-top:1px;font-weight:600}.why b{color:var(--fg)}
+.acts{display:flex;gap:5px;margin-top:6px}
+.bsm{border-radius:8px;padding:3px 9px;font-family:'Baloo 2';font-weight:700;font-size:11px;border:1px solid transparent}
+.bsm.p{background:var(--cat);color:#0d1f2c}.bsm.g{background:transparent;border-color:var(--bd);color:var(--mut)}
+
+/* ══ CLASS CARDS ═══════════════════════════════════════════════════════ */
+.ccards{display:flex;flex-wrap:wrap;gap:12px}
+.cc{background:var(--muted);border:1px solid var(--bd);border-radius:13px;padding:12px;display:flex;flex-direction:column;
+  gap:8px;position:relative;overflow:hidden;width:calc((100% - 48px)/5);min-width:180px;transition:.15s cubic-bezier(.16,1,.3,1)}
+.ccbar{position:absolute;left:0;top:0;bottom:0;width:4px;background:transparent;transition:.15s}   /* hidden at rest */
+.cc.hover{transform:translateY(-3px);border-color:var(--accent);
+  box-shadow:0 18px 34px -16px rgba(0,0,0,.75),0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent),
+  0 0 22px -6px color-mix(in srgb,var(--accent) 45%,transparent)}
+.cc.hover .ccbar{background:var(--accent);box-shadow:0 0 14px color-mix(in srgb,var(--accent) 75%,transparent)}
+.cctop{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.cccode{font-family:'Baloo 2';font-weight:800;font-size:15.5px;display:flex;align-items:center;gap:7px}
+.cdot{width:8px;height:8px;border-radius:3px;flex-shrink:0}    /* class identity at rest */
+.ccname{font-size:10.5px;color:var(--mut);font-weight:600;margin-top:1px}
+.ccgrade{font-family:'Baloo 2';font-weight:800;font-size:18px;line-height:1}
+.ccgs{font-size:9px;color:var(--dim);font-weight:700;text-align:right;margin-top:2px}
+.ccm{font-size:9.5px;font-weight:800;font-family:'Baloo 2';border-radius:999px;padding:2px 7px}
+.rdy{font-size:10.5px;color:var(--mut);font-weight:700}
+.rdy b{font-family:'Baloo 2';font-weight:800;color:var(--fg)}
+.rbarline{height:5px;border-radius:999px;background:#272420;overflow:hidden}
+.ccnext{font-size:10.5px;color:var(--mut);font-weight:600;display:flex;align-items:center;gap:5px;min-height:16px}
+.ccnext svg{width:11px;height:11px;flex-shrink:0}
+.openhint{display:none;align-items:center;gap:5px;font-size:10.5px;font-weight:800;font-family:'Baloo 2';color:var(--accent);min-height:16px}
+.cc.hover .openhint{display:flex}
+.cc.hover .ccnext{display:none}
+.openhint svg{width:12px;height:12px}
+.cc.hover .ccacts{display:flex;gap:6px;padding-top:8px;margin-top:auto;border-top:1px solid var(--bd)}
+.cca{flex:1;padding:6px;border-radius:8px;background:color-mix(in srgb,var(--accent) 18%,transparent);
+  border:1px solid color-mix(in srgb,var(--accent) 38%,transparent);color:var(--accent);
+  font-family:'Baloo 2';font-weight:800;font-size:11.5px;display:flex;align-items:center;justify-content:center;gap:5px}
+.cca svg{width:12px;height:12px}
+.ccdots{padding:6px 9px;border-radius:8px;background:var(--card);border:1px solid var(--bd);color:var(--mut);display:grid;place-items:center}
+.ccdots svg{width:13px;height:13px}
+.ccadd{background:transparent;border:1px dashed var(--bd);display:grid;place-items:center;gap:4px;color:var(--dim);text-align:center;padding:10px;width:120px;min-width:120px}
+.ccadd svg{width:18px;height:18px}
+
+/* ══ REVIEW QUEUE ══════════════════════════════════════════════════════ */
+.qrow{display:flex;align-items:center;gap:9px;background:var(--muted);border:1px solid var(--bd);border-radius:11px;padding:8px 10px}
+.qrow.weak{border-left:3px solid var(--danger)}
+.qrow.due{border-left:3px solid var(--warning)}
+.qcls{font-size:9.5px;font-weight:800;font-family:'Baloo 2';border-radius:999px;padding:2px 7px;flex-shrink:0}
+.qtop{font-size:12.5px;font-weight:700}
+.qwhy{font-size:10px;color:var(--dim);font-weight:600;margin-top:1px}
+.rbar{width:44px;height:5px;border-radius:999px;background:#272420;overflow:hidden;flex-shrink:0}
+.rfill{height:100%;border-radius:999px}
+.rpct{font-family:'Baloo 2';font-weight:800;font-size:11px;width:28px;text-align:right;flex-shrink:0}
+.stat{font-size:9.5px;font-weight:800;font-family:'Baloo 2';border-radius:999px;padding:2px 7px;flex-shrink:0;width:44px;text-align:center}
+
+/* ══ WEAK PANEL (exam-scoped) ══════════════════════════════════════════ */
+.examhdr{display:flex;align-items:center;gap:9px;background:color-mix(in srgb,var(--warning) 10%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--warning) 30%,var(--bd));border-radius:10px;padding:8px 10px}
+.exday{font-family:'Baloo 2';font-weight:800;font-size:19px;color:var(--warning);line-height:1}
+.trow{display:flex;align-items:center;gap:8px;padding:6px 2px}
+.tname{font-size:12px;font-weight:700;flex:1;min-width:0}
+.tunit{font-size:9.5px;color:var(--dim);font-weight:700;flex-shrink:0}
+.tbar{width:78px;height:6px;border-radius:999px;background:#272420;overflow:hidden;flex-shrink:0}
+.tfill{height:100%;border-radius:999px}
+.tpc{font-family:'Baloo 2';font-weight:800;font-size:11px;width:28px;text-align:right;flex-shrink:0}
+
+/* ══ UP NEXT (dynamic) ═════════════════════════════════════════════════ */
+.dyn{background:linear-gradient(135deg,color-mix(in srgb,var(--warning) 12%,var(--card)),var(--card) 62%);border-color:color-mix(in srgb,var(--warning) 30%,var(--bd))}
+.dyntop{display:flex;align-items:center;gap:14px}
+.dynbig{font-family:'Baloo 2';font-weight:800;font-size:36px;color:var(--warning);line-height:1}
+.dyntitle{font-family:'Baloo 2';font-weight:800;font-size:16px}
+.dynsub{font-size:11.5px;color:var(--mut);font-weight:600;margin-top:2px}
+.readywrap{display:flex;align-items:center;gap:12px;background:var(--muted);border:1px solid var(--bd);border-radius:11px;padding:10px 12px}
+.rdnum{font-family:'Baloo 2';font-weight:800;font-size:22px;line-height:1}
+.segbar{flex:1;height:9px;border-radius:999px;background:#272420;overflow:hidden;display:flex;position:relative}
+.sb{height:100%}
+.projmark{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--pri);border-radius:2px}
+.projlab{position:absolute;top:-19px;font-size:9px;font-weight:800;font-family:'Baloo 2';color:var(--pri);transform:translateX(-50%);white-space:nowrap}
+.todo{display:flex;flex-direction:column;gap:5px}
+.tdr{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700}
+.tdn{flex:1;color:var(--mut)}
+.tdbar{width:56px;height:5px;border-radius:999px;background:#272420;overflow:hidden}
+.tdv{font-family:'Baloo 2';font-weight:800;font-size:10.5px;width:26px;text-align:right}
+.dynq{display:flex;gap:7px;margin-top:auto;padding-top:9px;border-top:1px solid var(--bd)}
+.dynchip{display:flex;align-items:center;gap:6px;background:var(--muted);border:1px solid var(--bd);border-radius:9px;padding:6px 9px;font-size:10.5px;font-weight:700;color:var(--mut)}
+.dynchip svg{width:11px;height:11px}
+
+/* ══ GPA / UPCOMING / MASTERY / CONSISTENCY ════════════════════════════ */
+.gnum{font-family:'Baloo 2';font-weight:800;font-size:24px;line-height:1;font-variant-numeric:tabular-nums}
+.glab{font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-top:2px}
+.ctr{display:flex;align-items:center;gap:7px;margin-top:4px}
+.ctrl{font-size:10px;font-weight:700;color:var(--mut);width:56px;flex-shrink:0}
+.ctrack{flex:1;height:12px;position:relative;background:#272420;border-radius:4px;overflow:hidden}
+.ctmid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--dim);opacity:.6}
+.ctbar{position:absolute;top:3px;bottom:3px;border-radius:2px}
+.ctv{font-family:'Baloo 2';font-weight:800;font-size:10px;width:18px;text-align:right;flex-shrink:0}
+.uprow{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px}
+.uprow.imp{background:linear-gradient(90deg,color-mix(in srgb,var(--star) 10%,transparent),transparent 50%);border-left:3px solid var(--star)}
+.upic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;flex-shrink:0;color:#16120e}
+.upic svg{width:12px;height:12px}
+.uptl{font-size:12px;font-weight:700;flex:1;min-width:0}
+.upd{font-size:10.5px;font-weight:800;font-family:'Baloo 2';flex-shrink:0}
+.mstat{display:flex;align-items:baseline;gap:8px}
+.cstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cd{aspect-ratio:1;border-radius:2px}
+.cdaylab{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px}
+.cdl{font-size:8px;font-weight:800;color:var(--dim);text-align:center}
+</style>
+</head>
+<body>
+<div class="frame">
+<h1 class="sr-only">Academics — Daily mode, Class Center</h1>
+
+<!-- ══ BANNER ═══════════════════════════════════════════════════════════ -->
+<div class="ban">
+  <div class="bantop">
+    <div class="h1">Academics</div>
+    <div style="display:flex;align-items:center;gap:11px">
+      <!-- VARIABLE stats only. Credits (fixed) deliberately excluded. -->
+      <div class="bstats">
+        <div class="bs"><span class="bsv">3.62<span class="bsd" style="color:#f0a08f">▼</span></span><span class="bsl">Term GPA</span></div>
+        <div class="bs"><span class="bsv">3.71<span class="bsd" style="color:#8fd8c2">▲</span></span><span class="bsl">Cumulative</span></div>
+        <div class="bs"><span class="bsv" style="color:#f0c68a">9</span><span class="bsl">Due today</span></div>
+        <div class="bs"><span class="bsv" style="color:#8fd8c2">12</span><span class="bsl">Day streak</span></div>
+      </div>
+      <div class="ghostbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>How to study</div>
+    </div>
+  </div>
+  <!-- LEVEL 1 -->
+  <div class="mswitch">
+    <div class="mo on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Daily</div>
+    <div class="mo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Planning</div>
+  </div>
+  <!-- LEVEL 2 -->
+  <div class="utabs">
+    <div class="ut on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 3 3 6 3s6-2 6-3v-5"/></svg>Class Center</div>
+    <div class="ut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Assignments <span class="cnt">4</span></div>
+  </div>
+</div>
+
+<!-- ══ LEVEL 3 — filter bar ═════════════════════════════════════════════ -->
+<div class="fbar">
+  <div class="sel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18"/></svg><span class="v">Fall 2026</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></div>
+  <div class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>Find a class, note, topic…</div>
+  <span class="count">5 classes</span>
+  <div class="segsm">
+    <div class="ss on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>Cards</div>
+    <div class="ss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>List</div>
+  </div>
+</div>
+
+<div class="wrap"><div class="bento">
+
+  <!-- HEADS UP — same component as Overview Smart next actions -->
+  <div class="card smart c12">
+    <div class="hd"><div class="ti sm">Heads up</div><div style="font-size:9.5px;font-weight:800;color:var(--mcat);letter-spacing:.07em;text-transform:uppercase">Rules-based · explained</div></div>
+    <div class="bd"><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div class="rec"><div class="spk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div>
+        <div style="flex:1"><div class="rt">Science GPA is slipping</div><div class="why"><b>CHEM 262</b> at B+ pulls BCPM down .04.</div><div class="acts"><div class="bsm p">What-if</div><div class="bsm g">Dismiss</div></div></div></div>
+      <div class="rec"><div class="spk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <div style="flex:1"><div class="rt">Biochem not scheduled</div><div class="why">Last MCAT prereq — take by <b>Spring 2028</b>.</div><div class="acts"><div class="bsm p">Plan it</div><div class="bsm g">Dismiss</div></div></div></div>
+      <div class="rec"><div class="spk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg></div>
+        <div style="flex:1"><div class="rt">Fall 2027 is BCPM-heavy</div><div class="why">3 science courses planned.</div><div class="acts"><div class="bsm p">Rebalance</div><div class="bsm g">Dismiss</div></div></div></div>
+    </div></div>
+  </div>
+
+  <!-- CLASSES — first card shown in HOVER state to document the pattern -->
+  <div class="card c12">
+    <div class="hd"><div class="ti">Your classes</div><div class="sub">click a card to open its study hub</div></div>
+    <div class="bd">
+      <div class="ccards">
+        <div class="cc hover" style="--accent:var(--cat)">
+          <div class="ccbar"></div>
+          <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--cat)"></span>CHEM 262</div><div class="ccname">Organic Chemistry II</div></div><div><div class="ccgrade" style="color:var(--warning)">B+</div><div class="ccgs">88.4%</div></div></div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap"><span class="ccm" style="background:color-mix(in srgb,var(--danger) 18%,transparent);color:var(--danger)">3 weak</span><span class="ccm" style="background:color-mix(in srgb,var(--research) 18%,transparent);color:var(--research)">BCPM</span></div>
+          <div class="rdy"><b>8</b> of 18 topics ready</div>
+          <div class="rbarline"><div style="height:100%;width:44%;background:var(--cat);border-radius:999px"></div></div>
+          <div class="ccnext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18"/></svg>Midterm 2 · Friday</div>
+          <div class="openhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Open class hub</div>
+          <div class="ccacts"><div class="cca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 5v14l11-7z"/></svg>Review</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
+        </div>
+        <div class="cc" style="--accent:var(--research)">
+          <div class="ccbar"></div>
+          <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--research)"></span>BIOL 252</div><div class="ccname">Neurobiology</div></div><div><div class="ccgrade" style="color:var(--success)">A−</div><div class="ccgs">91.2%</div></div></div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap"><span class="ccm" style="background:color-mix(in srgb,var(--warning) 18%,transparent);color:var(--warning)">2 due</span><span class="ccm" style="background:color-mix(in srgb,var(--research) 18%,transparent);color:var(--research)">BCPM</span></div>
+          <div class="rdy"><b>14</b> of 21 topics ready</div>
+          <div class="rbarline"><div style="height:100%;width:67%;background:var(--research);border-radius:999px"></div></div>
+          <div class="ccnext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H5.2L4 17.5Z"/></svg>Lab report · Mon</div>
+          <div class="openhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Open class hub</div>
+          <div class="ccacts"><div class="cca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 5v14l11-7z"/></svg>Review</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
+        </div>
+        <div class="cc" style="--accent:var(--shadow)">
+          <div class="ccbar"></div>
+          <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--shadow)"></span>PHYS 118</div><div class="ccname">Mechanics</div></div><div><div class="ccgrade" style="color:var(--success)">A</div><div class="ccgs">95.0%</div></div></div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap"><span class="ccm" style="background:#272420;color:var(--dim)">1 new</span><span class="ccm" style="background:color-mix(in srgb,var(--research) 18%,transparent);color:var(--research)">BCPM</span></div>
+          <div class="rdy"><b>10</b> of 12 topics ready</div>
+          <div class="rbarline"><div style="height:100%;width:83%;background:var(--shadow);border-radius:999px"></div></div>
+          <div class="ccnext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H5.2L4 17.5Z"/></svg>Problem set 7 · Wed</div>
+          <div class="openhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Open class hub</div>
+          <div class="ccacts"><div class="cca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 5v14l11-7z"/></svg>Review</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
+        </div>
+        <div class="cc" style="--accent:var(--clinical)">
+          <div class="ccbar"></div>
+          <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--clinical)"></span>PSYC 210</div><div class="ccname">Statistics</div></div><div><div class="ccgrade" style="color:var(--success)">A</div><div class="ccgs">94.1%</div></div></div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap"><span class="ccm" style="background:color-mix(in srgb,var(--mcat) 18%,transparent);color:var(--mcat)">Anki</span></div>
+          <div class="rdy"><b>10</b> of 14 topics ready</div>
+          <div class="rbarline"><div style="height:100%;width:71%;background:var(--clinical);border-radius:999px"></div></div>
+          <div class="ccnext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Nothing this week</div>
+          <div class="openhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Open class hub</div>
+          <div class="ccacts"><div class="cca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 5v14l11-7z"/></svg>Review</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
+        </div>
+        <div class="cc ccadd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span style="font-family:'Baloo 2';font-weight:800;font-size:11.5px">Add class</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REVIEW QUEUE -->
+  <div class="card c7">
+    <div class="hd">
+      <div style="display:flex;align-items:baseline;gap:9px"><div class="ti">Today's review queue</div><div class="sub">9 topics · ~35 min</div></div>
+      <div style="display:flex;gap:6px"><div class="btn g">Plan 90 min</div><div class="btn p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 5v14l11-7z"/></svg>Start</div></div>
+    </div>
+    <div class="bd">
+      <div class="qrow weak"><span class="qcls" style="background:color-mix(in srgb,var(--cat) 20%,transparent);color:var(--cat)">CHEM 262</span>
+        <div style="flex:1"><div class="qtop">SN1 / SN2 mechanisms</div><div class="qwhy">Missed 2 of 3 last quiz · retrievability ~54%</div></div>
+        <div class="rbar"><div class="rfill" style="width:54%;background:var(--danger)"></div></div><span class="rpct" style="color:var(--danger)">54%</span>
+        <span class="stat" style="background:color-mix(in srgb,var(--danger) 20%,transparent);color:var(--danger)">Weak</span></div>
+      <div class="qrow weak"><span class="qcls" style="background:color-mix(in srgb,var(--research) 20%,transparent);color:var(--research)">BIOL 252</span>
+        <div style="flex:1"><div class="qtop">Action potential propagation</div><div class="qwhy">Last recall 9 days ago · FSRS predicts forgetting</div></div>
+        <div class="rbar"><div class="rfill" style="width:61%;background:var(--danger)"></div></div><span class="rpct" style="color:var(--danger)">61%</span>
+        <span class="stat" style="background:color-mix(in srgb,var(--danger) 20%,transparent);color:var(--danger)">Weak</span></div>
+      <div class="qrow due"><span class="qcls" style="background:color-mix(in srgb,var(--cat) 20%,transparent);color:var(--cat)">CHEM 262</span>
+        <div style="flex:1"><div class="qtop">Stereochemistry — chirality</div><div class="qwhy">Last recall 4 days ago · retrievability ~87%</div></div>
+        <div class="rbar"><div class="rfill" style="width:87%;background:var(--warning)"></div></div><span class="rpct" style="color:var(--warning)">87%</span>
+        <span class="stat" style="background:color-mix(in srgb,var(--warning) 20%,transparent);color:var(--warning)">Due</span></div>
+      <!-- Anki-owned: Anki owns timing; HQ shows a sync chip only -->
+      <div class="qrow due"><span class="qcls" style="background:color-mix(in srgb,var(--clinical) 20%,transparent);color:var(--clinical)">PSYC 210</span>
+        <div style="flex:1"><div class="qtop">Operant conditioning schedules</div><div class="qwhy">Scheduled by Anki deck · synced 1h ago</div></div>
+        <div class="rbar"><div class="rfill" style="width:82%;background:var(--warning)"></div></div><span class="rpct" style="color:var(--warning)">82%</span>
+        <span class="stat" style="background:color-mix(in srgb,var(--mcat) 20%,transparent);color:var(--mcat)">Anki</span></div>
+      <div><span class="lk">+5 more due →</span></div>
+    </div>
+  </div>
+
+  <!-- WHERE YOU'RE WEAK — exam-scoped by default -->
+  <div class="card c5">
+    <div class="hd">
+      <div style="display:flex;align-items:center;gap:6px"><div class="ti sm">Where you're weak</div>
+        <svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7"/></svg></div>
+      <div class="tog"><div class="tg on">Next exam</div><div class="tg">All topics</div></div>
+    </div>
+    <div class="bd">
+      <div class="examhdr"><span class="exday">6d</span>
+        <div style="flex:1"><div style="font-size:12px;font-weight:800;font-family:'Baloo 2'">CHEM 262 · Midterm 2</div><div style="font-size:10px;color:var(--mut);font-weight:600">Friday · Units 4–7 · 9 topics in scope</div></div></div>
+      <div class="trow"><span class="tname">E1 / E2 elimination</span><span class="tunit">U6</span><div class="tbar"><div class="tfill" style="width:48%;background:var(--danger)"></div></div><span class="tpc" style="color:var(--danger)">48%</span></div>
+      <div class="trow"><span class="tname">SN1 / SN2 mechanisms</span><span class="tunit">U5</span><div class="tbar"><div class="tfill" style="width:54%;background:var(--danger)"></div></div><span class="tpc" style="color:var(--danger)">54%</span></div>
+      <div class="trow"><span class="tname">Carbocation rearrangement</span><span class="tunit">U5</span><div class="tbar"><div class="tfill" style="width:62%;background:var(--danger)"></div></div><span class="tpc" style="color:var(--danger)">62%</span></div>
+      <div class="trow"><span class="tname">Resonance structures</span><span class="tunit">U4</span><div class="tbar"><div class="tfill" style="width:76%;background:var(--warning)"></div></div><span class="tpc" style="color:var(--warning)">76%</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding-top:5px;border-top:1px solid var(--bd)">
+        <span class="sub" style="font-weight:600">4 of 9 exam-ready</span><span class="lk" style="margin-left:auto">Review these →</span></div>
+    </div>
+  </div>
+
+  <!-- UP NEXT — dynamic, with projection marker + pace line -->
+  <div class="card dyn c7">
+    <div class="hd"><div class="ti sm">Up next</div><div class="sub">biggest thing on your plate</div></div>
+    <div class="bd">
+      <div class="dyntop">
+        <span class="dynbig">6d</span>
+        <div style="flex:1"><div class="dyntitle">CHEM 262 — Midterm 2</div>
+          <div class="dynsub">Friday 10:10 AM · Units 4–7 · worth 25% of your grade</div></div>
+        <div class="btn p" style="padding:9px 15px;font-size:13px">Build exam plan</div>
+      </div>
+      <div class="readywrap">
+        <div><div class="rdnum" style="color:var(--warning)">4/9</div><div style="font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)">Exam-ready</div></div>
+        <div style="flex:1;position:relative;padding-top:14px">
+          <div class="segbar">
+            <div class="sb" style="width:33%;background:var(--danger)"></div>
+            <div class="sb" style="width:22%;background:var(--warning)"></div>
+            <div class="sb" style="width:45%;background:var(--success)"></div>
+            <div class="projmark" style="left:89%"></div>
+            <div class="projlab" style="left:89%">projected Thu</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;font-weight:700;color:var(--dim)"><span>now</span><span>exam Friday</span></div>
+        </div>
+      </div>
+      <!-- PACE LINE — dismissible (× on hover), collapses to "Show projection" -->
+      <div class="pace"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>
+        At <b>3 topics/day</b> you'll be <b>8 of 9 exam-ready by Thursday</b> — one day early.
+        <span class="pdis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18M6 6l12 12"/></svg></span></div>
+      <div class="todo">
+        <div class="tdr"><span class="tdn">E1 / E2 elimination</span><div class="tdbar"><div style="height:100%;width:48%;background:var(--danger);border-radius:999px"></div></div><span class="tdv" style="color:var(--danger)">48%</span></div>
+        <div class="tdr"><span class="tdn">SN1 / SN2 mechanisms</span><div class="tdbar"><div style="height:100%;width:54%;background:var(--danger);border-radius:999px"></div></div><span class="tdv" style="color:var(--danger)">54%</span></div>
+      </div>
+      <div class="dynq">
+        <div class="dynchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16v12H5.2L4 17.5Z"/></svg>BIOL lab report · Mon · <b style="color:var(--success)">on pace</b></div>
+        <div class="dynchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M12 17v4"/></svg>PSYC presentation · Nov 8 · <b style="color:var(--warning)">not started</b></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GPA — trend + projection + contribution -->
+  <div class="card c5">
+    <div class="hd"><div class="ti sm">GPA</div><div class="lk">What-if →</div></div>
+    <div class="bd" style="gap:6px">
+      <div style="display:flex;gap:14px">
+        <div><div class="gnum" style="color:var(--cat)">3.62</div><div class="glab">Term proj.</div></div>
+        <div><div class="gnum">3.71</div><div class="glab">Cumulative</div></div>
+        <div><div class="gnum" style="color:var(--research)">3.68</div><div class="glab">Science</div></div>
+      </div>
+      <svg viewBox="0 0 300 62" style="width:100%;height:58px">
+        <line x1="0" y1="48" x2="300" y2="48" stroke="#3c352d"/>
+        <path d="M8 42 L62 36 L116 28 L170 31 L214 20" fill="none" stroke="#4b9cd3" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M214 20 L258 23 L292 26" fill="none" stroke="#4b9cd3" stroke-width="2.5" stroke-dasharray="5 4" opacity=".7"/>
+        <path d="M8 45 L62 40 L116 33 L170 36 L214 26" fill="none" stroke="#c98ac9" stroke-width="2" stroke-dasharray="4 3"/>
+        <circle cx="214" cy="20" r="3.5" fill="#4b9cd3"/><circle cx="292" cy="26" r="3" fill="none" stroke="#4b9cd3" stroke-width="2"/>
+        <text x="192" y="60" fill="#a89c8c" font-size="8" font-family="Nunito" font-weight="700">now</text>
+        <text x="256" y="60" fill="#7c7264" font-size="8" font-family="Nunito" font-weight="700">term end</text>
+      </svg>
+      <div style="font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)">Dragging ← → lifting</div>
+      <div class="ctr"><span class="ctrl">CHEM 262</span><div class="ctrack"><div class="ctmid"></div><div class="ctbar" style="right:50%;width:24%;background:var(--danger)"></div></div><span class="ctv" style="color:var(--danger)">B+</span></div>
+      <div class="ctr"><span class="ctrl">BIOL 252</span><div class="ctrack"><div class="ctmid"></div><div class="ctbar" style="left:50%;width:11%;background:var(--success)"></div></div><span class="ctv" style="color:var(--success)">A−</span></div>
+      <div class="ctr"><span class="ctrl">PHYS 118</span><div class="ctrack"><div class="ctmid"></div><div class="ctbar" style="left:50%;width:19%;background:var(--success)"></div></div><span class="ctv" style="color:var(--success)">A</span></div>
+      <div class="pace warn" style="margin-top:3px"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>
+        This term lands cumulative at <b>3.69</b>. An A− in CHEM holds <b>3.71</b>.
+        <span class="pdis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18M6 6l12 12"/></svg></span></div>
+    </div>
+  </div>
+
+  <!-- UPCOMING — important things (exams, presentations), starred first -->
+  <div class="card c4">
+    <div class="hd"><div class="ti sm">Upcoming</div><div class="lk">All →</div></div>
+    <div class="bd" style="gap:1px">
+      <div class="uprow imp"><span class="upic" style="background:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 4h16v12H5.2L4 17.5Z"/></svg></span><span class="uptl">Midterm 2 — CHEM 262</span><span class="upd" style="color:var(--danger)">Fri</span></div>
+      <div class="uprow imp"><span class="upic" style="background:var(--activities)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M12 17v4"/></svg></span><span class="uptl">PSYC presentation</span><span class="upd" style="color:var(--warning)">Nov 8</span></div>
+      <div class="uprow"><span class="upic" style="background:var(--research)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 4h16v12H5.2L4 17.5Z"/></svg></span><span class="uptl">Lab report — BIOL 252</span><span class="upd" style="color:var(--mut)">Mon</span></div>
+      <div class="uprow"><span class="upic" style="background:var(--shadow)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 4h16v12H5.2L4 17.5Z"/></svg></span><span class="uptl">Problem set 7</span><span class="upd" style="color:var(--mut)">Wed</span></div>
+    </div>
+  </div>
+
+  <!-- MASTERY TREND — actual + dashed projection -->
+  <div class="card c4">
+    <div class="hd"><div class="ti sm">Mastery trend</div><div class="sub">topics ready over time</div></div>
+    <div class="bd" style="gap:6px">
+      <div class="mstat"><span style="font-family:'Baloo 2';font-weight:800;font-size:26px;color:var(--success)">42</span><span class="sub" style="font-weight:600">of 65 ready · <span style="color:var(--success)">+7 this week</span></span></div>
+      <svg viewBox="0 0 300 66" style="width:100%;height:64px">
+        <defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6fc0a8" stop-opacity=".34"/><stop offset="100%" stop-color="#6fc0a8" stop-opacity="0"/></linearGradient></defs>
+        <line x1="0" y1="54" x2="300" y2="54" stroke="#3c352d"/>
+        <line x1="0" y1="10" x2="300" y2="10" stroke="#3c352d" stroke-dasharray="3 5"/>
+        <path d="M6 50 L48 46 L90 40 L132 34 L174 26 L204 21 L204 58 L6 58 Z" fill="url(#mg)"/>
+        <path d="M6 50 L48 46 L90 40 L132 34 L174 26 L204 21" fill="none" stroke="#6fc0a8" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="204" cy="21" r="3.5" fill="#6fc0a8"/>
+        <path d="M204 21 L248 15 L290 9" fill="none" stroke="#6fb3de" stroke-width="2.5" stroke-dasharray="5 4"/>
+        <circle cx="290" cy="9" r="3" fill="none" stroke="#6fb3de" stroke-width="2"/>
+        <text x="186" y="64" fill="#a89c8c" font-size="8" font-family="Nunito" font-weight="700">today</text>
+        <text x="256" y="64" fill="#6fb3de" font-size="8" font-family="Nunito" font-weight="700">Nov 18</text>
+      </svg>
+      <div class="pace"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>
+        At <b>+7/week</b> → all <b>65 ready by Nov 18</b>.
+        <span class="pdis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18M6 6l12 12"/></svg></span></div>
+    </div>
+  </div>
+
+  <!-- CONSISTENCY — no pace chip (restraint rule: streaks don't get one) -->
+  <div class="card c4">
+    <div class="hd"><div class="ti sm">Consistency</div><div class="sub">reviews per day</div></div>
+    <div class="bd" style="gap:6px">
+      <div class="mstat"><span style="font-family:'Baloo 2';font-weight:800;font-size:26px;color:var(--success)">12</span><span class="sub" style="font-weight:600">day streak · 19 of last 28 days</span></div>
+      <div class="cdaylab"><span class="cdl">S</span><span class="cdl">M</span><span class="cdl">T</span><span class="cdl">W</span><span class="cdl">T</span><span class="cdl">F</span><span class="cdl">S</span></div>
+      <div class="cstrip">
+        <div class="cd" style="background:#3c352d"></div><div class="cd" style="background:#43644f"></div><div class="cd" style="background:#6fc0a8"></div><div class="cd" style="background:#3c352d"></div><div class="cd" style="background:#43644f"></div><div class="cd" style="background:#6fc0a8"></div><div class="cd" style="background:#6fc0a8"></div>
+        <div class="cd" style="background:#43644f"></div><div class="cd" style="background:#3c352d"></div><div class="cd" style="background:#6fc0a8"></div><div class="cd" style="background:#6fc0a8"></div><div class="cd" style="background:#43644f"></div><div class="cd" style="background:#3c352d"></div><div class="cd" style="background:#6fc0a8"></div>
+        <div class="cd" style="background:#6fc0a8"></div><div class="cd" style="background:#6fc0a8"></div><div class="cd" style="background:#43644f"></div><div class="cd" style="background:#3c352d"></div><div class="cd" style="background:#6fc0a8"></div><div class="cd" style="background:#6fc0a8"></div><div class="cd" style="background:#6fc0a8"></div>
+        <div class="cd" style="background:#6fc0a8"></div><div class="cd" style="background:#43644f"></div><div class="cd" style="background:#6fc0a8"></div><div class="cd" style="background:#6fc0a8"></div><div class="cd" style="background:#6fc0a8"></div><div class="cd" style="background:#6fc0a8"></div><div class="cd" style="background:#43644f"></div>
+      </div>
+      <div class="sub" style="font-weight:600;font-size:10.5px">Reviews per day — not mastery</div>
+    </div>
+  </div>
+
+</div></div>
+</div>
+</body>
+</html>

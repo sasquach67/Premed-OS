@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<!--
+  MOCKUP — Calendar overlay (00-product-shell §7.9). NOT FILED YET.
+  A top-bar toggle opening an overlay. Week view default, Month + Agenda switchable.
+  READ-MOSTLY: no event creation, no drag-to-reschedule. Clicking deep-links to the owner.
+  HQ-owned items carry pillar accents; imported Google events are one muted treatment.
+  No CalendarEvent entity — this is a projection over Course / ClassAssignment / PlanSession / FullLength.
+  Values from decisions/_visual-recipes.md.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Calendar overlay — shell §7.9</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f;
+  --cat:#4b9cd3;   /* academics */
+  --mcat:#8c7bd4;
+  --clinical:#6fae6e;
+  --ext:#6b6459;   /* imported — deliberately muted, no pillar identity */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#191713;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;padding:24px;min-width:1240px}
+h1,h2,h3,.btn,.chip,.seg,.dow,.ev-t,.num,.kicker{font-family:'Baloo 2',system-ui,sans-serif}
+.num{font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto}
+
+/* ---- fake top bar, to show where the toggle lives ---- */
+.topbar{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--bd);
+  border-radius:13px;padding:9px 14px;margin-bottom:16px}
+.brand{font-family:'Baloo 2';font-weight:800;font-size:14px;letter-spacing:-.2px}
+.spacer{flex:1}
+.ticon{width:30px;height:30px;border-radius:8px;background:var(--muted);border:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:14px;cursor:pointer}
+.ticon.on{background:var(--cat);border-color:var(--cat);color:#0f1c26}
+.tnote{font-size:10.5px;color:var(--dim);font-weight:700}
+
+/* ---- overlay ---- */
+.veil{background:rgba(0,0,0,.35);border-radius:18px;padding:18px}
+.sheet{background:var(--bg);border:1px solid var(--bd);border-radius:16px;overflow:hidden;
+  box-shadow:0 30px 70px -30px rgba(0,0,0,.9)}
+.sh-top{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--bd);background:var(--card)}
+.sh-title{font-family:'Baloo 2';font-weight:800;font-size:15.5px}
+.range{font-size:12px;color:var(--mut);font-weight:700;font-variant-numeric:tabular-nums}
+.nav{display:flex;gap:4px}
+.nb{width:26px;height:26px;border-radius:7px;background:var(--muted);border:1px solid var(--bd);color:var(--mut);
+  font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.segwrap{display:flex;gap:3px;background:var(--muted);border:1px solid var(--bd);border-radius:999px;padding:3px}
+.seg{font-weight:800;font-size:11.5px;padding:4px 13px;border-radius:999px;color:var(--mut);cursor:pointer}
+.seg.on{background:#fff;color:#17222c}
+.esc{font-size:10.5px;color:var(--dim);font-weight:700}
+
+/* ---- week grid ---- */
+.grid{display:grid;grid-template-columns:52px repeat(7,1fr);background:var(--bg)}
+.dowrow{display:grid;grid-template-columns:52px repeat(7,1fr);border-bottom:1px solid var(--bd);background:var(--card)}
+.dow{padding:8px 6px;text-align:center;font-size:11px;font-weight:800;color:var(--mut)}
+.dow .d{display:block;font-size:15px;color:var(--fg);margin-top:1px}
+.dow.today .d{color:var(--cat)}
+.dow.today{background:color-mix(in srgb,var(--cat) 8%,transparent)}
+.hours{border-right:1px solid var(--bd)}
+.hr{height:44px;border-bottom:1px solid rgba(255,255,255,.045);font-size:9.5px;color:var(--dim);
+  padding:2px 6px 0 0;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.col{border-right:1px solid rgba(255,255,255,.05);position:relative}
+.col:last-child{border-right:none}
+.col.today{background:color-mix(in srgb,var(--cat) 4%,transparent)}
+.slot{height:44px;border-bottom:1px solid rgba(255,255,255,.045)}
+
+.ev{position:absolute;left:3px;right:3px;border-radius:7px;padding:4px 6px;overflow:hidden;cursor:pointer;
+  border-left:3px solid var(--c,var(--cat));
+  background:color-mix(in srgb,var(--c,var(--cat)) 17%,var(--card));
+  transition:.15s cubic-bezier(.16,1,.3,1)}
+.ev:hover{transform:translateY(-1px);box-shadow:0 8px 18px -8px rgba(0,0,0,.8);z-index:5}
+.ev-t{font-size:10.5px;font-weight:800;line-height:1.25;color:var(--fg)}
+.ev-m{font-size:9.5px;color:var(--mut);font-weight:700;margin-top:1px}
+.ev.mcat{--c:var(--mcat)} .ev.clin{--c:var(--clinical)} .ev.warn{--c:var(--warning)}
+.ev.ext{--c:var(--ext);border-left-style:dashed;background:var(--muted)}
+.ev.ext .ev-t{color:var(--mut);font-weight:700}
+
+/* all-day / deadline rail */
+.allday{display:grid;grid-template-columns:52px repeat(7,1fr);border-bottom:1px solid var(--bd);background:var(--card)}
+.ad-l{font-size:9px;color:var(--dim);font-weight:800;padding:7px 6px 7px 0;text-align:right;letter-spacing:.05em}
+.ad-c{padding:5px 4px;border-left:1px solid rgba(255,255,255,.05);min-height:34px}
+.pill{display:block;border-radius:6px;padding:3px 6px;font-size:9.5px;font-weight:800;font-family:'Baloo 2';
+  border-left:3px solid var(--c,var(--warning));
+  background:color-mix(in srgb,var(--c,var(--warning)) 18%,var(--card));color:var(--fg);margin-bottom:3px;cursor:pointer}
+.pill.exam{--c:var(--danger)} .pill.mcat{--c:var(--mcat)}
+
+/* legend + footer */
+.legend{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:11px 16px;border-top:1px solid var(--bd);background:var(--card)}
+.lg{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--mut);font-weight:700}
+.sw{width:10px;height:10px;border-radius:3px;background:var(--c)}
+.sw.dash{background:var(--muted);border-left:3px dashed var(--ext);border-radius:2px}
+.legend .rt{margin-left:auto;font-size:10.5px;color:var(--dim);font-weight:700}
+
+.note{margin-top:20px;background:var(--card);border:1px solid var(--bd);border-left:3px solid var(--cat);
+  border-radius:12px;padding:14px 17px}
+.note h4{font-size:13.5px;font-weight:800;margin-bottom:8px}
+.note p{font-size:12.5px;color:var(--mut);line-height:1.65}
+.note p+p{margin-top:7px}
+.note b{color:var(--fg)}
+.kicker{font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin:20px 0 8px}
+
+/* month mini */
+.month{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;padding:14px 16px}
+.mh{font-size:9.5px;font-weight:800;color:var(--dim);text-align:center;font-family:'Baloo 2';letter-spacing:.05em}
+.mc{background:var(--card);border:1px solid var(--bd);border-radius:8px;min-height:66px;padding:5px 6px}
+.mc.out{opacity:.35}
+.mc.today{border-color:var(--cat);background:color-mix(in srgb,var(--cat) 7%,var(--card))}
+.mn{font-size:11px;font-weight:800;font-family:'Baloo 2';color:var(--mut)}
+.mc.today .mn{color:var(--cat)}
+.mdot{display:flex;gap:3px;margin-top:5px;flex-wrap:wrap}
+.mdot i{width:5px;height:5px;border-radius:2px;background:var(--c,var(--cat))}
+.mtag{font-size:8.5px;font-weight:800;font-family:'Baloo 2';margin-top:4px;color:var(--mut);
+  background:var(--muted);border-radius:4px;padding:1px 4px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- top bar context -->
+  <div class="topbar">
+    <span class="brand">Premed HQ</span>
+    <span class="tnote">Academics · Class Center</span>
+    <span class="spacer"></span>
+    <span class="tnote">the toggle lives here →</span>
+    <div class="ticon">⌘K</div>
+    <div class="ticon">＋</div>
+    <div class="ticon on" title="Calendar">▦</div>
+    <div class="ticon">🔔</div>
+  </div>
+
+  <!-- overlay -->
+  <div class="veil">
+    <div class="sheet">
+
+      <div class="sh-top">
+        <span class="sh-title">Your week</span>
+        <span class="range num">Oct 20 – 26</span>
+        <div class="nav"><div class="nb">‹</div><div class="nb">›</div><div class="nb" style="width:auto;padding:0 9px;font-family:'Baloo 2';font-weight:800;font-size:10.5px">Today</div></div>
+        <span class="spacer"></span>
+        <div class="segwrap"><span class="seg on">Week</span><span class="seg">Month</span><span class="seg">Agenda</span></div>
+        <span class="esc">Esc to close</span>
+      </div>
+
+      <!-- deadline rail -->
+      <div class="allday">
+        <div class="ad-l">DUE</div>
+        <div class="ad-c"></div>
+        <div class="ad-c"><span class="pill">Problem set 6</span></div>
+        <div class="ad-c"></div>
+        <div class="ad-c"><span class="pill">ENGL draft</span><span class="pill mcat">Log FL3</span></div>
+        <div class="ad-c"><span class="pill exam">CHEM Exam 2</span></div>
+        <div class="ad-c"></div>
+        <div class="ad-c"></div>
+      </div>
+
+      <div class="dowrow">
+        <div class="dow"></div>
+        <div class="dow">MON<span class="d num">20</span></div>
+        <div class="dow">TUE<span class="d num">21</span></div>
+        <div class="dow today">WED<span class="d num">22</span></div>
+        <div class="dow">THU<span class="d num">23</span></div>
+        <div class="dow">FRI<span class="d num">24</span></div>
+        <div class="dow">SAT<span class="d num">25</span></div>
+        <div class="dow">SUN<span class="d num">26</span></div>
+      </div>
+
+      <div class="grid">
+        <div class="hours">
+          <div class="hr">8 AM</div><div class="hr">9</div><div class="hr">10</div><div class="hr">11</div>
+          <div class="hr">12 PM</div><div class="hr">1</div><div class="hr">2</div><div class="hr">3</div><div class="hr">4</div>
+        </div>
+
+        <!-- MON -->
+        <div class="col">
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="ev" style="top:88px;height:42px"><div class="ev-t">CHEM 261</div><div class="ev-m">Kenan B12</div></div>
+          <div class="ev mcat" style="top:264px;height:86px"><div class="ev-t">MCAT session</div><div class="ev-m">CARS + content · 2h</div></div>
+        </div>
+
+        <!-- TUE -->
+        <div class="col">
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="ev" style="top:264px;height:64px"><div class="ev-t">ENGL 105</div><div class="ev-m">Greenlaw 305</div></div>
+          <div class="ev clin" style="top:0;height:64px"><div class="ev-t">EMT shift</div><div class="ev-m">Clinical · 8h logged</div></div>
+        </div>
+
+        <!-- WED (today) -->
+        <div class="col today">
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="ev" style="top:88px;height:42px"><div class="ev-t">CHEM 261</div><div class="ev-m">Kenan B12</div></div>
+          <div class="ev ext" style="top:176px;height:42px"><div class="ev-t">Lunch w/ Priya</div><div class="ev-m">from Google Calendar</div></div>
+          <div class="ev warn" style="top:308px;height:64px"><div class="ev-t">Exam prep · Units 4–7</div><div class="ev-m">CHEM 261 · 6 days out</div></div>
+        </div>
+
+        <!-- THU -->
+        <div class="col">
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="ev" style="top:264px;height:64px"><div class="ev-t">ENGL 105</div><div class="ev-m">discussion · 3 readings</div></div>
+          <div class="ev ext" style="top:44px;height:42px"><div class="ev-t">Lab meeting</div><div class="ev-m">from Google Calendar</div></div>
+        </div>
+
+        <!-- FRI -->
+        <div class="col">
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="ev" style="top:88px;height:42px"><div class="ev-t">CHEM 261</div><div class="ev-m">Kenan B12</div></div>
+        </div>
+
+        <!-- SAT -->
+        <div class="col">
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="ev mcat" style="top:0;height:308px"><div class="ev-t">AAMC FL3</div><div class="ev-m">7.5h · starts 8:00, real breaks</div></div>
+        </div>
+
+        <!-- SUN -->
+        <div class="col">
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="ev mcat" style="top:88px;height:130px"><div class="ev-t">FL3 review</div><div class="ev-m">reserved · 3h</div></div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span class="lg"><i class="sw" style="--c:var(--cat)"></i> Academics</span>
+        <span class="lg"><i class="sw" style="--c:var(--mcat)"></i> MCAT</span>
+        <span class="lg"><i class="sw" style="--c:var(--clinical)"></i> Clinical</span>
+        <span class="lg"><i class="sw" style="--c:var(--danger)"></i> Exam</span>
+        <span class="lg"><i class="sw dash"></i> From your calendar</span>
+        <span class="rt">22 of 34 planned hours · click anything to open it where it lives</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- month view -->
+  <div class="kicker">Month view — density first, not detail</div>
+  <div class="veil">
+    <div class="sheet">
+      <div class="sh-top">
+        <span class="sh-title">October</span>
+        <div class="nav"><div class="nb">‹</div><div class="nb">›</div></div>
+        <span class="spacer"></span>
+        <div class="segwrap"><span class="seg">Week</span><span class="seg on">Month</span><span class="seg">Agenda</span></div>
+        <span class="esc">Esc to close</span>
+      </div>
+      <div class="month">
+        <div class="mh">MON</div><div class="mh">TUE</div><div class="mh">WED</div><div class="mh">THU</div><div class="mh">FRI</div><div class="mh">SAT</div><div class="mh">SUN</div>
+
+        <div class="mc out"><div class="mn num">13</div></div>
+        <div class="mc out"><div class="mn num">14</div></div>
+        <div class="mc out"><div class="mn num">15</div></div>
+        <div class="mc out"><div class="mn num">16</div></div>
+        <div class="mc out"><div class="mn num">17</div></div>
+        <div class="mc out"><div class="mn num">18</div></div>
+        <div class="mc out"><div class="mn num">19</div></div>
+
+        <div class="mc"><div class="mn num">20</div><div class="mdot"><i style="--c:var(--cat)"></i><i style="--c:var(--mcat)"></i></div></div>
+        <div class="mc"><div class="mn num">21</div><div class="mdot"><i style="--c:var(--cat)"></i><i style="--c:var(--clinical)"></i></div><span class="mtag">1 due</span></div>
+        <div class="mc today"><div class="mn num">22</div><div class="mdot"><i style="--c:var(--cat)"></i><i style="--c:var(--warning)"></i><i style="--c:var(--ext)"></i></div></div>
+        <div class="mc"><div class="mn num">23</div><div class="mdot"><i style="--c:var(--cat)"></i><i style="--c:var(--ext)"></i></div><span class="mtag">2 due</span></div>
+        <div class="mc"><div class="mn num">24</div><div class="mdot"><i style="--c:var(--cat)"></i></div><span class="mtag">Exam</span></div>
+        <div class="mc"><div class="mn num">25</div><div class="mdot"><i style="--c:var(--mcat)"></i></div><span class="mtag">FL3</span></div>
+        <div class="mc"><div class="mn num">26</div><div class="mdot"><i style="--c:var(--mcat)"></i></div></div>
+
+        <div class="mc"><div class="mn num">27</div><div class="mdot"><i style="--c:var(--cat)"></i><i style="--c:var(--mcat)"></i></div></div>
+        <div class="mc"><div class="mn num">28</div><div class="mdot"><i style="--c:var(--cat)"></i></div><span class="mtag">1 due</span></div>
+        <div class="mc"><div class="mn num">29</div><div class="mdot"><i style="--c:var(--cat)"></i></div></div>
+        <div class="mc"><div class="mn num">30</div><div class="mdot"><i style="--c:var(--cat)"></i></div><span class="mtag">W deadline</span></div>
+        <div class="mc"><div class="mn num">31</div><div class="mdot"><i style="--c:var(--cat)"></i></div></div>
+        <div class="mc"><div class="mn num">1</div><div class="mdot"><i style="--c:var(--mcat)"></i></div></div>
+        <div class="mc"><div class="mn num">2</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <h4>What this is — and what it deliberately isn't</h4>
+    <p><b>A toggle in the top bar, not a tab.</b> It opens as an overlay so it's reachable from anywhere and never loses your place. Week is default; Month and Agenda switch inside.</p>
+    <p><b>Read-mostly.</b> No event creation, no drag-to-reschedule, no editing in place. <b>Clicking anything deep-links to its owner</b> — the problem set opens in Assignments, CHEM Exam 2 opens exam prep mode, FL3 opens the full-length flow. Editing happens where the thing lives.</p>
+    <p><b>HQ's items vs yours are visibly different.</b> Pillar accents for what HQ scheduled; a single muted, dashed treatment for anything imported from Google Calendar. You must be able to tell at a glance, or the view stops being trustworthy.</p>
+    <p><b>No new entity.</b> Everything here is a projection over <code>Course</code> meeting times, <code>ClassAssignment</code> deadlines, <code>PlanSession</code>, <code>FullLength</code>, and imported events. If a builder reaches for a <code>CalendarEvent</code> table, that's the wrong turn — it stops being a view and becomes a calendar.</p>
+    <p><b>Note the FL3 block on Saturday and its reserved review block on Sunday</b> — that's §3.6's "an FL is a scheduled object" showing up where you'd actually notice it. And the footer's <b>22 of 34 planned hours</b> is the shared hour budget (§11b) surfacing without a separate screen.</p>
+    <p><b>Month is density-first:</b> coloured dots for what kind of thing, small tags for the few items that matter (Exam, FL3, W deadline). Not a wall of text at 1/7th width.</p>
+  </div>
+
+</div>
+</body>
+</html>

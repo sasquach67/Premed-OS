@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Premed HQ — Overview (bento control panel) — APPROVED reference</title>
+<!--
+  ============================================================================
+  PREMED HQ — OVERVIEW / HOME — APPROVED VISUAL + STRUCTURAL REFERENCE
+  ============================================================================
+  Status: APPROVED by Andy (July 2026). This is the target for the Overview
+  build. Read alongside specifications/03-overview.md — the spec is law for
+  behavior/содержание; this file shows layout, density, hierarchy, and feel.
+
+  WHAT THIS FILE IS
+  - Static HTML/CSS only. No React, no real data, no interactivity.
+  - Implementation must be built from the real component library
+    (see 03-overview.md §6a "Components used"), NOT by copying this markup.
+
+  KEY DECISIONS THIS FILE ENCODES
+  1. BENTO CONTROL PANEL — a 12-col grid of MIXED-SIZE panels (tall / wide-
+     short / small square). A uniform stack of equal rectangles is a defect.
+  2. ORDER — Hero → Smart next actions → Tasks (first working surface) →
+     Where I stand → stat tiles → quick access / goals / activity → roadmap.
+  3. NO "Needs attention" strip. Urgency lives on task rows + smart actions
+     + the shell bell.
+  4. TASKS — Now/Soon/Done TABS (not columns). Checkbox = complete (lands in
+     Done). Grip = reorder WITHIN the tab only. STAR = the single
+     prioritization concept; starred rows pin to an "Important" group.
+     There is NO separate "Focus" strip — one concept only.
+  5. GLASS JUDGMENT (04 §0c) — frosted glass ONLY on floating surfaces
+     (hero cards over the banner image, the context menu). Every content
+     panel, table, row, field, tab and badge is SOLID-with-depth.
+  6. TYPE — Baloo 2 (display/numbers, bold) + Nunito (body). Never change.
+  7. Numbers are exact, from computed selectors (06). Motion never distorts
+     data.
+  ============================================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── Theme tokens: mirrored from src/index.css (.dark warm default) ─────── */
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --pri:#6fb3de; --pri-ink:#0f2330; --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f; --star:#e7b06a;
+  --gpa:#4b9cd3; --mcat:#8c7bd4; --shadow:#e0a458; --volunteer:#5fb49c;
+  --activities:#e08b9b; --clinical:#6fae6e; --research:#c98ac9; --letters:#d59b6a;
+  --radius:0.9rem;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.frame{width:1400px;margin:0 auto;padding:24px;background:var(--bg);min-height:100vh}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+/* ── Shared panel ──────────────────────────────────────────────────────── */
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;
+  box-shadow:0 10px 26px -14px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden}
+.hd{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 10px;gap:10px;flex-shrink:0}
+.ti{font-family:'Baloo 2';font-weight:800;font-size:18px}
+.ti.sm{font-size:16px}
+.sub{font-size:12.5px;color:var(--dim);font-weight:700}
+.bd{padding:4px 18px 18px;display:flex;flex-direction:column;gap:11px;flex:1;min-height:0}
+.lk{font-size:12.5px;font-weight:800;color:var(--pri);font-family:'Baloo 2';cursor:pointer}
+.btn{border-radius:10px;padding:7px 14px;font-family:'Baloo 2';font-weight:700;font-size:13px;
+  border:1px solid transparent;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.btn.p{background:var(--pri);color:var(--pri-ink)}
+.btn.g{background:var(--muted);border-color:var(--bd);color:var(--mut)}
+.btn svg{width:14px;height:14px}
+
+/* ── BENTO GRID (§5) ───────────────────────────────────────────────────── */
+.bento{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:16px}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}
+.c6{grid-column:span 6}.c7{grid-column:span 7}.c12{grid-column:span 12}
+
+/* ── HERO: the only place frosted glass appears (floats over the banner) ── */
+.hero{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--bd);height:250px;
+  padding:22px;display:flex;flex-direction:column;justify-content:space-between;
+  background:
+    radial-gradient(150px 150px at 84% 22%,rgba(255,214,150,.5),transparent 70%),
+    radial-gradient(280px 190px at 16% 118%,rgba(111,174,110,.32),transparent 70%),
+    linear-gradient(120deg,#3b2f4a 0%,#7a4f5a 40%,#c98a5e 72%,#e7b06a 100%)}
+.hill{position:absolute;left:0;right:0;bottom:-2px;height:95px;
+  background:linear-gradient(180deg,transparent,rgba(28,20,16,.6));border-radius:50% 50% 0 0/100% 100% 0 0}
+.hdate{position:relative;z-index:2;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.8)}
+.hgreet{position:relative;z-index:2;font-family:'Baloo 2';font-weight:800;font-size:34px;color:#fff;
+  letter-spacing:-.5px;margin-top:4px;text-shadow:0 3px 16px rgba(0,0,0,.4)}
+.hrow{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:auto}
+/* GLASS — floating over imagery only */
+.glass{background:rgba(26,20,17,.42);backdrop-filter:blur(18px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.15);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 20px 44px -24px rgba(0,0,0,.65);border-radius:15px}
+.cd{padding:13px 17px}
+.cdt{font-size:11px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--pri)}
+.cdn{font-family:'Baloo 2';font-weight:700;font-size:15px;color:#fff;margin-top:2px}
+.cdc{font-family:'Baloo 2';font-weight:800;font-size:38px;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-1px;line-height:1.05;margin-top:4px}
+.cdb{height:6px;border-radius:999px;background:rgba(255,255,255,.16);margin-top:9px;overflow:hidden}
+.cdf{height:100%;width:62%;border-radius:999px;background:var(--pri)}
+.sch{padding:13px 16px}
+.schr{display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px;font-weight:700;color:rgba(255,255,255,.9)}
+.schr.past{color:rgba(255,255,255,.42);text-decoration:line-through}
+.tl{height:5px;border-radius:999px;background:rgba(255,255,255,.2);margin:6px 0 9px;position:relative}
+.tlf{position:absolute;left:52%;right:0;top:0;bottom:0;background:var(--success);border-radius:999px}
+.tlm{position:absolute;left:52%;top:50%;width:10px;height:10px;border-radius:50%;background:#fff;
+  transform:translate(-50%,-50%);box-shadow:0 0 0 3px rgba(111,179,222,.5)}
+
+/* ── SMART NEXT ACTIONS (§6.3) ─────────────────────────────────────────── */
+.smart{background:linear-gradient(180deg,color-mix(in srgb,var(--mcat) 9%,var(--card)),var(--card));
+  border-color:color-mix(in srgb,var(--mcat) 26%,var(--bd))}
+.rec{border:1px solid var(--bd);border-radius:13px;padding:13px;background:var(--muted);display:flex;gap:11px}
+.spk{width:32px;height:32px;border-radius:10px;flex-shrink:0;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--mcat) 26%,transparent);color:#d9cffc}
+.spk svg{width:17px;height:17px}
+.rt{font-family:'Baloo 2';font-weight:700;font-size:14.5px}
+.why{font-size:12.5px;color:var(--mut);margin-top:3px;font-weight:600}
+.why b{color:var(--fg)}
+.acts{display:flex;gap:7px;margin-top:9px}
+.bsm{border-radius:9px;padding:5px 12px;font-family:'Baloo 2';font-weight:700;font-size:12.5px;border:1px solid transparent;cursor:pointer}
+.bsm.p{background:var(--pri);color:var(--pri-ink)}
+.bsm.g{background:transparent;border-color:var(--bd);color:var(--mut)}
+
+/* ── TASKS (§6.4) — tabs, drag-in-tab, star ────────────────────────────── */
+.tabs{display:inline-flex;background:var(--muted);border:1px solid var(--bd);border-radius:11px;padding:4px;gap:4px}
+.tab{display:flex;align-items:center;gap:7px;padding:7px 16px;border-radius:8px;font-family:'Baloo 2';
+  font-weight:700;font-size:13.5px;color:var(--mut);cursor:pointer;border:1px solid transparent}
+.tab.on{background:var(--card);color:var(--fg);font-weight:800;border-color:var(--bd);box-shadow:0 3px 8px -4px rgba(0,0,0,.5)}
+.cnt{font-size:11.5px;font-weight:800;background:#272420;border-radius:999px;padding:1px 7px;color:var(--dim)}
+.tab.on .cnt{background:color-mix(in srgb,var(--pri) 22%,transparent);color:var(--pri)}
+.grp{display:flex;align-items:center;gap:9px;padding:4px 2px 0}
+.grpl{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--star);display:flex;align-items:center;gap:5px}
+.grpl svg{width:12px;height:12px}
+.grpl.plain{color:var(--dim)}
+.grpline{flex:1;height:1px;background:var(--bd)}
+.rows{display:flex;flex-direction:column;gap:7px}
+.row{position:relative;display:flex;align-items:center;gap:11px;background:var(--muted);
+  border:1px solid var(--bd);border-radius:11px;padding:10px 12px}
+.row.imp{border-left:3px solid var(--star);
+  background:linear-gradient(90deg,color-mix(in srgb,var(--star) 9%,var(--muted)),var(--muted) 40%)}
+.row.drag{transform:translateY(-2px) rotate(-.5deg);box-shadow:0 16px 30px -14px rgba(0,0,0,.7);
+  border-color:color-mix(in srgb,var(--pri) 45%,var(--bd));z-index:3}
+.grip{color:var(--dim);cursor:grab;flex-shrink:0;display:flex}
+.grip svg{width:12px;height:16px}
+.cbx{width:18px;height:18px;border-radius:5px;border:2px solid var(--bd);background:var(--card);flex-shrink:0;display:grid;place-items:center}
+.cbx.on{background:var(--success);border-color:var(--success)}
+.cbx svg{width:11px;height:11px;color:#16120e}
+.ttl{font-size:13.5px;font-weight:600;flex:1;min-width:0}
+.ttl.done{text-decoration:line-through;color:var(--mut)}
+.tag{font-size:10.5px;font-weight:800;font-family:'Baloo 2';border-radius:999px;padding:2px 9px;flex-shrink:0}
+.due{font-size:12px;font-weight:800;font-family:'Baloo 2';flex-shrink:0}
+.star{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;color:var(--dim);flex-shrink:0;cursor:pointer}
+.star.on{color:var(--star)}
+.star svg{width:16px;height:16px}
+.qadd{display:flex;align-items:center;gap:10px;border:1px dashed var(--bd);border-radius:11px;
+  padding:11px 13px;color:var(--dim);font-size:13px;font-weight:600;margin-top:auto}
+.qadd svg{width:15px;height:15px;color:var(--pri)}
+/* CONTEXT MENU — floating ⇒ frosted glass (01 §4c) */
+.ctx{position:absolute;top:38px;left:300px;z-index:20;width:224px;border-radius:13px;padding:6px;
+  background:rgba(38,33,29,.72);backdrop-filter:blur(20px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 26px 52px -22px rgba(0,0,0,.75)}
+.ci{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:600}
+.ci.hl{background:color-mix(in srgb,var(--star) 20%,transparent)}
+.ci svg{width:14px;height:14px;color:var(--mut)}
+.ci.hl svg{color:var(--star)}
+.ci .kx{margin-left:auto;font-size:10.5px;font-weight:800;color:var(--dim)}
+.csep{height:1px;background:rgba(255,255,255,.1);margin:4px 3px}
+
+/* ── WHERE I STAND (§6.5) — compact rows that KEEP pace feedback ───────── */
+.wis{display:flex;flex-direction:column;gap:3px}
+.wgh{display:flex;align-items:center;gap:8px;padding:9px 2px 4px}
+.wghl{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+.wghline{flex:1;height:1px;background:var(--bd)}
+.wr{display:flex;align-items:center;gap:9px;padding:6px 7px;border-radius:9px;cursor:pointer}
+.wr:hover{background:var(--muted)}
+.wic{width:22px;height:22px;border-radius:7px;flex-shrink:0;display:grid;place-items:center;
+  font-family:'Baloo 2';font-weight:800;font-size:10px;color:#16120e}
+.wnm{font-family:'Baloo 2';font-weight:700;font-size:13px;width:74px;flex-shrink:0}
+.wvl{font-size:12px;color:var(--mut);font-weight:700;font-variant-numeric:tabular-nums;width:88px;flex-shrink:0}
+.wvl b{color:var(--fg);font-family:'Baloo 2';font-weight:800}
+.wbar{flex:1;height:6px;border-radius:999px;background:#272420;overflow:hidden;min-width:30px}
+.wbf{height:100%;border-radius:999px}
+.wpc{font-size:10.5px;font-weight:800;border-radius:999px;padding:2px 8px;font-family:'Baloo 2';flex-shrink:0;width:74px;text-align:center}
+.wpc.ok{background:color-mix(in srgb,var(--success) 18%,transparent);color:var(--success)}
+.wpc.wn{background:color-mix(in srgb,var(--warning) 18%,transparent);color:var(--warning)}
+.wpc.bd2{background:color-mix(in srgb,var(--danger) 18%,transparent);color:var(--danger)}
+.wpc.nu{background:#272420;color:var(--dim)}
+
+/* ── STAT TILES (§6.5a) ────────────────────────────────────────────────── */
+.tile{padding:16px 18px;display:flex;flex-direction:column;gap:7px;justify-content:center}
+.tlab{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+.tbig{font-family:'Baloo 2';font-weight:800;font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.tsub{font-size:12px;color:var(--mut);font-weight:700}
+
+/* ── QUICK ACCESS (§6.5b) ──────────────────────────────────────────────── */
+.qw{display:flex;align-items:center;gap:11px;padding:12px 14px;background:var(--muted);
+  border:1px solid var(--bd);border-radius:12px;cursor:pointer}
+.qw:hover{border-color:color-mix(in srgb,var(--pri) 40%,var(--bd))}
+.qwi{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:#16120e;flex-shrink:0}
+.qwi svg{width:17px;height:17px}
+.qwt{font-family:'Baloo 2';font-weight:800;font-size:13.5px}
+.qws{font-size:11.5px;color:var(--mut);font-weight:600}
+
+/* ── ROADMAP (§6.7) — horizontal spine of milestone CARDS ──────────────── */
+.rmap{background:linear-gradient(180deg,color-mix(in srgb,var(--pri) 6%,var(--card)),var(--card))}
+.trk{position:relative;padding:20px 4px 4px}
+.rline{position:absolute;left:14px;right:14px;top:32px;height:4px;border-radius:4px;
+  background:linear-gradient(90deg,var(--success) 0%,var(--success) 22%,var(--pri) 30%,var(--bd) 38%,var(--bd) 100%)}
+.mrow{display:flex;gap:11px;position:relative}
+.mile{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center}
+.mdot{width:26px;height:26px;border-radius:50%;background:var(--muted);border:3px solid var(--bd);display:grid;place-items:center;z-index:1}
+.mdot svg{width:13px;height:13px;color:#16120e}
+.mile.done .mdot{background:var(--success);border-color:var(--success)}
+.mile.cur .mdot{background:var(--pri);border-color:var(--pri);box-shadow:0 0 0 5px color-mix(in srgb,var(--pri) 22%,transparent)}
+.mc{margin-top:11px;background:var(--muted);border:1px solid var(--bd);border-radius:11px;padding:9px;width:100%}
+.mile.cur .mc{background:var(--card);border-color:color-mix(in srgb,var(--pri) 45%,var(--bd));
+  box-shadow:0 10px 24px -14px color-mix(in srgb,var(--pri) 50%,transparent)}
+.mile.done .mc{opacity:.7}
+.here{font-size:9px;font-weight:800;font-family:'Baloo 2';letter-spacing:.08em;text-transform:uppercase;color:var(--pri);display:block;margin-bottom:2px}
+.ml{font-family:'Baloo 2';font-weight:700;font-size:12.5px;color:var(--mut);line-height:1.2}
+.mile.done .ml,.mile.cur .ml{color:var(--fg)}
+.mile.cur .ml{font-weight:800}
+.md{font-size:10.5px;color:var(--dim);font-weight:700;margin-top:3px}
+.ms{font-size:10.5px;color:var(--mut);font-weight:600;margin-top:6px;border-top:1px solid var(--bd);padding-top:6px}
+
+/* ── ACTIVITY / CAPTURE ────────────────────────────────────────────────── */
+.ac{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--bd)}
+.ac:last-child{border-bottom:none}
+.ad{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.at{font-size:13px;font-weight:600}
+.ai{font-size:11px;color:var(--dim);font-weight:600}
+.cap{display:flex;align-items:center;gap:10px;background:var(--muted);border:1px dashed var(--bd);
+  border-radius:12px;padding:12px 14px;color:var(--dim);font-size:13px;font-weight:600}
+.cap svg{width:16px;height:16px;color:var(--pri)}
+</style>
+</head>
+<body>
+<div class="frame">
+<h1 class="sr-only">Premed HQ Overview — approved bento control-panel reference</h1>
+
+<!-- ══ 1. HERO — themed banner; glass cards float over it ═══════════════ -->
+<div class="hero">
+  <div class="hill"></div>
+  <div>
+    <div class="hdate">Saturday, July 25 · 1:15 PM</div>
+    <div class="hgreet">Good to see you again, Eric!</div>
+  </div>
+  <div class="hrow">
+    <div class="glass cd">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span class="cdt">Free window</span>
+        <span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.78)">1h 45m until start</span>
+      </div>
+      <div class="cdn">Clinical Shift</div>
+      <div class="cdc">1:44:27</div>
+      <div class="cdb"><div class="cdf"></div></div>
+    </div>
+    <div class="glass sch">
+      <div style="display:flex;justify-content:flex-end">
+        <span style="font-size:12px;font-weight:800;color:var(--pri);font-family:'Baloo 2'">Connect</span>
+      </div>
+      <div class="tl"><div class="tlf"></div><div class="tlm"></div></div>
+      <div class="schr past"><span>9 AM &nbsp; CHEM 101 Lecture</span><span>9:50 AM</span></div>
+      <div class="schr past"><span>11 AM &nbsp; Neuroscience Seminar</span><span>12:15 PM</span></div>
+      <div class="schr"><span>3 PM &nbsp; Clinical Shift</span><span>7:00 PM</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="bento">
+
+  <!-- ══ 2. SMART NEXT ACTIONS — full width, 3 across ═══════════════════ -->
+  <!-- Dismiss last card ⇒ ENTIRE widget unmounts (§6.3) -->
+  <div class="card smart c12">
+    <div class="hd">
+      <div class="ti">Smart next actions</div>
+      <div style="font-size:11px;font-weight:800;color:var(--mcat);letter-spacing:.07em;text-transform:uppercase">Rules-based · explained</div>
+    </div>
+    <div class="bd">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="rec">
+          <div class="spk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 4.6L19 9.3l-3.6 3.2.9 4.9L12 15l-4.3 2.4.9-4.9L5 9.3l5.1-1.7Z"/></svg></div>
+          <div style="flex:1">
+            <div class="rt">Follow up with Dr. Patel</div>
+            <div class="why">Requested <b>21 days ago</b>, no reply.</div>
+            <div class="acts"><div class="bsm p">Open Letters</div><div class="bsm g">Dismiss</div></div>
+          </div>
+        </div>
+        <div class="rec">
+          <div class="spk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H5.2L4 17.5Z"/><path d="M8 9h8"/></svg></div>
+          <div style="flex:1">
+            <div class="rt">Add a verifier</div>
+            <div class="why"><b>42 hrs</b> lack a contact — blocks export.</div>
+            <div class="acts"><div class="bsm p">Add verifier</div><div class="bsm g">Dismiss</div></div>
+          </div>
+        </div>
+        <div class="rec">
+          <div class="spk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/></svg></div>
+          <div style="flex:1">
+            <div class="rt">Log recent shifts</div>
+            <div class="why">Clinical idle <b>5 weeks</b> — going stale.</div>
+            <div class="acts"><div class="bsm p">Quick-add</div><div class="bsm g">Dismiss</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 3. TASKS — TALL panel, 7 cols. Tabs + star + drag-in-tab ═══════ -->
+  <div class="card c7">
+    <div class="hd">
+      <div style="display:flex;align-items:baseline;gap:10px">
+        <div class="ti">Tasks</div><div class="sub">2 important · 1 overdue</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="btn p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>Add</div>
+        <div class="lk">Timeline →</div>
+      </div>
+    </div>
+    <div class="bd">
+      <!-- Now / Soon / Done are TABS. Done = completion archive, not a horizon. -->
+      <div class="tabs">
+        <div class="tab on">Now <span class="cnt">5</span></div>
+        <div class="tab">Soon <span class="cnt">4</span></div>
+        <div class="tab">Done <span class="cnt">9</span></div>
+      </div>
+      <div class="rows">
+        <!-- STARRED tasks pin into this group. This IS the focus area. -->
+        <div class="grp">
+          <span class="grpl"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.8 5.8 21l1.2-6.9L2 9.2l7-1L12 2l3 6.2 7 1-5 4.9 1.2 6.9z"/></svg>Important</span>
+          <span class="grpline"></span>
+        </div>
+        <div class="row imp">
+          <div class="grip"><svg viewBox="0 0 10 16" fill="currentColor"><circle cx="2" cy="2" r="1.4"/><circle cx="8" cy="2" r="1.4"/><circle cx="2" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="2" cy="14" r="1.4"/><circle cx="8" cy="14" r="1.4"/></svg></div>
+          <div class="cbx"></div>
+          <div class="ttl">Email Dr. Patel re: letter</div>
+          <span class="tag" style="background:color-mix(in srgb,var(--letters) 18%,transparent);color:var(--letters)">Letters</span>
+          <span class="due" style="color:var(--danger)">21d over</span>
+          <div class="star on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.8 5.8 21l1.2-6.9L2 9.2l7-1L12 2l3 6.2 7 1-5 4.9 1.2 6.9z"/></svg></div>
+        </div>
+        <div class="row imp">
+          <div class="grip"><svg viewBox="0 0 10 16" fill="currentColor"><circle cx="2" cy="2" r="1.4"/><circle cx="8" cy="2" r="1.4"/><circle cx="2" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="2" cy="14" r="1.4"/><circle cx="8" cy="14" r="1.4"/></svg></div>
+          <div class="cbx"></div>
+          <div class="ttl">Register for Aug MCAT date</div>
+          <span class="tag" style="background:color-mix(in srgb,var(--mcat) 18%,transparent);color:var(--mcat)">MCAT</span>
+          <span class="due" style="color:var(--warning)">9 days</span>
+          <div class="star on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.8 5.8 21l1.2-6.9L2 9.2l7-1L12 2l3 6.2 7 1-5 4.9 1.2 6.9z"/></svg></div>
+        </div>
+
+        <div class="grp"><span class="grpl plain">Everything else</span><span class="grpline"></span></div>
+
+        <!-- Row shown mid-drag + its right-click CONTEXT MENU (01 §4c) -->
+        <div class="row drag">
+          <div class="grip"><svg viewBox="0 0 10 16" fill="currentColor"><circle cx="2" cy="2" r="1.4"/><circle cx="8" cy="2" r="1.4"/><circle cx="2" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="2" cy="14" r="1.4"/><circle cx="8" cy="14" r="1.4"/></svg></div>
+          <div class="cbx"></div>
+          <div class="ttl">Finish Chem 262 problem set</div>
+          <span class="tag" style="background:color-mix(in srgb,var(--gpa) 18%,transparent);color:var(--gpa)">Academics</span>
+          <span class="due" style="color:var(--warning)">Today</span>
+          <div class="star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.8 5.8 21l1.2-6.9L2 9.2l7-1L12 2l3 6.2 7 1-5 4.9 1.2 6.9z"/></svg></div>
+          <div class="ctx">
+            <div class="ci hl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.8 5.8 21l1.2-6.9L2 9.2l7-1L12 2l3 6.2 7 1-5 4.9 1.2 6.9z"/></svg>Mark important<span class="kx">⌘I</span></div>
+            <div class="csep"></div>
+            <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.6 13.4 11 3.8V3H4v7h.8l9.6 9.6a2 2 0 0 0 2.8 0l3.4-3.4a2 2 0 0 0 0-2.8Z"/></svg>Tag<span class="kx">▸</span></div>
+            <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Set due date</div>
+            <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Move to Soon</div>
+            <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5h10"/></svg>Duplicate</div>
+            <div class="csep"></div>
+            <div class="ci" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="#e8806f" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>Delete</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="grip"><svg viewBox="0 0 10 16" fill="currentColor"><circle cx="2" cy="2" r="1.4"/><circle cx="8" cy="2" r="1.4"/><circle cx="2" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="2" cy="14" r="1.4"/><circle cx="8" cy="14" r="1.4"/></svg></div>
+          <div class="cbx"></div>
+          <div class="ttl">Draft one Story Bank reflection</div>
+          <span class="tag" style="background:color-mix(in srgb,var(--activities) 18%,transparent);color:var(--activities)">Essays</span>
+          <div class="star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.8 5.8 21l1.2-6.9L2 9.2l7-1L12 2l3 6.2 7 1-5 4.9 1.2 6.9z"/></svg></div>
+        </div>
+        <!-- Checked ⇒ animates out and lands in the Done tab -->
+        <div class="row">
+          <div class="grip"><svg viewBox="0 0 10 16" fill="currentColor"><circle cx="2" cy="2" r="1.4"/><circle cx="8" cy="2" r="1.4"/><circle cx="2" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="2" cy="14" r="1.4"/><circle cx="8" cy="14" r="1.4"/></svg></div>
+          <div class="cbx on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="m5 12 5 5L20 7"/></svg></div>
+          <div class="ttl done">Log this week's clinical hours</div>
+          <span class="due" style="color:var(--success)">→ Done</span>
+          <div class="star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.8 5.8 21l1.2-6.9L2 9.2l7-1L12 2l3 6.2 7 1-5 4.9 1.2 6.9z"/></svg></div>
+        </div>
+        <div class="qadd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Quick add — type and hit enter…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 4. WHERE I STAND — TALL, 5 cols. Compact BUT keeps pace chips ══ -->
+  <div class="card c5">
+    <div class="hd"><div class="ti">Where I stand</div><div class="sub">1 behind · 1 at risk</div></div>
+    <div class="bd" style="gap:0">
+      <div class="wis">
+        <div class="wgh"><span class="wghl">Foundation</span><span class="wghline"></span></div>
+        <div class="wr"><span class="wic" style="background:var(--gpa)">A</span><span class="wnm">Academics</span><span class="wvl"><b>3.71</b>/<b>3.68</b></span><div class="wbar"><div class="wbf" style="width:88%;background:var(--gpa)"></div></div><span class="wpc ok">on track</span></div>
+        <div class="wr"><span class="wic" style="background:var(--mcat)">M</span><span class="wnm">MCAT</span><span class="wvl"><b>511</b> · goal 515</span><div class="wbar"><div class="wbf" style="width:74%;background:var(--mcat)"></div></div><span class="wpc wn">63d out</span></div>
+        <div class="wgh"><span class="wghl">Experiences</span><span class="wghline"></span></div>
+        <div class="wr"><span class="wic" style="background:var(--clinical)">C</span><span class="wnm">Clinical</span><span class="wvl"><b>120</b>/150 hrs</span><div class="wbar"><div class="wbf" style="width:80%;background:var(--clinical)"></div></div><span class="wpc ok">on pace</span></div>
+        <div class="wr"><span class="wic" style="background:var(--volunteer)">V</span><span class="wnm">Volunteer</span><span class="wvl"><b>80</b>/150 hrs</span><div class="wbar"><div class="wbf" style="width:53%;background:var(--volunteer)"></div></div><span class="wpc bd2">behind</span></div>
+        <div class="wr"><span class="wic" style="background:var(--shadow)">S</span><span class="wnm">Shadowing</span><span class="wvl"><b>24</b>/50 hrs</span><div class="wbar"><div class="wbf" style="width:48%;background:var(--shadow)"></div></div><span class="wpc ok">on pace</span></div>
+        <div class="wr"><span class="wic" style="background:var(--research)">R</span><span class="wnm">Research</span><span class="wvl">poster stage</span><div class="wbar"><div class="wbf" style="width:60%;background:var(--research)"></div></div><span class="wpc nu">no goal</span></div>
+        <div class="wgh"><span class="wghl">Application</span><span class="wghline"></span></div>
+        <div class="wr"><span class="wic" style="background:var(--pri)">SL</span><span class="wnm">Schools</span><span class="wvl"><b>12</b> · balanced</span><div class="wbar"><div class="wbf" style="width:75%;background:var(--pri)"></div></div><span class="wpc ok">good mix</span></div>
+        <div class="wr"><span class="wic" style="background:var(--activities)">E</span><span class="wnm">Essays</span><span class="wvl">PS draft <b>2</b>/3</span><div class="wbar"><div class="wbf" style="width:60%;background:var(--activities)"></div></div><span class="wpc wn">22d left</span></div>
+        <div class="wr"><span class="wic" style="background:var(--letters)">L</span><span class="wnm">Letters</span><span class="wvl"><b>1</b>/3 received</span><div class="wbar"><div class="wbf" style="width:33%;background:var(--letters)"></div></div><span class="wpc bd2">1 overdue</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 5. STAT TILES — small / small / medium (§6.5a) ═════════════════ -->
+  <div class="card c3 tile">
+    <span class="tlab">Cumulative GPA</span>
+    <div style="display:flex;align-items:flex-end;gap:10px">
+      <span class="tbig" style="color:var(--gpa)">3.71</span>
+      <span class="tsub" style="color:var(--success);margin-bottom:5px">▲ .06</span>
+    </div>
+    <svg viewBox="0 0 200 44" style="width:100%;height:44px">
+      <path d="M4 36 L44 31 L84 22 L124 25 L164 12 L196 8" fill="none" stroke="#4b9cd3" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="196" cy="8" r="4" fill="#4b9cd3"/>
+    </svg>
+    <span class="tsub">Science 3.68 · 6 terms</span>
+  </div>
+
+  <div class="card c3 tile" style="align-items:center;text-align:center">
+    <svg width="104" height="104" viewBox="0 0 104 104">
+      <circle cx="52" cy="52" r="42" fill="none" stroke="#272420" stroke-width="13"/>
+      <circle cx="52" cy="52" r="42" fill="none" stroke="#8c7bd4" stroke-width="13" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="68" transform="rotate(-90 52 52)"/>
+      <text x="52" y="50" text-anchor="middle" fill="#ece3d4" font-family="Baloo 2" font-weight="800" font-size="26">511</text>
+      <text x="52" y="67" text-anchor="middle" fill="#7c7264" font-family="Nunito" font-weight="700" font-size="11">of 515</text>
+    </svg>
+    <span class="tsub">MCAT · 1,240 questions</span>
+  </div>
+
+  <div class="card c6">
+    <div class="hd"><div class="ti sm">Hours logged</div><div class="sub">248 total</div></div>
+    <div class="bd" style="gap:9px;justify-content:center">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;font-weight:700;color:var(--mut);width:72px">Clinical</span><div style="flex:1;height:10px;border-radius:999px;background:#272420;overflow:hidden"><div style="height:100%;width:83%;background:var(--clinical);border-radius:999px"></div></div><span style="font-family:'Baloo 2';font-weight:800;font-size:13px;width:34px;text-align:right;color:var(--clinical)">120</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;font-weight:700;color:var(--mut);width:72px">Volunteer</span><div style="flex:1;height:10px;border-radius:999px;background:#272420;overflow:hidden"><div style="height:100%;width:55%;background:var(--volunteer);border-radius:999px"></div></div><span style="font-family:'Baloo 2';font-weight:800;font-size:13px;width:34px;text-align:right;color:var(--volunteer)">80</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;font-weight:700;color:var(--mut);width:72px">Shadowing</span><div style="flex:1;height:10px;border-radius:999px;background:#272420;overflow:hidden"><div style="height:100%;width:33%;background:var(--shadow);border-radius:999px"></div></div><span style="font-family:'Baloo 2';font-weight:800;font-size:13px;width:34px;text-align:right;color:var(--shadow)">24</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;font-weight:700;color:var(--mut);width:72px">Research</span><div style="flex:1;height:10px;border-radius:999px;background:#272420;overflow:hidden"><div style="height:100%;width:31%;background:var(--research);border-radius:999px"></div></div><span style="font-family:'Baloo 2';font-weight:800;font-size:13px;width:34px;text-align:right;color:var(--research)">22</span></div>
+    </div>
+  </div>
+
+  <!-- ══ 6. QUICK ACCESS (§6.5b) ════════════════════════════════════════ -->
+  <div class="card c4">
+    <div class="hd"><div class="ti sm">Quick access</div></div>
+    <div class="bd" style="gap:9px">
+      <div class="qw"><div class="qwi" style="background:var(--mcat)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 5v14l11-7z"/></svg></div><div><div class="qwt">Start MCAT block</div><div class="qws">C/P · 90 min</div></div></div>
+      <div class="qw"><div class="qwi" style="background:var(--research)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg></div><div><div class="qwt">Review session</div><div class="qws">28 cards due</div></div></div>
+      <div class="qw"><div class="qwi" style="background:var(--pri)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div><div><div class="qwt">Drop into Atlas</div><div class="qws">File, link, or note</div></div></div>
+      <div class="qw"><div class="qwi" style="background:var(--clinical)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><div class="qwt">Log hours</div><div class="qws">Last: 4h Tuesday</div></div></div>
+    </div>
+  </div>
+
+  <!-- ══ 7. QUARTERLY GOALS ═════════════════════════════════════════════ -->
+  <div class="card c4">
+    <div class="hd"><div class="ti sm">Quarterly goals</div></div>
+    <div class="bd" style="gap:11px;justify-content:center">
+      <div><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span>100 clinical hrs</span><b style="font-family:'Baloo 2';color:var(--pri)">72%</b></div><div style="height:8px;border-radius:999px;background:var(--muted);margin-top:5px;overflow:hidden"><div style="height:100%;width:72%;background:var(--clinical);border-radius:999px"></div></div></div>
+      <div><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span>PS draft 3</span><b style="font-family:'Baloo 2';color:var(--pri)">60%</b></div><div style="height:8px;border-radius:999px;background:var(--muted);margin-top:5px;overflow:hidden"><div style="height:100%;width:60%;background:var(--activities);border-radius:999px"></div></div></div>
+      <div><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span>150 Q's / week</span><b style="font-family:'Baloo 2';color:var(--pri)">88%</b></div><div style="height:8px;border-radius:999px;background:var(--muted);margin-top:5px;overflow:hidden"><div style="height:100%;width:88%;background:var(--mcat);border-radius:999px"></div></div></div>
+    </div>
+  </div>
+
+  <!-- ══ 8. RECENT ACTIVITY + QUICK CAPTURE ═════════════════════════════ -->
+  <div class="card c4">
+    <div class="hd"><div class="ti sm">Recent activity</div></div>
+    <div class="bd" style="gap:0">
+      <div class="ac"><div class="ad" style="background:var(--clinical)"></div><div><div class="at">Logged 4 hrs — ER scribe</div><div class="ai">2 hours ago</div></div></div>
+      <div class="ac"><div class="ad" style="background:var(--gpa)"></div><div><div class="at">Chem 262 problem set</div><div class="ai">Yesterday</div></div></div>
+      <div class="ac"><div class="ad" style="background:var(--pri)"></div><div><div class="at">Added Duke SOM</div><div class="ai">2 days ago</div></div></div>
+      <div class="cap" style="margin-top:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Capture a thought…</div>
+    </div>
+  </div>
+
+  <!-- ══ 9. ROADMAP — horizontal spine of milestone CARDS (§6.7) ════════ -->
+  <div class="card rmap c12">
+    <div class="hd">
+      <div class="ti">Premed roadmap</div>
+      <div class="sub">on pace · ahead of conventional timing &nbsp;<span class="lk">Open timeline →</span></div>
+    </div>
+    <div class="bd">
+      <div class="trk">
+        <div class="rline"></div>
+        <div class="mrow">
+          <div class="mile done"><div class="mdot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg></div><div class="mc"><div class="ml">Request LORs</div><div class="md">Done · Jun 2</div><div class="ms">3 of 4 sent</div></div></div>
+          <div class="mile done"><div class="mdot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg></div><div class="mc"><div class="ml">Register MCAT</div><div class="md">Done · Jul 8</div><div class="ms">Sept 12 seat</div></div></div>
+          <div class="mile cur"><div class="mdot"></div><div class="mc"><span class="here">You are here</span><div class="ml">Draft personal statement</div><div class="md">Target · Aug 15</div><div class="ms">Draft 2 of 3 · 22d left</div></div></div>
+          <div class="mile"><div class="mdot"></div><div class="mc"><div class="ml">Open AMCAS</div><div class="md">~ Sep 3</div><div class="ms">Transcript first</div></div></div>
+          <div class="mile"><div class="mdot"></div><div class="mc"><div class="ml">Submit primary</div><div class="md">~ Sep 10</div><div class="ms">12 schools</div></div></div>
+          <div class="mile"><div class="mdot"></div><div class="mc"><div class="ml">Secondaries</div><div class="md">Oct</div><div class="ms">Pre-write in Aug</div></div></div>
+          <div class="mile"><div class="mdot"></div><div class="mc"><div class="ml">Interviews</div><div class="md">Nov–Feb</div><div class="ms">Mock in Oct</div></div></div>
+          <div class="mile"><div class="mdot"></div><div class="mc"><div class="ml">Decisions</div><div class="md">Spring</div><div class="ms">Matriculate '27</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+</body>
+</html>

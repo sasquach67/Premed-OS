@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Premed HQ — Volunteering · Verification Ledger (Session 2)</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#282420; --card:#322d27; --card2:#3a342d; --fg:#ece3d4; --muted-fg:#a89a86;
+    --border:#453e35; --primary:#4b9cd3; --primary-soft:rgba(75,156,211,.16);
+    --accent:#5fb49c; --accent-soft:rgba(95,180,156,.14);   /* --cat-volunteer */
+    --success:#5fb49c; --warning:#e0a458; --destructive:#e26d5c;
+    --shadow:0 1px 2px rgba(0,0,0,.25),0 8px 22px -10px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:Nunito,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .display{font-family:'Baloo 2',cursive;font-variant-numeric:tabular-nums}
+  .wrap{max-width:1120px;margin:0 auto;padding:26px 22px 70px}
+  svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+
+  .titlebar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .titlebar .swatch{width:10px;height:26px;border-radius:5px;background:var(--accent)}
+  .titlebar h1{margin:0;font-family:'Baloo 2';font-size:24px;font-weight:800}
+  .titlebar .sub{color:var(--muted-fg);font-size:12.5px;font-weight:700;margin-left:auto}
+
+  .summary{display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);
+    border-radius:14px;box-shadow:var(--shadow);padding:12px 18px;margin-bottom:14px}
+  .kpi{display:flex;align-items:baseline;gap:7px}
+  .kpi .n{font-family:'Baloo 2';font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+  .kpi .l{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted-fg)}
+  .split{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800}
+  .split .bar{width:130px;height:8px;border-radius:4px;background:var(--card2);overflow:hidden;display:flex}
+  .split .bar i{display:block;height:100%}
+  .pace{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--muted-fg)}
+  .pace b{color:var(--fg)}
+
+  /* ---- THE TOOL: Verification Ledger (AMCAS-formatted) ---- */
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px}
+  .panel h2{margin:0 0 4px;display:flex;align-items:center;gap:8px;font-family:'Baloo 2';font-size:16px;font-weight:800}
+  .panel .hint{font-size:11.5px;font-weight:700;color:var(--muted-fg);margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;font-weight:700}
+  th{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-fg);
+    text-align:left;padding:6px 10px;border-bottom:1px solid var(--border)}
+  td{padding:9px 10px;border-bottom:1px dashed var(--border);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  td .org{font-weight:800;font-size:13px}
+  td .city{color:var(--muted-fg);font-size:11px}
+  .nums{font-variant-numeric:tabular-nums}
+  td .contact{line-height:1.45}
+  td .contact .who{font-weight:800}
+  td .contact .how{color:var(--muted-fg);font-size:11px}
+  .chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:10.5px;font-weight:800;white-space:nowrap}
+  .chip.clin{background:var(--accent-soft);color:var(--accent)}
+  .chip.non{background:rgba(224,164,88,.14);color:var(--warning)}
+  .copy{display:inline-flex;align-items:center;gap:5px;background:var(--primary-soft);color:var(--primary);
+    border:0;border-radius:8px;font:inherit;font-weight:800;font-size:11px;padding:5px 9px;cursor:pointer;white-space:nowrap}
+
+  /* entity cards (catalog, Class-Center style) */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:14px}
+  .ecard{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);
+    padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:6px}
+  .ecard.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow)}
+  .ecard .top{display:flex;align-items:center;gap:8px}
+  .ecard .dot{width:8px;height:8px;border-radius:50%;background:var(--success)}
+  .ecard .dot.amber{background:var(--warning)}
+  .ecard .nm{font-weight:800;font-size:13.5px;flex:1}
+  .ecard .hrs{font-family:'Baloo 2';font-weight:800;font-size:18px;color:var(--accent);font-variant-numeric:tabular-nums}
+  .ecard .meta{font-size:11px;font-weight:700;color:var(--muted-fg)}
+  .ecard.add{border-style:dashed;align-items:center;justify-content:center;color:var(--primary);font-weight:800;font-size:13px;min-height:70px}
+
+  /* workspace (clicked entity) */
+  .workspace{background:var(--card);border:1px solid var(--accent);border-radius:14px;box-shadow:var(--shadow);padding:18px}
+  .hero{display:grid;grid-template-columns:1fr auto;gap:16px;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:15px 17px;margin-bottom:14px}
+  .hero h3{margin:0;font-family:'Baloo 2';font-size:19px;font-weight:800}
+  .hero .meta{display:flex;flex-wrap:wrap;gap:6px 15px;margin-top:7px;font-size:12.5px;font-weight:700;color:var(--muted-fg)}
+  .hero .hours .n{font-family:'Baloo 2';font-size:38px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+  .hero .hours .l{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-fg)}
+  .hero .contact{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px 16px;border-top:1px dashed var(--border);padding-top:10px;
+    font-size:12.5px;font-weight:700;color:var(--muted-fg)}
+  .verifier{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;background:var(--primary-soft);color:var(--primary);border-radius:999px;padding:2px 8px}
+  .lastact{margin-left:auto;color:var(--success);display:inline-flex;gap:6px;align-items:center}
+
+  .mods{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .module{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 15px}
+  .module h4{margin:0 0 10px;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-fg)}
+  .impact{display:flex;gap:10px;flex-wrap:wrap}
+  .fact{flex:1;min-width:100px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 11px}
+  .fact .n{font-family:'Baloo 2';font-size:20px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+  .fact .l{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted-fg)}
+
+  .row{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:9px;font-size:13px;font-weight:700}
+  .row:hover{background:var(--card)}
+  .row .date{color:var(--muted-fg);font-size:11.5px;font-weight:800;width:60px;flex:0 0 auto;font-variant-numeric:tabular-nums}
+  .row .hrs{font-family:'Baloo 2';font-weight:800;color:var(--accent);width:40px;text-align:right;flex:0 0 auto;font-variant-numeric:tabular-nums}
+  .addrow{display:flex;gap:8px;align-items:center;margin-top:8px;background:var(--card);border:1px dashed var(--border);border-radius:10px;padding:7px 10px}
+  .addrow input{background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--fg);font:inherit;font-size:12.5px;font-weight:700;padding:6px 9px;min-width:0}
+  .addrow .go{background:var(--primary);border:0;color:#fff;border-radius:8px;font:inherit;font-weight:800;font-size:12.5px;padding:6px 13px;cursor:pointer}
+  .addrow .prompt{font-size:10.5px;color:var(--muted-fg);font-weight:700}
+
+  .note{max-width:1120px;margin:14px auto 0;padding:0 22px;font-size:11.5px;color:var(--muted-fg);font-weight:600;line-height:1.6}
+  @media(max-width:760px){.mods{grid-template-columns:1fr}.hero{grid-template-columns:1fr}.pace{margin-left:0;width:100%}
+    .panel{overflow-x:auto}.panel table{min-width:760px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="titlebar">
+    <span class="swatch"></span><h1>Volunteering</h1>
+    <span class="sub">audit-ready · the ledger is the tool</span>
+  </div>
+
+  <!-- summary strip: clinical vs non-clinical vs targets + pace -->
+  <div class="summary">
+    <span class="kpi"><span class="n display">230</span><span class="l">total hours</span></span>
+    <span class="split" style="color:var(--accent)">
+      <span>Clinical 138</span>
+      <span class="bar"><i style="width:60%;background:var(--accent)"></i><i style="width:40%;background:var(--warning)"></i></span>
+      <span style="color:var(--warning)">Non-clin 92</span>
+    </span>
+    <span class="kpi"><span class="n display" style="font-size:16px;color:var(--success)">138<span style="color:var(--muted-fg)">/150</span></span><span class="l">clin target</span></span>
+    <span class="kpi"><span class="n display" style="font-size:16px;color:var(--success)">92<span style="color:var(--muted-fg)">/100</span></span><span class="l">non-clin target</span></span>
+    <span class="pace"><b>3.4 hrs/wk</b> → both targets land by <b>Feb 2027</b></span>
+  </div>
+
+  <!-- THE TOOL: Verification Ledger -->
+  <div class="panel">
+    <h2><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg> Verification Ledger</h2>
+    <p class="hint">Formatted the way AMCAS asks for it. One copy button per org at application time.</p>
+    <table>
+      <thead><tr>
+        <th>Organization</th><th class="nums">Total hrs</th><th class="nums">Avg / wk</th><th>Dates</th><th>Contact (verifier)</th><th>Type</th><th></th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="org">UNC Children's Hospital — patient playroom</div><div class="city">Chapel Hill, NC</div></td>
+          <td class="nums display">138</td><td class="nums">3.0</td>
+          <td class="nums">Sep 2025 –<br/>present</td>
+          <td><div class="contact"><div class="who">Marcus Lee · Volunteer Services Coord.</div><div class="how">mlee@unchealth.unc.edu · (984) 974-1136</div></div></td>
+          <td><span class="chip clin">Clinical</span></td>
+          <td><button class="copy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> copy for AMCAS</button></td>
+        </tr>
+        <tr>
+          <td><div class="org">Habitat for Humanity — Orange County</div><div class="city">Chapel Hill, NC</div></td>
+          <td class="nums display">64</td><td class="nums">1.5</td>
+          <td class="nums">Oct 2025 –<br/>present</td>
+          <td><div class="contact"><div class="who">Dana Whitfield · Site Supervisor</div><div class="how">dwhitfield@orangehabitat.org · (919) 932-7077</div></div></td>
+          <td><span class="chip non">Non-clinical</span></td>
+          <td><button class="copy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> copy for AMCAS</button></td>
+        </tr>
+        <tr>
+          <td><div class="org">TABLE — weekend meal packing</div><div class="city">Carrboro, NC</div></td>
+          <td class="nums display">28</td><td class="nums">1.0</td>
+          <td class="nums">Feb 2026 –<br/>present</td>
+          <td><div class="contact"><div class="who">Priya Shah · Program Manager</div><div class="how">priya@tablenc.org · (919) 636-4860</div></div></td>
+          <td><span class="chip non">Non-clinical</span></td>
+          <td><button class="copy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> copy for AMCAS</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- entity catalog (Class-Center pattern): click a card → workspace below -->
+  <div class="cards">
+    <div class="ecard active">
+      <div class="top"><span class="dot"></span><span class="nm">UNC Children's — playroom</span><span class="hrs display">138</span></div>
+      <div class="meta">Clinical · Sat mornings · last logged 5 days ago</div>
+    </div>
+    <div class="ecard">
+      <div class="top"><span class="dot"></span><span class="nm">Habitat for Humanity</span><span class="hrs display">64</span></div>
+      <div class="meta">Non-clinical · build days · last logged 2 weeks ago</div>
+    </div>
+    <div class="ecard">
+      <div class="top"><span class="dot amber"></span><span class="nm">TABLE meal packing</span><span class="hrs display">28</span></div>
+      <div class="meta">Non-clinical · gone quiet 6 weeks — log or archive?</div>
+    </div>
+    <div class="ecard add"><span>+ add organization</span></div>
+  </div>
+
+  <!-- workspace: UNC Children's -->
+  <div class="workspace">
+    <div class="hero">
+      <div>
+        <h3>UNC Children's Hospital — patient playroom</h3>
+        <div class="meta">
+          <span class="chip clin">Clinical</span>
+          <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Sep 2025 – present · Sat 9a–12p</span>
+        </div>
+      </div>
+      <div class="hours"><div class="n display">138</div><div class="l">hours here</div></div>
+      <div class="contact">
+        <span class="verifier">AMCAS verifier</span>
+        <span style="color:var(--fg)">Marcus Lee · Volunteer Services Coordinator</span>
+        <span>mlee@unchealth.unc.edu</span><span>(984) 974-1136</span>
+        <span class="lastact"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> last activity: 5 days ago</span>
+      </div>
+    </div>
+
+    <div class="mods">
+      <div class="module">
+        <h4><svg viewBox="0 0 24 24"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg> Impact numbers <span style="flex:1"></span><span style="color:var(--primary);font-size:11px;cursor:pointer">edit</span></h4>
+        <div class="impact">
+          <div class="fact"><div class="n display">~310</div><div class="l">patient visits</div></div>
+          <div class="fact"><div class="n display">46</div><div class="l">shifts</div></div>
+          <div class="fact"><div class="n display">4</div><div class="l">event days run</div></div>
+        </div>
+      </div>
+      <div class="module">
+        <h4><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Notes</h4>
+        <div style="font-size:12.5px;font-weight:600;color:var(--muted-fg);line-height:1.55">
+          Charge nurse (5E) knows me by name — ask Marcus about the teen-lounge pilot in August.
+          Isolation-room protocol retrained Jun 14.
+        </div>
+      </div>
+    </div>
+
+    <div class="module" style="background:transparent;border:0;padding:0">
+      <h4><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Hours log</h4>
+      <div class="row"><span class="date">Jul 12</span><span>Playroom + two bedside visits (5E)</span><span style="margin-left:auto" class="hrs display">3.0</span></div>
+      <div class="row"><span class="date">Jul 5</span><span>Playroom · craft table · sibling support</span><span style="margin-left:auto" class="hrs display">3.0</span></div>
+      <div class="row"><span class="date">Jun 28</span><span>Family movie night setup + run</span><span style="margin-left:auto" class="hrs display">4.0</span></div>
+      <div class="addrow">
+        <input style="width:92px" value="Jul 19" /><input style="width:52px" placeholder="hrs" />
+        <input style="flex:1" placeholder="what did you do? who did it help? (numbers make AMCAS descriptions)" />
+        <button class="go">Log</button>
+      </div>
+      <div class="prompt" style="margin-top:6px;font-size:10.5px;color:var(--muted-fg);font-weight:700">Impact prompt at log time: “how many patients/people today?” — keeps descriptions concrete.</div>
+    </div>
+  </div>
+</div>
+
+<div class="note"><b>380px:</b> ledger table scrolls horizontally inside its panel (min-width 760px); entity cards stack 1-col; summary split bar wraps.
+The ledger is the pillar's landing centerpiece; card click swaps the workspace below (Class-Center pattern).</div>
+</body>
+</html>

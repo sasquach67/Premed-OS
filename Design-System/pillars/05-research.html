@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Premed HQ — Research · Outputs Table (Session 5)</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#282420; --card:#322d27; --card2:#3a342d; --fg:#ece3d4; --muted-fg:#a89a86;
+    --border:#453e35; --primary:#4b9cd3; --primary-soft:rgba(75,156,211,.16);
+    --accent:#c98ac9; --accent-soft:rgba(201,138,201,.15);   /* --cat-research */
+    --success:#5fb49c; --warning:#e0a458; --destructive:#e26d5c;
+    --shadow:0 1px 2px rgba(0,0,0,.25),0 8px 22px -10px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:Nunito,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .display{font-family:'Baloo 2',cursive;font-variant-numeric:tabular-nums}
+  .wrap{max-width:1120px;margin:0 auto;padding:26px 22px 70px}
+  svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+
+  .titlebar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .titlebar .swatch{width:10px;height:26px;border-radius:5px;background:var(--accent)}
+  .titlebar h1{margin:0;font-family:'Baloo 2';font-size:24px;font-weight:800}
+  .titlebar .sub{color:var(--muted-fg);font-size:12.5px;font-weight:700;margin-left:auto}
+
+  .summary{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);
+    border-radius:14px;box-shadow:var(--shadow);padding:12px 18px;margin-bottom:14px}
+  .kpi{display:flex;align-items:baseline;gap:7px}
+  .kpi .n{font-family:'Baloo 2';font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+  .kpi .l{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted-fg)}
+  /* outputs-by-status mini legend as the pillar's "one graphic" */
+  .statusbar{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800}
+  .sb{display:inline-flex;align-items:center;gap:5px;color:var(--muted-fg)}
+  .sb .d{width:9px;height:9px;border-radius:2px}
+
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px}
+  .panel h2{margin:0 0 4px;display:flex;align-items:center;gap:8px;font-family:'Baloo 2';font-size:16px;font-weight:800}
+  .panel .hint{font-size:11.5px;font-weight:700;color:var(--muted-fg);margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;font-weight:700}
+  th{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-fg);text-align:left;padding:6px 10px;border-bottom:1px solid var(--border)}
+  td{padding:10px;border-bottom:1px dashed var(--border);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  .title{font-weight:800;font-size:13px}
+  .venue{color:var(--muted-fg);font-size:11px}
+  .nums{font-variant-numeric:tabular-nums}
+  /* status chips = pipeline stages (a table, not a kanban) */
+  .st{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 10px;font-size:10.5px;font-weight:800;white-space:nowrap}
+  .st.idea{background:var(--card2);color:var(--muted-fg)}
+  .st.submitted{background:var(--primary-soft);color:var(--primary)}
+  .st.accepted{background:rgba(224,164,88,.16);color:var(--warning)}
+  .st.presented{background:rgba(95,180,156,.15);color:var(--success)}
+  .deadline{font-weight:800}
+  .deadline.soon{color:var(--warning)}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-bottom:14px}
+  .ecard{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px;cursor:pointer}
+  .ecard.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow)}
+  .ecard .nm{font-weight:800;font-size:13.5px}
+  .ecard .pi{font-size:11px;font-weight:700;color:var(--muted-fg);margin-top:3px}
+  .ecard .foot{display:flex;align-items:center;gap:8px;margin-top:9px}
+  .ecard .foot .h{font-family:'Baloo 2';font-weight:800;font-size:17px;color:var(--accent);font-variant-numeric:tabular-nums}
+  .ecard .foot .o{font-size:11px;font-weight:800;color:var(--muted-fg)}
+  .ecard.add{border-style:dashed;display:grid;place-items:center;color:var(--primary);font-weight:800;font-size:13px;min-height:84px}
+
+  .workspace{background:var(--card);border:1px solid var(--accent);border-radius:14px;box-shadow:var(--shadow);padding:18px}
+  .hero{display:grid;grid-template-columns:1fr auto;gap:16px;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:15px 17px;margin-bottom:14px}
+  .hero h3{margin:0;font-family:'Baloo 2';font-size:19px;font-weight:800}
+  .hero .meta{display:flex;flex-wrap:wrap;gap:6px 15px;margin-top:7px;font-size:12.5px;font-weight:700;color:var(--muted-fg)}
+  .hero .hours .n{font-family:'Baloo 2';font-size:38px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+  .hero .hours .l{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-fg)}
+  .hero .pline{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px 16px;border-top:1px dashed var(--border);padding-top:10px;font-size:12.5px;font-weight:700;color:var(--muted-fg)}
+  .verifier{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;background:var(--primary-soft);color:var(--primary);border-radius:999px;padding:2px 8px}
+
+  .mods{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .module{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 15px}
+  .module h4{margin:0 0 10px;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-fg)}
+  .module h4 .grow{flex:1}
+  .mini{font-size:11px;font-weight:800;color:var(--primary);cursor:pointer}
+
+  /* meeting log w/ running to-discuss */
+  .mtg{padding:8px 0;border-bottom:1px dashed var(--border);font-size:12.5px;font-weight:700}
+  .mtg:last-child{border:0}
+  .mtg .d{color:var(--muted-fg);font-size:11px;font-weight:800;font-variant-numeric:tabular-nums}
+  .mtg .body{margin-top:2px;font-weight:600;color:var(--fg)}
+  .todisc{margin-top:4px;display:flex;flex-direction:column;gap:3px}
+  .todisc .t{display:flex;gap:7px;align-items:center;font-size:12px;font-weight:700;color:var(--muted-fg)}
+  .todisc .box{width:13px;height:13px;border-radius:4px;border:1.5px solid var(--muted-fg)}
+  .todisc .box.on{background:var(--success);border-color:var(--success)}
+
+  .row{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:9px;font-size:13px;font-weight:700}
+  .row:hover{background:var(--card)}
+  .row .date{color:var(--muted-fg);font-size:11.5px;font-weight:800;width:60px;flex:0 0 auto;font-variant-numeric:tabular-nums}
+  .row .hrs{font-family:'Baloo 2';font-weight:800;color:var(--accent);width:40px;text-align:right;flex:0 0 auto;font-variant-numeric:tabular-nums}
+  .addrow{display:flex;gap:8px;align-items:center;margin-top:8px;background:var(--card);border:1px dashed var(--border);border-radius:10px;padding:7px 10px}
+  .addrow input{background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--fg);font:inherit;font-size:12.5px;font-weight:700;padding:6px 9px;min-width:0}
+  .addrow .go{background:var(--primary);border:0;color:#fff;border-radius:8px;font:inherit;font-weight:800;font-size:12.5px;padding:6px 13px;cursor:pointer}
+
+  .note{max-width:1120px;margin:14px auto 0;padding:0 22px;font-size:11.5px;color:var(--muted-fg);font-weight:600;line-height:1.6}
+  @media(max-width:760px){.mods{grid-template-columns:1fr}.hero{grid-template-columns:1fr}.statusbar{margin-left:0;width:100%}
+    .panel{overflow-x:auto}.panel table{min-width:720px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="titlebar">
+    <span class="swatch"></span><h1>Research</h1>
+    <span class="sub">turning time into lines on a CV</span>
+  </div>
+
+  <div class="summary">
+    <span class="kpi"><span class="n display">2</span><span class="l">labs / projects</span></span>
+    <span class="kpi"><span class="n display">248</span><span class="l">total hours</span></span>
+    <span class="kpi"><span class="n display">5</span><span class="l">outputs</span></span>
+    <span class="statusbar">
+      <span class="sb"><span class="d" style="background:var(--muted-fg)"></span>idea 1</span>
+      <span class="sb"><span class="d" style="background:var(--primary)"></span>submitted 2</span>
+      <span class="sb"><span class="d" style="background:var(--warning)"></span>accepted 1</span>
+      <span class="sb"><span class="d" style="background:var(--success)"></span>presented 1</span>
+    </span>
+  </div>
+
+  <!-- THE TOOL: Outputs table (a table w/ status chips, NOT a kanban) -->
+  <div class="panel">
+    <h2><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Outputs</h2>
+    <p class="hint">Every poster, abstract, talk, and paper as a row — the thing adcoms actually count.</p>
+    <table>
+      <thead><tr><th>Title</th><th>Type</th><th>Venue</th><th>Deadline</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="title">Astrocyte Ca²⁺ signaling after mild TBI</div><div class="venue">Kwon Lab · first author</div></td>
+          <td>Poster</td><td>UNC Neuroscience Symposium</td>
+          <td class="nums"><span class="deadline">presented</span></td>
+          <td><span class="st presented"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Presented · Apr 2026</span></td>
+        </tr>
+        <tr>
+          <td><div class="title">Same, extended cohort (n=42)</div><div class="venue">Kwon Lab · co-author</div></td>
+          <td>Abstract</td><td>Society for Neuroscience 2026</td>
+          <td class="nums"><span class="deadline">accepted</span></td>
+          <td><span class="st accepted">Accepted · present Nov</span></td>
+        </tr>
+        <tr>
+          <td><div class="title">Microglial morphology pipeline (methods)</div><div class="venue">Kwon Lab · co-author</div></td>
+          <td>Paper</td><td>J. Neurotrauma (under review)</td>
+          <td class="nums"><span class="deadline">submitted</span></td>
+          <td><span class="st submitted">Submitted · Jun 2026</span></td>
+        </tr>
+        <tr>
+          <td><div class="title">EMS pre-hospital data retrospective</div><div class="venue">Health Policy lab · lead</div></td>
+          <td>Abstract</td><td>NC Health Research Day</td>
+          <td class="nums"><span class="deadline soon">due Sep 15</span></td>
+          <td><span class="st submitted">Submitted · Jul 2026</span></td>
+        </tr>
+        <tr>
+          <td><div class="title">Prehospital stroke recognition review</div><div class="venue">Health Policy lab · lead</div></td>
+          <td>Talk</td><td>undecided</td>
+          <td class="nums"><span class="deadline soon">draft by Oct 1</span></td>
+          <td><span class="st idea">Idea</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- lab/project catalog -->
+  <div class="cards">
+    <div class="ecard active">
+      <div class="nm">Kwon Lab — TBI neuroinflammation</div>
+      <div class="pi">PI: Dr. Sarah Kwon · UNC Neuroscience Center</div>
+      <div class="foot"><span class="h display">196</span><span class="o">· 4 outputs · since Jun 2025</span></div>
+    </div>
+    <div class="ecard">
+      <div class="nm">Health Policy — EMS outcomes</div>
+      <div class="pi">PI: Dr. Alan Reyes · Sheps Center</div>
+      <div class="foot"><span class="h display">52</span><span class="o">· 1 output · since Feb 2026</span></div>
+    </div>
+    <div class="ecard add"><span>+ add lab / project</span></div>
+  </div>
+
+  <!-- workspace: Kwon Lab -->
+  <div class="workspace">
+    <div class="hero">
+      <div>
+        <h3>Kwon Lab — TBI neuroinflammation</h3>
+        <div class="meta">
+          <span><svg viewBox="0 0 24 24"><path d="M9 2v6l-5 9a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-9V2"/><path d="M9 2h6"/></svg> Wet lab · confocal imaging + behavior</span>
+          <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Jun 2025 – present · ~6 hrs/wk</span>
+        </div>
+      </div>
+      <div class="hours"><div class="n display">196</div><div class="l">hours here</div></div>
+      <div class="pline">
+        <span class="verifier">AMCAS verifier</span>
+        <span style="color:var(--fg)">Dr. Sarah Kwon · Principal Investigator</span>
+        <span>skwon@neuro.unc.edu · (919) 966-1029</span>
+        <span style="margin-left:auto">4 outputs · 1 first-author poster</span>
+      </div>
+    </div>
+
+    <div class="mods">
+      <!-- meeting log with running to-discuss -->
+      <div class="module">
+        <h4><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> Meetings with PI <span class="grow"></span><span class="mini">+ log</span></h4>
+        <div class="mtg">
+          <span class="d">Jul 10 · 1:1</span>
+          <div class="body">Agreed I lead the SfN poster figures. She wants n bumped before submission.</div>
+        </div>
+        <div class="mtg">
+          <span class="d">To discuss next time</span>
+          <div class="todisc">
+            <span class="t"><span class="box on"></span> ask about authorship order on the methods paper</span>
+            <span class="t"><span class="box"></span> confocal time conflict w/ Tue clinicals</span>
+            <span class="t"><span class="box"></span> summer stipend / work-study paperwork</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- lab notebook / hours -->
+      <div class="module">
+        <h4><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Lab notebook / hours <span class="grow"></span><span class="mini">all →</span></h4>
+        <div class="row"><span class="date">Jul 11</span><span>Confocal — 6 slices, GFAP+Iba1 co-stain</span><span style="margin-left:auto" class="hrs display">5.0</span></div>
+        <div class="row"><span class="date">Jul 8</span><span>ImageJ morphology batch + QC</span><span style="margin-left:auto" class="hrs display">4.0</span></div>
+        <div class="row"><span class="date">Jul 3</span><span>Perfusions + tissue collection (n=4)</span><span style="margin-left:auto" class="hrs display">6.0</span></div>
+        <div class="addrow">
+          <input style="width:88px" value="Jul 14" /><input style="width:48px" placeholder="hrs" />
+          <input style="flex:1" placeholder="what you did in lab" />
+          <button class="go">Log</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note"><b>380px:</b> outputs table scrolls in-panel (min-width 720px); project cards + modules stack. Status chips are the pipeline — no kanban board.
+Deadlines surface on the Timeline/Home deadline ladder. First-author flag carries into the AMCAS Activities Builder.</div>
+</body>
+</html>

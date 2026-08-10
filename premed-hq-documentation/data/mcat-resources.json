@@ -1,0 +1,612 @@
+{
+  "meta": {
+    "category": "B \u2014 opinionated community consensus (NOT factual reference data)",
+    "producedBy": "Merged: ChatGPT (31-resource Reddit-weighted synthesis, base) + Claude synthesis + Andy's cues. Two independent Reddit-weighted passes CONVERGED on all consensus tiers. Then a Claude verification sweep: corrected AnKing cost (free V2 vs paid AnkiHub), added the Khan Academy 2026 availability caveat, and added two resources both prior passes missed \u2014 MCAT Bootcamp and Sketchy MCAT. Added `usageNuance` (specific, actionable how-to-use detail, Jack-Westin-caliber) to the highest-value resources.",
+    "retrievedAt": "2026-07-22",
+    "convergenceNote": "Claude and ChatGPT independently produced the same tier placements (AAMC/UWorld-QBank/Khan/MilesDown/Pankow = near-universal; Jack Westin/Kaplan/Princeton-books/third-party-FLs = debated). Agreement on opinion data = strong consensus signal.",
+    "trustRule": "Present as community consensus WITH the debate intact \u2014 never HQ's factual verdict (architecture/02 trust separation). Opinions shift; a guide, not truth.",
+    "studyModel": "Community consensus: MCAT prep is two repeating phases \u2014 content review and practice questions; most high scorers use only 3\u20135 core resources. AAMC is the most representative material and many 'double' it (redo AAMC questions).",
+    "sources": [
+      "https://www.reddit.com/r/Mcat/",
+      "https://forums.studentdoctor.net/",
+      "https://thematchguy.com/mcat-resources-ranked-by-score/"
+    ],
+    "freshness": {
+      "refreshCadence": "annual / as opinions shift",
+      "reason": "Community opinion is volatile; resources get added, retired, or fall out of favor",
+      "sourceToMonitor": "https://www.reddit.com/r/Mcat/",
+      "lastVerified": "2026-07-22",
+      "reviewBy": "2027-07-01",
+      "churn": "medium (opinion)"
+    }
+  },
+  "resources": [
+    {
+      "id": "aamc-complete-bundle",
+      "name": "AAMC Official Prep Bundle",
+      "purpose": [
+        "practice",
+        "cars",
+        "full-length"
+      ],
+      "cost": "paid",
+      "consensusTier": "near-universal",
+      "championedBy": "High scorers treat official materials as the final authority for question style, logic, and calibration.",
+      "critique": "Explanations are terse, some science QPacks feel easier or older, and starting too late can prevent deep review.",
+      "communityNote": "Closest available match to the test; review every answer, including correct guesses.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/e5290b/how_long_to_give_aamc_materials_when_working_full/",
+        "https://forums.studentdoctor.net/threads/mcat-resource-by-section-list.1406972/",
+        "https://forums.studentdoctor.net/threads/what-are-the-best-resources-to-study-for-the-mcat.1499679/"
+      ],
+      "usageNuance": "'Doubling' the AAMC means pass 1 timed for practice, pass 2 UNTIMED reviewing every answer choice \u2014 why each wrong option is wrong. The untimed second review is where the points actually come from, not the raw score."
+    },
+    {
+      "id": "aamc-full-lengths",
+      "name": "AAMC Full-Length Practice Exams",
+      "purpose": [
+        "full-length",
+        "practice"
+      ],
+      "cost": "paid",
+      "consensusTier": "near-universal",
+      "championedBy": "Used for late-stage benchmarking, pacing, endurance, and final weakness identification.",
+      "critique": "Retakes can be inflated by memory, forms vary, and some recent examinees report stranger or harder test-day sections.",
+      "communityNote": "The most trusted score predictor, but not a guarantee.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/e5290b/how_long_to_give_aamc_materials_when_working_full/",
+        "https://www.reddit.com/r/Mcat/comments/1td7ki0/051426_mcat/",
+        "https://forums.studentdoctor.net/threads/mcat-resource-by-section-list.1406972/"
+      ]
+    },
+    {
+      "id": "aamc-section-bank",
+      "name": "AAMC Section Bank",
+      "purpose": [
+        "practice"
+      ],
+      "cost": "paid",
+      "consensusTier": "near-universal",
+      "championedBy": "Praised for hard experimental reasoning, graph analysis, and passage dissection.",
+      "critique": "It can be demoralizing and may overrepresent the hardest material; timed versus untimed use is debated.",
+      "communityNote": "Depth of review matters more than raw percentage.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/e5290b/how_long_to_give_aamc_materials_when_working_full/",
+        "https://forums.studentdoctor.net/threads/mcat-resource-by-section-list.1406972/"
+      ],
+      "usageNuance": "Scores here run deflated and it's B/B- and experimental-reasoning-heavy. Do it UNTIMED first to learn the reasoning style; treat a low % as normal, not a red flag."
+    },
+    {
+      "id": "aamc-question-packs",
+      "name": "AAMC Question Packs",
+      "purpose": [
+        "practice",
+        "cars"
+      ],
+      "cost": "paid",
+      "consensusTier": "near-universal",
+      "championedBy": "Used for official-style repetition, foundational review, and CARS logic.",
+      "critique": "Science packs are often considered easier and less current than Section Banks or FLs.",
+      "communityNote": "Common sequence: QPacks before Section Banks.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/e5290b/how_long_to_give_aamc_materials_when_working_full/",
+        "https://forums.studentdoctor.net/threads/mcat-resource-by-section-list.1406972/"
+      ]
+    },
+    {
+      "id": "aamc-cars-qpack",
+      "name": "AAMC CARS Question Packs",
+      "purpose": [
+        "cars",
+        "practice"
+      ],
+      "cost": "paid",
+      "consensusTier": "near-universal",
+      "championedBy": "Prioritized because they teach the test maker's standards for author intent, support, analogy, and inference.",
+      "critique": "Some passages are unusually difficult and explanations remain brief.",
+      "communityNote": "Third-party CARS builds stamina; AAMC defines the logic.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/e5290b/how_long_to_give_aamc_materials_when_working_full/",
+        "https://forums.studentdoctor.net/threads/mcat-resource-by-section-list.1406972/"
+      ]
+    },
+    {
+      "id": "uworld-qbank",
+      "name": "UWorld MCAT QBank",
+      "purpose": [
+        "practice",
+        "content-review"
+      ],
+      "cost": "paid",
+      "consensusTier": "near-universal",
+      "championedBy": "Championed for active learning, volume, diagrams, and explanations that double as targeted review.",
+      "critique": "Expensive, often harder and more detailed than AAMC, percentages do not map cleanly to scores, and CARS is frequently skipped.",
+      "communityNote": "The most common first choice when buying one major third-party practice resource.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/1k0oq0c/broke_and_studying_for_the_mcat_uworld_or/",
+        "https://www.reddit.com/r/Mcat/comments/ms5bon/best_practice_passage_material/",
+        "https://forums.studentdoctor.net/threads/what-are-the-best-resources-to-study-for-the-mcat.1499679/",
+        "https://forums.studentdoctor.net/threads/uworld-mcat.1355256/",
+        "https://www.redwoodmcat.com/blog/how-good-is-uworld-cars",
+        "https://forums.studentdoctor.net/threads/uworld-percentages.1402813/"
+      ],
+      "usageNuance": "Two specifics: (1) UWorld percentages run ~10\u201320% BELOW your real AAMC score \u2014 a 55\u201360% is normal, it's not predictive, so don't panic. (2) Contrary to the common 'skip UWorld CARS' myth, UWorld CARS is actually the closest third-party to AAMC's logic \u2014 it's worth doing. The explanations are the real value; review them like content."
+    },
+    {
+      "id": "uworld-books",
+      "name": "UWorld MCAT Textbooks",
+      "purpose": [
+        "content-review"
+      ],
+      "cost": "paid",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "Liked for visuals and tight integration with the QBank.",
+      "critique": "Newer and less community-tested than Kaplan; may duplicate learning from QBank explanations.",
+      "communityNote": "Promising, but not yet as established as UWorld's QBank.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/",
+        "https://forums.studentdoctor.net/threads/what-are-the-best-resources-to-study-for-the-mcat.1499679/"
+      ]
+    },
+    {
+      "id": "kaplan-books",
+      "name": "Kaplan MCAT Complete Review Books",
+      "purpose": [
+        "content-review"
+      ],
+      "cost": "paid",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "Default structured review set; organized, comprehensive, available used, and easy to pair with Anki.",
+      "critique": "Passive reading is slow, detail can exceed test needs, and passage practice is weak without another bank.",
+      "communityNote": "Skim strengths, read weaknesses, and start questions early.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/ms5bon/best_practice_passage_material/",
+        "https://www.reddit.com/r/Mcat/comments/e5290b/how_long_to_give_aamc_materials_when_working_full/",
+        "https://forums.studentdoctor.net/threads/mcat-practice-materials.1405615/",
+        "https://forums.studentdoctor.net/threads/mcat-study-buddy-mega-thread.1378673/",
+        "https://forums.studentdoctor.net/threads/are-kaplan-books-bad.1239332/",
+        "https://www.redwoodmcat.com/blog/which-books-you-should-get-to-study-for-the-mcat"
+      ],
+      "usageNuance": "Use Kaplan books for CONTENT, but its Psych/Soc is widely considered mediocre \u2014 do psych/soc from Khan Academy + the Pankow doc instead. Use Kaplan for learning, AAMC for score prediction; don't rely on Kaplan's own tests to predict your score."
+    },
+    {
+      "id": "princeton-review-books",
+      "name": "The Princeton Review MCAT Books",
+      "purpose": [
+        "content-review"
+      ],
+      "cost": "paid",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "Favored by students who need more teaching and explanation than a concise review set.",
+      "critique": "Dense and time-consuming; may pull students into excessive detail.",
+      "communityNote": "Usually selected instead of Kaplan, not alongside it.",
+      "communitySources": [
+        "https://forums.studentdoctor.net/threads/uworld-mcat.1355256/",
+        "https://forums.studentdoctor.net/threads/mcat-study-buddy-mega-thread.1378673/",
+        "https://forums.studentdoctor.net/threads/mcat-practice-materials.1405615/"
+      ]
+    },
+    {
+      "id": "examkrackers-books",
+      "name": "Examkrackers MCAT Complete Study Package",
+      "purpose": [
+        "content-review"
+      ],
+      "cost": "paid",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "Recommended for concise, test-focused review when the science foundation is already strong.",
+      "critique": "Can be too compressed for major gaps and is less dominant than Kaplan plus UWorld.",
+      "communityNote": "Best fit for shorter timelines or stronger prerequisite backgrounds.",
+      "communitySources": [
+        "https://forums.studentdoctor.net/threads/mcat-study-buddy-mega-thread.1378673/",
+        "https://forums.studentdoctor.net/threads/mcat-resource-by-section-list.1406972/"
+      ]
+    },
+    {
+      "id": "berkeley-review",
+      "name": "The Berkeley Review Books and Passages",
+      "purpose": [
+        "content-review",
+        "practice"
+      ],
+      "cost": "paid",
+      "consensusTier": "niche",
+      "championedBy": "A committed minority praises huge volumes of hard, topic-sorted science passages.",
+      "critique": "Bulky, old-fashioned, difficult to obtain, and often overkill.",
+      "communityNote": "Cult favorite for extreme science passage volume.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/ms5bon/best_practice_passage_material/",
+        "https://forums.studentdoctor.net/threads/mcat-study-buddy-mega-thread.1378673/"
+      ]
+    },
+    {
+      "id": "khan-academy",
+      "name": "Khan Academy MCAT Collection",
+      "purpose": [
+        "content-review",
+        "practice"
+      ],
+      "cost": "free",
+      "consensusTier": "near-universal",
+      "championedBy": "Used to repair specific gaps, especially Psych/Soc, with accessible videos linked to the AAMC outline.",
+      "critique": "Quality and depth vary, and passive watching can create false confidence. Availability caveat: currently free and active, but its future past 2026 is uncertain \u2014 Khan Academy is in ongoing talks with AAMC to extend, no guaranteed timeline. Verify before relying on it long-term.",
+      "communityNote": "Usually used selectively rather than front to back.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/e5290b/how_long_to_give_aamc_materials_when_working_full/",
+        "https://www.reddit.com/r/Mcat/comments/1unhw8j/486_on_my_first_fl_after_content_review/",
+        "https://forums.studentdoctor.net/threads/list-of-free-mcat-resources-2026-2027.1519162/",
+        "https://forums.studentdoctor.net/threads/mcat-study-buddy-mega-thread.1378673/",
+        "https://support.khanacademy.org/hc/en-us/community/posts/4411586016909-Update-MCAT-is-staying-on-Khan-Academy-for-5-more-years"
+      ]
+    },
+    {
+      "id": "psych-soc-300-page-doc",
+      "name": "Khan Academy 300-Page Psych/Soc Document",
+      "purpose": [
+        "content-review"
+      ],
+      "cost": "free",
+      "consensusTier": "near-universal",
+      "championedBy": "Treated as the comprehensive community transcription of KA Psych/Soc.",
+      "critique": "Long, repetitive, unofficial, and easy to read passively.",
+      "communityNote": "Often paired with Mr. Pankow rather than used alone.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/e5290b/how_long_to_give_aamc_materials_when_working_full/",
+        "https://forums.studentdoctor.net/threads/mcat-study-buddy-mega-thread.1378673/",
+        "https://www.reddit.com/r/Mcat/comments/mcbi38/ps_term_differences_document/"
+      ]
+    },
+    {
+      "id": "psych-soc-86-page-doc",
+      "name": "Condensed 86-Page Psych/Soc Document",
+      "purpose": [
+        "content-review"
+      ],
+      "cost": "free",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "Popular on short timelines for rapid term review.",
+      "critique": "Omits nuance and lower-frequency content; weak as a sole source for beginners.",
+      "communityNote": "A speed alternative, not a universal replacement.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/",
+        "https://www.reddit.com/r/AnkiMCAT/",
+        "https://forums.studentdoctor.net/threads/list-of-free-mcat-resources-2026-2027.1519162/"
+      ]
+    },
+    {
+      "id": "milesdown-anki",
+      "name": "MilesDown Anki Deck",
+      "purpose": [
+        "spaced-repetition",
+        "content-review"
+      ],
+      "cost": "free",
+      "consensusTier": "near-universal",
+      "championedBy": "Recommended for concise, image-rich cloze cards and manageable workload.",
+      "critique": "Can be recognition-heavy, shallow, and incomplete as a primary learning source.",
+      "communityNote": "The efficiency-oriented deck for shorter timelines.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/e5290b/how_long_to_give_aamc_materials_when_working_full/",
+        "https://forums.studentdoctor.net/threads/list-of-free-mcat-resources-2026-2027.1519162/",
+        "https://forums.studentdoctor.net/threads/what-are-the-best-resources-to-study-for-the-mcat.1499679/",
+        "https://www.reddit.com/r/AnkiMCAT/",
+        "https://forums.studentdoctor.net/threads/anki-deck-recs.1499896/"
+      ],
+      "usageNuance": "Cloze/recognition format is efficient but builds RECOGNITION, not always recall or application \u2014 it can create false confidence ('I knew that') without being able to reason it on a passage. Pair Anki with passage practice; don't let deck completion stand in for practice."
+    },
+    {
+      "id": "anking-mcat",
+      "name": "AnKing MCAT Deck",
+      "purpose": [
+        "spaced-repetition",
+        "content-review"
+      ],
+      "cost": "free (V2) / paid (AnkiHub sync)",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "Viewed as a tagged, maintained, better-organized evolution of MilesDown.",
+      "critique": "Subscription access, card bloat, and cloze-recognition concerns remain. Nuance: the V2 deck downloads FREE; only the maintained, tagged version needs a paid AnkiHub subscription (ChatGPT listed it as flatly paid).",
+      "communityNote": "A polished MilesDown ecosystem rather than a different philosophy.",
+      "communitySources": [
+        "https://forums.studentdoctor.net/threads/what-are-the-best-resources-to-study-for-the-mcat.1499679/",
+        "https://www.reddit.com/r/AnkiMCAT/",
+        "https://forums.studentdoctor.net/threads/anki-deck-recs.1499896/"
+      ]
+    },
+    {
+      "id": "jacksparrow-anki",
+      "name": "JackSparrow Anki Deck",
+      "purpose": [
+        "spaced-repetition",
+        "content-review"
+      ],
+      "cost": "free",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "Favored for broad coverage and open-ended active recall.",
+      "critique": "Very large, verbose, and capable of crowding out passage practice.",
+      "communityNote": "Depth over efficiency; best for long timelines or weaker foundations.",
+      "communitySources": [
+        "https://forums.studentdoctor.net/threads/what-are-the-best-resources-to-study-for-the-mcat.1499679/",
+        "https://www.reddit.com/r/AnkiMCAT/"
+      ]
+    },
+    {
+      "id": "mr-pankow-anki",
+      "name": "Mr. Pankow Psych/Soc Anki Deck",
+      "purpose": [
+        "spaced-repetition",
+        "content-review"
+      ],
+      "cost": "free",
+      "consensusTier": "near-universal",
+      "championedBy": "Frequently treated as the default dedicated Psych/Soc deck.",
+      "critique": "Large and repetitive; cards alone do not train newer research-heavy P/S passages.",
+      "communityNote": "Pair with passage analysis rather than using it alone.",
+      "communitySources": [
+        "https://forums.studentdoctor.net/threads/list-of-free-mcat-resources-2026-2027.1519162/",
+        "https://forums.studentdoctor.net/threads/what-are-the-best-resources-to-study-for-the-mcat.1499679/",
+        "https://www.reddit.com/r/AnkiMCAT/",
+        "https://www.reddit.com/r/Mcat/comments/1td7ki0/051426_mcat/"
+      ]
+    },
+    {
+      "id": "self-made-anki",
+      "name": "Self-Made Error and Content-Gap Anki Cards",
+      "purpose": [
+        "spaced-repetition",
+        "meta"
+      ],
+      "cost": "free",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "Personal cards from misses are relevant, memorable, and targeted.",
+      "critique": "Creation is slow and poor card design or unseen gaps can limit coverage.",
+      "communityNote": "Common hybrid: premade base plus personal missed-question cards.",
+      "communitySources": [
+        "https://forums.studentdoctor.net/threads/what-are-the-best-resources-to-study-for-the-mcat.1499679/",
+        "https://www.reddit.com/r/Mcat/comments/1unhw8j/486_on_my_first_fl_after_content_review/"
+      ]
+    },
+    {
+      "id": "jack-westin-cars",
+      "name": "Jack Westin Daily CARS",
+      "purpose": [
+        "cars",
+        "practice"
+      ],
+      "cost": "free",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "Popular for daily volume, timing habits, and reading stamina.",
+      "critique": "Many users find its logic inconsistent or more speculative than AAMC. Specifically: its reasoning/inference runs further than AAMC CARS, which leans on the author's belief/intent and analogy \u2014 use Jack Westin for volume, calibrate to AAMC for the real style.",
+      "communityNote": "Common advice: Jack Westin for reps, AAMC CARS QP for the real feel.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/1k0oq0c/broke_and_studying_for_the_mcat_uworld_or/",
+        "https://forums.studentdoctor.net/threads/mcat-resource-by-section-list.1406972/",
+        "https://forums.studentdoctor.net/threads/what-are-the-best-resources-to-study-for-the-mcat.1499679/"
+      ]
+    },
+    {
+      "id": "jack-westin-science-qbank",
+      "name": "Jack Westin Science Question Bank",
+      "purpose": [
+        "practice"
+      ],
+      "cost": "free",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "One of the broadest free banks and useful when UWorld is unaffordable.",
+      "critique": "Quality and representativeness vary by topic and remain below AAMC/UWorld.",
+      "communityNote": "Strong budget supplement, weak official-calibration substitute.",
+      "communitySources": [
+        "https://forums.studentdoctor.net/threads/what-are-the-best-resources-to-study-for-the-mcat.1499679/",
+        "https://www.reddit.com/r/Mcat/comments/1unhw8j/486_on_my_first_fl_after_content_review/",
+        "https://www.reddit.com/r/Mcat/comments/1k0oq0c/broke_and_studying_for_the_mcat_uworld_or/"
+      ]
+    },
+    {
+      "id": "examkrackers-101-cars",
+      "name": "Examkrackers 101 Verbal/CARS Passages",
+      "purpose": [
+        "cars",
+        "practice"
+      ],
+      "cost": "paid",
+      "consensusTier": "niche",
+      "championedBy": "Used for concentrated passage volume, timing, and hard reading practice.",
+      "critique": "Much predates the current exam and logic may differ from AAMC.",
+      "communityNote": "Legacy volume resource, not modern logic authority.",
+      "communitySources": [
+        "https://forums.studentdoctor.net/threads/mcat-resource-by-section-list.1406972/",
+        "https://forums.studentdoctor.net/threads/mcat-study-buddy-mega-thread.1378673/"
+      ]
+    },
+    {
+      "id": "testing-solutions-cars",
+      "name": "Testing Solutions CARS Materials",
+      "purpose": [
+        "cars",
+        "practice",
+        "meta"
+      ],
+      "cost": "paid",
+      "consensusTier": "niche",
+      "championedBy": "Liked by students wanting explicit passage mapping and a systematic routine.",
+      "critique": "Others find it rigid, time-consuming, or mismatched to natural reading.",
+      "communityNote": "A strategy system, not a consensus requirement.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/",
+        "https://forums.studentdoctor.net/threads/mcat-resource-by-section-list.1406972/"
+      ]
+    },
+    {
+      "id": "blueprint-full-lengths",
+      "name": "Blueprint MCAT Full-Length Exams",
+      "purpose": [
+        "full-length",
+        "practice"
+      ],
+      "cost": "paid",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "Useful for diagnostics, analytics, pacing, and endurance before AAMC exams.",
+      "critique": "Scores and logic can be deflated or inconsistent; CARS is often criticized.",
+      "communityNote": "Training exams, not trusted like AAMC for prediction.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/1k0oq0c/broke_and_studying_for_the_mcat_uworld_or/",
+        "https://www.reddit.com/r/Mcat/comments/e5290b/how_long_to_give_aamc_materials_when_working_full/",
+        "https://forums.studentdoctor.net/threads/mcat-resource-by-section-list.1406972/"
+      ],
+      "usageNuance": "Use third-party FLs for STAMINA and to rehearse your review process \u2014 not score prediction. Their C/P skews more calculation-heavy and CARS less representative than AAMC; only AAMC FLs predict your score."
+    },
+    {
+      "id": "altius-full-lengths",
+      "name": "Altius Full-Length Exams",
+      "purpose": [
+        "full-length",
+        "practice"
+      ],
+      "cost": "paid",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "Praised for difficult B/B and C/P experimental passage practice.",
+      "critique": "CARS/P/S are less representative and difficulty can distort confidence.",
+      "communityNote": "Chosen for hard science training rather than score prediction.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/",
+        "https://forums.studentdoctor.net/threads/mcat-study-buddy-mega-thread.1378673/",
+        "https://forums.studentdoctor.net/threads/mcat-resource-by-section-list.1406972/"
+      ]
+    },
+    {
+      "id": "kaplan-full-lengths",
+      "name": "Kaplan Full-Length Exams",
+      "purpose": [
+        "full-length",
+        "practice"
+      ],
+      "cost": "paid",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "Commonly bundled with books and useful for stamina and exposing gaps.",
+      "critique": "Often described as content-heavy, deflated, and less representative.",
+      "communityNote": "Use misses diagnostically; do not treat scaled score as destiny.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/e5290b/how_long_to_give_aamc_materials_when_working_full/",
+        "https://forums.studentdoctor.net/threads/mcat-practice-materials.1405615/",
+        "https://forums.studentdoctor.net/threads/mcat-study-buddy-mega-thread.1378673/"
+      ]
+    },
+    {
+      "id": "princeton-full-lengths",
+      "name": "The Princeton Review Full-Length Exams",
+      "purpose": [
+        "full-length",
+        "practice"
+      ],
+      "cost": "paid",
+      "consensusTier": "niche",
+      "championedBy": "Used for difficulty and endurance, especially within purchased courses.",
+      "critique": "Often harshly scaled, overly detailed, and less representative than AAMC.",
+      "communityNote": "Usually a course-included resource, not a first standalone purchase.",
+      "communitySources": [
+        "https://forums.studentdoctor.net/threads/mcat-study-buddy-mega-thread.1378673/",
+        "https://forums.studentdoctor.net/threads/mcat-practice-materials.1405615/"
+      ]
+    },
+    {
+      "id": "r-mcat-wiki",
+      "name": "r/MCAT Wiki and Resource Compilations",
+      "purpose": [
+        "meta",
+        "content-review",
+        "practice"
+      ],
+      "cost": "free",
+      "consensusTier": "near-universal",
+      "championedBy": "Used for schedules, explanations, equations, score writeups, and comparisons.",
+      "critique": "Advice is anecdotal, survivorship-biased, inconsistent, and sometimes outdated.",
+      "communityNote": "Use to identify patterns, not replace official materials or diagnostics.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/",
+        "https://forums.studentdoctor.net/threads/list-of-free-mcat-resources-2026-2027.1519162/"
+      ]
+    },
+    {
+      "id": "high-scorer-writeups",
+      "name": "High-Scorer Study Writeups and Schedules",
+      "purpose": [
+        "meta"
+      ],
+      "cost": "free",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "Useful for concrete workflows, review systems, and resource combinations.",
+      "critique": "Highly individualized and distorted by selection bias, prior background, and hidden time advantages.",
+      "communityNote": "Borrow workflow ideas, not exact calendars or score promises.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/",
+        "https://forums.studentdoctor.net/threads/mcat-study-buddy-mega-thread.1378673/"
+      ]
+    },
+    {
+      "id": "ak-lectures",
+      "name": "AK Lectures",
+      "purpose": [
+        "content-review"
+      ],
+      "cost": "free",
+      "consensusTier": "niche",
+      "championedBy": "Praised for clear, detailed biology and biochemistry explanations.",
+      "critique": "Depth can exceed MCAT needs and organization is not a complete MCAT course.",
+      "communityNote": "Excellent targeted remediation, inefficient front to back.",
+      "communitySources": [
+        "https://forums.studentdoctor.net/threads/list-of-free-mcat-resources-2026-2027.1519162/",
+        "https://forums.studentdoctor.net/threads/uworld-mcat.1355256/"
+      ]
+    },
+    {
+      "id": "science-simplified",
+      "name": "Science Simplified",
+      "purpose": [
+        "content-review"
+      ],
+      "cost": "free",
+      "consensusTier": "niche",
+      "championedBy": "Used by students with weak chemistry, physics, or biochemistry for intuitive relearning.",
+      "critique": "Community evidence is thinner than for Khan Academy and watching remains passive without questions.",
+      "communityNote": "A targeted explainer channel, not a core requirement.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/comments/1unhw8j/486_on_my_first_fl_after_content_review/"
+      ]
+    },
+    {
+      "id": "mcat-bootcamp",
+      "name": "MCAT Bootcamp",
+      "purpose": [
+        "content-review",
+        "practice",
+        "spaced-repetition"
+      ],
+      "cost": "paid",
+      "consensusTier": "widely-used-debated",
+      "championedBy": "Fast-rising content platform \u2014 animated lessons, integrated Anki, and practice. Community framing: 'Bootcamp teaches you while UWorld tests you' \u2014 used during study years to learn the material.",
+      "critique": "Newer than UWorld/AAMC and less battle-tested; its practice questions are seen as less representative than AAMC, so it's paired with UWorld/AAMC for real practice. Paid subscription.",
+      "communityNote": "Current consensus pairing: Bootcamp to learn, UWorld + AAMC to test.",
+      "communitySources": [
+        "https://gradschool.uworld.com/mcat/best-mcat-prep-courses/",
+        "https://www.iatrox.com/compare/uworld-vs-bootcamp"
+      ],
+      "addedBy": "Claude verification sweep (missed by both prior passes)"
+    },
+    {
+      "id": "sketchy-mcat",
+      "name": "Sketchy MCAT",
+      "purpose": [
+        "content-review"
+      ],
+      "cost": "paid",
+      "consensusTier": "niche",
+      "championedBy": "Visual-mnemonic tool some use for memorization-heavy pockets \u2014 amino acids, psych/soc terms, select biochem.",
+      "critique": "Polarizing: many find the story-based method a time sink for the MCAT (more valued for Step exams), and it doesn't replace content review. Community weight is thinner than the core tools \u2014 treat as optional.",
+      "communityNote": "Used selectively for rote-memorization areas, not as primary content review.",
+      "communitySources": [
+        "https://www.reddit.com/r/Mcat/ (Sketchy discussion; consensus thinner)"
+      ],
+      "addedBy": "Claude verification sweep",
+      "confidence": "lower \u2014 sourcing thinner than core resources"
+    }
+  ]
+}

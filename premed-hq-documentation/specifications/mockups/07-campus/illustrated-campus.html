@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus — the illustrated surface (fork C)</title>
+<!--
+  ============================================================================
+  CAMPUS - ILLUSTRATED SVG SURFACE   "fork C"   (Aug 2026)
+  ============================================================================
+  Status: REJECTED, and correctly. Board: specifications/07-campus-layer-board.md
+  This exists to answer one question Andy asked: "mock up what you're trying
+  to say, I'm not picking up what you're putting down."
+
+  IT DID ITS JOB BY BEING REJECTED. Andy, on seeing it:
+    "while it is nice to see, I just don't know the practical use of it...
+     this should be more of a feature just for extracurriculars... a prospect
+     of events that HQ sees and is like 'oh, this event you could probably
+     go to.' It thinks about logistics, like walking there."
+  The campus SURFACE is dead (board 2d). What replaced it is EV-1, event
+  prospecting, living in Extracurriculars > Discover. A student does not open
+  an app to see where their own commitments are - they already know.
+
+  KEEP THIS FILE. Two things in it survived and are still the reference:
+   . FRAME 2's detail panel - "what you have here, across pillars, every row
+     a deep link" - is the shape of the building marker on an event card.
+   . The right rail's tight-connection row is EV-1 in miniature: the value
+     was never the picture, it was the number.
+  DO NOT rebuild frame 1 as a surface.
+
+  THE ARGUMENT IN ONE LINE
+  A drawing of campus is not a map engine. It is an SVG. So the "Hay Day"
+  feel - a place you inhabit where every object is live - costs no tile
+  provider, no MapLibre, no Protomaps, no API key, and works offline.
+
+  THE THREE FORKS (board 2c). This mocks up C.
+   A. Places list      - no picture. Cheap. Answers questions, shows no shape.
+   B. Rendered plot    - MapLibre + Protomaps. Accurate. Looks like Google
+                         Maps wearing HQ's chrome.
+   C. Illustrated SVG  - THIS. Buildings are clickable <path>s. Your records
+                         live on it. Fully themeable. Looks like HQ.
+
+  WHAT IS DELIBERATELY NOT HERE
+   . Wayfinding. UNC's Concept3D map does directions, ADA routes, parking,
+     and does them better than we ever would. Every building here carries
+     "Open in UNC maps" - a deep link to map.concept3d.com/?id=111#!m/<id>
+     (board 2b). We do "what do I have here". They do "how do I get there".
+   . Geographic accuracy. This is a depiction, not a survey. If you need
+     to navigate, the deep link is right there.
+   . Off-campus. A Durham practice cannot live on a drawing of Chapel Hill.
+     It goes in the "further afield" strip - see the right rail.
+
+  TWO LOCKED RULES THIS COLLIDES WITH - both flagged on the board, neither
+  quietly ignored:
+   1. 04 limits the graphic vocabulary to stacked bars, progress pills,
+      status chips, heatmaps, ring gauges. An illustrated campus is none
+      of those and needs an explicit written exception.
+   2. 04 s10 bans decorative metaphor - which is why the Life at UNC
+      whiteboard was rejected. THE DEFENCE: a drawing of the actual campus
+      is a depiction, not a metaphor. The whiteboard pretended to be an
+      object it was not. This is the real place, drawn.
+
+  DESIGN CONFORMANCE (04 s0c, the one that got v1-v3 of other mockups
+  rejected): banner hero present . glass strip floating over it . layered
+  depth, nested panels, real shadows . Baloo 2 + Nunito only . warm dark
+  tokens . motion on every interactive element . no emoji, no flat boxes.
+  Per 0a this file is a FLOW reference; the app's own components are the
+  visual law.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#282420; --card:#322d27; --bd:#423a32; --muted:#2c2823;
+  --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --pri:#4b9cd3;
+  --cat-gpa:#4b9cd3; --cat-mcat:#8c7bd4; --cat-shadow:#e0a458;
+  --cat-volunteer:#5fb49c; --cat-activities:#e08b9b; --cat-clinical:#6fae6e;
+  --cat-research:#c98ac9; --cat-letters:#d59b6a;
+  --success:#6fc0a8; --warning:#e7b06a;
+  --lawn:#3f4a34; --lawn2:#495438; --roof:#5b4c40; --roofTop:#6d5b4b;
+  --path:#4a4139; --water:#3a4a52;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.frame{width:1180px;margin:0 auto 30px;padding:24px;background:var(--bg);border-radius:20px}
+.flabel{width:1180px;margin:0 auto 10px;padding:0 26px;font-family:'Baloo 2';font-weight:800;font-size:12px;
+  color:var(--dim);text-transform:uppercase;letter-spacing:.09em}
+.note{width:1180px;margin:0 auto 26px;padding:0 26px;font-size:13.5px;color:var(--mut);max-width:1000px}
+.note b{color:var(--fg)}
+
+/* HERO BANNER - 04 s0c: every tab gets one */
+.hero{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--bd);height:172px;
+  padding:20px 22px;display:flex;flex-direction:column;justify-content:space-between;
+  background:
+    radial-gradient(170px 150px at 88% 16%,rgba(233,206,150,.40),transparent 70%),
+    radial-gradient(300px 200px at 10% 128%,rgba(75,156,211,.30),transparent 70%),
+    linear-gradient(118deg,#2e3b46 0%,#46584f 40%,#7d6a52 76%,#c39a5c 100%)}
+.hill{position:absolute;left:0;right:0;bottom:-2px;height:88px;
+  background:linear-gradient(180deg,transparent,rgba(28,20,16,.60));border-radius:50% 50% 0 0/100% 100% 0 0}
+.hz{position:relative;z-index:2}
+.hdate{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.78)}
+.hgreet{font-family:'Baloo 2';font-weight:800;font-size:30px;color:#fff;letter-spacing:-.4px;margin-top:3px;
+  text-shadow:0 3px 16px rgba(0,0,0,.4)}
+.hsub{font-size:13px;font-weight:700;color:rgba(255,255,255,.70);margin-top:4px}
+.hrow{display:flex;gap:10px;margin-top:auto;align-items:flex-end;position:relative;z-index:2}
+.glass{background:rgba(26,20,17,.42);backdrop-filter:blur(18px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.15);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 20px 44px -24px rgba(0,0,0,.65);border-radius:13px}
+.gstat{padding:9px 15px}
+.gstat .k{font-family:'Baloo 2';font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.gstat .v{font-family:'Baloo 2';font-weight:800;font-size:19px;color:#fff;line-height:1.15;margin-top:1px}
+.gstat .v em{font-style:normal;font-size:12px;font-weight:700;color:rgba(255,255,255,.6)}
+.gseg{display:flex;padding:4px;gap:3px;margin-left:auto}
+.gseg button{padding:7px 14px;font-family:'Baloo 2';font-weight:700;font-size:12.5px;color:rgba(255,255,255,.68);
+  background:none;border:0;cursor:pointer;border-radius:9px;transition:.16s cubic-bezier(.16,1,.3,1)}
+.gseg button:hover{color:#fff;background:rgba(255,255,255,.08)}
+.gseg button.on{background:#fff;color:#1b2831;font-weight:800}
+
+/* BODY */
+.body{display:grid;grid-template-columns:1fr 316px;gap:16px;margin-top:16px}
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:15px;
+  box-shadow:0 18px 38px -26px rgba(0,0,0,.7)}
+.ptitle{display:flex;align-items:center;gap:9px;padding:13px 16px 0}
+.ptitle h3{margin:0;font-family:'Baloo 2';font-weight:800;font-size:15px;color:var(--fg)}
+.ptitle .cnt{font-size:11.5px;font-weight:800;color:var(--dim);margin-left:auto;font-family:'Baloo 2';letter-spacing:.05em}
+
+/* the drawing */
+.stage{position:relative;margin:11px;border-radius:12px;overflow:hidden;border:1px solid #3a332c;
+  background:linear-gradient(165deg,#2f2a24,#272319)}
+svg.map{display:block;width:100%;height:auto}
+.bldg{cursor:pointer;transition:transform .18s cubic-bezier(.16,1,.3,1)}
+.bldg:hover{transform:translateY(-2.5px)}
+.bldg:hover .top{filter:brightness(1.22)}
+.top{transition:filter .18s ease}
+.pin{cursor:pointer;transform-origin:center bottom;transition:transform .2s cubic-bezier(.16,1,.3,1)}
+.pin:hover{transform:translateY(-3px) scale(1.06)}
+.lbl{font-family:'Baloo 2';font-weight:700;font-size:9.5px;fill:#b8ab99;letter-spacing:.02em;pointer-events:none}
+.lbl.big{font-size:11px;fill:#d3c7b4}
+.zone{font-family:'Baloo 2';font-weight:800;font-size:10px;fill:#6c6154;letter-spacing:.16em;pointer-events:none}
+@keyframes pulse{0%,100%{opacity:.16;r:19}50%{opacity:.42;r:25}}
+.live{animation:pulse 2.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.live{animation:none;opacity:.28}}
+
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:6px;padding:0 13px 13px}
+.lg{display:flex;align-items:center;gap:6px;padding:5px 10px;background:var(--muted);border:1px solid var(--bd);
+  border-radius:999px;font-size:11.5px;font-weight:700;color:var(--mut);cursor:pointer;
+  transition:.16s cubic-bezier(.16,1,.3,1)}
+.lg:hover{color:var(--fg);border-color:#544a3f;transform:translateY(-1px)}
+.lg i{width:8px;height:8px;border-radius:50%;display:block}
+.lg.off{opacity:.42}
+
+/* right rail */
+.rail{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;align-items:flex-start;padding:10px 13px;border-top:1px solid #3a332c;
+  cursor:pointer;transition:.16s cubic-bezier(.16,1,.3,1)}
+.row:hover{background:#37312a}
+.row:first-of-type{border-top:0}
+.dot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:none}
+.row .t{font-family:'Baloo 2';font-weight:700;font-size:13.5px;color:var(--fg);line-height:1.25}
+.row .s{font-size:11.5px;color:var(--dim);font-weight:600;margin-top:2px}
+.row .r{margin-left:auto;font-size:11px;font-weight:800;color:var(--mut);font-family:'Baloo 2';white-space:nowrap;margin-top:3px}
+.warnrow{background:rgba(231,176,106,.09);border-left:3px solid var(--warning);border-radius:0}
+.warnrow .t{color:#f0c98d}
+
+/* the building detail - glass, floats over the drawing */
+.detail{position:absolute;left:18px;bottom:18px;width:330px;padding:15px 16px;z-index:5}
+.detail .eye{font-family:'Baloo 2';font-size:9.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--cat-clinical)}
+.detail h4{margin:2px 0 1px;font-family:'Baloo 2';font-weight:800;font-size:19px;color:#fff;letter-spacing:-.2px}
+.detail .sub{font-size:11.5px;font-weight:700;color:rgba(255,255,255,.55)}
+.dl{margin-top:11px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;gap:8px}
+.di{display:flex;gap:9px;align-items:center;cursor:pointer;transition:.15s ease}
+.di:hover{transform:translateX(2px)}
+.di .sw{width:3px;height:26px;border-radius:2px;flex:none}
+.di .a{font-size:12.5px;font-weight:700;color:rgba(255,255,255,.92);line-height:1.2}
+.di .b{font-size:11px;color:rgba(255,255,255,.5);font-weight:600;margin-top:1px}
+.di .go{margin-left:auto;font-size:14px;color:rgba(255,255,255,.34);font-weight:700}
+.dact{display:flex;gap:7px;margin-top:12px}
+.btn{flex:1;padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);
+  color:#fff;font-family:'Baloo 2';font-weight:700;font-size:12px;cursor:pointer;text-align:center;
+  transition:.16s cubic-bezier(.16,1,.3,1)}
+.btn:hover{background:rgba(255,255,255,.14);transform:translateY(-1px)}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#0f2330;font-weight:800}
+.btn.pri:hover{background:#5aa9de}
+
+.foot{width:1180px;margin:0 auto;padding:16px 26px 40px;font-size:12px;color:var(--dim);line-height:1.6}
+.foot b{color:var(--mut)}
+</style>
+</head>
+<body>
+
+<div class="flabel">Frame 1 · Campus — the surface</div>
+
+<div class="frame">
+  <div class="hero">
+    <div class="hill"></div>
+    <div class="hz">
+      <div class="hdate">Thursday, 6 August</div>
+      <div class="hgreet">Campus</div>
+      <div class="hsub">Where your commitments actually are</div>
+    </div>
+    <div class="hrow">
+      <div class="glass gstat"><div class="k">Your places</div><div class="v">14</div></div>
+      <div class="glass gstat"><div class="k">Travel this week</div><div class="v">3h 20m</div></div>
+      <div class="glass gstat"><div class="k">Happening tonight</div><div class="v">2 <em>nearby</em></div></div>
+      <div class="glass gseg">
+        <button class="on">Campus</button>
+        <button>Further afield</button>
+        <button>List</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="panel">
+      <div class="ptitle"><h3>Your campus</h3><span class="cnt">11 ON CAMPUS · 3 FURTHER AFIELD</span></div>
+
+      <div class="stage">
+      <svg class="map" viewBox="0 0 780 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustrated map of UNC campus with your records pinned to buildings">
+
+        <rect x="0" y="0" width="780" height="500" fill="#2b2620"/>
+
+        <!-- lawns -->
+        <rect x="168" y="96" width="176" height="182" rx="7" fill="var(--lawn)"/>
+        <rect x="176" y="104" width="160" height="166" rx="5" fill="var(--lawn2)" opacity=".55"/>
+        <rect x="424" y="252" width="120" height="66" rx="7" fill="var(--lawn)" opacity=".8"/>
+        <ellipse cx="596" cy="118" rx="54" ry="34" fill="var(--lawn)" opacity=".6"/>
+
+        <!-- paths -->
+        <path d="M0 62 H780" stroke="#514639" stroke-width="9" fill="none" opacity=".8"/>
+        <path d="M0 300 H780" stroke="var(--path)" stroke-width="7" fill="none"/>
+        <path d="M256 62 V300" stroke="var(--path)" stroke-width="5" fill="none"/>
+        <path d="M256 300 C240 350 200 366 150 378" stroke="var(--path)" stroke-width="6" fill="none"/>
+        <path d="M404 62 V300" stroke="var(--path)" stroke-width="4" fill="none" opacity=".7"/>
+        <path d="M560 300 V420" stroke="var(--path)" stroke-width="4" fill="none" opacity=".7"/>
+        <text class="zone" x="12" y="52">FRANKLIN ST</text>
+        <text class="zone" x="12" y="292">SOUTH RD</text>
+        <text class="zone" x="86" y="352" transform="rotate(-24 86 352)">MANNING DR</text>
+
+        <!-- ============ NORTH CAMPUS ============ -->
+        <text class="zone" x="196" y="88">NORTH CAMPUS</text>
+
+        <!-- Old Well -->
+        <g class="bldg"><ellipse cx="256" cy="132" rx="13" ry="7" fill="#4a4136"/>
+          <circle class="top" cx="256" cy="126" r="9" fill="#8d7a61"/>
+          <circle cx="256" cy="126" r="4.5" fill="#2f2a23"/>
+          <text class="lbl" x="256" y="150" text-anchor="middle">Old Well</text></g>
+
+        <!-- Wilson Library -->
+        <g class="bldg"><rect x="196" y="234" width="120" height="40" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="196" y="228" width="120" height="40" rx="4" fill="var(--roofTop)"/>
+          <rect x="240" y="216" width="32" height="14" rx="3" fill="#7d6a58"/>
+          <text class="lbl big" x="256" y="253" text-anchor="middle">Wilson Library</text></g>
+
+        <!-- west row -->
+        <g class="bldg"><rect x="96" y="118" width="60" height="52" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="96" y="112" width="60" height="52" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl" x="126" y="142" text-anchor="middle">Caudill</text>
+          <text class="lbl" x="126" y="153" text-anchor="middle">Labs</text></g>
+        <g class="bldg"><rect x="96" y="188" width="60" height="46" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="96" y="182" width="60" height="46" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl" x="126" y="209" text-anchor="middle">Murray</text></g>
+        <g class="bldg"><rect x="96" y="250" width="60" height="40" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="96" y="244" width="60" height="40" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl" x="126" y="268" text-anchor="middle">Genome</text>
+          <text class="lbl" x="126" y="279" text-anchor="middle">Sciences</text></g>
+
+        <!-- east row -->
+        <g class="bldg"><rect x="356" y="118" width="52" height="48" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="356" y="112" width="52" height="48" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl" x="382" y="140" text-anchor="middle">South</text>
+          <text class="lbl" x="382" y="151" text-anchor="middle">Bldg</text></g>
+        <g class="bldg"><rect x="356" y="192" width="52" height="44" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="356" y="186" width="52" height="44" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl" x="382" y="212" text-anchor="middle">Bingham</text></g>
+
+        <!-- Union / Pit -->
+        <text class="zone" x="452" y="88">THE PIT</text>
+        <g class="bldg"><rect x="446" y="110" width="86" height="58" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="446" y="104" width="86" height="58" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl big" x="489" y="130" text-anchor="middle">Student</text>
+          <text class="lbl big" x="489" y="143" text-anchor="middle">Union</text></g>
+        <g class="bldg"><rect x="446" y="186" width="60" height="40" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="446" y="180" width="60" height="40" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl" x="476" y="204" text-anchor="middle">Campus Y</text></g>
+        <g class="bldg"><rect x="522" y="186" width="46" height="40" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="522" y="180" width="46" height="40" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl" x="545" y="204" text-anchor="middle">Lenoir</text></g>
+
+        <!-- Davis -->
+        <g class="bldg"><rect x="596" y="128" width="80" height="62" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="596" y="122" width="80" height="62" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl big" x="636" y="150" text-anchor="middle">Davis</text>
+          <text class="lbl big" x="636" y="163" text-anchor="middle">Library</text></g>
+
+        <!-- Kenan Stadium -->
+        <g class="bldg"><ellipse cx="484" cy="378" rx="76" ry="46" fill="var(--roof)"/>
+          <ellipse class="top" cx="484" cy="372" rx="76" ry="46" fill="var(--roofTop)"/>
+          <ellipse cx="484" cy="372" rx="48" ry="25" fill="var(--lawn2)"/>
+          <text class="lbl" x="484" y="376" text-anchor="middle">Kenan Stadium</text></g>
+
+        <!-- ============ HEALTH AFFAIRS ============ -->
+        <text class="zone" x="66" y="330">HEALTH AFFAIRS</text>
+        <g class="bldg"><rect x="60" y="344" width="132" height="76" rx="5" fill="#5a4a3e"/>
+          <rect class="top" x="60" y="337" width="132" height="76" rx="5" fill="#6f5c4c"/>
+          <rect x="72" y="349" width="108" height="8" rx="2" fill="#8a7663" opacity=".5"/>
+          <text class="lbl big" x="126" y="376" text-anchor="middle">UNC Hospitals</text>
+          <text class="lbl" x="126" y="390" text-anchor="middle">Memorial · Children's</text></g>
+        <g class="bldg"><rect x="208" y="344" width="58" height="44" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="208" y="338" width="58" height="44" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl" x="237" y="364" text-anchor="middle">MacNider</text></g>
+        <g class="bldg"><rect x="282" y="344" width="58" height="44" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="282" y="338" width="58" height="44" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl" x="311" y="364" text-anchor="middle">Berryhill</text></g>
+        <g class="bldg"><rect x="208" y="404" width="132" height="40" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="208" y="398" width="132" height="40" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl" x="274" y="422" text-anchor="middle">Bondurant Hall</text></g>
+
+        <!-- trees -->
+        <g fill="#3d4a33" opacity=".85">
+          <circle cx="180" cy="112" r="7"/><circle cx="332" cy="112" r="7"/>
+          <circle cx="180" cy="188" r="6"/><circle cx="332" cy="188" r="6"/>
+          <circle cx="180" cy="258" r="7"/><circle cx="332" cy="258" r="7"/>
+          <circle cx="426" cy="272" r="8"/><circle cx="540" cy="272" r="8"/>
+          <circle cx="596" cy="230" r="7"/><circle cx="700" cy="200" r="9"/>
+          <circle cx="60" cy="100" r="8"/><circle cx="722" cy="330" r="10"/>
+          <circle cx="380" cy="470" r="9"/><circle cx="640" cy="450" r="8"/>
+        </g>
+
+        <!-- ============ YOUR PINS ============ -->
+        <!-- clinical: UNC Hospitals -->
+        <g class="pin"><circle class="live" cx="126" cy="330" r="19" fill="var(--cat-clinical)" opacity=".2"/>
+          <path d="M126 314 c-9 0-16 7-16 16 0 11 16 24 16 24 s16-13 16-24 c0-9-7-16-16-16z" fill="var(--cat-clinical)"/>
+          <circle cx="126" cy="330" r="6" fill="#20301f"/></g>
+        <!-- shadowing: MacNider -->
+        <g class="pin"><path d="M237 322 c-8 0-14 6-14 14 0 10 14 21 14 21 s14-11 14-21 c0-8-6-14-14-14z" fill="var(--cat-shadow)"/>
+          <circle cx="237" cy="336" r="5" fill="#2f2416"/></g>
+        <!-- research: Genome Sciences -->
+        <g class="pin"><path d="M126 226 c-8 0-14 6-14 14 0 10 14 21 14 21 s14-11 14-21 c0-8-6-14-14-14z" fill="var(--cat-research)"/>
+          <circle cx="126" cy="240" r="5" fill="#2c1f2c"/></g>
+        <!-- classes: Caudill -->
+        <g class="pin"><path d="M126 92 c-8 0-14 6-14 14 0 10 14 21 14 21 s14-11 14-21 c0-8-6-14-14-14z" fill="var(--cat-gpa)"/>
+          <circle cx="126" cy="106" r="5" fill="#122430"/></g>
+        <!-- ECs: Student Union -->
+        <g class="pin"><circle class="live" cx="489" cy="88" r="19" fill="var(--cat-activities)" opacity=".2"/>
+          <path d="M489 74 c-8 0-14 6-14 14 0 10 14 21 14 21 s14-11 14-21 c0-8-6-14-14-14z" fill="var(--cat-activities)"/>
+          <circle cx="489" cy="88" r="5" fill="#331f26"/></g>
+        <!-- volunteering: Campus Y -->
+        <g class="pin"><path d="M476 164 c-8 0-14 6-14 14 0 10 14 21 14 21 s14-11 14-21 c0-8-6-14-14-14z" fill="var(--cat-volunteer)"/>
+          <circle cx="476" cy="178" r="5" fill="#16302a"/></g>
+        <!-- classes: Davis -->
+        <g class="pin"><path d="M636 104 c-8 0-14 6-14 14 0 10 14 21 14 21 s14-11 14-21 c0-8-6-14-14-14z" fill="var(--cat-gpa)"/>
+          <circle cx="636" cy="118" r="5" fill="#122430"/></g>
+      </svg>
+      </div>
+
+      <div class="legend">
+        <span class="lg"><i style="background:var(--cat-gpa)"></i>Classes · 4</span>
+        <span class="lg"><i style="background:var(--cat-clinical)"></i>Clinical · 1</span>
+        <span class="lg"><i style="background:var(--cat-shadow)"></i>Shadowing · 2</span>
+        <span class="lg"><i style="background:var(--cat-research)"></i>Research · 1</span>
+        <span class="lg"><i style="background:var(--cat-volunteer)"></i>Volunteering · 1</span>
+        <span class="lg"><i style="background:var(--cat-activities)"></i>Extracurriculars · 2</span>
+        <span class="lg off"><i style="background:var(--warning)"></i>Flyer events · 2</span>
+      </div>
+    </div>
+
+    <div class="rail">
+      <div class="panel">
+        <div class="ptitle"><h3>Today</h3></div>
+        <div style="height:9px"></div>
+        <div class="row"><span class="dot" style="background:var(--cat-gpa)"></span>
+          <div><div class="t">CHEM 262</div><div class="s">Caudill Labs 0100 · 9:05</div></div><div class="r">now</div></div>
+        <div class="row"><span class="dot" style="background:var(--cat-clinical)"></span>
+          <div><div class="t">ED volunteer shift</div><div class="s">UNC Hospitals · 1:00</div></div><div class="r">18 min</div></div>
+        <div class="row warnrow"><span class="dot" style="background:var(--warning)"></span>
+          <div><div class="t">Tight connection</div><div class="s">CHEM 262 ends 12:15. Walk is 18 min.</div></div></div>
+      </div>
+
+      <div class="panel">
+        <div class="ptitle"><h3>Happening tonight</h3><span class="cnt">FROM FLYERS</span></div>
+        <div style="height:9px"></div>
+        <div class="row"><span class="dot" style="background:var(--cat-activities)"></span>
+          <div><div class="t">MEDLIFE interest meeting</div><div class="s">Union 3411 · 6:30 · you're 4 min away</div></div></div>
+        <div class="row"><span class="dot" style="background:var(--cat-research)"></span>
+          <div><div class="t">Undergrad RA info session</div><div class="s">Genome Sciences G100 · 7:00</div></div></div>
+      </div>
+
+      <div class="panel">
+        <div class="ptitle"><h3>Further afield</h3><span class="cnt">NOT ON CAMPUS</span></div>
+        <div style="height:9px"></div>
+        <div class="row"><span class="dot" style="background:var(--cat-shadow)"></span>
+          <div><div class="t">Duke Family Medicine</div><div class="s">Durham · Dr. Reyes</div></div><div class="r">34 min</div></div>
+        <div class="row"><span class="dot" style="background:var(--cat-volunteer)"></span>
+          <div><div class="t">TABLE</div><div class="s">Carrboro</div></div><div class="r">21 min</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note"><b>Frame 1.</b> The drawing is the surface, but it is not the only thing on it — the right rail
+answers the questions a picture cannot. Note the tight-connection row: <b>that is the feature</b>, and it needed
+locations, not a map. Two pins pulse because something is happening there tonight.</div>
+
+<div class="flabel">Frame 2 · A building, clicked</div>
+
+<div class="frame">
+  <div class="panel" style="max-width:820px">
+    <div class="ptitle"><h3>Your campus</h3><span class="cnt">UNC HOSPITALS SELECTED</span></div>
+    <div class="stage" style="min-height:392px">
+      <svg class="map" viewBox="0 40 470 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="UNC Hospitals selected on the illustrated campus map">
+        <rect x="0" y="0" width="470" height="500" fill="#2b2620"/>
+        <path d="M0 60 H470" stroke="var(--path)" stroke-width="7" fill="none"/>
+        <path d="M120 60 C104 110 64 126 14 138" stroke="var(--path)" stroke-width="6" fill="none"/>
+        <text class="zone" x="14" y="52">SOUTH RD</text>
+        <text class="zone" x="28" y="96">HEALTH AFFAIRS</text>
+
+        <g class="bldg"><rect x="24" y="112" width="132" height="76" rx="5" fill="#6a5546"/>
+          <rect class="top" x="24" y="105" width="132" height="76" rx="5" fill="#8a7159"/>
+          <rect x="36" y="117" width="108" height="8" rx="2" fill="#a58e73" opacity=".55"/>
+          <text class="lbl big" x="90" y="144" text-anchor="middle" style="fill:#f0e6d6">UNC Hospitals</text>
+          <text class="lbl" x="90" y="158" text-anchor="middle">Memorial · Children's</text></g>
+        <g class="bldg"><rect x="176" y="112" width="58" height="44" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="176" y="106" width="58" height="44" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl" x="205" y="132" text-anchor="middle">MacNider</text></g>
+        <g class="bldg"><rect x="252" y="112" width="58" height="44" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="252" y="106" width="58" height="44" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl" x="281" y="132" text-anchor="middle">Berryhill</text></g>
+        <g class="bldg"><rect x="176" y="172" width="134" height="40" rx="4" fill="var(--roof)"/>
+          <rect class="top" x="176" y="166" width="134" height="40" rx="4" fill="var(--roofTop)"/>
+          <text class="lbl" x="243" y="190" text-anchor="middle">Bondurant Hall</text></g>
+        <g fill="#3d4a33" opacity=".85"><circle cx="352" cy="120" r="9"/><circle cx="386" cy="176" r="8"/>
+          <circle cx="340" cy="230" r="10"/><circle cx="60" cy="232" r="8"/></g>
+
+        <g class="pin"><circle class="live" cx="90" cy="98" r="21" fill="var(--cat-clinical)" opacity=".24"/>
+          <path d="M90 80 c-10 0-18 8-18 18 0 12 18 27 18 27 s18-15 18-27 c0-10-8-18-18-18z" fill="var(--cat-clinical)"/>
+          <circle cx="90" cy="98" r="7" fill="#20301f"/></g>
+        <g class="pin"><path d="M205 90 c-8 0-14 6-14 14 0 10 14 21 14 21 s14-11 14-21 c0-8-6-14-14-14z" fill="var(--cat-shadow)"/>
+          <circle cx="205" cy="104" r="5" fill="#2f2416"/></g>
+      </svg>
+
+      <div class="detail glass">
+        <div class="eye">UNC Hospitals</div>
+        <h4>101 Manning Drive</h4>
+        <div class="sub">18 min walk from Caudill · Health Affairs</div>
+        <div class="dl">
+          <div class="di"><span class="sw" style="background:var(--cat-clinical)"></span>
+            <div><div class="a">ED volunteer</div><div class="b">Tuesdays 1:00–5:00 · 84 hours logged</div></div>
+            <span class="go">›</span></div>
+          <div class="di"><span class="sw" style="background:var(--cat-shadow)"></span>
+            <div><div class="a">Dr. Patel · cardiology</div><div class="b">3 visits · last 12 June</div></div>
+            <span class="go">›</span></div>
+          <div class="di"><span class="sw" style="background:var(--cat-letters)"></span>
+            <div><div class="a">Dr. Patel — letter requested</div><div class="b">Sent 2 July · no response yet</div></div>
+            <span class="go">›</span></div>
+        </div>
+        <div class="dact">
+          <button class="btn pri">Log a shift</button>
+          <button class="btn">Open in UNC maps ↗</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note"><b>Frame 2.</b> This is the whole argument. Clicking a building shows <b>what you have there,
+across pillars</b> — a clinical shift, a physician, an open letter request — and every row deep-links to the
+page that owns it. The map <b>owns nothing but locations</b>. <b>Open in UNC maps</b> hands wayfinding back to
+Concept3D, which is the one thing we should never rebuild.</div>
+
+<div class="foot">
+<b>Fork C, drawn.</b> No tile provider, no MapLibre, no Protomaps, no API key, no backend — this is an SVG with
+click handlers. It works signed-out and offline, and it is the only version that can wear HQ's palette rather
+than looking like a general-purpose map in a warm-dark frame.<br><br>
+<b>Costs, stated honestly.</b> Someone has to draw it, and every new building is hand work. Accuracy is
+approximate by design. Off-campus records cannot appear and live in the rail instead. And it needs an explicit
+exception to <b>04</b>'s graphic vocabulary before it can ship.<br><br>
+<b>Per 04 §0a this file is a flow reference.</b> Structure and behaviour are the point; the app's real tokens
+and components are the visual law.
+</div>
+
+</body>
+</html>

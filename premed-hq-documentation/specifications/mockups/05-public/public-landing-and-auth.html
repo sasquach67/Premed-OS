@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Premed HQ — Public layer: landing, auth, merge — PROPOSED</title>
+<!--
+  ============================================================================
+  PREMED HQ — PUBLIC LAYER (LANDING · AUTH · LOCAL→ACCOUNT MERGE)
+  ============================================================================
+  Status: PROPOSED (Aug 2026). NOT cleared to build — BUILD-MANIFEST governs.
+  Read alongside specifications/05-public-and-account.md — the spec is law for
+  behavior; this file shows layout, density, hierarchy, and feel.
+
+  WHAT THIS FILE IS
+  - Static HTML/CSS only. No React, no real data, no interactivity.
+  - Implementation must be built from the real component library, NOT by
+    copying this markup.
+  - Three surfaces stacked for review; each is its own page in the product.
+
+  KEY DECISIONS THIS FILE ENCODES
+  1. AUTH IS NOT A GATE (05 §0.1) — primary action is "Start tracking", NOT
+     "Sign up". Signed-out mode is fully functional; the line under the CTA
+     says so, because that promise must be visible before someone bounces.
+  2. INDEPENDENCE DISCLAIMER (05 §6.1) sits in the HERO region, not only the
+     footer. Beta status is stated, not implied.
+  3. ONE PAGE — hero → features → guided tour (annotated screenshot) →
+     three specifics → about → privacy + cost → footer. No fabricated
+     social proof, no countdown, no exit popup.
+  3g. GUIDED TOUR — a real screenshot per tab with the mascot pointing
+     things out, starting on Overview. *** THE MASCOT IS NOT A RAM ***:
+     05 6.1 forbids ram/Rameses imagery and calls root CLAUDE.md's "Ram
+     mascot" line STALE. It is a Ghibli-adjacent DOCTOR character. It is an
+     ILLUSTRATION, NEVER A UI ICON — beside the callout, never the marker,
+     button, or bullet. Art here is a PLACEHOLDER silhouette.
+  3h. NO PILLAR LABELS on the feature tiles (Andy, Aug 2026: "the little
+     labels 'all pillars,' 'academics' is stupid"). The per-tile colour
+     tint carries the same information without the noise. The Atlas tile
+     keeps ONE marker, a corner "Soon", because that one is an honesty
+     gate rather than decoration.
+  3b. FEATURES — all ten capabilities as GLASS TILES, own section, same
+     glass material and same two-weight heading as the hero. This REVERSES
+     the earlier "no feature grid" rule (Andy, Aug 2026). Breadth IS the
+     pitch and prose cannot carry ten items. ICONS ARE LUCIDE OUTLINES,
+     NEVER EMOJI (CLAUDE.md, absolute). TITLES ONLY — a description under a
+     tile turns this into the generic SaaS grid the page rejects.
+     Two earlier forms were built and cut: a glass chip cloud ("just
+     floating pieces of glass text") and a numbered index (structure, but
+     it lost the hero's material).
+  3c. CENTERED GLASS HERO (Andy, Aug 2026: "really glass this time").
+     Every hero surface floats, so every hero surface is glass. Everything
+     BELOW the hero stays solid-with-depth. That line is the whole rule.
+  3d. MINIMAL STACK (Andy, Aug 2026: "there's too much writing"). The hero
+     stack is badge → headline → ONE line → two buttons → no-account line,
+     and nothing else. Only the headline is large type; everything else is
+     11-14px. The feature index is its OWN section below the hero, not part
+     of the stack — an earlier pass tucked it under the CTA and it still
+     made the hero long. Five elements, full stop.
+  3e. ENTRANCE MOTION — staggered fade + rise, translateY(18px)→0, .62s,
+     cubic-bezier(.22,1,.36,1), six steps ~90ms apart. Six is the cap.
+     prefers-reduced-motion shows everything INSTANTLY, not faster.
+  3f. ABOUT SECTION is first person and stays first person. A beta with no
+     users has one honest trust signal: who made it and why. Rewriting it
+     into third-person company voice reads as a fake team.
+  4. MAGIC LINK IS THE DEFAULT, password secondary, Google third (05 §2.1).
+     Google is asked for sign-in identity ONLY; Calendar/Drive scopes are
+     requested later, separately.
+  5. "CHECK YOUR EMAIL" IS A DESIGNED STATE, not an afterthought — expiry
+     stated, resend + password fallback offered, and it reassures that local
+     data is untouched.
+  6. LOCAL→ACCOUNT MERGE (05 §0.2) is the highest-risk screen in the product.
+     It names what's on the device in plain counts, defaults to upload, and
+     states the safety property IN the panel: local data survives until the
+     server confirms; a non-empty account gets a reviewable diff, never an
+     overwrite, never "last write wins".
+  7. TYPE — Baloo 2 (display/numbers, bold) + Nunito (body). Never change.
+     THE HERO HEADLINE NOW BREAKS THE IN-APP SCALE, deliberately: two
+     weights, 27px setup line over a 46px payoff line, vs _visual-recipes'
+     .h1 = 30px. This REVERSES decision #5. Reason: the stacked two-weight
+     format Andy picked from reference 1 does not work at a single 30px —
+     the contrast IS the device. Scoped to this page only; every in-app
+     surface keeps 30px. One word from Andy reverts it.
+  7b. PILL BUTTONS + FLOATING PILL NAV — reverses decisions #9, PUBLIC LAYER
+     ONLY. Andy, Aug 2026: "the tab should follow these formats and the
+     buttons too". In-app buttons keep the 10px system radius. Do not let
+     this leak past the landing/auth pages.
+  8. HQ'S OWN PALETTE. Never described as an institutional colour (05 §6.1).
+  ============================================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── Theme tokens: mirrored from src/index.css (.dark warm default) ─────── */
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --pri:#6fb3de; --pri-ink:#0f2330; --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f; --star:#e7b06a;
+  --gpa:#4b9cd3; --mcat:#8c7bd4; --shadow:#e0a458; --volunteer:#5fb49c;
+  --activities:#e08b9b; --clinical:#6fae6e; --research:#c98ac9; --letters:#d59b6a;
+  --radius:0.9rem;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.frame{width:1400px;margin:0 auto;padding:24px;background:var(--bg);min-height:100vh}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+/* ── Shared panel ──────────────────────────────────────────────────────── */
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;
+  box-shadow:0 10px 26px -14px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden}
+.hd{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 10px;gap:10px;flex-shrink:0}
+.ti{font-family:'Baloo 2';font-weight:800;font-size:18px}
+.ti.sm{font-size:16px}
+.sub{font-size:12.5px;color:var(--dim);font-weight:700}
+.bd{padding:4px 18px 18px;display:flex;flex-direction:column;gap:11px;flex:1;min-height:0}
+.lk{font-size:12.5px;font-weight:800;color:var(--pri);font-family:'Baloo 2';cursor:pointer}
+.btn{border-radius:10px;padding:7px 14px;font-family:'Baloo 2';font-weight:700;font-size:13px;
+  border:1px solid transparent;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.btn.p{background:var(--pri);color:var(--pri-ink)}
+.btn.g{background:var(--muted);border-color:var(--bd);color:var(--mut)}
+.btn.lg{padding:10px 18px;font-size:14px}
+.btn svg{width:14px;height:14px}
+.num{font-variant-numeric:tabular-nums}
+
+/* ── Review scaffolding (this file only; not part of the product) ───────── */
+.seclab{display:flex;align-items:center;gap:11px;margin:26px 0 12px}
+.seclab .n{width:23px;height:23px;border-radius:7px;background:var(--pri);color:var(--pri-ink);
+  font-family:'Baloo 2';font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.seclab .t{font-family:'Baloo 2';font-weight:800;font-size:16px}
+.seclab .s{font-size:12.5px;color:var(--dim);font-weight:700}
+.page{border:1px solid var(--bd);border-radius:16px;overflow:hidden;background:var(--bg)}
+
+/* ── Public top bar ────────────────────────────────────────────────────── */
+.topbar{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--bd);background:var(--card)}
+.brand{font-family:'Baloo 2';font-weight:800;font-size:17px;letter-spacing:-.2px}
+.grow{flex:1}
+.nlk{font-size:13px;color:var(--mut);font-weight:700;cursor:pointer}
+
+/* ── HERO — CENTERED GLASS (Andy, Aug 2026: "really glass this time") ────
+   Departure from 04 §0c's "glass only where it floats". Everything in the
+   hero region floats over the gradient, so everything here is glass; every
+   surface BELOW the hero stays solid-with-depth. That boundary is the rule.
+   Glass recipe is _visual-recipes.md verbatim: rgba(20,26,34,.5) +
+   blur(16px) saturate(1.1) + 1px rgba(255,255,255,.16) + INSET highlight.
+   The inset top highlight is what makes it read as glass and not as a
+   translucent box. Never drop it.                                         */
+.hero{position:relative;padding:0 22px 46px;overflow:hidden;text-align:center;
+  background:
+    radial-gradient(680px 380px at 50% -12%, rgba(111,179,222,.30), transparent 72%),
+    radial-gradient(420px 300px at 8% 108%, rgba(111,192,168,.14), transparent 70%),
+    radial-gradient(380px 260px at 96% 88%, rgba(224,164,88,.12), transparent 70%),
+    linear-gradient(115deg,#233448 0%,#2a3646 44%,#3a3730 100%);}
+/* the bloom: a soft light source behind the headline, not a flat wash */
+.hero::before{content:"";position:absolute;left:50%;top:-190px;width:760px;height:380px;
+  transform:translateX(-50%);pointer-events:none;
+  background:radial-gradient(closest-side, rgba(111,179,222,.34), transparent 70%);
+  filter:blur(18px)}
+.hero-in{max-width:720px;margin:58px auto 0;position:relative}
+
+/* THE glass recipe — one class, applied to every floating hero surface */
+.gl-s{background:rgba(20,26,34,.5);backdrop-filter:blur(16px) saturate(1.1);
+  -webkit-backdrop-filter:blur(16px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}
+
+/* ── ENTRANCE: staggered fade + rise (the 21st.dev "float in") ──────────
+   translateY(18px) → 0 with opacity, 90ms apart, cubic-bezier(.22,1,.36,1).
+   Six steps max; more than that and the page feels slow to arrive.
+   REDUCED MOTION IS NOT OPTIONAL (04 §accessibility) — the guard below
+   shows everything instantly rather than animating it faster.           */
+@keyframes fadeRise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.an{opacity:0;animation:fadeRise .62s cubic-bezier(.22,1,.36,1) forwards}
+.an1{animation-delay:.05s}.an2{animation-delay:.14s}.an3{animation-delay:.23s}
+.an4{animation-delay:.32s}.an5{animation-delay:.44s}.an6{animation-delay:.56s}
+@media (prefers-reduced-motion:reduce){
+  .an{animation:none;opacity:1;transform:none}
+  .hero::before{filter:none}
+}
+
+.chip{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;
+  border-radius:999px;padding:5px 6px 5px 14px;color:rgba(255,255,255,.82)}
+.chip .tagpill{font-family:'Baloo 2';font-weight:800;font-size:10px;letter-spacing:.05em;text-transform:uppercase;
+  background:rgba(255,255,255,.9);color:#17222c;border-radius:999px;padding:2.5px 9px}
+/* h1 stays 30px — the in-app scale (_visual-recipes.md). The reference decks
+   use 48-64px; matching them would reverse decisions file #5. Scale is NOT
+   what makes those heroes work — the bloom, the glass and the centering are. */
+.h1{font-family:'Baloo 2';font-weight:800;font-size:30px;line-height:1.2;letter-spacing:-.4px;color:#fff;margin:18px 0 0}
+.h1 em{font-style:normal;color:#a9d3ee}
+.lede{font-size:14.5px;color:rgba(255,255,255,.76);line-height:1.65;margin:13px auto 0;max-width:560px}
+.lede b{color:#fff;font-weight:700}
+.ctarow{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:24px;flex-wrap:wrap}
+.btn.w{background:#fff;color:#17222c;border-color:#fff}
+.btn.gl{background:rgba(255,255,255,.13);color:#fff;border-color:rgba(255,255,255,.2)}
+.noacct{font-size:12.5px;color:rgba(255,255,255,.6);font-weight:700;margin-top:12px}
+
+.disc{font-size:11.5px;color:rgba(255,255,255,.4);font-weight:600;margin-top:30px}
+
+/* ── FEATURES — GLASS TILES (Andy, Aug 2026) ───────────────────────────
+   Third form for this list. Chips were "floating glass text"; the numbered
+   index fixed structure but lost the hero's material. This keeps the glass
+   AND the two-weight heading, and adds a glass icon tile per row.
+   ICONS ARE LUCIDE OUTLINES, NEVER EMOJI (CLAUDE.md, absolute).
+   Titles only — still no blurbs. A description under a tile turns this back
+   into the generic SaaS feature grid the page rejects.                    */
+.feat{position:relative;overflow:hidden;padding:42px 22px 46px;
+  background:linear-gradient(180deg,#252b31 0%,#242019 62%,var(--bg) 100%)}
+.feat .mesh{opacity:.5}
+.featin{position:relative;z-index:2;text-align:center;max-width:1180px;margin:0 auto}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;margin-bottom:14px;
+  border-radius:999px;padding:5px 13px;color:rgba(255,255,255,.62);
+  font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase}
+.feats{font-size:13.5px;color:rgba(255,255,255,.6);font-weight:600;margin:12px auto 26px;max-width:520px}
+.ftiles{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;text-align:left}
+.ftile{position:relative;border-radius:14px;padding:15px 14px 16px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.11);
+  backdrop-filter:blur(14px) saturate(1.1);-webkit-backdrop-filter:blur(14px) saturate(1.1);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14);transition:background .2s,border-color .2s}
+.ftile:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2)}
+.ficon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--c,#6fb3de) 20%,rgba(255,255,255,.05));
+  border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.2);
+  color:var(--c,#a9d3ee)}
+.ficon svg{width:17px;height:17px;stroke-width:1.9}
+.ftile.soon{border-color:rgba(231,176,106,.3)}
+.soonmark{position:absolute;top:11px;right:11px;font-family:'Baloo 2';font-weight:800;font-size:8px;
+  letter-spacing:.07em;text-transform:uppercase;color:#e7b06a;background:rgba(231,176,106,.18);
+  border-radius:5px;padding:2.5px 6px}
+.ftl{font-family:'Baloo 2';font-weight:700;font-size:13.5px;color:#fff;margin-top:12px;line-height:1.32}
+.hl.sm .l1{font-size:19px;margin-bottom:3px}
+.hl.sm .l2{font-size:33px}
+
+.shotwin{border-radius:11px 11px 0 0;overflow:hidden;background:var(--bg);
+  border:1px solid rgba(255,255,255,.09);border-bottom:none;height:210px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--dim);font-size:12.5px;font-weight:700;text-align:center;padding:0 30px}
+
+/* ── Pitch: three specifics (bento-derived, mixed emphasis) ────────────── */
+.body{padding:18px 22px 22px}
+.bento{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.c4{grid-column:span 4}.c5{grid-column:span 5}.c7{grid-column:span 7}.c12{grid-column:span 12}
+.tag{display:inline-flex;font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.05em;
+  text-transform:uppercase;border-radius:6px;padding:3px 7px;
+  background:color-mix(in srgb,var(--c,var(--gpa)) 16%,transparent);color:var(--c,var(--gpa))}
+.pitchp{font-size:13px;color:var(--mut);line-height:1.6}
+
+/* ── Privacy + cost ───────────────────────────────────────────────────── */
+.privtext{font-size:13.5px;color:var(--mut);line-height:1.7}
+.privtext b{color:var(--fg);font-weight:700}
+.costbig{font-family:'Baloo 2';font-weight:800;font-size:22px}
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+.foot{border-top:1px solid var(--bd);background:var(--card);padding:16px 22px;display:flex;gap:18px;
+  align-items:flex-start;flex-wrap:wrap}
+.foot .fl{display:flex;gap:16px}
+.foot .fd{flex:1;min-width:340px;font-size:11.5px;color:var(--dim);line-height:1.6}
+
+/* ── Auth ─────────────────────────────────────────────────────────────── */
+.authwrap{padding:38px 22px;display:flex;align-items:center;justify-content:center;min-height:430px}
+.authcard{width:372px}
+.field{display:flex;flex-direction:column;gap:6px}
+.lbl{font-family:'Baloo 2';font-weight:800;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.inp{background:var(--muted);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;
+  color:var(--fg);font-family:'Nunito';font-size:14px;outline:none}
+.inp::placeholder{color:var(--dim)}
+.inp:focus-visible{border-color:var(--pri)}
+.btn.full{width:100%;justify-content:center;padding:11px}
+.orbar{display:flex;align-items:center;gap:11px}
+.orbar i{flex:1;height:1px;background:var(--bd)}
+.orbar span{font-family:'Baloo 2';font-weight:800;font-size:10.5px;letter-spacing:.06em;color:var(--dim)}
+.fine{font-size:11.5px;color:var(--dim);line-height:1.6}
+.fine b{color:var(--mut);font-weight:700}
+.mailbadge{width:44px;height:44px;border-radius:12px;background:color-mix(in srgb,var(--pri) 16%,transparent);
+  display:flex;align-items:center;justify-content:center;color:var(--pri)}
+.mailbadge svg{width:21px;height:21px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--muted);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;font-size:13.5px;font-weight:700}
+
+/* ── Merge ────────────────────────────────────────────────────────────── */
+.mergewrap{padding:30px 22px;display:flex;justify-content:center}
+.mergecard{width:600px}
+.frow{display:flex;align-items:center;gap:11px;padding:8px 0;border-top:1px solid rgba(255,255,255,.045);font-size:13.5px}
+.frow:first-of-type{border-top:none}
+.dot{width:9px;height:9px;border-radius:3px;background:var(--c,var(--gpa));flex:none}
+.frow .fn{flex:1;font-weight:700}
+.frow .fv{font-family:'Baloo 2';font-weight:800;color:var(--mut)}
+.opt{display:flex;gap:12px;align-items:flex-start;background:var(--muted);border:1px solid var(--bd);
+  border-radius:12px;padding:13px 14px;cursor:pointer}
+.opt.on{border-color:var(--pri);background:color-mix(in srgb,var(--pri) 8%,var(--muted));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pri) 35%,transparent)}
+.radio{width:16px;height:16px;border-radius:50%;border:2px solid var(--bd);flex:none;margin-top:2px;position:relative}
+.opt.on .radio{border-color:var(--pri)}
+.opt.on .radio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--pri)}
+.opt .ot{font-family:'Baloo 2';font-weight:800;font-size:14px;display:flex;align-items:center;gap:7px}
+.opt .om{font-size:12.5px;color:var(--mut);margin-top:4px;line-height:1.55}
+.rec{font-family:'Baloo 2';font-weight:800;font-size:9px;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--success);background:color-mix(in srgb,var(--success) 16%,transparent);border-radius:5px;padding:2px 6px}
+.pace{background:color-mix(in srgb,var(--success) 10%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--success) 26%,var(--bd));
+  border-radius:9px;padding:11px 13px;font-size:12.5px;font-weight:700;color:var(--mut);line-height:1.6}
+.pace b{color:var(--fg)}
+
+/* ═══ LIFTED FROM ANDY'S TWO 21st.dev REFERENCES (Aug 2026) ═══════════════
+   Taken: real refractive glass (feTurbulence displacement), the animated
+   mesh background, the floating pill nav, pill buttons, the gooey CTA, the
+   two-weight headline, the staggered entrance.
+   DROPPED, deliberately: @paper-design/shaders-react (WebGL, a new dep,
+   CLAUDE.md says flag first), framer-motion (CSS does all of this),
+   the cyan/orange ramp, Instrument Serif + Inter, the rotating textPath
+   badge, the logo particle burst, and the partner logo row (HQ has no
+   partners and fabricated social proof is banned).                        */
+
+/* Animated mesh — a CSS stand-in for <MeshGradient>, zero dependencies */
+.mesh{position:absolute;inset:-25%;pointer-events:none;filter:blur(46px);opacity:.9}
+.mesh i{position:absolute;display:block;border-radius:50%}
+.mesh .m1{width:48%;height:64%;left:6%;top:-8%;
+  background:radial-gradient(closest-side,rgba(111,179,222,.5),transparent 72%);
+  animation:drift1 26s ease-in-out infinite alternate}
+.mesh .m2{width:42%;height:56%;right:2%;top:6%;
+  background:radial-gradient(closest-side,rgba(140,123,212,.34),transparent 72%);
+  animation:drift2 32s ease-in-out infinite alternate}
+.mesh .m3{width:52%;height:52%;left:22%;bottom:-16%;
+  background:radial-gradient(closest-side,rgba(224,164,88,.26),transparent 72%);
+  animation:drift3 29s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(16%,10%) scale(1.14)}}
+@keyframes drift2{to{transform:translate(-13%,9%) scale(1.1)}}
+@keyframes drift3{to{transform:translate(9%,-11%) scale(1.16)}}
+
+/* Real glass: the feTurbulence displacement filter is what makes an edge
+   refract instead of just blur. This is the piece Andy kept asking for. */
+.glassfx{filter:url(#hq-glass)}
+
+/* Floating pill nav — reference 2's header, on HQ tokens */
+.navbar{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;
+  padding:18px 0 0;gap:14px;text-align:left}
+.navpill{display:inline-flex;align-items:center;gap:2px;border-radius:999px;padding:4px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(12px) saturate(1.1);-webkit-backdrop-filter:blur(12px) saturate(1.1)}
+.navlk{padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:700;
+  color:rgba(255,255,255,.7);cursor:pointer;transition:background .18s,color .18s}
+.navlk:hover,.navlk.on{background:rgba(255,255,255,.11);color:#fff}
+.navbrand{font-family:'Baloo 2';font-weight:800;font-size:17px;color:#fff;letter-spacing:-.2px}
+
+/* Gooey CTA — white pill with an arrow pill that slides out from under it.
+   The gooey filter is what fuses them mid-slide instead of showing a seam. */
+.gooey{position:relative;display:inline-flex;align-items:center;filter:url(#hq-gooey)}
+.gooey .lead{position:relative;z-index:2;border-radius:999px;background:#fff;color:#17222c;
+  font-family:'Baloo 2';font-weight:800;font-size:12.5px;padding:8px 17px;height:32px;
+  display:inline-flex;align-items:center;border:none;cursor:pointer}
+.gooey .tail{position:absolute;right:0;z-index:1;border-radius:999px;background:#fff;color:#17222c;
+  height:32px;width:32px;display:inline-flex;align-items:center;justify-content:center;border:none;
+  cursor:pointer;transform:translateX(-30px);transition:transform .34s cubic-bezier(.22,1,.36,1)}
+.gooey:hover .tail{transform:translateX(6px)}
+.gooey .tail svg{width:13px;height:13px}
+
+/* Pill buttons — PUBLIC LAYER ONLY. Reverses decisions #9 for this page.  */
+.pbtn{border-radius:999px;font-family:'Baloo 2';font-weight:700;font-size:13.5px;padding:11px 22px;
+  display:inline-flex;align-items:center;gap:8px;cursor:pointer;border:1px solid transparent;
+  transition:background .2s,border-color .2s,transform .2s}
+.pbtn svg{width:14px;height:14px}
+.pbtn.solid{background:#fff;color:#17222c;border-color:#fff}
+.pbtn.solid:hover{background:rgba(255,255,255,.9)}
+.pbtn.ghost{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.2);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.pbtn.ghost:hover{background:rgba(255,255,255,.15);border-color:rgba(111,179,222,.5)}
+
+/* Two-weight headline — reference 1's stacked format, HQ palette */
+.hl{margin:20px 0 0;letter-spacing:-.6px;line-height:1.06}
+.hl .l1{display:block;font-family:'Baloo 2';font-weight:600;font-size:27px;
+  color:rgba(255,255,255,.82);letter-spacing:.2px;margin-bottom:5px}
+.hl .l2{display:block;font-family:'Baloo 2';font-weight:800;font-size:46px;
+  background:linear-gradient(120deg,#ffffff 0%,#a9d3ee 38%,#e0a458 78%,#ffffff 100%);
+  background-size:220% auto;-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+  animation:sheen 9s linear infinite}
+@keyframes sheen{to{background-position:220% center}}
+@media (prefers-reduced-motion:reduce){
+  .hl .l2{animation:none}
+  .mesh i{animation:none}
+}
+
+/* ── GUIDED TOUR — annotated screenshot (Andy, Aug 2026) ───────────────
+   One real screenshot per tab, with the mascot pointing things out.
+   Starts on Overview.
+   *** NOT A RAM. *** 05-public-and-account.md 6.1 forbids ram or Rameses
+   imagery outright, and states that root CLAUDE.md's "Ram mascot" line is
+   STALE. Any mascot must be visibly unrelated to a university mascot, so
+   this is a Ghibli-adjacent DOCTOR character (Andy's own words: "little
+   doctor ghibli"). Do not reintroduce a ram anywhere in the public layer.
+   THE MASCOT IS AN ILLUSTRATION, NEVER A UI ICON — it stands beside a
+   callout; it is never the marker, the button, or the bullet.
+   The art below is a PLACEHOLDER silhouette; swap the <svg> for an <img>. */
+.tour{position:relative;overflow:hidden;padding:44px 22px 48px;background:var(--bg)}
+.tourin{position:relative;z-index:2;max-width:1180px;margin:0 auto;text-align:center}
+.tourtabs{display:inline-flex;gap:3px;border-radius:999px;padding:4px;margin:20px 0 26px;
+  background:var(--muted);border:1px solid var(--bd)}
+.ttab{padding:7px 16px;border-radius:999px;font-family:'Baloo 2';font-weight:700;font-size:12.5px;
+  color:var(--mut);cursor:pointer}
+.ttab.on{background:var(--fg);color:#17222c;font-weight:800}
+.shotstage{position:relative;border-radius:16px;background:var(--card);border:1px solid var(--bd);
+  box-shadow:0 26px 60px -30px rgba(0,0,0,.8);padding:9px}
+.shotwin{position:relative;border-radius:11px;overflow:hidden;background:#1d1a17;
+  border:1px solid rgba(255,255,255,.07);height:430px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--dim);font-size:12.5px;font-weight:700;text-align:center;padding:0 40px}
+/* callout: glass card + a ram beside it + a leader line to the region */
+.call{position:absolute;z-index:3;display:flex;align-items:flex-start;gap:9px;max-width:262px;text-align:left}
+.call .bubble{border-radius:13px;padding:10px 13px;font-size:12.5px;font-weight:700;line-height:1.45;
+  color:#fff;background:rgba(20,26,34,.62);backdrop-filter:blur(15px) saturate(1.1);
+  -webkit-backdrop-filter:blur(15px) saturate(1.1);border:1px solid rgba(255,255,255,.18);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 12px 28px -14px rgba(0,0,0,.7)}
+.call .bubble b{color:#a9d3ee;font-weight:800}
+.guide{width:40px;height:40px;flex:none;border-radius:50%;overflow:hidden;
+  background:radial-gradient(circle at 34% 28%,#3d4a58,#232b34);
+  border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.22);
+  display:flex;align-items:flex-end;justify-content:center}
+.guide svg{width:34px;height:34px;color:#e9dcc4}
+.pin{position:absolute;width:11px;height:11px;border-radius:50%;background:var(--pri);
+  box-shadow:0 0 0 4px rgba(111,179,222,.24),0 0 14px rgba(111,179,222,.7);z-index:3}
+.pin::after{content:"";position:absolute;inset:-4px;border-radius:50%;
+  border:1px solid rgba(111,179,222,.55);animation:ping 2.4s ease-out infinite}
+@keyframes ping{0%{transform:scale(.8);opacity:.9}70%,100%{transform:scale(2.1);opacity:0}}
+@media (prefers-reduced-motion:reduce){.pin::after{animation:none}}
+.tourfoot{font-size:12.5px;color:var(--dim);font-weight:700;margin-top:20px}
+
+/* ── Review note (this file only) ──────────────────────────────────────── */
+.note{margin-top:22px;background:var(--card);border:1px solid var(--bd);border-left:3px solid var(--pri);
+  border-radius:16px;padding:16px 19px}
+.note h4{font-family:'Baloo 2';font-weight:800;font-size:15px;margin:0 0 9px}
+.note p{font-size:13px;color:var(--mut);line-height:1.7;margin:0}
+.note p+p{margin-top:8px}
+.note b{color:var(--fg)}
+</style>
+</head>
+<body>
+<div class="frame">
+<h1 class="sr-only">Premed HQ public layer — landing page, authentication, and local-to-account merge</h1>
+
+<!-- ═══════════════ 1 · LANDING ═══════════════ -->
+<div class="seclab"><span class="n">1</span><span class="t">Landing — one page</span>
+  <span class="s">primary action is <b>Start tracking</b>, not Sign up · disclaimer in the hero region</span></div>
+
+<div class="page">
+  <!-- ── HERO ── -->
+  <div class="hero">
+    <!-- SVG filter defs, lifted from reference 1. feTurbulence +
+         feDisplacementMap is REAL glass: the edge refracts what's behind it
+         rather than only blurring it. Scale is 0.3 — higher looks melted. -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+      <filter id="hq-glass" x="-50%" y="-50%" width="200%" height="200%">
+        <feTurbulence baseFrequency="0.005" numOctaves="1" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.3"/>
+        <feColorMatrix type="matrix" values="1 0 0 0 0.02  0 1 0 0 0.02  0 0 1 0 0.04  0 0 0 .92 0"/>
+      </filter>
+      <filter id="hq-gooey" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+        <feColorMatrix in="blur" mode="matrix"
+          values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="gooey"/>
+        <feComposite in="SourceGraphic" in2="gooey" operator="atop"/>
+      </filter>
+    </defs></svg>
+
+    <!-- animated mesh, behind everything -->
+    <div class="mesh" aria-hidden="true"><i class="m1"></i><i class="m2"></i><i class="m3"></i></div>
+
+    <!-- ── FLOATING PILL NAV (reference 2's header, over the gradient) ── -->
+    <div class="navbar an an1">
+      <span class="navbrand">Premed HQ</span>
+      <nav class="navpill">
+        <span class="navlk on">Features</span>
+        <span class="navlk">About</span>
+        <span class="navlk">Pricing</span>
+        <span class="navlk">Privacy</span>
+        <span class="navlk">Terms</span>
+      </nav>
+      <!-- gooey CTA: arrow pill slides out from under the label on hover -->
+      <div class="gooey">
+        <button class="lead">Start tracking</button>
+        <button class="tail" aria-label="Start tracking">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M7 7h10v10M7 17 17 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="hero-in">
+      <!-- 1 · badge -->
+      <span class="chip gl-s glassfx an an2"><span class="tagpill">Beta</span> Built for UNC pre-meds</span>
+
+      <!-- 2 · headline, two weights (reference 1's stacked format).
+           Light line sets up, heavy gradient line lands the punch. -->
+      <div class="hl an an3">
+        <span class="l1">Stop tracking your pre-med application</span>
+        <span class="l2">in a spreadsheet.</span>
+      </div>
+
+      <!-- 3 · ONE line. The upperclassman simile was cut here (too much writing). -->
+      <p class="lede an an4">Everything from your first semester to the day you submit.</p>
+
+      <!-- 4 · actions, pill format from both references -->
+      <div class="ctarow an an5">
+        <button class="pbtn solid">Start tracking
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <button class="pbtn ghost">Sign in</button>
+      </div>
+      <p class="noacct an an5">No account needed. Your data stays on this device until you choose to sync it.</p>
+
+      <!-- §6.1 requires this in the HERO REGION, not only the footer. -->
+      <p class="disc an an5">An independent student project. Not affiliated with UNC-Chapel Hill or the AAMC.</p>
+    </div>
+
+  </div>
+
+  <!-- ── FEATURES · GLASS TILES ── -->
+  <div class="feat">
+    <div class="mesh" aria-hidden="true"><i class="m1"></i><i class="m2"></i><i class="m3"></i></div>
+    <div class="featin">
+      <span class="eyebrow gl-s glassfx">Features</span>
+      <div class="hl sm">
+        <span class="l1">Ten things it does that</span>
+        <span class="l2">a spreadsheet can't.</span>
+      </div>
+      <p class="feats">Every part of the application, in one system that can read across all of it.</p>
+      <div class="ftiles">
+        <div class="ftile" style="--c:var(--pri)">
+          <div class="ficon" style="--c:var(--pri)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></div>
+          <div class="ftl">Every part of the application, one place</div>
+        </div>
+        <div class="ftile" style="--c:var(--gpa)">
+          <div class="ficon" style="--c:var(--gpa)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h4"/></svg></div>
+          <div class="ftl">Upload a syllabus, get your semester</div>
+        </div>
+        <div class="ftile" style="--c:var(--gpa)">
+          <div class="ficon" style="--c:var(--gpa)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></div>
+          <div class="ftl">Study sessions with spaced repetition</div>
+        </div>
+        <div class="ftile" style="--c:var(--volunteer)">
+          <div class="ficon" style="--c:var(--volunteer)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg></div>
+          <div class="ftl">One weekly plan across classes and MCAT</div>
+        </div>
+        <div class="ftile" style="--c:var(--mcat)">
+          <div class="ficon" style="--c:var(--mcat)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg></div>
+          <div class="ftl">Flags what you've forgotten before the exam</div>
+        </div>
+        <div class="ftile" style="--c:var(--gpa)">
+          <div class="ficon" style="--c:var(--gpa)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12.5V17c3.5 3 8.5 3 12 0v-4.5"/></svg></div>
+          <div class="ftl">UNC graduation and major requirements</div>
+        </div>
+        <div class="ftile" style="--c:var(--letters)">
+          <div class="ficon" style="--c:var(--letters)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 14l2 2 4-4"/></svg></div>
+          <div class="ftl">Everything logged AMCAS-ready</div>
+        </div>
+        <div class="ftile soon">
+          <span class="soonmark">Soon</span>
+          <div class="ficon" style="--c:#e7b06a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2V9"/></svg></div>
+          <div class="ftl">Advice from people ahead of you</div>
+        </div>
+        <div class="ftile" style="--c:var(--research)">
+          <div class="ficon" style="--c:var(--research)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+          <div class="ftl">Google Calendar, Canvas, Drive, dictation</div>
+        </div>
+        <div class="ftile" style="--c:var(--clinical)">
+          <div class="ficon" style="--c:var(--clinical)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="ftl">Works signed out. Your data stays yours.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GUIDED TOUR · annotated screenshot ── -->
+  <div class="tour">
+    <div class="tourin">
+      <span class="eyebrow gl-s glassfx" style="background:rgba(255,255,255,.05);border:1px solid var(--bd);color:var(--dim)">A look inside</span>
+      <div class="hl sm" style="color:var(--fg)">
+        <span class="l1" style="color:var(--mut)">This is what it looks like</span>
+        <span class="l2">when it's yours.</span>
+      </div>
+
+      <!-- Tour steps through real tabs. Overview first, because it is home. -->
+      <div class="tourtabs">
+        <span class="ttab on">Overview</span>
+        <span class="ttab">Academics</span>
+        <span class="ttab">MCAT</span>
+        <span class="ttab">Clinical</span>
+      </div>
+
+      <div class="shotstage">
+        <div class="shotwin">[ real screenshot of Overview, populated with demo data — never an illustration, never a device frame ]</div>
+
+        <!-- Callouts sit OVER the screenshot. Pin marks the region; the ram
+             stands beside the text. Coordinates are per-screenshot. -->
+        <span class="pin" style="left:16%;top:20%"></span>
+        <div class="call" style="left:5%;top:26%">
+          <span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span>
+          <div class="bubble"><b>Start here.</b> Overview is everything that needs you today, pulled from every tab.</div>
+        </div>
+
+        <span class="pin" style="left:52%;top:15%"></span>
+        <div class="call" style="left:41%;top:21%">
+          <span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span>
+          <div class="bubble"><b>Where you stand.</b> GPA, hours and practice scores, live, with the AMCAS number beside your school's.</div>
+        </div>
+
+        <span class="pin" style="left:81%;top:47%"></span>
+        <div class="call" style="right:4%;top:53%">
+          <span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span>
+          <div class="bubble"><b>Today's plan.</b> Built from one hour budget shared across classes and MCAT prep, so it actually fits.</div>
+        </div>
+
+        <span class="pin" style="left:26%;top:75%"></span>
+        <div class="call" style="left:13%;top:81%">
+          <span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span>
+          <div class="bubble"><b>The bell is quiet.</b> Three interruptions a week, maximum. Everything else waits until you look.</div>
+        </div>
+      </div>
+
+      <p class="tourfoot">Demo data. Your workspace starts empty, and stays on your device until you say otherwise.</p>
+    </div>
+  </div>
+
+  <!-- ── PITCH: three specifics ── -->
+  <div class="body">
+    <div class="bento">
+      <!-- These three EXPAND chips 2, 4 and 5. They must never restate them. -->
+      <div class="card c4"><div class="hd"><div class="ti sm">You type the syllabus in once. Never.</div></div>
+        <div class="bd">
+          <span class="tag">Upload a PDF</span>
+          <p class="pitchp">Drop in the CHEM 262 syllabus and the semester builds itself: units, due dates, exam dates, grading weights, late policy. One person in your section uploads it and everyone else imports the same structure.</p>
+        </div></div>
+
+      <div class="card c4"><div class="hd"><div class="ti sm">Classes and prep can't both win</div></div>
+        <div class="bd">
+          <span class="tag" style="--c:var(--mcat)">One hour budget</span>
+          <p class="pitchp">Two study plans that each look reasonable add up to 34 hours a week. HQ builds both against the same calendar and says so before you commit to either. Miss a week and the plan reflows instead of becoming a backlog.</p>
+        </div></div>
+
+      <div class="card c4"><div class="hd"><div class="ti sm">It tells you what's gone stale</div></div>
+        <div class="bd">
+          <span class="tag" style="--c:var(--clinical)">Before the exam, not after</span>
+          <p class="pitchp">You took psych freshman year and sit the MCAT in 2029. HQ models what you'll be relearning from zero, weighted by how much of the exam it actually is, and schedules it back before it costs you.</p>
+        </div></div>
+
+      <!-- ── ABOUT (added Aug 2026) ──────────────────────────────────────
+           First person, and it stays first person. With no users, no logos
+           and no testimonials, the only trust signal a beta honestly has is
+           who made it and why. Do not turn this into "About Premed HQ" in
+           third-person company voice — that reads as a fake team. -->
+      <div class="card c12"><div class="hd">
+          <div><div class="ti sm">Who makes this</div>
+          <div class="sub">One student · Chapel Hill</div></div>
+        </div>
+        <div class="bd">
+          <p class="privtext">I'm a pre-med at UNC. I built HQ because I was running my whole application out of a spreadsheet and a notes app, and neither of them could tell me anything I didn't already type in myself. Every feature here exists because I wanted it at 1am the night before something was due.</p>
+          <p class="privtext"><b>It isn't a company.</b> No investors, no ads, no affiliate links, and nothing on this page is sponsored. When a paid resource is the right answer HQ says so and points at the free option first. If it ever needs to cost money, that will be said plainly and long before it happens.</p>
+        </div></div>
+
+      <div class="card c7"><div class="hd"><div class="ti sm">Your grades don't leave your device unless you ask</div></div>
+        <div class="bd">
+          <p class="privtext"><b>HQ is local-first.</b> Everything works signed out, stored in your browser. An account adds sync across devices — nothing more. AI features send only what they need, we name every processor that receives anything, and there's a local-only path for the parts you'd rather keep offline. <b>No third-party analytics. No ad tech. Your data is never sold.</b></p>
+          <span class="lk">Read the privacy policy →</span>
+        </div></div>
+
+      <div class="card c5"><div class="hd"><div class="ti sm">What it costs</div></div>
+        <div class="bd">
+          <div class="costbig">Free</div>
+          <p class="privtext" style="font-size:13px">Free during public beta. If that changes you'll know well before it does — and you can export everything, always.</p>
+        </div></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="fl"><span class="nlk">About</span><span class="nlk">Pricing</span><span class="nlk">Privacy</span><span class="nlk">Terms</span><span class="nlk">Contact</span><span class="nlk">Changelog</span></div>
+    <p class="fd">Premed HQ is an independent project. Not affiliated with, endorsed by, or sponsored by the University of North Carolina at Chapel Hill, the AAMC, or any other institution. MCAT is a program of the AAMC, which does not sponsor or endorse this product.</p>
+  </div>
+</div>
+
+<!-- ═══════════════ 2 · AUTH ═══════════════ -->
+<div class="seclab"><span class="n">2</span><span class="t">Sign in — and the state everyone skips</span>
+  <span class="s">magic link default · password secondary · Google third</span></div>
+
+<div class="bento">
+  <div class="c6">
+    <div class="page">
+      <div class="authwrap"><div class="card authcard">
+        <div class="hd"><div><div class="ti">Sign in</div>
+          <div class="sub" style="margin-top:4px;font-weight:600;color:var(--mut)">Or create an account — same form either way.</div></div></div>
+        <div class="bd" style="gap:13px">
+          <div class="field"><span class="lbl">Email</span><input class="inp" placeholder="you@unc.edu"></div>
+          <button class="btn p full">Email me a sign-in link</button>
+          <div class="orbar"><i></i><span>OR</span><i></i></div>
+          <button class="btn g full">Use a password instead</button>
+          <button class="btn g full">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+            Continue with Google
+          </button>
+          <p class="fine">By continuing you agree to the <b>Terms</b> and <b>Privacy Policy</b>. We ask Google for your sign-in identity only — Calendar and Drive are requested later, separately, if you want them.</p>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="c6">
+    <div class="page">
+      <div class="authwrap"><div class="card authcard">
+        <div class="hd"><div class="mailbadge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+        </div></div>
+        <div class="bd" style="gap:13px">
+          <div><div class="ti">Check your email</div>
+            <div class="sub" style="margin-top:5px;font-weight:600;color:var(--mut)">We sent a sign-in link to:</div></div>
+          <div class="row"><span>andy@unc.edu</span><span class="lk">Change</span></div>
+          <p class="fine"><b>The link works once and expires in 15 minutes.</b> If it hasn't arrived in a couple of minutes, check spam — or use a password instead.</p>
+          <button class="btn g full">Resend link</button>
+          <button class="btn g full">Use a password instead</button>
+          <p class="fine">Nothing you've already tracked is affected. <b>Your data is still on this device.</b></p>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ 3 · MERGE ═══════════════ -->
+<div class="seclab"><span class="n">3</span><span class="t">Local → account merge</span>
+  <span class="s">the highest-risk screen in the product (05 §0.2)</span></div>
+
+<div class="page">
+  <div class="mergewrap"><div class="card mergecard">
+    <div class="hd"><div><div class="ti">You've got work on this device</div>
+      <div class="sub" style="margin-top:5px;font-weight:600;color:var(--mut)">You've been using HQ signed out since Sept 8. Here's what's here — pick what happens to it.</div></div></div>
+    <div class="bd" style="gap:15px">
+
+      <div class="card" style="box-shadow:none;background:var(--muted)">
+        <div class="hd" style="padding:12px 14px 6px"><span class="lbl">On this device</span></div>
+        <div class="bd" style="padding:0 14px 12px;gap:0">
+          <div class="frow"><i class="dot"></i><span class="fn">Classes</span><span class="fv num">4</span></div>
+          <div class="frow"><i class="dot"></i><span class="fn">Topics, with review history</span><span class="fv num">38</span></div>
+          <div class="frow"><i class="dot" style="--c:var(--clinical)"></i><span class="fn">Logged hours</span><span class="fv num">61</span></div>
+          <div class="frow"><i class="dot" style="--c:var(--mcat)"></i><span class="fn">Mistakes logged</span><span class="fv num">22</span></div>
+          <div class="frow"><i class="dot" style="--c:var(--warning)"></i><span class="fn">Assignments &amp; deadlines</span><span class="fv num">17</span></div>
+        </div>
+      </div>
+
+      <div class="opt on">
+        <span class="radio"></span>
+        <div><div class="ot">Upload this to my account <span class="rec">Recommended</span></div>
+          <div class="om">Everything above moves to your account and syncs across devices. Your account is empty, so nothing can be overwritten.</div></div>
+      </div>
+      <div class="opt">
+        <span class="radio"></span>
+        <div><div class="ot">Keep them separate for now</div>
+          <div class="om">Sign in with an empty account. This device's data stays exactly where it is — you can upload it any time from Settings → Data.</div></div>
+      </div>
+
+      <div class="pace"><b>Nothing is deleted either way.</b> This device's copy stays until the upload finishes and the server confirms it. If your account already had data, you'd get a change-by-change review before anything merged — never an overwrite, and never "last write wins."</div>
+
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn p lg">Upload and continue</button>
+        <span class="sub" style="font-weight:600;color:var(--dim)">or decide later — Settings → Data</span>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ═══════════════ REVIEW NOTE ═══════════════ -->
+<div class="note">
+  <h4>What these three are testing</h4>
+  <p><b>The landing page isn't a wall.</b> <code>Start tracking</code> is primary, <code>Sign in</code> secondary, and the line beside them states the local-first promise outright — that has to be visible before someone decides to bounce, or the whole signed-out design buys you nothing.</p>
+  <p><b>The disclaimer is in the hero region, not only the footer</b> (05 §6.1), and it uses the glass chip recipe since it floats over banner art. Beta status is stated top-right rather than implied.</p>
+  <p><b>The merge screen is the one to scrutinise.</b> Plain counts of what's on the device, upload as the default, and the safety property stated <em>in the panel</em> rather than a tooltip: local data survives until the server confirms, and a non-empty account gets a reviewable diff. This is the single most likely place in the product to lose someone's work.</p>
+  <p><b>The hero leads with the category, then the breadth.</b> Problem-Solution formula: the incumbent is a spreadsheet, so the headline names that. The subhead lands one familiar comparison. The ten chips are the breadth argument, and prose could not carry ten items. <b>They are a wrapping cloud, never a card grid</b> &mdash; the moment they grow icons and blurbs they have become the thing this page bans.</p>
+  <p><b>Note what's absent:</b> no fabricated testimonials, no user counts, no countdown, no exit popup. The three cards <em>expand</em> three chips rather than repeating them, and each is a claim HQ can actually back.</p>
+  <p><b>Honesty gates:</b> the Atlas chip carries <code>soon</code> because Atlas is still a placeholder route. The integrations chip names Canvas but says nothing about grades, because only the calendar-feed path is built. <b>Both stay that way until the code catches up.</b></p>
+  <p><b>Copy is settled</b> (Aug 2026) and lives in the decisions file with the rejected wordings and their reasons. <b>Still open:</b> whether the headline moves above the 30px in-app scale to match the reference decks, which would reverse decision #5.</p>
+</div>
+
+</div>
+</body>
+</html>

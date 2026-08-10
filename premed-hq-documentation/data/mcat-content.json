@@ -1,0 +1,826 @@
+{
+  "meta": {
+    "producedBy": "Merged: structure + SIRS skills + UNC prereq map (Claude, verified via search); Foundational Concept official wording + full percentile table (ChatGPT, cited to AAMC). MCAT is stable since 2015 \u2014 no drift here (unlike the UNC gen-ed case).",
+    "retrievedAt": "2026-07-22",
+    "stability": "MCAT format unchanged since 2015; AAMC confirmed no changes for 2026",
+    "sources": [
+      "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam",
+      "https://students-residents.aamc.org/mcat-scores/mcat-exam-score-scale"
+    ],
+    "confidenceNote": "Section structure, scoring scale, SIRS/CARS skills = high. Foundational Concept wording = high (official, via ChatGPT). Percentile table = high on values (match known AAMC data), verify effective window each cycle.",
+    "freshness": {
+      "refreshCadence": "annual (percentiles) / rare (structure)",
+      "reason": "Exam structure is stable since 2015; percentile ranks refresh each May",
+      "sourceToMonitor": "https://students-residents.aamc.org/mcat-scores/mcat-exam-score-scale",
+      "lastVerified": "2026-07-22",
+      "reviewBy": "2027-05-01",
+      "churn": "low"
+    }
+  },
+  "sections": [
+    {
+      "id": "chem-phys",
+      "name": "Chemical and Physical Foundations of Biological Systems",
+      "questions": 59,
+      "minutes": 95,
+      "scoreRange": [
+        118,
+        132
+      ],
+      "confidence": "high",
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam"
+    },
+    {
+      "id": "cars",
+      "name": "Critical Analysis and Reasoning Skills",
+      "questions": 53,
+      "minutes": 90,
+      "scoreRange": [
+        118,
+        132
+      ],
+      "confidence": "high",
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam"
+    },
+    {
+      "id": "bio-biochem",
+      "name": "Biological and Biochemical Foundations of Living Systems",
+      "questions": 59,
+      "minutes": 95,
+      "scoreRange": [
+        118,
+        132
+      ],
+      "confidence": "high",
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam"
+    },
+    {
+      "id": "psych-soc",
+      "name": "Psychological, Social, and Biological Foundations of Behavior",
+      "questions": 59,
+      "minutes": 95,
+      "scoreRange": [
+        118,
+        132
+      ],
+      "confidence": "high",
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam"
+    }
+  ],
+  "examTiming": {
+    "totalQuestions": 230,
+    "totalTestingMinutes": 375,
+    "totalSeatedTime": "approximately 7 hours 30 minutes with optional breaks",
+    "confidence": "high",
+    "source": "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam"
+  },
+  "foundationalConcepts": [
+    {
+      "id": "fc1",
+      "section": "bio-biochem",
+      "name": "Biomolecules have unique properties that determine how they contribute to the structure and function of cells and how they participate in the processes necessary to maintain life.",
+      "contentCategories": [
+        "1A Structure and function of proteins and their constituent amino acids",
+        "1B Transmission of genetic information from the gene to the protein",
+        "1C Transmission of heritable information from generation to generation and the processes that increase genetic diversity",
+        "1D Principles of bioenergetics and fuel molecule metabolism"
+      ],
+      "approxSectionWeightPercent": 55,
+      "source": "https://students-residents.aamc.org/media/9261/download",
+      "confidence": "high"
+    },
+    {
+      "id": "fc2",
+      "section": "bio-biochem",
+      "name": "Highly organized assemblies of molecules, cells, and organs interact to carry out the functions of living organisms.",
+      "contentCategories": [
+        "2A Assemblies of molecules, cells, and groups of cells within single cellular and multicellular organisms",
+        "2B The structure, growth, physiology, and genetics of prokaryotes and viruses",
+        "2C Processes of cell division, differentiation, and specialization"
+      ],
+      "approxSectionWeightPercent": 20,
+      "source": "https://students-residents.aamc.org/media/9261/download",
+      "confidence": "high"
+    },
+    {
+      "id": "fc3",
+      "section": "bio-biochem",
+      "name": "Complex systems of tissues and organs sense the internal and external environments of multicellular organisms and, through integrated functioning, maintain a stable internal environment within an ever-changing external environment.",
+      "contentCategories": [
+        "3A Structure and functions of the nervous and endocrine systems and ways these systems coordinate the organ systems",
+        "3B Structure and integrative functions of the main organ systems"
+      ],
+      "approxSectionWeightPercent": 25,
+      "source": "https://students-residents.aamc.org/media/9261/download",
+      "confidence": "high"
+    },
+    {
+      "id": "fc4",
+      "section": "chem-phys",
+      "name": "Complex living organisms transport materials, sense their environment, process signals, and respond to changes using processes understood in terms of physical principles.",
+      "contentCategories": [
+        "4A Translational motion, forces, work, energy, and equilibrium in living systems",
+        "4B Importance of fluids for the circulation of blood, gas movement, and gas exchange",
+        "4C Electrochemistry and electrical circuits and their elements",
+        "4D How light and sound interact with matter",
+        "4E Atoms, nuclear decay, electronic structure, and atomic chemical behavior"
+      ],
+      "approxSectionWeightPercent": 40,
+      "source": "https://students-residents.aamc.org/media/9261/download",
+      "confidence": "high"
+    },
+    {
+      "id": "fc5",
+      "section": "chem-phys",
+      "name": "The principles that govern chemical interactions and reactions form the basis for a broader understanding of the molecular dynamics of living systems.",
+      "contentCategories": [
+        "5A Unique nature of water and its solutions",
+        "5B Nature of molecules and intermolecular interactions",
+        "5C Separation and purification methods",
+        "5D Structure, function, and reactivity of biologically relevant molecules",
+        "5E Principles of chemical thermodynamics and kinetics"
+      ],
+      "approxSectionWeightPercent": 60,
+      "source": "https://students-residents.aamc.org/media/9261/download",
+      "confidence": "high"
+    },
+    {
+      "id": "fc6",
+      "section": "psych-soc",
+      "name": "Biological, psychological, and sociocultural factors influence the ways that individuals perceive, think about, and react to the world.",
+      "contentCategories": [
+        "6A Sensing the environment",
+        "6B Making sense of the environment",
+        "6C Responding to the world"
+      ],
+      "approxSectionWeightPercent": 25,
+      "source": "https://students-residents.aamc.org/media/9261/download",
+      "confidence": "high"
+    },
+    {
+      "id": "fc7",
+      "section": "psych-soc",
+      "name": "Biological, psychological, and sociocultural factors influence behavior and behavior change.",
+      "contentCategories": [
+        "7A Individual influences on behavior",
+        "7B Social processes that influence human behavior",
+        "7C Attitude and behavior change"
+      ],
+      "approxSectionWeightPercent": 35,
+      "source": "https://students-residents.aamc.org/media/9261/download",
+      "confidence": "high"
+    },
+    {
+      "id": "fc8",
+      "section": "psych-soc",
+      "name": "Psychological, sociocultural, and biological factors influence the way we think about ourselves and others, as well as how we interact with others.",
+      "contentCategories": [
+        "8A Self-identity",
+        "8B Social thinking",
+        "8C Social interactions"
+      ],
+      "approxSectionWeightPercent": 20,
+      "source": "https://students-residents.aamc.org/media/9261/download",
+      "confidence": "high"
+    },
+    {
+      "id": "fc9",
+      "section": "psych-soc",
+      "name": "Cultural and social differences influence well-being.",
+      "contentCategories": [
+        "9A Understanding social structure",
+        "9B Demographic characteristics and processes"
+      ],
+      "approxSectionWeightPercent": 15,
+      "source": "https://students-residents.aamc.org/media/9261/download",
+      "confidence": "high"
+    },
+    {
+      "id": "fc10",
+      "section": "psych-soc",
+      "name": "Social stratification and access to resources influence well-being.",
+      "contentCategories": [
+        "10A Social inequality"
+      ],
+      "approxSectionWeightPercent": 5,
+      "source": "https://students-residents.aamc.org/media/9261/download",
+      "confidence": "high"
+    }
+  ],
+  "reasoningSkills": {
+    "scientificInquiryAndReasoning": [
+      {
+        "id": "sirs1",
+        "name": "Knowledge of Scientific Concepts and Principles"
+      },
+      {
+        "id": "sirs2",
+        "name": "Scientific Reasoning and Problem-Solving"
+      },
+      {
+        "id": "sirs3",
+        "name": "Reasoning About the Design and Execution of Research"
+      },
+      {
+        "id": "sirs4",
+        "name": "Data-Based and Statistical Reasoning"
+      }
+    ],
+    "carsSkills": [
+      {
+        "id": "cars1",
+        "name": "Foundations of Comprehension"
+      },
+      {
+        "id": "cars2",
+        "name": "Reasoning Within the Text"
+      },
+      {
+        "id": "cars3",
+        "name": "Reasoning Beyond the Text"
+      }
+    ],
+    "confidence": "high",
+    "source": "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam"
+  },
+  "carsSkills": [
+    {
+      "id": "cars-skill-1",
+      "name": "Foundations of Comprehension",
+      "approxSectionWeightPercent": 30,
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/critical-analysis-and-reasoning-skills-section-overview",
+      "confidence": "high"
+    },
+    {
+      "id": "cars-skill-2",
+      "name": "Reasoning Within the Text",
+      "approxSectionWeightPercent": 30,
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/critical-analysis-and-reasoning-skills-section-overview",
+      "confidence": "high"
+    },
+    {
+      "id": "cars-skill-3",
+      "name": "Reasoning Beyond the Text",
+      "approxSectionWeightPercent": 40,
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/critical-analysis-and-reasoning-skills-section-overview",
+      "confidence": "high"
+    }
+  ],
+  "scoring": {
+    "sectionRange": [
+      118,
+      132
+    ],
+    "totalRange": [
+      472,
+      528
+    ],
+    "percentileDefinition": "Percentage of scores equal to or lower than the specified score.",
+    "percentileEffectiveDates": {
+      "from": "2026-05-01",
+      "through": "2027-04-30"
+    },
+    "percentilePopulation": "All MCAT results from testing years 2023, 2024, and 2025 combined",
+    "totalMean": 500.6,
+    "totalStandardDeviation": 11.2,
+    "percentiles": [
+      {
+        "score": 472,
+        "percentile": "<1"
+      },
+      {
+        "score": 473,
+        "percentile": "<1"
+      },
+      {
+        "score": 474,
+        "percentile": "<1"
+      },
+      {
+        "score": 475,
+        "percentile": 1
+      },
+      {
+        "score": 476,
+        "percentile": 1
+      },
+      {
+        "score": 477,
+        "percentile": 2
+      },
+      {
+        "score": 478,
+        "percentile": 2
+      },
+      {
+        "score": 479,
+        "percentile": 3
+      },
+      {
+        "score": 480,
+        "percentile": 4
+      },
+      {
+        "score": 481,
+        "percentile": 5
+      },
+      {
+        "score": 482,
+        "percentile": 6
+      },
+      {
+        "score": 483,
+        "percentile": 8
+      },
+      {
+        "score": 484,
+        "percentile": 9
+      },
+      {
+        "score": 485,
+        "percentile": 11
+      },
+      {
+        "score": 486,
+        "percentile": 12
+      },
+      {
+        "score": 487,
+        "percentile": 14
+      },
+      {
+        "score": 488,
+        "percentile": 16
+      },
+      {
+        "score": 489,
+        "percentile": 18
+      },
+      {
+        "score": 490,
+        "percentile": 20
+      },
+      {
+        "score": 491,
+        "percentile": 23
+      },
+      {
+        "score": 492,
+        "percentile": 25
+      },
+      {
+        "score": 493,
+        "percentile": 28
+      },
+      {
+        "score": 494,
+        "percentile": 31
+      },
+      {
+        "score": 495,
+        "percentile": 33
+      },
+      {
+        "score": 496,
+        "percentile": 36
+      },
+      {
+        "score": 497,
+        "percentile": 39
+      },
+      {
+        "score": 498,
+        "percentile": 42
+      },
+      {
+        "score": 499,
+        "percentile": 45
+      },
+      {
+        "score": 500,
+        "percentile": 48
+      },
+      {
+        "score": 501,
+        "percentile": 52
+      },
+      {
+        "score": 502,
+        "percentile": 55
+      },
+      {
+        "score": 503,
+        "percentile": 58
+      },
+      {
+        "score": 504,
+        "percentile": 61
+      },
+      {
+        "score": 505,
+        "percentile": 64
+      },
+      {
+        "score": 506,
+        "percentile": 67
+      },
+      {
+        "score": 507,
+        "percentile": 71
+      },
+      {
+        "score": 508,
+        "percentile": 74
+      },
+      {
+        "score": 509,
+        "percentile": 76
+      },
+      {
+        "score": 510,
+        "percentile": 79
+      },
+      {
+        "score": 511,
+        "percentile": 82
+      },
+      {
+        "score": 512,
+        "percentile": 84
+      },
+      {
+        "score": 513,
+        "percentile": 86
+      },
+      {
+        "score": 514,
+        "percentile": 89
+      },
+      {
+        "score": 515,
+        "percentile": 91
+      },
+      {
+        "score": 516,
+        "percentile": 92
+      },
+      {
+        "score": 517,
+        "percentile": 94
+      },
+      {
+        "score": 518,
+        "percentile": 95
+      },
+      {
+        "score": 519,
+        "percentile": 96
+      },
+      {
+        "score": 520,
+        "percentile": 97
+      },
+      {
+        "score": 521,
+        "percentile": 98
+      },
+      {
+        "score": 522,
+        "percentile": 99
+      },
+      {
+        "score": 523,
+        "percentile": 99
+      },
+      {
+        "score": 524,
+        "percentile": 99
+      },
+      {
+        "score": 525,
+        "percentile": 100
+      },
+      {
+        "score": 526,
+        "percentile": 100
+      },
+      {
+        "score": 527,
+        "percentile": 100
+      },
+      {
+        "score": 528,
+        "percentile": 100
+      }
+    ],
+    "sectionPercentiles": {
+      "chem-phys": [
+        {
+          "score": 118,
+          "percentile": 2
+        },
+        {
+          "score": 119,
+          "percentile": 4
+        },
+        {
+          "score": 120,
+          "percentile": 9
+        },
+        {
+          "score": 121,
+          "percentile": 16
+        },
+        {
+          "score": 122,
+          "percentile": 25
+        },
+        {
+          "score": 123,
+          "percentile": 35
+        },
+        {
+          "score": 124,
+          "percentile": 46
+        },
+        {
+          "score": 125,
+          "percentile": 56
+        },
+        {
+          "score": 126,
+          "percentile": 67
+        },
+        {
+          "score": 127,
+          "percentile": 77
+        },
+        {
+          "score": 128,
+          "percentile": 85
+        },
+        {
+          "score": 129,
+          "percentile": 91
+        },
+        {
+          "score": 130,
+          "percentile": 96
+        },
+        {
+          "score": 131,
+          "percentile": 99
+        },
+        {
+          "score": 132,
+          "percentile": 100
+        }
+      ],
+      "cars": [
+        {
+          "score": 118,
+          "percentile": 1
+        },
+        {
+          "score": 119,
+          "percentile": 3
+        },
+        {
+          "score": 120,
+          "percentile": 8
+        },
+        {
+          "score": 121,
+          "percentile": 15
+        },
+        {
+          "score": 122,
+          "percentile": 25
+        },
+        {
+          "score": 123,
+          "percentile": 37
+        },
+        {
+          "score": 124,
+          "percentile": 50
+        },
+        {
+          "score": 125,
+          "percentile": 62
+        },
+        {
+          "score": 126,
+          "percentile": 74
+        },
+        {
+          "score": 127,
+          "percentile": 84
+        },
+        {
+          "score": 128,
+          "percentile": 90
+        },
+        {
+          "score": 129,
+          "percentile": 95
+        },
+        {
+          "score": 130,
+          "percentile": 98
+        },
+        {
+          "score": 131,
+          "percentile": 99
+        },
+        {
+          "score": 132,
+          "percentile": 100
+        }
+      ],
+      "bio-biochem": [
+        {
+          "score": 118,
+          "percentile": 1
+        },
+        {
+          "score": 119,
+          "percentile": 4
+        },
+        {
+          "score": 120,
+          "percentile": 8
+        },
+        {
+          "score": 121,
+          "percentile": 15
+        },
+        {
+          "score": 122,
+          "percentile": 23
+        },
+        {
+          "score": 123,
+          "percentile": 32
+        },
+        {
+          "score": 124,
+          "percentile": 43
+        },
+        {
+          "score": 125,
+          "percentile": 53
+        },
+        {
+          "score": 126,
+          "percentile": 64
+        },
+        {
+          "score": 127,
+          "percentile": 75
+        },
+        {
+          "score": 128,
+          "percentile": 84
+        },
+        {
+          "score": 129,
+          "percentile": 90
+        },
+        {
+          "score": 130,
+          "percentile": 96
+        },
+        {
+          "score": 131,
+          "percentile": 98
+        },
+        {
+          "score": 132,
+          "percentile": 100
+        }
+      ],
+      "psych-soc": [
+        {
+          "score": 118,
+          "percentile": 1
+        },
+        {
+          "score": 119,
+          "percentile": 3
+        },
+        {
+          "score": 120,
+          "percentile": 6
+        },
+        {
+          "score": 121,
+          "percentile": 10
+        },
+        {
+          "score": 122,
+          "percentile": 17
+        },
+        {
+          "score": 123,
+          "percentile": 25
+        },
+        {
+          "score": 124,
+          "percentile": 34
+        },
+        {
+          "score": 125,
+          "percentile": 44
+        },
+        {
+          "score": 126,
+          "percentile": 54
+        },
+        {
+          "score": 127,
+          "percentile": 65
+        },
+        {
+          "score": 128,
+          "percentile": 76
+        },
+        {
+          "score": 129,
+          "percentile": 85
+        },
+        {
+          "score": 130,
+          "percentile": 92
+        },
+        {
+          "score": 131,
+          "percentile": 97
+        },
+        {
+          "score": 132,
+          "percentile": 100
+        }
+      ]
+    },
+    "source": "https://students-residents.aamc.org/media/19701/download",
+    "scoringMethodSource": "https://students-residents.aamc.org/register-mcat-exam/publication-chapters/mcat-exam-scoring",
+    "confidence": "high",
+    "verificationNote": "Full percentile table from ChatGPT, cited to an AAMC PDF; anchor values (500->48, 510->79, 515->91, 520->97) match known AAMC data. Verify the effective-date window (May 2026-Apr 2027) against the current official AAMC Percentile Ranks PDF before each cycle."
+  },
+  "prereqMap": [
+    {
+      "section": "chem-phys",
+      "courseAreas": [
+        "general chemistry",
+        "organic chemistry",
+        "physics",
+        "some biochemistry"
+      ],
+      "uncCourses": [
+        "CHEM 101/102",
+        "CHEM 261/262",
+        "PHYS 114/115 or 118/119"
+      ],
+      "confidence": "high",
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam"
+    },
+    {
+      "section": "cars",
+      "courseAreas": [
+        "no specific coursework; reading and reasoning across humanities/social sciences"
+      ],
+      "uncCourses": [],
+      "confidence": "high",
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam"
+    },
+    {
+      "section": "bio-biochem",
+      "courseAreas": [
+        "introductory biology",
+        "biochemistry",
+        "some general and organic chemistry"
+      ],
+      "uncCourses": [
+        "BIOL 101/103/202",
+        "CHEM 430 or BIOL 433"
+      ],
+      "confidence": "high",
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam"
+    },
+    {
+      "section": "psych-soc",
+      "courseAreas": [
+        "introductory psychology",
+        "introductory sociology",
+        "some biology"
+      ],
+      "uncCourses": [
+        "PSYC 101",
+        "SOCI 101"
+      ],
+      "confidence": "high",
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam"
+    }
+  ]
+}

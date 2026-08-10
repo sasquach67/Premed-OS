@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Volunteering — standing commitments vs one-day events</title>
+<!--
+  ============================================================================
+  VOLUNTEERING - WHERE ONE-TIME COMMITMENTS GO
+  ============================================================================
+  Status: DRAFT (Aug 2026). Board: tabs/04-volunteering-board.md §4h (V1).
+
+  THE QUESTION (Andy, Aug 2026)
+  "Clinical and volunteering are different because in clinical you have
+  roles that you stick with. In volunteering you can have those same roles
+  that you stick with, but there are more temporary ones that are kind of
+  one-off. Where would they go, really, and visually how do they look?"
+
+  THE PROBLEM THIS SOLVES
+  V-12 rules a one-off is first-class and bans "only one day" copy.
+  §5a's layout said it anyway: one card per Experience means a student
+  with eight one-day events gets EIGHT CARDS EACH HOLDING ONE SESSION,
+  beside a headline reading "longest 18 mo". Copy rule honored, structure
+  contradicting it.
+
+  THE DIAGNOSIS - the card is the wrong SHAPE, not the content
+  A card answers "what is my relationship here" - role, cadence,
+  longevity, verifier, a session log. A one-off has no relationship. It
+  has a date and a thing you did. A card holding one session is a mostly
+  empty card, and eight of them read as eight abandoned commitments no
+  matter what the copy says.
+
+  AND AMCAS ALREADY MODELS THE ANSWER
+  15 entries max (03-clinical §7b, verified). Nobody submits eight
+  one-day events as eight entries - they combine into one, described
+  together. So grouping is not a UI convenience that diminishes them.
+  IT IS WHAT THE STUDENT WILL ACTUALLY SUBMIT.
+
+  WHAT IS DRAWN
+   · STANDING COMMITMENTS -> cards, and they LEAD. Unchanged from §5a.
+   · ONE-DAY EVENTS -> rows in ONE block, with its OWN REAL TOTAL in the
+     header ("6 events · 34 hrs"), never a consolation line.
+   · The block is called "One-day events". NEVER "Misc", "Other", or
+     "Uncategorized" - those are bins and V-12 forbids the register.
+   · "longest 18 mo" in the banner reads across STANDING ONLY. That
+     headline sitting beside eight events was the specific insult.
+
+  FRAME 2 - THE GRADUATION MECHANIC (the Turkey Trot case)
+  An annual one-day event is NOT a one-off. It is a multi-year
+  relationship expressed once a year - same race, same drive, every
+  November. When an Experience tagged one-time-event gains a SECOND
+  session, HQ offers to promote it to a standing card.
+  Deterministic (two sessions is the whole test), no AI, no sourced
+  threshold. OFFER, never auto-move - #12-15's flag-and-offer rule.
+  It rewards the pattern this pillar exists to reward - you came back -
+  without ever scolding the student who did not.
+
+  DESIGN COMPLIANCE (04 §0c, after three rejected mockups)
+   · Banner hero on the surface. Glass ONLY on the cards floating over it.
+   · Solid-with-depth below: tinted panels, nested rows, real shadows,
+     hover lift + accent ignite. NOT flat minimalism (§0 directive 1).
+   · Underline tabs with the glow, per _visual-recipes.md. No pill row.
+   · Tokens taken literally from _visual-recipes.md.
+
+  DELIBERATELY EXCLUDED
+   · Any "only one day", "just once", "short" or "brief" language.
+   · A count badge implying events are lesser.
+   · Sorting events below a divider labelled anything judgemental.
+   · Auto-promoting a repeated event without asking.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --pri:#6fb3de; --pri-ink:#0f2330; --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f; --star:#e7b06a;
+  --cat:#5fb49c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.frame{width:1260px;margin:0 auto 30px;padding:24px;background:var(--bg);border-radius:20px}
+.flabel{width:1260px;margin:0 auto 10px;padding:0 26px;font-family:'Baloo 2';font-weight:800;font-size:12px;
+  color:var(--dim);text-transform:uppercase;letter-spacing:.09em}
+
+/* ── BANNER HERO (04 §0c) ────────────────────────────────────────────── */
+.hero{position:relative;border-radius:16px 16px 0 0;overflow:hidden;border:1px solid var(--bd);border-bottom:none;
+  padding:22px 24px 0;
+  background:
+    radial-gradient(170px 160px at 84% 18%,rgba(160,235,205,.40),transparent 70%),
+    radial-gradient(280px 190px at 12% 122%,rgba(95,180,156,.34),transparent 70%),
+    linear-gradient(120deg,#2f4038 0%,#41645a 42%,#7d7050 74%,#c9a05e 100%)}
+.hill{position:absolute;left:0;right:0;bottom:-2px;height:88px;
+  background:linear-gradient(180deg,transparent,rgba(28,20,16,.55));border-radius:50% 50% 0 0/100% 100% 0 0}
+.htop{position:relative;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.h1{font-family:'Baloo 2';font-weight:800;font-size:30px;color:#fff;letter-spacing:-.4px;line-height:1.1}
+.hsub{font-size:12.5px;color:rgba(255,255,255,.68);font-weight:700;margin-top:4px}
+.primary{background:var(--cat);color:#0e2119;font-family:'Baloo 2';font-weight:800;font-size:13px;
+  border:none;border-radius:999px;padding:9px 18px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+  transition:.15s cubic-bezier(.16,1,.3,1)}
+.primary svg{width:15px;height:15px}
+.primary:hover{transform:translateY(-2px);box-shadow:0 14px 26px -12px rgba(95,180,156,.7)}
+/* GLASS — floats over the banner ONLY */
+.glass{background:rgba(26,20,17,.42);backdrop-filter:blur(18px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.15);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 20px 44px -24px rgba(0,0,0,.65);border-radius:14px}
+.stats{position:relative;z-index:2;display:inline-flex;margin-top:16px;padding:2px}
+.st{padding:9px 18px;border-right:1px solid rgba(255,255,255,.12)}
+.st:last-child{border-right:none}
+.st b{display:block;font-family:'Baloo 2';font-weight:800;font-size:19px;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1}
+.st span{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+
+/* underline tabs — the glow is the point (_visual-recipes) */
+.tabs{position:relative;z-index:2;display:flex;gap:26px;margin-top:18px}
+.tab{position:relative;padding:10px 2px 12px;font-family:'Baloo 2';font-weight:700;font-size:14px;
+  color:rgba(255,255,255,.6);cursor:pointer}
+.tab.on{color:#fff;font-weight:800}
+.tab.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;border-radius:3px 3px 0 0;
+  background:var(--cat);box-shadow:0 0 12px color-mix(in srgb,var(--cat) 60%,transparent)}
+
+.body{border:1px solid var(--bd);border-top:none;border-radius:0 0 16px 16px;padding:20px 24px 26px;background:var(--bg)}
+
+/* ── SECTION HEADS ──────────────────────────────────────────────────── */
+.sec{display:flex;align-items:baseline;gap:11px;margin:4px 2px 13px}
+.sec:not(:first-child){margin-top:26px}
+.sec h2{font-family:'Baloo 2';font-weight:800;font-size:17px;letter-spacing:-.1px;margin:0}
+.sec .cnt{font-family:'Baloo 2';font-weight:800;font-size:12.5px;color:var(--cat);
+  background:color-mix(in srgb,var(--cat) 16%,transparent);border-radius:999px;padding:3px 11px}
+.sec .ln{flex:1;height:1px;background:var(--bd)}
+
+/* ── STANDING COMMITMENT = A CARD ───────────────────────────────────── */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.card{position:relative;background:var(--card);border:1px solid var(--bd);border-radius:15px;padding:16px 18px;
+  box-shadow:0 10px 26px -14px rgba(0,0,0,.55);overflow:hidden;cursor:pointer;
+  transition:.15s cubic-bezier(.16,1,.3,1)}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cat);opacity:0;
+  transition:.15s cubic-bezier(.16,1,.3,1)}
+.card:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--cat) 45%,var(--bd));
+  box-shadow:0 20px 36px -16px rgba(0,0,0,.78),0 0 24px -8px color-mix(in srgb,var(--cat) 42%,transparent)}
+.card:hover::before{opacity:1;box-shadow:0 0 14px color-mix(in srgb,var(--cat) 75%,transparent)}
+.ctop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.cname{font-family:'Baloo 2';font-weight:800;font-size:17px;line-height:1.2}
+.crole{font-size:12.5px;color:var(--mut);font-weight:600;margin-top:3px}
+.chrs{font-family:'Baloo 2';font-weight:800;font-size:24px;color:var(--fg);font-variant-numeric:tabular-nums;
+  line-height:1;text-align:right;white-space:nowrap}
+.chrs small{display:block;font-family:'Nunito';font-size:9.5px;font-weight:800;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--dim);margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
+.chip{font-family:'Baloo 2';font-weight:800;font-size:10.5px;border-radius:999px;padding:3px 10px}
+.c-cat{background:color-mix(in srgb,var(--cat) 18%,transparent);color:var(--cat)}
+.c-dir{background:color-mix(in srgb,var(--pri) 18%,transparent);color:var(--pri)}
+.c-pop{background:var(--muted);color:var(--mut)}
+.c-ver{background:color-mix(in srgb,var(--success) 16%,transparent);color:var(--success)}
+/* longevity = a progress pill, in the approved graphic vocabulary */
+.lng{display:flex;align-items:center;gap:10px;margin-top:14px}
+.lbar{flex:1;height:6px;border-radius:999px;background:#272420;overflow:hidden}
+.lfill{height:100%;border-radius:999px;background:var(--cat);box-shadow:0 0 10px color-mix(in srgb,var(--cat) 55%,transparent)}
+.lng b{font-family:'Baloo 2';font-weight:800;font-size:12px;color:var(--mut);white-space:nowrap}
+
+/* ── ONE-DAY EVENTS = ONE PANEL OF ROWS ─────────────────────────────── */
+.events{background:linear-gradient(180deg,color-mix(in srgb,var(--cat) 7%,var(--card)),var(--card) 60%);
+  border:1px solid color-mix(in srgb,var(--cat) 22%,var(--bd));border-radius:15px;
+  box-shadow:0 10px 26px -14px rgba(0,0,0,.55);overflow:hidden}
+.ehead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px 12px}
+.ehead .t{font-family:'Baloo 2';font-weight:800;font-size:16.5px}
+.ehead .s{font-size:12px;color:var(--dim);font-weight:700;margin-top:2px}
+.etot{font-family:'Baloo 2';font-weight:800;font-size:20px;color:var(--fg);font-variant-numeric:tabular-nums;text-align:right;line-height:1}
+.etot small{display:block;font-family:'Nunito';font-size:9.5px;font-weight:800;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--dim);margin-top:4px}
+.erow{display:flex;align-items:center;gap:14px;padding:12px 18px;border-top:1px solid var(--bd);
+  transition:.15s cubic-bezier(.16,1,.3,1);cursor:pointer}
+.erow:hover{background:var(--muted)}
+.edate{font-family:'Baloo 2';font-weight:800;font-size:12.5px;color:var(--mut);width:74px;flex:none;
+  font-variant-numeric:tabular-nums}
+.ename{font-weight:700;font-size:13.5px;flex:1;min-width:0}
+.ename span{display:block;font-size:11.5px;color:var(--dim);font-weight:600;margin-top:2px}
+.ehrs{font-family:'Baloo 2';font-weight:800;font-size:13.5px;color:var(--fg);font-variant-numeric:tabular-nums;
+  width:52px;text-align:right;flex:none}
+.eadd{display:flex;align-items:center;gap:10px;padding:12px 18px;border-top:1px dashed var(--bd);
+  color:var(--dim);font-size:13px;font-weight:600;cursor:pointer}
+.eadd svg{width:15px;height:15px;color:var(--cat)}
+
+/* ── FRAME 2: the graduation offer ──────────────────────────────────── */
+.offer{margin-top:14px;display:flex;gap:14px;align-items:flex-start;
+  background:linear-gradient(140deg,color-mix(in srgb,var(--cat) 15%,var(--card)),var(--card) 62%);
+  border:1px solid color-mix(in srgb,var(--cat) 40%,var(--bd));border-radius:14px;padding:15px 18px;
+  box-shadow:0 14px 30px -16px rgba(0,0,0,.65)}
+.ram{width:40px;height:40px;border-radius:50%;flex:none;
+  background:radial-gradient(circle at 35% 30%,#d8c3a0,#a8875c);box-shadow:inset 0 -5px 12px rgba(0,0,0,.28)}
+.offer h4{font-family:'Baloo 2';font-weight:800;font-size:15.5px;margin:0}
+.offer p{font-size:13px;color:var(--mut);font-weight:600;margin:5px 0 0;line-height:1.55}
+.oacts{display:flex;gap:9px;margin-top:12px}
+.bsm{border-radius:10px;padding:7px 14px;font-family:'Baloo 2';font-weight:800;font-size:12.5px;cursor:pointer;
+  border:1px solid transparent;transition:.15s cubic-bezier(.16,1,.3,1)}
+.bsm.p{background:var(--cat);color:#0e2119}
+.bsm.g{background:transparent;border-color:var(--bd);color:var(--mut)}
+.bsm:hover{transform:translateY(-1px)}
+
+.note{width:1260px;margin:0 auto 30px;padding:17px 26px;border:1px dashed var(--bd);border-radius:14px;
+  font-size:13px;color:var(--dim);font-weight:600;line-height:1.62;background:var(--bg)}
+.note b{color:var(--mut);font-weight:800}
+.note i{color:var(--mut);font-style:italic}
+</style>
+</head>
+<body>
+
+<p class="flabel">Frame 1 — standing commitments lead as cards. One-day events are rows in one panel with a real total.</p>
+<div class="frame">
+
+  <div class="hero">
+    <div class="hill"></div>
+    <div class="htop">
+      <div>
+        <div class="h1">Volunteering</div>
+        <div class="hsub">Service hours, especially with the underserved.</div>
+      </div>
+      <button class="primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Log service
+      </button>
+    </div>
+    <div class="glass stats">
+      <div class="st"><b>318</b><span>Service hours</span></div>
+      <div class="st"><b>3</b><span>Causes</span></div>
+      <div class="st"><b>18 mo</b><span>Longest standing</span></div>
+      <div class="st"><b>4</b><span>Populations served</span></div>
+    </div>
+    <div class="tabs">
+      <div class="tab on">Orgs</div>
+      <div class="tab">Sessions</div>
+      <div class="tab">Reflections</div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <div class="sec">
+      <h2>Standing commitments</h2>
+      <span class="cnt">2</span>
+      <span class="ln"></span>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="ctop">
+          <div>
+            <div class="cname">Inter-Faith Council Shelter</div>
+            <div class="crole">Kitchen volunteer · Saturdays</div>
+          </div>
+          <div class="chrs">214<small>hours</small></div>
+        </div>
+        <div class="chips">
+          <span class="chip c-cat">Food insecurity</span>
+          <span class="chip c-dir">Direct</span>
+          <span class="chip c-pop">Homeless</span>
+          <span class="chip c-ver">Verifier on file</span>
+        </div>
+        <div class="lng">
+          <div class="lbar"><div class="lfill" style="width:100%"></div></div>
+          <b>weekly · 18 mo</b>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ctop">
+          <div>
+            <div class="cname">Carolina Tutoring Corps</div>
+            <div class="crole">Reading tutor · Tuesdays</div>
+          </div>
+          <div class="chrs">70<small>hours</small></div>
+        </div>
+        <div class="chips">
+          <span class="chip c-cat">Education</span>
+          <span class="chip c-dir">Direct</span>
+          <span class="chip c-pop">Youth</span>
+          <span class="chip c-ver">Verifier on file</span>
+        </div>
+        <div class="lng">
+          <div class="lbar"><div class="lfill" style="width:56%"></div></div>
+          <b>weekly · 10 mo</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>One-day events</h2>
+      <span class="cnt">6</span>
+      <span class="ln"></span>
+    </div>
+
+    <div class="events">
+      <div class="ehead">
+        <div>
+          <div class="t">Single-day service</div>
+          <div class="s">Six events across four organizations</div>
+        </div>
+        <div class="etot">34<small>hours</small></div>
+      </div>
+
+      <div class="erow">
+        <span class="edate">28 Nov 25</span>
+        <span class="ename">Turkey Trot 5K<span>Chapel Hill Parks · water station</span></span>
+        <span class="chip c-pop">Community</span>
+        <span class="ehrs">5.0</span>
+      </div>
+      <div class="erow">
+        <span class="edate">04 Oct 25</span>
+        <span class="ename">Red Cross blood drive<span>American Red Cross · check-in desk</span></span>
+        <span class="chip c-pop">Community</span>
+        <span class="ehrs">6.0</span>
+      </div>
+      <div class="erow">
+        <span class="edate">12 Sep 25</span>
+        <span class="ename">Habitat build day<span>Habitat for Humanity · framing crew</span></span>
+        <span class="chip c-pop">Low-income</span>
+        <span class="ehrs">8.0</span>
+      </div>
+      <div class="erow">
+        <span class="edate">19 Apr 25</span>
+        <span class="ename">Campus food drive<span>Carolina Cupboard · sorting</span></span>
+        <span class="chip c-pop">Low-income</span>
+        <span class="ehrs">4.0</span>
+      </div>
+      <div class="erow">
+        <span class="edate">29 Nov 24</span>
+        <span class="ename">Turkey Trot 5K<span>Chapel Hill Parks · water station</span></span>
+        <span class="chip c-pop">Community</span>
+        <span class="ehrs">5.0</span>
+      </div>
+      <div class="erow">
+        <span class="edate">05 Oct 24</span>
+        <span class="ename">Beach sweep<span>NC Coastal Federation · shoreline cleanup</span></span>
+        <span class="chip c-pop">Community</span>
+        <span class="ehrs">6.0</span>
+      </div>
+
+      <div class="eadd">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Add an event — date, hours, what you did
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<p class="flabel">Frame 2 — the Turkey Trot case: a second session makes it a relationship, so HQ offers to promote it.</p>
+<div class="frame">
+  <div class="body" style="border:1px solid var(--bd);border-radius:16px">
+
+    <div class="sec" style="margin-top:0">
+      <h2>One-day events</h2>
+      <span class="cnt">6</span>
+      <span class="ln"></span>
+    </div>
+
+    <div class="events">
+      <div class="ehead">
+        <div>
+          <div class="t">Single-day service</div>
+          <div class="s">Six events across four organizations</div>
+        </div>
+        <div class="etot">34<small>hours</small></div>
+      </div>
+      <div class="erow" style="background:color-mix(in srgb,var(--cat) 9%,transparent)">
+        <span class="edate">28 Nov 25</span>
+        <span class="ename">Turkey Trot 5K<span>Chapel Hill Parks · water station · second year</span></span>
+        <span class="chip c-cat">Returned</span>
+        <span class="ehrs">5.0</span>
+      </div>
+      <div class="erow">
+        <span class="edate">04 Oct 25</span>
+        <span class="ename">Red Cross blood drive<span>American Red Cross · check-in desk</span></span>
+        <span class="chip c-pop">Community</span>
+        <span class="ehrs">6.0</span>
+      </div>
+    </div>
+
+    <div class="offer">
+      <div class="ram"></div>
+      <div>
+        <h4>You came back to the Turkey Trot</h4>
+        <p>Two years running with Chapel Hill Parks. Want to track this as a standing commitment instead? It keeps both sessions and starts showing longevity.</p>
+        <div class="oacts">
+          <button class="bsm p">Make it standing</button>
+          <button class="bsm g">Keep as events</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="note">
+  <b>Why two shapes, and not one.</b> Andy: <i>“in Clinical you have roles that you stick with. In Volunteering you can have those same roles, but there are more temporary ones that are kind of one-off.”</i> Clinical inherited a hero of one card per site because <b>every clinical record is a relationship</b>. Volunteering has both kinds, so it needs both shapes. <b>A card answers “what is my relationship here.” A row answers “what did I do that day.”</b> Forcing a Turkey Trot into a card produces a mostly-empty card, and eight of them read as eight abandoned commitments regardless of the copy.
+  <br><br>
+  <b>The events panel carries a real total</b> — <i>34 hours, six events</i> — in the same weight the cards use for theirs. It is not a footnote under the real work. And <b>“longest 18 mo” in the banner reads across standing commitments only</b>: that number sitting beside a list of events was the specific thing V-12's copy rule could not fix on its own.
+  <br><br>
+  <b>The promotion is an offer, never automatic</b> (#12–15's flag-and-offer rule), and the test is deterministic — a second session, nothing more. No AI, no sourced threshold. It rewards returning without ever scolding the student who did not.
+</div>
+
+</body>
+</html>

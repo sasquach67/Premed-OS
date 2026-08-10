@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Class Center — study hub (CHEM 241) concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#faf9f7; --s2:#ffffff; --s1:#f4f2ee; --border:#e5e2db;
+    --text:#1f1e1c; --muted:#6f6d67; --hint:#9a978f;
+    --accent:#185fa5; --accent-bg:#e6f1fb;
+    --warn:#a06a12; --warn-bg:#faeeda; --danger:#a32d2d; --danger-bg:#fceceb;
+    --success:#3b6d11; --success-bg:#eaf3de; --leaf:#0f6e56; --leaf-bg:#e1f5ee;
+    --radius:8px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1a1917; --s2:#26251f; --s1:#211f1b; --border:#3a382f;
+      --text:#f1efe8; --muted:#b4b2a9; --hint:#888780;
+      --accent:#85b7eb; --accent-bg:#0c2740; --warn:#ef9f27; --warn-bg:#3a2c10;
+      --danger:#f09595; --danger-bg:#3a1717; --success:#97c459; --success-bg:#20300c;
+      --leaf:#5dcaa5; --leaf-bg:#0d2b24; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:1.75rem; line-height:1.55; font-size:15px;}
+  .wrap{max-width:860px; margin:0 auto;}
+  .hd{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px;}
+  .hd h1{font-size:22px; font-weight:600; margin:0;}
+  .hd .meta{font-size:13px; color:var(--muted); margin-top:2px;}
+  .chip{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:500; padding:5px 11px; border-radius:999px;}
+  .chip.exam{background:var(--danger-bg); color:var(--danger);}
+  .grid{display:grid; grid-template-columns:1fr 250px; gap:16px;}
+  @media(max-width:720px){ .grid{grid-template-columns:1fr;} }
+  .coach{background:var(--leaf-bg); border:0.5px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:16px; display:flex; gap:12px; align-items:flex-start;}
+  .coach .ram{width:34px;height:34px;border-radius:50%;background:var(--leaf);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:14px;}
+  .coach h3{margin:0 0 3px; font-size:14px; font-weight:600;}
+  .coach p{margin:0; font-size:13px; color:var(--muted);}
+  .coach .steps{display:flex; gap:6px; margin-top:9px; flex-wrap:wrap;}
+  .coach .steps span{font-size:11px; background:var(--s2); border:0.5px solid var(--border); border-radius:999px; padding:3px 9px; color:var(--text);}
+  .coach .go{margin-top:10px; font-size:13px; color:var(--leaf); font-weight:500; cursor:pointer;}
+  .coach .x{margin-left:auto; color:var(--hint); cursor:pointer; font-size:15px; background:none;border:none;}
+  .sec{background:var(--s2); border:0.5px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:16px;}
+  .sec h2{font-size:13px; font-weight:600; margin:0 0 12px; display:flex; align-items:center; gap:7px;}
+  .sec h2 .count{color:var(--muted); font-weight:400;}
+  .due{border:0.5px solid var(--border); border-radius:10px; padding:11px 12px; margin-bottom:9px; background:var(--bg);}
+  .due:last-child{margin-bottom:0;}
+  .due .top{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .due .t{font-weight:500;}
+  .due .why{font-size:12px; color:var(--muted); margin-top:5px; display:flex; align-items:center; gap:5px;}
+  .due .why b{font-weight:500; color:var(--text);}
+  .btn{border:0.5px solid var(--border); background:var(--s1); color:var(--text); border-radius:var(--radius); padding:6px 12px; font-size:13px; font-weight:500; cursor:pointer;}
+  .btn.p{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 2px; border-top:0.5px solid var(--border); font-size:14px;}
+  .row:first-of-type{border-top:none;}
+  .st{font-size:11px; font-weight:500; padding:3px 9px; border-radius:999px;}
+  .st.ready{background:var(--success-bg); color:var(--success);}
+  .st.weak{background:var(--danger-bg); color:var(--danger);}
+  .st.rev{background:var(--accent-bg); color:var(--accent);}
+  .st.notes{background:var(--warn-bg); color:var(--warn);}
+  .st.new{background:var(--s1); color:var(--muted);}
+  .st.anki{background:var(--leaf-bg); color:var(--leaf);}
+  .dots{color:var(--hint); cursor:pointer; font-size:18px; line-height:1; padding:0 4px; background:none; border:none;}
+  .tools{display:flex; flex-wrap:wrap; gap:8px;}
+  .tool{border:0.5px solid var(--border); background:var(--s2); border-radius:10px; padding:9px 12px; font-size:13px; font-weight:500; cursor:pointer; display:flex; align-items:center; gap:7px;}
+  .tool .ic{color:var(--accent);}
+  .file{display:flex; align-items:center; gap:9px; padding:8px 2px; border-top:0.5px solid var(--border); font-size:13px;}
+  .file:first-of-type{border-top:none;}
+  .file .k{font-size:11px; color:var(--muted); margin-left:auto;}
+  .drop{margin-top:10px; border:1px dashed var(--border); border-radius:10px; padding:12px; text-align:center; font-size:12px; color:var(--hint); cursor:pointer;}
+  .foot{font-size:12px; color:var(--hint); text-align:center; margin-top:6px;}
+  .ic{font-style:normal;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hd">
+    <div>
+      <h1>CHEM 241 · Organic Chemistry I</h1>
+      <div class="meta">Dr. Elamin · MWF 10:10a · Kenan B12</div>
+    </div>
+    <span class="chip exam">◉ Midterm 2 in 6 days</span>
+  </div>
+
+  <div class="coach" id="coach">
+    <div class="ram">HQ</div>
+    <div>
+      <h3>New here? Learn how to actually study.</h3>
+      <p>This class runs on active recall + spaced review — the two habits that beat re-reading. Here's the loop:</p>
+      <div class="steps"><span>1 · Mark topics as you cover them</span><span>2 · Do your daily review queue</span><span>3 · Quiz yourself, don't re-read</span><span>4 · Trust the schedule</span></div>
+      <div class="go">Take the 90-second walkthrough →</div>
+    </div>
+    <button class="x" onclick="document.getElementById('coach').style.display='none'" aria-label="Dismiss">✕</button>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="sec">
+        <h2>◉ Due for review today <span class="count">· 2 topics</span></h2>
+        <div class="due">
+          <div class="top"><span class="t">Alkene addition reactions</span><button class="btn p">Recall</button></div>
+          <div class="why"><span class="ic">💡</span>Due because your last recall was <b>4 days ago</b> and retrievability dropped to <b>~87%</b> — recall now to lock it in.</div>
+        </div>
+        <div class="due">
+          <div class="top"><span class="t">Stereochemistry · R/S</span><button class="btn p">Recall</button></div>
+          <div class="why"><span class="ic">💡</span>You marked this <b>Weak</b> last time, so it's scheduled sooner.</div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>Topics <span class="count">· 2 of 6 ready</span></h2>
+        <div class="row"><span>Unit 1 · Structure & bonding</span><span style="display:flex;align-items:center;gap:8px;"><span class="st ready">✓ Ready</span><button class="dots" aria-label="Topic actions">⋯</button></span></div>
+        <div class="row"><span>Unit 2 · Alkanes & conformations</span><span style="display:flex;align-items:center;gap:8px;"><span class="st ready">✓ Ready</span><button class="dots" aria-label="Topic actions">⋯</button></span></div>
+        <div class="row"><span>Unit 3 · Stereochemistry</span><span style="display:flex;align-items:center;gap:8px;"><span class="st weak">Weak</span><button class="dots" aria-label="Topic actions">⋯</button></span></div>
+        <div class="row"><span>Unit 4 · Alkene reactions</span><span style="display:flex;align-items:center;gap:8px;"><span class="st rev">Reviewing</span><span class="st anki">Anki · in sync</span><button class="dots" aria-label="Topic actions">⋯</button></span></div>
+        <div class="row"><span>Unit 5 · Alkynes</span><span style="display:flex;align-items:center;gap:8px;"><span class="st notes">Notes made</span><button class="dots" aria-label="Topic actions">⋯</button></span></div>
+        <div class="row"><span>Unit 6 · Radical reactions</span><span style="display:flex;align-items:center;gap:8px;"><span class="st new">Not started</span><button class="dots" aria-label="Topic actions">⋯</button></span></div>
+      </div>
+
+      <div class="sec">
+        <h2>Study tools</h2>
+        <div class="tools">
+          <button class="tool"><span class="ic">✦</span>Generate study guide</button>
+          <button class="tool"><span class="ic">✦</span>Quiz me</button>
+          <button class="tool"><span class="ic">✦</span>Free-recall dump</button>
+          <button class="tool"><span class="ic">✦</span>Make flashcards → Anki</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec">
+        <h2>Materials</h2>
+        <div class="file"><span>📄</span>Syllabus<span class="k">PDF</span></div>
+        <div class="file"><span>📊</span>Lecture 12 — alkenes<span class="k">slides</span></div>
+        <div class="file"><span>✎</span>My notes<span class="k">GoodNotes</span></div>
+        <div class="file"><span>🔗</span>Canvas page<span class="k">link</span></div>
+        <div class="drop">Drop Canvas files here to centralize</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">Concept mockup · Class Center per-class study hub. See <code>tabs/01-academics.md</code> §4.1.</div>
+</div>
+</body>
+</html>

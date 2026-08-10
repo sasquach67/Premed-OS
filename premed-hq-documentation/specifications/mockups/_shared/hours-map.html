@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where your hours live (cross-pillar hours map)</title>
+<!--
+  ============================================================================
+  WHERE YOUR HOURS LIVE — CROSS-PILLAR HOURS MAP — VISUAL REFERENCE
+  ============================================================================
+  Status: REJECTED (Aug 2026). Do not build. Kept as a reference only.
+
+  WHY IT WAS KILLED
+  Overview already does this job, in two places:
+   · 03-overview.md §6.5 "Where I stand" has one row per domain and already
+     encodes the per-pillar differences (Shadowing shows specialties,
+     Extracurriculars shows roles and never hours).
+   · 03-overview.md §6.5a has an "Hours" stat tile: one comparative bar per
+     category with exact totals.
+  A third rendering of the same numbers is not a feature.
+
+  WHAT SURVIVES, AND WHERE IT GOES
+  Four elements here are genuinely absent from Overview. All four belong to
+  the AMCAS export preview (catalog P17), because they answer "what does my
+  application look like" rather than "where am I":
+   1. The ATTRIBUTION LINE ("64h from Carolina Health Access, counted once").
+      This is #18 made visible and is the only place the invariant should
+      ever speak unprompted.
+   2. AMCAS CATEGORY per row (board §7a mapping).
+   3. EXPAND TO THE UNDERLYING RECORDS. A total you cannot open is a vanity
+      figure.
+   4. The JUDGMENT CALLS review, where #13's deferred questions surface.
+
+  The constraints panel in this file also survives and should carry over:
+  no targets, no comparison, no pie chart, no readiness score.
+  Related: tabs/03-clinical-board.md C1 (hour ownership) ·
+           tabs/03-clinical-feature-catalog.md #18, P17 (AMCAS export preview)
+
+  WHY THIS EXISTS, AND WHAT IT IS NOT
+  #18 "hour ownership" is an INVARIANT, not a feature: one record, one
+  category, counted once. `hourTotals()` already enforces it by keying off a
+  single `category` field, so double-counting is not currently possible.
+  An invariant that needs a dashboard is one you do not trust, so this is NOT
+  a reassurance panel and NOT an "hour allocation" screen.
+
+  What students actually want is the SHAPE OF THEIR WHOLE RECORD in one
+  place. Most build it in a spreadsheet the week before submitting. This is
+  that view, and ownership becomes legible as a BYPRODUCT: the "counted in"
+  lines are #18 doing its job visibly rather than being asserted.
+
+  MOCKED STANDALONE ON PURPOSE
+  The AMCAS export preview (P17) does not exist yet. Designing this inside a
+  screen that has not been designed would make it impossible to tell whether
+  a bad result is this idea or its placement. Judge the panel alone first,
+  then place it: inside the export preview, on Overview, or on Profile/CV.
+
+  DECISIONS THIS FILE ENCODES
+  1. IT IS A RECORD VIEW, NOT A SCOREBOARD. It says what you have and where
+     it counts. It stops there.
+  2. NO TARGETS, NO PROGRESS BARS, NO GAPS. The moment it says "you need 250
+     more clinical hours" it becomes a bucket-filling scoreboard, which
+     contradicts Shadowing (where the correct end state is STOP, §2.1) and
+     Extracurriculars (where hours are the weakest signal, §2.1).
+  3. NO COMPARISON TO OTHER APPLICANTS, ever. Already a stated non-goal
+     (03-clinical-board.md §5).
+  4. EVERY NUMBER IS TRACEABLE. A total you cannot open is a vanity figure.
+     Each row expands to the records behind it.
+  5. CROSS-LINKS ARE SHOWN AS ATTRIBUTION, NOT DUPLICATION. "64h counted in
+     Service" on the Extracurriculars row is the ONLY place #18 needs to
+     speak unprompted. Without it a club shows no hours and reads as broken.
+  6. AMCAS CATEGORY IS SHOWN because it is the real output (board §7a). The
+     student sees where each row lands on the application.
+  7. SHADOWING SHOWS BREADTH, NOT A TOTAL BAR. Its metric is specialties
+     covered. Rendering it as a small hours bar beside the others would
+     import exactly the accumulation pressure that pillar forbids.
+  8. ACTIVITIES SHOWS NO HOURS AT ALL. Extracurriculars' rule is the
+     strictest version in the app: hours are never centered there.
+
+  DELIBERATELY EXCLUDED — do not add these back
+   · A pie or donut of hours by pillar. Implies the split should be balanced.
+     It should not; the right shape differs per person.
+   · Any "recommended" or "typical" hour figure. Category A research has not
+     confirmed one exists, and board C3 forbids presenting a user's own
+     target as an admissions standard.
+   · A completeness percentage or readiness score. Invented composite.
+   · Sparklines of hours over time. Clinical already owns that chart, and it
+     is the only pillar where accumulation is the point.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#211e1a; --card:#2b2722; --fg:#ece3d4; --mut:#a89c8c; --dim:#7c7264;
+  --bd:#3c352d; --muted:#322e28;
+  --success:#6fc0a8; --warning:#e7b06a; --danger:#e8806f;
+  --cat:#4b9cd3;
+  --clinical:#6fae6e; --service:#72a996; --shadow:#e0a458;
+  --research:#c98ac9; --activities:#e08b9b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:13px;padding:26px;overflow:auto}
+.frame{width:1400px;background:var(--bg);border-radius:18px;overflow:hidden;box-shadow:0 30px 90px -30px rgba(0,0,0,.9);margin-bottom:34px}
+.framelabel{width:1400px;font-family:'Baloo 2';font-weight:800;font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;margin:0 0 10px 4px}
+
+.banner{background:
+  radial-gradient(340px 200px at 88% 6%, rgba(75,156,211,.34), transparent 70%),
+  radial-gradient(260px 180px at 10% 130%, rgba(111,192,168,.18), transparent 70%),
+  linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%);padding:16px 24px 18px}
+.h1{font-family:'Baloo 2';font-weight:800;font-size:30px;color:#fff;letter-spacing:-.4px;line-height:1.1}
+.subline{font-size:12px;color:rgba(255,255,255,.66);font-weight:700;margin-top:4px}
+.modetag{font-family:'Baloo 2';font-weight:800;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:3px 10px;
+  display:inline-block;margin-bottom:12px}
+
+.body{padding:20px 22px 26px}
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 10px 26px -14px rgba(0,0,0,.55)}
+.ph{padding:15px 17px 9px;display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.pt{font-family:'Baloo 2';font-weight:800;font-size:17px}
+.ps{font-size:11.5px;color:var(--dim);font-weight:700}
+.pb{padding:3px 17px 17px;display:flex;flex-direction:column;gap:8px}
+
+/* ---- the row ---- */
+.hrow{display:grid;grid-template-columns:16px 132px 1fr 96px 20px;gap:13px;align-items:center;
+  background:var(--muted);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;
+  cursor:pointer;transition:.15s cubic-bezier(.16,1,.3,1)}
+.hrow:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 55%,var(--bd))}
+.dot{width:9px;height:9px;border-radius:3px;background:var(--accent)}
+.pill{font-family:'Baloo 2';font-weight:800;font-size:14px}
+.pill small{display:block;font-size:10px;font-weight:800;color:var(--dim);letter-spacing:.04em;text-transform:uppercase;margin-top:2px}
+.who{font-size:12px;font-weight:700;color:var(--mut);line-height:1.5}
+.who .amcas{display:block;font-size:10.5px;color:var(--dim);font-weight:700;margin-top:3px}
+.amt{font-family:'Baloo 2';font-weight:800;font-size:19px;text-align:right;font-variant-numeric:tabular-nums}
+.amt small{display:block;font-size:10px;font-weight:800;color:var(--dim)}
+.chev{color:var(--dim);font-size:11px;text-align:center}
+
+/* attribution line: the only place #18 speaks unprompted */
+.attr{display:flex;align-items:center;gap:8px;margin:-2px 0 0 42px;padding:7px 11px;
+  background:rgba(255,255,255,.028);border-left:2px solid color-mix(in srgb,var(--service) 55%,transparent);
+  border-radius:0 9px 9px 0;font-size:11.5px;font-weight:700;color:var(--dim)}
+.attr b{color:var(--mut);font-weight:800}
+
+/* expanded records */
+.recs{margin:-2px 0 0 42px;display:flex;flex-direction:column;gap:5px}
+.rec{display:grid;grid-template-columns:1fr 74px;gap:10px;align-items:center;
+  background:var(--card);border:1px solid var(--bd);border-radius:9px;padding:8px 11px}
+.rec .rn{font-size:12px;font-weight:700}
+.rec .rn span{display:block;font-size:10.5px;color:var(--dim);font-weight:700;margin-top:2px}
+.rec .rh{font-family:'Baloo 2';font-weight:800;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;color:var(--mut)}
+
+.chip{font-family:'Baloo 2';font-weight:800;border-radius:999px;padding:2px 8px;font-size:9.5px;white-space:nowrap}
+.c-dim{background:rgba(255,255,255,.07);color:var(--dim)}
+.c-ok{background:color-mix(in srgb,var(--success) 18%,transparent);color:var(--success)}
+
+.note{font-size:11.5px;color:var(--dim);font-weight:600;line-height:1.55;padding:9px 11px;
+  background:rgba(255,255,255,.028);border-left:2px solid color-mix(in srgb,var(--cat) 42%,transparent);
+  border-radius:0 9px 9px 0}
+.mnote{display:flex;gap:11px;align-items:flex-start;background:color-mix(in srgb,var(--cat) 7%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 24%,var(--bd));border-radius:12px;padding:11px 13px}
+.ram{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--cat) 22%,transparent);
+  display:grid;place-items:center;flex:none;font-size:15px}
+.mt{font-family:'Baloo 2';font-weight:800;font-size:12.5px;margin-bottom:2px}
+.mb{font-size:11.5px;color:var(--mut);font-weight:600;line-height:1.55}
+.x{margin-left:auto;color:var(--dim);font-weight:800;font-size:13px;cursor:pointer;flex:none}
+.btn{font-family:'Baloo 2';font-weight:800;font-size:11.5px;border-radius:9px;padding:7px 12px;
+  border:1px solid var(--bd);background:var(--muted);color:var(--mut);cursor:pointer}
+.two{display:grid;grid-template-columns:1fr 400px;gap:14px;align-items:start}
+</style>
+</head>
+<body>
+
+<div class="framelabel">Where your hours live &middot; standalone, placement undecided</div>
+<div class="frame">
+  <div class="banner">
+    <div class="modetag">Your record</div>
+    <div class="h1">Where your hours live</div>
+    <div class="subline">Everything you've logged, and where each part counts on the application.</div>
+  </div>
+
+  <div class="body"><div class="two">
+
+    <div class="panel">
+      <div class="ph">
+        <div><div class="pt">By pillar</div><div class="ps">Every number opens to the records behind it</div></div>
+        <div class="btn">Export</div>
+      </div>
+      <div class="pb">
+
+        <!-- CLINICAL, expanded -->
+        <div class="hrow" style="--accent:var(--clinical)">
+          <span class="dot"></span>
+          <div class="pill">Clinical<small>2 roles</small></div>
+          <div class="who">Orange County EMS &middot; UNC Children's Hospital
+            <span class="amcas">Paid Employment and Community Service, both Medical/Clinical</span></div>
+          <div class="amt">486<small>hours</small></div>
+          <div class="chev">&#9652;</div>
+        </div>
+        <div class="recs">
+          <div class="rec"><div class="rn">Orange County EMS <span>EMT &middot; Aug 2026 to now</span></div><div class="rh">396h</div></div>
+          <div class="rec"><div class="rn">Orange County EMS <span>estimated block, 2025</span></div><div class="rh">90h</div></div>
+          <div class="rec"><div class="rn">UNC Children's Hospital <span>patient playroom &middot; weekly</span></div><div class="rh">138h</div></div>
+        </div>
+
+        <!-- SERVICE -->
+        <div class="hrow" style="--accent:var(--service)">
+          <span class="dot"></span>
+          <div class="pill">Service<small>3 commitments</small></div>
+          <div class="who">TABLE &middot; Habitat for Humanity &middot; Carolina Health Access
+            <span class="amcas">Community Service/Volunteer, Not Medical/Clinical</span></div>
+          <div class="amt">210<small>hours</small></div>
+          <div class="chev">&#9662;</div>
+        </div>
+        <div class="attr">
+          <span>&#8627;</span>
+          <span><b>64h</b> of these come from Carolina Health Access, which is also one of your student organizations. Counted here, once.</span>
+        </div>
+
+        <!-- SHADOWING — breadth, not a total -->
+        <div class="hrow" style="--accent:var(--shadow)">
+          <span class="dot"></span>
+          <div class="pill">Shadowing<small>5 physicians</small></div>
+          <div class="who">Family medicine, cardiology, EM, peds, general surgery
+            <span class="amcas">Physician Shadowing/Clinical Observation</span></div>
+          <div class="amt">5<small>specialties</small></div>
+          <div class="chev">&#9662;</div>
+        </div>
+        <div class="note">Shadowing shows breadth, not a total, because specialties covered is its actual metric. 41 hours is a complete record and there is no reason to grow it.</div>
+
+        <!-- RESEARCH -->
+        <div class="hrow" style="--accent:var(--research)">
+          <span class="dot"></span>
+          <div class="pill">Research<small>1 project</small></div>
+          <div class="who">Okonkwo lab &middot; 1 poster, 1 abstract in review
+            <span class="amcas">Research/Lab, plus Presentations/Posters</span></div>
+          <div class="amt">380<small>hours</small></div>
+          <div class="chev">&#9662;</div>
+        </div>
+
+        <!-- ACTIVITIES — no hours at all -->
+        <div class="hrow" style="--accent:var(--activities)">
+          <span class="dot"></span>
+          <div class="pill">Activities<small>3 orgs</small></div>
+          <div class="who">Carolina Health Access &middot; Club water polo &middot; Campus radio
+            <span class="amcas">Extracurricular Activities and Leadership</span></div>
+          <div class="amt" style="font-size:14px;color:var(--dim)">Member<br><small style="font-size:9.5px">to President</small></div>
+          <div class="chev">&#9662;</div>
+        </div>
+        <div class="note">No hours here on purpose. What counts is the role you reached and what you built, so this row shows progression instead.</div>
+
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:13px">
+      <div class="panel">
+        <div class="ph"><div><div class="pt">What this is not</div><div class="ps">Constraints, written into the mockup</div></div></div>
+        <div class="pb">
+          <div class="note">No targets and no progress bars. Nothing here says you need more of anything.</div>
+          <div class="note">No comparison to other applicants. HQ has no honest data for it, and it would import the exact anxiety the app exists to reduce.</div>
+          <div class="note">No pie chart. A split implies there is a correct balance. There isn't one, and it differs per person.</div>
+          <div class="note">No readiness score. It would be an invented composite of numbers that are already right in front of you.</div>
+        </div>
+      </div>
+
+      <div class="mnote">
+        <div class="ram">&#128015;</div>
+        <div>
+          <div class="mt">Why the arrow line exists</div>
+          <div class="mb">Carolina Health Access is a student organization that also does service. Its hours count once, under Service. Without that line the club would show no hours and look broken, so it is the one place HQ explains where a number lives without being asked.</div>
+        </div>
+        <div class="x">&#10005;</div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><div><div class="pt">Judgment calls</div><div class="ps">Deferred from when you logged them</div></div></div>
+        <div class="pb">
+          <div class="rec"><div class="rn">Pharmacy technician <span>counselled patients sometimes</span></div><div class="rh"><span class="chip c-dim">review</span></div></div>
+          <div class="rec"><div class="rn">Camp counsellor, medical needs <span>assisting, not responsible</span></div><div class="rh"><span class="chip c-dim">review</span></div></div>
+          <div class="note">You were never asked about these when you added them. They are counted where you put them, and this is the one moment it is worth a second look.</div>
+        </div>
+      </div>
+    </div>
+
+  </div></div>
+</div>
+
+</body>
+</html>
