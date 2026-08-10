@@ -24,6 +24,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Check, Mail } from 'lucide-react'
 import { PublicShell } from '@/components/public/PublicShell'
 import { PublicNav } from '@/components/public/PublicNav'
+import { Wordmark } from '@/components/public/Wordmark'
 import { supabase, isSupabaseConfigured, authRedirectTo } from '@/lib/supabase'
 import { useEnterApp } from '@/components/public/useEnterApp'
 import { markEnteredApp } from '@/lib/publicLayer'
@@ -232,7 +233,13 @@ export function AuthPage() {
       </div>
 
       <div className="pl-authwrap">
-        <div className="pl-card pl-authcard">
+        <div className="pl-authstack">
+          {/* A sign-in screen with no mark is the one place a stranger
+              checks they are in the right product. Not a link here — it is
+              a label on the card, and the nav above already goes home. */}
+          <Wordmark asLink={false} small />
+
+          <div className="pl-card pl-authcard">
           {screen === 'sent' ? (
             <CheckYourEmail
               email={email.trim()}
@@ -403,6 +410,7 @@ export function AuthPage() {
               </div>
             </>
           )}
+          </div>
         </div>
       </div>
     </PublicShell>

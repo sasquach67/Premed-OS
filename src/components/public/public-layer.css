@@ -1,48 +1,129 @@
-/* ============================================================
-   public-layer.css — the PUBLIC LAYER ONLY (/, /auth, /auth/merge,
-   /about, /privacy, /terms, /pricing).
+/* ============================================================================
+   public-layer.css — the PUBLIC LAYER ONLY
+   (/, /landing, /auth, /auth/merge, /about, /privacy, /terms, /pricing)
 
-   Every selector is scoped under `.pl`. Nothing here reaches an in-app
-   surface, which is what keeps P1 §3's four scoped departures — pill
-   buttons, the floating pill nav, the 46px headline, and glass on every
-   floating surface — from leaking past this route group.
+   Every selector is scoped under `.pl`. That scoping is what keeps P1 §3's
+   four departures — pill buttons, the floating pill nav, the oversized
+   two-weight headline, and glass on every floating surface — from reaching
+   an in-app surface.
 
-   Values are `_shared/_visual-recipes.md` verbatim. The glass recipe's
-   `inset 0 1px 0 rgba(255,255,255,.16)` is what makes glass read as glass
-   rather than as a translucent box: never drop it (`_visual-recipes.md:34`).
+   ⭐ THE STANDING RULE (P2, Aug 2026). This file was 1013 lines across SIX
+   appended "fix passes." `.pl-hl-hero .l2`'s font-size was declared five
+   times, `.pl-hero-in` six, and the 1100px/900px breakpoints sat ABOVE the
+   non-media clamp() rules that overrode them — so tablet sizing had been
+   unreachable since the fluid-type pass, silently, because a clamp produces
+   a plausible size at every width. That cascade is why an edit to one value
+   scrambled the type somewhere else.
 
-   Theme: the hero/title band is ART — a dark gradient with light type,
-   in both themes, the same way a photograph doesn't invert. Everything
-   BELOW it uses the app's own tokens, so the light "paper" theme works.
-   ============================================================ */
+   So: ONE pass, in this order, and nothing appended to the bottom.
+
+       1. Tokens        one colour set, one type scale, one spacing scale
+       2. Primitives    glass, buttons, pills, fields
+       3. Layout        nav · hero · features · tour · cards · footer ·
+                        doc pages · about · pricing · auth · merge
+       4. Motion        load-in, scroll reveal, stagger
+       5. Media queries LAST, and only where a clamp() genuinely cannot
+
+   **Every property is declared exactly once. Every size reads from a token.**
+   A future fix EDITS THE RULE THAT EXISTS. Appending a seventh pass to the
+   bottom of this file is precisely how the file got into that state.
+   ============================================================================ */
+
+/* ══ 1 · TOKENS ═══════════════════════════════════════════════════════════ */
 
 .pl {
-  /* ⭐ Aug 2026 (Andy): the public layer is ART, end to end. ONE continuous
-     blue-glass field behind every section and every public route — the hero,
-     features, tour, cards, and all four doc pages. It does NOT follow the
-     app's light/dark theme, the same way a photograph doesn't invert.
+  /* ── Colour ───────────────────────────────────────────────────────────
+     The public layer is ART, end to end: one continuous blue field behind
+     every section and every public route. It does NOT follow the app's
+     light/dark theme, the same way a photograph doesn't invert.
 
-     Consequence, and it is the whole reason this is safe: because the field
-     is always dark, EVERY text colour below is a fixed light value. Nothing
-     here reads from --foreground. Reintroducing an app token for text is how
-     the paper theme breaks (white on cream), which already happened once. */
+     Because the field is always dark, EVERY text colour here is a fixed
+     light value. Nothing below reads from `--foreground`. Reintroducing an
+     app token for text is how the paper theme breaks (white on cream) —
+     that already happened once. */
+  /* ⚠️ THE ALPHAS ARE A CONTRAST BUDGET. Measured against the LIGHTEST
+     stop of the field (#233448 — the top, where the hero's disclaimer
+     sits), which is the worst case for white text:
+
+        --pl-fg   1.00 → 9.97:1     --pl-dim   0.56 → 5.14:1
+        --pl-mut  0.72 → 7.38:1     --pl-fine  0.52 → 4.67:1
+
+     `--pl-fine` was 0.42 (3.57:1) and `--pl-dim` 0.50 (4.45:1) — both
+     under AA's 4.5 for body text. That is not a cosmetic miss: `--pl-fine`
+     sets the hero's independence line AND the footer's AAMC disclaimer,
+     which are REQUIRED text (05 §6.1, §6.2). Legally required copy that
+     cannot be read is the same class of problem as the reveal-gating the
+     footer's `!important` guards against.
+
+     Lowering either of these back for a subtler look reopens that. */
   --pl-fg: #ece3d4;
   --pl-mut: rgba(255, 255, 255, 0.72);
-  --pl-dim: rgba(255, 255, 255, 0.5);
+  --pl-dim: rgba(255, 255, 255, 0.56);
+  --pl-fine: rgba(255, 255, 255, 0.52);
   --pl-bd: rgba(255, 255, 255, 0.14);
   --pl-card: rgba(255, 255, 255, 0.055);
   --pl-soft: rgba(255, 255, 255, 0.07);
   --pl-pri: #6fb3de;
+  --pl-ink: #17222c;
   --pl-success: #6fc0a8;
   --pl-warning: #e7b06a;
+  --pl-danger: #e8806f;
 
+  /* ── ONE type scale. Every font-size on the page comes from here. ──────
+     ⚠️ The ceilings are guardrails, not decoration. Past ~150px the
+     descender in "spreadsheet" starts fighting the CTA row on a 900px-tall
+     laptop. If the hero needs to be bigger, raise the vw factor — not the
+     ceiling. That scales large screens without breaking short ones. */
+  --t-setup: clamp(21px, 2.9vw, 58px);
+  --t-payoff: clamp(42px, 7.4vw, 150px);
+  --t-sec-set: clamp(16px, 1.6vw, 30px);
+  --t-sec-pay: clamp(28px, 3.7vw, 64px);
+  --t-about-set: clamp(19px, 2vw, 38px);
+  --t-about-pay: clamp(34px, 4.6vw, 84px);
+  --t-lede: clamp(16px, 1.4vw, 27px);
+  --t-h2: clamp(19px, 1.35vw, 26px);
+  --t-h3: clamp(17px, 1.25vw, 24px);
+  --t-body: clamp(14.5px, 0.95vw, 18px);
+  --t-read: clamp(15.5px, 1.05vw, 19px);
+  --t-prose: clamp(17px, 1.15vw, 21px);
+  --t-ui: clamp(13.5px, 0.92vw, 17px);
+  --t-fine: clamp(12px, 0.78vw, 15px);
+  --t-eyebrow: clamp(10px, 0.7vw, 12.5px);
+  --t-display: clamp(28px, 2.4vw, 46px);
+
+  /* ── ONE spacing scale ────────────────────────────────────────────── */
+  --s-1: clamp(6px, 0.5vw, 10px);
+  --s-2: clamp(10px, 0.9vw, 16px);
+  --s-3: clamp(16px, 1.4vw, 26px);
+  --s-4: clamp(24px, 2.2vw, 40px);
+  --s-5: clamp(40px, 4vw, 76px);
+  --s-6: clamp(56px, 7vw, 128px);
+
+  /* ── Measure, radii, easing ───────────────────────────────────────────
+     The hero gets a WIDER rail than the content sections. Display type and
+     a five-column tile grid want different measures; forcing them to share
+     one is what made the headline look boxed in. */
+  --rail: min(1660px, 93vw);
+  --rail-hero: min(1820px, 95vw);
+  --rail-doc: minmax(0, 820px);
+  --r-pill: 999px;
+  --r-card: clamp(14px, 1.1vw, 20px);
+  --r-field: clamp(10px, 0.8vw, 14px);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* `.pl` is a flex column and the footer takes `margin-top: auto`, so on a
+     short page (auth, pricing) the footer pins to the bottom instead of
+     leaving a band of empty field beneath it. On a long page it stays in
+     flow and nothing changes. */
   position: relative;
   isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   color: var(--pl-fg);
   font-family: 'Nunito', system-ui, sans-serif;
-  font-size: 15px;
+  font-size: var(--t-body);
   line-height: 1.45;
-  min-height: 100vh;
   background:
     radial-gradient(1200px 700px at 50% -8%, rgba(111, 179, 222, 0.3), transparent 70%),
     radial-gradient(900px 600px at 4% 38%, rgba(111, 192, 168, 0.12), transparent 70%),
@@ -50,12 +131,12 @@
     linear-gradient(168deg, #233448 0%, #26303c 38%, #2a2b2c 72%, #242019 100%);
   background-attachment: fixed;
 }
-/* the drifting mesh now sits behind the WHOLE page, not per-section */
-.pl > .pl-mesh {
-  position: fixed; inset: -25%; z-index: -1; opacity: 0.55;
-}
 
-/* ── THE glass recipe (_visual-recipes.md §Glass) ─────────────────────── */
+/* ══ 2 · PRIMITIVES ═══════════════════════════════════════════════════════ */
+
+/* ── The glass recipe (`_visual-recipes.md` §Glass, verbatim) ──────────────
+   `inset 0 1px 0 rgba(255,255,255,.16)` is what makes a surface read as
+   glass rather than as a translucent box. Never drop it. */
 .pl-glass {
   background: rgba(20, 26, 34, 0.5);
   backdrop-filter: blur(16px) saturate(1.1);
@@ -64,25 +145,215 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
   border-radius: 13px;
 }
-.pl-glass-pill { border-radius: 999px; }
-/* feTurbulence displacement — the edge refracts instead of only blurring */
+.pl-glass-pill { border-radius: var(--r-pill); }
+/* feTurbulence displacement — the edge refracts rather than only blurring */
 .pl-glassfx { filter: url(#hq-glass); }
 
-/* ── Entrance: staggered fade + rise, six steps, ~90ms apart ──────────── */
-@keyframes pl-fade-rise {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: none; }
+/* ── Pill buttons — PUBLIC LAYER ONLY (reverses 04 §6's 10px radius) ───── */
+.pl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55em;
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: var(--t-ui);
+  padding: 0.82em 1.55em;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
-.pl-an { opacity: 0; animation: pl-fade-rise 0.62s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-.pl-an1 { animation-delay: 0.05s; }
-.pl-an2 { animation-delay: 0.14s; }
-.pl-an3 { animation-delay: 0.23s; }
-.pl-an4 { animation-delay: 0.32s; }
-.pl-an5 { animation-delay: 0.44s; }
-.pl-an6 { animation-delay: 0.56s; }
+.pl-btn svg { width: 1.05em; height: 1.05em; flex: none; }
+/* the arrow slides on hover. NOT the SVG gooey filter — `filter: url()`
+   creates a containing block, clipped at some widths, and needed the def
+   present in the DOM. A transform does the same job with none of that. */
+.pl-btn .pl-arw { transition: transform 0.28s var(--ease); }
+.pl-btn:hover .pl-arw { transform: translateX(3px); }
 
-/* ── Animated mesh — CSS stand-in for the reference's WebGL MeshGradient ─ */
-.pl-mesh { position: absolute; inset: -25%; pointer-events: none; filter: blur(46px); opacity: 0.9; }
+/* HERO PRIMARY — solid white. On this dark field white is the heaviest
+   value available, which is what keeps the hero CTA ahead of the coloured
+   one in the nav. Do not colour both: two competing primaries was the
+   original defect and a tie is not a fix. */
+.pl-btn-solid { background: #fff; color: var(--pl-ink); border-color: #fff; }
+.pl-btn-solid:hover { background: rgba(255, 255, 255, 0.9); }
+
+.pl-btn-ghost {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.pl-btn-ghost:hover { background: rgba(255, 255, 255, 0.15); border-color: rgba(111, 179, 222, 0.5); }
+
+/* NAV CTA — coloured glass. ⭐ THE BLOOM IS LOAD-BEARING: every other glass
+   surface carries the inset highlight and stops there, so this is the only
+   element that appears to EMIT light rather than transmit it. That is what
+   lets a translucent pill hold the corner without going opaque. Drop the
+   bloom and it is one more panel.
+
+   The `background-color` is declared first as an opaque-enough fallback:
+   where `backdrop-filter` is unsupported the pill stays a solid tint rather
+   than becoming a transparent hole. */
+.pl-btn-tint {
+  background-color: #3f6f9b;
+  /* ⚠️ THE ALPHAS ARE A CONTRAST BUDGET, not a look. The mockup's .44/.34
+     put the white label at 3.91:1 over the lightest part of the field —
+     fine for large text, but this label is ~17px bold, which WCAG counts
+     as body and needs 4.5. At .32/.22 it measures 4.58 top / 6.18 bottom
+     against the field at FULL bloom, which is the worst case. Raising them
+     back for a punchier tint reopens the failure. */
+  background-image: linear-gradient(180deg, rgba(120, 190, 235, 0.32), rgba(72, 140, 190, 0.22));
+  color: #fff;
+  border-color: rgba(150, 210, 245, 0.55);
+  backdrop-filter: blur(14px) saturate(1.5);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 6px 22px rgba(90, 165, 220, 0.32);
+  /* for the light end of the field gradient, not decoration */
+  text-shadow: 0 1px 6px rgba(10, 30, 50, 0.35);
+}
+/* Hover brightens the EDGE and the BLOOM, never the fill — lightening the
+   fill is what would push the label back under AA. The pill still reads as
+   lighting up, and the contrast budget above holds in every state. */
+.pl-btn-tint:hover {
+  border-color: rgba(190, 230, 255, 0.85);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 8px 30px rgba(90, 165, 220, 0.5);
+}
+.pl-btn-lg { font-size: calc(var(--t-ui) * 1.12); padding: 0.95em 1.9em; }
+.pl-btn-sm { font-size: calc(var(--t-ui) * 0.94); padding: 0.66em 1.25em; }
+
+/* ── System-radius buttons — auth and merge keep the 10px house shape.
+   Pills are for surfaces that float over art; a form control does not. ── */
+.pl-sbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  border-radius: var(--r-field);
+  border: 1px solid transparent;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: var(--t-ui);
+  padding: 0.9em 1.2em;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, opacity 0.18s;
+}
+.pl-sbtn svg { width: 1.05em; height: 1.05em; flex: none; }
+.pl-sbtn:disabled { opacity: 0.55; cursor: not-allowed; }
+.pl-sbtn-p { background: var(--pl-pri); color: var(--pl-ink); }
+.pl-sbtn-p:hover:not(:disabled) { background: #85c1e6; }
+.pl-sbtn-g { background: var(--pl-soft); border-color: var(--pl-bd); color: var(--pl-fg); }
+.pl-sbtn-g:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
+.pl-sbtn-lg { font-size: calc(var(--t-ui) * 1.06); padding: 1em 1.5em; }
+.pl-sbtn-full { width: 100%; }
+
+/* ── Fields ───────────────────────────────────────────────────────────── */
+.pl-field { display: flex; flex-direction: column; gap: var(--s-1); width: 100%; }
+.pl-lbl {
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: var(--t-eyebrow);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pl-dim);
+}
+.pl-inp,
+.pl-fta,
+.pl-finp {
+  /* the feedback panel's reply field sits in a flex row and takes a share
+     of it; the other two are full-width in a column */
+  flex: 1;
+  min-width: 200px;
+  width: 100%;
+  background: var(--pl-soft);
+  border: 1px solid var(--pl-bd);
+  border-radius: var(--r-field);
+  padding: 0.85em 0.95em;
+  color: var(--pl-fg);
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: var(--t-read);
+  outline: none;
+}
+.pl-inp::placeholder,
+.pl-fta::placeholder,
+.pl-finp::placeholder { color: var(--pl-dim); }
+.pl-inp:focus-visible,
+.pl-fta:focus-visible,
+.pl-finp:focus-visible {
+  border-color: var(--pl-pri);
+  box-shadow: 0 0 0 2px rgba(111, 179, 222, 0.3);
+}
+.pl-fta { min-height: 96px; line-height: 1.6; resize: vertical; }
+
+/* ── The two-weight headline (PublicHeadline) ─────────────────────────────
+   A light setup line over a heavy gradient payoff line. The size-and-weight
+   contrast IS the device; it does not exist at a single size, which is why
+   this reverses the in-app 30px `.h1` scale. PUBLIC LAYER ONLY. */
+.pl-hl {
+  margin: 0;
+  display: grid;
+  gap: 0.06em;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+}
+.pl-hl .l1 { font-weight: 600; color: rgba(255, 255, 255, 0.86); letter-spacing: -0.01em; }
+.pl-hl .l2 {
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  background-image: linear-gradient(96deg, #ffffff 8%, #b9dcf3 46%, #e7c79a 92%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.pl-hl-hero .l1 { font-size: var(--t-setup); }
+.pl-hl-hero .l2 { font-size: var(--t-payoff); }
+.pl-hl-section .l1 { font-size: var(--t-sec-set); }
+.pl-hl-section .l2 { font-size: var(--t-sec-pay); line-height: 1.02; }
+.pl-hl-about .l1 { font-size: var(--t-about-set); }
+.pl-hl-about .l2 { font-size: var(--t-about-pay); line-height: 1.02; }
+/* `tone="page"` — kept for any headline that ever sits on a solid surface
+   rather than the field. Same device, cut from the layer's own tokens. */
+.pl-hl-page .l1 { color: var(--pl-mut); }
+
+/* ── Wordmark ─────────────────────────────────────────────────────────────
+   `premed` + blue `OS`, matching the supplied lockup. Baloo 2 stays: the
+   references are geometric sans and the two-tone FORMAT is what transfers,
+   never the letterforms.
+
+   ⚠️ The lockup's navy `premed` (#1E3044) is invisible on this dark field,
+   so the word is set in `--pl-fg` here and the mark inherits via
+   `currentColor`. Do not ship the navy onto the public layer. */
+.pl-wm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42em;
+  text-decoration: none;
+  white-space: nowrap;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: clamp(19px, 1.45vw, 28px);
+  letter-spacing: -0.025em;
+  line-height: 1;
+  color: var(--pl-fg);
+}
+.pl-wm-mark { width: 1.15em; height: 0.72em; flex: none; color: inherit; }
+/* The mark's tall bar takes its colour from here rather than the asset's
+   own #2E6CB8 — see `_visual-recipes.md` §"Two blues". */
+.pl-wm-mark .pl-wm-accent { fill: var(--pl-pri); }
+.pl-wm-a { font-weight: 700; color: var(--pl-fg); }
+.pl-wm-b { font-weight: 800; color: var(--pl-pri); }
+.pl-wm-sm { font-size: clamp(17px, 1.1vw, 22px); }
+
+/* ══ 3 · LAYOUT ═══════════════════════════════════════════════════════════ */
+
+/* the drifting mesh sits behind the WHOLE page, not per-section */
+.pl > .pl-mesh { position: fixed; inset: -25%; z-index: -1; opacity: 0.55; }
+.pl-mesh { pointer-events: none; filter: blur(46px); }
 .pl-mesh i { position: absolute; display: block; border-radius: 50%; }
 .pl-mesh .m1 {
   width: 48%; height: 64%; left: 6%; top: -8%;
@@ -99,915 +370,752 @@
   background: radial-gradient(closest-side, rgba(224, 164, 88, 0.26), transparent 72%);
   animation: pl-drift3 29s ease-in-out infinite alternate;
 }
-@keyframes pl-drift1 { to { transform: translate(16%, 10%) scale(1.14); } }
-@keyframes pl-drift2 { to { transform: translate(-13%, 9%) scale(1.1); } }
-@keyframes pl-drift3 { to { transform: translate(9%, -11%) scale(1.16); } }
 
-/* ── Two-weight headline (PublicHeadline) ─────────────────────────────── */
-.pl-hl { margin: 0; letter-spacing: -0.6px; line-height: 1.06; }
-.pl-hl .l1 {
-  display: block; font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 600;
-  color: rgba(255, 255, 255, 0.82); letter-spacing: 0.2px;
-}
-.pl-hl .l2 {
-  display: block; font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800;
-  background: linear-gradient(120deg, #ffffff 0%, #a9d3ee 38%, #e0a458 78%, #ffffff 100%);
-  background-size: 220% auto;
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent; color: transparent;
-  animation: pl-sheen 9s linear infinite;
-}
-@keyframes pl-sheen { to { background-position: 220% center; } }
-/* On a solid page background the white setup line and the white-to-blue
-   payoff gradient both disappear — badly in the paper theme, where the
-   page is cream. `tone="page"` re-cuts the same two-weight device out of
-   theme tokens so it reads in both themes. The device is the contrast
-   between the two lines, not the specific colours. */
-.pl-hl-page .l1 { color: var(--pl-mut); }
-.pl-hl-page .l2 {
-  background-image: linear-gradient(
-    120deg,
-    var(--pl-fg) 0%,
-    var(--pl-pri) 38%,
-    var(--pl-warning) 78%,
-    var(--pl-fg) 100%
-  );
-}
-/* three sizes, one component: hero 27/46 · section 19/33 · about 26/56 */
-.pl-hl-hero { margin-top: 20px; }
-.pl-hl-hero .l1 { font-size: 27px; margin-bottom: 5px; }
-.pl-hl-hero .l2 { font-size: 46px; }
-.pl-hl-section .l1 { font-size: 19px; margin-bottom: 3px; }
-.pl-hl-section .l2 { font-size: 33px; }
-.pl-hl-about .l1 { font-size: 26px; margin-bottom: 5px; }
-.pl-hl-about .l2 { font-size: 56px; letter-spacing: -1.4px; }
+/* ── Nav — three floating islands ─────────────────────────────────────────
+   ⚠️ NOT `justify-content: space-between`. Across three children that
+   centres the middle one BETWEEN ITS NEIGHBOURS, not on the page. The brand
+   and the CTA are different widths, so the pill sat off-centre by half that
+   difference — and because the error is a fraction of the leftover space it
+   GREW as the viewport widened. Fine in a small window, visibly wrong at
+   full screen.
 
-/* ── Floating pill nav ────────────────────────────────────────────────── */
+   `1fr auto 1fr` forces the side columns equal, so the pill lands on true
+   optical centre at every width. Below 900px the link pill hides and the
+   `auto` column collapses to zero with no extra rule. */
+.pl-navwrap { width: var(--rail-hero); margin: 0 auto; }
 .pl-navbar {
-  position: relative; z-index: 3; display: flex; align-items: center;
-  justify-content: space-between; padding: 18px 0 0; gap: 14px; text-align: left;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--s-3);
+  padding: clamp(14px, 1.4vw, 26px) 0 0;
 }
-.pl-navbrand {
-  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 17px;
-  color: #fff; letter-spacing: -0.2px; background: none; border: 0; padding: 0; cursor: pointer;
-}
+.pl-navbrand { justify-self: start; }
+.pl-navend { justify-self: end; display: inline-flex; align-items: center; gap: var(--s-2); }
+
+/* the pill is a glass island holding ONLY the five links — nothing else
+   goes inside it, ever. Brand and CTA are their own islands. */
 .pl-navpill {
-  display: inline-flex; align-items: center; gap: 2px; border-radius: 999px; padding: 4px;
-  background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(12px) saturate(1.1); -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: var(--s-1);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 .pl-navlk {
-  padding: 7px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 700;
-  color: rgba(255, 255, 255, 0.7); cursor: pointer; text-decoration: none;
-  background: none; border: 0; font-family: inherit;
+  padding: 0.62em 1.05em;
+  border-radius: var(--r-pill);
+  font-family: inherit;
+  font-size: var(--t-ui);
+  font-weight: 700;
+  color: var(--pl-mut);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
   transition: background 0.18s, color 0.18s;
 }
-.pl-navlk:hover, .pl-navlk[aria-current='page'] { background: rgba(255, 255, 255, 0.11); color: #fff; }
-/* below 900px the link pill collapses; brand + CTA stay */
-@media (max-width: 900px) { .pl-navpill { display: none; } }
+.pl-navlk:hover,
+.pl-navlk[aria-current='page'] { background: rgba(255, 255, 255, 0.11); color: #fff; }
 
-/* ── Gooey CTA — label pill + arrow pill fused mid-slide ──────────────── */
-.pl-gooey { position: relative; display: inline-flex; align-items: center; filter: url(#hq-gooey); }
-.pl-gooey .lead {
-  position: relative; z-index: 2; border-radius: 999px; background: #fff; color: #17222c;
-  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 12.5px;
-  padding: 8px 17px; height: 32px; display: inline-flex; align-items: center;
-  border: none; cursor: pointer;
-}
-.pl-gooey .tail {
-  position: absolute; right: 0; z-index: 1; border-radius: 999px; background: #fff; color: #17222c;
-  height: 32px; width: 32px; display: inline-flex; align-items: center; justify-content: center;
-  border: none; cursor: pointer; transform: translateX(-30px);
-  transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.pl-gooey:hover .tail, .pl-gooey:focus-within .tail { transform: translateX(6px); }
-.pl-gooey .tail svg { width: 13px; height: 13px; }
+/* ── Hero ─────────────────────────────────────────────────────────────────
+   ⚠️ THE NAV LIVES INSIDE `.pl-hero`. This is structural, not cosmetic
+   nesting. `.pl-hero` is `100svh`; if the nav becomes a sibling above it,
+   the first screen becomes `nav-height + 100svh` and the bottom of the hero
+   — with the scroll cue in it — falls below the fold by exactly the nav's
+   height. Nothing errors. The cue silently disappears.
 
-/* ── Pill buttons — PUBLIC LAYER ONLY (reverses 04 §6's 10px radius) ──── */
-.pl-btn {
-  border-radius: 999px; font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 700;
-  font-size: 13.5px; padding: 11px 22px; display: inline-flex; align-items: center; gap: 8px;
-  cursor: pointer; border: 1px solid transparent; text-decoration: none;
-  transition: background 0.2s, border-color 0.2s, transform 0.2s;
-}
-.pl-btn svg { width: 14px; height: 14px; }
-.pl-btn-solid { background: #fff; color: #17222c; border-color: #fff; }
-.pl-btn-solid:hover { background: rgba(255, 255, 255, 0.9); }
-.pl-btn-ghost {
-  background: rgba(255, 255, 255, 0.08); color: #fff; border-color: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-}
-.pl-btn-ghost:hover { background: rgba(255, 255, 255, 0.15); border-color: rgba(111, 179, 222, 0.5); }
-.pl-btn-sm { font-size: 12.5px; padding: 8px 17px; }
-.pl-btn-sm svg { width: 13px; height: 13px; }
+   A header looks like it belongs outside a hero section, which is what
+   makes this an attractive "tidy-up" and a real bug. **The visible scroll
+   cue is the canary.**
 
-/* ── HERO ─────────────────────────────────────────────────────────────── */
-.pl-hero {
-  position: relative; padding: 0 22px 46px; overflow: hidden; text-align: center;
-  background: none;
-}
-.pl-hero::before {
-  content: ''; position: absolute; left: 50%; top: -190px; width: 760px; height: 380px;
-  transform: translateX(-50%); pointer-events: none;
-  background: radial-gradient(closest-side, rgba(111, 179, 222, 0.34), transparent 70%);
-  filter: blur(18px);
-}
-.pl-hero-in { max-width: 720px; margin: 58px auto 0; position: relative; }
-.pl-navwrap { max-width: 1180px; margin: 0 auto; position: relative; z-index: 3; }
-
-.pl-chip {
-  display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;
-  padding: 5px 6px 5px 14px; color: rgba(255, 255, 255, 0.82);
-}
-.pl-chip .tagpill {
-  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 10px;
-  letter-spacing: 0.05em; text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.9); color: #17222c; border-radius: 999px; padding: 2.5px 9px;
-}
-.pl-lede {
-  font-size: 14.5px; color: rgba(255, 255, 255, 0.76); line-height: 1.65;
-  margin: 13px auto 0; max-width: 560px;
-}
-.pl-ctarow { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
-.pl-noacct { font-size: 12.5px; color: rgba(255, 255, 255, 0.6); font-weight: 700; margin: 12px 0 0; }
-.pl-disc { font-size: 11.5px; color: rgba(255, 255, 255, 0.55); font-weight: 600; margin: 30px 0 0; }
-
-/* ── FEATURES — glass tiles ───────────────────────────────────────────── */
-/* The Features section is part of the hero's ART region — glass tiles with
-   white titles — so it stays dark in BOTH themes. The fade into the page
-   background lives in the bottom padding, below the last tile: running the
-   gradient under the tiles the way the mockup did puts white text on cream
-   in the paper theme, which is where the bottom row became unreadable. */
-.pl-feat {
-  position: relative; overflow: hidden; padding: 42px 22px 90px;
-  background: none;
-}
-.pl-featin { position: relative; z-index: 2; text-align: center; max-width: 1180px; margin: 0 auto; }
-.pl-eyebrow {
-  display: inline-flex; align-items: center; gap: 9px; margin-bottom: 14px;
-  padding: 5px 13px; color: rgba(255, 255, 255, 0.72);
-  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 9.5px;
-  letter-spacing: 0.11em; text-transform: uppercase;
-}
-.pl-feats { font-size: 13.5px; color: rgba(255, 255, 255, 0.68); font-weight: 600; margin: 12px auto 26px; max-width: 520px; }
-.pl-ftiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; text-align: left; }
-@media (max-width: 1080px) { .pl-ftiles { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 720px) { .pl-ftiles { grid-template-columns: repeat(2, 1fr); } }
-.pl-ftile {
-  position: relative; border-radius: 14px; padding: 15px 14px 16px;
-  background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.11);
-  backdrop-filter: blur(14px) saturate(1.1); -webkit-backdrop-filter: blur(14px) saturate(1.1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  transition: background 0.2s, border-color 0.2s;
-}
-.pl-ftile { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
-.pl-ftile:hover { background: rgba(255, 255, 255, 0.09); border-color: rgba(255, 255, 255, 0.24); }
-.pl-ftile:focus-visible { outline: 2px solid #6fb3de; outline-offset: 2px; }
-.pl-ftile.is-open { background: rgba(255, 255, 255, 0.11); border-color: rgba(255, 255, 255, 0.3); }
-.pl-ftwrap { display: contents; }
-/* "See how" — the affordance. Hidden until hover/open so the grid at rest
-   is still titles only (decisions §4c). */
-.pl-fthint {
-  display: block; margin-top: 9px; font-family: 'Baloo 2', system-ui, sans-serif;
-  font-weight: 800; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.34); transition: color 0.18s;
-}
-.pl-ftile:hover .pl-fthint, .pl-ftile.is-open .pl-fthint { color: #a9d3ee; }
-/* The example spans the full grid row beneath the tile that opened it. */
-.pl-ftex {
-  grid-column: 1 / -1; margin: 2px 0 6px; border-radius: 14px; padding: 15px 17px;
-  font-size: 14.5px; line-height: 1.7; color: rgba(255, 255, 255, 0.86);
-  background: color-mix(in srgb, var(--c, #6fb3de) 13%, rgba(255, 255, 255, 0.05));
-  border: 1px solid color-mix(in srgb, var(--c, #6fb3de) 34%, transparent);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  animation: pl-fade-rise 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.pl-ficon {
-  width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-  background: color-mix(in srgb, var(--c, #6fb3de) 20%, rgba(255, 255, 255, 0.05));
-  border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  color: var(--c, #a9d3ee);
-}
-.pl-ficon svg { width: 17px; height: 17px; stroke-width: 1.9; }
-.pl-ftile-soon { border-color: rgba(231, 176, 106, 0.3); }
-.pl-soonmark {
-  position: absolute; top: 11px; right: 11px;
-  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 8px;
-  letter-spacing: 0.07em; text-transform: uppercase; color: #e7b06a;
-  background: rgba(231, 176, 106, 0.18); border-radius: 5px; padding: 2.5px 6px;
-}
-.pl-ftl {
-  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 700; font-size: 13.5px;
-  color: #fff; margin-top: 12px; line-height: 1.32;
-}
-
-/* ── GUIDED TOUR — annotated screenshot ───────────────────────────────── */
-.pl-tour { position: relative; overflow: hidden; padding: 44px 22px 48px; background: none; }
-.pl-tourin { position: relative; z-index: 2; max-width: 1180px; margin: 0 auto; text-align: center; }
-.pl-eyebrow-solid {
-  background: color-mix(in srgb, var(--pl-fg) 5%, transparent);
-  border: 1px solid var(--pl-bd); color: var(--pl-dim); border-radius: 999px;
-}
-.pl-tourtabs {
-  display: inline-flex; gap: 3px; border-radius: 999px; padding: 4px; margin: 20px 0 26px;
-  background: var(--pl-soft); border: 1px solid var(--pl-bd);
-}
-.pl-ttab {
-  padding: 7px 16px; border-radius: 999px; font-family: 'Baloo 2', system-ui, sans-serif;
-  font-weight: 700; font-size: 12.5px; color: var(--pl-mut); cursor: pointer;
-  background: none; border: 0;
-}
-.pl-ttab[aria-selected='true'] { background: #fff; color: #17222c; font-weight: 800; }
-.pl-shotstage {
-  position: relative; border-radius: 16px; background: var(--pl-card);
-  border: 1px solid var(--pl-bd); box-shadow: 0 26px 60px -30px rgba(0, 0, 0, 0.8); padding: 9px;
-}
-.pl-shotwin {
-  position: relative; border-radius: 11px; overflow: hidden; background: #1d1a17;
-  border: 1px solid rgba(255, 255, 255, 0.07); aspect-ratio: 16 / 9; min-height: 380px;
-  display: flex; align-items: stretch; justify-content: stretch;
-  /* ⚠️ NO PADDING. This used to be `padding: 0 40px` with centred text,
-     from when the window held a one-line "screenshot missing" placeholder.
-     It now holds a rendered preview that must fill the frame edge to edge —
-     the leftover padding inset it and made it look broken. */
-  padding: 0;
-  /* fixed dark surface in both themes, so any text inside is light */
-  color: rgba(236, 227, 212, 0.55); font-size: 12.5px; font-weight: 700;
-}
-.pl-shotwin img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
-.pl-call { position: absolute; z-index: 3; display: flex; align-items: flex-start; gap: 9px; max-width: 262px; text-align: left; }
-.pl-bubble {
-  border-radius: 13px; padding: 10px 13px; font-size: 12.5px; font-weight: 700; line-height: 1.45;
-  color: #fff; background: rgba(20, 26, 34, 0.62);
-  backdrop-filter: blur(15px) saturate(1.1); -webkit-backdrop-filter: blur(15px) saturate(1.1);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 12px 28px -14px rgba(0, 0, 0, 0.7);
-}
-.pl-bubble b { color: #a9d3ee; font-weight: 800; }
-/* The guide is an ILLUSTRATION beside the callout — never the marker,
-   the button, or the bullet (P1 §4.4). It is a doctor, never a ram. */
-.pl-guide {
-  width: 40px; height: 40px; flex: none; border-radius: 50%; overflow: hidden;
-  background: radial-gradient(circle at 34% 28%, #3d4a58, #232b34);
-  border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
-  display: flex; align-items: flex-end; justify-content: center;
-}
-.pl-guide svg { width: 34px; height: 34px; color: #e9dcc4; }
-.pl-pin {
-  position: absolute; width: 11px; height: 11px; border-radius: 50%; background: #6fb3de;
-  box-shadow: 0 0 0 4px rgba(111, 179, 222, 0.24), 0 0 14px rgba(111, 179, 222, 0.7); z-index: 3;
-}
-.pl-pin::after {
-  content: ''; position: absolute; inset: -4px; border-radius: 50%;
-  border: 1px solid rgba(111, 179, 222, 0.55); animation: pl-ping 2.4s ease-out infinite;
-}
-@keyframes pl-ping { 0% { transform: scale(0.8); opacity: 0.9; } 70%, 100% { transform: scale(2.1); opacity: 0; } }
-.pl-tourfoot { font-size: 12.5px; color: var(--pl-dim); font-weight: 700; margin-top: 20px; }
-/* callouts stack under the shot on narrow screens rather than covering it */
-@media (max-width: 860px) {
-  .pl-call { position: static !important; max-width: none; margin-top: 10px; }
-  .pl-pin { display: none; }
-  .pl-shotwin { min-height: 180px; }
-}
-
-/* ── Below the hero: SOLID with depth. No glass past this line. ───────── */
-.pl-body { padding: 18px 22px 22px; max-width: 1180px; margin: 0 auto; }
-.pl-bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
-.pl-c4 { grid-column: span 4; }
-.pl-c5 { grid-column: span 5; }
-.pl-c7 { grid-column: span 7; }
-.pl-c12 { grid-column: span 12; }
-@media (max-width: 900px) { .pl-c4, .pl-c5, .pl-c7, .pl-c12 { grid-column: span 12; } }
-.pl-card {
-  background: var(--pl-card); border: 1px solid var(--pl-bd); border-radius: 16px;
-  backdrop-filter: blur(14px) saturate(1.1); -webkit-backdrop-filter: blur(14px) saturate(1.1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.13);
-  box-shadow: 0 10px 26px -14px rgba(0, 0, 0, 0.55);
-  display: flex; flex-direction: column; overflow: hidden;
-}
-.pl-hd { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 10px; gap: 10px; flex-shrink: 0; }
-.pl-ti { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 18px; }
-.pl-ti-sm { font-size: 16px; }
-.pl-sub { font-size: 12.5px; color: var(--pl-dim); font-weight: 700; }
-.pl-bd { padding: 4px 18px 18px; display: flex; flex-direction: column; gap: 11px; flex: 1; min-height: 0; align-items: flex-start; }
-.pl-tag {
-  display: inline-flex; font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800;
-  font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 6px; padding: 3px 7px;
-  background: color-mix(in srgb, var(--c, var(--pl-pri)) 16%, transparent); color: var(--c, var(--pl-pri));
-}
-.pl-pitchp { font-size: 13px; color: var(--pl-mut); line-height: 1.6; margin: 0; }
-.pl-privtext { font-size: 13.5px; color: var(--pl-mut); line-height: 1.7; margin: 0; }
-.pl-privtext b { color: var(--pl-fg); font-weight: 700; }
-.pl-costbig { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 22px; }
-.pl-lk {
-  font-size: 12.5px; font-weight: 800; color: var(--pl-pri);
-  font-family: 'Baloo 2', system-ui, sans-serif; text-decoration: none;
-}
-.pl-lk:hover { text-decoration: underline; }
-
-/* ── Footer ───────────────────────────────────────────────────────────── */
-.pl-foot {
-  border-top: 1px solid var(--pl-bd); background: rgba(255, 255, 255, 0.04); padding: 18px 22px;
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap;
-}
-.pl-foot .fl { display: flex; gap: 16px; flex-wrap: wrap; }
-.pl-nlk { font-size: 13px; color: var(--pl-mut); font-weight: 700; text-decoration: none; }
-.pl-nlk:hover { color: var(--pl-fg); }
-.pl-foot .fd { flex: 1; min-width: 340px; font-size: 11.5px; color: var(--pl-dim); line-height: 1.6; margin: 0; }
-
-/* ── Auth ─────────────────────────────────────────────────────────────── */
-.pl-authwrap { padding: 38px 22px; display: flex; align-items: center; justify-content: center; min-height: 62vh; }
-.pl-authcard { width: 100%; max-width: 372px; }
-.pl-field { display: flex; flex-direction: column; gap: 6px; width: 100%; }
-.pl-lbl {
-  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 10.5px;
-  letter-spacing: 0.06em; text-transform: uppercase; color: var(--pl-dim);
-}
-.pl-inp {
-  width: 100%; background: var(--pl-soft); border: 1px solid var(--pl-bd); border-radius: 10px;
-  padding: 10px 12px; color: var(--pl-fg); font-family: 'Nunito', system-ui, sans-serif;
-  font-size: 14px; outline: none;
-}
-.pl-inp::placeholder { color: var(--pl-dim); }
-.pl-inp:focus-visible { border-color: var(--pl-pri); box-shadow: 0 0 0 2px color-mix(in srgb, var(--pl-pri) 30%, transparent); }
-/* the auth/merge buttons keep the SYSTEM 10px radius — pills are for the
-   hero and the nav, where they float over art (P1 §3). */
-.pl-sbtn {
-  border-radius: 10px; padding: 7px 14px; font-family: 'Baloo 2', system-ui, sans-serif;
-  font-weight: 700; font-size: 13px; border: 1px solid transparent;
-  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
-}
-.pl-sbtn svg { width: 14px; height: 14px; }
-.pl-sbtn-p { background: var(--pl-pri); color: var(--primary-foreground); }
-.pl-sbtn-g { background: var(--pl-soft); border-color: var(--pl-bd); color: var(--pl-mut); }
-.pl-sbtn-lg { padding: 10px 18px; font-size: 14px; }
-.pl-sbtn-full { width: 100%; justify-content: center; padding: 11px; }
-.pl-sbtn:disabled { opacity: 0.55; cursor: not-allowed; }
-.pl-orbar { display: flex; align-items: center; gap: 11px; width: 100%; }
-.pl-orbar i { flex: 1; height: 1px; background: var(--pl-bd); }
-.pl-orbar span { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.06em; color: var(--pl-dim); }
-.pl-fine { font-size: 11.5px; color: var(--pl-dim); line-height: 1.6; margin: 0; }
-.pl-fine b { color: var(--pl-mut); font-weight: 700; }
-.pl-mailbadge {
-  width: 44px; height: 44px; border-radius: 12px;
-  background: color-mix(in srgb, var(--pl-pri) 16%, transparent);
-  display: flex; align-items: center; justify-content: center; color: var(--pl-pri);
-}
-.pl-mailbadge svg { width: 21px; height: 21px; }
-.pl-row {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
-  background: var(--pl-soft); border: 1px solid var(--pl-bd); border-radius: 10px;
-  padding: 10px 12px; font-size: 13.5px; font-weight: 700;
-}
-.pl-alert {
-  width: 100%; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.55;
-  background: color-mix(in srgb, var(--pl-warning) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--pl-warning) 34%, transparent); color: var(--pl-fg);
-}
-.pl-alert-bad {
-  background: color-mix(in srgb, var(--destructive) 12%, transparent);
-  border-color: color-mix(in srgb, var(--destructive) 34%, transparent);
-}
-.pl-alert-ok {
-  background: color-mix(in srgb, var(--pl-success) 12%, transparent);
-  border-color: color-mix(in srgb, var(--pl-success) 34%, transparent);
-}
-
-/* ── Merge ────────────────────────────────────────────────────────────── */
-.pl-mergewrap { padding: 30px 22px; display: flex; justify-content: center; }
-.pl-mergecard { width: 100%; max-width: 600px; }
-.pl-frow { display: flex; align-items: center; gap: 11px; padding: 8px 0; border-top: 1px solid var(--pl-bd); font-size: 13.5px; }
-.pl-frow:first-of-type { border-top: none; }
-.pl-dot { width: 9px; height: 9px; border-radius: 3px; background: var(--c, var(--cat-gpa)); flex: none; }
-.pl-frow .fn { flex: 1; font-weight: 700; }
-.pl-frow .fv { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; color: var(--pl-mut); font-variant-numeric: tabular-nums; }
-.pl-opt {
-  display: flex; gap: 12px; align-items: flex-start; width: 100%; text-align: left;
-  background: var(--pl-soft); border: 1px solid var(--pl-bd); border-radius: 12px;
-  padding: 13px 14px; cursor: pointer; font-family: inherit; color: inherit;
-}
-.pl-opt[data-on='true'] {
-  border-color: var(--pl-pri); background: color-mix(in srgb, var(--pl-pri) 8%, var(--pl-soft));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pl-pri) 35%, transparent);
-}
-.pl-radio { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--pl-bd); flex: none; margin-top: 2px; position: relative; }
-.pl-opt[data-on='true'] .pl-radio { border-color: var(--pl-pri); }
-.pl-opt[data-on='true'] .pl-radio::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--pl-pri); }
-.pl-ot { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 7px; }
-.pl-om { font-size: 12.5px; color: var(--pl-mut); margin-top: 4px; line-height: 1.55; }
-.pl-rec {
-  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 9px;
-  letter-spacing: 0.05em; text-transform: uppercase; color: var(--pl-success);
-  background: color-mix(in srgb, var(--pl-success) 16%, transparent); border-radius: 5px; padding: 2px 6px;
-}
-/* the safety property lives IN the panel, never in a tooltip (05 §0.2) */
-.pl-pace {
-  width: 100%; background: color-mix(in srgb, var(--pl-success) 10%, var(--pl-soft));
-  border: 1px solid color-mix(in srgb, var(--pl-success) 26%, var(--pl-bd));
-  border-radius: 9px; padding: 11px 13px; font-size: 12.5px; font-weight: 700;
-  color: var(--pl-mut); line-height: 1.6; margin: 0;
-}
-.pl-pace b { color: var(--pl-fg); }
-
-/* ── DOC PAGES — one shell, four routes ──────────────────────────────── */
-.pl-band {
-  position: relative; overflow: hidden; padding: 0 22px 34px; background: none;
-}
-.pl-bandin { position: relative; z-index: 2; max-width: 940px; margin: 38px auto 0; }
-.pl-doctitle { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 34px; color: #fff; letter-spacing: -0.5px; margin: 0; }
-.pl-docsub { font-size: 14px; color: rgba(255, 255, 255, 0.68); margin: 9px 0 0; max-width: 620px; line-height: 1.6; }
-.pl-updated {
-  display: inline-flex; align-items: center; gap: 7px; margin-top: 16px; border-radius: 999px; padding: 5px 13px;
-  font-size: 11.5px; font-weight: 700; color: rgba(255, 255, 255, 0.78);
-  background: rgba(20, 26, 34, 0.5); border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16); backdrop-filter: blur(14px);
-}
-.pl-docwrap {
-  display: grid; grid-template-columns: 196px minmax(0, 720px); gap: 44px;
-  justify-content: center; padding: 34px 22px 42px;
-}
-.pl-toc { position: sticky; top: 20px; align-self: start; }
-.pl-toclab {
-  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 9.5px;
-  letter-spacing: 0.11em; text-transform: uppercase; color: var(--pl-dim); margin-bottom: 10px;
-}
-.pl-toc a {
-  display: block; font-size: 12.5px; font-weight: 700; color: var(--pl-mut);
-  padding: 6px 0 6px 11px; border-left: 2px solid var(--pl-bd); text-decoration: none;
-}
-.pl-toc a:hover, .pl-toc a[aria-current='true'] { color: var(--pl-fg); border-left-color: var(--pl-pri); }
-/* rail collapses to inline chips below 1100px (decision 2) */
-@media (max-width: 1100px) {
-  .pl-docwrap { grid-template-columns: minmax(0, 720px); gap: 20px; }
-  .pl-toc { position: static; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .pl-toclab { width: 100%; margin-bottom: 4px; }
-  .pl-toc a { border-left: 0; border: 1px solid var(--pl-bd); border-radius: 999px; padding: 5px 11px; }
-  .pl-toc a[aria-current='true'] { border-color: var(--pl-pri); }
-}
-.pl-doc h2 { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 19px; margin: 34px 0 10px; scroll-margin-top: 20px; }
-.pl-doc h2:first-child { margin-top: 0; }
-.pl-doc p { font-size: 15px; line-height: 1.75; color: var(--pl-mut); margin: 0 0 13px; }
-.pl-doc p b, .pl-doc li b { color: var(--pl-fg); font-weight: 700; }
-.pl-doc ul { margin: 0 0 15px; padding-left: 19px; }
-.pl-doc li { font-size: 15px; line-height: 1.7; color: var(--pl-mut); margin-bottom: 7px; }
-.pl-doc a.pl-inline { color: var(--pl-pri); font-weight: 700; text-decoration: none; }
-.pl-doc a.pl-inline:hover { text-decoration: underline; }
-/* Plain-English summary strip — required above EVERY section (§6.4) */
-.pl-plain {
-  display: flex; gap: 11px; align-items: flex-start; border-radius: 11px; padding: 11px 13px; margin: 0 0 15px;
-  background: color-mix(in srgb, var(--pl-pri) 9%, var(--pl-card));
-  border: 1px solid color-mix(in srgb, var(--pl-pri) 24%, var(--pl-bd));
-}
-.pl-plain .k {
-  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 9px;
-  letter-spacing: 0.07em; text-transform: uppercase; color: var(--pl-pri); flex: none; padding-top: 3px;
-}
-.pl-plain p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--pl-fg); font-weight: 600; }
-.pl-tbl { width: 100%; border-collapse: collapse; margin: 0 0 16px; font-size: 13.5px; }
-.pl-tbl th {
-  text-align: left; font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 10px;
-  letter-spacing: 0.06em; text-transform: uppercase; color: var(--pl-dim);
-  padding: 0 12px 8px 0; border-bottom: 1px solid var(--pl-bd);
-}
-.pl-tbl td { padding: 11px 12px 11px 0; border-bottom: 1px solid var(--pl-bd); color: var(--pl-mut); vertical-align: top; line-height: 1.6; }
-.pl-tbl td b { color: var(--pl-fg); }
-.pl-tblwrap { overflow-x: auto; }
-.pl-callout {
-  border-radius: 12px; padding: 14px 16px; margin: 0 0 16px; background: var(--pl-card);
-  border: 1px solid var(--pl-bd); border-left: 3px solid var(--pl-warning);
-}
-.pl-callout p { margin: 0; font-size: 13.5px; line-height: 1.65; }
-.pl-callout-good { border-left-color: var(--pl-success); }
-.pl-changelog { border-top: 1px solid var(--pl-bd); margin-top: 34px; padding-top: 18px; }
-.pl-clrow { display: flex; gap: 14px; padding: 8px 0; font-size: 13px; color: var(--pl-mut); }
-.pl-cldate {
-  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 11.5px;
-  color: var(--pl-dim); width: 78px; flex: none; font-variant-numeric: tabular-nums; padding-top: 2px;
-}
-
-/* ── ABOUT ────────────────────────────────────────────────────────────── */
-.pl-aboutgrid { max-width: 640px; margin: 0 auto; padding: 36px 22px 6px; }
-.pl-prose p { font-size: 17px; line-height: 1.85; color: var(--pl-mut); margin: 0 0 20px; }
-.pl-prose p b { color: var(--pl-fg); font-weight: 700; }
-/* right-floated, prose wraps around it, whole and uncropped, UNCAPTIONED */
-.pl-figure { float: right; width: 226px; margin: 5px 0 18px 28px; shape-margin: 18px; }
-.pl-figure img {
-  width: 100%; display: block; border-radius: 13px; border: 1px solid var(--pl-bd);
-  box-shadow: 0 16px 34px -18px rgba(0, 0, 0, 0.8);
-}
-@media (max-width: 560px) { .pl-figure { float: none; width: 100%; max-width: 260px; margin: 0 0 20px; } }
-.pl-clearfix::after { content: ''; display: block; clear: both; }
-.pl-social { display: flex; gap: 9px; margin: 2px 0 0; }
-.pl-sq {
-  width: 40px; height: 40px; border-radius: 11px; background: var(--pl-card); border: 1px solid var(--pl-bd);
-  display: flex; align-items: center; justify-content: center; color: var(--pl-mut);
-  text-decoration: none; transition: color 0.18s, border-color 0.18s;
-}
-.pl-sq:hover, .pl-sq:focus-visible { color: var(--pl-fg); border-color: var(--pl-mut); }
-.pl-sq svg { width: 17px; height: 17px; }
-.pl-fbpanel {
-  max-width: 640px; margin: 20px auto 0; background: var(--pl-card);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  border: 1px solid var(--pl-bd); border-radius: 16px; padding: 22px 24px;
-}
-.pl-fbk {
-  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 9.5px;
-  letter-spacing: 0.11em; text-transform: uppercase; color: var(--pl-pri); margin-bottom: 8px;
-}
-.pl-fbh { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 22px; margin: 0 0 7px; color: var(--pl-fg); }
-.pl-fbp { font-size: 14px; color: var(--pl-mut); line-height: 1.65; margin: 0 0 16px; }
-.pl-flbl {
-  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 9.5px;
-  letter-spacing: 0.07em; text-transform: uppercase; color: var(--pl-dim); margin-bottom: 7px;
-}
-.pl-fta {
-  width: 100%; min-height: 96px; background: var(--pl-soft); border: 1px solid var(--pl-bd);
-  border-radius: 11px; padding: 12px 14px; color: var(--pl-fg);
-  font-family: 'Nunito', system-ui, sans-serif; font-size: 14.5px; line-height: 1.6; resize: vertical;
-}
-.pl-fta::placeholder { color: var(--pl-dim); }
-.pl-finp {
-  flex: 1; min-width: 200px; background: var(--pl-soft); border: 1px solid var(--pl-bd);
-  border-radius: 11px; padding: 11px 13px; color: var(--pl-fg);
-  font-family: 'Nunito', system-ui, sans-serif; font-size: 14px;
-}
-.pl-finp::placeholder { color: var(--pl-dim); }
-.pl-fbfoot { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
-.pl-fbnote { font-size: 11.5px; color: var(--pl-dim); font-weight: 700; line-height: 1.55; margin: 10px 0 0; }
-.pl-fbnote b { color: var(--pl-mut); }
-
-/* ── PRICING — coming soon. No plan cards, no tiers, no fake numbers. ─── */
-.pl-soonwrap { max-width: 640px; margin: 0 auto; padding: 44px 22px 52px; text-align: center; }
-.pl-soonbadge {
-  display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 5px 14px;
-  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 10px;
-  letter-spacing: 0.09em; text-transform: uppercase; color: var(--pl-success);
-  background: color-mix(in srgb, var(--pl-success) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--pl-success) 30%, transparent);
-}
-.pl-soonp { font-size: 16px; line-height: 1.8; color: var(--pl-mut); margin: 18px 0 0; }
-.pl-soonp b { color: var(--pl-fg); font-weight: 700; }
-.pl-soonlist { max-width: 470px; margin: 24px auto 0; text-align: left; }
-.pl-soonrow {
-  display: flex; gap: 11px; align-items: flex-start; padding: 11px 0;
-  border-top: 1px solid var(--pl-bd); font-size: 14px; color: var(--pl-mut); line-height: 1.6;
-}
-.pl-soonrow:first-child { border-top: none; }
-.pl-soonrow b { color: var(--pl-fg); font-weight: 700; }
-.pl-tick { width: 16px; height: 16px; flex: none; margin-top: 3px; color: var(--pl-success); }
-
-/* ── Focus visibility, everywhere in the group ────────────────────────── */
-.pl a:focus-visible, .pl button:focus-visible, .pl textarea:focus-visible, .pl input:focus-visible {
-  outline: 2px solid #a9d3ee; outline-offset: 2px; border-radius: 6px;
-}
-
-/* ── REDUCED MOTION: everything shows INSTANTLY. Not faster — none. ───── */
-@media (prefers-reduced-motion: reduce) {
-  .pl-an { animation: none; opacity: 1; transform: none; }
-  .pl-hl .l2 { animation: none; }
-  .pl-mesh i { animation: none; }
-  .pl-pin::after { animation: none; }
-  .pl-hero::before { filter: none; }
-  .pl-gooey .tail, .pl-btn, .pl-navlk, .pl-ftile, .pl-sq { transition: none; }
-}
-
-/* ── SCROLL REVEAL (Andy, Aug 2026) ───────────────────────────────────────
-   The hero animates on load (.pl-an). EVERYTHING BELOW THE FOLD waits until
-   it enters the viewport and then uses the SAME fade-rise motion, so the page
-   reveals itself as you scroll rather than firing all at once behind the fold.
-
-   Same easing and distance as .pl-an on purpose — one motion system, two
-   triggers. Do not give the scroll reveal its own curve.
-
-   ⚠️ The default state is VISIBLE. `.pl-reveal` only hides once the observer
-   has attached (`data-reveal-ready` on the root). With no JS, a failed
-   observer, or reduced motion, every section renders normally — a reveal that
-   can strand content unread is worse than no reveal. */
-[data-reveal-ready='1'] .pl-reveal { opacity: 0; transform: translateY(22px); }
-[data-reveal-ready='1'] .pl-reveal.is-in {
-  opacity: 1; transform: none;
-  transition: opacity 0.66s cubic-bezier(0.22, 1, 0.36, 1),
-              transform 0.66s cubic-bezier(0.22, 1, 0.36, 1);
-}
-/* children stagger inside a revealed block */
-[data-reveal-ready='1'] .pl-reveal .pl-stagger > * { opacity: 0; transform: translateY(16px); }
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > * {
-  opacity: 1; transform: none;
-  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-              transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
-}
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(1) { transition-delay: 0.04s; }
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(2) { transition-delay: 0.09s; }
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(3) { transition-delay: 0.14s; }
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(4) { transition-delay: 0.19s; }
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(5) { transition-delay: 0.24s; }
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(n + 6) { transition-delay: 0.29s; }
-
-@media (prefers-reduced-motion: reduce) {
-  [data-reveal-ready='1'] .pl-reveal,
-  [data-reveal-ready='1'] .pl-reveal .pl-stagger > * { opacity: 1 !important; transform: none !important; }
-}
-
-
-/* ── SCALE — second pass (Andy: "a lot of dead space and things could be
-   made bigger") ───────────────────────────────────────────────────────────
-   Two separate problems, fixed separately:
-
-   1. DEAD SPACE was vertical. The hero forced 100vh, sections carried
-      76-96px of padding, and the gaps between them read as emptiness rather
-      than breathing room. Vertical rhythm is tightened throughout.
-   2. TOO SMALL was horizontal. The mockup was authored in a 1400px review
-      frame, so the max-widths were sized for a canvas, not a browser. On a
-      1600-1920 display everything sat marooned in a narrow column.
-
-   In-app scale is untouched — this is the public layer only. */
-.pl-hero { min-height: 0; display: block; padding: 0 30px 56px; }
-.pl-hero-in { max-width: 940px; margin-top: 56px; }
-.pl-navwrap, .pl-featin, .pl-tourin, .pl-body { max-width: min(1560px, 92vw); }
-.pl-navbar { padding-top: 22px; }
-
-/* type */
-.pl-hl-page .l1, .pl-hl-hero .l1 { font-size: 34px; }
-.pl-hl-hero .l2 { font-size: 68px; letter-spacing: -2px; line-height: 1.02; }
-.pl-lede { font-size: 18px; max-width: 700px; margin-top: 18px; }
-.pl-noacct { font-size: 14px; }
-.pl-btn { font-size: 15.5px; padding: 14px 28px; }
-.pl-disc { font-size: 12.5px; margin-top: 26px; }
-
-/* sections: tighter vertically, wider horizontally */
-.pl-feat { padding: 40px 30px 56px; }
-.pl-tour { padding: 40px 30px 64px; }
-.pl-body { padding: 24px 30px 34px; }
-.pl-feats { font-size: 16px; max-width: 680px; margin-bottom: 30px; }
-
-/* tiles: bigger targets, bigger type */
-.pl-ftiles { gap: 16px; }
-.pl-ftile { padding: 20px 19px 21px; border-radius: 16px; }
-.pl-ftl { font-size: 16px; line-height: 1.35; margin-top: 15px; }
-.pl-ficon { width: 44px; height: 44px; border-radius: 13px; }
-.pl-ficon svg { width: 22px; height: 22px; }
-.pl-ftex { font-size: 15.5px; padding: 18px 20px; }
-
-/* the tour window is the proof the product exists — give it room */
-.pl-shotwin { min-height: 480px; }
-.pl-shotstage { padding: 11px; }
-.pl-tourtabs { margin: 22px 0 24px; }
-
-@media (max-width: 1100px) {
-  .pl-hl-hero .l2 { font-size: 46px; letter-spacing: -1.2px; }
-  .pl-shotwin { min-height: 340px; }
-}
-@media (max-width: 900px) {
-  .pl-hero { padding: 0 20px 40px; }
-  .pl-hero-in { margin-top: 38px; }
-  .pl-hl-hero .l2 { font-size: 38px; letter-spacing: -0.9px; }
-  .pl-hl-page .l1, .pl-hl-hero .l1 { font-size: 23px; }
-  .pl-lede { font-size: 16px; }
-  .pl-feat, .pl-tour { padding: 32px 20px 40px; }
-  .pl-shotwin { min-height: 240px; }
-}
-
-/* doc pages get the same treatment: less air above, larger title, wider
-   reading measure. 720px was a print-column measure; 820 reads better on
-   a screen at this type size. */
-.pl-bandin { max-width: min(1560px, 92vw); margin-top: 30px; }
-.pl-doctitle { font-size: 44px; letter-spacing: -1px; }
-.pl-docsub { font-size: 16px; max-width: 700px; }
-.pl-docwrap { grid-template-columns: 210px minmax(0, 820px); gap: 52px; padding: 26px 30px 44px; }
-.pl-doc p, .pl-doc li { font-size: 16.5px; line-height: 1.8; }
-.pl-doc h2 { font-size: 23px; margin: 40px 0 12px; }
-.pl-aboutgrid { max-width: 780px; padding: 26px 30px 6px; }
-.pl-prose p { font-size: 18px; line-height: 1.85; }
-.pl-soonwrap { max-width: 760px; padding: 30px 30px 56px; }
-.pl-fbpanel { max-width: 780px; }
-@media (max-width: 1100px) {
-  .pl-docwrap { grid-template-columns: minmax(0, 820px); }
-  .pl-doctitle { font-size: 34px; }
-}
-
-/* ── Third pass: the nav, the auth card, and the gap under the footer ─────
-   (Andy: "the bar at the top and the text… doesn't quite fill the page",
-   "this needs to be expanded", "the spacing is just awkward")
-
-   ⭐ THE DEAD SPACE UNDER THE FOOTER was the real bug, and it was structural
-   rather than a padding value. `.pl` is min-height:100vh, but its children
-   were static — so on a short page (auth, pricing) the footer sat wherever
-   the content ended and the remaining viewport was just empty field below
-   it. Making `.pl` a flex column and giving the footer `margin-top:auto`
-   pins it to the bottom on short pages and leaves it in flow on long ones. */
-.pl { display: flex; flex-direction: column; }
-.pl-foot { margin-top: auto; }
-
-/* nav: it was sized for a 1400px mockup frame and read as a toolbar on a
-   real display. Everything up one step. */
-.pl-navbrand { font-size: 21px; }
-.pl-navlk { font-size: 14.5px; padding: 9px 17px; }
-.pl-navpill { padding: 5px; }
-.pl-gooey .lead { font-size: 14.5px; padding: 10px 22px; height: 40px; }
-.pl-gooey .tail { height: 40px; width: 40px; transform: translateX(-38px); }
-.pl-gooey:hover .tail { transform: translateX(7px); }
-.pl-gooey .tail svg { width: 15px; height: 15px; }
-
-/* auth: a 372px card centred in a 1900px page reads as a dialog that lost
-   its page. Wider, larger type, and vertically centred in what's left of
-   the viewport after the nav and footer. */
-.pl-authwrap {
-  padding: 56px 30px 72px;
-  min-height: calc(100vh - 250px);
-  align-items: center;
-}
-.pl-authcard { max-width: 480px; }
-.pl-authcard .pl-ti { font-size: 30px; }
-.pl-authcard .pl-sub { font-size: 15px; }
-.pl-inp { font-size: 16px; padding: 14px 15px; border-radius: 12px; }
-.pl-lbl { font-size: 11.5px; }
-.pl-sbtn { font-size: 15px; padding: 14px 18px; border-radius: 12px; }
-.pl-fine { font-size: 13.5px; line-height: 1.7; }
-.pl-orbar span { font-size: 11.5px; }
-
-/* merge screen gets the same treatment — it is the highest-risk surface and
-   was the narrowest thing on the site */
-.pl-mergewrap { padding: 48px 30px 64px; min-height: calc(100vh - 250px); align-items: center; }
-.pl-mergecard { max-width: 720px; }
-
-@media (max-width: 900px) {
-  .pl-navbrand { font-size: 18px; }
-  .pl-navlk { font-size: 13px; padding: 7px 12px; }
-  .pl-authwrap, .pl-mergewrap { min-height: 0; padding: 34px 20px 44px; }
-  .pl-authcard .pl-ti { font-size: 25px; }
-}
-
-/* ── Hero width — FINAL, and it supersedes the three passes above ────────
-   (Andy, Aug 2026, three times: "too small", "a lot of dead space",
-   "widen this", "still not wide enough".)
-
-   The earlier passes kept nudging fixed px values, which was the wrong
-   tool: a fixed 68px headline in a fixed 1240px column looks right on one
-   display and marooned on every other. This uses FLUID type — the headline
-   scales with the viewport, so the hero fills the frame at any width and
-   the copy breaks where it should instead of where the column ran out.
-
-   ⚠️ Do not "clean this up" back into fixed px. The clamp() floors and
-   ceilings are the guardrails: 42px is the smallest readable payoff line on
-   a phone, 118px is where it starts to outrun a 1440p screen. */
-.pl-hero-in { max-width: min(1720px, 94vw); margin-top: 40px; }
-.pl-hl-hero .l1 {
-  font-size: clamp(22px, 2.9vw, 54px);
-  margin-bottom: 0.15em;
-}
-.pl-hl-hero .l2 {
-  font-size: clamp(42px, 6.6vw, 118px);
-  letter-spacing: -0.035em;
-  line-height: 0.98;
-}
-.pl-lede {
-  font-size: clamp(16px, 1.35vw, 25px);
-  max-width: min(980px, 78vw);
-  margin-top: clamp(16px, 1.6vw, 30px);
-}
-.pl-ctarow { margin-top: clamp(22px, 2.4vw, 40px); gap: 14px; }
-.pl-btn { font-size: clamp(15px, 1.05vw, 19px); padding: clamp(13px, 1.05vw, 19px) clamp(24px, 2vw, 38px); }
-.pl-btn svg { width: 1.05em; height: 1.05em; }
-.pl-noacct { font-size: clamp(13px, 0.9vw, 17px); margin-top: 16px; }
-.pl-disc { font-size: clamp(12px, 0.78vw, 15px); }
-.pl-chip { font-size: clamp(12.5px, 0.85vw, 16px); padding: 7px 8px 7px 18px; }
-.pl-chip .tagpill { font-size: 0.82em; padding: 3px 11px; }
-
-/* the sections below follow the same fluid logic so the page reads as one
-   scale rather than a wide hero above narrow content */
-.pl-navwrap, .pl-featin, .pl-tourin, .pl-body { max-width: min(1720px, 94vw); }
-.pl-feats { font-size: clamp(15px, 1.05vw, 19px); max-width: min(760px, 80vw); }
-.pl-ftl { font-size: clamp(15px, 0.95vw, 18px); }
-.pl-ftex { font-size: clamp(14.5px, 0.95vw, 18px); }
-
-@media (max-width: 1000px) {
-  .pl-hero-in { max-width: 100%; margin-top: 32px; }
-  .pl-lede { max-width: 100%; }
-}
-
-/* ── THE HERO OWNS THE FIRST SCREEN (Andy: "the features should be out of
-   the page, and only appear when i scroll down") ─────────────────────────
-   The hero contains the nav, so a full-viewport hero puts the Features
-   section entirely below the fold. Nothing of it peeks in on load, which is
-   what makes the scroll reveal actually read as a reveal.
-
-   ⚠️ This was set once, removed during the "too much dead space" pass, and
-   is now back — the difference is that the hero type is fluid and much
-   larger, so it FILLS the screen instead of floating in it. If a future
-   pass finds dead space here again, the fix is bigger content, NOT a
-   shorter hero: shortening it lets Features peek back in and breaks this. */
+   Features staying entirely below the fold is deliberate. If a future pass
+   finds dead space here, the fix is BIGGER CONTENT, not a shorter hero —
+   shortening it lets Features peek in and breaks the reveal. */
 .pl-hero {
   min-height: 100svh;
   display: flex;
   flex-direction: column;
-  padding-bottom: clamp(28px, 3vw, 56px);
+  padding: 0 0 var(--s-3);
 }
-/* the nav sits at the top; the content block takes the rest and centres */
 .pl-hero-in {
-  margin-top: 0;
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: var(--rail-hero);
+  margin: 0 auto;
+  /* Opened up (Andy): "No account needed" sat almost against the buttons
+     and read as a caption ON the CTA rather than a separate promise.
+     Because the hero is 100svh, space the stack does not use becomes dead
+     air above and below it — spreading the blocks FILLS the screen rather
+     than pushing anything off it. */
+  gap: var(--s-4);
 }
-/* short laptops: don't let a 100vh hero crush the content off-screen */
-@media (max-height: 680px) {
-  .pl-hero { min-height: 0; padding-top: 24px; padding-bottom: 48px; }
-  .pl-hero-in { display: block; }
+
+.pl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7em;
+  font-size: var(--t-fine);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  padding: 0.42em 0.5em 0.42em 1.1em;
+  border-radius: var(--r-pill);
+}
+.pl-chip .tagpill {
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 0.82em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--pl-ink);
+  border-radius: var(--r-pill);
+  padding: 0.22em 0.8em;
 }
 
-/* ═══ FRONT PAGE — TYPE + MOTION, consolidated pass (Aug 2026) ═══════════
-   ⚠️ THE BUG THIS FIXES: three earlier resize passes targeted `.pl-l1` and
-   `.pl-l2`. The real classes are `.l1` / `.l2` INSIDE `.pl-hl-*`, so every
-   one of those rules matched nothing and the hero stayed at its original
-   46px through three rounds of "still too small". Selectors corrected.
+.pl-lede {
+  margin: 0;
+  font-size: var(--t-lede);
+  color: var(--pl-mut);
+  line-height: 1.55;
+  max-width: 52ch;
+}
+.pl-ctarow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
 
-   Everything below is fluid. Do not convert back to fixed px. */
+/* ONE fine-print line, not two stacked blocks. The no-account promise is
+   what stops a bounce (P1 §2); the independence line is required in the
+   hero region by 05 §6.1. ⚠️ Neither is ever reveal-gated, and both stay
+   visible without scrolling. */
+.pl-finerow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8em;
+  flex-wrap: wrap;
+  margin: var(--s-2) 0 0;
+  font-size: var(--t-fine);
+  font-weight: 700;
+  color: var(--pl-dim);
+}
+.pl-finerow .sep { color: var(--pl-fine); }
+.pl-finerow .ind { color: var(--pl-fine); font-weight: 600; }
 
-/* ── Display type ─────────────────────────────────────────────────────── */
-.pl-hl-hero { margin-top: 0; }
-.pl-hl-hero .l1 { font-size: clamp(21px, 2.5vw, 46px); margin-bottom: 0.14em; }
-.pl-hl-hero .l2 { font-size: clamp(40px, 5.9vw, 104px); letter-spacing: -0.035em; line-height: 0.99; }
-.pl-hl-section .l1 { font-size: clamp(18px, 1.75vw, 32px); margin-bottom: 0.14em; }
-.pl-hl-section .l2 { font-size: clamp(30px, 3.9vw, 68px); letter-spacing: -0.03em; line-height: 1.02; }
-.pl-hl-about .l1 { font-size: clamp(20px, 2vw, 36px); }
-.pl-hl-about .l2 { font-size: clamp(34px, 4.4vw, 76px); letter-spacing: -0.03em; }
+/* the scroll cue — the hero owns the screen, so say there is more.
+   `flex: none` keeps it from being squeezed by the centred stack, and as
+   the last child of the 100svh hero it lands just inside the fold. */
+.pl-cue { display: flex; justify-content: center; flex: none; }
+.pl-cue span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7em;
+  font-size: var(--t-eyebrow);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pl-fine);
+}
+.pl-cue svg { width: 14px; height: 14px; animation: pl-bob 2.4s var(--ease) infinite; }
 
-/* ── Section rhythm ───────────────────────────────────────────────────── */
-.pl-feat { padding: clamp(56px, 7vw, 132px) 30px clamp(48px, 5vw, 96px); }
-.pl-tour { padding: clamp(40px, 5vw, 96px) 30px clamp(56px, 6vw, 112px); }
-.pl-body { padding: clamp(20px, 2.5vw, 48px) 30px clamp(48px, 5vw, 88px); }
-.pl-eyebrow { font-size: clamp(10px, 0.72vw, 13px); letter-spacing: 0.13em; padding: 7px 16px; }
-.pl-feats { margin-top: clamp(12px, 1.2vw, 22px); margin-bottom: clamp(24px, 2.6vw, 48px); }
+/* ── Features ─────────────────────────────────────────────────────────── */
+.pl-feat { padding: var(--s-6) 0 var(--s-5); }
+.pl-featin { width: var(--rail); margin: 0 auto; text-align: center; }
+.pl-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7em;
+  font-size: var(--t-eyebrow);
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 0.55em 1.3em;
+  border-radius: var(--r-pill);
+  margin-bottom: var(--s-2);
+}
+.pl-eyebrow-solid {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--pl-bd);
+  color: var(--pl-mut);
+}
+.pl-feats {
+  font-size: var(--t-body);
+  color: var(--pl-mut);
+  line-height: 1.6;
+  max-width: 52ch;
+  margin: var(--s-2) auto var(--s-4);
+}
 
-/* ── Tiles ────────────────────────────────────────────────────────────── */
-.pl-ftiles { gap: clamp(12px, 1.1vw, 20px); }
-.pl-ftile { padding: clamp(17px, 1.4vw, 26px); border-radius: clamp(14px, 1.1vw, 20px); }
-.pl-ficon { width: clamp(40px, 3vw, 56px); height: clamp(40px, 3vw, 56px); border-radius: clamp(11px, 0.85vw, 16px); }
-.pl-ficon svg { width: 48%; height: 48%; }
-.pl-ftl { margin-top: clamp(12px, 1vw, 20px); }
-.pl-fthint { font-size: clamp(9.5px, 0.62vw, 12px); }
+.pl-ftiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: clamp(12px, 1.1vw, 20px);
+  text-align: left;
+}
+.pl-ftwrap { display: flex; flex-direction: column; min-width: 0; }
+.pl-ftile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  padding: clamp(17px, 1.4vw, 26px);
+  border-radius: var(--r-card);
+  background: var(--pl-card);
+  border: 1px solid var(--pl-bd);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  color: var(--pl-fg);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s var(--ease);
+}
+.pl-ftile:hover {
+  background: rgba(255, 255, 255, 0.085);
+  border-color: rgba(255, 255, 255, 0.24);
+  transform: translateY(-2px);
+}
+.pl-ftile.is-open { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.28); }
+.pl-ftile-soon { border-color: rgba(231, 176, 106, 0.38); }
+.pl-ficon {
+  width: clamp(38px, 2.8vw, 52px);
+  height: clamp(38px, 2.8vw, 52px);
+  border-radius: clamp(11px, 0.85vw, 15px);
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--c, var(--pl-pri)) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c, var(--pl-pri)) 34%, transparent);
+  color: var(--c, var(--pl-pri));
+}
+.pl-ficon svg { width: 46%; height: 46%; }
+/* Tile interior rhythm — THE GAPS ARE UNEVEN ON PURPOSE. `See how` gets
+   more room under the title than the title gets under the icon, because it
+   is an affordance rather than content; equal gaps made it read as a third
+   line of the title. The title FLEXES, so `See how` sits on the tile floor
+   and every affordance in a row lines up regardless of title wrap. */
+.pl-ftl {
+  flex: 1;
+  font-size: clamp(14.5px, 0.95vw, 17.5px);
+  font-weight: 800;
+  line-height: 1.38;
+  margin-top: var(--s-3);
+}
+.pl-fthint {
+  display: block;
+  margin-top: var(--s-2);
+  font-size: var(--t-eyebrow);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pl-fine);
+}
+.pl-soonmark {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25em 0.7em;
+  border-radius: var(--r-pill);
+  background: rgba(231, 176, 106, 0.18);
+  border: 1px solid rgba(231, 176, 106, 0.38);
+  color: var(--pl-warning);
+}
+/* the example, revealed on click. Titles-only still holds on the CLOSED
+   tile — the grid at rest is exactly what it was. */
+.pl-ftex {
+  margin: var(--s-1) 0 0;
+  padding: var(--s-3);
+  border-radius: var(--r-card);
+  background: color-mix(in srgb, var(--c, var(--pl-pri)) 10%, rgba(255, 255, 255, 0.04));
+  border: 1px solid color-mix(in srgb, var(--c, var(--pl-pri)) 26%, transparent);
+  font-size: var(--t-body);
+  line-height: 1.65;
+  color: var(--pl-mut);
+}
+
+/* ── Guided tour ──────────────────────────────────────────────────────── */
+.pl-tour { padding: var(--s-5) 0 var(--s-6); }
+.pl-tourin { width: var(--rail); margin: 0 auto; text-align: center; }
+.pl-tourtabs {
+  display: inline-flex;
+  gap: 3px;
+  padding: var(--s-1);
+  margin: var(--s-3) 0 var(--s-4);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--pl-bd);
+}
+.pl-ttab {
+  padding: 0.6em 1.2em;
+  border-radius: var(--r-pill);
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: var(--t-ui);
+  color: var(--pl-mut);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+.pl-ttab[aria-selected='true'] { background: var(--pl-fg); color: var(--pl-ink); font-weight: 800; }
+.pl-shotstage {
+  position: relative;
+  padding: var(--s-1);
+  border-radius: var(--r-card);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--pl-bd);
+  box-shadow: 0 26px 60px -30px rgba(0, 0, 0, 0.8);
+}
+.pl-shotwin {
+  position: relative;
+  overflow: hidden;
+  border-radius: calc(var(--r-card) - 4px);
+  background: #1d1a17;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: left;
+}
+.pl-shotwin img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+
+/* TourPreview — the fallback when no screenshot has been captured yet.
+   ⚠️ These rules did not exist before P2: the markup shipped unstyled, so
+   the fallback rendered as a stack of bare text. Do not delete the
+   component; it is what stands in for a failed image load. */
+.pl-prev { display: grid; grid-template-columns: clamp(120px, 13%, 190px) 1fr; width: 100%; height: 100%; text-align: left; }
+.pl-prev-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  padding: var(--s-3) var(--s-2);
+  background: rgba(0, 0, 0, 0.22);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+.pl-prev-brand {
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: var(--t-fine);
+  color: var(--pl-fg);
+  margin-bottom: var(--s-2);
+}
+.pl-prev-navlk {
+  font-size: var(--t-fine);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.38);
+  padding: 0.35em 0.6em;
+  border-radius: 7px;
+}
+.pl-prev-navlk.on { background: rgba(255, 255, 255, 0.1); color: var(--pl-fg); }
+.pl-prev-main { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-3); min-width: 0; }
+.pl-prev-hd { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-2); }
+.pl-prev-h { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-h3); color: var(--pl-fg); }
+.pl-prev-chip { font-size: var(--t-fine); font-weight: 700; color: var(--pl-dim); }
+.pl-prev-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: var(--s-2); }
+.pl-prev-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--s-2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid color-mix(in srgb, var(--c, var(--pl-pri)) 30%, transparent);
+}
+.pl-prev-k { font-size: var(--t-eyebrow); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pl-dim); }
+.pl-prev-v { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-h3); color: var(--c, var(--pl-fg)); }
+.pl-prev-list { display: flex; flex-direction: column; gap: 1px; }
+.pl-prev-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  padding: 0.55em 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: var(--t-fine);
+}
+.pl-prev-row i { width: 8px; height: 8px; border-radius: 3px; background: var(--c, var(--pl-pri)); flex: none; }
+.pl-prev-t { flex: 1; font-weight: 700; color: var(--pl-mut); }
+.pl-prev-m { color: var(--pl-dim); font-weight: 700; }
+
+/* callouts sit OVER the shot. The pin marks the region; the guide is an
+   ILLUSTRATION beside the bubble and never the marker itself. */
+.pl-call { position: absolute; z-index: 3; display: flex; align-items: flex-start; gap: 9px; max-width: 262px; text-align: left; }
+.pl-bubble {
+  border-radius: 13px;
+  padding: 0.7em 0.9em;
+  font-size: var(--t-fine);
+  font-weight: 700;
+  line-height: 1.45;
+  color: #fff;
+  background: rgba(20, 26, 34, 0.62);
+  backdrop-filter: blur(15px) saturate(1.1);
+  -webkit-backdrop-filter: blur(15px) saturate(1.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 12px 28px -14px rgba(0, 0, 0, 0.7);
+}
+.pl-bubble b { color: #a9d3ee; font-weight: 800; }
+.pl-guide {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 34% 28%, #3d4a58, #232b34);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.pl-guide svg { width: 34px; height: 34px; color: #e9dcc4; }
+.pl-pin {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--pl-pri);
+  box-shadow: 0 0 0 4px rgba(111, 179, 222, 0.24), 0 0 14px rgba(111, 179, 222, 0.7);
+  z-index: 3;
+}
+.pl-pin::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid rgba(111, 179, 222, 0.55);
+  animation: pl-ping 2.4s ease-out infinite;
+}
+.pl-tourfoot { font-size: var(--t-fine); color: var(--pl-dim); font-weight: 700; margin-top: var(--s-3); }
 
 /* ── Cards ────────────────────────────────────────────────────────────── */
-.pl-card { border-radius: clamp(14px, 1.1vw, 20px); }
-.pl-ti { font-size: clamp(17px, 1.25vw, 24px); }
-.pl-privtext, .pl-pitchp { font-size: clamp(14.5px, 1vw, 19px); line-height: 1.72; }
-.pl-costbig { font-size: clamp(28px, 2.4vw, 46px); }
-
-/* ═══ MOTION — the pop, and it keeps going all the way down ══════════════
-   Andy: "it should have that pop in animation and it should continue as we
-   keep scrolling." Every block below the fold reveals as it arrives, and
-   children inside a block stagger. Scale is what makes it read as a POP
-   rather than a slide — 0.965 → 1 is enough; more looks like a bounce. */
-[data-reveal-ready='1'] .pl-reveal {
-  opacity: 0;
-  transform: translateY(30px) scale(0.965);
+.pl-body { width: var(--rail); margin: 0 auto; padding: var(--s-3) 0 var(--s-5); }
+.pl-bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--s-3); }
+.pl-c5 { grid-column: span 5; }
+.pl-c7 { grid-column: span 7; }
+.pl-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--pl-card);
+  border: 1px solid var(--pl-bd);
+  border-radius: var(--r-card);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
+.pl-hd { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); padding: var(--s-3) var(--s-3) var(--s-1); flex-shrink: 0; }
+.pl-ti { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-h2); margin: 0; }
+.pl-ti-sm { font-size: var(--t-h3); }
+.pl-sub { font-size: var(--t-fine); color: var(--pl-dim); font-weight: 700; }
+.pl-bd { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-2); padding: var(--s-1) var(--s-3) var(--s-3); flex: 1; min-height: 0; }
+.pl-privtext { margin: 0; font-size: var(--t-read); color: var(--pl-mut); line-height: 1.72; }
+.pl-privtext b { color: var(--pl-fg); font-weight: 700; }
+.pl-costbig { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-display); }
+.pl-lk {
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: var(--t-ui);
+  font-weight: 800;
+  color: var(--pl-pri);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+.pl-lk:hover { text-decoration: underline; }
+
+/* ── Footer ───────────────────────────────────────────────────────────────
+   The hero carries the ONE-LINE independence statement (05 §6.1); the
+   footer carries the LONG form plus the AAMC line (05 §6.2). Two
+   requirements, not one repeated.
+
+   ⚠️ `opacity: 1 !important` is NOT leftover debugging. The footer was
+   given `.pl-reveal` once and its required legal lines started at opacity
+   0 — a required disclaimer behind a scroll animation is a compliance
+   problem, not a visual one. Never give `.pl-foot` the reveal class.
+
+   `margin-top: auto` pins it to the bottom on short pages (auth, pricing)
+   instead of leaving a band of empty field beneath it. */
+.pl-foot {
+  width: var(--rail);
+  margin: var(--s-6) auto 0;
+  margin-top: auto;
+  padding: var(--s-4) 0 var(--s-5);
+  border-top: 1px solid var(--pl-bd);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  text-align: center;
+  opacity: 1 !important;
+  transform: none !important;
+}
+.pl-footbrand { margin-bottom: calc(var(--s-1) * -1); }
+.pl-footlinks { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-1); }
+.pl-nlk {
+  padding: 0.5em 1em;
+  border-radius: var(--r-pill);
+  font-size: var(--t-ui);
+  font-weight: 700;
+  color: var(--pl-mut);
+  text-decoration: none;
+  transition: background 0.18s, color 0.18s;
+}
+.pl-nlk:hover { background: rgba(255, 255, 255, 0.09); color: #fff; }
+.pl-footdisc { margin: 0; max-width: 78ch; font-size: var(--t-fine); line-height: 1.75; color: var(--pl-fine); font-weight: 600; }
+
+/* ── Doc pages — one shell, four routes ───────────────────────────────── */
+.pl-band { position: relative; padding: 0 0 var(--s-4); }
+.pl-bandin { width: var(--rail); margin: var(--s-4) auto 0; }
+.pl-doctitle { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-sec-pay); color: #fff; letter-spacing: -0.03em; margin: 0; line-height: 1.05; }
+.pl-docsub { font-size: var(--t-lede); color: var(--pl-mut); margin: var(--s-2) 0 0; max-width: 60ch; line-height: 1.6; }
+.pl-updated {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  margin-top: var(--s-3);
+  border-radius: var(--r-pill);
+  padding: 0.4em 1em;
+  font-size: var(--t-fine);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(20, 26, 34, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.pl-docwrap { display: grid; grid-template-columns: 210px var(--rail-doc); gap: var(--s-5); justify-content: center; padding: var(--s-4) var(--s-3) var(--s-5); }
+.pl-toc { position: sticky; top: 20px; align-self: start; }
+.pl-toclab { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-eyebrow); letter-spacing: 0.11em; text-transform: uppercase; color: var(--pl-dim); margin-bottom: var(--s-2); }
+.pl-toc a { display: block; font-size: var(--t-fine); font-weight: 700; color: var(--pl-mut); padding: 0.45em 0 0.45em 0.8em; border-left: 2px solid var(--pl-bd); text-decoration: none; }
+.pl-toc a:hover,
+.pl-toc a[aria-current='true'] { color: var(--pl-fg); border-left-color: var(--pl-pri); }
+.pl-doc h2 { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-h2); margin: var(--s-4) 0 var(--s-2); scroll-margin-top: 20px; }
+.pl-doc h2:first-child { margin-top: 0; }
+.pl-doc p { font-size: var(--t-read); line-height: 1.8; color: var(--pl-mut); margin: 0 0 var(--s-2); }
+.pl-doc p b,
+.pl-doc li b { color: var(--pl-fg); font-weight: 700; }
+.pl-doc ul { margin: 0 0 var(--s-3); padding-left: 1.2em; }
+.pl-doc li { font-size: var(--t-read); line-height: 1.75; color: var(--pl-mut); margin-bottom: 0.45em; }
+.pl-inline { color: var(--pl-pri); font-weight: 700; text-decoration: none; }
+.pl-inline:hover { text-decoration: underline; }
+/* the plain-English summary strip, required above EVERY section (§6.4) */
+.pl-plain {
+  display: flex;
+  gap: 0.8em;
+  align-items: flex-start;
+  border-radius: var(--r-field);
+  padding: 0.8em 0.95em;
+  margin: 0 0 var(--s-3);
+  background: rgba(111, 179, 222, 0.09);
+  border: 1px solid rgba(111, 179, 222, 0.26);
+}
+.pl-plain .k { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-eyebrow); letter-spacing: 0.07em; text-transform: uppercase; color: var(--pl-pri); flex: none; padding-top: 0.25em; }
+.pl-plain p { margin: 0; font-size: var(--t-body); line-height: 1.6; color: var(--pl-fg); font-weight: 600; }
+.pl-tblwrap { overflow-x: auto; }
+.pl-tbl { width: 100%; border-collapse: collapse; margin: 0 0 var(--s-3); font-size: var(--t-body); }
+.pl-tbl th { text-align: left; font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-eyebrow); letter-spacing: 0.06em; text-transform: uppercase; color: var(--pl-dim); padding: 0 0.8em 0.6em 0; border-bottom: 1px solid var(--pl-bd); }
+.pl-tbl td { padding: 0.75em 0.8em 0.75em 0; border-bottom: 1px solid var(--pl-bd); color: var(--pl-mut); vertical-align: top; line-height: 1.6; }
+.pl-tbl td b { color: var(--pl-fg); }
+.pl-callout { border-radius: var(--r-field); padding: 0.9em 1.1em; margin: 0 0 var(--s-3); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--pl-bd); border-left: 3px solid var(--pl-warning); }
+.pl-callout p { margin: 0; font-size: var(--t-body); line-height: 1.65; }
+.pl-callout-good { border-left-color: var(--pl-success); }
+.pl-changelog { border-top: 1px solid var(--pl-bd); margin-top: var(--s-4); padding-top: var(--s-3); }
+.pl-clrow { display: flex; gap: 1em; padding: 0.5em 0; font-size: var(--t-body); color: var(--pl-mut); }
+.pl-cldate { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-fine); color: var(--pl-dim); width: 78px; flex: none; font-variant-numeric: tabular-nums; padding-top: 0.15em; }
+
+/* ── About ────────────────────────────────────────────────────────────── */
+.pl-aboutgrid { width: min(780px, 92vw); margin: 0 auto; padding: var(--s-4) 0 var(--s-1); }
+.pl-prose p { font-size: var(--t-prose); line-height: 1.85; color: var(--pl-mut); margin: 0 0 var(--s-3); }
+.pl-prose p b { color: var(--pl-fg); font-weight: 700; }
+/* right-floated, prose wraps around it, whole and uncropped, UNCAPTIONED —
+   the wrap and the uncropped frame are both load-bearing */
+.pl-figure { float: right; width: clamp(190px, 20vw, 260px); margin: 0.3em 0 var(--s-3) var(--s-4); shape-margin: 18px; }
+.pl-figure img { width: 100%; display: block; border-radius: var(--r-field); border: 1px solid var(--pl-bd); box-shadow: 0 16px 34px -18px rgba(0, 0, 0, 0.8); }
+.pl-clearfix::after { content: ''; display: block; clear: both; }
+.pl-social { display: flex; gap: var(--s-1); margin: var(--s-1) 0 0; }
+.pl-sq { width: 40px; height: 40px; border-radius: var(--r-field); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--pl-bd); display: flex; align-items: center; justify-content: center; color: var(--pl-mut); text-decoration: none; transition: color 0.18s, border-color 0.18s; }
+.pl-sq:hover,
+.pl-sq:focus-visible { color: var(--pl-fg); border-color: var(--pl-mut); }
+.pl-sq svg { width: 17px; height: 17px; }
+.pl-fbpanel { width: min(780px, 92vw); margin: var(--s-3) auto 0; background: var(--pl-card); border: 1px solid var(--pl-bd); border-radius: var(--r-card); padding: var(--s-4); }
+.pl-fbk { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-eyebrow); letter-spacing: 0.11em; text-transform: uppercase; color: var(--pl-pri); margin-bottom: var(--s-1); }
+.pl-fbh { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-h2); margin: 0 0 var(--s-1); color: var(--pl-fg); }
+.pl-fbp { font-size: var(--t-body); color: var(--pl-mut); line-height: 1.65; margin: 0 0 var(--s-3); }
+.pl-flbl { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-eyebrow); letter-spacing: 0.07em; text-transform: uppercase; color: var(--pl-dim); margin-bottom: var(--s-1); display: block; }
+.pl-fbfoot { display: flex; align-items: center; gap: var(--s-2); margin-top: var(--s-2); flex-wrap: wrap; }
+.pl-fbnote { font-size: var(--t-fine); color: var(--pl-dim); font-weight: 700; line-height: 1.55; margin: var(--s-2) 0 0; }
+.pl-fbnote b { color: var(--pl-mut); }
+
+/* ── Pricing — no plan cards, no tiers, no number that isn't real ─────── */
+.pl-soonwrap { width: min(760px, 92vw); margin: 0 auto; padding: var(--s-5) 0 var(--s-6); text-align: center; }
+.pl-soonbadge { display: inline-flex; align-items: center; gap: 0.6em; border-radius: var(--r-pill); padding: 0.4em 1.1em; font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-eyebrow); letter-spacing: 0.09em; text-transform: uppercase; color: var(--pl-success); background: rgba(111, 192, 168, 0.14); border: 1px solid rgba(111, 192, 168, 0.3); }
+.pl-soonp { font-size: var(--t-read); line-height: 1.8; color: var(--pl-mut); margin: var(--s-3) 0 0; }
+.pl-soonp b { color: var(--pl-fg); font-weight: 700; }
+.pl-soonlist { max-width: 470px; margin: var(--s-4) auto 0; text-align: left; }
+.pl-soonrow { display: flex; gap: 0.7em; align-items: flex-start; padding: 0.7em 0; border-top: 1px solid var(--pl-bd); font-size: var(--t-body); color: var(--pl-mut); line-height: 1.6; }
+.pl-soonrow:first-child { border-top: none; }
+.pl-soonrow b { color: var(--pl-fg); font-weight: 700; }
+.pl-tick { width: 16px; height: 16px; flex: none; margin-top: 0.2em; color: var(--pl-success); }
+
+/* ── Auth ─────────────────────────────────────────────────────────────── */
+.pl-authwrap { display: flex; align-items: center; justify-content: center; padding: var(--s-5) var(--s-3) var(--s-6); }
+.pl-authstack { display: flex; flex-direction: column; align-items: center; gap: var(--s-3); width: 100%; max-width: 480px; }
+.pl-authcard { width: 100%; }
+.pl-orbar { display: flex; align-items: center; gap: 0.8em; width: 100%; }
+.pl-orbar i { flex: 1; height: 1px; background: var(--pl-bd); }
+.pl-orbar span { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-eyebrow); letter-spacing: 0.06em; color: var(--pl-dim); }
+.pl-fine { font-size: var(--t-fine); color: var(--pl-dim); line-height: 1.7; margin: 0; }
+.pl-fine b { color: var(--pl-mut); font-weight: 700; }
+.pl-mailbadge { width: 44px; height: 44px; border-radius: var(--r-field); background: rgba(111, 179, 222, 0.16); display: flex; align-items: center; justify-content: center; color: var(--pl-pri); }
+.pl-mailbadge svg { width: 21px; height: 21px; }
+.pl-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); width: 100%; background: var(--pl-soft); border: 1px solid var(--pl-bd); border-radius: var(--r-field); padding: 0.75em 0.9em; font-size: var(--t-body); font-weight: 700; }
+.pl-alert { width: 100%; border-radius: var(--r-field); padding: 0.75em 0.9em; font-size: var(--t-fine); line-height: 1.55; background: rgba(231, 176, 106, 0.12); border: 1px solid rgba(231, 176, 106, 0.34); color: var(--pl-fg); }
+.pl-alert-bad { background: rgba(232, 128, 111, 0.12); border-color: rgba(232, 128, 111, 0.34); }
+.pl-alert-ok { background: rgba(111, 192, 168, 0.12); border-color: rgba(111, 192, 168, 0.34); }
+
+/* ── Merge — the highest-risk surface in the product ──────────────────── */
+.pl-mergewrap { display: flex; justify-content: center; padding: var(--s-4) var(--s-3) var(--s-6); }
+.pl-mergecard { width: 100%; max-width: 720px; }
+.pl-frow { display: flex; align-items: center; gap: 0.7em; padding: 0.5em 0; border-top: 1px solid var(--pl-bd); font-size: var(--t-body); }
+.pl-frow:first-of-type { border-top: none; }
+.pl-dot { width: 9px; height: 9px; border-radius: 3px; background: var(--c, var(--pl-pri)); flex: none; }
+.pl-frow .fn { flex: 1; font-weight: 700; }
+.pl-frow .fv { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; color: var(--pl-mut); font-variant-numeric: tabular-nums; }
+.pl-opt { display: flex; gap: 0.8em; align-items: flex-start; width: 100%; text-align: left; background: var(--pl-soft); border: 1px solid var(--pl-bd); border-radius: var(--r-field); padding: 0.85em 0.9em; cursor: pointer; font-family: inherit; color: inherit; }
+.pl-opt[data-on='true'] { border-color: var(--pl-pri); background: rgba(111, 179, 222, 0.1); box-shadow: 0 0 0 1px rgba(111, 179, 222, 0.35); }
+.pl-radio { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--pl-bd); flex: none; margin-top: 0.15em; position: relative; }
+.pl-opt[data-on='true'] .pl-radio { border-color: var(--pl-pri); }
+.pl-opt[data-on='true'] .pl-radio::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--pl-pri); }
+.pl-ot { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-body); display: flex; align-items: center; gap: 0.5em; }
+.pl-om { font-size: var(--t-fine); color: var(--pl-mut); margin-top: 0.25em; line-height: 1.55; }
+.pl-rec { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--pl-success); background: rgba(111, 192, 168, 0.16); border-radius: 5px; padding: 0.2em 0.5em; }
+/* the safety property lives IN the panel, never in a tooltip (05 §0.2) */
+.pl-pace { width: 100%; background: rgba(111, 192, 168, 0.1); border: 1px solid rgba(111, 192, 168, 0.26); border-radius: var(--r-field); padding: 0.75em 0.9em; font-size: var(--t-fine); font-weight: 700; color: var(--pl-mut); line-height: 1.6; margin: 0; }
+.pl-pace b { color: var(--pl-fg); }
+
+/* ── Focus visibility, everywhere in the group ────────────────────────── */
+.pl a:focus-visible,
+.pl button:focus-visible,
+.pl textarea:focus-visible,
+.pl input:focus-visible { outline: 2px solid #a9d3ee; outline-offset: 2px; }
+
+/* ══ 4 · MOTION ═══════════════════════════════════════════════════════════ */
+
+@keyframes pl-fade-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes pl-drift1 { to { transform: translate(16%, 10%) scale(1.14); } }
+@keyframes pl-drift2 { to { transform: translate(-13%, 9%) scale(1.1); } }
+@keyframes pl-drift3 { to { transform: translate(9%, -11%) scale(1.16); } }
+@keyframes pl-ping { 0% { transform: scale(0.8); opacity: 0.9; } 70%, 100% { transform: scale(2.1); opacity: 0; } }
+@keyframes pl-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+
+/* the hero animates on load; everything below waits for the observer */
+.pl-an { opacity: 0; animation: pl-fade-rise 0.62s var(--ease) forwards; }
+.pl-an1 { animation-delay: 0.05s; }
+.pl-an2 { animation-delay: 0.14s; }
+.pl-an3 { animation-delay: 0.23s; }
+.pl-an4 { animation-delay: 0.32s; }
+.pl-an5 { animation-delay: 0.44s; }
+
+/* ⚠️ FAIL-VISIBLE. The hidden state applies only once `useReveal` has set
+   `data-reveal-ready` on the root. If the script never runs, the observer
+   is missing, or reduced motion is on, every section renders normally. A
+   reveal that can strand content unread is worse than no reveal. */
+[data-reveal-ready='1'] .pl-reveal { opacity: 0; transform: translateY(30px) scale(0.965); }
 [data-reveal-ready='1'] .pl-reveal.is-in {
   opacity: 1;
   transform: none;
-  transition:
-    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
 }
-[data-reveal-ready='1'] .pl-reveal .pl-stagger > * {
-  opacity: 0;
-  transform: translateY(20px) scale(0.97);
-}
+[data-reveal-ready='1'] .pl-reveal .pl-stagger > * { opacity: 0; transform: translateY(20px) scale(0.97); }
 [data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > * {
   opacity: 1;
   transform: none;
-  transition:
-    opacity 0.58s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.58s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.58s var(--ease), transform 0.58s var(--ease);
 }
 /* ten tiles need ten steps, not five */
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(1)  { transition-delay: 0.03s; }
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(2)  { transition-delay: 0.07s; }
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(3)  { transition-delay: 0.11s; }
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(4)  { transition-delay: 0.15s; }
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(5)  { transition-delay: 0.19s; }
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(6)  { transition-delay: 0.23s; }
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(7)  { transition-delay: 0.27s; }
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(8)  { transition-delay: 0.31s; }
-[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(9)  { transition-delay: 0.35s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(1) { transition-delay: 0.03s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(2) { transition-delay: 0.07s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(3) { transition-delay: 0.11s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(4) { transition-delay: 0.15s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(5) { transition-delay: 0.19s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(6) { transition-delay: 0.23s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(7) { transition-delay: 0.27s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(8) { transition-delay: 0.31s; }
+[data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(9) { transition-delay: 0.35s; }
 [data-reveal-ready='1'] .pl-reveal.is-in .pl-stagger > *:nth-child(n + 10) { transition-delay: 0.39s; }
 
-/* ── Fixes, Aug 2026 ─────────────────────────────────────────────────────
+/* ══ 5 · MEDIA QUERIES — LAST, always ═════════════════════════════════════
+   Everything above is fluid, so these exist only where a clamp() genuinely
+   cannot express the change: a grid's column count, a layout collapsing,
+   and motion preferences. Nothing here restates a font-size.
 
-   1. THE BADGE WAS COLLIDING WITH THE HEADLINE. The consolidated type pass
-      set `.pl-hl-hero { margin-top: 0 }` while the headline grew to ~104px,
-      so it butted straight into the "Built for UNC pre-meds" chip. Spacing
-      restored, and it scales with the type instead of being a fixed 20px.
+   ⚠️ NEW RULES GO ABOVE THIS LINE, in their own section. A media query
+   placed above a non-media rule for the same selector is dead — that is
+   exactly how the 1100px and 900px breakpoints stopped working. */
 
-   2. ⚠️ THE FOOTER MUST NEVER BE REVEAL-GATED. It was given `.pl-reveal`,
-      which meant the independence and AAMC disclaimers — required by
-      05 §6.1 and §6.2 — started at opacity 0 and could stay there if the
-      observer never fired for the last element on the page. A required
-      legal line hidden behind a scroll animation is a compliance problem,
-      not a visual one. The class is removed and must not come back.
-      Nothing legally required is ever animated in. */
-.pl-hl-hero { margin-top: clamp(18px, 2vw, 40px); }
-.pl-hero .pl-chip { margin-bottom: 0; }
-.pl-foot { opacity: 1 !important; transform: none !important; }
+@media (max-width: 1180px) {
+  .pl-ftiles { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 1100px) {
+  .pl-docwrap { grid-template-columns: var(--rail-doc); }
+  .pl-toc { position: static; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .pl-toclab { width: 100%; margin-bottom: 4px; }
+  .pl-toc a { border-left: 0; border: 1px solid var(--pl-bd); border-radius: var(--r-pill); padding: 0.35em 0.8em; }
+  .pl-toc a[aria-current='true'] { border-color: var(--pl-pri); }
+}
+
+@media (max-width: 900px) {
+  .pl-navpill { display: none; }
+  .pl-ftiles { grid-template-columns: repeat(2, 1fr); }
+  .pl-c5, .pl-c7 { grid-column: span 12; }
+  .pl-call { position: static !important; max-width: none; margin-top: 10px; }
+  .pl-pin { display: none; }
+  .pl-shotwin { aspect-ratio: auto; min-height: 200px; }
+  .pl-prev-nav { display: none; }
+  .pl-prev { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .pl-figure { float: none; width: min(260px, 70%); margin: 0 0 var(--s-3); }
+}
+
+/* short laptops: a 100svh hero must not crush its own content off-screen */
+@media (max-height: 680px) {
+  .pl-hero { min-height: 0; padding-block: var(--s-4); }
+}
+
+/* everything shows instantly — not faster, none */
+@media (prefers-reduced-motion: reduce) {
+  .pl-an { animation: none; opacity: 1; transform: none; }
+  .pl-mesh i { animation: none; }
+  .pl-pin::after { animation: none; }
+  .pl-cue svg { animation: none; }
+  .pl-btn, .pl-ftile, .pl-navlk, .pl-sq, .pl-ttab { transition: none; }
+  [data-reveal-ready='1'] .pl-reveal,
+  [data-reveal-ready='1'] .pl-reveal .pl-stagger > * { opacity: 1 !important; transform: none !important; }
+}

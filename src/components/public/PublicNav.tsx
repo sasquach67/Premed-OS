@@ -1,12 +1,27 @@
 /* ============================================================
-   PublicNav — the floating pill nav. ONE component, all seven routes.
+   PublicNav — three floating islands. ONE component, all public routes.
 
-   Not a solid top bar: a brand on the left, a glass pill of text links in
-   the centre, and the gooey CTA on the right (P1 §4.1). The gooey filter
-   fuses the label pill and the arrow pill mid-slide so there is no seam.
+   Brand · a glass pill of links · the CTA. Three separate elements, NOT
+   one merged rail — merging was proposed and rejected (`public-landing-v2.md`
+   §2). The islands are the design; placement was the defect.
 
-   PILL RADIUS IS PUBLIC-LAYER ONLY (P1 §3). In-app buttons keep the 10px
-   system radius; this must not leak past `/` and `/auth*`.
+   ⚠️ THE PLACEMENT BUG, so it is not reintroduced: `justify-content:
+   space-between` across three children centres the middle one BETWEEN ITS
+   NEIGHBOURS, not on the page. `premedOS` and `Start tracking ↗` are
+   different widths, so the pill sat off-centre by half that difference —
+   and because the error is a fraction of the leftover space, it GREW as
+   the viewport widened. Fine in a small window, visibly wrong at full
+   screen. The fix is a `1fr auto 1fr` grid in the stylesheet, which forces
+   the side columns equal. Do not reintroduce flex here.
+
+   ⚠️ THE PILL HOLDS THE FIVE LINKS AND NOTHING ELSE. Sign out goes in the
+   right-hand column beside the CTA — never inside the pill, and never with
+   an inline `marginLeft: auto`, which breaks the grid distribution
+   entirely.
+
+   ⚠️ THIS COMPONENT RENDERS INSIDE `.pl-hero`, not above it. `.pl-hero` is
+   `100svh`; as a sibling, the nav pushes the hero's scroll cue below the
+   fold by exactly its own height, silently. See `public-layer.css` §Hero.
 
    **No nav item anywhere goes nowhere** (P1 §10). `Features` scrolls the
    landing page's Features section into view, navigating home first when
@@ -15,14 +30,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
+import { Wordmark } from '@/components/public/Wordmark'
 import { useEnterApp } from '@/components/public/useEnterApp'
 import { supabase } from '@/lib/supabase'
 
 interface NavLink {
   label: string
   to: string
-  /** Set when the target is a section of the landing page rather than a
-   *  route of its own. */
+  /** Set when the target is a section of the landing page, not a route. */
   section?: string
 }
 
@@ -39,10 +54,9 @@ export function PublicNav() {
   const navigate = useNavigate()
   const enterApp = useEnterApp()
 
-  /* ⭐ Aug 2026 — sign-out lives HERE too, not only in the app sidebar and
-     `/auth`. Andy could not sign out to re-test the sign-in flow, because
-     every existing control was behind the very session he was trying to
-     leave. A public page that cannot end a session is a dead end. */
+  /* Sign-out lives here as well as in the app sidebar and `/auth`. Every
+     other control was behind the very session someone would be trying to
+     leave, so a public page that cannot end a session is a dead end. */
   const [signedIn, setSignedIn] = useState(false)
   useEffect(() => {
     if (!supabase) return
@@ -64,7 +78,7 @@ export function PublicNav() {
       event.preventDefault()
       const scroll = () =>
         document.getElementById('features')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      if (pathname === '/') scroll()
+      if (pathname === '/' || pathname === '/landing') scroll()
       // Landing has to mount before the section exists to scroll to.
       else navigate('/', { state: { scrollTo: 'features' } })
     },
@@ -74,9 +88,7 @@ export function PublicNav() {
   return (
     <div className="pl-navwrap">
       <div className="pl-navbar pl-an pl-an1">
-        <Link to="/" className="pl-navbrand">
-          Premed OS
-        </Link>
+        <Wordmark className="pl-navbrand" />
 
         <nav className="pl-navpill" aria-label="Public pages">
           {LINKS.map((link) =>
@@ -97,27 +109,26 @@ export function PublicNav() {
           )}
         </nav>
 
-        {signedIn ? (
-          <button
-            type="button"
-            className="pl-navlk"
-            style={{ marginLeft: 'auto' }}
-            onClick={() => {
-              void supabase?.auth.signOut()
-            }}
-          >
-            Sign out
-          </button>
-        ) : null}
+        <div className="pl-navend">
+          {signedIn ? (
+            <button
+              type="button"
+              className="pl-navlk"
+              onClick={() => {
+                void supabase?.auth.signOut()
+              }}
+            >
+              Sign out
+            </button>
+          ) : null}
 
-        {/* Gooey CTA. Both halves do the same thing, so the arrow is
-            decorative to assistive tech and the label carries the name. */}
-        <div className="pl-gooey">
-          <button type="button" className="lead" onClick={enterApp}>
+          {/* Coloured glass, and it sits BELOW the hero's solid white in the
+              hierarchy — colour attracts, white outweighs it on this field.
+              The outer bloom is load-bearing: it is what makes this the one
+              element that appears to emit light rather than transmit it. */}
+          <button type="button" className="pl-btn pl-btn-tint" onClick={enterApp}>
             Start tracking
-          </button>
-          <button type="button" className="tail" tabIndex={-1} aria-hidden="true" onClick={enterApp}>
-            <ArrowUpRight />
+            <ArrowUpRight className="pl-arw" />
           </button>
         </div>
       </div>

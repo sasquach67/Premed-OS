@@ -19,7 +19,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
-  ArrowRight, CalendarDays, ClipboardCheck, FileText, GraduationCap,
+  ArrowRight, CalendarDays, ChevronDown, ClipboardCheck, FileText, GraduationCap,
   History, LayoutGrid, MessagesSquare, Repeat, Shield, Unplug,
 } from 'lucide-react'
 import { PublicShell } from '@/components/public/PublicShell'
@@ -163,26 +163,43 @@ export function Landing() {
             Everything from your first semester to the day you submit.
           </p>
 
-          {/* 4 · two buttons. Primary is Start tracking — never Sign up. */}
+          {/* 4 · two buttons. The hero CTA is the SOLID white one and stays
+              the primary — white is the heaviest value on this dark field,
+              which is what keeps it ahead of the nav's coloured pill. Do
+              not colour both; a tie is not a hierarchy. */}
           <div className="pl-ctarow pl-an pl-an5">
-            <button type="button" className="pl-btn pl-btn-solid" onClick={enterApp}>
+            <button type="button" className="pl-btn pl-btn-solid pl-btn-lg" onClick={enterApp}>
               Start tracking
-              <ArrowRight />
+              <ArrowRight className="pl-arw" />
             </button>
-            <Link to="/auth" className="pl-btn pl-btn-ghost">
+            <Link to="/auth" className="pl-btn pl-btn-ghost pl-btn-lg">
               Sign in
             </Link>
           </div>
 
-          {/* 5 · the local-first promise, above the fold, verbatim */}
-          <p className="pl-noacct pl-an pl-an5">
-            No account needed. Your data stays on this device until you choose to sync it.
+          {/* 5 · ONE fine-print row, not two stacked blocks. The no-account
+              promise is what stops a bounce (P1 §2); the independence line
+              is required in the hero region by 05 §6.1.
+              ⚠️ Both must stay visible without scrolling, and neither is
+              ever reveal-gated. */}
+          <p className="pl-finerow pl-an pl-an5">
+            <span>No account needed. Your data stays on this device until you choose to sync it.</span>
+            <span className="sep" aria-hidden="true">·</span>
+            <span className="ind">
+              An independent student project. Not affiliated with UNC-Chapel Hill or the AAMC.
+            </span>
           </p>
+        </div>
 
-          {/* 05 §6.1 requires this in the HERO REGION, not only the footer. */}
-          <p className="pl-disc pl-an pl-an5">
-            An independent student project. Not affiliated with UNC-Chapel Hill or the AAMC.
-          </p>
+        {/* The hero owns the whole first screen, so it has to say there is
+            more. Last child of the 100svh hero, `flex: none`, so it lands
+            just inside the fold — and it is the canary for §6: if this is
+            not visible on load, the nav has been lifted out of the hero. */}
+        <div className="pl-cue" aria-hidden="true">
+          <span>
+            Scroll
+            <ChevronDown />
+          </span>
         </div>
       </section>
 

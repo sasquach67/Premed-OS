@@ -2,11 +2,39 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/mascot.png" />
-    <link rel="apple-touch-icon" href="/mascot.png" />
+    <!-- ⚠️ The favicon used to be /mascot.png — the ram. 05 §6.1 forbids
+         ram/Rameses imagery on the public layer because it reads as a
+         university mascot, and the favicon is the MOST public surface in
+         the product: it sits in the tab of every page, including Privacy
+         and Terms, right beside the line saying there is no affiliation.
+         Do not point this back at the mascot.
+         Paths carry %BASE_URL% because the app is served from /Premed-HQ/
+         on Pages; a root-relative /art/... 404s there. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="%BASE_URL%art/brand/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%BASE_URL%art/brand/favicon-16.png" />
+    <link rel="apple-touch-icon" href="%BASE_URL%art/brand/favicon-180.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#4b9cd3" />
-    <title>Premed OS — Andy's Command Center</title>
+    <meta name="theme-color" content="#233448" />
+
+    <!-- ⚠️ The title was "Premed OS — Andy's Command Center". That was right
+         when this was one person's tool; it is now the tab title a stranger
+         sees. Matches PublicShell's landing title. -->
+    <title>Premed OS — your whole pre-med application, in one place</title>
+    <meta
+      name="description"
+      content="Stop tracking your pre-med application in a spreadsheet. Everything from your first semester to the day you submit. No account needed."
+    />
+
+    <!-- Link preview. premedos-lockup.png is 1094x629 (~1.91:1), so it needs
+         no crop at the standard card ratio. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Premed OS — your whole pre-med application, in one place" />
+    <meta
+      property="og:description"
+      content="Stop tracking your pre-med application in a spreadsheet. Everything from your first semester to the day you submit."
+    />
+    <meta property="og:image" content="%BASE_URL%art/brand/premedos-lockup.png" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="root"></div>
