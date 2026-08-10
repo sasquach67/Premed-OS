@@ -43,7 +43,7 @@ const COMMITMENTS = [
 
 export function PricingPage() {
   return (
-    <PublicShell title="Pricing — Premed HQ">
+    <PublicShell title="Pricing — Premed OS">
       <div className="pl-band">
         <PublicNav />
         <div className="pl-bandin">

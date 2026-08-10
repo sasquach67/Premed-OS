@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This file defines how Premed HQ should reason about pre-med data without overgeneralizing metrics or claiming to predict admissions outcomes.
+This file defines how Premed OS should reason about pre-med data without overgeneralizing metrics or claiming to predict admissions outcomes.
 
 ## Core rule
 

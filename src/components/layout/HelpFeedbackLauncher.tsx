@@ -19,7 +19,7 @@ export function HelpFeedbackLauncher() {
     event.preventDefault()
     const body = feedback.trim()
     if (!body) return
-    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Premed HQ feedback')}&body=${encodeURIComponent(body)}`
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Premed OS feedback')}&body=${encodeURIComponent(body)}`
     toast({ title: 'Feedback email opened', description: `Addressed to ${SUPPORT_EMAIL}.`, tone: 'success' })
     setOpen(false)
     setFeedback('')

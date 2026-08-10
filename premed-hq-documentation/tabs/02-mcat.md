@@ -2,7 +2,7 @@
 
 **Status:** Core designed (July 2026) — **study session is the centerpiece** (§3.0); Mistake-to-Mastery is a loop inside it (§4). Content mastery tracker (§3.5), full-length review workflow (§3.6), and CARS trainer (§3.7) added. AI/content rule locked (§2a). Refining with incoming materials (Andy's build screenshots, walkthrough).
 **Sidebar group:** Foundation · **Spec type:** domain tab
-**Repo:** `sasquach67/Premed-HQ` — `src/pages/Mcat.tsx` (1071L), `src/components/mcat/McatSessionSetupDialog.tsx`
+**Repo:** `sasquach67/Premed-OS` — `src/pages/Mcat.tsx` (1071L), `src/components/mcat/McatSessionSetupDialog.tsx`
 **Depends on:** `specifications/00-product-shell.md`, `specifications/01-shared-interface-patterns.md`, `specifications/04-visual-craft-standards.md`, `architecture/02-global-intelligence-framework.md`, `data/mcat-content.json`
 **Models after:** Mistake to Mastery (mistaketomastery.com) — its mistake-review loop is the reference for the Mistakes feature.
 
@@ -70,7 +70,7 @@ Mirrors the discipline of `tabs/01-academics.md` §3. **Define these entities be
 
 **Dashboard · Plan · Content · Questions · Mistakes · Stats · Advisor**
 
-(Resolves the earlier mode-switch open decision → flat, matching the proven reference. Mistakes keeps Premed HQ's Mistake-to-Mastery design, §4, which is stronger than PrepCat's logger.)
+(Resolves the earlier mode-switch open decision → flat, matching the proven reference. Mistakes keeps Premed OS's Mistake-to-Mastery design, §4, which is stronger than PrepCat's logger.)
 
 ### 3.0 Study Session — the centerpiece
 

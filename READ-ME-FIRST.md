@@ -1,10 +1,10 @@
-# Premed HQ — review bundle
+# Premed OS — review bundle
 
 This bundle has the **app** and the **spec it was built against**, so a reviewer can judge
 the build against the requirements.
 
 ```
-premed-hq/        the app — React + TS + Vite + Tailwind v4 + shadcn-style (Radix) + Recharts + dnd-kit + Zustand
+premedos/        the app — React + TS + Vite + Tailwind v4 + shadcn-style (Radix) + Recharts + dnd-kit + Zustand
   README.md       how to run/host + Google OAuth setup + architecture map
   src/            all the code (start at App.tsx → pages/ → components/)
 spec/
@@ -16,7 +16,7 @@ spec/
 
 ## To run the app
 ```bash
-cd premed-hq
+cd premedos
 npm install
 npm run dev      # then open the printed localhost URL
 ```
@@ -27,4 +27,4 @@ npm run dev      # then open the printed localhost URL
 - The non-negotiables: AMCAS GPA engine, detailed tracker tables w/ rings, localStorage autosave + Drive backup,
   categorized clickable resources, embedded docs, visual timeline, the speech-bubble mascot, ⌘K search.
 - Known open item: the ram mascot is a placeholder **SVG** (`src/components/mascot/Ram.tsx`); final art is meant
-  to be an image-model Ghibli ram from Andy's reference pics (swap = one line, see premed-hq/README.md).
+  to be an image-model Ghibli ram from Andy's reference pics (swap = one line, see premedos/README.md).

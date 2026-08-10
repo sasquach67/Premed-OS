@@ -146,7 +146,7 @@ Plus: beta status and no uptime guarantee · acceptable use with the provenance 
 |---|---|
 | **Age floor** | Terms must state one |
 | **Governing law** | Terms needs a jurisdiction |
-| **`Premed HQ` trademark + domain check** | Flagged in §6.1 and still unresolved. **Do not print the name on legal pages as a settled brand until this is done.** |
+| **`Premed OS` trademark + domain check** | Flagged in §6.1 and still unresolved. **Do not print the name on legal pages as a settled brand until this is done.** |
 
 ## Note recorded here because it surfaced during this pass
 

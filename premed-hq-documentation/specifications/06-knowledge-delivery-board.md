@@ -169,7 +169,7 @@ Andy asked for both an ambient thing and a place to check back. **Those are diff
 
 **`Sauce` works because the meaning maps exactly, not because it is current.** *"What's the sauce?"* asks how someone actually did the thing — **insider knowledge**, which is precisely what this delivers. Considered and passed over: `Good to know` (accurate, warm, three words), `Did you know` (Wikipedia's own name for this exact pattern, but reads young), `Today` (says *when*, not *what*, and collides with schedule language), `Cheat code` (legible, fits the Timeline's game framing, but "cheat" implies a shortcut when most of this is just knowing the process), `Lore` (repo precedent in `research-prompts/community-lore.md`, but leans mythology over fact).
 
-**`04` §12 backs the choice:** *"Personality & motion are core — not sprinkles… Premed HQ is built to make users want to come back."* A slangy name is consistent with a UNC app that has a ram mascot, not a departure from the design system.
+**`04` §12 backs the choice:** *"Personality & motion are core — not sprinkles… Premed OS is built to make users want to come back."* A slangy name is consistent with a UNC app that has a ram mascot, not a departure from the design system.
 
 **The risk, recorded once so it is not re-argued.** Slang dates, and the app follows a student four years — someone starting 2026 graduates 2030. A *product* using slang can land as trying too hard in a way a person using it does not. **Two things make it an acceptable bet:** `sauce` is unusually stable as slang goes, and **the name is one string — the cheapest thing in the app to change.** Unlike a route or a data model, reversing it costs nothing.
 

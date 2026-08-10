@@ -1,4 +1,4 @@
-# Premed HQ mockup variant lab
+# Premed OS mockup variant lab
 
 > **Status:** PROTOTYPE REVIEW TOOL — not an implementation reference.
 >
@@ -11,7 +11,7 @@ page and variant.
 
 ## Scope
 
-The lab mirrors the current Premed HQ product navigation:
+The lab mirrors the current Premed OS product navigation:
 
 - Overview first;
 - Academics & GPA in its locked Daily and Planning hierarchy;

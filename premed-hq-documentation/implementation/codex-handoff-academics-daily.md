@@ -4,7 +4,7 @@
 
 ---
 
-You are implementing the **Academics tab, Daily mode** for Premed HQ.
+You are implementing the **Academics tab, Daily mode** for Premed OS.
 
 ## Source of truth
 

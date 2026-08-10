@@ -1,12 +1,12 @@
-# Premed HQ — Global Product Specification
+# Premed OS — Global Product Specification
 
 ## Purpose
 
-This document defines product behavior, design infrastructure, data intelligence, and implementation rules that apply across the entire Premed HQ application.
+This document defines product behavior, design infrastructure, data intelligence, and implementation rules that apply across the entire Premed OS application.
 
 Tab-specific behavior belongs in separate files under `docs/product/tabs/`. A feature belongs here only when it is genuinely useful across most or all sections of the product.
 
-Premed HQ should function as a production-ready, intelligent pre-med operating system rather than a collection of disconnected trackers.
+Premed OS should function as a production-ready, intelligent pre-med operating system rather than a collection of disconnected trackers.
 
 ## Product principles
 
@@ -447,7 +447,7 @@ Provide immediate undo, trash/recovery, version history for important content, a
 
 ## Global visual system
 
-Premed HQ should feel calm, precise, academic, modern, and professional without resembling hospital software.
+Premed OS should feel calm, precise, academic, modern, and professional without resembling hospital software.
 
 ### Data visualization
 
@@ -504,3 +504,40 @@ As ideas are discussed:
 5. Record constraints and explicit exclusions so coding agents do not overgeneralize features.
 
 This specification is expected to evolve continuously.
+
+---
+
+## ⭐ THE RENAME — `Premed HQ` → `Premed OS` (Aug 2026)
+
+**Andy renamed the product.** The sweep is **done**: 323 display strings across 126 files.
+
+### ⚠️ Four things were deliberately NOT renamed. Do not "finish the job."
+
+| Kept as `premed_hq` / `Premed-HQ` | Why renaming it is a defect |
+|---|---|
+| **8 localStorage keys** — `premed_hq_v1` · `premed_hq_public` · `premed_hq_quote` · `premed_hq_cloud_meta` · `premed_hq_command_recents` · `premed_hq_patch_notes_seen` (+ `LEGACY_STORAGE_KEY`, `RAW_STORAGE_KEY`) | **Every existing user's data disappears silently.** The app would read a key that has never been written. `CLAUDE.md`: *any localStorage schema change needs a versioned, lossless migration* — a rename is a schema change wearing a cosmetic disguise |
+| **`vite.config.ts` `base: '/Premed-HQ/'`** | It must match the GitHub Pages path `sasquach67.github.io/Premed-HQ/`. **Change it without renaming the GitHub repo and every asset 404s.** The two must move together or not at all |
+| **`googleDrive.ts` `BACKUP_FILENAME = 'premed-hq-backup.json'`** | **It is a LOOKUP key, not a label.** `findBackupFile()` queries Drive by exact name. Rename it and the app stops finding backups it wrote itself — the user's cloud backup appears to vanish |
+| **`package.json` name, `premed-hq-documentation/` folder** | Mechanical, no user impact, and both drag `package-lock.json` / hundreds of doc paths with them. **Separate change, if ever** |
+
+> **The distinction that matters: a NAME is a display string; an IDENTIFIER is a key.**
+> Renaming the first is cosmetic. Renaming the second is a migration. **They look identical in a grep**, which is exactly why this table exists.
+
+**Download filenames WERE renamed** (`premedos-backup-*.json`, `premedos-assignments.csv`) — those are write-only labels with no lookup path, so they are display strings.
+
+### Verify after any future sweep
+
+```
+grep -rn "premed_hq" src/        → must still return 8 keys
+grep -rn "Premed-HQ" vite.config.ts → must still return the base
+grep -rn "Premed HQ" src/        → must return nothing
+```
+
+### The logo
+
+**Official lockup supplied Aug 2026.** Assets and sampled tokens: `public/art/brand/README.md`.
+
+- **Ink `#1E3044` · Blue `#2E6CB8` · Blue-light `#9AB3DF` · Cream `#F6F3F1`**
+- ⚠️ **The logo blue is not `--pl-pri` (`#6FB3DE`).** Decide deliberately whether the UI accent moves — **two almost-identical blues is worse than either.**
+- ⚠️ **Navy `premed` is invisible on the dark public layer.** Use the `*-ondark` variants there.
+- ⚠️ **The tagline "organize. optimize. get ahead." is not approved copy.** It ships with the lockup; it does not belong on the landing page, which has a settled headline.

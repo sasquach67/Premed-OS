@@ -197,7 +197,7 @@ export function MergePage() {
   }, [userId, cloud, local, useLocal, replaceAll, finish])
 
   return (
-    <PublicShell title="Your data — Premed HQ">
+    <PublicShell title="Your data — Premed OS">
       <div className="pl-band">
         <PublicNav />
       </div>

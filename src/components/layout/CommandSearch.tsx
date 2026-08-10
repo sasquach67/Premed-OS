@@ -104,7 +104,7 @@ export function CommandSearch() {
       <CommandDialog
         open={open}
         onOpenChange={setOpen}
-        title="Search Premed HQ"
+        title="Search Premed OS"
         description="Search records, navigate pages, or run an action."
         className="top-[18%] max-w-xl translate-y-0 gap-0"
       >

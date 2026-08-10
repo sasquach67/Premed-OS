@@ -5,7 +5,7 @@
 
 > **GATE: CLEARED.** Andy flipped both `05-public` rows in `BUILD-MANIFEST.md` to `YES` (Aug 2026). **This chunk is cleared to build.**
 >
-> **Cleared to build is NOT cleared to publish.** The age floor, governing law, and the `Premed HQ` trademark/domain check (`05` §10) are open. **Build all seven routes; do not point a public domain at Privacy, Terms, or About until those three close.**
+> **Cleared to build is NOT cleared to publish.** The age floor, governing law, and the `Premed OS` trademark/domain check (`05` §10) are open. **Build all seven routes; do not point a public domain at Privacy, Terms, or About until those three close.**
 
 > **No dependency on any other brief.** This is the first surface a stranger sees and it reads no pillar data. It can be built before or after the Academics chunks.
 
@@ -110,7 +110,7 @@ Sign in · create account · **"check your email"** (expiry stated, resend offer
 
 **Do not paste a generic policy template.** Every claim on Privacy must be checkable against the spec. **A claim HQ cannot keep is worse than no page.**
 
-> **Publishing blockers, not build blockers (§10):** the **age floor**, **governing law**, and the **`Premed HQ` trademark and domain check** are all unresolved. Build the pages; **do not publish them live** until Andy closes those three.
+> **Publishing blockers, not build blockers (§10):** the **age floor**, **governing law**, and the **`Premed OS` trademark and domain check** are all unresolved. Build the pages; **do not publish them live** until Andy closes those three.
 
 ## 8. References — these only
 

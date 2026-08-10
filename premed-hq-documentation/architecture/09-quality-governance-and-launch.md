@@ -5,7 +5,7 @@
 
 ## Purpose
 
-Define the quality bar, governance process, and launch readiness criteria: how the team decides Premed HQ is correct, safe, accessible, and ready to ship, and how that is maintained after launch.
+Define the quality bar, governance process, and launch readiness criteria: how the team decides Premed OS is correct, safe, accessible, and ready to ship, and how that is maintained after launch.
 
 ## Planned sections
 

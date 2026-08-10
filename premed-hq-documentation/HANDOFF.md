@@ -4,7 +4,7 @@ You are picking up implementation of **Premed HQ** from a previous coding agent.
 
 ## 1. The repo
 
-`sasquach67/Premed-HQ` — Vite + React 19 + React Router 7 + Tailwind 4 + Radix/shadcn + a zustand-style store. **localStorage-first; signed-out mode must always work.** Respect `CLAUDE.md` MUST-NOT-CHANGE list (design tokens, theme, fonts, auth/sync layer, schemas — any localStorage change needs a versioned lossless migration). If you find uncommitted WIP from another session, stop and flag it.
+`sasquach67/Premed-OS` — Vite + React 19 + React Router 7 + Tailwind 4 + Radix/shadcn + a zustand-style store. **localStorage-first; signed-out mode must always work.** Respect `CLAUDE.md` MUST-NOT-CHANGE list (design tokens, theme, fonts, auth/sync layer, schemas — any localStorage change needs a versioned lossless migration). If you find uncommitted WIP from another session, stop and flag it.
 
 ## 2. Where things stand
 

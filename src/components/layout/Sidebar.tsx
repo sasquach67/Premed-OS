@@ -64,7 +64,7 @@ export function Sidebar({
         <AppMark x={compensatedX} />
         <AnimatePresence initial={false}>
           {expanded && (
-            <m.p className="min-w-0 font-display text-lg font-bold" initial={{ opacity: 0, x: -MOTION_DISTANCE.small }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -MOTION_DISTANCE.small }} transition={MOTION_TRANSITION.standard}>Premed HQ</m.p>
+            <m.p className="min-w-0 font-display text-lg font-bold" initial={{ opacity: 0, x: -MOTION_DISTANCE.small }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -MOTION_DISTANCE.small }} transition={MOTION_TRANSITION.standard}>Premed OS</m.p>
           )}
         </AnimatePresence>
         {collapsible && expanded && (
@@ -188,7 +188,7 @@ export function Sidebar({
       </m.div>
       <Dialog open={patchNotesOpen} onOpenChange={setPatchNotesOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>What’s new in Premed HQ</DialogTitle><DialogDescription>Foundation update · version 0.0.0</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>What’s new in Premed OS</DialogTitle><DialogDescription>Foundation update · version 0.0.0</DialogDescription></DialogHeader>
           <div className="space-y-3 text-sm">
             <p><strong>A safer workspace.</strong> Undo, Trash, autosave states, and guarded record opening now work together.</p>
             <p><strong>Lists that fit your work.</strong> Comfortable and compact density, saved views, bulk actions, and two-pane focus.</p>

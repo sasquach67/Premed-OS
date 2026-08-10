@@ -225,7 +225,7 @@ const SECTIONS: DocSection[] = [
 export function PrivacyPage() {
   return (
     <DocLayout
-      documentTitle="Privacy — Premed HQ"
+      documentTitle="Privacy — Premed OS"
       title="Privacy"
       subtitle="What's stored, what leaves your device, who receives it, and how to get all of it back or destroy it."
       lastUpdated={LAST_UPDATED}

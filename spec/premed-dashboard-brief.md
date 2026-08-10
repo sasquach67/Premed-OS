@@ -2,9 +2,9 @@
 
 > ⚠️ **THIS BRIEF IS THE DEEP REFERENCE — NOT THE LATEST INSTRUCTIONS.**
 > A working build already exists. The **authoritative, current direction** lives in:
-> - `premed-hq/CLAUDE.md` (entry point + golden rules)
-> - `premed-hq/rules/*.md` (focused working specs)
-> - `premed-hq/rules/revisions.md` + `/REVISIONS-ROUND-1.md` (the ACTIVE change list — do these next)
+> - `premedos/CLAUDE.md` (entry point + golden rules)
+> - `premedos/rules/*.md` (focused working specs)
+> - `premedos/rules/revisions.md` + `/REVISIONS-ROUND-1.md` (the ACTIVE change list — do these next)
 >
 > **Conflict order: `revisions` > `rules/*` > this brief.** Use this brief for background/depth (research, source material, personalization, appendices); follow the rules + revisions for what to actually build/change.
 

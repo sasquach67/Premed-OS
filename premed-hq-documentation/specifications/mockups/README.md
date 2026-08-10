@@ -1,6 +1,6 @@
 # Visual mockups — index
 
-**Read this before building any page.** These HTML files are the **approved visual references** for Premed HQ. They show layout, density, hierarchy, and feel; the specs are law for behavior and data.
+**Read this before building any page.** These HTML files are the **approved visual references** for Premed OS. They show layout, density, hierarchy, and feel; the specs are law for behavior and data.
 
 ---
 

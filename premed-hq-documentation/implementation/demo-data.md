@@ -2,7 +2,7 @@
 
 **Problem:** an empty app can't be designed against. "No information available" tells you nothing about whether a layout works, whether a warning reads well, or whether density is right.
 
-**Rule:** every surface in Premed HQ must be viewable **populated**, in one keystroke, without touching real data.
+**Rule:** every surface in Premed OS must be viewable **populated**, in one keystroke, without touching real data.
 
 ---
 

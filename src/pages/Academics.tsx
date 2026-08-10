@@ -815,7 +815,7 @@ function TarHeelTracker() {
             })}
           </div>
           <div className="mt-5 rounded-xl border border-border bg-muted/35 p-3 text-[11px] leading-relaxed text-muted-foreground">
-            Carolina Compass inspired the planner layout only. Requirement labels come from Premed HQ’s seeded UNC catalog data; uncertain rules are marked needs-verification and should be checked with the UNC catalog or an advisor.
+            Carolina Compass inspired the planner layout only. Requirement labels come from Premed OS’s seeded UNC catalog data; uncertain rules are marked needs-verification and should be checked with the UNC catalog or an advisor.
           </div>
         </aside>
 

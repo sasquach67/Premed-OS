@@ -4,7 +4,7 @@
 
 **Status:** Designed (August 2026)
 **Sidebar group:** Experiences · **Spec type:** domain tab
-**Repo:** `sasquach67/Premed-HQ` — `src/pages/ExperiencePillar.tsx` (shared builder), Shadowing config
+**Repo:** `sasquach67/Premed-OS` — `src/pages/ExperiencePillar.tsx` (shared builder), Shadowing config
 **Depends on:** `specifications/00-product-shell.md`, `01-shared-interface-patterns.md`, `04-visual-craft-standards.md`, `05-experience-pillar.md`, `architecture/04-admissions-framework.md`, `general.md`
 
 ## Ownership (from shell §2.2)

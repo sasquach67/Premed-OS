@@ -13,7 +13,7 @@
    ⚠ PUBLISHING BLOCKERS, NOT BUILD BLOCKERS (05 §10). Three items are
    still open and this page cannot go live until Andy closes them:
    the **age floor** (Terms must state one), the **governing law**
-   (Terms needs a jurisdiction), and the **`Premed HQ` trademark and
+   (Terms needs a jurisdiction), and the **`Premed OS` trademark and
    domain check**. The page is built; do not point a public domain at it.
    ============================================================ */
 import { DocLayout, Changelog, type DocSection } from '@/pages/public/DocLayout'
@@ -130,7 +130,7 @@ const SECTIONS: DocSection[] = [
       'HQ is provided as is. It is not liable for admissions outcomes or decisions made from its numbers.',
     body: (
       <p>
-        To the extent the law allows, Premed HQ is provided without warranties and is not liable for
+        To the extent the law allows, Premed OS is provided without warranties and is not liable for
         indirect or consequential loss, including any application outcome.{' '}
         <b>Nothing here limits rights that cannot be limited.</b>
       </p>
@@ -147,7 +147,7 @@ const SECTIONS: DocSection[] = [
 export function TermsPage() {
   return (
     <DocLayout
-      documentTitle="Terms of use — Premed HQ"
+      documentTitle="Terms of use — Premed OS"
       title="Terms of use"
       subtitle="What you can expect from HQ, what HQ expects from you, and the limits on both."
       lastUpdated={LAST_UPDATED}

@@ -1015,7 +1015,7 @@ function ecsOpenLoops(org: Org, initiativeCount: number) {
   const reflections = org.reflections ?? []
   const hasStory = reflections.some((reflection) => reflection.title.trim() || reflection.body.trim()) || !!org.reflection?.trim()
 
-  if (!org.joinedAt) loops.push('Add when you joined so Premed HQ can show continuity.')
+  if (!org.joinedAt) loops.push('Add when you joined so Premed OS can show continuity.')
   if (!org.role || org.role.toLowerCase() === 'member') loops.push('Clarify whether this is participation, leadership, or a role to grow into.')
   if (!hasStory) loops.push('Log one reflection that could become an interview story.')
   if (!org.nextGoal?.trim()) loops.push('Set the next move so this does not become a forgotten activity.')
@@ -1033,7 +1033,7 @@ function ecsApplicationRead(org: Org, initiativeCount: number) {
   if (org.status === 'interested') {
     return {
       title: 'Still exploratory',
-      detail: 'Premed HQ will treat this as a watchlist item until you join, take on a role, or log a concrete next step.',
+      detail: 'Premed OS will treat this as a watchlist item until you join, take on a role, or log a concrete next step.',
     }
   }
 

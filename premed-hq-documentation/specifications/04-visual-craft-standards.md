@@ -16,11 +16,11 @@
 
 ---
 
-## 0a. Mockups are flow references — the real template is Premed HQ's own
+## 0a. Mockups are flow references — the real template is Premed OS's own
 
 Every mockup / HTML / "inspo" file produced during design (e.g. `specifications/mockups/*.html`) shows **structure, flow, and functionality only**. Its generic styling — system fonts, neutral colors — is a **stand-in, not the target.**
 
-**The actual visual template is Premed HQ's existing design system in the repo** — its fonts, color tokens, radii, spacing, and shadcn/Tailwind components (per `architecture/01-global-design-system.md` and this doc). When a mockup is implemented, it must be rebuilt with **those real tokens and components**, so the result looks like Premed HQ, not like the mockup.
+**The actual visual template is Premed OS's existing design system in the repo** — its fonts, color tokens, radii, spacing, and shadcn/Tailwind components (per `architecture/01-global-design-system.md` and this doc). When a mockup is implemented, it must be rebuilt with **those real tokens and components**, so the result looks like Premed OS, not like the mockup.
 
 Rules for anyone reading a mockup:
 - **Match the app's real design template** (fonts, palette, components) — never copy the mockup's placeholder styling.
@@ -156,7 +156,7 @@ Respect the app's existing typography — never swap fonts unless asked.
 
 ## 7a. Motion & Delight — motion is core, and it is a system
 
-Premed HQ should feel **alive and modern.** Motion and microinteraction are a first-class part of the experience, not a garnish. A precise product that never moves reads as *static and lifeless*; users return to products that feel responsive and crafted. The bar is the polish of Linear / Arc / Vercel / Raycast — heavily animated **and** unmistakably serious. Restraint in this product applies to **clutter and metaphor** (§0, §10), *never* to motion quality.
+Premed OS should feel **alive and modern.** Motion and microinteraction are a first-class part of the experience, not a garnish. A precise product that never moves reads as *static and lifeless*; users return to products that feel responsive and crafted. The bar is the polish of Linear / Arc / Vercel / Raycast — heavily animated **and** unmistakably serious. Restraint in this product applies to **clutter and metaphor** (§0, §10), *never* to motion quality.
 
 Top-tier apps look premium with lots of motion because it's **systematic, not sprinkled.** All motion draws from one shared system:
 
@@ -252,6 +252,6 @@ Motion is built into every component from this shared system, not bolted on late
 
 - **Declutter is the prime directive.** Fewer, better-scoped controls; overflow menus over button rows; dropdowns over many add-buttons. No explainer blurbs, no "coming soon" placeholders, no dead zones.
 - **Dense but breathable.** Important things above the fold; compact stat grids, thin progress spines, chips/pills for status — with air around them.
-- **Personality & motion are core — not sprinkles.** A modern, alive feel is a goal, not a garnish: rich *systematic* motion (§7a), live touches (countdowns, "Now:" chips, streaks, number-flow), hero surfaces, the mascot as a purposeful illustration. The discipline is that motion is **systematic and origin-aware** (§7a) and **metaphor stays banned** (§10) — not that motion is rare. Premed HQ is built to make users *want to come back*; polish and delight are part of that job.
+- **Personality & motion are core — not sprinkles.** A modern, alive feel is a goal, not a garnish: rich *systematic* motion (§7a), live touches (countdowns, "Now:" chips, streaks, number-flow), hero surfaces, the mascot as a purposeful illustration. The discipline is that motion is **systematic and origin-aware** (§7a) and **metaphor stays banned** (§10) — not that motion is rare. Premed OS is built to make users *want to come back*; polish and delight are part of that job.
 - **Modern patterns he likes:** command palette (⌘K), segmented controls, ghost "+ add" cards, right-rail quick links, the center-peek record view (`01` §2).
 - These are flavor on top of §0–11, never an excuse to break them.

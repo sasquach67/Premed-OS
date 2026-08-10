@@ -1,14 +1,14 @@
-# Premed HQ mockup lab — Claude handoff
+# Premed OS mockup lab — Claude handoff
 
 > Start here before adding or changing any mockup.
 >
-> This folder is a pre-production design workspace. It is not the Premed HQ
+> This folder is a pre-production design workspace. It is not the Premed OS
 > implementation and should not be treated as production code.
 
 ## Immediate goal
 
-Continue and finish the Premed HQ mockup library in product order while
-preserving the existing Premed HQ visual language.
+Continue and finish the Premed OS mockup library in product order while
+preserving the existing Premed OS visual language.
 
 The review entry point is:
 
@@ -80,7 +80,7 @@ The variants are layout and design explorations, not color themes.
   components and product behavior.
 - **C** should explore another credible structure or interaction hierarchy.
 
-Keep the same fonts and overall Premed HQ design language. The desired tone is
+Keep the same fonts and overall Premed OS design language. The desired tone is
 modern, focused, and polished, with restrained but useful color. Avoid making
 the interface overly cartoony, overly saturated, or visually noisy.
 
@@ -107,7 +107,7 @@ Keep the left navigation in the order a user encounters the product:
    - Mistakes
    - Stats
    - Advisor
-4. Remaining Premed HQ product areas
+4. Remaining Premed OS product areas
 5. Archived concepts
 
 Do not reorder the lab by filename or creation date.
@@ -303,7 +303,7 @@ Do not collapse the lookup back into one flat array.
 ## Preservation and honesty rules
 
 - Documentation is the source of truth.
-- Do not implement these mockups in the Premed HQ app unless separately asked.
+- Do not implement these mockups in the Premed OS app unless separately asked.
 - Do not invent zero-value metrics, fake charts, or empty recommendation shells.
 - Keep Academics cold-start actions inside Daily → Class Center.
 - “Import a syllabus” remains the primary cold-start action.

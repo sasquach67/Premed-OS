@@ -2,7 +2,7 @@
 
 **Status:** Board (Aug 2026). **Reference index, not spec.**
 
-**Andy, Aug 2026:** *"Premed HQ, right now, one of its fatal flaws is that it obviously acts as a tracker, but it should also be used as a logistical guide… I literally want you to think of every single thing. If you think of a daily life in premed, you're going to have to think of everything… Not only are you thinking too low in scope, but you're thinking too low in terms of practicality."*
+**Andy, Aug 2026:** *"Premed OS, right now, one of its fatal flaws is that it obviously acts as a tracker, but it should also be used as a logistical guide… I literally want you to think of every single thing. If you think of a daily life in premed, you're going to have to think of everything… Not only are you thinking too low in scope, but you're thinking too low in terms of practicality."*
 
 **The distinction this file exists to close:**
 

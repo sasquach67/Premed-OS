@@ -8,7 +8,7 @@
 
 ## 1. The end goal
 
-**Premed HQ is a premed journey dashboard for one student, running locally, that turns four years of scattered effort into an application.** React + TypeScript + Vite + zustand, localStorage-first, GitHub Pages, Supabase magic-link sync as an addition — **signed-out mode must stay fully functional.**
+**Premed OS is a premed journey dashboard for one student, running locally, that turns four years of scattered effort into an application.** React + TypeScript + Vite + zustand, localStorage-first, GitHub Pages, Supabase magic-link sync as an addition — **signed-out mode must stay fully functional.**
 
 **The finish line for the documentation phase:** every tab has a ruled spec and a feature catalog, every catalog row is `live`, `spec`, `board`, or `cut` — **and nothing is `open`.** Then design, then code.
 
@@ -216,7 +216,7 @@
 | **A low row-count on an inheriting surface is not a gap** | Asking each pillar to invent its own reflection features was the wrong question |
 | **Three features died to the same question** — *"what is this actually for?"* | The map surface, `R-1`, `O-1`. **All were reflective views.** Ask it early |
 | **"Tabs without catalogs" ≠ "tabs never specced"** | Six of seven scaffolds were never specced at all |
-| **Do not read the stale locations as spec** | Root `rules/`, `spec/`, `CLAUDE_CODE_HANDOFF.md`, `READ-ME-FIRST.md`, `REVISIONS-ROUND-1.md`, nested `premed-hq/` |
+| **Do not read the stale locations as spec** | Root `rules/`, `spec/`, `CLAUDE_CODE_HANDOFF.md`, `READ-ME-FIRST.md`, `REVISIONS-ROUND-1.md`, nested `premedos/` |
 
 ---
 

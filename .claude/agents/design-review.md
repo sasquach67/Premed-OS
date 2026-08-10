@@ -1,10 +1,10 @@
 ---
 name: design-review
-description: Reviews rendered Premed HQ views against the locked design foundation. Use after implementing any new view or visual change, before commit.
+description: Reviews rendered Premed OS views against the locked design foundation. Use after implementing any new view or visual change, before commit.
 tools: Read, Grep, Glob, Bash, mcp__playwright__*
 ---
 
-You review Premed HQ UI changes for design-foundation compliance. You do
+You review Premed OS UI changes for design-foundation compliance. You do
 NOT redesign or suggest new visual directions — the foundation is locked.
 
 Process:

@@ -93,7 +93,7 @@ body {
 
    WAS: `display:flex; justify-content:space-between` across three
    children. That centres the pill BETWEEN its two neighbours, not on the
-   page — and since "Premed HQ" and "Start tracking ↗" are different
+   page — and since "Premed OS" and "Start tracking ↗" are different
    widths, the pill is pushed off-centre by exactly half their difference.
    It reads as "slightly wrong" at every viewport and gets worse as the
    rail widens, which is why it looked broken at full screen.
@@ -548,7 +548,7 @@ body {
 
     <div class="note">
       <b>What changed, and why.</b> This mockup is <b>direction, not pixel law</b> — the deliverable is the structure and the single token block.<br><br>
-      <b>1 · The three floating islands STAY.</b> The bug was placement, not the pattern. <code>justify-content: space-between</code> centres the pill <b>between its neighbours</b>, not on the page — and since "Premed HQ" and "Start tracking ↗" are different widths, the pill sits off-centre by half that difference, getting worse as the rail widens. Now a <code>1fr auto 1fr</code> grid, so the pill is on the true optical centre at every width. The pill holds <b>only</b> the five links.<br>
+      <b>1 · The three floating islands STAY.</b> The bug was placement, not the pattern. <code>justify-content: space-between</code> centres the pill <b>between its neighbours</b>, not on the page — and since "Premed OS" and "Start tracking ↗" are different widths, the pill sits off-centre by half that difference, getting worse as the rail widens. Now a <code>1fr auto 1fr</code> grid, so the pill is on the true optical centre at every width. The pill holds <b>only</b> the five links.<br>
       <b>2 · The brand is a two-tone wordmark, no icon.</b> All six references share that format, and <b>Premed OS</b> makes it automatic — "OS" is the second tone. Four options above; C is shown live. ⚠️ The references are geometric sans; Baloo 2 is rounded and never changes, so the format transfers but the letterforms stay warmer. <b>Klinar is the closest of the six to what Baloo 2 can do.</b><br>
       <b>3 · The top-right CTA is coloured glass</b> — saturated tint, luminous top edge, and an outer bloom in the same hue. The bloom is the whole trick: every other glass surface here has the inset highlight and stops there, so this is the only element that appears to <i>emit</i> light rather than transmit it. ⚠️ <b>The hero CTA stays solid white and stays the primary</b> — colour attracts, but on a dark field white outweighs it. Two competing primaries was the original problem; this is a second-place accent, not a tie.<br>
       <b>4 · The gooey filter is gone.</b> <code>filter: url(#hq-gooey)</code> made a containing block and clipped; a transform slides the arrow just as well.<br>

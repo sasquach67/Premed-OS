@@ -1,19 +1,19 @@
-# CODEX TASK — Bring the MCAT section of Premed HQ to full "PrepCat parity"
+# CODEX TASK — Bring the MCAT section of Premed OS to full "PrepCat parity"
 
 Paste this whole file to Codex. It is self-contained: context, setup, exact placement, per-tab design, the full data/scoring model, and build order. A companion HTML mockup and PrepCat reference screenshots ship in the same folder (`MCAT-PrepCat-Design/`, at the repo root) — **open them first.**
 
-> **Framing:** The MCAT pillar (`src/pages/Mcat.tsx`) already has the six tabs (Dashboard · Plan · Content · Mistakes · Stats · Advisor) built with **mostly static/mock data** (`PLAN_DAYS`, `HEATMAP`, hard-coded streaks, `CONTENT_ITEMS`). This task **upgrades each tab to be real and interactive**, modeled on PrepCat (a polished MCAT-prep app Andy uses), rebuilt in Premed HQ's own warm-paper Ghibli theme. The **Mistakes tab is the centerpiece** (an AAMC-outline "mistake map"); the other tabs get parity passes that share one data model.
+> **Framing:** The MCAT pillar (`src/pages/Mcat.tsx`) already has the six tabs (Dashboard · Plan · Content · Mistakes · Stats · Advisor) built with **mostly static/mock data** (`PLAN_DAYS`, `HEATMAP`, hard-coded streaks, `CONTENT_ITEMS`). This task **upgrades each tab to be real and interactive**, modeled on PrepCat (a polished MCAT-prep app Andy uses), rebuilt in Premed OS's own warm-paper Ghibli theme. The **Mistakes tab is the centerpiece** (an AAMC-outline "mistake map"); the other tabs get parity passes that share one data model.
 
 ---
 
 ## 0. First steps (do these before writing code)
 1. **Read the current file** `src/pages/Mcat.tsx` end to end and inventory what already exists (component names below). Reuse existing components (`ReadinessRing`, `ScoreTile`, `MetricTile`, `MiniBar`, `Heatmap`, `PlanDay`, `ContentCard`, `FilterRow`, `Field`) — extend, don't duplicate.
 2. **Open the mockup** `MCAT-PrepCat-Design/mcat-mistake-map.html` (at the repo root; `open` it or serve the folder). It shows the target for the Mistakes tab (radial mind map, topic combobox, inspector, roll-ups). **Direction, not pixel-law** — match layout, hierarchy, encoding, interactions.
-3. **Study the PrepCat reference screenshots** in `MCAT-PrepCat-Design/prepcat-reference/` (see its `README.md` for the filename→tab mapping). These are screenshots of PrepCat — the app this whole MCAT page is modeled on — showing each tab, several in a **filled/populated** state. Use them as visual direction for *layout and interaction*, but keep Premed HQ's own theme/fonts/colors (§1). If the folder is empty or missing a shot, fall back to the written flow descriptions in §4.
+3. **Study the PrepCat reference screenshots** in `MCAT-PrepCat-Design/prepcat-reference/` (see its `README.md` for the filename→tab mapping). These are screenshots of PrepCat — the app this whole MCAT page is modeled on — showing each tab, several in a **filled/populated** state. Use them as visual direction for *layout and interaction*, but keep Premed OS's own theme/fonts/colors (§1). If the folder is empty or missing a shot, fall back to the written flow descriptions in §4.
 4. **Setup / run** (Node is user-local):
    ```bash
    export PATH="$HOME/.local/node/bin:$PATH"
-   cd premed-hq && npm install && npm run dev   # http://localhost:5180
+   cd premedos && npm install && npm run dev   # http://localhost:5180
    ```
 5. **Deploy note:** the GitHub-connected deploy repo is the ROOT `premed-hq-review/`, which builds from a copy of this app. **You own the nested app (`premed-hq/`) only** — do NOT edit the root copy or `.github/workflows`; Andy handles the mirror. Don't commit QA screenshots or `.DS_Store`.
 

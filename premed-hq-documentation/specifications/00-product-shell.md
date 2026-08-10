@@ -2,14 +2,14 @@
 
 **Status:** Approved for implementation
 **Date:** July 21, 2026
-**Repo:** `sasquach67/Premed-HQ` (Vite + React 19 + React Router 7 + Tailwind 4 + Radix/shadcn + Zustand-style store)
+**Repo:** `sasquach67/Premed-OS` (Vite + React 19 + React Router 7 + Tailwind 4 + Radix/shadcn + Zustand-style store)
 **Architecture references:** `architecture/00-product-vision.md`, `architecture/01-global-design-system.md`, `architecture/02-global-intelligence-framework.md`, `general.md`
 
 ---
 
 ## 1. Purpose and Scope
 
-The product shell is the persistent frame around every page of Premed HQ: sidebar navigation, top bar, global search, quick add, the attention strip, the page container, and the responsive/mobile chrome. This spec defines exactly how the shell behaves so that every tab specification can assume it and never re-specify it.
+The product shell is the persistent frame around every page of Premed OS: sidebar navigation, top bar, global search, quick add, the attention strip, the page container, and the responsive/mobile chrome. This spec defines exactly how the shell behaves so that every tab specification can assume it and never re-specify it.
 
 The shell **owns**:
 
@@ -37,7 +37,7 @@ Architecture explains *why*; this document explains *how*. Nothing here re-argue
 
 This section is the single source of truth for top-level navigation. `src/app/routes.tsx` must match this table exactly.
 
-> **Architecture reconciliation.** `architecture/01-global-design-system.md` → "Global Navigation" prescribes a view-centric nav (Dashboard, Timeline, Search, AI Workspace, Notifications, Calendar, Settings). That section is **superseded** for navigation by the July 2026 handoff decision: Premed HQ uses domain-labeled navigation ("language that pre-med students already understand") and Atlas never becomes the center of navigation. The rest of 01 (entity-centered design, canonical ownership, stateless views, command palette scope, state preservation) remains fully in force and this spec conforms to it. 01's view-centric items survive as: Dashboard → Overview; Timeline → Timeline & Tasks; Search → command palette (§7.3); AI Workspace → reserved Atlas surfaces (§7.8); Notifications → Attention bell (§7.5); Settings → Support group. Calendar has no current surface — tracked in §14. Do not "correct" the sidebar toward 01's list.
+> **Architecture reconciliation.** `architecture/01-global-design-system.md` → "Global Navigation" prescribes a view-centric nav (Dashboard, Timeline, Search, AI Workspace, Notifications, Calendar, Settings). That section is **superseded** for navigation by the July 2026 handoff decision: Premed OS uses domain-labeled navigation ("language that pre-med students already understand") and Atlas never becomes the center of navigation. The rest of 01 (entity-centered design, canonical ownership, stateless views, command palette scope, state preservation) remains fully in force and this spec conforms to it. 01's view-centric items survive as: Dashboard → Overview; Timeline → Timeline & Tasks; Search → command palette (§7.3); AI Workspace → reserved Atlas surfaces (§7.8); Notifications → Attention bell (§7.5); Settings → Support group. Calendar has no current surface — tracked in §14. Do not "correct" the sidebar toward 01's list.
 
 ### 2.1 Sidebar groups and order
 
@@ -142,7 +142,7 @@ Grounded in code as of this date. File references are for Claude Code orientatio
 
 ### 3.7 Atlas — `sasquach67/Atlas` (separate app)
 
-Next.js 16 app: ingestion (paste/audio/video → timestamped transcripts), AI claim extraction into 20 pre-med pillars, knowledge canvas (`@xyflow/react`), duplicate resolution, cited guide synthesis. Local-first SQLite, provider-agnostic AI with deterministic mocks. **No integration with the Premed-HQ shell exists.**
+Next.js 16 app: ingestion (paste/audio/video → timestamped transcripts), AI claim extraction into 20 pre-med pillars, knowledge canvas (`@xyflow/react`), duplicate resolution, cited guide synthesis. Local-first SQLite, provider-agnostic AI with deterministic mocks. **No integration with the Premed-OS shell exists.**
 
 ---
 

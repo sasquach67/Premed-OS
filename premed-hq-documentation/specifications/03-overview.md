@@ -2,7 +2,7 @@
 
 **Status:** Approved for implementation
 **Date:** July 21, 2026
-**Repo:** `sasquach67/Premed-HQ` — `src/pages/Home.tsx`
+**Repo:** `sasquach67/Premed-OS` — `src/pages/Home.tsx`
 **Depends on:** `specifications/00-product-shell.md`, `architecture/01-global-design-system.md`, `architecture/02-global-intelligence-framework.md`, `architecture/04-admissions-framework.md`, `general.md`
 
 > ## ▶ APPROVED VISUAL REFERENCE — read before building
@@ -79,7 +79,7 @@ Current widgets, top to bottom: **Hero** (themed Ghibli/Doraemon banner, greetin
 1. **MCAT eats ~40% of the page** — a full hero card *plus* a QOTD widget *plus* a QOTD peek inside the card. One domain dominates; Clinical, Research, Volunteering, Essays get nothing on Home.
 2. **QOTD was rejected in the handoff** yet appears twice. It does not materially improve workflow given the dedicated MCAT features.
 3. **No domain-level status.** There's no single place to see where *every* domain stands — the thing a home base most needs.
-4. **No intelligence.** Nothing here makes Premed HQ feel like an intelligent OS rather than a tracker. No recommendations, no "next best action."
+4. **No intelligence.** Nothing here makes Premed OS feel like an intelligent OS rather than a tracker. No recommendations, no "next best action."
 5. **Ideas capture is a dead end** — captured text goes nowhere and connects to nothing.
 6. **Attention is scattered** — the "Soon" panel duplicates what the shell's Attention bell now owns.
 7. **AtAGlance is a thin subset** of what a real domains view should show.

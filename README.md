@@ -1,4 +1,4 @@
-# Premed HQ
+# Premed OS
 
 Andy's personal premed command center — a private, interactive dashboard for UNC
 pre-med planning, AMCAS prep, and daily execution. Built per `premed-dashboard-brief.md`
@@ -16,7 +16,7 @@ This machine has a user-local Node at `~/.local/node`. Put it on your PATH first
 
 ```bash
 export PATH="$HOME/.local/node/bin:$PATH"
-cd "premed-dashboard-project 2/premed-hq"
+cd "premed-dashboard-project 2/premedos"
 
 npm install        # first time only
 npm run dev        # http://localhost:5173  (we used 5179 in dev)

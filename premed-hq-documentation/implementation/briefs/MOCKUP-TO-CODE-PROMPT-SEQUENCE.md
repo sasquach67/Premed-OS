@@ -34,7 +34,7 @@ If zero rows relevant to this prompt are YES, stop and report that.
 
 ## Before you start — four facts that will bite
 
-**1. `CLAUDE-HANDOFF.md` currently forbids exactly what you are about to do.** Line 306: *"Do not implement these mockups in the Premed HQ app unless separately asked."* **This document is the separate ask.** `P1` amends that line so a future session does not stall on it.
+**1. `CLAUDE-HANDOFF.md` currently forbids exactly what you are about to do.** Line 306: *"Do not implement these mockups in the Premed OS app unless separately asked."* **This document is the separate ask.** `P1` amends that line so a future session does not stall on it.
 
 **2. There are two mirrored mockup folders**, and the handoff says a mismatch has already cost one pass:
 
@@ -45,7 +45,7 @@ premed-hq-documentation/specifications/mockups/ <- the mirror
 
 **Read from the mirror.** It is inside the docs tree, and the docs are the source of truth.
 
-**3. There is a decoy app at `premed-hq/`.** `CLAUDE.md` says ignore it. **Every prompt below must say `src/` at the repo root**, because a fuzzy match will find the old copy.
+**3. There is a decoy app at `premedos/`.** `CLAUDE.md` says ignore it. **Every prompt below must say `src/` at the repo root**, because a fuzzy match will find the old copy.
 
 **4. Every mockup has A/B/C variants, and only `A` is approved.** The lab's own rule: *"A should preserve the strongest approved or currently authored direction."* **Unless you have picked otherwise for a specific view, the answer is always A.**
 
@@ -73,7 +73,7 @@ Read these first, in this order:
   premed-hq-documentation/specifications/mockups/README.md
   premed-hq-documentation/implementation/component-inventory.md
 
-Scope note: the app is src/ at the repo root. The folder premed-hq/ is a stale
+Scope note: the app is src/ at the repo root. The folder premedos/ is a stale
 copy and CLAUDE.md says to ignore it. Do not read or reference it.
 
 Produce ONE report at:
@@ -126,7 +126,7 @@ Rules for this task:
 > `You changed files in src/. Revert those changes. P0 is read-only — the report is the deliverable.`
 
 > **If it read the wrong app:**
-> `You referenced premed-hq/. That is a stale copy CLAUDE.md tells you to ignore. Redo the affected sections against src/ at the repo root.`
+> `You referenced premedos/. That is a stale copy CLAUDE.md tells you to ignore. Redo the affected sections against src/ at the repo root.`
 
 ---
 

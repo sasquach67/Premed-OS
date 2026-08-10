@@ -1,7 +1,7 @@
 # Data Model
 
 **Status:** Written (July 2026) — grounded in the current repo store; canonical People/Organization normalization **approved** (phased path, §10).
-**Repo:** `sasquach67/Premed-HQ` — `src/lib/types.ts` (the authoritative field-level source), `src/store/store.ts` (persistence + migrations), `src/lib/selectors.ts` (derived properties), `src/data/seed.ts` (example records).
+**Repo:** `sasquach67/Premed-OS` — `src/lib/types.ts` (the authoritative field-level source), `src/store/store.ts` (persistence + migrations), `src/lib/selectors.ts` (derived properties), `src/data/seed.ts` (example records).
 **Depends on:** `general.md` → Global entity system; `architecture/06-service-foundation.md` (ownership, cloud, migration); `specifications/01-shared-interface-patterns.md` (how records are edited/opened).
 
 ---

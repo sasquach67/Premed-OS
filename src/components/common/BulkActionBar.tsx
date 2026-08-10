@@ -86,7 +86,7 @@ export function BulkActionBar({
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
     anchor.href = url
-    anchor.download = `premed-hq-${collection}-export.json`
+    anchor.download = `premedos-${collection}-export.json`
     anchor.click()
     URL.revokeObjectURL(url)
     toast({ title: 'Export prepared', description: `${ids.length} ${ids.length === 1 ? 'record' : 'records'} included.` })

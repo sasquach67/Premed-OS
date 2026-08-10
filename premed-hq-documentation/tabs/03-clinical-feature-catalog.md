@@ -365,7 +365,7 @@ Clinical's signals are **recency and steadiness** (§2.3), so the **default** is
 
 Also excluded from this chart: no goal line or target band (a target is optional, §7a, and drawing one turns description into a scoreboard), no trend overlay or moving average, no projection — #32 says the forward-looking part in words. Axis starts at zero.
 
-**#35 gap narrative is DEMOTED (Andy, Aug 2026):** *"gap narratives are not realistic. nobody using premed hq is just gonna have a gap all of a sudden."* Right. It was going to be a feature that noticed a break and wrote a sentence about it. **The empty bar already does that**, with no machinery, and only when there is something to see. It becomes a note on #34, not a standalone feature.
+**#35 gap narrative is DEMOTED (Andy, Aug 2026):** *"gap narratives are not realistic. nobody using premed OS is just gonna have a gap all of a sudden."* Right. It was going to be a feature that noticed a break and wrote a sentence about it. **The empty bar already does that**, with no machinery, and only when there is something to see. It becomes a note on #34, not a standalone feature.
 
 **#36 setting mix — mocked so it can be judged on sight** (`mockups/04-clinical/clinical-hours-chart.html` Frame 2). **Lean cut.** Nobody judges setting variety; Shadowing owns breadth as a real metric; it restates the site list one screen away; and it invites bucket-filling toward a balance nobody asked for. The one real use is at **writing time** ("EMS, inpatient, ED and clinic" is a sentence worth having), which means it belongs as one line in the export preview rather than a panel on the pillar.
 

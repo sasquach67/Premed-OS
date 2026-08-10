@@ -3,7 +3,7 @@
 Visual reference for the "MCAT PrepCat-parity" build (see `../mcat-mistake-map-CODEX-PROMPT.md`).
 These are screenshots of PrepCat (prepcat.net), the MCAT-prep app the MCAT page is modeled on.
 **They are visual direction only — match layout, hierarchy, and interaction patterns, not exact
-colors or fonts. Premed HQ keeps its own warm-paper Ghibli theme (Baloo 2 / Nunito, `SECTION_META`
+colors or fonts. Premed OS keeps its own warm-paper Ghibli theme (Baloo 2 / Nunito, `SECTION_META`
 colors).**
 
 ## How to name your drops

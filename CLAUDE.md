@@ -1,4 +1,4 @@
-# Premed HQ — Claude Code project memory
+# Premed OS — Claude Code project memory
 
 Premed journey dashboard (public beta). React + TypeScript + Vite + zustand.
 Deployed to GitHub Pages from `main` via Actions. Supabase magic-link auth

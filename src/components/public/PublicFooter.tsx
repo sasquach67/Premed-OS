@@ -23,7 +23,7 @@ export function PublicFooter() {
         <a className="pl-nlk" href={`mailto:${CONTACT_EMAIL}`}>Contact</a>
       </div>
       <p className="fd">
-        Premed HQ is an independent project. Not affiliated with, endorsed by, or sponsored by the
+        Premed OS is an independent project. Not affiliated with, endorsed by, or sponsored by the
         University of North Carolina at Chapel Hill, the AAMC, or any other institution. MCAT is a
         program of the AAMC, which does not sponsor or endorse this product.
       </p>

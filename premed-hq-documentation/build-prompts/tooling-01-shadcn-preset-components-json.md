@@ -4,7 +4,7 @@
 
 ---
 
-You are working in **Premed HQ**. Goal: make the app's **existing design system the canonical shadcn preset**, so any component installed via the shadcn CLI or the shadcn MCP renders in the Premed HQ theme with **no manual re-skinning**. This is a config step — the theme already exists and must not change.
+You are working in **Premed OS**. Goal: make the app's **existing design system the canonical shadcn preset**, so any component installed via the shadcn CLI or the shadcn MCP renders in the Premed OS theme with **no manual re-skinning**. This is a config step — the theme already exists and must not change.
 
 ## Read first
 

@@ -11,7 +11,7 @@ export function exportJson(): void {
   const a = document.createElement('a')
   const stamp = new Date().toISOString().slice(0, 10)
   a.href = url
-  a.download = `premed-hq-backup-${stamp}.json`
+  a.download = `premedos-backup-${stamp}.json`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -86,7 +86,7 @@ export async function readJsonFile(file: File): Promise<AppData> {
   }
   const problems = validateAppData(parsed)
   if (problems.length) {
-    throw new Error(`That file is not a valid Premed HQ backup:\n• ${problems.slice(0, 5).join('\n• ')}`)
+    throw new Error(`That file is not a valid Premed OS backup:\n• ${problems.slice(0, 5).join('\n• ')}`)
   }
   return parsed as AppData
 }

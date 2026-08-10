@@ -298,7 +298,7 @@ The spec models roles as dated records with `startDate`/`endDate` (§4). **Corre
 
 > ## STANDING PRINCIPLE (app-wide, RULED Andy Aug 2026): free reign
 >
-> *"I did say that Premed HQ was going to be a kind of free reign for students to do whatever they choose with the app. Just like how they can choose to see where they are with things, students should still be able to choose their hours target, as well as get a pace projection because they've chosen an hours target. For me, I would not really choose to have an hours target, but I think it wouldn't hurt to still have one."*
+> *"I did say that Premed OS was going to be a kind of free reign for students to do whatever they choose with the app. Just like how they can choose to see where they are with things, students should still be able to choose their hours target, as well as get a pace projection because they've chosen an hours target. For me, I would not really choose to have an hours target, but I think it wouldn't hurt to still have one."*
 >
 > **The line, and it separates two things that both feel like restraint:**
 >

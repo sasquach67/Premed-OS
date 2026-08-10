@@ -37,7 +37,7 @@ const PORTRAIT_SMALL = `${import.meta.env.BASE_URL}img/andy-portrait-452.jpg`
 
 export function AboutPage() {
   return (
-    <PublicShell title="About — Premed HQ">
+    <PublicShell title="About — Premed OS">
       <div className="pl-band">
         <PublicNav />
         <div className="pl-bandin" style={{ padding: '0 0 0' }}>
@@ -66,7 +66,7 @@ export function AboutPage() {
               height={900}
               loading="lazy"
               decoding="async"
-              alt="Andy, who builds Premed HQ"
+              alt="Andy, who builds Premed OS"
             />
           </figure>
 
@@ -110,7 +110,7 @@ export function AboutPage() {
         {/* §6.1 — independence is stated in the BODY here, not only in the
             footer. */}
         <p style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--pl-dim)', marginTop: 26 }}>
-          <b style={{ color: 'var(--pl-mut)' }}>Premed HQ is an independent project.</b> Not
+          <b style={{ color: 'var(--pl-mut)' }}>Premed OS is an independent project.</b> Not
           affiliated with, endorsed by, or sponsored by UNC-Chapel Hill, the AAMC, or any other
           institution. It uses course numbers and requirement names because those are facts about a
           curriculum, and its colours and name are its own. MCAT and AMCAS are programs of the AAMC,
@@ -139,7 +139,7 @@ function FeedbackPanel() {
   const send = () => {
     const body = replyTo.trim() ? `${message}\n\n— reply to: ${replyTo.trim()}` : message
     window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
-      'Premed HQ feedback',
+      'Premed OS feedback',
     )}&body=${encodeURIComponent(body)}`
   }
 

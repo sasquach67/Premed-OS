@@ -17,7 +17,7 @@ If zero rows relevant to this prompt are YES, stop and report that.
 
 TASK
 
-Build the public layer of Premed HQ: the landing page, authentication, the
+Build the public layer of Premed OS: the landing page, authentication, the
 local→account merge screen, and the four doc pages (About, Privacy, Terms,
 Pricing). Seven routes, none of which exist yet.
 

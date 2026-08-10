@@ -5,7 +5,7 @@
 
 ## Purpose
 
-Atlas is the knowledge brain; Premed HQ is the operating system on top of it. Atlas ingests external pre-med knowledge (AAMC, MCAT resources, practicing doctors, current pre-meds, social media, forums) and structures it as a connected, source-cited graph. HQ surfaces that knowledge as advice and recommendations. This spec defines the four Atlas surfaces and how they mount into HQ without Atlas becoming the center of navigation.
+Atlas is the knowledge brain; Premed OS is the operating system on top of it. Atlas ingests external pre-med knowledge (AAMC, MCAT resources, practicing doctors, current pre-meds, social media, forums) and structures it as a connected, source-cited graph. HQ surfaces that knowledge as advice and recommendations. This spec defines the four Atlas surfaces and how they mount into HQ without Atlas becoming the center of navigation.
 
 ## Locked decisions (July 2026)
 

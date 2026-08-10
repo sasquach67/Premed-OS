@@ -113,7 +113,7 @@ Andy sent two components and named what he wanted from each: reference 1 (`Shade
 
 **First person, and it stays first person.** With no users, no logos and no testimonials, the only trust signal a beta honestly has is who made it and why.
 
-- **Do not rewrite it into third-person company voice.** "Premed HQ was founded to…" reads as a fake team and undoes the point.
+- **Do not rewrite it into third-person company voice.** "Premed OS was founded to…" reads as a fake team and undoes the point.
 - It carries the commercial commitments in plain language: not a company, no investors, no ads, no affiliate links, nothing sponsored, free options named first.
 - It is the correct home for a familiar-comparison line if one is ever wanted again.
 

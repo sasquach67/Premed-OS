@@ -1,7 +1,7 @@
 # Knowledge Sources — external-data dependency map
 
 **Status:** Living inventory
-**Why this exists:** many Premed HQ features need **external knowledge**. A coding agent must **not** fetch or research this live — it will hallucinate or go stale. Knowledge is acquired **ahead of build time** and the coding agent builds against a clean data interface.
+**Why this exists:** many Premed OS features need **external knowledge**. A coding agent must **not** fetch or research this live — it will hallucinate or go stale. Knowledge is acquired **ahead of build time** and the coding agent builds against a clean data interface.
 
 ## Two distinct kinds of knowledge (do not mix)
 

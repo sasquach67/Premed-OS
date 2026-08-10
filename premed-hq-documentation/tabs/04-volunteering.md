@@ -4,7 +4,7 @@
 
 **Status:** Designed July 2026, **substantially revised Aug 2026** (sub-tabs, V-7 to V-13, continuity, W7 cut)
 **Sidebar group:** Experiences · **Spec type:** domain tab
-**Repo:** `sasquach67/Premed-HQ` — `src/pages/ExperiencePillar.tsx` (shared builder), Volunteering config
+**Repo:** `sasquach67/Premed-OS` — `src/pages/ExperiencePillar.tsx` (shared builder), Volunteering config
 **Depends on:** `specifications/00-product-shell.md`, `specifications/01-shared-interface-patterns.md`, `specifications/04-visual-craft-standards.md`, `specifications/05-experience-pillar.md`, `tabs/03-clinical.md` (skeleton it inherits), `architecture/04-admissions-framework.md`, `general.md`
 
 ## Ownership (from shell §2.2)

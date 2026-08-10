@@ -13,7 +13,7 @@ tighter net than reading 30,000 lines looking for gaps, and it matches exactly
 what was asked: what did you add that the app has not caught up with.
 
 **Scope.** All 117 docs scanned for markers; 11 densest specs read in full at
-the marked sections. `Atlas/` and `premed-hq/` excluded (separate/stale).
+the marked sections. `Atlas/` and `premedos/` excluded (separate/stale).
 
 ---
 

@@ -4,7 +4,7 @@
 
 ---
 
-You are implementing **Premed HQ**. Goal: build the **deterministic intelligence layer** — the rules engine that produces data-health warnings, dedup candidates, explainable rules-based recommendations, and the **unified attention model** that feeds the bell, status chip, Overview, and review queue. This is `architecture/02`'s **"Deterministic Before Probabilistic"** foundation: everything here is computed from rules over the entity graph, **no AI model calls**.
+You are implementing **Premed OS**. Goal: build the **deterministic intelligence layer** — the rules engine that produces data-health warnings, dedup candidates, explainable rules-based recommendations, and the **unified attention model** that feeds the bell, status chip, Overview, and review queue. This is `architecture/02`'s **"Deterministic Before Probabilistic"** foundation: everything here is computed from rules over the entity graph, **no AI model calls**.
 
 ## Read first
 

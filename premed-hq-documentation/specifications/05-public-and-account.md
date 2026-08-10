@@ -180,7 +180,7 @@ Two non-malicious things can drain a prepaid balance in a day: **a retry loop in
 
 ### 6.1 Independence disclaimer — REQUIRED, and not just a footer line
 
-> **Premed HQ is an independent project. It is not affiliated with, endorsed by, or sponsored by the University of North Carolina at Chapel Hill, the AAMC, or any other institution.**
+> **Premed OS is an independent project. It is not affiliated with, endorsed by, or sponsored by the University of North Carolina at Chapel Hill, the AAMC, or any other institution.**
 
 **Where it appears:** landing hero region · footer of every public page · About/Help · anywhere institution-specific data is displayed prominently (the Requirements audit).
 
@@ -190,7 +190,7 @@ Two non-malicious things can drain a prepaid balance in a day: **a retry loop in
 - **No ram or Rameses imagery.** If a mascot is used it must be **visibly unrelated to any university mascot**. **CORRECTION (Aug 2026):** this bullet previously said *"Confirmed July 2026: none exists"* — **that was wrong.** `src/components/mascot/Ram.tsx` renders `/art/mascot.gif` via `MascotNote.tsx`. It is **live in the app today** and is the thing to replace. It was kept off the public layer in the P1 build (the guided-tour figure is a doctor). Root `CLAUDE.md` has been corrected to match.
 - **HQ's palette is its own.** `#4b9cd3` is HQ's academics accent. **Do not describe it as "Carolina blue"** or any institutional colour — the `CLAUDE.md` parenthetical saying so has been removed, because that framing is what creates an impression of affiliation.
 - **Institution data is fact, not branding.** Course numbers, credit hours, and requirement names are facts about a curriculum and may be used. **Verbatim catalog prose may not be reproduced wholesale** — same distinction as the syllabus rule (`01` §4.1-M): structure and facts yes, expression no.
-- **`Premed HQ` name:** run a trademark and domain check before it's load-bearing. **Flagged, not resolved.**
+- **`Premed OS` name:** run a trademark and domain check before it's load-bearing. **Flagged, not resolved.**
 
 ### 6.2 Other required disclaimers
 
@@ -288,7 +288,7 @@ Beta status and no uptime guarantee · acceptable use · **user owns their conte
 
 ## 10. Open — needs a decision or a check
 
-1. **`Premed HQ` trademark + domain check.** Flagged, unresolved.
+1. **`Premed OS` trademark + domain check.** Flagged, unresolved.
 2. ~~Password auth~~ — **RESOLVED: build both** (§2.1).
 3. ~~Free-tier boundary~~ — **RESOLVED: free during beta, priced from measured usage after a full term** (§5.1). Still open *later*: the eventual price point and cap size, decided from real data.
 4. **Age floor** in Terms.

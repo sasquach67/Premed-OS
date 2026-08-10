@@ -69,7 +69,7 @@ function TourPreview({ tab }: { tab: string }) {
   return (
     <div className="pl-prev" aria-hidden="true">
       <aside className="pl-prev-nav">
-        <span className="pl-prev-brand">Premed HQ</span>
+        <span className="pl-prev-brand">Premed OS</span>
         {NAV.map((n) => (
           <span key={n} className={`pl-prev-navlk${n === tab ? ' on' : ''}`}>
             {n}

@@ -2,7 +2,7 @@
 
 ## Product identity
 
-Premed HQ is an intelligent operating system for pre-med students and applicants. It should unify planning, tracking, documentation, analysis, and application preparation without becoming a generic spreadsheet, Notion template, or life-coaching product.
+Premed OS is an intelligent operating system for pre-med students and applicants. It should unify planning, tracking, documentation, analysis, and application preparation without becoming a generic spreadsheet, Notion template, or life-coaching product.
 
 ## Primary outcomes
 
@@ -36,7 +36,7 @@ The product should help users:
 
 ## Non-goals
 
-Premed HQ should not:
+Premed OS should not:
 
 - Psychologically profile users
 - Pretend to predict admissions outcomes with certainty

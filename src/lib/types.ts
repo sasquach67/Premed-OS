@@ -1,5 +1,5 @@
 /* ============================================================
-   types.ts — the full Premed HQ data model.
+   types.ts — the full Premed OS data model.
    One root AppData object is persisted to localStorage and
    (optionally) mirrored to Google Drive.
    ============================================================ */

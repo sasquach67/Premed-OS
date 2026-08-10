@@ -4,7 +4,7 @@
 
 ---
 
-You are implementing **Premed HQ**. Goal: **make every existing screen obey the standardization contract** so the whole app reads as *one* system. This is normalization/cleanup — same behavior, same data, consistent surface. The app drifted because it was built piecemeal (e.g. Overview and Extracurriculars use different heading treatments/fonts; the Academics ledger and the Letters table are different table implementations). Fix all of it.
+You are implementing **Premed OS**. Goal: **make every existing screen obey the standardization contract** so the whole app reads as *one* system. This is normalization/cleanup — same behavior, same data, consistent surface. The app drifted because it was built piecemeal (e.g. Overview and Extracurriculars use different heading treatments/fonts; the Academics ledger and the Letters table are different table implementations). Fix all of it.
 
 > **CRITICAL — this is FORMAT standardization, NOT a redesign. If a prior sweep flattened the app, REVERT it first.**
 > - **Step 0 — restore the rich design.** If an earlier standardization pass flattened / restyled / re-weighted anything, `git revert` those commits so the app is back to its previous **rich, bold, layered** look (bold Baloo, dimensional cards, soft shadows/elevation, the themed banner, motion) *before doing anything else*.

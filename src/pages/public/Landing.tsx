@@ -137,7 +137,7 @@ export function Landing() {
   }, [location.state])
 
   return (
-    <PublicShell title="Premed HQ — your whole pre-med application, in one place">
+    <PublicShell title="Premed OS — your whole pre-med application, in one place">
       {/* ── HERO: five elements, full stop ─────────────────────────────── */}
       <section className="pl-hero">
 

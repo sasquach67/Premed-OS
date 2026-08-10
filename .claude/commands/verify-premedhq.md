@@ -1,8 +1,8 @@
 ---
-description: Full Premed HQ verification pass before push
+description: Full Premed OS verification pass before push
 ---
 
-Run the complete Premed HQ verification checklist on the current working
+Run the complete Premed OS verification checklist on the current working
 state:
 
 1. `npm run build` — report and fix any errors/warnings introduced by

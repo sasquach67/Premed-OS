@@ -75,7 +75,7 @@ export function PublicNav() {
     <div className="pl-navwrap">
       <div className="pl-navbar pl-an pl-an1">
         <Link to="/" className="pl-navbrand">
-          Premed HQ
+          Premed OS
         </Link>
 
         <nav className="pl-navpill" aria-label="Public pages">

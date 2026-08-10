@@ -1,4 +1,4 @@
-# Premed HQ — Overview Redesign Implementation Brief
+# Premed OS — Overview Redesign Implementation Brief
 
 ## Primary objective
 
@@ -83,7 +83,7 @@ The mascot should not appear in three simultaneous locations.
 
 ### Sidebar branding
 
-Replace the current ram emoji beside “Premed HQ” with a small, polished **Premed HQ application mark**.
+Replace the current ram emoji beside “Premed OS” with a small, polished **Premed OS application mark**.
 
 Do not use another full mascot illustration here.
 
@@ -389,9 +389,9 @@ Enhance the existing Search Everything interface with result-type tabs:
 
 Definitions:
 
-- **Dashboard**: internal pages, records, modules, and routes within Premed HQ
+- **Dashboard**: internal pages, records, modules, and routes within Premed OS
 - **Files**: Google Drive documents, uploaded files, or previously accessed file references stored in the application
-- **External links**: websites outside Premed HQ
+- **External links**: websites outside Premed OS
 
 Requirements:
 

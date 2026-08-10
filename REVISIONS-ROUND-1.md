@@ -1,4 +1,4 @@
-# Premed HQ — Revision Round 1 (from Andy's walkthrough)
+# Premed OS — Revision Round 1 (from Andy's walkthrough)
 
 Each item = **what you said → the technical fix I'd make**. Review/approve; ⚠️ marks things I need from you. Priority order at the bottom.
 

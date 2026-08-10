@@ -46,7 +46,7 @@
 >
 > **Two conditions, and they are not optional:**
 > 1. **The design is PROPOSED, not frozen.** If a drawing changes, the code follows it. Accepted cost, same as the Overview/Academics rows.
-> 2. **Cleared to BUILD is not cleared to PUBLISH.** The age floor, governing law, and the `Premed HQ` trademark/domain check (`05` §10) are still open. **Build the pages; do not point a public domain at Privacy, Terms, or About until those three close.**
+> 2. **Cleared to BUILD is not cleared to PUBLISH.** The age floor, governing law, and the `Premed OS` trademark/domain check (`05` §10) are still open. **Build the pages; do not point a public domain at Privacy, Terms, or About until those three close.**
 
 
 | Mockup | Header status | Build? |

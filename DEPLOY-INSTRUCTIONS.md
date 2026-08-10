@@ -1,4 +1,4 @@
-# How to put Premed HQ live (GitHub Pages, free)
+# How to put Premed OS live (GitHub Pages, free)
 
 Your live URL will be: **https://sasquach67.github.io/Premed-HQ/**
 
@@ -10,8 +10,8 @@ On your computer, in Terminal:
 
 ```bash
 # 1. Get a fresh copy of your repo
-git clone https://github.com/sasquach67/Premed-HQ.git
-cd Premed-HQ
+git clone https://github.com/sasquach67/Premed-OS.git
+cd Premed-OS
 
 # 2. Unzip the deploy package Claude gave you INTO this folder,
 #    so that src/, public/, index.html, package.json, .github/, etc.
@@ -31,7 +31,7 @@ press Cmd+Shift+. to show hidden files before dragging.
 
 ### Step 2 — Turn on GitHub Pages
 
-1. Go to https://github.com/sasquach67/Premed-HQ/settings/pages
+1. Go to https://github.com/sasquach67/Premed-OS/settings/pages
 2. Under **Build and deployment → Source**, choose **GitHub Actions**
 3. Go to the **Actions** tab of the repo — you should see a
    "Deploy to GitHub Pages" workflow running (or click "Run workflow" to start it)

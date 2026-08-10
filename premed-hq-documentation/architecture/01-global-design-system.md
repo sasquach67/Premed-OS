@@ -11,7 +11,7 @@ Dependencies:
 
 # Purpose
 
-This document defines the global design principles that govern Premed HQ.
+This document defines the global design principles that govern Premed OS.
 
 Unlike the Product Vision, this document is implementation-oriented. It establishes the architectural and interaction rules that should remain consistent across every feature, workflow, service, and interface.
 
@@ -63,7 +63,7 @@ The following principles apply globally throughout the product.
 
 ## 1. Data Model First
 
-Premed HQ is designed data-first rather than page-first.
+Premed OS is designed data-first rather than page-first.
 
 Every feature begins by defining the underlying information model before any interface is designed.
 
@@ -203,7 +203,7 @@ Relationship metadata should be preserved whenever possible.
 
 # Workspace Architecture
 
-The Premed HQ interface is composed of four architectural layers:
+The Premed OS interface is composed of four architectural layers:
 
 ```
 Platform
@@ -383,7 +383,7 @@ Every view should produce identical underlying state changes.
 
 # Workspace Model
 
-Premed HQ should feel like one continuous workspace.
+Premed OS should feel like one continuous workspace.
 
 Users should never feel as though they are moving between disconnected applications.
 

@@ -463,7 +463,7 @@ export function AssignmentsPanel({
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
     const anchor = document.createElement('a')
     anchor.href = url
-    anchor.download = 'premed-hq-assignments.csv'
+    anchor.download = 'premedos-assignments.csv'
     anchor.click()
     URL.revokeObjectURL(url)
     toast({ title: 'Assignments exported', description: `${linked.length} course-linked records included.` })

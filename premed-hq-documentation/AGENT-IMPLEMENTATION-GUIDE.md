@@ -1,6 +1,6 @@
 # Agent Implementation Guide — READ THIS FIRST
 
-**You are implementing Premed HQ. This documentation folder is your SINGLE SOURCE OF TRUTH.**
+**You are implementing Premed OS. This documentation folder is your SINGLE SOURCE OF TRUTH.**
 
 Everything you build must come from these `.md` and `.json` files. Do not invent features, rename things, change flows, or "improve" on the spec from your own priors, from other apps, or from generic best practice. If it is not in these docs, it is not in scope. When the docs and your instincts disagree, **the docs win.**
 
@@ -47,8 +47,8 @@ Higher in this list wins: a `tabs/` page never overrides a global rule in `archi
 The user will prompt you in chunks (usually one tab/spec at a time). For each chunk:
 
 1. **Read the full relevant docs** for that chunk — the tab spec AND everything it lists under "Depends on," plus the global rules (§2).
-2. **Read the existing repo code** for that area first. The app already partly exists (`sasquach67/Premed-HQ`, Vite + React 19 + React Router 7 + Tailwind 4 + shadcn). **Extend and align with what's there — do not rebuild from scratch** unless the spec explicitly says to replace it.
-   - **Target the current top-level source only.** The repo contains an **older nested `premed-hq/` folder that is stale — do not read it as truth or modify it.** All implementation happens against the top-level source tree; if the two ever disagree, the top-level wins. When in doubt about which copy is canonical, ask before touching `premed-hq/`.
+2. **Read the existing repo code** for that area first. The app already partly exists (`sasquach67/Premed-OS`, Vite + React 19 + React Router 7 + Tailwind 4 + shadcn). **Extend and align with what's there — do not rebuild from scratch** unless the spec explicitly says to replace it.
+   - **Target the current top-level source only.** The repo contains an **older nested `premedos/` folder that is stale — do not read it as truth or modify it.** All implementation happens against the top-level source tree; if the two ever disagree, the top-level wins. When in doubt about which copy is canonical, ask before touching `premedos/`.
 3. **Produce a short plan before coding:** which files you'll add/change, which shared components you'll reuse, and a spec-section → code mapping. Surface any ambiguity now (§0).
 4. **Implement** to the spec, applying all §2 global rules.
 5. **Verify against that spec's own "Acceptance criteria" section** — it is your test checklist. Also self-check `04` §11 build checklist and states (empty/loading/error, light/dark, mobile, keyboard, reduced-motion).

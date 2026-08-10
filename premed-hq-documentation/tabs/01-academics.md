@@ -2,14 +2,14 @@
 
 **Status:** Designed — approved for implementation (core decisions locked July 2026). Intelligence list is intentionally extensible.
 **Sidebar group:** Foundation · **Spec type:** domain tab
-**Repo:** `sasquach67/Premed-HQ` — `src/pages/Academics.tsx` (917L), `src/components/academics/ClassCenter.tsx` (1890L), `src/components/common/AssignmentsPanel.tsx`
+**Repo:** `sasquach67/Premed-OS` — `src/pages/Academics.tsx` (917L), `src/components/academics/ClassCenter.tsx` (1890L), `src/components/common/AssignmentsPanel.tsx`
 **Depends on:** `specifications/00-product-shell.md`, `specifications/01-shared-interface-patterns.md`, `specifications/03-overview.md`, `architecture/04-admissions-framework.md`, `general.md`
 
 ---
 
 ## 0. Scope decision (locked)
 
-**Premed HQ is UNC-only.** Users differ by *path and timeline* (grad year, cycle, traditional vs. gap year), not by institution. The Requirements's UNC-specific requirements, programs, and term plans are therefore correct as-is — do **not** generalize to other institutions.
+**Premed OS is UNC-only.** Users differ by *path and timeline* (grad year, cycle, traditional vs. gap year), not by institution. The Requirements's UNC-specific requirements, programs, and term plans are therefore correct as-is — do **not** generalize to other institutions.
 
 ---
 
@@ -1387,7 +1387,7 @@ Three guardrails, and only three:
 
 **The MCAT restriction is unchanged and stays scoped to MCAT** (`tabs/02-mcat.md` §2a): no AI-generated QBank questions or CARS passages there — those must be externally sourced. AI in MCAT remains limited to M2M drills + flashcards.
 
-**Secrets & hosting (RESOLVED July 2026).** Premed HQ is a **static** deploy (GitHub Pages). **Provider API keys must never reach the browser bundle or localStorage** — an XSS in a static app would leak them. Therefore:
+**Secrets & hosting (RESOLVED July 2026).** Premed OS is a **static** deploy (GitHub Pages). **Provider API keys must never reach the browser bundle or localStorage** — an XSS in a static app would leak them. Therefore:
 
 - Provider calls go through a **server-side proxy** (Supabase **Edge Function**) that owns the secrets, performs the topic-scoped retrieval, validates the response, and returns typed JSON.
 - **D6 ships server-configured provider secrets only.** The earlier "user pastes their own API key in Settings" model is **deferred** — it needs a secure per-user credential vault, which is its own chunk. (It also fits the metered/paywall model in `architecture/08` better than BYO-key.)

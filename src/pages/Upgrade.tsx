@@ -6,7 +6,7 @@ export function Upgrade() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-7">
-        <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Premed HQ Plus</p>
+        <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Premed OS Plus</p>
         <h1 className="mt-2 font-display text-3xl font-extrabold">A calmer way to stay ahead</h1>
         <p className="mt-2 text-muted-foreground">Preview the planned upgrade. Billing is not connected in this foundation release.</p>
       </div>

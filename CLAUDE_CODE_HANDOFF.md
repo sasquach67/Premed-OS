@@ -1,4 +1,4 @@
-# Claude Code Handoff: Premed HQ
+# Claude Code Handoff: Premed OS
 
 Read this before making changes.
 
@@ -13,7 +13,7 @@ The GitHub-connected repo is:
 Remote:
 
 ```bash
-origin https://github.com/sasquach67/Premed-HQ.git
+origin https://github.com/sasquach67/Premed-OS.git
 ```
 
 Latest pushed commit on `main`:
@@ -31,7 +31,7 @@ There are two app copies:
 1. Root app in `/Users/andyquach/Documents/premed-hq-review`
 2. Nested app in `/Users/andyquach/Documents/premed-hq-review/premed-hq`
 
-The nested `premed-hq` folder has its own local `.git`, but it is not the GitHub-connected repo.
+The nested `premedos` folder has its own local `.git`, but it is not the GitHub-connected repo.
 
 For deployment, the root app is now the important source because the existing GitHub Pages workflow runs:
 
@@ -46,7 +46,7 @@ from the repo root and uploads:
 dist
 ```
 
-Do not assume changes made only inside nested `premed-hq/` will deploy. If you edit the nested copy, mirror the change to the root app or update the deployment strategy intentionally.
+Do not assume changes made only inside nested `premedos/` will deploy. If you edit the nested copy, mirror the change to the root app or update the deployment strategy intentionally.
 
 ## What Was Just Fixed
 
@@ -73,13 +73,13 @@ hero-schedule-minimal-qa.jpg
 hero-schedule-mobile-qa.jpg
 hero-timeline-minimal-white-qa.jpg
 hero-timeline-reference-style-qa.jpg
-premed-hq/.claude/
+premedos/.claude/
 spec/unc_schedule_options_no_8am.png
 ```
 
 ## User Preferences
 
-- Keep the original Premed HQ fonts unless explicitly asked.
+- Keep the original Premed OS fonts unless explicitly asked.
 - Keep updating the existing export zip when relevant:
 
 ```bash

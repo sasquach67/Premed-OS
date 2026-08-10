@@ -1,6 +1,6 @@
 # Supabase setup — cloud sync + login
 
-Premed HQ can log you in with a one-time email link and sync your whole dashboard
+Premed OS can log you in with a one-time email link and sync your whole dashboard
 across devices. localStorage stays the primary store; Supabase is the synced copy.
 
 ## One-time setup (≈3 minutes)

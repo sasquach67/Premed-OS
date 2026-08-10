@@ -30,7 +30,7 @@ This document establishes the *principles* — "Respecting Attention," "Avoiding
 
 # Purpose
 
-This document defines the universal intelligence architecture that governs Premed HQ.
+This document defines the universal intelligence architecture that governs Premed OS.
 
 Unlike the Product Vision, which defines *what* the platform aims to achieve, and the Global Design System, which defines *how* the platform is structured and presented, this framework defines *how the platform thinks*.
 
@@ -40,7 +40,7 @@ Every recommendation, workflow, automation, analysis, prediction, and insight sh
 
 Rather than documenting individual AI features, this framework establishes the architectural rules governing intelligent behavior across the entire platform.
 
-Its purpose is to ensure that Premed HQ behaves as one coherent intelligence system rather than a collection of disconnected AI features.
+Its purpose is to ensure that Premed OS behaves as one coherent intelligence system rather than a collection of disconnected AI features.
 
 Every contributor should reference this document before introducing:
 
@@ -62,7 +62,7 @@ If implementation decisions conflict with this framework, this document takes pr
 
 # Scope
 
-The Global Intelligence Framework governs every intelligence-driven capability throughout Premed HQ.
+The Global Intelligence Framework governs every intelligence-driven capability throughout Premed OS.
 
 This includes—but is not limited to—
 
@@ -110,7 +110,7 @@ Intelligence should not exist as a separate product feature.
 
 Instead, intelligence should naturally emerge throughout every workflow.
 
-Users should experience Premed HQ as an intelligent system rather than a traditional application with AI added later.
+Users should experience Premed OS as an intelligent system rather than a traditional application with AI added later.
 
 Every domain should benefit from intelligent reasoning where appropriate.
 
@@ -122,7 +122,7 @@ Artificial intelligence should feel like part of the product's architecture—no
 
 ## 2. Intelligence Augments Rather Than Replaces
 
-Premed HQ exists to improve human decision making.
+Premed OS exists to improve human decision making.
 
 Artificial intelligence should accelerate:
 
@@ -146,7 +146,7 @@ Whenever uncertainty exists, the platform should prefer assisting the user rathe
 
 ## 3. Intelligence Is Provider-Agnostic
 
-Premed HQ should never be architected around a specific AI provider.
+Premed OS should never be architected around a specific AI provider.
 
 Language models, reasoning engines, retrieval systems, and future intelligence technologies are implementation details rather than architectural foundations.
 
@@ -225,7 +225,7 @@ The framework should remain stable even as execution strategies evolve.
 
 # Intelligence Architecture
 
-Premed HQ organizes intelligence into four architectural layers.
+Premed OS organizes intelligence into four architectural layers.
 
 ```
 Global Intelligence
@@ -293,7 +293,7 @@ Individual domains compose these capabilities rather than implementing their own
 
 ## Domain Intelligence
 
-Domain Intelligence adapts platform intelligence to specialized areas of Premed HQ.
+Domain Intelligence adapts platform intelligence to specialized areas of Premed OS.
 
 Examples include:
 
@@ -317,7 +317,7 @@ Instead, it extends it.
 
 ## Entity Intelligence
 
-Premed HQ should not treat entities as static records.
+Premed OS should not treat entities as static records.
 
 Instead, every entity should possess contextual intelligence derived from its relationships and surrounding information.
 
@@ -340,7 +340,7 @@ Rather than merely storing information, entities should actively contribute to i
 
 # Adaptive Intelligence Orchestration
 
-One of Premed HQ's defining architectural principles is that intelligence execution should be adaptive rather than static.
+One of Premed OS's defining architectural principles is that intelligence execution should be adaptive rather than static.
 
 Rather than assuming a single artificial intelligence provider, reasoning engine, or workflow is universally optimal, the platform dynamically determines the most appropriate execution strategy for each request.
 
@@ -368,7 +368,7 @@ Instead, the platform should continuously optimize execution based upon evidence
 
 Artificial intelligence providers should be treated as interchangeable execution engines rather than foundational components of the platform.
 
-Premed HQ should never permanently encode assumptions such as:
+Premed OS should never permanently encode assumptions such as:
 
 - Provider A is best for writing.
 - Provider B is best for programming.
@@ -387,7 +387,7 @@ The platform should remain capable of adopting future intelligence technologies 
 
 ## Intelligence Capabilities
 
-Rather than reasoning about individual models, Premed HQ reasons about capabilities.
+Rather than reasoning about individual models, Premed OS reasons about capabilities.
 
 Capabilities represent the fundamental units of intelligent work that may be satisfied by one or more providers.
 
@@ -425,7 +425,7 @@ Capabilities describe *what* work must be performed.
 
 Roles describe *how that work contributes* to an overall reasoning workflow.
 
-Premed HQ defines abstract intelligence roles independent of any provider.
+Premed OS defines abstract intelligence roles independent of any provider.
 
 Examples include:
 
@@ -507,7 +507,7 @@ Routing decisions should be supported by measurable evidence rather than reputat
 
 While public discussion surrounding AI models can provide useful signals, production routing should remain grounded in objective evaluation.
 
-Premed HQ should prioritize evidence according to the following hierarchy.
+Premed OS should prioritize evidence according to the following hierarchy.
 
 1. Internal evaluation results
 
@@ -699,7 +699,7 @@ Sophisticated orchestration should not become the default merely because it is a
 
 Certain requests benefit from multiple specialized reasoning stages.
 
-Rather than repeatedly asking several providers the same question, Premed HQ composes complementary intelligence roles into temporary execution pipelines.
+Rather than repeatedly asking several providers the same question, Premed OS composes complementary intelligence roles into temporary execution pipelines.
 
 Example:
 
@@ -761,7 +761,7 @@ Independent review becomes increasingly valuable as consequence and uncertainty 
 
 Independent reasoning systems will occasionally disagree.
 
-Premed HQ should never resolve disagreement by averaging responses.
+Premed OS should never resolve disagreement by averaging responses.
 
 Instead, disagreement should trigger additional reasoning.
 
@@ -895,7 +895,7 @@ Reasoning quality is fundamentally constrained by the quality of the context ava
 
 A highly capable intelligence provider supplied with incomplete, outdated, or irrelevant information will frequently produce worse outcomes than a less capable provider supplied with comprehensive context.
 
-For this reason, Premed HQ considers context assembly a first-class architectural responsibility rather than an implementation detail.
+For this reason, Premed OS considers context assembly a first-class architectural responsibility rather than an implementation detail.
 
 Reasoning should never begin until sufficient context has been assembled.
 
@@ -1074,7 +1074,7 @@ Context windows should therefore contain the smallest amount of information nece
 
 Large workspaces frequently exceed practical context limits.
 
-Rather than discarding information, Premed HQ should progressively compress lower-priority information while preserving important meaning.
+Rather than discarding information, Premed OS should progressively compress lower-priority information while preserving important meaning.
 
 Compression techniques may include:
 
@@ -1227,7 +1227,7 @@ Without memory, every interaction becomes an isolated conversation requiring use
 
 With unrestricted memory, intelligence risks accumulating outdated, contradictory, or irrelevant information that degrades reasoning quality over time.
 
-Premed HQ therefore treats memory as an architectural system rather than a storage mechanism.
+Premed OS therefore treats memory as an architectural system rather than a storage mechanism.
 
 The purpose of memory is not to remember everything.
 
@@ -1261,7 +1261,7 @@ Each category should follow different retention, correction, and retrieval polic
 
 ## Memory Layers
 
-Premed HQ organizes memory into multiple architectural layers.
+Premed OS organizes memory into multiple architectural layers.
 
 ```
 Working Memory
@@ -1538,7 +1538,7 @@ Planning, recommendations, automation, search, coaching, document analysis, and 
 
 This ensures the platform develops one coherent understanding of the user rather than maintaining disconnected memories across individual features.
 
-As Premed HQ matures, improvements to memory should automatically improve every intelligence capability built upon it.
+As Premed OS matures, improvements to memory should automatically improve every intelligence capability built upon it.
 
 ---
 
@@ -1558,7 +1558,7 @@ Retrieval answers:
 
 > "What do we need to know?"
 
-Premed HQ should avoid relying exclusively on either.
+Premed OS should avoid relying exclusively on either.
 
 Reasoning based entirely upon memory risks becoming outdated.
 
@@ -1612,7 +1612,7 @@ Retrieval should answer meaningful questions rather than maximize information vo
 
 ## Internal Retrieval
 
-Internal retrieval searches information already contained within Premed HQ.
+Internal retrieval searches information already contained within Premed OS.
 
 Examples include:
 
@@ -1659,7 +1659,7 @@ However, external information should supplement—not replace—the platform's u
 
 Not every source deserves equal influence.
 
-Premed HQ should evaluate sources according to authority rather than accessibility.
+Premed OS should evaluate sources according to authority rather than accessibility.
 
 In general, source priority should favor:
 
@@ -1843,11 +1843,11 @@ Memory provides continuity.
 
 Reasoning transforms information into understanding.
 
-Reasoning is the process by which Premed HQ interprets evidence, evaluates alternatives, identifies patterns, predicts outcomes, and produces actionable conclusions.
+Reasoning is the process by which Premed OS interprets evidence, evaluates alternatives, identifies patterns, predicts outcomes, and produces actionable conclusions.
 
 It represents the core of the platform's intelligence.
 
-Rather than viewing reasoning as a single capability, Premed HQ treats reasoning as a collection of specialized modes optimized for different categories of problems.
+Rather than viewing reasoning as a single capability, Premed OS treats reasoning as a collection of specialized modes optimized for different categories of problems.
 
 Different problems require different forms of thinking.
 
@@ -1891,7 +1891,7 @@ rather than immediately generating responses from incomplete understanding.
 
 ## Reasoning Modes
 
-Premed HQ organizes reasoning into reusable modes.
+Premed OS organizes reasoning into reusable modes.
 
 A single workflow may employ multiple reasoning modes simultaneously.
 
@@ -2230,7 +2230,7 @@ Composable reasoning enables sophisticated workflows while preserving modular ar
 
 ## Deterministic vs Probabilistic Reasoning
 
-Premed HQ should distinguish between reasoning that produces objective answers and reasoning that produces informed judgments.
+Premed OS should distinguish between reasoning that produces objective answers and reasoning that produces informed judgments.
 
 Deterministic reasoning includes:
 
@@ -2283,7 +2283,7 @@ Every recommendation, workflow, automation, planning system, coaching experience
 
 As new reasoning modes are introduced, they should become reusable across the entire platform rather than remaining isolated within individual domains.
 
-This enables Premed HQ to continuously expand its intelligence capabilities while maintaining one coherent model of how the platform thinks.
+This enables Premed OS to continuously expand its intelligence capabilities while maintaining one coherent model of how the platform thinks.
 
 ---
 
@@ -2293,7 +2293,7 @@ Reasoning produces understanding.
 
 Recommendations transform understanding into action.
 
-Premed HQ should not simply answer questions.
+Premed OS should not simply answer questions.
 
 It should help users determine what to do next.
 
@@ -2612,7 +2612,7 @@ This ensures that recommendations remain consistent throughout the platform whil
 
 Traditional software responds to user requests.
 
-Premed HQ should proactively identify opportunities to assist before users recognize the need themselves.
+Premed OS should proactively identify opportunities to assist before users recognize the need themselves.
 
 Proactive Intelligence represents the platform's ability to continuously observe the user's workspace, recognize meaningful patterns, and surface timely guidance without requiring explicit prompts.
 
@@ -2884,7 +2884,7 @@ Admissions, Academics, Clinical, Research, MCAT, Essays, Applications, and every
 
 This shared architecture enables the platform to recognize relationships that individual domains cannot observe independently.
 
-As Premed HQ accumulates additional understanding of the user's journey, proactive intelligence should become increasingly personalized, timely, and valuable while remaining respectful of user attention.
+As Premed OS accumulates additional understanding of the user's journey, proactive intelligence should become increasingly personalized, timely, and valuable while remaining respectful of user attention.
 
 ---
 
@@ -2894,7 +2894,7 @@ Recommendations tell users what they could do.
 
 Automation determines what the platform should do itself.
 
-Premed HQ should not automate every possible task.
+Premed OS should not automate every possible task.
 
 Nor should it require users to manually perform work that the platform can reliably complete on their behalf.
 
@@ -2969,7 +2969,7 @@ Only actions meeting appropriate safety and confidence thresholds should be auto
 
 ## Automation Categories
 
-Premed HQ supports multiple categories of intelligent action.
+Premed OS supports multiple categories of intelligent action.
 
 Examples include:
 
@@ -3190,7 +3190,7 @@ Automation should operate as a platform capability rather than a collection of i
 
 Every domain should be capable of contributing actions to a common automation architecture governed by shared principles for eligibility, confidence, approval, verification, recovery, and learning.
 
-As Premed HQ expands, new automation capabilities should integrate into this common framework rather than introducing separate automation systems.
+As Premed OS expands, new automation capabilities should integrate into this common framework rather than introducing separate automation systems.
 
 This ensures that intelligent actions remain predictable, trustworthy, and consistent regardless of where they originate within the platform.
 
@@ -3198,7 +3198,7 @@ This ensures that intelligent actions remain predictable, trustworthy, and consi
 
 # Personalization Architecture
 
-Premed HQ is designed for individuals, not average users.
+Premed OS is designed for individuals, not average users.
 
 Two users with identical GPAs, coursework, and experiences may require entirely different guidance based on their goals, preferences, constraints, learning styles, and personal histories.
 
@@ -3328,7 +3328,7 @@ Examples include:
 - Reflection habits
 - Documentation practices
 
-Rather than enforcing one optimal workflow, Premed HQ should adapt to successful user behaviors whenever possible.
+Rather than enforcing one optimal workflow, Premed OS should adapt to successful user behaviors whenever possible.
 
 ---
 
@@ -3478,7 +3478,7 @@ Instead, it should function as shared infrastructure consumed by every intellige
 
 Reasoning, recommendations, coaching, automation, search, planning, document generation, and future capabilities should all reference a common personalization architecture.
 
-This ensures that Premed HQ develops one coherent understanding of each user rather than multiple disconnected profiles across individual features.
+This ensures that Premed OS develops one coherent understanding of each user rather than multiple disconnected profiles across individual features.
 
 As the platform learns more about the individual, every intelligence capability should become more relevant without sacrificing consistency, transparency, or user control.
 
@@ -3490,7 +3490,7 @@ General intelligence understands problems.
 
 Domain intelligence understands *what those problems mean* within a specific field.
 
-Premed HQ is not intended to be a general-purpose AI assistant.
+Premed OS is not intended to be a general-purpose AI assistant.
 
 It is an intelligent platform built around the unique complexity of the pre-med journey.
 
@@ -3498,9 +3498,9 @@ Understanding pre-med applicants requires more than language models and reasonin
 
 It requires domain expertise.
 
-Domain Intelligence provides the specialized knowledge, relationships, heuristics, and decision frameworks that distinguish Premed HQ from general AI products.
+Domain Intelligence provides the specialized knowledge, relationships, heuristics, and decision frameworks that distinguish Premed OS from general AI products.
 
-Rather than embedding domain-specific logic throughout the platform, Premed HQ centralizes expertise within a dedicated architectural layer.
+Rather than embedding domain-specific logic throughout the platform, Premed OS centralizes expertise within a dedicated architectural layer.
 
 This enables every intelligence capability to reason using the same understanding of the domain.
 
@@ -3774,7 +3774,7 @@ Timeline
 
 Earlier MCAT readiness
 
-Rather than reasoning independently within each domain, Premed HQ should continuously identify interactions spanning multiple domains.
+Rather than reasoning independently within each domain, Premed OS should continuously identify interactions spanning multiple domains.
 
 Cross-domain intelligence enables recommendations that isolated systems cannot discover.
 
@@ -3812,7 +3812,7 @@ Each new domain should integrate through shared abstractions including:
 - recommendations
 - automation
 
-This enables Premed HQ to expand beyond pre-med while preserving architectural consistency.
+This enables Premed OS to expand beyond pre-med while preserving architectural consistency.
 
 ---
 
@@ -3824,7 +3824,7 @@ Reasoning, retrieval, recommendations, coaching, planning, automation, and perso
 
 This ensures that every intelligent interaction reflects one consistent model of how the pre-med ecosystem works.
 
-As Premed HQ grows, expanding domain expertise should automatically improve every intelligence capability built upon it.
+As Premed OS grows, expanding domain expertise should automatically improve every intelligence capability built upon it.
 
 ---
 
@@ -3834,13 +3834,13 @@ Most software is organized around pages.
 
 Most AI assistants are organized around conversations.
 
-Premed HQ is organized around entities.
+Premed OS is organized around entities.
 
 Every meaningful object within the platform—people, experiences, documents, schools, research projects, applications, courses, timelines, and tasks—exists as an entity with its own identity, relationships, history, and evolving state.
 
 Entity Intelligence enables the platform to understand not merely isolated pieces of information, but how every part of a user's journey connects to every other part.
 
-Rather than reasoning over conversations alone, Premed HQ reasons over an evolving knowledge graph representing the user's academic, professional, and personal development.
+Rather than reasoning over conversations alone, Premed OS reasons over an evolving knowledge graph representing the user's academic, professional, and personal development.
 
 This entity-centric architecture allows intelligence to remain consistent, reusable, and contextually aware across every workflow.
 
@@ -3900,7 +3900,7 @@ The platform should therefore reason about entities rather than disconnected tex
 
 ## Canonical Entities
 
-Every important concept within Premed HQ should exist as a canonical entity.
+Every important concept within Premed OS should exist as a canonical entity.
 
 Examples include:
 
@@ -4250,7 +4250,7 @@ New entity types should integrate through shared abstractions including:
 - permissions
 - intelligence capabilities
 
-This allows Premed HQ to grow organically while maintaining one coherent representation of knowledge.
+This allows Premed OS to grow organically while maintaining one coherent representation of knowledge.
 
 ---
 
@@ -4268,7 +4268,7 @@ Entity Intelligence defines what that knowledge actually represents.
 
 Every intelligence capability—including planning, recommendations, automation, coaching, search, document analysis, and future systems—should reason over the same canonical entity graph.
 
-By treating entities and relationships as the primary objects of intelligence, Premed HQ develops an enduring understanding of the user's journey rather than a collection of disconnected conversations.
+By treating entities and relationships as the primary objects of intelligence, Premed OS develops an enduring understanding of the user's journey rather than a collection of disconnected conversations.
 
 ---
 
@@ -4284,7 +4284,7 @@ Some are reasonable estimates.
 
 Others remain speculative.
 
-Premed HQ should explicitly recognize these differences rather than presenting all outputs with identical confidence.
+Premed OS should explicitly recognize these differences rather than presenting all outputs with identical confidence.
 
 Confidence is not a measure of intelligence.
 
@@ -4536,7 +4536,7 @@ Confidence should not be generated independently by each feature.
 
 Instead, it should function as shared platform infrastructure consumed by reasoning, recommendations, automation, forecasting, coaching, planning, and every future intelligence capability.
 
-By establishing one consistent confidence model across the platform, Premed HQ ensures that users develop a coherent understanding of how certainty is represented regardless of where intelligence is encountered.
+By establishing one consistent confidence model across the platform, Premed OS ensures that users develop a coherent understanding of how certainty is represented regardless of where intelligence is encountered.
 
 ---
 
@@ -4548,7 +4548,7 @@ Improvement requires measurement.
 
 Without evaluation, the platform cannot determine whether new reasoning strategies, retrieval systems, orchestration policies, or recommendation algorithms actually produce better outcomes.
 
-Premed HQ therefore treats evaluation as a first-class architectural capability rather than a development activity.
+Premed OS therefore treats evaluation as a first-class architectural capability rather than a development activity.
 
 Evaluation should occur continuously throughout the lifecycle of every intelligence system.
 
@@ -4576,7 +4576,7 @@ Success is defined by improved decision making—not impressive AI demonstration
 
 ## Levels of Evaluation
 
-Premed HQ evaluates intelligence across multiple levels.
+Premed OS evaluates intelligence across multiple levels.
 
 Model Performance
 
@@ -4664,7 +4664,7 @@ Recommendation systems succeed when users consistently benefit—not when recomm
 
 ## User Outcomes
 
-Ultimately, Premed HQ exists to improve user outcomes.
+Ultimately, Premed OS exists to improve user outcomes.
 
 Possible long-term indicators include:
 
@@ -4766,7 +4766,7 @@ Instead, it should function as shared infrastructure supporting every intelligen
 
 Every reasoning system, recommendation engine, automation workflow, retrieval pipeline, and future intelligence capability should participate within a common evaluation framework.
 
-By measuring intelligence consistently across the platform, Premed HQ can improve systematically rather than optimizing isolated components independently.
+By measuring intelligence consistently across the platform, Premed OS can improve systematically rather than optimizing isolated components independently.
 
 ---
 
@@ -4776,7 +4776,7 @@ Intelligence should be powerful.
 
 It should also be trustworthy.
 
-Users rely upon Premed HQ to assist with decisions that may influence years of academic and professional development.
+Users rely upon Premed OS to assist with decisions that may influence years of academic and professional development.
 
 The platform therefore has a responsibility to ensure that intelligence operates within clearly defined boundaries.
 
@@ -4804,7 +4804,7 @@ Every intelligence capability should remain accountable to a shared governance f
 
 Users remain the ultimate decision makers.
 
-Premed HQ should assist users in making informed decisions—not replace their judgment.
+Premed OS should assist users in making informed decisions—not replace their judgment.
 
 The platform should:
 
@@ -5002,7 +5002,7 @@ Governance should apply uniformly across every intelligence capability.
 
 Reasoning, retrieval, recommendations, automation, personalization, coaching, search, planning, and future systems should all operate within the same governance framework.
 
-By centralizing trust, safety, and governance, Premed HQ ensures that intelligent behavior remains predictable, explainable, and aligned with the platform's long-term vision regardless of how the underlying technology evolves.
+By centralizing trust, safety, and governance, Premed OS ensures that intelligent behavior remains predictable, explainable, and aligned with the platform's long-term vision regardless of how the underlying technology evolves.
 
 ---
 
@@ -5022,7 +5022,7 @@ User behavior shifts.
 
 Product requirements mature.
 
-Premed HQ therefore treats intelligence as a continuously operating platform capability rather than a static software feature.
+Premed OS therefore treats intelligence as a continuously operating platform capability rather than a static software feature.
 
 Intelligence Operations defines the architectural principles governing how intelligence is monitored, maintained, evaluated, and evolved throughout the lifetime of the platform.
 
@@ -5213,7 +5213,7 @@ Operational excellence should apply uniformly across every intelligence capabili
 
 Monitoring, experimentation, evaluation, observability, and continuous improvement should function as shared platform infrastructure rather than isolated practices within individual features.
 
-By treating intelligence operations as a foundational architectural concern, Premed HQ ensures that every future intelligence capability benefits from the same disciplined approach to reliability, measurement, and continuous evolution.
+By treating intelligence operations as a foundational architectural concern, Premed OS ensures that every future intelligence capability benefits from the same disciplined approach to reliability, measurement, and continuous evolution.
 
 ---
 
@@ -5225,7 +5225,7 @@ Sophisticated intelligence presented poorly often appears unintelligent.
 
 Conversely, clear, timely, and well-structured interactions allow users to develop trust in the platform's capabilities.
 
-Intelligence Experience Standards define the principles governing how intelligent behavior should be presented throughout Premed HQ.
+Intelligence Experience Standards define the principles governing how intelligent behavior should be presented throughout Premed OS.
 
 These standards ensure that every interaction feels consistent, understandable, and aligned with the platform's philosophy regardless of which underlying intelligence capabilities produced it.
 
@@ -5394,7 +5394,7 @@ The most intelligent system is often the one that knows when not to interrupt.
 
 ## Educational Intelligence
 
-Premed HQ should not merely complete work.
+Premed OS should not merely complete work.
 
 It should help users develop expertise.
 
@@ -5433,13 +5433,13 @@ Every intelligence capability should present itself through a shared experience 
 
 Reasoning, planning, recommendations, coaching, automation, search, document analysis, and future capabilities should all communicate using consistent interaction principles.
 
-This shared experience layer ensures that, regardless of how the underlying intelligence evolves, Premed HQ continues to feel like one coherent, trustworthy, and thoughtfully designed platform rather than a collection of independent AI features.
+This shared experience layer ensures that, regardless of how the underlying intelligence evolves, Premed OS continues to feel like one coherent, trustworthy, and thoughtfully designed platform rather than a collection of independent AI features.
 
 ---
 
 # Extensibility
 
-Premed HQ is intended to evolve continuously.
+Premed OS is intended to evolve continuously.
 
 New domains will emerge.
 
@@ -5867,7 +5867,7 @@ Does the feature remain explainable?
 
 ## Experience
 
-Does the capability feel consistent with the rest of Premed HQ?
+Does the capability feel consistent with the rest of Premed OS?
 
 Is interaction clear?
 
@@ -5897,13 +5897,13 @@ Every new intelligence capability should strengthen the overall platform archite
 
 Features that require exceptions to multiple architectural principles should generally motivate improvements to the architecture itself rather than introducing isolated exceptions.
 
-A successful design review concludes not merely that a feature works, but that it naturally belongs within the intelligence ecosystem established by Premed HQ.
+A successful design review concludes not merely that a feature works, but that it naturally belongs within the intelligence ecosystem established by Premed OS.
 
 ---
 
 # Relationship to Other Documentation
 
-The Global Intelligence Framework defines how Premed HQ thinks.
+The Global Intelligence Framework defines how Premed OS thinks.
 
 It does not exist in isolation.
 
@@ -5924,7 +5924,7 @@ Defines:
 - guiding product philosophy
 - strategic direction
 
-The Product Vision explains **why** Premed HQ is being built.
+The Product Vision explains **why** Premed OS is being built.
 
 The Global Intelligence Framework explains **how the platform reasons in support of that vision**.
 
@@ -6040,7 +6040,7 @@ Maintaining these boundaries keeps each document focused while allowing the over
 
 ## Closing Philosophy
 
-Premed HQ is not intended to be a collection of artificial intelligence features.
+Premed OS is not intended to be a collection of artificial intelligence features.
 
 It is intended to be an intelligent platform.
 
@@ -6056,7 +6056,7 @@ Implementation details will evolve.
 
 These architectural principles are intended to remain stable.
 
-By separating enduring intelligence architecture from transient implementation, Premed HQ can continuously adopt new capabilities while preserving one consistent model of how the platform thinks.
+By separating enduring intelligence architecture from transient implementation, Premed OS can continuously adopt new capabilities while preserving one consistent model of how the platform thinks.
 
-The Global Intelligence Framework therefore serves as the canonical foundation for every present and future intelligence capability developed within Premed HQ.
+The Global Intelligence Framework therefore serves as the canonical foundation for every present and future intelligence capability developed within Premed OS.
 

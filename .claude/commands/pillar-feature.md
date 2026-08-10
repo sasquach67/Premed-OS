@@ -1,5 +1,5 @@
 ---
-description: Implement a Premed HQ feature using the standard handoff structure
+description: Implement a Premed OS feature using the standard handoff structure
 ---
 
 Implement the following feature: $ARGUMENTS

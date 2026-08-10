@@ -65,9 +65,9 @@ These are the differentiation; generic versions would be a downgrade:
 
 ## 8. Motion Catalog (delight & animated components)
 
-Governed by `04-visual-craft` **§7a Motion & Delight** — every item draws from the shared motion system (tokens, easing, reduced-motion, "never distort data") and is **re-skinned to Premed HQ tokens** (source libraries provide the *motion*, not the look).
+Governed by `04-visual-craft` **§7a Motion & Delight** — every item draws from the shared motion system (tokens, easing, reduced-motion, "never distort data") and is **re-skinned to Premed OS tokens** (source libraries provide the *motion*, not the look).
 
-**Philosophy (July 2026):** modern, systematic motion is *core*, not a garnish — Premed HQ is built to make users want to come back. The only exclusions are **metaphor that dresses up data** (the rejected "watering plants," `05` §1) and **unsystematic one-off effects** (§10). "Eye candy" that is tasteful, systematic, and origin-aware is welcome.
+**Philosophy (July 2026):** modern, systematic motion is *core*, not a garnish — Premed OS is built to make users want to come back. The only exclusions are **metaphor that dresses up data** (the rejected "watering plants," `05` §1) and **unsystematic one-off effects** (§10). "Eye candy" that is tasteful, systematic, and origin-aware is welcome.
 
 **Sidebar (decided):** port **Animate UI**'s sidebar motion into the *existing* sidebar (keep the approved look/spacing — do not swap the component); collapsed rail shows a hover **tooltip with the item name**.
 

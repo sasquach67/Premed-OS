@@ -84,7 +84,15 @@ Below 900px the pill still hides; the `auto` column collapses to zero and brand/
 
 > **⚠️ Fonts do not change.** The references are geometric sans; Baloo 2 is rounded. The two-tone **format** transfers, the letterforms stay warm. **Do not substitute a font to match a reference.**
 
-> **⚠️ Do NOT do the `Premed HQ` → `Premed OS` rename in this chunk.** 297 occurrences across 125 files. Ship the component reading from **one exported constant**; the rename lands as its own change. Mixing a 125-file find-replace into a CSS refactor makes both unreviewable.
+> **✅ The `Premed HQ` → `Premed OS` rename is DONE** (Aug 2026, its own commit — 323 display strings across 126 files). **Nothing in this chunk needs to rename anything.** If you find a stray `Premed HQ` in a display string, fix it; if you find one in a **localStorage key, the vite base, or `googleDrive.ts`'s `BACKUP_FILENAME`, leave it** — those were preserved deliberately and renaming them is silent data loss. See `general.md` §Rename.
+
+> **⭐ Andy also supplied the official logo** (Aug 2026). Assets are in `public/art/brand/` with a `README.md` carrying the sampled tokens. **The wordmark is lowercase `premed` + blue `OS`** — match the supplied lockup rather than the mockup's four chooser variants, which predate it. **Use `premedos-mark.svg` in the nav**, not a raster.
+>
+> ⚠️ **The logo's navy `premed` is invisible on the dark public layer.** Use the `*-ondark.png` variants there, or the SVG mark with `currentColor`.
+>
+> ⚠️ **The logo blue is `#2E6CB8`; `--pl-pri` is `#6FB3DE`.** They are not the same. **Do not let them drift into "almost the same blue"** — either move the accent to the logo blue deliberately or keep them clearly distinct.
+>
+> ⚠️ **Do not put the tagline "organize. optimize. get ahead." on the landing page.** It ships with the lockup but is not approved copy and the hero has a settled headline. Use `premedos-stack.png`, which excludes it.
 
 **The chooser strip is mockup-only and must not reach the build.**
 
@@ -193,7 +201,10 @@ Fix the interior spacing. Icon, title and `See how` were nearly flush. **The gap
 - [ ] Keyboard: tab through nav → hero CTAs → tiles, visible focus on each
 - [ ] `prefers-reduced-motion`: scroll cue static, no tile transitions
 - [ ] The wordmark chooser strip is **not** in the build
-- [ ] `grep -rn "Premed OS" src/` shows the wordmark reads from one constant — **the 297-occurrence rename has NOT been done here**
+- [ ] `grep -rn "Premed HQ" src/` returns **nothing** in display strings
+- [ ] `grep -rn "premed_hq" src/` still returns **8 localStorage keys** — they must survive this chunk untouched
+- [ ] The nav mark renders from `premedos-mark.svg`, not a PNG
+- [ ] The wordmark is legible on the dark field — navy `premed` has not been shipped onto it
 
 ## 11. Commit
 

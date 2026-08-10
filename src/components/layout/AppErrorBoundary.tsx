@@ -29,7 +29,7 @@ function downloadRawData(): void {
   const a = document.createElement('a')
   const stamp = new Date().toISOString().slice(0, 10)
   a.href = url
-  a.download = `premed-hq-raw-backup-${stamp}.json`
+  a.download = `premedos-raw-backup-${stamp}.json`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -43,7 +43,7 @@ export class AppErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
     // Log for debugging; there is no telemetry in this app by design.
-    console.error('Premed HQ crashed:', error, info.componentStack)
+    console.error('Premed OS crashed:', error, info.componentStack)
   }
 
   private handleReset = (): void => {
@@ -66,7 +66,7 @@ export class AppErrorBoundary extends Component<Props, State> {
         <div style={{ maxWidth: 520, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: 28, boxShadow: '0 8px 24px rgba(0,0,0,.06)' }}>
           <h1 style={{ fontSize: 20, margin: '0 0 8px' }}>Something went wrong</h1>
           <p style={{ margin: '0 0 16px', lineHeight: 1.5 }}>
-            Premed HQ hit an unexpected error. Your data is still saved in this browser —
+            Premed OS hit an unexpected error. Your data is still saved in this browser —
             export a copy below, then try reloading.
           </p>
           <pre style={{ background: '#f3f4f6', borderRadius: 8, padding: 12, fontSize: 12, overflow: 'auto', maxHeight: 120 }}>

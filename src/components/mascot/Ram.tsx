@@ -38,7 +38,7 @@ export function Ram({
       src={sources[sourceIndex]}
       width={size}
       height={size}
-      alt="Premed HQ mascot"
+      alt="Premed OS mascot"
       onError={() => setSourceIndex((i) => i + 1)}
       className={cn('select-none object-contain drop-shadow-[0_6px_10px_rgba(58,53,48,0.14)]', className)}
       style={{ imageRendering: 'auto' }}

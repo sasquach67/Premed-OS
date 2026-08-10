@@ -1,7 +1,7 @@
 # 01 — Shared Interface Patterns
 
 **Status:** Approved for implementation (core patterns locked July 2026)
-**Repo:** `sasquach67/Premed-HQ` — `src/components/common/*`, `src/components/ui/*`
+**Repo:** `sasquach67/Premed-OS` — `src/components/common/*`, `src/components/ui/*`
 **Depends on:** `specifications/00-product-shell.md`, `architecture/01-global-design-system.md`, `general.md`
 
 ---
@@ -107,12 +107,12 @@ Contract:
 
 ### 4a. Form controls must be in-app, never native OS chrome (global rule)
 
-**Every interactive control renders in the Premed HQ design system — never the browser/OS native widget.** This applies across every tab and surface.
+**Every interactive control renders in the Premed OS design system — never the browser/OS native widget.** This applies across every tab and surface.
 
 - **Dropdowns / selects:** use the app's styled menu (Radix `Select`/`DropdownMenu` primitives already in the repo), matching the app's surfaces, radius, and type — not the native `<select>` popup or macOS-style menu.
 - **Date pickers:** clicking a date field opens the **app's own calendar popover**, styled to the design system — not the native browser date picker.
 - **Time pickers, comboboxes, popovers, tooltips, context menus:** all in-app styled, consistent across tabs.
-- Rationale: a native OS dropdown (see the status menu in Class Center — Not Started / Seen / Notes Made / Reviewing / Weak / Ready) breaks the visual language and looks pasted-in. Controls must feel native to Premed HQ, not to the operating system.
+- Rationale: a native OS dropdown (see the status menu in Class Center — Not Started / Seen / Notes Made / Reviewing / Weak / Ready) breaks the visual language and looks pasted-in. Controls must feel native to Premed OS, not to the operating system.
 - **Exempt — native file input:** `<input type="file">` is permitted; the OS file-browse dialog cannot be reimplemented in-app. Style the trigger button; the native picker itself is fine. The prohibition covers selects and date/time/month pickers only.
 - **Acceptance:** no raw native `<select>` dropdowns or native date/time pickers anywhere in the product; all use the shared styled components in both light and dark mode.
 
@@ -203,7 +203,7 @@ Touch/mobile equivalent: long-press opens the same menu; every item also remains
 
 ## 4d. Pacing & projections (LOCKED, global)
 
-**Projection over description.** Premed HQ's job is to tell the user *where they land*, not just where they are. Wherever a rate exists, prefer a forward statement to a static count. This is a core product value, not decoration.
+**Projection over description.** Premed OS's job is to tell the user *where they land*, not just where they are. Wherever a rate exists, prefer a forward statement to a static count. This is a core product value, not decoration.
 
 **The form.** Always the same shape: **"at THIS RATE → THIS OUTCOME by THIS DATE."**
 

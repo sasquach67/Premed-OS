@@ -1,4 +1,4 @@
-Premed HQ Dashboard
+Premed OS Dashboard
 
 Open index.html in a browser for the dashboard.
 

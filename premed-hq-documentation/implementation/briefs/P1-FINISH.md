@@ -59,7 +59,7 @@ git commit -m "feat(public): reachable front door — /landing and a reset contr
 
 ## 4 · Still open, unchanged
 
-**Publishing blockers** (`05` §10): age floor, governing law, and the `Premed HQ` trademark + domain check. **Built is not publishable.** The domain question is the same decision as the contact-email alias.
+**Publishing blockers** (`05` §10): age floor, governing law, and the `Premed OS` trademark + domain check. **Built is not publishable.** The domain question is the same decision as the contact-email alias.
 
 **Privacy and Terms prose.** Structured, summarised in plain English, and legally empty underneath. The pages build fine without it; they cannot publish without it.
 

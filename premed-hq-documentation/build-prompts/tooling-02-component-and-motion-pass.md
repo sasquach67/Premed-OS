@@ -4,7 +4,7 @@
 
 ---
 
-You are working in **Premed HQ**. Goal: complete the on-theme component library and stand up the **motion system**, so every tab is built from a ready, animated, on-brand toolkit. The shadcn preset (`components.json`) is already wired — pulled components inherit the theme automatically.
+You are working in **Premed OS**. Goal: complete the on-theme component library and stand up the **motion system**, so every tab is built from a ready, animated, on-brand toolkit. The shadcn preset (`components.json`) is already wired — pulled components inherit the theme automatically.
 
 ## Read first
 

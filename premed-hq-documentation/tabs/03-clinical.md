@@ -4,7 +4,7 @@
 
 **Status:** Designed (July 2026)
 **Sidebar group:** Experiences · **Spec type:** domain tab
-**Repo:** `sasquach67/Premed-HQ` — `src/pages/ExperiencePillar.tsx` (shared builder), Clinical config
+**Repo:** `sasquach67/Premed-OS` — `src/pages/ExperiencePillar.tsx` (shared builder), Clinical config
 **Depends on:** `specifications/00-product-shell.md`, `specifications/01-shared-interface-patterns.md`, `specifications/04-visual-craft-standards.md`, `specifications/05-experience-pillar.md`, `architecture/04-admissions-framework.md`, `general.md`
 
 ## Ownership (from shell §2.2)
@@ -306,7 +306,7 @@ Every other entity in HQ is single-student. This is the first one that's genuine
 
 **When in doubt, entries stay split.** Two similar-looking org names that were never explicitly matched simply show separate, smaller counts rather than one falsely confident big one. This is R7's rule again, cut or undercount rather than approximate, applied to entity resolution instead of a data source.
 
-**What's shown, and what never is:** an aggregate count on the org, nothing else. No individual student is ever named or made visible to another. **This is not a network or profile feature.** It is explicitly not the LinkedIn-style "click into someone's profile" idea Andy raised and then set aside, which would require Premed HQ to become a visible-by-default, multi-user product, a genuinely different undertaking, recorded separately (`implementation/deferred.md`) rather than folded in here.
+**What's shown, and what never is:** an aggregate count on the org, nothing else. No individual student is ever named or made visible to another. **This is not a network or profile feature.** It is explicitly not the LinkedIn-style "click into someone's profile" idea Andy raised and then set aside, which would require Premed OS to become a visible-by-default, multi-user product, a genuinely different undertaking, recorded separately (`implementation/deferred.md`) rather than folded in here.
 
 **This also is not the rejected "comparison to other applicants" feature** (board §5). *"12 students logged hours here"* is a discovery signal about a place, not a comparison of one student's hours against another's. If this ever drifts toward ranking or comparing students against each other, it has crossed into the rejected feature and should stop.
 

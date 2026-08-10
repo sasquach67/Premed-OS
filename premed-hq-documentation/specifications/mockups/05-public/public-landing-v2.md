@@ -43,7 +43,13 @@
 
 **Signed-in state:** `Sign out` goes in the right-hand column beside the CTA. The current inline `style={{ marginLeft: 'auto' }}` breaks the distribution and must go.
 
-### 1b · The brand is a two-tone wordmark, no icon glyph
+### 1b · The brand is a two-tone wordmark
+
+> **⭐ SUPERSEDED IN PART, Aug 2026 — Andy supplied the official logo after this section was written.** The chooser strip below is **history, not a live decision.** The real mark is in `public/art/brand/`, and it **does have an icon** — four ascending bars above the wordmark. **Build against the supplied lockup, not the four variants.**
+>
+> **What the official logo confirms:** lowercase `premed` in navy `#1E3044` + `OS` in blue `#2E6CB8` — which is **variant `C`'s move** (accent second half), so the reasoning below held. **What it overturns:** "no icon glyph." There is one, and it is close to the stacked-bar mark this mockup had proposed and then dropped.
+>
+> The rest of this section is kept because the trade-offs still apply to any future lockup work.
 
 **Andy sent six references** — MedAhead, ScalpelNote, UltimateOS, Klinar, MEDPRE, MEDOS — and **all six share one format: a two-tone wordmark with no separate icon.** The rename to **Premed OS** makes it near-automatic; `OS` is the second tone.
 
@@ -139,7 +145,7 @@ The tile is a flex column and **the title flexes**, so `See how` sits on the til
 - **Do not lift the nav out of the hero.**
 - **Do not remove the bloom from the nav CTA.**
 - **Do not reveal-gate the footer.**
-- **Do not do the `Premed HQ` → `Premed OS` rename in this chunk** — 297 occurrences across 125 files. The wordmark reads from one exported constant; the rename lands separately.
+- **The rename is DONE** (Aug 2026, own commit). **Do not rename `premed_hq_*` localStorage keys, the vite `base`, or `googleDrive.ts`'s `BACKUP_FILENAME`** — all three were preserved deliberately and changing them is silent data loss.
 - **No new dependencies.** Every effect here is CSS.
 
 ---

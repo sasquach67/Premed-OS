@@ -1280,7 +1280,7 @@ function statusTone(status: ExperienceEntry['status']) {
 
 function coverageForCategory(category: ExperienceCategory, rows: ExperienceEntry[]): { title: string; detail: string; tone: 'neutral' | 'warn' | 'good' } {
   const text = rows.map(textFor).join(' ').toLowerCase()
-  if (!rows.length) return { title: 'No signal yet', detail: 'Start with one real entry so Premed HQ can detect gaps.', tone: 'neutral' }
+  if (!rows.length) return { title: 'No signal yet', detail: 'Start with one real entry so Premed OS can detect gaps.', tone: 'neutral' }
 
   if (category === 'clinical') {
     const primaryCare = /primary care|family medicine|internal medicine|pediatrics/.test(text)

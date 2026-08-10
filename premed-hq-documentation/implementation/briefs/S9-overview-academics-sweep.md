@@ -5,7 +5,7 @@
 **Scope:** the 14 `Build? = YES` rows in `implementation/briefs/BUILD-MANIFEST.md`
 (Overview + Academics & GPA), **Variant A only**, read from
 `specifications/mockups/`. Code audited is `src/` at the repo root;
-`premed-hq/` was not opened.
+`premedos/` was not opened.
 
 **Read order followed:** `CLAUDE.md` → `AGENT-IMPLEMENTATION-GUIDE.md` →
 `04-visual-craft-standards.md` §0/§0a/§0b/§0c → `BUILD-MANIFEST.md` →
@@ -24,7 +24,7 @@ because **nothing under `src/` is dirty** — the audit reads only committed cod
 | `CLAUDE.md` | modified — adds the SOURCE OF TRUTH block + research convention |
 | `.github/workflows/deploy.yml` | modified — injects `VITE_SUPABASE_*` from repo Secrets at build |
 | `premed-hq-documentation/` | untracked (the entire spec folder) |
-| `mockup-lab/`, `Atlas/`, `Design-System/pillars/`, `premed-hq/.claude/`, `ziXi8K6N`, `spec/unc_schedule_options_no_8am.png`, `premed-hq-mockup-variant-lab-*.zip` | untracked |
+| `mockup-lab/`, `Atlas/`, `Design-System/pillars/`, `premedos/.claude/`, `ziXi8K6N`, `spec/unc_schedule_options_no_8am.png`, `premedos-mockup-variant-lab-*.zip` | untracked |
 | `.DS_Store`, `spec/.DS_Store` | modified |
 
 The deploy.yml change is the one worth a second look — it is a real behaviour

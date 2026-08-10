@@ -1,6 +1,6 @@
-# Premed HQ Product Framework
+# Premed OS Product Framework
 
-This folder is the living product-specification system for Premed HQ. It is the source of truth that coding agents (Claude Code / Codex) read before implementing.
+This folder is the living product-specification system for Premed OS. It is the source of truth that coding agents (Claude Code / Codex) read before implementing.
 
 ## Folder map
 

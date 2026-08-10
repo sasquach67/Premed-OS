@@ -1,6 +1,6 @@
-# CODEX TASK — Design-system standardization sweep (Premed HQ)
+# CODEX TASK — Design-system standardization sweep (Premed OS)
 
-**Reference:** open `Design-System/premed-hq-style-guide.html` in a browser first — it is the canonical system. Direction, not pixel-law. App root: repo root (`src/`). Run with `export PATH="$HOME/.local/node/bin:$PATH"`, dev server on :5180.
+**Reference:** open `Design-System/premedos-style-guide.html` in a browser first — it is the canonical system. Direction, not pixel-law. App root: repo root (`src/`). Run with `export PATH="$HOME/.local/node/bin:$PATH"`, dev server on :5180.
 
 This is a **mechanical consistency sweep** — no redesigns, no layout changes, no new features. Audited drift (2026-07-12): 6 radius scales in use, 19 arbitrary `shadow-[…]`, 63 ad-hoc pills vs Badge in only 3 files, ~15 hex literals in TSX, cold Tailwind grays in the error boundary.
 

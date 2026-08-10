@@ -16,6 +16,6 @@ This project uses a simplified semantic-versioning scheme:
 ## [v0.1.0] — 2026-06-24
 
 ### Baseline
-- Preserved the uploaded Premed HQ dashboard before new Codex modifications.
+- Preserved the uploaded Premed OS dashboard before new Codex modifications.
 - Added project-level bug tracking and version-management documentation.
 - Added the Overview redesign implementation brief without modifying application behavior.
