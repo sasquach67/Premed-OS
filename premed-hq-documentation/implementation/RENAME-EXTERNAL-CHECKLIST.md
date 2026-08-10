@@ -88,6 +88,26 @@
 
 ---
 
+---
+
+## 0 · The LOCAL folder rename — `premed-hq-review` → `premed-OS`
+
+**Andy is renaming the folder on his machine.** Worth stating plainly: **this is independent of everything above.**
+
+The folder name is not in git, not in the build, not in any URL. GitHub, Supabase, Google and the deployed site do not know it exists. **It changes nothing about the decisions below.**
+
+**Checked: exactly one tracked file hardcodes the absolute path** — `CLAUDE_CODE_HANDOFF.md`, which `CLAUDE.md` already lists as stale and says to ignore. Everything else is `Atlas/.next/` build cache, which is gitignored and regenerates.
+
+**Three things that do break, all trivial:**
+
+1. **Cowork's mounted folder** — re-select it after renaming.
+2. **`Atlas/.next/`** — delete it; Next rebuilds with the new path.
+3. Terminal aliases, editor workspaces, anything pointing at the old path.
+
+> ⚠️ **Minor: `premed-OS` mixes case.** macOS is case-insensitive-but-preserving so it works fine locally, but git on a case-sensitive filesystem (CI, a Linux collaborator) treats `premed-OS` and `premed-os` as different. **`premed-os` all-lowercase is the safer habit.** Low stakes here — it's your machine and the folder isn't tracked.
+
+---
+
 ## The honest summary
 
 **Only three items can actually break something, and all three are the same failure:** a URL allowlist that no longer matches the deployed URL.
@@ -95,3 +115,33 @@
 **If you never rename the GitHub repo, none of that risk exists** — the Pages URL stays put, Supabase and Google keep working, and the rename is purely cosmetic. `Premed-HQ` in a URL path nobody reads is a low price for zero breakage.
 
 > **The three genuinely worth doing regardless of the repo:** the **Supabase email templates**, the **Google consent-screen app name**, and the **favicon** (which is a `05` §6.1 defect, not a rename issue). **All three are things a user reads, and none of them requires touching a URL.**
+
+---
+
+## ⭐ The recommendation
+
+### Do now — zero risk, all user-visible
+
+1. **Supabase email templates.** The magic link is the only mail HQ ever sends. *"Premed HQ"* in the inbox against *"Premed OS"* on the site reads like a phish.
+2. **Google OAuth consent-screen app name.** The string in *"Sign in to continue to ___"* — the one moment someone is being asked to trust you. ⚠️ Check whether it re-triggers verification first.
+3. **Favicon + `<title>`.** Already briefed in `P2` §4b. The favicon is a `05` §6.1 defect regardless of the rename.
+
+### The GitHub repo — ⚠️ now or never, and this is the real point
+
+**The cost of renaming the repo only goes up. It never comes down.**
+
+Today: ~5 beta testers, no custom domain, no inbound links. A broken bookmark costs **nothing**. In a year with real users it costs real breakage, and you will be weighing it against a live audience.
+
+> **So: if you are ever going to rename it, today is the cheapest it will ever be.** That is the entire argument — there is no *later* version of this decision that is easier.
+
+### ⭐ Or skip it entirely — buy the domain instead
+
+**A custom domain makes the repo name permanently irrelevant.** Pages serves from the domain root, `base` becomes `/`, and the `/Premed-HQ/` path disappears from every URL a user ever sees.
+
+**That is strictly better than renaming the repo**, because it also removes the base-path fragility that caused this whole chain in the first place — and it is the thing you need anyway before publishing.
+
+⚠️ **`05` §10's trademark/domain check is still open and already blocks publishing.** It has to happen regardless. **Doing it first means the repo rename never needs to happen at all.**
+
+### Skip
+
+`package.json` name · the `premed-hq-documentation/` folder · **the 8 localStorage keys, permanently** (`general.md` §Rename).
