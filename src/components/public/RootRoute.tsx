@@ -43,6 +43,17 @@ function useSignedIn(): boolean | undefined {
   return signedIn
 }
 
+/** `/landing` — the landing page, unconditionally.
+ *
+ *  `/` is deliberately a one-way trip: once a browser has used HQ it shows
+ *  the dashboard forever, which is right for a visitor and makes the front
+ *  door impossible to look at again. This route is the way back in. It is
+ *  not a dev backdoor — it is the URL any "what is this?" link should point
+ *  at, and Settings links to it. */
+export function LandingRoute() {
+  return <Landing />
+}
+
 export function RootRoute() {
   // `hasEnteredApp` already covers "this browser has used HQ before", so
   // an existing installation never reaches the landing page.

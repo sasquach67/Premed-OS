@@ -32,3 +32,22 @@ dist-ssr
 premed-hq/node_modules/
 premed-hq/dist/
 premed-hq/mockups/
+
+# Atlas is its own git repository. Committing it produced a broken gitlink
+# (mode 160000 with no .gitmodules), which clones as an empty folder.
+# If it should travel with this repo, add it deliberately:
+#   git submodule add <url> Atlas
+Atlas/
+
+# Archives and scratch exports — the mockups they contain are already
+# tracked as real files in premed-hq-documentation/ and mockup-lab/.
+*.zip
+ziXi8K6N
+
+# Base64 intermediates from building the mockup portraits. The images are
+# inlined in the HTML; these are the leftovers.
+*.b64
+
+# Local editor/session config
+.claude/
+premed-hq/.claude/

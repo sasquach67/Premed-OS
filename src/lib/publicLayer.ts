@@ -95,6 +95,31 @@ export function hasSeenMerge(userId: string): boolean {
   return (read().mergeDecidedFor ?? []).includes(userId)
 }
 
+/* ── Re-running the flow ─────────────────────────────────────────────────
+   The front door is a one-way trip by design: once you have used HQ, `/`
+   is your dashboard forever. That is correct for a visitor and useless for
+   anyone testing the thing — the landing page, the auth screens and the
+   merge screen become unreachable in the browser you actually use.
+
+   `resetPublicMeta` puts this browser back to first-visit state. It clears
+   ONLY the two convenience flags in this file. It never touches the store,
+   the session, or anything a user typed. Worst case it costs one click.  */
+export function resetPublicMeta() {
+  try {
+    localStorage.removeItem(KEY)
+  } catch {
+    /* private mode — nothing to clear */
+  }
+  for (const listener of listeners) listener()
+}
+
+/** True when this browser has data from before the public layer existed.
+ *  Reported honestly by the reset control, because `resetPublicMeta` alone
+ *  cannot send such a browser back to the landing page — `/landing` can. */
+export function hasPreExistingData(): boolean {
+  return HAD_EXISTING_DATA
+}
+
 export function markMergeSeen(userId: string) {
   const meta = read()
   const seen = meta.mergeDecidedFor ?? []

@@ -1,7 +1,7 @@
 import { Suspense, lazy } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
-import { RootRoute } from '@/components/public/RootRoute'
+import { RootRoute, LandingRoute } from '@/components/public/RootRoute'
 import { MergeGate } from '@/components/public/MergeGate'
 
 /* Route-level code splitting: each page loads on demand, so the initial
@@ -56,6 +56,10 @@ function App() {
           <Route path="academics/review/:courseId" element={<AcademicRecallSession />} />
 
           {/* Public layer — outside the shell, own nav and footer. */}
+          {/* `/landing` always renders the landing page, for anyone who
+              wants to re-read it and for testing the front door without
+              clearing storage. `/` stays the smart route. */}
+          <Route path="landing" element={<LandingRoute />} />
           <Route path="auth" element={<AuthPage />} />
           <Route path="auth/merge" element={<MergePage />} />
           <Route path="about" element={<AboutPage />} />

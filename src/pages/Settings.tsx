@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Archive as ArchiveIcon, Cloud, CloudOff, Download, Upload, RotateCcw, Check, AlertCircle,
   Palette, ExternalLink, CheckCircle2, Trash2, CalendarClock, RefreshCw, Unplug, Wifi, ShieldCheck, BellOff,
@@ -10,6 +10,7 @@ import { useCloudSync } from '@/store/useCloudSync'
 import { useCalendarSync } from '@/hooks/useCalendarSync'
 import { ROUTE_MAP } from '@/app/routes'
 import { exportJson, readJsonFile, looksLikeAppData } from '@/lib/dataIo'
+import { resetPublicMeta, hasPreExistingData } from '@/lib/publicLayer'
 import { fmtDate, fmtTimeAgo } from '@/lib/date'
 import { VISUAL_THEMES } from '@/lib/themeAssets'
 import type { AppData } from '@/lib/types'
@@ -328,6 +329,7 @@ function CloudSyncSection({ onMessage }: { onMessage: (msg: string) => void }) {
               <Button size="sm" variant="outline" onClick={() => void cloud.pushNow()} disabled={busy}><Upload className="size-4" /> Push now</Button>
               <Button size="sm" variant="ghost" onClick={() => void cloud.signOut()} className="ml-auto">Sign out</Button>
             </div>
+            <PublicLayerReset />
           </>
         ) : (
           <>
@@ -340,6 +342,7 @@ function CloudSyncSection({ onMessage }: { onMessage: (msg: string) => void }) {
               <Button onClick={() => void sendLink()} disabled={busy}><Cloud className="size-4" /> Send magic link</Button>
             </div>
             {cloud.error && <p className="inline-flex items-center gap-1 text-xs text-destructive"><AlertCircle className="size-3" /> {cloud.error}</p>}
+            <PublicLayerReset />
           </>
         )}
       </CardContent>
@@ -567,5 +570,58 @@ function MutedSuggestionsSection() {
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+
+/* ── Front door ──────────────────────────────────────────────────────────
+   `/` shows the landing page to a first-time visitor and the dashboard to
+   everyone else, and that decision is sticky: once this browser has used
+   HQ, the landing page, the sign-in screens and the local→account merge
+   become unreachable from the address bar.
+
+   That is correct for a visitor and unworkable for anyone checking that
+   the flow still works. This block is the way back:
+
+     - "View the landing page" opens `/landing`, which always renders it.
+     - "Reset the front door" clears the two convenience flags in
+       publicLayer.ts — nothing else. It does not sign anyone out, does not
+       touch the store, and cannot lose work. After it, `/` shows the
+       landing page again and the merge screen will be offered once more.
+
+   Deliberately in Settings rather than behind a dev flag: it is a real
+   control with an honest description, and a hidden one would rot.        */
+function PublicLayerReset() {
+  const navigate = useNavigate()
+  const [done, setDone] = useState(false)
+  return (
+    <div className="space-y-2 rounded-lg border border-dashed bg-muted/40 p-3">
+      <p className="text-xs font-semibold">Front door</p>
+      <p className="text-xs text-muted-foreground">
+        The landing page only greets first-time visitors. Reset it to see that flow again —
+        this clears two display flags and nothing else. Your data, your session, and your
+        settings are untouched.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="sm" variant="outline" onClick={() => navigate('/landing')}>
+          View the landing page
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            resetPublicMeta()
+            setDone(true)
+          }}
+        >
+          Reset the front door
+        </Button>
+        {done && (
+          <span className="text-xs text-success">
+            Reset{hasPreExistingData() ? ' — this browser has data from before the landing page existed, so “/” still opens your dashboard. Use the button above.' : ' — “/” will show the landing page again.'}
+          </span>
+        )}
+      </div>
+    </div>
   )
 }
