@@ -541,3 +541,18 @@ grep -rn "Premed HQ" src/        → must return nothing
 - ⚠️ **The logo blue is not `--pl-pri` (`#6FB3DE`).** Decide deliberately whether the UI accent moves — **two almost-identical blues is worse than either.**
 - ⚠️ **Navy `premed` is invisible on the dark public layer.** Use the `*-ondark` variants there.
 - ⚠️ **The tagline "organize. optimize. get ahead." is not approved copy.** It ships with the lockup; it does not belong on the landing page, which has a settled headline.
+
+### ⚠️ On making the accent "UNC blue" — read before doing it
+
+**Andy, Aug 2026: *"if you want to make the blue UNC blue instead you can do that also."***
+
+**Two facts, and the first one is the surprising one:**
+
+1. **`#4b9cd3` is already Carolina Blue's hex.** The app has been using it as `--cat-gpa` and `--sidebar-primary` since the beginning. **There is nothing to change.**
+2. **`05` §6.1 already ruled on this — and ruled on the WORDS, not the colour.** *"HQ's palette is its own. Do not describe it as 'Carolina blue' or any institutional colour — the `CLAUDE.md` parenthetical saying so has been removed, **because that framing is what creates an impression of affiliation**."*
+
+**So the existing position is deliberate and coherent:** use the hex, never claim the association.
+
+> **⚠️ What would actually change something is naming it.** A comment reading `/* UNC blue */`, a token called `--unc-blue`, or a line of copy calling it Carolina blue — **any of those converts a colour choice into a claim of affiliation**, on a product whose hero and footer both carry a disclaimer saying there is none. **The disclaimers and the branding would then be saying opposite things**, and the disclaimer is the one that has to hold up.
+
+**This is Andy's call, not a rule.** But it should be made knowing the colour is already there, the docs already decided how to talk about it, and **the only thing on the table is whether to start saying it out loud.**

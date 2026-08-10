@@ -7,7 +7,7 @@
 
 > **Cleared to build is NOT cleared to publish.** `05` §10's three open items — age floor, governing law, and the trademark/domain check — are unchanged by this chunk and still block pointing a public domain at Privacy, Terms, or About.
 
-> **Three files only:** `src/components/public/public-layer.css` · `src/components/public/PublicNav.tsx` · `src/pages/public/Landing.tsx`. Plus one new `Wordmark` component. **Nothing outside `src/components/public/` and `src/pages/public/`.**
+> **Scope:** `src/components/public/public-layer.css` · `PublicNav.tsx` · `PublicFooter.tsx` · `pages/public/Landing.tsx` · `pages/public/AuthPage.tsx` · **`index.html`** · plus one new `Wordmark` component. **Nothing else.**
 
 ---
 
@@ -95,6 +95,50 @@ Below 900px the pill still hides; the `auto` column collapses to zero and brand/
 > ⚠️ **Do not put the tagline "organize. optimize. get ahead." on the landing page.** It ships with the lockup but is not approved copy and the hero has a settled headline. Use `premedos-stack.png`, which excludes it.
 
 **The chooser strip is mockup-only and must not reach the build.**
+
+---
+
+## 4b. Plant the logo — in scope for THIS chunk
+
+Assets: `public/art/brand/`. Tokens and the file table: its `README.md`.
+
+**Andy: *"i'd plant this everywhere we can."*** Six places, all in or adjacent to the public layer:
+
+| Where | Asset | Note |
+|---|---|---|
+| **Nav brand** | **`premedos-mark.svg`** + live text | **SVG, not a raster.** Short bars use `currentColor` so the mark inherits; the tall bar keeps its blue. Text stays Baloo 2 — **do not swap in a PNG wordmark**, it will not track the nav's fluid type |
+| **Footer brand** | the same `<Wordmark>` | Already in the v2 mockup |
+| **Favicon** | `favicon-32.png` · `favicon-180.png` | ⚠️ **defect below** |
+| **`<title>`** | — | ⚠️ **defect below** |
+| **Auth card** | `<Wordmark>` | A sign-in screen with no mark is the one place a stranger checks they're in the right product |
+| **`og:image`** | `premedos-lockup.png` | Link preview. 1094×629 ≈ 1.91:1, no crop needed |
+
+### ⚠️ Two live defects in `index.html`, both fixed here
+
+```html
+<link rel="icon" type="image/png" href="/mascot.png" />
+<link rel="apple-touch-icon" href="/mascot.png" />
+<title>Premed OS — Andy's Command Center</title>
+```
+
+1. **The favicon is the ram.** `05` §6.1 forbids ram/Rameses imagery on the public layer because it reads as a university mascot — **and the favicon is the most public surface in the product.** It sits in the browser tab of every page, including Privacy and Terms, next to the disclaimer saying there's no affiliation. **Replace with `favicon-32.png`.**
+2. **The title is personal, not product.** *"Andy's Command Center"* was right when this was one person's tool; it is now the tab title a stranger sees. **Use `Premed OS — your whole pre-med application, in one place`**, matching `PublicShell`.
+
+Add `<link rel="apple-touch-icon" href="/art/brand/favicon-180.png">`; keep `theme-color`.
+
+### ⚠️ Brand-colour conflict — resolve deliberately, not by eye
+
+**Logo blue `#2E6CB8`. App accent `#4b9cd3`.** Close enough to look like a mistake, far enough apart to read as two blues.
+
+**Pick one and record it in `_visual-recipes.md` before the logo ships into the nav:**
+
+1. **Both stay** — a mark is a mark, an accent is an accent. Legitimate, but they'll sit 40px apart in the nav.
+2. **Move the UI accent to `#2E6CB8`** — one blue everywhere. **Touches every pillar accent and both themes; not P2-sized.**
+3. **Restate the logo's tall bar as `#4b9cd3`** — smallest diff, one blue, and the logo is new enough that nothing depends on its hex yet.
+
+⚠️ **Do not ship "almost the same blue."** That is the one outcome worse than either.
+
+> ⚠️ **Read `general.md` §Rename before calling `#4b9cd3` "UNC blue" or "Carolina blue"** anywhere — code, comment, or copy. `05` §6.1 is explicit that **the framing, not the hex, creates the impression of affiliation.**
 
 ---
 
@@ -204,7 +248,11 @@ Fix the interior spacing. Icon, title and `See how` were nearly flush. **The gap
 - [ ] `grep -rn "Premed HQ" src/` returns **nothing** in display strings
 - [ ] `grep -rn "premed_hq" src/` still returns **8 localStorage keys** — they must survive this chunk untouched
 - [ ] The nav mark renders from `premedos-mark.svg`, not a PNG
-- [ ] The wordmark is legible on the dark field — navy `premed` has not been shipped onto it
+- [ ] The wordmark is legible on the dark field — **navy `premed` has not been shipped onto it**
+- [ ] **`/mascot.png` no longer appears in `index.html`** — the ram is off the browser tab
+- [ ] `<title>` is the product title, not "Andy's Command Center"
+- [ ] `og:image` resolves at the deployed base path (not a root-relative `/` that 404s under `/Premed-HQ/`)
+- [ ] The blue conflict is **recorded in `_visual-recipes.md`**, not just decided in a commit
 
 ## 11. Commit
 
