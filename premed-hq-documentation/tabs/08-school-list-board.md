@@ -252,7 +252,7 @@ Three answers were given and **they could not all be true at once:**
 |---|---|---|---|
 | **SL-16** | **Per-school status** | ○ | Primary submitted · secondary received · secondary submitted · interview · decision. **⚠️ `U-7` applies — check whether "no response" is a state or a non-event, same ruling as `LT-14`** |
 | **SL-17** | **Secondary prompts and deadlines** | ○ | ⚠️ **Essays owns the writing.** This holds the deadline only |
-| **SL-18** | **Interview dates and logistics** | ○ | |
+| **SL-18** ⏸ | **Interview dates and logistics** | ○ | **⏸ DEFERRED Aug 2026 (Andy) — near-future feature, not v1.** ⚠️ **Check `SL-30` before building: post-interview state and interview logistics were proposed separately and should be designed as one thing when they return** |
 | **SL-19** | **Cost tracking** | ○ | AMCAS per-school fees plus secondaries add up fast and surprise people. **Links to `P-42` Fee Assistance** |
 | **SL-23** | **Secondary prompts** | ○ | **Staged.** P1 student pastes · P2 shared, reusing `01` §4.1-M. **Never compiled from forums** |
 | **SL-22** | **Map view** | ○ | **Optional third view.** Reuses `07` §2g Leaflet. Two pin states only. **Needs city coords** — see §1b |
@@ -326,7 +326,7 @@ Three answers were given and **they could not all be true at once:**
 | # | Feature | AI | Note |
 |---|---|---|---|
 | **SL-24** ⭐ | **Application service as a first-class field — AMCAS · AACOMAS · TMDSAS** | ○ | **STRONGEST ROW IN THE WAVE, and currently a silent bug.** The board says *"AMCAS per-school fees"* (`SL-19`) and *"submitted in August"* (`SL-20`) **as if there were one application.** **There are three, and TMDSAS is not a variant of AMCAS** — separate portal, **different essay set, earlier deadlines, and its own [Match](https://www.tmdsas.com/application-guide/after-submitting.html#match)** for Texas residents, which is a mechanism no other school has. **A Texas school on an AMCAS timeline is a missed cycle.** ⚠️ **The roster already carries `applicationService`, populated on all 211** — 152 AMCAS · 48 AACOMAS · 11 TMDSAS. **This is surfacing a field that exists, not adding data.** **⚠️ AND THE CHECK FOUND A DEFECT — see below** |
-| **SL-25** ⭐ | **Situational-judgement requirement — AAMC PREview / CASPer** | ○ | **The tripwire nobody sees coming.** **[70+ schools](https://students-residents.aamc.org/aamc-preview/participating-schools) accept PREview for the 2026 cycle**, in three tiers — **require · recommend · accept** — and a *requiring* school **may not mark your application complete until the score arrives.** **[TMDSAS requires CASPer](https://www.tmdsas.com/application-guide/after-submitting.html#casper) separately.** ⚠️ **`admissionsTests: { PREview, CASPer }` ALREADY EXISTS on all 211 entries — and is `null` on all 211.** The schema author meant to ship it and nothing was ever populated. **That is a live conflict with §1**: participation changes annually, which is the maintenance trap. **Either populate with per-field source + check date, or delete the keys and make it student-entered. Null on 211 is the one option that is definitely wrong.** ⚠️ **`require / recommend / accept` — three states, so a boolean is the wrong shape** |
+| **SL-25** ⏸ | **Situational-judgement requirement — AAMC PREview / CASPer** | ○ | **⏸ DEFERRED Aug 2026 (Andy): *"casper and interview are tabs that i'd put in the near future as features, but not now."*** **Near-future, not v1.** ⚠️ **The deferral does NOT settle the data question** — the null keys are still wrong today, and `admissionsTests` should be deleted from the schema rather than shipped empty until this returns. **Everything below stands for when it does.** | **The tripwire nobody sees coming.** **[70+ schools](https://students-residents.aamc.org/aamc-preview/participating-schools) accept PREview for the 2026 cycle**, in three tiers — **require · recommend · accept** — and a *requiring* school **may not mark your application complete until the score arrives.** **[TMDSAS requires CASPer](https://www.tmdsas.com/application-guide/after-submitting.html#casper) separately.** ⚠️ **`admissionsTests: { PREview, CASPer }` ALREADY EXISTS on all 211 entries — and is `null` on all 211.** The schema author meant to ship it and nothing was ever populated. **That is a live conflict with §1**: participation changes annually, which is the maintenance trap. **Either populate with per-field source + check date, or delete the keys and make it student-entered. Null on 211 is the one option that is definitely wrong.** ⚠️ **`require / recommend / accept` — three states, so a boolean is the wrong shape** |
 | **SL-26** ⭐ | **Prereq coverage, read from Academics** | ○ | **HQ already holds the transcript.** The student types a school's prereqs once (`SL-17` phase 1); HQ matches against courses taken. ⚠️ **`U-13` is the whole design: *"BIOC 430 satisfies biochemistry · no stats course on your record"* is a FACT about the record. *"You are not competitive for this school"* is a judgement.** **`one record, two doors` again — Academics owns the course, this is a filtered read.** **⚠️ Depends on the course→requirement catalog, which `briefs/README.md` lists as not yet written** |
 | **SL-27** | **Letters routing per school** | ○ | How many each accepts, which of your writers go where. ⚠️ **`LT-6` ceded per-school letter requirements to MSAR** — but that cede was about **shipping** them. **The student typing them for their own list is §1's ruling exactly**, so this is consistent rather than a reversal. **Reads Letters' `Person` records; stores no second copy** |
 | **SL-28** | **Days since the secondary arrived** | ○ | **`SL-16`'s ruling already permits this shape** — *"submitted 94 days ago"* is a fact, *"ghosted"* is a verdict. **The two-week secondary turnaround is real applicant practice, not an HQ opinion** — needs a primary source before any number is stated, or it states no number at all |
@@ -383,6 +383,20 @@ Three answers were given and **they could not all be true at once:**
 **What hides until the cycle is in range** is the **cycle machinery**: per-school status, secondaries, interview dates, deadlines, cost tracking.
 
 **Why the difference from `LT-29`, stated because the two will be compared:** Letters had nothing useful to show early *except* people, so the letter layer went absent entirely. **School List has a genuinely useful early mode**, so the tab stays and only the cycle layer is gated. **Same principle — do not show someone a pipeline three years before they are in it — different application.**
+
+## 6b. ⏸ DEFERRED — near-future, not v1 (Andy, Aug 2026)
+
+> *"casper and interview are tabs that i'd put in the near future as features, but not now."*
+
+| Row | What it was | Why deferring is right |
+|---|---|---|
+| **`SL-25`** | PREview / CASPer requirement per school | **Both are post-primary concerns.** A first-year using HQ is years from either |
+| **`SL-18`** | Interview dates and logistics | **Same phase as `SL-21`'s gated cycle layer** — and interviews sit even later than that |
+| **`SL-30`** | Post-interview: update letter, waitlist, decision | **Deferred with `SL-18`. Design them together when they return** — they are one surface split across two rows |
+
+**⚠️ The deferral does not make the data correct.** `admissionsTests: { PREview, CASPer }` still sits on all 240 rows, null on all 240. **Deferring the FEATURE is a reason to remove the keys, not to leave them.** A null field for a feature that does not exist is how the next audit loses an hour.
+
+**These are deferred, not cut.** The research is done and cited; nothing needs re-deriving when they come back.
 
 ## 7. Still open
 

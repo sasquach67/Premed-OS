@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Premed OS — landing, restructure mockup v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   MOCKUP — public landing, restructure pass.
+   This file is DIRECTION, NOT PIXEL LAW. The point of it is the
+   STRUCTURE and the SINGLE TOKEN BLOCK below, not exact values.
+
+   The whole reason this mockup exists: public-layer.css set
+   `.pl-hl-hero .l2` font-size FIVE separate times and `.pl-hero-in` SIX.
+   Every property here is declared exactly ONCE, in the token block or in
+   one rule. That constraint is the deliverable.
+   ══════════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  /* ── Colour (unchanged from the live layer — do not restyle) ───────── */
+  --fg:      #ece3d4;
+  --mut:     rgba(255,255,255,.72);
+  --dim:     rgba(255,255,255,.50);
+  --fine:    rgba(255,255,255,.42);
+  --bd:      rgba(255,255,255,.14);
+  --card:    rgba(255,255,255,.055);
+  --pri:     #6fb3de;
+  --ink:     #17222c;
+
+  /* pillar tints, used ONLY as icon washes */
+  --cat-gpa:      #6fb3de;
+  --cat-mcat:     #b79ae0;
+  --cat-clinical: #6fc0a8;
+  --cat-letters:  #e08e7a;
+  --cat-research: #7fa8d8;
+  --cat-vol:      #e7b06a;
+
+  /* ── ONE type scale. Every size on the page comes from here. ─────────
+     Hero sizes raised (Andy: "the hero itself could fill up more of the
+     screen in terms of font"). The payoff line now tracks 7.4vw, so on a
+     1920px display it lands ~142px and the two words genuinely span the
+     rail instead of floating in it.
+     ⚠️ The ceilings are guardrails, not decoration: past ~150px the
+     descender in "spreadsheet" starts fighting the CTA row on a 900px
+     -tall laptop. Raise the vw factor before raising the ceiling.      */
+  --t-setup:   clamp(21px, 2.9vw, 58px);    /* headline line 1 */
+  --t-payoff:  clamp(42px, 7.4vw, 150px);   /* headline line 2 */
+  --t-sec-set: clamp(16px, 1.6vw, 30px);
+  --t-sec-pay: clamp(28px, 3.7vw, 64px);
+  --t-lede:    clamp(16px, 1.4vw, 27px);
+  --t-body:    clamp(14.5px, .95vw, 18px);
+  --t-ui:      clamp(13.5px, .92vw, 17px);  /* buttons + nav links */
+  --t-fine:    clamp(12px, .78vw, 15px);
+  --t-eyebrow: clamp(10px, .7vw, 12.5px);
+
+  /* ── ONE spacing scale ─────────────────────────────────────────────── */
+  --s-1: clamp(6px, .5vw, 10px);
+  --s-2: clamp(10px, .9vw, 16px);
+  --s-3: clamp(16px, 1.4vw, 26px);
+  --s-4: clamp(24px, 2.2vw, 40px);
+  --s-5: clamp(40px, 4vw, 76px);
+  --s-6: clamp(56px, 7vw, 128px);
+
+  --rail: min(1660px, 93vw);
+  /* the hero gets its own wider measure so the headline is not clipped by
+     the content rail — the rail is for the tile grid, not for display type */
+  --rail-hero: min(1820px, 95vw);
+  --r-pill: 999px;
+  --r-card: clamp(14px, 1.1vw, 20px);
+  --ease: cubic-bezier(.22, 1, .36, 1);
+}
+
+html, body { margin: 0; }
+body {
+  font-family: 'Nunito', system-ui, sans-serif;
+  color: var(--fg);
+  background:
+    radial-gradient(1200px 700px at 50% -8%, rgba(111,179,222,.30), transparent 70%),
+    radial-gradient(900px 600px at 4% 38%,  rgba(111,192,168,.12), transparent 70%),
+    radial-gradient(900px 600px at 98% 68%, rgba(224,164,88,.10), transparent 70%),
+    linear-gradient(168deg, #233448 0%, #26303c 38%, #2a2b2c 72%, #242019 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* ══ 1 · THE BAR — three floating islands, KEPT ════════════════════════
+   The islands are the design and they stay. The bug was PLACEMENT.
+
+   WAS: `display:flex; justify-content:space-between` across three
+   children. That centres the pill BETWEEN its two neighbours, not on the
+   page — and since "Premed HQ" and "Start tracking ↗" are different
+   widths, the pill is pushed off-centre by exactly half their difference.
+   It reads as "slightly wrong" at every viewport and gets worse as the
+   rail widens, which is why it looked broken at full screen.
+
+   NOW: a 3-column grid, `1fr auto 1fr`. The side columns are forced
+   equal, so the pill sits on the true optical centre no matter how long
+   the brand or the CTA gets. Nothing else about the nav changes.       */
+.rail { width: var(--rail); margin: 0 auto; }
+
+.nav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+/* ── brand: a TWO-TONE WORDMARK, no separate icon ───────────────────────
+   All six references Andy sent share one format: a two-tone wordmark
+   where the second half is a different weight or colour, and NO icon
+   glyph at all. MedAhead, ScalpelNote, UltimateOS and MEDOS are all the
+   same move. The rename to "Premed OS" makes this almost automatic —
+   "OS" is a natural second tone.
+
+   ⚠️ HONEST CONSTRAINT: the references are geometric sans (Poppins /
+   Gilroy family). Baloo 2 is ROUNDED, and CLAUDE.md says fonts never
+   change. So the two-tone FORMAT transfers cleanly; the letterforms will
+   read warmer and rounder than MEDOS or MEDPRE. Klinar is the closest of
+   the six to what Baloo 2 can actually do.                             */
+.brand { display: inline-flex; align-items: baseline; text-decoration: none; color: #fff; justify-self: start; }
+.navcta { justify-self: end; }
+.wm {
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: clamp(19px, 1.45vw, 28px);
+  letter-spacing: -.025em; line-height: 1; white-space: nowrap;
+}
+/* A · weight + tone. The quietest, and the one that survives at 16px. */
+.wm-a .a { font-weight: 500; color: rgba(255,255,255,.62); }
+.wm-a .b { font-weight: 800; color: var(--fg); }
+/* B · outlined second half — UltimateOS. Strongest at large sizes,
+   fragile small: the stroke thins out and it turns to mush under 18px. */
+.wm-b .a { font-weight: 800; color: var(--fg); }
+.wm-b .b {
+  font-weight: 800; color: transparent;
+  -webkit-text-stroke: 1.4px rgba(236,227,212,.92);
+}
+/* C · accent second half. The only one that uses the product's colour,
+   so it ties the wordmark to the CTA and the pillar accents. */
+.wm-c .a { font-weight: 700; color: var(--fg); }
+.wm-c .b { font-weight: 800; color: var(--pri); }
+/* D · monotone, letterspaced caps — MEDPRE / MEDOS. Reads as the most
+   "product", loses the warmth Baloo was chosen for. */
+.wm-d { text-transform: uppercase; letter-spacing: .06em; font-size: clamp(16px, 1.25vw, 24px); }
+.wm-d .a { font-weight: 800; color: var(--fg); }
+.wm-d .b { font-weight: 800; color: rgba(255,255,255,.55); }
+
+/* the chooser strip — MOCKUP ONLY, delete on implementation */
+.wmpick { width: var(--rail); margin: var(--s-4) auto 0; }
+.wmgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+.wmcell {
+  padding: var(--s-3) var(--s-2); border-radius: var(--r-card); text-align: center;
+  background: rgba(255,255,255,.04); border: 1px solid var(--bd);
+}
+.wmcell.pick { border-color: rgba(111,179,222,.6); background: rgba(111,179,222,.10); }
+.wmcell .lab { display: block; margin-top: var(--s-2); font-size: var(--t-eyebrow); letter-spacing: .12em; text-transform: uppercase; font-weight: 800; color: var(--fine); }
+.wmcell .why { display: block; margin-top: 6px; font-size: var(--t-fine); color: var(--dim); line-height: 1.5; font-weight: 600; }
+@media (max-width: 900px) { .wmgrid { grid-template-columns: repeat(2, 1fr); } }
+
+/* the pill is a glass island holding ONLY the five links — nothing else
+   goes inside it, ever. Brand and CTA are their own islands. */
+.navlinks {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: var(--s-1); border-radius: var(--r-pill);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+}
+.navlk {
+  padding: .62em 1.05em; border-radius: var(--r-pill);
+  font-size: var(--t-ui); font-weight: 700; color: var(--mut);
+  text-decoration: none; transition: background .18s, color .18s;
+}
+.navlk:hover, .navlk[aria-current='page'] { background: rgba(255,255,255,.11); color: #fff; }
+
+/* ── 2 · CTA HIERARCHY ────────────────────────────────────────────────
+   WAS: two "Start tracking" buttons on the first screen, both solid
+   white, at visibly different sizes (nav 14.5px fixed vs hero fluid up
+   to 19px). Two identical primaries = no primary.
+   NOW: the nav one is GHOST, the hero one is SOLID. One white element in
+   the viewport. Same copy, same action, no wording change — this is a
+   weight fix, not a copy decision.                                     */
+.btn {
+  display: inline-flex; align-items: center; gap: .55em;
+  border-radius: var(--r-pill); cursor: pointer;
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 700;
+  font-size: var(--t-ui); padding: .82em 1.55em;
+  border: 1px solid transparent; text-decoration: none;
+  transition: background .2s, border-color .2s, transform .2s;
+}
+.btn svg { width: 1.05em; height: 1.05em; }
+/* HERO PRIMARY — solid white. Against this dark field white is the
+   heaviest value available, which is what keeps the hero CTA ahead of the
+   coloured one in the nav. */
+.btn-solid { background: #fff; color: var(--ink); border-color: #fff; }
+.btn-solid:hover { background: rgba(255,255,255,.9); }
+
+/* NAV CTA — coloured glass (Andy: "colour the start tracking on the top
+   right"). Saturated tint, a LUMINOUS top edge, and a soft outer bloom in
+   the same hue.
+
+   The bloom is the whole trick: every other glass surface on the page
+   carries the inset highlight and stops there, so this is the only
+   element that appears to EMIT light rather than transmit it. That is
+   what lets a translucent pill hold the corner without going opaque.
+
+   ⚠️ It stays BELOW the hero's solid white in the hierarchy — colour
+   attracts, but white outweighs it on this background. Two competing
+   primaries was the original problem; this is a second-place accent, not
+   a tie. */
+.btn-tint {
+  background: linear-gradient(180deg, rgba(120,190,235,.44), rgba(72,140,190,.34));
+  color: #fff;
+  border-color: rgba(150,210,245,.55);
+  backdrop-filter: blur(14px) saturate(1.5);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.45),
+    0 6px 22px rgba(90,165,220,.32);
+  text-shadow: 0 1px 6px rgba(10,30,50,.35);
+}
+.btn-tint:hover {
+  background: linear-gradient(180deg, rgba(140,205,245,.54), rgba(84,155,205,.42));
+  border-color: rgba(175,225,255,.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.55),
+    0 8px 28px rgba(90,165,220,.44);
+}
+.btn-ghost { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.22); }
+.btn-ghost:hover { background: rgba(255,255,255,.15); border-color: rgba(111,179,222,.5); }
+.btn-lg { font-size: calc(var(--t-ui) * 1.12); padding: .95em 1.9em; }
+/* the arrow slides — no SVG gooey filter. url(#hq-gooey) created a
+   containing block, clipped at some widths, and was the fragile part of
+   "the start tracking symbols". A transform does the same job. */
+.btn .arw { transition: transform .28s var(--ease); }
+.btn:hover .arw { transform: translateX(3px); }
+
+/* ══ 3 · HERO ══════════════════════════════════════════════════════════
+   Full viewport so Features stays entirely below the fold — that part
+   Andy likes and it is kept exactly.
+   WAS: six centred blocks stacked (badge, headline, lede, buttons,
+   no-account line, disclaimer) — a pile, not a hierarchy.
+   NOW: five. The no-account promise and the required independence
+   disclaimer share one fine-print line. Both still above the fold; 05
+   §6.1 and the no-account line are satisfied.                          */
+/* ⚠️ THE NAV LIVES INSIDE THE HERO. This is not cosmetic nesting.
+   `.hero` is 100svh. If the nav sits ABOVE it as a sibling, the first
+   screen becomes nav-height + 100svh, so the bottom of the hero — and
+   with it the scroll cue — falls below the fold by exactly the height of
+   the nav. That is the bug: the cue was never meant to be off-screen.
+   The real PublicNav is rendered inside `.pl-hero` for this reason. Keep
+   it there. */
+.hero {
+  min-height: 100svh;
+  display: flex; flex-direction: column;
+  padding: 0 0 var(--s-3);
+}
+.heronav { padding: clamp(14px, 1.4vw, 26px) 0 0; flex: none; }
+/* Vertical rhythm opened up (Andy: "vertically space the text out
+   slightly… just column spacing increase a little to fill the page up on
+   the vertical axis"). The hero is 100svh, so any space the stack does
+   not use becomes dead air above and below it — spreading the blocks
+   fills the screen instead of centring a tight clump in it. */
+.hero-in {
+  flex: 1; display: flex; flex-direction: column; justify-content: center;
+  align-items: center; text-align: center;
+  width: var(--rail-hero); margin: 0 auto; gap: var(--s-4);
+}
+
+.chip {
+  display: inline-flex; align-items: center; gap: .7em;
+  font-size: var(--t-fine); font-weight: 700; color: rgba(255,255,255,.85);
+  padding: .42em .5em .42em 1.1em; border-radius: var(--r-pill);
+  background: rgba(255,255,255,.07); border: 1px solid var(--bd);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+}
+.chip b {
+  font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800;
+  font-size: .82em; letter-spacing: .06em; text-transform: uppercase;
+  background: rgba(255,255,255,.92); color: var(--ink);
+  border-radius: var(--r-pill); padding: .22em .8em;
+}
+
+.hl { margin: 0; font-family: 'Baloo 2', system-ui, sans-serif; display: grid; gap: .06em; }
+.hl .l1 { font-weight: 600; font-size: var(--t-setup); color: rgba(255,255,255,.86); letter-spacing: -.01em; }
+.hl .l2 {
+  font-weight: 800; font-size: var(--t-payoff); line-height: .98; letter-spacing: -.035em;
+  background: linear-gradient(96deg, #ffffff 8%, #b9dcf3 46%, #e7c79a 92%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.lede { margin: 0; font-size: var(--t-lede); color: var(--mut); line-height: 1.55; max-width: 52ch; }
+.ctarow { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; justify-content: center; }
+
+/* one fine-print line, not two stacked blocks.
+   The extra top margin is deliberate: "No account needed" was sitting
+   almost against the buttons, so it read as a caption ON the CTA rather
+   than as a separate promise. It needs its own air. */
+.finerow {
+  display: flex; align-items: center; gap: .8em; flex-wrap: wrap; justify-content: center;
+  font-size: var(--t-fine); color: var(--dim); font-weight: 700;
+  margin: var(--s-2) 0 0;
+}
+.finerow .sep { color: var(--fine); }
+.finerow .ind { color: var(--fine); font-weight: 600; }
+
+/* the scroll cue — the hero owns the screen, so say there's more.
+   `flex: none` keeps it from being squeezed by the centred stack, and it
+   is the last child of the 100svh hero, so it lands just inside the fold. */
+.cue { display: flex; justify-content: center; flex: none; }
+.cue span {
+  font-size: var(--t-eyebrow); letter-spacing: .14em; text-transform: uppercase;
+  font-weight: 800; color: var(--fine); display: inline-flex; align-items: center; gap: .7em;
+}
+.cue svg { width: 14px; height: 14px; animation: bob 2.4s var(--ease) infinite; }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+
+/* ══ 4 · FEATURES ══════════════════════════════════════════════════════ */
+.feat { padding: var(--s-6) 0 var(--s-5); }
+.featin { width: var(--rail); margin: 0 auto; text-align: center; }
+.eyebrow {
+  display: inline-flex; font-size: var(--t-eyebrow); letter-spacing: .13em;
+  text-transform: uppercase; font-weight: 800; color: rgba(255,255,255,.8);
+  padding: .55em 1.3em; border-radius: var(--r-pill);
+  background: rgba(255,255,255,.07); border: 1px solid var(--bd);
+  margin-bottom: var(--s-2);
+}
+.hl-sec .l1 { font-size: var(--t-sec-set); }
+.hl-sec .l2 { font-size: var(--t-sec-pay); line-height: 1.02; }
+.feats { font-size: var(--t-body); color: var(--mut); max-width: 52ch; margin: var(--s-2) auto var(--s-4); line-height: 1.6; }
+
+.tiles { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(12px, 1.1vw, 20px); grid-template-columns: repeat(5, 1fr); }
+.tile {
+  position: relative; width: 100%; text-align: left; cursor: pointer;
+  padding: clamp(17px, 1.4vw, 26px); border-radius: var(--r-card);
+  background: var(--card); border: 1px solid var(--bd);
+  backdrop-filter: blur(14px) saturate(1.1); -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+  color: var(--fg); font-family: inherit;
+  transition: background .2s, border-color .2s, transform .2s var(--ease);
+}
+.tile:hover { background: rgba(255,255,255,.085); border-color: rgba(255,255,255,.24); transform: translateY(-2px); }
+.ficon {
+  width: clamp(38px, 2.8vw, 52px); height: clamp(38px, 2.8vw, 52px);
+  border-radius: clamp(11px, .85vw, 15px);
+  background: color-mix(in srgb, var(--c) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 34%, transparent);
+  display: grid; place-items: center; color: var(--c);
+}
+.ficon svg { width: 46%; height: 46%; }
+/* Tile interior rhythm (Andy: "column spacing is also too close here").
+   Three elements, and they were sitting almost flush. The title needs
+   room under the icon, and SEE HOW needs MORE room under the title than
+   the title has under the icon — it is a different kind of thing (an
+   affordance, not content), so equal gaps made it look like a third line
+   of the title. Uneven on purpose. */
+.ftl { font-size: clamp(14.5px, .95vw, 17.5px); font-weight: 800; line-height: 1.38; margin-top: var(--s-3); }
+.fthint {
+  display: block; margin-top: var(--s-2);
+  font-size: var(--t-eyebrow); font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--fine);
+}
+.tile { display: flex; flex-direction: column; }
+/* pushes SEE HOW to the bottom so every tile's affordance lines up across
+   the row regardless of whether its title wraps to two lines or three */
+.ftl { flex: 1; }
+.soonmark {
+  position: absolute; top: 12px; right: 12px; font-size: 9.5px; font-weight: 800;
+  letter-spacing: .08em; text-transform: uppercase; padding: .25em .7em;
+  border-radius: var(--r-pill); background: rgba(231,176,106,.18);
+  border: 1px solid rgba(231,176,106,.38); color: #e7b06a;
+}
+
+/* ══ 5 · THE BOTTOM ROW ════════════════════════════════════════════════
+   It was missing from v1 of this mockup and Andy caught it. The footer is
+   not decoration — it carries the LONG form of the independence
+   disclaimer and the AAMC line, both required by 05 §6.1 and §6.2. The
+   hero states independence in one line; the footer is the full version.
+
+   ⚠️ NEVER reveal-gated, never animated. It got stranded behind the
+   scroll observer once and a required legal line at opacity 0 is a
+   compliance problem, not a visual one. `opacity: 1 !important` on the
+   real component exists for exactly this reason — do not remove it.     */
+.foot {
+  width: var(--rail); margin: var(--s-6) auto 0;
+  padding: var(--s-4) 0 var(--s-5);
+  border-top: 1px solid var(--bd);
+  display: flex; flex-direction: column; gap: var(--s-3); align-items: center; text-align: center;
+  opacity: 1 !important; transform: none !important;
+}
+.footbrand { margin-bottom: calc(var(--s-1) * -1); }
+.footlinks { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-1); }
+.footlk {
+  padding: .5em 1em; border-radius: var(--r-pill);
+  font-size: var(--t-ui); font-weight: 700; color: var(--mut);
+  text-decoration: none; transition: background .18s, color .18s;
+}
+.footlk:hover { background: rgba(255,255,255,.09); color: #fff; }
+.footdisc {
+  margin: 0; max-width: 78ch; font-size: var(--t-fine); line-height: 1.75;
+  color: var(--fine); font-weight: 600;
+}
+
+.note {
+  width: var(--rail); margin: var(--s-5) auto 0; padding: var(--s-3);
+  border-radius: var(--r-card); border: 1px dashed rgba(255,255,255,.2);
+  background: rgba(255,255,255,.03); font-size: var(--t-fine); color: var(--dim); line-height: 1.75;
+}
+.note b { color: var(--fg); }
+.note code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .93em; color: #b9dcf3; }
+
+@media (max-width: 1180px) { .tiles { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 900px) {
+  .navlinks { display: none; }
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-height: 680px) { .hero { min-height: 0; padding-block: var(--s-4); } }
+@media (prefers-reduced-motion: reduce) { .cue svg { animation: none; } .btn, .tile { transition: none; } }
+</style>
+</head>
+<body>
+
+<section class="hero">
+
+<header class="heronav">
+  <div class="rail">
+    <div class="nav">
+      <a class="brand" href="#" aria-label="Premed OS home">
+        <span class="wm wm-c"><span class="a">Premed</span><span class="b">OS</span></span>
+      </a>
+
+      <nav class="navlinks" aria-label="Public pages">
+        <a class="navlk" href="#" aria-current="page">Features</a>
+        <a class="navlk" href="#">About</a>
+        <a class="navlk" href="#">Pricing</a>
+        <a class="navlk" href="#">Privacy</a>
+        <a class="navlk" href="#">Terms</a>
+      </nav>
+
+      <a class="btn btn-tint navcta" href="#">
+        Start tracking
+        <svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </a>
+    </div>
+  </div>
+</header>
+
+  <div class="hero-in">
+    <span class="chip"><b>Beta</b> Built for UNC pre-meds</span>
+
+    <h1 class="hl">
+      <span class="l1">Stop tracking your pre-med application</span>
+      <span class="l2">in a spreadsheet.</span>
+    </h1>
+
+    <p class="lede">Everything from your first semester to the day you submit.</p>
+
+    <div class="ctarow">
+      <a class="btn btn-solid btn-lg" href="#">
+        Start tracking
+        <svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <a class="btn btn-ghost btn-lg" href="#">Sign in</a>
+    </div>
+
+    <p class="finerow">
+      <span>No account needed. Your data stays on this device until you choose to sync it.</span>
+      <span class="sep" aria-hidden="true">·</span>
+      <span class="ind">An independent student project. Not affiliated with UNC-Chapel Hill or the AAMC.</span>
+    </p>
+  </div>
+
+  <div class="cue">
+    <span>Scroll
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+    </span>
+  </div>
+</section>
+
+<section class="feat">
+  <div class="featin">
+    <span class="eyebrow">Features</span>
+    <h2 class="hl hl-sec">
+      <span class="l1">Ten things it does that</span>
+      <span class="l2">a spreadsheet can't.</span>
+    </h2>
+    <p class="feats">Every part of the application, in one system that can read across all of it.</p>
+
+    <div class="wmpick">
+      <div class="wmgrid">
+        <div class="wmcell">
+          <span class="wm wm-a" style="font-size:26px"><span class="a">Premed</span><span class="b">OS</span></span>
+          <span class="lab">A · weight + tone</span>
+          <span class="why">Quietest. The only one that still reads at 16px in a footer or a favicon.</span>
+        </div>
+        <div class="wmcell">
+          <span class="wm wm-b" style="font-size:26px"><span class="a">Premed</span><span class="b">OS</span></span>
+          <span class="lab">B · outlined OS</span>
+          <span class="why">UltimateOS's move. Best at large sizes — the stroke turns to mush under ~18px.</span>
+        </div>
+        <div class="wmcell pick">
+          <span class="wm wm-c" style="font-size:26px"><span class="a">Premed</span><span class="b">OS</span></span>
+          <span class="lab">C · accent OS — shown live</span>
+          <span class="why">The only one using the product's own blue, so the wordmark, the CTA and the pillar accents are one system.</span>
+        </div>
+        <div class="wmcell">
+          <span class="wm wm-d" style="font-size:24px"><span class="a">Premed</span><span class="b">OS</span></span>
+          <span class="lab">D · caps, monotone</span>
+          <span class="why">MEDPRE / MEDOS. Most "product", least warm — it fights what Baloo 2 was chosen for.</span>
+        </div>
+      </div>
+    </div>
+
+    <ul class="tiles" style="margin-top: var(--s-4)">
+      <li><button class="tile"><span class="ficon" style="--c:var(--cat-gpa)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span><span class="ftl">Every part of the application, one place</span><span class="fthint">See how</span></button></li>
+      <li><button class="tile"><span class="ficon" style="--c:var(--cat-gpa)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M19 8v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7z"/><path d="M9 13h6M9 17h4"/></svg></span><span class="ftl">Upload a syllabus, get your semester</span><span class="fthint">See how</span></button></li>
+      <li><button class="tile"><span class="ficon" style="--c:var(--cat-gpa)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span><span class="ftl">Study sessions with spaced repetition</span><span class="fthint">See how</span></button></li>
+      <li><button class="tile"><span class="ficon" style="--c:var(--cat-vol)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span class="ftl">One weekly plan across classes and MCAT</span><span class="fthint">See how</span></button></li>
+      <li><button class="tile"><span class="ficon" style="--c:var(--cat-mcat)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg></span><span class="ftl">Flags what you've forgotten before the exam</span><span class="fthint">See how</span></button></li>
+      <li><button class="tile"><span class="ficon" style="--c:var(--cat-gpa)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg></span><span class="ftl">UNC graduation and major requirements</span><span class="fthint">See how</span></button></li>
+      <li><button class="tile"><span class="ficon" style="--c:var(--cat-letters)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 13 2 2 4-4"/></svg></span><span class="ftl">Everything logged AMCAS-ready</span><span class="fthint">See how</span></button></li>
+      <li><button class="tile"><span class="soonmark">Soon</span><span class="ficon" style="--c:var(--cat-vol)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg></span><span class="ftl">Advice from people ahead of you</span><span class="fthint">See how</span></button></li>
+      <li><button class="tile"><span class="ficon" style="--c:var(--cat-research)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 5 3-3M2 22l3-3"/><path d="M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4z"/><path d="M12 6 18 12l2.3-2.3a2.4 2.4 0 0 0 0-3.4l-2.6-2.6a2.4 2.4 0 0 0-3.4 0z"/></svg></span><span class="ftl">Google Calendar, Canvas, Drive, dictation</span><span class="fthint">See how</span></button></li>
+      <li><button class="tile"><span class="ficon" style="--c:var(--cat-clinical)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span class="ftl">Works signed out. Your data stays yours.</span><span class="fthint">See how</span></button></li>
+    </ul>
+
+    <footer class="foot">
+      <span class="wm wm-c footbrand" style="font-size:24px"><span class="a">Premed</span><span class="b">OS</span></span>
+      <nav class="footlinks" aria-label="Footer">
+        <a class="footlk" href="#">About</a>
+        <a class="footlk" href="#">Pricing</a>
+        <a class="footlk" href="#">Privacy</a>
+        <a class="footlk" href="#">Terms</a>
+        <a class="footlk" href="mailto:elephon08@gmail.com">Contact</a>
+      </nav>
+      <p class="footdisc">
+        Premed OS is an independent project. Not affiliated with, endorsed by, or sponsored by
+        the University of North Carolina at Chapel Hill, the AAMC, or any other institution.
+        MCAT is a program of the AAMC, which does not sponsor or endorse this product.
+      </p>
+    </footer>
+
+    <div class="note">
+      <b>What changed, and why.</b> This mockup is <b>direction, not pixel law</b> — the deliverable is the structure and the single token block.<br><br>
+      <b>1 · The three floating islands STAY.</b> The bug was placement, not the pattern. <code>justify-content: space-between</code> centres the pill <b>between its neighbours</b>, not on the page — and since "Premed HQ" and "Start tracking ↗" are different widths, the pill sits off-centre by half that difference, getting worse as the rail widens. Now a <code>1fr auto 1fr</code> grid, so the pill is on the true optical centre at every width. The pill holds <b>only</b> the five links.<br>
+      <b>2 · The brand is a two-tone wordmark, no icon.</b> All six references share that format, and <b>Premed OS</b> makes it automatic — "OS" is the second tone. Four options above; C is shown live. ⚠️ The references are geometric sans; Baloo 2 is rounded and never changes, so the format transfers but the letterforms stay warmer. <b>Klinar is the closest of the six to what Baloo 2 can do.</b><br>
+      <b>3 · The top-right CTA is coloured glass</b> — saturated tint, luminous top edge, and an outer bloom in the same hue. The bloom is the whole trick: every other glass surface here has the inset highlight and stops there, so this is the only element that appears to <i>emit</i> light rather than transmit it. ⚠️ <b>The hero CTA stays solid white and stays the primary</b> — colour attracts, but on a dark field white outweighs it. Two competing primaries was the original problem; this is a second-place accent, not a tie.<br>
+      <b>4 · The gooey filter is gone.</b> <code>filter: url(#hq-gooey)</code> made a containing block and clipped; a transform slides the arrow just as well.<br>
+      <b>5 · Hero is five blocks, not six</b>, and the type is much bigger — the payoff line tracks <code>7.4vw</code>, so it lands ~142px at 1920px and the words span the measure instead of floating in it. The hero gets a wider rail than the tile grid: display type and a 5-column grid want different measures.<br>
+      <b>6 · Vertical rhythm opened up.</b> "No account needed" was sitting almost against the buttons, so it read as a caption <i>on</i> the CTA instead of a separate promise. Because the hero is <code>100svh</code>, any space the stack doesn't use becomes dead air above and below it — spreading the blocks fills the screen rather than centring a tight clump in it.<br>
+      <b>7 · Tile interior spacing, and the gaps are uneven on purpose.</b> SEE HOW gets more room under the title than the title gets under the icon — it's an affordance, not content, and equal gaps made it read as a third line of the title. The title also flexes, so SEE HOW sits on the tile floor and every affordance in a row lines up whether its title wraps to two lines or three.<br>
+      <b>8 · The bottom row exists now.</b> It was missing and you caught it. The footer carries the <b>long form</b> of the independence and AAMC disclaimers — the hero has the one-line version, the footer has the full one (05 §6.1, §6.2). ⚠️ Never reveal-gated, never animated: it got stranded behind the scroll observer once, and a required legal line at opacity 0 is a compliance problem rather than a visual one.<br>
+      <b>9 · Every property declared once.</b> <code>.pl-hl-hero .l2</code> font-size was set <b>5 times</b> in the live CSS and <code>.pl-hero-in</code> <b>6 times</b>; the max-width:1100px and 900px breakpoints were dead, overridden by later non-media rules. That cascade is why your edits scrambled the type.<br><br>
+      <b>Not in this mockup:</b> the guided tour section, which sits between Features and the footer. It is unchanged by this pass — see the notes on screenshots.<br>
+      <b>Kept exactly:</b> full-viewport hero so Features stays below the fold · scroll reveal · the continuous blue field · Baloo 2 + Nunito · all settled copy · the Soon marker on Atlas.
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

@@ -16,7 +16,8 @@ Each brief is a **self-contained chunk**: hand Codex one brief, it reads only th
 | D6 | `D6-ai-and-coverage.md` | AI layer + coverage ledger (**wide read**) | D4, D5 |
 | D7 | `D7-remediation.md` | Audit remediation | D2–D6 |
 | D8 | `D8-class-types.md` | Class types — STEM · Writing · General | **D4** |
-| P1 | `P1-public-landing-auth.md` · prompt: `P1-BUILD-PROMPT.md` · **remaining work: `P1-FINISH.md`** | Public layer — landing, auth, merge, About, Privacy, Terms, Pricing | **SHIPPED `67155de`.** Front-door fix uncommitted; **guided-tour screenshots still outstanding**; publishing blocked on `05` §10 |
+| P1 | `P1-public-landing-auth.md` · prompt: `P1-BUILD-PROMPT.md` · **remaining work: `P1-FINISH.md`** | Public layer — landing, auth, merge, About, Privacy, Terms, Pricing | **SHIPPED `67155de`.** **Guided-tour screenshots still outstanding** (see P2 §7); publishing blocked on `05` §10 |
+| P2 | `P2-landing-restructure.md` | **Landing restructure** — one-pass stylesheet, nav placement, wordmark, hero scale, footer | **P1.** Ready to build |
 | — | `FINAL-audit.md` | One wide audit across everything | all |
 
 **Not yet written** (spec exists, brief does not): syllabus ingestion (§4.1-M — **the keystone; most other features are decorative without it**), the grade ledger (§6.8), lifecycle/amnesty (§6.10), the attention budget (§6.11), the term-column Planner (§4.2-C1), the course→requirement catalog dataset.
@@ -71,6 +72,7 @@ mockup .html/.png  →  <same-folder>/<same-name>.md  →  named in a brief's §
 | `mcat-plan.html` | *needs one* | *MCAT chunk — not yet written* |
 | `00-shell/shell-calendar-sequence.html` + `shell-calendar-overlay.html` | `00-shell/shell-calendar-overlay.md` | *shell chunk — not yet written* |
 | `05-public/public-landing-and-auth.html` | `05-public/public-landing-and-auth.md` | **P1** |
+| `05-public/public-landing-v2.html` | `05-public/public-landing-v2.md` | **P2** — supersedes the P1 mockup for the **nav, hero, tile interior and footer only**; P1's remains the source for `/auth`, `/auth/merge` and page order |
 | `05-public/public-legal-about-pricing.html` | `05-public/public-legal-about-pricing.md` | **P1** |
 | `academics-nav-hierarchy.html` | `decisions/academics-nav-hierarchy.md` | shell/global |
 | — | `decisions/_visual-recipes.md` | **all of them** |
