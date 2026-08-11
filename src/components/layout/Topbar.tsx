@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, Plus } from 'lucide-react'
+import { Menu, PanelLeftOpen, Plus } from 'lucide-react'
 import { CommandSearch } from './CommandSearch'
 import { AttentionBell } from './AttentionBell'
 import { buildAttention, attentionStatus } from './attention'
@@ -17,7 +17,13 @@ import {
 import { cn } from '@/lib/utils'
 import { isDemoMode } from '@/lib/demoMode'
 
-export function Topbar({ onMenu }: { onMenu: () => void }) {
+type TopbarProps = {
+  onMenu: () => void
+  onShowDesktopSidebar?: () => void
+  desktopSidebarHidden?: boolean
+}
+
+export function Topbar({ onMenu, onShowDesktopSidebar, desktopSidebarHidden = false }: TopbarProps) {
   const location = useLocation()
   const data = useStore()
   const { isDark, setTheme } = useTheme()
@@ -53,6 +59,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
     <header className="sticky top-0 z-20 border-b border-border bg-background/75 shadow-sm backdrop-blur-xl">
       <div className="mx-auto flex w-full max-w-[84rem] min-w-0 items-center gap-2 px-4 py-2.5 md:px-8">
         <Button variant="ghost" size="icon" className="shrink-0 lg:hidden" onClick={onMenu} aria-label="Open menu"><Menu className="size-5" /></Button>
+        {desktopSidebarHidden && onShowDesktopSidebar && <Button variant="ghost" size="icon" className="hidden shrink-0 lg:inline-flex" onPointerDown={(event) => { event.preventDefault(); onShowDesktopSidebar() }} aria-label="Show sidebar"><PanelLeftOpen className="size-5" /></Button>}
         <Breadcrumb className="hidden min-w-0 xl:block">
           <BreadcrumbList className="h-9 flex-nowrap gap-1 text-xs font-bold sm:gap-1">
             <BreadcrumbItem className="min-w-0">

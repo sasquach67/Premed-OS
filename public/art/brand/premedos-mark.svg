@@ -1,10 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 232 142" role="img" aria-label="Premed OS">
-  <title>Premed OS</title>
-  <desc>Four ascending rounded bars, the tallest in brand blue.</desc>
-  <g fill="currentColor">
-    <rect x="0"   y="110" width="30" height="32"  rx="15" opacity="0.42"/>
-    <rect x="68"  y="72"  width="30" height="70"  rx="15" opacity="0.42"/>
-    <rect x="136" y="39"  width="30" height="103" rx="15" opacity="0.42"/>
-  </g>
-  <rect x="204" y="0" width="28" height="142" rx="14" fill="#2E6CB8"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 312 205" width="312" height="205" role="img" aria-label="Premed OS">
+  <!-- The four-bar mark. Geometry measured off the master lockup Andy supplied
+       (Aug 2026): four 48-wide bars on an 88 pitch, fully rounded caps, sharing
+       a baseline, rising 58 / 101 / 147 / 205.
+
+       ⚠️ The bars carry a FOUR-STEP blue ramp, not the old light/dark pair.
+       They are literal — no currentColor. The ramp reads on cream and on the
+       public layer's dark field alike, and inheriting would flatten the step
+       that makes it a chart rather than four sticks. -->
+  <rect x="0"   y="147" width="48" height="58"  rx="24" fill="#BAD1E8"/>
+  <rect x="88"  y="104" width="48" height="101" rx="24" fill="#9EC0E0"/>
+  <rect x="176" y="58"  width="48" height="147" rx="24" fill="#79ABD7"/>
+  <rect x="264" y="0"   width="48" height="205" rx="24" fill="#5293CC"/>
 </svg>

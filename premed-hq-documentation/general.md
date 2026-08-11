@@ -535,11 +535,14 @@ grep -rn "Premed HQ" src/        → must return nothing
 
 ### The logo
 
-**Official lockup supplied Aug 2026.** Assets and sampled tokens: `public/art/brand/README.md`.
+**Second revision supplied Aug 2026 — supersedes the first.** Assets and sampled tokens:
+`public/art/brand/README.md`.
 
-- **Ink `#1E3044` · Blue `#2E6CB8` · Blue-light `#9AB3DF` · Cream `#F6F3F1`**
-- ⚠️ **The logo blue is not `--pl-pri` (`#6FB3DE`).** Decide deliberately whether the UI accent moves — **two almost-identical blues is worse than either.**
-- ⚠️ **Navy `premed` is invisible on the dark public layer.** Use the `*-ondark` variants there.
+- **Ink `#132535` · Ramp `#BAD1E8` → `#9EC0E0` → `#79ABD7` → `#5293CC` · Cream `#FAF6F3`**
+- ⚠️ **The mark is a FOUR-STEP ramp**, not three pale bars and one dark one. The first revision was the latter; anything describing it that way predates this and is wrong.
+- ⚠️ **The mark goes ABOVE the wordmark.** Never beside it. Where a horizontal brand is unavoidable, use the mark alone.
+- ✅ **The accent moved.** `--pl-pri` is now the logo's `#5293cc`, approved by Andy. `#79abd7` (`--pl-pri-lt`) belongs to the `OS` and the third bar only. The signed-in app's `--primary`/`--ring`/`--sidebar-*` and `--cat-gpa` are deliberately still on the old blues — see `_visual-recipes.md` §Two blues.
+- ⚠️ **The ink `premed` is invisible on the dark public layer.** Use the `*-ondark` variants there.
 - ⚠️ **The tagline "organize. optimize. get ahead." is not approved copy.** It ships with the lockup; it does not belong on the landing page, which has a settled headline.
 
 ### ⚠️ On making the accent "UNC blue" — read before doing it

@@ -9,21 +9,27 @@
    Baloo 2 is rounded. The two-tone FORMAT transfers; the letterforms stay
    warm. Do not substitute a font to match a reference.
 
-   ⚠️ THE LOCKUP'S NAVY IS INVISIBLE HERE. `premed` is `#1E3044` in the
+   ⚠️ THE MARK GOES ABOVE THE WORD, NOT BESIDE IT. This component used to
+   set them inline, which matched nothing in the supplied artwork. Andy,
+   Aug 2026: the stack is the logo. In the nav that overhang is absorbed by
+   a negative block margin (see `.pl-navbrand`) so the row does not grow —
+   do not "fix" the stack back to a row to reclaim the height.
+
+   ⚠️ THE LOCKUP'S NAVY IS INVISIBLE HERE. `premed` is `#132535` in the
    supplied artwork, which disappears on the public layer's dark field —
    the result reads as a logo that just says `OS`. On this layer the word
-   is set in `--pl-fg` and the mark's short bars inherit it through
-   `currentColor`, exactly as `public/art/brand/README.md` describes.
+   is set in `--pl-fg`. The four bars are NOT recoloured: their ramp runs
+   light-to-dark and reads on cream and on the dark field alike.
 
    ⚠️ THE TAGLINE IS NOT HERE. "organize. optimize. get ahead." ships with
    the lockup but is not approved copy, and the hero has a settled
    headline. It stays off the landing page (P2 §4).
 
    The bar geometry is the master asset's, `public/art/brand/premedos-mark.svg`.
-   It is inlined rather than loaded through `<img>` because an `<img>`
-   cannot inherit `currentColor` — which is the whole reason that file uses
-   it. If the mark is ever redrawn, redraw it there and copy the geometry
-   across.
+   It is inlined rather than loaded through `<img>` so it scales with the
+   type instead of needing a pixel size at every call site. If the mark is
+   ever redrawn, redraw it there and copy the geometry across — the two
+   files are the same numbers twice and must not drift.
    ============================================================ */
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -36,23 +42,29 @@ interface WordmarkProps {
   className?: string
 }
 
+/** Four 48-wide bars on an 88 pitch, rising 58/101/147/205 off a shared
+ *  baseline. Geometry measured off the master, not redrawn by eye — it is
+ *  the same data as `public/art/brand/premedos-mark.svg`; change both or
+ *  neither. Inlined rather than `<img>` so it scales with the type. */
+const BARS = [
+  { x: 0, y: 147, h: 58, fill: '#BAD1E8' },
+  { x: 88, y: 104, h: 101, fill: '#9EC0E0' },
+  { x: 176, y: 58, h: 147, fill: '#79ABD7' },
+  { x: 264, y: 0, h: 205, fill: '#5293CC' },
+]
+
 function Mark() {
   return (
     <svg
       className="pl-wm-mark"
-      viewBox="0 0 232 142"
+      viewBox="0 0 312 205"
       aria-hidden="true"
       focusable="false"
       preserveAspectRatio="xMidYMid meet"
     >
-      {/* three short bars — inherit the wordmark's colour */}
-      <g fill="currentColor">
-        <rect x="0" y="110" width="30" height="32" rx="15" opacity="0.42" />
-        <rect x="68" y="72" width="30" height="70" rx="15" opacity="0.42" />
-        <rect x="136" y="39" width="30" height="103" rx="15" opacity="0.42" />
-      </g>
-      {/* the tall bar carries the accent — see `_visual-recipes.md` §Two blues */}
-      <rect className="pl-wm-accent" x="204" y="0" width="28" height="142" rx="14" />
+      {BARS.map((bar) => (
+        <rect key={bar.x} x={bar.x} y={bar.y} width={48} height={bar.h} rx={24} fill={bar.fill} />
+      ))}
     </svg>
   )
 }

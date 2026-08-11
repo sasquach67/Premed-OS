@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { X } from 'lucide-react'
-import { AnimatePresence, m } from 'motion/react'
+import { AnimatePresence, m, useReducedMotion } from 'motion/react'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { AlertsStrip } from './AlertsStrip'
-import { useStore } from '@/store/store'
 import { useTheme } from '@/store/useTheme'
 import { useBackup } from '@/store/useBackup'
 import { useCloudSync } from '@/store/useCloudSync'
@@ -17,38 +16,60 @@ import { HelpFeedbackLauncher } from './HelpFeedbackLauncher'
 import { MOTION_TRANSITION } from '@/lib/motion'
 import { crossfade } from '@/lib/motion'
 
+// The dock becomes the full sidebar in place: short, interruptible, and overlay-only.
+const SIDEBAR_TRANSFORM = { duration: 0.28, ease: [0.2, 0.8, 0.2, 1] as const }
+
 export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const collapsed = useStore((s) => s.settings.sidebarCollapsed)
-  const update = useStore((s) => s.update)
+  const [desktopSidebarLocked, setDesktopSidebarLocked] = useState(false)
+  const reduceMotion = useReducedMotion()
   const location = useLocation()
   useTheme()
   useBackup() // wires daily-on-open check + debounced auto-backup
   const cloud = useCloudSync() // wires Supabase login + cross-device cloud sync (no-op until configured/signed in)
+  const desktopSidebarVisible = desktopSidebarLocked
+  const keepDesktopSidebarVisibleOnNavigate = useCallback(() => {}, [])
+  const toggleDesktopSidebarLock = useCallback(() => {
+    if (desktopSidebarLocked) {
+      setDesktopSidebarLocked(false)
+      return
+    }
+    setDesktopSidebarLocked(true)
+  }, [desktopSidebarLocked])
 
-  // ⌘B / Ctrl+B or "[" toggles the sidebar (⌘S is reserved by the browser).
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement)?.tagName
-      const typing = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable
-      if (((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') || (!typing && e.key === '[')) {
-        e.preventDefault()
-        update((d) => { d.settings.sidebarCollapsed = !d.settings.sidebarCollapsed })
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b') {
+        event.preventDefault()
+        toggleDesktopSidebarLock()
       }
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [update])
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [toggleDesktopSidebarLock])
 
   return (
     <TooltipProvider delayDuration={200}>
       <ToastProvider>
       <ShellActionsProvider>
       <div className="flex h-svh overflow-hidden">
-        {/* desktop sidebar — compact icons when collapsed, full navigation when open */}
-        <aside className={collapsed ? 'relative hidden w-[4.75rem] shrink-0 lg:block' : 'relative hidden w-64 shrink-0 lg:block'}>
-          <Sidebar collapsible signedIn={Boolean(cloud.user)} onSignOut={() => { void cloud.signOut() }} />
-        </aside>
+        <m.aside
+          className="fixed inset-y-0 left-0 z-40 hidden w-[15.625rem] lg:block"
+          initial={false}
+          animate={desktopSidebarVisible ? { width: '15.625rem' } : { width: '4.25rem' }}
+          transition={reduceMotion ? { duration: 0 } : SIDEBAR_TRANSFORM}
+          style={{ willChange: 'width', overflow: 'visible' }}
+        >
+          <Sidebar
+            collapsible
+            desktopExpanded={desktopSidebarVisible}
+            signedIn={Boolean(cloud.user)}
+            desktopLocked={desktopSidebarLocked}
+            onNavigate={keepDesktopSidebarVisibleOnNavigate}
+            onToggleDesktopLock={toggleDesktopSidebarLock}
+            onSignOut={() => { void cloud.signOut() }}
+          />
+        </m.aside>
 
         {/* mobile drawer */}
         <AnimatePresence>
@@ -70,8 +91,8 @@ export function AppShell() {
         </AnimatePresence>
 
         {/* main column */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <Topbar onMenu={() => setMobileOpen(true)} />
+        <div className={`flex min-w-0 flex-1 flex-col transition-[padding] duration-200 ${desktopSidebarLocked ? 'lg:pl-[15.625rem]' : 'lg:pl-[4.25rem]'}`}>
+          <Topbar onMenu={() => setMobileOpen(true)} onShowDesktopSidebar={toggleDesktopSidebarLock} desktopSidebarHidden={!desktopSidebarVisible} />
           <AlertsStrip />
           <main className="relative flex-1 overflow-y-auto">
             <div className="mx-auto w-full max-w-[84rem] px-4 py-6 md:px-8 md:py-8">

@@ -69,7 +69,7 @@ type MascotNoteProps = MascotNoteBaseProps & (
 
 const VARIANT_STYLES: Record<MascotNoteVariant, string> = {
   tip: 'border-border bg-muted/55',
-  banner: 'border-white/15 bg-slate-950/45 text-white shadow-xl shadow-black/15 backdrop-blur-md',
+  banner: 'border-white/65 bg-card/78 text-foreground shadow-xl shadow-stone-900/10 backdrop-blur-md dark:border-white/15 dark:bg-slate-950/45 dark:text-white dark:shadow-black/15',
   teaching: 'border-[color-mix(in_srgb,var(--cat-mcat)_32%,var(--border))] bg-[color-mix(in_srgb,var(--cat-mcat)_10%,var(--card))]',
   'empty-state': 'border-dashed border-border bg-transparent',
   milestone: 'border-[color-mix(in_srgb,var(--success)_34%,var(--border))] bg-[color-mix(in_srgb,var(--success)_10%,var(--card))]',
@@ -134,14 +134,14 @@ export function MascotNote({
             {title && <p className="font-display text-sm font-extrabold leading-tight">{title}</p>}
             <div className={cn(
               'text-sm font-semibold leading-snug',
-              variant === 'banner' ? 'text-white/88' : 'text-foreground',
+              variant === 'banner' ? 'text-foreground/88 dark:text-white/88' : 'text-foreground',
             )}>
               {children}
             </div>
             {source && (
               <p className={cn(
                 'mt-1 text-[10px] font-extrabold uppercase tracking-[0.11em]',
-                variant === 'banner' ? 'text-white/55' : 'text-muted-foreground',
+                variant === 'banner' ? 'text-muted-foreground dark:text-white/55' : 'text-muted-foreground',
               )}>
                 {source}
               </p>

@@ -197,6 +197,8 @@ Unchanged from current implementation (§3.1) except as noted below. Contract:
 
 ### 7.2 Sidebar
 
+> **Amendment — Aug. 11, 2026 (current and superseding).** Desktop navigation is one compact, merged icon-and-label sidebar; there is no vertical rail divider, no collapsed icon rail, and no width/slide peek. The sidebar is normally hidden. Hovering either a thin left-edge activation zone or the small top-left control reveals the *entire* fixed-width sidebar (about 15.5rem) with a deliberately slow opacity-only `0 → 1` transition (~520ms soft ease-out). There is deliberately no sidebar transform, slide, or width transition. In this state it is a fixed overlay above the content, so the dashboard never shifts horizontally. Click the sidebar’s header control, or press `⌘B` / `Ctrl+B`, to lock it in place; only this pinned state becomes a flex column and pushes the dashboard right. Click or use the shortcut again to return to hover-overlay behavior. Navigation begins with a deliberate top inset beneath the header rather than being vertically centered. Section gaps are fixed and uniform; responsive row heights absorb spare vertical space evenly across the navigation icons, while Atlas retains a protected account-footer gap. Sidebar labels, group headings, and account copy retain Baloo 2 but use its lighter weights (500–600 rather than 700–800); row selection uses quiet color/background transitions. This amendment supersedes the collapsed, pin/unpin, hover-pop-out, tooltip, and Arc-style animation language below. The approved layout reference is `mockups/00-shell/sidebar-merged-remock.html`.
+
 Keep all current mechanics (§3.2). Changes and hard requirements:
 
 **Structure**

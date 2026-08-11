@@ -133,23 +133,30 @@ Focus rings use **`:focus-visible` only** — never `:focus`. A mouse click must
 
 **Baloo 2** (800) for titles, numbers, buttons, labels. **Nunito** (400/600/700) for body. Numbers always `font-variant-numeric: tabular-nums`. Sentence case everywhere — never Title Case.
 
-## Two blues — RESOLVED Aug 2026 (P2)
+## Two blues — REOPENED AND RESOLVED DIFFERENTLY, Aug 2026 (logo rev 2)
 
-The official logo's blue is **`#2E6CB8`**. The app accent is **`#4b9cd3`** (`--cat-gpa`), and the public layer renders it as **`#6fb3de`** (`--pl-pri`). Those are three near-neighbours, and `05` §10 flagged the collision before the logo shipped into the nav.
+> **The P2 ruling below is superseded. Do not implement it.** It was correct for the first
+> logo, whose blue was `#2E6CB8`. The second revision recoloured the mark to a four-step ramp
+> topping out at **`#5293CC`** — near enough to `--pl-pri` (`#6fb3de`) that the P2 ruling's
+> own failure mode, "almost the same blue," became the thing it produced.
 
-**Ruling: the mark takes the surface's accent; the raster assets keep the logo's own blue.**
+**Current ruling: the public layer's accent moved to the logo's blue.** Approved by Andy.
 
-- **In UI** (`Wordmark.tsx` → `.pl-wm-accent`), the mark's tall bar is filled with `var(--pl-pri)`. The nav therefore shows **one blue**: the mark, the `OS`, and the CTA tint are all the same hue.
-- **In the raster assets** (`favicon-*.png`, `premedos-lockup.png`, and every `*-ondark.png`), `#2E6CB8` is untouched. They render in light contexts — a browser tab, a link preview, a deck — where the app accent is not present to clash with, and rewriting the supplied artwork to chase a UI token would be the wrong direction of travel.
+- `--pl-pri` is **`#5293cc`** — the tall bar and the rule.
+- `--pl-pri-lt` is **`#79abd7`** — the `OS` and the third bar. **Two jobs. It is not a hover state and not a lighter accent.**
+- The mark's bars are **literal, not inherited.** They no longer use `currentColor`. The ramp is the mark's content: flatten it to one colour and it stops being a chart.
+- Alpha uses of the accent go through `--pl-pri-rgb`. Ten hardcoded `rgba(111, 179, 222, …)` had to be found by hand during this change — do not add an eleventh.
+
+**Deliberately NOT moved**, and this is still the P2 reasoning holding: the signed-in app's `--primary`, `--ring`, `--sidebar-primary`, `--sidebar-ring` (`#6fb3de`) and `--cat-gpa` (`#4b9cd3`) in `src/index.css`. `CLAUDE.md` locks those, the two layers never share a screen, and repainting every pillar accent in both themes is its own chunk of work. **If the app accent is ever unified, `#5293cc` is the target.**
 
 **Rejected, with reasons, so they are not re-proposed:**
 
 | Option | Why not |
 |---|---|
-| **Both blues coexist in the nav** | They land ~40px apart. Two blues that close read as a mistake, not as a system. `05` §10's warning is exactly this. |
-| **Move the UI accent to `#2E6CB8`** | One blue everywhere, and defensible — but it touches every pillar accent in both themes and is not P2-sized. **Still the right answer if the brand is ever made primary; do this deliberately, in its own chunk, not as a side effect.** |
-| **Repaint the logo's tall bar to `#4b9cd3` in the assets** | Same visible result as the ruling above, but it edits Andy's supplied artwork. The CSS override is reversible in one line; a recoloured PNG is not. |
+| **Keep `#6fb3de` and let the logo keep `#5293cc`** | 4% apart in hue. Reads as one colour rendered twice, badly — not as two colours. |
+| **Move the accent to `#79abd7` instead** | Matches the `OS` rather than the tall bar, and carries the old accent's contrast problem: 2.4:1 on a white card. `#5293cc` is 3.3:1. |
+| **Repaint the logo to `#6fb3de` in the assets** | Edits Andy's supplied artwork to chase a UI token. Wrong direction of travel, and a recoloured PNG is not reversible in one line. |
 
-⚠️ **Do not ship "almost the same blue."** That is the one outcome worse than either.
+⚠️ **The ink `premed` (`#132535`) never goes on the public layer** — it is invisible on the dark field and the lockup reads as though it just says `OS`. Use `--pl-fg` for the word, or an `*-ondark.png`. The bars need no such treatment; the ramp reads on both.
 
-⚠️ **The navy `premed` (`#1E3044`) never goes on the public layer** — it is invisible on the dark field and the lockup reads as though it just says `OS`. Use `--pl-fg` for the word and let the mark's short bars inherit through `currentColor`, or use an `*-ondark.png`.
+⚠️ **On the paper theme the palest bar (`#BAD1E8`) is ~1.4:1 against the cream sidebar and effectively disappears.** That is faithful to the artwork — the ramp fades out on cream by design — so it has **not** been "fixed". Flagged for Andy. If it is ever changed, shift the whole ramp one step darker on light surfaces; do not lighten the background or recolour one bar in isolation.

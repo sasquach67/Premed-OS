@@ -54,6 +54,7 @@ mockups/
 
 | File | Status | Spec |
 |---|---|---|
+| `sidebar-merged-remock.html` | **APPROVED** — compact merged overlay sidebar; no rail or width peek, top-paced spacing, Atlas clearance above account, and left-edge/top-control hover-triggered opacity/transform fade without content movement | `00-product-shell.md` |
 | `shell-calendar-sequence.html` | **read first** — the five-step flow; settles the ownership question | `00-product-shell.md` §7.9 |
 | `shell-calendar-overlay.html` | Week + Month views | §7.9 |
 

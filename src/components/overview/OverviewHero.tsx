@@ -55,12 +55,12 @@ export function OverviewHero() {
       className="relative min-h-[22rem] overflow-hidden rounded-3xl border border-border bg-card shadow-lg md:min-h-[24rem]"
     >
       <ThemedHomeImage key={visualTheme} visualTheme={visualTheme} />
-      <div className="absolute inset-0 bg-slate-950/52 dark:bg-slate-950/64" />
-      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/88 via-slate-950/52 to-slate-950/26" />
-      <div className="relative flex min-h-[22rem] flex-col p-5 text-white md:min-h-[24rem] md:p-7">
+      <div className="absolute inset-0 bg-stone-50/38 dark:bg-slate-950/52" />
+      <div className="absolute inset-0 bg-gradient-to-r from-stone-50/76 via-stone-50/34 to-sky-50/10 dark:from-slate-950/78 dark:via-slate-950/40 dark:to-slate-950/16" />
+      <div className="relative flex min-h-[22rem] flex-col p-5 text-foreground md:min-h-[24rem] md:p-7 dark:text-white">
         <div className="grid flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(23rem,.9fr)] lg:items-center">
           <div className="min-w-0">
-            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-white/72">
+            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-foreground/65 dark:text-white/72">
               {dateLine} · <span className="tabular-nums">{formatClock(now, '12h')}</span>
             </p>
             <h1
@@ -121,22 +121,22 @@ function HeroLiveStatus({ schedule, now }: { schedule: ReturnType<typeof useHero
   }
 
   return (
-    <div className="mt-4 w-full max-w-[28rem] rounded-3xl border border-white/14 bg-slate-950/48 px-5 py-4 text-left shadow-lg shadow-black/15 backdrop-blur-md">
+    <div className="mt-4 w-full max-w-[28rem] rounded-3xl border border-white/65 bg-card/78 px-5 py-4 text-left shadow-lg shadow-stone-900/10 backdrop-blur-md dark:border-white/14 dark:bg-slate-950/48 dark:shadow-black/15">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-primary/90">{eyebrow}</p>
-          <p className="mt-1 truncate text-sm font-extrabold text-white">{title}</p>
+          <p className="mt-1 truncate text-sm font-extrabold text-foreground dark:text-white">{title}</p>
         </div>
-        <Badge className="border-white/10 bg-white/8 text-white/72">{detail}</Badge>
+        <Badge className="border-border/70 bg-muted/65 text-muted-foreground dark:border-white/10 dark:bg-white/8 dark:text-white/72">{detail}</Badge>
       </div>
       <NumberFlow
         value={remaining}
         format={hms}
         animationKey={Math.floor(remaining / 3600)}
-        className="mt-3 font-display text-[clamp(2.5rem,5vw,3.75rem)] font-extrabold leading-none text-white"
+        className="mt-3 font-display text-[clamp(2.5rem,5vw,3.75rem)] font-extrabold leading-none text-foreground dark:text-white"
       />
       <span className="sr-only">Countdown updates continuously.</span>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/16">
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted/85 dark:bg-white/16">
         <div
           className="h-full rounded-full bg-primary shadow-[0_0_18px_rgba(116,192,252,.32)] transition-[width] duration-200"
           style={{ width: `${progress || 14}%` }}
@@ -163,18 +163,21 @@ function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof use
   const timelinePercent = (date: Date) => Math.min(98, Math.max(2, ((date.getTime() - dayStart.getTime()) / span) * 100))
 
   return (
-    <div className="relative rounded-3xl border border-white/14 bg-slate-950/58 p-4 shadow-xl backdrop-blur-md">
-      {!schedule.connected && !!visible.length && (
-        <button
-          type="button"
-          onClick={() => { void schedule.connect(new Date()) }}
-          disabled={!schedule.configured || schedule.status === 'connecting'}
-          className="absolute right-6 top-4 z-20 rounded-full border border-white/10 bg-slate-950/62 px-3 py-1 text-[11px] font-extrabold text-primary shadow-sm backdrop-blur transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-45"
-        >
-          Connect
-        </button>
-      )}
-      <div className="rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-4 shadow-inner shadow-black/10">
+    <div className="relative rounded-3xl border border-white/65 bg-card/78 p-4 shadow-xl shadow-stone-900/10 backdrop-blur-md dark:border-white/14 dark:bg-slate-950/58 dark:shadow-black/15">
+      <div className="mb-3 flex items-center justify-between gap-3 px-1">
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground dark:text-white/62">Today</p>
+        {!schedule.connected && !!visible.length && (
+          <button
+            type="button"
+            onClick={() => { void schedule.connect(new Date()) }}
+            disabled={!schedule.configured || schedule.status === 'connecting'}
+            className="rounded-full border border-border/70 bg-card/88 px-3 py-1 text-[11px] font-extrabold text-primary shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-45 dark:border-white/10 dark:bg-slate-950/62 dark:hover:bg-white/8"
+          >
+            Connect calendar
+          </button>
+        )}
+      </div>
+      <div className="rounded-2xl border border-border/60 bg-white/58 px-4 py-4 shadow-inner shadow-stone-900/5 dark:border-white/10 dark:bg-white/[0.055] dark:shadow-black/10">
         {!visible.length && (
           <MascotNote
             variant="empty-state"
@@ -192,9 +195,9 @@ function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof use
                 </Button>
               ) : <Button asChild size="sm"><Link to="/settings">Set up calendar</Link></Button>
               : <Button type="button" size="sm" onClick={() => document.getElementById('overview-tasks-heading')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>Review today’s tasks</Button>}
-            className="border-white/20 text-white"
+            className="border-border text-foreground dark:border-white/20 dark:text-white"
           >
-            <span className="text-white/75">
+            <span className="text-muted-foreground dark:text-white/75">
               {schedule.connected ? 'Your calendar is clear—use this window for the next important task.' : 'Connect your calendar to place today’s real schedule here.'}
             </span>
           </MascotNote>
@@ -202,7 +205,7 @@ function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof use
         {!!visible.length && (
           <>
             <div className="relative h-8" role="img" aria-label="Today’s schedule timeline">
-              <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-white/55" />
+              <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-foreground/22 dark:bg-white/55" />
               <div
                 className="absolute top-1/2 z-20 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-primary"
                 style={{ left: `${timelinePercent(now)}%` }}
@@ -215,11 +218,11 @@ function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof use
                 return (
                   <div key={event.id}>
                     <div
-                      className={cn('absolute top-1/2 z-10 h-1.5 -translate-y-1/2 rounded-full', active ? 'bg-primary' : past ? 'bg-white/20' : 'bg-leaf/70')}
+                      className={cn('absolute top-1/2 z-10 h-1.5 -translate-y-1/2 rounded-full', active ? 'bg-primary' : past ? 'bg-foreground/18 dark:bg-white/20' : 'bg-leaf/70')}
                       style={{ left: `${start}%`, width: `${Math.max(2.5, end - start)}%` }}
                     />
                     <div
-                      className="absolute top-1/2 z-20 h-4 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90"
+                      className="absolute top-1/2 z-20 h-4 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/75 dark:bg-white/90"
                       style={{ left: `${start}%` }}
                     />
                   </div>
@@ -232,9 +235,9 @@ function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof use
                 const past = event.endDate <= now
                 return (
                   <div key={event.id} className="grid grid-cols-[3.5rem_minmax(0,1fr)_4.5rem] items-center gap-2 text-xs">
-                    <span className="tabular-nums font-bold text-white/55">{formatClock(event.startDate, schedule.calendar.timeFormat).replace(/:00/g, '')}</span>
-                    <span className={cn('truncate font-extrabold', active ? 'text-primary' : past ? 'text-white/45 line-through' : 'text-white/86')}>{event.title}</span>
-                    <span className={cn('truncate text-right text-[11px] font-bold tabular-nums', active ? 'text-primary' : 'text-white/55')}>
+                    <span className="tabular-nums font-bold text-muted-foreground dark:text-white/55">{formatClock(event.startDate, schedule.calendar.timeFormat).replace(/:00/g, '')}</span>
+                    <span className={cn('truncate font-extrabold', active ? 'text-primary' : past ? 'text-muted-foreground/65 line-through dark:text-white/45' : 'text-foreground/88 dark:text-white/86')}>{event.title}</span>
+                    <span className={cn('truncate text-right text-[11px] font-bold tabular-nums', active ? 'text-primary' : 'text-muted-foreground dark:text-white/55')}>
                       {active
                         ? hms(secondsLeft(event.endDate.getTime() - now.getTime())).replace(/^0:/, '')
                         : formatEventTimeRange(event, schedule.calendar.timeFormat).split('-')[1]?.trim()}

@@ -63,7 +63,16 @@
   --pl-bd: rgba(255, 255, 255, 0.14);
   --pl-card: rgba(255, 255, 255, 0.055);
   --pl-soft: rgba(255, 255, 255, 0.07);
-  --pl-pri: #6fb3de;
+  /* ⚠️ THIS WAS #6fb3de. Andy's Aug-2026 logo revision recoloured the mark
+     to a four-step blue ramp topping out at #5293cc, which was close enough
+     to the old accent to read as two failed attempts at one blue rather than
+     two colours — exactly the drift `public/art/brand/README.md` warned
+     about. Approved by Andy: the accent moves to the logo's own blue.
+     `--pl-pri-lt` is the ramp's third step and belongs to the `OS` in the
+     wordmark; it is NOT a hover state and must not become one. */
+  --pl-pri: #5293cc;
+  --pl-pri-lt: #79abd7;
+  --pl-pri-rgb: 82, 147, 204;
   --pl-ink: #17222c;
   --pl-success: #6fc0a8;
   --pl-warning: #e7b06a;
@@ -125,7 +134,7 @@
   font-size: var(--t-body);
   line-height: 1.45;
   background:
-    radial-gradient(1200px 700px at 50% -8%, rgba(111, 179, 222, 0.3), transparent 70%),
+    radial-gradient(1200px 700px at 50% -8%, rgba(var(--pl-pri-rgb), 0.3), transparent 70%),
     radial-gradient(900px 600px at 4% 38%, rgba(111, 192, 168, 0.12), transparent 70%),
     radial-gradient(900px 600px at 98% 68%, rgba(224, 164, 88, 0.1), transparent 70%),
     linear-gradient(168deg, #233448 0%, #26303c 38%, #2a2b2c 72%, #242019 100%);
@@ -186,7 +195,7 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
-.pl-btn-ghost:hover { background: rgba(255, 255, 255, 0.15); border-color: rgba(111, 179, 222, 0.5); }
+.pl-btn-ghost:hover { background: rgba(255, 255, 255, 0.15); border-color: rgba(var(--pl-pri-rgb), 0.5); }
 
 /* NAV CTA — coloured glass. ⭐ THE BLOOM IS LOAD-BEARING: every other glass
    surface carries the inset highlight and stops there, so this is the only
@@ -287,7 +296,7 @@
 .pl-fta:focus-visible,
 .pl-finp:focus-visible {
   border-color: var(--pl-pri);
-  box-shadow: 0 0 0 2px rgba(111, 179, 222, 0.3);
+  box-shadow: 0 0 0 2px rgba(var(--pl-pri-rgb), 0.3);
 }
 .pl-fta { min-height: 96px; line-height: 1.6; resize: vertical; }
 
@@ -326,13 +335,15 @@
    references are geometric sans and the two-tone FORMAT is what transfers,
    never the letterforms.
 
-   ⚠️ The lockup's navy `premed` (#1E3044) is invisible on this dark field,
-   so the word is set in `--pl-fg` here and the mark inherits via
-   `currentColor`. Do not ship the navy onto the public layer. */
+   ⚠️ The lockup's ink `premed` (#132535) is invisible on this dark field,
+   so the word is set in `--pl-fg` here. The bars are NOT recoloured and no
+   longer use `currentColor` — the ramp is literal and reads on cream and on
+   this field alike. Do not ship the ink onto the public layer. */
 .pl-wm {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.42em;
+  gap: 0.1em;
   text-decoration: none;
   white-space: nowrap;
   font-family: 'Baloo 2', system-ui, sans-serif;
@@ -341,12 +352,12 @@
   line-height: 1;
   color: var(--pl-fg);
 }
-.pl-wm-mark { width: 1.15em; height: 0.72em; flex: none; color: inherit; }
-/* The mark's tall bar takes its colour from here rather than the asset's
-   own #2E6CB8 — see `_visual-recipes.md` §"Two blues". */
-.pl-wm-mark .pl-wm-accent { fill: var(--pl-pri); }
+/* 1.6em × 312:205. Measured off the master: the mark is 313px across a
+   1180px lockup, i.e. 26.5% of the wordmark's width, and it sits optically
+   centred over it (14px off centre in 1180 — do not "correct" that). */
+.pl-wm-mark { width: 1.6em; height: 1.051em; flex: none; }
 .pl-wm-a { font-weight: 700; color: var(--pl-fg); }
-.pl-wm-b { font-weight: 800; color: var(--pl-pri); }
+.pl-wm-b { font-weight: 800; color: var(--pl-pri-lt); }
 .pl-wm-sm { font-size: clamp(17px, 1.1vw, 22px); }
 
 /* ══ 3 · LAYOUT ═══════════════════════════════════════════════════════════ */
@@ -357,7 +368,7 @@
 .pl-mesh i { position: absolute; display: block; border-radius: 50%; }
 .pl-mesh .m1 {
   width: 48%; height: 64%; left: 6%; top: -8%;
-  background: radial-gradient(closest-side, rgba(111, 179, 222, 0.5), transparent 72%);
+  background: radial-gradient(closest-side, rgba(var(--pl-pri-rgb), 0.5), transparent 72%);
   animation: pl-drift1 26s ease-in-out infinite alternate;
 }
 .pl-mesh .m2 {
@@ -390,7 +401,26 @@
   gap: var(--s-3);
   padding: clamp(14px, 1.4vw, 26px) 0 0;
 }
-.pl-navbrand { justify-self: start; }
+/* ── The stacked brand must NOT grow the nav row ──────────────────────────
+   The lockup is stacked now, so the brand is roughly 60px tall against a
+   ~38px pill. Left in flow it sets the grid row height and pushes the whole
+   nav — and therefore the hero — down by ~22px at every width.
+
+   Negative block margins shrink what the item contributes to track sizing
+   while leaving it centred and unclipped, so the row stays sized by the pill
+   and the CTA and the brand overhangs equally above and below. -50px is
+   comfortably more than half the overhang at the largest clamp step.
+
+   ⚠️ Do not swap this for `position: absolute`. The navbar's `1fr auto 1fr`
+   only centres the pill because all three columns are real; taking the brand
+   out of flow leaves column 1 empty and the overhang would then have to be
+   measured against the navbar's padding box, which changes with the clamp.
+   ⚠️ Nothing in this subtree may take `overflow: hidden`. */
+.pl-navbrand {
+  justify-self: start;
+  align-self: center;
+  margin-block: -50px;
+}
 .pl-navend { justify-self: end; display: inline-flex; align-items: center; gap: var(--s-2); }
 
 /* the pill is a glass island holding ONLY the five links — nothing else
@@ -796,7 +826,7 @@
   height: 11px;
   border-radius: 50%;
   background: var(--pl-pri);
-  box-shadow: 0 0 0 4px rgba(111, 179, 222, 0.24), 0 0 14px rgba(111, 179, 222, 0.7);
+  box-shadow: 0 0 0 4px rgba(var(--pl-pri-rgb), 0.24), 0 0 14px rgba(var(--pl-pri-rgb), 0.7);
   z-index: 3;
 }
 .pl-pin::after {
@@ -804,7 +834,7 @@
   position: absolute;
   inset: -4px;
   border-radius: 50%;
-  border: 1px solid rgba(111, 179, 222, 0.55);
+  border: 1px solid rgba(var(--pl-pri-rgb), 0.55);
   animation: pl-ping 2.4s ease-out infinite;
 }
 .pl-tourfoot { font-size: var(--t-fine); color: var(--pl-dim); font-weight: 700; margin-top: var(--s-3); }
@@ -930,8 +960,8 @@
   border-radius: var(--r-field);
   padding: 0.8em 0.95em;
   margin: 0 0 var(--s-3);
-  background: rgba(111, 179, 222, 0.09);
-  border: 1px solid rgba(111, 179, 222, 0.26);
+  background: rgba(var(--pl-pri-rgb), 0.09);
+  border: 1px solid rgba(var(--pl-pri-rgb), 0.26);
 }
 .pl-plain .k { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-eyebrow); letter-spacing: 0.07em; text-transform: uppercase; color: var(--pl-pri); flex: none; padding-top: 0.25em; }
 .pl-plain p { margin: 0; font-size: var(--t-body); line-height: 1.6; color: var(--pl-fg); font-weight: 600; }
@@ -990,7 +1020,7 @@
 .pl-orbar span { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-eyebrow); letter-spacing: 0.06em; color: var(--pl-dim); }
 .pl-fine { font-size: var(--t-fine); color: var(--pl-dim); line-height: 1.7; margin: 0; }
 .pl-fine b { color: var(--pl-mut); font-weight: 700; }
-.pl-mailbadge { width: 44px; height: 44px; border-radius: var(--r-field); background: rgba(111, 179, 222, 0.16); display: flex; align-items: center; justify-content: center; color: var(--pl-pri); }
+.pl-mailbadge { width: 44px; height: 44px; border-radius: var(--r-field); background: rgba(var(--pl-pri-rgb), 0.16); display: flex; align-items: center; justify-content: center; color: var(--pl-pri); }
 .pl-mailbadge svg { width: 21px; height: 21px; }
 .pl-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); width: 100%; background: var(--pl-soft); border: 1px solid var(--pl-bd); border-radius: var(--r-field); padding: 0.75em 0.9em; font-size: var(--t-body); font-weight: 700; }
 .pl-alert { width: 100%; border-radius: var(--r-field); padding: 0.75em 0.9em; font-size: var(--t-fine); line-height: 1.55; background: rgba(231, 176, 106, 0.12); border: 1px solid rgba(231, 176, 106, 0.34); color: var(--pl-fg); }
@@ -1006,7 +1036,7 @@
 .pl-frow .fn { flex: 1; font-weight: 700; }
 .pl-frow .fv { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; color: var(--pl-mut); font-variant-numeric: tabular-nums; }
 .pl-opt { display: flex; gap: 0.8em; align-items: flex-start; width: 100%; text-align: left; background: var(--pl-soft); border: 1px solid var(--pl-bd); border-radius: var(--r-field); padding: 0.85em 0.9em; cursor: pointer; font-family: inherit; color: inherit; }
-.pl-opt[data-on='true'] { border-color: var(--pl-pri); background: rgba(111, 179, 222, 0.1); box-shadow: 0 0 0 1px rgba(111, 179, 222, 0.35); }
+.pl-opt[data-on='true'] { border-color: var(--pl-pri); background: rgba(var(--pl-pri-rgb), 0.1); box-shadow: 0 0 0 1px rgba(var(--pl-pri-rgb), 0.35); }
 .pl-radio { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--pl-bd); flex: none; margin-top: 0.15em; position: relative; }
 .pl-opt[data-on='true'] .pl-radio { border-color: var(--pl-pri); }
 .pl-opt[data-on='true'] .pl-radio::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--pl-pri); }

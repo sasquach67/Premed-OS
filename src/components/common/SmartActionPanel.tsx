@@ -23,10 +23,20 @@ export function SmartActionPanel({
   const dismiss = useStore((store) => store.dismissRecommendation)
   const reduceMotion = useReducedMotion()
   const recommendations = suppliedRecommendations ?? smartNextActions(state)
+  // Supplied recommendations (for example, the Academics heads-up panel) are
+  // derived by their parent. Filter here too so a persisted dismissal removes
+  // the card immediately, just as it does on the Overview panel.
+  const visibleRecommendations = recommendations.filter(
+    (recommendation) => !state.settings.recommendationState[recommendation.id]
+  )
+
+  function dismissAll() {
+    visibleRecommendations.forEach((recommendation) => dismiss(recommendation))
+  }
 
   return (
     <AnimatePresence initial={false}>
-      {!!recommendations.length && (
+      {!!visibleRecommendations.length && (
         <m.section
           aria-labelledby="smart-actions-heading"
           layout={!reduceMotion}
@@ -47,16 +57,31 @@ export function SmartActionPanel({
               Deterministic suggestions, each with the reason it appeared.
             </p>
           </div>
-          <Badge variant="outline">{recommendations.length} ready</Badge>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {visibleRecommendations.length > 1 && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                onClick={dismissAll}
+                aria-label={`Dismiss all ${visibleRecommendations.length} recommendations`}
+              >
+                <X className="size-3.5" />
+                Dismiss all
+              </Button>
+            )}
+            <Badge variant="outline">{visibleRecommendations.length} ready</Badge>
+          </div>
         </CardHeader>
         <CardContent>
           <div className={cn(
             'grid gap-3',
-            recommendations.length === 2 && 'md:grid-cols-2',
-            recommendations.length >= 3 && 'lg:grid-cols-3',
+            visibleRecommendations.length === 2 && 'md:grid-cols-2',
+            visibleRecommendations.length >= 3 && 'lg:grid-cols-3',
           )}>
             <AnimatePresence initial={false}>
-              {recommendations.map((recommendation) => (
+              {visibleRecommendations.map((recommendation) => (
                 <m.article
                   key={recommendation.id}
                   layout={!reduceMotion}
