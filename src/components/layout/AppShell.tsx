@@ -14,6 +14,7 @@ import { QuickAddDialog } from './QuickAddDialog'
 import { HelpFeedbackLauncher } from './HelpFeedbackLauncher'
 import { MOTION_TRANSITION } from '@/lib/motion'
 import { crossfade } from '@/lib/motion'
+import { isTypingTarget } from '@/lib/keyboard'
 
 // The dock becomes the full sidebar in place: short, interruptible, and overlay-only.
 const SIDEBAR_TRANSFORM = { duration: 0.28, ease: [0.2, 0.8, 0.2, 1] as const }
@@ -38,7 +39,10 @@ export function AppShell() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b') {
+      if (isTypingTarget(event.target)) return
+      const commandToggle = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b'
+      const bracketToggle = !event.metaKey && !event.ctrlKey && !event.altKey && event.key === '['
+      if (commandToggle || bracketToggle) {
         event.preventDefault()
         toggleDesktopSidebarLock()
       }

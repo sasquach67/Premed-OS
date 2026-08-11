@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/breadcrumb'
 import { cn } from '@/lib/utils'
 import { isDemoMode } from '@/lib/demoMode'
+import { isTypingTarget } from '@/lib/keyboard'
 
 type TopbarProps = {
   onMenu: () => void
@@ -44,9 +45,7 @@ export function Topbar({ onMenu, onShowDesktopSidebar, desktopSidebarHidden = fa
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement
-      const typing = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
-      if (!typing && !event.metaKey && !event.ctrlKey && !event.altKey && event.key.toLowerCase() === 'q') {
+      if (!isTypingTarget(event.target) && !event.metaKey && !event.ctrlKey && !event.altKey && event.key.toLowerCase() === 'q') {
         event.preventDefault()
         openQuickAdd()
       }

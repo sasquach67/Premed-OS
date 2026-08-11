@@ -20,6 +20,7 @@ import {
   studySourceSyncKey, studyTools, type GapCheckItem, type GapCheckResult,
 } from '@/lib/intelligence/studyTools'
 import { cn } from '@/lib/utils'
+import { isTypingTarget } from '@/lib/keyboard'
 import { AnimatedFileUpload } from '@/components/motion'
 import { FocusModeLayout } from '@/components/common/FocusModeLayout'
 import { MascotNote } from '@/components/common/MascotNote'
@@ -121,9 +122,7 @@ export function AcademicRecallSession() {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      const target = event.target as HTMLElement | null
-      const typing = target?.matches('textarea,input,[contenteditable="true"]')
-      if (typing) return
+      if (isTypingTarget(event.target)) return
       if (event.key.toLowerCase() === 'n' && (phase === 'active' || phase === 'report')) {
         event.preventDefault()
         skipTopic()

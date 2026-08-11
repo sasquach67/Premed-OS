@@ -15,6 +15,7 @@ import { useShellActions } from './shellActions'
 import { useTheme } from '@/store/useTheme'
 import type { QuickAddKind } from './shellActions'
 import { rankCommandHits, type CommandHit } from './commandSearchCore'
+import { isTypingTarget } from '@/lib/keyboard'
 
 const RECENT_KEY = 'premed_hq_command_recents'
 
@@ -76,10 +77,9 @@ export function CommandSearch() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement
-      const typing = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+      if (isTypingTarget(event.target)) return
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); setOpen((value) => !value) }
-      else if (event.key === '/' && !typing) { event.preventDefault(); setOpen(true) }
+      else if (event.key === '/') { event.preventDefault(); setOpen(true) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
