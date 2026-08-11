@@ -1,3 +1,21 @@
+/* ============================================================
+   ⚠️ THESE STRINGS ARE localStorage KEYS. DO NOT RENAME THEM.
+
+   They contain `hq` and they must keep containing it. The product was
+   renamed Premed HQ -> Premed OS in Aug 2026 and every DISPLAY string
+   moved, but a storage key is not a display string: it is the address a
+   returning user's data already lives at. Renaming `hq:app-data` does not
+   migrate anything — it silently points the app at an empty slot, and
+   every existing user opens a blank workspace with their real records
+   still sitting in the old key.
+
+   `general.md` §Rename lists this alongside the vite `base` and
+   googleDrive's BACKUP_FILENAME as preserved on purpose.
+
+   If these ever genuinely have to change, it needs a versioned, lossless
+   migration that reads the old key and writes the new one — the same
+   discipline every other schema change here follows. Not a find-replace.
+   ============================================================ */
 export const DEMO_MODE_FLAG = 'hq:demo-mode'
 export const REAL_STORAGE_KEY = 'hq:app-data'
 export const DEMO_STORAGE_KEY = 'hq-demo:app-data'

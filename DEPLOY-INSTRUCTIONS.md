@@ -1,6 +1,6 @@
 # How to put Premed OS live (GitHub Pages, free)
 
-Your live URL will be: **https://sasquach67.github.io/Premed-HQ/**
+Your live URL will be: **https://sasquach67.github.io/Premed-OS/**
 
 ## One-time setup (about 5 minutes)
 
@@ -36,7 +36,7 @@ press Cmd+Shift+. to show hidden files before dragging.
 3. Go to the **Actions** tab of the repo — you should see a
    "Deploy to GitHub Pages" workflow running (or click "Run workflow" to start it)
 4. When it goes green (~2 min), your site is live at
-   **https://sasquach67.github.io/Premed-HQ/**
+   **https://sasquach67.github.io/Premed-OS/**
 
 That's it. From now on, **every push to `main` auto-redeploys the site.**
 
@@ -70,5 +70,5 @@ redeploys itself. No manual build needed.
 ## If you ever outgrow GitHub Pages
 
 Netlify or Vercel are also free and give you a nicer URL (e.g.
-`premedhq.netlify.app`). If you switch, change `base: '/Premed-HQ/'` back to
+`premedhq.netlify.app`). If you switch, change `base: '/Premed-OS/'` back to
 `base: '/'` in `vite.config.ts`.

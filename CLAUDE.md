@@ -21,7 +21,7 @@ fully functional.**
 
 - Warm dark default: bg `#282420`, cards `#322d27`, borders `#423a32`,
   text `#ece3d4` / `#a89c8c` / `#7c7264`, primary `#4b9cd3`.
-  (**Do not describe this as "Carolina blue" or any UNC colour.** HQ has its own
+  (**Do not describe this as "Carolina blue" or any UNC colour.** Premed OS has its own
   design system and is **not affiliated with UNC** — see
   `premed-hq-documentation/specifications/05-public-and-account.md` §6.)
   Light "paper" theme is a user toggle — every new surface must work in both.
@@ -34,7 +34,7 @@ fully functional.**
 - Mascot = illustration only, never a UI icon. Celebrations only on
   real milestones (goal hit, letter submitted, first pub, cert renewed).
   **NOT a ram.** `premed-hq-documentation/specifications/05-public-and-account.md`
-  §6.1 forbids ram or Rameses imagery — it reads as a UNC mascot and HQ is
+  §6.1 forbids ram or Rameses imagery — it reads as a UNC mascot and Premed OS is
   not affiliated with UNC. Any mascot must be **visibly unrelated to a
   university mascot**. (`src/components/mascot/Ram.tsx` + `/art/mascot.gif`
   still exist and are the thing to replace; §6.1's parenthetical claiming
@@ -60,7 +60,7 @@ fully functional.**
   first."* Before designing any mechanism — content delivery, rotation,
   caching, sync, scheduling — search for how it is normally built, and say
   what the standard approach is even when choosing to depart from it.
-  **Check the repo first**: HQ has often already solved it once
+  **Check the repo first**: Premed OS has often already solved it once
   (`useDailyQuote.ts` and `pickDaily()` were a working daily-rotation
   implementation nobody remembered). Extend what exists before inventing.
   **Where to check is `premed-hq-documentation/implementation/reference-sources.md`** —

@@ -65,7 +65,7 @@ brew install supabase/tap/supabase
 ```
 
 ```bash
-cd ~/Documents/premed-hq-review
+cd ~/Documents/premed-os
 ```
 
 ```bash

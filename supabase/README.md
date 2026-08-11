@@ -16,9 +16,9 @@ across devices. localStorage stays the primary store; Supabase is the synced cop
    `dashboards` table with Row Level Security.
 
 3. **Auth URLs** — Supabase dashboard → **Authentication → URL Configuration**:
-   - **Site URL:** `https://sasquach67.github.io/Premed-HQ/`
+   - **Site URL:** `https://sasquach67.github.io/Premed-OS/`
    - **Redirect URLs:** add both
-     `https://sasquach67.github.io/Premed-HQ/` and (for local dev) `http://localhost:5180/`
+     `https://sasquach67.github.io/Premed-OS/` and (for local dev) `http://localhost:5180/`
    The magic-link email sends users back to these; unlisted URLs are rejected.
 
 4. **Email** — the built-in email provider works out of the box for magic links

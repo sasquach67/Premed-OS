@@ -1,5 +1,5 @@
 -- ============================================================
--- Premed HQ — cloud sync schema. Run ONCE in the Supabase SQL Editor
+-- Premed Premed OS — cloud sync schema. Run ONCE in the Supabase SQL Editor
 -- (Dashboard → SQL Editor → New query → paste → Run). Idempotent.
 -- One row per user holds the entire dashboard as jsonb; RLS makes each
 -- row private to its owner (the public anon key can't read others' data).
