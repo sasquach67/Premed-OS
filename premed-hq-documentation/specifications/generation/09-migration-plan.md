@@ -99,8 +99,9 @@ to do before a single student has seen one.
 ### Phase 4 — `flashcards-v1`
 - L2 card spec, six card types, deck rules
 - Card-specific deterministic checks (`08` §2.1)
-- Attach to topics and existing FSRS
+- Preserve source-topic metadata for export; no card-level FSRS or in-app review
 - Flashcard presets
+- One-way `.apkg` export; no import or read-back
 
 **Ships:** Create Flashcards.
 
@@ -112,7 +113,6 @@ to do before a single student has seen one.
 ### Phase 6 — Deferred
 - Version A/B testing and the comparison view
 - Source-figure extraction, then `source_figure` blocks (`06` §6)
-- Anki export if **D-6** says yes
 - Remaining generation artifacts from the `generationPolicy` allow-list
 
 ---
@@ -125,7 +125,7 @@ to do before a single student has seen one.
 | `openGapCitation` → `sourceItem.provenance` | `SourceRef` is a superset of `StudyCitation`; keep both shapes until Phase 2 lands |
 | `PracticeExam` / `PracticeQuestion` types | Retained even after the placeholder is deleted — a real generator will use them |
 | `generationPolicy` gate | Unchanged. New generators register behind it |
-| FSRS state | Never reset by generation or regeneration (`08` §1.5) |
+| Topic FSRS state | Never reset by generation or regeneration; cards have no Premed OS FSRS state |
 | Signed-out mode | Generation requires sign-in; nothing else may start to |
 | localStorage-canonical | Artifacts persist locally first, sync after |
 

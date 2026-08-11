@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { fmtTimeAgo } from '@/lib/date'
 import { uid } from '@/lib/id'
-import { bestMcat, gpaStats, hourTotals, percent } from '@/lib/selectors'
+import { gpaStats, hourTotals } from '@/lib/selectors'
 import type { ActivityEvent, CaptureRecord, Goals } from '@/lib/types'
 import { latestExperienceLabel } from '@/lib/overview'
 import { useStore } from '@/store/store'
@@ -82,13 +82,22 @@ function currentForTarget(target: keyof Goals, goals: Goals) {
   const state = useStore.getState()
   const hours = hourTotals(state.experiences)
   if (target === 'gpaTarget') return gpaStats(state.courses).cum
-  if (target === 'mcatTarget') return bestMcat(state.mcat) ?? 0
+  if (target === 'mcatTarget') {
+    const latest = [...state.mcat.attempts]
+      .filter((attempt) => attempt.total != null)
+      .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')) || b.order - a.order)[0]
+    return latest?.total ?? 0
+  }
   if (target === 'clinical') return hours.clinical
   if (target === 'volunteering') return hours.volunteering
   if (target === 'shadowing') return hours.shadowing
   if (target === 'research') return hours.research
   if (target === 'activities') return hours.leadership
   return goals[target]
+}
+
+function formatGoalValue(target: keyof Goals, value: number): string {
+  return target === 'gpaTarget' ? value.toFixed(2) : String(Math.round(value))
 }
 
 export function QuarterlyGoalsPanel() {
@@ -120,7 +129,6 @@ export function QuarterlyGoalsPanel() {
             const target = goal.standingTarget
             const targetValue = target ? goals[target] : 0
             const current = target ? currentForTarget(target, goals) : 0
-            const progress = target && targetValue ? percent(current, targetValue) : goal.done ? 100 : 0
             return (
               <div key={goal.id} className="rounded-xl border border-border bg-muted/35 p-3">
                 <div className="flex items-start gap-2">
@@ -131,11 +139,13 @@ export function QuarterlyGoalsPanel() {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold leading-snug">{goal.text}</p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"><span className="block h-full rounded-full bg-primary" style={{ width: `${progress}%` }} /></span>
-                      <span className="text-xs font-extrabold tabular-nums text-primary">{Math.round(progress)}%</span>
-                    </div>
-                    {target && <p className="mt-1 text-[11px] font-semibold text-muted-foreground">Toward standing {target.replace('Target', '')} target</p>}
+                    {target ? (
+                      <p className="mt-2 text-xs font-semibold text-muted-foreground">
+                        {current
+                          ? `${formatGoalValue(target, current)} recorded · ${formatGoalValue(target, targetValue)} student-set target`
+                          : `No recorded value yet · ${formatGoalValue(target, targetValue)} student-set target`}
+                      </p>
+                    ) : <p className="mt-2 text-xs font-semibold text-muted-foreground">{goal.done ? 'Completed' : 'Open'}</p>}
                   </div>
                 </div>
               </div>

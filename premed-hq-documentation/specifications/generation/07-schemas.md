@@ -264,7 +264,7 @@ interface Flashcard {
   difficultyEstimate: 1 | 2 | 3 | 4 | 5
   provenance: Provenance
 
-  owner: 'generated' | 'user'     // manual cards are exempt from generator checks
+  owner: 'generated'              // Premed OS has no manual card-authoring surface
   edited?: boolean
 }
 ```
@@ -290,7 +290,7 @@ are separate axes, and conflating them was the modelling error the first draft m
 - `enumerated-list` → 2–6 indices (`FC-L1`), `listOrdered` present, indices contiguous from `c1`
 - `sourceReference` present and in the verified citation set
 - `provenance: 'background'` forbidden under `SOURCE_ONLY` / `SOURCE_PLUS_CLARIFICATION`
-- **`owner: 'user'` → every generator check above is skipped** (`04` §10.1, `FC-IO-5`)
+- Background content follows `02` §2.6: marked, attached to a source-backed concept, and subordinate
 
 ---
 

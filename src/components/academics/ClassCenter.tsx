@@ -15,7 +15,7 @@ import type {
   ClassCenterData, ClassContact, ClassContactRole, Course,
   AcademicFile, ClassFileType, ClassNote, ClassNoteType, Topic,
   ClassWeakArea, PracticeExam, PracticeQuestion,
-  TopicConfidence, TopicStatus, WeakAreaSource, Person,
+  TopicStatus, WeakAreaSource, Person,
 } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -31,11 +31,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DateField } from '@/components/common/DateField'
 import { AnimatedFileUpload } from '@/components/motion'
 import { createTopicFsrsState } from '@/lib/academics/fsrs'
-import { topicRetrievability } from '@/lib/academics/fsrs'
 import { SmartActionPanel } from '@/components/common/SmartActionPanel'
 import { academicsNextActions, type Recommendation } from '@/lib/intelligence'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { CenterPeek, type RecordOpenMode } from '@/components/common/CenterPeek'
@@ -671,7 +669,7 @@ function ClassCard({
         </div>
 
         <div className="flex flex-wrap gap-1.5 text-xs font-bold">
-          {stats.weakCount > 0 && <Badge variant="danger">{stats.weakCount} weak</Badge>}
+          {stats.weakCount > 0 && <Badge variant="warning">{stats.weakCount} review notes</Badge>}
           {stats.processingCount > 0 && (
             <Badge variant="muted" aria-live="polite">
               <Loader2 className="size-3 animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -687,10 +685,7 @@ function ClassCard({
           {row.bcpm && <Badge variant="secondary">BCPM</Badge>}
         </div>
 
-        <div>
-          <p className="mb-1.5 text-xs font-bold text-muted-foreground">{stats.readyCount} of {stats.topicCount} topics ready</p>
-          <Progress value={stats.readyPercent} aria-label={`${stats.readyPercent}% topics ready`} />
-        </div>
+        <p className="text-xs font-bold text-muted-foreground">{stats.readyCount} marked ready · {stats.topicCount} topics recorded</p>
 
         <div className={cn('border-t border-border pt-3', compact && 'md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
           <p className="text-xs font-bold text-muted-foreground">
@@ -773,18 +768,18 @@ function AcademicsBento({
       && assignment.dueDate
       && !['submitted', 'graded', 'dropped'].includes(assignment.status)
     )
-    .sort((a, b) => assignmentPriority(b, data) - assignmentPriority(a, data))
+    .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
 
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
       <ReviewQueuePanel data={data} topics={dueTopics} onOpenClass={onOpenClass} />
-      <WeakTopicsPanel data={data} classes={classes} onOpenClass={onOpenClass} />
+      <ReviewTopicsPanel data={data} classes={classes} onOpenClass={onOpenClass} />
       <UpNextPanel data={data} assignments={pending} onOpenClass={onOpenClass} />
       <GpaPanel courses={courses} currentTerm={classes[0]?.semester ?? ''} />
       <ContactsPanel data={data} classes={classes} persons={persons} />
       <UpcomingPanel data={data} assignments={pending} />
-      <HistoryPanel title="Mastery trend" kind="mastery" data={data} />
-      <HistoryPanel title="Consistency" kind="consistency" data={data} />
+      <HistoryPanel title="Recent recall" kind="recent" data={data} />
+      <HistoryPanel title="Review activity" kind="activity" data={data} />
     </div>
   )
 }
@@ -852,18 +847,17 @@ function ReviewQueuePanel({
       {!shown.length ? <BentoEmpty>Nothing is due in Premed OS today.</BentoEmpty> : (
         <div className="space-y-2">
           {shown.map((topic) => {
-            const retrievability = Math.round(topicRetrievability(topic.fsrs) * 100)
             const questions = data.practiceQuestions.filter((question) => question.topicIds.includes(topic.id))
             const missed = questions.filter((question) => question.isCorrect === false || question.selfGrade === 'missed').length
             const why = questions.length
-              ? `Missed ${missed} of ${questions.length} recent questions · retrievability ~${retrievability}%`
+              ? `${missed} of ${questions.length} recorded questions were missed`
               : topic.fsrs.reps
-                ? `FSRS scheduled this review · retrievability ~${retrievability}%`
+                ? `FSRS scheduled this review from recorded recall events`
                 : `First retrieval is due · no review history yet`
             return (
               <button
                 key={topic.id}
-                className="grid w-full gap-2 rounded-xl border border-border bg-background p-3 text-left transition hover:border-primary/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_minmax(0,1fr)_8rem_auto]"
+                className="grid w-full gap-2 rounded-xl border border-border bg-background p-3 text-left transition hover:border-primary/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_minmax(0,1fr)_auto]"
                 onClick={() => onOpenClass(topic.courseId)}
               >
                 <Badge variant="outline">{classLabel(topic.courseId, data)}</Badge>
@@ -871,11 +865,7 @@ function ReviewQueuePanel({
                   <span className="block truncate font-bold">{topic.title}</span>
                   <span className="block truncate text-xs font-semibold text-muted-foreground">{why}</span>
                 </span>
-                <span className="self-center">
-                  <Progress value={retrievability} />
-                  <span className="mt-1 block text-right text-[11px] font-bold tabular-nums text-muted-foreground">{retrievability}%</span>
-                </span>
-                <Badge variant={topic.status === 'weak' ? 'danger' : 'secondary'}>{statusLabel(topic.status)}</Badge>
+                <Badge variant={topic.status === 'weak' ? 'warning' : 'secondary'}>{topic.status === 'weak' ? 'Marked for review' : statusLabel(topic.status)}</Badge>
               </button>
             )
           })}
@@ -886,7 +876,7 @@ function ReviewQueuePanel({
   )
 }
 
-function WeakTopicsPanel({
+function ReviewTopicsPanel({
   data,
   classes,
   onOpenClass,
@@ -907,8 +897,8 @@ function WeakTopicsPanel({
   const topics = data.topics
     .filter((topic) => activeIds.has(topic.courseId))
     .filter((topic) => effectiveScope === 'all' || examTopicIds.includes(topic.id))
-    .filter((topic) => topic.status === 'weak' || topicRetrievability(topic.fsrs) < 0.7)
-    .sort((a, b) => topicRetrievability(a.fsrs) - topicRetrievability(b.fsrs))
+    .filter((topic) => topic.status === 'weak' || topic.fsrs.due <= Date.now())
+    .sort((a, b) => a.fsrs.due - b.fsrs.due || a.order - b.order)
     .slice(0, 5)
   const readyInScope = data.topics.filter((topic) =>
     (effectiveScope === 'all' ? activeIds.has(topic.courseId) : examTopicIds.includes(topic.id)) && topic.status === 'ready'
@@ -920,7 +910,7 @@ function WeakTopicsPanel({
   return (
     <BentoPanel
       span={5}
-      title="Where you’re weak"
+      title="Marked for review"
       icon={Target}
       actions={(
         <ToggleGroup
@@ -943,25 +933,21 @@ function WeakTopicsPanel({
         </div>
       )}
       {!examScopeAvailable && scope === 'exam' && (
-        <p className="mb-3 text-xs font-semibold text-muted-foreground">No exam scope is available, so all weak topics are shown.</p>
+        <p className="mb-3 text-xs font-semibold text-muted-foreground">No exam scope is available, so all due or manually marked topics are shown.</p>
       )}
-      {!topics.length ? <BentoEmpty>No genuinely weak topics in this scope.</BentoEmpty> : (
+      {!topics.length ? <BentoEmpty>No topics are due or manually marked in this scope.</BentoEmpty> : (
         <div className="space-y-2">
-          {topics.map((topic) => {
-            const strength = Math.round(topicRetrievability(topic.fsrs) * 100)
-            return (
+          {topics.map((topic) => (
               <button key={topic.id} className="w-full rounded-xl bg-muted/25 p-3 text-left hover:bg-muted/45" onClick={() => onOpenClass(topic.courseId)}>
                 <span className="flex items-center justify-between gap-2">
                   <span className="font-bold">{topic.title}</span>
-                  <span className="text-xs font-bold tabular-nums text-muted-foreground">{strength}%</span>
+                  <Badge variant="muted">{topic.status === 'weak' ? 'Manually marked' : 'Due'}</Badge>
                 </span>
                 <span className="mt-1 block text-xs font-semibold text-muted-foreground">{classLabel(topic.courseId, data)}{topic.unit ? ` · ${topic.unit}` : ''}</span>
-                <Progress className="mt-2" value={strength} />
               </button>
-            )
-          })}
+          ))}
           <div className="flex items-center justify-between pt-1 text-xs font-bold text-muted-foreground">
-            <span>{readyInScope} of {totalInScope} exam-ready</span>
+            <span>{readyInScope} of {totalInScope} marked ready</span>
             {topics[0] ? <Button asChild variant="link" size="sm" className="h-auto p-0"><Link to={`/academics/review/${topics[0].courseId}?topicId=${topics[0].id}`}>Review these →</Link></Button> : null}
           </div>
         </div>
@@ -988,10 +974,9 @@ function UpNextPanel({
   const topicIds = [...new Set([...(item.coveredTopicIds ?? []), ...item.linkedTopicIds])]
   const topics = data.topics.filter((topic) => topicIds.includes(topic.id))
   const ready = topics.filter((topic) => topic.status === 'ready').length
-  const readiness = topics.length ? Math.round((ready / topics.length) * 100) : 0
   const weak = topics
-    .filter((topic) => topic.status === 'weak' || topicRetrievability(topic.fsrs) < 0.7)
-    .sort((a, b) => topicRetrievability(a.fsrs) - topicRetrievability(b.fsrs))
+    .filter((topic) => topic.status === 'weak')
+    .sort((a, b) => a.order - b.order)
     .slice(0, 2)
   return (
     <BentoPanel
@@ -1010,16 +995,10 @@ function UpNextPanel({
           <p className="mt-1 text-sm font-semibold text-muted-foreground">
             {item.weight != null ? `Worth ${item.weight}% of the course grade` : 'Grade weight not available'}
           </p>
-          <div className="mt-4">
-            <div className="mb-1 flex justify-between text-xs font-bold text-muted-foreground">
-              <span>Exam-ready</span><span className="tabular-nums">{readiness}%</span>
-            </div>
-            <Progress value={readiness} />
-            {!data.reviewEvents.length && <p className="mt-1 text-xs font-semibold text-muted-foreground">Projection unavailable · not enough review history yet</p>}
-          </div>
+          <p className="mt-4 text-xs font-bold text-muted-foreground">{ready} of {topics.length} linked topics are marked ready.</p>
           {!!weak.length && (
             <div className="mt-3 flex flex-wrap gap-2">
-              {weak.map((topic) => <Badge key={topic.id} variant="danger">{topic.title}</Badge>)}
+              {weak.map((topic) => <Badge key={topic.id} variant="warning">Marked for review · {topic.title}</Badge>)}
             </div>
           )}
         </div>
@@ -1031,40 +1010,14 @@ function UpNextPanel({
           ))}
         </div>
       )}
-      {data.reviewEvents.length >= 3 && weak.length > 0 && (
-        <PaceLine text={reviewPaceText(data, weak.length)} />
-      )}
     </BentoPanel>
   )
-}
-
-function PaceLine({ text }: { text: string }) {
-  const [open, setOpen] = useState(true)
-  return open ? (
-    <div className="mt-4 flex items-start justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-semibold">
-      <span>{text}</span>
-      <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setOpen(false)}>Dismiss</Button>
-    </div>
-  ) : (
-    <Button variant="outline" size="sm" className="mt-4" onClick={() => setOpen(true)}>Show projection</Button>
-  )
-}
-
-function reviewPaceText(data: ClassCenterViewData, weakCount: number) {
-  const newest = Math.max(...data.reviewEvents.map((event) => event.timestamp))
-  const oldest = Math.min(...data.reviewEvents.map((event) => event.timestamp))
-  const elapsedDays = Math.max(1, (newest - oldest) / 86400000)
-  const reviewsPerDay = data.reviewEvents.length / elapsedDays
-  const daysNeeded = Math.max(1, Math.ceil(weakCount / reviewsPerDay))
-  const projected = new Date(Date.now() + daysNeeded * 86400000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-  return `At ${reviewsPerDay.toFixed(1)} reviews/day → these weak topics get one retrieval by ${projected}.`
 }
 
 function GpaPanel({ courses, currentTerm }: { courses: Course[]; currentTerm: string }) {
   const overall = gpaStats(courses)
   const term = gpaStats(courses.filter((course) => course.term === currentTerm))
   const graded = courses.filter((course) => GRADE_POINTS[course.grade] != null && course.credits > 0)
-  const maxCredits = Math.max(1, ...graded.map((course) => course.credits))
   return (
     <BentoPanel
       span={5}
@@ -1077,14 +1030,14 @@ function GpaPanel({ courses, currentTerm }: { courses: Course[]; currentTerm: st
         <Metric label="Cumulative" value={fmtGpa(overall.cum)} />
         <Metric label="Science" value={fmtGpa(overall.science)} />
       </div>
-      <BentoEmpty>Not enough grade history yet for an honest trend or projection.</BentoEmpty>
+      {!graded.length && <BentoEmpty>Not enough graded work yet to calculate GPA.</BentoEmpty>}
       {!!graded.length && (
         <div className="mt-4 space-y-2">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Contribution · dragging ← → lifting</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Recorded grades</p>
           {graded.slice(0, 4).map((course) => (
-            <div key={course.id} className="grid grid-cols-[5rem_minmax(0,1fr)_2rem] items-center gap-2 text-xs font-bold">
+            <div key={course.id} className="grid grid-cols-[minmax(0,1fr)_4rem_3rem] items-center gap-2 rounded-xl bg-muted/30 px-3 py-2 text-xs font-bold">
               <span className="truncate">{course.code}</span>
-              <Progress value={(course.credits / maxCredits) * (GRADE_POINTS[course.grade] / 4) * 100} />
+              <span className="text-right text-muted-foreground">{course.credits} cr</span>
               <span className="text-right tabular-nums text-muted-foreground">{course.grade}</span>
             </div>
           ))}
@@ -1156,14 +1109,14 @@ function ContactsPanel({
 
 function UpcomingPanel({ data, assignments }: { data: ClassCenterViewData; assignments: ClassAssignment[] }) {
   const items = [...assignments]
-    .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0) || String(a.dueDate).localeCompare(String(b.dueDate)))
+    .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
     .slice(0, 5)
   return (
     <BentoPanel span={4} title="Upcoming" icon={CalendarDays}>
       {!items.length ? <BentoEmpty>No important dated work is pending.</BentoEmpty> : (
         <div className="space-y-2">
           {items.map((item) => (
-            <div key={item.id} className={cn('rounded-xl border border-border bg-background p-3', (item.weight ?? 0) >= 20 && 'border-l-4 border-l-primary bg-primary/5')}>
+            <div key={item.id} className="rounded-xl border border-border bg-background p-3">
               <div className="flex items-start justify-between gap-2">
                 <span className="font-bold">{item.title}</span>
                 <span className="whitespace-nowrap text-xs font-bold tabular-nums text-muted-foreground">{item.dueDate ? daysUntil(item.dueDate) : 'TBD'}</span>
@@ -1183,17 +1136,17 @@ function HistoryPanel({
   data,
 }: {
   title: string
-  kind: 'mastery' | 'consistency'
+  kind: 'recent' | 'activity'
   data: ClassCenterViewData
 }) {
   const events = data.reviewEvents
-  const enough = events.length >= 3
+  const enough = events.length > 0
   const days = [...new Set(events.map((event) => new Date(event.timestamp).toISOString().slice(0, 10)))].sort().slice(-14)
   return (
-    <BentoPanel span={4} title={title} icon={kind === 'mastery' ? TrendingUp : CalendarClock}>
-      {!enough ? <BentoEmpty>Not enough history yet. Reviews completed in D5 will build this view.</BentoEmpty> : kind === 'consistency' ? (
+    <BentoPanel span={4} title={title} icon={kind === 'recent' ? Timer : CalendarClock}>
+      {!enough ? <BentoEmpty>No review events recorded yet.</BentoEmpty> : kind === 'activity' ? (
         <div>
-          <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Reviews per day — not mastery</p>
+          <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Recorded reviews by day</p>
           <div className="grid grid-cols-7 gap-1.5">
             {days.map((day) => {
               const count = events.filter((event) => new Date(event.timestamp).toISOString().slice(0, 10) === day).length
@@ -1202,19 +1155,17 @@ function HistoryPanel({
           </div>
         </div>
       ) : (
-        <BentoEmpty>Review events exist, but topic-ready history is not yet sufficient for an honest trend.</BentoEmpty>
+        <div className="space-y-2">
+          {[...events].sort((a, b) => b.timestamp - a.timestamp).slice(0, 4).map((event) => (
+            <div key={event.id} className="flex items-center justify-between rounded-xl bg-muted/30 px-3 py-2 text-xs font-bold">
+              <span>{data.topics.find((topic) => topic.id === event.topicId)?.title || 'Topic unavailable'}</span>
+              <span className="text-muted-foreground">{statusLabel(event.grade)} · {new Date(event.timestamp).toLocaleDateString()}</span>
+            </div>
+          ))}
+        </div>
       )}
     </BentoPanel>
   )
-}
-
-function assignmentPriority(assignment: ClassAssignment, data: ClassCenterViewData) {
-  if (!assignment.dueDate) return 0
-  const days = Math.max(1, Math.ceil((new Date(`${assignment.dueDate}T00:00:00`).getTime() - Date.now()) / 86400000))
-  const topicIds = [...new Set([...(assignment.coveredTopicIds ?? []), ...assignment.linkedTopicIds])]
-  const topics = data.topics.filter((topic) => topicIds.includes(topic.id))
-  const readiness = topics.length ? topics.filter((topic) => topic.status === 'ready').length / topics.length : 0
-  return ((assignment.weight ?? 1) * (1 + (1 - readiness))) / days
 }
 
 function initials(name: string) {
@@ -1277,7 +1228,7 @@ function ClassWorkspace({
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => addNote(row.id, mutate)}><NotebookText className="size-4" /> Note</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => addTopic(row.id, mutate)}><Target className="size-4" /> Topic</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => addWeakArea(row.id, mutate)}><Brain className="size-4" /> Weak area</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addWeakArea(row.id, mutate)}><Brain className="size-4" /> Review note</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => addFile(row.id, mutate)}><FolderOpen className="size-4" /> Resource</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => addContact(row.id, mutate)}><Users className="size-4" /> Contact</DropdownMenuItem>
                 </DropdownMenuContent>
@@ -1400,9 +1351,9 @@ function OverviewTab({
     .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
     .slice(0, 4)
   const latestNote = data.notes.filter((note) => note.courseId === row.id).sort((a, b) => b.updatedAt - a.updatedAt)[0]
-  const weakTopic = topics.find((topic) => topic.status === 'weak') ?? topics.find((topic) => topic.status === 'reviewing')
+  const reviewTopic = topics.find((topic) => topic.status === 'weak') ?? topics.find((topic) => topic.status === 'reviewing')
   const actionRows = [
-    weakTopic ? { label: `Review weak topic: ${weakTopic.title}`, meta: '15 min', onClick: undefined } : undefined,
+    reviewTopic ? { label: `Review marked topic: ${reviewTopic.title}`, meta: '15 min', onClick: undefined } : undefined,
     stats.nextDeadline ? { label: `Start ${stats.nextDeadline.title}`, meta: stats.nextDeadline.dueDate ? daysUntil(stats.nextDeadline.dueDate) : 'Open', onClick: openAssignments } : undefined,
   ].filter(Boolean) as { label: string; meta: string; onClick?: () => void }[]
   return (
@@ -1427,7 +1378,7 @@ function OverviewTab({
         </Card>
         <Card>
           <CardHeader className="flex-row items-center justify-between">
-            <CardTitle>Topics · {topics.filter((topic) => normalizedTopicStatus(topic.status) === 'ready').length} of {topics.length} ready</CardTitle>
+            <CardTitle>Topics · {topics.filter((topic) => normalizedTopicStatus(topic.status) === 'ready').length} marked ready · {topics.length} recorded</CardTitle>
             <Button size="sm" variant="outline" onClick={() => addTopic(row.id, mutate)}><Plus className="size-4" /> Topic</Button>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -1449,7 +1400,7 @@ function OverviewTab({
                   <p className="text-sm text-muted-foreground">{statusLabel(item.type)}</p>
                   {item.type === 'exam' && weakCoveredTopics(item, data).length > 0 && (
                     <p className="mt-1 text-xs font-extrabold text-destructive">
-                      Weak covered: {weakCoveredTopics(item, data).map((topic) => topic.title).join(', ')}
+                      Marked for review: {weakCoveredTopics(item, data).map((topic) => topic.title).join(', ')}
                     </p>
                   )}
                 </div>
@@ -1667,14 +1618,14 @@ function StudyCenterTab({ row, data, mutate }: ClassTabProps) {
   const exams = data.practiceExams.filter((exam) => exam.courseId === row.id).sort((a, b) => b.updatedAt - a.updatedAt)
   const activeExam = data.practiceExams.find((exam) => exam.id === activeExamId)
   const revisionQueue = topics
-    .map((topic) => ({ topic, readiness: topicReadiness(topic, data), practice: topicPracticeStats(topic.id, data) }))
-    .sort((a, b) => a.readiness - b.readiness)
+    .map((topic) => ({ topic, practice: topicPracticeStats(topic.id, data) }))
+    .sort((a, b) => a.topic.fsrs.due - b.topic.fsrs.due || a.topic.order - b.topic.order)
     .slice(0, 5)
   const nextExam = data.assignments
     .filter((item) => item.courseId === row.id && item.type === 'exam' && item.dueDate && item.status !== 'graded')
     .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))[0]
   const coveredTopics = nextExam ? topics.filter((topic) => (nextExam.coveredTopicIds?.length ? nextExam.coveredTopicIds : nextExam.linkedTopicIds).includes(topic.id)) : topics
-  const readyCount = coveredTopics.filter((topic) => topicReadiness(topic, data) >= 75).length
+  const readyCount = coveredTopics.filter((topic) => topic.status === 'ready').length
 
   return (
     <div className="space-y-5">
@@ -1683,13 +1634,7 @@ function StudyCenterTab({ row, data, mutate }: ClassTabProps) {
       )}
       <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 lg:flex-row lg:items-center lg:justify-between">
         <p className="text-sm font-semibold text-muted-foreground">Practice generation is being rebuilt on the verified study-tools backend.</p>
-        <div className="min-w-[220px] space-y-1">
-          <div className="flex items-center justify-between text-xs font-extrabold uppercase text-muted-foreground">
-            <span>{nextExam ? `${nextExam.title} readiness` : 'Exam readiness'}</span>
-            <span className="text-destructive">{readyCount}/{coveredTopics.length} ready</span>
-          </div>
-          <ProgressLine value={coveredTopics.length ? Math.round((readyCount / coveredTopics.length) * 100) : 0} />
-        </div>
+        <p className="text-xs font-extrabold uppercase text-muted-foreground">{nextExam ? nextExam.title : 'Recorded scope'} · {readyCount}/{coveredTopics.length} marked ready</p>
       </div>
       <div className="grid gap-5 xl:grid-cols-[1.25fr_.85fr]">
         <Card>
@@ -1697,12 +1642,11 @@ function StudyCenterTab({ row, data, mutate }: ClassTabProps) {
             <CardTitle>Topic intelligence</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1">
-            <div className="hidden grid-cols-[1fr_120px_140px_140px_140px_92px] gap-3 px-3 py-2 text-xs font-extrabold uppercase text-muted-foreground lg:grid">
+            <div className="hidden grid-cols-[1fr_120px_140px_140px_92px] gap-3 px-3 py-2 text-xs font-extrabold uppercase text-muted-foreground lg:grid">
               <span>Topic</span>
               <span>Status</span>
-              <span>Confidence</span>
+              <span>Self-rating</span>
               <span>Practice</span>
-              <span>Readiness</span>
               <span className="text-right">Action</span>
             </div>
             {topics.map((topic) => (
@@ -1715,15 +1659,15 @@ function StudyCenterTab({ row, data, mutate }: ClassTabProps) {
           <Card>
             <CardHeader><CardTitle>Revision queue</CardTitle></CardHeader>
             <CardContent className="space-y-2">
-              {revisionQueue.map(({ topic, readiness, practice }) => (
+              {revisionQueue.map(({ topic, practice }) => (
                 <div key={topic.id} className="flex items-center justify-between gap-3 rounded-xl bg-muted/45 p-3">
                   <div>
                     <p className="font-bold">{topic.title}</p>
                     <p className="text-xs font-semibold text-muted-foreground">
-                      {practice.total ? `${practice.correct}/${practice.total} practice correct` : 'Not tested'} · {activeWeakAreasForTopic(topic.id, data).length} weak
+                      {practice.total ? `${practice.correct}/${practice.total} practice correct` : 'Not tested'} · {activeWeakAreasForTopic(topic.id, data).length} review notes
                     </p>
                   </div>
-                  <Badge variant={readiness >= 75 ? 'success' : readiness >= 45 ? 'warning' : 'danger'}>{readiness}% ready</Badge>
+                  <Badge variant="muted">{topic.fsrs.due <= Date.now() ? 'Due' : 'Scheduled'}</Badge>
                 </div>
               ))}
             </CardContent>
@@ -1748,27 +1692,25 @@ function StudyCenterTab({ row, data, mutate }: ClassTabProps) {
 
 function TopicMatrixRow({ topic, data, mutate }: { topic: Topic; data: ClassCenterViewData; mutate: ClassTabProps['mutate'] }) {
   const practice = topicPracticeStats(topic.id, data)
-  const readiness = topicReadiness(topic, data)
   const weakAreas = activeWeakAreasForTopic(topic.id, data)
   return (
     <div className={cn(
-      'grid gap-3 rounded-xl px-3 py-3 text-sm lg:grid-cols-[1fr_120px_140px_140px_140px_92px] lg:items-center',
+      'grid gap-3 rounded-xl px-3 py-3 text-sm lg:grid-cols-[1fr_120px_140px_140px_92px] lg:items-center',
       weakAreas.length ? 'border border-destructive/25 bg-destructive/8' : 'bg-card'
     )}>
       <div className="min-w-0">
         <p className="truncate font-bold">{topic.title}</p>
-        <p className="text-xs font-semibold text-muted-foreground">{topic.unit || 'No unit'}{weakAreas.length ? ` · ${weakAreas.length} active weak` : ''}</p>
+        <p className="text-xs font-semibold text-muted-foreground">{topic.unit || 'No unit'}{weakAreas.length ? ` · ${weakAreas.length} review notes` : ''}</p>
       </div>
       <TinySelect value={topic.status} options={TOPIC_STATUSES} onChange={(value) => mutate((draft) => {
         const item = draft.topics.find((row) => row.id === topic.id)
         if (item) Object.assign(item, { status: value as TopicStatus, updatedAt: Date.now() })
       })} />
-      <InlineGauge value={Math.round((topic.confidence / 3) * 100)} meta={confidenceLabel(topic.confidence)} />
-      <InlineGauge value={practice.percent ?? 0} meta={practice.total ? `${practice.correct}/${practice.total}` : 'Not tested'} muted={!practice.total} />
-      <InlineGauge value={readiness} meta={`${readiness}%`} />
+      <span className="text-xs font-bold text-muted-foreground">{topic.confidence}/3 recorded</span>
+      <span className="text-xs font-bold text-muted-foreground">{practice.total ? `${practice.correct}/${practice.total} correct` : 'Not tested'}</span>
       <div className="flex justify-start lg:justify-end">
         <Button size="sm" variant={weakAreas.length ? 'default' : 'ghost'} onClick={() => addWeakArea(topic.courseId, mutate, { topicId: topic.id, label: topic.title })}>
-          {weakAreas.length ? 'Review' : 'Log weak'}
+          {weakAreas.length ? 'Review notes' : 'Add review note'}
         </Button>
       </div>
     </div>
@@ -1881,7 +1823,7 @@ function PracticeExamRunner({
                 </div>
               )}
               {!question.isCorrect && (
-                <Button size="sm" variant="outline" onClick={() => addWeakAreaFromQuestion(question, data, mutate)}>Log weak area</Button>
+                <Button size="sm" variant="outline" onClick={() => addWeakAreaFromQuestion(question, data, mutate)}>Mark for review</Button>
               )}
             </div>
           )}
@@ -2023,7 +1965,7 @@ function addWeakArea(courseId: string, mutate: ClassTabProps['mutate'], preset: 
       id: uid(),
       courseId,
       topicId: preset.topicId,
-      label: preset.label || 'New weak area',
+      label: preset.label || 'New review note',
       source: (preset.source as WeakAreaSource) || 'manual',
       reason: preset.reason || 'conceptual',
       severity: preset.severity || 2,
@@ -2156,12 +2098,11 @@ function removeById(key: 'files' | 'contacts', id: string, mutate: ClassTabProps
 }
 
 function TopicRow({ topic, current, data, mutate }: { topic: Topic; current: boolean; data: ClassCenterViewData; mutate: ClassTabProps['mutate'] }) {
-  const readiness = topicReadiness(topic, data)
   const weakCount = activeWeakAreasForTopic(topic.id, data).length
   const StatusIcon = normalizedTopicStatus(topic.status) === 'ready' ? CheckCircle2 : Circle
   return (
     <div className={cn(
-      'grid gap-3 rounded-xl border border-border bg-card p-3 text-sm md:grid-cols-[1.4fr_90px_130px_130px_auto] md:items-center',
+      'grid gap-3 rounded-xl border border-border bg-card p-3 text-sm md:grid-cols-[1.4fr_90px_130px_auto] md:items-center',
       current && 'border-primary/35 bg-primary/8'
     )}>
       <div className="flex min-w-0 items-center gap-2">
@@ -2173,7 +2114,7 @@ function TopicRow({ topic, current, data, mutate }: { topic: Topic; current: boo
           })} />
           <div className="mt-1 flex flex-wrap gap-1">
             {current && <Badge variant="secondary">Current</Badge>}
-            {weakCount > 0 && <Badge variant="danger">{weakCount} weak</Badge>}
+            {weakCount > 0 && <Badge variant="warning">{weakCount} review notes</Badge>}
             <TopicReferenceBadge label="Notes" count={topicLinkedNotes(topic.id, data).length} />
             <TopicReferenceBadge label="Assignments" count={topicLinkedAssignments(topic.id, data).length} />
             <TopicReferenceBadge label="Files" count={topicLinkedFiles(topic.id, data).length} />
@@ -2188,8 +2129,7 @@ function TopicRow({ topic, current, data, mutate }: { topic: Topic; current: boo
         const item = draft.topics.find((row) => row.id === topic.id)
         if (item) Object.assign(item, { status: value as TopicStatus, updatedAt: Date.now() })
       })} />
-      <InlineGauge value={readiness} meta={`${readiness}% ready`} />
-      <Button size="sm" variant={weakCount ? 'default' : 'outline'} onClick={() => addWeakArea(topic.courseId, mutate, { topicId: topic.id, label: topic.title })}>{weakCount ? 'Review' : 'Log weak'}</Button>
+      <Button size="sm" variant={weakCount ? 'default' : 'outline'} onClick={() => addWeakArea(topic.courseId, mutate, { topicId: topic.id, label: topic.title })}>{weakCount ? 'Review notes' : 'Add review note'}</Button>
     </div>
   )
 }
@@ -2197,18 +2137,12 @@ function TopicRow({ topic, current, data, mutate }: { topic: Topic; current: boo
 function classStats(courseId: string, data: ClassCenterViewData) {
   const topics = data.topics.filter((item) => item.courseId === courseId)
   const readyCount = topics.filter((topic) => topic.status === 'ready').length
-  const masteredWeight = topics.reduce((sum, topic) => {
-    const value = topicStatusWeight(topic.status)
-    return sum + value
-  }, 0)
   const upcoming = data.assignments
     .filter((item) => item.courseId === courseId && item.status !== 'submitted' && item.status !== 'graded' && item.dueDate)
     .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
   return {
-    revision: topics.length ? Math.round((masteredWeight / topics.length) * 100) : 0,
     topicCount: topics.length,
     readyCount,
-    readyPercent: topics.length ? Math.round((readyCount / topics.length) * 100) : 0,
     weakCount: data.weakAreas.filter((item) => item.courseId === courseId && item.status !== 'resolved').length,
     notesCount: data.notes.filter((item) => item.courseId === courseId).length,
     filesCount: data.files.filter((item) => item.courseId === courseId).length,
@@ -2238,22 +2172,6 @@ function normalizedTopicStatus(status: TopicStatus) {
   return status
 }
 
-function topicStatusWeight(status: TopicStatus) {
-  const normalized = normalizedTopicStatus(status)
-  if (normalized === 'ready') return 1
-  if (normalized === 'reviewing') return 0.72
-  if (normalized === 'notes-made') return 0.58
-  if (normalized === 'seen') return 0.34
-  if (normalized === 'weak') return 0.18
-  return 0
-}
-
-function confidenceLabel(value: TopicConfidence) {
-  if (value === 3) return 'Strong'
-  if (value === 2) return 'Okay'
-  return 'Weak'
-}
-
 function activeWeakAreasForTopic(topicId: string, data: ClassCenterViewData) {
   return data.weakAreas.filter((area) => area.topicId === topicId && area.status !== 'resolved')
 }
@@ -2264,18 +2182,7 @@ function topicPracticeStats(topicId: string, data: ClassCenterViewData) {
   return {
     total: questions.length,
     correct,
-    percent: questions.length ? Math.round((correct / questions.length) * 100) : null,
   }
-}
-
-function topicReadiness(topic: Topic, data: ClassCenterViewData) {
-  const practice = topicPracticeStats(topic.id, data)
-  const weakAreas = activeWeakAreasForTopic(topic.id, data)
-  const confidenceScore = Math.round((topic.confidence / 3) * 100)
-  const practiceScore = practice.percent ?? 35
-  const weakPenalty = Math.min(100, weakAreas.reduce((sum, area) => sum + area.severity * 18, 0))
-  // Readiness formula for Phase 2: confidence 40%, practice 40%, active weak-area penalty up to 20%.
-  return Math.max(0, Math.min(100, Math.round(confidenceScore * 0.4 + practiceScore * 0.4 + (100 - weakPenalty) * 0.2)))
 }
 
 function topicLinkedNotes(topicId: string, data: ClassCenterViewData) {
@@ -2392,15 +2299,6 @@ function ToggleChip({ selected, onClick, children }: { selected: boolean; onClic
     >
       {children}
     </button>
-  )
-}
-
-function InlineGauge({ value, meta, muted }: { value: number; meta: string; muted?: boolean }) {
-  return (
-    <div className="space-y-1">
-      <ProgressLine value={value} muted={muted} />
-      <p className={cn('text-xs font-extrabold', muted ? 'text-muted-foreground' : 'text-foreground')}>{meta}</p>
-    </div>
   )
 }
 

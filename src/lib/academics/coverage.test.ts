@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { ClassCenterData, KeyPoint, SourceChunk } from '@/lib/types'
-import { calculateCourseCoverage, prioritizeKeyPoints, proposeChunkAssignment } from './coverage'
+import type { ClassCenterData, SourceChunk } from '@/lib/types'
+import { calculateCourseCoverage, proposeChunkAssignment } from './coverage'
 
 const chunk = (id: string, topicId?: string): SourceChunk => ({
   id, fileId: `file-${id}`, courseId: 'course-1', topicId, content: id,
@@ -24,14 +24,6 @@ describe('coverage ledger', () => {
     expect(result.totalChunks).toBe(3)
     expect(result.unassigned.map((item) => item.chunk.id)).toEqual(['c2'])
     expect(result.uncovered.map((item) => item.chunk.id)).toEqual(['c2', 'c3'])
-  })
-
-  it('prioritizes key points never surfaced', () => {
-    const point = (id: string, timesSurfaced: number, order: number): KeyPoint => ({
-      id, topicId: 't1', text: id, sourceChunkIds: [], timesSurfaced,
-      createdAt: 1, updatedAt: 1, order,
-    })
-    expect(prioritizeKeyPoints([point('seen', 2, 0), point('new', 0, 1)])[0].id).toBe('new')
   })
 
   it('isolates an unanchored file instead of creating a misc bucket', () => {

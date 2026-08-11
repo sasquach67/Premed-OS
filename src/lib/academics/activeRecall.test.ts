@@ -3,7 +3,7 @@ import { Rating } from 'ts-fsrs'
 import { createTopicFsrsState } from '@/lib/academics/fsrs'
 import { reviewTopic } from '@/lib/academics/fsrs'
 import {
-  REVIEW_RATINGS, buildRecallQueue, calibrationFor, noKeyLoopAvailable,
+  REVIEW_RATINGS, buildRecallQueue, noKeyLoopAvailable,
 } from '@/lib/academics/activeRecall'
 import type { Topic } from '@/lib/types'
 
@@ -30,7 +30,7 @@ describe('active recall deterministic loop', () => {
     expect(after.due).toBeGreaterThan(2)
   })
 
-  it('orders requested, weak, and never-reviewed topics deterministically', () => {
+  it('keeps an explicitly requested topic first, then uses the recorded due order', () => {
     const queue = buildRecallQueue([
       topic('later', 500, 'ready', 2),
       topic('never', 50, 'seen'),
@@ -39,9 +39,4 @@ describe('active recall deterministic loop', () => {
     expect(queue.map((item) => item.id)).toEqual(['never', 'weak'])
   })
 
-  it('computes calibration without model output', () => {
-    expect(calibrationFor('pretty-sure', 'again').overconfident).toBe(true)
-    expect(calibrationFor('shaky', 'good').underconfident).toBe(true)
-    expect(calibrationFor('know-it-cold', 'easy').label).toBe('Confidence matched recall')
-  })
 })

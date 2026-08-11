@@ -18,7 +18,6 @@ import { normalizeEntityName } from '@/lib/entityMatching'
 import { daysSinceUpdate, parseIsoDate, pillarSignals } from './derived'
 import { dedupCandidates } from './dedup'
 import { INTELLIGENCE_THRESHOLDS, type ConfidenceLevel, type Explained, type Severity } from './types'
-import { GRADE_POINTS } from '@/lib/selectors'
 
 /** Lifecycle states a recommendation moves through (architecture/02
  *  "Recommendation Lifecycles"). `generated` is implicit — anything returned by
@@ -293,38 +292,6 @@ export function smartNextActions(
     .slice(0, Math.max(0, limit))
 }
 
-function scienceGpaSlippingRule(data: AppData): Recommendation[] {
-  const graded = data.courses.filter((course) =>
-    course.bcpm && course.credits > 0 && GRADE_POINTS[course.grade] != null
-  )
-  const points = (rows: typeof graded) => {
-    const credits = rows.reduce((sum, course) => sum + course.credits, 0)
-    if (!credits) return null
-    return rows.reduce((sum, course) => sum + GRADE_POINTS[course.grade] * course.credits, 0) / credits
-  }
-  const current = points(graded)
-  if (current == null) return []
-  return graded.flatMap((course) => {
-    const without = points(graded.filter((item) => item.id !== course.id))
-    const drag = without == null ? 0 : without - current
-    if (drag < 0.02) return []
-    const cause = `${course.code || course.title} at ${course.grade} pulls BCPM down ${drag.toFixed(2).replace(/^0/, '')}`
-    return [{
-      id: `academics-science-gpa:${course.id}:${course.grade}`,
-      ruleId: 'academics-science-gpa',
-      title: 'Science GPA slipping',
-      severity: 'important' as const,
-      rank: rank(3, 3),
-      why: `${cause}. Try a what-if before changing the rest of your plan.`,
-      cause,
-      route: '/academics?mode=planning&tab=planner',
-      actionLabel: 'What-if',
-      entityId: course.id,
-      entityLabel: course.code,
-    }]
-  })
-}
-
 function termBeforeMcat(targetDate: string) {
   const date = parseIsoDate(targetDate)
   if (!date) return ''
@@ -361,30 +328,6 @@ function unscheduledPrereqRule(data: AppData): Recommendation[] {
     entityId: requirement.id,
     entityLabel: requirement.label,
   }]
-}
-
-function bcpmHeavyTermRule(data: AppData): Recommendation[] {
-  const byTerm = new Map<string, typeof data.courses>()
-  for (const course of data.courses) {
-    if (!course.bcpm || course.status !== 'planned' || !course.term) continue
-    byTerm.set(course.term, [...(byTerm.get(course.term) ?? []), course])
-  }
-  return [...byTerm.entries()].flatMap(([term, courses]) => {
-    if (courses.length < 3) return []
-    const cause = `${term} has ${courses.length} science courses planned`
-    return [{
-      id: `academics-bcpm-heavy:${term}:${courses.map((course) => course.id).sort().join('-')}`,
-      ruleId: 'academics-bcpm-heavy',
-      title: 'BCPM-heavy term',
-      severity: 'suggested' as const,
-      rank: rank(2, 2),
-      why: `${cause}. Check that the workload leaves room for consistent review.`,
-      cause,
-      route: '/academics?mode=planning&tab=planner',
-      actionLabel: 'Rebalance',
-      entityLabel: term,
-    }]
-  })
 }
 
 function coveredNeverReviewedRule(data: AppData): Recommendation[] {
@@ -449,9 +392,7 @@ export function academicsNextActions(
   const state = data.settings.recommendationState ?? {}
   const muted = data.settings.mutedRecommendationRules ?? {}
   return [
-    ...scienceGpaSlippingRule(data),
     ...unscheduledPrereqRule(data),
-    ...bcpmHeavyTermRule(data),
     ...coveredNeverReviewedRule(data),
     ...noSyllabusRule(data),
   ]
@@ -477,9 +418,7 @@ const RULE_LABELS: Record<string, string> = {
   'reflection-to-story': 'Send reflections to the Story Bank',
   'archive-completed': 'Archive finished roles',
   'resolve-duplicates': 'Review possible duplicates',
-  'academics-science-gpa': 'Science GPA slipping',
   'academics-unscheduled-prereq': 'Unscheduled med prereq',
-  'academics-bcpm-heavy': 'BCPM-heavy term',
   'academics-covered-never-reviewed': 'Covered but never reviewed',
   'academics-no-syllabus': 'No syllabus imported',
 }

@@ -74,11 +74,11 @@ feature, and it is the one users will not forgive — they will have spent real 
 section 3 to section 5 keeps its edits. **A concept that disappears from the new generation keeps its
 edited block, moved to an `orphaned` section** with an explanation — never deleted.
 
-## 1.5 Flashcards keep their review history
+## 1.5 Flashcards keep source identity, not review history
 
-An edited card retains its FSRS state (`04` §6). A **regenerated** card — same `conceptId`, new
-content — also retains it, because the student's memory of the concept did not reset when the
-wording changed. A card whose `conceptId` changes is a new card with fresh state.
+An edited or regenerated card keeps its stable `conceptId` so provenance, edit protection, duplicate
+detection, and export remain correct. Premed OS creates no card-review or FSRS state; Anki owns the
+only review schedule after one-way export.
 
 ---
 
@@ -185,11 +185,8 @@ deletions wastes a call on something `String.prototype.match` does perfectly.
 | `blocking` | **Artifact is not persisted.** One scoped regeneration of the offending section/card; if it fails again, surface the error. Never ship a blocking-failed artifact |
 | `advisory` | Artifact persists. Findings attached and shown as a dismissible quality note |
 
-**Cards with `owner: 'user'` are exempt from every check in §2.1 and §2.2** (`04` §10.1, `FC-IO-5`).
-Andy's hand-authored image-occlusion cards will sit inside generated decks, and a card with no
-`front`, no `back`, and no `cloze_text` is malformed *for a generator* and perfectly valid *for a
-person*. Running generator checks over user-authored cards would flag the student's own work as
-defective — the same class of mistake as regeneration overwriting their edits.
+Hand-authored Anki cards sit outside this pipeline entirely. Premed OS never imports or quality-checks
+them; every card evaluated here was generated from the student's supplied material.
 
 **Advisory findings are shown to the student, not hidden.** *"This guide is heavier on prose than
 usual — regenerate the Mechanisms section?"* is more useful than silence, and it teaches the student

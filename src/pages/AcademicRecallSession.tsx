@@ -11,7 +11,7 @@ import { homeBanner } from '@/lib/themeAssets'
 import { reviewTopic } from '@/lib/academics/fsrs'
 import {
   REVIEW_RATINGS, buildRecallQueue, buildScopeItems,
-  calibrationFor, confidenceForEvent, sourceForScope,
+  confidenceForEvent, sourceForScope,
   type GapDisposition, type RecallConfidence, type RecallScopeItem,
 } from '@/lib/academics/activeRecall'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -335,8 +335,8 @@ export function AcademicRecallSession() {
   }
 
   const completed = results.filter((result) => !result.skipped)
-  const overconfident = completed.filter((result) => calibrationFor(result.confidence, result.grade).overconfident)
-  const underconfident = completed.filter((result) => calibrationFor(result.confidence, result.grade).underconfident)
+  const skipped = results.filter((result) => result.skipped).length
+  const markedAgain = completed.filter((result) => result.grade === 'again').length
 
   return (
     <TooltipProvider>
@@ -437,7 +437,7 @@ export function AcademicRecallSession() {
             <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Gap report</p><h1 className="mt-1 font-display text-3xl font-extrabold">{current.title}</h1></div><Badge className="border-white/15 bg-white/8 text-white">{confidenceLabel(confidence)} before reveal</Badge></div>
             <div className="mt-5 rounded-2xl border border-amber-400/25 bg-amber-400/8 p-4">
               <p className="font-extrabold">{apiGapAvailable ? 'AI gap-check available' : 'Deterministic self-check — no API key required'}</p>
-              <p className="mt-1 text-sm text-white/64">{apiGapAvailable ? 'Run the structured gap check against only the scope below.' : 'Classify each stated scope item yourself. FSRS scheduling, calibration, grading, and the summary remain fully available.'}</p>
+              <p className="mt-1 text-sm text-white/64">{apiGapAvailable ? 'Run the structured gap check against only the scope below.' : 'Classify each stated scope item yourself. Topic scheduling, grading, and the summary remain fully available.'}</p>
               <Button size="sm" variant="outline" className="mt-3 border-white/18 bg-white/7 text-white" disabled={!apiGapAvailable || checkingGaps} onClick={runGapCheck}><Sparkles className="size-4" /> {checkingGaps ? 'Checking…' : 'Run AI gap-check'}</Button>
             </div>
             {gapError && <p role="status" className="mt-3 rounded-xl border border-amber-300/25 bg-amber-300/8 px-4 py-3 text-sm font-bold text-amber-100">{gapError} Nothing was saved.</p>}
@@ -472,22 +472,18 @@ export function AcademicRecallSession() {
       {phase === 'summary' && (
         <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center py-10">
           <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-primary">Session complete</p>
-          <h1 className="mt-2 font-display text-[clamp(2.8rem,7vw,5.5rem)] font-extrabold leading-none">
-            {overconfident.length ? `Overconfident on ${overconfident.length} of ${completed.length}` : underconfident.length ? `You knew more than expected on ${underconfident.length}` : 'Confidence matched your recall'}
-          </h1>
+          <h1 className="mt-2 font-display text-[clamp(2.8rem,7vw,5.5rem)] font-extrabold leading-none">{completed.length} topics reviewed</h1>
           <p className="mt-4 max-w-3xl text-lg font-bold text-white/72">
-            {overconfident.length
-              ? `You predicted Pretty sure or Know it cold, then graded ${overconfident.map((item) => item.title).join(', ')} Again or Hard.`
-              : `${completed.length} topics scheduled deterministically with FSRS · ${results.filter((result) => result.skipped).length} skipped · ${formatTime(elapsed)} elapsed.`}
+            {completed.length} topics scheduled deterministically with FSRS · {skipped} skipped · {formatTime(elapsed)} elapsed.
           </p>
           <div className="mt-8 grid gap-3 md:grid-cols-3">
             <SummaryMetric label="Reviewed" value={String(completed.length)} />
-            <SummaryMetric label="Overconfident" value={String(overconfident.length)} />
-            <SummaryMetric label="Underconfident" value={String(underconfident.length)} />
+            <SummaryMetric label="Marked again" value={String(markedAgain)} />
+            <SummaryMetric label="Skipped" value={String(skipped)} />
           </div>
           <div className="mt-8 flex flex-wrap gap-3"><Button size="lg" onClick={() => navigate(exitTo)}>Back to class</Button><Button size="lg" variant="outline" className="border-white/20 bg-slate-950/42 text-white" onClick={() => { setIndex(0); setResults([]); setElapsed(0); resetComposer(); setPhase('start') }}><RotateCcw className="size-4" /> Review again</Button></div>
           <MascotNote variant="banner" className="mt-7 max-w-2xl">
-            Calibration is the win: notice where certainty and recall disagreed, then let the next scheduled rep correct it.
+            Review complete. Your recorded grades set the next topic intervals.
           </MascotNote>
         </section>
       )}

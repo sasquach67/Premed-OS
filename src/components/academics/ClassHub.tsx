@@ -12,7 +12,7 @@ import type {
 } from '@/lib/types'
 import { useStore } from '@/store/store'
 import { uid } from '@/lib/id'
-import { createTopicFsrsState, topicRetrievability } from '@/lib/academics/fsrs'
+import { createTopicFsrsState } from '@/lib/academics/fsrs'
 import { calculateCourseCoverage } from '@/lib/academics/coverage'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/components/common/useToast'
@@ -49,8 +49,8 @@ const STATUS_LABELS: Record<TopicStatus, string> = {
   seen: 'Covered',
   'notes-made': 'Notes made',
   reviewing: 'Reviewing',
-  weak: 'Weak',
-  ready: 'Ready',
+  weak: 'Marked for review',
+  ready: 'Marked ready',
 }
 
 const STATUS_TONE: Record<TopicStatus, string> = {
@@ -180,7 +180,7 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
             </div>
             <div className="glass-surface grid shrink-0 grid-cols-2 overflow-hidden text-white sm:grid-cols-4">
               <BannerStat label="Grade" value={stats.grade} />
-              <BannerStat label="Ready" value={`${stats.ready}/${courseTopics.length}`} />
+              <BannerStat label="Marked ready" value={`${stats.ready}/${courseTopics.length}`} />
               <BannerStat label="Due today" value={String(stats.dueToday)} />
               <BannerStat label="Next exam" value={stats.examCountdown} />
             </div>
@@ -206,11 +206,11 @@ export function ClassHubPeek({
   const due = assignments
     .filter((item) => !isComplete(item) && item.dueDate)
     .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
-  const weak = topics.filter((item) => item.status === 'weak' || item.status === 'reviewing')
-  const priorities = [
-    ...due.slice(0, 2).map((item) => ({ id: `a-${item.id}`, title: item.title, meta: item.dueDate ? relativeDate(item.dueDate) : 'No date', type: 'assignment' })),
-    ...weak.slice(0, 2).map((item) => ({ id: `t-${item.id}`, title: item.title, meta: 'Recall', type: 'topic' })),
-  ].slice(0, 2)
+  const marked = topics.filter((item) => item.status === 'weak' || item.status === 'reviewing')
+  const recordedItems = [
+    ...due.map((item) => ({ id: `a-${item.id}`, title: item.title, meta: item.dueDate ? relativeDate(item.dueDate) : 'No date', type: 'assignment' })),
+    ...marked.map((item) => ({ id: `t-${item.id}`, title: item.title, meta: STATUS_LABELS[item.status], type: 'topic' })),
+  ]
 
   return (
     <div className={cn('grid gap-0', split && 'lg:grid-cols-[minmax(0,1fr)_minmax(320px,.72fr)]')}>
@@ -225,18 +225,18 @@ export function ClassHubPeek({
         <div className="grid grid-cols-3 overflow-hidden rounded-2xl border border-border bg-card/70">
           <Stat label="Grade" value={stats.grade} />
           <Stat label="Due today" value={String(stats.dueToday)} />
-          <Stat label="Ready" value={`${stats.ready}/${topics.length}`} />
+          <Stat label="Marked ready" value={`${stats.ready}/${topics.length}`} />
         </div>
         <div>
-          <h3 className="font-display text-lg font-extrabold">Needs attention</h3>
-          <div className="mt-2 space-y-2">
-            {priorities.map((item) => (
+          <h3 className="font-display text-lg font-extrabold">Due and marked topics</h3>
+          <div className="mt-2 max-h-60 space-y-2 overflow-y-auto">
+            {recordedItems.map((item) => (
               <div key={item.id} className="flex items-center justify-between rounded-xl border border-border bg-muted/35 px-3 py-2">
                 <span className="font-bold">{item.title}</span>
                 <Badge variant={item.type === 'topic' ? 'warning' : 'outline'}>{item.meta}</Badge>
               </div>
             ))}
-            {!priorities.length && <EmptyState icon={CheckCircle2} title="Nothing urgent" detail="No due or weak items are recorded for this class." />}
+            {!recordedItems.length && <EmptyState icon={CheckCircle2} title="Nothing recorded here" detail="No due assignments or marked review topics are recorded for this class." />}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -353,8 +353,8 @@ function Overview({
         </div>
       </Panel>
 
-      <Panel className="col-span-12" title="Mastery across the semester">
-        <MasteryChart events={data.reviewEvents.filter((event) => topics.some((topic) => topic.id === event.topicId))} />
+      <Panel className="col-span-12" title="Recorded recall activity">
+        <RecallHistory events={data.reviewEvents.filter((event) => topics.some((topic) => topic.id === event.topicId))} />
       </Panel>
     </div>
   )
@@ -376,7 +376,8 @@ function CoverageLedger({
   const coverage = useMemo(() => calculateCourseCoverage(courseId, data), [courseId, data])
 
   function confirmAssignment(chunkId: string) {
-    const topicId = selections[chunkId]
+    const proposed = data.sourceChunks.find((chunk) => chunk.id === chunkId)
+    const topicId = selections[chunkId] || (proposed?.assignmentConfirmed === false ? proposed.topicId : undefined)
     if (!topicId) return
     update((draft) => {
       const chunk = draft.academics.classCenter.sourceChunks.find((item) => item.id === chunkId)
@@ -406,9 +407,9 @@ function CoverageLedger({
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_repeat(3,minmax(8rem,.42fr))]">
         <div className="rounded-2xl border border-border bg-card/66 p-4 shadow-sm backdrop-blur">
-          <div className="flex items-center justify-between gap-3 text-sm font-extrabold"><span>Mapped</span><span className="tabular-nums">{coverage.mappedPercent}%</span></div>
+          <div className="flex items-center justify-between gap-3 text-sm font-extrabold"><span>Confirmed</span><span className="tabular-nums">{coverage.mappedPercent}%</span></div>
           <Progress className="mt-3" value={coverage.mappedPercent} />
-          <p className="mt-2 text-xs font-semibold text-muted-foreground">{coverage.mappedChunks} of {coverage.totalChunks} chunks have a confirmed or proposed topic label.</p>
+          <p className="mt-2 text-xs font-semibold text-muted-foreground">{coverage.mappedChunks} of {coverage.totalChunks} chunks have a student-confirmed topic label.</p>
         </div>
         <CoverageMetric label="Unassigned" value={coverage.unassigned.length} tone={coverage.unassigned.length ? 'warning' : 'neutral'} />
         <CoverageMetric label="Uncovered" value={coverage.uncovered.length} tone={coverage.uncovered.length ? 'warning' : 'neutral'} />
@@ -424,11 +425,11 @@ function CoverageLedger({
                 <p className="truncate font-bold">{file?.title || 'Source file unavailable'}</p>
                 <p className="truncate text-xs font-semibold text-muted-foreground">{chunk.content}</p>
               </div>
-              <Select value={selections[chunk.id]} onValueChange={(value) => setSelections((current) => ({ ...current, [chunk.id]: value }))}>
+              <Select value={selections[chunk.id] || (chunk.assignmentConfirmed === false ? chunk.topicId : undefined)} onValueChange={(value) => setSelections((current) => ({ ...current, [chunk.id]: value }))}>
                 <SelectTrigger aria-label={`Topic for ${file?.title || 'source chunk'}`}><SelectValue placeholder="Choose topic…" /></SelectTrigger>
                 <SelectContent>{topics.map((topic) => <SelectItem key={topic.id} value={topic.id}>{topic.title}</SelectItem>)}</SelectContent>
               </Select>
-              <Button size="sm" disabled={!selections[chunk.id]} onClick={() => confirmAssignment(chunk.id)}>Confirm</Button>
+              <Button size="sm" disabled={!selections[chunk.id] && !(chunk.assignmentConfirmed === false && chunk.topicId)} onClick={() => confirmAssignment(chunk.id)}>Confirm</Button>
             </div>
           ))}
         </div>
@@ -441,7 +442,7 @@ function CoverageLedger({
       )}
       {coverage.neverReviewed.length > 0 && (
         <p className="text-sm font-semibold text-muted-foreground">
-          Next review priority: <strong className="text-foreground">{coverage.neverReviewed.slice(0, 3).map((point) => point.text).join(' · ')}</strong>
+          Not yet reviewed: <strong className="text-foreground">{coverage.neverReviewed.map((point) => point.text).join(' · ')}</strong>
         </p>
       )}
     </div>
@@ -605,24 +606,20 @@ function Notes({ courseId, notes, topics }: { courseId: string; notes: ClassNote
 }
 
 function ExamScope({ exam, topics, allTopics }: { exam: ClassAssignment; topics: Topic[]; allTopics: Topic[] }) {
-  if (!(exam.coveredTopicIds?.length)) return <EmptyState icon={Target} title="Scope not mapped" detail={`Link covered topics to ${exam.title} to calculate readiness.`} />
+  if (!(exam.coveredTopicIds?.length)) return <EmptyState icon={Target} title="Scope not mapped" detail={`Link covered topics to ${exam.title} to record its scope.`} />
   const counts = {
     ready: topics.filter((item) => item.status === 'ready').length,
     reviewing: topics.filter((item) => ['reviewing', 'notes-made', 'seen'].includes(item.status)).length,
-    weak: topics.filter((item) => item.status === 'weak' || item.status === 'not-started').length,
+    review: topics.filter((item) => item.status === 'weak').length,
+    notStarted: topics.filter((item) => item.status === 'not-started').length,
   }
-  const denominator = Math.max(1, topics.length)
   return (
     <div className="space-y-3">
-      <div className="flex h-3 overflow-hidden rounded-full bg-muted" aria-label={`${counts.ready} ready, ${counts.reviewing} reviewing, ${counts.weak} weak`}>
-        <span className="bg-success" style={{ width: `${counts.ready / denominator * 100}%` }} />
-        <span className="bg-warning" style={{ width: `${counts.reviewing / denominator * 100}%` }} />
-        <span className="bg-destructive" style={{ width: `${counts.weak / denominator * 100}%` }} />
-      </div>
-      <div className="grid grid-cols-3 gap-2 text-xs font-bold">
-        <Legend color="bg-emerald-500" label={`Ready ${counts.ready}`} />
+      <div className="grid grid-cols-2 gap-2 text-xs font-bold sm:grid-cols-4" aria-label="Student-recorded topic states">
+        <Legend color="bg-emerald-500" label={`Marked ready ${counts.ready}`} />
         <Legend color="bg-amber-400" label={`Reviewing ${counts.reviewing}`} />
-        <Legend color="bg-destructive" label={`Weak ${counts.weak}`} />
+        <Legend color="bg-destructive" label={`Marked for review ${counts.review}`} />
+        <Legend color="bg-muted-foreground" label={`Not started ${counts.notStarted}`} />
       </div>
       <p className="rounded-xl bg-muted/35 p-3 text-xs font-semibold text-muted-foreground">
         Scope comes from the {exam.coveredTopicIds.length} topic links recorded on {exam.title}; {topics.length} match this class’s {allTopics.length} current topics.
@@ -631,26 +628,17 @@ function ExamScope({ exam, topics, allTopics }: { exam: ClassAssignment; topics:
   )
 }
 
-function MasteryChart({ events }: { events: ReviewEvent[] }) {
-  const sorted = [...events].sort((a, b) => a.timestamp - b.timestamp)
-  if (sorted.length < 3) return <EmptyState icon={Brain} title="Not enough history yet" detail="Three recorded recalls are needed before showing an honest trend or projection." />
-  const points = sorted.map((event, index) => {
-    const score = event.grade === 'easy' ? 100 : event.grade === 'good' ? 78 : event.grade === 'hard' ? 52 : 24
-    return `${(index / Math.max(1, sorted.length - 1)) * 72 + 4},${94 - score * 0.72}`
-  }).join(' ')
-  const last = sorted.at(-1)!
-  const lastScore = last.grade === 'easy' ? 100 : last.grade === 'good' ? 78 : last.grade === 'hard' ? 52 : 24
-  const prior = sorted.at(-2)!
-  const priorScore = prior.grade === 'easy' ? 100 : prior.grade === 'good' ? 78 : prior.grade === 'hard' ? 52 : 24
-  const projected = Math.max(0, Math.min(100, lastScore + (lastScore - priorScore)))
+function RecallHistory({ events }: { events: ReviewEvent[] }) {
+  const recent = [...events].sort((a, b) => b.timestamp - a.timestamp).slice(0, 6)
+  if (!recent.length) return <EmptyState icon={Brain} title="No recall activity yet" detail="Completed topic reviews will appear here as recorded events." />
   return (
-    <div>
-      <svg viewBox="0 0 100 100" className="h-48 w-full" role="img" aria-label="Recorded recall performance with a dashed one-step projection">
-        <path d="M4 22H96M4 58H96M4 94H96" className="stroke-border" strokeWidth="0.7" />
-        <polyline points={points} fill="none" className="stroke-primary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-        <line x1="76" y1={94 - lastScore * 0.72} x2="96" y2={94 - projected * 0.72} className="stroke-primary" strokeWidth="2.5" strokeDasharray="4 4" />
-      </svg>
-      <p className="text-xs font-semibold text-muted-foreground">Solid = recorded recall grades. Dashed = one-step projection using only the last two recorded grades; it is not a promised outcome.</p>
+    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {recent.map((event) => (
+        <div key={event.id} className="rounded-xl border border-border bg-muted/25 p-3">
+          <p className="font-extrabold">{titleCase(event.grade)}</p>
+          <p className="mt-1 text-xs font-semibold text-muted-foreground">{new Date(event.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
+        </div>
+      ))}
     </div>
   )
 }
@@ -694,7 +682,7 @@ function WhatIf({ assignments }: { assignments: ClassAssignment[] }) {
 
 function TopicRow({ topic, data }: { topic: Topic; data: ClassCenterData }) {
   const lastRecall = topic.fsrs.lastReview ? new Date(topic.fsrs.lastReview).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Never'
-  const retrievability = topic.fsrs.reps > 0 ? `${Math.round(topicRetrievability(topic.fsrs) * 100)}%` : 'Not established'
+  const nextReview = topic.fsrs.reps > 0 ? new Date(topic.fsrs.due).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Not scheduled'
   const noteCount = data.notes.filter((note) => note.topicIds.includes(topic.id)).length
   return (
     <ContextMenu>
@@ -702,7 +690,7 @@ function TopicRow({ topic, data }: { topic: Topic; data: ClassCenterData }) {
         <div className="grid gap-3 rounded-xl border border-border bg-muted/25 p-3 md:grid-cols-[minmax(0,1fr)_120px_130px_110px_auto] md:items-center">
           <div><p className="font-extrabold">{topic.title}</p><p className="text-xs text-muted-foreground">MCAT tag not set · {noteCount} notes</p></div>
           <span className="text-xs font-bold text-muted-foreground">Last recall {lastRecall}</span>
-          <span className="text-xs font-bold text-muted-foreground">Retrievability {retrievability}</span>
+          <span className="text-xs font-bold text-muted-foreground">Next review {nextReview}</span>
           <Badge className={cn('justify-self-start', STATUS_TONE[topic.status])}>{STATUS_LABELS[topic.status]}</Badge>
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Brain className="size-4" /> Quiz me</Button></DropdownMenuTrigger>

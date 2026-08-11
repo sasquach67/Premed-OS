@@ -308,7 +308,7 @@ export function Academics() {
           <ol className="space-y-3 text-sm">
             <li><strong>1. Capture the scope.</strong> Import the syllabus and connect topics to the next exam.</li>
             <li><strong>2. Review by retrieval.</strong> Answer before revealing; do not count rereading as mastery.</li>
-            <li><strong>3. Follow the weak signal.</strong> Spend the next block on the lowest-retrievability exam topic.</li>
+            <li><strong>3. Choose the next review.</strong> Open a due topic or one you explicitly marked for review.</li>
           </ol>
         </DialogContent>
       </Dialog>
@@ -638,7 +638,7 @@ function TarHeelTracker() {
         const bcpmCredits = termCredits(termCourses.filter((course) => course.bcpm))
         if (credits > 18) out.push(`${term} is overloaded at ${credits} credits`)
         if (credits > 0 && credits < 12 && !/Summer/i.test(term)) out.push(`${term} is below full-time load`)
-        if (credits >= 12 && bcpmCredits / credits >= 0.75) out.push(`${term} is BCPM-heavy (${bcpmCredits} of ${credits} credits)`)
+        if (credits >= 12 && bcpmCredits / credits >= 0.75) out.push(`${term} records ${bcpmCredits} of ${credits} credits as BCPM`)
       }
     }
     for (const course of courses) {

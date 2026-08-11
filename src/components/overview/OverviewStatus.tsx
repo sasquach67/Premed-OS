@@ -11,7 +11,6 @@ import {
   Telescope,
   Users,
 } from 'lucide-react'
-import { Line, LineChart, RadialBar, RadialBarChart, YAxis } from 'recharts'
 import { Link } from 'react-router-dom'
 import { PaceProjectionLine } from '@/components/common/PaceProjectionLine'
 import { MascotNote } from '@/components/common/MascotNote'
@@ -19,11 +18,8 @@ import { NumberFlow } from '@/components/motion'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 import { daysUntil } from '@/lib/date'
-import { paceProjection } from '@/lib/intelligence'
-import { observedWeeklyHours, termGpaSeries } from '@/lib/overview'
-import { bestMcat, fmtGpa, gpaStats, hourTotals, percent } from '@/lib/selectors'
+import { fmtGpa, gpaStats, hourTotals } from '@/lib/selectors'
 import type { ExperienceCategory } from '@/lib/types'
 import { useStore } from '@/store/store'
 
@@ -34,23 +30,16 @@ interface DomainRow {
   icon: typeof GraduationCap
   accent: string
   value: string
-  progress?: number
-  pace: string
-  tone: 'success' | 'warning' | 'danger' | 'neutral'
-}
-
-function projectionForHours(category: ExperienceCategory, current: number, goal: number) {
-  const state = useStore.getState()
-  const weekly = observedWeeklyHours(state.experiences, category)
-  if (!goal || weekly == null || weekly <= 0) return null
-  return paceProjection(current, goal, weekly)
+  state: string
 }
 
 export function WhereIStand() {
   const state = useStore()
   const gpa = gpaStats(state.courses)
   const hours = hourTotals(state.experiences)
-  const mcat = bestMcat(state.mcat)
+  const latestMcat = [...state.mcat.attempts]
+    .filter((attempt) => attempt.total != null)
+    .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')) || b.order - a.order)[0]
   const graded = gpa.credits > 0
   const researchProjects = state.experiences.filter((entry) => entry.category === 'research' && !entry.deletedAt).length
   const leadershipRoles = state.orgs.filter((org) => org.status === 'leader' && !org.deletedAt).length
@@ -59,7 +48,6 @@ export function WhereIStand() {
   const submittedSecondaries = state.secondaries.filter((entry) => entry.status === 'submitted').length
   const lettersReceived = state.letters.filter((letter) => letter.status === 'submitted').length
   const activeLetters = state.letters.filter((letter) => letter.status !== 'declined').length
-  const reachSchools = state.schools.filter((school) => school.category === 'reach').length
   const examDays = daysUntil(state.mcat.targetDate)
 
   /* Class-level state reaches Overview instead of stopping at Academics:
@@ -76,7 +64,7 @@ export function WhereIStand() {
 
   const classSignals = [
     dueTopics ? `${dueTopics} due` : '',
-    weakTopics ? `${weakTopics} weak` : '',
+    weakTopics ? `${weakTopics} review notes` : '',
     openAssignments ? `${openAssignments} open` : '',
     coverageGaps ? `${coverageGaps} unfiled` : '',
   ].filter(Boolean)
@@ -90,14 +78,6 @@ export function WhereIStand() {
     accent: string,
   ): DomainRow => {
     const current = hours[category]
-    const projection = projectionForHours(category, current, goal)
-    const pace = !current
-      ? 'not started'
-      : !projection?.projectedDate
-        ? 'not enough data'
-        : projection.met
-          ? 'on track'
-          : 'on pace'
     return {
       group: 'Experiences',
       label,
@@ -105,9 +85,7 @@ export function WhereIStand() {
       icon,
       accent,
       value: `${Math.round(current)}/${goal} hrs`,
-      progress: goal ? percent(current, goal) : undefined,
-      pace,
-      tone: pace === 'on track' || pace === 'on pace' ? 'success' : 'neutral',
+      state: current ? 'hours logged' : 'none logged',
     }
   }
 
@@ -115,24 +93,14 @@ export function WhereIStand() {
     {
       group: 'Foundation', label: 'Academics', route: '/academics', icon: GraduationCap, accent: 'var(--cat-gpa)',
       value: graded ? `${fmtGpa(gpa.cum)} cum · ${fmtGpa(gpa.science)} sci` : 'Not started',
-      progress: graded && state.goals.gpaTarget ? percent(gpa.cum, state.goals.gpaTarget) : undefined,
-      // Class work outranks the GPA summary here: an unreviewed backlog is the
-      // thing you can still act on today, where a posted grade is already set.
-      pace: classSignals.length
+      state: classSignals.length
         ? classSignals.join(' · ')
-        : !graded ? 'not enough data' : gpa.cum >= state.goals.gpaTarget ? 'on track' : 'at risk',
-      tone: dueTopics || weakTopics
-        ? 'warning'
-        : !graded ? 'neutral' : gpa.cum >= state.goals.gpaTarget ? 'success' : 'warning',
+        : !graded ? 'not enough data' : 'record current',
     },
     {
       group: 'Foundation', label: 'MCAT', route: '/mcat', icon: Brain, accent: 'var(--cat-mcat)',
-      value: mcat ? `${mcat} · goal ${state.mcat.goalScore ?? state.goals.mcatTarget}` : `${state.mcat.currentPhase ?? 'Plan not started'}`,
-      progress: mcat ? percent(mcat, state.mcat.goalScore ?? state.goals.mcatTarget) : undefined,
-      pace: mcat && mcat >= (state.mcat.goalScore ?? state.goals.mcatTarget)
-        ? 'on track'
-        : examDays != null ? `${Math.max(0, examDays)}d out` : 'no date',
-      tone: mcat && mcat >= (state.mcat.goalScore ?? state.goals.mcatTarget) ? 'success' : 'warning',
+      value: latestMcat?.total ? `${latestMcat.total} recorded · goal ${state.mcat.goalScore ?? state.goals.mcatTarget}` : `${state.mcat.currentPhase ?? 'Plan not started'}`,
+      state: examDays != null ? `${Math.max(0, examDays)}d out` : 'no date',
     },
     hourRow('Clinical', 'clinical', state.goals.clinical, '/clinical', Stethoscope, 'var(--cat-clinical)'),
     hourRow('Volunteering', 'volunteering', state.goals.volunteering, '/volunteering', HeartHandshake, 'var(--cat-volunteer)'),
@@ -140,35 +108,29 @@ export function WhereIStand() {
     {
       group: 'Experiences', label: 'Research', route: '/research', icon: Microscope, accent: 'var(--cat-research)',
       value: researchProjects ? `${researchProjects} ${researchProjects === 1 ? 'project' : 'projects'}` : 'Not started',
-      pace: 'no goal', tone: 'neutral',
+      state: 'record count',
     },
     {
       group: 'Experiences', label: 'Extracurriculars', route: '/ecs', icon: Users, accent: 'var(--cat-activities)',
       value: `${activeOrgs} roles · ${leadershipRoles} leadership`,
-      pace: 'no goal', tone: 'neutral',
+      state: 'record count',
     },
     {
       group: 'Application', label: 'School List', route: '/schools', icon: School, accent: 'var(--primary)',
-      value: `${state.schools.length} schools · ${reachSchools} reach`,
-      progress: state.schools.length ? Math.min(100, (state.schools.length / 12) * 100) : undefined,
-      pace: state.schools.length ? 'building' : 'not started', tone: 'neutral',
+      value: `${state.schools.length} schools`,
+      state: state.schools.length ? 'list started' : 'not started',
     },
     {
       group: 'Application', label: 'Essays', route: '/essays', icon: BookOpen, accent: 'var(--cat-activities)',
       value: `${draftedStories} stories · ${submittedSecondaries}/${state.secondaries.length} submitted`,
-      progress: state.secondaries.length ? percent(submittedSecondaries, state.secondaries.length) : undefined,
-      pace: draftedStories ? 'in progress' : 'not started', tone: 'neutral',
+      state: draftedStories ? 'records present' : 'not started',
     },
     {
       group: 'Application', label: 'Letters', route: '/letters', icon: Building2, accent: 'var(--cat-letters)',
       value: `${lettersReceived}/${activeLetters || 0} received`,
-      progress: activeLetters ? percent(lettersReceived, activeLetters) : undefined,
-      pace: activeLetters ? (lettersReceived >= activeLetters ? 'on track' : 'in progress') : 'not started',
-      tone: lettersReceived >= activeLetters && activeLetters ? 'success' : 'neutral',
+      state: activeLetters ? 'records present' : 'not started',
     },
   ]
-
-  const exceptions = rows.filter((row) => row.tone === 'warning' || row.tone === 'danger')
 
   return (
     <Card className="h-full min-h-[34rem]" role="region" aria-labelledby="where-i-stand-heading">
@@ -177,9 +139,7 @@ export function WhereIStand() {
           <CardTitle id="where-i-stand-heading" className="text-lg">Where I stand</CardTitle>
           <p className="mt-1 text-xs font-semibold text-muted-foreground">Honest state from each owning domain.</p>
         </div>
-        <Badge variant={exceptions.length ? 'warning' : 'success'}>
-          {exceptions.length ? `${exceptions.length} need a look` : 'On track'}
-        </Badge>
+        <Badge variant="muted">Record facts</Badge>
       </CardHeader>
       <CardContent className="space-y-2">
         {(['Foundation', 'Experiences', 'Application'] as const).map((group) => (
@@ -207,7 +167,7 @@ function DomainStatusRow({ row }: { row: DomainRow }) {
   return (
     <Link
       to={row.route}
-      aria-label={`${row.label}, ${row.value}, ${row.pace}`}
+      aria-label={`${row.label}, ${row.value}, ${row.state}`}
       className="group grid min-h-9 grid-cols-[1.5rem_minmax(5.5rem,.72fr)_minmax(8rem,1fr)_4.5rem] items-center gap-2 rounded-xl px-1.5 py-1 transition-colors hover:bg-muted/45"
     >
       <span className="grid size-6 place-items-center rounded-lg text-white shadow-sm" style={{ background: row.accent }}>
@@ -216,38 +176,22 @@ function DomainStatusRow({ row }: { row: DomainRow }) {
       <span className="truncate text-xs font-extrabold">{row.label}</span>
       <span className="min-w-0">
         <span className="block truncate text-right text-[11px] font-bold tabular-nums text-muted-foreground">{row.value}</span>
-        {row.progress != null && (
-          <span className="mt-1 block h-1 overflow-hidden rounded-full bg-muted">
-            <span className="block h-full rounded-full" style={{ width: `${row.progress}%`, background: row.accent }} />
-          </span>
-        )}
       </span>
-      <Badge
-        variant={row.tone === 'success' ? 'success' : row.tone === 'warning' ? 'warning' : row.tone === 'danger' ? 'danger' : 'muted'}
-        className="justify-center px-1.5 text-[9px]"
-      >
-        {row.pace}
-      </Badge>
+      <Badge variant="muted" className="justify-center px-1.5 text-[9px]">{row.state}</Badge>
     </Link>
   )
 }
 
-const GPA_CHART = {
-  cumulative: { label: 'Cumulative', color: 'var(--chart-1)' },
-  science: { label: 'Science', color: 'var(--chart-2)' },
-} satisfies ChartConfig
-
 export function GpaStatTile() {
   const courses = useStore((state) => state.courses)
-  const series = termGpaSeries(courses)
   const stats = gpaStats(courses)
-  const delta = series.length > 1 ? series.at(-1)!.cumulative - series.at(-2)!.cumulative : null
+  const graded = stats.credits > 0
 
   const card = (
-    <Card className="h-full min-h-48 transition-transform duration-200 hover:-translate-y-0.5" role="region" aria-label="GPA trend">
+    <Card className="h-full min-h-48 transition-transform duration-200 hover:-translate-y-0.5" role="region" aria-label="Recorded GPA">
       <CardContent className="flex h-full flex-col p-4">
         <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Cumulative GPA</p>
-        {!series.length ? (
+        {!graded ? (
           <MascotNote
             variant="empty-state"
             priority={30}
@@ -255,45 +199,36 @@ export function GpaStatTile() {
             actions={<Button asChild size="sm"><Link to="/academics">Open Academics</Link></Button>}
             className="mt-3 flex-1 items-center"
           >
-            Record a grade first; a term trend appears only when there is real work to calculate.
+            Record a grade first; GPA appears only when there is real work to calculate.
           </MascotNote>
         ) : (
           <>
             <div className="mt-2 flex items-end gap-2">
               <NumberFlow value={stats.cum} format={(value) => value.toFixed(2)} className="font-display text-4xl font-extrabold text-[var(--cat-gpa)]" />
-              {delta != null && <Badge variant={delta >= 0 ? 'success' : 'warning'}>{delta >= 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(2)}</Badge>}
             </div>
-            <ChartContainer config={GPA_CHART} className="mt-2 h-20 w-full aspect-auto">
-              <LineChart data={series} margin={{ top: 6, right: 5, bottom: 4, left: 5 }}>
-                <YAxis domain={[0, 4]} hide />
-                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                <Line type="monotone" dataKey="cumulative" stroke="var(--color-cumulative)" strokeWidth={3} dot={false} isAnimationActive />
-                <Line type="monotone" dataKey="science" stroke="var(--color-science)" strokeWidth={2} strokeDasharray="4 4" dot={false} connectNulls />
-              </LineChart>
-            </ChartContainer>
-            <p className="mt-auto text-xs font-semibold text-muted-foreground">Science {fmtGpa(stats.science)} · {series.length} terms</p>
+            <p className="mt-auto text-xs font-semibold text-muted-foreground">Science {fmtGpa(stats.science)} · {stats.credits} graded credits</p>
           </>
         )}
       </CardContent>
     </Card>
   )
 
-  return series.length ? <Link to="/academics" className="block h-full">{card}</Link> : card
+  return graded ? <Link to="/academics" className="block h-full">{card}</Link> : card
 }
-
-const MCAT_CHART = { score: { label: 'Score', color: 'var(--chart-2)' } } satisfies ChartConfig
 
 export function McatStatTile() {
   const mcat = useStore((state) => state.mcat)
   const fallbackGoal = useStore((state) => state.goals.mcatTarget)
-  const best = bestMcat(mcat)
+  const latest = [...mcat.attempts]
+    .filter((attempt) => attempt.total != null)
+    .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')) || b.order - a.order)[0]
+  const recorded = latest?.total
   const goal = mcat.goalScore ?? fallbackGoal
-  const normalized = best ? Math.max(0, Math.min(100, ((best - 472) / Math.max(1, goal - 472)) * 100)) : 0
 
   const card = (
-    <Card className="h-full min-h-48 transition-transform duration-200 hover:-translate-y-0.5" role="region" aria-label="MCAT score against target">
+    <Card className="h-full min-h-48 transition-transform duration-200 hover:-translate-y-0.5" role="region" aria-label="Latest MCAT score and student-set target">
       <CardContent className="grid h-full place-items-center p-4 text-center">
-        {!best ? (
+        {!recorded ? (
           <MascotNote
             variant="empty-state"
             priority={31}
@@ -304,18 +239,9 @@ export function McatStatTile() {
             Log your first scored practice and this target view will use the real result.
           </MascotNote>
         ) : (
-          <div className="relative size-36">
-            <ChartContainer config={MCAT_CHART} className="size-36 aspect-square">
-              <RadialBarChart data={[{ score: normalized }]} innerRadius={49} outerRadius={64} startAngle={90} endAngle={-270}>
-                <RadialBar dataKey="score" background fill="var(--color-score)" cornerRadius={10} />
-              </RadialBarChart>
-            </ChartContainer>
-            <div className="pointer-events-none absolute inset-0 grid place-items-center">
-              <div>
-                <NumberFlow value={best} className="font-display text-3xl font-extrabold" />
-                <p className="text-xs font-semibold text-muted-foreground">of {goal}</p>
-              </div>
-            </div>
+          <div className="grid w-full grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-muted/35 p-4"><NumberFlow value={recorded} className="font-display text-3xl font-extrabold" /><p className="text-xs font-semibold text-muted-foreground">Latest recorded</p></div>
+            <div className="rounded-2xl bg-muted/35 p-4"><NumberFlow value={goal} className="font-display text-3xl font-extrabold" /><p className="text-xs font-semibold text-muted-foreground">Student-set target</p></div>
           </div>
         )}
         <p className="text-xs font-semibold text-muted-foreground">MCAT · questions not tracked</p>
@@ -323,7 +249,7 @@ export function McatStatTile() {
     </Card>
   )
 
-  return best ? <Link to="/mcat" className="block h-full">{card}</Link> : card
+  return recorded ? <Link to="/mcat" className="block h-full">{card}</Link> : card
 }
 
 export function HoursStatTile() {
@@ -342,28 +268,23 @@ export function HoursStatTile() {
     { label: 'Volunteer', value: totals.volunteering, color: 'var(--cat-volunteer)' },
     { label: 'Research', value: totals.research, color: 'var(--cat-research)' },
   ]
-  const max = Math.max(1, ...rows.map((row) => row.value))
   const total = rows.reduce((sum, row) => sum + row.value, 0)
 
   return (
     <Card className="h-full min-h-48" role="region" aria-labelledby="hours-stat-heading">
       <CardHeader className="flex-row items-center justify-between pb-2">
         <CardTitle id="hours-stat-heading">Hours logged</CardTitle>
-        <Badge variant="muted"><NumberFlow value={Math.round(total)} /> total</Badge>
+        {total > 0 && <Badge variant="muted"><NumberFlow value={Math.round(total)} /> total</Badge>}
       </CardHeader>
       <CardContent className="space-y-2">
-        {rows.map((row) => (
-          <div key={row.label} className="grid grid-cols-[4.75rem_minmax(0,1fr)_2.5rem] items-center gap-2 text-xs">
+        {total === 0 ? (
+          <p className="rounded-xl border border-dashed border-border p-4 text-sm font-semibold text-muted-foreground">No experience hours recorded yet.</p>
+        ) : rows.map((row) => (
+          <div key={row.label} className="grid grid-cols-[minmax(0,1fr)_3rem] items-center gap-2 rounded-xl bg-muted/30 px-3 py-2 text-xs">
             <span className="font-bold text-muted-foreground">{row.label}</span>
-            <span className="h-2 overflow-hidden rounded-full bg-muted">
-              <m.span
-                className="block h-full rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${(row.value / max) * 100}%` }}
-                style={{ background: row.color }}
-              />
-            </span>
-            <NumberFlow value={Math.round(row.value)} className="text-right font-display font-extrabold" />
+            {row.value > 0
+              ? <m.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ color: row.color }}><NumberFlow value={Math.round(row.value)} className="text-right font-display font-extrabold" /></m.span>
+              : <span className="text-right font-semibold text-muted-foreground">—</span>}
           </div>
         ))}
       </CardContent>

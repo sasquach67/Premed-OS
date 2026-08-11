@@ -18,7 +18,7 @@
 
 | | Meaning | Example |
 |---|---|---|
-| **CEDE** | The incumbent does it; HQ points out | **Anki · LabArchives** |
+| **CEDE** | The incumbent does it; HQ points out | **Anki review/scheduling · LabArchives** |
 | **BRIDGE** | HQ keeps a minimal record and reads one-way | **Zotero** (`B-7`) |
 | **DUPLICATE-MINIMAL** | **Reachable? No. HQ re-enters by paste, stores the least it can** | **Canvas** |
 
@@ -26,7 +26,7 @@
 
 ---
 
-## 1. MCAT vs. **Anki** — CEDE. The largest finding in this audit.
+## 1. MCAT vs. **Anki** — CEDE review and scheduling; generate only from student material
 
 **Anki is free. MileDown (2,888 cards) is free. AnKing MCAT (6,200+ cards) is $6/month via AnkiHub.** **Spaced repetition is backed by decades of learning science and is standard in the study plans of top scorers.**
 
@@ -34,7 +34,14 @@
 
 ### ⚠️ HQ MUST NOT BUILD
 
-**A flashcard system. A spaced-repetition scheduler. A card review queue. Card authoring. Deck management.** **Any of these is a fifth-best Anki**, and the `Lab notes` precedent applies exactly: **the ≤5-second logging rule and `S0` both break on a card library.**
+**A spaced-repetition scheduler, card review queue, self-rating flow, card-level FSRS, deck import,
+or bundled/pre-authored deck.** Any of these is a fifth-best Anki, and the `Lab notes` precedent
+applies exactly.
+
+**RULED by Andy, Aug 2026:** Premed OS may generate a card only from material the student supplied —
+their own slides, notes, course material, or their own missed questions. Background is permitted only
+when marked and subordinate under generation §2.6. Generation is not a general card-authoring or
+content-distribution system. Export is one-way `.apkg`; Premed OS never reads an Anki deck back.
 
 ### What HQ keeps — and it is substantial, because Anki does none of it
 
@@ -61,9 +68,12 @@
 
 **On the scheduler specifically — the one real overlap.** **HQ's is three buckets** (*wrong → soon · right-but-flagged → medium · right-and-unflagged → long*). **Anki's FSRS is vastly more sophisticated and that does not matter here**, because **the sophistication pays off across thousands of cards over years, not across a mistake log during one prep cycle.** **And the no-self-rating divergence is deliberate and correct: a wrong calculation is objectively wrong, so asking the student to rate their own recall would be worse, not simpler.**
 
-**⚠️ THE LINE, and it is narrow: the drill queue is fed ONLY by the student's own attempts.** **The moment HQ ships or imports a content deck, `U-12` fires and this ruling is void.** **No HQ-authored cards. No pre-made decks. No card authoring UI.**
+**⚠️ THE LINE, and it is narrow:** generated drills and cards are fed only by the student's own
+attempts or supplied course material. The moment Premed OS ships, bundles, or imports a pre-authored
+deck, `U-12` fires and this ruling is void. There is no in-app review or scheduling UI.
 
-**The addition — `M-ANKI`:** **one dismissible pointer that Anki exists and MileDown is free** (`N-12` pattern, `U-8` — states it, never instructs). **Plus export a miss as plain text so a student can paste it into their own deck.** **One-way out, consistent with the no-two-way-sync rule.**
+**The addition — `M-ANKI`:** one dismissible pointer that Anki exists (`N-12` pattern, `U-8` — states
+it, never instructs), plus one-way `.apkg` export. Nothing syncs or reads back.
 
 ---
 
@@ -143,7 +153,7 @@
 
 | Pillar | Incumbent | Outcome | Cost to student |
 |---|---|---|---|
-| **MCAT** | **Anki** | **CEDE** — no flashcards, no SRS | **Free** |
+| **MCAT + Academics cards** | **Anki** | **Generate only from student-supplied material; CEDE all review/scheduling; one-way `.apkg`** | **Free** |
 | **Academics** | **Canvas** | **DUPLICATE-MINIMAL** — paste, never sync | Free but **unreachable** |
 | **Research · Lab notes** | **LabArchives** | **CEDE** — ruled Aug 2026 | Free via UNC |
 | **Research · Literature** | **Zotero / Sciwheel** | **BRIDGE** — one-way read | Free |

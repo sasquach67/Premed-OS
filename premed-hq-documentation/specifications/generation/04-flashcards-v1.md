@@ -472,18 +472,16 @@ cards is a *disclosed* gap, not a silent one.
 | `FC-IO-2` | The notice is **informational, never an error**, and never blocks or delays generation. |
 | `FC-IO-3` | It appears **at most once per deck**, not per card. |
 | `FC-IO-4` | It must not claim a delivery date. "Planned" / "coming soon" only — a dated promise in product copy is a commitment the roadmap has not made. |
-| `FC-IO-5` | Manually-authored occlusion cards are **first-class**: never flagged as defects by the quality gate, never overwritten by regeneration, and they keep their FSRS history. |
+| `FC-IO-5` | Students may add image-occlusion cards after export in Anki. Premed OS does not import, inspect, rewrite, or schedule them. |
 
-`FC-IO-5` matters most. Andy's hand-made occlusion cards will sit in generated decks, and the
-quality checks must not treat a card with no `front`, no `back`, and no `cloze_text` as malformed.
-**Manual cards carry `owner: 'user'` and are exempt from every generator quality check** — the same
-distinction `AcademicFile.owner` already draws between `course`, `mine`, and `generated`.
+`FC-IO-5` keeps the ownership boundary explicit: hand-made occlusion cards live in Anki, outside
+Premed OS's one-way export pipeline.
 
 #### When occlusion arrives
 
 The addition is: figure extraction in ingestion → a `source_figure` asset id → an `IMAGE_OCCLUSION`
 card type carrying that id plus occlusion regions. **Nothing in v1 needs redesign to accommodate
-it**, and existing manual cards should be migratable rather than replaced.
+it**; the resulting card still leaves Premed OS through the one-way export boundary.
 
 ---
 
@@ -532,21 +530,22 @@ Split rationale in `08` §2.3: machines check mechanics, models check meaning.
 
 ---
 
-## 13. Relationship to topics and FSRS
+## 13. Relationship to topics — no in-app card scheduling
 
-Cards attach to a `Topic` via `concept_id → topicId` and inherit the existing spaced-repetition
-machinery. **FSRS state is created on first review, not at generation** — matching
-`createTopicFsrsState`'s current behavior.
+Generated cards retain the source course/topic metadata required for grounding, tagging, scoped
+regeneration, and export. That relationship does **not** create review state.
 
-An edited or regenerated card **keeps its FSRS history** (`08` §1.5). The student's memory of the
-concept did not reset because the wording changed.
+**RULED by Andy, Aug 2026:** Premed OS never reviews or schedules cards. There is no card queue,
+self-rating, or card-level FSRS. Topic FSRS continues to schedule Academics topic recall only and is
+never changed by card generation or regeneration.
 
 ---
 
 ## 14. Anki export — ✅ **D-6 RESOLVED: `.apkg` is a target**
 
-**Andy's call, Aug 2026: design the schema for round-trip `.apkg` export now.** The card schema in
-`07` §4 is therefore Anki-compatible by construction rather than retrofitted.
+**Andy's call, Aug 2026: design the schema for one-way `.apkg` export now.** The card schema in
+`07` §4 is therefore Anki-compatible by construction rather than retrofitted. Premed OS never
+imports or reads an Anki deck back.
 
 ### 14.1 Note type mapping
 
@@ -554,16 +553,14 @@ concept did not reset because the wording changed.
 |---|---|---|
 | `clozePattern` absent | **Basic (and reversed as needed)** | `front` → Front, `back` → Back |
 | `clozePattern: 'single'` \| `'independent'` \| `'enumerated-list'` | **Cloze** | `clozeText` → Text. Anki's own `{{c1::}}` syntax, so all three patterns export losslessly |
-| Manual occlusion (`owner: 'user'`) | **Image Occlusion** | Authored in Anki, imported as-is, never rewritten |
 
 **`cardType` is premedOS's retrieval objective and has no Anki equivalent** — it exports as a tag
 (`premedos::type::CONCEPTUAL`) rather than forcing a note-type distinction Anki does not make.
 
 ### 14.2 The fields Anki has no home for
 
-`concept_id` and `source_reference` are the two that matter, and losing them breaks real behavior —
-**regeneration silently stops working on any card that has been exported and re-imported**, because
-identity matching is by `conceptId` (`07` §5).
+`concept_id` and `source_reference` are retained so the exported note remains inspectable in Anki.
+Premed OS does not re-import the package, so neither field is a sync key.
 
 **Resolution: a premedOS note type with reserved fields.**
 
@@ -580,7 +577,7 @@ premedos_spec
 
 | Field | Contents | Why |
 |---|---|---|
-| `premedos_concept_id` | The stable `conceptId` | Round-trip identity. Without it, re-import creates orphans |
+| `premedos_concept_id` | The stable `conceptId` | Preserves provenance in the exported package; it is not read back |
 | `premedos_source` | `fileId:chunkId:start-end` plus the resolved human label | Source inspection survives the trip; the label is resolved at export, never model-authored |
 | `premedos_spec` | `specId` + `specHash` | Tells you which generator version made a card you find months later |
 
@@ -591,16 +588,16 @@ review, and never pollute the retrieval surface (`FC-15`).
 
 | id | Rule |
 |---|---|
-| `FC-EXP-1` | Export is **lossless for premedOS-authored cards.** Every field survives a round trip |
-| `FC-EXP-2` | Re-imported cards match by `premedos_concept_id`. A card whose field is missing or altered is treated as **user-authored** (`owner: 'user'`) and is never overwritten by regeneration |
+| `FC-EXP-1` | Export is **lossless for Premed OS-authored cards.** Every authored field is present in the `.apkg` |
+| `FC-EXP-2` | Export is one-way. Premed OS never imports, syncs, or reads an Anki package back |
 | `FC-EXP-3` | Export **never fabricates** a source label. `premedos_source` is resolved from `SourceChunk.sourcePosition` at export time (`01` §4.1) |
-| `FC-EXP-4` | Manual cards (`owner: 'user'`), including image occlusion, export unchanged and are exempt from every generator check |
+| `FC-EXP-4` | Cards authored later in Anki remain entirely Anki-owned and are outside Premed OS quality checks |
 | `FC-EXP-5` | Deck structure mirrors the concept map — `Course::Topic` — so Anki's deck tree matches premedOS's |
-| `FC-EXP-6` | **Scheduling state is not exported.** FSRS history stays in premedOS; Anki rebuilds its own. Two schedulers for one card is a correctness problem, not a feature |
+| `FC-EXP-6` | **No scheduling state exists in Premed OS.** Anki creates and owns the only card-review schedule |
 
-`FC-EXP-6` is worth being explicit about: you will have the same card in two apps with two
-independent review schedules. **premedOS should say so at export** rather than letting a student
-assume their reviews sync.
+`FC-EXP-6` is worth being explicit about: the exported card is handed off to Anki. **Premed OS should
+say at export that the handoff is one-way** rather than letting a student assume reviews sync or read
+back.
 
 ### 14.4 Dependency to flag
 

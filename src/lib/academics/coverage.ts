@@ -26,16 +26,6 @@ export interface ChunkAssignmentProposal {
   requiresConfirmation: true
 }
 
-export function prioritizeKeyPoints(points: KeyPoint[]): KeyPoint[] {
-  return [...points].sort((a, b) => {
-    const never = Number(a.timesSurfaced > 0) - Number(b.timesSurfaced > 0)
-    if (never) return never
-    return a.timesSurfaced - b.timesSurfaced
-      || (a.lastSurfaced ?? 0) - (b.lastSurfaced ?? 0)
-      || a.order - b.order
-  })
-}
-
 export function calculateCourseCoverage(
   courseId: string,
   data: Pick<ClassCenterData, 'files' | 'sourceChunks' | 'keyPoints' | 'topics'>,
@@ -47,16 +37,17 @@ export function calculateCourseCoverage(
   const points = data.keyPoints.filter((point) => topicIds.has(point.topicId))
   const claimedChunkIds = new Set(points.flatMap((point) => point.sourceChunkIds))
   const item = (chunk: SourceChunk): CoverageItem => ({ chunk, file: fileById.get(chunk.fileId) })
-  const mappedChunks = chunks.filter((chunk) => Boolean(chunk.topicId)).length
+  const isConfirmed = (chunk: SourceChunk) => Boolean(chunk.topicId) && chunk.assignmentConfirmed !== false
+  const mappedChunks = chunks.filter(isConfirmed).length
 
   return {
     totalChunks: chunks.length,
     mappedChunks,
     mappedPercent: chunks.length ? Math.round((mappedChunks / chunks.length) * 100) : 0,
-    unassigned: chunks.filter((chunk) => !chunk.topicId).map(item),
+    unassigned: chunks.filter((chunk) => !isConfirmed(chunk)).map(item),
     uncovered: chunks.filter((chunk) => !claimedChunkIds.has(chunk.id)).map(item),
     unprocessedFiles: files.filter((file) => !chunks.some((chunk) => chunk.fileId === file.id)),
-    neverReviewed: prioritizeKeyPoints(points.filter((point) => point.timesSurfaced === 0)),
+    neverReviewed: points.filter((point) => point.timesSurfaced === 0).sort((a, b) => a.order - b.order),
   }
 }
 

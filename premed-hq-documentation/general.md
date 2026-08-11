@@ -123,11 +123,17 @@ Premed OS should function as a production-ready, intelligent pre-med operating s
 
 | | | Example |
 |---|---|---|
-| **CEDE** | The incumbent does it; HQ points out | **Anki · LabArchives · MSAR's data · letter delivery** |
+| **CEDE** | The incumbent does it; HQ points out | **Anki review/scheduling · LabArchives · MSAR's data · letter delivery** |
 | **BRIDGE** | HQ keeps a minimal record and reads one-way | **Zotero** (`B-7`) |
 | **DUPLICATE-MINIMAL** | **Unreachable. HQ re-enters by paste, stores the least it can** | **Canvas** |
 
 **`DUPLICATE-MINIMAL` is not a loophole. It requires proving integration is impossible, not merely inconvenient.**
+
+> **Flashcard boundary — RULED by Andy, Aug 2026.** Premed OS may generate cards only from material
+> the student supplied: their slides, notes, course material, or their own missed questions.
+> Background is permitted only when marked and subordinate under generation §2.6. Premed OS never
+> ships, bundles, or imports a pre-authored deck. Anki owns review and scheduling completely: there
+> is no card queue, self-rating, or card-level FSRS. Export is one-way `.apkg`; nothing reads back.
 
 **⚠️ The full pass across every pillar is `implementation/U-12-incumbent-audit.md`. Read it before speccing MCAT, Academics, Letters, or School List.**
 

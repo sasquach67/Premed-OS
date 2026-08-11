@@ -229,7 +229,7 @@ export interface Topic {
   status: TopicStatus
   fsrs: TopicFsrsState
   /** Legacy confidence is retained losslessly until the review-session chunk
-   * replaces it with confidence-before-reveal calibration. */
+   * replaces it with a confidence-before-reveal self-record. */
   confidence: TopicConfidence
   sourceNoteIds: ID[]
   linkedNoteIds?: ID[]

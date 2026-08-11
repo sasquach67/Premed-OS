@@ -1,14 +1,12 @@
 import type { AppData } from '@/lib/types'
-import { assignPendingChunks } from '@/lib/academics/chunkAssignment'
 
 /** D6 additive migration. It records honest source ranges and assignment
  * provenance without moving, merging, dropping, or reinterpreting any chunk.
  *
- * Unlabelled chunks are then run through the coverage pipeline
- * (semantic → positional → document-specific) instead of being parked at
- * `pending`, which left the coverage meter permanently understated. Every
- * automatic assignment lands with `assignmentConfirmed: false`, so the user
- * still confirms it — nothing is presented as settled fact.
+ * U-10 (Aug 2026) makes manual filing the default. Unlabelled chunks remain
+ * pending until the student explicitly confirms a topic. Existing provisional
+ * proposals are preserved losslessly and the coverage ledger treats them as
+ * unassigned until confirmation.
  *
  * Pure — see the note on `migrateAcademicTags`. */
 export function migrateAcademicsV7(data: AppData): AppData {
@@ -27,17 +25,11 @@ export function migrateAcademicsV7(data: AppData): AppData {
     return { ...file, processingStatus }
   })
 
-  const { chunks, topics } = assignPendingChunks({
-    sourceChunks: ranged,
-    topics: center.topics ?? [],
-    files,
-  })
-
   return {
     ...data,
     academics: {
       ...data.academics,
-      classCenter: { ...center, sourceChunks: chunks, topics, files },
+      classCenter: { ...center, sourceChunks: ranged, topics: center.topics ?? [], files },
     },
   }
 }

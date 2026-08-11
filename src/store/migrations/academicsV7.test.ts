@@ -16,14 +16,11 @@ describe('academics v7 migration', () => {
     const chunk = twice.academics.classCenter.sourceChunks[0]
     // Lossless: the stored text and its honest range are untouched.
     expect(chunk).toMatchObject({ content: 'exact text', characterStart: 0, characterEnd: 10 })
-    // Assigned rather than parked at `pending` — with no topic to match and no
-    // syllabus position, it lands on its own document's topic.
-    expect(chunk.assignmentMethod).toBe('document-topic')
-    expect(chunk.topicId).toBeTruthy()
-    // Automatic assignment is provisional; the user still confirms it.
-    expect(chunk.assignmentConfirmed).toBe(false)
-    // Idempotent: a second pass neither reassigns nor invents another topic.
-    expect(chunk.topicId).toBe(once.academics.classCenter.sourceChunks[0].topicId)
+    // U-10: hydration never files or creates a topic on the student's behalf.
+    expect(chunk.assignmentMethod).toBeUndefined()
+    expect(chunk.topicId).toBeUndefined()
+    expect(chunk.assignmentConfirmed).toBeUndefined()
+    // Idempotent: a second pass neither assigns nor invents a topic.
     expect(twice.academics.classCenter.topics).toHaveLength(once.academics.classCenter.topics.length)
   })
 })
