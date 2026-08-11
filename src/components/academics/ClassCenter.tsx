@@ -854,7 +854,7 @@ function ReviewQueuePanel({
         </div>
       )}
     >
-      {!shown.length ? <BentoEmpty>Nothing is due in HQ today.</BentoEmpty> : (
+      {!shown.length ? <BentoEmpty>Nothing is due in Premed OS today.</BentoEmpty> : (
         <div className="space-y-2">
           {shown.map((topic) => {
             const retrievability = Math.round(topicRetrievability(topic.fsrs) * 100)

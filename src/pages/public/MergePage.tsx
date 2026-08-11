@@ -209,7 +209,7 @@ export function MergePage() {
               <h1 className="pl-ti">You've got work on this device</h1>
               <div className="pl-sub" style={{ marginTop: 5, fontWeight: 600 }}>
                 {since
-                  ? `You've been using HQ signed out since ${since}. Here's what's here — pick what happens to it.`
+                  ? `You've been using Premed OS signed out since ${since}. Here's what's here — pick what happens to it.`
                   : "Here's what's on this device — pick what happens to it."}
               </div>
             </div>

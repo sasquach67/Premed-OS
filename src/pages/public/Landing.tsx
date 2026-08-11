@@ -36,7 +36,7 @@ import { useEnterApp } from '@/components/public/useEnterApp'
    tile grows a description sentence it has become the generic SaaS grid
    this page rejects, and the reversal above no longer covers it.
    NO PILLAR LABELS — the colour tint carries the grouping, because a
-   visitor doesn't know HQ's pillar names yet (decisions §4d). */
+   visitor doesn't know Premed OS's pillar names yet (decisions §4d). */
 const TILES = [
   {
     icon: LayoutGrid,
@@ -57,21 +57,21 @@ const TILES = [
     title: 'Study sessions with spaced repetition',
     tint: 'var(--cat-gpa)',
     example:
-      'A session knows which topics are due, times itself, and logs the hours as you work. Your misses become tagged cards you export to Anki in one click — HQ never becomes a second flashcard app.',
+      'A session knows which topics are due, times itself, and logs the hours as you work. Your misses become tagged cards you export to Anki in one click — Premed OS never becomes a second flashcard app.',
   },
   {
     icon: CalendarDays,
     title: 'One weekly plan across classes and MCAT',
     tint: 'var(--cat-volunteer)',
     example:
-      "Two study plans that each look reasonable add up to 34 hours a week. HQ builds both against the same calendar and says so before you commit. Miss a week and the plan reflows instead of becoming a backlog.",
+      "Two study plans that each look reasonable add up to 34 hours a week. Premed OS builds both against the same calendar and says so before you commit. Miss a week and the plan reflows instead of becoming a backlog.",
   },
   {
     icon: History,
     title: "Flags what you've forgotten before the exam",
     tint: 'var(--cat-mcat)',
     example:
-      "You took psych freshman year and sit the MCAT in 2029. HQ models what you'll be relearning from zero, weighted by how much of the exam it actually is, and schedules it back before it costs you.",
+      "You took psych freshman year and sit the MCAT in 2029. Premed OS models what you'll be relearning from zero, weighted by how much of the exam it actually is, and schedules it back before it costs you.",
   },
   {
     icon: GraduationCap,
@@ -270,7 +270,7 @@ export function Landing() {
             </div>
             <div className="pl-bd">
               <p className="pl-privtext">
-                <b>HQ is local-first.</b> Everything works signed out, stored in your browser. An
+                <b>Premed OS is local-first.</b> Everything works signed out, stored in your browser. An
                 account adds sync across devices — nothing more. AI features send only what they
                 need, we name every processor that receives anything, and there's a local-only path
                 for the parts you'd rather keep offline. <b>No third-party analytics. No ad tech.

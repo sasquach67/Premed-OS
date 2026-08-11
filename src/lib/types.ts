@@ -912,7 +912,7 @@ export interface BusyPeriod {
  * informs the shape but never replaces it (`01` §6.9).
  *
  * It is NOT a productivity target. The pool describes what a student *has*,
- * not what they *should* use — HQ never nudges anyone to fill unclaimed hours.
+ * not what they *should* use — Premed OS never nudges anyone to fill unclaimed hours.
  */
 export interface WeeklyCapacity {
   /** Available study hours per weekday, Sunday-first to match the app's

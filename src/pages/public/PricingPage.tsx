@@ -21,7 +21,7 @@ import { PublicHeadline } from '@/components/public/PublicHeadline'
 
 const CONTACT_EMAIL = 'elephon08@gmail.com'
 
-/** The four §5.4 commitments. Every one is a promise HQ can keep today. */
+/** The four §5.4 commitments. Every one is a promise Premed OS can keep today. */
 const COMMITMENTS = [
   {
     lead: 'Your records are never paywalled.',
@@ -67,7 +67,7 @@ export function PricingPage() {
           <b>Every tracker, every plan, every calculation, and the AI features are all just on.</b>
         </p>
         <p className="pl-soonp">
-          Most of HQ costs nothing to run. The parts that cost money are the AI ones, and I'd rather
+          Most of Premed OS costs nothing to run. The parts that cost money are the AI ones, and I'd rather
           measure a full semester of real usage than guess a number now and get it wrong in either
           direction.{' '}
           <b>

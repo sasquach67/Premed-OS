@@ -12,8 +12,15 @@ const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.
 
 export const isSupabaseConfigured = Boolean(url && anonKey)
 
-/** The base URL the app is served from (e.g. https://sasquach67.github.io/Premed-HQ/).
- *  Used as the magic-link redirect target — must be listed in Supabase Auth → URL config. */
+/** The base URL the app is served from (e.g. https://sasquach67.github.io/Premed-OS/).
+ *  Used as the magic-link and OAuth redirect target — it must be listed in
+ *  Supabase Auth → URL Configuration → Redirect URLs.
+ *
+ *  ⚠️ THIS TRACKS THE VITE `base`, so renaming the repo moves it. When the
+ *  base changed from `/Premed-HQ/` to `/Premed-OS/`, every previously
+ *  allowlisted redirect stopped matching — sign-in fails with a redirect
+ *  error until both the new localhost and Pages paths are added there.
+ *  Renaming the repo again means updating that allowlist again. */
 export const authRedirectTo =
   typeof window !== 'undefined' ? `${window.location.origin}${import.meta.env.BASE_URL}` : undefined
 

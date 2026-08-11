@@ -5,7 +5,7 @@
    only to someone for whom it is actually the front door: no session, no
    work on this device, and they have never clicked `Start tracking`.
    Everyone else — every existing user, every signed-in user, anyone who
-   has typed a single thing into HQ — gets their dashboard, exactly as
+   has typed a single thing into Premed OS — gets their dashboard, exactly as
    before this chunk existed.
 
    Nothing new gates the app. Failing every check below costs a visitor one
@@ -45,7 +45,7 @@ function useSignedIn(): boolean | undefined {
 
 /** `/landing` — the landing page, unconditionally.
  *
- *  `/` is deliberately a one-way trip: once a browser has used HQ it shows
+ *  `/` is deliberately a one-way trip: once a browser has used Premed OS it shows
  *  the dashboard forever, which is right for a visitor and makes the front
  *  door impossible to look at again. This route is the way back in. It is
  *  not a dev backdoor — it is the URL any "what is this?" link should point
@@ -55,7 +55,7 @@ export function LandingRoute() {
 }
 
 export function RootRoute() {
-  // `hasEnteredApp` already covers "this browser has used HQ before", so
+  // `hasEnteredApp` already covers "this browser has used Premed OS before", so
   // an existing installation never reaches the landing page.
   const entered = useSyncExternalStore(subscribePublicMeta, hasEnteredApp, () => true)
   const signedIn = useSignedIn()

@@ -577,7 +577,7 @@ function MutedSuggestionsSection() {
 /* ── Front door ──────────────────────────────────────────────────────────
    `/` shows the landing page to a first-time visitor and the dashboard to
    everyone else, and that decision is sticky: once this browser has used
-   HQ, the landing page, the sign-in screens and the local→account merge
+   Premed OS, the landing page, the sign-in screens and the local→account merge
    become unreachable from the address bar.
 
    That is correct for a visitor and unworkable for anyone checking that

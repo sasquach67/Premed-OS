@@ -4,10 +4,10 @@
    Two clauses carry this page:
      • **"Numbers are estimates."** GPA, BCPM, projections, readiness and
        score bands are all computed from user input and from rules that
-       change between cycles. This is the clause that keeps HQ from being
+       change between cycles. This is the clause that keeps Premed OS from being
        treated as authoritative, and it also appears wherever a derived
        number is displayed — not only here.
-     • **The user owns their content**, HQ takes only the licence needed to
+     • **The user owns their content**, Premed OS takes only the licence needed to
        operate, and that licence ends on deletion.
 
    ⚠ PUBLISHING BLOCKERS, NOT BUILD BLOCKERS (05 §10). Three items are
@@ -41,12 +41,12 @@ const SECTIONS: DocSection[] = [
     id: 'estimates',
     heading: 'Numbers are estimates',
     summary:
-      'Every number HQ produces is an estimate to verify. Do not submit an application on the strength of one.',
+      'Every number Premed OS produces is an estimate to verify. Do not submit an application on the strength of one.',
     body: (
       <p>
         GPA, BCPM classification, grade projections, hour totals, readiness reads, and score bands
         are computed from what you enter and from published rules that change between cycles.{' '}
-        <b>Verify against your official transcript, AMCAS, and your pre-health advisor.</b> HQ is not
+        <b>Verify against your official transcript, AMCAS, and your pre-health advisor.</b> Premed OS is not
         academic, medical, legal, or financial advice.
       </p>
     ),
@@ -55,14 +55,14 @@ const SECTIONS: DocSection[] = [
     id: 'your-content',
     heading: 'Your content',
     summary:
-      'You own everything you write. HQ gets only the permission needed to store it and show it back to you.',
+      'You own everything you write. Premed OS gets only the permission needed to store it and show it back to you.',
     body: (
       <ul>
         <li>
           <b>You keep ownership</b> of your notes, reflections, essays, and records.
         </li>
         <li>
-          HQ receives a{' '}
+          Premed OS receives a{' '}
           <b>limited licence to store, process, and display your content to you</b>, for the purpose
           of operating the service, and for nothing else.
         </li>
@@ -76,15 +76,15 @@ const SECTIONS: DocSection[] = [
     id: 'acceptable-use',
     heading: 'Acceptable use',
     summary:
-      "Don't use HQ to distribute material you don't have the right to distribute, and don't attack the service.",
+      "Don't use Premed OS to distribute material you don't have the right to distribute, and don't attack the service.",
     body: (
       <ul>
         <li>
           <b>Past exams and course materials:</b> every shared entry carries a permission status, and
-          material of unknown origin is never shared. <b>HQ is not a distribution network.</b>
+          material of unknown origin is never shared. <b>Premed OS is not a distribution network.</b>
         </li>
         <li>
-          <b>Syllabi:</b> sharing a parse shares structure and facts. Do not use HQ to redistribute
+          <b>Syllabi:</b> sharing a parse shares structure and facts. Do not use Premed OS to redistribute
           the document itself.
         </li>
         <li>
@@ -105,8 +105,8 @@ const SECTIONS: DocSection[] = [
       'Canvas, Google, Anki, and any prep provider have their own terms, and those are between you and them.',
     body: (
       <p>
-        HQ links to and integrates with third-party services at your direction.{' '}
-        <b>Canvas access is read-only, permanently</b> — HQ never submits work, posts, or writes on
+        Premed OS links to and integrates with third-party services at your direction.{' '}
+        <b>Canvas access is read-only, permanently</b> — Premed OS never submits work, posts, or writes on
         your behalf. <b>No integration with paid answer-sharing services will ever be built.</b>
       </p>
     ),
@@ -118,7 +118,7 @@ const SECTIONS: DocSection[] = [
       "Advice gathered from forums is opinion, attributed and dated. It is not official guidance and sometimes it's wrong.",
     body: (
       <p>
-        Where community consensus conflicts with the AAMC or a university, HQ shows both and says
+        Where community consensus conflicts with the AAMC or a university, Premed OS shows both and says
         which is which. Posts are summarised and linked, never republished.
       </p>
     ),
@@ -127,7 +127,7 @@ const SECTIONS: DocSection[] = [
     id: 'liability',
     heading: 'Limits of liability',
     summary:
-      'HQ is provided as is. It is not liable for admissions outcomes or decisions made from its numbers.',
+      'Premed OS is provided as is. It is not liable for admissions outcomes or decisions made from its numbers.',
     body: (
       <p>
         To the extent the law allows, Premed OS is provided without warranties and is not liable for
@@ -149,7 +149,7 @@ export function TermsPage() {
     <DocLayout
       documentTitle="Terms of use — Premed OS"
       title="Terms of use"
-      subtitle="What you can expect from HQ, what HQ expects from you, and the limits on both."
+      subtitle="What you can expect from Premed OS, what Premed OS expects from you, and the limits on both."
       lastUpdated={LAST_UPDATED}
       sections={SECTIONS}
     />

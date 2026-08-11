@@ -428,7 +428,7 @@ export function AcademicRecallSession() {
               </div>
             )}
             <div className="mt-6 rounded-xl border border-amber-400/20 bg-amber-400/8 px-4 py-3 text-sm font-bold text-white/72">
-              You said <strong className="text-white">{confidenceLabel(confidence)}</strong>. Grade the recall honestly; the interval becomes the next HQ review.
+              You said <strong className="text-white">{confidenceLabel(confidence)}</strong>. Grade the recall honestly; the interval becomes the next Premed OS review.
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {GRADE_OPTIONS.map((option) => <Button key={option.grade} variant="outline" disabled={!scope.every((item) => dispositions[item.id])} className="h-16 flex-col border-white/18 bg-white/5 text-white" onClick={() => gradeTopic(option.grade)}><span className="font-display text-lg font-extrabold">{titleCase(option.grade)}</span><span className="text-xs text-white/54">{option.interval} · {option.key}</span></Button>)}

@@ -28,7 +28,9 @@ export function Ram({
         style={{ width: size, height: size }}
         aria-label="mascot"
       >
-        <span className="font-display text-lg font-bold">HQ</span>
+        {/* Two characters, deliberately: this is a fixed-size circular
+            fallback and the full product name overflows it. */}
+        <span className="font-display text-lg font-bold">OS</span>
       </div>
     )
   }

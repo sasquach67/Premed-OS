@@ -184,7 +184,7 @@ const STEPS: TourStep[] = [
         pin: { left: '70%', top: '60%' },
         at: { right: '5%', top: '66%' },
         lead: 'Before the exam.',
-        body: "What you learned two years ago decays. HQ schedules it back before it costs you a point.",
+        body: "What you learned two years ago decays. Premed OS schedules it back before it costs you a point.",
       },
     ],
   },

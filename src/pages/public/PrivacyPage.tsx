@@ -2,7 +2,7 @@
    PrivacyPage — 05 §6.4.
 
    Not a template. Every claim here is checkable against the spec, because
-   **a claim HQ cannot keep is worse than no page** (doc-decisions §Do not).
+   **a claim Premed OS cannot keep is worse than no page** (doc-decisions §Do not).
    If a statement below stops being true in the code, the statement is what
    changes — not quietly, and not by deleting the section.
 
@@ -11,7 +11,7 @@
        for each row;
      • on-device transcription called out separately — it is at once the
        largest cost decision in the product and the strongest privacy claim
-       HQ can make;
+       Premed OS can make;
      • all three processors NAMED, with what each one receives.
    ============================================================ */
 import { DocLayout, Changelog, type DocSection } from '@/pages/public/DocLayout'
@@ -23,7 +23,7 @@ const SECTIONS: DocSection[] = [
     id: 'local-first',
     heading: 'Local first, really',
     summary:
-      'HQ works with no account. Until you make one, everything you type lives in your browser and nowhere else.',
+      'Premed OS works with no account. Until you make one, everything you type lives in your browser and nowhere else.',
     body: (
       <p>
         Your records are written to local storage on your device as you enter them. Signing in adds
@@ -171,12 +171,12 @@ const SECTIONS: DocSection[] = [
     id: 'patient-information',
     heading: 'Patient information',
     summary:
-      "Don't put identifiable patient details in reflections. HQ will quietly say so if it spots something, and will never block you from saving.",
+      "Don't put identifiable patient details in reflections. Premed OS will quietly say so if it spots something, and will never block you from saving.",
     body: (
       <p>
         Clinical, shadowing, and volunteering reflections are free text. Write about what you
         learned, not who you saw — no names, dates of birth, room numbers, or record numbers.{' '}
-        <b>HQ is not a compliance product and does not claim to be.</b>
+        <b>Premed OS is not a compliance product and does not claim to be.</b>
       </p>
     ),
   },

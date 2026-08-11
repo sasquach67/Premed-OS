@@ -26,7 +26,7 @@ const KEY = 'premed_hq_public'
  *  `@/lib/publicLayer` is the first import in `main.tsx`.
  *
  *  It answers the only question the landing gate can actually ask: has
- *  this browser used HQ before? The store's own contents cannot answer it,
+ *  this browser used Premed OS before? The store's own contents cannot answer it,
  *  because `seed.ts` ships a populated workspace — a fresh install already
  *  has courses and tasks in it, so "does the store hold anything" is true
  *  for everybody and would hide the landing page from every visitor. */
@@ -96,7 +96,7 @@ export function hasSeenMerge(userId: string): boolean {
 }
 
 /* ── Re-running the flow ─────────────────────────────────────────────────
-   The front door is a one-way trip by design: once you have used HQ, `/`
+   The front door is a one-way trip by design: once you have used Premed OS, `/`
    is your dashboard forever. That is correct for a visitor and useless for
    anyone testing the thing — the landing page, the auth screens and the
    merge screen become unreachable in the browser you actually use.
@@ -181,8 +181,8 @@ export function hasLocalWork(data: AppData): boolean {
   return localCounts(data).length > 0
 }
 
-/** The date the visitor started using HQ signed out, for the merge screen's
- *  "You've been using HQ signed out since …" line. Returns undefined when
+/** The date the visitor started using Premed OS signed out, for the merge screen's
+ *  "You've been using Premed OS signed out since …" line. Returns undefined when
  *  nothing on the device carries a creation date — the copy drops the
  *  clause rather than inventing one. */
 export function localWorkSince(data: AppData): string | undefined {

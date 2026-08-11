@@ -65,7 +65,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
       official: 'Taken from the UNC catalog. Treat as fact.',
       'premed-advice': 'Community consensus among pre-meds, not a UNC rule — useful, but check it.',
       'planner-inspired': 'Inferred from a planner layout. Verify before relying on it.',
-      'user-note': 'Something you or an advisor added. HQ has not checked it against anything.',
+      'user-note': 'Something you or an advisor added. Premed OS has not checked it against anything.',
     },
   },
 
@@ -81,7 +81,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     values: {
       course: 'Handed out by the class — syllabus, slides, problem sets.',
       mine: 'Your own work. The gap report can cite these back to you.',
-      generated: 'Produced by HQ from your material, not by you or the professor.',
+      generated: 'Produced by Premed OS from your material, not by you or the professor.',
     },
   },
 

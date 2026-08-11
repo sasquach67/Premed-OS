@@ -77,7 +77,7 @@ export function AboutPage() {
             classes, but using all of these apps felt a bit convoluted.
           </p>
           <p>
-            So I built HQ to put everything in one place, and to hopefully make <b>OUR</b> pre-med
+            So I built Premed OS to put everything in one place, and to hopefully make <b>OUR</b> pre-med
             journey a tiny bit easier. My noob self has been the only developer of this app, so I'm
             open to any form of feedback or advice from others!
           </p>
