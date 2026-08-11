@@ -52,10 +52,10 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     values: {
       'not-started': 'Nothing recorded yet — the topic exists but you have not worked it.',
       seen: 'Covered in class, but you have not tried to recall it from memory.',
-      'notes-made': 'You have written it up. Writing is not recall, so this is not yet ready.',
-      reviewing: 'Actively in the recall rotation, not yet reliable.',
-      weak: 'You tried to recall it and could not. This is where study time pays best.',
-      ready: 'You recalled it without prompting. It will resurface before you forget.',
+      'notes-made': 'Choose this once notes exist but you have not marked the topic for recall review.',
+      reviewing: 'Choose this while the topic is in your recall rotation.',
+      weak: 'Choose this when you want the topic kept visible as marked for review.',
+      ready: 'Choose this when you want the topic recorded as ready for the current study plan.',
     },
   },
 
@@ -87,7 +87,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
 
   'assignment.type': {
     values: {
-      exam: 'Choose this for anything that gets its own study plan and readiness score.',
+      exam: 'Choose this for anything that gets its own study plan and source-linked topic scope.',
       quiz: 'Choose this for a short in-class check — graded, but not worth a study plan.',
       homework: 'Choose this for routine graded work with a due date.',
       lab: 'Choose this for lab work with a separate write-up or deadline.',
