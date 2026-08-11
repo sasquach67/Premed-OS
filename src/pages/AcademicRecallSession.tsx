@@ -16,7 +16,8 @@ import {
 } from '@/lib/academics/activeRecall'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import {
-  studyTools, type GapCheckItem, type GapCheckResult,
+  acceptStudySourceDisclosure, hasAcceptedStudySourceDisclosure, studySourceFingerprint,
+  studySourceSyncKey, studyTools, type GapCheckItem, type GapCheckResult,
 } from '@/lib/intelligence/studyTools'
 import { cn } from '@/lib/utils'
 import { AnimatedFileUpload } from '@/components/motion'
@@ -173,23 +174,53 @@ export function AcademicRecallSession() {
 
   async function runGapCheck() {
     if (!current || checkingGaps) return
+    const sources = data.sourceChunks
+      .filter((chunk) => chunk.courseId === courseId && chunk.topicId === current.id)
+      .slice(0, 24)
+      .map((chunk) => ({
+        chunkId: chunk.id,
+        fileId: chunk.fileId,
+        content: chunk.content,
+        start: 0,
+        end: chunk.content.length,
+      }))
+    if (!sources.length) {
+      setGapResult(null)
+      setGapError('Add source material to this topic before running an AI gap-check.')
+      return
+    }
+    if (!hasAcceptedStudySourceDisclosure()) {
+      const accepted = window.confirm(
+        'AI study tools copy only the selected topic source chunks to your private Premed OS server workspace so the model can compare your recall against them. Your local data remains canonical, and you can delete the server copy at any time in Settings. Continue?',
+      )
+      if (!accepted) return
+      acceptStudySourceDisclosure()
+    }
     setCheckingGaps(true)
     setGapError('')
+    const syncKey = studySourceSyncKey(courseId, current.id)
+    const fingerprint = studySourceFingerprint(sources)
+    if (localStorage.getItem(syncKey) !== fingerprint) {
+      const syncResult = await studyTools.syncSources({
+        action: 'sync-sources',
+        courseId,
+        topicId: current.id,
+        sources,
+      })
+      if (!syncResult.ok) {
+        setCheckingGaps(false)
+        setGapResult(null)
+        setGapError(syncResult.message)
+        return
+      }
+      localStorage.setItem(syncKey, fingerprint)
+    }
     const result = await studyTools.gapCheck({
       action: 'gap-check',
       courseId,
       topicId: current.id,
       response,
-      sources: data.sourceChunks
-        .filter((chunk) => chunk.courseId === courseId && chunk.topicId === current.id)
-        .slice(0, 24)
-        .map((chunk) => ({
-          chunkId: chunk.id,
-          fileId: chunk.fileId,
-          content: chunk.content,
-          start: 0,
-          end: chunk.content.length,
-        })),
+      chunkIds: sources.map((source) => source.chunkId),
     })
     setCheckingGaps(false)
     if (!result.ok) {

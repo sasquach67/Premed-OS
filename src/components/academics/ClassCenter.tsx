@@ -14,16 +14,13 @@ import type {
   AcademicTagColor, ClassAssignment, ClassWorkspace,
   ClassCenterData, ClassContact, ClassContactRole, Course,
   AcademicFile, ClassFileType, ClassNote, ClassNoteType, Topic,
-  ClassWeakArea, PracticeExam, PracticeExamDifficulty, PracticeQuestion,
-  PracticeQuestionType, TopicConfidence, TopicStatus, WeakAreaSource, Person,
+  ClassWeakArea, PracticeExam, PracticeQuestion,
+  TopicConfidence, TopicStatus, WeakAreaSource, Person,
 } from '@/lib/types'
-import { aiPracticeService, type GeneratePracticeExamRequest } from '@/services/aiPracticeService'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
@@ -78,8 +75,6 @@ const TOPIC_STATUSES: TopicStatus[] = ['not-started', 'seen', 'notes-made', 'rev
 const NOTE_TYPES: ClassNoteType[] = ['lecture', 'reading', 'lab', 'study-guide', 'exam-review', 'question-log', 'other']
 const FILE_TYPES: ClassFileType[] = ['syllabus', 'lecture-slides', 'reading', 'study-guide', 'rubric', 'past-exam', 'lab-handout', 'link', 'other']
 const CONTACT_ROLES: ClassContactRole[] = ['professor', 'TA', 'advisor', 'study-partner', 'tutor', 'peer', 'other']
-const PRACTICE_DIFFICULTIES: PracticeExamDifficulty[] = ['easy', 'medium', 'hard', 'mixed']
-const PRACTICE_QUESTION_TYPES: PracticeQuestionType[] = ['multiple-choice', 'short-answer', 'free-response']
 
 const COLOR_STYLES: Record<AcademicTagColor, string> = {
   gray: 'from-slate-400/18 via-slate-200/18 to-slate-500/12 text-slate-700 dark:text-slate-200',
@@ -1667,7 +1662,6 @@ function CourseKitTab({ row, data, mutate }: ClassTabProps) {
 }
 
 function StudyCenterTab({ row, data, mutate }: ClassTabProps) {
-  const [generatorOpen, setGeneratorOpen] = useState(false)
   const [activeExamId, setActiveExamId] = useState('')
   const topics = data.topics.filter((topic) => topic.courseId === row.id).sort((a, b) => a.order - b.order)
   const exams = data.practiceExams.filter((exam) => exam.courseId === row.id).sort((a, b) => b.updatedAt - a.updatedAt)
@@ -1688,19 +1682,7 @@ function StudyCenterTab({ row, data, mutate }: ClassTabProps) {
         <PracticeExamRunner exam={activeExam} data={data} mutate={mutate} onClose={() => setActiveExamId('')} />
       )}
       <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={() => setGeneratorOpen(true)}><Plus className="size-4" /> Practice exam</Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline"><MoreHorizontal className="size-4" /> More</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem><NotebookText className="size-4" /> Generate from notes</DropdownMenuItem>
-              <DropdownMenuItem><Brain className="size-4" /> Explain weak topic</DropdownMenuItem>
-              <DropdownMenuItem><Target className="size-4" /> Build study plan</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <p className="text-sm font-semibold text-muted-foreground">Practice generation is being rebuilt on the verified study-tools backend.</p>
         <div className="min-w-[220px] space-y-1">
           <div className="flex items-center justify-between text-xs font-extrabold uppercase text-muted-foreground">
             <span>{nextExam ? `${nextExam.title} readiness` : 'Exam readiness'}</span>
@@ -1760,19 +1742,6 @@ function StudyCenterTab({ row, data, mutate }: ClassTabProps) {
           </Card>
         </div>
       </div>
-      <PracticeExamGenerator
-        open={generatorOpen}
-        courseId={row.id}
-        data={data}
-        onOpenChange={setGeneratorOpen}
-        onGenerated={(exam, questions) => {
-          mutate((draft) => {
-            draft.practiceExams.unshift(exam)
-            draft.practiceQuestions.unshift(...questions)
-          })
-          setActiveExamId(exam.id)
-        }}
-      />
     </div>
   )
 }
@@ -1803,107 +1772,6 @@ function TopicMatrixRow({ topic, data, mutate }: { topic: Topic; data: ClassCent
         </Button>
       </div>
     </div>
-  )
-}
-
-/** Exported so the live class hub owns it. Keyed by `courseId` and the plain
- *  `ClassCenterData` so it has no dependency on Class Center's joined view. */
-export function PracticeExamGenerator({
-  open, courseId, data, onOpenChange, onGenerated,
-}: {
-  open: boolean
-  courseId: string
-  data: ClassCenterData
-  onOpenChange: (open: boolean) => void
-  onGenerated: (exam: PracticeExam, questions: PracticeQuestion[]) => void
-}) {
-  const row = { id: courseId }
-  const topics = data.topics.filter((topic) => topic.courseId === row.id).sort((a, b) => a.order - b.order)
-  const notes = data.notes.filter((note) => note.courseId === row.id)
-  const files = data.files.filter((file) => file.courseId === row.id)
-  const [topicIds, setTopicIds] = useState<string[]>(topics.slice(0, 3).map((topic) => topic.id))
-  const [sourceNoteIds, setSourceNoteIds] = useState<string[]>([])
-  const [sourceFileIds, setSourceFileIds] = useState<string[]>([])
-  const [difficulty, setDifficulty] = useState<PracticeExamDifficulty>('medium')
-  const [questionCount, setQuestionCount] = useState(6)
-  const [questionTypes, setQuestionTypes] = useState<PracticeQuestionType[]>(['multiple-choice'])
-  const [generating, setGenerating] = useState(false)
-  const [policyError, setPolicyError] = useState('')
-
-  async function generate() {
-    setGenerating(true)
-    const request: GeneratePracticeExamRequest = {
-      courseId: row.id,
-      topicIds,
-      sourceNoteIds,
-      sourceFileIds,
-      difficulty,
-      questionCount,
-      questionTypes,
-    }
-    try {
-      const response = await aiPracticeService.generatePracticeExam(request, { topics, notes, files })
-      onGenerated(response.exam, response.questions)
-      onOpenChange(false)
-      setPolicyError('')
-    } catch (error) {
-      // The generation allow-list rejected this surface. Say so plainly rather
-      // than failing silently or pretending the request is still running.
-      setPolicyError(error instanceof Error ? error.message : 'Generation is not available here.')
-    } finally {
-      setGenerating(false)
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Generate practice exam</DialogTitle>
-          <DialogDescription>Local placeholder generator for now. It uses selected topics and saved class material, then can be replaced by a backend endpoint later.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-5">
-          <TopicPicker label="Topics to test" topics={topics} value={topicIds} onChange={setTopicIds} />
-          <TopicPicker
-            label="Source notes"
-            topics={notes.map((note) => ({ id: note.id, title: note.title, courseId: row.id, status: 'seen', confidence: 2, sourceNoteIds: [], order: note.order }))}
-            value={sourceNoteIds}
-            onChange={setSourceNoteIds}
-          />
-          <TopicPicker
-            label="Source files"
-            topics={files.map((file) => ({ id: file.id, title: file.title, courseId: row.id, status: 'seen', confidence: 2, sourceNoteIds: [], order: file.order }))}
-            value={sourceFileIds}
-            onChange={setSourceFileIds}
-          />
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Difficulty"><TinySelect value={difficulty} options={PRACTICE_DIFFICULTIES} onChange={(value) => setDifficulty(value as PracticeExamDifficulty)} /></Field>
-            <Field label="Questions"><Input type="number" min={1} max={40} value={questionCount} onChange={(event) => setQuestionCount(Number(event.target.value))} /></Field>
-            <Field label="Question types">
-              <div className="flex flex-wrap gap-1.5">
-                {PRACTICE_QUESTION_TYPES.map((type) => (
-                  <ToggleChip key={type} selected={questionTypes.includes(type)} onClick={() => setQuestionTypes((prev) => toggleValue(prev, type))}>{statusLabel(type)}</ToggleChip>
-                ))}
-              </div>
-            </Field>
-          </div>
-          {generating && (
-            <div className="rounded-2xl bg-primary/10 p-4 text-sm font-bold text-primary">
-              Building a balanced local practice set from your topics...
-            </div>
-          )}
-        </div>
-        {policyError && (
-          <p role="alert" className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm font-semibold text-foreground">
-            {policyError}
-          </p>
-        )}
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={generate} disabled={generating || !topicIds.length || !questionTypes.length}>{generating ? 'Generating...' : 'Create exam'}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   )
 }
 

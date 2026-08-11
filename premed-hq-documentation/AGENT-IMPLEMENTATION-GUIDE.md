@@ -21,7 +21,8 @@ Everything you build must come from these `.md` and `.json` files. Do not invent
    - `01-shared-interface-patterns` (center-peek model, lean inspector, **layout discipline §5c**),
    - `04-visual-craft-standards` (**the non-negotiable design rules**),
    - `05-experience-pillar` (the shared FRAME for the five experience pillars; the builder itself serves Clinical/Volunteering/Shadowing/Research, while Extracurriculars is a separate page),
-   - `02-atlas...`, `03-overview`.
+   - `02-atlas...`, `03-overview`,
+   - **`generation/`** — the AI generation engine (layers, source modes, study-guide and flashcard specs, schemas, visual system, regeneration, quality). **APPROVED Aug 2026; all nine decisions resolved.** Start at `generation/README.md` for the decision log, then build against `09-migration-plan.md` §3 from Phase 0. It governs every generated artifact; `lib/academics/generationPolicy.ts` remains the enforcing gate.
 4. `data/` — reference datasets (`*.json`). Treat as data, not code; wire the app to read them.
 5. `tabs/` — the per-page specs. Implement these **one at a time** (§3).
 

@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils'
 import { TimeField } from '@/components/common/DateField'
 import { TrashRecovery } from '@/components/common/TrashRecovery'
 import { mutedRecommendationRules } from '@/lib/intelligence'
+import { clearStudySourceSyncCache, studyTools } from '@/lib/intelligence/studyTools'
 import { isDemoMode, setDemoMode } from '@/lib/demoMode'
 
 export function Settings() {
@@ -40,6 +41,7 @@ export function Settings() {
   const archiveRef = useRef<HTMLDivElement>(null)
   const [params] = useSearchParams()
   const [msg, setMsg] = useState('')
+  const [deletingAiSources, setDeletingAiSources] = useState(false)
   const archiveRequested = params.get('tab') === 'archive'
   const origin = window.location.origin
   const isFileOrigin = window.location.protocol === 'file:'
@@ -71,6 +73,19 @@ export function Settings() {
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Restore failed.')
     }
+  }
+
+  async function deleteAiSources() {
+    if (!confirm('Delete every class-source chunk copied to your private Premed OS server workspace? Your local notes, files, and study history will stay intact.')) return
+    setDeletingAiSources(true)
+    const result = await studyTools.deleteSources()
+    setDeletingAiSources(false)
+    if (!result.ok) {
+      setMsg(result.message)
+      return
+    }
+    clearStudySourceSyncCache()
+    setMsg('Server-side AI source copies deleted. Your local class data was not changed.')
   }
 
   return (
@@ -120,6 +135,20 @@ export function Settings() {
               <Button variant="outline" onClick={() => fileRef.current?.click()}><Upload className="size-4" /> Import JSON</Button>
               <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) onImport(f) }} />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /> AI study data</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              AI study tools copy only the source chunks you explicitly use to your private server workspace. Your browser data stays canonical.
+            </p>
+            <Button variant="outline" onClick={deleteAiSources} disabled={deletingAiSources}>
+              <Trash2 className="size-4" /> {deletingAiSources ? 'Deleting...' : 'Delete server source copies'}
+            </Button>
           </CardContent>
         </Card>
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createStudyToolsClient, isGapCheckResult } from './studyTools'
+import { createStudyToolsClient, isGapCheckResult, studySourceFingerprint } from './studyTools'
 
 describe('study tools boundary', () => {
   it('keeps a zero-Supabase clone fully deterministic and offline', async () => {
@@ -8,13 +8,41 @@ describe('study tools boundary', () => {
       courseId: 'course-1',
       topicId: 'topic-1',
       response: 'My recall',
-      sources: [],
+      chunkIds: ['chunk-1'],
     })
     expect(result).toEqual({
       ok: false,
       code: 'unconfigured',
-      message: 'AI gap-check is not configured. Manual review remains available.',
+      message: 'AI study tools are not configured. Local study workflows remain available.',
     })
+  })
+
+  it('keeps source content out of the generation request', async () => {
+    const requests: unknown[] = []
+    const client = {
+      auth: { getSession: async () => ({ data: { session: { access_token: 'test' } } }) },
+      functions: {
+        invoke: async (_name: string, options: { body: unknown }) => {
+          requests.push(options.body)
+          return { data: { covered: [], missed: [], wrong: [], suggestedGrade: 'good' }, error: null }
+        },
+      },
+    }
+    const result = await createStudyToolsClient(client as never).gapCheck({
+      action: 'gap-check', courseId: 'course-1', topicId: 'topic-1', response: 'Recall', chunkIds: ['chunk-1'],
+    })
+    expect(result.ok).toBe(true)
+    expect(requests).toEqual([{
+      action: 'gap-check', courseId: 'course-1', topicId: 'topic-1', response: 'Recall', chunkIds: ['chunk-1'],
+    }])
+    expect(JSON.stringify(requests)).not.toContain('source content')
+  })
+
+  it('fingerprints content changes without storing the content itself', () => {
+    const first = studySourceFingerprint([{ chunkId: 'c', fileId: 'f', content: 'alpha', start: 0, end: 5 }])
+    const second = studySourceFingerprint([{ chunkId: 'c', fileId: 'f', content: 'omega', start: 0, end: 5 }])
+    expect(first).not.toBe(second)
+    expect(first).not.toContain('alpha')
   })
 
   it('rejects malformed model output instead of accepting prose', () => {

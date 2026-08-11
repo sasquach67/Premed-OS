@@ -15,6 +15,10 @@ type Chunk = {
   character_end: number
 }
 
+const AI_REQUEST_WEIGHT = {
+  'gap-check': 1,
+} as const
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (request.method !== 'POST') return failure(405, 'method-not-allowed', 'POST required.')
@@ -46,25 +50,47 @@ Deno.serve(async (request) => {
   } catch {
     return failure(400, 'invalid-request', 'A JSON request is required.')
   }
+  if (body.action === 'delete-sources') {
+    const { error } = await client
+      .from('academic_source_chunks')
+      .delete()
+      .eq('user_id', userData.user.id)
+    if (error) return failure(503, 'delete-failed', 'The server source copy could not be deleted.')
+    return json({ deleted: true })
+  }
+
+  if (body.action === 'sync-sources') {
+    if (!isText(body.courseId) || !isText(body.topicId)) {
+      return failure(400, 'invalid-request', 'A typed topic-scoped source sync is required.')
+    }
+    const suppliedSources = validateSources(body.sources)
+    if (!suppliedSources) {
+      return failure(400, 'invalid-request', 'Sources must use the typed topic-scoped contract.')
+    }
+    try {
+      await mirrorLocalSources(client, userData.user.id, body.courseId, body.topicId, suppliedSources)
+      return json({ synced: suppliedSources.length })
+    } catch (error) {
+      console.error('study-tools source sync failure', error instanceof Error ? error.message : 'unknown')
+      return failure(503, 'sync-failed', 'Source material could not be synced.')
+    }
+  }
+
   if (body.action !== 'gap-check' || !isText(body.courseId) || !isText(body.topicId) || !isText(body.response)) {
-    return failure(400, 'invalid-request', 'A typed gap-check request is required.')
+    return failure(400, 'invalid-request', 'A typed study-tool request is required.')
   }
-  const suppliedSources = validateSources(body.sources)
-  if (body.sources !== undefined && !suppliedSources) {
-    return failure(400, 'invalid-request', 'Sources must use the typed topic-scoped contract.')
-  }
+  const chunkIds = validateChunkIds(body.chunkIds)
+  if (!chunkIds?.length) return failure(400, 'invalid-request', 'At least one trusted chunk ID is required.')
 
   const { data: allowed, error: limitError } = await client.rpc('claim_ai_request', {
     p_hour_limit: 20,
     p_day_limit: 100,
+    p_weight: AI_REQUEST_WEIGHT['gap-check'],
   })
   if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
   if (!allowed) return failure(429, 'rate-limited', 'Hourly or daily AI usage limit reached.')
 
-  if (suppliedSources?.length) {
-    await mirrorLocalSources(client, userData.user.id, body.courseId, body.topicId, suppliedSources)
-  }
-  const chunks = await retrieveChunks(client, body.courseId, body.topicId, body.response)
+  const chunks = await retrieveChunks(client, body.courseId, body.topicId, chunkIds)
   if (!chunks.length) return failure(422, 'no-sources', 'No topic-scoped source material is available.')
 
   try {
@@ -122,37 +148,14 @@ async function retrieveChunks(
   client: ReturnType<typeof createClient>,
   courseId: string,
   topicId: string,
-  query: string,
+  chunkIds: string[],
 ): Promise<Chunk[]> {
-  const embeddingKey = Deno.env.get('OPENAI_EMBEDDING_API_KEY')
-  if (embeddingKey) {
-    const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${embeddingKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'text-embedding-3-small', input: query }),
-    })
-    if (embeddingResponse.ok) {
-      const embeddingJson = await embeddingResponse.json()
-      const embedding = embeddingJson?.data?.[0]?.embedding
-      if (Array.isArray(embedding)) {
-        const { data } = await client.rpc('match_academic_chunks', {
-          p_course_id: courseId,
-          p_topic_id: topicId,
-          p_embedding: embedding,
-          p_limit: 12,
-        })
-        if (Array.isArray(data) && data.length) return data as Chunk[]
-      }
-    }
-  }
-
-  // pgvector is an optional accelerator. The fail-safe path remains strictly
-  // topic scoped and deterministic when no embedding provider is configured.
   const { data, error } = await client
     .from('academic_source_chunks')
     .select('chunk_id,file_id,content,character_start,character_end')
     .eq('course_id', courseId)
     .eq('topic_id', topicId)
+    .in('chunk_id', chunkIds)
     .order('created_at', { ascending: true })
     .limit(MAX_CHUNKS)
   if (error) throw error
@@ -338,7 +341,6 @@ function isText(value: unknown): value is string {
 }
 
 function validateSources(value: unknown) {
-  if (value === undefined) return []
   if (!Array.isArray(value) || value.length > MAX_CHUNKS) return null
   const sources: Array<{ chunkId: string; fileId: string; content: string; start: number; end: number }> = []
   for (const raw of value) {
@@ -355,6 +357,13 @@ function validateSources(value: unknown) {
     })
   }
   return sources
+}
+
+function validateChunkIds(value: unknown) {
+  if (!Array.isArray(value) || value.length > MAX_CHUNKS) return null
+  const ids = value.filter(isText)
+  if (ids.length !== value.length || new Set(ids).size !== ids.length) return null
+  return ids
 }
 
 function json(body: unknown, status = 200) {

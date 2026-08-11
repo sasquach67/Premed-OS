@@ -29,15 +29,28 @@ export interface GapCheckRequest {
   courseId: string
   topicId: string
   response: string
-  /** Topic-scoped local sources are mirrored only when the user explicitly
-   * runs the gap-check. localStorage remains canonical. */
-  sources?: Array<{
-    chunkId: string
-    fileId: string
-    content: string
-    start: number
-    end: number
-  }>
+  /** The edge function resolves these IDs from the signed-in user's private
+   * server mirror. Source content is never trusted from a generation call. */
+  chunkIds: string[]
+}
+
+export interface StudySourceInput {
+  chunkId: string
+  fileId: string
+  content: string
+  start: number
+  end: number
+}
+
+export interface SyncStudySourcesRequest {
+  action: 'sync-sources'
+  courseId: string
+  topicId: string
+  sources: StudySourceInput[]
+}
+
+export interface DeleteStudySourcesRequest {
+  action: 'delete-sources'
 }
 
 export type StudyToolFailureCode =
@@ -45,6 +58,7 @@ export type StudyToolFailureCode =
   | 'sign-in-required'
   | 'rate-limited'
   | 'request-too-large'
+  | 'no-sources'
   | 'invalid-response'
   | 'unavailable'
 
@@ -66,31 +80,91 @@ export function isGapCheckResult(value: unknown): value is GapCheckResult {
 }
 
 export function createStudyToolsClient(client: FunctionClient | null = supabase) {
+  async function invoke<T>(request: GapCheckRequest | SyncStudySourcesRequest | DeleteStudySourcesRequest): Promise<StudyToolResponse<T>> {
+    if (!client) {
+      return { ok: false, code: 'unconfigured', message: 'AI study tools are not configured. Local study workflows remain available.' }
+    }
+    const { data: sessionData } = await client.auth.getSession()
+    if (!sessionData.session) {
+      return { ok: false, code: 'sign-in-required', message: 'Sign in to use server-side AI study tools.' }
+    }
+    const { data, error } = await client.functions.invoke('study-tools', { body: request })
+    if (error) {
+      const status = (error as { context?: { status?: number } }).context?.status
+      if (status === 429) return { ok: false, code: 'rate-limited', message: 'AI usage limit reached. Try again later.' }
+      if (status === 413) return { ok: false, code: 'request-too-large', message: 'This request is too large for one study-tool action.' }
+      if (status === 422) return { ok: false, code: 'no-sources', message: 'No synced source material is available for this topic.' }
+      return { ok: false, code: 'unavailable', message: 'AI study tools are unavailable. Your local data was not changed.' }
+    }
+    return { ok: true, data: data as T }
+  }
+
   return {
+    async syncSources(request: SyncStudySourcesRequest): Promise<StudyToolResponse<{ synced: number }>> {
+      const result = await invoke<{ synced: number }>(request)
+      if (!result.ok) return result
+      if (!isRecord(result.data) || !Number.isInteger(result.data.synced) || Number(result.data.synced) < 0) {
+        return { ok: false, code: 'invalid-response', message: 'The source sync returned an invalid response.' }
+      }
+      return { ok: true, data: { synced: Number(result.data.synced) } }
+    },
+
     async gapCheck(request: GapCheckRequest): Promise<StudyToolResponse<GapCheckResult>> {
-      if (!client) {
-        return { ok: false, code: 'unconfigured', message: 'AI gap-check is not configured. Manual review remains available.' }
-      }
-      const { data: sessionData } = await client.auth.getSession()
-      if (!sessionData.session) {
-        return { ok: false, code: 'sign-in-required', message: 'Sign in to use the server-side AI gap-check.' }
-      }
-      const { data, error } = await client.functions.invoke('study-tools', { body: request })
-      if (error) {
-        const status = (error as { context?: { status?: number } }).context?.status
-        if (status === 429) return { ok: false, code: 'rate-limited', message: 'AI usage limit reached. Try again later.' }
-        if (status === 413) return { ok: false, code: 'request-too-large', message: 'This response is too large for one gap-check.' }
-        return { ok: false, code: 'unavailable', message: 'AI gap-check is unavailable. Continue with the manual report.' }
-      }
-      if (!isGapCheckResult(data)) {
+      const result = await invoke<unknown>(request)
+      if (!result.ok) return result
+      if (!isGapCheckResult(result.data)) {
         return { ok: false, code: 'invalid-response', message: 'The gap-check returned an invalid result. Nothing was saved.' }
       }
-      return { ok: true, data }
+      return { ok: true, data: result.data }
+    },
+
+    async deleteSources(): Promise<StudyToolResponse<{ deleted: true }>> {
+      const result = await invoke<{ deleted: true }>({ action: 'delete-sources' })
+      if (!result.ok) return result
+      if (!isRecord(result.data) || result.data.deleted !== true) {
+        return { ok: false, code: 'invalid-response', message: 'The source deletion returned an invalid response.' }
+      }
+      return { ok: true, data: { deleted: true } }
     },
   }
 }
 
 export const studyTools = createStudyToolsClient()
+
+const DISCLOSURE_KEY = 'premed-os:ai-study-source-disclosure:v1'
+const SOURCE_SYNC_PREFIX = 'premed-os:ai-study-source-sync:v1:'
+
+export function hasAcceptedStudySourceDisclosure() {
+  return typeof localStorage !== 'undefined' && localStorage.getItem(DISCLOSURE_KEY) === 'accepted'
+}
+
+export function acceptStudySourceDisclosure() {
+  if (typeof localStorage !== 'undefined') localStorage.setItem(DISCLOSURE_KEY, 'accepted')
+}
+
+export function studySourceSyncKey(courseId: string, topicId: string) {
+  return `${SOURCE_SYNC_PREFIX}${encodeURIComponent(courseId)}:${encodeURIComponent(topicId)}`
+}
+
+export function studySourceFingerprint(sources: StudySourceInput[]) {
+  let hash = 0x811c9dc5
+  for (const source of sources) {
+    const value = `${source.chunkId}\u0000${source.fileId}\u0000${source.start}\u0000${source.end}\u0000${source.content}`
+    for (let index = 0; index < value.length; index += 1) {
+      hash ^= value.charCodeAt(index)
+      hash = Math.imul(hash, 0x01000193)
+    }
+  }
+  return `${sources.length}:${(hash >>> 0).toString(16)}`
+}
+
+export function clearStudySourceSyncCache() {
+  if (typeof localStorage === 'undefined') return
+  for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+    const key = localStorage.key(index)
+    if (key?.startsWith(SOURCE_SYNC_PREFIX)) localStorage.removeItem(key)
+  }
+}
 
 function isGapCheckItem(value: unknown): value is GapCheckItem {
   if (!isRecord(value) || typeof value.text !== 'string' || !value.text.trim()) return false
