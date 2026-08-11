@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useStore, snapshotData } from '@/store/store'
 import * as drive from '@/lib/googleDrive'
+import { dataForRemote } from '@/lib/storyPrivacy'
 
 const DEBOUNCE_MS = 5000
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -17,7 +18,7 @@ export type BackupStatus = 'idle' | 'connecting' | 'saving' | 'saved' | 'error' 
 /** Snapshot stripped of backup-metadata so writing the timestamp
  *  doesn't itself look like a data change (avoids backup loops). */
 function contentSignature(): string {
-  const d = snapshotData() as unknown as Record<string, unknown>
+  const d = dataForRemote(snapshotData()) as unknown as Record<string, unknown>
   const settings = { ...(d.settings as Record<string, unknown>) }
   delete settings.backup
   return JSON.stringify({ ...d, settings })
@@ -38,7 +39,7 @@ export function useBackup() {
     setStatus('saving')
     setError('')
     try {
-      const id = await drive.uploadBackup(snapshotData(), backup.driveFileId)
+      const id = await drive.uploadBackup(dataForRemote(snapshotData()), backup.driveFileId)
       lastSig.current = contentSignature()
       update((d) => {
         d.settings.backup.lastBackupAt = Date.now()

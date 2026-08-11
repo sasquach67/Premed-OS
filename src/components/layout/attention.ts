@@ -50,7 +50,7 @@ function deadlineItem(task: TaskItem, today: Date): AttentionItem | null {
   const why = daysLeft < 0
     ? `Overdue by ${Math.abs(daysLeft)} day${Math.abs(daysLeft) === 1 ? '' : 's'}`
     : daysLeft === 0 ? 'Due today' : `Due in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`
-  return { id: `deadline:${task.id}`, source: 'deadline', priority, title: task.title, why, route: '/timeline', actionLabel: 'Open task', date: task.deadline, daysLeft }
+  return { id: `deadline:${task.id}`, source: 'deadline', priority, title: task.title, why, route: '/overview/tasks', actionLabel: 'Open task', date: task.deadline, daysLeft }
 }
 
 /** Finished or abandoned work can't be due. */

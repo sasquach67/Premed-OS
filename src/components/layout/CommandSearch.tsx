@@ -40,7 +40,7 @@ export function CommandSearch() {
       { id: 'action-experience', label: 'New experience', verbs: 'add create log', sub: 'Create a linked experience', group: 'Actions', kind: 'action', action: quick('experience') },
       { id: 'action-school', label: 'New school', verbs: 'add create', sub: 'Add to School List', group: 'Actions', kind: 'action', action: quick('school') },
       { id: 'action-story', label: 'New story', verbs: 'add create', sub: 'Add to Story Bank', group: 'Actions', kind: 'action', action: quick('story') },
-      { id: 'action-overdue', label: 'Find overdue work', verbs: 'show open', sub: 'Open Timeline & Tasks', group: 'Actions', kind: 'action', action: () => navigate('/timeline?filter=overdue') },
+      { id: 'action-overdue', label: 'Find overdue work', verbs: 'show open', sub: 'Open tasks', group: 'Actions', kind: 'action', action: () => navigate('/overview/tasks?filter=overdue') },
       { id: 'action-incomplete', label: 'Find incomplete records', verbs: 'show open', sub: 'Open the data-health Attention feed', group: 'Actions', kind: 'action', action: () => window.dispatchEvent(new Event('premed:attention')) },
       { id: 'action-theme', label: 'Toggle appearance', verbs: 'switch change', sub: `Use ${isDark ? 'light' : 'dark'} mode`, group: 'Actions', kind: 'action', action: () => setTheme(isDark ? 'light' : 'dark') },
       { id: 'action-sidebar', label: 'Toggle sidebar', verbs: 'show hide collapse expand', sub: 'Change sidebar dock', group: 'Actions', kind: 'action', action: () => store.update((draft) => { draft.settings.sidebarCollapsed = !draft.settings.sidebarCollapsed }) },
@@ -58,7 +58,7 @@ export function CommandSearch() {
       if (course) hits.push({ id: `class-${course.id}`, label: `${course.code} ${course.title}`, sub: course.term, group: 'Records', kind: 'record', route: `/academics/classes/${course.id}` })
     }
     // Milestones are roadmap nodes stored in `tasks`, not task records.
-    for (const row of store.tasks.filter((task) => !task.milestone)) hits.push({ id: `task-${row.id}`, label: row.title, sub: row.type, group: 'Records', kind: 'record', route: '/timeline' })
+    for (const row of store.tasks.filter((task) => !task.milestone)) hits.push({ id: `task-${row.id}`, label: row.title, sub: row.type, group: 'Records', kind: 'record', route: '/overview/tasks' })
     for (const row of store.experiences) hits.push({ id: `experience-${row.id}`, label: row.org || row.role, sub: row.category, group: 'Records', kind: 'record', route: `/${row.category === 'leadership' ? 'ecs' : row.category}` })
     for (const row of store.schools) hits.push({ id: `school-${row.id}`, label: row.name, sub: row.location || row.type, group: 'Records', kind: 'record', route: '/schools' })
     for (const row of store.stories) hits.push({ id: `story-${row.id}`, label: row.title || row.prompt, sub: 'Story Bank', group: 'Records', kind: 'record', route: '/essays' })

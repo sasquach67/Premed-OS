@@ -14,6 +14,7 @@ import { useStore, snapshotData } from '@/store/store'
 import { supabase, isSupabaseConfigured, authRedirectTo, type DashboardRow } from '@/lib/supabase'
 import { hasLocalWork, hasSeenMerge } from '@/lib/publicLayer'
 import type { AppData } from '@/lib/types'
+import { dataForRemote, mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
 
 const DEBOUNCE_MS = 4000
 const META_KEY = 'premed_hq_cloud_meta'
@@ -32,7 +33,7 @@ function writeMeta(m: CloudMeta) {
 /** Snapshot minus Drive-backup metadata, so a Drive timestamp write
  *  doesn't look like a data change and cause a redundant cloud push. */
 function contentSignature(): string {
-  const d = snapshotData() as unknown as Record<string, unknown>
+  const d = dataForRemote(snapshotData()) as unknown as Record<string, unknown>
   const settings = { ...(d.settings as Record<string, unknown>) }
   delete settings.backup
   return JSON.stringify({ ...d, settings })
@@ -59,7 +60,7 @@ export function useCloudSync() {
     if (!supabase || !user) return
     setStatus('syncing'); setError('')
     try {
-      const row: DashboardRow = { user_id: user.id, data: snapshotData(), updated_at: new Date().toISOString() }
+      const row: DashboardRow = { user_id: user.id, data: dataForRemote(snapshotData()), updated_at: new Date().toISOString() }
       const { error: e } = await supabase.from('dashboards').upsert(row, { onConflict: 'user_id' })
       if (e) throw e
       markSynced(user.id)
@@ -76,7 +77,10 @@ export function useCloudSync() {
       const { data, error: e } = await supabase
         .from('dashboards').select('data, updated_at').eq('user_id', user.id).maybeSingle()
       if (e) throw e
-      if (data?.data) { replaceAll(data.data as AppData); markSynced(user.id) }
+      if (data?.data) {
+        replaceAll(mergeRemotePreservingLocal(data.data as AppData, snapshotData()))
+        markSynced(user.id)
+      }
       setStatus('synced')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Pull failed'); setStatus('error')
@@ -100,7 +104,7 @@ export function useCloudSync() {
         await pushNowFor(u)
       } else if (knownAt === 0 || remoteAt > knownAt) {
         // Fresh browser, or cloud has edits we haven't seen -> take the cloud.
-        replaceAll(data.data as AppData)
+        replaceAll(mergeRemotePreservingLocal(data.data as AppData, snapshotData()))
         markSynced(u.id)
         setStatus('synced')
       } else {
@@ -112,7 +116,7 @@ export function useCloudSync() {
     }
     // local helper that pushes for a specific user (avoids stale `user` closure)
     async function pushNowFor(u2: User) {
-      const row: DashboardRow = { user_id: u2.id, data: snapshotData(), updated_at: new Date().toISOString() }
+      const row: DashboardRow = { user_id: u2.id, data: dataForRemote(snapshotData()), updated_at: new Date().toISOString() }
       const { error: e2 } = await supabase!.from('dashboards').upsert(row, { onConflict: 'user_id' })
       if (e2) throw e2
       markSynced(u2.id)

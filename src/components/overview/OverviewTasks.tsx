@@ -10,9 +10,10 @@ import {
   Star,
   Tag,
   Trash2,
+  X,
 } from 'lucide-react'
 import { useMemo, useRef, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useToast } from '@/components/common/useToast'
 import { MascotNote } from '@/components/common/MascotNote'
 import { Badge } from '@/components/ui/badge'
@@ -71,6 +72,8 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
   /* The expansion adds room to filter and search and NOTHING else — any
    * behaviour here that the widget lacks is a defect (03-overview §6.4). */
   const [query, setQuery] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const overdueOnly = expanded && searchParams.get('filter') === 'overdue'
   const reduceMotion = useReducedMotion()
 
   const counts = useMemo(() => ({
@@ -81,9 +84,14 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
   const visible = useMemo(() => {
     const forTab = overviewTasks(tasks, tab)
     const needle = query.trim().toLowerCase()
-    if (!needle) return forTab
-    return forTab.filter((task) => `${task.title} ${task.type} ${task.notes ?? ''}`.toLowerCase().includes(needle))
-  }, [query, tab, tasks])
+    return forTab.filter((task) => {
+      if (overdueOnly) {
+        const days = daysUntil(task.deadline)
+        if (days == null || days >= 0 || task.progress === 'Finished') return false
+      }
+      return !needle || `${task.title} ${task.type} ${task.notes ?? ''}`.toLowerCase().includes(needle)
+    })
+  }, [overdueOnly, query, tab, tasks])
   const important = visible.filter((task) => task.important)
   const everythingElse = visible.filter((task) => !task.important)
   const overdue = visible.filter((task) => {
@@ -146,15 +154,26 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
         </Tabs>
 
         {expanded && (
-          <div className="relative mt-3">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search titles, categories, notes…"
-              aria-label="Search tasks"
-              className="pl-9"
-            />
+          <div className="mt-3 flex items-center gap-2">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search titles, categories, notes…"
+                aria-label="Search tasks"
+                className="pl-9"
+              />
+            </div>
+            {overdueOnly && (
+              <Button type="button" size="sm" variant="secondary" onClick={() => {
+                const next = new URLSearchParams(searchParams)
+                next.delete('filter')
+                setSearchParams(next, { replace: true })
+              }}>
+                Overdue only <X className="size-3.5" />
+              </Button>
+            )}
           </div>
         )}
         <div className="relative mt-4 min-h-0 flex-1">
@@ -171,13 +190,13 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
                 <MascotNote
                   variant="empty-state"
                   priority={20}
-                  title={tab === 'done' ? 'Nothing completed yet' : `Nothing in ${tab}`}
-                  actions={tab === 'done'
+                  title={overdueOnly ? 'No overdue tasks' : tab === 'done' ? 'Nothing completed yet' : `Nothing in ${tab}`}
+                  actions={overdueOnly || tab === 'done'
                     ? null
                     : <Button type="button" size="sm" onClick={() => document.getElementById('overview-quick-task')?.focus()}>Add a task</Button>}
                   className="min-h-56 items-center"
                 >
-                  {tab === 'done' ? 'Finish a task and it will collect here.' : 'Add a title below to get started.'}
+                  {overdueOnly ? 'You’re caught up.' : tab === 'done' ? 'Finish a task and it will collect here.' : 'Add a title below to get started.'}
                 </MascotNote>
               ) : (
                 <Reorder.Group axis="y" values={visible} onReorder={applyOrder} className="space-y-3">

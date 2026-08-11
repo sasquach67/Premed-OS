@@ -29,6 +29,7 @@ import { TrashRecovery } from '@/components/common/TrashRecovery'
 import { mutedRecommendationRules } from '@/lib/intelligence'
 import { clearStudySourceSyncCache, studyTools } from '@/lib/intelligence/studyTools'
 import { isDemoMode, setDemoMode } from '@/lib/demoMode'
+import { mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
 
 export function Settings() {
   const route = ROUTE_MAP.settings
@@ -68,7 +69,10 @@ export function Settings() {
   async function restoreFromDrive() {
     try {
       const data = await backup.restore()
-      if (looksLikeAppData(data)) { replaceAll(data as AppData); setMsg('Restored from Google Drive.') }
+      if (looksLikeAppData(data)) {
+        replaceAll(mergeRemotePreservingLocal(data as AppData, useStore.getState() as unknown as AppData))
+        setMsg('Restored from Google Drive.')
+      }
       else setMsg('No backup found on Drive.')
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Restore failed.')

@@ -1,6 +1,5 @@
 import {
   Clock3,
-  FileUp,
   Lightbulb,
   Plus,
   RotateCcw,
@@ -8,13 +7,12 @@ import {
   Target,
   X,
 } from 'lucide-react'
-import { useMemo, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { CenterPeek, type RecordOpenMode } from '@/components/common/CenterPeek'
 import { MascotNote } from '@/components/common/MascotNote'
 import { useToast } from '@/components/common/useToast'
 import { McatSessionSetupDialog } from '@/components/mcat/McatSessionSetupDialog'
-import { AnimatedFileUpload, NumberFlow } from '@/components/motion'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { fmtTimeAgo } from '@/lib/date'
 import { uid } from '@/lib/id'
 import { gpaStats, hourTotals } from '@/lib/selectors'
-import type { ActivityEvent, CaptureRecord, Goals } from '@/lib/types'
+import type { ActivityEvent, Goals, StoryEntry } from '@/lib/types'
 import { latestExperienceLabel } from '@/lib/overview'
 import { useStore } from '@/store/store'
 
@@ -60,8 +58,8 @@ export function QuickAccess() {
           onClick={() => document.getElementById('quick-capture')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           className="group flex w-full items-center gap-3 rounded-xl border border-border bg-muted/35 px-3 py-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:bg-muted/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground"><FileUp className="size-4" /></span>
-          <span><span className="block text-sm font-extrabold">Drop into Atlas</span><span className="block text-xs text-muted-foreground">File, link, or note</span></span>
+          <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground"><Lightbulb className="size-4" /></span>
+          <span><span className="block text-sm font-extrabold">Capture a thought</span><span className="block text-xs text-muted-foreground">Saves directly to Story Bank</span></span>
         </button>
         <QuickLink to="/clinical" icon={Stethoscope} color="var(--cat-clinical)" title="Log hours" detail={lastHours ? `Last: ${lastHours}` : 'Add your first shift'} />
       </CardContent>
@@ -198,7 +196,7 @@ function GoalTargetEditor() {
 
 export function ActivityAndCapture() {
   const activity = useStore((state) => state.meta.activity).slice(0, 4)
-  const captures = useStore((state) => state.captures)
+  const stories = useStore((state) => state.stories)
   const addItem = useStore((state) => state.addItem)
   const logActivity = useStore((state) => state.logActivity)
   const softDeleteItems = useStore((state) => state.softDeleteItems)
@@ -206,28 +204,25 @@ export function ActivityAndCapture() {
   const update = useStore((state) => state.update)
   const toast = useToast()
   const [value, setValue] = useState('')
+  const [localOnly, setLocalOnly] = useState(false)
 
-  const unsorted = useMemo(() => captures.filter((capture) => !capture.triagedAt).length, [captures])
-
-  function addCapture(content: string, file?: File) {
+  function addCapture(content: string) {
     const trimmed = content.trim()
-    if (!trimmed && !file) return
-    const isUrl = /^https?:\/\/\S+$/i.test(trimmed)
+    if (!trimmed) return
     const now = Date.now()
-    addItem('captures', {
+    addItem('stories', {
       id: uid(),
-      kind: isUrl || file ? 'source' : 'idea',
-      content: trimmed || file?.name || 'Untitled source',
-      url: isUrl ? trimmed : undefined,
-      fileName: file?.name,
-      mimeType: file?.type,
-      fileSize: file?.size,
-      createdAt: now,
+      prompt: '',
+      title: '',
+      commentary: trimmed,
+      tags: [],
+      capturedAt: now,
       updatedAt: now,
       origin: 'overview',
-      order: captures.length,
+      localOnly,
+      order: stories.length,
     })
-    logActivity('atlas', `Captured ${isUrl || file ? 'source' : 'idea'}: ${trimmed || file?.name}`)
+    logActivity('essays', `Captured Story Bank thought: ${trimmed}`)
   }
 
   function submit(event: FormEvent) {
@@ -235,21 +230,22 @@ export function ActivityAndCapture() {
     if (!value.trim()) return
     addCapture(value)
     setValue('')
+    setLocalOnly(false)
   }
 
   function captureForActivity(entry: ActivityEvent) {
-    const matches = captures.filter((capture) => entry.label === `Captured ${capture.kind}: ${capture.content}`)
-    return matches.sort((a, b) => Math.abs(a.createdAt - entry.at) - Math.abs(b.createdAt - entry.at))[0]
+    const matches = stories.filter((story) => story.origin === 'overview' && entry.label === `Captured Story Bank thought: ${story.commentary}`)
+    return matches.sort((a, b) => Math.abs((a.capturedAt ?? 0) - entry.at) - Math.abs((b.capturedAt ?? 0) - entry.at))[0]
   }
 
-  function deleteCapture(entry: ActivityEvent, capture: CaptureRecord) {
-    const recoveryId = softDeleteItems('captures', [capture.id], `Deleted captured ${capture.kind}`)
+  function deleteCapture(entry: ActivityEvent, capture: StoryEntry) {
+    const recoveryId = softDeleteItems('stories', [capture.id], 'Deleted captured thought')
     update((draft) => {
       draft.meta.activity = draft.meta.activity.filter((candidate) => candidate.id !== entry.id)
     })
     toast({
       title: 'Capture moved to Trash',
-      description: capture.content,
+      description: capture.commentary,
       onUndo: recoveryId
         ? () => {
             undoRecovery(recoveryId)
@@ -269,7 +265,7 @@ export function ActivityAndCapture() {
     <Card id="quick-capture" className="h-full scroll-mt-24" role="region" aria-labelledby="activity-capture-heading">
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle id="activity-capture-heading">Recent activity + capture</CardTitle>
-        <Button asChild size="sm" variant="ghost"><Link to="/atlas"><NumberFlow value={unsorted} /> unsorted</Link></Button>
+        <Button asChild size="sm" variant="ghost"><Link to="/essays">Open Story Bank</Link></Button>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="space-y-1">
@@ -280,7 +276,7 @@ export function ActivityAndCapture() {
               title="No recent activity yet"
               actions={<Button type="button" size="sm" onClick={() => document.getElementById('overview-capture')?.focus()}>Capture something</Button>}
             >
-              Add a thought, source, or file below and your latest work will appear here.
+              Add a thought below and it will appear in Story Bank immediately.
             </MascotNote>
           )}
           {activity.map((entry) => {
@@ -299,7 +295,7 @@ export function ActivityAndCapture() {
                       size="icon"
                       variant="ghost"
                       onClick={() => deleteCapture(entry, capture)}
-                      aria-label={`Delete captured ${capture.kind}: ${capture.content}`}
+                      aria-label={`Delete captured thought: ${capture.commentary}`}
                       title="Delete capture"
                       className="pointer-events-none absolute right-0 top-1/2 size-6 -translate-y-1/2 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
                     >
@@ -314,21 +310,15 @@ export function ActivityAndCapture() {
         <form onSubmit={submit} className="space-y-2 border-t border-border pt-3">
           <div className="flex items-center justify-between gap-2">
             <label htmlFor="overview-capture" className="flex items-center gap-2 text-sm font-extrabold"><Lightbulb className="size-4 text-primary" />Quick Capture</label>
-            <Badge variant="muted">idea or source</Badge>
+            <Badge variant="muted">Story Bank</Badge>
           </div>
-          <Textarea id="overview-capture" value={value} onChange={(event) => setValue(event.target.value)} rows={2} placeholder="Type a thought or paste a URL…" />
-          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <AnimatedFileUpload
-              multiple
-              onFiles={(files) => files.forEach((file) => addCapture('', file))}
-              label="Drop a file or screenshot"
-              description="Stored locally as a source reference."
-              className="min-h-20 px-3 py-2"
-            />
-            <Button type="submit" disabled={!value.trim()} className="sm:self-stretch"><Plus className="size-4" />Capture</Button>
-          </div>
-          <div className="rounded-xl border border-dashed border-border px-3 py-2 text-[11px] font-semibold text-muted-foreground">
-            Connections will appear here after Atlas integration is enabled.
+          <Textarea id="overview-capture" value={value} onChange={(event) => setValue(event.target.value)} rows={2} placeholder="Type or paste a thought…" />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <label htmlFor="overview-capture-local" className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground">
+              <Checkbox id="overview-capture-local" checked={localOnly} onCheckedChange={(checked) => setLocalOnly(Boolean(checked))} />
+              Keep local; never sync
+            </label>
+            <Button type="submit" disabled={!value.trim()}><Plus className="size-4" />Capture</Button>
           </div>
         </form>
       </CardContent>

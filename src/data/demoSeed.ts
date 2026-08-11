@@ -180,6 +180,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
   data.stories = [
     { id: 'demo-story-transport', prompt: 'A meaningful clinical interaction', title: 'Slow down at every turn', commentary: 'During a late-afternoon transport, a patient’s daughter asked me to explain where we were going before each hallway turn. Her request changed how I understood orientation as part of care, not an optional courtesy.', tags: ['clinical', 'communication'], relatedExperienceId: 'demo-exp-clinical', order: 0 },
     { id: 'demo-story-service', prompt: 'A time you learned from a community', title: 'Packing for the weekend', commentary: 'At TABLE NC, families and volunteers showed me how transportation schedules and school calendars shape food access.', tags: ['service', 'social determinants'], relatedExperienceId: 'demo-exp-volunteer', order: 1 },
+    { id: 'demo-story-capture', prompt: '', title: '', commentary: 'Ask Dr. Ruiz whether glial modulation belongs in the midterm scope.', tags: [], capturedAt: stamp(-1), updatedAt: stamp(-1), origin: 'overview', order: 2 },
   ]
   data.secondaries = [
     { id: 'demo-secondary-unc', school: 'UNC School of Medicine', prompt: 'Describe how your experiences prepared you to serve North Carolina communities.', wordLimit: 400, status: 'drafting', notes: 'Connect TABLE NC and patient transport without repeating the personal statement.', order: 0 },
@@ -196,7 +197,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
     { id: 'demo-goal-1', quarter: 'Current term', text: 'Protect a 3.8+ GPA while building a repeatable active-recall system', done: false, standingTarget: 'gpaTarget', order: 0 },
     { id: 'demo-goal-2', quarter: 'Current term', text: 'Reach 150 clinical hours without sacrificing reflection quality', done: false, standingTarget: 'clinical', order: 1 },
   ]
-  data.captures = [{ id: 'demo-capture-1', kind: 'idea', content: 'Ask Dr. Ruiz whether glial modulation belongs in the midterm scope.', createdAt: stamp(-1), updatedAt: stamp(-1), origin: 'overview', order: 0 }]
+  data.captures = []
 
   const attempts: McatAttempt[] = [
     { id: 'demo-mcat-diagnostic', date: date(-21), total: 502, cp: 124, cars: 126, bb: 125, ps: 127, kind: 'practice', source: 'Blueprint diagnostic', notes: 'Strongest in P/S; content gaps in electrochemistry and amino acids.', order: 0 },

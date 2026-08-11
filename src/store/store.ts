@@ -150,9 +150,10 @@ export function migrateIntelligence(data: AppData): AppData {
   }
 }
 
-/** Version 2: add Overview's planning and capture fields without deleting or
- * rewriting any legacy value. The old `home-ideas` note remains intact even
- * after it is copied into the local capture inbox. */
+/** Version 2: add Overview's planning fields and move unstructured Overview
+ * thoughts directly into Story Bank. Legacy source captures remain intact;
+ * legacy idea captures become untyped Story Bank entries. The old
+ * `home-ideas` note remains untouched, making the migration lossless. */
 export function migrateOverviewSchema(data: AppData): AppData {
   // Rows are only rebuilt when a field is actually added.
   const tasks = (data.tasks ?? []).map((task) => {
@@ -162,26 +163,61 @@ export function migrateOverviewSchema(data: AppData): AppData {
     return { ...task, important, horizon }
   })
 
+  const existingStories = [...(data.stories ?? [])]
   const captures = [...(data.captures ?? [])]
+  const stories = [...existingStories]
+
+  for (const capture of captures) {
+    if (capture.kind !== 'idea') continue
+    const storyId = `story-${capture.id}`
+    if (stories.some((story) => story.id === storyId)) continue
+    stories.push({
+      id: storyId,
+      prompt: '',
+      title: '',
+      commentary: capture.content,
+      tags: [],
+      capturedAt: capture.createdAt,
+      updatedAt: capture.updatedAt,
+      origin: 'overview',
+      order: stories.length,
+    })
+  }
+
+  const sourceCaptures = captures.filter((capture) => capture.kind === 'source')
   const legacy = data.notes?.['home-ideas']?.trim()
-  if (legacy && !captures.some((capture) => capture.id === 'capture-legacy-home-ideas')) {
+  if (legacy && /^https?:\/\//i.test(legacy) && !sourceCaptures.some((capture) => capture.id === 'capture-legacy-home-ideas')) {
     const at = data.meta?.lastOpenedAt || Date.now()
-    captures.push({
+    sourceCaptures.push({
       id: 'capture-legacy-home-ideas',
-      kind: /^https?:\/\//i.test(legacy) ? 'source' : 'idea',
+      kind: 'source',
       content: legacy,
-      url: /^https?:\/\//i.test(legacy) ? legacy : undefined,
+      url: legacy,
       createdAt: at,
       updatedAt: at,
       origin: 'overview',
-      order: captures.length,
+      order: sourceCaptures.length,
+    })
+  } else if (legacy && !/^https?:\/\//i.test(legacy) && !stories.some((story) => story.id === 'story-legacy-home-ideas')) {
+    const at = data.meta?.lastOpenedAt || Date.now()
+    stories.push({
+      id: 'story-legacy-home-ideas',
+      prompt: '',
+      title: '',
+      commentary: legacy,
+      tags: [],
+      capturedAt: at,
+      updatedAt: at,
+      origin: 'overview',
+      order: stories.length,
     })
   }
 
   return {
     ...data,
     tasks,
-    captures,
+    stories,
+    captures: sourceCaptures,
     settings: { ...data.settings, projectionDismissals: data.settings.projectionDismissals ?? {} },
   }
 }

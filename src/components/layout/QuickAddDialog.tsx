@@ -69,7 +69,7 @@ export function QuickAddDialog() {
   const activeCategory = activeKind === 'experience' ? categoryForPath(location.pathname) : category
 
   const route = useMemo(() => ({
-    task: '/timeline', course: '/academics', assignment: '/academics', hours: `/${category === 'leadership' ? 'ecs' : category}`,
+    task: '/overview/tasks', course: '/academics', assignment: '/academics', hours: `/${category === 'leadership' ? 'ecs' : category}`,
     experience: `/${category === 'leadership' ? 'ecs' : category}`, mistake: '/mcat', school: '/schools', story: '/essays', note: '/',
   })[activeKind ?? 'task'], [activeKind, category])
 

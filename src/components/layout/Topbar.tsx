@@ -92,7 +92,7 @@ export function Topbar({ onMenu, onShowDesktopSidebar, desktopSidebarHidden = fa
 
 function LiveStatusChip({ label, tone }: { label: string; tone: 'alert' | 'due' | 'system' | 'clear' }) {
   return (
-    <Link to={tone === 'system' || tone === 'clear' ? '/settings' : '/timeline'} className={cn(
+    <Link to={tone === 'system' || tone === 'clear' ? '/settings' : '/overview/tasks'} className={cn(
       'hidden h-8 max-w-[10rem] items-center gap-1.5 truncate rounded-full border px-3 text-xs font-extrabold shadow-sm transition hover:bg-muted sm:inline-flex',
       tone === 'alert' && 'border-destructive/35 bg-destructive/10 text-destructive',
       tone === 'due' && 'border-primary/30 bg-primary/10 text-primary',

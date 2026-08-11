@@ -29,6 +29,7 @@ import { snapshotData, useStore } from '@/store/store'
 import { localCounts, localWorkSince, markMergeSeen } from '@/lib/publicLayer'
 import type { AppData } from '@/lib/types'
 import type { DashboardRow } from '@/lib/supabase'
+import { dataForRemote, mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
 
 type Choice = 'upload' | 'separate'
 type Phase = 'loading' | 'empty-account' | 'review' | 'working' | 'error'
@@ -153,7 +154,7 @@ export function MergePage() {
     try {
       const row: DashboardRow = {
         user_id: userId,
-        data: local,
+        data: dataForRemote(local),
         updated_at: new Date().toISOString(),
       }
       const { error: e } = await supabase.from('dashboards').upsert(row, { onConflict: 'user_id' })
@@ -180,15 +181,16 @@ export function MergePage() {
         }
       }
       const result = merged as unknown as AppData
+      const remoteResult = dataForRemote(result)
       const row: DashboardRow = {
         user_id: userId,
-        data: result,
+        data: remoteResult,
         updated_at: new Date().toISOString(),
       }
       const { error: e } = await supabase.from('dashboards').upsert(row, { onConflict: 'user_id' })
       if (e) throw e
       // Server confirmed — only now does the device's copy change.
-      replaceAll(result)
+      replaceAll(mergeRemotePreservingLocal(remoteResult, local))
       finish('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'The merge did not finish. Nothing was changed.')

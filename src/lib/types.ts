@@ -551,6 +551,12 @@ export interface StoryEntry {
   relatedExperienceId?: ID
   /** optional link to a full Google Doc the user writes in */
   docUrl?: string
+  /** Overview brain-dump captures have no required prompt, title, or tags. */
+  capturedAt?: number
+  updatedAt?: number
+  origin?: 'overview'
+  /** Per-entry privacy guard: excluded from every remote sync and backup. */
+  localOnly?: boolean
   order: number
 }
 

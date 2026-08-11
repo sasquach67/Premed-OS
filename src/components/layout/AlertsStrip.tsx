@@ -21,7 +21,7 @@ export function AlertsStrip() {
         {alerts.map((a) => (
           <AlertChip key={a.id} a={a} />
         ))}
-        <Link to="/timeline" className="ml-auto text-xs font-semibold text-primary hover:underline">
+        <Link to="/overview/tasks" className="ml-auto text-xs font-semibold text-primary hover:underline">
           View all →
         </Link>
         <button

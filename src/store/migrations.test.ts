@@ -151,7 +151,7 @@ describe('migrateOverviewSchema', () => {
     })
   })
 
-  it('copies the legacy Home scratchpad into capture inbox without deleting it', () => {
+  it('preserves a legacy source URL in the source capture collection without deleting the note', () => {
     const data = freshData()
     delete (data as Partial<AppData>).captures
     delete (data.settings as Partial<AppData['settings']>).projectionDismissals
@@ -169,12 +169,38 @@ describe('migrateOverviewSchema', () => {
     expect(out.settings.projectionDismissals).toEqual({})
   })
 
-  it('is idempotent and never duplicates the legacy capture', () => {
+  it('moves a legacy plain-text scratchpad into Story Bank idempotently', () => {
     const data = freshData()
     data.notes['home-ideas'] = 'A thought worth keeping'
     const once = migrateOverviewSchema(data)
     const twice = migrateOverviewSchema(JSON.parse(JSON.stringify(once)) as AppData)
+    expect(once.stories.find((story) => story.id === 'story-legacy-home-ideas')).toMatchObject({
+      commentary: 'A thought worth keeping',
+      prompt: '',
+      title: '',
+      origin: 'overview',
+    })
+    expect(once.captures).toEqual([])
+    expect(twice.stories).toEqual(once.stories)
     expect(twice.captures).toEqual(once.captures)
+  })
+
+  it('moves existing Overview idea captures into Story Bank but preserves source captures', () => {
+    const data = freshData()
+    data.captures = [
+      { id: 'idea-1', kind: 'idea', content: 'A brain dump', createdAt: 10, updatedAt: 11, origin: 'overview', order: 0 },
+      { id: 'source-1', kind: 'source', content: 'Lecture link', url: 'https://example.com', createdAt: 12, updatedAt: 12, origin: 'overview', order: 1 },
+    ]
+
+    const out = migrateOverviewSchema(data)
+
+    expect(out.stories.find((story) => story.id === 'story-idea-1')).toMatchObject({
+      commentary: 'A brain dump',
+      capturedAt: 10,
+      updatedAt: 11,
+      origin: 'overview',
+    })
+    expect(out.captures).toEqual([data.captures[1]])
   })
 })
 
@@ -321,7 +347,7 @@ describe('migrations never write to frozen input', () => {
     expect(out).not.toBe(data)
   })
 
-  it('migrateOverviewSchema backfills tasks and captures without mutating', () => {
+  it('migrateOverviewSchema backfills tasks and Story Bank captures without mutating', () => {
     const data = structuredClone(freshData())
     delete (data as Partial<AppData>).captures
     data.notes['home-ideas'] = 'A thought worth keeping'
@@ -333,7 +359,8 @@ describe('migrations never write to frozen input', () => {
     const out = migrateOverviewSchema(data)
     expect(out.tasks[0].important).toBe(false)
     expect(out.tasks[0].horizon).toBe('soon')
-    expect(out.captures).toHaveLength(1)
+    expect(out.stories.some((story) => story.id === 'story-legacy-home-ideas')).toBe(true)
+    expect(out.captures).toHaveLength(0)
     // Caller untouched.
     expect(data.tasks[0].important).toBeUndefined()
     expect(data.captures).toBeUndefined()
@@ -408,7 +435,7 @@ describe('migrations never write to frozen input', () => {
     expect(out.settings.mascotNoteDismissals).toEqual({})
     expect(out.academics.migrationJournal).toBeDefined()
     expect(out.academics.classCenter.reviewEvents).toEqual([])
-    expect(out.captures.some((capture) => capture.id === 'capture-legacy-home-ideas')).toBe(true)
+    expect(out.stories.some((story) => story.id === 'story-legacy-home-ideas')).toBe(true)
     // ...and never on the caller's frozen tree.
     expect((frozen as unknown as Record<string, unknown>).trash).toBeUndefined()
   })

@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
 
 const PS_CHECKLIST = [
   'Opens with a vivid, specific moment (not a thesis statement)',
@@ -73,15 +74,23 @@ function StoryBank() {
         <Collapsible
           key={st.id}
           defaultOpen={false}
-          title={st.prompt}
-          badge={st.commentary.trim() ? <span className="rounded-full bg-[color-mix(in_srgb,var(--success)_16%,transparent)] px-2 py-0.5 text-xs font-bold text-[color-mix(in_srgb,var(--success)_60%,var(--foreground))]">written</span> : <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">empty</span>}
+          title={st.prompt || (st.capturedAt ? `Captured thought · ${new Date(st.capturedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : 'Captured thought')}
+          badge={st.origin === 'overview'
+            ? <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">captured</span>
+            : st.commentary.trim() ? <span className="rounded-full bg-[color-mix(in_srgb,var(--success)_16%,transparent)] px-2 py-0.5 text-xs font-bold text-[color-mix(in_srgb,var(--success)_60%,var(--foreground))]">written</span> : <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">empty</span>}
         >
           <div className="space-y-3">
-            <Input defaultValue={st.title} placeholder="Give this story a title…" onBlur={(e) => patchItem('stories', st.id, { title: e.target.value })} />
-            <Textarea defaultValue={st.commentary} placeholder="Your personal commentary — what happened, why it mattered, what it says about you…" onBlur={(e) => patchItem('stories', st.id, { commentary: e.target.value })} className="min-h-32" />
+            <Input defaultValue={st.title} placeholder={st.origin === 'overview' ? 'Optional title…' : 'Give this story a title…'} onBlur={(e) => patchItem('stories', st.id, { title: e.target.value, updatedAt: Date.now() })} />
+            <Textarea defaultValue={st.commentary} placeholder="Your personal commentary — what happened, why it mattered, what it says about you…" onBlur={(e) => patchItem('stories', st.id, { commentary: e.target.value, updatedAt: Date.now() })} className="min-h-32" />
             <div className="flex flex-wrap items-center gap-2">
               <span className="flex items-center gap-1 text-xs text-muted-foreground"><Tag className="size-3.5" /></span>
-              <Input defaultValue={st.tags.join(', ')} placeholder="tags: leadership, clinical…" onBlur={(e) => patchItem('stories', st.id, { tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) })} className="h-8 max-w-xs" />
+              <Input defaultValue={st.tags.join(', ')} placeholder="tags: leadership, clinical…" onBlur={(e) => patchItem('stories', st.id, { tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean), updatedAt: Date.now() })} className="h-8 max-w-xs" />
+              {st.origin === 'overview' && (
+                <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground">
+                  <Checkbox checked={st.localOnly === true} onCheckedChange={(checked) => patchItem('stories', st.id, { localOnly: Boolean(checked), updatedAt: Date.now() })} />
+                  Keep local; never sync
+                </label>
+              )}
               <div className="ml-auto flex items-center gap-2">
                 {st.docUrl
                   ? <Button asChild size="sm" variant="outline"><a href={st.docUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="size-3.5" /> Open doc</a></Button>

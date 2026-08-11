@@ -42,12 +42,12 @@ export function NextEventWidget() {
         <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
           <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground"><CalendarClock className="size-4" /></span>
           {next ? (
-            <Link to="/timeline" className="group min-w-0 flex-1">
+            <Link to="/overview/tasks" className="group min-w-0 flex-1">
               <p className="truncate text-sm font-bold group-hover:text-primary">{next.title || 'Untitled'}</p>
               <p className="text-xs text-muted-foreground">{fmtRelative(next.deadline)} · {fmtDate(next.deadline)}</p>
             </Link>
           ) : (
-            <p className="text-sm text-muted-foreground">No upcoming deadlines — <Link to="/timeline" className="font-semibold text-primary hover:underline">add one</Link>.</p>
+            <p className="text-sm text-muted-foreground">No dated tasks are coming up. Add one from <Link to="/overview/tasks" className="font-semibold text-primary hover:underline">Tasks</Link>.</p>
           )}
           {next && <ArrowRight className="size-4 shrink-0 text-muted-foreground" />}
         </div>

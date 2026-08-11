@@ -4,7 +4,6 @@ import { X } from 'lucide-react'
 import { AnimatePresence, m, useReducedMotion } from 'motion/react'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
-import { AlertsStrip } from './AlertsStrip'
 import { useTheme } from '@/store/useTheme'
 import { useBackup } from '@/store/useBackup'
 import { useCloudSync } from '@/store/useCloudSync'
@@ -93,7 +92,6 @@ export function AppShell() {
         {/* main column */}
         <div className={`flex min-w-0 flex-1 flex-col transition-[padding] duration-200 ${desktopSidebarLocked ? 'lg:pl-[15.625rem]' : 'lg:pl-[4.25rem]'}`}>
           <Topbar onMenu={() => setMobileOpen(true)} onShowDesktopSidebar={toggleDesktopSidebarLock} desktopSidebarHidden={!desktopSidebarVisible} />
-          <AlertsStrip />
           <main className="relative flex-1 overflow-y-auto">
             <div className="mx-auto w-full max-w-[84rem] px-4 py-6 md:px-8 md:py-8">
               <AnimatePresence mode="wait" initial={false}>
