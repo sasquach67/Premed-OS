@@ -1,4 +1,5 @@
 import { CalendarClock } from 'lucide-react'
+import { StatStrip as SharedStatStrip, type StatStripMetric } from '@/components/common/StatStrip'
 import type { Org } from '@/lib/types'
 import { activeOrg, reflectionCount } from './ecsUtils'
 
@@ -35,30 +36,33 @@ export function StatStrip({ orgs }: { orgs: Org[] }) {
   const active = orgs.filter(activeOrg)
   const reflected = active.filter((org) => reflectionCount(org) > 0).length
   const meeting = nextMeeting(orgs)
+  const metrics: StatStripMetric[] = [
+    {
+      id: 'organizations',
+      value: orgs.length,
+      label: orgs.length === 1 ? 'organization' : 'organizations',
+    },
+    {
+      id: 'leadership',
+      value: orgs.filter((org) => org.status === 'leader').length,
+      label: 'leadership role',
+    },
+    {
+      id: 'reflections',
+      value: `${reflected}/${active.length}`,
+      label: 'reflections written',
+      detail: active.length - reflected > 0 ? `${active.length - reflected} need one` : undefined,
+    },
+  ]
 
-  return (
-    <div className="flex flex-wrap gap-2">
-      <Pill value={orgs.length} label={orgs.length === 1 ? 'organization' : 'organizations'} />
-      <Pill value={orgs.filter((org) => org.status === 'leader').length} label="leadership role" />
-      <Pill value={`${reflected}/${active.length}`} label="reflections written" detail={active.length - reflected > 0 ? `${active.length - reflected} need one` : undefined} />
-      {meeting && (
-        <div className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-bold shadow-sm">
-          <span className="grid size-6 place-items-center rounded-full bg-leaf/15 text-leaf"><CalendarClock className="size-3.5" /></span>
-          <span className="text-muted-foreground">Next:</span>
-          <span className="max-w-[16rem] truncate">{meeting.meetingInfo}</span>
-        </div>
-      )}
-    </div>
-  )
+  if (meeting) {
+    metrics.push({
+      id: 'next-meeting',
+      icon: <CalendarClock className="size-3.5" aria-hidden="true" />,
+      value: 'Next',
+      label: meeting.meetingInfo,
+    })
+  }
+
+  return <SharedStatStrip metrics={metrics} />
 }
-
-function Pill({ value, label, detail }: { value: number | string; label: string; detail?: string }) {
-  return (
-    <div className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-bold shadow-sm">
-      <span className="grid size-6 place-items-center rounded-full bg-primary/12 text-primary">{value}</span>
-      <span>{label}</span>
-      {detail && <span className="text-muted-foreground">· {detail}</span>}
-    </div>
-  )
-}
-

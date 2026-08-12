@@ -45,6 +45,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { DateField } from '@/components/common/DateField'
 import { CenterPeek, type RecordOpenMode } from '@/components/common/CenterPeek'
+import { BoundedRegion } from '@/components/common/BoundedLayout'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Toggle } from '@/components/ui/toggle'
 import { daysUntil, fmtRelative } from '@/lib/date'
@@ -176,7 +177,7 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
             )}
           </div>
         )}
-        <div className="relative mt-4 min-h-0 flex-1">
+        <BoundedRegion size={expanded ? 'tall' : 'default'} className="relative mt-4 min-h-0 flex-1 pr-1">
           <AnimatePresence initial={false} mode="popLayout">
             <m.div
               key={tab}
@@ -206,7 +207,7 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
               )}
             </m.div>
           </AnimatePresence>
-        </div>
+        </BoundedRegion>
 
         {tab !== 'done' && (
           <form onSubmit={quickAdd} className="mt-4 flex items-center gap-2 border-t border-dashed border-border pt-3">

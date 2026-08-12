@@ -96,7 +96,7 @@ This table is the required routing result of `component-inventory.md`. `NEW` mea
 | stat strip | `StatStrip` | Adopt and generalize the existing implementation; `Ring` and `StatTile` remain deprecated for routine metrics. Do not add another stat-strip component. |
 | sub-tab underline navigation | `Animated Tabs` | Keep the product views and order from the mockup; use the shared tabs behavior and app styling. |
 | expandable row | `Collapsible` | The row remains one disclosure control; do not create a parallel expandable-list implementation. |
-| inline add row | **NEW** | No inventory component owns inline collection creation. |
+| inline add row | `InlineAddRow` | Use the shared keyboard-submit form; feature pages configure its fields and creation callback. |
 | contact card | `Card` | Compose the existing card primitive; clicking a record still follows the shared record-open model. |
 | banner hero | `PageBanner` | Preserve the pictured content order inside the existing banner owner. |
 | glass card | `Card` (`variant="glass"`) | The shared card already owns the app glass treatment; the public layer keeps its existing `GlassSurface` wrapper. Do not hand-roll another glass recipe. |

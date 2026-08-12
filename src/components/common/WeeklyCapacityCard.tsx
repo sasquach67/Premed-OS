@@ -86,7 +86,7 @@ export function WeeklyCapacityCard() {
         <CardTitle className="flex flex-wrap items-center justify-between gap-2">
           <span className="flex items-center gap-2">
             <CalendarRange className="size-4 text-primary" /> Weekly study hours
-            <InfoTip label="Roughly how many hours you have free to study on an ordinary day. Academics and MCAT both plan against this one number, so neither can book time the other already took." />
+            <InfoTip field="capacity.dailyHours" />
           </span>
           {captured
             ? <Badge variant="muted">{total}h a week</Badge>
@@ -126,7 +126,7 @@ export function WeeklyCapacityCard() {
             {' · '}
             <span className="inline-flex items-center gap-1">
               <strong className="text-foreground tabular-nums">{slack}h</strong> held back
-              <InfoTip label="About one catch-up day, kept unclaimed by either plan so a week that slips has somewhere to go." />
+              <InfoTip field="capacity.slack" />
             </span>
           </p>
         )}
@@ -134,7 +134,7 @@ export function WeeklyCapacityCard() {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Busy stretches</h3>
-            <InfoTip label="Finals, travel, a heavier shift rota — a stretch where your usual week does not hold. Both plans bend around it, and nothing piles up as debt because of it." />
+            <InfoTip field="capacity.busyPeriod" />
           </div>
 
           {capacity.busyPeriods.map((period) => (

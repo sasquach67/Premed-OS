@@ -42,13 +42,6 @@ import { Button } from '@/components/ui/button'
 import { Calendar, CalendarDayButton } from '@/components/ui/calendar'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu'
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -73,6 +66,7 @@ import { DateField } from '@/components/common/DateField'
 import { MascotNote } from '@/components/common/MascotNote'
 import { PaceProjectionLine } from '@/components/common/PaceProjectionLine'
 import { CollectionState, type CollectionLoadState } from '@/components/common/CollectionState'
+import { RecordActionOverflow, RecordContextMenu, type RecordAction } from '@/components/common/RecordActionMenu'
 import { TrackerTable, type ColumnDef } from '@/components/common/TrackerTable'
 import { useToast } from '@/components/common/useToast'
 import { uid } from '@/lib/id'
@@ -754,9 +748,33 @@ function AssignmentRow({
     </>
   )
 
+  const actions: RecordAction[] = [
+    {
+      id: 'complete',
+      label: complete ? 'Reopen' : 'Mark submitted',
+      icon: <Check className="size-4" />,
+      onSelect: () => onComplete(assignment, !complete),
+    },
+    {
+      id: 'important',
+      label: assignment.important ? 'Remove important' : 'Mark important',
+      icon: <Star className="size-4" />,
+      onSelect: () => onImportant(assignment),
+    },
+    { id: 'edit', label: 'Edit', icon: <Pencil className="size-4" />, onSelect: () => onEdit(assignment) },
+    { id: 'duplicate', label: 'Duplicate', icon: <Copy className="size-4" />, onSelect: () => onDuplicate(assignment) },
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: <Trash2 className="size-4" />,
+      destructive: true,
+      separatorBefore: true,
+      onSelect: () => onDelete(assignment),
+    },
+  ]
+
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
+    <RecordContextMenu actions={actions}>
         <m.article
           layout
           className={cn(
@@ -780,18 +798,10 @@ function AssignmentRow({
             <Badge variant={due.variant}>{due.label}</Badge>
             <span className="min-w-16 text-right text-xs font-semibold tabular-nums text-muted-foreground">{exactDue(assignment.dueDate)}</span>
             {visibleActions}
+            <RecordActionOverflow actions={actions} label={`Actions for ${assignment.title}`} />
           </div>
         </m.article>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem onSelect={() => onComplete(assignment, !complete)}><Check className="size-4" /> {complete ? 'Reopen' : 'Mark submitted'}</ContextMenuItem>
-        <ContextMenuItem onSelect={() => onImportant(assignment)}><Star className="size-4" /> {assignment.important ? 'Remove important' : 'Mark important'}</ContextMenuItem>
-        <ContextMenuItem onSelect={() => onEdit(assignment)}><Pencil className="size-4" /> Edit</ContextMenuItem>
-        <ContextMenuItem onSelect={() => onDuplicate(assignment)}><Copy className="size-4" /> Duplicate</ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem variant="destructive" onSelect={() => onDelete(assignment)}><Trash2 className="size-4" /> Delete</ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+    </RecordContextMenu>
   )
 }
 

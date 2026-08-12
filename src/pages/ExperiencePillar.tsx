@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { DateField } from '@/components/common/DateField'
+import { InlineAddRow } from '@/components/common/InlineAddRow'
 
 type ExperiencePatch = Partial<ExperienceEntry> & Record<string, unknown>
 type PillarTab = { id: string; label: string; icon: ComponentType<{ className?: string }>; count?: number }
@@ -827,31 +828,6 @@ function ExpandableEntryRow({
           </div>
         </div>
       )}
-    </div>
-  )
-}
-
-function InlineAddRow({ label, fields, onAdd }: { label: string; fields: string[]; onAdd: (values: string[]) => void }) {
-  const [values, setValues] = useState(fields.map(() => ''))
-  return (
-    <div className="grid gap-2 rounded-xl border border-dashed border-border bg-muted/10 p-3 md:grid-cols-[1fr_1fr_7rem_auto]">
-      {fields.map((field, index) => (
-        <Input
-          key={field}
-          value={values[index]}
-          onChange={(event) => setValues((current) => current.map((item, i) => i === index ? event.target.value : item))}
-          placeholder={field}
-          type={field.toLowerCase().includes('hour') ? 'number' : 'text'}
-        />
-      ))}
-      <Button
-        onClick={() => {
-          onAdd(values)
-          setValues(fields.map(() => ''))
-        }}
-      >
-        <Plus className="size-4" /> {label}
-      </Button>
     </div>
   )
 }

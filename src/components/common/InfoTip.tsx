@@ -1,4 +1,4 @@
-import { useState, type PointerEvent } from 'react'
+import { useRef, useState, type PointerEvent } from 'react'
 import { Info } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { glossary } from '@/lib/glossary'
@@ -19,19 +19,17 @@ import { cn } from '@/lib/utils'
 export function InfoTip({
   field,
   value,
-  label,
   className,
 }: {
-  /** Glossary key, e.g. `course.bcpm`. */
-  field?: string
+  /** Glossary key, e.g. `course.bcpm`. Content never lives in JSX. */
+  field: string
   /** Optional value within that field — omit to define the field itself. */
   value?: string | number | boolean
-  /** Literal text, for the rare case with no glossary row yet. */
-  label?: string
   className?: string
 }) {
   const [open, setOpen] = useState(false)
-  const text = label ?? (field ? glossary(field, value) : undefined)
+  const pointerType = useRef('')
+  const text = glossary(field, value)
 
   // Nothing written for this term yet — render no affordance rather than an
   // empty one. The option's own label still does the primary work.
@@ -51,9 +49,22 @@ export function InfoTip({
         <button
           type="button"
           aria-label={`What does this mean? ${text}`}
+          onPointerDown={(event) => { pointerType.current = event.pointerType }}
+          onClick={(event) => {
+            // Hover already opened the mouse experience. Do not let the
+            // following click toggle it closed; touch and keyboard still use
+            // Radix's normal click activation.
+            if (pointerType.current === 'mouse' && open) event.preventDefault()
+          }}
           onPointerEnter={hover(true)}
           onPointerLeave={hover(false)}
-          onFocus={() => setOpen(true)}
+          onFocus={(event) => {
+            // Mouse focus is immediately followed by Radix's click toggle.
+            // Opening here only for :focus-visible avoids an open-then-close
+            // race while preserving keyboard discovery.
+            if (event.currentTarget.matches(':focus-visible')) setOpen(true)
+          }}
+          onBlur={() => setOpen(false)}
           className={cn(
             'inline-grid size-5 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             className,

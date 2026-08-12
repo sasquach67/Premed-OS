@@ -3,7 +3,7 @@ import { AnimatePresence, m, useReducedMotion } from 'motion/react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import {
   Archive,
-  AlertTriangle, ArrowDownRight, ArrowUpRight, Calculator, CalendarDays, CheckCircle2, ChevronDown,
+  AlertTriangle, Calculator, CalendarDays, CheckCircle2, ChevronDown,
   Clock, Flame, FlaskConical, GraduationCap, Library, MoreHorizontal, Plus,
   Search, ShieldCheck, Sparkles, Trash2, X,
 } from 'lucide-react'
@@ -37,6 +37,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/common/useToast'
 import { instantCrossfade, sharedAxis } from '@/lib/motion'
 import { AcademicMigrationReview } from '@/components/academics/AcademicMigrationReview'
+import { StatStrip } from '@/components/common/StatStrip'
 
 const GRADES: LetterGrade[] = ['', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F', 'P', 'IP']
 const COURSE_COLUMNS: ColumnDef[] = [
@@ -202,20 +203,22 @@ export function Academics() {
               onChange={changeMode}
               label="Academics mode"
             />
-            <div className="glass-surface grid grid-cols-2 overflow-hidden text-white sm:grid-cols-4">
-              <BannerStat
-                label="Term GPA"
-                value={fmtGpa(currentTermGpa.cum)}
-                change={priorTermGpa?.cum ? currentTermGpa.cum - priorTermGpa.cum : undefined}
-              />
-              <BannerStat
-                label="Cumulative"
-                value={fmtGpa(gpa.cum)}
-                change={priorCumulative?.cum ? gpa.cum - priorCumulative.cum : undefined}
-              />
-              <BannerStat label="Due today" value={String(dueToday)} />
-              <BannerStat label="Day streak" value={String(reviewStreak)} icon={<Flame className="size-3.5 text-orange-300" />} />
-            </div>
+            <StatStrip
+              variant="banner"
+              className="grid-flow-row grid-cols-2 sm:grid-flow-col sm:grid-cols-none"
+              metrics={[
+                {
+                  id: 'term-gpa', label: 'Term GPA', value: fmtGpa(currentTermGpa.cum), cadence: 'variable',
+                  direction: !currentTermGpa.credits || !priorTermGpa?.credits ? undefined : currentTermGpa.cum >= priorTermGpa.cum ? 'up' : 'down',
+                },
+                {
+                  id: 'cumulative-gpa', label: 'Cumulative', value: fmtGpa(gpa.cum), cadence: 'variable',
+                  direction: !gpa.credits || !priorCumulative?.credits ? undefined : gpa.cum >= priorCumulative.cum ? 'up' : 'down',
+                },
+                { id: 'due-today', label: 'Due today', value: String(dueToday), cadence: 'variable' },
+                { id: 'day-streak', label: 'Day streak', value: String(reviewStreak), cadence: 'variable', icon: <Flame className="size-3.5 text-orange-300" /> },
+              ]}
+            />
           </div>
         </PageHeader>
         <AcademicMigrationReview />
@@ -354,29 +357,6 @@ function AcademicsTab({
         {count}
       </span>
     </TabsTrigger>
-  )
-}
-
-function BannerStat({
-  label,
-  value,
-  change,
-  icon,
-}: {
-  label: string
-  value: string
-  change?: number
-  icon?: React.ReactNode
-}) {
-  const Direction = change == null ? null : change >= 0 ? ArrowUpRight : ArrowDownRight
-  return (
-    <div className="min-w-20 border-r border-white/10 px-4 py-2 last:border-r-0">
-      <p className="text-xs font-bold text-white/70">{label}</p>
-      <p className="flex items-center gap-1 font-display text-lg font-extrabold leading-tight text-white tabular-nums">
-        {icon}{value}
-        {Direction && <Direction className={cn('size-3.5', change! >= 0 ? 'text-emerald-300' : 'text-rose-300')} aria-hidden="true" />}
-      </p>
-    </div>
   )
 }
 

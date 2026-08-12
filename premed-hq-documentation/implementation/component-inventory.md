@@ -19,7 +19,7 @@
 
 These are the differentiation; generic versions would be a downgrade:
 
-`TrackerTable` · `CenterPeek` · `ObjectInspector` · `RecordOpenWorkspace` · `EntityLinkCombobox` · `CreateExperienceDialog` · `BulkActionBar` · `SavedViewControls` · `TrashRecovery` · `DependencyConfirmDialog` · `FocusModeLayout` · `ModeSwitch` · `ThreeLevelNav` · `AutosaveStatus` · `ToastProvider` · `Kanban` · `NotesDB` · `DocEmbed` · `HeroDailySchedule` · `PageHeader` · `PageBanner` · `EmptyState` · `InfoTip` · `MascotNote` · `StatStrip` · `ResourceGrid` · `CollectionState` · `Collapsible` · `SidePeek` (mobile sheet).
+`TrackerTable` · `CenterPeek` · `ObjectInspector` · `RecordOpenWorkspace` · `EntityLinkCombobox` · `CreateExperienceDialog` · `BulkActionBar` · `SavedViewControls` · `TrashRecovery` · `DependencyConfirmDialog` · `FocusModeLayout` · `ModeSwitch` · `ThreeLevelNav` · `InlineAddRow` · `InteractiveCard` · `RecordActionMenu` · `EqualHeightGrid` · `BoundedRegion` · `AutosaveStatus` · `ToastProvider` · `Kanban` · `NotesDB` · `DocEmbed` · `HeroDailySchedule` · `PageHeader` · `PageBanner` · `EmptyState` · `InfoTip` · `MascotNote` · `StatStrip` · `ResourceGrid` · `CollectionState` · `Collapsible` · `SidePeek` (mobile sheet).
 
 ## 2. Have — shadcn primitives already in the repo (no action)
 

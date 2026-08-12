@@ -34,6 +34,7 @@ import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { StatStrip } from '@/components/common/StatStrip'
 
 type HubTab = 'overview' | 'materials' | 'topics' | 'assignments' | 'notes'
 
@@ -178,12 +179,16 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
               </span>
               <LinksMenu workspace={workspace} contacts={courseContacts} />
             </div>
-            <div className="glass-surface grid shrink-0 grid-cols-2 overflow-hidden text-white sm:grid-cols-4">
-              <BannerStat label="Grade" value={stats.grade} />
-              <BannerStat label="Marked ready" value={`${stats.ready}/${courseTopics.length}`} />
-              <BannerStat label="Due today" value={String(stats.dueToday)} />
-              <BannerStat label="Next exam" value={stats.examCountdown} />
-            </div>
+            <StatStrip
+              variant="banner"
+              className="grid-flow-row grid-cols-2 sm:grid-flow-col sm:grid-cols-none"
+              metrics={[
+                { id: 'grade', label: 'Grade', value: stats.grade, cadence: 'variable' },
+                { id: 'ready', label: 'Marked ready', value: `${stats.ready}/${courseTopics.length}`, cadence: 'variable' },
+                { id: 'due-today', label: 'Due today', value: String(stats.dueToday), cadence: 'variable' },
+                { id: 'next-exam', label: 'Next exam', value: stats.examCountdown, cadence: 'variable' },
+              ]}
+            />
           </div>
         </PageHeader>
 
@@ -812,19 +817,6 @@ function StudyToolActions({ onOpenNotes }: { onOpenNotes: () => void }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return <div className="border-b border-border/70 p-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"><p className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">{label}</p><p className="mt-1 font-display text-xl font-extrabold tabular-nums">{value}</p></div>
-}
-
-/** Banner-borne variable metric — the only glass surface on this page, because
- *  it is the only one floating over the banner art (04 §0c). */
-function BannerStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-24 border-r border-white/10 px-4 py-2 last:border-r-0">
-      <p className="whitespace-nowrap text-xs font-bold text-white/70">{label}</p>
-      {/* Values here are open-ended ("Not scheduled", "6d", "B+"), so the row
-       *  shrinks the long ones rather than clipping or wrapping them. */}
-      <p className="truncate font-display text-lg font-extrabold leading-tight tabular-nums text-white" title={value}>{value}</p>
-    </div>
-  )
 }
 
 function StatusMetric({ label, value }: { label: string; value: string }) {

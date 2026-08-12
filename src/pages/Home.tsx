@@ -6,6 +6,7 @@ import { GpaStatTile, HoursStatTile, McatStatTile, WhereIStand } from '@/compone
 import { ActivityAndCapture, QuarterlyGoalsPanel, QuickAccess } from '@/components/overview/OverviewSupport'
 import { OverviewTasks } from '@/components/overview/OverviewTasks'
 import { TemporaryAdvisingGuidance } from '@/components/overview/TemporaryAdvisingGuidance'
+import { EqualHeightGrid } from '@/components/common/BoundedLayout'
 
 export function Home() {
   return (
@@ -14,7 +15,7 @@ export function Home() {
         <OverviewHero />
         <SmartActionPanel />
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-6 xl:grid-cols-12">
+        <EqualHeightGrid className="grid-cols-1 lg:grid-cols-6 xl:grid-cols-12">
           <div className="lg:col-span-6 xl:col-span-7"><OverviewTasks /></div>
           <div className="lg:col-span-6 xl:col-span-5"><WhereIStand /></div>
 
@@ -28,7 +29,7 @@ export function Home() {
 
           <div className="order-last lg:col-span-6 xl:col-span-12"><OverviewRoadmap /></div>
           <div className="order-last lg:col-span-6 xl:col-span-12"><TemporaryAdvisingGuidance /></div>
-        </div>
+        </EqualHeightGrid>
       </div>
     </MascotNoteProvider>
   )

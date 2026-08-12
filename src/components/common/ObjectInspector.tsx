@@ -20,6 +20,19 @@ export interface ObjectInspectorConfig {
   dataQuality: InspectorSection
 }
 
+export const CORE_INSPECTOR_SECTIONS = [
+  { key: 'overview', title: 'Overview / Details', icon: ListChecks },
+  { key: 'relations', title: 'Relations', icon: Link2 },
+  { key: 'files', title: 'Files', icon: FileText },
+  { key: 'activity', title: 'Activity', icon: Activity },
+  { key: 'actions', title: 'Actions', icon: ListChecks },
+] as const
+
+export const PROGRESSIVE_INSPECTOR_SECTIONS = [
+  { key: 'notes', title: 'Notes', icon: NotebookPen },
+  { key: 'dataQuality', title: 'Data quality', icon: ShieldCheck },
+] as const
+
 export function ObjectInspector({
   title,
   subtitle,
@@ -44,14 +57,23 @@ export function ObjectInspector({
       </header>
 
       <div className="space-y-4 p-4 md:p-6">
-        <InspectorRegion title="Overview / Details" icon={ListChecks} section={config.overview} />
-        <InspectorRegion title="Relations" icon={Link2} section={config.relations} />
-        <InspectorRegion title="Files" icon={FileText} section={config.files} />
-        <InspectorRegion title="Activity" icon={Activity} section={config.activity} />
-        <InspectorRegion title="Actions" icon={ListChecks} section={config.actions} />
+        {CORE_INSPECTOR_SECTIONS.map((definition) => (
+          <InspectorRegion
+            key={definition.key}
+            title={definition.title}
+            icon={definition.icon}
+            section={config[definition.key]}
+          />
+        ))}
 
-        <ProgressiveRegion title="Notes" icon={NotebookPen} section={config.notes} />
-        <ProgressiveRegion title="Data quality" icon={ShieldCheck} section={config.dataQuality} />
+        {PROGRESSIVE_INSPECTOR_SECTIONS.map((definition) => (
+          <ProgressiveRegion
+            key={definition.key}
+            title={definition.title}
+            icon={definition.icon}
+            section={config[definition.key]}
+          />
+        ))}
       </div>
     </article>
   )
@@ -107,7 +129,7 @@ function SectionContent({ section }: { section: InspectorSection }) {
   if (section.content) return <>{section.content}</>
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
-      <span>{section.emptyLabel}</span>
+      <span>{section.emptyLabel.trim() || 'Nothing here yet.'}</span>
       {section.addAction}
     </div>
   )

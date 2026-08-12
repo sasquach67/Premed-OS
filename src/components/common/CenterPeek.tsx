@@ -8,7 +8,8 @@ import {
 import { SidePeek } from '@/components/common/SidePeek'
 import { cn } from '@/lib/utils'
 
-export type RecordOpenMode = 'peek' | 'split' | 'expanded'
+export const RECORD_OPEN_MODES = ['peek', 'split', 'expanded'] as const
+export type RecordOpenMode = (typeof RECORD_OPEN_MODES)[number]
 
 export function CenterPeek({
   open,

@@ -29,6 +29,20 @@ export interface GlossaryEntry {
 }
 
 export const GLOSSARY: Record<string, GlossaryEntry> = {
+  /* ---- Shared planning ------------------------------------------ */
+
+  'capacity.dailyHours': {
+    field: 'Enter the hours you can really study on an ordinary day. Academics and MCAT share this same pool.',
+  },
+
+  'capacity.slack': {
+    field: 'Keep about one ordinary day unclaimed so a delayed week has room to recover.',
+  },
+
+  'capacity.busyPeriod': {
+    field: 'Add finals, travel, or heavier work stretches when your ordinary weekly capacity will not hold.',
+  },
+
   /* ---- Academics ------------------------------------------------ */
 
   'course.bcpm': {
