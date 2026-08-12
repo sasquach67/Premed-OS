@@ -460,7 +460,7 @@
   }
   /* Glass takes its tone from its immediate backdrop, not from the page theme.
      Dark banner art needs ink glass even while the rest of the app is light. */
-  .glass-surface--dark {
+  .glass-surface.glass-surface--dark {
     --glass-foreground: #fffaf0;
     background: rgba(20, 26, 34, .62);
     color: var(--glass-foreground);

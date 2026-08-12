@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { useStore } from '@/store/store'
 
 export type MascotNoteVariant = 'tip' | 'banner' | 'teaching' | 'empty-state' | 'milestone'
+export type MascotNoteTone = 'default' | 'dark'
 
 interface MascotNoteScopeValue {
   activeId: string | null
@@ -59,6 +60,8 @@ interface MascotNoteBaseProps {
   /** Lower values win when several notes exist in one view. */
   priority?: number
   title?: string
+  /** Explicitly opt into ink glass only when the immediate backdrop is dark. */
+  tone?: MascotNoteTone
 }
 
 type MascotNoteProps = MascotNoteBaseProps & (
@@ -69,7 +72,7 @@ type MascotNoteProps = MascotNoteBaseProps & (
 
 const VARIANT_STYLES: Record<MascotNoteVariant, string> = {
   tip: 'border-border bg-muted/55',
-  banner: 'glass-surface--dark border-white/16 text-white shadow-xl shadow-black/20 backdrop-blur-md',
+  banner: 'border-white/65 bg-card/78 text-foreground shadow-xl shadow-stone-900/10 backdrop-blur-md dark:border-white/15 dark:bg-slate-950/45 dark:text-white dark:shadow-black/15',
   teaching: 'border-[color-mix(in_srgb,var(--cat-mcat)_32%,var(--border))] bg-[color-mix(in_srgb,var(--cat-mcat)_10%,var(--card))]',
   'empty-state': 'border-dashed border-border bg-transparent',
   milestone: 'border-[color-mix(in_srgb,var(--success)_34%,var(--border))] bg-[color-mix(in_srgb,var(--success)_10%,var(--card))]',
@@ -85,6 +88,7 @@ export function MascotNote({
   dismissible = false,
   priority = 100,
   title,
+  tone = 'default',
 }: MascotNoteProps) {
   const generatedId = useId()
   const instanceId = noteId ?? generatedId
@@ -94,6 +98,7 @@ export function MascotNote({
   const dismissed = useStore((state) => Boolean(noteId && state.settings.mascotNoteDismissals[noteId]))
   const update = useStore((state) => state.update)
   const canDismiss = Boolean(noteId && (dismissible || variant === 'teaching'))
+  const isDarkBanner = variant === 'banner' && tone === 'dark'
 
   useEffect(() => {
     if (dismissed) return
@@ -121,6 +126,7 @@ export function MascotNote({
           className={cn(
             'flex min-w-0 items-start gap-3 rounded-2xl border p-3.5',
             VARIANT_STYLES[variant],
+            isDarkBanner && 'glass-surface glass-surface--dark border-white/16 text-white shadow-black/20',
             className,
           )}
         >
@@ -134,14 +140,14 @@ export function MascotNote({
             {title && <p className="font-display text-sm font-extrabold leading-tight">{title}</p>}
             <div className={cn(
               'text-sm font-semibold leading-snug',
-              variant === 'banner' ? 'text-foreground/88 dark:text-white/88' : 'text-foreground',
+              variant === 'banner' ? (isDarkBanner ? 'text-white/88' : 'text-foreground/88 dark:text-white/88') : 'text-foreground',
             )}>
               {children}
             </div>
             {source && (
               <p className={cn(
                 'mt-1 text-[10px] font-extrabold uppercase tracking-[0.11em]',
-                variant === 'banner' ? 'text-muted-foreground dark:text-white/55' : 'text-muted-foreground',
+                variant === 'banner' ? (isDarkBanner ? 'text-white/55' : 'text-muted-foreground dark:text-white/55') : 'text-muted-foreground',
               )}>
                 {source}
               </p>
@@ -155,7 +161,12 @@ export function MascotNote({
               variant="ghost"
               onClick={dismiss}
               aria-label="Dismiss note"
-              className={cn('size-7 shrink-0', variant === 'banner' && 'text-white/65 hover:bg-white/10 hover:text-white')}
+              className={cn(
+                'size-7 shrink-0',
+                variant === 'banner' && (isDarkBanner
+                  ? 'text-white/65 hover:bg-white/10 hover:text-white'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'),
+              )}
             >
               <X className="size-3.5" />
             </Button>

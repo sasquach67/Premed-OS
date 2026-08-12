@@ -380,7 +380,7 @@ export function AcademicRecallSession() {
             <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" className="size-14 border-white/20 bg-slate-950/45 text-white"><Settings2 className="size-5" /></Button></TooltipTrigger><TooltipContent>Speak default · interleave on · weak first on.</TooltipContent></Tooltip>
           </div>
           <p className="mt-3 text-sm font-bold text-white/58">Speak <strong className="text-white">default</strong> · Interleave <strong className="text-white">on</strong> · Weak first <strong className="text-white">on</strong></p>
-          <MascotNote variant="banner" className="mt-7 max-w-2xl">
+          <MascotNote variant="banner" tone="dark" className="mt-7 max-w-2xl">
             Say it out loud before you look. The gap between feeling sure and actually recalling is the whole point.
           </MascotNote>
         </section>
@@ -481,7 +481,7 @@ export function AcademicRecallSession() {
             <SummaryMetric label="Skipped" value={String(skipped)} />
           </div>
           <div className="mt-8 flex flex-wrap gap-3"><Button size="lg" onClick={() => navigate(exitTo)}>Back to class</Button><Button size="lg" variant="outline" className="border-white/20 bg-slate-950/42 text-white" onClick={() => { setIndex(0); setResults([]); setElapsed(0); resetComposer(); setPhase('start') }}><RotateCcw className="size-4" /> Review again</Button></div>
-          <MascotNote variant="banner" className="mt-7 max-w-2xl">
+          <MascotNote variant="banner" tone="dark" className="mt-7 max-w-2xl">
             Review complete. Your recorded grades set the next topic intervals.
           </MascotNote>
         </section>
