@@ -51,8 +51,9 @@ export interface GenerationRequest {
   artifact: string
   /** Academics only: generation is always for ONE class. */
   courseId?: string
-  /** Ids of the class's own materials/topics the artifact derives from
-   *  (guardrail 1). Empty means "invented from thin air", which is refused. */
+  /** Ids of student-supplied materials/topics or the student's own missed
+   *  questions. Empty means "invented from thin air", which is refused in
+   *  both Academics and MCAT. */
   groundedIn?: readonly string[]
 }
 
@@ -81,8 +82,8 @@ export function presentsAsRealExam(title: string): boolean {
   return PRESENTED_AS_REAL.test(title)
 }
 
-/** The one gate. Throws unless the request satisfies its scope's rule and,
- *  in Academics, all three guardrails. */
+/** The one gate. Throws unless the request satisfies its scope's rule and the
+ *  shared source boundary; Academics also requires one specific class. */
 export function assertGenerationAllowed(request: GenerationRequest): void {
   const { scope, artifact } = request
 
@@ -94,16 +95,20 @@ export function assertGenerationAllowed(request: GenerationRequest): void {
     throw new GenerationNotAllowedError(scope, artifact, why)
   }
 
-  if (scope !== 'academics') return
+  // Guardrail 1 — every generated artifact begins with material the student
+  // supplied. Background may later elaborate a source-backed concept under
+  // generation/02 §2.6; it can never replace this grounding.
+  if (!request.groundedIn?.length) {
+    const sourceDescription = scope === 'mcat'
+      ? "the student's own missed questions or supplied study material"
+      : "this class's own materials (syllabus, slides, readings, notes, or topics)"
+    throw new GenerationNotAllowedError(scope, artifact,
+      `Generated work must derive from ${sourceDescription}; select what it should be built from.`)
+  }
 
-  // Guardrail 1 — grounded in that class's own materials.
-  if (!request.courseId) {
+  if (scope === 'academics' && !request.courseId) {
     throw new GenerationNotAllowedError(scope, artifact,
       'Academics generation is always for one specific class; no course was given.')
-  }
-  if (!request.groundedIn?.length) {
-    throw new GenerationNotAllowedError(scope, artifact,
-      "Generated work must derive from this class's own materials — select the syllabus, slides, readings, notes, or topics it should be built from.")
   }
 }
 

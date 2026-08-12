@@ -177,8 +177,8 @@ fabricate a slide number it never authors.
 | `callout` (Clinical Connection) | Required under SOURCE_ONLY / CLARIFICATION | Otherwise it is background |
 | `overview`, `final_synthesis` | Optional | Legitimately span the whole topic |
 | `active_recall` question | Required | The answer must exist in the source |
-| Flashcard | Required | Every card must be traceable |
-| Anything marked `background` | **Forbidden** | It is by definition not from the source |
+| Flashcard tested target | Required | Every card is anchored to student-supplied material |
+| Marked `background` supplement | No `SourceRef`; permitted only in `SOURCE_PLUS_BACKGROUND` | Must attach to a source-backed concept and remain subordinate under `02` §2.6 |
 
 ### 4.3 Uncitable content
 

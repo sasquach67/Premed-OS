@@ -63,14 +63,19 @@ describe('MCAT generation — restricted, and scoped to MCAT', () => {
   it('still allows only missed-to-mastery drills and flashcards', () => {
     expect([...MCAT_ARTIFACTS]).toEqual(['missed-to-mastery', 'flashcards'])
     for (const artifact of MCAT_ARTIFACTS) {
-      expect(() => assertGenerationAllowed({ scope: 'mcat', artifact })).not.toThrow()
+      expect(() => assertGenerationAllowed({ scope: 'mcat', artifact, groundedIn: ['missed-question-1'] })).not.toThrow()
     }
+  })
+
+  it('refuses MCAT cards or drills without student-supplied grounding', () => {
+    expect(() => assertGenerationAllowed({ scope: 'mcat', artifact: 'flashcards' }))
+      .toThrow(/own missed questions|supplied study material/i)
   })
 
   it('never generates QBank questions or CARS passages', () => {
     for (const artifact of MCAT_FORBIDDEN_ARTIFACTS) {
       expect(isGenerationAllowed('mcat', artifact)).toBe(false)
-      expect(() => assertGenerationAllowed({ scope: 'mcat', artifact }))
+      expect(() => assertGenerationAllowed({ scope: 'mcat', artifact, groundedIn: ['missed-question-1'] }))
         .toThrow(/externally sourced/i)
     }
   })
@@ -87,7 +92,7 @@ describe('MCAT generation — restricted, and scoped to MCAT', () => {
 
   it('names the scope and artifact on the error so failures are actionable', () => {
     try {
-      assertGenerationAllowed({ scope: 'mcat', artifact: 'cars-passages' })
+      assertGenerationAllowed({ scope: 'mcat', artifact: 'cars-passages', groundedIn: ['missed-question-1'] })
       expect.unreachable('should have thrown')
     } catch (error) {
       expect(error).toBeInstanceOf(GenerationNotAllowedError)

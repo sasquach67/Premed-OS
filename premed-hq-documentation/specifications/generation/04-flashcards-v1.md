@@ -20,7 +20,13 @@ The bar, stated plainly:
 
 premedOS takes inspiration from the learning-design principles associated with high-quality decks
 (AnKing, MileDown, Pankow) while developing **an independent premedOS standard.** It does not imitate
-any deck verbatim, and no generator prompt may name a deck as a style to copy.
+any deck verbatim, and no generator prompt may name a deck as a style to copy. Premed OS never ships,
+bundles, or imports a pre-authored deck; every generated card begins with material the student supplied.
+
+**Source boundary (ruled by Andy, Aug 2026):** the tested target on every card must be supported by
+the student's own slides, notes, course material, or their own missed question. In
+`SOURCE_PLUS_BACKGROUND`, clearly marked background may appear only as subordinate explanation in
+`extra`; it may not create a concept, lead the card, or become the tested answer (`02` §2.6).
 
 **Card count is driven by learning value, not source length.** A 40-slide lecture may yield 15 good
 cards. That is a correct outcome, not under-generation, and the UI must not present it as a shortfall.
@@ -522,7 +528,7 @@ rewritten**, never shipped with a warning.
 | 5 | **Answer length** | Is the tested answer reasonably concise? | deterministic |
 | 6 | **Cueing** | Does the wording accidentally reveal the answer? | model |
 | 7 | **Redundancy** | Is another card testing the same thing? (§5) | deterministic candidates + model class |
-| 8 | **Source support** | Supported by the source, or by permitted external knowledge? | server-side, absolute |
+| 8 | **Source support** | Is the tested target supported by student-supplied material, with any permitted background marked and confined to subordinate Extra copy? | server-side, absolute |
 | 9 | **Explanation** | Would an Extra field materially improve understanding? | model |
 | 10 | **Visual value** | Would a diagram, equation, or table improve learning? | model |
 
@@ -537,7 +543,7 @@ regeneration, and export. That relationship does **not** create review state.
 
 **RULED by Andy, Aug 2026:** Premed OS never reviews or schedules cards. There is no card queue,
 self-rating, or card-level FSRS. Topic FSRS continues to schedule Academics topic recall only and is
-never changed by card generation or regeneration.
+never changed by card generation or regeneration. **Review and scheduling stay in Anki.**
 
 ---
 
