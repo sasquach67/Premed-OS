@@ -1,38 +1,27 @@
 /* ============================================================
-   GuidedTour — annotated screenshots, one per tab, Overview first
-   because it is home and it is the tab that explains the others.
+   GuidedTour — a live, contained product preview.
 
-   ⚠ THE MASCOT IS NOT A RAM. `05-public-and-account.md` §6.1 forbids ram
-   or Rameses imagery outright and states that root `CLAUDE.md`'s "Ram
-   mascot" line is stale. The guide here is a Ghibli-adjacent DOCTOR
-   character — stethoscope, coat, no horns — and it must stay visibly
-   unrelated to any university mascot.
-
-   `src/components/mascot/Ram.tsx` exists in this repo and renders
-   `/art/mascot.gif`. It is deliberately NOT used here; see the P1 report.
-
-   The guide is an ILLUSTRATION and never a UI icon: it stands beside a
-   callout, and the pulsing pin — not the character — marks the region.
-   It is calm here. A tour is explanation, not a milestone, so there is no
-   confetti and no cheering copy (04's celebration rule).
-
-   Callout coordinates are per-screenshot and have to be redone whenever a
-   screenshot is retaken. That cost was accepted (decisions §4e).
+   This is deliberately DOM, not a captured image. The preview is a small
+   read-only version of the product's information architecture: visitors can
+   change the section and scroll through it without leaving the landing page.
+   It never reads or writes a visitor's real workspace.
    ============================================================ */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties, UIEvent } from 'react'
+import {
+  BookOpen,
+  Brain,
+  CalendarDays,
+  CheckCircle2,
+  ChevronRight,
+  CircleDot,
+  Clock3,
+  GraduationCap,
+  LayoutDashboard,
+  Stethoscope,
+} from 'lucide-react'
 import { PublicHeadline } from '@/components/public/PublicHeadline'
 
-/* ⭐ Aug 2026 (Andy) — the guide is the REAL mascot art at /art/mascot.gif,
-   not the placeholder silhouette that shipped first.
-
-   ⚠️ Recorded because it cuts against a written rule: `05` §6.1 bans ram
-   imagery on the public layer, and this asset is the existing mascot. Andy
-   asked for it by name ("that Ghibli template that was already in one of
-   the files"). If the art is ever confirmed to read as a university mascot,
-   this is the line to revisit — not the tour itself.
-
-   Still an ILLUSTRATION, never a UI icon: it stands beside a callout, and
-   the pulsing pin marks the region. Calm here — a tour is explanation. */
 function GuideFigure() {
   return (
     <span className="pl-guide" aria-hidden="true">
@@ -41,62 +30,178 @@ function GuideFigure() {
   )
 }
 
+type PreviewTab = 'Overview' | 'Academics' | 'MCAT' | 'Clinical'
 
-/* ⭐ Aug 2026 (Andy: "can you actually render something there?") — the shot
-   window used to hold a line of text saying a screenshot was missing, which
-   was honest and looked like a bug.
+const PREVIEW_NAV: { label: PreviewTab; icon: typeof LayoutDashboard }[] = [
+  { label: 'Overview', icon: LayoutDashboard },
+  { label: 'Academics', icon: GraduationCap },
+  { label: 'MCAT', icon: Brain },
+  { label: 'Clinical', icon: Stethoscope },
+]
 
-   This renders a SIMPLIFIED VIEW OF THE REAL INTERFACE from the app's own
-   tokens. It is deliberately NOT dressed up as a photograph: no browser
-   chrome, no device frame, no blur. It is a diagram of the layout, and it is
-   labelled as a preview.
+const PREVIEW_COPY: Record<PreviewTab, { eyebrow: string; title: string; subline: string }> = {
+  Overview: {
+    eyebrow: 'Wednesday, August 12',
+    title: 'Good to see you again, Andy.',
+    subline: 'The few things that need your attention today.',
+  },
+  Academics: {
+    eyebrow: 'Fall 2026 · 3 classes',
+    title: 'Academics, in one place.',
+    subline: 'Due dates, course material and the work behind your GPA.',
+  },
+  MCAT: {
+    eyebrow: 'Your plan · 31 weeks',
+    title: 'Study what will matter next.',
+    subline: 'Your classes and MCAT plan share the same week.',
+  },
+  Clinical: {
+    eyebrow: 'Clinical experience',
+    title: 'Hours with a record behind them.',
+    subline: 'Shifts, reflections and verification stay together.',
+  },
+}
 
-   ⚠️ It does NOT satisfy the "real screenshots with demo data" requirement
-   (P1 §4.4) — that item stays open until actual captures exist. This is a
-   better placeholder, not the deliverable. */
-function TourPreview({ tab }: { tab: string }) {
-  const NAV = ['Overview', 'Academics', 'MCAT', 'Clinical', 'Volunteering', 'Research']
-  const STATS = [
-    { k: 'AMCAS GPA', v: '3.71', c: 'var(--cat-gpa)' },
-    { k: 'Clinical hours', v: '146', c: 'var(--cat-clinical)' },
-    { k: 'Weeks to MCAT', v: '31', c: 'var(--cat-mcat)' },
-  ]
-  const ROWS = [
-    { t: 'CHEM 262 · Problem set 7', m: 'due tomorrow', c: 'var(--cat-gpa)' },
-    { t: 'Review: amino acid side chains', m: '12 topics due', c: 'var(--cat-mcat)' },
-    { t: 'Carolina ED · Thursday shift', m: '4 hrs, unlogged', c: 'var(--cat-clinical)' },
-  ]
+function OverviewContent() {
   return (
-    <div className="pl-prev" aria-hidden="true">
-      <aside className="pl-prev-nav">
-        <span className="pl-prev-brand">Premed OS</span>
-        {NAV.map((n) => (
-          <span key={n} className={`pl-prev-navlk${n === tab ? ' on' : ''}`}>
-            {n}
-          </span>
-        ))}
+    <>
+      <div className="pl-live-hero">
+        <div className="pl-live-next">
+          <span className="pl-live-mini">Next up</span>
+          <b>CHEM 101 lecture</b>
+          <strong>6:33:54</strong>
+          <span className="pl-live-progress"><i /></span>
+        </div>
+        <div className="pl-live-day">
+          <div className="pl-live-dayhead"><span>Today</span><CalendarDays aria-hidden="true" /></div>
+          <div className="pl-live-event"><time>9 AM</time><b>CHEM 101 lecture</b><span>9:50 AM</span></div>
+          <div className="pl-live-event"><time>11 AM</time><b>Neuroscience seminar</b><span>12:15 PM</span></div>
+          <div className="pl-live-event"><time>3 PM</time><b>Clinical shift</b><span>7 PM</span></div>
+        </div>
+      </div>
+      <PreviewSection title="Smart next actions" action="3 ready">
+        <div className="pl-live-actiongrid">
+          <PreviewAction title="Add a verifier" detail="UNC Family Medicine has active hours with no contact yet." />
+          <PreviewAction title="Plan problem set 7" detail="CHEM 262 is due tomorrow at 11:59 PM." />
+        </div>
+      </PreviewSection>
+      <div className="pl-live-split">
+        <PreviewSection title="Tasks" action="Add task"><PreviewList rows={['Review amino acids', 'Confirm Thursday shift', 'Read ENGL 105 essay feedback']} /></PreviewSection>
+        <PreviewSection title="Where I stand"><PreviewList rows={['Academics · 3.67', 'Clinical · 146 hrs', 'MCAT · plan begins Aug 24']} /></PreviewSection>
+      </div>
+    </>
+  )
+}
+
+function AcademicsContent() {
+  return (
+    <>
+      <div className="pl-live-kpis">
+        <PreviewMetric label="Cumulative" value="3.67" tone="blue" />
+        <PreviewMetric label="Term GPA" value="—" />
+        <PreviewMetric label="Due this week" value="4" tone="amber" />
+      </div>
+      <PreviewSection title="Your classes" action="Add class">
+        <div className="pl-live-courses">
+          <PreviewCourse code="CHEM 262" title="Organic Chemistry II" detail="Problem set 7 · due tomorrow" tone="blue" />
+          <PreviewCourse code="ENGL 105" title="Writing in Health & Medicine" detail="Revision notes · Friday" tone="violet" />
+          <PreviewCourse code="NSCI 222" title="Introduction to Neuroscience" detail="Seminar reflection · next week" tone="green" />
+        </div>
+      </PreviewSection>
+      <PreviewSection title="Coming up"><PreviewList rows={['Thu · CHEM 262 problem set', 'Fri · ENGL 105 revision', 'Mon · NSCI 222 reading response', 'Sep 2 · CHEM 262 exam']} /></PreviewSection>
+    </>
+  )
+}
+
+function McatContent() {
+  return (
+    <>
+      <div className="pl-live-plan">
+        <div><span className="pl-live-mini">This week</span><strong>6 hrs planned</strong><p>One plan across coursework and MCAT.</p></div>
+        <span className="pl-live-ring">3/4</span>
+      </div>
+      <PreviewSection title="Return to these" action="View plan">
+        <PreviewList rows={['Psych/soc · behavior change', 'Biochem · amino acids', 'CARS · passage reasoning']} />
+      </PreviewSection>
+      <PreviewSection title="Recent practice">
+        <div className="pl-live-practice"><span>Biology drill</span><b>18 / 20</b><em>Reviewed</em></div>
+        <div className="pl-live-practice"><span>CARS passage set</span><b>—</b><em>Planned</em></div>
+      </PreviewSection>
+    </>
+  )
+}
+
+function ClinicalContent() {
+  return (
+    <>
+      <div className="pl-live-kpis">
+        <PreviewMetric label="Logged hours" value="146" tone="green" />
+        <PreviewMetric label="This week" value="4" />
+        <PreviewMetric label="Need a verifier" value="1" tone="amber" />
+      </div>
+      <PreviewSection title="Active positions" action="Add position">
+        <PreviewCourse code="CAROLINA ED" title="Emergency Department Volunteer" detail="Thursday · 3 PM–7 PM" tone="green" />
+        <PreviewCourse code="FAMILY MED" title="Clinic Volunteer" detail="Next shift · Aug 20" tone="blue" />
+      </PreviewSection>
+      <PreviewSection title="Keep while it is fresh">
+        <div className="pl-live-reflection"><BookOpen aria-hidden="true" /><span>After a shift, log what you saw and why it mattered.</span><ChevronRight aria-hidden="true" /></div>
+      </PreviewSection>
+    </>
+  )
+}
+
+function PreviewMetric({ label, value, tone }: { label: string; value: string; tone?: string }) {
+  return <div className={`pl-live-metric${tone ? ` is-${tone}` : ''}`}><span>{label}</span><b>{value}</b></div>
+}
+
+function PreviewAction({ title, detail }: { title: string; detail: string }) {
+  return <div className="pl-live-action"><span className="pl-live-actionicon"><CircleDot aria-hidden="true" /></span><b>{title}</b><p>{detail}</p><button type="button">Open <ChevronRight aria-hidden="true" /></button></div>
+}
+
+function PreviewCourse({ code, title, detail, tone }: { code: string; title: string; detail: string; tone: string }) {
+  return <div className={`pl-live-course is-${tone}`}><span className="pl-live-coursemark" /><div><small>{code}</small><b>{title}</b><p>{detail}</p></div><ChevronRight aria-hidden="true" /></div>
+}
+
+function PreviewList({ rows }: { rows: string[] }) {
+  return <div className="pl-live-list">{rows.map((row) => <div key={row}><CheckCircle2 aria-hidden="true" /><span>{row}</span><ChevronRight aria-hidden="true" /></div>)}</div>
+}
+
+function PreviewSection({ title, action, children }: { title: string; action?: string; children: React.ReactNode }) {
+  return <section className="pl-live-section"><div className="pl-live-sectionhead"><h3>{title}</h3>{action ? <button type="button">{action}</button> : null}</div>{children}</section>
+}
+
+function LivePreview({ tab, onProgress, onSelect }: { tab: PreviewTab; onProgress: (progress: number) => void; onSelect: (tab: PreviewTab) => void }) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'auto' })
+    onProgress(0)
+  }, [tab, onProgress])
+
+  const handleScroll = (event: UIEvent<HTMLDivElement>) => {
+    const element = event.currentTarget
+    const range = element.scrollHeight - element.clientHeight
+    onProgress(range > 0 ? element.scrollTop / range : 0)
+  }
+
+  const copy = PREVIEW_COPY[tab]
+  return (
+    <div className="pl-live-app" aria-label={`Interactive ${tab} product preview`}>
+      <aside className="pl-live-rail" aria-label="Demo navigation">
+        <span className="pl-live-mark" aria-hidden="true"><i /><i /><i /></span>
+        <div className="pl-live-railnav">
+          {PREVIEW_NAV.map(({ label, icon: Icon }) => <button key={label} type="button" className={label === tab ? 'is-active' : ''} aria-label={`Show ${label} preview`} aria-pressed={label === tab} onClick={() => onSelect(label)}><Icon aria-hidden="true" /></button>)}
+        </div>
+        <span className="pl-live-avatar" aria-hidden="true">A</span>
       </aside>
-      <div className="pl-prev-main">
-        <div className="pl-prev-hd">
-          <span className="pl-prev-h">Good to see you again, Andy</span>
-          <span className="pl-prev-chip">Tuesday · week 6</span>
-        </div>
-        <div className="pl-prev-stats">
-          {STATS.map((st) => (
-            <div key={st.k} className="pl-prev-stat" style={{ ['--c' as string]: st.c }}>
-              <span className="pl-prev-k">{st.k}</span>
-              <span className="pl-prev-v">{st.v}</span>
-            </div>
-          ))}
-        </div>
-        <div className="pl-prev-list">
-          {ROWS.map((r) => (
-            <div key={r.t} className="pl-prev-row">
-              <i style={{ ['--c' as string]: r.c }} />
-              <span className="pl-prev-t">{r.t}</span>
-              <span className="pl-prev-m">{r.m}</span>
-            </div>
-          ))}
+      <div className="pl-live-workspace" ref={scrollRef} onScroll={handleScroll} tabIndex={0}>
+        <header className="pl-live-topbar"><span>{tab}</span><span className="pl-live-search">Search or run a command…</span><span className="pl-live-notice"><Clock3 aria-hidden="true" />6 to review</span></header>
+        <div className="pl-live-content">
+          <header className="pl-live-title"><span>{copy.eyebrow}</span><h2>{copy.title}</h2><p>{copy.subline}</p></header>
+          {tab === 'Overview' ? <OverviewContent /> : null}
+          {tab === 'Academics' ? <AcademicsContent /> : null}
+          {tab === 'MCAT' ? <McatContent /> : null}
+          {tab === 'Clinical' ? <ClinicalContent /> : null}
         </div>
       </div>
     </div>
@@ -104,167 +209,65 @@ function TourPreview({ tab }: { tab: string }) {
 }
 
 interface Callout {
-  /** Where the pulsing pin sits, as CSS percentages. */
   pin: { left: string; top: string }
-  /** Where the bubble sits. */
-  at: React.CSSProperties
+  at: CSSProperties
   lead: string
   body: string
 }
 
 interface TourStep {
-  tab: string
-  /** Real screenshot with demo data — never an illustration of an
-   *  interface, never a laptop device frame, never a blurred fake. */
-  shot?: string
-  alt: string
+  tab: PreviewTab
   callouts: Callout[]
 }
 
 const STEPS: TourStep[] = [
-  {
-    tab: 'Overview',
-    alt: 'The Overview tab, populated with demo data',
-    callouts: [
-      {
-        pin: { left: '16%', top: '20%' },
-        at: { left: '5%', top: '26%' },
-        lead: 'Start here.',
-        body: 'Overview is everything that needs you today, pulled from every tab.',
-      },
-      {
-        pin: { left: '52%', top: '15%' },
-        at: { left: '41%', top: '21%' },
-        lead: 'Where you stand.',
-        body: "GPA, hours and practice scores, live, with the AMCAS number beside your school's.",
-      },
-      {
-        pin: { left: '81%', top: '47%' },
-        at: { right: '4%', top: '53%' },
-        lead: "Today's plan.",
-        body: 'Built from one hour budget shared across classes and MCAT prep, so it actually fits.',
-      },
-      {
-        pin: { left: '26%', top: '75%' },
-        at: { left: '13%', top: '81%' },
-        lead: 'The bell is quiet.',
-        body: 'Three interruptions a week, maximum. Everything else waits until you look.',
-      },
-    ],
-  },
-  {
-    tab: 'Academics',
-    alt: 'The Academics tab, populated with demo data',
-    callouts: [
-      {
-        pin: { left: '20%', top: '22%' },
-        at: { left: '6%', top: '28%' },
-        lead: 'AMCAS GPA math.',
-        body: 'BCPM is classified per course, and the number beside it is the one AMCAS will compute.',
-      },
-      {
-        pin: { left: '68%', top: '38%' },
-        at: { right: '5%', top: '44%' },
-        lead: 'One class, one hub.',
-        body: 'Syllabus, assignments, topics, files and the people who teach it, in one place.',
-      },
-    ],
-  },
-  {
-    tab: 'MCAT',
-    alt: 'The MCAT tab, populated with demo data',
-    callouts: [
-      {
-        pin: { left: '24%', top: '26%' },
-        at: { left: '8%', top: '32%' },
-        lead: 'Your own mistakes.',
-        body: 'Every missed question becomes a drill, tagged by why you missed it rather than by topic alone.',
-      },
-      {
-        pin: { left: '70%', top: '60%' },
-        at: { right: '5%', top: '66%' },
-        lead: 'Before the exam.',
-        body: "What you learned two years ago decays. Premed OS schedules it back before it costs you a point.",
-      },
-    ],
-  },
-  {
-    tab: 'Clinical',
-    alt: 'The Clinical tab, populated with demo data',
-    callouts: [
-      {
-        pin: { left: '18%', top: '24%' },
-        at: { left: '5%', top: '30%' },
-        lead: 'Hours that hold up.',
-        body: 'Each shift carries its site, its supervisor and its dates, so verification is already done.',
-      },
-      {
-        pin: { left: '64%', top: '55%' },
-        at: { right: '6%', top: '61%' },
-        lead: 'Written while you remember it.',
-        body: 'A reflection prompt after a shift beats reconstructing eighteen months of them in June.',
-      },
-    ],
-  },
+  { tab: 'Overview', callouts: [
+    { pin: { left: '21%', top: '24%' }, at: { left: '4%', top: '31%' }, lead: 'Start here.', body: 'Overview gathers the few things that need you today.' },
+    { pin: { left: '73%', top: '50%' }, at: { right: '3%', top: '56%' }, lead: 'Act with context.', body: 'Each next action says why it surfaced, so it is never just another notification.' },
+  ] },
+  { tab: 'Academics', callouts: [
+    { pin: { left: '24%', top: '29%' }, at: { left: '4%', top: '35%' }, lead: 'One class, one hub.', body: 'Syllabus, due dates, files and feedback stay with the course.' },
+    { pin: { left: '66%', top: '54%' }, at: { right: '3%', top: '60%' }, lead: 'The right GPA math.', body: 'Course details are carried forward rather than reconstructed later.' },
+  ] },
+  { tab: 'MCAT', callouts: [
+    { pin: { left: '23%', top: '31%' }, at: { left: '4%', top: '38%' }, lead: 'One honest plan.', body: 'Classwork and prep draw from the same week instead of competing schedules.' },
+    { pin: { left: '69%', top: '61%' }, at: { right: '3%', top: '67%' }, lead: 'Return to the miss.', body: 'A missed question turns into a specific next review, not a generic topic list.' },
+  ] },
+  { tab: 'Clinical', callouts: [
+    { pin: { left: '26%', top: '31%' }, at: { left: '4%', top: '38%' }, lead: 'Hours with evidence.', body: 'Positions, shifts and verifier details stay connected from the start.' },
+    { pin: { left: '70%', top: '60%' }, at: { right: '3%', top: '66%' }, lead: 'Reflect while it is fresh.', body: 'A short prompt makes the future application easier to write.' },
+  ] },
 ]
 
 export function GuidedTour() {
   const [active, setActive] = useState(0)
+  const [progress, setProgress] = useState(0)
   const step = STEPS[active]
+  const calloutIndex = Math.min(step.callouts.length - 1, Math.floor(progress * step.callouts.length))
+  const callout = step.callouts[calloutIndex]
+
+  const selectTab = (tab: PreviewTab) => {
+    const index = STEPS.findIndex((step) => step.tab === tab)
+    if (index >= 0) setActive(index)
+  }
 
   return (
     <section className="pl-tour" aria-labelledby="tour-heading">
       <div className="pl-tourin pl-reveal">
         <span className="pl-eyebrow pl-eyebrow-solid">A look inside</span>
-        <PublicHeadline
-          id="tour-heading"
-          setup="This is what it looks like"
-          payoff="when it's yours."
-          size="section"
-          tone="page"
-        />
+        <PublicHeadline id="tour-heading" setup="This is what it looks like" payoff="when it's yours." size="section" tone="page" />
 
-        <div className="pl-tourtabs" role="tablist" aria-label="Tour steps">
-          {STEPS.map((s, i) => (
-            <button
-              key={s.tab}
-              type="button"
-              role="tab"
-              className="pl-ttab"
-              aria-selected={i === active}
-              onClick={() => setActive(i)}
-            >
-              {s.tab}
-            </button>
-          ))}
+        <div className="pl-tourtabs" role="tablist" aria-label="Product preview sections">
+          {STEPS.map((step, index) => <button key={step.tab} type="button" role="tab" className="pl-ttab" aria-selected={index === active} onClick={() => setActive(index)}>{step.tab}</button>)}
         </div>
 
+        <div className="pl-tourhint"><span>Try it</span> Choose a section or scroll inside the preview.</div>
         <div className="pl-shotstage pl-reveal">
-          <div className="pl-shotwin">
-            {step.shot ? (
-              <img src={step.shot} alt={step.alt} />
-            ) : (
-              <TourPreview tab={step.tab} />
-            )}
-          </div>
-
-          {step.callouts.map((c) => (
-            <span key={`pin-${c.lead}`} className="pl-pin" style={c.pin} aria-hidden="true" />
-          ))}
-          {step.callouts.map((c) => (
-            <div key={c.lead} className="pl-call" style={c.at}>
-              <GuideFigure />
-              <div className="pl-bubble">
-                <b>{c.lead}</b> {c.body}
-              </div>
-            </div>
-          ))}
+          <div className="pl-shotwin"><LivePreview tab={step.tab} onProgress={setProgress} onSelect={selectTab} /></div>
+          <span key={`pin-${callout.lead}`} className="pl-pin" style={callout.pin} aria-hidden="true" />
+          <div key={callout.lead} className="pl-call" style={callout.at}><GuideFigure /><div className="pl-bubble"><b>{callout.lead}</b> {callout.body}</div></div>
         </div>
-
-        {/* Without this line the first empty session reads as a bug. */}
-        <p className="pl-tourfoot">
-          Demo data. Your workspace starts empty, and stays on your device until you say otherwise.
-        </p>
+        <p className="pl-tourfoot">Interactive demo data. Your workspace starts empty, and stays on your device until you say otherwise.</p>
       </div>
     </section>
   )
