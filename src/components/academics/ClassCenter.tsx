@@ -125,8 +125,15 @@ function accentAlpha(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-function cardAccentVars(color: AcademicTagColor): CSSProperties {
-  const hex = CARD_ACCENT_HEX[color]
+/** Persisted class colours predate the current palette and can contain a
+ * retired value. A card must fall back to blue rather than letting a visual
+ * accent take down the whole Class Center. */
+export function classCardColor(color: unknown): AcademicTagColor {
+  return typeof color === 'string' && color in CARD_ACCENT_HEX ? color as AcademicTagColor : 'blue'
+}
+
+function cardAccentVars(color: unknown): CSSProperties {
+  const hex = CARD_ACCENT_HEX[classCardColor(color)]
   return {
     '--class-accent': hex,
     '--class-accent-45': accentAlpha(hex, 0.45),
@@ -670,7 +677,7 @@ function ClassCard({
     ? `${stats.nextDeadline.title}${stats.nextDeadline.dueDate ? ` · ${daysUntil(stats.nextDeadline.dueDate)}` : ''}`
     : 'No deadline scheduled'
   const percent = coursePercent(row.id, data)
-  const accent = CARD_ACCENTS[row.color]
+  const accent = CARD_ACCENTS[classCardColor(row.color)]
   const signal = classSignal(row, data, stats, nextText)
 
   function openFromCard(event: MouseEvent<HTMLElement>) {
