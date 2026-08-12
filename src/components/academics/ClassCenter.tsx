@@ -15,7 +15,7 @@ import type {
   ClassCenterData, ClassContact, ClassContactRole, Course,
   AcademicFile, ClassFileType, ClassNote, ClassNoteType, Topic,
   ClassWeakArea, PracticeExam, PracticeQuestion,
-  TopicStatus, WeakAreaSource, Person,
+  TopicStatus, WeakAreaSource, Person, ClassWorkspaceType,
 } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/context-menu'
 import { GRADE_POINTS, fmtGpa, gpaStats } from '@/lib/selectors'
 import { ClassHub, ClassHubPeek } from '@/components/academics/ClassHub'
+import { MascotNote } from '@/components/common/MascotNote'
 
 const COLORS: AcademicTagColor[] = ['blue', 'green', 'purple', 'orange', 'yellow', 'red', 'pink', 'gray', 'brown']
 const CLASS_ICONS: { id: string; label: string; Icon: LucideIcon }[] = [
@@ -73,6 +74,11 @@ const TOPIC_STATUSES: TopicStatus[] = ['not-started', 'seen', 'notes-made', 'rev
 const NOTE_TYPES: ClassNoteType[] = ['lecture', 'reading', 'lab', 'study-guide', 'exam-review', 'question-log', 'other']
 const FILE_TYPES: ClassFileType[] = ['syllabus', 'lecture-slides', 'reading', 'study-guide', 'rubric', 'past-exam', 'lab-handout', 'link', 'other']
 const CONTACT_ROLES: ClassContactRole[] = ['professor', 'TA', 'advisor', 'study-partner', 'tutor', 'peer', 'other']
+const CLASS_TYPES: Array<{ value: ClassWorkspaceType; label: string; detail: string }> = [
+  { value: 'stem', label: 'STEM', detail: 'Topics and recall tools' },
+  { value: 'writing', label: 'Writing', detail: 'Drafts, readings, feedback' },
+  { value: 'general', label: 'General', detail: 'Grades and deadlines' },
+]
 
 const COLOR_STYLES: Record<AcademicTagColor, string> = {
   gray: 'from-slate-400/18 via-slate-200/18 to-slate-500/12 text-slate-700 dark:text-slate-200',
@@ -167,6 +173,7 @@ function emptyClassForm(semester = 'Fall 2026'): ClassFormState {
     location: '',
     color: 'blue',
     icon: 'book',
+    type: 'stem',
     background: '',
     status: 'active',
     currentTopicId: '',
@@ -191,6 +198,7 @@ function classToForm(row: ClassWorkspaceView): ClassFormState {
     location: row.location ?? '',
     color: row.color,
     icon: normalizeClassIcon(row.icon),
+    type: row.type,
     background: row.background ?? '',
     status: row.status,
     currentTopicId: row.currentTopicId ?? '',
@@ -337,6 +345,7 @@ function ClassCenterDashboard({
     open: false,
     form: emptyClassForm(),
   })
+  const [syllabusImportOpen, setSyllabusImportOpen] = useState(false)
   const [draggedClassId, setDraggedClassId] = useState<string | null>(null)
   const [dragOverClassId, setDragOverClassId] = useState<string | null>(null)
   const semesters = useMemo(() => {
@@ -352,6 +361,50 @@ function ClassCenterDashboard({
     .filter((row) => `${row.courseCode} ${row.courseTitle} ${row.nickname ?? ''} ${row.instructor ?? ''}`.toLowerCase().includes(query.toLowerCase()))
     .sort((a, b) => a.order - b.order)
   const activeClasses = data.classes.filter((row) => row.status === 'active')
+
+  function importSyllabus(form: ClassFormState, selectedFiles: File[]) {
+    const now = Date.now()
+    const courseId = uid()
+    updateAll((draft) => {
+      draft.courses.push({
+        id: courseId, code: form.courseCode.trim() || 'NEW 101', title: form.courseTitle.trim() || 'Untitled class',
+        term: form.semester, credits: 3, grade: '', bcpm: false, status: 'in-progress', inResidence: true,
+        satisfies: [], order: draft.courses.length,
+      })
+      const center = draft.academics.classCenter
+      center.workspaces.push({ ...workspaceFields(form), id: uid(), courseId, createdAt: now, updatedAt: now, order: center.workspaces.length })
+      selectedFiles.forEach((file) => center.files.unshift({
+        id: uid(), courseId, title: file.name.replace(/\.[^.]+$/, '') || file.name, type: 'syllabus', sourceType: 'upload', owner: 'course', url: '',
+        fileName: file.name, mimeType: file.type, notes: '', linkedTopicIds: [], createdAt: now, updatedAt: now, order: center.files.length,
+      }))
+    })
+    setSyllabusImportOpen(false)
+  }
+
+  if (!archiveOnly && activeClasses.length === 0) {
+    return (
+      <>
+        <div className="mx-auto max-w-5xl py-8 sm:py-12">
+          <MascotNote variant="empty-state" className="min-h-[300px] flex-col justify-center px-6 py-10 text-center sm:px-12" title="Bring in your first class">
+            <p className="mx-auto max-w-xl">Start with the syllabus you already have. You’ll review the class details before anything is saved.</p>
+            <div className="mt-5 flex flex-col items-center">
+              <Button size="lg" onClick={() => setSyllabusImportOpen(true)}><Upload className="size-4" /> Import syllabus</Button>
+              <button type="button" onClick={() => setEditor({ open: true, form: emptyClassForm(semester) })} className="mt-3 text-sm font-bold text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline">Add manually</button>
+            </div>
+          </MascotNote>
+          <div className="mt-5 grid overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-3">
+            {[
+              ['1', 'Review before saving', 'Check the course details before the class is created.'],
+              ['2', 'Keep work in one place', 'Materials and deadlines begin with the syllabus.'],
+              ['3', 'Change it any time', 'Class tools can always be adjusted later.'],
+            ].map(([number, title, detail]) => <div key={number} className="flex gap-3 bg-card p-5"><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary/12 font-display text-sm font-extrabold text-primary">{number}</span><div><p className="font-display text-sm font-extrabold">{title}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{detail}</p></div></div>)}
+          </div>
+        </div>
+        <SyllabusImportDialog open={syllabusImportOpen} semester={semester} onOpenChange={setSyllabusImportOpen} onImport={importSyllabus} />
+        <ClassEditorDialog open={editor.open} title="Create class" form={editor.form} onOpenChange={(open) => setEditor((prev) => ({ ...prev, open }))} onChange={(patch) => setEditor((prev) => ({ ...prev, form: { ...prev.form, ...patch } }))} onSave={saveClass} />
+      </>
+    )
+  }
 
   function saveClass() {
     const now = Date.now()
@@ -496,6 +549,9 @@ function ClassCenterDashboard({
                     center.files = center.files.filter((item) => item.courseId !== row.id)
                     center.contacts = center.contacts.filter((item) => item.courseId !== row.id)
                     center.weakAreas = center.weakAreas.filter((item) => item.courseId !== row.id)
+                    center.paperDrafts = center.paperDrafts.filter((item) => item.courseId !== row.id)
+                    center.assignedReadings = center.assignedReadings.filter((item) => item.courseId !== row.id)
+                    center.feedbackNotes = center.feedbackNotes.filter((item) => item.courseId !== row.id)
                   })
                 }}
                 onArchive={() => mutate((draft) => {
@@ -615,6 +671,7 @@ function ClassCard({
     : 'No deadline scheduled'
   const percent = coursePercent(row.id, data)
   const accent = CARD_ACCENTS[row.color]
+  const signal = classSignal(row, data, stats, nextText)
 
   function openFromCard(event: MouseEvent<HTMLElement>) {
     if ((event.target as HTMLElement).closest('button,a,[role="menuitem"]')) return
@@ -685,7 +742,7 @@ function ClassCard({
           {row.bcpm && <Badge variant="secondary">BCPM</Badge>}
         </div>
 
-        <p className="text-xs font-bold text-muted-foreground">{stats.readyCount} marked ready · {stats.topicCount} topics recorded</p>
+        <p className="text-xs font-bold text-muted-foreground">{signal}</p>
 
         <div className={cn('border-t border-border pt-3', compact && 'md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
           <p className="text-xs font-bold text-muted-foreground">
@@ -706,7 +763,7 @@ function ClassCard({
               onFocus={() => setActionHovered(true)}
               onBlur={() => setActionHovered(false)}
             >
-              <Play className="size-4" /> Review
+              <BookOpen className="size-4" /> Open
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -717,10 +774,7 @@ function ClassCard({
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{row.courseCode || 'Class'}</DropdownMenuLabel>
                 <DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><BookOpen className="size-4" /> Open class hub</Link></DropdownMenuItem>
-                <DropdownMenuItem onClick={onReview}><Play className="size-4" /> Review</DropdownMenuItem>
-                <DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><Brain className="size-4" /> Quiz me</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><CheckCircle2 className="size-4" /> Covered in lecture today</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><NotebookText className="size-4" /> Generate study guide</Link></DropdownMenuItem>
+                {row.type === 'stem' && <><DropdownMenuItem onClick={onReview}><Play className="size-4" /> Review</DropdownMenuItem><DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><Brain className="size-4" /> Quiz me</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><CheckCircle2 className="size-4" /> Covered in lecture today</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><NotebookText className="size-4" /> Generate study guide</Link></DropdownMenuItem></>}
                 <DropdownMenuItem onClick={onEdit}><Edit3 className="size-4" /> Class settings</DropdownMenuItem>
                 <DropdownMenuItem onClick={onArchive}><Archive className="size-4" /> {row.status === 'archived' ? 'Restore' : 'Archive'}</DropdownMenuItem>
                 <DropdownMenuItem onClick={onDelete} className="text-destructive"><Trash2 className="size-4" /> Delete</DropdownMenuItem>
@@ -736,7 +790,7 @@ function ClassCard({
     <ContextMenu>
       <ContextMenuTrigger asChild>{card}</ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem onSelect={onReview}><Play className="size-4" /> Review</ContextMenuItem>
+        {row.type === 'stem' && <ContextMenuItem onSelect={onReview}><Play className="size-4" /> Review</ContextMenuItem>}
         <ContextMenuItem onSelect={onOpen}><BookOpen className="size-4" /> Open class hub</ContextMenuItem>
         <ContextMenuItem onSelect={onEdit}><Edit3 className="size-4" /> Class settings</ContextMenuItem>
         <ContextMenuItem onSelect={onArchive}><Archive className="size-4" /> {row.status === 'archived' ? 'Restore' : 'Archive'}</ContextMenuItem>
@@ -1869,6 +1923,25 @@ function ClassEditorDialog({
               <Field label="Location"><Input value={form.location ?? ''} onChange={(e) => onChange({ location: e.target.value })} /></Field>
               <Field label="Nickname"><Input value={form.nickname ?? ''} onChange={(e) => onChange({ nickname: e.target.value })} placeholder="Optional" /></Field>
             </div>
+            <Field label="Class type">
+              <div className="grid gap-2 sm:grid-cols-3">
+                {CLASS_TYPES.map((type) => (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => onChange({ type: type.value })}
+                    className={cn(
+                      'rounded-xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      form.type === type.value ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card text-muted-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    <span className="block font-display text-sm font-extrabold">{type.label}</span>
+                    <span className="mt-0.5 block text-xs font-semibold">{type.detail}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs font-semibold text-muted-foreground">This changes the study tools in this class only. Grades, credits, and requirements never change.</p>
+            </Field>
           </section>
           <section className="space-y-3 border-t border-border pt-4">
             <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Look</h3>
@@ -1922,6 +1995,47 @@ function ClassEditorDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={onSave}>Save class</Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function SyllabusImportDialog({
+  open, semester, onOpenChange, onImport,
+}: {
+  open: boolean
+  semester: string
+  onOpenChange: (open: boolean) => void
+  onImport: (form: ClassFormState, files: File[]) => void
+}) {
+  const [form, setForm] = useState(() => emptyClassForm(semester))
+  const [files, setFiles] = useState<File[]>([])
+
+  function close(next: boolean) {
+    if (!next) {
+      setFiles([])
+      setForm(emptyClassForm(semester))
+    }
+    onOpenChange(next)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={close}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader><DialogTitle>Import your syllabus</DialogTitle></DialogHeader>
+        <div className="space-y-5">
+          <p className="text-sm font-semibold text-muted-foreground">Your file is saved to Materials with a new class. Review the course details here first.</p>
+          <AnimatedFileUpload onFiles={(selected) => setFiles(selected.slice(0, 1))} />
+          {files.length > 0 && <p className="rounded-xl border border-border bg-muted/35 px-3 py-2 text-sm font-bold">Ready to import: {files[0].name}</p>}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Course code"><Input value={form.courseCode} onChange={(event) => setForm((current) => ({ ...current, courseCode: event.target.value }))} placeholder="ENGL 105" /></Field>
+            <Field label="Course title"><Input value={form.courseTitle} onChange={(event) => setForm((current) => ({ ...current, courseTitle: event.target.value }))} placeholder="English Composition & Rhetoric" /></Field>
+          </div>
+          <Field label="Class type">
+            <div className="grid gap-2 sm:grid-cols-3">{CLASS_TYPES.map((type) => <button key={type.value} type="button" onClick={() => setForm((current) => ({ ...current, type: type.value }))} className={cn('rounded-xl border p-3 text-left transition', form.type === type.value ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-muted/50')}><span className="block font-display text-sm font-extrabold">{type.label}</span><span className="text-xs font-semibold text-muted-foreground">{type.detail}</span></button>)}</div>
+          </Field>
+        </div>
+        <DialogFooter><Button variant="outline" onClick={() => close(false)}>Cancel</Button><Button disabled={!files.length} onClick={() => onImport(form, files)}><Upload className="size-4" /> Import syllabus</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -2152,6 +2266,17 @@ function classStats(courseId: string, data: ClassCenterViewData) {
     failedCount: data.files.filter((item) => item.courseId === courseId && item.processingStatus === 'failed').length,
     nextDeadline: upcoming[0],
   }
+}
+
+function classSignal(row: ClassWorkspaceView, data: ClassCenterViewData, stats: ReturnType<typeof classStats>, fallback: string) {
+  if (row.type === 'writing') {
+    const draft = data.paperDrafts.filter((item) => item.courseId === row.id).sort((a, b) => a.order - b.order).find((item) => item.stage !== 'submitted')
+    const behind = data.assignedReadings.filter((item) => item.courseId === row.id && item.status === 'not-started' && item.dueForDiscussion && item.dueForDiscussion < new Date().toISOString().slice(0, 10)).length
+    if (draft) return `${draft.title} · ${draft.stage === 'outline' ? 'outline' : draft.stage}`
+    return behind ? `${behind} reading${behind === 1 ? '' : 's'} behind` : fallback
+  }
+  if (row.type === 'general') return fallback
+  return `${stats.readyCount} marked ready · ${stats.topicCount} topics recorded`
 }
 
 function coursePercent(courseId: string, data: ClassCenterViewData) {

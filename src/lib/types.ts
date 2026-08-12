@@ -156,6 +156,8 @@ export interface AcademicTypeOption {
 }
 
 export type ClassStatus = 'active' | 'archived'
+/** A class workspace changes its study layer, never the course's academic data. */
+export type ClassWorkspaceType = 'stem' | 'writing' | 'general'
 export type TopicStatus = 'not-started' | 'seen' | 'notes-made' | 'reviewing' | 'weak' | 'ready'
 export type LegacyTopicStatus = TopicStatus | 'cards-made' | 'mastered'
 export type TopicConfidence = 1 | 2 | 3
@@ -192,6 +194,8 @@ export interface ClassWorkspace {
   location?: string
   color: AcademicTagColor
   icon: string
+  /** Controls the class hub's study layer only. Course/GPA data stay type-blind. */
+  type: ClassWorkspaceType
   background?: string
   status: ClassStatus
   currentTopicId?: ID
@@ -201,6 +205,48 @@ export interface ClassWorkspace {
   goodNotesUrl?: string
   ankiDeckName?: string
   notesDocUrl?: string
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
+export type PaperDraftStage = 'outline' | 'draft' | 'revision' | 'submitted'
+export type AssignedReadingStatus = 'not-started' | 'skimmed' | 'read'
+
+/** Writing-only workspace records. They remain intact when a class changes type. */
+export interface PaperDraft {
+  id: ID
+  courseId: ID
+  assignmentId?: ID
+  title: string
+  stage: PaperDraftStage
+  selfDeadline?: string
+  completedAt?: number
+  fileUrl?: string
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
+export interface AssignedReading {
+  id: ID
+  courseId: ID
+  week: string
+  title: string
+  source?: string
+  status: AssignedReadingStatus
+  dueForDiscussion?: string
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
+export interface FeedbackNote {
+  id: ID
+  courseId: ID
+  assignmentId?: ID
+  theme: string
+  quote?: string
   createdAt: number
   updatedAt: number
   order: number
@@ -481,6 +527,9 @@ export interface ClassCenterData {
   weakAreas: ClassWeakArea[]
   practiceExams: PracticeExam[]
   practiceQuestions: PracticeQuestion[]
+  paperDrafts: PaperDraft[]
+  assignedReadings: AssignedReading[]
+  feedbackNotes: FeedbackNote[]
 }
 
 export interface AcademicTagSettings {

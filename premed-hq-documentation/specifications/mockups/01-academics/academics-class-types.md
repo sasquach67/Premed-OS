@@ -1,5 +1,7 @@
 # Decisions — Class types (STEM · Writing · General)
 
+> **Status:** APPROVED (Andy, Aug 2026)
+
 **Mockup:** `specifications/mockups/01-academics/academics-class-types.html`
 **Spec:** `tabs/01-academics.md` §4.1-N (types), §3.3 (`ClassWorkspace.type`, Writing entities), §6 #57–59
 **Exact visual values:** `decisions/_visual-recipes.md` — use literally, do not approximate.

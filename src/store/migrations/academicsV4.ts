@@ -122,6 +122,7 @@ function workspaceFromLegacy(workspace: LegacyWorkspace, courseId: string): Clas
     location: compactWhitespace(workspace.location) || undefined,
     color: (workspace.color as ClassWorkspace['color']) ?? 'blue',
     icon: compactWhitespace(workspace.icon) || 'book',
+    type: 'stem',
     background: compactWhitespace(workspace.background) || undefined,
     status: workspace.status === 'archived' ? 'archived' : 'active',
     currentTopicId: compactWhitespace(workspace.currentTopicId) || undefined,
@@ -143,6 +144,7 @@ function emptyWorkspace(courseId: string, order: number, now: number): ClassWork
     courseId,
     color: 'blue',
     icon: 'book',
+    type: 'stem',
     status: 'active',
     createdAt: now,
     updatedAt: now,
@@ -214,6 +216,9 @@ function migrateRelatedRows(
     weakAreas: mapRows('weakAreas') as never,
     practiceExams: mapRows('practiceExams') as never,
     practiceQuestions: mapRows('practiceQuestions') as never,
+    paperDrafts: [],
+    assignedReadings: [],
+    feedbackNotes: [],
   }
 }
 

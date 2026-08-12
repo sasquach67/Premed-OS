@@ -1,6 +1,8 @@
 # Academics empty states — prototype decisions
 
-> **Status:** PROTOTYPE — not approved for implementation.
+> **Status:** APPROVED — Variant A (Andy, Aug 2026). Use A's centered launchpad,
+> with B's concise “What this sets up” explanation. “Add manually” is a quiet
+> text link beneath the primary button.
 >
 > **Mockup:** `academics-empty-states-prototype.html`
 >
@@ -10,7 +12,7 @@
 
 - This is an empty mode of **Daily → Class Center**, not a new tab or onboarding route.
 - **Import a syllabus** is the single primary day-one action and creates the first class.
-- **Add manually** is visible beside it as the secondary path.
+- **Add manually** is a quiet text link beneath it.
 - The message uses the dashed, transparent `MascotNote` empty variant. Maximum one mascot per view.
 - The populated shell remains recognizable, but controls with nothing to operate on are absent.
 - No `0.00` GPA, `0%` readiness, zero-count stat strip, empty chart, recommendation, or hollow study panel.

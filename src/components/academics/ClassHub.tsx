@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import type {
   AcademicFile, ClassAssignment, ClassCenterData, ClassContact, ClassNote,
-  ClassWorkspace, Course, Person, ReviewEvent, Topic, TopicStatus,
+  AssignedReading, ClassWorkspace, ClassWorkspaceType, Course, FeedbackNote, PaperDraft, Person, ReviewEvent, Topic, TopicStatus,
 } from '@/lib/types'
 import { useStore } from '@/store/store'
 import { uid } from '@/lib/id'
@@ -36,7 +36,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatStrip } from '@/components/common/StatStrip'
 
-type HubTab = 'overview' | 'materials' | 'topics' | 'assignments' | 'notes'
+type HubTab = 'overview' | 'materials' | 'topics' | 'readings' | 'assignments' | 'notes'
 
 export interface ClassHubProps {
   course: Course
@@ -73,7 +73,13 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const requestedTab = params.get('classTab')
-  const initialTab = isHubTab(requestedTab) ? requestedTab : 'overview'
+  const classType: ClassWorkspaceType = workspace.type ?? (course.bcpm ? 'stem' : 'general')
+  const availableTabs = classType === 'stem'
+    ? ['overview', 'materials', 'topics', 'assignments', 'notes'] as HubTab[]
+    : classType === 'writing'
+      ? ['overview', 'materials', 'readings', 'assignments', 'notes'] as HubTab[]
+      : ['overview', 'materials', 'assignments', 'notes'] as HubTab[]
+  const initialTab = isHubTab(requestedTab) && availableTabs.includes(requestedTab) ? requestedTab : 'overview'
   const [tab, setTab] = useState<HubTab>(initialTab)
   const toast = useToast()
   const courseTopics = ordered(data.topics.filter((item) => item.courseId === course.id))
@@ -81,10 +87,13 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
   const courseNotes = [...data.notes.filter((item) => item.courseId === course.id)].sort((a, b) => b.updatedAt - a.updatedAt)
   const courseAssignments = ordered(data.assignments.filter((item) => item.courseId === course.id))
   const courseContacts = ordered(data.contacts.filter((item) => item.courseId === course.id))
+  const courseDrafts = ordered(data.paperDrafts.filter((item) => item.courseId === course.id))
+  const courseReadings = ordered(data.assignedReadings.filter((item) => item.courseId === course.id))
+  const courseFeedback = ordered(data.feedbackNotes.filter((item) => item.courseId === course.id))
   const stats = hubStats(course, courseTopics, courseAssignments)
 
   function changeTab(next: string) {
-    if (!isHubTab(next)) return
+    if (!isHubTab(next) || !availableTabs.includes(next)) return
     setTab(next)
     const nextParams = new URLSearchParams(params)
     nextParams.set('classTab', next)
@@ -111,9 +120,16 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
     navigate(`/academics/review/${course.id}`)
   }
 
+  function primaryAction() {
+    if (classType === 'stem') return <Button onClick={startReview}><Play className="size-4" /> Start review</Button>
+    if (classType === 'writing') return <Button onClick={() => changeTab('readings')}><NotebookText className="size-4" /> Open current draft</Button>
+    return <Button onClick={() => changeTab('assignments')}><Plus className="size-4" /> Add a grade</Button>
+  }
+
   const counts = {
     materials: courseFiles.length,
     topics: courseTopics.length,
+    readings: courseReadings.length,
     assignments: courseAssignments.filter((item) => !isComplete(item)).length,
     notes: courseNotes.length,
   }
@@ -132,18 +148,18 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
           subtitle={course.title}
           actions={(
             <div className="flex shrink-0 items-center gap-2">
-              <Button onClick={startReview}><Play className="size-4" /> Start review</Button>
+              {primaryAction()}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="icon" aria-label="Class actions" className="border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white"><MoreHorizontal className="size-4" /></Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Study tools</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => toast({ title: 'Choose your sources', description: 'Open Materials and select the files to include.' })}>
+                  <DropdownMenuLabel>{classType === 'stem' ? 'Study tools' : 'Class actions'}</DropdownMenuLabel>
+                  {classType === 'stem' && <><DropdownMenuItem onClick={() => toast({ title: 'Choose your sources', description: 'Open Materials and select the files to include.' })}>
                     <Sparkles className="size-4" /> Generate study guide
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={addTopic}><Plus className="size-4" /> Add topic</DropdownMenuItem>
+                  </DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={addTopic}><Plus className="size-4" /> Add topic</DropdownMenuItem></>}
+                  {classType === 'writing' && <DropdownMenuItem onClick={() => changeTab('readings')}><NotebookText className="size-4" /> Manage drafts and readings</DropdownMenuItem>}
+                  {classType === 'general' && <DropdownMenuItem onClick={() => changeTab('assignments')}><Plus className="size-4" /> Add coursework</DropdownMenuItem>}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -152,7 +168,8 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
             <TabsList className="h-auto w-full justify-start gap-5 overflow-x-auto rounded-none border-0 bg-transparent p-0">
               <HubTabTrigger value="overview" label="Overview" />
               <HubTabTrigger value="materials" label="Materials" count={counts.materials} />
-              <HubTabTrigger value="topics" label="Topics" count={counts.topics} />
+              {classType === 'stem' && <HubTabTrigger value="topics" label="Topics" count={counts.topics} />}
+              {classType === 'writing' && <HubTabTrigger value="readings" label="Readings" count={counts.readings} />}
               <HubTabTrigger value="assignments" label="Assignments" count={counts.assignments} />
               <HubTabTrigger value="notes" label="Notes" count={counts.notes} />
             </TabsList>
@@ -184,17 +201,27 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
               className="grid-flow-row grid-cols-2 sm:grid-flow-col sm:grid-cols-none"
               metrics={[
                 { id: 'grade', label: 'Grade', value: stats.grade, cadence: 'variable' },
-                { id: 'ready', label: 'Marked ready', value: `${stats.ready}/${courseTopics.length}`, cadence: 'variable' },
-                { id: 'due-today', label: 'Due today', value: String(stats.dueToday), cadence: 'variable' },
-                { id: 'next-exam', label: 'Next exam', value: stats.examCountdown, cadence: 'variable' },
+                ...(classType === 'stem' ? [
+                  { id: 'ready', label: 'Marked ready', value: `${stats.ready}/${courseTopics.length}`, cadence: 'variable' as const },
+                  { id: 'due-today', label: 'Due today', value: String(stats.dueToday), cadence: 'variable' as const },
+                  { id: 'next-exam', label: 'Next exam', value: stats.examCountdown, cadence: 'variable' as const },
+                ] : classType === 'writing' ? [
+                  { id: 'next-due', label: 'Next due', value: stats.nextDue, cadence: 'variable' as const },
+                  { id: 'draft-stage', label: 'Draft stage', value: currentDraftStage(courseDrafts), cadence: 'variable' as const },
+                  { id: 'readings', label: 'Readings behind', value: String(courseReadings.filter((item) => item.status === 'not-started' && item.dueForDiscussion && item.dueForDiscussion < isoToday()).length), cadence: 'variable' as const },
+                ] : [
+                  { id: 'next-deadline', label: 'Next deadline', value: stats.nextDue, cadence: 'variable' as const },
+                  { id: 'credits', label: 'Credits', value: String(course.credits), cadence: 'variable' as const },
+                ]),
               ]}
             />
           </div>
         </PageHeader>
 
-        <TabsContent value="overview"><Overview course={course} data={data} topics={courseTopics} assignments={courseAssignments} notes={courseNotes} contacts={courseContacts} persons={persons} onTab={changeTab} /></TabsContent>
+        <TabsContent value="overview"><Overview course={course} data={data} type={classType} topics={courseTopics} drafts={courseDrafts} assignments={courseAssignments} notes={courseNotes} contacts={courseContacts} persons={persons} onTab={changeTab} /></TabsContent>
         <TabsContent value="materials"><Materials courseId={course.id} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} onTab={changeTab} /></TabsContent>
         <TabsContent value="topics"><Topics courseId={course.id} data={data} topics={courseTopics} assignments={courseAssignments} /></TabsContent>
+        <TabsContent value="readings"><WritingTools courseId={course.id} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} /></TabsContent>
         <TabsContent value="assignments"><Assignments assignments={courseAssignments} topics={courseTopics} /></TabsContent>
         <TabsContent value="notes"><Notes courseId={course.id} notes={courseNotes} topics={courseTopics} /></TabsContent>
       </Tabs>
@@ -205,13 +232,14 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
 export function ClassHubPeek({
   course, workspace, data, split = false, onOpen,
 }: Omit<ClassHubProps, 'persons'> & { split?: boolean; onOpen: () => void }) {
+  const classType: ClassWorkspaceType = workspace.type ?? (course.bcpm ? 'stem' : 'general')
   const topics = ordered(data.topics.filter((item) => item.courseId === course.id))
   const assignments = ordered(data.assignments.filter((item) => item.courseId === course.id))
   const stats = hubStats(course, topics, assignments)
   const due = assignments
     .filter((item) => !isComplete(item) && item.dueDate)
     .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
-  const marked = topics.filter((item) => item.status === 'weak' || item.status === 'reviewing')
+  const marked = classType === 'stem' ? topics.filter((item) => item.status === 'weak' || item.status === 'reviewing') : []
   const recordedItems = [
     ...due.map((item) => ({ id: `a-${item.id}`, title: item.title, meta: item.dueDate ? relativeDate(item.dueDate) : 'No date', type: 'assignment' })),
     ...marked.map((item) => ({ id: `t-${item.id}`, title: item.title, meta: STATUS_LABELS[item.status], type: 'topic' })),
@@ -230,10 +258,10 @@ export function ClassHubPeek({
         <div className="grid grid-cols-3 overflow-hidden rounded-2xl border border-border bg-card/70">
           <Stat label="Grade" value={stats.grade} />
           <Stat label="Due today" value={String(stats.dueToday)} />
-          <Stat label="Marked ready" value={`${stats.ready}/${topics.length}`} />
+          {classType === 'stem' ? <Stat label="Marked ready" value={`${stats.ready}/${topics.length}`} /> : <Stat label="Credits" value={String(course.credits)} />}
         </div>
         <div>
-          <h3 className="font-display text-lg font-extrabold">Due and marked topics</h3>
+          <h3 className="font-display text-lg font-extrabold">{classType === 'stem' ? 'Due and marked topics' : 'Due work'}</h3>
           <div className="mt-2 max-h-60 space-y-2 overflow-y-auto">
             {recordedItems.map((item) => (
               <div key={item.id} className="flex items-center justify-between rounded-xl border border-border bg-muted/35 px-3 py-2">
@@ -241,11 +269,11 @@ export function ClassHubPeek({
                 <Badge variant={item.type === 'topic' ? 'warning' : 'outline'}>{item.meta}</Badge>
               </div>
             ))}
-            {!recordedItems.length && <EmptyState icon={CheckCircle2} title="Nothing recorded here" detail="No due assignments or marked review topics are recorded for this class." />}
+            {!recordedItems.length && <EmptyState icon={CheckCircle2} title="Nothing recorded here" detail={classType === 'stem' ? 'No due assignments or marked review topics are recorded for this class.' : 'No due assignments are recorded for this class.'} />}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button asChild><Link to={`/academics/review/${course.id}`}>Start review</Link></Button>
+          {classType === 'stem' && <Button asChild><Link to={`/academics/review/${course.id}`}>Start review</Link></Button>}
           <Button variant="outline" onClick={onOpen}>Open full hub</Button>
         </div>
       </div>
@@ -264,11 +292,13 @@ export function ClassHubPeek({
 }
 
 function Overview({
-  course, data, topics, assignments, notes, contacts, persons, onTab,
+  course, data, type, topics, drafts, assignments, notes, contacts, persons, onTab,
 }: {
   course: Course
   data: ClassCenterData
+  type: ClassWorkspaceType
   topics: Topic[]
+  drafts: PaperDraft[]
   assignments: ClassAssignment[]
   notes: ClassNote[]
   contacts: ClassContact[]
@@ -284,6 +314,13 @@ function Overview({
   const categories = categoryStats(assignments)
   const weightSum = assignments.reduce((sum, item) => sum + (item.weight ?? 0), 0)
   const gradedWeight = assignments.filter(hasGrade).reduce((sum, item) => sum + (item.weight ?? 0), 0)
+
+  if (type !== 'stem') {
+    return <NonStemOverview
+      course={course} type={type} drafts={drafts} assignments={assignments} notes={notes}
+      contacts={contacts} persons={persons} onTab={onTab}
+    />
+  }
 
   return (
     <div className="grid grid-cols-12 gap-4">
@@ -361,6 +398,86 @@ function Overview({
       <Panel className="col-span-12" title="Recorded recall activity">
         <RecallHistory events={data.reviewEvents.filter((event) => topics.some((topic) => topic.id === event.topicId))} />
       </Panel>
+    </div>
+  )
+}
+
+function NonStemOverview({
+  course, type, drafts, assignments, notes, contacts, persons, onTab,
+}: {
+  course: Course
+  type: ClassWorkspaceType
+  drafts: PaperDraft[]
+  assignments: ClassAssignment[]
+  notes: ClassNote[]
+  contacts: ClassContact[]
+  persons: Person[]
+  onTab: (tab: string) => void
+}) {
+  const open = assignments.filter((item) => !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
+  const today = open.filter((item) => item.dueDate === isoToday())
+  const recentNotes = notes.slice(0, 3)
+  const label = type === 'writing' ? 'Open readings' : 'Open assignments'
+  const destination = type === 'writing' ? 'readings' : 'assignments'
+  return (
+    <div className="grid grid-cols-12 gap-4">
+      <Panel className="col-span-12" title="Class status" action={<Button size="sm" variant="outline" onClick={() => onTab(destination)}>{label}</Button>}>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <StatusMetric label="Course grade" value={course.grade || 'Not graded yet'} />
+          <StatusMetric label={type === 'writing' ? 'Open papers' : 'Open work'} value={String(type === 'writing' ? drafts.filter((draft) => draft.stage !== 'submitted').length : open.length)} />
+          <StatusMetric label="Credits" value={String(course.credits)} />
+        </div>
+      </Panel>
+      <Panel className="col-span-12 lg:col-span-4" title="Due today">
+        {today.length ? <div className="space-y-2">{today.map((item) => <AssignmentMini key={item.id} item={item} />)}</div> : <EmptyState icon={CheckCircle2} title="Clear for today" detail="No unfinished class work is dated today." />}
+      </Panel>
+      <Panel className="col-span-12 lg:col-span-4" title="Coming up">
+        <div className="space-y-2">{open.slice(0, 4).map((item) => <AssignmentMini key={item.id} item={item} />)}{!open.length && <EmptyState icon={CheckCircle2} title="Nothing coming up" detail="No unfinished dated work is recorded." />}</div>
+      </Panel>
+      <Panel className="col-span-12 lg:col-span-4" title="Recent notes">
+        <div className="space-y-2">{recentNotes.map((note) => <NoteRow key={note.id} note={note} />)}{!recentNotes.length && <EmptyState icon={NotebookText} title="No notes yet" detail="Class notes will appear here after you capture them." />}</div>
+      </Panel>
+      <Panel className="col-span-12" title="Class contacts">
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">{contacts.map((contact) => <ContactRow key={contact.id} contact={contact} person={persons.find((person) => person.id === contact.personId)} />)}{!contacts.length && <EmptyState icon={Users} title="No contacts yet" detail="Add a professor, TA, or study partner from Class Center." />}</div>
+      </Panel>
+    </div>
+  )
+}
+
+function WritingTools({ courseId, drafts, readings, feedback }: { courseId: string; drafts: PaperDraft[]; readings: AssignedReading[]; feedback: FeedbackNote[] }) {
+  const update = useStore((state) => state.update)
+  const incompleteReadings = readings.filter((item) => item.status !== 'read')
+  const current = drafts.find((item) => item.stage !== 'submitted')
+  function patchDraft(id: string, stage: PaperDraft['stage']) {
+    update((draft) => {
+      const item = draft.academics.classCenter.paperDrafts.find((row) => row.id === id)
+      if (item) Object.assign(item, { stage, completedAt: stage === 'submitted' ? Date.now() : undefined, updatedAt: Date.now() })
+    })
+  }
+  function patchReading(id: string, status: AssignedReading['status']) {
+    update((draft) => {
+      const item = draft.academics.classCenter.assignedReadings.find((row) => row.id === id)
+      if (item) Object.assign(item, { status, updatedAt: Date.now() })
+    })
+  }
+  return (
+    <div className="grid gap-4 xl:grid-cols-2">
+      <Panel title="Drafts" action={<Button size="sm" variant="outline" onClick={() => {
+        const now = Date.now(); update((draft) => draft.academics.classCenter.paperDrafts.push({ id: uid(), courseId, title: 'Untitled paper', stage: 'outline', createdAt: now, updatedAt: now, order: draft.academics.classCenter.paperDrafts.filter((item) => item.courseId === courseId).length }))
+      }}><Plus className="size-4" /> Add paper</Button>}>
+        <div className="space-y-3">{drafts.map((draft) => <div key={draft.id} className="rounded-xl border border-border bg-muted/25 p-3"><div className="flex items-center justify-between gap-3"><p className="font-extrabold">{draft.title}</p><Badge variant={draft.stage === 'submitted' ? 'success' : 'outline'}>{titleCase(draft.stage)}</Badge></div><div className="mt-3 flex flex-wrap gap-2">{(['outline', 'draft', 'revision', 'submitted'] as const).map((stage) => <Button key={stage} size="sm" variant={draft.stage === stage ? 'default' : 'outline'} onClick={() => patchDraft(draft.id, stage)}>{titleCase(stage)}</Button>)}</div>{draft.selfDeadline && <p className="mt-2 text-xs font-semibold text-muted-foreground">Your deadline · {relativeDate(draft.selfDeadline)}</p>}</div>)}{!drafts.length && <EmptyState icon={FileText} title="No papers assigned yet" detail="Add a paper when it appears in the syllabus or course site." />}</div>
+      </Panel>
+      <Panel title="Readings" action={<Button size="sm" variant="outline" onClick={() => {
+        const now = Date.now(); update((draft) => draft.academics.classCenter.assignedReadings.push({ id: uid(), courseId, week: 'This week', title: 'Untitled reading', status: 'not-started', createdAt: now, updatedAt: now, order: draft.academics.classCenter.assignedReadings.filter((item) => item.courseId === courseId).length }))
+      }}><Plus className="size-4" /> Add reading</Button>}>
+        <div className="space-y-2">{readings.map((reading) => <div key={reading.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/25 p-3"><div className="min-w-0"><p className="font-extrabold">{reading.title}</p><p className="text-xs text-muted-foreground">{reading.week}{reading.source ? ` · ${reading.source}` : ''}</p></div><Select value={reading.status} onValueChange={(status) => patchReading(reading.id, status as AssignedReading['status'])}><SelectTrigger className="w-32"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not-started">Not started</SelectItem><SelectItem value="skimmed">Skimmed</SelectItem><SelectItem value="read">Read</SelectItem></SelectContent></Select></div>)}{!readings.length && <EmptyState icon={BookOpen} title="No readings listed yet" detail="Your syllabus doesn't list readings by week — add them as they are assigned." />}</div>
+      </Panel>
+      <Panel className="xl:col-span-2" title="Feedback log">
+        <div className="space-y-2">{feedback.map((note) => <div key={note.id} className="rounded-xl border border-border bg-muted/25 p-3"><p className="font-extrabold">{note.theme}</p>{note.quote && <p className="mt-1 text-sm text-muted-foreground">“{note.quote}”</p>}</div>)}{!feedback.length && <EmptyState icon={NotebookText} title="No feedback logged yet" detail="Capture a professor's recurring note after your first draft returns." />}</div>
+      </Panel>
+      {current && <p className="sr-only">Current draft: {current.title}</p>}
+      {!readings.length && <p className="sr-only">Reading list incomplete.</p>}
+      {incompleteReadings.length > 0 && <p className="sr-only">{incompleteReadings.length} readings are not finished.</p>}
     </div>
   )
 }
@@ -872,14 +989,20 @@ function addCoveredTopic(courseId: string) {
 function hubStats(course: Course, topics: Topic[], assignments: ClassAssignment[]) {
   const today = isoToday()
   const exam = assignments.filter((item) => item.type === 'exam' && !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))[0]
+  const next = assignments.filter((item) => !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))[0]
   return {
     grade: course.grade || (coursePercent(assignments) == null ? '—' : `${formatNumber(coursePercent(assignments)!)}%`),
     ready: topics.filter((item) => item.status === 'ready').length,
     dueToday: assignments.filter((item) => item.dueDate === today && !isComplete(item)).length,
+    nextDue: next?.dueDate ? relativeDate(next.dueDate) : '—',
     // Banner metrics are short by design (04 §0c "6d"), so the empty case is a
     // dash rather than a sentence that has to truncate inside the strip.
     examCountdown: exam?.dueDate ? relativeDate(exam.dueDate) : '—',
   }
+}
+
+function currentDraftStage(drafts: PaperDraft[]) {
+  return titleCase(drafts.find((item) => item.stage !== 'submitted')?.stage ?? '—')
 }
 
 function coursePercent(assignments: ClassAssignment[]) {
@@ -965,7 +1088,7 @@ function ordered<T extends { order: number }>(items: T[]) {
 }
 
 function isHubTab(value: string | null): value is HubTab {
-  return value === 'overview' || value === 'materials' || value === 'topics' || value === 'assignments' || value === 'notes'
+  return value === 'overview' || value === 'materials' || value === 'topics' || value === 'readings' || value === 'assignments' || value === 'notes'
 }
 
 function isoToday() {

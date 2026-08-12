@@ -145,6 +145,7 @@ function createClassCenterSeed(): AcademicTagSettings['classCenter'] {
     .map((course, order) => ({
       id: `workspace-${course.id}`,
       courseId: course.id,
+      type: course.code === 'ENGL 105' ? 'writing' : course.bcpm ? 'stem' : 'general',
       color: 'blue',
       icon: 'book',
       status: 'active',
@@ -282,6 +283,9 @@ function createClassCenterSeed(): AcademicTagSettings['classCenter'] {
     weakAreas,
     practiceExams: [],
     practiceQuestions: [],
+    paperDrafts: [],
+    assignedReadings: [],
+    feedbackNotes: [],
   }
 }
 

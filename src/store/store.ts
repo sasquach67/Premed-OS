@@ -28,6 +28,7 @@ import { migrateAcademicsV6 } from '@/store/migrations/academicsV6'
 import { migrateAcademicsV7 } from '@/store/migrations/academicsV7'
 import { migrateFoundationV8 } from '@/store/migrations/foundationV8'
 import { migrateShellV9 } from '@/store/migrations/shellV9'
+import { migrateClassTypesV10 } from '@/store/migrations/classTypesV10'
 
 const DEMO_MODE = isDemoMode()
 
@@ -45,8 +46,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateShellV9`. */
-export const CURRENT_STORE_VERSION = 9
+/** Matches the newest migration in `migrateAll`: `migrateClassTypesV10`. */
+export const CURRENT_STORE_VERSION = 10
 
 function createInitialData() {
   if (!DEMO_MODE) return structuredClone(createSeedData())
@@ -489,7 +490,7 @@ export function migrateRequirementMetadata(data: AppData): AppData {
 /** The full hydration chain. Exported so the frozen-input contract can be
  *  tested end to end: every link must be pure, or immer state throws. */
 export function migrateAll(data: AppData): AppData {
-  return migrateShellV9(migrateFoundationV8(migrateAcademicsV7(migrateAcademicsV6(migrateAcademicsV5(migrateAcademicsV4(migrateMascotNotes(
+  return migrateClassTypesV10(migrateShellV9(migrateFoundationV8(migrateAcademicsV7(migrateAcademicsV6(migrateAcademicsV5(migrateAcademicsV4(migrateMascotNotes(
     migrateOverviewSchema(
       migrateIntelligence(
         migrateSafetyNets(
@@ -501,7 +502,7 @@ export function migrateAll(data: AppData): AppData {
         ),
       ),
     ),
-  )))))))
+  ))))))))
 }
 
 function nextOrder(arr: AnyRow[]): number {

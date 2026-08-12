@@ -1,7 +1,7 @@
 import { createSeedData } from '@/data/seed'
 import { createTopicFsrsState } from '@/lib/academics/fsrs'
 import type {
-  AppData, ClassAssignment, ClassNote, Course, ExperienceEntry, KeyPoint,
+  AppData, AssignedReading, ClassAssignment, ClassNote, Course, ExperienceEntry, FeedbackNote, KeyPoint, PaperDraft,
   LetterEntry, McatAttempt, McatErrorLog, SourceChunk, Topic,
 } from '@/lib/types'
 
@@ -23,13 +23,14 @@ export function createDemoData(seedTime = Date.now()): AppData {
     course('demo-course-chem262', 'Fall 2026', 'CHEM 262', 'Organic Chemistry II', 3, 'IP', true, 'in-progress', 4),
     course('demo-course-phys118', 'Fall 2026', 'PHYS 118', 'Introductory Calculus-based Mechanics and Relativity', 4, 'IP', true, 'in-progress', 5),
     course('demo-course-soci101', 'Fall 2026', 'SOCI 101', 'Sociology', 3, 'IP', false, 'in-progress', 6),
-    course('demo-course-psyc210', 'Spring 2027', 'PSYC 210', 'Statistical Principles of Psychological Research', 4, '', false, 'planned', 7),
-    course('demo-course-nsci225', 'Spring 2027', 'NSCI 225', 'Cognitive Neuroscience', 3, '', true, 'planned', 8),
+    course('demo-course-engl105', 'Fall 2026', 'ENGL 105', 'English Composition & Rhetoric', 3, 'IP', false, 'in-progress', 7),
+    course('demo-course-psyc210', 'Spring 2027', 'PSYC 210', 'Statistical Principles of Psychological Research', 4, '', false, 'planned', 8),
+    course('demo-course-nsci225', 'Spring 2027', 'NSCI 225', 'Cognitive Neuroscience', 3, '', true, 'planned', 9),
     {
-      ...course('demo-course-spring-only', 'Fall 2027', 'NSCI 490', 'Advanced Seminar in Translational Neuroscience and Community Health', 3, '', true, 'planned', 9),
+      ...course('demo-course-spring-only', 'Fall 2027', 'NSCI 490', 'Advanced Seminar in Translational Neuroscience and Community Health', 3, '', true, 'planned', 10),
       notes: 'Spring-only offering — this Fall placement needs correction.',
     },
-    course('demo-course-unplaced', 'Unscheduled', 'CHEM 430', 'Biochemistry', 3, '', true, 'planned', 10),
+    course('demo-course-unplaced', 'Unscheduled', 'CHEM 430', 'Biochemistry', 3, '', true, 'planned', 11),
   ]
   courses[0].satisfies = ['Natural Scientific Investigation', 'Neuroscience B.S.']
   courses[1].satisfies = ['Neuroscience B.S. — Additional Requirements']
@@ -116,6 +117,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
     assignment('demo-a-exam', courses[3].id, 'Midterm — cellular neurophysiology', 'exam', date(6), 'in-progress', 'Exams', undefined, 100, 30, 2, at),
     assignment('demo-a-final', courses[3].id, 'Cumulative final examination covering cellular systems and behavior', 'exam', date(42), 'not-started', 'Final', undefined, 100, 33, 3, at),
     assignment('demo-a-chem', courses[4].id, 'Mechanism problem set', 'homework', date(2), 'not-started', 'Problem sets', undefined, 25, 10, 4, at),
+    assignment('demo-a-engl-draft', courses[7].id, 'Rhetorical analysis draft', 'project', date(3), 'in-progress', 'Essays', undefined, 100, 35, 5, at),
   ]
   assignments[2].important = true
   assignments[2].coveredTopicIds = [topics[0].id, topics[1].id]
@@ -128,7 +130,8 @@ export function createDemoData(seedTime = Date.now()): AppData {
   data.academics.classCenter = {
     workspaces: courses.filter((item) => item.term === data.profile.startTerm).map((item, order) => ({
       id: `demo-workspace-${item.id}`, courseId: item.id, color: ['green', 'orange', 'blue', 'purple'][order] as 'green' | 'orange' | 'blue' | 'purple',
-      icon: item.bcpm ? 'brain' : 'book', status: 'active', instructor: order === 0 ? 'Dr. Elena Ruiz' : undefined,
+      type: item.code === 'ENGL 105' ? 'writing' : item.bcpm ? 'stem' : 'general',
+      icon: item.code === 'ENGL 105' ? 'pen' : item.bcpm ? 'brain' : 'book', status: 'active', instructor: item.code === 'ENGL 105' ? 'Prof. Maya Bell' : order === 0 ? 'Dr. Elena Ruiz' : undefined,
       meetingDays: order % 2 ? 'Tue/Thu' : 'MWF', meetingTime: order % 2 ? '11:00 AM–12:15 PM' : '10:10–11:00 AM',
       location: order === 0 ? 'Coker Hall 201' : undefined,
       syllabusUrl: item.id === courses[3].id ? 'https://canvas.unc.edu/' : undefined,
@@ -147,6 +150,12 @@ export function createDemoData(seedTime = Date.now()): AppData {
     weakAreas: [{ id: 'demo-weak-synapse', courseId: courses[3].id, topicId: topics[0].id, label: 'Synaptic vesicle release sequence', source: 'quiz', reason: 'conceptual', severity: 3, notes: 'Confused calcium entry with vesicle fusion.', createdAt: stamp(-4), lastPracticedAt: stamp(-4), status: 'active', order: 0 }],
     practiceExams: [],
     practiceQuestions: [],
+    paperDrafts: [{ id: 'demo-draft-engl105-rhetorical-analysis', courseId: 'demo-course-engl105', title: 'Rhetorical analysis', stage: 'draft', selfDeadline: date(3), createdAt: stamp(-6), updatedAt: stamp(-1), order: 0 }] as PaperDraft[],
+    assignedReadings: [
+      { id: 'demo-reading-engl105-1', courseId: 'demo-course-engl105', week: 'Week 2', title: 'Writing as a process', source: 'Course reader', status: 'read', dueForDiscussion: date(-1), createdAt: stamp(-9), updatedAt: stamp(-2), order: 0 },
+      { id: 'demo-reading-engl105-2', courseId: 'demo-course-engl105', week: 'Week 2', title: 'Audience and evidence', source: 'Course reader', status: 'not-started', dueForDiscussion: date(1), createdAt: stamp(-9), updatedAt: stamp(-9), order: 1 },
+    ] as AssignedReading[],
+    feedbackNotes: [{ id: 'demo-feedback-engl105-thesis', courseId: 'demo-course-engl105', theme: 'Make the thesis more specific', quote: 'Show the reader what is at stake in the claim.', createdAt: stamp(-3), updatedAt: stamp(-3), order: 0 }] as FeedbackNote[],
   }
   data.academics.courseOptions = courses.map((item, order) => ({ id: `demo-option-${item.id}`, name: item.code, title: item.title, color: ['blue', 'green', 'purple', 'orange'][order % 4] as 'blue' | 'green' | 'purple' | 'orange' }))
   data.academics.migrationJournal = []

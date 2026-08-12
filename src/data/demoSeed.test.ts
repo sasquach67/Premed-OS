@@ -55,7 +55,11 @@ describe('site-wide demo data', () => {
     expect(center.sourceChunks.some((chunk) => !chunk.topicId)).toBe(true)
     expect(data.requirements.some((requirement) => requirement.group.includes('Neuroscience') && requirement.verificationStatus === 'needs-verification')).toBe(true)
     expect(data.courses.some((course) => course.term === 'Unscheduled')).toBe(true)
-    expect(bcpmCredits / currentCredits).toBeGreaterThanOrEqual(0.75)
+    // ENGL 105 is intentionally part of the current term so the Writing
+    // workspace can be reviewed against real mixed-course data.
+    expect(bcpmCredits / currentCredits).toBeGreaterThanOrEqual(0.6)
+    expect(current.some((course) => course.code === 'ENGL 105')).toBe(true)
+    expect(center.workspaces.find((workspace) => workspace.courseId === current.find((course) => course.code === 'ENGL 105')?.id)?.type).toBe('writing')
     expect(data.courses.filter((course) => course.term === 'Spring 2027').reduce((sum, course) => sum + course.credits, 0)).toBeLessThan(12)
     expect(data.courses.some((course) => /spring-only/i.test(course.notes ?? '') && !/Spring/i.test(course.term))).toBe(true)
     expect(gradedWeight).toBe(37)
