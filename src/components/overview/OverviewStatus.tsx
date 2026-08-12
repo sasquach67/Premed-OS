@@ -1,4 +1,4 @@
-import { m } from 'motion/react'
+import { Line, LineChart, PolarAngleAxis, RadialBar, RadialBarChart, YAxis } from 'recharts'
 import {
   Brain,
   Building2,
@@ -18,8 +18,11 @@ import { NumberFlow } from '@/components/motion'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ChartContainer } from '@/components/ui/chart'
+import { Progress } from '@/components/ui/progress'
 import { daysUntil } from '@/lib/date'
 import { fmtGpa, gpaStats, hourTotals } from '@/lib/selectors'
+import { goalProgress, termGpaSeries } from '@/lib/overview'
 import type { ExperienceCategory } from '@/lib/types'
 import { useStore } from '@/store/store'
 
@@ -31,6 +34,7 @@ interface DomainRow {
   accent: string
   value: string
   state: string
+  progress?: number
 }
 
 export function WhereIStand() {
@@ -49,6 +53,7 @@ export function WhereIStand() {
   const lettersReceived = state.letters.filter((letter) => letter.status === 'submitted').length
   const activeLetters = state.letters.filter((letter) => letter.status !== 'declined').length
   const examDays = daysUntil(state.mcat.targetDate)
+  const mcatGoal = state.mcat.goalScore ?? state.goals.mcatTarget
 
   /* Class-level state reaches Overview instead of stopping at Academics:
      what's due, what's shaky, what's open, and what is still unfiled. */
@@ -78,14 +83,16 @@ export function WhereIStand() {
     accent: string,
   ): DomainRow => {
     const current = hours[category]
+    const hasGoal = goal > 0
     return {
       group: 'Experiences',
       label,
       route,
       icon,
       accent,
-      value: `${Math.round(current)}/${goal} hrs`,
-      state: current ? 'hours logged' : 'none logged',
+      value: hasGoal ? `${Math.round(current)}/${goal} hrs` : `${Math.round(current)} hrs`,
+      state: !current ? 'not started' : hasGoal ? 'goal set' : 'no goal',
+      progress: goalProgress(current, goal),
     }
   }
 
@@ -96,11 +103,13 @@ export function WhereIStand() {
       state: classSignals.length
         ? classSignals.join(' · ')
         : !graded ? 'not enough data' : 'record current',
+      progress: goalProgress(gpa.cum, state.goals.gpaTarget),
     },
     {
       group: 'Foundation', label: 'MCAT', route: '/mcat', icon: Brain, accent: 'var(--cat-mcat)',
-      value: latestMcat?.total ? `${latestMcat.total} recorded · goal ${state.mcat.goalScore ?? state.goals.mcatTarget}` : `${state.mcat.currentPhase ?? 'Plan not started'}`,
+      value: latestMcat?.total ? `${latestMcat.total} recorded · goal ${mcatGoal}` : `${state.mcat.currentPhase ?? 'Plan not started'}`,
       state: examDays != null ? `${Math.max(0, examDays)}d out` : 'no date',
+      progress: goalProgress(latestMcat?.total ?? 0, mcatGoal),
     },
     hourRow('Clinical', 'clinical', state.goals.clinical, '/clinical', Stethoscope, 'var(--cat-clinical)'),
     hourRow('Volunteering', 'volunteering', state.goals.volunteering, '/volunteering', HeartHandshake, 'var(--cat-volunteer)'),
@@ -168,7 +177,7 @@ function DomainStatusRow({ row }: { row: DomainRow }) {
     <Link
       to={row.route}
       aria-label={`${row.label}, ${row.value}, ${row.state}`}
-      className="group grid min-h-9 grid-cols-[1.5rem_minmax(5.5rem,.72fr)_minmax(8rem,1fr)_4.5rem] items-center gap-2 rounded-xl px-1.5 py-1 transition-colors hover:bg-muted/45"
+      className="group grid min-h-9 grid-cols-[1.5rem_minmax(4.75rem,.7fr)_minmax(6rem,1fr)_3.5rem_auto] items-center gap-1.5 rounded-xl px-1.5 py-1 transition-colors hover:bg-muted/45"
     >
       <span className="grid size-6 place-items-center rounded-lg text-white shadow-sm" style={{ background: row.accent }}>
         <Icon className="size-3.5" />
@@ -177,6 +186,9 @@ function DomainStatusRow({ row }: { row: DomainRow }) {
       <span className="min-w-0">
         <span className="block truncate text-right text-[11px] font-bold tabular-nums text-muted-foreground">{row.value}</span>
       </span>
+      {row.progress == null
+        ? <span aria-hidden="true" />
+        : <Progress value={row.progress} className="h-1.5 border-0" aria-label={`${row.label} progress toward student-set goal`} />}
       <Badge variant="muted" className="justify-center px-1.5 text-[9px]">{row.state}</Badge>
     </Link>
   )
@@ -186,6 +198,9 @@ export function GpaStatTile() {
   const courses = useStore((state) => state.courses)
   const stats = gpaStats(courses)
   const graded = stats.credits > 0
+  const series = termGpaSeries(courses)
+  const previous = series.at(-2)?.cumulative
+  const delta = previous == null ? null : stats.cum - previous
 
   const card = (
     <Card className="h-full min-h-48 transition-transform duration-200 hover:-translate-y-0.5" role="region" aria-label="Recorded GPA">
@@ -203,10 +218,33 @@ export function GpaStatTile() {
           </MascotNote>
         ) : (
           <>
-            <div className="mt-2 flex items-end gap-2">
+            <div className="mt-2 flex items-end justify-between gap-2">
               <NumberFlow value={stats.cum} format={(value) => value.toFixed(2)} className="font-display text-4xl font-extrabold text-[var(--cat-gpa)]" />
+              {delta != null && (
+                <Badge variant={delta >= 0 ? 'success' : 'danger'}>
+                  {delta >= 0 ? '▲' : '▼'} {delta >= 0 ? '+' : ''}{delta.toFixed(2)} this term
+                </Badge>
+              )}
             </div>
-            <p className="mt-auto text-xs font-semibold text-muted-foreground">Science {fmtGpa(stats.science)} · {stats.credits} graded credits</p>
+            {series.length < 2 ? (
+              <p className="mt-4 rounded-xl border border-dashed border-border p-3 text-xs font-semibold text-muted-foreground">
+                Add another graded term to show a GPA trend.
+              </p>
+            ) : (
+              <ChartContainer
+                config={{ cumulative: { label: 'Cumulative', color: 'var(--cat-gpa)' }, science: { label: 'Science', color: 'var(--cat-research)' } }}
+                className="mt-2 h-16 w-full aspect-auto"
+                initialDimension={{ width: 240, height: 64 }}
+                aria-label="Cumulative and science GPA trend by term"
+              >
+                <LineChart data={series} margin={{ top: 4, right: 2, bottom: 2, left: 2 }}>
+                  <YAxis hide domain={[0, 4]} />
+                  <Line type="monotone" dataKey="cumulative" stroke="var(--color-cumulative)" strokeWidth={2.5} dot={false} isAnimationActive={false} />
+                  <Line type="monotone" dataKey="science" stroke="var(--color-science)" strokeWidth={2} strokeDasharray="4 3" dot={false} connectNulls isAnimationActive={false} />
+                </LineChart>
+              </ChartContainer>
+            )}
+            <p className="mt-auto text-xs font-semibold text-muted-foreground">Science {fmtGpa(stats.science)} · {series.length} {series.length === 1 ? 'term' : 'terms'}</p>
           </>
         )}
       </CardContent>
@@ -239,9 +277,24 @@ export function McatStatTile() {
             Log your first scored practice and this target view will use the real result.
           </MascotNote>
         ) : (
-          <div className="grid w-full grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-muted/35 p-4"><NumberFlow value={recorded} className="font-display text-3xl font-extrabold" /><p className="text-xs font-semibold text-muted-foreground">Latest recorded</p></div>
-            <div className="rounded-2xl bg-muted/35 p-4"><NumberFlow value={goal} className="font-display text-3xl font-extrabold" /><p className="text-xs font-semibold text-muted-foreground">Student-set target</p></div>
+          <div className="relative mx-auto size-32">
+            <ChartContainer
+              config={{ score: { label: 'Recorded score', color: 'var(--cat-mcat)' } }}
+              className="size-32 aspect-square"
+              initialDimension={{ width: 128, height: 128 }}
+              aria-label={`${recorded} recorded against a student-set target of ${goal}`}
+            >
+              <RadialBarChart data={[{ score: Math.min(recorded, goal) }]} startAngle={90} endAngle={-270} innerRadius="72%" outerRadius="100%">
+                <PolarAngleAxis type="number" domain={[472, Math.max(472, goal)]} dataKey="score" tick={false} />
+                <RadialBar dataKey="score" background fill="var(--color-score)" cornerRadius={12} isAnimationActive={false} />
+              </RadialBarChart>
+            </ChartContainer>
+            <div className="pointer-events-none absolute inset-0 grid place-items-center">
+              <div>
+                <NumberFlow value={recorded} className="font-display text-3xl font-extrabold" />
+                <p className="text-[10px] font-bold text-muted-foreground">of {goal}</p>
+              </div>
+            </div>
           </div>
         )}
         <p className="text-xs font-semibold text-muted-foreground">MCAT · questions not tracked</p>
@@ -269,6 +322,7 @@ export function HoursStatTile() {
     { label: 'Research', value: totals.research, color: 'var(--cat-research)' },
   ]
   const total = rows.reduce((sum, row) => sum + row.value, 0)
+  const largest = Math.max(...rows.map((row) => row.value), 1)
 
   return (
     <Card className="h-full min-h-48" role="region" aria-labelledby="hours-stat-heading">
@@ -280,10 +334,13 @@ export function HoursStatTile() {
         {total === 0 ? (
           <p className="rounded-xl border border-dashed border-border p-4 text-sm font-semibold text-muted-foreground">No experience hours recorded yet.</p>
         ) : rows.map((row) => (
-          <div key={row.label} className="grid grid-cols-[minmax(0,1fr)_3rem] items-center gap-2 rounded-xl bg-muted/30 px-3 py-2 text-xs">
+          <div key={row.label} className="grid grid-cols-[5rem_minmax(0,1fr)_3rem] items-center gap-2 rounded-xl bg-muted/30 px-3 py-2 text-xs">
             <span className="font-bold text-muted-foreground">{row.label}</span>
             {row.value > 0
-              ? <m.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ color: row.color }}><NumberFlow value={Math.round(row.value)} className="text-right font-display font-extrabold" /></m.span>
+              ? <Progress value={(row.value / largest) * 100} className="h-2" aria-label={`${row.label}, ${Math.round(row.value)} hours`} />
+              : <span aria-hidden="true" />}
+            {row.value > 0
+              ? <span style={{ color: row.color }}><NumberFlow value={Math.round(row.value)} className="text-right font-display font-extrabold" /></span>
               : <span className="text-right font-semibold text-muted-foreground">—</span>}
           </div>
         ))}

@@ -63,7 +63,7 @@ Roadmap milestones are stored as rows in `data.tasks` with `milestone: true`. **
 
 | Field | Editable today | Target |
 |---|---|---|
-| `title` | **NO. Set once at quick-add and never renameable anywhere in the app.** | **Inline rename on the row.** The most basic missing thing here |
+| `title` | **NO. Set once in the standard create form and never renameable anywhere in the app.** | **Inline rename on the row.** The most basic missing thing here |
 | `deadline` | **NO** — dead-end nav ×3 | **Date picker on the row**, no navigation |
 | `notes` | **NO surface anywhere in the app** | Task detail (2c) |
 | `fileUrl` | **NO surface anywhere in the app** | Task detail (2c) |
@@ -106,7 +106,7 @@ Roadmap milestones are stored as rows in `data.tasks` with `milestone: true`. **
 15. **`Assignments` tab → delete.** `AssignmentsPanel` is Academics' (`briefs/D3-assignments.md`: *"Anything tied to a class lives here — `courseId` is required"*). If it is not already mounted on Academics → Daily → Assignments, **mount it there before removing it here.**
 16. **`Board` tab (`TaskBoard`) → delete.** A kanban over `tasks`, which are Overview's, with **no edit affordances** — it only moves cards between columns. Overview's Now/Soon/Done plus the star is the locked model (`03-overview.md` §6.4). **The `kanban` field stays on `TaskItem` and keeps being written** (2a); only the UI goes. **Do not drop data.**
 17. **`Verify` tab (`VerifyChecklist`) → remove from Timeline. RESOLVED by Andy, Aug 2026.** Split the data by final owner: `advisingQs` belongs to **Letters**, as person-scoped questions on an `LT-27` mentor record riding `LT-30`'s existing loop; `tips` belongs to **Help**, as sourced Category B guidance. Both destination surfaces are undrawn, so the existing component mounts on Overview as a temporary home. **Do not delete either collection.** The code comment on the temporary component must preserve this ruling for the eventual split.
-18. **`Add task` page action → delete.** It creates a task with an empty title and no way to name it; Overview's quick-add replaces it properly.
+18. **`Add task` page action → delete.** It creates a task with an empty title and no way to name it; Overview's standard create form replaces it properly.
 19. **`RoadmapGraphic` becomes the whole page** — no `Tabs` wrapper around a single view.
 20. **`overview.ts:87`** — `milestoneRoute`'s fallback returns `/timeline`, which **stays correct**: a roadmap milestone with no better home does belong to Timeline. **No change. Listed so it is not swept up with the others.**
 21. **`UltimateGuideDialog.tsx:138`** — `Open cycle timeline` → `/timeline` **stays correct. No change.**

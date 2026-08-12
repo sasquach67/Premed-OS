@@ -49,7 +49,7 @@ Every widget on this page must earn its place by answering one of those four. An
 Overview is a **status board you can act in for a few high-frequency things only**. Exactly three inline actions are permitted, because they're done daily and routing out for them would be hostile:
 
 - Check off / complete a task
-- Quick-add a task (title only)
+- Create a task from the Tasks header (standard create form)
 - Quick Capture an idea or source (into Atlas)
 
 Every other action opens the owning page. Editing a task's details, logging structured hours, managing a goal — all route out. If a fourth inline action is ever proposed, it must be justified against this rule, not smuggled in.
@@ -60,14 +60,14 @@ Every other action opens the owning page. Editing a task's details, logging stru
 
 Grounded in `src/pages/Home.tsx` as of this date (699 lines).
 
-Current widgets, top to bottom: **Hero** (themed Ghibli/Doraemon banner, greeting, live clock, countdown to next timed calendar event, mascot bubble, today's-schedule timeline) → **TaskWorkspace** (Today/All toggle, pinned focus targets, task rows, inline quick-add, add dialog) → **AtAGlance** (GPA / hours / best MCAT stat tiles) → **McatOverviewCard** (large: phase, study-plan progress, launch-a-block, QOTD peek) → **PremedRoadmap** (8 hardcoded stages) → **UpcomingPanel** ("Soon" alerts, 14-day) → **LowerWidgets** (MCAT QOTD, Quarterly goals, Recent activity, Ideas capture).
+Current widgets, top to bottom: **Hero** (themed Ghibli/Doraemon banner, greeting, live clock, countdown to next timed calendar event, mascot bubble, today's-schedule timeline) → **TaskWorkspace** (Today/All toggle, pinned focus targets, task rows, standard add dialog) → **AtAGlance** (GPA / hours / best MCAT stat tiles) → **McatOverviewCard** (large: phase, study-plan progress, launch-a-block, QOTD peek) → **PremedRoadmap** (8 hardcoded stages) → **UpcomingPanel** ("Soon" alerts, 14-day) → **LowerWidgets** (MCAT QOTD, Quarterly goals, Recent activity, Ideas capture).
 
 ---
 
 ## 3. Current Strengths (preserve)
 
 1. **The hero's "what's now" band is genuinely useful** — live countdown to the current/next calendar event plus a today's-schedule timeline answers "where am I *right now*" better than most dashboards.
-2. **Tasks already support the hybrid model** — inline quick-add and check-off exist and feel right.
+2. **Tasks already support the hybrid model** — standard-form creation and inline check-off exist and feel right.
 3. **The roadmap gives a real long-view** — Foundation → Matriculate answers "where am I in the whole journey."
 4. **Recent activity** cheaply answers "what's changed."
 5. **Themed hero banner is brand, and it stays** — personality is a feature here, not clutter.
@@ -179,12 +179,12 @@ The "what should I work on" core, the **first substantial working surface on the
   - **All it adds is room** to filter and search a long list. `Done` is already the archive and Settings holds the global one, so *"find what I did four months ago"* was answered before this existed.
 - **Roadmap steps flow in automatically (RULED Aug 2026, Andy).** A Timeline node's checklist items typed `step` (actionable) appear in **`Soon`**; items typed `note` (guidance, *"keep in mind…"*) never do. **This is `one record, two doors`, not a second owner:** the record stays Timeline's, Overview reads it, and ticking it in either place ticks it in both. **The list is a union computed at read time — never a write into `tasks`.** Steps render distinguishably from general to-dos and link back to their node. **Only the current node's steps flow** (~25 nodes × ~5 steps would bury the week's real work), and **a step cannot be deleted here** — complete or dismiss only, since deleting would damage the roadmap. Full ruling in `tabs/11-timeline-tasks.md`.
 - **General to-dos only — never assignments.** This widget shows general/personal/application workflow tasks. **Assignments** (course-linked academic deliverables) are owned by Academics and live on the **Academics → Assignments** page; they never appear in this widget. The two are distinct lists with distinct owners: Home = your general to-do list; Assignments = coursework, on its own page. *(An assignment's due date may still surface in the attention strip/bell — attention is "what's due," not the to-do list — but the assignment record itself is never listed here.)*
-- **Inline actions permitted:** check off / complete a task; quick-add a task (title only, existing form). Quick-add here creates a general task, never an assignment.
+- **Inline actions permitted:** check off / complete a task; create a task via the header `＋ Add task` button. Creating here makes a general task, never an assignment.
 - **Routes out:** opening a task, editing its details, changing type or due date → **`/overview/tasks`** (revised Aug 2026 — Overview is the owning page now, so this "routes out" to its own sub-route, not to another tab).
 - Starred/important tasks pin to the top group (see above). No separate focus strip.
 - Completing a task shows a toast with Undo (per `01` undo standards).
 - Replaces the current Today/All toggle with the Now/Soon/Done tab set; keep it compact (cap visible rows per tab, **"+N more →" to `/overview/tasks`**).
-- Quick-add row sits at the bottom of the panel ("Quick add — type and hit enter…").
+- **Task creation is a regular `＋ Add task` button in the panel header** (⭐ RULED Aug 2026, Andy — supersedes the inline quick-add row this line used to specify). It opens the standard create form. **The inline "type and hit enter" row is removed**; it is not a second path and must not be reintroduced alongside the button. Mockup: `mockups/03-overview/overview-s3-target.html`.
 
 ### 6.5 Where I stand (Domains)
 
@@ -324,7 +324,7 @@ Explicit traceability (from `implementation/component-inventory.md`); motion fro
 | Tasks — star / important + "Important" group | `Toggle` (star icon, lucide) + grouped list; group header + accent left-border on row |
 | Tasks — right-click actions | **`Context Menu`** (floating → keeps frosted glass) — Mark important ⌘I · Tag ▸ (submenu) · Set due date (`Calendar`/`DateField`) · Move to Soon · Duplicate · Delete (`Alert Dialog` if destructive-with-deps) |
 | Tasks — category tag · due chip | `Badge` (per-pillar `--cat-*`) · `Badge` (severity color) |
-| Tasks — title-only quick-add | inline `Input` |
+| Tasks — create | header `Button` → the standard create form (**revised Aug 2026** — was an inline `Input`) |
 | Tasks — "+N more →" | link → Timeline |
 | Where I stand — compact rows (grouped) | list rows → links; mobile groups `Accordion`/`Collapsible` |
 | Where I stand — value + mini bar | **Number Flow** (exact values) + **Animated Progress Bar** (thin spine) |
@@ -390,7 +390,7 @@ Explicit traceability (from `implementation/component-inventory.md`); motion fro
 - [ ] Only the permitted inline actions write data; every other action deep-links to the owning page.
 - [ ] **Where I stand** shows honest per-domain state per §6.5 in compact single-line rows that still carry value-against-goal + mini bar + **pace chip**, grouped Foundation/Experiences/Application, with pace chips **only** where a standing goal exists — no invented percentages.
 - [ ] Smart next actions shows ≤3 recommendations, each with a visible reason and a primary action; dismissed recommendations enter suppression; **the whole widget unmounts when the last is dismissed** and the grid closes the gap.
-- [ ] **Tasks use Now / Soon / Done tabs** (Done = completion archive, not a planning horizon). Drag (`Reorder`) reorders **within a tab only**; checkbox completes → animates to Done with undo; **star/important is the only prioritization concept** (pinned "Important" group — no separate Focus strip); right-click menu per `01` §4c; title-only quick-add works inline.
+- [ ] **Tasks use Now / Soon / Done tabs** (Done = completion archive, not a planning horizon). Drag (`Reorder`) reorders **within a tab only**; checkbox completes → animates to Done with undo; **star/important is the only prioritization concept** (pinned "Important" group — no separate Focus strip); right-click menu per `01` §4c; **a `＋ Add task` button sits in the panel header and no inline quick-add row exists**.
 - [ ] **Stat tiles** (§6.5a) render GPA trend, MCAT ring, and hours bars from computed selectors with exact values; **Quick access** (§6.5b) launchers appear only when their target exists.
 - [ ] **Roadmap** renders as a horizontal spine of **milestone cards** (label · target date · detail line), current milestone raised with "You are here". Built from existing milestone records + Profile cycle/path; **if no milestones exist, show an empty setup state — never hardcoded dates**.
 - [ ] Quarterly goals set standing domain targets; a quarterly goal can reference a standing target; domain pace reflects the target.

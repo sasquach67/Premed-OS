@@ -53,6 +53,14 @@ export function termGpaSeries(courses: Course[]): TermGpaPoint[] {
   })
 }
 
+/** A progress surface exists only when both a standing target and a real
+ * recorded value exist. Undefined keeps insufficient/no-target rows dormant
+ * instead of drawing an empty bar that reads as zero progress. */
+export function goalProgress(current: number, goal?: number): number | undefined {
+  if (!(current > 0) || !(goal && goal > 0)) return undefined
+  return Math.min(100, (current / goal) * 100)
+}
+
 export type OverviewTaskTab = TaskHorizon | 'done'
 
 export function overviewTaskTab(task: TaskItem): OverviewTaskTab {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { overviewTasks, roadmapMilestones, termGpaSeries } from '@/lib/overview'
+import { goalProgress, overviewTasks, roadmapMilestones, termGpaSeries } from '@/lib/overview'
 import type { Course, TaskItem } from '@/lib/types'
 
 function task(partial: Partial<TaskItem>): TaskItem {
@@ -82,5 +82,16 @@ describe('Overview selectors', () => {
       { term: 'Fall 2026', cumulative: 4, science: 4 },
       { term: 'Spring 2027', cumulative: 3.5, science: 4 },
     ])
+  })
+
+  it('keeps no-target and insufficient-value progress dormant', () => {
+    expect(goalProgress(12)).toBeUndefined()
+    expect(goalProgress(12, 0)).toBeUndefined()
+    expect(goalProgress(0, 150)).toBeUndefined()
+  })
+
+  it('bounds real value-against-goal progress', () => {
+    expect(goalProgress(75, 150)).toBe(50)
+    expect(goalProgress(180, 150)).toBe(100)
   })
 })

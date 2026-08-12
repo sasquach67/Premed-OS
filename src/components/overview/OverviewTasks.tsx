@@ -1,18 +1,20 @@
 import { AnimatePresence, m, Reorder, useReducedMotion } from 'motion/react'
 import {
+  ArrowUpRight,
   CalendarDays,
   Check,
   Copy,
   Ellipsis,
   GripVertical,
   NotebookPen,
+  Plus,
   Search,
   Star,
   Tag,
   Trash2,
   X,
 } from 'lucide-react'
-import { useMemo, useRef, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useToast } from '@/components/common/useToast'
 import { MascotNote } from '@/components/common/MascotNote'
@@ -55,6 +57,7 @@ import { overviewTasks, type OverviewTaskTab } from '@/lib/overview'
 import type { CollectionRecord, TaskItem } from '@/lib/types'
 import { useStore } from '@/store/store'
 import { cn } from '@/lib/utils'
+import { useShellActions } from '@/components/layout/shellActions'
 
 const TABS: Array<{ value: OverviewTaskTab; label: string }> = [
   { value: 'now', label: 'Now' },
@@ -65,11 +68,9 @@ const CATEGORIES = ['Personal', 'Application', 'Advising', 'MCAT', 'Academics', 
 
 export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {}) {
   const tasks = useStore((state) => state.tasks)
-  const addItem = useStore((state) => state.addItem)
   const update = useStore((state) => state.update)
-  const logActivity = useStore((state) => state.logActivity)
+  const { openQuickAdd } = useShellActions()
   const [tab, setTab] = useState<OverviewTaskTab>('now')
-  const [quickTitle, setQuickTitle] = useState('')
   /* The expansion adds room to filter and search and NOTHING else — any
    * behaviour here that the widget lacks is a defect (03-overview §6.4). */
   const [query, setQuery] = useState('')
@@ -100,27 +101,6 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
     return days != null && days < 0 && task.progress !== 'Finished'
   }).length
 
-  function quickAdd(event: FormEvent) {
-    event.preventDefault()
-    const title = quickTitle.trim()
-    if (!title) return
-    addItem('tasks', {
-      id: uid(),
-      title,
-      type: 'Personal',
-      progress: 'Not started',
-      kanban: 'todo',
-      archived: false,
-      milestone: false,
-      horizon: tab === 'soon' ? 'soon' : 'now',
-      important: false,
-      order: visible.length,
-    })
-    logActivity('overview', `Added task: ${title}`)
-    setQuickTitle('')
-    if (tab === 'done') setTab('now')
-  }
-
   function applyOrder(next: CollectionRecord<TaskItem>[]) {
     update((draft) => {
       const rank = new Map(next.map((task, index) => [task.id, index]))
@@ -140,7 +120,17 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
             {important.length} important{overdue ? ` · ${overdue} overdue` : ''}
           </p>
         </div>
-        {!expanded && <Button asChild size="sm" variant="outline"><Link to="/overview/tasks">Expand</Link></Button>}
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Button type="button" size="sm" onClick={() => openQuickAdd('task')}>
+            <Plus className="size-4" />
+            Add task
+          </Button>
+          {!expanded && (
+            <Button asChild size="icon" variant="ghost" className="size-8" aria-label="Expand tasks">
+              <Link to="/overview/tasks"><ArrowUpRight className="size-4" /></Link>
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="flex h-[calc(100%-5rem)] flex-col">
         <Tabs value={tab} onValueChange={(value) => setTab(value as OverviewTaskTab)}>
@@ -192,12 +182,9 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
                   variant="empty-state"
                   priority={20}
                   title={overdueOnly ? 'No overdue tasks' : tab === 'done' ? 'Nothing completed yet' : `Nothing in ${tab}`}
-                  actions={overdueOnly || tab === 'done'
-                    ? null
-                    : <Button type="button" size="sm" onClick={() => document.getElementById('overview-quick-task')?.focus()}>Add a task</Button>}
                   className="min-h-56 items-center"
                 >
-                  {overdueOnly ? 'You’re caught up.' : tab === 'done' ? 'Finish a task and it will collect here.' : 'Add a title below to get started.'}
+                  {overdueOnly ? 'You’re caught up.' : tab === 'done' ? 'Finish a task and it will collect here.' : 'Use Add task to create your first general to-do.'}
                 </MascotNote>
               ) : (
                 <Reorder.Group axis="y" values={visible} onReorder={applyOrder} className="space-y-3">
@@ -208,20 +195,6 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
             </m.div>
           </AnimatePresence>
         </BoundedRegion>
-
-        {tab !== 'done' && (
-          <form onSubmit={quickAdd} className="mt-4 flex items-center gap-2 border-t border-dashed border-border pt-3">
-            <Input
-              id="overview-quick-task"
-              value={quickTitle}
-              onChange={(event) => setQuickTitle(event.target.value)}
-              placeholder="Quick add — type and hit enter…"
-              aria-label="Quick-add a general task"
-              className="h-9 border-0 bg-transparent px-1 shadow-none focus-visible:ring-0"
-            />
-            <Button type="submit" size="sm" variant="ghost" disabled={!quickTitle.trim()}>Add</Button>
-          </form>
-        )}
       </CardContent>
     </Card>
   )
@@ -452,7 +425,7 @@ function TaskRow({
   )
 }
 
-/** Click to rename in place. The title was previously set once at quick-add
+/** Click to rename in place. The title is initially set in the standard create form
  *  and editable nowhere in the app. */
 function TaskTitle({ task, onRename, onOpen }: { task: CollectionRecord<TaskItem>; onRename: (title: string) => void; onOpen: () => void }) {
   const [editing, setEditing] = useState(false)
