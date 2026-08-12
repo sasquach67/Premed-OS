@@ -401,37 +401,3 @@ export function academicsNextActions(
     .filter((rec) => rec.severity === 'blocking' || !muted[rec.ruleId])
     .slice(0, Math.max(0, limit))
 }
-
-export interface MutedRule {
-  ruleId: string
-  at: number
-  /** A readable name so the settings list isn't a wall of slugs. */
-  label: string
-}
-
-const RULE_LABELS: Record<string, string> = {
-  'add-verifier': 'Add a verifier for active hours',
-  'exposure-going-stale': 'Exposure going stale',
-  'letter-follow-up': 'Follow up on letter requests',
-  'research-pi-recommender': 'Suggest research PIs as recommenders',
-  'link-organization': 'Link free-text orgs to records',
-  'reflection-to-story': 'Send reflections to the Story Bank',
-  'archive-completed': 'Archive finished roles',
-  'resolve-duplicates': 'Review possible duplicates',
-  'academics-unscheduled-prereq': 'Unscheduled med prereq',
-  'academics-covered-never-reviewed': 'Covered but never reviewed',
-  'academics-no-syllabus': 'No syllabus imported',
-}
-
-export function recommendationRuleLabel(ruleId: string): string {
-  return RULE_LABELS[ruleId] ?? ruleId
-}
-
-/** Muted rules, for the settings surface that lets the user turn them back on.
- *  Muting must never be a silent black hole. */
-export function mutedRecommendationRules(data: AppData): MutedRule[] {
-  const muted = data.settings.mutedRecommendationRules ?? {}
-  return Object.entries(muted)
-    .map(([ruleId, record]) => ({ ruleId, at: record.at, label: recommendationRuleLabel(ruleId) }))
-    .sort((a, b) => b.at - a.at)
-}

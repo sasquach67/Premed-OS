@@ -49,12 +49,9 @@ export {
 export {
   generateRecommendations,
   isMutableSeverity,
-  mutedRecommendationRules,
-  recommendationRuleLabel,
   ruleDismissalCount,
   smartNextActions,
   academicsNextActions,
-  type MutedRule,
   type Recommendation,
   type RecommendationStatus,
 } from './recommendations'

@@ -9,8 +9,9 @@ import type { AppData, CollectionRecord, Course, ExperienceEntry, LetterEntry } 
 import { daysSinceUpdate, paceProjection, pillarSignals, nextDeadline } from './derived'
 import { dataHealthWarnings, experienceCompleteness, courseCompleteness } from './dataHealth'
 import { dedupCandidates } from './dedup'
-import { academicsNextActions, generateRecommendations, isMutableSeverity, ruleDismissalCount, smartNextActions, mutedRecommendationRules } from './recommendations'
+import { academicsNextActions, generateRecommendations, isMutableSeverity, ruleDismissalCount, smartNextActions } from './recommendations'
 import { INTELLIGENCE_THRESHOLDS } from './types'
+import { useStore } from '@/store/store'
 
 const NOW = new Date('2026-07-25T12:00:00')
 const DAY = 86_400_000
@@ -315,12 +316,18 @@ describe('suppression and the alert-fatigue guard', () => {
     expect(ruleDismissalCount(data, 'letter-follow-up')).toBe(1)
   })
 
-  it('surfaces muted rules with readable labels so they can be turned back on', () => {
-    const data = quietSeed()
-    data.settings.mutedRecommendationRules['add-verifier'] = { at: Date.now() }
-    const [muted] = mutedRecommendationRules(data)
-    expect(muted.ruleId).toBe('add-verifier')
-    expect(muted.label).toBe('Add a verifier for active hours')
+  it('retires a rule only after its third dismissal', () => {
+    expect(INTELLIGENCE_THRESHOLDS.ruleMuteAfterDismissals).toBe(3)
+    useStore.getState().replaceAll(quietSeed())
+    const dismiss = useStore.getState().dismissRecommendation
+    const base = { ruleId: 'add-verifier', severity: 'important' as const }
+
+    dismiss({ ...base, id: 'add-verifier:first' })
+    dismiss({ ...base, id: 'add-verifier:second' })
+    expect(useStore.getState().settings.mutedRecommendationRules['add-verifier']).toBeUndefined()
+
+    dismiss({ ...base, id: 'add-verifier:third' })
+    expect(useStore.getState().settings.mutedRecommendationRules['add-verifier']).toBeDefined()
   })
 })
 

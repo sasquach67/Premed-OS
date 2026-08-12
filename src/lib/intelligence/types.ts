@@ -60,8 +60,8 @@ export const INTELLIGENCE_THRESHOLDS = {
   staleStoryDays: 21,
   /** A completed role idle this long is a candidate for archiving. */
   archiveCompletedAfterDays: 90,
-  /** How many dismissals of the same rule before it is muted wholesale. */
-  ruleMuteAfterDismissals: 2,
+  /** How many dismissals of the same rule before it is retired permanently. */
+  ruleMuteAfterDismissals: 3,
   /** Default cap on simultaneously surfaced recommendations (spec 03 §6.3: ≤3). */
   maxSmartActions: 3,
 } as const

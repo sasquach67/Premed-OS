@@ -82,7 +82,6 @@ interface Actions {
    *  never perform the recommended action, which stays the user's to take. */
   acceptRecommendation: (id: string) => void
   dismissRecommendation: (rec: { id: string; ruleId: string; severity: Severity }, reason?: string) => void
-  unmuteRecommendationRule: (ruleId: string) => void
 
   replaceAll: (data: AppData) => void
   resetToSeed: () => void
@@ -713,7 +712,7 @@ export const useStore = create<Store>()(
         set((s) => {
           s.settings.recommendationState[rec.id] = { status: 'dismissed', at: Date.now(), reason }
           // Alert-fatigue guard. Dismissal is per-instance by default; only once
-          // the same rule has been waved away repeatedly do we mute the rule
+          // the same rule has been waved away three times do we retire the rule
           // itself — and never for blocking items, which must always surface
           // no matter how often they are dismissed.
           if (!isMutableSeverity(rec.severity)) return
@@ -722,16 +721,6 @@ export const useStore = create<Store>()(
             .length
           if (dismissals >= INTELLIGENCE_THRESHOLDS.ruleMuteAfterDismissals) {
             s.settings.mutedRecommendationRules[rec.ruleId] = { at: Date.now() }
-          }
-        }),
-
-      unmuteRecommendationRule: (ruleId) =>
-        set((s) => {
-          delete s.settings.mutedRecommendationRules[ruleId]
-          // Clear this rule's dismissal history too, otherwise the very next
-          // dismissal would instantly re-trip the mute threshold.
-          for (const key of Object.keys(s.settings.recommendationState)) {
-            if (key.startsWith(`${ruleId}:`)) delete s.settings.recommendationState[key]
           }
         }),
 

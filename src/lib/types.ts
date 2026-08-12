@@ -881,8 +881,9 @@ export interface Settings {
   /** Per-instance recommendation lifecycle — an accepted or dismissed
    *  recommendation never returns. Keyed by `${ruleId}:${entityId}`. */
   recommendationState: Record<string, RecommendationRecord>
-  /** Rules muted wholesale after repeated dismissals (alert-fatigue guard).
-   *  Never applied to blocking items, and always re-enableable from Settings. */
+  /** Rules retired permanently after three dismissals (alert-fatigue guard).
+   *  Never applied to blocking items. The legacy field name is retained so
+   *  existing local-first records do not need a destructive migration. */
   mutedRecommendationRules: Record<string, MutedRuleRecord>
   /** Per-line pacing dismissal; false/absent means the projection may render. */
   projectionDismissals: Record<string, boolean>
