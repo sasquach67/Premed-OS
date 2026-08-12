@@ -79,8 +79,8 @@ export interface PillarSignals {
   activeCount: number
   /** Days from the earliest start date to today (or to the latest end date). */
   longevityDays: number | null
-  /** Average hours per week across the observed span; 0 when the span is unknown. */
-  hoursPerWeek: number
+  /** Unknown until the hour-log model supplies dated, measured entries. */
+  hoursPerWeek: number | null
   /** Distinct organizations represented — breadth, not volume. */
   distinctOrgs: number
   /** Distinct tags (used for Shadowing specialty breadth). */
@@ -111,8 +111,9 @@ export function pillarSignals(
   const spanEnd = hasOpenEntry || !latestEnd ? now : latestEnd
 
   const longevityDays = earliest ? Math.max(0, daysBetween(earliest, spanEnd)) : null
-  const weeks = longevityDays && longevityDays > 0 ? longevityDays / 7 : 0
-  const hoursPerWeek = weeks > 0 ? totalHours / weeks : 0
+  // A parent position's date range is not a measured activity interval. Using it
+  // to divide an aggregate would manufacture a pace; keep this dormant instead.
+  const hoursPerWeek = null
 
   const stamps = rows
     .map((entry) => entry.updatedAt ?? entry.createdAt)

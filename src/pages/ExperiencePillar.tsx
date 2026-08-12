@@ -226,7 +226,7 @@ type ApprovedPillarProps = {
 }
 
 function ApprovedPillarPage(props: ApprovedPillarProps) {
-  const { category, rows, entities, goal, totalHours, selectedEntity, onSelect, onAddEntity, onAddEntry } = props
+  const { category, rows, entities, goal, totalHours, selectedEntity, onSelect, onAddEntity } = props
 
   return (
     <ApprovedExperienceLayout
@@ -241,7 +241,6 @@ function ApprovedPillarPage(props: ApprovedPillarProps) {
         if (match) onSelect(match)
       }}
       onAddEntity={onAddEntity}
-      onAddEntry={onAddEntry}
     />
   )
 }
@@ -315,8 +314,8 @@ function ApprovedLedger({ rows }: { rows: ExperienceEntry[] }) {
   return (
     <section className="overflow-hidden rounded-2xl border bg-card">
       <div className="border-b p-4"><h2 className="font-display text-lg font-extrabold">Verification ledger</h2><p className="text-sm text-muted-foreground">The audit-ready record behind the final AMCAS entry.</p></div>
-      <div className="overflow-x-auto"><table className="w-full min-w-[48rem] text-sm"><thead className="bg-muted/30 text-left text-xs uppercase tracking-wide text-muted-foreground"><tr><th className="px-4 py-3">Organization</th><th>Total hrs</th><th>Avg / wk</th><th>Dates</th><th>Verifier</th><th>Type</th><th className="pr-4">AMCAS</th></tr></thead><tbody>
-        {sites.map((site) => { const row = site.entry; const count = rows.filter((item) => (item.org || item.id) === site.key).length; return <tr key={site.key} className="border-t"><td className="px-4 py-3 font-bold">{site.org || 'Unnamed organization'}</td><td>{site.hours}h</td><td>{Math.max(1, Math.round(site.hours / Math.max(1, count * 4)))}h</td><td className="text-muted-foreground">{dateRangeLabel([row])}</td><td>{row.supervisor || row.contact || 'Add verifier'}</td><td>{row.tags[0] || 'Non-clinical'}</td><td className="pr-4"><button type="button" className="inline-flex items-center gap-1 text-xs font-bold text-primary"><Copy className="size-3.5" /> Copy</button></td></tr> })}
+      <div className="overflow-x-auto"><table className="w-full min-w-[48rem] text-sm"><thead className="bg-muted/30 text-left text-xs uppercase tracking-wide text-muted-foreground"><tr><th className="px-4 py-3">Organization</th><th>Total hrs</th><th>Pace</th><th>Dates</th><th>Verifier</th><th>Type</th><th className="pr-4">AMCAS</th></tr></thead><tbody>
+        {sites.map((site) => { const row = site.entry; return <tr key={site.key} className="border-t"><td className="px-4 py-3 font-bold">{site.org || 'Unnamed organization'}</td><td>{site.hours}h</td><td className="text-muted-foreground">Needs dated hour logs</td><td className="text-muted-foreground">{dateRangeLabel([row])}</td><td>{row.supervisor || row.contact || 'Add verifier'}</td><td>{row.tags[0] || 'Non-clinical'}</td><td className="pr-4"><button type="button" className="inline-flex items-center gap-1 text-xs font-bold text-primary"><Copy className="size-3.5" /> Copy</button></td></tr> })}
       </tbody></table></div>
     </section>
   )
@@ -397,7 +396,6 @@ function PillarInsightStrip({
   entities: ExperienceEntity[]
 }) {
   const totalHours = rows.reduce((sum, row) => sum + Number(row.hours || 0), 0)
-  const projected = Math.round(projectedHoursFor(rows))
   const contacts = uniqueContacts(rows).length
   const staleCount = entities.filter((entity) => entity.stale).length
   const openLoops = entities.reduce((sum, entity) => sum + entity.openLoops.length, 0)
@@ -408,9 +406,9 @@ function PillarInsightStrip({
       <InsightCard
         icon={TrendingUp}
         label="Pace"
-        title={projected >= goal ? `On pace for about ${projected}h` : `${Math.max(0, goal - projected)}h gap at current pace`}
-        detail={`${totalHours}h logged now · ${goal}h target`}
-        tone={projected >= goal ? 'good' : 'warn'}
+        title="Weekly pace needs dated hour logs"
+        detail={`${totalHours}h recorded now${goal > 0 ? ` · ${goal}h target` : ''}`}
+        tone="neutral"
       />
       <InsightCard
         icon={Network}
@@ -715,7 +713,7 @@ function HoursAndSitesView({
   return (
     <div className="space-y-5">
       <div className="grid gap-4 lg:grid-cols-[1.1fr_1.4fr]">
-        <WeeklyHoursCard rows={rows} />
+        <WeeklyHoursCard />
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -767,25 +765,14 @@ function HoursAndSitesView({
   )
 }
 
-function WeeklyHoursCard({ rows }: { rows: ExperienceEntry[] }) {
-  const weeks = useMemo(() => buildWeeks(rows), [rows])
-  const max = Math.max(1, ...weeks.map((week) => week.hours))
+function WeeklyHoursCard() {
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base"><Clock className="size-4 text-primary" /> Weekly hours</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex h-44 items-end gap-2">
-          {weeks.map((week) => (
-            <div key={week.label} className="flex min-w-0 flex-1 flex-col items-center gap-2">
-              <div className="flex h-32 w-full items-end rounded-lg bg-muted/30 p-1">
-                <div className="w-full rounded-md bg-primary/80" style={{ height: `${Math.max(6, (week.hours / max) * 100)}%` }} />
-              </div>
-              <span className="text-[0.68rem] font-bold text-muted-foreground">{week.label}</span>
-            </div>
-          ))}
-        </div>
+        <p className="rounded-xl border border-dashed border-border p-4 text-sm font-semibold text-muted-foreground">Weekly history needs dated hour logs. Premed OS will not assign aggregate totals to made-up weeks.</p>
       </CardContent>
     </Card>
   )
@@ -1099,15 +1086,6 @@ function Field({ label, children, className }: { label: string; children: ReactN
   return <label className={cn('space-y-1.5 text-sm font-bold', className)}><span>{label}</span>{children}</label>
 }
 
-function buildWeeks(rows: ExperienceEntry[]) {
-  const result = Array.from({ length: 7 }, (_, index) => ({ label: `W${index + 1}`, hours: 0 }))
-  rows.forEach((row, index) => {
-    const bucket = Math.min(result.length - 1, index % result.length)
-    result[bucket].hours += Number(row.hours || 0)
-  })
-  return result
-}
-
 function siteSummaries(rows: ExperienceEntry[]) {
   const map = new Map<string, { key: string; org: string; role: string; hours: number; entry: ExperienceEntry }>()
   rows.forEach((entry) => {
@@ -1192,18 +1170,6 @@ function defaultRoleForCategory(category: ExperienceCategory) {
     leadership: 'Member',
   }
   return labels[category]
-}
-
-function projectedHoursFor(rows: ExperienceEntry[]) {
-  const total = rows.reduce((sum, row) => sum + Number(row.hours || 0), 0)
-  const dated = rows.map((row) => latestDateValue(row)).filter(Boolean)
-  if (dated.length < 2) return total
-
-  const oldest = Math.min(...dated)
-  const newest = Math.max(...dated)
-  const weeks = Math.max(1, daysBetween(oldest, newest) / 7)
-  const weeklyPace = total / weeks
-  return Math.round(total + weeklyPace * 48)
 }
 
 function categoryNoun(category: ExperienceCategory, plural = false) {

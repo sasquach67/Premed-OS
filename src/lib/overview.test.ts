@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { goalProgress, overviewTasks, roadmapMilestones, termGpaSeries } from '@/lib/overview'
-import type { Course, TaskItem } from '@/lib/types'
+import { goalProgress, latestExperienceLabel, observedWeeklyHours, overviewTasks, roadmapMilestones, termGpaSeries } from '@/lib/overview'
+import type { Course, ExperienceEntry, TaskItem } from '@/lib/types'
 
 function task(partial: Partial<TaskItem>): TaskItem {
   return {
@@ -93,5 +93,14 @@ describe('Overview selectors', () => {
   it('bounds real value-against-goal progress', () => {
     expect(goalProgress(75, 150)).toBe(50)
     expect(goalProgress(180, 150)).toBe(100)
+  })
+
+  it('keeps hour pace and “last logged” dormant until dated hour logs exist', () => {
+    const aggregate = [{
+      id: 'clinical-1', category: 'clinical', org: 'Clinic', role: 'Volunteer',
+      startDate: '2026-05-01', hours: 24, description: '', status: 'active', tags: [], order: 0,
+    }] satisfies ExperienceEntry[]
+    expect(observedWeeklyHours(aggregate, 'clinical')).toBeNull()
+    expect(latestExperienceLabel(aggregate)).toBeNull()
   })
 })

@@ -70,9 +70,9 @@ describe('derived properties', () => {
     expect(signals.entryCount).toBe(2)
     expect(signals.distinctOrgs).toBe(2)
     expect(signals.distinctTags).toBe(2)
-    // 60 days of longevity at 80h => ~9.3 h/wk
+    // Position bounds can establish tenure, not measured weekly pace.
     expect(signals.longevityDays).toBe(60)
-    expect(signals.hoursPerWeek).toBeCloseTo(80 / (60 / 7), 5)
+    expect(signals.hoursPerWeek).toBeNull()
   })
 
   it('reports unknown rather than inventing a date when timestamps are absent', () => {

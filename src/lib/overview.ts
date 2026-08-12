@@ -116,21 +116,14 @@ export function roadmapMilestones(tasks: CollectionRecord<TaskItem>[]): RoadmapM
   }))
 }
 
-export function observedWeeklyHours(entries: CollectionRecord<ExperienceEntry>[], category: ExperienceCategory): number | null {
-  const relevant = entries.filter((entry) => entry.category === category && !entry.deletedAt && entry.hours > 0)
-  const dated = relevant
-    .map((entry) => Date.parse(entry.startDate ?? ''))
-    .filter(Number.isFinite)
-  if (!relevant.length || !dated.length) return null
-  const weeks = Math.max(1, (Date.now() - Math.min(...dated)) / 604_800_000)
-  return relevant.reduce((sum, entry) => sum + entry.hours, 0) / weeks
+/** Aggregate experience rows do not contain dated activity. Keep pace dormant
+ * until the hour-log model can supply real dated entries. */
+export function observedWeeklyHours(_entries: CollectionRecord<ExperienceEntry>[], _category: ExperienceCategory): number | null {
+  return null
 }
 
 export function latestExperienceLabel(entries: CollectionRecord<ExperienceEntry>[]): string | null {
-  const dated = entries
-    .filter((entry) => !entry.deletedAt && entry.hours > 0 && entry.startDate)
-    .sort((a, b) => String(b.startDate).localeCompare(String(a.startDate)))
-  const latest = dated[0]
-  if (!latest) return null
-  return `${latest.hours}h · ${latest.org || latest.role}`
+  // A position start date is not the date on which its aggregate hours happened.
+  void entries
+  return null
 }
