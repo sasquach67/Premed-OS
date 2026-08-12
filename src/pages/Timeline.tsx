@@ -1,11 +1,7 @@
-import { GitBranch, ClipboardCheck, Pin } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { ROUTE_MAP } from '@/app/routes'
 import { daysUntil, fmtDate, fmtRelative } from '@/lib/date'
 import { PageHeader } from '@/components/common/PageHeader'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 
 export function Timeline() {
@@ -13,16 +9,7 @@ export function Timeline() {
   return (
     <div>
       <PageHeader title={route.label} />
-
-      <Tabs defaultValue="roadmap">
-        <TabsList>
-          <TabsTrigger value="roadmap"><GitBranch className="size-4" /> Roadmap</TabsTrigger>
-          <TabsTrigger value="verify"><ClipboardCheck className="size-4" /> Verify</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="roadmap"><RoadmapGraphic /></TabsContent>
-        <TabsContent value="verify"><VerifyChecklist /></TabsContent>
-      </Tabs>
+      <div className="mt-4"><RoadmapGraphic /></div>
     </div>
   )
 }
@@ -31,6 +18,10 @@ export function Timeline() {
 function RoadmapGraphic() {
   const tasks = useStore((s) => s.tasks)
   const milestones = tasks.filter((t) => t.milestone && t.deadline).sort((a, b) => (daysUntil(a.deadline) ?? 0) - (daysUntil(b.deadline) ?? 0))
+
+  if (!milestones.length) {
+    return <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">No roadmap milestones yet.</p>
+  }
 
   return (
     <div className="relative ml-2 space-y-5 border-l-2 border-border pl-7 pt-2">
@@ -55,36 +46,6 @@ function RoadmapGraphic() {
           </div>
         )
       })}
-    </div>
-  )
-}
-
-function VerifyChecklist() {
-  const advisingQs = useStore((s) => s.advisingQs)
-  const patchItem = useStore((s) => s.patchItem)
-  const tips = useStore((s) => s.tips).filter((t) => t.tag === 'andy')
-
-  return (
-    <div className="grid gap-5 lg:grid-cols-3">
-      <Card className="lg:col-span-2">
-        <CardHeader><CardTitle>Verify with advisor / HPA</CardTitle></CardHeader>
-        <CardContent className="space-y-1">
-          {advisingQs.map((q) => (
-            <label key={q.id} className="flex cursor-pointer items-start gap-2.5 rounded-lg px-1 py-1.5 hover:bg-muted/40">
-              <Checkbox checked={q.answered} onCheckedChange={(v) => patchItem('advisingQs', q.id, { answered: Boolean(v) })} className="mt-0.5" />
-              <span className={cn('text-sm', q.answered && 'text-muted-foreground line-through')}>{q.question}</span>
-            </label>
-          ))}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader><CardTitle className="flex items-center gap-2"><Pin className="size-4 text-destructive" /> Don’t-do reminders</CardTitle></CardHeader>
-        <CardContent className="space-y-2">
-          {tips.map((t) => (
-            <div key={t.id} className="rounded-lg border border-border bg-muted/40 p-2.5 text-xs">{t.text}</div>
-          ))}
-        </CardContent>
-      </Card>
     </div>
   )
 }

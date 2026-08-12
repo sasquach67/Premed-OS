@@ -105,7 +105,7 @@ Roadmap milestones are stored as rows in `data.tasks` with `milestone: true`. **
 
 15. **`Assignments` tab → delete.** `AssignmentsPanel` is Academics' (`briefs/D3-assignments.md`: *"Anything tied to a class lives here — `courseId` is required"*). If it is not already mounted on Academics → Daily → Assignments, **mount it there before removing it here.**
 16. **`Board` tab (`TaskBoard`) → delete.** A kanban over `tasks`, which are Overview's, with **no edit affordances** — it only moves cards between columns. Overview's Now/Soon/Done plus the star is the locked model (`03-overview.md` §6.4). **The `kanban` field stays on `TaskItem` and keeps being written** (2a); only the UI goes. **Do not drop data.**
-17. **`Verify` tab (`VerifyChecklist`) → does not belong here, and does not obviously belong anywhere.** It renders `advisingQs` and Andy's `don't-do` tips — neither is a task, a deadline, or a roadmap node. **Do not delete it. Do not silently relocate it. Move it out of Timeline and report where you think it should live** — Help and Overview are both plausible, and this is a product call, not an implementation one.
+17. **`Verify` tab (`VerifyChecklist`) → remove from Timeline. RESOLVED by Andy, Aug 2026.** Split the data by final owner: `advisingQs` belongs to **Letters**, as person-scoped questions on an `LT-27` mentor record riding `LT-30`'s existing loop; `tips` belongs to **Help**, as sourced Category B guidance. Both destination surfaces are undrawn, so the existing component mounts on Overview as a temporary home. **Do not delete either collection.** The code comment on the temporary component must preserve this ruling for the eventual split.
 18. **`Add task` page action → delete.** It creates a task with an empty title and no way to name it; Overview's quick-add replaces it properly.
 19. **`RoadmapGraphic` becomes the whole page** — no `Tabs` wrapper around a single view.
 20. **`overview.ts:87`** — `milestoneRoute`'s fallback returns `/timeline`, which **stays correct**: a roadmap milestone with no better home does belong to Timeline. **No change. Listed so it is not swept up with the others.**
@@ -125,7 +125,7 @@ For each numbered item: **done / partial / skipped**, with file references.
 **Call out specifically:**
 
 - **The parity table (2a)** — confirm every `TaskItem` field is either editable or on the ruled-out list. **This is the acceptance test for the whole brief.**
-- **Item 17** — where you think `VerifyChecklist` belongs, and why.
+- **Item 17** — confirm the temporary Overview bridge preserves both collections and records the final Letters/Help split in code.
 - **Item 13** — your proposed `NextEventWidget` empty-state copy.
 - **Item 14** — whether existing activity-feed entries need migrating.
 - **Any 20th reference** to `/timeline` this brief missed.

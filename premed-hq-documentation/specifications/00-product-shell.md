@@ -61,15 +61,13 @@ Non-nav routes (reachable, not listed): Profile & CV (`/profile`, opened from th
 
 **Resolved placement (July 2026):** Timeline stays in the Application group.
 
-> **Stale-route warning (Aug 2026).** §3.3 to §3.5 below describe **current code**, which still routes every task affordance to `/timeline` — the Topbar quick-capture "Task" link, the command palette's "Add a task" action, `LiveStatusChip`, and `AlertsStrip`'s "View all →". **All four now point at the wrong tab.** They belong to Overview: the task surfaces at `/overview/tasks` (`03-overview.md` §6.4), the deadline aggregate in the Attention bell (§7.5). Those paragraphs are left as-built descriptions, not corrected in place; **the rewiring is tracked in `implementation/deferred.md`.**
-
 ### 2.2 Page ownership
 
 Every object type has exactly one owning page. Other pages may *reference* an object (via links or inspectors) but never re-implement its editing surface.
 
 | Page | Owns (canonical create/edit/archive) | References only |
 |---|---|---|
-| Overview | Nothing. Composes widgets from other pages' data | Everything |
+| Overview | General tasks and their full editing surface | Everything else |
 | Academics | Courses, terms, assignments, class notes, GPA calculations | Tasks, files |
 | MCAT | Practice scores, study schedule, error/mistake log, focus sessions, resources | Tasks |
 | Clinical | Clinical experiences + hour logs | People (supervisors), organizations |
@@ -87,7 +85,7 @@ Every object type has exactly one owning page. Other pages may *reference* an ob
 
 Rules derived from this table:
 
-- The Overview page is a pure composition layer. If a widget needs an editing surface, it deep-links to the owning page instead of embedding one.
+- Overview is a composition layer except for general tasks, which it owns outright. Other widgets deep-link to their owning pages instead of embedding a second editor.
 - Hour logging happens on the owning experience page, and via Quick Add (§7.4), which routes the record to the owning store slice.
 - Tasks created anywhere (Quick Add, page-level buttons) live in the **Overview** store (revised Aug 2026) and appear wherever they are referenced.
 - **Deadlines have no central owner.** Each belongs to the record it is attached to — assignments to Academics, submission windows to Research, follow-ups to Letters. **The Attention bell (§7.5) is the only cross-cutting deadline surface.** No tab builds a second one.
@@ -102,7 +100,7 @@ Grounded in code as of this date. File references are for Claude Code orientatio
 
 - Flex row filling `h-svh`; desktop sidebar is an `<aside>` that reserves layout width (`4.75rem` collapsed / `16rem` expanded). **Motion follows §7.2 (canonical):** hover pop-out is a `transform` slide (~220ms), and only pin/unpin (⌘B) changes the reserved gutter width (≤250ms). The old 500ms `width` transition is **retired** — do not animate `width`, and never animate two elements at once. All transitions keep a `motion-reduce` fallback.
 - Mobile (`<lg`): sidebar hidden; hamburger opens a left drawer over a `bg-foreground/35` backdrop with blur; close on backdrop click or X.
-- Main column: `Topbar` (sticky) → `AlertsStrip` → scrollable `<main>` with `max-w-6xl` centered container, `px-4 py-6 md:px-8 md:py-8`.
+- Main column: `Topbar` (sticky) → scrollable `<main>` with a centered responsive container. The Attention bell is the only mounted cross-cutting alert surface.
 - Global shortcut: ⌘B / Ctrl+B, or `[` when not typing, toggles sidebar collapse (persisted in settings).
 - Shell mounts `useTheme`, `useBackup` (daily-on-open check + debounced auto-backup), `useCloudSync` (Supabase, no-op until configured).
 
@@ -119,21 +117,20 @@ Grounded in code as of this date. File references are for Claude Code orientatio
 ### 3.3 Top bar — `src/components/layout/Topbar.tsx`
 
 - Left: mobile menu button + `CommandSearch` trigger.
-- Right: **LiveStatusChip** (priority: overdue count → due today → due soon → "Backup off" → "Saved"; links to Timeline or Settings), appearance toggle (lightbulb icon), **MoreMenu** overflow dropdown.
-- MoreMenu contains: profile header, "Now" block (active page + status + overdue/today/soon counts), **Quick capture** items, then links to Ultimate Guide, Help, Backup/sync, Export, Profile, Settings.
-- Quick capture items are **navigation links only** — "Task" goes to `/timeline`, "Clinical hours" goes to `/clinical`, etc. Nothing is created from the menu. "Contact" is disabled with a "soon" badge.
+- Right: optional demo badge → **LiveStatusChip** (Attention-derived; task urgency links to `/overview/tasks`, system states to Settings) → **Quick Add** → **Attention bell** → appearance toggle.
+- Quick Add creates records in place through the shared dialog. General tasks are written to Overview and never routed through Timeline.
 
 ### 3.4 Command palette — `src/components/layout/CommandSearch.tsx`
 
 - Opens via ⌘K / Ctrl+K or `/` when not typing; Radix Dialog.
 - Fuzzy subsequence matching over an in-memory index rebuilt per render: nav routes, two section shortcuts, courses, tasks (+ attachments), experiences (+ attachments), schools, story/secondary docs, resume.
 - Tabs: All / Dashboard / Files / External links. Arrow keys + Enter; file hits open in a new browser tab.
-- A small hard-coded action list exists ("Add a task" → navigates to `/timeline`) — actions navigate, they do not create.
+- The Actions group uses the shared Quick Add dialog for creation. "Find overdue work" routes to `/overview/tasks?filter=overdue`; task record hits route to `/overview/tasks`.
 
-### 3.5 Alerts strip — `src/components/layout/AlertsStrip.tsx`
+### 3.5 Attention — `src/components/layout/AttentionBell.tsx`
 
-- Slim warning-tinted band under the top bar on every page; top 4 upcoming alerts from tasks (`upcomingAlerts` selector), each with icon by kind, relative date, per-alert Google Calendar one-click add, "View all →" to Timeline.
-- Dismissal stores a composite key of current alert ids+dates; the strip reappears when the alert set changes.
+- The bell is the mounted cross-cutting deadline, data-health, and system surface. Task items route to `/overview/tasks`; assignments and other owned dates route to their owning pages.
+- `AlertsStrip.tsx` remains in the tree for history but is not mounted. Do not restore it as a second deadline aggregate.
 
 ### 3.6 Routing — `src/App.tsx`, `src/app/routes.tsx`
 
