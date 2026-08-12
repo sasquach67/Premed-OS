@@ -69,7 +69,7 @@ type MascotNoteProps = MascotNoteBaseProps & (
 
 const VARIANT_STYLES: Record<MascotNoteVariant, string> = {
   tip: 'border-border bg-muted/55',
-  banner: 'border-white/65 bg-card/78 text-foreground shadow-xl shadow-stone-900/10 backdrop-blur-md dark:border-white/15 dark:bg-slate-950/45 dark:text-white dark:shadow-black/15',
+  banner: 'glass-surface--dark border-white/16 text-white shadow-xl shadow-black/20 backdrop-blur-md',
   teaching: 'border-[color-mix(in_srgb,var(--cat-mcat)_32%,var(--border))] bg-[color-mix(in_srgb,var(--cat-mcat)_10%,var(--card))]',
   'empty-state': 'border-dashed border-border bg-transparent',
   milestone: 'border-[color-mix(in_srgb,var(--success)_34%,var(--border))] bg-[color-mix(in_srgb,var(--success)_10%,var(--card))]',

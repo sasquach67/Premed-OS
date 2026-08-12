@@ -202,6 +202,7 @@ export function Academics() {
               options={[{ id: 'daily', label: 'Daily' }, { id: 'planning', label: 'Planning' }]}
               onChange={changeMode}
               label="Academics mode"
+              className="glass-surface--dark"
             />
             <StatStrip
               variant="banner"

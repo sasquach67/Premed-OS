@@ -458,6 +458,17 @@
     border-color: rgba(255, 255, 255, .16);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16);
   }
+  /* Glass takes its tone from its immediate backdrop, not from the page theme.
+     Dark banner art needs ink glass even while the rest of the app is light. */
+  .glass-surface--dark {
+    --glass-foreground: #fffaf0;
+    background: rgba(20, 26, 34, .62);
+    color: var(--glass-foreground);
+    border-color: rgba(255, 255, 255, .16);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .16),
+      0 12px 30px -20px rgba(0, 0, 0, .55);
+  }
   .glass-surface.text-popover-foreground,
   .glass-surface.text-foreground {
     color: var(--glass-foreground);

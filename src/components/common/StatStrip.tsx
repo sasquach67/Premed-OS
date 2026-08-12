@@ -40,7 +40,7 @@ export function StatStrip(props: StatStripProps) {
 
     return (
       <div
-        className={cn('glass-surface grid shrink-0 grid-flow-col auto-cols-fr overflow-hidden text-white', className)}
+        className={cn('glass-surface glass-surface--dark grid shrink-0 grid-flow-col auto-cols-fr overflow-hidden text-white', className)}
         aria-label="Current metrics"
       >
         {metrics.slice(0, 5).map((metric) => {
