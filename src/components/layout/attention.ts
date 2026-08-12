@@ -13,6 +13,7 @@ import type { AppData, ClassAssignment, TaskItem } from '@/lib/types'
 import { dataHealthWarnings } from '@/lib/intelligence/dataHealth'
 import { dedupCandidates } from '@/lib/intelligence/dedup'
 import type { Severity } from '@/lib/intelligence/types'
+import { storageFailure } from '@/store/storageHealth'
 
 export type AttentionSource = 'deadline' | 'data-health' | 'system'
 /** Alias kept so existing call sites read naturally; the vocabulary is shared. */
@@ -117,6 +118,18 @@ export const dataHealthFeed: AttentionFeed = (data) =>
 export const systemFeed: AttentionFeed = (data) => {
   const items: AttentionItem[] = []
   const { backup } = data.settings
+  const persistenceError = storageFailure()
+  if (persistenceError) {
+    items.push({
+      id: 'system:storage-write-failed',
+      source: 'system',
+      priority: 'blocking',
+      title: 'Local save failed',
+      why: `This browser rejected the latest save. Keep this tab open and export a backup before clearing site data. ${persistenceError}`,
+      route: '/settings',
+      actionLabel: 'Export backup',
+    })
+  }
   if (!backup.enabled) {
     items.push({
       id: 'system:backup-off',
@@ -155,8 +168,8 @@ export function buildAttention(data: AppData, extraFeeds: AttentionFeed[] = []):
 export function attentionStatus(items: AttentionItem[], backupEnabled: boolean) {
   const blocking = items.filter((item) => item.priority === 'blocking').length
   const important = items.filter((item) => item.priority === 'important').length
-  if (blocking) return { label: `${blocking} overdue`, tone: 'alert' as const }
-  if (important) return { label: `${important} due soon`, tone: 'due' as const }
+  if (blocking) return { label: `${blocking} need attention`, tone: 'alert' as const }
+  if (important) return { label: `${important} to review`, tone: 'due' as const }
   if (!backupEnabled) return { label: 'Backup off', tone: 'system' as const }
   return { label: 'All clear', tone: 'clear' as const }
 }

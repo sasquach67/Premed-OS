@@ -19,6 +19,7 @@ import {
   LEGACY_STORAGE_KEY, REAL_STORAGE_KEY, stampDemoNamespace,
 } from '@/lib/demoMode'
 import { uid } from '@/lib/id'
+import { guardedStorage } from '@/store/storageHealth'
 import { isMutableSeverity } from '@/lib/intelligence/recommendations'
 import { INTELLIGENCE_THRESHOLDS, type Severity } from '@/lib/intelligence/types'
 import { migrateAcademicsV4, syncCurrentTermWorkspaces } from '@/store/migrations/academicsV4'
@@ -34,7 +35,7 @@ const DEMO_MODE = isDemoMode()
 // legacy namespace while demo mode is active.
 if (!DEMO_MODE && typeof localStorage !== 'undefined' && !localStorage.getItem(REAL_STORAGE_KEY)) {
   const legacy = localStorage.getItem(LEGACY_STORAGE_KEY)
-  if (legacy) localStorage.setItem(REAL_STORAGE_KEY, legacy)
+  if (legacy) guardedStorage(localStorage).setItem(REAL_STORAGE_KEY, legacy)
 }
 
 // Discard any demo blob we did not seed, so the "Demo data" badge can never sit
@@ -42,7 +43,9 @@ if (!DEMO_MODE && typeof localStorage !== 'undefined' && !localStorage.getItem(R
 if (DEMO_MODE) clearUnstampedDemoNamespace()
 
 export const STORAGE_KEY = activeStorageKey()
-const SEED_VERSION = 8
+/** Version 0 is the oldest local-first root shape this migration chain accepts. */
+export const OLDEST_SUPPORTED_STORE_VERSION = 0
+export const CURRENT_STORE_VERSION = 8
 
 function createInitialData() {
   if (!DEMO_MODE) return structuredClone(createSeedData())
@@ -740,8 +743,8 @@ export const useStore = create<Store>()(
     })),
     {
       name: STORAGE_KEY,
-      version: SEED_VERSION,
-      storage: createJSONStorage(() => localStorage),
+      version: CURRENT_STORE_VERSION,
+      storage: createJSONStorage(() => guardedStorage(localStorage)),
       migrate: (persisted) => migrateAll(persisted as AppData) as unknown as Store,
       partialize: (state) =>
         Object.fromEntries(DATA_KEYS.map((k) => [k, state[k]])) as unknown as Store,

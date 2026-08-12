@@ -126,7 +126,7 @@ describe('attention model is unified', () => {
     expect(attentionStatus(
       [{ id: 'a', source: 'deadline', priority: 'blocking', title: 'x', why: 'y', route: '/', actionLabel: 'Open' }],
       true
-    )).toEqual({ label: '1 overdue', tone: 'alert' })
+    )).toEqual({ label: '1 need attention', tone: 'alert' })
   })
 })
 

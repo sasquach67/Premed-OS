@@ -1,13 +1,18 @@
 /* Tests for the data-migration functions that run on every load/import.
    These are the functions most likely to corrupt user data if broken. */
 import { describe, expect, it } from 'vitest'
-import { migrateAcademicTags, migrateAll, migrateMascotNotes, migrateOrgReflections, migrateOverviewSchema, migrateRequirementMetadata, migrateSafetyNets } from '@/store/store'
+import { CURRENT_STORE_VERSION, OLDEST_SUPPORTED_STORE_VERSION, migrateAcademicTags, migrateAll, migrateMascotNotes, migrateOrgReflections, migrateOverviewSchema, migrateRequirementMetadata, migrateSafetyNets } from '@/store/store'
 import { createSeedData } from '@/data/seed'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
 
 function freshData(): AppData {
   return createSeedData()
 }
+
+it('declares the full supported local migration span', () => {
+  expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
+  expect(CURRENT_STORE_VERSION).toBeGreaterThan(OLDEST_SUPPORTED_STORE_VERSION)
+})
 
 describe('migrateAcademicTags', () => {
   it('never writes to frozen input (immer-produced state is read-only)', () => {
