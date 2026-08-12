@@ -324,7 +324,7 @@
   /* Fixed desktop sidebar: a left-edge/top-control hover only fades the complete
      panel; it never exposes a partial rail or animates its geometry. */
   .sidebar-static-nav { display: flex; height: 100%; width: 100%; flex-direction: column; border-right: 1px solid var(--sidebar-border); background: var(--sidebar); color: var(--sidebar-foreground); }
-  .sidebar-static-header { display: flex; height: 4.75rem; flex: none; align-items: center; justify-content: space-between; gap: 0.625rem; padding: 0 0.75rem 0 1rem; border-bottom: 1px solid color-mix(in srgb, var(--sidebar-border) 75%, transparent); }
+  .sidebar-static-header { display: flex; height: 4.75rem; flex: none; align-items: center; justify-content: space-between; gap: 0.625rem; padding: 0 0.75rem 0 1rem; }
   .sidebar-static-wordmark { color: #132535; font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.06em; line-height: 1; }
   .sidebar-static-wordmark b { color: #79ABD7; font-weight: 800; }
   .dark .sidebar-static-wordmark { color: #f8f5ee; }
