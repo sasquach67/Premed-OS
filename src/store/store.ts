@@ -45,7 +45,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-export const CURRENT_STORE_VERSION = 8
+/** Matches the newest migration in `migrateAll`: `migrateShellV9`. */
+export const CURRENT_STORE_VERSION = 9
 
 function createInitialData() {
   if (!DEMO_MODE) return structuredClone(createSeedData())
