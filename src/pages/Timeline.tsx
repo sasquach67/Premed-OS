@@ -1,16 +1,10 @@
-import { Plus, CalendarDays, KanbanSquare, GitBranch, ClipboardCheck, Pin } from 'lucide-react'
+import { GitBranch, ClipboardCheck, Pin } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { ROUTE_MAP } from '@/app/routes'
-import type { TaskItem } from '@/lib/types'
-import { uid } from '@/lib/id'
 import { daysUntil, fmtDate, fmtRelative } from '@/lib/date'
 import { PageHeader } from '@/components/common/PageHeader'
-import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
-import { addTask } from '@/components/common/assignmentActions'
-import { Kanban, type KanbanItem } from '@/components/common/Kanban'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 
@@ -18,19 +12,15 @@ export function Timeline() {
   const route = ROUTE_MAP.timeline
   return (
     <div>
-      <PageHeader title={route.label} actions={<Button onClick={() => addTask()}><Plus className="size-4" /> Add task</Button>} />
+      <PageHeader title={route.label} />
 
       <Tabs defaultValue="roadmap">
         <TabsList>
           <TabsTrigger value="roadmap"><GitBranch className="size-4" /> Roadmap</TabsTrigger>
-          <TabsTrigger value="assignments"><CalendarDays className="size-4" /> Assignments</TabsTrigger>
-          <TabsTrigger value="board"><KanbanSquare className="size-4" /> Board</TabsTrigger>
           <TabsTrigger value="verify"><ClipboardCheck className="size-4" /> Verify</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roadmap"><RoadmapGraphic /></TabsContent>
-        <TabsContent value="assignments"><AssignmentsPanel /></TabsContent>
-        <TabsContent value="board"><TaskBoard /></TabsContent>
         <TabsContent value="verify"><VerifyChecklist /></TabsContent>
       </Tabs>
     </div>
@@ -66,37 +56,6 @@ function RoadmapGraphic() {
         )
       })}
     </div>
-  )
-}
-
-function TaskBoard() {
-  const tasks = useStore((s) => s.tasks)
-  const patchItem = useStore((s) => s.patchItem)
-  const addItem = useStore((s) => s.addItem)
-
-  const items: KanbanItem[] = tasks.filter((t) => !t.milestone).map((t) => ({
-    id: t.id,
-    title: t.title || 'Untitled',
-    subtitle: [t.course, t.deadline ? fmtRelative(t.deadline) : null].filter(Boolean).join(' · '),
-    column: t.archived ? 'done' : t.kanban === 'done' ? 'done' : t.kanban,
-  }))
-
-  return (
-    <Kanban
-      collection="tasks"
-      columns={[
-        { id: 'todo', title: 'To-Do', accent: 'var(--muted-foreground)' },
-        { id: 'doing', title: 'In-Progress', accent: 'var(--cat-shadow)' },
-        { id: 'done', title: 'Done', accent: 'var(--success)' },
-      ]}
-      items={items}
-      onMove={(id, col) => patchItem('tasks', id, { kanban: col as TaskItem['kanban'], archived: col === 'done', progress: col === 'done' ? 'Finished' : col === 'doing' ? 'Working on' : 'Not started' })}
-      footer={(colId) => colId === 'todo' && (
-        <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground" onClick={() => addItem('tasks', { id: uid(), title: 'New task', type: 'Personal', progress: 'Not started', kanban: 'todo', archived: false, milestone: false, order: 0 } as TaskItem)}>
-          <Plus className="size-4" /> Add card
-        </Button>
-      )}
-    />
   )
 }
 

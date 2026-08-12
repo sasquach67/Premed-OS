@@ -115,7 +115,7 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
       important: false,
       order: visible.length,
     })
-    logActivity('home', `Added task: ${title}`)
+    logActivity('overview', `Added task: ${title}`)
     setQuickTitle('')
     if (tab === 'done') setTab('now')
   }
@@ -285,7 +285,7 @@ function TaskRow({
   function complete() {
     const previous = { progress: task.progress, kanban: task.kanban, archived: task.archived }
     patchItem('tasks', task.id, { progress: 'Finished', kanban: 'done', archived: false })
-    logActivity('home', `Finished: ${task.title}`)
+    logActivity('overview', `Finished: ${task.title}`)
     toast({
       title: 'Task completed',
       description: task.title,
@@ -296,7 +296,7 @@ function TaskRow({
 
   function reopen() {
     patchItem('tasks', task.id, { progress: 'Not started', kanban: 'todo', archived: false })
-    logActivity('home', `Reopened: ${task.title}`)
+    logActivity('overview', `Reopened: ${task.title}`)
   }
 
   function duplicate() {
