@@ -303,7 +303,10 @@ Do not collapse the lookup back into one flat array.
 ## Preservation and honesty rules
 
 - Documentation is the source of truth.
-- Do not implement these mockups in the Premed OS app unless separately asked.
+- Mockups ARE now being implemented in the app, per
+  `implementation/briefs/W1-SWEEP-PROMPT-SEQUENCE.md` (Andy, Aug 2026).
+  Implementation reads the mockups; it never edits them. The mirror in
+  `specifications/mockups/` is the read source.
 - Do not invent zero-value metrics, fake charts, or empty recommendation shells.
 - Keep Academics cold-start actions inside Daily → Class Center.
 - “Import a syllabus” remains the primary cold-start action.
