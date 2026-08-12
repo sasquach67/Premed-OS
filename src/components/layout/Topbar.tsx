@@ -55,7 +55,7 @@ export function Topbar({ onMenu, onShowDesktopSidebar, desktopSidebarHidden = fa
   }, [openQuickAdd])
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-background/75 shadow-sm backdrop-blur-xl">
+    <header className="sticky top-0 z-20 bg-background/75 backdrop-blur-xl">
       <div className="mx-auto flex w-full max-w-[84rem] min-w-0 items-center gap-2 px-4 py-2.5 md:px-8">
         <Button variant="ghost" size="icon" className="shrink-0 lg:hidden" onClick={onMenu} aria-label="Open menu"><Menu className="size-5" /></Button>
         {desktopSidebarHidden && onShowDesktopSidebar && <Button variant="ghost" size="icon" className="hidden shrink-0 lg:inline-flex" onPointerDown={(event) => { event.preventDefault(); onShowDesktopSidebar() }} aria-label="Show sidebar"><PanelLeftOpen className="size-5" /></Button>}
