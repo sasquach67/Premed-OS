@@ -42,7 +42,7 @@ interface NavLink {
 }
 
 const LINKS: NavLink[] = [
-  { label: 'Features', to: '/', section: 'features' },
+  { label: 'Features', to: '/landing', section: 'features' },
   { label: 'About', to: '/about' },
   { label: 'Pricing', to: '/pricing' },
   { label: 'Privacy', to: '/privacy' },
@@ -80,7 +80,7 @@ export function PublicNav() {
         document.getElementById('features')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       if (pathname === '/' || pathname === '/landing') scroll()
       // Landing has to mount before the section exists to scroll to.
-      else navigate('/', { state: { scrollTo: 'features' } })
+      else navigate('/landing', { state: { scrollTo: 'features' } })
     },
     [pathname, navigate],
   )
@@ -93,7 +93,7 @@ export function PublicNav() {
         <nav className="pl-navpill" aria-label="Public pages">
           {LINKS.map((link) =>
             link.section ? (
-              <a key={link.label} href="/" className="pl-navlk" onClick={goToFeatures}>
+              <a key={link.label} href="#/landing" className="pl-navlk" onClick={goToFeatures}>
                 {link.label}
               </a>
             ) : (
