@@ -393,43 +393,33 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
 .tourin{position:relative;z-index:2;max-width:1180px;margin:0 auto;text-align:center}
 .tourtabs{display:inline-flex;gap:3px;border-radius:999px;padding:4px;margin:20px 0 26px;
   background:var(--muted);border:1px solid var(--bd)}
-.ttab{padding:7px 16px;border:0;border-radius:999px;font-family:'Baloo 2';font-weight:700;font-size:12.5px;
-  color:var(--mut);background:transparent;cursor:pointer}
+.ttab{padding:7px 16px;border-radius:999px;font-family:'Baloo 2';font-weight:700;font-size:12.5px;
+  color:var(--mut);cursor:pointer}
 .ttab.on{background:var(--fg);color:#17222c;font-weight:800}
 .shotstage{position:relative;border-radius:16px;background:var(--card);border:1px solid var(--bd);
   box-shadow:0 26px 60px -30px rgba(0,0,0,.8);padding:9px}
 .shotwin{position:relative;border-radius:11px;overflow:hidden;background:#1d1a17;
-  border:1px solid rgba(255,255,255,.07);height:min(490px,62vh);padding:0;display:block;
-  overflow-y:auto;overscroll-behavior:contain;scroll-behavior:smooth;scrollbar-width:thin;
-  scrollbar-color:var(--pri) rgba(0,0,0,.28)}
-.shotwin:focus-visible{outline:2px solid var(--pri);outline-offset:3px}
-.tourshot{display:none;width:100%;height:auto;min-height:100%;object-fit:contain;object-position:top center}
-.tourshot.on{display:block}
-/* One guide note changes as the reader explores the captured page. */
-.tourstate{display:none!important}
-.tourcoach{position:absolute;z-index:3;right:18px;bottom:18px;display:flex;align-items:flex-end;gap:9px;
-  max-width:min(340px,calc(100% - 38px));text-align:left;animation:tourcue .18s cubic-bezier(.16,1,.3,1) both}
-@keyframes tourcue{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
-.tourprogress{position:absolute;z-index:4;right:18px;bottom:6px;left:18px;height:2px;overflow:hidden;
-  border-radius:99px;background:rgba(255,255,255,.18);pointer-events:none}.tourprogress i{display:block;width:100%;height:100%;
-  transform:scaleX(.08);transform-origin:left center;border-radius:inherit;background:var(--pri);transition:transform .12s ease-out}
+  border:1px solid rgba(255,255,255,.07);height:430px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--dim);font-size:12.5px;font-weight:700;text-align:center;padding:0 40px}
+/* callout: glass card + a ram beside it + a leader line to the region */
 .call{position:absolute;z-index:3;display:flex;align-items:flex-start;gap:9px;max-width:262px;text-align:left}
-.call .bubble,.tourcoach .bubble{border-radius:13px;padding:10px 13px;font-size:12.5px;font-weight:700;line-height:1.45;
+.call .bubble{border-radius:13px;padding:10px 13px;font-size:12.5px;font-weight:700;line-height:1.45;
   color:#fff;background:rgba(20,26,34,.62);backdrop-filter:blur(15px) saturate(1.1);
   -webkit-backdrop-filter:blur(15px) saturate(1.1);border:1px solid rgba(255,255,255,.18);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 12px 28px -14px rgba(0,0,0,.7)}
-.call .bubble b,.tourcoach .bubble b{color:#a9d3ee;font-weight:800}
-.guide{position:relative;width:40px;height:40px;flex:none;border-radius:50%;overflow:hidden;
+.call .bubble b{color:#a9d3ee;font-weight:800}
+.guide{width:40px;height:40px;flex:none;border-radius:50%;overflow:hidden;
   background:radial-gradient(circle at 34% 28%,#3d4a58,#232b34);
   border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.22);
   display:flex;align-items:flex-end;justify-content:center}
-.guide::after{content:"";position:absolute;inset:0;background:url('assets/mascot.gif') center/118% auto no-repeat}.guide svg{display:none}
+.guide svg{width:34px;height:34px;color:#e9dcc4}
 .pin{position:absolute;width:11px;height:11px;border-radius:50%;background:var(--pri);
   box-shadow:0 0 0 4px rgba(111,179,222,.24),0 0 14px rgba(111,179,222,.7);z-index:3}
 .pin::after{content:"";position:absolute;inset:-4px;border-radius:50%;
   border:1px solid rgba(111,179,222,.55);animation:ping 2.4s ease-out infinite}
 @keyframes ping{0%{transform:scale(.8);opacity:.9}70%,100%{transform:scale(2.1);opacity:0}}
-@media (prefers-reduced-motion:reduce){.pin::after{animation:none}.shotwin{scroll-behavior:auto}.tourcoach{animation:none}.tourprogress i{transition:none}}
+@media (prefers-reduced-motion:reduce){.pin::after{animation:none}}
 .tourfoot{font-size:12.5px;color:var(--dim);font-weight:700;margin-top:20px}
 
 /* ── Review note (this file only) ──────────────────────────────────────── */
@@ -586,47 +576,40 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
       </div>
 
       <!-- Tour steps through real tabs. Overview first, because it is home. -->
-      <div class="tourtabs" role="tablist" aria-label="Tour steps">
-        <button class="ttab on" type="button" role="tab" aria-selected="true" data-tour="overview">Overview</button>
-        <button class="ttab" type="button" role="tab" aria-selected="false" data-tour="academics-daily">Academics · Daily</button>
-        <button class="ttab" type="button" role="tab" aria-selected="false" data-tour="academics-planning">Academics · Planning</button>
+      <div class="tourtabs">
+        <span class="ttab on">Overview</span>
+        <span class="ttab">Academics</span>
+        <span class="ttab">MCAT</span>
+        <span class="ttab">Clinical</span>
       </div>
 
       <div class="shotstage">
-        <div class="shotwin" tabindex="0" role="region" aria-label="Guided product preview. Scroll to continue the walkthrough.">
-          <img class="tourshot on" data-tour-shot="overview" src="assets/tour/overview.png" alt="Overview with current demo data">
-          <img class="tourshot" data-tour-shot="academics-daily" src="assets/tour/academics-daily.png" alt="Academics Daily with current demo data">
-          <img class="tourshot" data-tour-shot="academics-planning" src="assets/tour/academics-planning.png" alt="Academics Planning with current demo data">
+        <div class="shotwin">[ real screenshot of Overview, populated with demo data — never an illustration, never a device frame ]</div>
+
+        <!-- Callouts sit OVER the screenshot. Pin marks the region; the ram
+             stands beside the text. Coordinates are per-screenshot. -->
+        <span class="pin" style="left:16%;top:20%"></span>
+        <div class="call" style="left:5%;top:26%">
+          <span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span>
+          <div class="bubble"><b>Start here.</b> Overview is everything that needs you today, pulled from every tab.</div>
         </div>
 
-        <div class="tourcoach" aria-live="polite">
-          <span class="guide" aria-hidden="true"></span>
-          <div class="bubble"><b id="tour-lead">Start here.</b> <span id="tour-copy">Overview is everything that needs you today, pulled from every tab.</span></div>
-        </div>
-        <div class="tourprogress" aria-hidden="true"><i></i></div>
-
-        <!-- Callout coordinates are tied to these captured product screens. -->
-        <div class="tourstate on" data-tour-state="overview">
-          <span class="pin" style="left:18%;top:18%"></span>
-          <div class="call" style="left:4%;top:23%"><span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span><div class="bubble"><b>Start here.</b> Overview is everything that needs you today, pulled from every tab.</div></div>
-          <span class="pin" style="left:70%;top:25%"></span>
-          <div class="call" style="right:4%;top:31%"><span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span><div class="bubble"><b>Your day, at a glance.</b> The schedule stays visible beside the one thing happening now.</div></div>
-          <span class="pin" style="left:36%;top:68%"></span>
-          <div class="call" style="left:8%;top:73%"><span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span><div class="bubble"><b>What matters next.</b> A small, explainable set of next actions—not another dashboard to maintain.</div></div>
+        <span class="pin" style="left:52%;top:15%"></span>
+        <div class="call" style="left:41%;top:21%">
+          <span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span>
+          <div class="bubble"><b>Where you stand.</b> GPA, hours and practice scores, live, with the AMCAS number beside your school's.</div>
         </div>
 
-        <div class="tourstate" data-tour-state="academics-daily">
-          <span class="pin" style="left:19%;top:25%"></span>
-          <div class="call" style="left:5%;top:31%"><span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span><div class="bubble"><b>One calm daily view.</b> Classes, assignments, and the study loop share the same academic home.</div></div>
-          <span class="pin" style="left:43%;top:63%"></span>
-          <div class="call" style="left:23%;top:69%"><span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span><div class="bubble"><b>Heads up, with a reason.</b> Useful prompts say why they appeared and point to the next small action.</div></div>
+        <span class="pin" style="left:81%;top:47%"></span>
+        <div class="call" style="right:4%;top:53%">
+          <span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span>
+          <div class="bubble"><b>Today's plan.</b> Built from one hour budget shared across classes and MCAT prep, so it actually fits.</div>
         </div>
 
-        <div class="tourstate" data-tour-state="academics-planning">
-          <span class="pin" style="left:31%;top:66%"></span>
-          <div class="call" style="left:6%;top:72%"><span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span><div class="bubble"><b>AMCAS GPA, clearly separated.</b> Cumulative, science, and all-other coursework stay legible without collapsing into one score.</div></div>
-          <span class="pin" style="left:77%;top:66%"></span>
-          <div class="call" style="right:4%;top:72%"><span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span><div class="bubble"><b>What-if stays hypothetical.</b> Test a future grade without confusing a projection for your actual record.</div></div>
+        <span class="pin" style="left:26%;top:75%"></span>
+        <div class="call" style="left:13%;top:81%">
+          <span class="guide"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="14" r="5.4"/><path d="M9.5 31.5c0-5 4.7-8.2 10.5-8.2s10.5 3.2 10.5 8.2"/><path d="M15.6 24.3v3.1a4.4 4.4 0 0 0 8.8 0v-3.1"/><circle cx="27.4" cy="26.6" r="2.1"/><path d="M24.4 25.6v-1.3"/></svg></span>
+          <div class="bubble"><b>The bell is quiet.</b> Three interruptions a week, maximum. Everything else waits until you look.</div>
         </div>
       </div>
 
@@ -790,69 +773,5 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
 </div>
 
 </div>
-<script>
-  /* The tour uses real captures from the current product. The one guide note
-     changes as the reader scrolls the selected page rather than competing with
-     every annotation at once. */
-  const tourCues = {
-    overview: [
-      ['Start here.', 'Overview is everything that needs you today, pulled from every tab.'],
-      ['Your day, at a glance.', 'The schedule stays visible beside the one thing happening now.'],
-      ['What matters next.', 'A small, explainable set of next actions—not another dashboard to maintain.'],
-    ],
-    'academics-daily': [
-      ['One calm daily view.', 'Classes, assignments, and the study loop share the same academic home.'],
-      ['Heads up, with a reason.', 'Useful prompts say why they appeared and point to the next small action.'],
-    ],
-    'academics-planning': [
-      ['AMCAS GPA, clearly separated.', 'Cumulative, science, and all-other coursework stay legible without collapsing into one score.'],
-      ['What-if stays hypothetical.', 'Test a future grade without confusing a projection for your actual record.'],
-    ],
-  }
-  let activeTour = 'overview'
-  let activeCue = -1
-  const tourViewport = document.querySelector('.shotwin')
-  const tourCoach = document.querySelector('.tourcoach')
-  const tourLead = document.getElementById('tour-lead')
-  const tourCopy = document.getElementById('tour-copy')
-  const tourProgress = document.querySelector('.tourprogress i')
-  function setCoach(index) {
-    const cues = tourCues[activeTour]
-    const next = Math.max(0, Math.min(index, cues.length - 1))
-    if (next === activeCue) return
-    activeCue = next
-    const [lead, copy] = cues[next]
-    tourCoach.style.animation = 'none'
-    void tourCoach.offsetWidth
-    tourCoach.style.animation = ''
-    tourLead.textContent = lead
-    tourCopy.textContent = copy
-  }
-  function updateCoachFromScroll() {
-    const max = tourViewport.scrollHeight - tourViewport.clientHeight
-    const progress = max > 0 ? tourViewport.scrollTop / max : 0
-    tourProgress.style.transform = `scaleX(${Math.max(.08, progress)})`
-    setCoach(Math.floor(progress * tourCues[activeTour].length))
-  }
-  tourViewport.addEventListener('scroll', updateCoachFromScroll, { passive: true })
-  document.querySelectorAll('[data-tour]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const view = button.dataset.tour
-      activeTour = view
-      activeCue = -1
-      document.querySelectorAll('[data-tour]').forEach((item) => {
-        const selected = item === button
-        item.classList.toggle('on', selected)
-        item.setAttribute('aria-selected', String(selected))
-      })
-      document.querySelectorAll('[data-tour-shot], [data-tour-state]').forEach((item) => {
-        item.classList.toggle('on', item.dataset.tourShot === view || item.dataset.tourState === view)
-      })
-      tourViewport.scrollTop = 0
-      updateCoachFromScroll()
-    })
-  })
-  updateCoachFromScroll()
-</script>
 </body>
 </html>

@@ -731,48 +731,67 @@
   text-align: left;
 }
 .pl-shotwin img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
-.pl-tourviewport {
-  height: min(31rem, 62vh);
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scroll-behavior: smooth;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(var(--pl-pri-rgb), 0.7) rgba(0, 0, 0, 0.28);
-}
-.pl-tourviewport:focus-visible { outline: 2px solid var(--pl-pri); outline-offset: 3px; }
-/* Captures stay at a readable desktop scale. Without this wrapper, a narrow
-   landing page scales the 16:9 capture down to exactly the viewport height,
-   leaving no vertical content to scroll or cues to discover. */
-.pl-tourimage {
-  width: max(100%, 70rem);
-  flex: 0 0 max(100%, 70rem);
-  align-self: flex-start;
-  margin-left: 50%;
-  transform: translateX(-50%);
-}
-.pl-tourviewport img { width: 100%; height: auto; min-height: 0; max-width: none; object-fit: contain; }
-.pl-tourviewport::-webkit-scrollbar { width: 9px; }
-.pl-tourviewport::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.28); }
-.pl-tourviewport::-webkit-scrollbar-thumb { border: 2px solid rgba(0, 0, 0, 0.28); border-radius: var(--r-pill); background: rgba(var(--pl-pri-rgb), 0.72); }
 
-/* The guide is an illustration beside the active explanation, never a control
-   or marker. The one cue changes as the preview itself is scrolled. */
-.pl-tourcoach {
-  position: absolute;
-  z-index: 3;
-  right: var(--s-3);
-  bottom: var(--s-3);
+/* TourPreview — the fallback when no screenshot has been captured yet.
+   ⚠️ These rules did not exist before P2: the markup shipped unstyled, so
+   the fallback rendered as a stack of bare text. Do not delete the
+   component; it is what stands in for a failed image load. */
+.pl-prev { display: grid; grid-template-columns: clamp(120px, 13%, 190px) 1fr; width: 100%; height: 100%; text-align: left; }
+.pl-prev-nav {
   display: flex;
-  align-items: flex-end;
-  gap: 9px;
-  max-width: min(340px, calc(100% - var(--s-5)));
-  text-align: left;
-  animation: pl-tourcue-in 180ms ease-out both;
+  flex-direction: column;
+  gap: 0.35em;
+  padding: var(--s-3) var(--s-2);
+  background: rgba(0, 0, 0, 0.22);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
-@keyframes pl-tourcue-in { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
-.pl-tourprogress { position: absolute; z-index: 4; right: var(--s-3); bottom: 5px; left: var(--s-3); height: 2px; overflow: hidden; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.18); pointer-events: none; }
-.pl-tourprogress i { display: block; width: 100%; height: 100%; transform-origin: left center; border-radius: inherit; background: var(--pl-pri); transition: transform 120ms ease-out; }
+.pl-prev-brand {
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: var(--t-fine);
+  color: var(--pl-fg);
+  margin-bottom: var(--s-2);
+}
+.pl-prev-navlk {
+  font-size: var(--t-fine);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.38);
+  padding: 0.35em 0.6em;
+  border-radius: 7px;
+}
+.pl-prev-navlk.on { background: rgba(255, 255, 255, 0.1); color: var(--pl-fg); }
+.pl-prev-main { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-3); min-width: 0; }
+.pl-prev-hd { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-2); }
+.pl-prev-h { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-h3); color: var(--pl-fg); }
+.pl-prev-chip { font-size: var(--t-fine); font-weight: 700; color: var(--pl-dim); }
+.pl-prev-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: var(--s-2); }
+.pl-prev-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--s-2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid color-mix(in srgb, var(--c, var(--pl-pri)) 30%, transparent);
+}
+.pl-prev-k { font-size: var(--t-eyebrow); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pl-dim); }
+.pl-prev-v { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-h3); color: var(--c, var(--pl-fg)); }
+.pl-prev-list { display: flex; flex-direction: column; gap: 1px; }
+.pl-prev-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  padding: 0.55em 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: var(--t-fine);
+}
+.pl-prev-row i { width: 8px; height: 8px; border-radius: 3px; background: var(--c, var(--pl-pri)); flex: none; }
+.pl-prev-t { flex: 1; font-weight: 700; color: var(--pl-mut); }
+.pl-prev-m { color: var(--pl-dim); font-weight: 700; }
+
+/* callouts sit OVER the shot. The pin marks the region; the guide is an
+   ILLUSTRATION beside the bubble and never the marker itself. */
+.pl-call { position: absolute; z-index: 3; display: flex; align-items: flex-start; gap: 9px; max-width: 262px; text-align: left; }
 .pl-bubble {
   border-radius: 13px;
   padding: 0.7em 0.9em;
@@ -800,7 +819,24 @@
   align-items: flex-end;
   justify-content: center;
 }
-.pl-guide img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+.pl-guide svg { width: 34px; height: 34px; color: #e9dcc4; }
+.pl-pin {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--pl-pri);
+  box-shadow: 0 0 0 4px rgba(var(--pl-pri-rgb), 0.24), 0 0 14px rgba(var(--pl-pri-rgb), 0.7);
+  z-index: 3;
+}
+.pl-pin::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--pl-pri-rgb), 0.55);
+  animation: pl-ping 2.4s ease-out infinite;
+}
 .pl-tourfoot { font-size: var(--t-fine); color: var(--pl-dim); font-weight: 700; margin-top: var(--s-3); }
 
 /* ── Cards ────────────────────────────────────────────────────────────── */
@@ -1087,14 +1123,11 @@
   .pl-navpill { display: none; }
   .pl-ftiles { grid-template-columns: repeat(2, 1fr); }
   .pl-c5, .pl-c7 { grid-column: span 12; }
-  .pl-tourviewport { height: min(25rem, 58vh); }
-  .pl-tourcoach { right: var(--s-2); bottom: var(--s-2); max-width: calc(100% - var(--s-4)); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pl-tourviewport { scroll-behavior: auto; }
-  .pl-tourcoach { animation: none; }
-  .pl-tourprogress i { transition: none; }
+  .pl-call { position: static !important; max-width: none; margin-top: 10px; }
+  .pl-pin { display: none; }
+  .pl-shotwin { aspect-ratio: auto; min-height: 200px; }
+  .pl-prev-nav { display: none; }
+  .pl-prev { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {
