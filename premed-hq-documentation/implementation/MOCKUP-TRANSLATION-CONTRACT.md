@@ -93,14 +93,14 @@ This table is the required routing result of `component-inventory.md`. `NEW` mea
 
 | Recurring mockup pattern | One component to use | Mechanical ruling |
 |---|---|---|
-| stat strip | **NEW** | `Ring` and `StatTile` are deprecated for routine metrics; the inventory specifies a compact stat row but names no owner. |
+| stat strip | `StatStrip` | Adopt and generalize the existing implementation; `Ring` and `StatTile` remain deprecated for routine metrics. Do not add another stat-strip component. |
 | sub-tab underline navigation | `Animated Tabs` | Keep the product views and order from the mockup; use the shared tabs behavior and app styling. |
 | expandable row | `Collapsible` | The row remains one disclosure control; do not create a parallel expandable-list implementation. |
 | inline add row | **NEW** | No inventory component owns inline collection creation. |
 | contact card | `Card` | Compose the existing card primitive; clicking a record still follows the shared record-open model. |
 | banner hero | `PageBanner` | Preserve the pictured content order inside the existing banner owner. |
-| glass card | **NEW** | The inventory names no one cross-app glass-card component. Do not hand-roll another glass recipe. |
-| mascot note | **NEW** | The inventory names no mascot-note owner. Do not invent a replacement name in a feature. |
+| glass card | `Card` (`variant="glass"`) | The shared card already owns the app glass treatment; the public layer keeps its existing `GlassSurface` wrapper. Do not hand-roll another glass recipe. |
+| mascot note | `MascotNote` | Adopt the existing shared component and its persisted one-per-view behavior; never create a second explanation-note component. |
 | InfoTip | `InfoTip` | Use only for terse factual clarification, not teaching copy or safety-critical content. |
 | tracker table | `TrackerTable` | Enhance the one table implementation; never build a second data table. |
 | center-peek | `CenterPeek` | Record click opens through the shared record-open grammar. |

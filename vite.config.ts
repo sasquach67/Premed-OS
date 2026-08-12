@@ -19,5 +19,8 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // This Vite project owns the root src/ app. Atlas has its own runner,
+    // aliases, and Playwright suites, so the app gate must not collect it.
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
   },
 })

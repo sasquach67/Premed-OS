@@ -19,11 +19,11 @@
 
 These are the differentiation; generic versions would be a downgrade:
 
-`TrackerTable` · `CenterPeek` · `ObjectInspector` · `RecordOpenWorkspace` · `EntityLinkCombobox` · `CreateExperienceDialog` · `BulkActionBar` · `SavedViewControls` · `TrashRecovery` · `DependencyConfirmDialog` · `FocusModeLayout` · `ModeSwitch` · `AutosaveStatus` · `ToastProvider` · `Kanban` · `NotesDB` · `DocEmbed` · `HeroDailySchedule` · `PageHeader` · `PageBanner` · `EmptyState` · `InfoTip` · `ResourceGrid` · `CollectionState` · `Collapsible` · `SidePeek` (mobile sheet).
+`TrackerTable` · `CenterPeek` · `ObjectInspector` · `RecordOpenWorkspace` · `EntityLinkCombobox` · `CreateExperienceDialog` · `BulkActionBar` · `SavedViewControls` · `TrashRecovery` · `DependencyConfirmDialog` · `FocusModeLayout` · `ModeSwitch` · `AutosaveStatus` · `ToastProvider` · `Kanban` · `NotesDB` · `DocEmbed` · `HeroDailySchedule` · `PageHeader` · `PageBanner` · `EmptyState` · `InfoTip` · `MascotNote` · `StatStrip` · `ResourceGrid` · `CollectionState` · `Collapsible` · `SidePeek` (mobile sheet).
 
 ## 2. Have — shadcn primitives already in the repo (no action)
 
-`badge` · `button` · `card` · `checkbox` · `dialog` · `dropdown-menu` · `input` · `label` · `popover` · `progress` · `select` · `separator` · `switch` · `tabs` · `textarea` · `tooltip`.
+`badge` · `button` · `card` (including its owned `glass` variant) · `checkbox` · `dialog` · `dropdown-menu` · `input` · `label` · `popover` · `progress` · `select` · `separator` · `switch` · `tabs` · `textarea` · `tooltip`.
 
 ## 3. Improve — selective upgrades (only where shadcn is genuinely better)
 
