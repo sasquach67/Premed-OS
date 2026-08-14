@@ -1,0 +1,81 @@
+export type SyllabusKind = 'identity' | 'exams' | 'weights' | 'units' | 'deadlines' | 'policies' | 'logistics'
+
+export interface SyllabusEvidence { quote: string; location: string }
+export interface SyllabusItem { id: string; kind: SyllabusKind; label: string; value?: string; confidence: 'high' | 'low'; evidence: SyllabusEvidence }
+export interface SyllabusProposal {
+  sourceName: string
+  sourceKind: 'pdf' | 'docx' | 'text' | 'image'
+  text: string
+  items: SyllabusItem[]
+  searched: Record<SyllabusKind, string>
+  scanDetected: boolean
+}
+
+const month = '(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)'
+const datePattern = new RegExp(`\\b${month}\\.?\\s+\\d{1,2}(?:,?\\s+20\\d{2})?\\b`, 'gi')
+const headers: Array<[SyllabusKind, RegExp]> = [
+  ['units', /^(?:week|unit|module|chapter)\s*\d+/i],
+  ['policies', /\b(?:attendance|late work|late policy|drop(?:ped)? lowest|replacement|make-?up)\b/i],
+  ['logistics', /\b(?:office hours|meets?|meeting|room|location|instructor|professor)\b/i],
+]
+
+function lineEvidence(line: string, index: number): SyllabusEvidence {
+  return { quote: line.trim(), location: `line ${index + 1}` }
+}
+function push(items: SyllabusItem[], kind: SyllabusKind, label: string, value: string | undefined, confidence: 'high' | 'low', evidence: SyllabusEvidence) {
+  items.push({ id: `${kind}-${items.length}`, kind, label, value, confidence, evidence })
+}
+
+/** A key-free parser. It deliberately proposes only regular, attributable facts. */
+export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', sourceKind: SyllabusProposal['sourceKind'] = 'text'): SyllabusProposal {
+  const lines = text.replace(/\r/g, '').split('\n').map((line) => line.replace(/\s+/g, ' ').trim()).filter(Boolean)
+  const items: SyllabusItem[] = []
+  const searched: Record<SyllabusKind, string> = {
+    identity: 'No course identity found', exams: 'No exam dates found', weights: 'No grade categories found', units: 'No week or unit headings found', deadlines: 'No assignment deadlines found', policies: 'No attendance, late, drop, or replacement policy found', logistics: 'No meeting, instructor, or office-hours details found',
+  }
+  lines.forEach((line, index) => {
+    const evidence = lineEvidence(line, index)
+    const course = line.match(/\b([A-Z]{2,5}\s?\d{2,4}[A-Z]?)\s*(?:[-:–—]\s*|\s{2,})(.{3,})/)
+    if (course && !items.some((item) => item.kind === 'identity')) { push(items, 'identity', course[1], course[2], 'high', evidence); searched.identity = 'Course identity found' }
+    const weight = line.match(/^(.{2,60}?)\s*[-:–]?\s*(\d{1,3}(?:\.\d+)?)\s*%/i)
+    if (weight) { push(items, 'weights', weight[1].trim(), `${weight[2]}%`, 'high', evidence); searched.weights = 'Grade categories found' }
+    const date = line.match(datePattern)
+    if (date) {
+      const isExam = /\b(?:exam|midterm|final|test)\b/i.test(line)
+      const kind: SyllabusKind = isExam ? 'exams' : 'deadlines'
+      push(items, kind, line.replace(date[0], '').replace(/[—:–-]+$/, '').trim() || (isExam ? 'Exam' : 'Deadline'), date[0], 'high', evidence)
+      searched[kind] = isExam ? 'Exam dates found' : 'Assignment deadlines found'
+    }
+    for (const [kind, pattern] of headers) if (pattern.test(line)) { push(items, kind, line, undefined, kind === 'policies' ? 'low' : 'high', evidence); searched[kind] = `${kind[0].toUpperCase()}${kind.slice(1)} found` }
+  })
+  return { sourceName, sourceKind, text, items, searched, scanDetected: text.replace(/\s/g, '').length < 80 }
+}
+
+export async function extractSyllabusFile(file: File): Promise<SyllabusProposal> {
+  const name = file.name || 'Syllabus'
+  const type = file.type.toLowerCase()
+  if (type.startsWith('image/')) {
+    return parseSyllabusText('', name, 'image')
+  }
+  if (/wordprocessingml|\.docx$/i.test(type || name)) {
+    const mammoth = await import('mammoth')
+    const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })
+    return parseSyllabusText(result.value, name, 'docx')
+  }
+  if (type === 'application/pdf' || /\.pdf$/i.test(name)) {
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+    const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise
+    const pages: string[] = []
+    for (let number = 1; number <= pdf.numPages; number += 1) {
+      const content = await (await pdf.getPage(number)).getTextContent()
+      pages.push(content.items.map((item) => 'str' in item ? item.str : '').join(' '))
+    }
+    return parseSyllabusText(pages.join('\n'), name, 'pdf')
+  }
+  throw new Error('This file cannot be read directly. Paste its text or enter it manually.')
+}
+
+export function weightGap(items: SyllabusItem[]) {
+  const weights = items.filter((item) => item.kind === 'weights').map((item) => Number(item.value?.replace('%', ''))).filter(Number.isFinite)
+  return weights.length ? 100 - weights.reduce((sum, weight) => sum + weight, 0) : null
+}

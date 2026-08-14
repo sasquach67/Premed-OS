@@ -43,6 +43,9 @@ import {
 import { GRADE_POINTS, fmtGpa, gpaStats } from '@/lib/selectors'
 import { ClassHub, ClassHubPeek } from '@/components/academics/ClassHub'
 import { MascotNote } from '@/components/common/MascotNote'
+import { useToast } from '@/components/common/useToast'
+import { extractSyllabusFile, parseSyllabusText, weightGap, type SyllabusProposal } from '@/lib/academics/syllabusParser'
+import { retainLocalSyllabus } from '@/lib/academics/localSyllabusFiles'
 
 const COLORS: AcademicTagColor[] = ['blue', 'green', 'purple', 'orange', 'yellow', 'red', 'pink', 'gray', 'brown']
 const CLASS_ICONS: { id: string; label: string; Icon: LucideIcon }[] = [
@@ -369,9 +372,14 @@ function ClassCenterDashboard({
     .sort((a, b) => a.order - b.order)
   const activeClasses = data.classes.filter((row) => row.status === 'active')
 
-  function importSyllabus(form: ClassFormState, selectedFiles: File[]) {
+  async function importSyllabus(form: ClassFormState, selectedFiles: File[], proposal?: SyllabusProposal) {
     const now = Date.now()
     const courseId = uid()
+    const sourceFiles = selectedFiles.length ? selectedFiles : proposal ? [new File([proposal.text], `${proposal.sourceName}.txt`, { type: 'text/plain' })] : []
+    const retained = await Promise.all(sourceFiles.map(async (file) => {
+      const id = uid()
+      return { file, id, blobRef: await retainLocalSyllabus(file, id) }
+    }))
     updateAll((draft) => {
       draft.courses.push({
         id: courseId, code: form.courseCode.trim() || 'NEW 101', title: form.courseTitle.trim() || 'Untitled class',
@@ -380,10 +388,18 @@ function ClassCenterDashboard({
       })
       const center = draft.academics.classCenter
       center.workspaces.push({ ...workspaceFields(form), id: uid(), courseId, createdAt: now, updatedAt: now, order: center.workspaces.length })
-      selectedFiles.forEach((file) => center.files.unshift({
-        id: uid(), courseId, title: file.name.replace(/\.[^.]+$/, '') || file.name, type: 'syllabus', sourceType: 'upload', owner: 'course', url: '',
+      retained.forEach(({ file, id, blobRef }) => center.files.unshift({
+        id, courseId, title: file.name.replace(/\.[^.]+$/, '') || file.name, type: 'syllabus', sourceType: 'upload', owner: 'course', url: '', blobRef,
         fileName: file.name, mimeType: file.type, notes: '', linkedTopicIds: [], createdAt: now, updatedAt: now, order: center.files.length,
       }))
+      if (proposal) {
+        proposal.items.filter((item) => item.kind === 'units').forEach((item, index) => center.topics.push({
+          id: uid(), courseId, title: item.label, unit: item.label, status: 'not-started', fsrs: createTopicFsrsState(), confidence: 3, sourceNoteIds: [], linkedFileIds: [], createdAt: now, updatedAt: now, order: index,
+        }))
+        proposal.items.filter((item) => item.kind === 'exams' || item.kind === 'deadlines').forEach((item, index) => center.assignments.push({
+          id: uid(), courseId, title: item.label, type: item.kind === 'exams' ? 'exam' : 'other', dueDate: item.value, status: 'not-started', linkedTopicIds: [], linkedFileIds: [], notes: `Source: ${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: index,
+        }))
+      }
     })
     setSyllabusImportOpen(false)
   }
@@ -2013,27 +2029,51 @@ function SyllabusImportDialog({
   open: boolean
   semester: string
   onOpenChange: (open: boolean) => void
-  onImport: (form: ClassFormState, files: File[]) => void
+  onImport: (form: ClassFormState, files: File[], proposal?: SyllabusProposal) => Promise<void>
 }) {
   const [form, setForm] = useState(() => emptyClassForm(semester))
   const [files, setFiles] = useState<File[]>([])
+  const [pastedText, setPastedText] = useState('')
+  const [proposal, setProposal] = useState<SyllabusProposal | null>(null)
+  const [parsing, setParsing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const toast = useToast()
 
   function close(next: boolean) {
     if (!next) {
       setFiles([])
+      setProposal(null)
+      setPastedText('')
+      setError(null)
       setForm(emptyClassForm(semester))
     }
     onOpenChange(next)
   }
+
+  async function parse() {
+    setError(null); setParsing(true)
+    try {
+      const next = pastedText.trim() ? parseSyllabusText(pastedText, 'Pasted syllabus') : await extractSyllabusFile(files[0])
+      setProposal(next)
+      const identity = next.items.find((item) => item.kind === 'identity')
+      if (identity && !form.courseCode) setForm((current) => ({ ...current, courseCode: identity.label, courseTitle: identity.value || current.courseTitle }))
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'This file could not be read.') } finally { setParsing(false) }
+  }
+  const grouped = proposal ? (['identity', 'exams', 'weights', 'units', 'deadlines', 'policies', 'logistics'] as const).map((kind) => [kind, proposal.items.filter((item) => item.kind === kind)] as const) : []
+  const gap = proposal ? weightGap(proposal.items) : null
 
   return (
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="max-w-xl">
         <DialogHeader><DialogTitle>Import your syllabus</DialogTitle></DialogHeader>
         <div className="space-y-5">
-          <p className="text-sm font-semibold text-muted-foreground">Your file is saved to Materials with a new class. Review the course details here first.</p>
-          <AnimatedFileUpload onFiles={(selected) => setFiles(selected.slice(0, 1))} />
-          {files.length > 0 && <p className="rounded-xl border border-border bg-muted/35 px-3 py-2 text-sm font-bold">Ready to import: {files[0].name}</p>}
+          {!proposal && <>
+            <p className="text-sm font-semibold text-muted-foreground">Read this locally, then review every proposed item before anything is saved.</p>
+            <AnimatedFileUpload accept=".pdf,.docx,image/*,text/plain" multiple onFiles={(selected) => { setFiles(selected); setError(null) }} label="Drop a syllabus or course schedule here" description="PDF, DOCX, image, or text file. It stays on this device." />
+            <Textarea value={pastedText} onChange={(event) => setPastedText(event.target.value)} placeholder="Or paste syllabus text from Canvas…" className="min-h-28" />
+            {error && <p className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm font-bold">{error} Paste the text or continue with manual entry; importing never blocks you.</p>}
+          </>}
+          {proposal && <div className="space-y-3"><p className="text-sm font-semibold text-muted-foreground">Nothing has been saved. Each proposal includes the text it came from.</p>{proposal.scanDetected && <p className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm font-bold">This looks like a scan — the text can’t be read directly. Paste the text or enter details manually with the file open beside you.</p>}{grouped.map(([kind, items]) => <details key={kind} open={items.some((item) => item.confidence === 'low')} className="rounded-xl border border-border bg-muted/20 p-3"><summary className="cursor-pointer font-display text-sm font-extrabold capitalize">{kind} · {items.length ? `${items.length} found` : proposal.searched[kind]}</summary><div className="mt-3 space-y-2">{items.map((item) => <div key={item.id} className="rounded-lg border border-border bg-card p-2 text-sm"><div className="flex gap-2"><span className={cn('font-bold', item.confidence === 'low' && 'text-warning')}>{item.label}</span><span>{item.value}</span></div><p className="mt-1 text-xs text-muted-foreground">{item.evidence.location} · “{item.evidence.quote}”</p></div>)}<button type="button" onClick={() => setProposal(null)} className="text-xs font-bold text-primary underline">Add manually</button></div></details>)}{gap !== null && gap !== 0 && <p className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm font-bold">Grade weights are {Math.abs(gap)}% {gap > 0 ? 'short of' : 'over'} 100%. Nothing was normalized.</p>}</div>}
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Course code"><Input value={form.courseCode} onChange={(event) => setForm((current) => ({ ...current, courseCode: event.target.value }))} placeholder="ENGL 105" /></Field>
             <Field label="Course title"><Input value={form.courseTitle} onChange={(event) => setForm((current) => ({ ...current, courseTitle: event.target.value }))} placeholder="English Composition & Rhetoric" /></Field>
@@ -2042,7 +2082,7 @@ function SyllabusImportDialog({
             <div className="grid gap-2 sm:grid-cols-3">{CLASS_TYPES.map((type) => <button key={type.value} type="button" onClick={() => setForm((current) => ({ ...current, type: type.value }))} className={cn('rounded-xl border p-3 text-left transition', form.type === type.value ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-muted/50')}><span className="block font-display text-sm font-extrabold">{type.label}</span><span className="text-xs font-semibold text-muted-foreground">{type.detail}</span></button>)}</div>
           </Field>
         </div>
-        <DialogFooter><Button variant="outline" onClick={() => close(false)}>Cancel</Button><Button disabled={!files.length} onClick={() => onImport(form, files)}><Upload className="size-4" /> Import syllabus</Button></DialogFooter>
+        <DialogFooter><Button variant="outline" onClick={() => proposal ? setProposal(null) : close(false)}>{proposal ? 'Back' : 'Cancel'}</Button>{proposal ? <Button onClick={async () => { await onImport(form, files, proposal); toast({ title: 'Syllabus applied', description: `Created ${form.courseCode || 'your class'} from the reviewed proposal.` }) }}><CheckCircle2 className="size-4" /> Apply reviewed import</Button> : <Button disabled={(!files.length && !pastedText.trim()) || parsing} onClick={parse}><Upload className="size-4" /> {parsing ? 'Reading week structure…' : 'Read syllabus'}</Button>}</DialogFooter>
       </DialogContent>
     </Dialog>
   )
