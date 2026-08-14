@@ -411,7 +411,7 @@ function ClassCenterDashboard({
           <MascotNote variant="empty-state" className="min-h-[300px] flex-col justify-center px-6 py-10 text-center sm:px-12" title="Bring in your first class">
             <p className="mx-auto max-w-xl">Start with the syllabus you already have. You’ll review the class details before anything is saved.</p>
             <div className="mt-5 flex flex-col items-center">
-              <Button size="lg" className="shadow-none hover:shadow-sm" onClick={() => setSyllabusImportOpen(true)}><Upload className="size-4" /> Import syllabus</Button>
+              <Button size="lg" className="shadow-[0_-6px_14px_-10px_hsl(var(--primary)/0.54)] hover:shadow-[0_-7px_16px_-10px_hsl(var(--primary)/0.58)]" onClick={() => setSyllabusImportOpen(true)}><Upload className="size-4" /> Import syllabus</Button>
               <button type="button" onClick={() => setEditor({ open: true, form: emptyClassForm(semester) })} className="mt-3 text-sm font-bold text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline">Add manually</button>
             </div>
           </MascotNote>
