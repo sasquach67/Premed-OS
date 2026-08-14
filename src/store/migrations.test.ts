@@ -17,12 +17,13 @@ it('declares the full supported local migration span', () => {
 })
 
 describe('migrateSchoolStatusV12', () => {
-  it('preserves a school record while retaining only the applied event', () => {
+  it('archives a school record while retaining only the applied event and its student note', () => {
     const data = freshData()
-    data.schools = [{ id: 'school-1', name: 'Example', type: 'MD', category: 'target', status: 'rejected' as never, order: 0 }]
+    data.schools = [{ id: 'school-1', name: 'Example', type: 'MD', category: 'target', status: 'rejected' as never, whyItIsOnMyList: 'A strong rural-health fit.', order: 0 }]
     const out = migrateSchoolStatusV12(data)
     expect(out.schools).toHaveLength(1)
-    expect(out.schools[0]).toMatchObject({ id: 'school-1', name: 'Example', status: 'applied' })
+    expect(out.schools[0]).toMatchObject({ id: 'school-1', name: 'Example', status: 'applied', whyItIsOnMyList: 'A strong rural-health fit.' })
+    expect(out.schools[0].archivedAt).toEqual(expect.any(String))
   })
 })
 

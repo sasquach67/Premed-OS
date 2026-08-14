@@ -709,6 +709,10 @@ export interface SchoolEntry {
   mission?: string
   secondaryStatus?: 'not started' | 'received' | 'submitted'
   notes?: string
+  /** Student-authored rationale; never generated or inferred. */
+  whyItIsOnMyList?: string
+  /** A dropped school remains a retrievable decision record. */
+  archivedAt?: string
   order: number
 }
 
