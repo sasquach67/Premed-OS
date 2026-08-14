@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest'
 import { CURRENT_STORE_VERSION, OLDEST_SUPPORTED_STORE_VERSION, migrateAcademicTags, migrateAll, migrateMascotNotes, migrateOrgReflections, migrateOverviewSchema, migrateRequirementMetadata, migrateSafetyNets } from '@/store/store'
 import { createSeedData } from '@/data/seed'
+import { migrateSyllabusV11 } from '@/store/migrations/syllabusV11'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
 
 function freshData(): AppData {
@@ -11,7 +12,25 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(10)
+  expect(CURRENT_STORE_VERSION).toBe(11)
+})
+
+describe('migrateSyllabusV11', () => {
+  it('adds an empty grade category array without changing legacy data', () => {
+    const data = freshData()
+    delete (data.academics.classCenter as Partial<typeof data.academics.classCenter>).gradeCategories
+    const before = structuredClone(data)
+    const out = migrateSyllabusV11(data)
+    expect(out.academics.classCenter.gradeCategories).toEqual([])
+    expect({ ...out.academics.classCenter, gradeCategories: undefined }).toEqual({ ...before.academics.classCenter, gradeCategories: undefined })
+  })
+
+  it('is a no-op when categories already exist', () => {
+    const data = freshData()
+    data.academics.classCenter.gradeCategories = [{ id: 'category-1', courseId: 'course-1', name: 'Exams', weight: 60, createdAt: 1, updatedAt: 1, order: 0 }]
+    expect(migrateSyllabusV11(data)).toBe(data)
+    expect(migrateSyllabusV11(data).academics.classCenter.gradeCategories).toEqual(data.academics.classCenter.gradeCategories)
+  })
 })
 
 describe('migrateAcademicTags', () => {

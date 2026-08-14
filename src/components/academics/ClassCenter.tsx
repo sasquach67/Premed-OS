@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties, type DragEvent, type MouseEvent } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle, Archive, ArrowLeft, Atom, BarChart3, BookOpen, Brain, Calculator, CalendarClock, CalendarDays,
   CheckCircle2, Circle, Dna, Edit3, FlaskConical, FolderOpen, Leaf, Mail, Microscope,
@@ -44,7 +44,7 @@ import { GRADE_POINTS, fmtGpa, gpaStats } from '@/lib/selectors'
 import { ClassHub, ClassHubPeek } from '@/components/academics/ClassHub'
 import { MascotNote } from '@/components/common/MascotNote'
 import { useToast } from '@/components/common/useToast'
-import { extractSyllabusFile, parseSyllabusText, weightGap, type SyllabusProposal } from '@/lib/academics/syllabusParser'
+import { extractSyllabusFile, parseSyllabusText, weightGap, type SyllabusProposal, type SyllabusKind } from '@/lib/academics/syllabusParser'
 import { retainLocalSyllabus } from '@/lib/academics/localSyllabusFiles'
 
 const COLORS: AcademicTagColor[] = ['blue', 'green', 'purple', 'orange', 'yellow', 'red', 'pink', 'gray', 'brown']
@@ -356,6 +356,9 @@ function ClassCenterDashboard({
     form: emptyClassForm(),
   })
   const [syllabusImportOpen, setSyllabusImportOpen] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const scopedCourseId = searchParams.get('importFor')
+  const scopedCourse = scopedCourseId ? courses.find((course) => course.id === scopedCourseId) : undefined
   const [draggedClassId, setDraggedClassId] = useState<string | null>(null)
   const [dragOverClassId, setDragOverClassId] = useState<string | null>(null)
   const semesters = useMemo(() => {
@@ -372,22 +375,22 @@ function ClassCenterDashboard({
     .sort((a, b) => a.order - b.order)
   const activeClasses = data.classes.filter((row) => row.status === 'active')
 
-  async function importSyllabus(form: ClassFormState, selectedFiles: File[], proposal?: SyllabusProposal) {
+  async function importSyllabus(form: ClassFormState, selectedFiles: File[], proposal?: SyllabusProposal, existingCourseId?: string) {
     const now = Date.now()
-    const courseId = uid()
+    const courseId = existingCourseId ?? uid()
     const sourceFiles = selectedFiles.length ? selectedFiles : proposal ? [new File([proposal.text], `${proposal.sourceName}.txt`, { type: 'text/plain' })] : []
     const retained = await Promise.all(sourceFiles.map(async (file) => {
       const id = uid()
       return { file, id, blobRef: await retainLocalSyllabus(file, id) }
     }))
     updateAll((draft) => {
-      draft.courses.push({
+      if (!existingCourseId) draft.courses.push({
         id: courseId, code: form.courseCode.trim() || 'NEW 101', title: form.courseTitle.trim() || 'Untitled class',
         term: form.semester, credits: 3, grade: '', bcpm: false, status: 'in-progress', inResidence: true,
         satisfies: [], order: draft.courses.length,
       })
       const center = draft.academics.classCenter
-      center.workspaces.push({ ...workspaceFields(form), id: uid(), courseId, createdAt: now, updatedAt: now, order: center.workspaces.length })
+      if (!existingCourseId) center.workspaces.push({ ...workspaceFields(form), id: uid(), courseId, createdAt: now, updatedAt: now, order: center.workspaces.length })
       retained.forEach(({ file, id, blobRef }) => center.files.unshift({
         id, courseId, title: file.name.replace(/\.[^.]+$/, '') || file.name, type: 'syllabus', sourceType: 'upload', owner: 'course', url: '', blobRef,
         fileName: file.name, mimeType: file.type, notes: '', linkedTopicIds: [], createdAt: now, updatedAt: now, order: center.files.length,
@@ -399,9 +402,23 @@ function ClassCenterDashboard({
         proposal.items.filter((item) => item.kind === 'exams' || item.kind === 'deadlines').forEach((item, index) => center.assignments.push({
           id: uid(), courseId, title: item.label, type: item.kind === 'exams' ? 'exam' : 'other', dueDate: item.value, status: 'not-started', linkedTopicIds: [], linkedFileIds: [], notes: `Source: ${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: index,
         }))
+        const policyNote = proposal.items.filter((item) => item.kind === 'policies').map((item) => item.label || item.evidence.quote).filter(Boolean).join('\n')
+        proposal.items.filter((item) => item.kind === 'weights').forEach((item, index) => center.gradeCategories.push({
+          id: uid(), courseId, name: item.label || 'Untitled category', weight: Number(item.value?.replace('%', '')) || 0, policyNote: policyNote || undefined,
+          source: `${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: index,
+        }))
+        const workspace = center.workspaces.find((item) => item.courseId === courseId)
+        const logistics = proposal.items.filter((item) => item.kind === 'logistics').map((item) => item.label).join(' ')
+        if (workspace && logistics) {
+          if (!workspace.instructor) workspace.instructor = logistics.match(/(?:instructor|prof(?:essor)?)\s*[:\-]?\s*([A-Z][\w.' -]+)/i)?.[1]?.trim() ?? workspace.instructor
+          if (!workspace.meetingDays) workspace.meetingDays = logistics.match(/\b(?:MWF|TR|TTH|Mon(?:day)?(?:\s*\/\s*Wed(?:nesday)?(?:\s*\/\s*Fri(?:day)?)?)?|Tue(?:sday)?(?:\s*\/\s*Thu(?:rsday)?)?)\b/i)?.[0] ?? workspace.meetingDays
+          if (!workspace.meetingTime) workspace.meetingTime = logistics.match(/\b\d{1,2}:\d{2}\s*(?:AM|PM)?\s*(?:[-–]\s*\d{1,2}:\d{2}\s*(?:AM|PM)?)?/i)?.[0] ?? workspace.meetingTime
+          if (!workspace.location) workspace.location = logistics.match(/(?:room|location)\s*[:\-]?\s*([\w -]{3,})/i)?.[1]?.trim() ?? workspace.location
+        }
       }
     })
     setSyllabusImportOpen(false)
+    if (existingCourseId) { const next = new URLSearchParams(searchParams); next.delete('importFor'); setSearchParams(next, { replace: true }) }
   }
 
   if (!archiveOnly && activeClasses.length === 0) {
@@ -560,6 +577,7 @@ function ClassCenterDashboard({
                   setDragOverClassId(null)
                 }}
                 onEdit={() => setEditor({ open: true, courseId: row.id, form: classToForm(row) })}
+                onImport={() => { const next = new URLSearchParams(searchParams); next.set('importFor', row.id); setSearchParams(next) }}
                 onDelete={() => {
                   if (!window.confirm(`Delete ${row.courseCode || row.courseTitle}?`)) return
                   updateAll((draft) => {
@@ -630,6 +648,7 @@ function ClassCenterDashboard({
         onChange={(patch) => setEditor((prev) => ({ ...prev, form: { ...prev.form, ...patch } }))}
         onSave={saveClass}
       />
+      <SyllabusImportDialog open={syllabusImportOpen || Boolean(scopedCourse)} semester={semester} scopedCourse={scopedCourse} onOpenChange={(open) => { setSyllabusImportOpen(open); if (!open && scopedCourse) { const next = new URLSearchParams(searchParams); next.delete('importFor'); setSearchParams(next, { replace: true }) } }} onImport={importSyllabus} />
 
       <CenterPeek
         open={Boolean(peekCourseId)}
@@ -669,7 +688,7 @@ function ClassCenterDashboard({
 
 function ClassCard({
   row, data, compact, dragging, dragOver, onOpen, onReview,
-  onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd, onEdit, onArchive, onDelete,
+  onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd, onEdit, onImport, onArchive, onDelete,
 }: {
   row: ClassWorkspaceView
   data: ClassCenterViewData
@@ -684,6 +703,7 @@ function ClassCard({
   onDrop: (event: DragEvent<HTMLElement>) => void
   onDragEnd: () => void
   onEdit: () => void
+  onImport: () => void
   onArchive: () => void
   onDelete: () => void
 }) {
@@ -797,6 +817,7 @@ function ClassCard({
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{row.courseCode || 'Class'}</DropdownMenuLabel>
                 <DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><BookOpen className="size-4" /> Open class hub</Link></DropdownMenuItem>
+                <DropdownMenuItem onClick={onImport}><Upload className="size-4" /> Import syllabus</DropdownMenuItem>
                 {row.type === 'stem' && <><DropdownMenuItem onClick={onReview}><Play className="size-4" /> Review</DropdownMenuItem><DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><Brain className="size-4" /> Quiz me</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><CheckCircle2 className="size-4" /> Covered in lecture today</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><NotebookText className="size-4" /> Generate study guide</Link></DropdownMenuItem></>}
                 <DropdownMenuItem onClick={onEdit}><Edit3 className="size-4" /> Class settings</DropdownMenuItem>
                 <DropdownMenuItem onClick={onArchive}><Archive className="size-4" /> {row.status === 'archived' ? 'Restore' : 'Archive'}</DropdownMenuItem>
@@ -2024,12 +2045,13 @@ function ClassEditorDialog({
 }
 
 function SyllabusImportDialog({
-  open, semester, onOpenChange, onImport,
+  open, semester, onOpenChange, onImport, scopedCourse,
 }: {
   open: boolean
   semester: string
   onOpenChange: (open: boolean) => void
-  onImport: (form: ClassFormState, files: File[], proposal?: SyllabusProposal) => Promise<void>
+  onImport: (form: ClassFormState, files: File[], proposal?: SyllabusProposal, existingCourseId?: string) => Promise<void>
+  scopedCourse?: Course
 }) {
   const [form, setForm] = useState(() => emptyClassForm(semester))
   const [files, setFiles] = useState<File[]>([])
@@ -2061,6 +2083,18 @@ function SyllabusImportDialog({
   }
   const grouped = proposal ? (['identity', 'exams', 'weights', 'units', 'deadlines', 'policies', 'logistics'] as const).map((kind) => [kind, proposal.items.filter((item) => item.kind === kind)] as const) : []
   const gap = proposal ? weightGap(proposal.items) : null
+  const applySummary = proposal ? ([
+    ['units', 'units'], ['deadlines', 'deadlines'], ['exams', 'exam dates'], ['weights', 'grade categories'],
+  ] as const).map(([kind, label]) => {
+    const count = proposal.items.filter((item) => item.kind === kind).length
+    return count ? `${count} ${label}` : null
+  }).filter(Boolean).join(', ') : ''
+  function addManual(kind: SyllabusKind) {
+    setProposal((current) => current ? { ...current, items: [...current.items, { id: `${kind}-manual-${Date.now()}`, kind, label: '', value: '', confidence: 'low', evidence: { quote: 'Added manually', location: 'manual entry' } }] } : current)
+  }
+  function patchProposalItem(id: string, patch: Partial<SyllabusProposal['items'][number]>) {
+    setProposal((current) => current ? { ...current, items: current.items.map((item) => item.id === id ? { ...item, ...patch } : item) } : current)
+  }
 
   return (
     <Dialog open={open} onOpenChange={close}>
@@ -2073,16 +2107,16 @@ function SyllabusImportDialog({
             <Textarea value={pastedText} onChange={(event) => setPastedText(event.target.value)} placeholder="Or paste syllabus text from Canvas…" className="min-h-28" />
             {error && <p className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm font-bold">{error} Paste the text or continue with manual entry; importing never blocks you.</p>}
           </>}
-          {proposal && <div className="space-y-3"><p className="text-sm font-semibold text-muted-foreground">Nothing has been saved. Each proposal includes the text it came from.</p>{proposal.scanDetected && <p className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm font-bold">This looks like a scan — the text can’t be read directly. Paste the text or enter details manually with the file open beside you.</p>}{grouped.map(([kind, items]) => <details key={kind} open={items.some((item) => item.confidence === 'low')} className="rounded-xl border border-border bg-muted/20 p-3"><summary className="cursor-pointer font-display text-sm font-extrabold capitalize">{kind} · {items.length ? `${items.length} found` : proposal.searched[kind]}</summary><div className="mt-3 space-y-2">{items.map((item) => <div key={item.id} className="rounded-lg border border-border bg-card p-2 text-sm"><div className="flex gap-2"><span className={cn('font-bold', item.confidence === 'low' && 'text-warning')}>{item.label}</span><span>{item.value}</span></div><p className="mt-1 text-xs text-muted-foreground">{item.evidence.location} · “{item.evidence.quote}”</p></div>)}<button type="button" onClick={() => setProposal(null)} className="text-xs font-bold text-primary underline">Add manually</button></div></details>)}{gap !== null && gap !== 0 && <p className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm font-bold">Grade weights are {Math.abs(gap)}% {gap > 0 ? 'short of' : 'over'} 100%. Nothing was normalized.</p>}</div>}
-          <div className="grid gap-4 sm:grid-cols-2">
+          {proposal && <div className="space-y-3"><p className="text-sm font-semibold text-muted-foreground">Nothing has been saved. Each proposal includes the text it came from.</p>{proposal.scanDetected && <p className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm font-bold">This looks like a scan — the text can’t be read directly. Paste the text or enter details manually with the file open beside you.</p>}{grouped.map(([kind, items]) => <details key={kind} open={items.some((item) => item.confidence === 'low')} className="rounded-xl border border-border bg-muted/20 p-3"><summary className="cursor-pointer font-display text-sm font-extrabold capitalize">{kind} · {items.length ? `${items.length} found` : proposal.searched[kind]}</summary><div className="mt-3 space-y-2">{items.map((item) => <div key={item.id} className="rounded-lg border border-border bg-card p-2 text-sm"><div className="flex gap-2"><Input aria-label={`${kind} label`} value={item.label} onChange={(event) => patchProposalItem(item.id, { label: event.target.value })} className={cn('h-8 font-bold', item.confidence === 'low' && 'border-warning')} /><Input aria-label={`${kind} value`} value={item.value ?? ''} onChange={(event) => patchProposalItem(item.id, { value: event.target.value })} className="h-8" /></div><p className="mt-1 text-xs text-muted-foreground">{item.evidence.location} · “{item.evidence.quote}”</p></div>)}<button type="button" onClick={() => addManual(kind)} className="text-xs font-bold text-primary underline">Add manually</button></div></details>)}{gap !== null && gap !== 0 && <p className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm font-bold">Grade weights are {Math.abs(gap)}% {gap > 0 ? 'short of' : 'over'} 100%. Nothing was normalized.</p>}</div>}
+          {scopedCourse ? <div className="rounded-xl border border-border bg-muted/25 p-3 text-sm font-bold">Importing into <span className="text-primary">{scopedCourse.code} · {scopedCourse.title}</span></div> : <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Course code"><Input value={form.courseCode} onChange={(event) => setForm((current) => ({ ...current, courseCode: event.target.value }))} placeholder="ENGL 105" /></Field>
             <Field label="Course title"><Input value={form.courseTitle} onChange={(event) => setForm((current) => ({ ...current, courseTitle: event.target.value }))} placeholder="English Composition & Rhetoric" /></Field>
-          </div>
+          </div>}
           <Field label="Class type">
             <div className="grid gap-2 sm:grid-cols-3">{CLASS_TYPES.map((type) => <button key={type.value} type="button" onClick={() => setForm((current) => ({ ...current, type: type.value }))} className={cn('rounded-xl border p-3 text-left transition', form.type === type.value ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-muted/50')}><span className="block font-display text-sm font-extrabold">{type.label}</span><span className="text-xs font-semibold text-muted-foreground">{type.detail}</span></button>)}</div>
           </Field>
         </div>
-        <DialogFooter><Button variant="outline" onClick={() => proposal ? setProposal(null) : close(false)}>{proposal ? 'Back' : 'Cancel'}</Button>{proposal ? <Button onClick={async () => { await onImport(form, files, proposal); toast({ title: 'Syllabus applied', description: `Created ${form.courseCode || 'your class'} from the reviewed proposal.` }) }}><CheckCircle2 className="size-4" /> Apply reviewed import</Button> : <Button disabled={(!files.length && !pastedText.trim()) || parsing} onClick={parse}><Upload className="size-4" /> {parsing ? 'Reading week structure…' : 'Read syllabus'}</Button>}</DialogFooter>
+        <DialogFooter><Button variant="outline" onClick={() => proposal ? setProposal(null) : close(false)}>{proposal ? 'Back' : 'Cancel'}</Button>{proposal ? <Button onClick={async () => { await onImport(form, files, proposal, scopedCourse?.id); toast({ title: 'Syllabus applied', description: `Updated ${scopedCourse?.code || form.courseCode || 'your class'} from the reviewed proposal.` }) }}><CheckCircle2 className="size-4" /> {applySummary ? `Add ${applySummary} to ${scopedCourse?.code || form.courseCode || form.courseTitle || 'this class'}` : 'Apply reviewed import'}</Button> : <Button disabled={(!files.length && !pastedText.trim()) || parsing} onClick={parse}><Upload className="size-4" /> {parsing ? 'Reading week structure…' : 'Read syllabus'}</Button>}</DialogFooter>
       </DialogContent>
     </Dialog>
   )

@@ -29,6 +29,7 @@ import { migrateAcademicsV7 } from '@/store/migrations/academicsV7'
 import { migrateFoundationV8 } from '@/store/migrations/foundationV8'
 import { migrateShellV9 } from '@/store/migrations/shellV9'
 import { migrateClassTypesV10 } from '@/store/migrations/classTypesV10'
+import { migrateSyllabusV11 } from '@/store/migrations/syllabusV11'
 
 const DEMO_MODE = isDemoMode()
 
@@ -46,8 +47,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateClassTypesV10`. */
-export const CURRENT_STORE_VERSION = 10
+/** Matches the newest migration in `migrateAll`: `migrateSyllabusV11`. */
+export const CURRENT_STORE_VERSION = 11
 
 function createInitialData() {
   if (!DEMO_MODE) return structuredClone(createSeedData())
@@ -314,7 +315,7 @@ export function migrateAcademicTags(data: AppData): AppData {
   // A non-enumerable compatibility view lets old callers detect that the
   // container exists without serializing duplicate course/workspace data.
   // Defined on the fresh container: object spread never carries it across.
-  const center = { ...classCenterSource, topics, weakAreas } as ClassCenterData & { classes?: unknown[] }
+  const center = { ...classCenterSource, topics, weakAreas, gradeCategories: classCenterSource.gradeCategories ?? [] } as ClassCenterData & { classes?: unknown[] }
   Object.defineProperty(center, 'classes', {
     configurable: true,
     enumerable: false,
@@ -490,7 +491,7 @@ export function migrateRequirementMetadata(data: AppData): AppData {
 /** The full hydration chain. Exported so the frozen-input contract can be
  *  tested end to end: every link must be pure, or immer state throws. */
 export function migrateAll(data: AppData): AppData {
-  return migrateClassTypesV10(migrateShellV9(migrateFoundationV8(migrateAcademicsV7(migrateAcademicsV6(migrateAcademicsV5(migrateAcademicsV4(migrateMascotNotes(
+  return migrateSyllabusV11(migrateClassTypesV10(migrateShellV9(migrateFoundationV8(migrateAcademicsV7(migrateAcademicsV6(migrateAcademicsV5(migrateAcademicsV4(migrateMascotNotes(
     migrateOverviewSchema(
       migrateIntelligence(
         migrateSafetyNets(
@@ -502,7 +503,7 @@ export function migrateAll(data: AppData): AppData {
         ),
       ),
     ),
-  ))))))))
+  )))))))))
 }
 
 function nextOrder(arr: AnyRow[]): number {

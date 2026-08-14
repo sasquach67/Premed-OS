@@ -219,6 +219,7 @@ function migrateRelatedRows(
     paperDrafts: [],
     assignedReadings: [],
     feedbackNotes: [],
+    gradeCategories: [],
   }
 }
 

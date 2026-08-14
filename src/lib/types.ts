@@ -530,6 +530,20 @@ export interface ClassCenterData {
   paperDrafts: PaperDraft[]
   assignedReadings: AssignedReading[]
   feedbackNotes: FeedbackNote[]
+  gradeCategories: GradeCategory[]
+}
+
+/** Parsed or student-entered syllabus category. This intentionally has no grade math. */
+export interface GradeCategory {
+  id: ID
+  courseId: ID
+  name: string
+  weight: number
+  policyNote?: string
+  source?: string
+  createdAt: number
+  updatedAt: number
+  order: number
 }
 
 export interface AcademicTagSettings {

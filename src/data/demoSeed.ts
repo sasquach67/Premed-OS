@@ -156,6 +156,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
       { id: 'demo-reading-engl105-2', courseId: 'demo-course-engl105', week: 'Week 2', title: 'Audience and evidence', source: 'Course reader', status: 'not-started', dueForDiscussion: date(1), createdAt: stamp(-9), updatedAt: stamp(-9), order: 1 },
     ] as AssignedReading[],
     feedbackNotes: [{ id: 'demo-feedback-engl105-thesis', courseId: 'demo-course-engl105', theme: 'Make the thesis more specific', quote: 'Show the reader what is at stake in the claim.', createdAt: stamp(-3), updatedAt: stamp(-3), order: 0 }] as FeedbackNote[],
+    gradeCategories: [],
   }
   data.academics.courseOptions = courses.map((item, order) => ({ id: `demo-option-${item.id}`, name: item.code, title: item.title, color: ['blue', 'green', 'purple', 'orange'][order % 4] as 'blue' | 'green' | 'purple' | 'orange' }))
   data.academics.migrationJournal = []

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import type {
   AcademicFile, ClassAssignment, ClassCenterData, ClassContact, ClassNote,
-  AssignedReading, ClassWorkspace, ClassWorkspaceType, Course, FeedbackNote, PaperDraft, Person, ReviewEvent, Topic, TopicStatus,
+  AssignedReading, ClassWorkspace, ClassWorkspaceType, Course, FeedbackNote, GradeCategory, PaperDraft, Person, ReviewEvent, Topic, TopicStatus,
 } from '@/lib/types'
 import { useStore } from '@/store/store'
 import { uid } from '@/lib/id'
@@ -583,19 +583,27 @@ function CoverageMetric({ label, value, tone }: { label: string; value: number; 
 function Materials({
   courseId, data, files, topics, notes, onTab,
 }: { courseId: string; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; onTab: (tab: string) => void }) {
+  const navigate = useNavigate()
   const [filter, setFilter] = useState<'all' | 'course' | 'mine' | 'generated' | 'unassigned'>('all')
   const groups = useMemo(() => groupFiles(files, topics, notes), [files, notes, topics])
   const visible = groups.map((group) => ({
     ...group,
     files: group.files.filter((file) => filter === 'all' || (filter === 'unassigned' ? group.unit === 'Unassigned' : fileOwnership(file, notes) === filter)),
   })).filter((group) => group.files.length)
+  const categories = data.gradeCategories.filter((item) => item.courseId === courseId).sort((a, b) => a.order - b.order)
+  function patchCategory(id: string, patch: Partial<GradeCategory>) {
+    useStore.getState().update((draft) => {
+      const category = draft.academics.classCenter.gradeCategories.find((item) => item.id === id)
+      if (category) Object.assign(category, patch, { updatedAt: Date.now() })
+    })
+  }
 
   return (
     <div className="space-y-4">
       <SectionToolbar
         title="Materials"
         detail="Course files stay grouped by their linked unit."
-        action={<StudyToolActions onOpenNotes={() => onTab('notes')} />}
+        action={<div className="flex items-center gap-2"><Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button><StudyToolActions onOpenNotes={() => onTab('notes')} /></div>}
       />
       <div className="flex flex-wrap gap-2" aria-label="Material filters">
         {(['all', 'course', 'mine', 'generated', 'unassigned'] as const).map((value) => (
@@ -604,6 +612,15 @@ function Materials({
           </Button>
         ))}
       </div>
+      {!!categories.length && <Card>
+        <CardHeader><CardTitle>Grade categories</CardTitle><p className="mt-1 text-sm text-muted-foreground">Saved from your syllabus. These are editable records only—grade calculations are not enabled here.</p></CardHeader>
+        <CardContent className="space-y-2">{categories.map((category) => <div key={category.id} className="grid gap-2 rounded-xl border border-border bg-muted/20 p-3 sm:grid-cols-[1fr_7rem]">
+          <Input aria-label="Grade category" value={category.name} onChange={(event) => patchCategory(category.id, { name: event.target.value })} />
+          <Input aria-label="Grade category weight" type="number" min="0" max="100" value={category.weight} onChange={(event) => patchCategory(category.id, { weight: Number(event.target.value) || 0 })} />
+          {category.policyNote && <p className="text-xs font-semibold text-muted-foreground sm:col-span-2">Policy (verbatim): {category.policyNote}</p>}
+          {category.source && <p className="text-xs text-muted-foreground sm:col-span-2">{category.source}</p>}
+        </div>)}</CardContent>
+      </Card>}
       {visible.map((group) => (
         <Card key={group.unit}>
           <CardHeader className="flex-row items-start justify-between gap-3">
