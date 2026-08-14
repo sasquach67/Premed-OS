@@ -1,7 +1,14 @@
 # Component Inventory & Map
 
-**Status:** Working doc (July 2026) — the menu for the pre-tab component pass.
-**Purpose:** map the full shadcn catalogue against what the repo already has, so every component is **accounted for and justified by a real use** (not "add everything"). This is the reference the tab phase pulls from.
+**Status:** Historical planning inventory (July 2026), filesystem-audited August 14, 2026.
+**Purpose:** preserve the candidate decisions that shaped the component pass. For verified current state and the mockup-by-mockup registry mapping, use [`COMPONENT-REGISTRY-MOCKUP-CROSSWALK.md`](./COMPONENT-REGISTRY-MOCKUP-CROSSWALK.md).
+
+> **Audit correction (Aug 14, 2026):** Later sections of this file use words
+> such as “installed,” “adopted,” “wired,” and “no component is orphaned” for
+> what were sometimes planning decisions rather than filesystem facts. Do not
+> treat those statements as current installation or usage evidence. The audited
+> crosswalk separates four states: **file exists**, **used in `src/`**,
+> **parked**, and **cleared to build**. The filesystem and build manifest win.
 
 ## How to use this (the review workflow)
 

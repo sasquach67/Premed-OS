@@ -37,7 +37,8 @@
 | Mockup | Header status | Build? |
 |---|---|---|
 | `03-overview/overview-bento-control-panel.html` | APPROVED (July 2026) | **`YES`** |
-| `03-overview/overview-where-i-stand-expandable.html` | PROPOSED (Aug 2026) | `NO` |
+| `03-overview/overview-where-i-stand-expandable.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 12, 2026 (Andy) |
+| `03-overview/overview-s3-target.html` | APPROVED (Aug 2026) | **`YES`** — refinement of the bento row above. Supersedes it for the Tasks create affordance only; bento spans, block order and glass judgment still come from `overview-bento-control-panel.html` |
 | `03-overview/sauce-two-doors.html` | DRAFT | `NO` |
 
 ### Landing & auth
@@ -58,6 +59,7 @@
 
 | Mockup | Header status | Build? |
 |---|---|---|
+| `00-shell/sidebar-merged-remock.html` | APPROVED (Aug 2026) | **`BUILT`** — shipped in `f9bcaef`. **Do not rebuild, do not "bring into conformance."** `00-product-shell.md` §7.2's amendment describes the shipped state, not a target. `Sidebar.tsx` and `AppShell.tsx` are frozen |
 | `00-shell/shell-calendar-overlay.html` | **none** | `NO` |
 | `00-shell/shell-calendar-sequence.html` | **none** | `NO` |
 | `00-shell/sauce-dropdown.html` | DRAFT | `NO` |
