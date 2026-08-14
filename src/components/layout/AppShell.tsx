@@ -18,10 +18,15 @@ import { isTypingTarget } from '@/lib/keyboard'
 
 // The dock becomes the full sidebar in place: short, interruptible, and overlay-only.
 const SIDEBAR_TRANSFORM = { duration: 0.28, ease: [0.2, 0.8, 0.2, 1] as const }
+const DESKTOP_SIDEBAR_LOCK_KEY = 'premed_os_desktop_sidebar_locked'
+
+function readDesktopSidebarLock() {
+  return localStorage.getItem(DESKTOP_SIDEBAR_LOCK_KEY) === 'true'
+}
 
 export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [desktopSidebarLocked, setDesktopSidebarLocked] = useState(false)
+  const [desktopSidebarLocked, setDesktopSidebarLocked] = useState(readDesktopSidebarLock)
   const reduceMotion = useReducedMotion()
   const location = useLocation()
   useTheme()
@@ -30,12 +35,12 @@ export function AppShell() {
   const desktopSidebarVisible = desktopSidebarLocked
   const keepDesktopSidebarVisibleOnNavigate = useCallback(() => {}, [])
   const toggleDesktopSidebarLock = useCallback(() => {
-    if (desktopSidebarLocked) {
-      setDesktopSidebarLocked(false)
-      return
-    }
-    setDesktopSidebarLocked(true)
-  }, [desktopSidebarLocked])
+    setDesktopSidebarLocked((wasLocked) => {
+      const nextLocked = !wasLocked
+      localStorage.setItem(DESKTOP_SIDEBAR_LOCK_KEY, String(nextLocked))
+      return nextLocked
+    })
+  }, [])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
