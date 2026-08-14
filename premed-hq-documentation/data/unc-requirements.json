@@ -3,6 +3,70 @@
     "curriculum": "IDEAs in Action",
     "curriculumVersion": "2026-2027",
     "appliesTo": "degree-seeking undergraduates matriculating Fall 2022 or later",
+    "majorScope": {
+      "status": "PARTIAL — 6 majors collected. This is NOT a ruled v1 scope; no decision has been recorded on whether 6 is the answer or the first batch.",
+      "recordedOn": "2026-08-13",
+      "covered": [
+        {
+          "major": "Neuroscience",
+          "degree": "B.S.",
+          "verificationStatus": "verified-live (Claude fetched catalog.unc.edu 2026-07-21)"
+        },
+        {
+          "major": "Biology",
+          "degree": "B.S.",
+          "verificationStatus": "chatgpt-sourced — spot-check against live catalog before trusting"
+        },
+        {
+          "major": "Chemistry",
+          "degree": "B.S.",
+          "verificationStatus": "chatgpt-sourced — spot-check against live catalog before trusting"
+        },
+        {
+          "major": "Psychology",
+          "degree": "B.S.",
+          "verificationStatus": "chatgpt-sourced — spot-check against live catalog before trusting"
+        },
+        {
+          "major": "Exercise and Sport Science",
+          "degree": "B.S.",
+          "verificationStatus": "chatgpt-sourced — spot-check against live catalog before trusting"
+        },
+        {
+          "major": "Nutrition",
+          "degree": "B.S.P.H.",
+          "verificationStatus": "chatgpt-sourced — spot-check against live catalog before trusting"
+        }
+      ],
+      "collectedButNotYetMerged": [
+        {
+          "major": "Community and Global Public Health",
+          "degree": "B.S.P.H.",
+          "source": "implementation/research-prompts/unc-tar-heel-tracker-major-requirements-2026-27.md",
+          "blockedBy": "schema has no admissionGate field; Gillings programs are limited-enrollment with sophomore-year application"
+        },
+        {
+          "major": "Biomedical Engineering",
+          "degree": "B.S.",
+          "source": "implementation/research-prompts/unc-tar-heel-tracker-major-requirements-2026-27.md",
+          "blockedBy": "admission-gated, and major work may be satisfied at NC State - needs a cross-institution course source, not UNC codes only"
+        }
+      ],
+      "expansionOrder": [
+        "The other four Gillings B.S.P.H. programs as distinct records: Biostatistics, Environmental Health Sciences, Health Policy and Management, Nutrition",
+        "The three EXSS B.A. tracks, captured separately - the existing record is the B.S. only",
+        "Pre-health adjacent: Clinical Laboratory Science, Environmental Science B.S., Statistics and Analytics B.S., Medical Anthropology B.A., Sociology B.A., Physics B.S.",
+        "Full catalog A-Z only after the schema supports source versioning, tracks, admission gates, and option/exclusion logic"
+      ],
+      "schemaGapsBlockingExpansion": [
+        "track - Nutrition has two tracks (Nutrition Health and Society; Nutrition Science and Research). UNC describes the Science and Research track as med-school preparation. One flat record cannot hold both.",
+        "admissionGate - B.S.P.H. and BME require a separate application; university admission does not grant program admission.",
+        "catalogYear per record - meta.curriculumVersion is file-wide. The 2026-2027 IDEAs page applies to students beginning Fall 2026; earlier cohorts need archived catalog editions.",
+        "option-group logic - the catalog uses choose-one, choose-two, minimum-credit, area-breadth, course-number-range, exclusion and no-double-count rules. A flat course list produces false completions."
+      ],
+      "boundary": "Planning library only. UNC states the official graduation audit is the student's ConnectCarolina record; this data can show what the catalog says for a selected program and cohort, never that a student is cleared to graduate.",
+      "openDefect": "meta.appliesTo claims 'matriculating Fall 2022 or later', but the research packet finds the current IDEAs page applies specifically to students beginning Fall 2026, with earlier cohorts directed to catalog archives. These cannot both be right - needs verification before any completion calculation ships."
+    },
     "retrievedAt": "2026-07-22",
     "producedBy": "Merged: gen-ed + med prereqs + Neuroscience verified live by Claude (catalog.unc.edu); other 5 majors from ChatGPT (sources normalized, flagged for spot-check)",
     "verificationNote": "ChatGPT's gen-ed drifted to the retired 2022 curriculum (e.g. 'Power, Difference, and Inequality', Triple-I). This merge uses Claude's live-verified gen-ed instead. ChatGPT's majors are included for breadth but carry verificationStatus='needs spot-check'.",
@@ -281,7 +345,7 @@
       "howSatisfied": "one approved course",
       "exampleCourses": [],
       "grading": "",
-      "notes": "Marked with \u2020 in the catalog (cohort-dependent \u2014 verify applicability by cohort).",
+      "notes": "Marked with † in the catalog (cohort-dependent — verify applicability by cohort).",
       "confidence": "medium",
       "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/interdisciplinary/"
     },
@@ -320,7 +384,7 @@
       "howSatisfied": "one approved course",
       "exampleCourses": [],
       "grading": "",
-      "notes": "Marked \u2020 \u2014 added for Fall 2025+ cohorts; verify applicability by cohort.",
+      "notes": "Marked † — added for Fall 2025+ cohorts; verify applicability by cohort.",
       "confidence": "medium",
       "source": "https://catalog.unc.edu/undergraduate/ideas-in-action/foundations-american-democracy/"
     },
@@ -454,7 +518,7 @@
       "major": "Neuroscience",
       "degree": "B.S.",
       "totalHours": "78-79",
-      "generalNotes": "Min cumulative GPA 2.0 overall and in major core; \u226545 credit hours at UNC; \u2265half of major core at UNC. Grade of C or better required in NSCI 175 and all Additional Requirement courses. Pre-med advising suggests adding BIOL 252/252L and CHEM 430 as electives.",
+      "generalNotes": "Min cumulative GPA 2.0 overall and in major core; ≥45 credit hours at UNC; ≥half of major core at UNC. Grade of C or better required in NSCI 175 and all Additional Requirement courses. Pre-med advising suggests adding BIOL 252/252L and CHEM 430 as electives.",
       "requirements": [
         {
           "id": "nsci-core-intro",
@@ -523,7 +587,7 @@
           "name": "Knowledge Electives",
           "courses": [],
           "credits": 6,
-          "notes": "Select \u22656 credit hours from the catalog's Knowledge Electives list (BIOL 205/240/425/431/433/440, etc.). Full list at source; enumerate later.",
+          "notes": "Select ≥6 credit hours from the catalog's Knowledge Electives list (BIOL 205/240/425/431/433/440, etc.). Full list at source; enumerate later.",
           "confidence": "medium",
           "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
         },
@@ -533,7 +597,7 @@
           "name": "Mathematics, Methods, Statistics Electives",
           "courses": [],
           "credits": 6,
-          "notes": "Select \u22656 credit hours from the catalog list. Enumerate later.",
+          "notes": "Select ≥6 credit hours from the catalog list. Enumerate later.",
           "confidence": "medium",
           "source": "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/"
         },
@@ -727,7 +791,7 @@
         }
       ],
       "source": "https://catalog.unc.edu/undergraduate/programs-study/biology-major-bs/",
-      "verificationStatus": "chatgpt-sourced \u2014 spot-check against live catalog before trusting"
+      "verificationStatus": "chatgpt-sourced — spot-check against live catalog before trusting"
     },
     {
       "major": "Chemistry",
@@ -830,7 +894,7 @@
         }
       ],
       "source": "https://catalog.unc.edu/undergraduate/programs-study/chemistry-major-bs/",
-      "verificationStatus": "chatgpt-sourced \u2014 spot-check against live catalog before trusting"
+      "verificationStatus": "chatgpt-sourced — spot-check against live catalog before trusting"
     },
     {
       "major": "Psychology",
@@ -927,7 +991,7 @@
         }
       ],
       "source": "https://catalog.unc.edu/undergraduate/programs-study/psychology-major-bs/",
-      "verificationStatus": "chatgpt-sourced \u2014 spot-check against live catalog before trusting"
+      "verificationStatus": "chatgpt-sourced — spot-check against live catalog before trusting"
     },
     {
       "major": "Exercise and Sport Science",
@@ -997,7 +1061,7 @@
         }
       ],
       "source": "https://catalog.unc.edu/undergraduate/programs-study/exercise-sport-science-major-bs/",
-      "verificationStatus": "chatgpt-sourced \u2014 spot-check against live catalog before trusting"
+      "verificationStatus": "chatgpt-sourced — spot-check against live catalog before trusting"
     },
     {
       "major": "Nutrition",
@@ -1063,7 +1127,7 @@
         }
       ],
       "source": "https://catalog.unc.edu/undergraduate/programs-study/nutrition-major-bsph/",
-      "verificationStatus": "chatgpt-sourced \u2014 spot-check against live catalog before trusting"
+      "verificationStatus": "chatgpt-sourced — spot-check against live catalog before trusting"
     }
   ]
 }
