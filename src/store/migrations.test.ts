@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { CURRENT_STORE_VERSION, OLDEST_SUPPORTED_STORE_VERSION, migrateAcademicTags, migrateAll, migrateMascotNotes, migrateOrgReflections, migrateOverviewSchema, migrateRequirementMetadata, migrateSafetyNets } from '@/store/store'
 import { createSeedData } from '@/data/seed'
 import { migrateSyllabusV11 } from '@/store/migrations/syllabusV11'
+import { migrateSchoolStatusV12 } from '@/store/migrations/schoolStatusV12'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
 
 function freshData(): AppData {
@@ -12,7 +13,17 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(11)
+  expect(CURRENT_STORE_VERSION).toBe(12)
+})
+
+describe('migrateSchoolStatusV12', () => {
+  it('preserves a school record while retaining only the applied event', () => {
+    const data = freshData()
+    data.schools = [{ id: 'school-1', name: 'Example', type: 'MD', category: 'target', status: 'rejected' as never, order: 0 }]
+    const out = migrateSchoolStatusV12(data)
+    expect(out.schools).toHaveLength(1)
+    expect(out.schools[0]).toMatchObject({ id: 'school-1', name: 'Example', status: 'applied' })
+  })
 })
 
 describe('migrateSyllabusV11', () => {

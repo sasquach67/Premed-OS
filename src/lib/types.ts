@@ -693,7 +693,7 @@ export interface McatState {
 }
 
 export type SchoolStatus =
-  | 'researching' | 'will-apply' | 'applied' | 'secondary' | 'interview' | 'accepted' | 'waitlist' | 'rejected'
+  | 'researching' | 'will-apply' | 'applied' | 'secondary' | 'interview' | 'accepted' | 'waitlist'
 
 export interface SchoolEntry {
   id: ID

@@ -17,7 +17,7 @@ const COLUMNS: ColumnDef[] = [
   { key: 'state', header: 'St', type: 'text', width: '56px' },
   { key: 'type', header: 'Type', type: 'select', width: '82px', options: ['MD', 'DO', 'Other'] },
   { key: 'category', header: 'Tier', type: 'select', width: '108px', options: ['reach', 'target', 'safety', 'undecided'] },
-  { key: 'status', header: 'Status', type: 'select', width: '128px', options: ['researching', 'will-apply', 'applied', 'secondary', 'interview', 'accepted', 'waitlist', 'rejected'] },
+  { key: 'status', header: 'Status', type: 'select', width: '128px', options: ['researching', 'will-apply', 'applied', 'secondary', 'interview', 'accepted', 'waitlist'] },
   { key: 'medianGpa', header: 'Med GPA', type: 'number', width: '82px', align: 'right' },
   { key: 'medianMcat', header: 'Med MCAT', type: 'number', width: '88px', align: 'right' },
   { key: 'msarUrl', header: 'MSAR', type: 'link', width: '150px' },
