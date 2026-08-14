@@ -1,6 +1,7 @@
 # School List
 
-**Status:** **SPECCED for the ruled scope (Aug 2026).** The governing boundary (`§1`), the two modes (`§1b`), `SL-9`, `SL-16`, `SL-21`, `SL-22`, and `SL-23` phase 1 are migrated here as binding behaviour. **Waves 0–3 have not had their row-by-row ruling pass and Wave 4 (`SL-24`–`SL-31`) is unruled** — see `## Open decisions`.
+**Status:** **SPECCED for the ruled scope (Aug 2026).** The governing boundary (`§1`), the two modes (`§1b`), `SL-9`, `SL-16`, `SL-21`, `SL-22`, `SL-23` phase 1, **all of Wave 4**, and **all of Wave 0** are migrated here as binding behaviour. **⭐ Wave 4 CLOSED (Batches 1–3) · Wave 0 CLOSED (Batch 4) · open decisions C, D, E CLOSED** — Aug 2026. **Ten rows remain unruled across Waves 1–3** — see `## Open decisions`.
+**⚠️ The shipped app contradicts ruled behaviour in five places** — see `## Known code drift`. **One is a `U-7` violation live in the product.**
 **Board:** `tabs/08-school-list-board.md` — the decision trail, 31 rows. **Source material, not spec.** Where this file and the board disagree on a *ruled* item, this file is the spec and the board is the record of why.
 **Catalog:** none yet.
 **Sidebar group:** Application · **Spec type:** domain tab
@@ -109,7 +110,7 @@ The licensing objection was **overstated** and is recorded as such on the board:
 
 **Do not apply that pattern here.** Explore and Track are **two different record sets** — shipped reference data and student-owned records — not one set behind two filters. Adding from Explore **creates** a `TrackedSchool` that references the roster entry by `id`; it does not reveal a hidden one.
 
-`one record, two doors` *does* apply between this tab and Essays for secondary prompts (`§8`). Keeping the two patterns straight matters, because conflating them is how a second store gets built.
+`one record, two doors` *does* apply between this tab and Essays — **twice, and the ownership runs opposite ways**: Essays owns the secondary prompts this tab reads (`§8`), and **School List owns the `whyItIsOnMyList` that Essays reads** (`§4a` `SL-2`). Keeping the patterns straight matters, because conflating them is how a second store gets built.
 
 ### The roster
 
@@ -117,6 +118,25 @@ The licensing objection was **overstated** and is recorded as such on the board:
 - **Verified row-by-row against primary sources** (LCME accredited-programs table; AACOM College Directory), not by matching totals. **⚠️ Any future "verified against source" claim in this repo means row-by-row or it means nothing** — a coincidental matching count hid a 27-school gap once already.
 - **Free text is always allowed.** A student may add a school absent from the roster by typing its name (`SL-1`). The roster is an autocomplete, never a whitelist.
 - **Admissions-profile fields in the file are `null` by design.** They are not unfinished work. Do not populate them, and do not write code that treats a `null` median as an error state.
+
+### ⭐ Regional campuses — both entries STAY, gated by availability (RULED Aug 2026, Batch 3)
+
+**Sidney Kimmel — Delaware Regional Medical Campus** and **Tufts — Maine Track** are the 2 of 240 entries with no city. **Both stay. The roster count remains 240.**
+
+**The test is the applicant's, not the accreditor's:** *can a student select this option in the current cycle?* **LCME accredits 163 programs; a student does not apply to an accreditation.** The DO side already ships at teaching-location grain for the same reason, so keeping these is consistent rather than an exception.
+
+**⚠️ But the research found they are not the same case, and one of them cannot be selected at all:**
+
+| Entry | Finding | Consequence |
+|---|---|---|
+| **Tufts — Maine Track** | A track under the **parent program's** accreditation. Real and selectable today | Renders normally, marked as a track of its parent |
+| **Sidney Kimmel — Delaware** | **NOT YET OPERATING.** No AMCAS record of a separate designation was found | **Must not be selectable this cycle** |
+
+**Therefore the roster carries an availability field.** A campus that is not yet operating is **visible and unselectable, with the reason stated** — never silently absent, and never selectable-but-broken. `implementation/research-prompts/school-list-regional-campus-grain.md`.
+
+**⚠️ Do not resolve a future case of this by deleting rows.** Deleting changes every count the app displays and silently narrows `SL-22`'s completeness claim. **The packet also warns there may be more regional campuses in this position — if the count grows, that is a roster-grain decision, not a series of one-offs.**
+
+**Do not infer a city from the parent institution.** Neither entry gets a coordinate it does not have; `SL-22` renders a pin only where a location is sourced.
 
 ---
 
@@ -130,9 +150,84 @@ The licensing objection was **overstated** and is recorded as such on the board:
   - `requirements?` · `deadlines?` — student-entered, phase 1 only (`§9`)
   - `status?` — cycle layer only (`§7`)
   - `archivedAt?` — **archive, never delete. A school you dropped is a decision worth keeping.**
+- **`CycleApplication`** — ⭐ **added by `SL-24b`, Aug 2026.** One record **per application service per cycle**, not per school. `service` (`AMCAS` | `AACOMAS` | `TMDSAS`) · `cycle` · `submittedOn?` · `serviceState?` · plus the service's own document facts. **A student applying to Texas schools and non-Texas schools has two of these.** See `§7a`.
 - **`Essay`** — **NOT OWNED HERE.** Owned by Essays & Story Bank (`09` §7): `school?` · `promptText` · `limit` · `limitUnit` · `status` · `dueDate?` · `draft`. This tab is a **second door** onto those records (`§8`).
 - **Referenced, never copied:** applicant MCAT and GPA (Academics / MCAT / Profile), residency (`P-33`), letter writers (Letters `Person`).
 - **Derived (Layer C):** per-school deltas, tier-tag counts, in-state count, days-since-submission. **All recomputed on read. Nothing derived is stored.**
+
+---
+
+## 4a. ⭐ Wave 0 — the list itself, row by row (RULED Aug 2026, Batch 4)
+
+**These six rows are what makes the list a list.** The envelope was already migrated; this is the row-by-row pass.
+
+### `SL-1` — add a school ✅ BUILD
+
+**Autocomplete against `data/med-schools.json` — names only.** The roster is **an autocomplete, never a whitelist**: free text is always allowed for anything absent, misspelled, newly accredited, or foreign.
+
+| Entry route | What the record gets |
+|---|---|
+| **Picked from the roster** | References `School.id`. Layer A facts — type, state, city, application service — **render read-only** |
+| **Typed free-text** | Carries a name and nothing else. **Layer A facts are DORMANT, not blank and not guessed** |
+
+**⚠️ A free-text school never receives inferred facts.** Premed OS does not guess MD/DO from the name, state from the word "Texas," or application service from either. **The student sets what they know; the rest stays dormant** (`U-5`).
+
+**⚠️ No fetch, ever — not even to validate a name the student typed.** `§1` is absolute on this.
+
+**A duplicate warns; it never blocks.** A student may have a reason for two rows, and blocking an entry to enforce a data model is the tab telling them they are wrong about their own list.
+
+### `SL-2` — why it is on my list ✅ BUILD, and Essays reads it
+
+**Free text, available from day one, never required, never prompted more than once** (`U-1`). **A school is addable with this field empty forever.**
+
+> **⚠️ Never generated, never suggested, never autocompleted.** This is the field MSAR cannot have and the one thing that makes the list the student's. **A proposed sentence here would be Premed OS putting words in a student's mouth about their own motivation.**
+
+**⭐ The Essays handoff (RULED Aug 2026):** **Essays & Story Bank READS `whyItIsOnMyList`; School List OWNS it.** When the student drafts that school's *"why this school,"* the note is visible as material. **One record, two doors** — the same pattern as secondary prompts (`§8`) and Letters' `Person` (`§7b`).
+
+- **Editing it in either place edits the same record.** There is no copy and nothing to drift.
+- **It is material, not a draft.** Essays never treats the note as prose to submit.
+- **Grep proves one store.** `09` §7 already says School List *"supplies the material for 'why this school'"* and **"never a second school database"** — this is that sentence, specified.
+
+**This is the argument for the tab existing before a cycle does.** The reason you were interested at nineteen is the material at twenty-two, and **it is unrecoverable if it was never written down.**
+
+### `SL-3` — the student's own tier tag ✅ BUILD
+
+**Already binding in `§6`: the tag is the record.** Never computed silently, never recomputed after the student sets it, never overridden.
+
+**Row-level additions:** the default is **`undecided`**, which is a real state and not a guess. **No school is required to carry a tier**, and a list of twelve untagged schools is a valid list.
+
+### `SL-4` — MD / DO / other ✅ BUILD
+
+**Layer A for roster entries — read-only, from the file.** Student-set for free-text entries. **`other` exists** for foreign and non-listed programs.
+
+**⚠️ Never inferred from a school's name.** *"College of Osteopathic Medicine"* is a naming convention, not a data source — and the roster already carries the verified value for all 240.
+
+### `SL-5` — state, and the in-state flag ⭐ RULED, with the blank case specified
+
+**State is Layer A for roster entries, student-set for free-text.** **In-state is Layer C — derived on read from state + residency (`P-33`), never stored.** Change residency in Profile and every flag and count recomputes; nothing needs migrating.
+
+**⭐ When residency is blank — and it is blank for every new user:**
+
+- **The in-state flag and the in-state count go DORMANT.** They do not render as `0`, as "out-of-state," or as an empty chip. `U-5`.
+- **The dormant state states its reason and teaches**, in one line: *"In-state status needs your residency — it materially changes a list."* **A dormant field that explains itself is worth more than a hidden one.**
+- **It links to the Profile field.** One route, no re-entry here — **`P-33` is Profile's record and this tab does not hold a second copy.**
+- **It never nags.** No prompt, no badge, no attention-budget spend.
+
+> **⚠️ The reasoning, recorded because it justifies the calm posture (Andy, Aug 2026):** *"no one who has a blank slate will even be old enough to apply at that point."* **A blank residency almost always means a first- or second-year who is years from an application.** There is nothing urgent to resolve, so the correct behaviour is to inform and wait — **not to chase the field.**
+
+**⚠️ Blank is never treated as out-of-state.** That states something false about every school on the list, which is `U-13` — a claim wearing a fact's clothes.
+
+**`SL-14`'s in-state count inherits this dormancy.** It is already ruled and shipping; **it must not render a count while residency is unset.**
+
+### `SL-6` — archive, never delete ✅ BUILD
+
+**`archivedAt` on the `TrackedSchool`. The record is never destroyed.** *"A school you dropped is a decision worth keeping."*
+
+- **An archived school leaves the active list and every count it feeds** — tier balance, in-state, list size.
+- **It stays retrievable**, with its `whyItIsOnMyList` intact. **The reason you dropped a school is itself material.**
+- **Grep proves no destructive path.** No delete, no remove, no clear.
+
+> **⚠️ LIVE CODE CONFLICT, Aug 2026.** `src/pages/Schools.tsx` ships a `Remove` row action, and `01` §4c listed `Remove` until it was corrected in Batch 3. **The shipped code contradicts this ruling today** — see `## Known code drift`.
 
 ---
 
@@ -196,15 +291,97 @@ Premed OS **may** suggest reach / target / safety **only when the student has en
 
 **NYU being free changes a list.** Tuition plus `P-42` Fee Assistance is a cost picture nobody assembles anywhere else. It is Layer B: **typed by the student, never shipped, never fetched.**
 
+### ⭐ "Add to compare" — STRUCK. The list itself is the comparison. (RULED Aug 2026, Batch 3)
+
+**`specifications/01-shared-interface-patterns.md` §4c listed "Add to compare" as a School List row action. It is struck** — resolution 1 of the three the open decision named.
+
+**Two separate findings, and both point the same way.**
+
+**1. What was left to compare is not what MSAR compares.** `§1` ships no admissions numbers, so a compare surface here could only hold Layer A (service, state, MD/DO), Layer C (in-state, tier counts, prereq coverage), and whatever Layer B the student typed. **MSAR compares admissions data; this would compare cost and logistics.** A different feature wearing the same word.
+
+> **⚠️ Recorded so it is not re-argued: `U-9` does NOT forbid this.** Its three clauses — *"not against a bar, not against other students, not against the student's own past"* — all concern **the student**. Arranging schools does not score the applicant. **The earlier conservative reading conflated the two; the constraint that actually binds is `§1`'s ban on shipped numbers.**
+
+**2. A table is the wrong shape, and that is the deciding reason.** MSAR's table works because **MSAR's data is complete and uniform for every school.** Layer B is sparse by construction — a student types tuition for four schools out of twelve. **A grid renders that sparseness as rows of blank cells, and every blank reads as the student's failure to do homework.** `U-5` already governs this: insufficient data goes dormant with a reason, never an empty chart. **A comparison table over sparse student-entered data is an empty chart with extra steps.**
+
+**What ships instead: sort, group, and filter on the list that already exists.** Group by application service, sort by tuition, filter to in-state. **Same information, no second surface, nothing empty.**
+
+**⚠️ A row-level "Add to compare" is the tell.** It implies a separate compare *destination*, and that destination is the MSAR-shaped thing `§1` cedes. **The row menu is `Move tier · Mark applied · Archive`.**
+
+> **⚠️ A second defect was found in the same row while striking this.** `01` §4c read `Remove`, but `§4` of this spec is explicit: **"archive, never delete. A school you dropped is a decision worth keeping."** **Corrected to `Archive` in the same edit** — recorded here because it was not part of the open decision and a later reader will otherwise wonder where it came from.
+
+**Three questions, three shapes — do not collapse them into one "compare" feature:**
+
+| The question | What answers it | Shape |
+|---|---|---|
+| *"Is my list balanced?"* | `SL-13` tier counts, `SL-14` in-state count | A count or small bar |
+| *"What can I afford?"* | `SL-9` tuition + `P-42` fees | Sorted rows — money compares as length |
+| *"What do I owe each school, and when?"* | Cycle-layer status, deadlines | **The list, sorted by date** |
+
 ---
 
 ## 7. The cycle layer (gated) — status, and the `U-7` problem
 
 **Everything in this section renders only when the cycle is in range** (`SL-21`).
 
+### ⭐ `SL-21` — what puts a cycle "in range" (RULED Aug 2026, Batch 3)
+
+> **The student throws the switch. Premed OS proposes and waits. It never flips itself.**
+
+**The gate is an explicit application-mode state the student controls.** It is available at all times — including earlier than Premed OS would suggest — because **`U-8` permits declining to assert and forbids withholding a capability.** A student further ahead than the calendar assumes is never gated out.
+
+**Premed OS proposes once, in the autumn before the cycle opens** — roughly eight months ahead, derived from the expected application year collected at onboarding. *"Cycles usually open in early May — turn on cycle tracking?"* **The student answers; nothing changes until they do.** This is `U-10`'s propose-and-wait, the same mechanism already ruled for `SL-26`'s course mapping.
+
+**⚠️ The proposal is derived from the YEAR ALONE. No service date is stored, computed, or displayed by this gate.**
+
+| Rejected | Why |
+|---|---|
+| **A pure student switch with no prompt** | A student who never flips it never sees deadlines — **silent failure on the one surface where a miss is unrecoverable** |
+| **A date formula that activates application mode** | The packet found AMCAS opened **May 6 / May 1 / May 5** across three official cycles, and only **two** cycles of published history exist for AACOMAS and TMDSAS. **A derivation rule would be an inference presented as a calendar** |
+| **Deriving from onboarding without confirmation** | Gap years are the norm. The expected cycle a first-year enters goes stale constantly |
+
+**Why autumn and not January:** the work the cycle layer supports — building the list, tiering, lining up letter writers — happens in the spring *before* applications open. **Letter writers asked in April are asked late.**
+
+**⚠️ If Premed OS ever displays an actual service date, that is a different feature with a different rule:** it needs a freshness-labelled annual lookup, never a formula. `implementation/research-prompts/school-list-sl-21-cycle-calendar.md`. **The TMDSAS rank-preference deadline is explicitly unsuitable for approximation** — missing it withdraws the applicant from every medical school (`SL-24c`).
+
+## 7a. ⭐ `SL-24` — the application service, and the primary is not per-school (RULED Aug 2026)
+
+### `SL-24` — `applicationService` is first-class ✅ BUILD
+
+**Every tracked school carries `AMCAS` | `AACOMAS` | `TMDSAS`.** The roster already holds it on all 240 entries — 153 AMCAS · 73 AACOMAS · 14 TMDSAS. **This surfaces a field that exists; it adds no data and creates no maintenance.**
+
+**Why it is not cosmetic:** **Sam Houston State COM and UNT Health Fort Worth TCOM are osteopathic schools that apply through TMDSAS, not AACOMAS.** **No student would guess that, and nothing else in Premed OS would tell them.** A Texas school run on an AMCAS timeline is a missed cycle.
+
+### ⭐ `SL-24b` — the primary is a SERVICE-LEVEL object. This amends `SL-16`.
+
+> **You fill out one AMCAS application. You submit it once. AMCAS sends it to twelve schools.**
+
+**Putting `primary submitted` on each school makes the student record one action twelve times**, and leaves nowhere to put the facts that are true of the application rather than of a school — *"AMCAS is holding this until your transcript arrives."* That is one fact about one application, not twelve facts about twelve schools.
+
+| Lives on `CycleApplication` (per service) | Lives on the school |
+|---|---|
+| Primary submitted date · service processing state · document holds (transcripts, verification) | **Secondary received · secondary submitted · interview · decision** |
+
+**The test:** *did the student do this once, or once per school?* Once → the service record. Once per school → the school record.
+
+**⚠️ The case that forces it:** a student applying to Texas **and** elsewhere has **two primaries** — different deadlines, different document rules (TMDSAS asks for transcripts only when it wants them; AMCAS waits on them before processing). **The per-school model cannot represent that at all** — it renders two rows with the same status label meaning two different things.
+
+**Cost, recorded honestly:** this is a second entity in a tab that had one, and it edits a `SL-16` ruling that was already closed. **It is far cheaper now than after a student has twelve live applications in it** — that migration would land mid-cycle, which is the worst possible time.
+
+**Do NOT render the three services' own state vocabularies verbatim.** AMCAS says *Ready for Review*; AACOMAS says *Verified*; TMDSAS says neither. **Three vocabularies on one screen is three mental models for a student applying to two services.** Keep one plain set in the UI and store the service's source state underneath.
+
+### `SL-24c` — ⏸ TMDSAS Match: DEFERRED with `SL-18`
+
+**TMDSAS runs a Match for eligible Texas residents who have interviewed and rank their schools. An applicant who misses the ranking deadline is withdrawn from every medical school.**
+
+**Deferred, not cut** — Match sits *after* interviews, and interview logistics are already deferred (`§6b`). **The research is done and cited on the board; nothing needs re-deriving when it returns.** ⚠️ **When it does, note the failure mode is total and unrecoverable**, which is an argument for carrying the ranking deadline in the Attention bell even before the ranking UI exists.
+
+---
+
 ### `SL-16` — per-school status
 
-**States:** `primary submitted` · `secondary received` · `secondary submitted` · `interview` · `decision`.
+**⚠️ AMENDED by `SL-24b` — `primary submitted` moves to `CycleApplication`.**
+
+**States on the school:** `secondary received` · `secondary submitted` · `interview` · `decision`.
 
 ### ⚠️ No `rejected`. No `no response`. No `waiting`. No status enum implying a non-event.
 
@@ -217,6 +394,84 @@ Premed OS **may** suggest reach / target / safety **only when the student has en
 **School List owns the AMCAS / AACOMAS / TMDSAS and secondary dates attached to its schools** (shell §2.2; `11-timeline-tasks.md` confirms the routing). **They surface in the Attention bell** (shell §7.5) with severity, competing in the standard attention auction (`U-3`).
 
 **⚠️ No second deadline list, here or anywhere.** Timeline does not hold them; this tab does not build a calendar.
+
+## 7b. `SL-26` and `SL-27` — reading Academics and Letters (RULED Aug 2026)
+
+**Both are filtered reads of records another tab owns. Neither stores a second copy.**
+
+### `SL-26` — prerequisite coverage ✅ BUILD, as record presence only
+
+**The student types a school's prereqs (`SL-17` phase 1) and maps their own courses to them.** Premed OS reports which requirements have a course mapped and which do not.
+
+| ✅ Allowed — a fact about the record | ❌ Forbidden — a claim about the school |
+|---|---|
+| *"Statistics — nothing mapped."* | *"BIOC 430 satisfies Duke's biochemistry requirement."* |
+| *"BIOC 430 → biochemistry"* (**the student's own mapping**) | *"You meet Duke's prerequisites."* |
+| *"CHEM 262 is in progress"* — a scheduling fact | Treating planned or in-progress work as completed coursework |
+
+> **⚠️ THE REASON, and it is sourced rather than cautious: there is no AMCAS / AACOMAS / TMDSAS prerequisite-equivalency standard.** All three services classify coursework for **their own GPA arithmetic**, and all three tell applicants to check each school directly. **A service category cannot certify a school's requirement**, and school policies on lab hours, AP and IB credit, community-college work, online courses, and recency all differ. `implementation/research-prompts/school-list-sl-26-prerequisite-coverage.md`.
+
+**The cost of the narrow version is almost nothing.** *"Nothing mapped to statistics"* is the useful output, and the student can dispute it by looking. *"Satisfies"* is a claim nobody can back, and if the school disagrees the student finds out after applying — unrecoverable.
+
+**`U-10` applies to the mapping:** Premed OS may **propose** a course→requirement match and waits. It never files one silently.
+
+**Do not:**
+- **Do not read `data/med-schools.json` for prerequisites.** Every `prereqs` array is empty by design (`§1`), and `prereqNotes` is a disclaimer, not content.
+- **Do not promote `data/unc-requirements.json` into an acceptance claim.** It is medium-confidence, typical-UNC, and says so. It can support a **UNC planning** comparison; it is not per-program acceptance data.
+- **Do not infer a school's policy from an Academics tag or a service subject category.**
+
+**⚠️ Depends on the course→requirement catalog**, which `briefs/README.md` lists as not yet written.
+
+### `SL-27` — letters routing ✅ BUILD, service-aware
+
+**The three services genuinely differ, and one cross-service routing field would be false for two of them.**
+
+| Service | What the student can actually do | What Premed OS shows |
+|---|---|---|
+| **AMCAS** | **Real per-school assignment.** Up to 10 letter entries, each designated to chosen schools — the cap exists *for* targeting | **Per-school letter assignment**, reading Letters' `Person` records |
+| **TMDSAS** | **Nothing. Assignment is impossible** — every letter submitted through TMDSAS is available to **every** school selected | **No assignment UI.** One stated fact: *"all TMDSAS letters go to every TMDSAS school on your list"* |
+| **AACOMAS** | **No documented per-program assignment exists.** Routes vary and some schools accept letters directly | **Requirements only.** No assignment claim |
+
+**Per school, the student may record what that school says it requires:** quantity, writer roles or relationships, packet policy, direct-vs-service route, deadline. **All student-entered.** `LT-6` ceded per-school letter requirements to MSAR — **that cede was about SHIPPING them.** A student typing them for their own list is `§1`'s ruling exactly, so this is consistent rather than a reversal.
+
+**⚠️ Never infer "complete" from letter receipt.** TMDSAS demonstrates why: **the same pending optional letter may block completeness at one school and not another**, and each school decides whether to accept a late letter. **Receipt is a fact; completeness is the school's judgement and Premed OS does not hold it.**
+
+**Reads Letters' `Person` records. Stores no second copy. Grep for one.**
+
+---
+
+## 7c. ⭐ Wave 4 close — `SL-28`, `SL-29`, `SL-31` (RULED Aug 2026, Batch 3)
+
+### `SL-28` — days since the secondary arrived ✅ BUILD, as elapsed time with no target
+
+**The row shows the measured fact and nothing else:** *"Secondary received 9 days ago."*
+
+**⚠️ Premed OS states no turnaround target, ever.** The research pass found **no AAMC, AACOM, or TMDSAS window, no school-published expectation, and no outcome study.** The widely-repeated "two weeks" traces only to consulting blogs. `implementation/research-prompts/school-list-sl-28-secondary-turnaround.md`.
+
+| ✅ Allowed | ❌ Forbidden |
+|---|---|
+| *"Secondary received 9 days ago"* — elapsed time as a dated fact | Any generic target, recommended window, or "typical" figure |
+| **A countdown to a deadline THE STUDENT ENTERED** — a fact about their own record | A lateness verdict, a colour ramp standing in for one, or a probability claim |
+
+**A student who has entered no deadline sees no countdown.** A false-precision countdown against a number Premed OS guessed is worse than the plain elapsed count.
+
+**⚠️ This is `SL-16`'s ruling applied unchanged:** *"submitted 94 days ago"* is a fact; *"ghosted"* is a verdict (`U-7`, `U-13`).
+
+### `SL-29` — the cycle as an object ⏸ CUT FROM v1, with one carry-over obligation
+
+**Roughly a third of applicants apply twice, and `SL-6` archives a school but cannot archive a CYCLE.** A reapplicant keeps their list and starts the statuses over.
+
+**Cut, because a first-year does not have a second cycle** and the beta population is first- and second-years. **This is the second cycle's problem.**
+
+> **⚠️ THE OBLIGATION, and it is the whole ruling: the data model must not BLOCK this later.** Cycle-scoped facts — per-school status, `CycleApplication`, secondary state — **carry a cycle stamp from day one**, even though nothing reads it in v1. **`LT-13` already put status on the request rather than the person for exactly this reason.** A stamp costs nothing now; retrofitting one costs a migration mid-cycle.
+
+### `SL-31` — export the list ✅ BUILD, reusing `P-13`
+
+**Two real uses:** the advisor conversation, and typing the list into the application service's school-selection screen by hand.
+
+**Builds nothing new. Reuses `P-13`'s exporter.** If `P-13` gains a format, this gains it too. **Do not write a second exporter; grep for one.**
+
+**Exports what the student has** — their own entries, tags, notes, and status. **It does not export shipped roster data as though it were their research.**
 
 ---
 
@@ -298,10 +553,10 @@ Standard object inspector per `01` §3 — **the five core sections are mandator
 | Section | Configured as |
 |---|---|
 | **Overview / Details** | Directory facts (read-only, Layer A) · `whyItIsOnMyList` · tier · entered numbers with `enteredOn` · tuition |
-| **Relations** | Secondary essays (opens the `Essay` peek — the Essays door) · letter writers routed here (**pending `SL-27`**) · linked tasks |
+| **Relations** | Secondary essays (opens the `Essay` peek — the Essays door) · letter writers routed here (`SL-27`, ruled — **AMCAS only**; `§7b`) · linked tasks |
 | **Files** | Attachments and links the student added |
 | **Activity** | Recent changes to this record |
-| **Actions** | Open in Explore · archive · export (**pending `SL-31`**) |
+| **Actions** | Open in Explore · archive · export (`SL-31`, ruled — reuses `P-13`; `§7c`) |
 | *Notes* (on demand) | Freeform |
 | *Data quality* (on demand) | Missing-field warnings only, each stating its cause (`U-1`). **Never a completeness score** (`U-9`) |
 
@@ -348,11 +603,11 @@ Per shell §10 and `general.md` → Accessibility. Tab-specific:
 
 | Tab | Direction |
 |---|---|
-| **Essays & Story Bank** | **Owns `Essay` and all secondary prompt text.** This tab is the school door. **Never a second school database there; never a second prompt store here** |
-| **Academics** | Supplies courses and GPA for any student-entered requirement comparison. **`SL-26` is UNRULED — no comparison ships yet** |
+| **Essays & Story Bank** | **Owns `Essay` and all secondary prompt text** — this tab is the school door. **⭐ Traffic runs BOTH ways: Essays reads `whyItIsOnMyList`, which School List owns** (`§4a` `SL-2`). **Never a second school database there; never a second prompt store here; never a copy of the note in either** |
+| **Academics** | Supplies courses and GPA. **`SL-26` RULED (`§7b`) — coverage reports mapped/unmapped ONLY. Never a claim that a course satisfies a requirement** |
 | **MCAT** | Supplies the student's own score for `§6`'s delta |
 | **Profile / CV** | Supplies residency (`P-33`) for the in-state count; `P-42` Fee Assistance links from tuition |
-| **Letters** | Supplies writer `Person` records. **`LT-6` ceded per-school *letter requirements* to MSAR; `SL-27` is UNRULED** |
+| **Letters** | Supplies writer `Person` records. **`LT-6` ceded per-school *letter requirements* to MSAR; `SL-27` RULED (`§7b`) — per-school assignment renders for AMCAS only** |
 | **Timeline** | Takes application-cycle milestones as **roadmap-node context**. **Timeline holds no deadlines and no copy of them** |
 | **Overview / Attention bell** | The only cross-cutting deadline surface (shell §7.5) |
 | **Help** | Collects the `U-12` pointers, including MSAR, under the `U-8` guard |
@@ -361,7 +616,7 @@ Per shell §10 and `general.md` → Accessibility. Tab-specific:
 
 - **The tab is admissions-aware and admissions-silent.** It knows what a cycle looks like; it says nothing about how yours will go.
 - **Geography is a real variable** — in-state preference and interview travel — which is why `SL-22` exists and why the in-state count is a legitimate fact.
-- **Rolling admissions is real**, which is why *"submitted in August"* is a fact worth surfacing (`SL-20`, pending its row ruling).
+- **Rolling admissions is real**, which is why *"submitted in August"* is a fact worth surfacing (`SL-20`, still unruled — Batch 7).
 - **The student's own reasons are the durable asset.** `whyItIsOnMyList` written at nineteen is the material for *"why this school"* at twenty-two. That is the argument for the tab existing before the cycle does.
 
 ## Do Not Generalize From Other Tabs
@@ -370,7 +625,7 @@ Per shell §10 and `general.md` → Accessibility. Tab-specific:
 - **Do not invent an admissions-odds score, chance figure, or readiness score** — here or by importing this tab's arithmetic elsewhere.
 - **Do not treat Explore/Track as `one record, two doors`** (`§3`).
 - **Do not apply `LT-29`'s absent-tab gate to this tab** (`SL-21`).
-- **Do not build a school comparison table** — ceded to MSAR (`§1`). **⚠️ See `## Open decisions` — `01` §4c currently lists "Add to compare" and that conflict is unresolved.**
+- **Do not build a school comparison table** — ceded to MSAR (`§1`). **"Add to compare" was struck from `01` §4c, Aug 2026 (`§6`).** Sort, group, and filter the existing list instead; **a separate compare destination is the MSAR-shaped thing `§1` cedes.**
 - **Do not populate the `null` admissions fields in `data/med-schools.json`.** They are the ruling, not a gap.
 
 ---
@@ -406,8 +661,55 @@ Per shell §10 and `general.md` → Accessibility. Tab-specific:
 - [ ] Before the gate, **no status, secondary, deadline, or cost element renders at all** — verified by DOM absence, not by disabled state.
 - [ ] The tab and the interest list remain fully usable before the gate.
 - [ ] **No `rejected`, `no response`, `waiting`, or equivalent status exists.**
+- [ ] Every tracked school shows its application service; the value matches the roster and is never inferred from MD/DO or state.
+- [ ] **`primary submitted` does not exist as a per-school status.** It lives on a `CycleApplication`, one per service per cycle.
+- [ ] A student with both a Texas and a non-Texas school has **two** `CycleApplication` records, independently dated.
+- [ ] No service's own state vocabulary (`Ready for Review`, `Verified`, …) is rendered verbatim in the UI.
+
+**Reading Academics and Letters (`SL-26`, `SL-27`)**
+
+- [ ] Prerequisite coverage reports mapped/unmapped **only**. **Grep proves no string asserting a school accepts, satisfies, or fulfils anything.**
+- [ ] A course→requirement mapping is made or confirmed by the student, never filed silently.
+- [ ] Planned and in-progress courses are visibly distinct from completed coursework.
+- [ ] **Nothing reads `prereqs` or `prereqNotes` from `data/med-schools.json`.**
+- [ ] Per-school letter assignment renders **only** for AMCAS schools.
+- [ ] A TMDSAS school shows the all-schools fact and **no assignment control**.
+- [ ] **No letter or requirement state is labelled complete by inference from receipt.**
+- [ ] **Grep proves one `Person` store.** Letters owns it; this tab reads it.
 - [ ] Elapsed time since a submission renders as a dated fact with no verdict language.
 - [ ] Application-cycle deadlines surface **only** in the Attention bell; **grep proves no second deadline list in this tab**.
+
+**Batch 3 — the gate, the compare strike, the roster grain, and Wave 4's close**
+
+- [ ] **The cycle layer never activates on its own.** Only an explicit student action turns application mode on.
+- [ ] The autumn proposal is derived from the expected **year** alone. **Grep proves no stored, computed, or displayed service date anywhere in this tab.**
+- [ ] The application-mode switch is reachable **before** Premed OS proposes it — a student ahead of the calendar is never gated out.
+- [ ] **"Add to compare" appears nowhere** — verified by grep, in this tab and in `01` §4c.
+- [ ] **No compare surface, table, or side-by-side view exists.** Sort / group / filter act on the existing list only.
+- [ ] A sparse Layer B field renders dormant with a reason, **never as an empty cell in a grid**.
+- [ ] **The roster is 240.** Both regional-campus entries are present.
+- [ ] A campus that is not yet operating is **visible and unselectable with the reason stated** — not hidden, not selectable.
+- [ ] **No entry receives a city inferred from its parent institution.**
+- [ ] `SL-28` renders elapsed time only. **Grep proves no generic turnaround target, recommended window, or "typical" figure.**
+- [ ] A countdown renders **only** against a deadline the student entered.
+- [ ] **Every cycle-scoped record carries a cycle stamp**, including in v1 where nothing reads it (`SL-29`).
+- [ ] Export reuses `P-13`. **Grep proves one exporter.**
+- [ ] Export contains the student's own entries and never re-exports shipped roster data as their research.
+
+**Batch 4 — Wave 0, the list itself**
+
+- [ ] A free-text school renders Layer A fields **dormant**, never blank-as-fact and never inferred. **Grep proves no name-based inference of type, state, or service.**
+- [ ] A duplicate entry **warns and still saves**.
+- [ ] **Nothing fetches to validate a typed school name.**
+- [ ] `whyItIsOnMyList` is **never generated, suggested, or autocompleted** — verified by grep against the AI surfaces.
+- [ ] A school saves with `whyItIsOnMyList` empty, and is never prompted for it more than once.
+- [ ] **Essays reads `whyItIsOnMyList` from the same record School List owns.** Editing in either surface shows in the other. **Grep proves one store.**
+- [ ] Default tier is `undecided`; **a list of untagged schools is valid and renders no warning.**
+- [ ] **With residency unset, the in-state flag and `SL-14`'s count do not render** — replaced by one line stating the reason and linking to Profile.
+- [ ] **Blank residency is never treated as out-of-state.**
+- [ ] Changing residency in Profile recomputes every flag and count with **no stored value migrated**.
+- [ ] The unset-residency state **never nags** — no prompt, no badge, no attention-budget spend.
+- [ ] Archiving removes a school from the active list and every count; **the record and its note survive**. **Grep proves no destructive delete path.**
 
 **Secondary prompts (`SL-23` phase 1)**
 
@@ -435,57 +737,78 @@ Per shell §10 and `general.md` → Accessibility. Tab-specific:
 
 ---
 
+## Known code drift — the shipped app contradicts ruled behaviour
+
+**Found Aug 2026 by reading `src/` against this spec. Recorded here, not fixed here.**
+
+> **⚠️ `BUILD-MANIFEST.md` clears only Overview and Academics. School List is not `YES`, so none of the below may be built without Andy changing that row.** It is listed so the drift is known, not so it gets built quietly.
+
+| Drift | Where | Rule it breaks |
+|---|---|---|
+| **`rejected` ships as a selectable status** | `src/pages/Schools.tsx` status options | **`U-7`, and `§7`'s "No `rejected`. No `no response`. No `waiting`."** This is a locked universal rule and the violation is in the product today |
+| **`Remove` instead of archive** | `Schools.tsx` row action | **`SL-6`** (`§4a`). Corrected in `01` §4c Aug 2026; the code still does it |
+| **`applied` as a per-school status** | `Schools.tsx` status options | **`SL-24b`** (`§7a`) — the primary is service-level. The current model records one AMCAS submission twelve times |
+| **No `applicationService` anywhere** | `SchoolEntry` in `src/lib/types.ts` | **`SL-24`** (`§7a`) — first-class, and the roster already carries it on all 240 |
+| **The app never reads `data/med-schools.json`** | No import in `src/` | **`SL-1`** (`§4a`) — the roster autocomplete has no data behind it |
+
+**The cheap half is deletion, not construction:** removing `rejected`, renaming `Remove` → `Archive`. **The structural half — `CycleApplication`, `applicationService`, reading the roster — is a real build and should wait for Waves 1–3 to close.**
+
+---
+
 ## Open decisions
 
 **Nothing below is ruled. Do not implement any of it, and do not let it into acceptance criteria.**
 
-### A · Waves 0–3 — the row-by-row ruling pass
+### A · Waves 1–3 — the remaining row-by-row pass
 
-The governing decisions are closed, but rows **`SL-1`–`SL-8`, `SL-10`–`SL-14`, `SL-17`, `SL-19`, `SL-20`** were never ruled one at a time the way Letters and Profile/CV were. This spec captures the **envelope** those rows sit inside; it does not rule them. → `tabs/08-school-list-board.md` §2–§5.
+**✅ Wave 0 (`SL-1`–`SL-6`) CLOSED — Batch 4, migrated to `§4a`.**
 
-### B · Wave 4 — `SL-24`–`SL-31`, unruled
+**Ten rows remain unruled: `SL-7`, `SL-8`, `SL-10`–`SL-14`, `SL-17`, `SL-19`, `SL-20`.** This spec captures the **envelope** they sit inside; it does not rule them. → `tabs/08-school-list-board.md` §3–§5.
 
-| Row | Question | Research |
+| Batch | Wave | Rows |
 |---|---|---|
-| **`SL-24`** | Application service as a first-class field. **The board calls this the strongest row and a live silent bug** — the tab currently talks about "AMCAS fees" and "submitted in August" as if there were one application. TMDSAS has different document timing and a post-interview **Match** with a ranking deadline that withdraws you from every school if missed. | ✅ `implementation/research-prompts/school-list-sl-24-application-services.md` |
-| **`SL-26`** | Prerequisite coverage read from Academics. **The packet's finding is the constraint:** no AMCAS/AACOMAS/TMDSAS prerequisite-equivalency standard exists, and a service course category cannot certify a school's requirement. A record-presence fact may be truthful; an acceptance claim is not. | ✅ `.../school-list-sl-26-prerequisite-coverage.md` |
-| **`SL-27`** | Letters routing per school. **AMCAS supports real per-school letter designation; TMDSAS explicitly does not** — every TMDSAS letter goes to every selected school. No official AACOMAS per-program assignment was found. A single cross-service field would misstate two of the three. | ✅ `.../school-list-sl-27-letters-routing.md` |
-| **`SL-28`** | Days since the secondary arrived. Shape is permitted by `SL-16`; **needs a primary source before any turnaround number is stated, or it states none.** | ❌ |
-| **`SL-29`** | The cycle as an object — re-applicant carry-over. **Probably cut from v1**; a first-year has no second cycle. | ❌ |
-| **`SL-31`** | Export the list. Reuses `P-13`'s exporter; builds nothing new. **Weakest row in the wave.** | ❌ |
+| **5** | Wave 1 — the numbers the student enters | `SL-7`, `SL-8`, `SL-10` (`SL-9` already ruled) |
+| **6** | Wave 2 — the arithmetic on those numbers | `SL-11`–`SL-14` (`SL-15` CUT) |
+| **7** | Wave 3 leftovers | `SL-17`, `SL-19`, `SL-20` |
 
-**⚠️ The three packets are evidence, not rulings.** Their "implications" sections are explicitly non-binding. **Do not promote one into a product decision without an explicit ruling.**
+**⚠️ `SL-14` is affected by a Batch 4 ruling and is not fully closed by Wave 2 alone** — `§4a` `SL-5` requires its in-state count to go dormant while residency is unset.
 
-### C · The two regional-campus roster entries
+### B · ⭐ Wave 4 — CLOSED (Aug 2026)
 
-**Sidney Kimmel — Delaware Regional Medical Campus** and **Tufts — Maine Track** are the only 2 of 240 entries with no city, because no directory lists one. **LCME does not accredit or list either separately.** Keep them (applicant-facing: a student can select those tracks, consistent with the DO side's teaching-location grain) or drop them (accreditation grain: LCME lists 163 programs)?
+**All eight rows are ruled or deferred. Nothing in Wave 4 is open.**
 
-**⚠️ Do not resolve this by quietly deleting two rows. It changes any count the app displays**, and it gates `SL-22`'s completeness claim. Recorded in `data/med-schools.json` → `meta.knownDefects`.
+| Batch | Rows | Where it landed |
+|---|---|---|
+| **1** | `SL-24` · `SL-24b` · `SL-24c` ⏸ | `§7a` |
+| **2** | `SL-26` · `SL-27` | `§7b` |
+| **3** | `SL-28` · `SL-29` CUT · `SL-31` | `§7c` |
+| **Deferred** | `SL-25` ⏸ · `SL-30` ⏸ | `§6b`, with `SL-18` |
 
-### D · ⚠️ Precedence conflict — "Add to compare"
+**⚠️ Packets remain evidence, not rulings.** Their "implications" sections are explicitly non-binding. **A future reader must not promote one into a product decision without an explicit ruling** — that rule survives Wave 4's close.
 
-**`specifications/01-shared-interface-patterns.md` §4c lists "Add to compare" as a confirmed School List row context-menu item.** **The `U-12` ruling in `§1` forbids a school comparison table** — MSAR already compares up to ten schools side by side.
+### ⭐ C, D, E — CLOSED (Aug 2026, Batch 3)
 
-`specifications/` outranks `tabs/`, but `§1` derives from `general.md`'s `U-12`, which outranks both. **This spec takes the conservative reading and ships no compare feature.** Three possible resolutions, none taken:
+| Was | Ruling | Where it landed |
+|---|---|---|
+| **C** · the two regional-campus entries | **Both stay; roster remains 240.** An availability field gates the not-yet-operating campus | `§3` |
+| **D** · "Add to compare" precedence conflict | **Struck from `01` §4c.** The list itself is the comparison — sort, group, filter | `§6` |
+| **E** · the `SL-21` phase-gate trigger | **Student-thrown switch; autumn proposal derived from the year alone; no stored service dates** | `§7` |
 
-1. Strike "Add to compare" from `01` §4c.
-2. Allow comparison **of the student's own entered numbers across their own list only** — arguably inside `§2`'s line, since the app would compute on numbers the student gave it.
-3. Rule it explicitly out of scope for v1 and leave `01` §4c stale with a note.
+**Two things worth carrying forward from how these closed:**
 
-**Needs Andy's direction.**
+- **`U-9` does not forbid arranging schools.** Its clauses concern the student, not the list. **The conservative reading that produced open decision D conflated the two** — the binding constraint was always `§1`'s ban on shipped numbers. Recorded so it is not re-derived a third time.
+- **The Delaware campus is not yet operating**, which no earlier draft knew. **C was not a filing question; one of the two rows could not be selected at all.**
 
-### E · The phase-gate trigger (`SL-21`)
+### F · Data follow-ups — partially applied Aug 2026
 
-**What puts the cycle "in range" is not specified.** Onboarding collects an expected application cycle (`general.md` → New-user onboarding), which is the obvious input, but **the lead time is unruled** — does the cycle layer appear twelve months out, at the start of the application year, or on an explicit "I'm applying" switch? An explicit student-thrown switch is the option most consistent with `U-8`, but that is an argument, not a ruling.
-
-### F · Data follow-ups — recorded, deliberately NOT fixed
-
-**Documentation-only pass. `data/med-schools.json` was not modified.**
+**⚠️ `data/med-schools.json` HAS now been modified.** Two items below were applied on 2026-08-13; the rest stand.
 
 | Item | State |
 |---|---|
-| **`admissionsTests: { PREview, CASPer }`** | **Null on all 240.** `SL-25` is deferred, and **deferring the feature is a reason to remove the keys, not to leave them.** Populating conflicts with `§1`; participation changes annually. **Null on 240 is the one option that is definitely wrong.** Needs a ruling before the schema ships |
-| **`prereqNotes`** | **Filled on every entry with one of two disclaimer strings** — a placeholder that reads as populated in any fill-rate check. Either populate per school or move the disclaimer to `meta` |
+| **✅ `prereqNotes`** | **APPLIED.** The disclaimer moved to `meta.prereqDisclaimer` (stated once, not 240 times) and every entry's `prereqNotes` is now `null`. **It previously reported 240/240 in any fill-rate check while holding no per-school information** — the emptiest field in the file was the only one reading as full |
+| **✅ `meta.fieldCoverage`** | **ADDED.** Real per-field counts, so a later audit reads the true number rather than inferring one. At the time of writing: `medianMCAT 0` · `medianGPA 0` · `acceptanceRate 0` · `prereqs 0` · `deadlines 0` · `admissionsTests 0` · `mission 12` · `inStateFriendly 3` · **`control 211`** · `city 238` |
+| **⚠️ `control` — NEW, found Aug 2026** | **Null on 29 of 240** — 27 DO and 2 MD, mostly newer colleges and branch campuses. **A "public schools only" filter silently returns 211**, and nothing tells the student the other 29 were dropped rather than excluded. Directory-level and cheap; prompt written |
+| **`admissionsTests: { PREview, CASPer }`** | **Null on all 240.** `SL-25` is deferred, and **deferring the feature is a reason to remove the keys, not to leave them.** ⚠️ **The `SL-25` packet sharpens this: AAMC defines FOUR PREview requirement levels, so a boolean was never the right shape** — and *"a current `null` has no applicant meaning; it must not render as 'not required'."* **Null on 240 is still the one option that is definitely wrong.** Needs a ruling before the schema ships |
 | **⚠️ Board / dataset drift** | The board's DATA DEFECT #2 says the TMDSAS corrections were *"recorded, not applied."* **They have since been applied** — `meta.corrections` dated 2026-08-10, and the file now holds 14 TMDSAS entries. **The board text is stale.** Left as-is per the do-not-edit-the-board instruction; noted here so the next reader does not re-apply a fix |
 | **⚠️ Stale board figures** | Board `SL-24` cites "populated on all 211 — 152 AMCAS · 48 AACOMAS · 11 TMDSAS." **Actual: 240 entries — 153 AMCAS · 73 AACOMAS · 14 TMDSAS.** The board predates the 211 → 240 expansion in its own §5a-i |
 
@@ -503,18 +826,22 @@ The governing decisions are closed, but rows **`SL-1`–`SL-8`, `SL-10`–`SL-14
 | §1b `SL-23` phase 1 | **Migrated as binding** | `§8` |
 | §1b `SL-23` phase 2 | **Deferred, visible** | `§8` |
 | §1b Deadlines/requirements staging | **Migrated as binding** | `§9` |
-| §2 Wave 0 (`SL-1`–`SL-6`) | **Envelope migrated; rows OPEN** | `§4`, `§9` · Open decisions A |
-| §3 Wave 1 (`SL-7`–`SL-10`) | **Envelope migrated; `SL-9` ruled; rows OPEN** | `§2`, `§6` · Open decisions A |
+| §2 Wave 0 (`SL-1`–`SL-6`) | ✅ **RULED Aug 2026 — Batch 4** | `§4a` |
+| §3 Wave 1 (`SL-7`–`SL-10`) | **Envelope migrated; `SL-9` ruled; `SL-7`, `SL-8`, `SL-10` OPEN** | `§2`, `§6` · Open decisions A |
 | §4 Wave 2 (`SL-11`–`SL-14`) | **Envelope migrated; rows OPEN.** `SL-15` **CUT** | `§6` · Open decisions A |
 | §5 Wave 3 (`SL-16`–`SL-20`, `SL-22`, `SL-23`) | **`SL-16` ruled and migrated; `SL-18` deferred; rest OPEN** | `§7` · Open decisions A |
-| §5a / §5a-i Roster audit + static pass | **Migrated as data facts** | `§3`, Open decisions C and F |
-| §5b Wave 4 (`SL-24`–`SL-31`) | **OPEN — unruled** | Open decisions B |
+| §5a / §5a-i Roster audit + static pass | **Migrated as data facts** | `§3`, Open decisions F |
+| §5a Regional-campus grain | ✅ **RULED Aug 2026 — Batch 3.** Both stay; availability-gated | `§3` |
+| §5b Wave 4 · `SL-24` | ✅ **RULED Aug 2026 — Batch 1** | `§7a` |
+| §5b Wave 4 · `SL-26`, `SL-27` | ✅ **RULED Aug 2026 — Batch 2** | `§7b` |
+| §5b Wave 4 · `SL-28`, `SL-29`, `SL-31` | ✅ **RULED Aug 2026 — Batch 3.** `SL-29` **CUT from v1**, carry-over obligation recorded | `§7c` |
 | §5b Data defect #2 (TMDSAS) | **Applied in dataset; board text stale** | Open decisions F |
 | §6 `SL-9` split | **Migrated as binding** | `§6` |
 | §6 `SL-16` `U-7` mechanism | **Migrated as binding** | `§7` |
-| §6 `SL-21` phase gate | **Migrated as binding** | Primary users and stages, `§7`, `§11` |
-| §6b Deferred (`SL-18`, `SL-25`, `SL-30`) | **Deferred, visible** | Open decisions B and F |
-| §7 Still open | **Carried forward** | Open decisions A and B |
+| §6 `SL-21` phase gate | **Migrated as binding; trigger RULED Aug 2026 — Batch 3** | Primary users and stages, `§7`, `§11` |
+| §6b Deferred (`SL-18`, `SL-25`, `SL-30`) | **Deferred, visible** | `§6b` · Open decisions F |
+| §7 Still open | **Carried forward** | Open decisions A |
+| `01` §4c "Add to compare" | ✅ **STRUCK Aug 2026 — Batch 3.** Edit applied to `01` §4c | `§6` |
 | Stub's `U-12` / MSAR ruling | **Migrated, with the `§1b` amendment stated** | `§1` |
 
 **Deferred and still visible, not silently dropped:** `SL-18` (interview dates and logistics) · `SL-25` (PREview / CASPer) · `SL-30` (post-interview: update letter, waitlist, decision). **`SL-18` and `SL-30` are one surface split across two rows — design them together when they return.** The research behind all three is done and cited on the board; nothing needs re-deriving.

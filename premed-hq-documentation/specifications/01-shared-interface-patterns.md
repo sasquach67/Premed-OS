@@ -192,10 +192,14 @@ Records across the app support a **right-click context menu** (`Context Menu`) a
 | **Experience / activity cards** | Log hours · Add reflection · Mark most-meaningful · Add verifier · Archive |
 | **Academics — course row** | Edit grade · Toggle BCPM · Move term · Open class hub · Archive |
 | **Academics — Class Center topic** | Mark Seen / Weak / Ready · Review now · Add note · Open in Anki (if Anki-owned) |
-| **School List row** | Move tier · Add to compare · Mark applied · Remove |
+| **School List row** | Move tier · Mark applied · Archive |
 | **Letters row** | Mark received · Send follow-up · Copy request template |
 | **Essays draft** | Duplicate draft · Mark final · Link to school |
 | **Timeline event / milestone** | Reschedule · Convert to task · Snooze · Delete |
+
+> **⚠️ "Add to compare" was STRUCK from the School List row, Aug 2026.** `tabs/08-school-list.md` `§6` rules it out: a row-level compare action implies a separate compare destination, and that destination is the side-by-side view `U-12` §4 cedes to MSAR. **Sort, group, and filter act on the existing list instead. Do not reintroduce it here or under another name.**
+>
+> **`Remove` is also corrected to `Archive`** — School List `§4` is explicit: *"archive, never delete. A school you dropped is a decision worth keeping."*
 
 Touch/mobile equivalent: long-press opens the same menu; every item also remains reachable from the row's visible overflow control or the record peek.
 
