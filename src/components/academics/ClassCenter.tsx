@@ -46,6 +46,7 @@ import { MascotNote } from '@/components/common/MascotNote'
 import { useToast } from '@/components/common/useToast'
 import { extractSyllabusFile, parseSyllabusText, weightGap, type SyllabusProposal, type SyllabusKind } from '@/lib/academics/syllabusParser'
 import { retainLocalSyllabus } from '@/lib/academics/localSyllabusFiles'
+import { syllabusReimportDiff, type ReimportRow } from '@/lib/academics/syllabusReimport'
 
 const COLORS: AcademicTagColor[] = ['blue', 'green', 'purple', 'orange', 'yellow', 'red', 'pink', 'gray', 'brown']
 const CLASS_ICONS: { id: string; label: string; Icon: LucideIcon }[] = [
@@ -170,6 +171,8 @@ type ClassWorkspaceView = Omit<ClassWorkspace, 'id'> & {
 type ClassCenterViewData = ClassCenterData & { classes: ClassWorkspaceView[] }
 
 type ClassFormState = Omit<ClassWorkspaceView, 'id' | 'workspaceId' | 'courseId' | 'createdAt' | 'updatedAt' | 'order' | 'grade' | 'bcpm' | 'credits'>
+type ReimportDecision = { row: ReimportRow; action: ReimportRow['defaultAction'] }
+const reimportActionKey = (row: ReimportRow) => `${row.kind}:${row.key}`
 
 function emptyClassForm(semester = 'Fall 2026'): ClassFormState {
   return {
@@ -248,6 +251,45 @@ function workspaceFields(form: ClassFormState): Omit<ClassWorkspace, 'id' | 'cou
     ...workspace
   } = form
   return workspace
+}
+
+const reimportNormalized = (value: string | undefined) => (value ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
+const reimportAssignmentKey = (title: string, date?: string) => `${reimportNormalized(title)}|${reimportNormalized(date)}`
+
+/** Applies only a student's explicit review choices. The diff itself stays in
+ * syllabusReimport.ts; these keys merely locate the records that it identified. */
+function applyAcceptedReimport(center: ClassCenterData, courseId: string, proposal: SyllabusProposal, decisions: ReimportDecision[], now: number) {
+  const accepted = decisions.filter((decision) => decision.action === 'accept')
+  const acceptedRows = new Set(accepted.map((decision) => `${decision.row.kind}:${decision.row.key}`))
+  const wants = (kind: ReimportRow['kind'], key: string) => acceptedRows.has(`${kind}:${key}`)
+  const removed = new Set(accepted.filter((decision) => decision.row.status === 'removed').map((decision) => `${decision.row.kind}:${decision.row.key}`))
+
+  // A removed syllabus line is preserved unless the student explicitly accepts its removal.
+  center.topics = center.topics.filter((item) => item.courseId !== courseId || !removed.has(`topic:${reimportNormalized(item.title)}`))
+  center.assignments = center.assignments.filter((item) => item.courseId !== courseId || !removed.has(`assignment:${reimportAssignmentKey(item.title, item.dueDate)}`))
+  center.gradeCategories = center.gradeCategories.filter((item) => item.courseId !== courseId || !removed.has(`category:${reimportNormalized(item.name)}`))
+
+  proposal.items.filter((item) => item.kind === 'units').forEach((item) => {
+    const key = reimportNormalized(item.label)
+    if (!wants('topic', key) || center.topics.some((topic) => topic.courseId === courseId && reimportNormalized(topic.title) === key)) return
+    center.topics.push({ id: uid(), courseId, title: item.label, unit: item.label, status: 'not-started', fsrs: createTopicFsrsState(now), confidence: 3, sourceNoteIds: [], linkedFileIds: [], createdAt: now, updatedAt: now, order: center.topics.filter((topic) => topic.courseId === courseId).length })
+  })
+  proposal.items.filter((item) => item.kind === 'exams' || item.kind === 'deadlines').forEach((item) => {
+    const key = reimportAssignmentKey(item.label, item.value)
+    if (!wants('assignment', key) || center.assignments.some((assignment) => assignment.courseId === courseId && reimportAssignmentKey(assignment.title, assignment.dueDate) === key)) return
+    center.assignments.push({ id: uid(), courseId, title: item.label, type: item.kind === 'exams' ? 'exam' : 'other', dueDate: item.value, status: 'not-started', linkedTopicIds: [], linkedFileIds: [], notes: `Source: ${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: center.assignments.filter((assignment) => assignment.courseId === courseId).length })
+  })
+  proposal.items.filter((item) => item.kind === 'weights').forEach((item) => {
+    const key = reimportNormalized(item.label)
+    const category = center.gradeCategories.find((candidate) => candidate.courseId === courseId && reimportNormalized(candidate.name) === key)
+    if (category && wants('category', key)) {
+      category.weight = Number(item.value?.replace('%', '')) || 0
+      category.source = `${item.evidence.location} — “${item.evidence.quote}”`
+      category.updatedAt = now
+    } else if (!category && wants('category', key)) {
+      center.gradeCategories.push({ id: uid(), courseId, name: item.label || 'Untitled category', weight: Number(item.value?.replace('%', '')) || 0, source: `${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: center.gradeCategories.filter((candidate) => candidate.courseId === courseId).length })
+    }
+  })
 }
 
 function normalizeClassIcon(icon?: string) {
@@ -359,6 +401,8 @@ function ClassCenterDashboard({
   const [searchParams, setSearchParams] = useSearchParams()
   const scopedCourseId = searchParams.get('importFor')
   const scopedCourse = scopedCourseId ? courses.find((course) => course.id === scopedCourseId) : undefined
+  const reimporting = searchParams.get('reimport') === '1' && Boolean(scopedCourse)
+  const reimportFileId = searchParams.get('reimportFile') ?? undefined
   const [draggedClassId, setDraggedClassId] = useState<string | null>(null)
   const [dragOverClassId, setDragOverClassId] = useState<string | null>(null)
   const semesters = useMemo(() => {
@@ -375,7 +419,7 @@ function ClassCenterDashboard({
     .sort((a, b) => a.order - b.order)
   const activeClasses = data.classes.filter((row) => row.status === 'active')
 
-  async function importSyllabus(form: ClassFormState, selectedFiles: File[], proposal?: SyllabusProposal, existingCourseId?: string) {
+  async function importSyllabus(form: ClassFormState, selectedFiles: File[], proposal?: SyllabusProposal, existingCourseId?: string, reimportDecisions?: ReimportDecision[], replaceSyllabusFileId?: string) {
     const now = Date.now()
     const courseId = existingCourseId ?? uid()
     const sourceFiles = selectedFiles.length ? selectedFiles : proposal ? [new File([proposal.text], `${proposal.sourceName}.txt`, { type: 'text/plain' })] : []
@@ -391,11 +435,17 @@ function ClassCenterDashboard({
       })
       const center = draft.academics.classCenter
       if (!existingCourseId) center.workspaces.push({ ...workspaceFields(form), id: uid(), courseId, createdAt: now, updatedAt: now, order: center.workspaces.length })
-      retained.forEach(({ file, id, blobRef }) => center.files.unshift({
+      if (replaceSyllabusFileId) {
+        const latest = retained[0]
+        const existing = center.files.find((file) => file.id === replaceSyllabusFileId && file.courseId === courseId && file.type === 'syllabus')
+        if (latest && existing) Object.assign(existing, { title: latest.file.name.replace(/\.[^.]+$/, '') || latest.file.name, sourceType: 'upload', url: '', blobRef: latest.blobRef, fileName: latest.file.name, mimeType: latest.file.type, updatedAt: now })
+      } else retained.forEach(({ file, id, blobRef }) => center.files.unshift({
         id, courseId, title: file.name.replace(/\.[^.]+$/, '') || file.name, type: 'syllabus', sourceType: 'upload', owner: 'course', url: '', blobRef,
         fileName: file.name, mimeType: file.type, notes: '', linkedTopicIds: [], createdAt: now, updatedAt: now, order: center.files.length,
       }))
-      if (proposal) {
+      if (proposal && existingCourseId && reimportDecisions) {
+        applyAcceptedReimport(center, courseId, proposal, reimportDecisions, now)
+      } else if (proposal) {
         proposal.items.filter((item) => item.kind === 'units').forEach((item, index) => center.topics.push({
           id: uid(), courseId, title: item.label, unit: item.label, status: 'not-started', fsrs: createTopicFsrsState(), confidence: 3, sourceNoteIds: [], linkedFileIds: [], createdAt: now, updatedAt: now, order: index,
         }))
@@ -408,7 +458,7 @@ function ClassCenterDashboard({
           source: `${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: index,
         }))
         const workspace = center.workspaces.find((item) => item.courseId === courseId)
-        const logistics = proposal.items.filter((item) => item.kind === 'logistics').map((item) => item.label).join(' ')
+        const logistics = proposal.items.filter((item) => item.kind === 'logistics').map((item) => item.label || item.evidence.quote).join(' ')
         if (workspace && logistics) {
           if (!workspace.instructor) workspace.instructor = logistics.match(/(?:instructor|prof(?:essor)?)\s*[:\-]?\s*([A-Z][\w.' -]+)/i)?.[1]?.trim() ?? workspace.instructor
           if (!workspace.meetingDays) workspace.meetingDays = logistics.match(/\b(?:MWF|TR|TTH|Mon(?:day)?(?:\s*\/\s*Wed(?:nesday)?(?:\s*\/\s*Fri(?:day)?)?)?|Tue(?:sday)?(?:\s*\/\s*Thu(?:rsday)?)?)\b/i)?.[0] ?? workspace.meetingDays
@@ -418,7 +468,7 @@ function ClassCenterDashboard({
       }
     })
     setSyllabusImportOpen(false)
-    if (existingCourseId) { const next = new URLSearchParams(searchParams); next.delete('importFor'); setSearchParams(next, { replace: true }) }
+    if (existingCourseId) { const next = new URLSearchParams(searchParams); next.delete('importFor'); next.delete('reimport'); next.delete('reimportFile'); setSearchParams(next, { replace: true }) }
   }
 
   if (!archiveOnly && activeClasses.length === 0) {
@@ -441,15 +491,16 @@ function ClassCenterDashboard({
           </div>
         </div>
         <SyllabusImportDialog open={syllabusImportOpen} semester={semester} onOpenChange={setSyllabusImportOpen} onImport={importSyllabus} />
-        <ClassEditorDialog open={editor.open} title="Create class" form={editor.form} onOpenChange={(open) => setEditor((prev) => ({ ...prev, open }))} onChange={(patch) => setEditor((prev) => ({ ...prev, form: { ...prev.form, ...patch } }))} onSave={saveClass} />
+        <ClassEditorDialog open={editor.open} title="Create class" form={editor.form} onOpenChange={(open) => setEditor((prev) => ({ ...prev, open }))} onChange={(patch) => setEditor((prev) => ({ ...prev, form: { ...prev.form, ...patch } }))} onSave={saveClass} onSaveAndImport={() => saveClass(true)} />
       </>
     )
   }
 
-  function saveClass() {
+  function saveClass(openImportAfterCreate = false) {
     const now = Date.now()
     const form = editor.form
     if (!form.courseCode.trim() && !form.courseTitle.trim()) return
+    let createdCourseId: string | undefined
     updateAll((draft) => {
       if (editor.courseId) {
         const course = draft.courses.find((item) => item.id === editor.courseId)
@@ -462,6 +513,7 @@ function ClassCenterDashboard({
         if (workspace) Object.assign(workspace, workspaceFields(form), { updatedAt: now })
       } else {
         const courseId = uid()
+        createdCourseId = courseId
         draft.courses.push({
           id: courseId,
           code: form.courseCode.trim() || 'NEW 101',
@@ -486,6 +538,11 @@ function ClassCenterDashboard({
       }
     })
     setEditor({ open: false, form: emptyClassForm(semester === 'Archived' || semester === 'All active' ? 'Fall 2026' : semester) })
+    if (openImportAfterCreate && createdCourseId) {
+      const next = new URLSearchParams(searchParams)
+      next.set('importFor', createdCourseId)
+      setSearchParams(next)
+    }
   }
 
   function moveClass(targetId: string) {
@@ -647,8 +704,18 @@ function ClassCenterDashboard({
         onOpenChange={(open) => setEditor((prev) => ({ ...prev, open }))}
         onChange={(patch) => setEditor((prev) => ({ ...prev, form: { ...prev.form, ...patch } }))}
         onSave={saveClass}
+        onSaveAndImport={editor.courseId ? undefined : () => saveClass(true)}
       />
-      <SyllabusImportDialog open={syllabusImportOpen || Boolean(scopedCourse)} semester={semester} scopedCourse={scopedCourse} onOpenChange={(open) => { setSyllabusImportOpen(open); if (!open && scopedCourse) { const next = new URLSearchParams(searchParams); next.delete('importFor'); setSearchParams(next, { replace: true }) } }} onImport={importSyllabus} />
+      <SyllabusImportDialog
+        open={syllabusImportOpen || Boolean(scopedCourse)}
+        semester={semester}
+        scopedCourse={scopedCourse}
+        reimport={reimporting}
+        reimportFileId={reimportFileId}
+        current={{ topics: data.topics.filter((item) => item.courseId === scopedCourse?.id), assignments: data.assignments.filter((item) => item.courseId === scopedCourse?.id), categories: data.gradeCategories.filter((item) => item.courseId === scopedCourse?.id) }}
+        onOpenChange={(open) => { setSyllabusImportOpen(open); if (!open && scopedCourse) { const next = new URLSearchParams(searchParams); next.delete('importFor'); next.delete('reimport'); next.delete('reimportFile'); setSearchParams(next, { replace: true }) } }}
+        onImport={importSyllabus}
+      />
 
       <CenterPeek
         open={Boolean(peekCourseId)}
@@ -1939,7 +2006,7 @@ function PracticeExamRunner({
 }
 
 function ClassEditorDialog({
-  open, title, form, onOpenChange, onChange, onSave,
+  open, title, form, onOpenChange, onChange, onSave, onSaveAndImport,
 }: {
   open: boolean
   title: string
@@ -1947,6 +2014,7 @@ function ClassEditorDialog({
   onOpenChange: (open: boolean) => void
   onChange: (patch: Partial<ClassFormState>) => void
   onSave: () => void
+  onSaveAndImport?: () => void
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -2037,6 +2105,7 @@ function ClassEditorDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          {onSaveAndImport && <Button variant="outline" onClick={onSaveAndImport}><Upload className="size-4" /> Create & import syllabus</Button>}
           <Button onClick={onSave}>Save class</Button>
         </DialogFooter>
       </DialogContent>
@@ -2045,13 +2114,16 @@ function ClassEditorDialog({
 }
 
 function SyllabusImportDialog({
-  open, semester, onOpenChange, onImport, scopedCourse,
+  open, semester, onOpenChange, onImport, scopedCourse, reimport = false, reimportFileId, current,
 }: {
   open: boolean
   semester: string
   onOpenChange: (open: boolean) => void
-  onImport: (form: ClassFormState, files: File[], proposal?: SyllabusProposal, existingCourseId?: string) => Promise<void>
+  onImport: (form: ClassFormState, files: File[], proposal?: SyllabusProposal, existingCourseId?: string, reimportDecisions?: ReimportDecision[], replaceSyllabusFileId?: string) => Promise<void>
   scopedCourse?: Course
+  reimport?: boolean
+  reimportFileId?: string
+  current?: { topics: Topic[]; assignments: ClassAssignment[]; categories: import('@/lib/types').GradeCategory[] }
 }) {
   const [form, setForm] = useState(() => emptyClassForm(semester))
   const [files, setFiles] = useState<File[]>([])
@@ -2059,6 +2131,8 @@ function SyllabusImportDialog({
   const [proposal, setProposal] = useState<SyllabusProposal | null>(null)
   const [parsing, setParsing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [reimportRows, setReimportRows] = useState<ReimportRow[]>([])
+  const [reimportActions, setReimportActions] = useState<Record<string, ReimportRow['defaultAction']>>({})
   const toast = useToast()
 
   function close(next: boolean) {
@@ -2068,6 +2142,8 @@ function SyllabusImportDialog({
       setPastedText('')
       setError(null)
       setForm(emptyClassForm(semester))
+      setReimportRows([])
+      setReimportActions({})
     }
     onOpenChange(next)
   }
@@ -2077,12 +2153,18 @@ function SyllabusImportDialog({
     try {
       const next = pastedText.trim() ? parseSyllabusText(pastedText, 'Pasted syllabus') : await extractSyllabusFile(files[0])
       setProposal(next)
+      if (reimport && current) {
+        const rows = syllabusReimportDiff(current, next.items)
+        setReimportRows(rows)
+        setReimportActions(Object.fromEntries(rows.map((row) => [reimportActionKey(row), row.defaultAction])))
+      }
       const identity = next.items.find((item) => item.kind === 'identity')
       if (identity && !form.courseCode) setForm((current) => ({ ...current, courseCode: identity.label, courseTitle: identity.value || current.courseTitle }))
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'This file could not be read.') } finally { setParsing(false) }
   }
   const grouped = proposal ? (['identity', 'exams', 'weights', 'units', 'deadlines', 'policies', 'logistics'] as const).map((kind) => [kind, proposal.items.filter((item) => item.kind === kind)] as const) : []
   const gap = proposal ? weightGap(proposal.items) : null
+  const decisions: ReimportDecision[] = reimportRows.map((row) => ({ row, action: reimportActions[reimportActionKey(row)] ?? row.defaultAction }))
   const applySummary = proposal ? ([
     ['units', 'units'], ['deadlines', 'deadlines'], ['exams', 'exam dates'], ['weights', 'grade categories'],
   ] as const).map(([kind, label]) => {
@@ -2099,7 +2181,7 @@ function SyllabusImportDialog({
   return (
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="max-w-xl">
-        <DialogHeader><DialogTitle>Import your syllabus</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{reimport ? 'Re-import your syllabus' : 'Import your syllabus'}</DialogTitle></DialogHeader>
         <div className="space-y-5">
           {!proposal && <>
             <p className="text-sm font-semibold text-muted-foreground">Read this locally, then review every proposed item before anything is saved.</p>
@@ -2107,19 +2189,44 @@ function SyllabusImportDialog({
             <Textarea value={pastedText} onChange={(event) => setPastedText(event.target.value)} placeholder="Or paste syllabus text from Canvas…" className="min-h-28" />
             {error && <p className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm font-bold">{error} Paste the text or continue with manual entry; importing never blocks you.</p>}
           </>}
-          {proposal && <div className="space-y-3"><p className="text-sm font-semibold text-muted-foreground">Nothing has been saved. Each proposal includes the text it came from.</p>{proposal.scanDetected && <p className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm font-bold">This looks like a scan — the text can’t be read directly. Paste the text or enter details manually with the file open beside you.</p>}{grouped.map(([kind, items]) => <details key={kind} open={items.some((item) => item.confidence === 'low')} className="rounded-xl border border-border bg-muted/20 p-3"><summary className="cursor-pointer font-display text-sm font-extrabold capitalize">{kind} · {items.length ? `${items.length} found` : proposal.searched[kind]}</summary><div className="mt-3 space-y-2">{items.map((item) => <div key={item.id} className="rounded-lg border border-border bg-card p-2 text-sm"><div className="flex gap-2"><Input aria-label={`${kind} label`} value={item.label} onChange={(event) => patchProposalItem(item.id, { label: event.target.value })} className={cn('h-8 font-bold', item.confidence === 'low' && 'border-warning')} /><Input aria-label={`${kind} value`} value={item.value ?? ''} onChange={(event) => patchProposalItem(item.id, { value: event.target.value })} className="h-8" /></div><p className="mt-1 text-xs text-muted-foreground">{item.evidence.location} · “{item.evidence.quote}”</p></div>)}<button type="button" onClick={() => addManual(kind)} className="text-xs font-bold text-primary underline">Add manually</button></div></details>)}{gap !== null && gap !== 0 && <p className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm font-bold">Grade weights are {Math.abs(gap)}% {gap > 0 ? 'short of' : 'over'} 100%. Nothing was normalized.</p>}</div>}
+          {proposal && <div className="space-y-3"><p className="text-sm font-semibold text-muted-foreground">Nothing has been saved. Each proposal includes the text it came from.</p>{proposal.scanDetected && <p className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm font-bold">This looks like a scan — the text can’t be read directly. Paste the text or enter details manually with the file open beside you.</p>}{reimport ? <ReimportReview rows={reimportRows} actions={reimportActions} onAction={(row, action) => setReimportActions((current) => ({ ...current, [reimportActionKey(row)]: action }))} /> : <>{grouped.map(([kind, items]) => <details key={kind} open={items.some((item) => item.confidence === 'low')} className="rounded-xl border border-border bg-muted/20 p-3"><summary className="cursor-pointer font-display text-sm font-extrabold capitalize">{kind} · {items.length ? `${items.length} found` : proposal.searched[kind]}</summary><div className="mt-3 space-y-2">{items.map((item) => <div key={item.id} className="rounded-lg border border-border bg-card p-2 text-sm"><div className="flex gap-2"><Input aria-label={`${kind} label`} value={item.label} onChange={(event) => patchProposalItem(item.id, { label: event.target.value })} className={cn('h-8 font-bold', item.confidence === 'low' && 'border-warning')} /><Input aria-label={`${kind} value`} value={item.value ?? ''} onChange={(event) => patchProposalItem(item.id, { value: event.target.value })} className="h-8" /></div><p className="mt-1 text-xs text-muted-foreground">{item.evidence.location} · “{item.evidence.quote}”</p></div>)}<button type="button" onClick={() => addManual(kind)} className="text-xs font-bold text-primary underline">Add manually</button></div></details>)}{gap !== null && gap !== 0 && <p className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm font-bold">Grade weights are {Math.abs(gap)}% {gap > 0 ? 'short of' : 'over'} 100%. Nothing was normalized.</p>}</>}</div>}
           {scopedCourse ? <div className="rounded-xl border border-border bg-muted/25 p-3 text-sm font-bold">Importing into <span className="text-primary">{scopedCourse.code} · {scopedCourse.title}</span></div> : <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Course code"><Input value={form.courseCode} onChange={(event) => setForm((current) => ({ ...current, courseCode: event.target.value }))} placeholder="ENGL 105" /></Field>
             <Field label="Course title"><Input value={form.courseTitle} onChange={(event) => setForm((current) => ({ ...current, courseTitle: event.target.value }))} placeholder="English Composition & Rhetoric" /></Field>
           </div>}
-          <Field label="Class type">
+          {!scopedCourse && <Field label="Class type">
             <div className="grid gap-2 sm:grid-cols-3">{CLASS_TYPES.map((type) => <button key={type.value} type="button" onClick={() => setForm((current) => ({ ...current, type: type.value }))} className={cn('rounded-xl border p-3 text-left transition', form.type === type.value ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-muted/50')}><span className="block font-display text-sm font-extrabold">{type.label}</span><span className="text-xs font-semibold text-muted-foreground">{type.detail}</span></button>)}</div>
-          </Field>
+          </Field>}
         </div>
-        <DialogFooter><Button variant="outline" onClick={() => proposal ? setProposal(null) : close(false)}>{proposal ? 'Back' : 'Cancel'}</Button>{proposal ? <Button onClick={async () => { await onImport(form, files, proposal, scopedCourse?.id); toast({ title: 'Syllabus applied', description: `Updated ${scopedCourse?.code || form.courseCode || 'your class'} from the reviewed proposal.` }) }}><CheckCircle2 className="size-4" /> {applySummary ? `Add ${applySummary} to ${scopedCourse?.code || form.courseCode || form.courseTitle || 'this class'}` : 'Apply reviewed import'}</Button> : <Button disabled={(!files.length && !pastedText.trim()) || parsing} onClick={parse}><Upload className="size-4" /> {parsing ? 'Reading week structure…' : 'Read syllabus'}</Button>}</DialogFooter>
+        <DialogFooter><Button variant="outline" onClick={() => proposal ? setProposal(null) : close(false)}>{proposal ? 'Back' : 'Cancel'}</Button>{proposal ? <Button onClick={async () => { await onImport(form, files, proposal, scopedCourse?.id, reimport ? decisions : undefined, reimport ? reimportFileId : undefined); toast({ title: reimport ? 'Syllabus changes applied' : 'Syllabus applied', description: reimport ? 'Only the changes you accepted were applied.' : `Updated ${scopedCourse?.code || form.courseCode || 'your class'} from the reviewed proposal.` }) }}><CheckCircle2 className="size-4" /> {reimport ? 'Apply accepted changes' : applySummary ? `Add ${applySummary} to ${scopedCourse?.code || form.courseCode || form.courseTitle || 'this class'}` : 'Apply reviewed import'}</Button> : <Button disabled={(!files.length && !pastedText.trim()) || parsing} onClick={parse}><Upload className="size-4" /> {parsing ? 'Reading week structure…' : 'Read syllabus'}</Button>}</DialogFooter>
       </DialogContent>
     </Dialog>
   )
+}
+
+function ReimportReview({ rows, actions, onAction }: { rows: ReimportRow[]; actions: Record<string, ReimportRow['defaultAction']>; onAction: (row: ReimportRow, action: ReimportRow['defaultAction']) => void }) {
+  const labels: Record<ReimportRow['status'], string> = { added: 'Added', changed: 'Changed', removed: 'Removed', unchanged: 'Unchanged' }
+  const visibleStatuses: ReimportRow['status'][] = ['added', 'changed', 'removed']
+  const unchanged = rows.filter((row) => row.status === 'unchanged')
+  return <div className="space-y-3">
+    <p className="rounded-xl border border-border bg-muted/25 p-3 text-sm font-semibold">Review the proposed changes. Changed and removed records default to <strong>Keep</strong>; nothing is overwritten or deleted until you explicitly accept it.</p>
+    {visibleStatuses.map((status) => {
+      const group = rows.filter((row) => row.status === status)
+      if (!group.length) return null
+      return <section key={status} className={cn('rounded-xl border p-3', status === 'removed' ? 'border-amber-500/40 bg-amber-500/8' : 'border-border bg-muted/20')}>
+        <h3 className="font-display text-sm font-extrabold">{labels[status]} · {group.length}</h3>
+        <div className="mt-2 space-y-2">{group.map((row) => {
+          const action = actions[reimportActionKey(row)] ?? row.defaultAction
+          const acceptLabel = row.status === 'removed' ? 'Remove' : 'Accept'
+          return <div key={`${row.kind}:${row.key}`} className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+            <div><p className="font-bold capitalize">{row.kind}</p><p className="text-muted-foreground">{row.status === 'changed' ? `${row.current} → ${row.proposed}` : row.proposed ?? row.current}</p></div>
+            <div className="flex gap-1 self-end sm:self-auto"><Button type="button" size="sm" variant={action === 'keep' ? 'default' : 'outline'} onClick={() => onAction(row, 'keep')}>Keep</Button><Button type="button" size="sm" variant={action === 'accept' ? 'default' : 'outline'} onClick={() => onAction(row, 'accept')}>{acceptLabel}</Button></div>
+          </div>
+        })}</div>
+      </section>
+    })}
+    <details className="rounded-xl border border-border bg-muted/15 p-3"><summary className="cursor-pointer text-sm font-extrabold">Unchanged · {unchanged.length} kept as-is</summary><p className="mt-2 text-sm text-muted-foreground">These records are not listed again and no action is needed.</p></details>
+  </div>
 }
 
 type ClassTabProps = {

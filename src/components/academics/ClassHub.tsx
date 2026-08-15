@@ -629,7 +629,7 @@ function Materials({
           </CardHeader>
           <CardContent className="space-y-3">
             {group.unit === 'Unassigned' && <div className="rounded-xl border border-dashed border-amber-500/45 bg-amber-500/8 p-3 text-sm font-semibold">These files have no linked topic, so their position is not known yet. Link a topic to file them without moving or deleting anything.</div>}
-            {group.files.map((file) => <FileRow key={file.id} file={file} ownership={fileOwnership(file, notes)} />)}
+            {group.files.map((file) => <FileRow key={file.id} file={file} ownership={fileOwnership(file, notes)} onReimport={file.type === 'syllabus' ? () => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}&reimport=1&reimportFile=${file.id}`) : undefined} />)}
             <div className="rounded-2xl border border-violet-500/30 bg-violet-500/9 p-4">
               <p className="font-display font-extrabold text-violet-800 dark:text-violet-100">Prime yourself</p>
               <p className="mt-1 text-sm text-muted-foreground">Write one question you should be able to answer before this module’s next lecture.</p>
@@ -854,7 +854,7 @@ function AssignmentRow({ item, topics }: { item: ClassAssignment; topics: Topic[
   )
 }
 
-function FileRow({ file, ownership }: { file: AcademicFile; ownership: 'course' | 'mine' | 'generated' }) {
+function FileRow({ file, ownership, onReimport }: { file: AcademicFile; ownership: 'course' | 'mine' | 'generated'; onReimport?: () => void }) {
   const toast = useToast()
   const label = ownership === 'course' ? 'Course' : ownership === 'mine' ? 'Mine' : 'Generated'
   const content = (
@@ -863,6 +863,7 @@ function FileRow({ file, ownership }: { file: AcademicFile; ownership: 'course' 
       <div className="flex items-center gap-2">
         <Badge variant={ownership === 'generated' ? 'secondary' : 'outline'}>{label}</Badge>
         {file.url && <span className="text-xs font-bold text-primary">Open ↗</span>}
+        {onReimport && <Button type="button" size="sm" variant="outline" onClick={(event) => { event.preventDefault(); onReimport() }}>Re-import</Button>}
         <Button
           type="button"
           size="sm"
