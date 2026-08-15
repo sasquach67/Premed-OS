@@ -772,3 +772,14 @@
   0% { opacity: 0; transform: translateY(8px); }
   100% { opacity: 1; transform: translateY(0); }
 }
+
+/* The empty-state import is the one dominant action. Its light rises above
+   the button so the quieter manual link beneath remains visually clear. */
+@keyframes syllabus-import-breathe {
+  0%, 100% { box-shadow: 0 -5px 13px -11px hsl(var(--primary) / 0.30); }
+  50% { box-shadow: 0 -10px 22px -12px hsl(var(--primary) / 0.58); }
+}
+
+.syllabus-import-breathe {
+  animation: syllabus-import-breathe 2.8s ease-in-out infinite;
+}
