@@ -1106,6 +1106,13 @@ const placehold = (id,group,name,desc,section="",depth=0) => ({
   id,group,name,desc,section,depth,status:"soon",placeholder:true,
   variants:PLACEHOLDER_DIRECTIONS[id] || [["Direction pending","No layout direction has been proposed for this tab yet."]]
 });
+/* State boards are deliberate review surfaces, not A/B/C alternatives. Each
+   contains several real states of one interaction; the single lab treatment
+   prevents a loading or empty state from pretending to be a competing design. */
+const overviewStateBoard = (id,name,path,desc) => ({
+  id,group:"Overview",name,section:"",depth:1,status:"proposed",fitCanvas:true,
+  path,desc,variants:[["State coverage","One settled visual treatment; the board makes the required states reviewable together."]]
+});
 const asProductViews = (page,kind,slugs) => {
   page.views=page.variants.map((view,index)=>({slug:slugs[index],name:view[0],desc:view[1]}));
   page.viewKind=kind;
@@ -1122,6 +1129,9 @@ const orderedProfiles = [
   Object.assign(byId["public-docs"]||{},{group:"Landing & auth",name:"About \u00b7 Privacy \u00b7 Terms \u00b7 Pricing",section:"",depth:0,fitCanvas:true}),
 
   Object.assign(byId.overview,{group:"Overview",name:"Overview",section:"",depth:0,fitCanvas:true}),
+  overviewStateBoard("overview-task-states","Tasks · states","03-overview/overview-task-states.html?lab-rev=overview-task-states-20260816","Task detail, empty lifecycle, completion, visible context-menu equivalents, and the expanded-list handoff."),
+  overviewStateBoard("overview-status-states","Status · absence states","03-overview/overview-status-states.html?lab-rev=overview-status-states-20260816","Where I Stand expansion in the bento, Smart Actions absence, conditional Quick Access, and roadmap empty state."),
+  overviewStateBoard("overview-capture-goals-states","Capture · goals · resilience","03-overview/overview-capture-goals-states.html?lab-rev=overview-capture-goals-20260816","Story Bank capture paths, confirmed quarterly-goal types, independent widget loading/error, and mobile order."),
 
   Object.assign(byId["daily-main"],{group:"Academics & GPA",name:"Class Center",section:"Daily",depth:1,fitCanvas:true}),
   Object.assign(asProductViews(byId.assignments,"Assignment view",["agenda","weekly","calendar"]),
