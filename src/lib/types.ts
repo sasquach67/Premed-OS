@@ -614,6 +614,8 @@ export interface StoryEntry {
   relatedExperienceId?: ID
   /** optional link to a full Google Doc the user writes in */
   docUrl?: string
+  /** A URL captured from Overview, retained as structured source metadata. */
+  sourceUrl?: string
   /** Overview brain-dump captures have no required prompt, title, or tags. */
   capturedAt?: number
   updatedAt?: number
@@ -750,6 +752,8 @@ export interface QuarterlyGoal {
   quarter: string
   text: string
   done: boolean
+  /** Student-confirmed presentation: never inferred from the goal wording. */
+  kind: 'check-off' | 'measured'
   /** Optional link to the long-horizon target stored in `goals`. */
   standingTarget?: keyof Goals
   order: number

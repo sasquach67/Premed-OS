@@ -10,7 +10,9 @@ import {
   Stethoscope,
   Telescope,
   Users,
+  ChevronDown,
 } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PaceProjectionLine } from '@/components/common/PaceProjectionLine'
 import { MascotNote } from '@/components/common/MascotNote'
@@ -35,10 +37,12 @@ interface DomainRow {
   value: string
   state: string
   progress?: number
+  records?: Array<{ id: string; title: string; detail: string; state: string }>
 }
 
 export function WhereIStand() {
   const state = useStore()
+  const [openRow, setOpenRow] = useState<string | null>(null)
   const gpa = gpaStats(state.courses)
   const hours = hourTotals(state.experiences)
   const latestMcat = [...state.mcat.attempts]
@@ -84,6 +88,15 @@ export function WhereIStand() {
   ): DomainRow => {
     const current = hours[category]
     const hasGoal = goal > 0
+    const records = state.experiences
+      .filter((entry) => entry.category === category && !entry.deletedAt)
+      .sort((a, b) => a.order - b.order)
+      .map((entry) => ({
+        id: entry.id,
+        title: entry.org || 'Untitled position',
+        detail: `${entry.role || 'Role not recorded'} · ${Math.round(entry.hours)} recorded hours`,
+        state: entry.status === 'completed' ? 'ended' : entry.status,
+      }))
     return {
       group: 'Experiences',
       label,
@@ -93,6 +106,7 @@ export function WhereIStand() {
       value: hasGoal ? `${Math.round(current)}/${goal} hrs` : `${Math.round(current)} hrs`,
       state: !current ? 'not started' : hasGoal ? 'goal set' : 'no goal',
       progress: goalProgress(current, goal),
+      records,
     }
   }
 
@@ -118,6 +132,7 @@ export function WhereIStand() {
       group: 'Experiences', label: 'Research', route: '/research', icon: Microscope, accent: 'var(--cat-research)',
       value: researchProjects ? `${researchProjects} ${researchProjects === 1 ? 'project' : 'projects'}` : 'Not started',
       state: 'record count',
+      records: state.experiences.filter((entry) => entry.category === 'research' && !entry.deletedAt).sort((a, b) => a.order - b.order).map((entry) => ({ id: entry.id, title: entry.org || 'Untitled project', detail: entry.role || 'Role not recorded', state: entry.status === 'completed' ? 'ended' : entry.status })),
     },
     {
       group: 'Experiences', label: 'Extracurriculars', route: '/ecs', icon: Users, accent: 'var(--cat-activities)',
@@ -158,7 +173,7 @@ export function WhereIStand() {
               <span className="h-px flex-1 bg-border" />
             </div>
             <div className="space-y-0.5">
-              {rows.filter((row) => row.group === group).map((row) => <DomainStatusRow key={row.label} row={row} />)}
+              {rows.filter((row) => row.group === group).map((row) => <DomainStatusRow key={row.label} row={row} open={openRow === row.label} onOpenChange={(next) => setOpenRow(next ? row.label : null)} />)}
             </div>
           </section>
         ))}
@@ -171,26 +186,24 @@ export function WhereIStand() {
   )
 }
 
-function DomainStatusRow({ row }: { row: DomainRow }) {
+function DomainStatusRow({ row, open, onOpenChange }: { row: DomainRow; open: boolean; onOpenChange: (next: boolean) => void }) {
   const Icon = row.icon
+  const records = row.records ?? []
+  const visibleRecords = records.slice(0, 3)
   return (
-    <Link
-      to={row.route}
-      aria-label={`${row.label}, ${row.value}, ${row.state}`}
-      className="group grid min-h-9 grid-cols-[1.5rem_minmax(4.75rem,.7fr)_minmax(6rem,1fr)_3.5rem_auto] items-center gap-1.5 rounded-xl px-1.5 py-1 transition-colors hover:bg-muted/45"
-    >
-      <span className="grid size-6 place-items-center rounded-lg text-white shadow-sm" style={{ background: row.accent }}>
-        <Icon className="size-3.5" />
-      </span>
-      <span className="truncate text-xs font-extrabold">{row.label}</span>
-      <span className="min-w-0">
-        <span className="block truncate text-right text-[11px] font-bold tabular-nums text-muted-foreground">{row.value}</span>
-      </span>
-      {row.progress == null
-        ? <span aria-hidden="true" />
-        : <Progress value={row.progress} className="h-1.5 border-0" aria-label={`${row.label} progress toward student-set goal`} />}
-      <Badge variant="muted" className="justify-center px-1.5 text-[9px]">{row.state}</Badge>
-    </Link>
+    <div className="rounded-xl">
+      <div className="group grid min-h-9 grid-cols-[1.5rem_minmax(4.75rem,.7fr)_minmax(5rem,1fr)_3.5rem_auto] items-center gap-1.5 px-1.5 py-1 transition-colors hover:bg-muted/45">
+        <span className="grid size-6 place-items-center rounded-lg text-white shadow-sm" style={{ background: row.accent }}><Icon className="size-3.5" /></span>
+        <Link to={row.route} aria-label={`${row.label}, ${row.value}, ${row.state}`} className="truncate text-xs font-extrabold hover:underline">{row.label}</Link>
+        <Link to={row.route} className="min-w-0"><span className="block truncate text-right text-[11px] font-bold tabular-nums text-muted-foreground">{row.value}</span></Link>
+        {row.progress == null ? <span aria-hidden="true" /> : <Progress value={row.progress} className="h-1.5 border-0" aria-label={`${row.label} progress toward student-set goal`} />}
+        {records.length > 0 ? <button type="button" onClick={() => onOpenChange(!open)} aria-expanded={open} aria-label={`${open ? 'Collapse' : 'Expand'} ${row.label} records`} className="flex items-center gap-1 rounded-md text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Badge variant="muted" className="justify-center px-1.5 text-[9px]">{row.state}</Badge><ChevronDown className={`size-3 transition-transform duration-150 motion-reduce:transition-none ${open ? 'rotate-180' : ''}`} /></button> : <Badge variant="muted" className="justify-center px-1.5 text-[9px]">{row.state}</Badge>}
+      </div>
+      {open && records.length > 0 && <div className="mx-1.5 mb-1 rounded-xl border border-border bg-muted/25 p-2.5">
+        <div className="space-y-1.5">{visibleRecords.map((record) => <Link key={record.id} to={row.route} className="flex items-center justify-between gap-2 rounded-lg border border-border/80 bg-card px-2.5 py-2 hover:bg-muted/45"><span className="min-w-0"><span className="block truncate text-xs font-extrabold">{record.title}</span><span className="block truncate text-[11px] font-semibold text-muted-foreground">{record.detail}</span></span><Badge variant="muted" className="shrink-0 px-1.5 text-[9px]">{record.state}</Badge></Link>)}</div>
+        {records.length > visibleRecords.length && <Link to={row.route} className="mt-2 block text-xs font-bold text-primary hover:underline">+{records.length - visibleRecords.length} more →</Link>}
+      </div>}
+    </div>
   )
 }
 

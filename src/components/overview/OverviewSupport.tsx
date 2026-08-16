@@ -1,13 +1,15 @@
 import {
+  Archive,
   Clock3,
+  FileUp,
   Lightbulb,
+  Link2,
   Plus,
   RotateCcw,
-  Stethoscope,
   Target,
   X,
 } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { CenterPeek, type RecordOpenMode } from '@/components/common/CenterPeek'
 import { MascotNote } from '@/components/common/MascotNote'
@@ -22,18 +24,15 @@ import { Textarea } from '@/components/ui/textarea'
 import { fmtTimeAgo } from '@/lib/date'
 import { uid } from '@/lib/id'
 import { gpaStats, hourTotals } from '@/lib/selectors'
-import type { ActivityEvent, Goals, StoryEntry } from '@/lib/types'
-import { latestExperienceLabel } from '@/lib/overview'
+import type { ActivityEvent, Goals, QuarterlyGoal, StoryEntry } from '@/lib/types'
 import { useStore } from '@/store/store'
 
 export function QuickAccess() {
   const mcat = useStore((state) => state.mcat)
   const classCenter = useStore((state) => state.academics.classCenter)
-  const experiences = useStore((state) => state.experiences)
   const [now] = useState(Date.now)
   const dueTopics = classCenter.topics.filter((topic) => topic.fsrs.due <= now).length
   const nextMcat = mcat.schedule.find((item) => !item.done)
-  const lastHours = latestExperienceLabel(experiences)
 
   return (
     <Card className="h-full" role="region" aria-labelledby="quick-access-heading">
@@ -61,7 +60,6 @@ export function QuickAccess() {
           <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground"><Lightbulb className="size-4" /></span>
           <span><span className="block text-sm font-extrabold">Capture a thought</span><span className="block text-xs text-muted-foreground">Saves directly to Story Bank</span></span>
         </button>
-        <QuickLink to="/clinical" icon={Stethoscope} color="var(--cat-clinical)" title="Log hours" detail={lastHours ? `Last: ${lastHours}` : 'Add your first shift'} />
       </CardContent>
     </Card>
   )
@@ -102,28 +100,40 @@ export function QuarterlyGoalsPanel() {
   const goals = useStore((state) => state.goals)
   const quarterlyGoals = useStore((state) => state.quarterlyGoals)
   const patchItem = useStore((state) => state.patchItem)
-  const [editorOpen, setEditorOpen] = useState(false)
+  const softDeleteItems = useStore((state) => state.softDeleteItems)
+  const toast = useToast()
+  const [editor, setEditor] = useState<QuarterlyGoal | null | 'new'>(null)
+  const [targetsOpen, setTargetsOpen] = useState(false)
   const [mode, setMode] = useState<RecordOpenMode>('peek')
+
+  const visibleGoals = quarterlyGoals.filter((goal) => !goal.deletedAt).slice(0, 4)
+  function archiveGoal(goal: QuarterlyGoal) {
+    const recoveryId = softDeleteItems('quarterlyGoals', [goal.id], 'Archived quarterly goal')
+    toast({ title: 'Goal archived', description: goal.text, onUndo: recoveryId ? () => useStore.getState().undoRecovery(recoveryId) : undefined })
+  }
 
   return (
     <>
       <Card className="h-full" role="region" aria-labelledby="quarterly-goals-heading">
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle id="quarterly-goals-heading">Quarterly goals</CardTitle>
-          <Button size="sm" variant="ghost" onClick={() => setEditorOpen(true)}>Edit targets</Button>
+          <div className="flex items-center gap-1">
+            <Button size="sm" variant="ghost" onClick={() => setTargetsOpen(true)}>Edit targets</Button>
+            <Button size="sm" onClick={() => setEditor('new')}><Plus className="size-3.5" />Add goal</Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {!quarterlyGoals.length && (
+          {!visibleGoals.length && (
             <MascotNote
               variant="empty-state"
               priority={40}
               title="No quarterly goal yet"
-              actions={<Button type="button" size="sm" onClick={() => setEditorOpen(true)}>Set a goal</Button>}
+              actions={<Button type="button" size="sm" onClick={() => setEditor('new')}>Set a goal</Button>}
             >
               Add one focused push to connect today’s work to a standing target.
             </MascotNote>
           )}
-          {quarterlyGoals.slice(0, 4).map((goal) => {
+          {visibleGoals.map((goal) => {
             const target = goal.standingTarget
             const targetValue = target ? goals[target] : 0
             const current = target ? currentForTarget(target, goals) : 0
@@ -135,26 +145,65 @@ export function QuarterlyGoalsPanel() {
                     onCheckedChange={(checked) => patchItem('quarterlyGoals', goal.id, { done: Boolean(checked) })}
                     aria-label={goal.done ? `${goal.text} completed` : `Complete ${goal.text}`}
                   />
-                  <div className="min-w-0 flex-1">
+                  <button type="button" onClick={() => setEditor(goal)} className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     <p className="text-sm font-bold leading-snug">{goal.text}</p>
-                    {target ? (
+                    {goal.kind === 'measured' && target ? (
                       <p className="mt-2 text-xs font-semibold text-muted-foreground">
                         {current
                           ? `${formatGoalValue(target, current)} recorded · ${formatGoalValue(target, targetValue)} student-set target`
                           : `No recorded value yet · ${formatGoalValue(target, targetValue)} student-set target`}
                       </p>
                     ) : <p className="mt-2 text-xs font-semibold text-muted-foreground">{goal.done ? 'Completed' : 'Open'}</p>}
-                  </div>
+                  </button>
+                  <Badge variant="muted" className="shrink-0 px-1.5 text-[9px]">{goal.kind === 'measured' ? 'Measured' : 'Check-off'}</Badge>
                 </div>
               </div>
             )
           })}
         </CardContent>
       </Card>
-      <CenterPeek open={editorOpen} mode={mode} label="Standing domain targets" onOpenChange={setEditorOpen} onModeChange={setMode}>
+      <CenterPeek open={editor != null} mode={mode} label={editor === 'new' ? 'New quarterly goal' : 'Edit quarterly goal'} onOpenChange={(open) => !open && setEditor(null)} onModeChange={setMode}>
+        {editor != null && <QuarterlyGoalEditor goal={editor === 'new' ? undefined : editor} onDone={() => setEditor(null)} onArchive={editor === 'new' ? undefined : () => { archiveGoal(editor); setEditor(null) }} />}
+      </CenterPeek>
+      <CenterPeek open={targetsOpen} mode={mode} label="Standing domain targets" onOpenChange={setTargetsOpen} onModeChange={setMode}>
         <GoalTargetEditor />
       </CenterPeek>
     </>
+  )
+}
+
+function QuarterlyGoalEditor({ goal, onDone, onArchive }: { goal?: QuarterlyGoal; onDone: () => void; onArchive?: () => void }) {
+  const addItem = useStore((state) => state.addItem)
+  const patchItem = useStore((state) => state.patchItem)
+  const existingCount = useStore((state) => state.quarterlyGoals.length)
+  const [text, setText] = useState(goal?.text ?? '')
+  const [quarter, setQuarter] = useState(goal?.quarter ?? 'Current term')
+  const [kind, setKind] = useState<QuarterlyGoal['kind']>(goal?.kind ?? 'check-off')
+  const [standingTarget, setStandingTarget] = useState<keyof Goals | ''>(goal?.standingTarget ?? '')
+  const targetOptions: Array<{ value: keyof Goals; label: string }> = [
+    { value: 'gpaTarget', label: 'GPA' }, { value: 'mcatTarget', label: 'MCAT' },
+    { value: 'clinical', label: 'Clinical hours' }, { value: 'volunteering', label: 'Volunteering hours' },
+    { value: 'shadowing', label: 'Shadowing hours' }, { value: 'research', label: 'Research hours' }, { value: 'activities', label: 'Activities hours' },
+  ]
+  function submit(event: FormEvent) {
+    event.preventDefault()
+    if (!text.trim() || (kind === 'measured' && !standingTarget)) return
+    const patch = { quarter: quarter.trim() || 'Current term', text: text.trim(), kind, standingTarget: kind === 'measured' ? standingTarget as keyof Goals : undefined }
+    if (goal) patchItem('quarterlyGoals', goal.id, patch)
+    else addItem('quarterlyGoals', { id: uid(), ...patch, done: false, order: existingCount })
+    onDone()
+  }
+  return (
+    <form onSubmit={submit} className="mx-auto max-w-2xl space-y-5 p-5 md:p-7">
+      <div><h2 className="font-display text-2xl font-extrabold">{goal ? 'Edit quarterly goal' : 'Add a quarterly goal'}</h2><p className="mt-1 text-sm text-muted-foreground">You choose how this goal is represented; nothing is inferred from its wording.</p></div>
+      <label className="block text-sm font-bold">Goal <Textarea value={text} onChange={(event) => setText(event.target.value)} className="mt-2" rows={3} placeholder="What do you want to make true this term?" /></label>
+      <label className="block text-sm font-bold">Quarter or term <Input value={quarter} onChange={(event) => setQuarter(event.target.value)} className="mt-2" /></label>
+      <fieldset className="space-y-2"><legend className="text-sm font-bold">Goal type</legend><div className="grid gap-2 sm:grid-cols-2">
+        {(['check-off', 'measured'] as const).map((option) => <button key={option} type="button" onClick={() => setKind(option)} className={`rounded-xl border p-3 text-left text-sm font-bold transition-colors ${kind === option ? 'border-primary bg-primary/10' : 'border-border bg-muted/35 hover:bg-muted/60'}`}><span className="block">{option === 'check-off' ? 'Check-off' : 'Measured'}</span><span className="mt-1 block text-xs font-semibold text-muted-foreground">{option === 'check-off' ? 'A manual completion state.' : 'Recorded evidence against a target you set.'}</span></button>)}
+      </div></fieldset>
+      {kind === 'measured' && <label className="block text-sm font-bold">Standing target <select value={standingTarget} onChange={(event) => setStandingTarget(event.target.value as keyof Goals)} className="mt-2 flex h-9 w-full rounded-md border border-border bg-background px-3 text-sm"><option value="">Choose a target</option>{targetOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>}
+      <div className="flex flex-wrap justify-between gap-2"><div>{onArchive && <Button type="button" variant="ghost" onClick={onArchive}><Archive className="size-4" />Archive</Button>}</div><Button type="submit" disabled={!text.trim() || (kind === 'measured' && !standingTarget)}>Save goal</Button></div>
+    </form>
   )
 }
 
@@ -204,9 +253,19 @@ export function ActivityAndCapture() {
   const update = useStore((state) => state.update)
   const toast = useToast()
   const [value, setValue] = useState('')
+  const [url, setUrl] = useState('')
   const [localOnly, setLocalOnly] = useState(false)
+  const [captureKind, setCaptureKind] = useState<'thought' | 'link'>('thought')
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
 
-  function addCapture(content: string) {
+  useEffect(() => {
+    if (!saved) return
+    const timer = window.setTimeout(() => setSaved(false), 4500)
+    return () => window.clearTimeout(timer)
+  }, [saved])
+
+  function addCapture(content: string, sourceUrl?: string) {
     const trimmed = content.trim()
     if (!trimmed) return
     const now = Date.now()
@@ -220,21 +279,37 @@ export function ActivityAndCapture() {
       updatedAt: now,
       origin: 'overview',
       localOnly,
+      sourceUrl,
       order: stories.length,
     })
-    logActivity('essays', `Captured Story Bank thought: ${trimmed}`)
+    logActivity('essays', sourceUrl ? `Captured Story Bank link: ${trimmed}` : `Captured Story Bank thought: ${trimmed}`)
   }
 
   function submit(event: FormEvent) {
     event.preventDefault()
-    if (!value.trim()) return
-    addCapture(value)
+    const trimmedUrl = url.trim()
+    if (captureKind === 'link') {
+      try {
+        const parsed = new URL(trimmedUrl)
+        if (!/^https?:$/.test(parsed.protocol)) throw new Error('unsupported protocol')
+      } catch {
+        setError('Paste a complete http or https link, then try again.')
+        return
+      }
+      addCapture(value.trim() || trimmedUrl, trimmedUrl)
+    } else if (value.trim()) addCapture(value)
+    else return
     setValue('')
+    setUrl('')
     setLocalOnly(false)
+    setError(null)
+    setSaved(true)
   }
 
   function captureForActivity(entry: ActivityEvent) {
-    const matches = stories.filter((story) => story.origin === 'overview' && entry.label === `Captured Story Bank thought: ${story.commentary}`)
+    const matches = stories.filter((story) => story.origin === 'overview' && (
+      entry.label === `Captured Story Bank thought: ${story.commentary}` || entry.label === `Captured Story Bank link: ${story.commentary}`
+    ))
     return matches.sort((a, b) => Math.abs((a.capturedAt ?? 0) - entry.at) - Math.abs((b.capturedAt ?? 0) - entry.at))[0]
   }
 
@@ -312,13 +387,23 @@ export function ActivityAndCapture() {
             <label htmlFor="overview-capture" className="flex items-center gap-2 text-sm font-extrabold"><Lightbulb className="size-4 text-primary" />Quick Capture</label>
             <Badge variant="muted">Story Bank</Badge>
           </div>
-          <Textarea id="overview-capture" value={value} onChange={(event) => setValue(event.target.value)} rows={2} placeholder="Type or paste a thought…" />
+          <div className="flex items-center gap-1" role="tablist" aria-label="Capture type">
+            <Button type="button" size="sm" variant={captureKind === 'thought' ? 'secondary' : 'ghost'} onClick={() => { setCaptureKind('thought'); setError(null) }}>Thought</Button>
+            <Button type="button" size="sm" variant={captureKind === 'link' ? 'secondary' : 'ghost'} onClick={() => { setCaptureKind('link'); setError(null) }}><Link2 className="size-3.5" />Link</Button>
+            <Button type="button" size="sm" variant="ghost" disabled title="File capture needs a local attachment store before it can save safely."><FileUp className="size-3.5" />File</Button>
+          </div>
+          {captureKind === 'thought'
+            ? <Textarea id="overview-capture" value={value} onChange={(event) => { setValue(event.target.value); setError(null) }} rows={2} placeholder="Type or paste a thought…" />
+            : <><Input id="overview-capture-link" aria-label="Link to save in Story Bank" value={url} onChange={(event) => { setUrl(event.target.value); setError(null) }} placeholder="https://…" /><Input aria-label="Optional note about this link" value={value} onChange={(event) => setValue(event.target.value)} placeholder="Optional note" /></>}
+          {error && <p role="alert" className="border-l-2 border-destructive pl-2 text-xs font-semibold text-destructive">{error} <Button type="button" size="sm" variant="link" onClick={() => document.getElementById(captureKind === 'link' ? 'overview-capture-link' : 'overview-capture')?.focus()}>Retry</Button></p>}
+          {saved && <p role="status" className="rounded-lg border border-success/30 bg-success/10 px-2.5 py-2 text-xs font-bold text-[color-mix(in_srgb,var(--success)_55%,var(--foreground))]">Saved to Story Bank. <Link className="underline underline-offset-2" to="/essays">Open it</Link></p>}
+          <p className="text-[11px] font-semibold text-muted-foreground">File capture is reserved until this device has a safe local attachment store. Atlas connection: reserved for a later phase.</p>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <label htmlFor="overview-capture-local" className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground">
               <Checkbox id="overview-capture-local" checked={localOnly} onCheckedChange={(checked) => setLocalOnly(Boolean(checked))} />
               Keep local; never sync
             </label>
-            <Button type="submit" disabled={!value.trim()}><Plus className="size-4" />Capture</Button>
+            <Button type="submit" disabled={captureKind === 'thought' ? !value.trim() : !url.trim()}><Plus className="size-4" />Capture</Button>
           </div>
         </form>
       </CardContent>

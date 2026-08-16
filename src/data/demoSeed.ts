@@ -204,8 +204,8 @@ export function createDemoData(seedTime = Date.now()): AppData {
     { id: 'demo-milestone-amcas', title: 'Submit AMCAS primary', type: 'Application', deadline: date(500), progress: 'Not started', kanban: 'todo', archived: false, milestone: true, horizon: 'soon', important: false, order: 4 },
   ]
   data.quarterlyGoals = [
-    { id: 'demo-goal-1', quarter: 'Current term', text: 'Protect a 3.8+ GPA while building a repeatable active-recall system', done: false, standingTarget: 'gpaTarget', order: 0 },
-    { id: 'demo-goal-2', quarter: 'Current term', text: 'Reach 150 clinical hours without sacrificing reflection quality', done: false, standingTarget: 'clinical', order: 1 },
+    { id: 'demo-goal-1', quarter: 'Current term', text: 'Protect a 3.8+ GPA while building a repeatable active-recall system', done: false, kind: 'measured', standingTarget: 'gpaTarget', order: 0 },
+    { id: 'demo-goal-2', quarter: 'Current term', text: 'Reach 150 clinical hours without sacrificing reflection quality', done: false, kind: 'measured', standingTarget: 'clinical', order: 1 },
   ]
   data.captures = []
 

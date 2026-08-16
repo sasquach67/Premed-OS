@@ -5,6 +5,7 @@ import { CURRENT_STORE_VERSION, OLDEST_SUPPORTED_STORE_VERSION, migrateAcademicT
 import { createSeedData } from '@/data/seed'
 import { migrateSyllabusV11 } from '@/store/migrations/syllabusV11'
 import { migrateSchoolStatusV12 } from '@/store/migrations/schoolStatusV12'
+import { migrateOverviewV13 } from '@/store/migrations/overviewV13'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
 
 function freshData(): AppData {
@@ -13,7 +14,32 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(12)
+  expect(CURRENT_STORE_VERSION).toBe(13)
+})
+
+describe('migrateOverviewV13', () => {
+  it('adds an explicit goal kind without changing any legacy goal field', () => {
+    const data = freshData()
+    data.quarterlyGoals = [
+      { id: 'manual', quarter: 'Fall', text: 'Send the email', done: false, order: 0 } as never,
+      { id: 'linked', quarter: 'Fall', text: 'Record clinical hours', done: false, standingTarget: 'clinical', order: 1 } as never,
+    ]
+    const before = structuredClone(data.quarterlyGoals)
+    Object.freeze(data.quarterlyGoals[0])
+    Object.freeze(data.quarterlyGoals)
+
+    const out = migrateOverviewV13(data)
+
+    expect(out.quarterlyGoals[0]).toEqual({ ...before[0], kind: 'check-off' })
+    expect(out.quarterlyGoals[1]).toEqual({ ...before[1], kind: 'measured' })
+    expect(data.quarterlyGoals[0]).toEqual(before[0])
+  })
+
+  it('is a no-op once every goal has a confirmed kind', () => {
+    const data = freshData()
+    expect(migrateOverviewV13(data)).toBe(data)
+    expect(migrateOverviewV13(migrateOverviewV13(data))).toBe(data)
+  })
 })
 
 describe('migrateSchoolStatusV12', () => {

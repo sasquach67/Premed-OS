@@ -561,8 +561,8 @@ const focusTargets: FocusTarget[] = seq<Omit<FocusTarget, 'id' | 'order'>>([
 ])
 
 const quarterlyGoals: QuarterlyGoal[] = seq<Omit<QuarterlyGoal, 'id' | 'order'>>([
-  { quarter: 'Fall 2026', text: 'Lock a 3.8+ first semester; build study systems before anything else', done: false, standingTarget: 'gpaTarget' },
-  { quarter: 'Fall 2026', text: 'Start ONE longitudinal commitment (clinical, volunteering, or research)', done: false, standingTarget: 'clinical' },
+  { quarter: 'Fall 2026', text: 'Lock a 3.8+ first semester; build study systems before anything else', done: false, kind: 'measured', standingTarget: 'gpaTarget' },
+  { quarter: 'Fall 2026', text: 'Start ONE longitudinal commitment (clinical, volunteering, or research)', done: false, kind: 'measured', standingTarget: 'clinical' },
 ])
 
 const schools: SchoolEntry[] = seq<Omit<SchoolEntry, 'id' | 'order'>>([
