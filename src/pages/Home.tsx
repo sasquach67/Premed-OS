@@ -5,7 +5,6 @@ import { OverviewRoadmap } from '@/components/overview/OverviewRoadmap'
 import { GpaStatTile, HoursStatTile, McatStatTile, WhereIStand } from '@/components/overview/OverviewStatus'
 import { ActivityAndCapture, QuarterlyGoalsPanel, QuickAccess } from '@/components/overview/OverviewSupport'
 import { OverviewTasks } from '@/components/overview/OverviewTasks'
-import { TemporaryAdvisingGuidance } from '@/components/overview/TemporaryAdvisingGuidance'
 import { EqualHeightGrid } from '@/components/common/BoundedLayout'
 
 export function Home() {
@@ -28,7 +27,6 @@ export function Home() {
           <div className="lg:col-span-3 xl:col-span-4"><ActivityAndCapture /></div>
 
           <div className="order-last lg:col-span-6 xl:col-span-12"><OverviewRoadmap /></div>
-          <div className="order-last lg:col-span-6 xl:col-span-12"><TemporaryAdvisingGuidance /></div>
         </EqualHeightGrid>
       </div>
     </MascotNoteProvider>
