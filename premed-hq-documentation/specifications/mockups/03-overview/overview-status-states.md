@@ -1,6 +1,6 @@
 # Overview status and absence states
 
-**Status:** PROPOSED · **Scope:** Where I Stand, Smart next actions, Quick Access, and roadmap absence.
+**Status:** APPROVED · **Scope:** Where I Stand, Smart next actions, Quick Access, and roadmap absence.
 
 ## Behaviour
 

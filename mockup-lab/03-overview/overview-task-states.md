@@ -1,6 +1,6 @@
 # Overview Tasks — state coverage
 
-**Status:** PROPOSED · **Scope:** Overview task widget and its existing expanded route.
+**Status:** APPROVED · **Scope:** Overview task widget and its existing expanded route.
 
 ## Behaviour
 

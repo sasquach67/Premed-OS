@@ -1,6 +1,6 @@
 # Overview Capture, Quarterly Goals, and resilience states
 
-**Status:** PROPOSED · **Scope:** Capture input paths, Quarterly Goals, and shared widget resilience.
+**Status:** APPROVED · **Scope:** Capture input paths, Quarterly Goals, and shared widget resilience.
 
 ## Behaviour
 
