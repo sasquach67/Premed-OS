@@ -133,6 +133,19 @@ Andy's reason: *"if we can interconnect those and make them communicate, that wo
 
 **A step cannot be deleted from Overview.** *(Lean, needs confirming.)* It is the roadmap's record, and deleting it there would silently damage the node. **Complete it, or dismiss it** — dismissing hides it from Overview and leaves the node intact. **Delete is not offered on a step row.**
 
+### A milestone's optional implementation task is not a `step` (ruled Aug 17, 2026)
+
+A student may create **one separate linked Overview implementation task** from a
+Timeline milestone. It is concrete work the student chooses to take on; it is
+not authored roadmap guidance and must never be retyped as a `step`. It lives
+in Overview's normal `Task` collection, has no inferred due date, priority,
+schedule, or completion state, and its completion never completes the
+milestone. The milestone retains the one link after that task is completed,
+archived, or moved to Trash so recovery remains possible; v1 offers neither an
+unlink nor a second task from the same milestone. This is the explicit
+exception to the one-record rule above; that rule still governs all authored
+Timeline steps.
+
 ### Copy law: "not yet," never "behind"
 
 **The one real risk in the game metaphor.** A game locks a quest because it authored the world. HQ did not author the student's life, and its user is an anxious premed looking at three years of grayed-out nodes.

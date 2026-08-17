@@ -1,6 +1,6 @@
 # Overview roadmap task linkage
 
-**Status:** PROPOSED · **Scope:** the one permitted handoff from a Timeline
+**Status:** APPROVED · **Scope:** the one permitted handoff from a Timeline
 milestone to an Overview task.
 
 ## Behaviour
@@ -14,6 +14,12 @@ milestone to an Overview task.
 - After creation, the roadmap card shows a compact linked-task fact and an
   `Open task` handoff. Completing or archiving the task never silently
   completes, deletes, or rewrites the milestone.
+- This is a separate, user-created **implementation task**, not a Timeline
+  checklist `step`. A node's authored `step` still stays Timeline-owned and
+  flows into Overview → Soon as the same record. One milestone may create one
+  linked implementation task; its link remains recoverable if that task is
+  completed, archived, or moved to Trash, and v1 offers no unlink/recreate
+  path.
 - With no milestone records, Overview shows only the Timeline setup route. It
   never fabricates a date, a generic schedule, a task, or a current step.
 
@@ -36,6 +42,6 @@ milestone to an Overview task.
 
 ## Deliberately absent
 
-No duplicate roadmap/task record, default date, automatic task completion,
-task editor inside the roadmap, Atlas graph, generic generated schedule, or
-completion percentage.
+No copied Timeline step, second linked implementation task, default date,
+automatic task completion, task editor inside the roadmap, Atlas graph,
+generic generated schedule, or completion percentage.
