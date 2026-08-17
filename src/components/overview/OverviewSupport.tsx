@@ -113,6 +113,24 @@ export function QuarterlyGoalsPanel() {
   const [mode, setMode] = useState<RecordOpenMode>('peek')
 
   const visibleGoals = quarterlyGoals.filter((goal) => !goal.deletedAt).slice(0, 4)
+  function openGoalEditor(goal: QuarterlyGoal | 'new') {
+    setTargetsOpen(false)
+    setMode('peek')
+    setEditor(goal)
+  }
+  function openTargetEditor() {
+    setEditor(null)
+    setMode('peek')
+    setTargetsOpen(true)
+  }
+  function closeGoalEditor() {
+    setEditor(null)
+    setMode('peek')
+  }
+  function closeTargetEditor() {
+    setTargetsOpen(false)
+    setMode('peek')
+  }
   function archiveGoal(goal: QuarterlyGoal) {
     const recoveryId = softDeleteItems('quarterlyGoals', [goal.id], 'Archived quarterly goal')
     toast({ title: 'Goal archived', description: goal.text, onUndo: recoveryId ? () => useStore.getState().undoRecovery(recoveryId) : undefined })
@@ -124,8 +142,8 @@ export function QuarterlyGoalsPanel() {
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle id="quarterly-goals-heading">Quarterly goals</CardTitle>
           <div className="flex items-center gap-1">
-            <Button size="sm" variant="ghost" onClick={() => setTargetsOpen(true)}>Edit targets</Button>
-            <Button size="sm" onClick={() => setEditor('new')}><Plus className="size-3.5" />Add goal</Button>
+            <Button size="sm" variant="ghost" onClick={openTargetEditor}>Edit targets</Button>
+            <Button size="sm" onClick={() => openGoalEditor('new')}><Plus className="size-3.5" />Add goal</Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -134,7 +152,7 @@ export function QuarterlyGoalsPanel() {
               variant="empty-state"
               priority={40}
               title="No quarterly goal yet"
-              actions={<Button type="button" size="sm" onClick={() => setEditor('new')}>Set a goal</Button>}
+              actions={<Button type="button" size="sm" onClick={() => openGoalEditor('new')}>Set a goal</Button>}
             >
               Add one focused push to connect today’s work to a standing target.
             </MascotNote>
@@ -151,7 +169,7 @@ export function QuarterlyGoalsPanel() {
                     onCheckedChange={(checked) => patchItem('quarterlyGoals', goal.id, { done: Boolean(checked) })}
                     aria-label={goal.done ? `${goal.text} completed` : `Complete ${goal.text}`}
                   />
-                  <button type="button" onClick={() => setEditor(goal)} className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <button type="button" onClick={() => openGoalEditor(goal)} className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     <p className="text-sm font-bold leading-snug">{goal.text}</p>
                     {goal.kind === 'measured' && target ? (
                       <p className="mt-2 text-xs font-semibold text-muted-foreground">
@@ -168,10 +186,10 @@ export function QuarterlyGoalsPanel() {
           })}
         </CardContent>
       </Card>
-      <CenterPeek open={editor != null} mode={mode} label={editor === 'new' ? 'New quarterly goal' : 'Edit quarterly goal'} onOpenChange={(open) => !open && setEditor(null)} onModeChange={setMode}>
-        {editor != null && <QuarterlyGoalEditor goal={editor === 'new' ? undefined : editor} onDone={() => setEditor(null)} onArchive={editor === 'new' ? undefined : () => { archiveGoal(editor); setEditor(null) }} />}
+      <CenterPeek open={editor != null} mode={mode} label={editor === 'new' ? 'New quarterly goal' : 'Edit quarterly goal'} onOpenChange={(open) => !open && closeGoalEditor()} onModeChange={setMode}>
+        {editor != null && <QuarterlyGoalEditor goal={editor === 'new' ? undefined : editor} onDone={closeGoalEditor} onArchive={editor === 'new' ? undefined : () => { archiveGoal(editor); closeGoalEditor() }} />}
       </CenterPeek>
-      <CenterPeek open={targetsOpen} mode={mode} label="Standing domain targets" onOpenChange={setTargetsOpen} onModeChange={setMode}>
+      <CenterPeek open={targetsOpen} mode={mode} label="Standing domain targets" onOpenChange={(open) => !open && closeTargetEditor()} onModeChange={setMode}>
         <GoalTargetEditor />
       </CenterPeek>
     </>

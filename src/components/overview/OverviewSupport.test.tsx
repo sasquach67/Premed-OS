@@ -3,7 +3,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ToastContext } from '@/components/common/toast-context'
-import { ActivityAndCapture } from '@/components/overview/OverviewSupport'
+import { ActivityAndCapture, QuarterlyGoalsPanel } from '@/components/overview/OverviewSupport'
 import { createSeedData } from '@/data/seed'
 import { useStore } from '@/store/store'
 
@@ -16,6 +16,11 @@ class ResizeObserverMock {
 }
 
 vi.stubGlobal('ResizeObserver', ResizeObserverMock)
+vi.stubGlobal('matchMedia', vi.fn().mockImplementation(() => ({
+  matches: false,
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+})))
 
 function fileList(file: File): FileList {
   return { 0: file, length: 1, item: (index: number) => index === 0 ? file : null } as unknown as FileList
@@ -24,6 +29,12 @@ function fileList(file: File): FileList {
 function button(container: HTMLElement, label: string): HTMLButtonElement {
   const found = [...container.querySelectorAll('button')].find((element) => element.textContent?.trim() === label)
   if (!found) throw new Error(`Could not find button: ${label}`)
+  return found as HTMLButtonElement
+}
+
+function buttonContaining(container: HTMLElement, text: string): HTMLButtonElement {
+  const found = [...container.querySelectorAll('button')].find((element) => element.textContent?.includes(text))
+  if (!found) throw new Error(`Could not find button containing: ${text}`)
   return found as HTMLButtonElement
 }
 
@@ -62,6 +73,18 @@ describe('Overview File Capture', () => {
     await act(async () => input.dispatchEvent(new Event('change', { bubbles: true })))
   }
 
+  async function renderQuarterlyGoals() {
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <ToastContext.Provider value={{ toast: () => 'test-toast' }}>
+            <QuarterlyGoalsPanel />
+          </ToastContext.Provider>
+        </MemoryRouter>
+      )
+    })
+  }
+
   it('shows the selected file and captures it through the existing store service', async () => {
     const capture = vi.fn().mockResolvedValue('story-file-1')
     useStore.setState({ createOverviewFileCapture: capture })
@@ -98,5 +121,16 @@ describe('Overview File Capture', () => {
     expect(container.textContent).toContain('We couldn’t save this file on this device. Try again.')
     expect(container.textContent).toContain('reflection.pdf · 5 B')
     expect(container.textContent).not.toContain('Saved file to Story Bank.')
+  })
+
+  it('keeps quarterly goal and standing-target editors mutually exclusive after expand', async () => {
+    await renderQuarterlyGoals()
+    await act(async () => button(container, 'Edit targets').click())
+    await act(async () => (document.querySelector('button[aria-label="Expand record"]') as HTMLButtonElement).click())
+    await act(async () => buttonContaining(container, 'Lock a 3.8+ first semester').click())
+
+    const headings = [...document.querySelectorAll('h2')].map((heading) => heading.textContent)
+    expect(headings).toContain('Edit quarterly goal')
+    expect(headings).not.toContain('Standing targets')
   })
 })
