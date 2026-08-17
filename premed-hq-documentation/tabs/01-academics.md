@@ -1276,6 +1276,45 @@ All rules-based and **explainable** (`02`); each states why it fired. Confirmed 
 30. **Material staleness** — files uploaded but never opened, or notes never linked to any topic (orphans). Small, but it's how a coworking space silently becomes a junk drawer.
 31. **Weekly ritual** — one Sunday prompt: what's coming, what's stalled, what's decayed. **The only scheduled/recurring nudge in the tab** — everything else is event-driven, and this one exists because planning has no natural trigger.
 
+### Learning signals — the class-page surface (Andy, Aug 2026)
+
+**What it is:** a small, contextual, pull-first panel inside a **STEM class's
+Overview**. It answers one question: *is there a specific part of how I am
+learning this class that needs a different next move?* It is not a fourth
+Daily tab, a dashboard, a notification feed, or a generic AI study coach.
+
+**Placement and scope.** The panel sits below the class's primary next action
+and above its supporting class information. A class-card signal may hand the
+student into this panel only when the signal is consequential; otherwise the
+panel is discovered by opening that class. Its action routes to the owner that
+can resolve it — Topics/review, Materials, Assignments, or the active-recall
+summary — rather than trying to repair the issue inline.
+
+**What belongs here.** These are existing deterministic features with one
+shared home, not a new set of speculative metrics:
+
+- **Core learning-cycle signals:** interleaving check (#16), prerequisite decay
+  (#21), cycle stall (#23), cram detection (#25), re-read detection (#26),
+  topic difficulty outlier (#27), and material staleness (#30).
+- **Situational additions:** assignment-to-topic linkage (#37), lecture-lab
+  lag (#36), post-exam decay check (#41), and concept-map gaps (#39).
+- **Cross-class overlap (#22)** may appear as a proposal from this panel only
+  when it shows the evidence and asks the student to confirm the `TopicLink`.
+  It never auto-merges two courses or silently credits review in both.
+
+**Panel discipline.** Show at most three items at once, each as
+**cause → consequence → one action**. A class with no eligible evidence renders
+no panel at all. The panel is *pull* when the student opens the class; promoting
+one item into Alerts still goes through the global §6.11 nudge auction and
+three-per-week cap. No readiness score, composite rank, generic “you may be
+behind” warning, or empty/zero state is permitted.
+
+**Type boundary.** This panel is STEM-only because its signals depend on topics,
+review events, prerequisite links, course material, and exam scope. Writing
+uses its own draft/readings/feedback layer; General classes do not render a
+pretend study-intelligence panel. Every signal remains dormant until the real
+input it needs exists, and says what evidence triggered it when it does.
+
 **Added July 2026 — exam, workload, and self-knowledge.** The last wave. Several of these exist nowhere else because they require the app to hold *both* the academic record and the study history:
 
 32. **Exam-day readiness forecast** — for each exam-scope topic, projected retrievability *on the exam date* (§4.1-L), rolled into one honest number: "at your current pace, 6 of 9 will be above 80% on Friday." Turns FSRS into a decision, not a schedule.
