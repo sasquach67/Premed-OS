@@ -1,6 +1,6 @@
 # Overview projection states
 
-**Status:** PROPOSED · **Scope:** the single permitted pacing/projection
+**Status:** APPROVED · **Scope:** the single permitted pacing/projection
 disclosure inside an owning Overview panel.
 
 ## Behaviour
