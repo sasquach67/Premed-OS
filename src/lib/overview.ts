@@ -66,7 +66,9 @@ export type OverviewTaskTab = TaskHorizon | 'done'
 
 export function overviewTaskTab(task: TaskItem): OverviewTaskTab {
   if (task.progress === 'Finished') return 'done'
-  return task.horizon ?? (task.kanban === 'doing' || task.deadline ? 'now' : 'soon')
+  // A missing date is still a present commitment. Send unsorted tasks to Now
+  // by default; Soon remains an intentional user choice via the task controls.
+  return task.horizon ?? 'now'
 }
 
 export function overviewTasks(tasks: CollectionRecord<TaskItem>[], tab: OverviewTaskTab): CollectionRecord<TaskItem>[] {

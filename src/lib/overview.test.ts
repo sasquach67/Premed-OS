@@ -28,6 +28,12 @@ describe('Overview selectors', () => {
     expect(overviewTasks(tasks, 'done').map((item) => item.id)).toEqual(['done'])
   })
 
+  it('puts a task without a date or chosen horizon in Now by default', () => {
+    const undated = task({ id: 'undated', important: false })
+    expect(overviewTasks([undated], 'now').map((item) => item.id)).toEqual(['undated'])
+    expect(overviewTasks([undated], 'soon')).toEqual([])
+  })
+
   it('pins important tasks before everything else without a second focus concept', () => {
     const tasks = [
       task({ id: 'normal', order: 0, horizon: 'now', important: false }),

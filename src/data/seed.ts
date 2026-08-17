@@ -469,7 +469,7 @@ function t(title: string, type: TaskItem['type'], deadline?: string, notes?: str
     kanban: 'todo',
     notes,
     archived: false,
-    horizon: deadline ? 'now' : 'soon',
+    horizon: 'now',
     important: false,
   }
 }

@@ -529,7 +529,7 @@ describe('migrations never write to frozen input', () => {
 
     const out = migrateOverviewSchema(data)
     expect(out.tasks[0].important).toBe(false)
-    expect(out.tasks[0].horizon).toBe('soon')
+    expect(out.tasks[0].horizon).toBe('now')
     expect(out.stories.some((story) => story.id === 'story-legacy-home-ideas')).toBe(true)
     expect(out.captures).toHaveLength(0)
     // Caller untouched.

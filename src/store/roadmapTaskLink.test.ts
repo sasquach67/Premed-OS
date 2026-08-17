@@ -27,13 +27,13 @@ describe('createRoadmapImplementationTask', () => {
       type: 'Task',
       progress: 'Not started',
       kanban: 'todo',
-      horizon: 'soon',
+      horizon: 'now',
       important: false,
       archived: false,
     })])
     expect(state.tasks[0]).not.toHaveProperty('milestone')
     expect(state.tasks[0]).not.toHaveProperty('timelineMilestoneId')
-    expect(overviewTasks(state.tasks, 'soon').map((task) => task.id)).toEqual([taskId])
+    expect(overviewTasks(state.tasks, 'now').map((task) => task.id)).toEqual([taskId])
     expect(useStore.getState().createRoadmapImplementationTask('milestone', 'A duplicate')).toBeNull()
     expect(useStore.getState().tasks).toHaveLength(1)
   })

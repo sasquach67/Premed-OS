@@ -12,6 +12,7 @@ export function addTask(course?: string) {
     progress: 'Not started',
     kanban: 'todo',
     archived: false,
+    horizon: 'now',
     order: useStore.getState().tasks.length,
   } as TaskItem)
 }

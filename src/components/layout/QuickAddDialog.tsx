@@ -94,7 +94,7 @@ export function QuickAddDialog() {
     const beforeRecovery = data.meta.recoveryStack[0]?.id
     const order = (key: 'tasks' | 'courses' | 'experiences' | 'schools' | 'stories' | 'notePages') => data[key].length
     if (activeKind === 'task') {
-      addItem('tasks', { id, title: title.trim(), type: detail.trim() || 'Task', deadline: date || undefined, progress: 'Not started', kanban: 'todo', archived: false, order: order('tasks') })
+      addItem('tasks', { id, title: title.trim(), type: detail.trim() || 'Task', deadline: date || undefined, progress: 'Not started', kanban: 'todo', archived: false, horizon: 'now', order: order('tasks') })
     } else if (activeKind === 'course') {
       addItem('courses', { id, term: date || 'Planned', code: title.trim(), title: detail.trim() || 'Untitled course', credits: Number(amount) || 3, grade: '', bcpm: false, status: 'planned', inResidence: true, satisfies: [], order: order('courses') })
     } else if (activeKind === 'hours') {

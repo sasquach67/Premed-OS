@@ -175,7 +175,7 @@ export function migrateOverviewSchema(data: AppData): AppData {
   // Rows are only rebuilt when a field is actually added.
   const tasks = (data.tasks ?? []).map((task) => {
     const important = task.important ?? false
-    const horizon = task.horizon ?? (task.kanban === 'doing' || Boolean(task.deadline) ? 'now' : 'soon')
+    const horizon = task.horizon ?? 'now'
     if (important === task.important && horizon === task.horizon) return task
     return { ...task, important, horizon }
   })
@@ -597,7 +597,7 @@ export const useStore = create<Store>()(
             progress: 'Not started' as const,
             kanban: 'todo' as const,
             archived: false,
-            horizon: 'soon' as const,
+            horizon: 'now' as const,
             important: false,
             order: nextOrder(s.tasks),
           }
