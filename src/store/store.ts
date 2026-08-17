@@ -36,6 +36,7 @@ import { migrateTimelineV14 } from '@/store/migrations/timelineV14'
 import { migrateExperienceHoursV15 } from '@/store/migrations/experienceHoursV15'
 import { migrateRoadmapTaskLinkV16 } from '@/store/migrations/roadmapTaskLinkV16'
 import { migrateOverviewAttachmentsV17 } from '@/store/migrations/overviewAttachmentsV17'
+import { migrateTaskHorizonsV18 } from '@/store/migrations/taskHorizonsV18'
 import { removeStoryAttachment, retainThenPersistStoryAttachment } from '@/lib/overviewFileCapture'
 
 const DEMO_MODE = isDemoMode()
@@ -54,8 +55,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateOverviewAttachmentsV17`. */
-export const CURRENT_STORE_VERSION = 17
+/** Matches the newest migration in `migrateAll`: `migrateTaskHorizonsV18`. */
+export const CURRENT_STORE_VERSION = 18
 
 function createInitialData() {
   if (!DEMO_MODE) return structuredClone(createSeedData())
@@ -523,7 +524,8 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateTimelineV14(migrated)
   migrated = migrateExperienceHoursV15(migrated)
   migrated = migrateRoadmapTaskLinkV16(migrated)
-  return migrateOverviewAttachmentsV17(migrated)
+  migrated = migrateOverviewAttachmentsV17(migrated)
+  return migrateTaskHorizonsV18(migrated)
 }
 
 function nextOrder(arr: AnyRow[]): number {

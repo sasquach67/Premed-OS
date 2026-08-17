@@ -10,6 +10,7 @@ import { migrateTimelineV14 } from '@/store/migrations/timelineV14'
 import { migrateExperienceHoursV15 } from '@/store/migrations/experienceHoursV15'
 import { migrateRoadmapTaskLinkV16 } from '@/store/migrations/roadmapTaskLinkV16'
 import { migrateOverviewAttachmentsV17 } from '@/store/migrations/overviewAttachmentsV17'
+import { migrateTaskHorizonsV18 } from '@/store/migrations/taskHorizonsV18'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
 
 function freshData(): AppData {
@@ -18,7 +19,25 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(17)
+  expect(CURRENT_STORE_VERSION).toBe(18)
+})
+
+describe('migrateTaskHorizonsV18', () => {
+  it('moves legacy undated Soon defaults to Now without changing dated or finished tasks', () => {
+    const data = freshData()
+    data.tasks = [
+      { id: 'legacy-undated', title: 'Legacy no date', type: 'Task', progress: 'Not started', kanban: 'todo', archived: false, horizon: 'soon', order: 0 },
+      { id: 'dated-soon', title: 'Set for later', type: 'Task', deadline: '2026-09-01', progress: 'Not started', kanban: 'todo', archived: false, horizon: 'soon', order: 1 },
+      { id: 'done-undated', title: 'Completed', type: 'Task', progress: 'Finished', kanban: 'done', archived: false, horizon: 'soon', order: 2 },
+    ] as TaskItem[]
+
+    const out = migrateTaskHorizonsV18(data)
+
+    expect(out.tasks.map((task) => task.horizon)).toEqual(['now', 'soon', 'soon'])
+    expect(out.tasks[0]).toMatchObject({ id: 'legacy-undated', title: 'Legacy no date' })
+    expect(out.tasks[0]).not.toHaveProperty('deadline')
+    expect(migrateTaskHorizonsV18(out)).toBe(out)
+  })
 })
 
 describe('migrateOverviewAttachmentsV17', () => {
