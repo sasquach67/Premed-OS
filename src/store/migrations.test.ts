@@ -8,6 +8,7 @@ import { migrateSchoolStatusV12 } from '@/store/migrations/schoolStatusV12'
 import { migrateOverviewV13 } from '@/store/migrations/overviewV13'
 import { migrateTimelineV14 } from '@/store/migrations/timelineV14'
 import { migrateExperienceHoursV15 } from '@/store/migrations/experienceHoursV15'
+import { migrateRoadmapTaskLinkV16 } from '@/store/migrations/roadmapTaskLinkV16'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
 
 function freshData(): AppData {
@@ -16,7 +17,31 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(15)
+  expect(CURRENT_STORE_VERSION).toBe(16)
+})
+
+describe('migrateRoadmapTaskLinkV16', () => {
+  it('does not infer a relationship or rewrite any existing milestone/task field', () => {
+    const data = freshData()
+    data.timelineMilestones = [{ id: 'milestone', title: 'Draft statement', completed: false, order: 0 }]
+    data.tasks = [{ id: 'task', title: 'A separate task', type: 'Task', progress: 'Not started', kanban: 'todo', archived: false, order: 0 }]
+    const before = structuredClone(data)
+    Object.freeze(data)
+    Object.freeze(data.timelineMilestones)
+    Object.freeze(data.tasks)
+
+    expect(migrateRoadmapTaskLinkV16(data)).toBe(data)
+    expect(data).toEqual(before)
+  })
+
+  it('is idempotent and preserves an existing explicit link', () => {
+    const data = freshData()
+    data.timelineMilestones = [{ id: 'milestone', title: 'Draft statement', completed: false, implementationTaskId: 'task', order: 0 }]
+    const once = migrateRoadmapTaskLinkV16(data)
+    expect(once).toBe(data)
+    expect(migrateRoadmapTaskLinkV16(once)).toBe(data)
+    expect(once.timelineMilestones[0].implementationTaskId).toBe('task')
+  })
 })
 
 describe('migrateExperienceHoursV15', () => {

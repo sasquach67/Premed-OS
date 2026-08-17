@@ -14,7 +14,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useToast } from '@/components/common/useToast'
 import { MascotNote } from '@/components/common/MascotNote'
@@ -53,7 +53,7 @@ import { Toggle } from '@/components/ui/toggle'
 import { daysUntil, fmtRelative } from '@/lib/date'
 import { uid } from '@/lib/id'
 import { MOTION_TRANSITION } from '@/lib/motion'
-import { overviewTasks, type OverviewTaskTab } from '@/lib/overview'
+import { overviewTaskTab, overviewTasks, type OverviewTaskTab } from '@/lib/overview'
 import type { CollectionRecord, TaskItem } from '@/lib/types'
 import { useStore } from '@/store/store'
 import { cn } from '@/lib/utils'
@@ -75,8 +75,21 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
    * behaviour here that the widget lacks is a defect (03-overview §6.4). */
   const [query, setQuery] = useState('')
   const [searchParams, setSearchParams] = useSearchParams()
+  const openedTaskId = expanded ? searchParams.get('task') : null
   const overdueOnly = expanded && searchParams.get('filter') === 'overdue'
   const reduceMotion = useReducedMotion()
+
+  useEffect(() => {
+    if (!openedTaskId) return
+    const target = tasks.find((task) => task.id === openedTaskId)
+    if (target) setTab(overviewTaskTab(target))
+  }, [openedTaskId, tasks])
+
+  function clearOpenedTask() {
+    const next = new URLSearchParams(searchParams)
+    next.delete('task')
+    setSearchParams(next, { replace: true })
+  }
 
   const counts = useMemo(() => ({
     now: overviewTasks(tasks, 'now').length,
@@ -188,8 +201,8 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
                 </MascotNote>
               ) : (
                 <Reorder.Group axis="y" values={visible} onReorder={applyOrder} className="space-y-3">
-                  <TaskGroup label="Important" tasks={important} tab={tab} reduceMotion={Boolean(reduceMotion)} expanded={expanded} />
-                  <TaskGroup label={important.length ? 'Everything else' : undefined} tasks={everythingElse} tab={tab} reduceMotion={Boolean(reduceMotion)} expanded={expanded} />
+                  <TaskGroup label="Important" tasks={important} tab={tab} reduceMotion={Boolean(reduceMotion)} expanded={expanded} openedTaskId={openedTaskId} onOpenedTaskClose={clearOpenedTask} />
+                  <TaskGroup label={important.length ? 'Everything else' : undefined} tasks={everythingElse} tab={tab} reduceMotion={Boolean(reduceMotion)} expanded={expanded} openedTaskId={openedTaskId} onOpenedTaskClose={clearOpenedTask} />
                 </Reorder.Group>
               )}
             </m.div>
@@ -206,12 +219,16 @@ function TaskGroup({
   tab,
   reduceMotion,
   expanded,
+  openedTaskId,
+  onOpenedTaskClose,
 }: {
   label?: string
   tasks: CollectionRecord<TaskItem>[]
   tab: OverviewTaskTab
   reduceMotion: boolean
   expanded: boolean
+  openedTaskId: string | null
+  onOpenedTaskClose: () => void
 }) {
   const cap = expanded ? tasks.length : 7
   if (!tasks.length) return null
@@ -225,7 +242,7 @@ function TaskGroup({
         </div>
       )}
       {tasks.slice(0, cap).map((task) => (
-        <TaskRow key={task.id} task={task} tab={tab} reduceMotion={reduceMotion} />
+        <TaskRow key={task.id} task={task} tab={tab} reduceMotion={reduceMotion} openOnMount={openedTaskId === task.id} onDetailClose={onOpenedTaskClose} />
       ))}
       {tasks.length > cap && (
         <Link to="/overview/tasks" className="mt-2 block px-2 text-xs font-bold text-primary">
@@ -240,10 +257,14 @@ function TaskRow({
   task,
   tab,
   reduceMotion,
+  openOnMount,
+  onDetailClose,
 }: {
   task: CollectionRecord<TaskItem>
   tab: OverviewTaskTab
   reduceMotion: boolean
+  openOnMount: boolean
+  onDetailClose: () => void
 }) {
   const toast = useToast()
   const patchItem = useStore((state) => state.patchItem)
@@ -255,6 +276,10 @@ function TaskRow({
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailMode, setDetailMode] = useState<RecordOpenMode>('peek')
   const days = daysUntil(task.deadline)
+
+  useEffect(() => {
+    if (openOnMount) setDetailOpen(true)
+  }, [openOnMount])
 
   function complete() {
     const previous = { progress: task.progress, kanban: task.kanban, archived: task.archived }
@@ -416,7 +441,10 @@ function TaskRow({
       open={detailOpen}
       mode={detailMode}
       label={task.title || 'Task'}
-      onOpenChange={setDetailOpen}
+      onOpenChange={(open) => {
+        setDetailOpen(open)
+        if (!open && openOnMount) onDetailClose()
+      }}
       onModeChange={setDetailMode}
     >
       <TaskDetail task={task} onPatch={(patch) => patchItem('tasks', task.id, patch)} />

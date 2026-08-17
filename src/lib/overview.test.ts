@@ -49,6 +49,13 @@ describe('Overview selectors', () => {
     expect(milestones[0]).toMatchObject({ detail: 'First detail', state: 'current' })
   })
 
+  it('projects an explicit implementation-task link without making it a Timeline step', () => {
+    const [milestone] = roadmapMilestones([
+      { id: 'statement', title: 'Draft statement', completed: false, implementationTaskId: 'task-1', order: 0 },
+    ] satisfies TimelineMilestone[])
+    expect(milestone).toMatchObject({ id: 'statement', implementationTaskId: 'task-1', state: 'current' })
+  })
+
   it('builds exact cumulative and BCPM term series from graded courses', () => {
     const courses = [
       {

@@ -611,6 +611,9 @@ export interface TimelineMilestone {
   completed: boolean
   /** Retains the legacy record relationship without making Task canonical. */
   legacyTaskId?: ID
+  /** One optional Overview-owned implementation task. This is deliberately
+   * distinct from a Timeline-authored step and survives that task's lifecycle. */
+  implementationTaskId?: ID
   order: number
 }
 

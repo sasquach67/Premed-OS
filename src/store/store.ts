@@ -34,6 +34,7 @@ import { migrateSchoolStatusV12 } from '@/store/migrations/schoolStatusV12'
 import { migrateOverviewV13 } from '@/store/migrations/overviewV13'
 import { migrateTimelineV14 } from '@/store/migrations/timelineV14'
 import { migrateExperienceHoursV15 } from '@/store/migrations/experienceHoursV15'
+import { migrateRoadmapTaskLinkV16 } from '@/store/migrations/roadmapTaskLinkV16'
 
 const DEMO_MODE = isDemoMode()
 
@@ -51,8 +52,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateExperienceHoursV15`. */
-export const CURRENT_STORE_VERSION = 15
+/** Matches the newest migration in `migrateAll`: `migrateRoadmapTaskLinkV16`. */
+export const CURRENT_STORE_VERSION = 16
 
 function createInitialData() {
   if (!DEMO_MODE) return structuredClone(createSeedData())
@@ -70,6 +71,9 @@ interface Actions {
   // generic collection CRUD (Notion-like inline editing)
   addItem: <K extends CollectionKey>(key: K, item: AppData[K][number]) => void
   patchItem: <K extends CollectionKey>(key: K, id: string, patch: Partial<AppData[K][number]>) => void
+  /** Atomically creates the one permitted normal task linked to a Timeline
+   * milestone. It deliberately never creates a Timeline-authored step. */
+  createRoadmapImplementationTask: (milestoneId: string, title: string) => string | null
   removeItem: (key: CollectionKey, id: string) => void
   softDeleteItems: (key: CollectionKey, ids: string[], label?: string) => string | null
   restoreTrashItems: (trashIds: string[]) => void
@@ -495,19 +499,26 @@ export function migrateRequirementMetadata(data: AppData): AppData {
 /** The full hydration chain. Exported so the frozen-input contract can be
  *  tested end to end: every link must be pure, or immer state throws. */
 export function migrateAll(data: AppData): AppData {
-  return migrateExperienceHoursV15(migrateTimelineV14(migrateOverviewV13(migrateSchoolStatusV12(migrateSyllabusV11(migrateClassTypesV10(migrateShellV9(migrateFoundationV8(migrateAcademicsV7(migrateAcademicsV6(migrateAcademicsV5(migrateAcademicsV4(migrateMascotNotes(
-    migrateOverviewSchema(
-      migrateIntelligence(
-        migrateSafetyNets(
-          migrateOrgReflections(
-            migrateRequirementMetadata(
-              migrateAcademicTags(data),
-            ),
-          ),
-        ),
-      ),
-    ),
-  )))))))))))))
+  let migrated = migrateAcademicTags(data)
+  migrated = migrateRequirementMetadata(migrated)
+  migrated = migrateOrgReflections(migrated)
+  migrated = migrateSafetyNets(migrated)
+  migrated = migrateIntelligence(migrated)
+  migrated = migrateOverviewSchema(migrated)
+  migrated = migrateMascotNotes(migrated)
+  migrated = migrateAcademicsV4(migrated)
+  migrated = migrateAcademicsV5(migrated)
+  migrated = migrateAcademicsV6(migrated)
+  migrated = migrateAcademicsV7(migrated)
+  migrated = migrateFoundationV8(migrated)
+  migrated = migrateShellV9(migrated)
+  migrated = migrateClassTypesV10(migrated)
+  migrated = migrateSyllabusV11(migrated)
+  migrated = migrateSchoolStatusV12(migrated)
+  migrated = migrateOverviewV13(migrated)
+  migrated = migrateTimelineV14(migrated)
+  migrated = migrateExperienceHoursV15(migrated)
+  return migrateRoadmapTaskLinkV16(migrated)
 }
 
 function nextOrder(arr: AnyRow[]): number {
@@ -565,6 +576,32 @@ export const useStore = create<Store>()(
           if (row) Object.assign(row, patch)
           if (key === 'courses') syncCurrentTermWorkspaces(s as unknown as AppData)
         }),
+
+      createRoadmapImplementationTask: (milestoneId, title) => {
+        const cleanedTitle = title.trim()
+        if (!cleanedTitle) return null
+        let taskId: string | null = null
+        set((s) => {
+          const milestone = s.timelineMilestones.find((item) => item.id === milestoneId)
+          if (!milestone || milestone.implementationTaskId) return
+          taskId = uid()
+          const task = {
+            id: taskId,
+            title: cleanedTitle,
+            type: 'Task',
+            progress: 'Not started' as const,
+            kanban: 'todo' as const,
+            archived: false,
+            horizon: 'soon' as const,
+            important: false,
+            order: nextOrder(s.tasks),
+          }
+          s.tasks.push(task)
+          milestone.implementationTaskId = taskId
+          pushRecovery(s as unknown as AppData, 'tasks', 'Created linked roadmap task', [], [task])
+        })
+        return taskId
+      },
 
       removeItem: (key, id) =>
         set((s) => {

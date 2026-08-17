@@ -82,6 +82,7 @@ export interface RoadmapMilestone {
   label: string
   target?: string
   detail?: string
+  implementationTaskId?: string
   route: string
   state: 'done' | 'current' | 'future'
 }
@@ -104,6 +105,7 @@ export function roadmapMilestones(items: CollectionRecord<TimelineMilestone>[]):
     label: milestone.title,
     target: milestone.targetDate,
     detail: milestone.detail,
+    implementationTaskId: milestone.implementationTaskId,
     route: '/timeline',
     state: milestone.completed ? 'done' : milestone.id === currentId ? 'current' : 'future',
   }))
