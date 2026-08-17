@@ -33,6 +33,7 @@ import { migrateSyllabusV11 } from '@/store/migrations/syllabusV11'
 import { migrateSchoolStatusV12 } from '@/store/migrations/schoolStatusV12'
 import { migrateOverviewV13 } from '@/store/migrations/overviewV13'
 import { migrateTimelineV14 } from '@/store/migrations/timelineV14'
+import { migrateExperienceHoursV15 } from '@/store/migrations/experienceHoursV15'
 
 const DEMO_MODE = isDemoMode()
 
@@ -50,8 +51,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateTimelineV14`. */
-export const CURRENT_STORE_VERSION = 14
+/** Matches the newest migration in `migrateAll`: `migrateExperienceHoursV15`. */
+export const CURRENT_STORE_VERSION = 15
 
 function createInitialData() {
   if (!DEMO_MODE) return structuredClone(createSeedData())
@@ -97,7 +98,7 @@ export type Store = AppData & Actions
 
 /** keys that hold the persisted data (functions are never serialized) */
 const DATA_KEYS: (keyof AppData)[] = [
-  'profile', 'goals', 'courses', 'requirements', 'experiences', 'tasks', 'timelineMilestones',
+  'profile', 'goals', 'courses', 'requirements', 'experiences', 'experienceHourEntries', 'tasks', 'timelineMilestones',
   'persons', 'organizations',
   'academics', 'letters', 'stories', 'secondaries', 'interviewQs', 'mcat', 'schools',
   'resources', 'tips', 'focusTargets', 'quarterlyGoals', 'advisingQs',
@@ -494,7 +495,7 @@ export function migrateRequirementMetadata(data: AppData): AppData {
 /** The full hydration chain. Exported so the frozen-input contract can be
  *  tested end to end: every link must be pure, or immer state throws. */
 export function migrateAll(data: AppData): AppData {
-  return migrateTimelineV14(migrateOverviewV13(migrateSchoolStatusV12(migrateSyllabusV11(migrateClassTypesV10(migrateShellV9(migrateFoundationV8(migrateAcademicsV7(migrateAcademicsV6(migrateAcademicsV5(migrateAcademicsV4(migrateMascotNotes(
+  return migrateExperienceHoursV15(migrateTimelineV14(migrateOverviewV13(migrateSchoolStatusV12(migrateSyllabusV11(migrateClassTypesV10(migrateShellV9(migrateFoundationV8(migrateAcademicsV7(migrateAcademicsV6(migrateAcademicsV5(migrateAcademicsV4(migrateMascotNotes(
     migrateOverviewSchema(
       migrateIntelligence(
         migrateSafetyNets(
@@ -506,7 +507,7 @@ export function migrateAll(data: AppData): AppData {
         ),
       ),
     ),
-  ))))))))))))
+  )))))))))))))
 }
 
 function nextOrder(arr: AnyRow[]): number {

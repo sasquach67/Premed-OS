@@ -1,7 +1,7 @@
 import { createSeedData } from '@/data/seed'
 import { createTopicFsrsState } from '@/lib/academics/fsrs'
 import type {
-  AppData, AssignedReading, ClassAssignment, ClassNote, Course, ExperienceEntry, FeedbackNote, KeyPoint, PaperDraft,
+  AppData, AssignedReading, ClassAssignment, ClassNote, Course, ExperienceEntry, ExperienceHourEntry, FeedbackNote, KeyPoint, PaperDraft,
   LetterEntry, McatAttempt, McatErrorLog, SourceChunk, Topic,
 } from '@/lib/types'
 
@@ -169,6 +169,20 @@ export function createDemoData(seedTime = Date.now()): AppData {
     experience('demo-exp-leadership', 'leadership', 'Carolina Neuroscience Club', 'Outreach Chair', date(-280), 92, 'Coordinated brain-awareness demonstrations for local middle-school students.', ['leadership', 'education'], 4),
     // Research is deliberately empty so its real empty-state remains visible.
   ]
+  // Demo aggregates are explicitly estimated backfill blocks. They make the
+  // total visible without masquerading as a measured weekly history.
+  data.experienceHourEntries = data.experiences.map((experience, order): ExperienceHourEntry => ({
+    id: `demo-hour-estimate-${experience.id}`,
+    experienceId: experience.id,
+    hours: experience.hours ?? 0,
+    kind: 'estimated',
+    periodStart: experience.startDate,
+    note: 'Demo aggregate shown as an estimated backfill block.',
+    createdAt: stamp(-1),
+    updatedAt: stamp(-1),
+    archived: false,
+    order,
+  }))
   data.notePages = [
     { id: 'demo-note-clinical', title: 'Transport reflection', body: 'A patient’s daughter asked me to slow down and explain every turn. I learned that efficiency without orientation can increase anxiety.', tag: 'reflection', pillar: 'clinical', updatedAt: stamp(-2), order: 0 },
   ]

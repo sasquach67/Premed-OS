@@ -23,7 +23,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { fmtTimeAgo } from '@/lib/date'
 import { uid } from '@/lib/id'
-import { gpaStats, hourTotals } from '@/lib/selectors'
+import { totalsForCategory } from '@/lib/experienceHours'
+import { gpaStats } from '@/lib/selectors'
 import type { ActivityEvent, Goals, QuarterlyGoal, StoryEntry } from '@/lib/types'
 import { useStore } from '@/store/store'
 
@@ -76,7 +77,6 @@ function QuickLink({ to, icon: Icon, color, title, detail }: { to: string; icon:
 
 function currentForTarget(target: keyof Goals, goals: Goals) {
   const state = useStore.getState()
-  const hours = hourTotals(state.experiences)
   if (target === 'gpaTarget') return gpaStats(state.courses).cum
   if (target === 'mcatTarget') {
     const latest = [...state.mcat.attempts]
@@ -84,11 +84,11 @@ function currentForTarget(target: keyof Goals, goals: Goals) {
       .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')) || b.order - a.order)[0]
     return latest?.total ?? 0
   }
-  if (target === 'clinical') return hours.clinical
-  if (target === 'volunteering') return hours.volunteering
-  if (target === 'shadowing') return hours.shadowing
-  if (target === 'research') return hours.research
-  if (target === 'activities') return hours.leadership
+  if (target === 'clinical') return totalsForCategory(state.experiences, state.experienceHourEntries, 'clinical').total
+  if (target === 'volunteering') return totalsForCategory(state.experiences, state.experienceHourEntries, 'volunteering').total
+  if (target === 'shadowing') return totalsForCategory(state.experiences, state.experienceHourEntries, 'shadowing').total
+  if (target === 'research') return totalsForCategory(state.experiences, state.experienceHourEntries, 'research').total
+  if (target === 'activities') return totalsForCategory(state.experiences, state.experienceHourEntries, 'leadership').total
   return goals[target]
 }
 

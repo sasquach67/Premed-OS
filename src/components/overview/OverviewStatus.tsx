@@ -11,10 +11,11 @@ import {
   Telescope,
   Users,
   ChevronDown,
+  Eye,
+  X,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PaceProjectionLine } from '@/components/common/PaceProjectionLine'
 import { MascotNote } from '@/components/common/MascotNote'
 import { NumberFlow } from '@/components/motion'
 import { Badge } from '@/components/ui/badge'
@@ -23,7 +24,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartContainer } from '@/components/ui/chart'
 import { Progress } from '@/components/ui/progress'
 import { daysUntil } from '@/lib/date'
-import { fmtGpa, gpaStats, hourTotals } from '@/lib/selectors'
+import { hourPaceProjection, totalsForCategory, totalsForExperience, type HourPaceProjection } from '@/lib/experienceHours'
+import { fmtGpa, gpaStats } from '@/lib/selectors'
 import { goalProgress, termGpaSeries } from '@/lib/overview'
 import type { ExperienceCategory } from '@/lib/types'
 import { useStore } from '@/store/store'
@@ -38,13 +40,15 @@ interface DomainRow {
   state: string
   progress?: number
   records?: Array<{ id: string; title: string; detail: string; state: string }>
+  projection?: HourPaceProjection | null
+  projectionKey?: string
+  projectionUnavailable?: string
 }
 
 export function WhereIStand() {
   const state = useStore()
   const [openRow, setOpenRow] = useState<string | null>(null)
   const gpa = gpaStats(state.courses)
-  const hours = hourTotals(state.experiences)
   const latestMcat = [...state.mcat.attempts]
     .filter((attempt) => attempt.total != null)
     .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')) || b.order - a.order)[0]
@@ -86,7 +90,8 @@ export function WhereIStand() {
     icon: typeof GraduationCap,
     accent: string,
   ): DomainRow => {
-    const current = hours[category]
+    const totals = totalsForCategory(state.experiences, state.experienceHourEntries, category)
+    const current = totals.total
     const hasGoal = goal > 0
     const records = state.experiences
       .filter((entry) => entry.category === category && !entry.deletedAt)
@@ -94,7 +99,7 @@ export function WhereIStand() {
       .map((entry) => ({
         id: entry.id,
         title: entry.org || 'Untitled position',
-        detail: `${entry.role || 'Role not recorded'} · ${Math.round(entry.hours)} recorded hours`,
+        detail: `${entry.role || 'Role not recorded'} · ${Math.round(totalsForExperience(state.experienceHourEntries, entry.id).total)} recorded hours`,
         state: entry.status === 'completed' ? 'ended' : entry.status,
       }))
     return {
@@ -107,6 +112,11 @@ export function WhereIStand() {
       state: !current ? 'not started' : hasGoal ? 'goal set' : 'no goal',
       progress: goalProgress(current, goal),
       records,
+      projection: hourPaceProjection(state.experiences, state.experienceHourEntries, category, goal),
+      projectionKey: `overview-hour-pace:${category}`,
+      projectionUnavailable: goal > 0
+        ? 'Not enough dated work yet. Add two dated logs on different days to calculate a rate.'
+        : 'Set an hours target to calculate a projection from dated logs.',
     }
   }
 
@@ -177,10 +187,6 @@ export function WhereIStand() {
             </div>
           </section>
         ))}
-        <PaceProjectionLine
-          id="overview-domain-pace"
-          insufficientLabel="Not enough dated activity yet to calculate an honest domain pace."
-        />
       </CardContent>
     </Card>
   )
@@ -199,12 +205,43 @@ function DomainStatusRow({ row, open, onOpenChange }: { row: DomainRow; open: bo
         {row.progress == null ? <span aria-hidden="true" /> : <Progress value={row.progress} className="h-1.5 border-0" aria-label={`${row.label} progress toward student-set goal`} />}
         {records.length > 0 ? <button type="button" onClick={() => onOpenChange(!open)} aria-expanded={open} aria-label={`${open ? 'Collapse' : 'Expand'} ${row.label} records`} className="flex items-center gap-1 rounded-md text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Badge variant="muted" className="justify-center px-1.5 text-[9px]">{row.state}</Badge><ChevronDown className={`size-3 transition-transform duration-150 motion-reduce:transition-none ${open ? 'rotate-180' : ''}`} /></button> : <Badge variant="muted" className="justify-center px-1.5 text-[9px]">{row.state}</Badge>}
       </div>
-      {open && records.length > 0 && <div className="mx-1.5 mb-1 rounded-xl border border-border bg-muted/25 p-2.5">
+      {open && records.length > 0 && <div className="mx-1.5 mb-1 space-y-2 rounded-xl border border-border bg-muted/25 p-2.5">
         <div className="space-y-1.5">{visibleRecords.map((record) => <Link key={record.id} to={row.route} className="flex items-center justify-between gap-2 rounded-lg border border-border/80 bg-card px-2.5 py-2 hover:bg-muted/45"><span className="min-w-0"><span className="block truncate text-xs font-extrabold">{record.title}</span><span className="block truncate text-[11px] font-semibold text-muted-foreground">{record.detail}</span></span><Badge variant="muted" className="shrink-0 px-1.5 text-[9px]">{record.state}</Badge></Link>)}</div>
-        {records.length > visibleRecords.length && <Link to={row.route} className="mt-2 block text-xs font-bold text-primary hover:underline">+{records.length - visibleRecords.length} more →</Link>}
+        {records.length > visibleRecords.length && <Link to={row.route} className="block text-xs font-bold text-primary hover:underline">+{records.length - visibleRecords.length} more →</Link>}
+        {row.projectionKey && <ProjectionDisclosure projection={row.projection} projectionKey={row.projectionKey} unavailable={row.projectionUnavailable ?? 'Not enough dated work yet.'} />}
       </div>}
     </div>
   )
+}
+
+function ProjectionDisclosure({ projection, projectionKey, unavailable }: { projection: HourPaceProjection | null | undefined; projectionKey: string; unavailable: string }) {
+  const dismissed = useStore((state) => Boolean(state.settings.projectionDismissals[projectionKey]))
+  const update = useStore((state) => state.update)
+  const [open, setOpen] = useState(false)
+  const restore = () => {
+    update((draft) => { delete draft.settings.projectionDismissals[projectionKey] })
+    setOpen(true)
+  }
+
+  if (!projection) {
+    return <p className="border-l-2 border-warning px-2 py-1 text-[11px] font-semibold text-muted-foreground">{unavailable}</p>
+  }
+  if (!open || dismissed) {
+    return <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={restore}><Eye className="size-3.5" />Show projection</Button>
+  }
+  const formatDate = (value: string) => new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  return (
+    <div className="rounded-lg border border-border bg-card p-2.5 text-[11px]">
+      <div className="mb-2 flex items-center justify-between gap-2"><span className="font-extrabold text-foreground">Projection from dated logs</span><Button type="button" size="icon" variant="ghost" className="size-6" aria-label="Hide projection" onClick={() => { update((draft) => { draft.settings.projectionDismissals[projectionKey] = true }); setOpen(false) }}><X className="size-3.5" /></Button></div>
+      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4"><ProjectionFact label="Window" value={`${formatDate(projection.observationStart)}–${formatDate(projection.observationEnd)}`} /><ProjectionFact label="Logged" value={`${projection.loggedHours.toFixed(1)}h`} /><ProjectionFact label="Rate" value={`${projection.weeklyRate.toFixed(1)}h / week`} /><ProjectionFact label="Remaining" value={`${projection.remainingHours.toFixed(1)}h`} /></div>
+      <p className="mt-2 font-semibold text-muted-foreground">At {projection.weeklyRate.toFixed(1)}h/week → remaining hours by <span className="font-extrabold text-foreground">{formatDate(projection.projectedDate)}</span>.</p>
+      {projection.estimatedHours > 0 && <p className="mt-1 text-[10px] font-semibold text-muted-foreground">{projection.estimatedHours.toFixed(1)}h of captured time is estimated backfill; it is excluded from this rate.</p>}
+    </div>
+  )
+}
+
+function ProjectionFact({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-md bg-muted/40 px-2 py-1.5"><span className="block text-[9px] font-extrabold uppercase tracking-wide text-muted-foreground">{label}</span><span className="block truncate font-bold text-foreground">{value}</span></div>
 }
 
 export function GpaStatTile() {
@@ -320,7 +357,7 @@ export function McatStatTile() {
 
 export function HoursStatTile() {
   const experiences = useStore((state) => state.experiences)
-  const totals = hourTotals(experiences)
+  const hourEntries = useStore((state) => state.experienceHourEntries)
   /* Clinical, Volunteering and Research only (03-overview §6.5a, corrected
    * Aug 2026). Shadowing and Extracurriculars are excluded because their own
    * specs reject an hours-first metric: Shadowing's headline is coverage, not
@@ -330,9 +367,9 @@ export function HoursStatTile() {
    * (07-extracurriculars §2, point 1). Drawing bars those pillars reject
    * makes the app contradict itself. */
   const rows = [
-    { label: 'Clinical', value: totals.clinical, color: 'var(--cat-clinical)' },
-    { label: 'Volunteer', value: totals.volunteering, color: 'var(--cat-volunteer)' },
-    { label: 'Research', value: totals.research, color: 'var(--cat-research)' },
+    { label: 'Clinical', value: totalsForCategory(experiences, hourEntries, 'clinical').total, color: 'var(--cat-clinical)' },
+    { label: 'Volunteer', value: totalsForCategory(experiences, hourEntries, 'volunteering').total, color: 'var(--cat-volunteer)' },
+    { label: 'Research', value: totalsForCategory(experiences, hourEntries, 'research').total, color: 'var(--cat-research)' },
   ]
   const total = rows.reduce((sum, row) => sum + row.value, 0)
   const largest = Math.max(...rows.map((row) => row.value), 1)

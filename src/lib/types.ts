@@ -122,7 +122,9 @@ export interface ExperienceEntry {
   role: string
   startDate?: string      // ISO date
   endDate?: string
-  hours: number
+  /** @deprecated v15 migrates this aggregate into an estimated child block.
+   * Kept temporarily while the Experience pillar editor is migrated. */
+  hours?: number
   description: string
   /** AMCAS "Most Meaningful" reflection (per-activity click-in). */
   mostMeaningful?: string
@@ -133,6 +135,19 @@ export interface ExperienceEntry {
   fileUrl?: string        // Drive link
   tags: string[]
   order: number
+}
+
+/** A dated, attributable unit of time under one enduring experience position. */
+export interface ExperienceHourEntry extends EntityEnvelope {
+  experienceId: ID
+  hours: number
+  kind: 'logged' | 'estimated'
+  /** Required for measured logs; deliberately absent for undated estimates. */
+  date?: string
+  /** Retained source bounds only — never synthesized into dated logs. */
+  periodStart?: string
+  periodEnd?: string
+  note?: string
 }
 
 export type AcademicTagColor =
@@ -1069,6 +1084,7 @@ export interface AppData {
   academics: AcademicTagSettings
   requirements: CollectionRecord<RequirementItem>[]
   experiences: CollectionRecord<ExperienceEntry>[]
+  experienceHourEntries: CollectionRecord<ExperienceHourEntry>[]
   persons: CollectionRecord<Person>[]
   organizations: CollectionRecord<Organization>[]
   tasks: CollectionRecord<TaskItem>[]
@@ -1095,7 +1111,7 @@ export interface AppData {
 
 /** Array-typed collections eligible for generic CRUD. */
 export type CollectionKey =
-  | 'courses' | 'requirements' | 'experiences' | 'persons' | 'organizations' | 'tasks' | 'timelineMilestones' | 'letters'
+  | 'courses' | 'requirements' | 'experiences' | 'experienceHourEntries' | 'persons' | 'organizations' | 'tasks' | 'timelineMilestones' | 'letters'
   | 'stories' | 'secondaries' | 'interviewQs' | 'schools' | 'resources'
   | 'tips' | 'focusTargets' | 'quarterlyGoals' | 'advisingQs'
   | 'captures' | 'notePages' | 'orgs'

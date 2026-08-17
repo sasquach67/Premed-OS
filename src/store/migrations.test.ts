@@ -7,6 +7,7 @@ import { migrateSyllabusV11 } from '@/store/migrations/syllabusV11'
 import { migrateSchoolStatusV12 } from '@/store/migrations/schoolStatusV12'
 import { migrateOverviewV13 } from '@/store/migrations/overviewV13'
 import { migrateTimelineV14 } from '@/store/migrations/timelineV14'
+import { migrateExperienceHoursV15 } from '@/store/migrations/experienceHoursV15'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
 
 function freshData(): AppData {
@@ -15,7 +16,33 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(14)
+  expect(CURRENT_STORE_VERSION).toBe(15)
+})
+
+describe('migrateExperienceHoursV15', () => {
+  it('preserves every legacy aggregate as one estimated block without inventing a date', () => {
+    const data = createSeedData()
+    data.experiences = [{ id: 'clinical', category: 'clinical', org: 'Clinic', role: 'Volunteer', startDate: '2026-06-01', hours: 24, description: '', status: 'active', tags: [], order: 0 }]
+    const frozen = structuredClone(data)
+    Object.freeze(data)
+    Object.freeze(data.experiences)
+    const out = migrateExperienceHoursV15(data)
+    expect(data).toEqual(frozen)
+    expect(out.experienceHourEntries).toEqual([expect.objectContaining({
+      experienceId: 'clinical', hours: 24, kind: 'estimated', periodStart: '2026-06-01',
+    })])
+    expect(out.experienceHourEntries[0]).not.toHaveProperty('date')
+  })
+
+  it('is idempotent and never clobbers existing hour entries', () => {
+    const data = createSeedData()
+    data.experiences = [{ id: 'clinical', category: 'clinical', org: 'Clinic', role: 'Volunteer', hours: 24, description: '', status: 'active', tags: [], order: 0 }]
+    data.experienceHourEntries = [{ id: 'measured', experienceId: 'clinical', hours: 3, kind: 'logged', date: '2026-08-01', createdAt: 1, updatedAt: 1, archived: false, order: 0 }]
+    const once = migrateExperienceHoursV15(data)
+    expect(once.experienceHourEntries).toHaveLength(2)
+    expect(migrateExperienceHoursV15(once)).toBe(once)
+    expect(once.experienceHourEntries.find((entry) => entry.id === 'measured')).toMatchObject({ hours: 3, kind: 'logged' })
+  })
 })
 
 describe('migrateTimelineV14', () => {
