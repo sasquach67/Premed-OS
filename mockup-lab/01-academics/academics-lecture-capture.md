@@ -4,18 +4,25 @@
 
 ## Behaviour
 
-- Begins in the existing class **Materials** tab. Recording and upload are equal paths; neither is required.
-- The flow is capture/upload → transcript review → explicit proposals for material links and coverage. Nothing is silently applied.
-- Every finding is a quote with timestamp. It describes what was said; it never labels importance, predicts an exam, or quantifies confidence.
-- The no-permission and no-material-match states are normal recovery paths, not errors that block studying.
+- Begins in the existing class **Materials** tab. Recording and upload are optional; the student can always continue with normal notes.
+- Recording policy is acknowledged once as a quiet reminder. Audio is local by default; any cloud or provider choice must be disclosed before transfer.
+- Transcript excerpts carry their quote and timestamp evidence. Proposed source links and coverage are reviewable and never silently applied.
+- No-audio, denied-permission, or unlinked material remains an honest, recoverable state—not a fabricated lesson or unit.
 
 ## Appearance
 
-- Same compact Class Hub banner and blue Materials underline as the owner surface.
-- Capture is one centered dashed drop/record zone, with a 46px blue orb and exactly two equal secondary entry paths.
-- Transcript findings are quiet solid quote strips with a blue left rule; evidence metadata is deliberately smaller and dimmer than the quote.
-- Proposals are solid review rows. Amber appears only for the bounded unavailable/unlinked explanation; no mascot is used on failure.
+- The shared class banner establishes the parent Materials destination. The three chips only switch capture states.
+- **Capture** is a recording desk: a single audio field sits at the visual center, with small tool controls around it and a policy note parked at the lower edge. It reads as an instrument, not a rectangular checklist.
+- **Review** is a transcript workspace: timestamp dots form a reading rail at left, evidence occupies the main page, and a narrow proposal rail holds the few actions that change data. Quotes are the primary visual material.
+- **Unavailable** is intentionally spacious and quiet: one dashed audio mark, one recovery choice, then the exact no-fabrication promise.
+- All work surfaces are solid-with-depth; only the shared banner floats.
+
+## Component translation
+
+- Use the existing Materials-level `Tabs`, `AnimatedFileUpload`, and `InfoTip`/policy disclosure owners; recording does not create a separate media component family.
+- The transcript workspace can use the app’s `Resizable` split primitive on larger screens and falls back to the stacked layout shown here on mobile.
+- Animate UI/SmoothUI may supply reduced-motion-safe upload and panel-transition behavior, but the app’s own tokens, source evidence, and record owner remain authoritative.
 
 ## Product views
 
-`start` shows local-first capture, `review` shows quote-and-timestamp evidence and explicit proposals, and `unavailable` shows microphone and matching recovery without an empty shell.
+`start` is optional local capture/upload, `review` is evidence-first transcript review, and `unavailable` is permission/no-audio recovery.

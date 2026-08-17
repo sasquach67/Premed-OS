@@ -8,7 +8,7 @@
 |---|---|
 | Requirement preview | See named requirement effects, confidence, caps, and downstream unlocks before placing a course. |
 | Plan comparison | Restore/compare named saved plans, understand substitutes, and export an honest advisor snapshot. |
-| MCAT decay | Explain the relative future relearning consequence of a scheduling choice. |
+| MCAT timing | Explain the relative future relearning consequence of a scheduling choice. |
 
 ## Behaviour
 
@@ -19,7 +19,19 @@
 
 ## Appearance
 
-- Reuses the term-column board with a compact solid decision rail. Selected course, preview diff, and locked term are separated by border/light, not by giant metrics.
-- The comparison view uses two equal solid plan cards so neither option looks recommended by color alone.
-- MCAT ordering uses small violet ordinal cells and explanatory sentences. No gauge, progress bar, or composite measure appears.
-- The standard A/B/C planning composition remains available in the existing Planner source; this page supplies the missing decision states rather than replacing its board.
+- **Requirement preview** preserves the planner’s term board as the working surface. Compact course tickets live inside real terms; the selected ticket has a small edge mark and the narrow inspector describes consequences. This prevents the decision from becoming a stack of generic rows.
+- **Plan comparison** is two paper-like plan sheets bridged by a deliberately neutral `OR`. The course order itself is the visual comparison; consequences appear as small editorial notes instead of metric cards.
+- **MCAT timing** is a reading path rather than a ranking table: violet ordinal dots mark the relative order and the sentence underneath names the evidence. It contains no gauge, progress bar, readiness score, or retention percentage.
+- Every work surface is solid-with-depth. Only the shared Planning mode pill uses glass.
+
+## Component translation
+
+- Keep `ModeSwitch`, `Tabs`, Planner, `TrackerTable`, and `Collapsible` as the only owners. The compact course tickets are configured `InteractiveCard` compositions, not a new planner-card system.
+- The comparison sheets use a page-owned CSS composition; 21st.dev is a density/layout reference only. They must not replace the planner’s existing state or interactions.
+- Animate UI may enhance tabs, disclosure, and view transitions with the shared reduced-motion rules. It never supplies palette, spacing, or planning data.
+
+## States
+
+- Requirement preview includes catalog staleness, named/inferred mapping distinction, double-count cap, downstream unlock, and an editable-term action.
+- Plan comparison includes a restore action and an honest advisor export boundary.
+- MCAT timing includes the no-MCAT-date planning-window fallback and explicitly calls out missing tracked-topic information.

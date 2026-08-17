@@ -12,20 +12,27 @@
 
 ## Behaviour
 
-- This is an extension of the existing **Materials** tab, never a sixth class tab.
-- Canvas is read-only calendar context: no Canvas token, no write action, no silent overwrite. A connected class with no items is ordinary, not an error.
-- Catalog entries state source/permission; unknown-origin material is private and never shared.
-- Generation is impossible without selected course material or the student’s own notes. Output keeps its source links and generated ownership marker.
+- This extends the existing **Materials** tab; it never adds a sixth class tab.
+- Canvas is read-only calendar context: no Canvas token, no write action, and no silent overwrite. A connected course with no items is ordinary.
+- Catalog entries keep their source/permission. Unknown-origin material remains private.
+- Generation cannot run without selected student-supplied course material. Its output retains source links and a generated ownership marker.
 
 ## Appearance
 
-- Reuses the existing Class Hub banner and blue Materials underline; the active view is a solid level-3 filter chip below it.
-- Resource rows are dense solid surfaces, each with a 30px unit cell, source badge, and quiet metadata; only the banner floats.
-- The safety rule is a restrained amber dashed note, never a blocking modal. The empty state is centered and singular, with one obvious recovery action.
-- Normal laptop layout is a 1.35 / .65 split; it stacks on narrow screens without losing the source information.
+- The shared Class Hub banner and Materials underline establish place. Below it, the three view chips are quiet tools—not another tab system.
+- **Resource catalog** is a material shelf: a narrow unit spine at left, a selected-unit canvas of compact object tiles at center, and one restrained empty-state rail. The hierarchy is unit → material → provenance, so the source badge is visible without turning every item into a long row.
+- **Calendar feed** is a left-to-right handoff trail. Its vertical event thread makes the calendar source, one proposed change, and the student-controlled course record feel sequential rather than like three settings cards.
+- **Study guide** is a source map. Small selected material nodes converge into a single source-linked output node; the linework expresses grounding without claiming that the model knows more than the inputs.
+- Dense material surfaces are solid-with-depth. The banner is the only floating/glass region. The course-blue bloom is used only for source selection and the active view.
+
+## Component translation
+
+- Use the existing `ThreeLevelNav` / Tabs owner for the class hierarchy, `ResourceGrid` for catalog objects, and `AnimatedFileUpload` for adding a real file.
+- The resource shelf borrows 21st.dev’s information-density approach only; it does not introduce another card or grid owner.
+- Calendar review is a configured `InteractiveCard`/`CenterPeek` decision surface when it needs detail. Animate UI is a motion reference for the view transition, re-skinned to the Premed OS tokens.
 
 ## States
 
-- Catalog: populated and unknown-origin private warning.
-- Calendar feed: explain handoff, changed-date review, connected-but-empty, and disconnect result.
-- Study guide: selected sources and no-eligible-material state. Provider failure remains a scoped error state in the later build brief.
+- Catalog shows populated sources, an explicit unknown-origin private treatment, and the first-action empty rail.
+- Calendar feed shows the handoff, a date conflict that must be reviewed, connected-but-empty, and the non-destructive disconnect consequence.
+- Study guide shows selected sources and the no-eligible-material recovery. Provider failure remains a scoped error state for the eventual build brief.
