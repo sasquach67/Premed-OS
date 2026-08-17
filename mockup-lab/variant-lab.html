@@ -463,6 +463,52 @@ const profiles = [
     ]
   },
   {
+    id:"academics-materials-extensions",group:"Academics",name:"Materials extensions",status:"proposed",
+    path:"01-academics/academics-materials-extensions.html",
+    desc:"The existing Materials tab gains catalog permission, calendar-feed review, and student-grounded generation states.",
+    variants:[
+      ["Resource catalog","Source ownership and private-by-default assessment materials."],
+      ["Calendar feed","Path A review of imported calendar dates before they become plan facts."],
+      ["Study guide","Grounded generation with the student's selected class material."]
+    ]
+  },
+  {
+    id:"academics-lecture-capture",group:"Academics",name:"Lecture capture",status:"proposed",
+    path:"01-academics/academics-lecture-capture.html",
+    desc:"Optional local-first lecture capture with quote-and-timestamp review, never an importance prediction.",
+    variants:[
+      ["Capture","Optional local recording or upload begins from Materials."],
+      ["Review","Quotes and timestamps become explicit material proposals."],
+      ["Unavailable","No permission and no match remain recoverable states."]
+    ]
+  },
+  {
+    id:"academics-planning-decisions",group:"Academics",name:"Planner decision states",status:"proposed",
+    path:"01-academics/academics-planning-decisions.html",
+    desc:"Requirement preview, saved-plan comparison, and a ranked MCAT-decay explanation inside Planning.",
+    variants:[
+      ["Requirement preview","A transparent suggested next term is never an enrollment command."],
+      ["Plan comparison","A saved plan stays distinct from the plan currently being edited."],
+      ["MCAT decay","A ranked, dated explanation replaces a generic stale-study warning."]
+    ]
+  },
+  {
+    id:"academics-planning-cold-start",group:"Academics",name:"Planning empty state",status:"proposed",
+    path:"01-academics/academics-planning-cold-start.html",native:true,keys:["A"],
+    desc:"Planning asks for one durable course fact rather than showing empty metrics or a fake degree plan.",
+    variants:[["One fact first","A quiet Planning-specific cold state, distinct from the Daily syllabus launchpad."]]
+  },
+  {
+    id:"academics-term-rollover",group:"Academics",name:"Term rollover",status:"proposed",
+    path:"01-academics/academics-term-rollover.html",
+    desc:"A bounded end-of-term transition separates archived course records from the next home for topics.",
+    variants:[
+      ["Rollover ritual","Three topic fates make the student’s term-end choices explicit."],
+      ["Paused work","Every existing plan is paused rather than silently carried forward."],
+      ["January re-offer","One short, low-pressure re-offer resumes nothing automatically."]
+    ]
+  },
+  {
     id:"overview",group:"Overview",name:"Overview control panel",status:"approved",
     path:"03-overview/overview-bento-control-panel.html",
     desc:"Cross-pillar command center, roadmap, tasks, and readiness.",
@@ -1148,8 +1194,15 @@ const orderedProfiles = [
   Object.assign(asProductViews(byId["syllabus-import"],"Import step",["upload","review","re-import"]),
     {group:"Academics & GPA",section:"Daily · supporting flows",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["class-types"],"Class example",["comparison","stem","writing"]),
-    {group:"Academics & GPA",section:"Daily · supporting flows",depth:2,fitCanvas:true,authoredViews:"class-types"}),
-  Object.assign(byId.planner,{group:"Academics & GPA",name:"Planner",section:"Planning",depth:1,fitCanvas:true}),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"class-types"}),
+  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","canvas","generate"]),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
+  Object.assign(asProductViews(byId["academics-lecture-capture"],"Capture state",["start","review","unavailable"]),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
+  Object.assign(byId.planner,{group:"Academics",name:"Planner",section:"Planning",depth:1,fitCanvas:true}),
+  Object.assign(asProductViews(byId["academics-planning-decisions"],"Decision state",["preview","compare","decay"]),
+    {group:"Academics",section:"Planning",depth:2,fitCanvas:true,passViewToSource:true}),
+  Object.assign(byId["academics-planning-cold-start"],{group:"Academics",section:"Planning",depth:2,fitCanvas:true}),
   Object.assign(asProductViews(byId["requirements"],"Tracker section",["audit","requirements","prior-credit"]),
     {group:"Academics & GPA",section:"Planning",depth:1,fitCanvas:true,authoredViews:"wrap-per-view"}),
   Object.assign(asProductViews(byId["grades-archive"],"Record view",["ledger","gpa","what-if"]),
