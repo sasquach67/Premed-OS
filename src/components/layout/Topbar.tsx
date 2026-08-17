@@ -59,7 +59,10 @@ export function Topbar({ onMenu, onShowDesktopSidebar, desktopSidebarHidden = fa
       <div className="mx-auto flex w-full max-w-[84rem] min-w-0 items-center gap-2 px-4 py-2.5 md:px-8">
         <Button variant="ghost" size="icon" className="shrink-0 lg:hidden" onClick={onMenu} aria-label="Open menu"><Menu className="size-5" /></Button>
         {desktopSidebarHidden && onShowDesktopSidebar && <Button variant="ghost" size="icon" className="hidden shrink-0 lg:inline-flex" onPointerDown={(event) => { event.preventDefault(); onShowDesktopSidebar() }} aria-label="Show sidebar"><PanelLeftOpen className="size-5" /></Button>}
-        <Breadcrumb className="hidden min-w-0 xl:block">
+        {/* Keep a stable context column so a deep breadcrumb does not visually
+         * crowd the command field. The search affordance then begins at a
+         * predictable point across Overview detail routes. */}
+        <Breadcrumb className="hidden w-36 shrink-0 xl:block">
           <BreadcrumbList className="h-9 flex-nowrap gap-1 text-xs font-bold sm:gap-1">
             <BreadcrumbItem className="min-w-0">
               <BreadcrumbLink asChild>
