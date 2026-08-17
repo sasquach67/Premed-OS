@@ -9,7 +9,7 @@ import {
   Target,
   X,
 } from 'lucide-react'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { CenterPeek, type RecordOpenMode } from '@/components/common/CenterPeek'
 import { MascotNote } from '@/components/common/MascotNote'
@@ -73,6 +73,12 @@ function QuickLink({ to, icon: Icon, color, title, detail }: { to: string; icon:
       <span className="min-w-0"><span className="block text-sm font-extrabold">{title}</span><span className="block truncate text-xs text-muted-foreground">{detail}</span></span>
     </Link>
   )
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10 * 1024 ? 1 : 0)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} MB`
 }
 
 function currentForTarget(target: keyof Goals, goals: Goals) {
@@ -251,17 +257,21 @@ export function ActivityAndCapture() {
   const softDeleteItems = useStore((state) => state.softDeleteItems)
   const undoRecovery = useStore((state) => state.undoRecovery)
   const update = useStore((state) => state.update)
+  const createOverviewFileCapture = useStore((state) => state.createOverviewFileCapture)
   const toast = useToast()
   const [value, setValue] = useState('')
   const [url, setUrl] = useState('')
   const [localOnly, setLocalOnly] = useState(false)
-  const [captureKind, setCaptureKind] = useState<'thought' | 'link'>('thought')
+  const [captureKind, setCaptureKind] = useState<'thought' | 'link' | 'file'>('thought')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [isSavingFile, setIsSavingFile] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [saved, setSaved] = useState(false)
+  const [saved, setSaved] = useState<'thought' | 'link' | 'file' | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!saved) return
-    const timer = window.setTimeout(() => setSaved(false), 4500)
+    const timer = window.setTimeout(() => setSaved(null), 4500)
     return () => window.clearTimeout(timer)
   }, [saved])
 
@@ -285,9 +295,37 @@ export function ActivityAndCapture() {
     logActivity('essays', sourceUrl ? `Captured Story Bank link: ${trimmed}` : `Captured Story Bank thought: ${trimmed}`)
   }
 
-  function submit(event: FormEvent) {
+  function clearSelectedFile() {
+    setSelectedFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  async function submit(event: FormEvent) {
     event.preventDefault()
     const trimmedUrl = url.trim()
+    if (captureKind === 'file') {
+      if (!selectedFile || isSavingFile) return
+      setError(null)
+      setIsSavingFile(true)
+      let id: string | null = null
+      try {
+        id = await createOverviewFileCapture(selectedFile, { commentary: value.trim(), localOnly })
+      } catch {
+        id = null
+      } finally {
+        setIsSavingFile(false)
+      }
+      if (!id) {
+        setError('We couldn’t save this file on this device. Try again.')
+        return
+      }
+      clearSelectedFile()
+      setValue('')
+      setLocalOnly(false)
+      setError(null)
+      setSaved('file')
+      return
+    }
     if (captureKind === 'link') {
       try {
         const parsed = new URL(trimmedUrl)
@@ -303,7 +341,7 @@ export function ActivityAndCapture() {
     setUrl('')
     setLocalOnly(false)
     setError(null)
-    setSaved(true)
+    setSaved(captureKind)
   }
 
   function captureForActivity(entry: ActivityEvent) {
@@ -388,22 +426,45 @@ export function ActivityAndCapture() {
             <Badge variant="muted">Story Bank</Badge>
           </div>
           <div className="flex items-center gap-1" role="tablist" aria-label="Capture type">
-            <Button type="button" size="sm" variant={captureKind === 'thought' ? 'secondary' : 'ghost'} onClick={() => { setCaptureKind('thought'); setError(null) }}>Thought</Button>
-            <Button type="button" size="sm" variant={captureKind === 'link' ? 'secondary' : 'ghost'} onClick={() => { setCaptureKind('link'); setError(null) }}><Link2 className="size-3.5" />Link</Button>
-            <Button type="button" size="sm" variant="ghost" disabled title="File capture needs a local attachment store before it can save safely."><FileUp className="size-3.5" />File</Button>
+            <Button type="button" size="sm" role="tab" aria-selected={captureKind === 'thought'} variant={captureKind === 'thought' ? 'secondary' : 'ghost'} onClick={() => { setCaptureKind('thought'); setError(null); setSaved(null) }}>Thought</Button>
+            <Button type="button" size="sm" role="tab" aria-selected={captureKind === 'link'} variant={captureKind === 'link' ? 'secondary' : 'ghost'} onClick={() => { setCaptureKind('link'); setError(null); setSaved(null) }}><Link2 className="size-3.5" />Link</Button>
+            <Button type="button" size="sm" role="tab" aria-selected={captureKind === 'file'} variant={captureKind === 'file' ? 'secondary' : 'ghost'} onClick={() => { setCaptureKind('file'); setError(null); setSaved(null) }}><FileUp className="size-3.5" />File</Button>
           </div>
           {captureKind === 'thought'
             ? <Textarea id="overview-capture" value={value} onChange={(event) => { setValue(event.target.value); setError(null) }} rows={2} placeholder="Type or paste a thought…" />
-            : <><Input id="overview-capture-link" aria-label="Link to save in Story Bank" value={url} onChange={(event) => { setUrl(event.target.value); setError(null) }} placeholder="https://…" /><Input aria-label="Optional note about this link" value={value} onChange={(event) => setValue(event.target.value)} placeholder="Optional note" /></>}
-          {error && <p role="alert" className="border-l-2 border-destructive pl-2 text-xs font-semibold text-destructive">{error} <Button type="button" size="sm" variant="link" onClick={() => document.getElementById(captureKind === 'link' ? 'overview-capture-link' : 'overview-capture')?.focus()}>Retry</Button></p>}
-          {saved && <p role="status" className="rounded-lg border border-success/30 bg-success/10 px-2.5 py-2 text-xs font-bold text-[color-mix(in_srgb,var(--success)_55%,var(--foreground))]">Saved to Story Bank. <Link className="underline underline-offset-2" to="/essays">Open it</Link></p>}
-          <p className="text-[11px] font-semibold text-muted-foreground">File capture is reserved until this device has a safe local attachment store. Atlas connection: reserved for a later phase.</p>
+            : captureKind === 'link'
+              ? <><Input id="overview-capture-link" aria-label="Link to save in Story Bank" value={url} onChange={(event) => { setUrl(event.target.value); setError(null) }} placeholder="https://…" /><Input aria-label="Optional note about this link" value={value} onChange={(event) => setValue(event.target.value)} placeholder="Optional note" /></>
+              : <div className="space-y-2 rounded-lg border border-border bg-muted/35 p-2.5">
+                <input
+                  ref={fileInputRef}
+                  id="overview-capture-file"
+                  type="file"
+                  className="sr-only"
+                  onChange={(event) => {
+                    setSelectedFile(event.currentTarget.files?.item(0) ?? null)
+                    setError(null)
+                    setSaved(null)
+                  }}
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button id="overview-capture-file-choose" type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}><FileUp className="size-3.5" />{selectedFile ? 'Choose another file' : 'Choose file'}</Button>
+                  {selectedFile
+                    ? <span className="min-w-0 flex-1 truncate text-xs font-bold" aria-live="polite" title={selectedFile.name}>{selectedFile.name} · {formatFileSize(selectedFile.size)}</span>
+                    : <span className="text-xs font-semibold text-muted-foreground">Select a file to save to Story Bank.</span>}
+                  {selectedFile && <Button type="button" size="icon" variant="ghost" onClick={clearSelectedFile} aria-label={`Remove ${selectedFile.name}`} title="Remove selected file"><X className="size-3.5" /></Button>}
+                </div>
+                <Input aria-label="Optional note about this file" value={value} onChange={(event) => setValue(event.target.value)} placeholder="Optional note" />
+                <p className="text-[11px] font-semibold text-muted-foreground">File bytes stay on this device and are not included in JSON backup or restore.</p>
+              </div>}
+          {error && <p role="alert" className="border-l-2 border-destructive pl-2 text-xs font-semibold text-destructive">{error} <Button type="button" size="sm" variant="link" onClick={() => document.getElementById(captureKind === 'link' ? 'overview-capture-link' : captureKind === 'file' ? 'overview-capture-file-choose' : 'overview-capture')?.focus()}>Retry</Button></p>}
+          {saved && <p role="status" className="rounded-lg border border-success/30 bg-success/10 px-2.5 py-2 text-xs font-bold text-[color-mix(in_srgb,var(--success)_55%,var(--foreground))]">{saved === 'file' ? 'Saved file to Story Bank.' : 'Saved to Story Bank.'} <Link className="underline underline-offset-2" to="/essays">Open it</Link></p>}
+          {captureKind !== 'file' && <p className="text-[11px] font-semibold text-muted-foreground">Atlas connection: reserved for a later phase.</p>}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <label htmlFor="overview-capture-local" className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground">
               <Checkbox id="overview-capture-local" checked={localOnly} onCheckedChange={(checked) => setLocalOnly(Boolean(checked))} />
               Keep local; never sync
             </label>
-            <Button type="submit" disabled={captureKind === 'thought' ? !value.trim() : !url.trim()}><Plus className="size-4" />Capture</Button>
+            <Button type="submit" disabled={captureKind === 'thought' ? !value.trim() : captureKind === 'link' ? !url.trim() : !selectedFile || isSavingFile}><Plus className="size-4" />{isSavingFile ? 'Saving…' : 'Capture'}</Button>
           </div>
         </form>
       </CardContent>
