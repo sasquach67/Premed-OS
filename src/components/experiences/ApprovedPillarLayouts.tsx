@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react'
 import type { ExperienceCategory, ExperienceEntry } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { PillarSceneHeader } from './PillarSceneHeader'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 /** Real grouped entity (site / org / physician / lab) from ExperiencePillar. */
 export type PillarEntity = {
@@ -12,6 +14,7 @@ export type PillarEntity = {
   status: ExperienceEntry['status']
   lastActivityLabel: string
   stale: boolean
+  experienceLogTargets: Array<{ id: string; label: string }>
 }
 
 type ExperienceLayoutProps = {
@@ -26,6 +29,7 @@ type ExperienceLayoutProps = {
   selectedKey?: string
   onSelectEntity?: (key: string) => void
   onAddEntity: () => void
+  onAddDatedHours: (experienceId: string, date: string, hours: number, note?: string) => void
 }
 
 type Entity = {
@@ -35,6 +39,7 @@ type Entity = {
   hours: string
   tail: string
   tone?: 'primary' | 'warn' | 'quiet'
+  experienceLogTargets: Array<{ id: string; label: string }>
 }
 
 const PILLAR_META = {
@@ -45,7 +50,7 @@ const PILLAR_META = {
 } satisfies Record<ExperienceLayoutProps['category'], { title: string; subtitle: string; add: string }>
 
 export function ApprovedExperienceLayout({
-  category, rows, entities, goal, totalHours, selectedKey, onSelectEntity, onAddEntity,
+  category, rows, entities, goal, totalHours, selectedKey, onSelectEntity, onAddEntity, onAddDatedHours,
 }: ExperienceLayoutProps) {
   const meta = PILLAR_META[category]
   const cards: Entity[] = entities.map((entity) => ({
@@ -55,6 +60,7 @@ export function ApprovedExperienceLayout({
     hours: `${Math.round(entity.totalHours)}h`,
     tail: entity.status === 'completed' ? 'ended' : entity.status,
     tone: entity.stale ? 'warn' : undefined,
+    experienceLogTargets: entity.experienceLogTargets,
   }))
   const [activeId, setActiveId] = useState(selectedKey ?? cards[0]?.id ?? '')
   const active = cards.find((entity) => entity.id === activeId) ?? cards[0]
@@ -71,7 +77,7 @@ export function ApprovedExperienceLayout({
       </PillarSceneHeader>
       <PositionRecords category={category} entities={cards} />
       <EntityRail category={category} entities={cards} activeId={activeId} addLabel={meta.add} onSelect={selectEntity} onAdd={onAddEntity} />
-      {active && <PositionDetail entity={active} />}
+      {active && <PositionDetail key={active.id} entity={active} onAddDatedHours={onAddDatedHours} />}
     </div>
   )
 }
@@ -170,7 +176,23 @@ function EntityRail({ category, entities, activeId, addLabel, onSelect, onAdd }:
   )
 }
 
-function PositionDetail({ entity }: { entity: Entity }) {
+function PositionDetail({ entity, onAddDatedHours }: {
+  entity: Entity
+  onAddDatedHours: (experienceId: string, date: string, hours: number, note?: string) => void
+}) {
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [hours, setHours] = useState('')
+  const [note, setNote] = useState('')
+  const [experienceId, setExperienceId] = useState(entity.experienceLogTargets[0]?.id ?? '')
+
+  function submitLog() {
+    const parsedHours = Number(hours)
+    if (!experienceId || !date || !(parsedHours > 0)) return
+    onAddDatedHours(experienceId, date, parsedHours, note.trim() || undefined)
+    setHours('')
+    setNote('')
+  }
+
   return (
     <section className="rounded-[14px] border bg-card p-[18px] shadow-sm">
       <div className="grid gap-3 rounded-xl border bg-muted/20 px-[17px] py-[15px] sm:grid-cols-[1fr_auto]">
@@ -181,7 +203,21 @@ function PositionDetail({ entity }: { entity: Entity }) {
         <div><strong className="font-display text-[38px] font-extrabold leading-none tabular-nums">{entity.hours.replace('h', '')}</strong><span className="block text-[10px] font-extrabold uppercase tracking-[0.06em] text-muted-foreground">recorded hours</span></div>
         <div className="border-t border-dashed border-border pt-2 sm:col-span-2">
           <StatusChip tone={entity.tone === 'warn' ? 'warn' : 'quiet'}>{entity.tail}</StatusChip>
-          <p className="mt-2 text-[12px] font-semibold leading-relaxed text-muted-foreground">Dated hour history is not available for this position yet, so Premed OS does not show a weekly rate, trend, projection, or sample shifts.</p>
+          <p className="mt-2 text-[12px] font-semibold leading-relaxed text-muted-foreground">Add the real date and time from a shift or session. Premed OS only calculates pace from these dated logs.</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-[9.5rem_5.5rem_minmax(0,1fr)_auto]">
+            <Input aria-label="Date worked" type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+            <Input aria-label="Hours worked" type="number" min="0.25" step="0.25" inputMode="decimal" placeholder="Hours" value={hours} onChange={(event) => setHours(event.target.value)} />
+            <Input aria-label="Optional log note" placeholder="Optional note" value={note} onChange={(event) => setNote(event.target.value)} />
+            <Button type="button" size="sm" onClick={submitLog} disabled={!date || !(Number(hours) > 0) || entity.experienceLogTargets.length === 0}>Log</Button>
+          </div>
+          {entity.experienceLogTargets.length > 1 && (
+            <label className="mt-2 flex items-center gap-2 text-[11px] font-bold text-muted-foreground">
+              <span>Position</span>
+              <select aria-label="Position for this log" value={experienceId} onChange={(event) => setExperienceId(event.target.value)} className="h-8 rounded-md border bg-background px-2 text-foreground">
+                {entity.experienceLogTargets.map((target) => <option key={target.id} value={target.id}>{target.label}</option>)}
+              </select>
+            </label>
+          )}
         </div>
       </div>
     </section>

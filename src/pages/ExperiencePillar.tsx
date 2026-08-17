@@ -10,8 +10,8 @@ import {
 } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { ROUTE_MAP } from '@/app/routes'
-import type { ExperienceCategory, ExperienceEntry, Goals, NotePage, StoryEntry } from '@/lib/types'
-import { hourTotals } from '@/lib/selectors'
+import type { ExperienceCategory, ExperienceEntry, ExperienceHourEntry, Goals, NotePage, StoryEntry } from '@/lib/types'
+import { totalsForCategory, totalsForExperience } from '@/lib/experienceHours'
 import { uid } from '@/lib/id'
 import { cn } from '@/lib/utils'
 import { ApprovedExperienceLayout } from '@/components/experiences/ApprovedPillarLayouts'
@@ -42,6 +42,7 @@ type ExperienceEntity = {
   lastActivityLabel: string
   stale: boolean
   openLoops: string[]
+  experienceLogTargets: Array<{ id: string; label: string }>
 }
 
 const ROUTE_BY_CATEGORY: Record<ExperienceCategory, string> = {
@@ -76,6 +77,7 @@ const RESEARCH_STAGES = ['Question', 'Protocol', 'Data', 'Analysis', 'Output']
 export function ExperiencePillar({ category }: { category: ExperienceCategory }) {
   const navigate = useNavigate()
   const experiences = useStore((s) => s.experiences)
+  const experienceHourEntries = useStore((s) => s.experienceHourEntries)
   const goals = useStore((s) => s.goals)
   const notePages = useStore((s) => s.notePages)
   const addItem = useStore((s) => s.addItem)
@@ -89,7 +91,7 @@ export function ExperiencePillar({ category }: { category: ExperienceCategory })
     () => experiences.filter((entry) => entry.category === category).sort(sortByOrderThenDate),
     [experiences, category]
   )
-  const entities = useMemo(() => buildExperienceEntities(rows, category), [rows, category])
+  const entities = useMemo(() => buildExperienceEntities(rows, category, experienceHourEntries), [rows, category, experienceHourEntries])
   const notes = useMemo(
     () => notePages.filter((note) => note.pillar === routeId || note.pillar === `pillar-${routeId}`).sort((a, b) => b.updatedAt - a.updatedAt),
     [notePages, routeId]
@@ -98,9 +100,8 @@ export function ExperiencePillar({ category }: { category: ExperienceCategory })
   const [createOpen, setCreateOpen] = useState(false)
   const selectedEntity = entities.find((entity) => entity.key === selectedEntityKey) ?? entities[0] ?? null
 
-  const totals = hourTotals(experiences)
   const goal = goals[GOAL_KEY[category]]
-  const totalHours = Math.round(totals[category])
+  const totalHours = Math.round(totalsForCategory(experiences, experienceHourEntries, category).total)
 
   function addEntry(patch: ExperiencePatch = {}) {
     const entry: ExperienceEntry = {
@@ -125,6 +126,24 @@ export function ExperiencePillar({ category }: { category: ExperienceCategory })
 
   function patchEntry(id: string, patch: ExperiencePatch) {
     patchItem('experiences', id, patch as Partial<ExperienceEntry>)
+  }
+
+  function addDatedHours(experienceId: string, date: string, hours: number, note?: string) {
+    const now = Date.now()
+    const entry: ExperienceHourEntry = {
+      id: uid(),
+      experienceId,
+      date,
+      hours,
+      kind: 'logged',
+      note,
+      createdAt: now,
+      updatedAt: now,
+      archived: false,
+      order: experienceHourEntries.length,
+    }
+    addItem('experienceHourEntries', entry)
+    logActivity(routeId, `Logged ${hours} hours in ${route.label.toLowerCase()}`)
   }
 
   function requestLetter(entry: ExperienceEntry) {
@@ -185,6 +204,7 @@ export function ExperiencePillar({ category }: { category: ExperienceCategory })
         notes={notes}
         onSelect={(entity) => setSelectedEntityKey(entity.key)}
         onAddEntity={() => setCreateOpen(true)}
+        onAddDatedHours={addDatedHours}
         onAddEntry={addEntry}
         onPatchEntry={patchEntry}
         onRemoveEntry={(id) => removeItem('experiences', id)}
@@ -217,6 +237,7 @@ type ApprovedPillarProps = {
   notes: NotePage[]
   onSelect: (entity: ExperienceEntity) => void
   onAddEntity: () => void
+  onAddDatedHours: (experienceId: string, date: string, hours: number, note?: string) => void
   onAddEntry: (patch?: ExperiencePatch) => ExperienceEntry
   onPatchEntry: (id: string, patch: ExperiencePatch) => void
   onRemoveEntry: (id: string) => void
@@ -226,7 +247,7 @@ type ApprovedPillarProps = {
 }
 
 function ApprovedPillarPage(props: ApprovedPillarProps) {
-  const { category, rows, entities, goal, totalHours, selectedEntity, onSelect, onAddEntity } = props
+  const { category, rows, entities, goal, totalHours, selectedEntity, onSelect, onAddEntity, onAddDatedHours } = props
 
   return (
     <ApprovedExperienceLayout
@@ -241,6 +262,7 @@ function ApprovedPillarPage(props: ApprovedPillarProps) {
         if (match) onSelect(match)
       }}
       onAddEntity={onAddEntity}
+      onAddDatedHours={onAddDatedHours}
     />
   )
 }
@@ -1097,7 +1119,7 @@ function siteSummaries(rows: ExperienceEntry[]) {
   return [...map.values()]
 }
 
-function buildExperienceEntities(rows: ExperienceEntry[], category: ExperienceCategory): ExperienceEntity[] {
+function buildExperienceEntities(rows: ExperienceEntry[], category: ExperienceCategory, hourEntries: ExperienceHourEntry[]): ExperienceEntity[] {
   const grouped = new Map<string, ExperienceEntry[]>()
 
   rows.forEach((entry) => {
@@ -1111,7 +1133,7 @@ function buildExperienceEntities(rows: ExperienceEntry[], category: ExperienceCa
       const first = sorted[0]
       const latest = sorted.reduce((best, row) => (latestDateValue(row) > latestDateValue(best) ? row : best), first)
       const earliest = sorted.reduce((best, row) => (dateValue(row.startDate) < dateValue(best.startDate) ? row : best), first)
-      const totalHours = sorted.reduce((sum, row) => sum + Number(row.hours || 0), 0)
+      const totalHours = sorted.reduce((sum, row) => sum + totalsForExperience(hourEntries, row.id).total, 0)
       const status: ExperienceEntry['status'] = sorted.some((row) => row.status === 'active')
         ? 'active'
         : sorted.some((row) => row.status === 'planned')
@@ -1133,6 +1155,7 @@ function buildExperienceEntities(rows: ExperienceEntry[], category: ExperienceCa
         lastActivityLabel: lastActivityLabelFor(latest),
         stale: daysBetween(latestDateValue(latest), Date.now()) > 45 && status === 'active',
         openLoops: entityOpenLoops(category, sorted),
+        experienceLogTargets: sorted.map((row, index) => ({ id: row.id, label: row.role || `Position ${index + 1}` })),
       }
     })
     .sort((a, b) => b.totalHours - a.totalHours || a.name.localeCompare(b.name))
