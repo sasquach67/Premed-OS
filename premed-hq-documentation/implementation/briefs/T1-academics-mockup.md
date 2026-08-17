@@ -1,208 +1,211 @@
-# T1 · Academics — mockup coverage gaps
+# T1 · Academics — remaining mockup coverage
 
 **Stage:** A · NOT DRAWN
-**Scope:** Academics only: Daily and Planning. This is a drawing brief. It does
-not authorize `src/`, store, service, or manifest changes.
+
+**Scope:** Academics only: Daily and Planning. This is a drawing brief. It
+does not authorize changes to `src/`, the persisted store, Supabase, cloud
+configuration, or `BUILD-MANIFEST.md`.
 
 ## 1. Fidelity audit — completed before this brief
 
 ### a. Spec → paper
 
-The existing mockups cover the primary Daily flow (Class Center, Assignments,
-Class Hub, active-recall session, syllabus import, class types, and exam-prep)
-and the primary Planning flow (Planner, Tar Heel Tracker, and Grades & Archive).
-They do **not** yet give the following ruled work a product surface. A URL field,
-a toast, or a line of explanatory copy is not a surface for an interaction.
+The primary Academics surfaces are drawn, and the prior Stage-A pass added
+Materials extensions, lecture capture, Planning decisions, Planning cold start,
+and term rollover. Two ruled surfaces still have no actual mockup source:
+`variant-lab.html` currently gives each only a generic `deepState(...)`
+placeholder. A sentence in the lab navigation is not a product surface.
 
-| Ruled work with no usable paper surface | Binding source | What is absent now |
+| Ruled feature without a usable paper surface | Binding source | What must become visible |
 |---|---|---|
-| **Canvas Path A in Academics** | `tabs/01-academics.md` §4.1-O, `implementation/integration-map.md` §0 | A course-level Calendar/Canvas connection state; read-only import preview; empty connected-course state; conflict/diff review; last-sync/error/revoke states. The Class Hub's `Import from Canvas` label and current `canvasUrl` field do not draw the required flow. |
-| **Exam/resource catalog** | `01-academics.md` §4.1-P | The Materials tab has generic file rows, but no catalog entry with source/permission status, unit coverage, answer-key/timed metadata, private `unknown origin` treatment, or take/score/mistake hand-off. |
-| **Lecture capture** | `01-academics.md` §4.1-Q | No record/upload → transcript → reviewed emphasis/coverage proposal path. In particular, there is no visible on-device/cloud disclosure, recording-policy notice, quote+timestamp evidence, or failure/no-audio state. The recall-response microphone is not lecture capture. |
-| **Material-grounded study generation** | `01-academics.md` §§4.1-G, 6.2–6.3 | The class mockup names “Generate study guide,” but does not draw source selection, no-eligible-material state, provenance/citation review, or configured/unconfigured/error states. |
-| **Term rollover ritual** | `01-academics.md` §6.10-C | No end-of-term screen for the three topic fates (retire / carry for MCAT / carry as prerequisite), default grouping, bulk actions, pause-everything, skip/re-offer, and archive boundary. |
-| **MCAT-decay consequences in Planning** | `01-academics.md` §4.2-E | Neither the Planner nor the Tracker draws the required ranked-but-not-scored course-decay result, its named inputs, or the no-MCAT-date fallback. It must remain visibly distinct from tracked-topic retention bands. |
-| **Planner decision and source-change states** | `01-academics.md` §4.2-C2–C3 | The Planner prototype shows a board and suggestions, but not a before/after requirement preview, double-count cap explanation, stale-catalog-plan flag, registered-term lock, saved-plan comparison, substitute choice, or advisor-export result. These are not optional implementation details; they are the planner’s decision states. |
-| **Lifecycle states beyond the zero-class launchpad** | `01-academics.md` §6.10-A, §6.10-C | Daily cold start is drawn, but Planning’s honest cold state and the transition from a completed course into the longitudinal record are not. No screen may substitute zeros, a hollow chart, or invented readiness. |
+| **Learning signals** | `tabs/01-academics.md` §6, “Learning signals — the class-page surface” | A real STEM Class Hub **Overview** panel, placed under the class’s primary next action. It needs cause → consequence → one owner-routing action; dormant/absent behavior; the at-most-three rule; situational evidence; and a cross-class overlap proposal that asks for confirmation rather than merging courses. Writing and General exclusion must be explicit. |
+| **Grade decisions and mistake evidence** | `tabs/01-academics.md` §6.8; candidate features #44–50 | A real Planning → Grades & Archive detail state for an individual course/graded item: regrade timing, policy visibility, incomplete-grade/no-data recovery, and mistake-cause evidence including blanked vs. did-not-know. A generic GPA display cannot stand in for decisions that need the underlying record and evidence. |
+| **Materials failure/result states** | `tabs/01-academics.md` §§4.1-G, 4.1-O, 4.1-P | `academics-materials-extensions.html` draws a catalog, Path-A handoff, and pre-generation source selection, but it does not yet draw a provider failure/recovery, source-linked generated result, or a clear feed-unavailable/reconnect state. Those are ruled interaction states, not implementation footnotes. |
+| **Planner action consequences** | `tabs/01-academics.md` §4.2-C3 | `academics-planning-decisions.html` draws requirement preview, saved-plan comparison, and course timing. It does not visibly show a locked registered term, a substitute choice, or the result of exporting an advisor snapshot. These must be distinguishable from a suggestion. |
 
-**Paper conflicts to correct while drawing:**
+The following Stage-A work now has a real mockup and is **not rebuilt** in this
+brief: resource catalog/Canvas Path A/generation composition, lecture capture’s
+main flow, term rollover’s three fates, Planning’s main decision composition,
+and Planning’s first-fact cold state.
 
-- `academics-daily-main-page.html` still contains stale Anki-sync examples, while
-  the approved decision file and §4.1 say Academics owns topic review and Anki
-  is one-way export only. New drawings must follow the decision/spec, not that
-  old HTML example.
-- No new top-level Academics tab is allowed. Catalog and lecture-capture
-  controls belong at the top of an existing class **Materials** view; exam prep
-  stays a temporary mode; rollover is a bounded flow from the existing
-  longitudinal surfaces.
-- A readiness number, blended preparedness score, or retention percentage for
-  an untracked course is forbidden. Use named inputs and rank/interval language
-  where the spec permits it.
+**Spec conflicts resolved while drawing:**
+
+- Learning signals are not another Daily tab, notification feed, or generic AI
+  coach. They live only in a STEM class’s Overview and route outward to the
+  owner that resolves the issue.
+- The study-guide surface may use only student-supplied material and must keep
+  provenance. It may not fill a missing source with general course content.
+- Canvas Path A is a read-only calendar-feed handoff. Do not depict Canvas
+  REST, browser-side token handling, or a write action.
+- Grade-policy behavior may be displayed only as a rule that was applied;
+  incomplete policy data stays incomplete. Do not invent a curve, outcome, or
+  score.
+- No readiness score, composite, percentage bar, or fake empty metric is
+  permitted. Named, attributable evidence is the design material.
 
 ### b. Mockup → app
 
-| Mockup | App evidence | Visual conclusion for this audit |
+| Mockup / surface | App evidence | Audit result |
 |---|---|---|
-| Daily · Class Center | `src/components/academics/ClassCenter.tsx`; fidelity commit `9f4d3ac` | Implemented. It is not rebuilt in this Stage-A pass. Its stale Anki HTML example remains a paper correction, not a reason to fork the screen. |
-| Assignments | `src/pages/Academics.tsx` plus `src/components/common/AssignmentsPanel.tsx` | Implemented as the shared assignment owner. Agenda/weekly/calendar fidelity remains a later visual check. |
-| Class Hub | `src/components/academics/ClassHub.tsx`; `7ddf493` | Implemented with its five tab structure. New catalog/capture states must extend the existing Materials surface rather than create a second hub. |
-| Review session | `src/pages/AcademicRecallSession.tsx`, `src/lib/academics/activeRecall.ts`; `9f9d98a` | Implemented. Its response audio capture must not be relabelled as the missing lecture-capture feature. |
-| Empty states and class types | `src/components/academics/ClassCenter.tsx`; `cb963a3` | Built; do not rebuild. |
-| Syllabus import | `src/components/academics/ClassCenter.tsx`, parser/re-import tests; `69a0b41`, `93bfeb8`, `1ee2c87` | Behaviour is shipped, including scoped entry and re-import. Its visual decision documentation is incomplete (see section e). |
-| Exam prep | Class-scoped practice/exam code is present in `ClassCenter.tsx` | The full temporary exam-plan mode is not established as visually translated; its source is still proposed and lacks a companion decision file. |
-| Planner | `src/pages/Academics.tsx` | A working planning surface exists, but the lab source is still a prototype and the ruled decision states above have no paper. |
-| Tar Heel Tracker | `src/pages/Academics.tsx` | Existing audit UI is not proof of visual parity. The proposed mockup is the later fidelity target once it is approved and its data boundary is confirmed. |
-| Grades & Archive | `src/pages/Academics.tsx` | Existing GPA/what-if controls do not prove parity with the proposed longitudinal ledger. Keep this for a later stage. |
+| Daily · Class Center | `src/components/academics/ClassCenter.tsx`; `9f4d3ac` | Existing app owner; do not redraw or rebuild it in this pass. |
+| Assignments | `src/pages/Academics.tsx`, `src/components/common/AssignmentsPanel.tsx` | Existing shared assignment owner; later fidelity audit only. |
+| Class Hub | `src/components/academics/ClassHub.tsx`; `7ddf493` | Existing five-tab owner. Materials and Learning Signals must extend it, never fork it. |
+| Review session | `src/pages/AcademicRecallSession.tsx`, `src/lib/academics/activeRecall.ts`; `9f9d98a` | Shipped; response recording is not the separate lecture-capture feature. |
+| Empty state and class types | `src/components/academics/ClassCenter.tsx`; `cb963a3` | Shipped; excluded from this pass. |
+| Syllabus import / re-import | `ClassCenter.tsx` plus parser and re-import tests; `69a0b41`, `93bfeb8`, `1ee2c87` | Behavior ships. Its missing companion decision document is a later Stage-B concern, not a reason to redraw it now. |
+| Exam prep mode | Class-scoped behavior in `ClassCenter.tsx` | Drawn but without a companion `.md`; later Stage B. |
+| Planner, Tar Heel Tracker, Grades & Archive | `src/pages/Academics.tsx` | App surfaces exist, but their proposed drawings are not a claim of fidelity. The new Grade Decisions state belongs inside the existing Grades owner. |
+| Materials extensions, lecture capture, Planning decisions/cold start, term rollover | No matching new app owners expected at Stage A | Correctly drawing-only and proposed. |
+| Learning signals and Grade decisions | Lab-only `deepState(...)` placeholders | **Not drawn.** These are why this run stops at Stage A. |
 
 ### c. Already built — do not rebuild
 
-- The approved zero-class launchpad and the three class-type configurations:
-  `cb963a3` (`feat(academics): implement approved empty state and class types`).
-- Syllabus ingestion, preserved local source file, scoped entry points, and
-  identity-based re-import: `69a0b41`, `93bfeb8`, and `1ee2c87`.
-- The existing Class Center and Class Hub structure: `9f4d3ac` and `7ddf493`.
-- Active-recall scheduling/loop: `9f9d98a`.
+- Zero-class launchpad and the three class-type configurations: `cb963a3`.
+- Syllabus ingestion, local source retention, scoped entry, and identity-based
+  re-import: `69a0b41`, `93bfeb8`, `1ee2c87`.
+- Existing Class Center and Class Hub structure: `9f4d3ac`, `7ddf493`.
+- Active-recall loop: `9f9d98a`.
+- The previous paper-only Academics coverage pass: `0cc610d`, refined in
+  `33ced05`.
 
 ### d. Gate
 
-`BUILD-MANIFEST.md` clears the listed Daily and Planning mockups with **YES**,
-except the legacy mode-switch and old study-hub concepts. The missing surfaces
-in section a have **no manifest rows yet**. This brief draws them only; nothing
-new may be implemented until its drawing is approved and Andy adds explicit
-manifest permission for the resulting source files.
+`BUILD-MANIFEST.md` has **YES** rows for the established Academics Daily and
+Planning mockups. The seven newer Stage-A source names below have no individual
+manifest rows. That does not block drawing, but it blocks any later source-code
+implementation until Andy explicitly adds/clears them. This brief makes no
+manifest edits.
 
 ### e. Decision-file audit
 
-| Existing source | Decision record | Result |
+| Source | Appearance record | Result |
 |---|---|---|
-| Daily, Assignments, Class Hub, Review session, Class types, Empty states | Companion `.md` exists and records hierarchy/interaction plus enough appearance direction to preserve its treatment | Pass for a later stage. |
-| Planner, Tar Heel Tracker, Grades & Archive | Companion `.md` exists and records product views, variants, hierarchy, and layout intent, but all three remain **prototype/proposed** in the lab | Not an implementation decision yet; do not promote by this brief. |
-| Exam prep | No companion `.md` | Stage B work after its source is approved: record the selected treatment, hierarchy, visual states, and motion before code. |
-| Syllabus import | No companion `.md` | Stage B work after the missing Stage-A drawings: write the visual decisions for upload, review, partial parse, and re-import; do not rewrite its shipped diff logic. |
+| Daily, Assignments, Class Hub, Review session, Class types, Empty states | Companion decisions record hierarchy and appearance | Pass for a later stage. |
+| Planner, Tar Heel Tracker, Grades & Archive | Companion decisions record views, hierarchy, and layout intent | Proposed; no automatic promotion. |
+| Materials extensions, Lecture capture, Planning decisions, Planning cold start, Term rollover | Companion decisions record behavior **and** treatment, hierarchy, surface material, and component boundary | Pass for the paper already drawn; this brief only fills the specific states named above. |
+| Syllabus import and Exam prep | No companion `.md` | Stage B after every Stage-A surface is drawn. Do not write their decision docs in this pass. |
+| Learning signals and Grade decisions | No HTML or companion `.md`; only lab placeholders | **Stage A fails here.** |
 
 ### f. Integrations and services owned by Academics
 
-| Dependency | Current classification | What a student sees today | What the eventual Academics brief must own |
+| Dependency | Classification | Student-visible state today | Later responsibility |
 |---|---|---|---|
-| Google Calendar read-only connection | **Code built, configured per user only** | Schedule context appears after the student connects Google Calendar; otherwise Calendar context is absent or the honest local fallback appears. | No code in this brief. Any later exam-plan/Canvas drawing must show the no-calendar state and never claim live hours without a connection. |
-| Canvas Path A (ICS → Google Calendar) | **Code missing in Academics** | A student can paste a Canvas URL/text into class setup, but there is no Canvas calendar-feed handoff, course attribution, or import review. | Later full brief: code only the low-cost read-only Path A first; no Canvas REST work. |
-| Canvas Path B REST mirror | **Code missing and explicitly deferred by spec** | Not available. | Not this pass and not the next default build. It requires the Supabase proxy/token boundary, verified UNC token policy, review-before-apply/diff behavior, sanitised HTML, and revoke path. |
-| Study-tools Edge Function | **Code built, configuration must be verified** | Without configured Supabase/provider secrets, generation must remain unavailable or explain why; it may not produce invented material. | Later build/fidelity pass must preserve student-supplied grounding and clickable provenance; configuration is an Andy checklist, not a client-side secret. |
-| Local syllabus-file retention | **Code built, local-only** | Import/re-import can retain the student’s chosen syllabus locally. | No cloud-storage claim or cross-device file-sync implication in new drawings. |
-| Lecture transcription / capture | **Code missing for the ruled lecture feature** | No lecture-capture flow exists; the recall microphone records a student response only. | Later full brief must decide/provider-map on-device default, consent/policy disclosure, local-audio boundary, and explicit cloud fallback before any service is added. |
-| Anki | **No required live integration** | No scheduler sync is available or promised. | Preserve one-way export only; never depict card review or scheduling as Premed OS behavior. |
+| Google Calendar read-only OAuth | **CODE BUILT, NOT PUBLICLY CONFIGURED/VERIFIED** | A student may see normal local/empty schedule behavior unless their Google connection is set up; public users can still meet Google’s unverified-app warning until Andy completes verification. | Not code in this drawing brief. Any Calendar-adjacent mock must include the honest unconnected state and never imply live data. |
+| Canvas Path A, Canvas calendar feed through Google Calendar | **CODE MISSING** | No course-attributed Canvas-feed review exists in the app. | A later full brief owns a read-only, review-before-apply Path A. Path B REST remains explicitly deferred. |
+| Grounded study generation service | **CODE BUILT, CONFIGURATION MUST BE VERIFIED** | Without configured provider secrets, the app must show unavailable/recovery rather than fabricate study content. | Later configuration checklist: verify server-side secret availability, test an authenticated call, and keep keys out of the client bundle. |
+| Local syllabus file retention | **CODE BUILT AND CONFIGURED** | A chosen syllabus can be retained for re-import locally; it is not cloud file storage. | New mockups must not imply cross-device storage. |
+| Lecture transcription/capture | **CODE MISSING** | No lecture-capture pipeline exists; recall audio is a different feature. | A later full brief must own local-first transcription, explicit cloud opt-in, policy disclosure, quote/timestamp evidence, and no-audio recovery. |
+| Anki | **NO LIVE INTEGRATION REQUIRED** | No Premed OS scheduler or review queue is promised. | Preserve one-way export only. |
 
-## 2. Work — Stage A only: draw the missing surfaces
+## 2. Work — Stage A only
 
-Create the following **proposed** mockup sources in `mockup-lab/01-academics/`,
-register each in `mockup-lab/variant-lab.html` with `status:"proposed"`, and
-write a companion `.md` that records both behaviour **and appearance**. Use the
-existing Academics shell, `_shared/_visual-recipes.md`, the real token system,
-and the current class hub / planning visual language. Do not copy inline mockup
-CSS into the app.
+Create or extend **only** the following proposed drawing sources in
+`mockup-lab/01-academics/`, register each real source in
+`mockup-lab/variant-lab.html` with `status:"proposed"`, and write/update the
+companion `.md` with both behavior **and appearance**. Use the existing
+Academics shell and `_shared/_visual-recipes.md` literally. Do not touch `src/`.
 
-1. **Class Hub · Materials extensions** — one source with product views for:
-   - resource catalog (empty, populated, `unknown origin` private warning, and
-     timed-result hand-off);
-   - Canvas Path-A handoff/review (not Path B), connected-empty, changed-item
-     review, unavailable, and disconnect states;
-   - material-grounded generation source selection, no-eligible-material,
-     provenance result, and unavailable/error states.
-   Keep the controls at the top of **Materials**; do not add a sixth class tab.
+1. **`academics-learning-signals.html` + `.md`**
+   - Draw a class-scoped STEM Overview panel in its real position: below the
+     primary next action, above supporting class information.
+   - Use at most three cause → consequence → one-action items. Actions route to
+     Topics/review, Materials, Assignments, or the recall summary.
+   - Draw populated, dormant/absent, and cross-class-overlap-proposal states.
+     The latter must present evidence and ask for confirmation of a `TopicLink`.
+   - Draw the type boundary plainly: Writing and General have no pretend
+     signals panel. Do not render a zero/empty replacement.
+   - Try **A/B/C only here**, because the contextual composition remains open:
+     a narrow overview rail, an editorial section below the next action, and a
+     compact evidence-first drawer. They must all use the same data rules.
 
-2. **Lecture capture** — one class-scoped flow beginning in Materials:
-   record/upload → explicit local-processing/privacy state → transcript review
-   → quote-and-timestamp evidence → proposed material links and coverage. Draw
-   a no-permission/no-audio state and a no-material-match state. The output is
-   descriptive, never “high yield,” scored, or predictive.
+2. **`academics-grade-decisions.html` + `.md`**
+   - Draw this inside Planning → Grades & Archive rather than creating a new
+     tab. Its states are: a returned item with a regrade window, a policy-aware
+     calculation disclosure, insufficient grade/policy data, and a
+     mistake-evidence detail that separates blanked from did-not-know.
+   - Every metric needs an attributable input. If the record is incomplete,
+     show the missing input and a recovery action—not a projection, zero, or
+     generic warning.
+   - Use one coherent treatment and named product views instead of A/B/C
+     cosmetic alternatives. It must feel like a record detail/decision surface,
+     not a wall of rectangular alert cards.
 
-3. **Term rollover** — one bounded end-of-term ritual attached to Planning / a
-   completed-course transition. Draw the pre-sorted three fates, editable bulk
-   controls, `Pause everything`, skip/default outcome, and January re-offer.
-   Preserve the course record in the ledger and show that carried topic state
-   survives intact.
+3. **Extend `academics-materials-extensions.html` + `.md`**
+   - Add named product states for: no calendar feed/reconnect recovery;
+     a source-linked generated result; and provider unavailable/error after the
+     student selected eligible material. No request runs before the student
+     selects sources.
+   - Keep the existing three quiet Materials tools. Do not make a sixth Class
+     Hub tab or draw Path B.
 
-4. **Planning decision states** — extend the existing Planner source or create
-   one companion state source only if it cannot remain legible in the planner:
-   requirement preview before placement, mapping-confidence/double-count
-   explanation, stale-catalog flag, term lock, saved-plan comparison,
-   substitute choice, and advisor-export result. Include the MCAT-decay
-   placement as ranked inputs, not a percentage or score.
-
-5. **Planning cold state** — an honest, Planning-specific no-record/no-plan
-   view that routes to the minimum first fact needed. It must not duplicate the
-   Daily syllabus-import launchpad or fill the page with zero metrics.
-
-### Variant discipline
-
-- Use A/B/C only for the genuinely unresolved **Planning decision composition**:
-  whole-plan board + inspector, next-term builder, and decision-first inspector
-  are already the three meaningful alternatives in the Planner document.
-- The Canvas, lecture capture, rollover, catalog, and cold states need named
-  product states—not cosmetic variants. Draw one coherent treatment each.
+4. **Extend `academics-planning-decisions.html` + `.md`**
+   - Add a locked registered-term state, an explicit substitute selection with
+     what it clears/does not clear, and an advisor-export result that names its
+     assumptions and source date.
+   - A locked term is a factual boundary, not a decorative lock. Suggestions
+     must not visually appear able to alter it.
 
 ## 3. References
 
-- `premed-hq-documentation/tabs/01-academics.md` §§4, 4.1-O–Q, 4.1-R,
-  4.2-C–E, 6.2–6.3, 6.8–6.10, 9, 13–14.
-- `premed-hq-documentation/implementation/integration-map.md` §0.
-- `premed-hq-documentation/implementation/component-inventory.md` — reuse
-  existing `PageHeader`, `StatStrip`, `InteractiveCard`, `InfoTip`,
-  `CenterPeek`, `RecordActionMenu`, `EmptyState`, and three-level navigation
-  patterns in drawings; do not invent duplicate component jobs.
-- `mockup-lab/01-academics/academics-class-hub.html` and `.md`;
-  `academics-planner-prototype.html` and `.md`; `academics-tar-heel-tracker.html`
-  and `.md`; `academics-grades-archive.html` and `.md`.
-- `premed-hq-documentation/specifications/mockups/_shared/_visual-recipes.md`,
-  `premed-hq-documentation/specifications/01-shared-interface-patterns.md`,
-  and `premed-hq-documentation/implementation/MOCKUP-TRANSLATION-CONTRACT.md`.
+- `premed-hq-documentation/tabs/01-academics.md` §§4.1-G, 4.1-O–Q,
+  4.2-C, 6, 6.8, 6.10–6.12, 13–14.
+- `premed-hq-documentation/implementation/component-inventory.md`.
+- `premed-hq-documentation/implementation/MOCKUP-TRANSLATION-CONTRACT.md`.
+- `premed-hq-documentation/specifications/01-shared-interface-patterns.md`.
+- `premed-hq-documentation/specifications/04-visual-craft-standards.md` §0.
+- `premed-hq-documentation/specifications/mockups/_shared/_visual-recipes.md`.
+- Existing source and decisions: `mockup-lab/01-academics/academics-class-hub.*`,
+  `academics-materials-extensions.*`, `academics-lecture-capture.*`,
+  `academics-planning-decisions.*`, `academics-planning-cold-start.*`,
+  `academics-term-rollover.*`, and `academics-grades-archive.*`.
 
 ## 4. Do not break
 
-- Do not touch `src/`, the persisted store, Supabase functions, tokens, fonts,
-  or the build manifest in this stage.
-- Do not redraw the already-built empty state, class types, ingestion/re-import
-  behavior, Class Center, Class Hub, or active-recall runner as a replacement.
-- Do not expose a Canvas token in the browser, invent a browser-side Canvas
-  fetch, or imply any Canvas write action.
-- Do not make cloud file storage, Google Calendar, provider keys, or Anki a
-  prerequisite for the normal Academics flow.
-- Do not turn AI output into course truth: all generation must be visibly
-  grounded in student-supplied material and preserve provenance.
-- Do not add scores, composite readiness, rankings that disguise scores,
-  invented data, `0%` empty progress, or a sixth Academics/class-hub tab.
-- Glass only floats over banner art or an overlay; dense lists, ledgers, and
-  decision surfaces remain solid-with-depth.
+- Do not touch `src/`, store shapes, migrations, Supabase, cloud credentials,
+  tokens, fonts, or the manifest.
+- Do not replace Class Center, Class Hub, the existing syllabus import/re-import
+  flow, class types, empty state, active recall, Planner, or Grades & Archive.
+- Do not add a sixth Class Hub tab, another Academics top-level tab, a Canvas
+  browser fetch/token, a Canvas write action, or a live Anki review surface.
+- Do not present AI output as course truth. Generation is student-material
+  grounded and retains provenance.
+- Do not draw scores, composite readiness, invented percentages, fake examples,
+  zero-progress empty states, generic “you are behind” warnings, or a predicted
+  exam outcome.
+- Glass floats only over banner art or an overlay. Dense records and decision
+  surfaces stay solid-with-depth.
 
 ## 5. Done when
 
-- Every section-1a feature has a traceable mockup button, field, state, or
-  screen; a plain mention in copy does not count.
-- Every new source has a `.md` that explicitly names treatment, hierarchy,
-  layout, surface material, typography/alignment intent, interaction flow,
-  empty/loading/error states, and its selected variant (where applicable).
-- `rg -n "Canvas|lecture capture|term rollover|MCAT decay|resource catalog" mockup-lab/01-academics`
-  finds a real named state for each ruled surface.
-- `rg -n "score|prepared %|retention %|high-yield" mockup-lab/01-academics`
-  finds no prohibited new claim in the new sources.
-- `rg -n "status:\"proposed\"" mockup-lab/variant-lab.html` includes every
-  new lab entry, and none is marked built or approved without Andy’s review.
-- Existing Daily/Planning lab pages still load; `npm run build` remains clean
-  even though this stage touches no app code.
+- `academics-learning-signals.html` and `academics-grade-decisions.html` each
+  exist with a companion `.md`, and each has a real registry entry rather than
+  a `deepState(...)` placeholder.
+- Learning Signals shows its STEM-only boundary, maximum-three discipline,
+  one-action routing, dormant/absent rule, and confirm-before-link overlap.
+- Grade Decisions names source evidence, policy application, incomplete-data
+  recovery, regrade timing, and blanked-vs-did-not-know without inventing a
+  result.
+- Materials contains a source-linked generation result and both relevant
+  unavailable/recovery states; Planning contains lock, substitute, and export
+  result states.
+- `rg -n "score|readiness|[0-9]+%|high-yield" mockup-lab/01-academics/academics-learning-signals.* mockup-lab/01-academics/academics-grade-decisions.*`
+  finds no prohibited new claim.
+- `rg -n "academics-learning-signals|academics-grade-decisions" mockup-lab/variant-lab.html`
+  points to the two real sources and both remain `status:"proposed"`.
+- Existing Academics pages still load in the lab. `npm run build` remains clean
+  even though this stage has no app-code change.
 
 ## 6. Commit
 
-`docs(mockups): draw remaining Academics ruled states`
+`docs(mockups): draw remaining Academics decision states`
 
-Commit only the new Academics mockups, their companion decision documents, and
-their registry entries. Do not sweep unrelated dirty lab, research, or brief
-files into this commit.
+Commit only these two new sources, their decision documents, the two targeted
+source/decision extensions, and the exact registry hunks. Do not sweep unrelated
+dirty lab, research, or brief work into this commit.
 
 ## 7. Next stage — not in scope here
 
-After the drawings are reviewed, approved, and explicitly added to
-`BUILD-MANIFEST.md`, rerun `TAB-BRIEF-PROMPT.md` for Academics. The next
-expected stop is **B · drawn, not decided** for the existing exam-prep and
-syllabus-import pages (and any new surface whose companion `.md` is incomplete).
-Only after that decision audit passes can an Academics full implementation or
-backend/fidelity brief be written.
+After Andy reviews these drawings, rerun `TAB-BRIEF-PROMPT.md` for Academics.
+The expected next stop is **B · DRAWN, NOT DECIDED** for syllabus import and
+exam prep (and any source whose updated companion `.md` lacks appearance
+decisions). No app code is authorized by this brief.
