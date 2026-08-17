@@ -650,6 +650,8 @@ export interface StoryEntry {
   docUrl?: string
   /** A URL captured from Overview, retained as structured source metadata. */
   sourceUrl?: string
+  /** Student-supplied binary retained only on this device in IndexedDB. */
+  attachment?: StoryAttachment
   /** Overview brain-dump captures have no required prompt, title, or tags. */
   capturedAt?: number
   updatedAt?: number
@@ -657,6 +659,15 @@ export interface StoryEntry {
   /** Per-entry privacy guard: excluded from every remote sync and backup. */
   localOnly?: boolean
   order: number
+}
+
+/** Metadata is durable; the bytes stay in device-local IndexedDB. */
+export interface StoryAttachment {
+  blobRef: string
+  fileName: string
+  mimeType: string
+  fileSize: number
+  storage: 'device-local'
 }
 
 export interface SecondaryEntry {

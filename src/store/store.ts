@@ -10,7 +10,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import type {
   AcademicCourseOption, AcademicTagColor, AcademicTypeOption,
-  AppData, ClassCenterData, CollectionKey, ActivityEvent, RequirementItem, RecoveryEntry,
+  AppData, ClassCenterData, CollectionKey, ActivityEvent, RequirementItem, RecoveryEntry, StoryEntry,
 } from '@/lib/types'
 import { createSeedData } from '@/data/seed'
 import { createDemoData } from '@/data/demoSeed'
@@ -35,6 +35,8 @@ import { migrateOverviewV13 } from '@/store/migrations/overviewV13'
 import { migrateTimelineV14 } from '@/store/migrations/timelineV14'
 import { migrateExperienceHoursV15 } from '@/store/migrations/experienceHoursV15'
 import { migrateRoadmapTaskLinkV16 } from '@/store/migrations/roadmapTaskLinkV16'
+import { migrateOverviewAttachmentsV17 } from '@/store/migrations/overviewAttachmentsV17'
+import { removeStoryAttachment, retainThenPersistStoryAttachment } from '@/lib/overviewFileCapture'
 
 const DEMO_MODE = isDemoMode()
 
@@ -52,8 +54,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateRoadmapTaskLinkV16`. */
-export const CURRENT_STORE_VERSION = 16
+/** Matches the newest migration in `migrateAll`: `migrateOverviewAttachmentsV17`. */
+export const CURRENT_STORE_VERSION = 17
 
 function createInitialData() {
   if (!DEMO_MODE) return structuredClone(createSeedData())
@@ -74,6 +76,8 @@ interface Actions {
   /** Atomically creates the one permitted normal task linked to a Timeline
    * milestone. It deliberately never creates a Timeline-authored step. */
   createRoadmapImplementationTask: (milestoneId: string, title: string) => string | null
+  /** Retains a student-supplied file before creating its one Story Bank record. */
+  createOverviewFileCapture: (file: File, options?: { commentary?: string; localOnly?: boolean }) => Promise<string | null>
   removeItem: (key: CollectionKey, id: string) => void
   softDeleteItems: (key: CollectionKey, ids: string[], label?: string) => string | null
   restoreTrashItems: (trashIds: string[]) => void
@@ -518,7 +522,8 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateOverviewV13(migrated)
   migrated = migrateTimelineV14(migrated)
   migrated = migrateExperienceHoursV15(migrated)
-  return migrateRoadmapTaskLinkV16(migrated)
+  migrated = migrateRoadmapTaskLinkV16(migrated)
+  return migrateOverviewAttachmentsV17(migrated)
 }
 
 function nextOrder(arr: AnyRow[]): number {
@@ -603,6 +608,35 @@ export const useStore = create<Store>()(
         return taskId
       },
 
+      createOverviewFileCapture: async (file, options = {}) => {
+        const id = uid()
+        try {
+          return await retainThenPersistStoryAttachment(id, file, (attachment) => {
+            set((s) => {
+              const now = Date.now()
+              const story: StoryEntry = {
+                id,
+                prompt: '',
+                title: '',
+                commentary: options.commentary?.trim() ?? '',
+                tags: [],
+                attachment,
+                capturedAt: now,
+                updatedAt: now,
+                origin: 'overview',
+                localOnly: Boolean(options.localOnly),
+                order: nextOrder(s.stories),
+              }
+              s.stories.push(story)
+              pushRecovery(s as unknown as AppData, 'stories', 'Captured Story Bank file', [], [story as unknown as AnyRow])
+            })
+            return id
+          })
+        } catch {
+          return null
+        }
+      },
+
       removeItem: (key, id) =>
         set((s) => {
           const arr = s[key] as unknown as AnyRow[]
@@ -651,11 +685,17 @@ export const useStore = create<Store>()(
           if (restoring.some((entry) => entry.collection === 'courses')) syncCurrentTermWorkspaces(s as unknown as AppData)
         }),
 
-      permanentlyDeleteTrashItems: (trashIds) =>
+      permanentlyDeleteTrashItems: (trashIds) => {
+        const attachments: Array<Pick<StoryEntry, 'attachment'>> = []
         set((s) => {
           const wanted = new Set(trashIds)
+          s.trash
+            .filter((entry) => wanted.has(entry.id) && entry.collection === 'stories')
+            .forEach((entry) => attachments.push(plain(entry.record) as Pick<StoryEntry, 'attachment'>))
           s.trash = s.trash.filter((entry) => !wanted.has(entry.id))
-        }),
+        })
+        void Promise.all(attachments.map((story) => removeStoryAttachment(story))).catch(() => undefined)
+      },
 
       bulkPatchItems: (key, ids, patch, label) => {
         let recoveryId: string | null = null

@@ -39,6 +39,7 @@
 | `03-overview/overview-bento-control-panel.html` | APPROVED (July 2026) | **`YES`** |
 | `03-overview/overview-where-i-stand-expandable.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 12, 2026 (Andy) |
 | `03-overview/overview-s3-target.html` | APPROVED (Aug 2026) | **`YES`** — refinement of the bento row above. Supersedes it for the Tasks create affordance only; bento spans, block order and glass judgment still come from `overview-bento-control-panel.html` |
+| `03-overview/overview-capture-goals-states.html` | APPROVED (Aug 2026) | **`YES`** — cleared Aug 17, 2026 (Andy); includes the local-file Capture path, goals, and widget resilience states |
 | `03-overview/overview-roadmap-task-linkage.html` | APPROVED (Aug 17, 2026) | **`YES`** — one optional linked Overview implementation task per Timeline milestone; this is distinct from Timeline-owned authored steps, which remain one record flowing into Overview → Soon |
 | `03-overview/sauce-two-doors.html` | DRAFT | `NO` |
 

@@ -9,6 +9,7 @@ import { migrateOverviewV13 } from '@/store/migrations/overviewV13'
 import { migrateTimelineV14 } from '@/store/migrations/timelineV14'
 import { migrateExperienceHoursV15 } from '@/store/migrations/experienceHoursV15'
 import { migrateRoadmapTaskLinkV16 } from '@/store/migrations/roadmapTaskLinkV16'
+import { migrateOverviewAttachmentsV17 } from '@/store/migrations/overviewAttachmentsV17'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
 
 function freshData(): AppData {
@@ -17,7 +18,32 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(16)
+  expect(CURRENT_STORE_VERSION).toBe(17)
+})
+
+describe('migrateOverviewAttachmentsV17', () => {
+  it('does not invent a file reference or change an existing Story Bank record', () => {
+    const data = freshData()
+    data.stories = [{ id: 'story', prompt: '', title: '', commentary: 'A note', tags: [], origin: 'overview', capturedAt: 1, order: 0 }]
+    const before = structuredClone(data)
+    Object.freeze(data)
+    Object.freeze(data.stories)
+
+    expect(migrateOverviewAttachmentsV17(data)).toBe(data)
+    expect(data).toEqual(before)
+  })
+
+  it('is idempotent and preserves an explicit device-local attachment', () => {
+    const data = freshData()
+    data.stories = [{
+      id: 'story', prompt: '', title: '', commentary: '', tags: [], origin: 'overview', capturedAt: 1, order: 0,
+      attachment: { blobRef: 'idb://overview/capture/story', fileName: 'notes.pdf', mimeType: 'application/pdf', fileSize: 12, storage: 'device-local' },
+    }]
+
+    expect(migrateOverviewAttachmentsV17(data)).toBe(data)
+    expect(migrateOverviewAttachmentsV17(data)).toBe(data)
+    expect(data.stories[0].attachment).toMatchObject({ fileName: 'notes.pdf', storage: 'device-local' })
+  })
 })
 
 describe('migrateRoadmapTaskLinkV16', () => {
