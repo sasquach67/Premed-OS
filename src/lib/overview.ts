@@ -6,6 +6,7 @@ import type {
   ExperienceEntry,
   TaskHorizon,
   TaskItem,
+  TimelineMilestone,
 } from '@/lib/types'
 
 const NON_GPA = new Set(['', 'P', 'NP', 'IP'])
@@ -70,7 +71,7 @@ export function overviewTaskTab(task: TaskItem): OverviewTaskTab {
 
 export function overviewTasks(tasks: CollectionRecord<TaskItem>[], tab: OverviewTaskTab): CollectionRecord<TaskItem>[] {
   return tasks
-    .filter((task) => !task.deletedAt && !task.milestone)
+    .filter((task) => !task.deletedAt && !task.timelineMilestoneId)
     .filter((task) => tab === 'done' ? task.progress === 'Finished' : !task.archived && task.progress !== 'Finished')
     .filter((task) => overviewTaskTab(task) === tab)
     .sort((a, b) => Number(Boolean(b.important)) - Number(Boolean(a.important)) || a.order - b.order)
@@ -85,34 +86,26 @@ export interface RoadmapMilestone {
   state: 'done' | 'current' | 'future'
 }
 
-function milestoneRoute(task: TaskItem) {
-  const value = `${task.type} ${task.title}`.toLowerCase()
-  if (value.includes('mcat')) return '/mcat'
-  if (value.includes('letter') || value.includes('lor')) return '/letters'
-  if (value.includes('essay') || value.includes('statement') || value.includes('secondary')) return '/essays'
-  if (value.includes('school')) return '/schools'
-  if (value.includes('course') || value.includes('gpa')) return '/academics'
-  return '/timeline'
-}
-
-export function roadmapMilestones(tasks: CollectionRecord<TaskItem>[]): RoadmapMilestone[] {
-  const milestones = tasks
-    .filter((task) => task.milestone && !task.deletedAt)
+/** One canonical Timeline projection. No title parsing or generic routing:
+ * every compact card returns to the Timeline record that owns it. */
+export function roadmapMilestones(items: CollectionRecord<TimelineMilestone>[]): RoadmapMilestone[] {
+  const milestones = items
+    .filter((milestone) => !milestone.deletedAt)
     .sort((a, b) => {
-      if (a.deadline && b.deadline) return a.deadline.localeCompare(b.deadline)
-      if (a.deadline) return -1
-      if (b.deadline) return 1
+      if (a.targetDate && b.targetDate) return a.targetDate.localeCompare(b.targetDate)
+      if (a.targetDate) return -1
+      if (b.targetDate) return 1
       return a.order - b.order
     })
 
-  const currentId = milestones.find((task) => task.progress !== 'Finished')?.id
-  return milestones.map((task) => ({
-    id: task.id,
-    label: task.title,
-    target: task.deadline,
-    detail: task.notes,
-    route: milestoneRoute(task),
-    state: task.progress === 'Finished' ? 'done' : task.id === currentId ? 'current' : 'future',
+  const currentId = milestones.find((milestone) => !milestone.completed)?.id
+  return milestones.map((milestone) => ({
+    id: milestone.id,
+    label: milestone.title,
+    target: milestone.targetDate,
+    detail: milestone.detail,
+    route: '/timeline',
+    state: milestone.completed ? 'done' : milestone.id === currentId ? 'current' : 'future',
   }))
 }
 

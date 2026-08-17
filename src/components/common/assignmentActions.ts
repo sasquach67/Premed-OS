@@ -12,7 +12,6 @@ export function addTask(course?: string) {
     progress: 'Not started',
     kanban: 'todo',
     archived: false,
-    milestone: false,
     order: useStore.getState().tasks.length,
   } as TaskItem)
 }

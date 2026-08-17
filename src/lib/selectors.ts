@@ -91,7 +91,7 @@ export function upcomingAlerts(tasks: TaskItem[], opts?: { horizon?: number }): 
       date: t.deadline,
       daysLeft: d,
       severity: d <= 2 ? 'urgent' : d <= 5 ? 'soon' : 'info',
-      kind: isExam ? 'exam' : isMeeting ? 'meeting' : t.milestone ? 'milestone' : 'task',
+      kind: isExam ? 'exam' : isMeeting ? 'meeting' : 'task',
     })
   }
   return out.sort((a, b) => a.daysLeft - b.daysLeft)

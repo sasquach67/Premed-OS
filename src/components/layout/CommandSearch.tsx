@@ -58,14 +58,14 @@ export function CommandSearch() {
       const course = courseById.get(workspace.courseId)
       if (course) hits.push({ id: `class-${course.id}`, label: `${course.code} ${course.title}`, sub: course.term, group: 'Records', kind: 'record', route: `/academics/classes/${course.id}` })
     }
-    // Milestones are roadmap nodes stored in `tasks`, not task records.
-    for (const row of store.tasks.filter((task) => !task.milestone)) hits.push({ id: `task-${row.id}`, label: row.title, sub: row.type, group: 'Records', kind: 'record', route: '/overview/tasks' })
+    for (const row of store.tasks.filter((task) => !task.timelineMilestoneId)) hits.push({ id: `task-${row.id}`, label: row.title, sub: row.type, group: 'Records', kind: 'record', route: '/overview/tasks' })
+    for (const row of store.timelineMilestones) hits.push({ id: `timeline-${row.id}`, label: row.title, sub: 'Timeline milestone', group: 'Records', kind: 'record', route: '/timeline' })
     for (const row of store.experiences) hits.push({ id: `experience-${row.id}`, label: row.org || row.role, sub: row.category, group: 'Records', kind: 'record', route: `/${row.category === 'leadership' ? 'ecs' : row.category}` })
     for (const row of store.schools) hits.push({ id: `school-${row.id}`, label: row.name, sub: row.location || row.type, group: 'Records', kind: 'record', route: '/schools' })
     for (const row of store.stories) hits.push({ id: `story-${row.id}`, label: row.title || row.prompt, sub: 'Story Bank', group: 'Records', kind: 'record', route: '/essays' })
     for (const row of store.resources) hits.push({ id: `resource-${row.id}`, label: row.label, sub: `${ROUTE_MAP[row.pillar]?.label ?? row.pillar} · ${row.category}`, group: 'External links', kind: 'external', url: row.url })
     return hits
-  }, [actions, store.orgs, store.courses, store.academics.classCenter.workspaces, store.tasks, store.experiences, store.schools, store.stories, store.resources])
+  }, [actions, store.orgs, store.courses, store.academics.classCenter.workspaces, store.tasks, store.timelineMilestones, store.experiences, store.schools, store.stories, store.resources])
 
   const results = useMemo(() => {
     if (!query.trim()) {

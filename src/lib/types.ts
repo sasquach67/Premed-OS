@@ -574,12 +574,28 @@ export interface TaskItem {
   fileUrl?: string
   /** finished items auto-leave the active assignment table */
   archived: boolean
-  /** pinned application-cycle milestones show on the timeline graphic */
+  /** @deprecated Legacy migration marker. Timeline milestones live in
+   * `timelineMilestones`; new task flows must never set this. */
   milestone?: boolean
+  /** Lossless link retained when a legacy milestone task becomes a Timeline node. */
+  timelineMilestoneId?: ID
   /** Overview planning horizon. Done remains derived from progress. */
   horizon?: TaskHorizon
   /** The single Overview prioritization concept. */
   important?: boolean
+  order: number
+}
+
+/** Timeline owns four-year roadmap nodes. These are not tasks or deadlines. */
+export interface TimelineMilestone {
+  id: ID
+  title: string
+  /** A student-set or migrated pacing date; absent means no date was supplied. */
+  targetDate?: string
+  detail?: string
+  completed: boolean
+  /** Retains the legacy record relationship without making Task canonical. */
+  legacyTaskId?: ID
   order: number
 }
 
@@ -1056,6 +1072,7 @@ export interface AppData {
   persons: CollectionRecord<Person>[]
   organizations: CollectionRecord<Organization>[]
   tasks: CollectionRecord<TaskItem>[]
+  timelineMilestones: CollectionRecord<TimelineMilestone>[]
   letters: CollectionRecord<LetterEntry>[]
   stories: CollectionRecord<StoryEntry>[]
   secondaries: CollectionRecord<SecondaryEntry>[]
@@ -1078,7 +1095,7 @@ export interface AppData {
 
 /** Array-typed collections eligible for generic CRUD. */
 export type CollectionKey =
-  | 'courses' | 'requirements' | 'experiences' | 'persons' | 'organizations' | 'tasks' | 'letters'
+  | 'courses' | 'requirements' | 'experiences' | 'persons' | 'organizations' | 'tasks' | 'timelineMilestones' | 'letters'
   | 'stories' | 'secondaries' | 'interviewQs' | 'schools' | 'resources'
   | 'tips' | 'focusTargets' | 'quarterlyGoals' | 'advisingQs'
   | 'captures' | 'notePages' | 'orgs'

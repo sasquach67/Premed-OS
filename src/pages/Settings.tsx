@@ -509,9 +509,9 @@ function ArchiveSettingsSection({ highlight }: { highlight: boolean }) {
   const patchItem = useStore((s) => s.patchItem)
   const removeItem = useStore((s) => s.removeItem)
 
-  // Milestones live in `tasks` with `milestone: true`; a completed roadmap
-  // node is not a finished task and must not be restorable from here (S7).
-  const doneTasks = tasks.filter((t) => !t.milestone && (t.archived || t.progress === 'Finished'))
+  // Timeline owns milestones. Legacy task rows remain recoverable but never
+  // appear as finished tasks in the Overview archive.
+  const doneTasks = tasks.filter((t) => !t.timelineMilestoneId && (t.archived || t.progress === 'Finished'))
   const doneFocus = focusTargets.filter((f) => f.done)
 
   return (

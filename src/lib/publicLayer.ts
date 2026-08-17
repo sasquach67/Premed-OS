@@ -167,7 +167,7 @@ export function localCounts(data: AppData): LocalCount[] {
     {
       key: 'assignments',
       label: 'Assignments & deadlines',
-      value: (center?.assignments?.length ?? 0) + data.tasks.filter((t) => !t.milestone).length,
+      value: (center?.assignments?.length ?? 0) + data.tasks.filter((t) => !t.timelineMilestoneId).length,
       tint: 'var(--warning)',
     },
   ]

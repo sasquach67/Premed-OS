@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { goalProgress, latestExperienceLabel, observedWeeklyHours, overviewTasks, roadmapMilestones, termGpaSeries } from '@/lib/overview'
-import type { Course, ExperienceEntry, TaskItem } from '@/lib/types'
+import type { Course, ExperienceEntry, TaskItem, TimelineMilestone } from '@/lib/types'
 
 function task(partial: Partial<TaskItem>): TaskItem {
   return {
@@ -36,15 +36,15 @@ describe('Overview selectors', () => {
     expect(overviewTasks(tasks, 'now').map((item) => item.id)).toEqual(['important', 'normal'])
   })
 
-  it('returns an empty roadmap when there are no milestone records', () => {
-    expect(roadmapMilestones([task({ milestone: false })])).toEqual([])
+  it('returns an empty roadmap when Timeline has no milestone records', () => {
+    expect(roadmapMilestones([])).toEqual([])
   })
 
-  it('projects only stored milestone records in deadline order', () => {
+  it('projects only stored Timeline milestone records in target-date order', () => {
     const milestones = roadmapMilestones([
-      task({ id: 'later', milestone: true, deadline: '2029-05-01', notes: 'Later detail' }),
-      task({ id: 'first', milestone: true, deadline: '2028-10-01', notes: 'First detail' }),
-    ])
+      { id: 'later', title: 'Later', targetDate: '2029-05-01', detail: 'Later detail', completed: false, order: 1 },
+      { id: 'first', title: 'First', targetDate: '2028-10-01', detail: 'First detail', completed: false, order: 0 },
+    ] satisfies TimelineMilestone[])
     expect(milestones.map((item) => item.id)).toEqual(['first', 'later'])
     expect(milestones[0]).toMatchObject({ detail: 'First detail', state: 'current' })
   })

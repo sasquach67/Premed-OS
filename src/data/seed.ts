@@ -10,7 +10,7 @@ import type {
   TipEntry, AdvisingQuestion, McatScheduleItem, InterviewQA, FocusTarget,
   QuarterlyGoal, SchoolEntry, AcademicTagColor, AcademicTagSettings,
   AcademicFile, ClassAssignment, ClassWorkspace, ClassContact, ClassNote,
-  Topic, ClassWeakArea, RequirementSourceType, RequirementVerificationStatus,
+  Topic, ClassWeakArea, RequirementSourceType, RequirementVerificationStatus, TimelineMilestone,
 } from '@/lib/types'
 import { createTopicFsrsState } from '@/lib/academics/fsrs'
 
@@ -450,23 +450,16 @@ function r(group: string, label: string, done: boolean, satisfiedBy?: string[], 
   return { group, label, done, satisfiedBy, note, ...requirementSource(group, label) }
 }
 
-// ---- Timeline / Tasks: near-term registration + 2029 application cycle milestones ----
+// ---- Overview tasks + Timeline-owned application-cycle milestones ----
 const tasks: TaskItem[] = seq<Omit<TaskItem, 'id' | 'order'>>([
-  t('Enroll for Fall 2026 — window opens 10:00 AM', 'Application', '2026-07-06', true, 'Use Swap (not Drop-then-Add). Enroll order: PSYC 101 → NURS 50 seminar → BIOL 103 → ENGL 105 → IDST 101 → IDST 111L.'),
-  t('Build ConnectCarolina shopping cart (30–40 sections)', 'Personal', '2026-07-05', false, 'Load multiple sections of each course + all preference-compliant backups.'),
-  t('Verify advising questions at orientation / HPA', 'Advising', '2026-08-15', false, 'See the Verify-with-advisor checklist in Timeline.'),
-  t('Find a research lab to reach out to', 'Personal', undefined, false, 'Start relationships early — research + a future letter writer.'),
-  t('Set up first physician shadowing', 'Personal', undefined, false),
-  t('Start clinical volunteering', 'Personal', undefined, false),
-  // 2029 cycle milestones (pinned on the timeline graphic)
-  tm('MCAT — sit the exam', '2029-03-15', 'Option 2 (GPA-safe): study winter 2028→spring 2029, sit Jan–Apr 2029.'),
-  tm('AMCAS opens (2029 cycle)', '2029-05-01', 'Primary application opens.'),
-  tm('Submit AMCAS primary — early!', '2029-05-30', 'Rolling admissions: earlier complete = stronger.'),
-  tm('Secondaries arrive in waves', '2029-07-01', 'Pre-write common prompts in June; turn around fast.'),
-  tm('Interview season begins', '2029-09-01', 'Rolling through winter.'),
-  tm('Matriculate — Fall 2030 (no gap year)', '2030-08-20', 'The finish line for this plan.'),
+  t('Enroll for Fall 2026 — window opens 10:00 AM', 'Application', '2026-07-06', 'Use Swap (not Drop-then-Add). Enroll order: PSYC 101 → NURS 50 seminar → BIOL 103 → ENGL 105 → IDST 101 → IDST 111L.'),
+  t('Build ConnectCarolina shopping cart (30–40 sections)', 'Personal', '2026-07-05', 'Load multiple sections of each course + all preference-compliant backups.'),
+  t('Verify advising questions at orientation / HPA', 'Advising', '2026-08-15', 'See the Verify-with-advisor checklist in Timeline.'),
+  t('Find a research lab to reach out to', 'Personal', undefined, 'Start relationships early — research + a future letter writer.'),
+  t('Set up first physician shadowing', 'Personal'),
+  t('Start clinical volunteering', 'Personal'),
 ])
-function t(title: string, type: TaskItem['type'], deadline: string | undefined, milestone: boolean, notes?: string): Omit<TaskItem, 'id' | 'order'> {
+function t(title: string, type: TaskItem['type'], deadline?: string, notes?: string): Omit<TaskItem, 'id' | 'order'> {
   return {
     title,
     type,
@@ -476,24 +469,24 @@ function t(title: string, type: TaskItem['type'], deadline: string | undefined, 
     kanban: 'todo',
     notes,
     archived: false,
-    milestone,
     horizon: deadline ? 'now' : 'soon',
     important: false,
   }
 }
-function tm(title: string, deadline: string, notes?: string): Omit<TaskItem, 'id' | 'order'> {
+const timelineMilestones: TimelineMilestone[] = seq<Omit<TimelineMilestone, 'id' | 'order'>>([
+  tm('MCAT — sit the exam', '2029-03-15', 'Option 2 (GPA-safe): study winter 2028→spring 2029, sit Jan–Apr 2029.'),
+  tm('AMCAS opens (2029 cycle)', '2029-05-01', 'Primary application opens.'),
+  tm('Submit AMCAS primary — early!', '2029-05-30', 'Rolling admissions: earlier complete = stronger.'),
+  tm('Secondaries arrive in waves', '2029-07-01', 'Pre-write common prompts in June; turn around fast.'),
+  tm('Interview season begins', '2029-09-01', 'Rolling through winter.'),
+  tm('Matriculate — Fall 2030 (no gap year)', '2030-08-20', 'The finish line for this plan.'),
+])
+function tm(title: string, targetDate: string, detail?: string): Omit<TimelineMilestone, 'id' | 'order'> {
   return {
     title,
-    type: 'Application',
-    typeId: typeId('Application'),
-    deadline,
-    progress: 'Not started',
-    kanban: 'todo',
-    notes,
-    archived: false,
-    milestone: true,
-    horizon: 'soon',
-    important: false,
+    targetDate,
+    detail,
+    completed: false,
   }
 }
 
@@ -675,6 +668,7 @@ export function createSeedData(): AppData {
     persons: [],
     organizations: [],
     tasks,
+    timelineMilestones,
     letters: [],
     stories,
     secondaries: [],

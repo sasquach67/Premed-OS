@@ -19,11 +19,11 @@ function formatTarget(value?: string) {
 }
 
 export function OverviewRoadmap() {
-  const tasks = useStore((state) => state.tasks)
+  const milestonesData = useStore((state) => state.timelineMilestones)
   const profile = useStore((state) => state.profile)
   const patchItem = useStore((state) => state.patchItem)
   const reduceMotion = useReducedMotion()
-  const milestones = roadmapMilestones(tasks)
+  const milestones = roadmapMilestones(milestonesData)
   const completed = milestones.filter((milestone) => milestone.state === 'done').length
   const progress = milestones.length ? (completed / milestones.length) * 100 : 0
 
@@ -93,11 +93,7 @@ export function OverviewRoadmap() {
                         <label className="mt-3 flex cursor-pointer items-center gap-2 text-[11px] font-bold text-muted-foreground">
                           <Checkbox
                             checked={milestone.state === 'done'}
-                            onCheckedChange={(checked) => patchItem('tasks', milestone.id, {
-                              progress: checked ? 'Finished' : 'Not started',
-                              kanban: checked ? 'done' : 'todo',
-                              archived: false,
-                            })}
+                            onCheckedChange={(checked) => patchItem('timelineMilestones', milestone.id, { completed: Boolean(checked) })}
                           />
                           Complete
                         </label>

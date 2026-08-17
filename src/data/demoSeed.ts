@@ -197,11 +197,13 @@ export function createDemoData(seedTime = Date.now()): AppData {
   ]
 
   data.tasks = [
-    { id: 'demo-task-exam', title: 'Build BIOL 252 active-recall plan for the cellular neurophysiology midterm', courseId: courses[3].id, course: 'BIOL 252', type: 'Exam', deadline: date(6), progress: 'Working on', kanban: 'doing', archived: false, milestone: false, horizon: 'now', important: true, order: 0 },
-    { id: 'demo-task-hours', title: 'Log this month’s clinical and service hours', type: 'Personal', deadline: date(1), progress: 'Not started', kanban: 'todo', archived: false, milestone: false, horizon: 'now', important: true, order: 1 },
-    { id: 'demo-task-lor', title: 'Send Dr. Ruiz the letter-writer packet', type: 'Application', deadline: date(12), progress: 'Not started', kanban: 'todo', archived: false, milestone: false, horizon: 'soon', important: true, order: 2 },
-    { id: 'demo-milestone-mcat', title: 'Sit for the MCAT', type: 'Application', deadline: date(426), progress: 'Not started', kanban: 'todo', archived: false, milestone: true, horizon: 'soon', important: false, order: 3 },
-    { id: 'demo-milestone-amcas', title: 'Submit AMCAS primary', type: 'Application', deadline: date(500), progress: 'Not started', kanban: 'todo', archived: false, milestone: true, horizon: 'soon', important: false, order: 4 },
+    { id: 'demo-task-exam', title: 'Build BIOL 252 active-recall plan for the cellular neurophysiology midterm', courseId: courses[3].id, course: 'BIOL 252', type: 'Exam', deadline: date(6), progress: 'Working on', kanban: 'doing', archived: false, horizon: 'now', important: true, order: 0 },
+    { id: 'demo-task-hours', title: 'Log this month’s clinical and service hours', type: 'Personal', deadline: date(1), progress: 'Not started', kanban: 'todo', archived: false, horizon: 'now', important: true, order: 1 },
+    { id: 'demo-task-lor', title: 'Send Dr. Ruiz the letter-writer packet', type: 'Application', deadline: date(12), progress: 'Not started', kanban: 'todo', archived: false, horizon: 'soon', important: true, order: 2 },
+  ]
+  data.timelineMilestones = [
+    { id: 'demo-milestone-mcat', title: 'Sit for the MCAT', targetDate: date(426), detail: '', completed: false, order: 0 },
+    { id: 'demo-milestone-amcas', title: 'Submit AMCAS primary', targetDate: date(500), detail: '', completed: false, order: 1 },
   ]
   data.quarterlyGoals = [
     { id: 'demo-goal-1', quarter: 'Current term', text: 'Protect a 3.8+ GPA while building a repeatable active-recall system', done: false, kind: 'measured', standingTarget: 'gpaTarget', order: 0 },

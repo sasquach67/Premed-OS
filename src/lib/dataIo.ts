@@ -18,7 +18,7 @@ export function exportJson(): void {
 
 /** Collections that must be arrays of objects-with-string-ids when present. */
 const ARRAY_COLLECTIONS = [
-  'courses', 'requirements', 'experiences', 'tasks', 'letters', 'stories',
+  'courses', 'requirements', 'experiences', 'tasks', 'timelineMilestones', 'letters', 'stories',
   'secondaries', 'interviewQs', 'schools', 'resources', 'tips', 'focusTargets',
   'quarterlyGoals', 'advisingQs', 'notePages', 'orgs',
 ] as const

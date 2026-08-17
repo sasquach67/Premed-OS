@@ -6,6 +6,7 @@ import { createSeedData } from '@/data/seed'
 import { migrateSyllabusV11 } from '@/store/migrations/syllabusV11'
 import { migrateSchoolStatusV12 } from '@/store/migrations/schoolStatusV12'
 import { migrateOverviewV13 } from '@/store/migrations/overviewV13'
+import { migrateTimelineV14 } from '@/store/migrations/timelineV14'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
 
 function freshData(): AppData {
@@ -14,7 +15,37 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(13)
+  expect(CURRENT_STORE_VERSION).toBe(14)
+})
+
+describe('migrateTimelineV14', () => {
+  it('moves a legacy milestone into Timeline without dropping or rewriting its task record', () => {
+    const data = freshData()
+    delete (data as Partial<AppData>).timelineMilestones
+    data.tasks = [{
+      id: 'legacy-roadmap', title: 'Submit primary', type: 'Application', deadline: '2029-05-30',
+      progress: 'Finished', kanban: 'done', notes: 'Use the verified packet.', archived: false,
+      milestone: true, horizon: 'soon', important: false, order: 7,
+    }]
+    const before = structuredClone(data.tasks[0])
+    Object.freeze(data.tasks[0])
+    Object.freeze(data.tasks)
+
+    const out = migrateTimelineV14(data)
+
+    expect(out.timelineMilestones).toEqual([{
+      id: 'timeline-milestone-legacy-roadmap', title: 'Submit primary', targetDate: '2029-05-30',
+      detail: 'Use the verified packet.', completed: true, legacyTaskId: 'legacy-roadmap', order: 0,
+    }])
+    expect(out.tasks[0]).toEqual({ ...before, timelineMilestoneId: 'timeline-milestone-legacy-roadmap' })
+    expect(data.tasks[0]).toEqual(before)
+  })
+
+  it('is idempotent once the legacy relationship and Timeline record exist', () => {
+    const data = freshData()
+    const once = migrateTimelineV14(data)
+    expect(migrateTimelineV14(once)).toBe(once)
+  })
 })
 
 describe('migrateOverviewV13', () => {
