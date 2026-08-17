@@ -12,6 +12,7 @@ import type {
 } from '@/lib/types'
 import { useStore } from '@/store/store'
 import { uid } from '@/lib/id'
+import { fmtDeadline, fmtEventDate } from '@/lib/date'
 import { createTopicFsrsState } from '@/lib/academics/fsrs'
 import { calculateCourseCoverage } from '@/lib/academics/coverage'
 import { cn } from '@/lib/utils'
@@ -241,7 +242,7 @@ export function ClassHubPeek({
     .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
   const marked = classType === 'stem' ? topics.filter((item) => item.status === 'weak' || item.status === 'reviewing') : []
   const recordedItems = [
-    ...due.map((item) => ({ id: `a-${item.id}`, title: item.title, meta: item.dueDate ? relativeDate(item.dueDate) : 'No date', type: 'assignment' })),
+    ...due.map((item) => ({ id: `a-${item.id}`, title: item.title, meta: assignmentDateLabel(item), type: 'assignment' })),
     ...marked.map((item) => ({ id: `t-${item.id}`, title: item.title, meta: STATUS_LABELS[item.status], type: 'topic' })),
   ]
 
@@ -352,7 +353,7 @@ function Overview({
           {open.slice(0, 4).map((item) => (
             <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-muted/35 px-3 py-2">
               <div className="min-w-0"><p className="truncate font-bold">{item.title}</p><p className="text-xs text-muted-foreground">{item.category || titleCase(item.type)}</p></div>
-              <div className="text-right"><p className="text-xs font-extrabold">{item.dueDate ? relativeDate(item.dueDate) : 'No date'}</p><p className="text-xs text-muted-foreground">{item.weight != null ? `${item.weight}% weight` : 'Weight not set'}</p></div>
+              <div className="text-right"><p className="text-xs font-extrabold">{assignmentDateLabel(item)}</p><p className="text-xs text-muted-foreground">{item.weight != null ? `${item.weight}% weight` : 'Weight not set'}</p></div>
             </div>
           ))}
           {!open.length && <EmptyState icon={CheckCircle2} title="Nothing coming up" detail="No unfinished dated work is recorded." />}
@@ -465,7 +466,7 @@ function WritingTools({ courseId, drafts, readings, feedback }: { courseId: stri
       <Panel title="Drafts" action={<Button size="sm" variant="outline" onClick={() => {
         const now = Date.now(); update((draft) => draft.academics.classCenter.paperDrafts.push({ id: uid(), courseId, title: 'Untitled paper', stage: 'outline', createdAt: now, updatedAt: now, order: draft.academics.classCenter.paperDrafts.filter((item) => item.courseId === courseId).length }))
       }}><Plus className="size-4" /> Add paper</Button>}>
-        <div className="space-y-3">{drafts.map((draft) => <div key={draft.id} className="rounded-xl border border-border bg-muted/25 p-3"><div className="flex items-center justify-between gap-3"><p className="font-extrabold">{draft.title}</p><Badge variant={draft.stage === 'submitted' ? 'success' : 'outline'}>{titleCase(draft.stage)}</Badge></div><div className="mt-3 flex flex-wrap gap-2">{(['outline', 'draft', 'revision', 'submitted'] as const).map((stage) => <Button key={stage} size="sm" variant={draft.stage === stage ? 'default' : 'outline'} onClick={() => patchDraft(draft.id, stage)}>{titleCase(stage)}</Button>)}</div>{draft.selfDeadline && <p className="mt-2 text-xs font-semibold text-muted-foreground">Your deadline · {relativeDate(draft.selfDeadline)}</p>}</div>)}{!drafts.length && <EmptyState icon={FileText} title="No papers assigned yet" detail="Add a paper when it appears in the syllabus or course site." />}</div>
+        <div className="space-y-3">{drafts.map((draft) => <div key={draft.id} className="rounded-xl border border-border bg-muted/25 p-3"><div className="flex items-center justify-between gap-3"><p className="font-extrabold">{draft.title}</p><Badge variant={draft.stage === 'submitted' ? 'success' : 'outline'}>{titleCase(draft.stage)}</Badge></div><div className="mt-3 flex flex-wrap gap-2">{(['outline', 'draft', 'revision', 'submitted'] as const).map((stage) => <Button key={stage} size="sm" variant={draft.stage === stage ? 'default' : 'outline'} onClick={() => patchDraft(draft.id, stage)}>{titleCase(stage)}</Button>)}</div>{draft.selfDeadline && <p className="mt-2 text-xs font-semibold text-muted-foreground">Your deadline · {fmtDeadline(draft.selfDeadline)}</p>}</div>)}{!drafts.length && <EmptyState icon={FileText} title="No papers assigned yet" detail="Add a paper when it appears in the syllabus or course site." />}</div>
       </Panel>
       <Panel title="Readings" action={<Button size="sm" variant="outline" onClick={() => {
         const now = Date.now(); update((draft) => draft.academics.classCenter.assignedReadings.push({ id: uid(), courseId, week: 'This week', title: 'Untitled reading', status: 'not-started', createdAt: now, updatedAt: now, order: draft.academics.classCenter.assignedReadings.filter((item) => item.courseId === courseId).length }))
@@ -847,7 +848,7 @@ function AssignmentRow({ item, topics }: { item: ClassAssignment; topics: Topic[
   return (
     <div className="grid gap-2 rounded-xl border border-border bg-muted/25 p-3 md:grid-cols-[minmax(0,1fr)_140px_110px_auto] md:items-center">
       <div><p className="font-extrabold">{item.title}</p><p className="text-xs text-muted-foreground">{linked.length ? linked.map((topic) => topic.title).join(', ') : 'No linked topics'}</p></div>
-      <span className="text-sm font-bold text-muted-foreground">{item.dueDate ? relativeDate(item.dueDate) : 'No due date'}</span>
+      <span className="text-sm font-bold text-muted-foreground">{assignmentDateLabel(item)}</span>
       <Badge variant={isComplete(item) ? 'success' : item.dueDate && item.dueDate < isoToday() ? 'danger' : 'outline'}>{titleCase(item.status)}</Badge>
       <span className="text-right text-sm font-extrabold tabular-nums">{hasGrade(item) ? `${item.pointsEarned}/${item.pointsPossible}` : item.weight != null ? `${item.weight}%` : '—'}</span>
     </div>
@@ -963,7 +964,7 @@ function EmptyState({ icon: Icon, title, detail }: { icon: typeof BookOpen; titl
 }
 
 function AssignmentMini({ item }: { item: ClassAssignment }) {
-  return <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/25 px-3 py-2"><div className="min-w-0"><p className="truncate font-bold">{item.title}</p><p className="text-xs text-muted-foreground">{titleCase(item.type)}</p></div><Badge variant={item.dueDate && item.dueDate < isoToday() ? 'danger' : 'outline'}>{item.dueDate ? relativeDate(item.dueDate) : 'No date'}</Badge></div>
+  return <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/25 px-3 py-2"><div className="min-w-0"><p className="truncate font-bold">{item.title}</p><p className="text-xs text-muted-foreground">{titleCase(item.type)}</p></div><Badge variant={item.dueDate && item.dueDate < isoToday() ? 'danger' : 'outline'}>{assignmentDateLabel(item)}</Badge></div>
 }
 
 function Legend({ color, label }: { color: string; label: string }) {
@@ -1012,10 +1013,10 @@ function hubStats(course: Course, topics: Topic[], assignments: ClassAssignment[
     grade: course.grade || (coursePercent(assignments) == null ? '—' : `${formatNumber(coursePercent(assignments)!)}%`),
     ready: topics.filter((item) => item.status === 'ready').length,
     dueToday: assignments.filter((item) => item.dueDate === today && !isComplete(item)).length,
-    nextDue: next?.dueDate ? relativeDate(next.dueDate) : '—',
+    nextDue: next ? assignmentDateLabel(next) : '—',
     // Banner metrics are short by design (04 §0c "6d"), so the empty case is a
     // dash rather than a sentence that has to truncate inside the strip.
-    examCountdown: exam?.dueDate ? relativeDate(exam.dueDate) : '—',
+    examCountdown: exam ? assignmentDateLabel(exam) : '—',
   }
 }
 
@@ -1093,12 +1094,8 @@ function meetingText(workspace: ClassWorkspace) {
   return value || 'Meeting time not set'
 }
 
-function relativeDate(date: string) {
-  const delta = Math.round((new Date(`${date}T00:00:00`).getTime() - new Date(`${isoToday()}T00:00:00`).getTime()) / 86400000)
-  if (delta === 0) return 'Today'
-  if (delta === 1) return 'Tomorrow'
-  if (delta === -1) return 'Yesterday'
-  return delta < 0 ? `${Math.abs(delta)}d overdue` : `${delta}d left`
+function assignmentDateLabel(item: Pick<ClassAssignment, 'dueDate' | 'type'>) {
+  return item.type === 'exam' ? fmtEventDate(item.dueDate) : fmtDeadline(item.dueDate)
 }
 
 function ordered<T extends { order: number }>(items: T[]) {

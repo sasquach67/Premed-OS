@@ -50,7 +50,7 @@ import { CenterPeek, type RecordOpenMode } from '@/components/common/CenterPeek'
 import { BoundedRegion } from '@/components/common/BoundedLayout'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Toggle } from '@/components/ui/toggle'
-import { daysUntil, fmtRelative } from '@/lib/date'
+import { daysUntil, fmtDeadline } from '@/lib/date'
 import { uid } from '@/lib/id'
 import { MOTION_TRANSITION } from '@/lib/motion'
 import { overviewTaskTab, overviewTasks, type OverviewTaskTab } from '@/lib/overview'
@@ -368,8 +368,9 @@ function TaskRow({
       <DateField
         value={task.deadline ?? ''}
         onChange={(iso) => patchItem('tasks', task.id, { deadline: iso || undefined })}
-        ariaLabel={task.deadline ? `Due ${fmtRelative(task.deadline)}. Change it` : `Set a due date for ${task.title}`}
+        ariaLabel={task.deadline ? `${fmtDeadline(task.deadline)}. Change it` : `Set a due date for ${task.title}`}
         align="end"
+        display="deadline"
         className={cn(
           // DateField's trigger is w-full by default; unconstrained it eats the
           // row and squeezes the title to nothing.

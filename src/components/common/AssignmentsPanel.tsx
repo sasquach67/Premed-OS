@@ -70,6 +70,7 @@ import { RecordActionOverflow, RecordContextMenu, type RecordAction } from '@/co
 import { TrackerTable, type ColumnDef } from '@/components/common/TrackerTable'
 import { useToast } from '@/components/common/useToast'
 import { uid } from '@/lib/id'
+import { daysUntil, fmtDeadline, fmtEventDate } from '@/lib/date'
 import { MOTION_DISTANCE, MOTION_TRANSITION } from '@/lib/motion'
 import type {
   ClassAssignment,
@@ -136,14 +137,11 @@ function courseLabel(courseId: string, courses: Course[]) {
 }
 
 function relativeDue(iso?: string) {
-  const due = localDate(iso)
-  if (!due) return { label: 'No date', variant: 'muted' as const }
-  const days = Math.round((due.getTime() - startOfDay().getTime()) / 86_400_000)
-  if (days < 0) return { label: `${Math.abs(days)}d overdue`, variant: 'danger' as const }
-  if (days === 0) return { label: 'Today', variant: 'warning' as const }
-  if (days === 1) return { label: 'Tomorrow', variant: 'warning' as const }
-  if (days < 7) return { label: due.toLocaleDateString(undefined, { weekday: 'long' }), variant: 'warning' as const }
-  return { label: `in ${days} days`, variant: 'muted' as const }
+  const days = daysUntil(iso)
+  if (days == null) return { label: 'No due date', variant: 'muted' as const }
+  if (days < 0) return { label: fmtDeadline(iso), variant: 'danger' as const }
+  if (days <= 6) return { label: fmtDeadline(iso), variant: 'warning' as const }
+  return { label: fmtDeadline(iso), variant: 'muted' as const }
 }
 
 function exactDue(iso?: string) {
@@ -734,7 +732,10 @@ function AssignmentRow({
   onDelete: (assignment: ClassAssignment) => void
 }) {
   const complete = COMPLETED.has(assignment.status)
-  const due = relativeDue(assignment.dueDate)
+  const examDays = daysUntil(assignment.dueDate)
+  const due = assignment.type === 'exam'
+    ? { label: fmtEventDate(assignment.dueDate), variant: examDays != null && examDays <= 6 ? 'warning' as const : 'muted' as const }
+    : relativeDue(assignment.dueDate)
   const color = courseColor(assignment.courseId, courses)
   const covered = assignment.coveredTopicIds ?? assignment.linkedTopicIds
   const ready = topics.filter((topic) => covered.includes(topic.id) && topic.status === 'ready').length

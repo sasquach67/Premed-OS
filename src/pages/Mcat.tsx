@@ -10,7 +10,7 @@ import {
 import { useStore } from '@/store/store'
 import { ROUTE_MAP } from '@/app/routes'
 import { bestMcat } from '@/lib/selectors'
-import { pickDaily } from '@/lib/date'
+import { daysUntil, fmtEventDate, fmtRecordedDate, pickDaily } from '@/lib/date'
 import { uid } from '@/lib/id'
 import { MCAT_QOTD } from '@/data/mcatQotd'
 import {
@@ -134,7 +134,7 @@ export function Mcat() {
   const readiness = Math.max(18, Math.min(92, Math.round(((currentScore - 472) / (goal - 472 || 1)) * 100)))
   const projectedReadiness = Math.max(readiness + 8, Math.min(96, Math.round(((projectedScore - 472) / (goal - 472 || 1)) * 100)))
   const qotd = pickDaily(MCAT_QOTD, 13) ?? MCAT_QOTD[0]
-  const days = daysUntilNumber(targetDate)
+  const days = daysUntil(targetDate)
   const openTasks = mcat.schedule.filter((s) => !s.done).length + mcat.errorLog.filter((e) => !e.resolved).length
   const debtHours = Math.round(openTasks * (preferredSessionLength / 60))
 
@@ -159,8 +159,7 @@ export function Mcat() {
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-2.5 text-sm card-soft">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-          <span className="flex items-center gap-1.5"><CalendarRange className="size-4 text-primary" /> Sit date <b>{formatDateChip(targetDate)}</b></span>
-          <span className="font-bold text-primary">{days != null ? `${days} days out` : 'Set a date'}</span>
+          <span className="flex items-center gap-1.5"><CalendarRange className="size-4 text-primary" /> Sit date <b>{fmtEventDate(targetDate)}</b></span>
           <span>Goal <b className="text-foreground">{mcat.goalScore ?? 'Set'}</b></span>
           <span>Baseline <b className="text-foreground">{mcat.baselineScore ?? best ?? 'Set'}</b></span>
           <span className="text-muted-foreground">Best so far <b className="text-foreground">{best ?? '—'}</b></span>
@@ -295,7 +294,7 @@ function McatSetupDialog() {
             <div className="grid gap-4 md:grid-cols-3">
               <Label className="space-y-1.5">
                 <span>Sit date</span>
-                <DateField value={targetDate} onChange={setTargetDate} ariaLabel="Sit date" />
+                <DateField value={targetDate} onChange={setTargetDate} ariaLabel="Sit date" display="event" />
               </Label>
               <Label className="space-y-1.5">
                 <span>Goal score</span>
@@ -748,6 +747,7 @@ function MistakeMap() {
                 </label>
                 <button onClick={() => update((d) => { d.mcat.errorLog = d.mcat.errorLog.filter((e) => e.id !== er.id) })} className="rounded-md p-1 text-muted-foreground hover:text-destructive"><Trash2 className="size-3.5" /></button>
               </div>
+              <p className="mb-2 text-xs font-semibold text-muted-foreground">{fmtRecordedDate(er.date)}</p>
               <div className="space-y-2">
                 <Field label="Why I missed it"><Textarea defaultValue={er.whyMissed} onBlur={(e) => patch(er.id, { whyMissed: e.target.value })} placeholder="Misread? Content gap? Timing?" className="min-h-14 text-sm" /></Field>
                 <Field label="The fix"><Textarea defaultValue={er.fix} onBlur={(e) => patch(er.id, { fix: e.target.value })} placeholder="The rule/strategy to remember next time" className="min-h-14 text-sm" /></Field>
@@ -1584,22 +1584,6 @@ function parseOptionalNumber(value: string) {
   if (!trimmed) return undefined
   const parsed = Number(trimmed)
   return Number.isFinite(parsed) ? parsed : undefined
-}
-
-function formatDateChip(date?: string) {
-  if (!date) return 'Set'
-  const parsed = new Date(`${date}T00:00:00`)
-  if (Number.isNaN(parsed.getTime())) return 'Set'
-  return new Intl.DateTimeFormat(undefined, { month: '2-digit', day: '2-digit', year: 'numeric' }).format(parsed)
-}
-
-function daysUntilNumber(date?: string) {
-  if (!date) return null
-  const target = new Date(`${date}T00:00:00`)
-  if (Number.isNaN(target.getTime())) return null
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  return Math.ceil((target.getTime() - today.getTime()) / 86_400_000)
 }
 
 function buildSectionReadiness(attempts: ReturnType<typeof useStore.getState>['mcat']['attempts']) {

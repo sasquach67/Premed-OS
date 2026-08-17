@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarClock, ArrowRight } from 'lucide-react'
 import { useStore } from '@/store/store'
-import { daysUntil, fmtDate, fmtRelative } from '@/lib/date'
+import { daysUntil, fmtDate, fmtDeadline } from '@/lib/date'
 import { Card, CardContent } from '@/components/ui/card'
 
 /** A live ticking clock. */
@@ -44,7 +44,7 @@ export function NextEventWidget() {
           {next ? (
             <Link to="/overview/tasks" className="group min-w-0 flex-1">
               <p className="truncate text-sm font-bold group-hover:text-primary">{next.title || 'Untitled'}</p>
-              <p className="text-xs text-muted-foreground">{fmtRelative(next.deadline)} · {fmtDate(next.deadline)}</p>
+              <p className="text-xs text-muted-foreground">{fmtDeadline(next.deadline)} · {fmtDate(next.deadline)}</p>
             </Link>
           ) : (
             <p className="text-sm text-muted-foreground">No dated tasks are coming up. Add one from <Link to="/overview/tasks" className="font-semibold text-primary hover:underline">Tasks</Link>.</p>

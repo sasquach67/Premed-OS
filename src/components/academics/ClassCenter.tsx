@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { uid } from '@/lib/id'
+import { fmtDeadline, fmtEventDate } from '@/lib/date'
 import { cn } from '@/lib/utils'
 import type {
   AcademicTagColor, ClassAssignment, ClassWorkspace,
@@ -777,7 +778,7 @@ function ClassCard({
   const [actionHovered, setActionHovered] = useState(false)
   const stats = classStats(row.id, data)
   const nextText = stats.nextDeadline?.title
-    ? `${stats.nextDeadline.title}${stats.nextDeadline.dueDate ? ` · ${daysUntil(stats.nextDeadline.dueDate)}` : ''}`
+    ? `${stats.nextDeadline.title}${stats.nextDeadline.dueDate ? ` · ${assignmentDateLabel(stats.nextDeadline)}` : ''}`
     : 'No deadline scheduled'
   const percent = coursePercent(row.id, data)
   const accent = CARD_ACCENTS[classCardColor(row.color)]
@@ -1092,7 +1093,7 @@ function ReviewTopicsPanel({
     >
       {effectiveScope === 'exam' && nextExam && (
         <div className="mb-3 rounded-xl bg-muted/35 p-3">
-          <p className="font-display text-xl font-bold tabular-nums">{nextExam.dueDate ? daysUntil(nextExam.dueDate) : 'Date TBD'}</p>
+          <p className="font-display text-xl font-bold tabular-nums">{fmtEventDate(nextExam.dueDate)}</p>
           <p className="text-sm font-bold">{classLabel(nextExam.courseId, data)} · {nextExam.title}</p>
           <p className="text-xs font-semibold text-muted-foreground">{examTopicIds.length} topics in scope</p>
         </div>
@@ -1152,7 +1153,7 @@ function UpNextPanel({
     >
       <div className="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)]">
         <div>
-          <p className="font-display text-4xl font-bold tabular-nums">{item.dueDate ? daysUntil(item.dueDate) : 'TBD'}</p>
+          <p className="font-display text-4xl font-bold tabular-nums">{assignmentDateLabel(item)}</p>
           <Badge className="mt-2" variant="outline">{classLabel(item.courseId, data)}</Badge>
         </div>
         <div>
@@ -1171,7 +1172,7 @@ function UpNextPanel({
       {!!assignments.slice(1, 4).length && (
         <div className="mt-4 flex flex-wrap gap-2">
           {assignments.slice(1, 4).map((next) => (
-            <Badge key={next.id} variant="secondary">{next.title} · {next.dueDate ? daysUntil(next.dueDate) : 'TBD'}</Badge>
+            <Badge key={next.id} variant="secondary">{next.title} · {assignmentDateLabel(next)}</Badge>
           ))}
         </div>
       )}
@@ -1284,7 +1285,7 @@ function UpcomingPanel({ data, assignments }: { data: ClassCenterViewData; assig
             <div key={item.id} className="rounded-xl border border-border bg-background p-3">
               <div className="flex items-start justify-between gap-2">
                 <span className="font-bold">{item.title}</span>
-                <span className="whitespace-nowrap text-xs font-bold tabular-nums text-muted-foreground">{item.dueDate ? daysUntil(item.dueDate) : 'TBD'}</span>
+                <span className="whitespace-nowrap text-xs font-bold tabular-nums text-muted-foreground">{assignmentDateLabel(item)}</span>
               </div>
               <p className="mt-1 text-xs font-semibold text-muted-foreground">{classLabel(item.courseId, data)}{item.weight != null ? ` · ${item.weight}%` : ''}</p>
             </div>
@@ -1385,7 +1386,7 @@ function ClassWorkspace({
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">Now: {topic?.title ?? 'Topic TBD'}</Badge>
-              {stats.nextDeadline && <Badge variant="danger">{stats.nextDeadline.title} · {stats.nextDeadline.dueDate ? daysUntil(stats.nextDeadline.dueDate) : 'soon'}</Badge>}
+              {stats.nextDeadline && <Badge variant="danger">{stats.nextDeadline.title} · {assignmentDateLabel(stats.nextDeadline)}</Badge>}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button className="rounded-full"><Plus className="size-4" /> Add</Button>
@@ -1519,7 +1520,7 @@ function OverviewTab({
   const reviewTopic = topics.find((topic) => topic.status === 'weak') ?? topics.find((topic) => topic.status === 'reviewing')
   const actionRows = [
     reviewTopic ? { label: `Review marked topic: ${reviewTopic.title}`, meta: '15 min', onClick: undefined } : undefined,
-    stats.nextDeadline ? { label: `Start ${stats.nextDeadline.title}`, meta: stats.nextDeadline.dueDate ? daysUntil(stats.nextDeadline.dueDate) : 'Open', onClick: openAssignments } : undefined,
+    stats.nextDeadline ? { label: `Start ${stats.nextDeadline.title}`, meta: assignmentDateLabel(stats.nextDeadline), onClick: openAssignments } : undefined,
   ].filter(Boolean) as { label: string; meta: string; onClick?: () => void }[]
   return (
     <div className="grid gap-4 xl:grid-cols-[1.2fr_.88fr]">
@@ -1569,7 +1570,7 @@ function OverviewTab({
                     </p>
                   )}
                 </div>
-                <span className="text-xs font-extrabold text-destructive">{item.dueDate ? daysUntil(item.dueDate) : 'no date'}</span>
+                <span className="text-xs font-extrabold text-destructive">{assignmentDateLabel(item)}</span>
               </button>
             ))}
             {!upcoming.length && <p className="text-sm text-muted-foreground">No class deadlines yet.</p>}
@@ -2537,17 +2538,8 @@ function compactMeeting(row: ClassWorkspaceView) {
   return [row.meetingDays, row.meetingTime, row.location].filter(Boolean).join(' · ')
 }
 
-function daysUntil(date: string) {
-  if (!date) return 'no date'
-  const start = new Date()
-  start.setHours(0, 0, 0, 0)
-  const target = new Date(`${date}T00:00:00`)
-  const days = Math.ceil((target.getTime() - start.getTime()) / 86400000)
-  if (Number.isNaN(days)) return 'date TBD'
-  if (days < 0) return `${Math.abs(days)}d overdue`
-  if (days === 0) return 'today'
-  if (days === 1) return 'tomorrow'
-  return `${days}d`
+function assignmentDateLabel(item: Pick<ClassAssignment, 'dueDate' | 'type'>) {
+  return item.type === 'exam' ? fmtEventDate(item.dueDate) : fmtDeadline(item.dueDate)
 }
 
 function statusLabel(value: string) {

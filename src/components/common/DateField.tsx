@@ -11,6 +11,7 @@ import {
   isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths,
 } from 'date-fns'
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from 'lucide-react'
+import { fmtDeadline, fmtEventDate } from '@/lib/date'
 import { cn } from '@/lib/utils'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
@@ -23,7 +24,7 @@ function toDate(iso: string): Date | null {
 }
 
 export function DateField({
-  value, onChange, placeholder = 'Pick a date', ariaLabel, className, align = 'start',
+  value, onChange, placeholder = 'Pick a date', ariaLabel, className, align = 'start', display = 'date',
 }: {
   value: string
   onChange: (iso: string) => void
@@ -31,6 +32,8 @@ export function DateField({
   ariaLabel?: string
   className?: string
   align?: 'start' | 'center' | 'end'
+  /** Show a contextual countdown in compact row controls; editors retain the exact date by default. */
+  display?: 'date' | 'deadline' | 'event'
 }) {
   const selected = toDate(value)
   const [open, setOpen] = useState(false)
@@ -43,6 +46,11 @@ export function DateField({
   }, [view])
 
   const today = new Date()
+  const label = selected
+    ? display === 'deadline' ? fmtDeadline(value)
+      : display === 'event' ? fmtEventDate(value)
+        : format(selected, 'MMM d, yyyy')
+    : placeholder
 
   return (
     <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) setView(selected ?? new Date()) }}>
@@ -55,7 +63,7 @@ export function DateField({
         )}
       >
         <CalendarDays className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="min-w-0 truncate tabular-nums">{selected ? format(selected, 'MMM d, yyyy') : placeholder}</span>
+        <span className="min-w-0 truncate tabular-nums" title={selected ? format(selected, 'MMM d, yyyy') : undefined}>{label}</span>
       </PopoverTrigger>
       <PopoverContent
         align={align}
