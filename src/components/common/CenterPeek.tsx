@@ -19,6 +19,8 @@ export function CenterPeek({
   children,
   onOpenChange,
   onModeChange,
+  onExpand,
+  allowSplit = true,
 }: {
   open: boolean
   mode: RecordOpenMode
@@ -27,6 +29,10 @@ export function CenterPeek({
   children: ReactNode
   onOpenChange: (open: boolean) => void
   onModeChange: (mode: RecordOpenMode) => void
+  /** Promotes the record to its owning full-page route, when it has one. */
+  onExpand?: () => void
+  /** Hide Split until the originating workspace implements a real docked list. */
+  allowSplit?: boolean
 }) {
   const [confirmClose, setConfirmClose] = useState(false)
   const [mobile, setMobile] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches)
@@ -71,21 +77,23 @@ export function CenterPeek({
 
   const controls = (
     <div className="flex shrink-0 items-center gap-1" aria-label="Record view controls">
-      <Button
-        type="button"
-        size="sm"
-        variant={mode === 'split' ? 'secondary' : 'ghost'}
-        onClick={() => onModeChange(mode === 'split' ? 'peek' : 'split')}
-        aria-label="Split record view"
-      >
-        <PanelLeft className="size-4" aria-hidden="true" />
-        <span className="hidden sm:inline">Split</span>
-      </Button>
+      {allowSplit && (
+        <Button
+          type="button"
+          size="sm"
+          variant={mode === 'split' ? 'secondary' : 'ghost'}
+          onClick={() => onModeChange(mode === 'split' ? 'peek' : 'split')}
+          aria-label="Split record view"
+        >
+          <PanelLeft className="size-4" aria-hidden="true" />
+          <span className="hidden sm:inline">Split</span>
+        </Button>
+      )}
       <Button
         type="button"
         size="sm"
         variant={mode === 'expanded' ? 'secondary' : 'ghost'}
-        onClick={() => onModeChange(mode === 'expanded' ? 'peek' : 'expanded')}
+        onClick={() => onExpand ? onExpand() : onModeChange(mode === 'expanded' ? 'peek' : 'expanded')}
         aria-label={mode === 'expanded' ? 'Collapse record' : 'Expand record'}
       >
         {mode === 'expanded'

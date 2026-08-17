@@ -1,6 +1,6 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ToastContext } from '@/components/common/toast-context'
 import { ActivityAndCapture, QuarterlyGoalsPanel } from '@/components/overview/OverviewSupport'
@@ -123,7 +123,7 @@ describe('Overview File Capture', () => {
     expect(container.textContent).not.toContain('Saved file to Story Bank.')
   })
 
-  it('keeps quarterly goal and standing-target editors mutually exclusive after expand', async () => {
+  it('keeps quarterly goal and standing-target editors mutually exclusive', async () => {
     await renderQuarterlyGoals()
     await act(async () => button(container, 'Edit targets').click())
     await act(async () => (document.querySelector('button[aria-label="Expand record"]') as HTMLButtonElement).click())
@@ -132,5 +132,26 @@ describe('Overview File Capture', () => {
     const headings = [...document.querySelectorAll('h2')].map((heading) => heading.textContent)
     expect(headings).toContain('Edit quarterly goal')
     expect(headings).not.toContain('Standing targets')
+  })
+
+  it('opens the goal editor expand control at its full-page Overview route', async () => {
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={['/']}>
+          <ToastContext.Provider value={{ toast: () => 'test-toast' }}>
+            <Routes>
+              <Route path="/" element={<QuarterlyGoalsPanel />} />
+              <Route path="/overview/goals/:goalId" element={<p>Quarterly goal full page</p>} />
+            </Routes>
+          </ToastContext.Provider>
+        </MemoryRouter>
+      )
+    })
+
+    await act(async () => buttonContaining(container, 'Lock a 3.8+ first semester').click())
+    await act(async () => (document.querySelector('button[aria-label="Expand record"]') as HTMLButtonElement).click())
+
+    expect(container.textContent).toContain('Quarterly goal full page')
+    expect(container.querySelector('button[aria-label="Split record view"]')).toBeNull()
   })
 })

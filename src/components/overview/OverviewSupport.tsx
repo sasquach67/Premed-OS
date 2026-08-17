@@ -10,7 +10,7 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { CenterPeek, type RecordOpenMode } from '@/components/common/CenterPeek'
 import { MascotNote } from '@/components/common/MascotNote'
 import { useToast } from '@/components/common/useToast'
@@ -108,6 +108,7 @@ export function QuarterlyGoalsPanel() {
   const patchItem = useStore((state) => state.patchItem)
   const softDeleteItems = useStore((state) => state.softDeleteItems)
   const toast = useToast()
+  const navigate = useNavigate()
   const [editor, setEditor] = useState<QuarterlyGoal | null | 'new'>(null)
   const [targetsOpen, setTargetsOpen] = useState(false)
   const [mode, setMode] = useState<RecordOpenMode>('peek')
@@ -134,6 +135,10 @@ export function QuarterlyGoalsPanel() {
   function archiveGoal(goal: QuarterlyGoal) {
     const recoveryId = softDeleteItems('quarterlyGoals', [goal.id], 'Archived quarterly goal')
     toast({ title: 'Goal archived', description: goal.text, onUndo: recoveryId ? () => useStore.getState().undoRecovery(recoveryId) : undefined })
+  }
+  function expandGoalEditor() {
+    if (editor === 'new') navigate('/overview/goals/new')
+    else if (editor) navigate(`/overview/goals/${editor.id}`)
   }
 
   return (
@@ -186,17 +191,17 @@ export function QuarterlyGoalsPanel() {
           })}
         </CardContent>
       </Card>
-      <CenterPeek open={editor != null} mode={mode} label={editor === 'new' ? 'New quarterly goal' : 'Edit quarterly goal'} onOpenChange={(open) => !open && closeGoalEditor()} onModeChange={setMode}>
+      <CenterPeek open={editor != null} mode={mode} label={editor === 'new' ? 'New quarterly goal' : 'Edit quarterly goal'} onOpenChange={(open) => !open && closeGoalEditor()} onModeChange={setMode} onExpand={expandGoalEditor} allowSplit={false}>
         {editor != null && <QuarterlyGoalEditor goal={editor === 'new' ? undefined : editor} onDone={closeGoalEditor} onArchive={editor === 'new' ? undefined : () => { archiveGoal(editor); closeGoalEditor() }} />}
       </CenterPeek>
-      <CenterPeek open={targetsOpen} mode={mode} label="Standing domain targets" onOpenChange={(open) => !open && closeTargetEditor()} onModeChange={setMode}>
+      <CenterPeek open={targetsOpen} mode={mode} label="Standing domain targets" onOpenChange={(open) => !open && closeTargetEditor()} onModeChange={setMode} onExpand={() => navigate('/overview/goals/targets')} allowSplit={false}>
         <GoalTargetEditor />
       </CenterPeek>
     </>
   )
 }
 
-function QuarterlyGoalEditor({ goal, onDone, onArchive }: { goal?: QuarterlyGoal; onDone: () => void; onArchive?: () => void }) {
+export function QuarterlyGoalEditor({ goal, onDone, onArchive }: { goal?: QuarterlyGoal; onDone: () => void; onArchive?: () => void }) {
   const addItem = useStore((state) => state.addItem)
   const patchItem = useStore((state) => state.patchItem)
   const existingCount = useStore((state) => state.quarterlyGoals.length)
@@ -231,7 +236,7 @@ function QuarterlyGoalEditor({ goal, onDone, onArchive }: { goal?: QuarterlyGoal
   )
 }
 
-function GoalTargetEditor() {
+export function GoalTargetEditor() {
   const goals = useStore((state) => state.goals)
   const update = useStore((state) => state.update)
   const labels: Array<{ key: keyof Goals; label: string; unit: string }> = [

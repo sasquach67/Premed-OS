@@ -9,6 +9,7 @@ import { MergeGate } from '@/components/public/MergeGate'
    needs them). Pages use named exports, hence the .then() shims. */
 const Home = lazy(() => import('@/pages/Home').then((m) => ({ default: m.Home })))
 const OverviewTasksPage = lazy(() => import('@/pages/OverviewTasksPage').then((m) => ({ default: m.OverviewTasksPage })))
+const OverviewQuarterlyGoalsPage = lazy(() => import('@/pages/OverviewQuarterlyGoalsPage').then((m) => ({ default: m.OverviewQuarterlyGoalsPage })))
 const Academics = lazy(() => import('@/pages/Academics').then((m) => ({ default: m.Academics })))
 const AcademicRecallSession = lazy(() => import('@/pages/AcademicRecallSession').then((m) => ({ default: m.AcademicRecallSession })))
 const Mcat = lazy(() => import('@/pages/Mcat').then((m) => ({ default: m.Mcat })))
@@ -77,6 +78,7 @@ function App() {
           <Route element={<AppShell />}>
             <Route path="northstar" element={<Navigate to="/?guide=open" replace />} />
             <Route path="overview/tasks" element={<OverviewTasksPage />} />
+            <Route path="overview/goals/:goalId" element={<OverviewQuarterlyGoalsPage />} />
             <Route path="academics" element={<Academics />} />
             <Route path="academics/classes/:courseId" element={<Academics />} />
             <Route path="mcat" element={<Mcat />} />
