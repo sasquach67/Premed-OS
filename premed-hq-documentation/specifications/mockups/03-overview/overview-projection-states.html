@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Overview · projection states</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#211e1a;--card:#2b2722;--muted:#322e28;--bd:#3c352d;--fg:#ece3d4;--mut:#a89c8c;--dim:#7c7264;--pri:#6fb3de;--success:#6fc0a8;--warning:#e7b06a}
+    *{box-sizing:border-box} body{margin:0;background:#171512;color:var(--fg);font:600 13px Nunito,sans-serif}
+    .frame{width:1400px;min-height:100vh;margin:auto;padding:26px;background:var(--bg)} h1,h2,h3,b,button{font-family:'Baloo 2'} h1{font-size:30px;line-height:1;margin:6px 0} h2{font-size:18px;margin:0} h3{font-size:13px;margin:0} p{margin:0;color:var(--mut)}
+    .ey{font:800 10px 'Baloo 2';letter-spacing:.12em;text-transform:uppercase;color:var(--pri)} .lede{max-width:690px;line-height:1.5}
+    .bento{display:grid;grid-template-columns:7fr 5fr;gap:16px;margin-top:18px}.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 10px 26px -14px #0009}.wide{grid-column:1/-1}.hd{padding:14px 16px 9px;display:flex;align-items:baseline;justify-content:space-between;gap:12px}.body{padding:3px 16px 16px}.sub{font-size:11px;color:var(--dim);font-weight:700}.group{font:800 9px 'Baloo 2';letter-spacing:.1em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:8px;margin:9px 0 4px}.group:after{content:'';height:1px;flex:1;background:var(--bd)}
+    .domain{display:grid;grid-template-columns:9px 1fr auto 15px;gap:9px;align-items:center;padding:8px;border-radius:9px}.domain.open{background:var(--muted)}.dot{width:9px;height:9px;border-radius:3px;background:var(--success)}.name{font-weight:800}.meta{font-size:11px;color:var(--mut);margin-left:6px}.chip{border:1px solid color-mix(in srgb,var(--success) 26%,var(--bd));background:color-mix(in srgb,var(--success) 10%,var(--muted));border-radius:9px;padding:4px 7px;font-size:10.5px;font-weight:800;color:var(--mut);white-space:nowrap}.chip.neutral{border-color:var(--bd);background:#ffffff08;color:var(--dim)}
+    .projection{margin:0 8px 8px 26px;border:1px solid var(--bd);border-radius:11px;background:var(--card);padding:10px}.empty-projection{display:flex;align-items:center;gap:10px;border-left:2px solid var(--warning);background:#e7b06a0f}.empty-icon{width:27px;height:27px;display:grid;place-items:center;border-radius:8px;background:#e7b06a1a;color:var(--warning);font:800 14px 'Baloo 2'}.hint{font-size:11px;line-height:1.4}.quiet{border:1px solid var(--bd);background:transparent;color:var(--mut);border-radius:9px;padding:6px 10px;font:800 11px 'Baloo 2';cursor:pointer}.quiet:focus-visible,.dismiss:focus-visible{outline:2px solid var(--pri);outline-offset:2px}.closed{display:flex;align-items:center;justify-content:space-between;gap:12px}.closed b{font-size:12px}.pill{border:1px solid color-mix(in srgb,var(--pri) 28%,var(--bd));background:#6fb3de14;border-radius:999px;padding:5px 10px;color:var(--pri);font:800 11px 'Baloo 2'}
+    .calculation{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px}.fact{border:1px solid var(--bd);border-radius:9px;background:var(--muted);padding:8px 9px}.fact span{display:block;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}.fact b{display:block;margin-top:2px;font-size:12px}.formula{margin-top:9px;padding-top:9px;border-top:1px solid var(--bd);font-size:11px;color:var(--mut)}.formula b{color:var(--fg)}.note{margin-top:9px;border-left:2px solid var(--success);background:#ffffff08;padding:8px 10px;font-size:11px;color:var(--mut)}.dismiss{margin-top:9px;border:0;background:transparent;padding:0;color:var(--dim);font:800 11px 'Baloo 2';cursor:pointer}.anchor{color:var(--pri);font-weight:800}
+    .road{display:flex;gap:10px;align-items:start;padding:12px}.road-dot{width:24px;height:24px;border-radius:50%;background:var(--muted);border:3px solid var(--bd);flex:none}.road-card{flex:1;border:1px solid var(--bd);background:var(--muted);border-radius:10px;padding:9px}.road-card h3{margin:0;font-size:13px}.aside-copy{font-size:11px;line-height:1.45;color:var(--mut)}
+    @media(max-width:800px){.frame{width:390px;padding:16px}.bento{grid-template-columns:1fr}.wide{grid-column:auto}.calculation{grid-template-columns:1fr}.domain{grid-template-columns:9px 1fr auto 15px}}
+  </style>
+</head>
+<body>
+  <main class="frame">
+    <div class="ey">Overview · projection states</div>
+    <h1>Show the math, or show the absence.</h1>
+    <p class="lede">A projection is a quiet disclosure inside the panel that owns its evidence. It is never a score, a separate dashboard, or a promise about a future the records cannot support.</p>
+
+    <div class="bento">
+      <section class="card">
+        <div class="hd"><div><h2>Where I stand</h2><div class="sub">Facts first. Projections stay optional.</div></div><span class="chip neutral">record facts</span></div>
+        <div class="body">
+          <div class="group">Experiences</div>
+          <div class="domain open"><span class="dot"></span><span class="name">Clinical <i class="meta">no pace yet</i></span><span class="chip neutral">no goal</span><span>⌃</span></div>
+          <div class="projection empty-projection">
+            <span class="empty-icon">—</span>
+            <div><b>Not enough dated work yet</b><p class="hint">Add attributable shift entries before a weekly pace can be calculated. Until then, this stays a record fact—not a zero.</p></div>
+          </div>
+          <div class="group">Foundation</div>
+          <div class="domain"><span class="dot" style="background:var(--pri)"></span><span class="name">Academics <i class="meta">3.67 cum · 3.50 sci</i></span><span class="chip neutral">record facts</span><span>⌄</span></div>
+        </div>
+      </section>
+
+      <aside class="card">
+        <div class="hd"><div><h2>Why this stays small</h2><div class="sub">One panel · one optional calculation</div></div></div>
+        <div class="body aside-copy"><p>The row remains useful even when a rate is unavailable. A student sees the source situation and the exact next step, without being assigned a deficit, percentage, or readiness judgement.</p><div class="road"><span class="road-dot"></span><div class="road-card"><h3>Projection is a disclosure</h3><p style="margin-top:4px;font-size:11px">The owning record keeps the calculation close to its dated evidence.</p></div></div></div>
+      </aside>
+
+      <section class="card wide">
+        <div class="hd"><div><h2>Clinical · projection available</h2><div class="sub">A named state of the same compact domain panel</div></div><span class="ey">Example calculation</span></div>
+        <div class="body">
+          <div class="closed"><div><b>72 logged clinical hours</b><p class="hint" style="margin-top:3px">100-hour student-set target · calculated only from dated, attributable entries.</p></div><button class="pill">Show projection</button></div>
+          <div class="projection" style="margin-top:12px">
+            <div class="closed"><div><b>Clinical pace</b><p class="hint" style="margin-top:2px">Example only · this panel would read the student’s own dated records.</p></div><span class="chip">calculated</span></div>
+            <div class="calculation"><div class="fact"><span>Evidence window</span><b>6 dated shifts · May 6–Jun 10</b></div><div class="fact"><span>Logged</span><b>24 h</b></div><div class="fact"><span>Measured pace</span><b>4 h / week</b></div><div class="fact"><span>Target remaining</span><b>28 h</b></div></div>
+            <div class="formula"><b>24 logged h</b> across <b>6 measured weeks</b> → <b>4 h/week</b>. At that same measured pace, 28 remaining hours takes about 7 weeks.</div>
+            <div class="note">This is a local calculation from the listed entries. It is not a guarantee, grade, score, or recommendation.</div>
+            <button class="dismiss">Dismiss projection</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
