@@ -9,7 +9,22 @@ export interface SyllabusProposal {
   items: SyllabusItem[]
   searched: Record<SyllabusKind, string>
   scanDetected: boolean
+  /** Whether this reads as a syllabus at all (§4.1-M-d). A proposal, never a verdict:
+   *  the review-anyway override is always offered. Distinct from `scanDetected`,
+   *  which means the text could not be read in the first place. */
+  documentKind: DocumentKind
+  /** Which structural syllabus signals were present. Drives the did-not-find list. */
+  structureFound: StructuralSignal[]
+  /** Numbered-question count — the positive evidence that this is course material. */
+  numberedItems: number
 }
+
+export type DocumentKind = 'syllabus' | 'unrecognized'
+
+/** A lone due date is NOT structural: that is exactly what a problem set carries.
+ *  These four are what separates a syllabus from any other course document. */
+export type StructuralSignal = 'weights' | 'exams' | 'units' | 'logistics'
+const STRUCTURAL: StructuralSignal[] = ['weights', 'exams', 'units', 'logistics']
 
 const month = '(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)'
 const datePattern = new RegExp(`\\b${month}\\.?\\s+\\d{1,2}(?:,?\\s+20\\d{2})?\\b`, 'gi')
@@ -48,7 +63,14 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
     }
     for (const [kind, pattern] of headers) if (pattern.test(line)) { push(items, kind, line, undefined, kind === 'policies' ? 'low' : 'high', evidence); searched[kind] = `${kind[0].toUpperCase()}${kind.slice(1)} found` }
   })
-  return { sourceName, sourceKind, text, items, searched, scanDetected: text.replace(/\s/g, '').length < 80 }
+  const scanDetected = text.replace(/\s/g, '').length < 80
+  const structureFound = STRUCTURAL.filter((signal) => items.some((item) => item.kind === signal))
+  const numberedItems = lines.filter((line) => /^\(?\d{1,2}[.)]\s+\S/.test(line)).length
+  // Only a readable document with NO structural signal at all is called unrecognized.
+  // Deliberately conservative: a one-page syllabus with just office hours still counts
+  // as a syllabus, and the student can override this either way.
+  const documentKind: DocumentKind = !scanDetected && structureFound.length === 0 ? 'unrecognized' : 'syllabus'
+  return { sourceName, sourceKind, text, items, searched, scanDetected, documentKind, structureFound, numberedItems }
 }
 
 export async function extractSyllabusFile(file: File): Promise<SyllabusProposal> {

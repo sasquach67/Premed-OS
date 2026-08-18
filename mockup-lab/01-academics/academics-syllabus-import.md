@@ -1,6 +1,6 @@
 # Academics · Syllabus Import — decisions
 
-**Status:** PROPOSED · Stage-B decision record
+**Status:** PROPOSED · Stage-B decision record · **translated to the app in `T1-academics-fidelity.md`**
 **Source:** `academics-syllabus-import.html` — 4 frames: upload · review · re-import + nothing-parsed · wrong document (frame 4 added under `T1-academics-mockup-2.md`)
 
 ## Product views
@@ -120,3 +120,20 @@
   manual path without discarding partial work.
 - The wrong-document route retains the file, writes no class record, and keeps
   an explicit override back into ordinary review.
+
+## Built
+
+Translated from the dialog to the ruled temporary full-screen mode in
+`src/components/academics/SyllabusImportMode.tsx`, replacing the former
+`SyllabusImportDialog`. Verified in the running app: `1fr 372px` split
+resolving to `700px 372px`, sticky rail at 372px, native `<details>` gone,
+groups in the ruled order collapsing on clean and expanding on flagged, and
+the wrong-document card rendering in the Academics accent with a zeroed Apply
+rail. Both themes and keyboard traversal checked.
+
+One open shell question, not owned by this surface: the Academics page header
+and its Daily/Planning tabs remain visible above the mode, because
+`ClassCenter` returns sub-views the same way it returns `ClassHub` and
+`ExamPrepMode`. §4.1-M-a asks import to behave *"like exam prep mode"*, so
+this matches the shipped precedent — but if the mode should suppress the pillar
+chrome, that is a shell decision affecting exam prep equally.

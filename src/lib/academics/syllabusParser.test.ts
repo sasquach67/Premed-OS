@@ -24,3 +24,43 @@ Attendance is required. Office hours Tuesday 2 PM.`
     expect(parseSyllabusText('  ').scanDetected).toBe(true)
   })
 })
+
+describe('document classification (§4.1-M-d)', () => {
+  const problemSet = [
+    'CHEM 262 Problem Set 6',
+    'Due Oct 24, 2026',
+    '1. Draw the mechanism for the following substitution.',
+    '2. Rank the leaving groups below.',
+    '3. Predict the major product.',
+  ].join('\n')
+
+  const thinSyllabus = [
+    'CHEM 262 - Organic Chemistry II',
+    'Instructor: Dr. Alvarez, office hours Tue 2:00 PM, room 214',
+  ].join('\n')
+
+  it('calls a problem set unrecognized — a lone due date is not structure', () => {
+    const parsed = parseSyllabusText(problemSet, 'Problem Set 6.pdf')
+    expect(parsed.documentKind).toBe('unrecognized')
+    expect(parsed.structureFound).toEqual([])
+    expect(parsed.numberedItems).toBe(3)
+  })
+
+  it('keeps a one-page syllabus with only logistics as a syllabus', () => {
+    const parsed = parseSyllabusText(thinSyllabus, 'Syllabus.pdf')
+    expect(parsed.documentKind).toBe('syllabus')
+    expect(parsed.structureFound).toContain('logistics')
+  })
+
+  it('never calls an unreadable scan unrecognized — that is a different diagnosis', () => {
+    const parsed = parseSyllabusText('', 'Scan.pdf', 'image')
+    expect(parsed.scanDetected).toBe(true)
+    expect(parsed.documentKind).toBe('syllabus')
+  })
+
+  it('reports the structural signals it did find', () => {
+    const parsed = parseSyllabusText(['CHEM 262 - Organic Chemistry II', 'Problem sets 15%', 'Week 1 Introduction'].join('\n'))
+    expect(parsed.documentKind).toBe('syllabus')
+    expect(parsed.structureFound).toEqual(expect.arrayContaining(['weights', 'units']))
+  })
+})
