@@ -1,326 +1,217 @@
-# T2 · Overview — approved state coverage to app
+# T2 · Overview — honest projection state
 
 **Stage:** C · **DECIDED, NOT BUILT**
+**Build gate:** **BLOCKED.** `overview-projection-states.html` is not named
+`YES` in `BUILD-MANIFEST.md`. This document is a complete implementation brief,
+not permission to begin. Andy must add/clear the source in the manifest; nobody
+else edits the manifest.
 
-This brief translates the approved Overview state sources into the existing
-Overview composition. It is one visual-and-behavioural pass: no second task
-system, no separate dashboard, and no work on a different tab.
+This is the first remaining Overview stage. It implements one approved, local
+disclosure inside the existing Where I Stand panel: an honest unavailable state,
+a quiet `Show projection` control, and a traceable expanded calculation. It
+does not add a ninth Home block, a generic dashboard projection, or a second
+experience tracker.
 
-> **Calendar boundary:** the hero's durable, server-side Google Calendar
-> integration is governed by `I1-google-calendar.md`, not this tab brief. The
-> current client-side read-only connector is a partial implementation. Do not
-> invent a refresh-token architecture here or alter the frozen hero to paper
-> over that missing integration.
+> **Important prerequisite:** a real calculated projection needs dated,
+> attributable experience-hour entries. The current model only has aggregate
+> `ExperienceEntry.hours`, so this brief is incomplete until the separately
+> proposed hour-log model is approved. Do not substitute an aggregate, a
+> position start date, or an invented weekly rate. Until that model is cleared,
+> ship only the approved unavailable state.
 
----
-
-## 1. Fidelity audit — what is already correct, and what remains
+## 1. Fidelity audit
 
 ### a. Spec → paper
 
-All ruled Overview features now have a named, reachable paper surface. No Stage
-A drawing is needed.
+**Pass.** Every ruled Overview surface now has a reviewable paper source.
 
-| Ruled feature | Approved source now covering it |
+| Ruled feature | Source |
 |---|---|
-| Task record editing, lifecycle, empty state, undo, compact cap, and expanded-list handoff | `overview-task-states.html` + `.md` |
-| Where I Stand expansion, positions, attribution, estimated treatment, targetless state | `overview-status-states.html` + `.md` |
-| Smart Actions dismissal/absence, conditional Quick Access, and roadmap empty | `overview-status-states.html` + `.md` |
-| Quarterly goal types and no-goal/editor states | `overview-capture-goals-states.html` + `.md` |
-| Text/URL/file Capture, local-only control, Story Bank confirmation, reserved Atlas slot, widget resilience, and mobile order | `overview-capture-goals-states.html` + `.md` |
-| Parent bento spans, order, hero-only glass, stat-tile hierarchy, and roadmap spine | `overview-bento-control-panel.html` + `.md`; `overview-s3-target.html` + `.md` |
+| Eight-block bento, order, hero-only glass, stat-tile hierarchy, and roadmap | `overview-bento-control-panel.html` + `.md` |
+| Task lifecycle/detail/empty/expanded handoff | `overview-task-states.html` + `.md` |
+| Where I Stand expansion, Smart Actions absence, Quick Access, roadmap empty | `overview-status-states.html` + `.md` |
+| Story Bank capture, quarterly goals, widget loading/error/mobile | `overview-capture-goals-states.html` + `.md` |
+| Insufficient evidence, collapsed and expanded projection states | `overview-projection-states.html` + `.md` |
 
-**Spec conflict resolved:** `03-overview.md`'s older Atlas wording is
-superseded by its `SB-64` amendment and the approved decision source: v1
-Capture lands in **Story Bank**. Atlas is an inert reserved connection slot,
-not a live destination.
+No score, normalized bar, readiness label, ranking, or default target is drawn.
+The mockup's populated projection is explicitly an **example calculation** for
+review, not seed data or a product default.
 
 ### b. Mockup → app
 
-| Surface | App state | Fidelity finding |
-|---|---|---|
-| Hero | `OverviewHero.tsx` + `HeroDailySchedule.tsx` | **Built/frozen visually.** Preserve the banner and hero-only glass. Its Google Calendar connector is browser-session-only, so durable OAuth/cache work remains in `I1-google-calendar.md`. |
-| Tasks | `OverviewTasks.tsx` | **Mostly built.** One list, Now/Soon/Done, Add task, expand route, edit fields, visible context-menu equivalents, Undo, compact cap, and reduced motion exist. Verify rather than rebuild. Timeline-owned step projection still needs proof before claiming it works. |
-| Smart Actions | `SmartActionPanel.tsx` | **Mostly built.** Deterministic reasons, cap, dismissal suppression, last-card unmount, motion, and reduced motion exist. Match the approved solid-card density and remove any visual claim that turns a count into a score. |
-| Where I Stand | `OverviewStatus.tsx` | **Divergent.** It is a flat linked list. It has no one-open-row inspector, position cap, cross-pillar attribution, or explicit estimated-block presentation. |
-| Quick Access | `OverviewSupport.tsx` | **Partial.** MCAT/review entries are conditional, but Log hours always renders and the Capture launcher only scrolls to text capture. It does not meet the approved “only what exists” rule for each launcher. |
-| Quarterly Goals | `OverviewSupport.tsx` | **Partial.** Check-off and standing target links persist, but the current editor only edits standing targets. It cannot create/edit/archive the quarterly-goal records or make the student confirm check-off versus measured type. |
-| Recent activity + Capture | `OverviewSupport.tsx` | **Partial.** Text capture reaches Story Bank and local-only persists. URL/file entry, success treatment, reserved Atlas slot, and independent loading/error states are absent. |
-| Roadmap | `OverviewRoadmap.tsx` | **Partial.** It has the horizontal record-driven spine, current node, empty state, and reduced motion. Confirm it reads Timeline-owned milestone records rather than a second Overview task model; do not build generic milestones. |
-| Temporary advisor panel | `Home.tsx` | **Removed** in `d7811d7`; it is not an Overview block and must not return. Its data remains for Letters. |
+| Surface | Current app finding |
+|---|---|
+| Bento shell, Hero, Tasks, Smart Actions, stat tiles, Quick Access, goals, Capture | Built in the existing composition; audit in place, do not rebuild. |
+| Where I Stand expansion and targetless no-bar treatment | Built by `3abdb68`; retain its one-open-row geometry. |
+| Roadmap record ownership | Built by `bec129c` on canonical `timelineMilestones`; retain. |
+| Projection unavailable/collapsed/expanded states | **Missing.** No Overview component renders `Show projection`, `Not enough dated work yet`, or a traceable calculation. |
+
+One fidelity defect is already visible in `OverviewRoadmap.tsx`: it calculates
+and renders a completion percentage for the roadmap. That is not this
+projection source and must not be copied into it; resolve it only when a
+manifest-cleared Overview source/brief explicitly covers the roadmap treatment.
 
 ### c. Already built — do not rebuild
 
-- Bento shell, primary block order, solid-with-depth panels, and the
-  record-driven roadmap foundation: `f75be18`.
-- Overview ownership and Story Bank text capture: `33cc995`.
-- Task header, no-inline-quick-add rule, and no targetless domain bar:
-  `e889582`.
-- Task detail/CenterPeek work and current Overview conformance shipped before
-  this brief; audit it in place rather than fork it.
-- The temporary advisor panel was removed from the composition: `d7811d7`.
+- Approved Overview state coverage: `3abdb68`
+  (`feat(overview): translate approved state coverage`).
+- Canonical Timeline milestone ownership: `bec129c`
+  (`fix(timeline): make roadmap milestones canonical Timeline records`).
+- Projection paper source and approval: `511b650`, `f79b577`.
 - `OverviewHero.tsx`, `HeroDailySchedule.tsx`, `Sidebar.tsx`, and
-  `AppShell.tsx` are frozen approved work. No modification in this brief.
+  `AppShell.tsx` are frozen approved work. Do not edit them.
 
 ### d. Gate
 
-`BUILD-MANIFEST.md` clears `overview-bento-control-panel.html`,
-`overview-s3-target.html`, and `overview-where-i-stand-expandable.html` as
-**YES**. The three approved state boards are state coverage for those cleared
-sources; they do not create a new, ungated tab. `sauce-two-doors.html` is NO
-and is out of scope.
+The manifest clears the bento, S3 Tasks refinement, and historical Where I
+Stand source as **YES**. It has **no row** for
+`03-overview/overview-projection-states.html`; per the manifest rule, this new
+source is not cleared. Nothing in this brief may be implemented until Andy
+changes the manifest.
 
 ### e. Decisions files
 
-The current approved sources all record both behaviour and appearance:
+**Pass.** The five current Overview decision documents record both behaviour
+and appearance. In particular, `overview-projection-states.md` locks the
+solid inset, quiet disclosure pill, four fact cells, and mobile/reduced-motion
+treatment. No behaviour-only decision file blocks this stage.
 
-- `overview-bento-control-panel.md` — bento hierarchy and updated task/goal
-  treatment.
-- `overview-s3-target.md` — compact Task header and targetless-bar rule.
-- `overview-task-states.md` — one list/two sizes, solid row density, peek
-  relationship, and empty state.
-- `overview-status-states.md` — 7/5 bento density, nested expansion, absent
-  Smart Actions, conditional launchers, and no-bar rule.
-- `overview-capture-goals-states.md` — Story Bank destination, capture
-  hierarchy, confirmed goal vocabulary, resilience, and mobile order.
+### f. Integrations and services
 
-The older standalone `overview-where-i-stand-expandable.html` has no companion
-decision file, but its app-facing treatment is superseded by the approved
-`overview-status-states.md`. Do not use the standalone source as a competing
-implementation target.
+| Dependency | Classification | What the student sees today | Required outcome |
+|---|---|---|---|
+| Google Calendar hero | **Code built, not configured** | Class-schedule/mock-preview fallback or a connect prompt; not the student's Google events. | No code in this brief. Andy completes the checklist below. |
+| Dated experience-hour evidence for a projection | **Code/model missing** | No projection surface; aggregates cannot honestly establish pace. | The backend work in this brief is blocked pending approval of `HOURLOG-model-proposal.md`. |
+| File attachment persistence for Capture | **Code/storage missing, intentionally unavailable** | A disabled File affordance with an honest explanation. | Not part of this projection brief; preserve the unavailable state. |
 
-**Stage result:** A passes (every ruled feature is drawn), B passes (approved
-appearance and behaviour are recorded), and C is the first failing stage:
-the approved Overview is only partially translated and its missing UI and data
-paths must land together.
+#### Andy checklist — Google Calendar configuration
 
----
+1. In Google Cloud, enable **Google Calendar API** for the existing project.
+2. Configure the consent screen with the `calendar.readonly` scope.
+3. Create/use a Web OAuth client and authorize:
+   `http://127.0.0.1:5173` and `https://sasquach67.github.io`.
+4. Put its client ID in local `VITE_GOOGLE_CLIENT_ID` and the hosted build
+   secret/environment value. Add that variable to `.github/workflows/deploy.yml`
+   alongside the existing public Supabase build variables.
+5. Rebuild the deployed site, connect once, refresh, and confirm the Hero says
+   Google Calendar and displays that account's current-day events.
 
-## 2. References
+This is an account/configuration task, not a backend-token task: do not add
+refresh-token storage, an Edge Function, or a broader OAuth scope.
 
-| What | Where |
-|---|---|
-| Product law | `specifications/03-overview.md` §0, §5–§11, §13, SB-64 |
-| Main bento source + decision | `specifications/mockups/03-overview/overview-bento-control-panel.html` + `.md` |
-| Task refinement + decision | `…/overview-s3-target.html` + `.md` |
-| Approved task state source | `…/overview-task-states.html` + `.md` |
-| Approved status/absence source | `…/overview-status-states.html` + `.md` |
-| Approved Capture/Goals source | `…/overview-capture-goals-states.html` + `.md` |
-| Earlier Where I Stand reference | `…/overview-where-i-stand-expandable.html` — read only as historical detail; state board wins |
-| Exact visual recipes | `specifications/mockups/_shared/_visual-recipes.md` |
-| Translation contract | `implementation/MOCKUP-TRANSLATION-CONTRACT.md` |
-| Existing components | `implementation/component-inventory.md` |
-| Shared interaction law | `specifications/01-shared-interface-patterns.md` §2–§5 |
-| Universal rules | `general.md` — especially U-1, U-2, U-5, U-7, U-8, U-9, U-12 |
-| Calendar integration boundary | `implementation/briefs/I1-google-calendar.md` |
+## 2. Why this lands at Stage C
 
----
+Stages A and B pass: the state is drawn, approved, and documented with its
+appearance. Stage C is the first failure because **nothing in `src/` implements
+the approved projection state at all**. Existing Overview components must not
+be reimplemented; this is the one missing decided surface, with its data path,
+in one pass once both prerequisites are cleared.
 
-## 3. FRONTEND — translate only the missing approved states
+## 3. References
 
-### A. Keep the Overview composition exact
+- `specifications/03-overview.md` §5–§6.9, §9–§11, especially §6.5 and §11
+  pacing/projection acceptance criterion
+- `specifications/01-shared-interface-patterns.md` §4d
+- `specifications/mockups/03-overview/overview-projection-states.html` + `.md`
+- `specifications/mockups/03-overview/overview-status-states.html` + `.md`
+- `specifications/mockups/_shared/_visual-recipes.md`
+- `implementation/MOCKUP-TRANSLATION-CONTRACT.md`
+- `implementation/component-inventory.md`
+- `implementation/briefs/HOURLOG-model-proposal.md` (proposal, not authority
+  to start the migration)
+- `implementation/briefs/I1-google-calendar.md` (configuration boundary)
+- `general.md` U-4, U-5, U-6, U-8, U-9, U-12
 
-- Preserve the eight bento blocks and their order: Hero → Smart next actions
-  → Tasks / Where I Stand → stat tiles → Quick Access / Quarterly goals /
-  Recent activity + Capture → roadmap.
-- Do not restore Questions for advisors, sourced guidance, QOTD, a Needs
-  Attention strip, a Focus strip, or an inline quick-add row.
-- Hero cards and the existing record/context overlay remain the only glass
-  surfaces. Every dense widget, row, pill, and form is solid-with-depth.
-- Use the signed-in tokens and typography from `_visual-recipes.md` literally:
-  Baloo 2 for hierarchy/numbers/controls, Nunito for body, and the existing
-  signed-in blue (`--primary` / `#6fb3de`), not public `#5293cc`.
+## 4. FRONTEND — one local disclosure in Where I Stand
 
-### B. Where I Stand becomes the approved in-place inspector
+After the manifest gate and hour-log model are both cleared:
 
-- Reuse the existing `WhereIStand` component; do not create a second status
-  dashboard or a standalone page.
-- A row body opens its owner route. Its chevron independently expands **one
-  row at a time** in place.
-- The open panel shows only supportable real records: positions/roles, their
-  active/ended/estimated state, domain-owned route, and a capped `+N more →`
-  owner handoff. Attribution can link to an existing owning organization only
-  when the relationship is stored.
-- A targetless domain renders its accent, label, real value, and neutral
-  `no goal`/record-facts chip — **no `Progress` element at all.**
-- Existing aggregate experience hours are not dated logs. Do not fabricate a
-  pace, week series, position allocation, or “estimated block” from them.
-  If an honest position detail cannot be sourced from the current model, keep
-  that part dormant with its reason (U-5). The hour-log model is separate work.
+1. Extend the existing `WhereIStand` expanded-row implementation. Do not add a
+   new Overview card, route, tab, chart, or generic projection component.
+2. With insufficient real evidence, show the approved solid inset:
+   `Not enough dated work yet` plus the concrete next record needed. It has a
+   restrained warning left rule and dash chip; it is not an error and contains
+   no zero, estimate, bar, or encouragement copy.
+3. With sufficient evidence, keep the calculation hidden by default behind
+   `Show projection`. The control expands only that row and returns to the
+   quiet state with a local dismiss control. Keyboard focus and `aria-expanded`
+   must stay correct; reduced motion is instant.
+4. The expanded inset names its evidence window, exact **logged** hours,
+   measured weekly rate, remaining student-set goal, and plain calculation.
+   Use the source's four compact facts and one-line formula—no chart, meter,
+   percentage, promise, or “on track” conclusion.
+5. Render this only where its owning domain has a student-set hours goal and
+   real attributable dated logs. Estimated blocks remain visibly distinct and
+   never feed the evidence window or rate.
+6. Preserve the existing one-open-Where-I-Stand-row rule. On mobile the fact
+   cells stack inside the same inset; nothing floats over the page.
 
-### C. Quick Access and Smart Actions stay conditional and quiet
+## 5. BACKEND — complete only after the model ruling
 
-- Keep `SmartActionPanel` as the one shared implementation. Preserve its
-  deterministic explain-line, suppression, cap of three, last-dismissed
-  unmount, keyboard actions, and reduced-motion behaviour.
-- Make every Quick Access launcher conditional on a real target. Do not show
-  a blank “Log hours” destination merely to fill the panel. Capture remains
-  valid because it is always a real action.
-- Use a visible control for every right-click/context-menu action; no
-  undiscoverable-only action is added.
+This work is intentionally blocked, not a license to start the model now.
+Once `HOURLOG-model-proposal.md` becomes an approved, manifest-cleared data
+model brief, this Overview implementation must consume its canonical selectors:
 
-### D. Quarterly Goals are editable records, not inferred progress
+1. Add the separate parent-position / child-hour-entry model and versioned,
+   lossless migration exactly as approved. An aggregate legacy total becomes
+   one `estimated` block, never fabricated daily rows.
+2. Provide a selector scoped to a real position/domain that returns either:
+   - an explicit insufficiency reason; or
+   - a transparent observation interval, summed dated `logged` hours, rate,
+     remaining target, and a simple future-date arithmetic result.
+3. Exclude estimated, deleted, undated, cross-pillar, and un-attributed entries
+   from pacing. A selector must return `null`/reason rather than a plausible
+   number whenever those rules leave insufficient observed data.
+4. Persist a per-record projection dismissal only after a projection is valid;
+   never make dismissal data masquerade as a goal or change underlying logs.
+5. Test aggregate legacy imports, estimated exclusion, two dated logs with a
+   known interval, missing goal, no data, position ownership, migration
+   idempotence, and reopening/dismissing the disclosure.
 
-- Reuse the `quarterlyGoals` collection and `CenterPeek`; do not introduce a
-  second goal store.
-- Add/create/edit/archive a quarterly goal from its existing panel. The form
-  requires the student to select **Check-off** or **Measured**; never infer
-  type from wording.
-- Measured goals can name an existing, attributable standing target and show
-  only recorded value plus a student-set target. Check-off goals remain a
-  checkbox with Open/Completed copy. Neither gets a normalized percentage or
-  bar.
-- Preserve the no-goal `MascotNote` and the target editor, but distinguish
-  editing the current quarter’s goal from editing standing targets.
+## 6. Do not break
 
-### E. Capture is Story Bank-first and resilient
+- No edits to frozen Hero/shell files.
+- No Calendar OAuth backend, token persistence, remote attachment store, AI
+  classification, Atlas route, or new external API.
+- No aggregate-hours-as-pace calculation, weekly bucket inference, fixed
+  denominator, fabricated future date, or demo value on a real user surface.
+- No score, readiness/composite label, ranking, normalized percentage, or
+  progress bar (U-4/U-5/U-9).
+- No experience record duplication or a second store. Reuse canonical records,
+  selectors, `WhereIStand`, the shared `Collapsible`, and the existing store.
+- Preserve keyboard-only use, focus return, themes, tooltips, and reduced
+  motion. The rest of Home must keep rendering if a selector is unavailable.
 
-- Retain one Capture surface in `ActivityAndCapture`; do not add an Atlas page
-  or triage controls to Home.
-- Render text, pasted URL, and file-affordance inputs as the approved compact
-  solid composition, with per-entry local-only choice and short successful-save
-  confirmation linking to Story Bank.
-- Atlas is a labelled, disabled/reserved connection slot only. It must not
-  navigate anywhere in v1.
-- Loading and failure belong to their individual widget. Use skeleton lines,
-  a restrained error rule, and local retry; never blank Home or show a
-  full-page spinner. On mobile, keep Capture in normal flow high enough to be
-  reachable, never a floating control.
+## 7. Done when
 
-**File attachment boundary requiring verification before implementation:** the
-current `CaptureRecord` stores only metadata and `StoryEntry` has no attachment
-payload/reference. Do not pretend a selected file was saved. Reuse an existing
-local file mechanism if one exists; otherwise show the file affordance only as
-an honest unavailable state and record the missing storage decision before
-claiming this brief complete. No file bytes may be sent to a provider.
+- `rg "Show projection|Not enough dated work yet" src` finds the one approved
+  local surface, not a second dashboard/card.
+- `rg "width:.*%|progress|score|readiness|ranking"` over its new projection
+  code finds no visual metric prohibited by U-9.
+- Projection values come only from the canonical dated-log selector; grep
+  proves the component never reads `ExperienceEntry.hours` or `startDate` to
+  derive a rate.
+- An estimated legacy block displays as estimated but cannot alter weekly pace,
+  projection, streak, latest log, or calculated future date.
+- A domain with no target or insufficient logs has the factual unavailable
+  treatment, never a zero-width bar or example value.
+- The existing Overview component tests plus focused migration/selector/UI
+  tests pass, as do `npm run test` and `npm run build`; both themes,
+  keyboard-only use, and reduced motion are verified.
+- Google Calendar configuration is separately verified with the checklist; it
+  is not claimed “done” merely because fallback events render.
 
-### F. Roadmap remains a Timeline projection
+## 8. Commit
 
-- Preserve the horizontal record-driven spine, current-node treatment, empty
-  state, owner route, and reduced-motion alternative.
-- It may read Timeline-owned milestones only. Do not create generic default
-  dates, a second Overview roadmap model, a priority score, or a completion
-  percentage presented as an evaluation.
+`feat(overview): add evidence-backed pace disclosure`
 
----
+Commit only the implementation and its tests. Unrelated mockup, research,
+school-list, and documentation changes stay separate.
 
-## 4. BACKEND — only the missing Overview data paths
+## 9. Next stage — not in this brief
 
-### Quarterly goals
-
-- The existing `QuarterlyGoal` shape supports `quarter`, `text`, `done`, and
-  optional `standingTarget`. Add only an explicit goal-kind field if the
-  existing fields cannot distinguish check-off from measured goals without
-  inference.
-- If a field is added, create a new versioned, lossless migration. Existing
-  records become `check-off` unless they already carry `standingTarget`, in
-  which case they become `measured`; preserve every other byte. Test frozen
-  legacy input and a second run no-op.
-- Existing `quarterlyGoals` APIs, backup/export, trash, and generic CRUD must
-  preserve the new field. A goal archive is recoverable; it is never silently
-  deleted.
-
-### Capture
-
-- Text capture already creates a local `StoryEntry`; preserve that direct
-  Story Bank destination and `localOnly` semantics.
-- URL metadata must be retained losslessly with the resulting Story Bank
-  record or a stable linked capture record. Do not put a URL in unstructured
-  text and call it structured capture.
-- File persistence is explicitly contingent on the verified local mechanism
-  above. No remote upload, no API key, no AI classification, and no Atlas
-  triage is authorized by this brief.
-
-### Calendar and hour logs — do not smuggle them in
-
-- Do not persist OAuth refresh tokens, change Google scopes, add a background
-  sync job, or change the frozen hero. That is I1.
-- Do not add dated hour logs, derive weekly pace, or migrate aggregate hours.
-  That requires the separate hour-log model ruling.
-
----
-
-## 5. Do not break
-
-- No edits to `OverviewHero.tsx`, `HeroDailySchedule.tsx`, `Sidebar.tsx`, or
-  `AppShell.tsx`.
-- No `TemporaryAdvisingGuidance` mount on Home; do not delete `advisingQs` or
-  `tips` collections.
-- No visual or semantic score, readiness composite, ranking, comparison,
-  inferred percentage, or bar without a student-set target (U-5/U-9).
-- No invented experience allocation, schedule, target, event, timeline date,
-  or recommendation (U-5/U-7/U-8).
-- No duplicate components: reuse `CenterPeek`, `SmartActionPanel`,
-  `MascotNote`, `Card`, `Progress` where permitted, `useToast`, and the one
-  Zustand store.
-- Preserve keyboard-only flows, tooltips, focus return from peeks, mobile
-  sheets, dark/light themes, and `prefers-reduced-motion`.
-- Do not alter `localStorage` shape without the versioned lossless migration
-  and tests described above.
-
----
-
-## 6. Done when
-
-### Fidelity
-
-- [ ] Home has exactly the approved eight blocks; grep confirms no mounted
-  `TemporaryAdvisingGuidance`, `Needs attention`, `QOTD`, or task quick-add.
-- [ ] Where I Stand has a one-open-row inspector and a real owner handoff;
-  targetless rows render no progress element.
-- [ ] Smart Actions unmounts completely after the final dismissal; every
-  launcher has a real, visible destination/action.
-- [ ] Quarterly goal create/edit/archive and both goal kinds match the
-  approved row density and CenterPeek composition.
-- [ ] Capture visibly accepts text/URL and handles file storage honestly;
-  success lands in Story Bank; Atlas remains non-navigable/reserved.
-- [ ] Empty/loading/error states are widget-local; Home never blanks because
-  one selector fails. Mobile order keeps Capture in normal flow.
-- [ ] Roadmap empty state uses the Timeline setup route and no generic dates.
-- [ ] Dark and light visual checks match the approved solid-card hierarchy;
-  glass is confined to hero/overlays.
-
-### Data and safety
-
-- [ ] `rg -n "[0-9]+%|readiness|score" src/components/overview` is reviewed:
-  no rendered inferred/composite metric survives.
-- [ ] `rg -n "TemporaryAdvisingGuidance" src/pages/Home.tsx` returns no match.
-- [ ] No targetless `WhereIStand` row renders `Progress`.
-- [ ] Goal migration, if required, is lossless and idempotent; migration tests
-  cover both a legacy record and repeat hydration.
-- [ ] File capture has an actual local persistence mechanism, or remains an
-  explicitly unavailable affordance with the missing decision reported.
-- [ ] Grep proves no calendar write scope, refresh token, or hour-log model was
-  added in this Overview change.
-
-### Verification
-
-- [ ] `npm run test` and `npm run build` pass.
-- [ ] Signed-out/local mode works, both themes render, keyboard-only flows
-  work, and reduced-motion state has no positional animation.
-- [ ] Verify the updated Home visually at normal desktop, short desktop, and
-  mobile widths with empty, partial, and populated local data.
-
----
-
-## 7. Commit
-
-```
-feat(overview): translate approved state coverage
-```
-
-Commit only Overview implementation, required migration/tests, and this
-brief's direct support. Keep the dirty mockup, School List, research, and
-other tab changes separate.
-
----
-
-## 8. Next stage — not in this brief
-
-After this lands, re-run `TAB-BRIEF-PROMPT.md` for Overview. It should audit
-for **F · Built and matching** and only then promote the approved Overview
-entries to `status:"built"` with the commit noted in their decisions.
-
-Durable Google Calendar OAuth/cache/shell-calendar work remains **I1**, and the
-dated hour-log model remains its own ruled chunk. Neither is silently included
-or completed by this Overview pass.
+After this implementation is committed and visually checked against the
+approved source, rerun `TAB-BRIEF-PROMPT.md` for Overview. It will audit Stage
+D/E/F. Promotion to `built` remains out of scope until every Overview surface
+uses real records/live configured services—including Google Calendar—and no
+mock/placeholder fallback is being presented as live data.
