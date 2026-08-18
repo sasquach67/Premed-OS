@@ -39,6 +39,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatStrip } from '@/components/common/StatStrip'
 import { ExamPrepMode } from '@/components/academics/ExamPrepMode'
 import { ForgettingCurve } from '@/components/academics/ForgettingCurve'
+import { StudyMethodTrack } from '@/components/academics/StudyMethodTrack'
+import { StudyMethodPanel } from '@/components/academics/StudyMethodPanel'
 
 type HubTab = 'overview' | 'materials' | 'topics' | 'readings' | 'assignments' | 'notes'
 
@@ -374,6 +376,10 @@ function Overview({
       <Panel className="col-span-12" title="Material coverage" action={<Button size="sm" variant="outline" onClick={() => onTab('materials')}>Open materials</Button>}>
         <CoverageLedger courseId={course.id} data={data} topics={topics} onOpenMaterials={() => onTab('materials')} />
       </Panel>
+
+      <div className="col-span-12">
+        <StudyMethodPanel courseId={course.id} topics={topics} events={data.reviewEvents} classType={type} />
+      </div>
 
       <Panel className="col-span-12 lg:col-span-4" title="Due today">
         {today.length ? <div className="space-y-2">{today.map((item) => <AssignmentMini key={item.id} item={item} />)}</div> : <EmptyState icon={CheckCircle2} title="Clear for today" detail="No unfinished class work is dated today." />}
@@ -885,11 +891,12 @@ function TopicRow({ topic, data, exam }: { topic: Topic; data: ClassCenterData; 
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className="grid gap-3 rounded-xl border border-border bg-muted/25 p-3 md:grid-cols-[minmax(0,1fr)_120px_130px_110px_auto] md:items-center">
+        <div className="grid gap-3 rounded-xl border border-border bg-muted/25 p-3 md:grid-cols-[minmax(0,1fr)_120px_130px_110px_auto_auto] md:items-center">
           <div><p className="font-extrabold">{topic.title}</p><p className="text-xs text-muted-foreground">MCAT tag not set · {noteCount} notes</p></div>
           <span className="text-xs font-bold text-muted-foreground">Last recall {lastRecall}</span>
           <span className="text-xs font-bold text-muted-foreground">Next review {nextReview}</span>
           <Badge className={cn('justify-self-start', STATUS_TONE[topic.status])}>{STATUS_LABELS[topic.status]}</Badge>
+          <StudyMethodTrack topic={topic} events={data.reviewEvents} />
           <div className="flex items-center gap-1.5">
             <Button size="sm" variant="ghost" aria-expanded={curveOpen} onClick={() => setCurveOpen((open) => !open)}>
               <TrendingDown className="size-4" /> Will I still know this?

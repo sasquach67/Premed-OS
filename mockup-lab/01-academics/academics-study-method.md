@@ -1,6 +1,6 @@
 # Academics · Study method · UNPATCHED 2026 — decisions
 
-**Status:** PROPOSED · Stage-A coverage · **C2 ruled Aug 18, 2026**
+**Status:** PROPOSED · Stage-A coverage · **C2 ruled Aug 18, 2026** · **BUILT (partial — see below)**
 **Source:** `academics-study-method.html` · **Spec:** `tabs/01-academics.md` §4.1-K, rendering §6.6
 **Drawn under:** `implementation/briefs/T1-academics-mockup-2.md`
 
@@ -155,3 +155,33 @@ deletion of both `.html` and `.md` from `specifications/mockups/01-academics/`.
 - An empty group collapses to its header with a one-line reason.
 - All groups empty → the panel is not rendered.
 - No meeting schedule → the timing prompts are absent, every group still works.
+
+## Built — and what was deliberately withheld
+
+Placements A and B are implemented in `StudyMethodTrack.tsx` and
+`StudyMethodPanel.tsx` over `lib/academics/studyMethod.ts`.
+
+**Three of the five groups were not built, on purpose.** The surface outruns
+its engine: `Before class` needs Pretest and Predict, `Needs connecting` needs
+`TopicLink`, and `Exam-ready check` needs Full mock — all four are §6.6
+features marked ✗ new and none exists. Rendering a group whose action is dead
+would advertise a study step the app cannot perform, on the surface whose whole
+job is *"what do I do right now?"*.
+
+**Only `Just covered` and `Due to review` ship**, both backed by the existing
+recall runner and FSRS. The panel renders whatever `studyGroups` returns, so
+each remaining group turns on when its engine lands — no rework here.
+
+The same rule governs the dot track: the four engineless steps render hollow
+and are **never fillable**, with a hover that says *"not available yet"*
+instead of inventing a completion signal.
+
+Placement C reduces to ordering for now, since the only group timing would
+promote is `Before class`, which is not rendered.
+
+Verified live: 9 dots in three stage groups with only engine-backed steps
+filled, the panel showing `Just covered · 1` and `Due to review · 1` with no
+forbidden group or action anywhere in the DOM, and — on a class where neither
+group qualifies — **no panel DOM at all**, no "all caught up" placeholder, with
+the rest of the Overview intact. Both themes checked. 280 tests and the
+production build pass.
