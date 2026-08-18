@@ -1,6 +1,6 @@
 # T1 · Academics — Learning signals decisions
 
-**Stage:** B · DRAWN, NOT DECIDED
+**Stage:** B · DRAWN, NOT DECIDED · **EXECUTED Aug 18, 2026 — A · Priority rail ruled**
 
 **Scope:** Choose the one placement composition for the STEM-only Learning
 signals panel in a class Overview. This is a decision pass only: no `src/`,
@@ -126,12 +126,12 @@ does not make either edit, because the selection belongs to Andy.
 
 ## 5. Done when
 
-- [ ] Andy has selected A, B, or C after reviewing the actual lab frames.
-- [ ] The companion `.md` names the winning treatment and records behaviour
+- [x] Andy has selected A, B, or C after reviewing the actual lab frames.
+- [x] The companion `.md` names the winning treatment and records behaviour
       **and** appearance, including mobile and hierarchy.
-- [ ] The registry entry has `status:"approved"` (the manifest remains the
+- [x] The registry entry has `status:"approved"` (the manifest remains the
       separate build gate).
-- [ ] No `src/` file, app state, integration setting, or data model changed.
+- [x] No `src/` file, app state, integration setting, or data model changed.
 
 ## 6. Commit
 
