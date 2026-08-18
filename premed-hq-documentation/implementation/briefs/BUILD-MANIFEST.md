@@ -82,14 +82,23 @@
 | `01-academics/class-center-study-hub.html` | **none** (concept) | `NO` |
 | `01-academics/academics-exam-prep-mode.html` | PROPOSED (July 2026) | **`YES`** |
 | `01-academics/academics-syllabus-import.html` | PROPOSED (July 2026) | **`YES`** |
+| `01-academics/academics-study-method.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy). §4.1-K, all three placements. C2 ruled: the retrievability bar stays and the status chip is its non-numeric form |
+| `01-academics/academics-forgetting-curve.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy). §4.1-L. C1 ruled: the exam-day figure ships **only** with its band label, never alone |
+| `01-academics/academics-learning-signals.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
+| `01-academics/academics-grade-decisions.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
+| `01-academics/academics-materials-extensions.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
+| `01-academics/academics-lecture-capture.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
 
 ### Academics · Planning
 
 | Mockup | Header status | Build? |
 |---|---|---|
 | `01-academics/academics-planner-prototype.html` | **none** | **`YES`** |
-| `01-academics/academics-requirements.html` | PROPOSED (Aug 2026) | **`YES`** |
+| `01-academics/academics-requirements.html` | PROPOSED (Aug 2026) | **`YES`** — file restored Aug 18, 2026 after a working-tree deletion left this row pointing at nothing (C3). ⚠️ **Cleared to build the SCREEN, not to ship completion maths** — `data/unc-requirements.json` warns that a flat course list produces false completions, and 5 of its 6 majors are unverified. See the note under this table |
 | `01-academics/academics-grades-archive.html` | PROPOSED (Aug 2026) | **`YES`** |
+| `01-academics/academics-planning-decisions.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
+| `01-academics/academics-planning-cold-start.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
+| `01-academics/academics-term-rollover.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
 
 ### Clinical
 
@@ -147,3 +156,34 @@
 1. **Say which variant.** The lab holds A/B/C for most views and **A is the default** (*"A should preserve the strongest approved or currently authored direction"*). If it is not A, write the letter in the row.
 2. **Say which product views**, if the mockup declares several. Class Hub alone has five.
 3. **Then run the matching prompt** from `MOCKUP-TO-CODE-PROMPT-SEQUENCE.md`, which will re-read this file and refuse anything still `NO`.
+
+---
+
+## ⚠️ Note on `academics-requirements.html` — cleared, but not a licence to compute
+
+Added Aug 18, 2026. The requirement dataset **exists** —
+`premed-hq-documentation/data/unc-requirements.json`, 23 gen-eds, 9 med
+prereqs, 6 majors — and **nothing in `src/` reads it.** The app instead
+hardcodes four programs in `Academics.tsx:444-447` with only Neuroscience B.S.
+marked `modeled: true`.
+
+**Wiring the dataset in naively would ship wrong answers.** The file says so
+itself:
+
+- **5 of 6 majors are `chatgpt-sourced — spot-check against live catalog before
+  trusting`.** Only Neuroscience is `verified-live`.
+- **`openDefect`:** `meta.appliesTo` claims *"matriculating Fall 2022 or later"*
+  while the current IDEAs page applies to students **beginning Fall 2026**.
+  *"These cannot both be right — needs verification before any completion
+  calculation ships."*
+- **`schemaGapsBlockingExpansion`:** the catalog uses choose-one, choose-two,
+  minimum-credit, area-breadth, course-number-range, exclusion and
+  no-double-count rules. *"A flat course list produces false completions."*
+- **`boundary`:** planning library only. UNC's official audit is the student's
+  ConnectCarolina record; this data may show what the catalog says, **never
+  that a student is cleared to graduate.**
+
+**So the honest order is:** build the screen against the dataset as a *planning
+library* with per-major verification state visible, and do **not** ship a
+completion calculation until the cohort defect is resolved and the schema
+carries option-group logic.
