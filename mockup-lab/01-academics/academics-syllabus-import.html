@@ -260,6 +260,18 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
   border:1px solid color-mix(in srgb,var(--warning) 34%,var(--bd));border-radius:14px;padding:15px 16px}
 .failt{font-family:'Baloo 2';font-weight:800;font-size:15px;margin-bottom:4px}
 .failb{font-size:12px;color:var(--mut);font-weight:600;line-height:1.6}
+/* ---------- MISFILED DOCUMENT (§4.1-M-d) ----------
+   Deliberately NOT the warning treatment used by .failbox. Nothing failed
+   here: the file read perfectly, it just isn't a syllabus. Same containment,
+   different diagnosis, so it gets the academics accent and not the warning. */
+.misbox{background:color-mix(in srgb,var(--cat) 8%,var(--muted));
+  border:1px solid color-mix(in srgb,var(--cat) 34%,var(--bd));border-radius:14px;padding:15px 16px}
+.mist{font-family:'Baloo 2';font-weight:800;font-size:15px;margin-bottom:4px}
+.misb{font-size:12px;color:var(--mut);font-weight:600;line-height:1.6}
+.evidence{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-top:11px}
+.evlab{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.evrow{display:flex;gap:9px;font-size:11.5px;font-weight:700;color:var(--mut);padding:3px 0}
+.evrow .no{color:var(--dim);min-width:15px}
 </style>
 </head>
 <body>
@@ -646,6 +658,98 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
           <div>
             <div class="mt">Why this isn't automatic</div>
             <div class="mb">You've already corrected things by hand since August. A re-import that overwrote them would quietly throw that work away &mdash; so a newer syllabus proposes, it never replaces.</div>
+          </div>
+          <div class="x">&#10005;</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================================
+     FRAME 4 — WRONG DOCUMENT (§4.1-M-d, third state)
+     The file read fine. It just isn't a syllabus. This is a ROUTING
+     decision, not a failure — so it must not look like Frame 3's scan card.
+     ===================================================================== -->
+<div class="framelabel">Frame 4 &mdash; wrong document &middot; it read perfectly and it still isn't a syllabus</div>
+<div class="frame">
+  <div class="banner">
+    <div class="exitrow">
+      <div class="exit">&larr; Back</div>
+      <div class="modetag">Import syllabus &middot; nothing saved yet</div>
+    </div>
+    <div class="brow">
+      <div>
+        <div class="h1">That reads like a problem set</div>
+        <div class="subline">I read the whole thing &mdash; there's just no syllabus in it. It's already filed to CHEM 262, so nothing is lost either way.</div>
+      </div>
+      <div class="statstrip">
+        <div class="stat"><div class="value num">0</div><div class="label">Items found</div></div>
+        <div class="stat"><div class="value num">1</div><div class="label">File kept</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="split">
+      <div style="display:flex;flex-direction:column;gap:13px">
+
+        <div class="misbox">
+          <div class="mist">This looks like course material, not a syllabus</div>
+          <div class="misb">
+            A syllabus has grade weights, exam dates, and a week-by-week schedule.
+            <b>Problem Set 6.pdf</b> has none of those &mdash; it has six numbered questions and a due date at the top.
+            <div style="margin-top:8px">That's a perfectly good file to keep. It belongs in <b>Materials</b>, filed against the unit it practises, where the study tools can actually use it.</div>
+          </div>
+
+          <div class="evidence">
+            <div class="evlab">What I looked for and didn't find</div>
+            <div class="evrow"><span class="no">&#10005;</span><span>Grade weights that sum to 100%</span></div>
+            <div class="evrow"><span class="no">&#10005;</span><span>Exam or midterm dates</span></div>
+            <div class="evrow"><span class="no">&#10005;</span><span>A week-by-week or unit schedule</span></div>
+            <div class="evrow"><span class="no">&#10005;</span><span>An instructor and office-hours block</span></div>
+            <div class="evrow" style="color:var(--cat)"><span class="no">&#10003;</span><span>Six numbered questions and one due date &mdash; which is why Materials is the better home</span></div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <div class="btn pri">File it in Materials</div>
+            <div class="btn">It really is my syllabus &mdash; review anyway</div>
+            <div class="btn ghost">Try another file</div>
+          </div>
+        </div>
+
+        <div class="src" style="margin:0">
+          <b>Why the second button exists:</b> some syllabi genuinely are one page with no weights table. The
+          detection is a proposal like every other one on this screen &mdash; it can be overridden, and choosing
+          to review anyway drops you into the ordinary review composition with whatever little was found.
+        </div>
+
+        <div class="group">
+          <div class="gh" style="padding:12px 14px">
+            <div><div class="gtitle">Filing it here also answers &ldquo;which unit?&rdquo;</div>
+            <div class="gsum">Due date Oct 24 falls inside Unit 7, so that's the default &mdash; changeable on the row.</div></div>
+            <span class="chip" style="background:color-mix(in srgb,var(--cat) 18%,transparent);color:var(--cat)">Unit 7</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:13px;position:sticky;top:20px">
+        <div class="applybox">
+          <div class="abt">Nothing to apply</div>
+          <div class="abs">No class records would change</div>
+          <div class="cnt"><span class="n num">0</span> units</div>
+          <div class="cnt"><span class="n num">0</span> deadlines</div>
+          <div class="cnt"><span class="n num">0</span> exam dates</div>
+          <div class="cnt"><span class="n num">0</span> grade categories</div>
+          <div class="btn block" style="margin-top:9px">File it in Materials</div>
+          <div class="consequence">The rail stays, and it stays honest: this import would write nothing. Filing the file is a Materials action, not an import.</div>
+        </div>
+        <div class="mnote">
+          <div class="ram">&#128015;</div>
+          <div>
+            <div class="mt">Your file was never at risk</div>
+            <div class="mb">It was attached to CHEM 262 the moment you dropped it, before I read a word of it. Every route out of this screen keeps it.</div>
           </div>
           <div class="x">&#10005;</div>
         </div>

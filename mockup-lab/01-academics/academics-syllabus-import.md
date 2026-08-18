@@ -1,6 +1,7 @@
 # Academics · Syllabus Import — decisions
 
 **Status:** PROPOSED · Stage-B decision record
+**Source:** `academics-syllabus-import.html` — 4 frames: upload · review · re-import + nothing-parsed · wrong document (frame 4 added under `T1-academics-mockup-2.md`)
 
 ## Product views
 
@@ -10,6 +11,7 @@
 | Review before apply | Let the student inspect every extracted class fact before any record is written. |
 | Re-import diff | Compare a newer syllabus to confirmed records without silently replacing student corrections. |
 | Nothing parsed | Keep the file and route directly into manual entry instead of stranding the student. |
+| Wrong document | Say the upload isn't a syllabus and route it to Materials, where it belongs. |
 
 ## Behaviour
 
@@ -38,6 +40,14 @@
 - When nothing can be read, the file remains locally attached to the class and
   the student can enter details manually, paste text, or try another file.
   There is no bare error or forced restart.
+- **Wrong document is a separate diagnosis from nothing-parsed.** When the file
+  reads cleanly but is not a syllabus — a problem set, a slide deck — the
+  screen says so, names what it looked for and did not find, and offers
+  **filing it in Materials** as the primary route, because that is where the
+  file belongs. The detection is a proposal like every other one on this
+  screen: an explicit override reviews it as a syllabus anyway, since some
+  syllabi genuinely carry no weights table. The file is retained either way,
+  and nothing is written to the class.
 
 ## Appearance
 
@@ -62,6 +72,15 @@
 - **Nothing parsed** is a contained recovery card inside the same review
   composition. It keeps the student's file and makes the next three routes
   visible, rather than replacing the whole screen with an error state.
+- **Wrong document** uses the same containment and the same Apply rail, but
+  **must not reuse the nothing-parsed treatment.** Nothing failed: the file was
+  read perfectly and simply isn't a syllabus, so the card takes the Academics
+  accent rather than the warning tone that marks a parse failure. It carries a
+  short did-not-find list — weights, exam dates, a schedule, an instructor
+  block — with the one thing it *did* find shown in accent as the reason
+  Materials is the better home. The Apply rail stays visible and reads
+  **"Nothing to apply"** with explicit zero counts, because a rail that
+  vanished would hide the fact that this import writes nothing.
 - Dropzones, review groups, evidence quotes, diff rows, and the Apply rail are
   solid-with-depth using the shared Academics tokens. They do not use glass.
   Focus is visible for keyboard controls; confidence and change state use text
@@ -99,3 +118,5 @@
   defaults and keep/accept meaning.
 - The no-parse route retains the file and returns the student to a useful
   manual path without discarding partial work.
+- The wrong-document route retains the file, writes no class record, and keeps
+  an explicit override back into ordinary review.
