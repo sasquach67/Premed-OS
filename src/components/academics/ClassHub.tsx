@@ -41,6 +41,7 @@ import { ExamPrepMode } from '@/components/academics/ExamPrepMode'
 import { ForgettingCurve } from '@/components/academics/ForgettingCurve'
 import { StudyMethodTrack } from '@/components/academics/StudyMethodTrack'
 import { StudyMethodPanel } from '@/components/academics/StudyMethodPanel'
+import { LearningSignalsPanel } from '@/components/academics/LearningSignalsPanel'
 
 type HubTab = 'overview' | 'materials' | 'topics' | 'readings' | 'assignments' | 'notes'
 
@@ -379,6 +380,15 @@ function Overview({
 
       <div className="col-span-12">
         <StudyMethodPanel courseId={course.id} topics={topics} events={data.reviewEvents} classType={type} />
+      </div>
+
+      {/* §4.1: below the class's primary next action, above its supporting
+          class information. Absent entirely when no signal is earned. */}
+      <div className="col-span-12">
+        <LearningSignalsPanel
+          courseId={course.id} topics={topics} events={data.reviewEvents}
+          assignments={assignments} classType={type} onTab={onTab}
+        />
       </div>
 
       <Panel className="col-span-12 lg:col-span-4" title="Due today">
