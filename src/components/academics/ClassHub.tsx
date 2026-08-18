@@ -5,6 +5,7 @@ import {
   Clock3, FileText, Filter, FolderOpen, GraduationCap, HelpCircle,
   Mail, MapPin, MoreHorizontal, NotebookText, Play, Plus,
   Sparkles, Target, UserRound, Users,
+  TrendingDown,
 } from 'lucide-react'
 import type {
   AcademicFile, ClassAssignment, ClassCenterData, ClassContact, ClassNote,
@@ -37,6 +38,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatStrip } from '@/components/common/StatStrip'
 import { ExamPrepMode } from '@/components/academics/ExamPrepMode'
+import { ForgettingCurve } from '@/components/academics/ForgettingCurve'
 
 type HubTab = 'overview' | 'materials' | 'topics' | 'readings' | 'assignments' | 'notes'
 
@@ -380,7 +382,7 @@ function Overview({
 
       <Panel className="col-span-12 lg:col-span-4" title="Exam scope" action={exam ? <Button size="sm" variant="outline" onClick={() => onOpenExamPrep(exam.id)}>Exam prep</Button> : undefined}>
         {exam ? (
-          <ExamScope exam={exam} topics={scopedTopics} allTopics={topics} />
+          <ExamScope exam={exam} topics={scopedTopics} allTopics={topics} events={data.reviewEvents} />
         ) : <EmptyState icon={CalendarClock} title="No upcoming exam" detail="Add an exam and link its covered topics to see scope." />}
       </Panel>
 
@@ -687,6 +689,9 @@ function Topics({
   const [filter, setFilter] = useState<'all' | TopicStatus>('all')
   const units = groupTopics(topics.filter((item) => filter === 'all' || item.status === filter))
   const examTopicIds = new Set(assignments.filter((item) => item.type === 'exam' && !isComplete(item)).flatMap((item) => item.coveredTopicIds ?? []))
+  // The next uncompleted exam, so a topic's curve can carry its exam line (§4.1-L).
+  const exam = assignments.filter((item) => item.type === 'exam' && !isComplete(item) && item.dueDate)
+    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())[0]
   return (
     <div className="space-y-4">
       <SectionToolbar
@@ -711,7 +716,7 @@ function Topics({
               <Progress value={unitTopics.length ? (ready / unitTopics.length) * 100 : 0} />
             </CardHeader>
             <CardContent className="space-y-2">
-              {unitTopics.map((topic) => <TopicRow key={topic.id} topic={topic} data={data} />)}
+              {unitTopics.map((topic) => <TopicRow key={topic.id} topic={topic} data={data} exam={exam} />)}
             </CardContent>
           </Card>
         )
@@ -781,7 +786,11 @@ function Notes({ courseId, notes, topics }: { courseId: string; notes: ClassNote
   )
 }
 
-function ExamScope({ exam, topics, allTopics }: { exam: ClassAssignment; topics: Topic[]; allTopics: Topic[] }) {
+function ExamScope({ exam, topics, allTopics, events }: { exam: ClassAssignment; topics: Topic[]; allTopics: Topic[]; events: ReviewEvent[] }) {
+  // §4.1-L entry 2: the exam-scope panel is where the exam-day question is
+  // actually asked, so each scoped topic opens its curve here.
+  const [curveTopicId, setCurveTopicId] = useState<string | null>(null)
+  const curveTopic = topics.find((item) => item.id === curveTopicId)
   if (!(exam.coveredTopicIds?.length)) return <EmptyState icon={Target} title="Scope not mapped" detail={`Link covered topics to ${exam.title} to record its scope.`} />
   const counts = {
     ready: topics.filter((item) => item.status === 'ready').length,
@@ -800,6 +809,18 @@ function ExamScope({ exam, topics, allTopics }: { exam: ClassAssignment; topics:
       <p className="rounded-xl bg-muted/35 p-3 text-xs font-semibold text-muted-foreground">
         Scope comes from the {exam.coveredTopicIds.length} topic links recorded on {exam.title}; {topics.length} match this class’s {allTopics.length} current topics.
       </p>
+      <div className="flex flex-wrap gap-1.5">
+        {topics.map((item) => (
+          <Button
+            key={item.id} size="sm" variant={curveTopicId === item.id ? 'default' : 'outline'}
+            aria-pressed={curveTopicId === item.id}
+            onClick={() => setCurveTopicId((current) => current === item.id ? null : item.id)}
+          >
+            <TrendingDown className="size-4" /> {item.title}
+          </Button>
+        ))}
+      </div>
+      {curveTopic && <ForgettingCurve topic={curveTopic} events={events} exam={exam} />}
     </div>
   )
 }
@@ -856,7 +877,8 @@ function WhatIf({ assignments }: { assignments: ClassAssignment[] }) {
   )
 }
 
-function TopicRow({ topic, data }: { topic: Topic; data: ClassCenterData }) {
+function TopicRow({ topic, data, exam }: { topic: Topic; data: ClassCenterData; exam?: ClassAssignment }) {
+  const [curveOpen, setCurveOpen] = useState(false)
   const lastRecall = topic.fsrs.lastReview ? new Date(topic.fsrs.lastReview).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Never'
   const nextReview = topic.fsrs.reps > 0 ? new Date(topic.fsrs.due).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Not scheduled'
   const noteCount = data.notes.filter((note) => note.topicIds.includes(topic.id)).length
@@ -868,10 +890,16 @@ function TopicRow({ topic, data }: { topic: Topic; data: ClassCenterData }) {
           <span className="text-xs font-bold text-muted-foreground">Last recall {lastRecall}</span>
           <span className="text-xs font-bold text-muted-foreground">Next review {nextReview}</span>
           <Badge className={cn('justify-self-start', STATUS_TONE[topic.status])}>{STATUS_LABELS[topic.status]}</Badge>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Brain className="size-4" /> Quiz me</Button></DropdownMenuTrigger>
-            <DropdownMenuContent align="end"><DropdownMenuItem asChild><Link to={`/academics/review/${topic.courseId}?topicId=${topic.id}`}>Recall this topic</Link></DropdownMenuItem><DropdownMenuItem>Open linked notes</DropdownMenuItem></DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-1.5">
+            <Button size="sm" variant="ghost" aria-expanded={curveOpen} onClick={() => setCurveOpen((open) => !open)}>
+              <TrendingDown className="size-4" /> Will I still know this?
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Brain className="size-4" /> Quiz me</Button></DropdownMenuTrigger>
+              <DropdownMenuContent align="end"><DropdownMenuItem asChild><Link to={`/academics/review/${topic.courseId}?topicId=${topic.id}`}>Recall this topic</Link></DropdownMenuItem><DropdownMenuItem>Open linked notes</DropdownMenuItem></DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          {curveOpen && <div className="md:col-span-5"><ForgettingCurve topic={topic} events={data.reviewEvents} exam={exam} /></div>}
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent><ContextMenuItem asChild><Link to={`/academics/review/${topic.courseId}?topicId=${topic.id}`}><Brain className="size-4" /> Quiz me</Link></ContextMenuItem><ContextMenuItem><NotebookText className="size-4" /> Open context</ContextMenuItem></ContextMenuContent>

@@ -1,6 +1,6 @@
 # Academics · Forgetting curve — decisions
 
-**Status:** PROPOSED · Stage-A coverage · **C1 ruled Aug 18, 2026 — no open conflicts**
+**Status:** PROPOSED · Stage-A coverage · **C1 ruled Aug 18, 2026** · **BUILT**
 **Source:** `academics-forgetting-curve.html` · **Spec:** `tabs/01-academics.md` §4.1-L
 **Drawn under:** `implementation/briefs/T1-academics-mockup-2.md`
 
@@ -122,3 +122,24 @@ its band label. Related: [[academics-study-method]] C2, resolved the same way.
 - 1 review or 0 → "not enough history yet", no shape drawn.
 - No exam date on the class → the curve draws without the exam line; the
   panel is still useful and says nothing about an exam that isn't scheduled.
+
+## Built
+
+Implemented in `src/components/academics/ForgettingCurve.tsx` over
+`src/lib/academics/forgettingCurve.ts`. The previously dead
+`topicRetrievability` export is now live; `fsrs.ts` itself is unchanged.
+
+**One thing the drawing could not have told us.** A topic stores only its
+*current* stability, so drawing every past interval with today's value made all
+the teeth identical — and the widening of the gaps, which §4.1-L calls the
+whole argument, vanished from the picture. The build reconstructs the stability
+that actually governed each interval by replaying the review log through the
+shipped scheduler. No schema change, no second model, and the flattening now
+appears because it is real rather than because it was drawn that way.
+
+Verified against the demo review log: history solid and projection dashed
+beginning at the same review moment, retention jumping back to full at each
+reset, the exam line inside the plot, `≈63% on exam day · Fading` rendering as
+one block, the legend always visible, and a topic with fewer than two reviews
+emitting no polyline at all. Both themes checked; 266 tests and the production
+build pass.
