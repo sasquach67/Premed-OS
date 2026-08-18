@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Academics · Topic ↔ assignment linking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#211e1a;--card:#2b2722;--fg:#ece3d4;--mut:#a89c8c;--dim:#7c7264;--bd:#3c352d;--muted:#322e28;--cat:#4b9cd3;--success:#6fc0a8;--warning:#e7b06a;--violet:#8c7bd4}
+*{box-sizing:border-box}
+body{margin:0;background:#191613;color:var(--fg);font:15px/1.45 Nunito,sans-serif}
+.frame{min-height:100vh;width:min(1240px,100%);margin:auto;background:var(--bg)}
+.banner{padding:18px 24px 0;background:radial-gradient(340px 200px at 88% 6%,rgba(75,156,211,.34),transparent 70%),radial-gradient(260px 180px at 10% 130%,rgba(111,192,168,.18),transparent 70%),linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%)}
+.crumb{font:800 11px 'Baloo 2';color:rgba(255,255,255,.68);letter-spacing:.05em}
+.title{margin:3px 0 0;color:#fff;font:800 30px 'Baloo 2';letter-spacing:-.4px}
+.title i{font:700 18px Nunito,sans-serif;color:rgba(255,255,255,.84);font-style:normal}
+.tabs{display:flex;gap:24px;margin-top:14px}
+.tab{position:relative;padding:10px 2px 11px;color:rgba(255,255,255,.6);font:700 14px 'Baloo 2'}
+.tab.on{color:#fff;font-weight:800}
+.tab.on:after{content:"";position:absolute;inset:auto 0 -1px;height:3px;border-radius:3px 3px 0 0;background:var(--cat);box-shadow:0 0 12px color-mix(in srgb,var(--cat) 60%,transparent)}
+.subnav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 24px;background:var(--card);border-bottom:1px solid var(--bd)}
+.axis{font:800 10px 'Baloo 2';letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-right:2px}
+.axis+.axis{margin-left:14px}
+.chip{border:1px solid var(--bd);border-radius:9px;padding:6px 10px;background:var(--muted);color:var(--mut);font:800 11px 'Baloo 2';white-space:nowrap;cursor:pointer}
+.chip.on{border-color:color-mix(in srgb,var(--cat) 48%,var(--bd));color:var(--cat);background:color-mix(in srgb,var(--cat) 13%,var(--muted))}
+.wrap{max-width:1120px;margin:auto;padding:24px}
+.variant,.view{display:none}
+.variant.on,.view.on{display:block}
+.eyebrow{font:800 10px 'Baloo 2';letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 10px 26px -14px rgba(0,0,0,.55)}
+.lede{margin:0 0 15px;max-width:640px;color:var(--mut);font-size:12px;font-weight:700}
+.lede b{color:var(--fg);font-family:'Baloo 2'}
+.stack{display:grid;gap:15px}
+.row{padding:15px 17px}
+.row-head{display:flex;align-items:start;justify-content:space-between;gap:14px}
+.row-head b{font:800 16px 'Baloo 2'}
+.meta{margin-top:2px;color:var(--mut);font-size:11.5px;font-weight:700}
+.badge{border:1px solid var(--bd);border-radius:8px;padding:4px 8px;background:var(--muted);color:var(--mut);font:800 10.5px 'Baloo 2';white-space:nowrap}
+.field{margin-top:13px;padding-top:12px;border-top:1px solid var(--bd)}
+.field-label{display:flex;align-items:center;gap:7px;font:800 10.5px 'Baloo 2';letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.topic{display:inline-flex;align-items:center;gap:7px;border:1px solid color-mix(in srgb,var(--cat) 34%,var(--bd));border-radius:9px;padding:6px 8px 6px 10px;background:color-mix(in srgb,var(--cat) 11%,var(--muted));font:800 11.5px 'Baloo 2';color:var(--fg)}
+.topic .x{color:var(--mut);font-size:13px;line-height:1;cursor:pointer}
+.topic.scope{border-color:color-mix(in srgb,var(--warning) 38%,var(--bd));background:color-mix(in srgb,var(--warning) 11%,var(--muted))}
+.add{display:inline-flex;align-items:center;gap:6px;border:1px dashed color-mix(in srgb,var(--cat) 46%,var(--bd));border-radius:9px;padding:6px 10px;background:transparent;color:var(--cat);font:800 11.5px 'Baloo 2';cursor:pointer}
+.typeahead{margin-top:10px;border:1px solid color-mix(in srgb,var(--cat) 40%,var(--bd));border-radius:12px;background:var(--muted);overflow:hidden}
+.typeahead input{width:100%;border:0;border-bottom:1px solid var(--bd);padding:10px 12px;background:transparent;color:var(--fg);font:700 12.5px Nunito,sans-serif;outline:none}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-top:1px solid var(--bd);font-size:12px;font-weight:700}
+.opt:first-of-type{border-top:0}
+.opt.on{background:color-mix(in srgb,var(--cat) 10%,transparent);color:var(--fg)}
+.opt small{color:var(--dim);font-size:10.5px;font-weight:700}
+.hint{margin-top:9px;color:var(--dim);font-size:10.5px;font-weight:700}
+.note{margin-top:15px;padding:12px 14px;border-left:3px solid var(--cat);background:color-mix(in srgb,var(--cat) 7%,var(--muted));color:var(--mut);font-size:11.5px;font-weight:700;border-radius:0 10px 10px 0}
+.note b{font-family:'Baloo 2';color:var(--fg)}
+.note.warn{border-left-color:var(--warning);background:color-mix(in srgb,var(--warning) 7%,var(--muted))}
+.expander{margin-top:11px;padding-top:11px;border-top:1px solid var(--bd);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.sub{padding:11px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--muted)}
+.sub h4{margin:0 0 7px;font:800 11px 'Baloo 2';letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.sub p{margin:0;font-size:12px;font-weight:700}
+.caret{color:var(--cat);font:800 11px 'Baloo 2';cursor:pointer}
+.peek-stage{position:relative;min-height:430px;padding:17px;overflow:hidden}
+.peek-dim{position:absolute;inset:0;background:rgba(10,8,6,.55)}
+.peek{position:absolute;left:50%;top:34px;transform:translateX(-50%);width:min(520px,92%);border:1px solid var(--bd);border-radius:16px;background:var(--card);box-shadow:0 26px 60px -20px rgba(0,0,0,.75);overflow:hidden}
+.peek-head{padding:15px 17px;border-bottom:1px solid var(--bd)}
+.peek-head b{font:800 16px 'Baloo 2'}
+.peek-body{max-height:270px;overflow:auto}
+.pick{display:flex;align-items:center;gap:11px;padding:11px 17px;border-top:1px solid var(--bd);font-size:12.5px;font-weight:700}
+.pick:first-of-type{border-top:0}
+.box{width:15px;height:15px;flex:none;border:1.5px solid var(--bd);border-radius:5px}
+.box.on{border-color:var(--cat);background:var(--cat);position:relative}
+.box.on:after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #10222f;border-width:0 2px 2px 0;transform:rotate(42deg)}
+.pick small{margin-left:auto;color:var(--dim);font-size:10.5px}
+.peek-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 17px;border-top:1px solid var(--bd);background:var(--muted)}
+.count{color:var(--mut);font-size:11px;font-weight:700}
+.buttons{display:flex;gap:8px}
+.primary{border:0;border-radius:10px;background:var(--cat);color:#102331;padding:9px 13px;font:800 12px 'Baloo 2';cursor:pointer}
+.secondary{border:1px solid var(--bd);border-radius:10px;padding:9px 12px;background:var(--card);color:var(--mut);font:800 12px 'Baloo 2';cursor:pointer}
+.empty{margin-top:9px;padding:15px;border:1px dashed var(--bd);border-radius:12px;text-align:center}
+.empty b{display:block;font:800 13px 'Baloo 2'}
+.empty span{display:block;margin-top:3px;color:var(--mut);font-size:11.5px;font-weight:700}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+@media(max-width:860px){.expander,.pair{grid-template-columns:1fr}}
+@media(max-width:760px){.banner,.subnav,.wrap{padding-inline:14px}.tabs{overflow:auto}.peek{top:16px}}
+</style>
+</head>
+<body>
+<main class="frame">
+  <header class="banner">
+    <div class="crumb">‹ Class Center</div>
+    <div class="title">CHEM 262 <i>Organic Chemistry II</i></div>
+    <nav class="tabs"><span class="tab">Overview</span><span class="tab">Materials</span><span class="tab" data-tab="topic">Topics</span><span class="tab on" data-tab="assignment">Assignments</span><span class="tab">Notes</span></nav>
+  </header>
+
+  <nav class="subnav">
+    <span class="axis">Variant</span>
+    <span class="chip" data-variant="A">A · inline chips</span>
+    <span class="chip" data-variant="B">B · expandable row</span>
+    <span class="chip" data-variant="C">C · scope picker</span>
+    <span class="axis">View</span>
+    <span class="chip" data-view="assignment">Link from the assignment</span>
+    <span class="chip" data-view="exam">Exam scope</span>
+    <span class="chip" data-view="topic">Link from the topic</span>
+  </nav>
+
+  <section class="wrap">
+
+    <!-- ══════════════ A · INLINE CHIPS ══════════════ -->
+    <section class="variant" data-variant="A">
+
+      <div class="view" data-view="assignment">
+        <p class="lede">Topics are <b>removable chips on the record itself</b>. Linking is one click and a typed match — no drawer, no page change. The cost is width: an assignment naming six topics wraps to three lines.</p>
+        <div class="stack">
+          <article class="card row">
+            <div class="row-head"><div><b>Mechanism problem set</b><div class="meta">Problem sets · Due in 2 days · 10% weight</div></div><span class="badge">Not started</span></div>
+            <div class="field">
+              <div class="field-label">Topics this covers</div>
+              <div class="chips">
+                <span class="topic">SN1 and SN2 mechanisms <span class="x">×</span></span>
+                <span class="topic">Stereochemistry and conformations <span class="x">×</span></span>
+                <button class="add">+ Link topic</button>
+              </div>
+              <div class="typeahead">
+                <input value="acid" placeholder="Type a topic name…">
+                <div class="opt on"><span>Acid–base and pKa</span><small>Unit 2</small></div>
+                <div class="opt"><span>Acid-catalysed hydration</span><small>Unit 3</small></div>
+              </div>
+              <p class="hint">Only this class's own topics are offered. Nothing is matched or linked for you.</p>
+            </div>
+          </article>
+
+          <article class="card row">
+            <div class="row-head"><div><b>Nomenclature quiz</b><div class="meta">Quizzes · Due in 9 days · 5% weight</div></div><span class="badge">Not started</span></div>
+            <div class="field">
+              <div class="field-label">Topics this covers</div>
+              <div class="chips"><button class="add">+ Link topic</button></div>
+              <p class="hint">Unlinked is a normal, permanent state. No count, meter, or reminder is attached to it.</p>
+            </div>
+          </article>
+        </div>
+        <div class="note"><b>A link is something you say, never something inferred.</b> A syllabus import may later <i>propose</i> links — as a proposal, with its evidence, needing confirmation. Nothing here writes a link on your behalf.</div>
+      </div>
+
+      <div class="view" data-view="exam">
+        <p class="lede">An exam carries <b>two separate fields</b>. Scope is what the exam tests; topics-covered is ordinary linkage. Merging them would silently widen exam prep, so the chips are visually distinct and separately labelled.</p>
+        <article class="card row">
+          <div class="row-head"><div><b>Exam 2 — Units 3–5</b><div class="meta">Exams · In 11 days · 30% weight</div></div><span class="badge">Not started</span></div>
+          <div class="field">
+            <div class="field-label">Exam scope <span class="badge">drives exam prep</span></div>
+            <div class="chips">
+              <span class="topic scope">Alkene addition <span class="x">×</span></span>
+              <span class="topic scope">Radical halogenation <span class="x">×</span></span>
+              <span class="topic scope">SN1 and SN2 mechanisms <span class="x">×</span></span>
+              <button class="add">+ Add to scope</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label">Topics this covers</div>
+            <div class="chips"><span class="topic">Stereochemistry and conformations <span class="x">×</span></span><button class="add">+ Link topic</button></div>
+            <p class="hint">Covered-but-not-in-scope is a real answer: the material appeared, the exam does not test it.</p>
+          </div>
+        </article>
+        <div class="note warn"><b>Scope is never inferred from the title.</b> “Units 3–5” in the name proves nothing about which topic records those units contain. Until scope is stated, Exam scope and Exam prep stay dormant and say so.</div>
+      </div>
+
+      <div class="view" data-view="topic">
+        <p class="lede">The same record, written from the other side. A student thinking topic-first works in Topics, so the affordance exists there too — and it is <b>one link, not two lists</b>.</p>
+        <div class="stack">
+          <article class="card row">
+            <div class="row-head"><div><b>SN1 and SN2 mechanisms</b><div class="meta">Unit 1 · Structure · Marked for review</div></div><span class="badge">3 reviews</span></div>
+            <div class="field">
+              <div class="field-label">Work that covers this topic</div>
+              <div class="chips">
+                <span class="topic">Mechanism problem set <span class="x">×</span></span>
+                <span class="topic scope">Exam 2 — in scope <span class="x">×</span></span>
+                <button class="add">+ Link assignment</button>
+              </div>
+              <p class="hint">Removing it here removes the same link the assignment shows. There is one record, seen from two places.</p>
+            </div>
+          </article>
+          <article class="card row">
+            <div class="row-head"><div><b>Radical halogenation</b><div class="meta">Unit 3 · Reactions · Not started</div></div><span class="badge">No reviews</span></div>
+            <div class="field">
+              <div class="field-label">Work that covers this topic</div>
+              <div class="chips"><span class="topic scope">Exam 2 — in scope <span class="x">×</span></span><button class="add">+ Link assignment</button></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════ B · EXPANDABLE ROW ══════════════ -->
+    <section class="variant" data-variant="B">
+
+      <div class="view" data-view="assignment">
+        <p class="lede">The row expands into its record, where topics are <b>one field among grade, weight, and notes</b> — the shape <code>ExpandableEntryRow</code> already uses elsewhere. Costs a click; earns room for every field the record actually has.</p>
+        <article class="card row">
+          <div class="row-head"><div><b>Mechanism problem set</b><div class="meta">Problem sets · Due in 2 days · 10% weight</div></div><span class="caret">Collapse ▴</span></div>
+          <div class="expander">
+            <div class="sub"><h4>Weight</h4><p>10% of the course grade</p></div>
+            <div class="sub"><h4>Points</h4><p>Not graded yet · 25 possible</p></div>
+            <div class="sub"><h4>Status</h4><p>Not started</p></div>
+          </div>
+          <div class="field">
+            <div class="field-label">Topics this covers</div>
+            <div class="chips">
+              <span class="topic">SN1 and SN2 mechanisms <span class="x">×</span></span>
+              <span class="topic">Stereochemistry and conformations <span class="x">×</span></span>
+              <button class="add">+ Link topic</button>
+            </div>
+            <p class="hint">Two linked. The field states what is linked and never how much of the class is.</p>
+          </div>
+        </article>
+
+        <article class="card row" style="margin-top:15px">
+          <div class="row-head"><div><b>Nomenclature quiz</b><div class="meta">Quizzes · Due in 9 days · 5% weight</div></div><span class="caret">Expand ▾</span></div>
+          <div class="meta" style="margin-top:9px">No linked topics</div>
+        </article>
+        <div class="note"><b>Collapsed rows stay the approved agenda.</b> The Assignments page structure — agenda default, three views, add as the primary action — does not move. This is an affordance inside a record.</div>
+      </div>
+
+      <div class="view" data-view="exam">
+        <p class="lede">In an expanded exam record the two fields are <b>stacked and separately titled</b>, which is the clearest place in any variant to keep scope and coverage from blurring.</p>
+        <article class="card row">
+          <div class="row-head"><div><b>Exam 2 — Units 3–5</b><div class="meta">Exams · In 11 days · 30% weight</div></div><span class="caret">Collapse ▴</span></div>
+          <div class="field">
+            <div class="field-label">Exam scope <span class="badge">drives exam prep</span></div>
+            <div class="chips"><span class="topic scope">Alkene addition <span class="x">×</span></span><span class="topic scope">Radical halogenation <span class="x">×</span></span><button class="add">+ Add to scope</button></div>
+          </div>
+          <div class="field">
+            <div class="field-label">Topics this covers</div>
+            <div class="chips"><span class="topic">SN1 and SN2 mechanisms <span class="x">×</span></span><button class="add">+ Link topic</button></div>
+          </div>
+        </article>
+      </div>
+
+      <div class="view" data-view="topic">
+        <p class="lede">Topics expand the same way, so one row family covers both directions and nothing new has to be learned.</p>
+        <article class="card row">
+          <div class="row-head"><div><b>SN1 and SN2 mechanisms</b><div class="meta">Unit 1 · Structure</div></div><span class="caret">Collapse ▴</span></div>
+          <div class="expander">
+            <div class="sub"><h4>Status</h4><p>Marked for review</p></div>
+            <div class="sub"><h4>Reviews</h4><p>3 recorded · 1 lapse</p></div>
+            <div class="sub"><h4>Materials</h4><p>Chapter 6 reading</p></div>
+          </div>
+          <div class="field">
+            <div class="field-label">Work that covers this topic</div>
+            <div class="chips"><span class="topic">Mechanism problem set <span class="x">×</span></span><span class="topic scope">Exam 2 — in scope <span class="x">×</span></span><button class="add">+ Link assignment</button></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ══════════════ C · SCOPE PICKER ══════════════ -->
+    <section class="variant" data-variant="C">
+
+      <div class="view" data-view="assignment">
+        <p class="lede">A focused overlay listing <b>every topic in the class at once</b>. Heavy for linking one topic; the only variant that makes linking eight of them pleasant.</p>
+        <article class="card peek-stage">
+          <div class="row-head"><div><b>Mechanism problem set</b><div class="meta">Problem sets · Due in 2 days</div></div><span class="badge">Not started</span></div>
+          <div class="peek-dim"></div>
+          <div class="peek">
+            <div class="peek-head"><div class="eyebrow">Link topics</div><b>What does this assignment cover?</b><div class="meta">CHEM 262 · 5 topics recorded</div></div>
+            <div class="peek-body">
+              <div class="pick"><span class="box on"></span><span>SN1 and SN2 mechanisms</span><small>Unit 1</small></div>
+              <div class="pick"><span class="box on"></span><span>Stereochemistry and conformations</span><small>Unit 1</small></div>
+              <div class="pick"><span class="box"></span><span>Acid–base and pKa</span><small>Unit 2</small></div>
+              <div class="pick"><span class="box"></span><span>Radical halogenation</span><small>Unit 3</small></div>
+              <div class="pick"><span class="box"></span><span>Alkene addition</span><small>Unit 4</small></div>
+            </div>
+            <div class="peek-foot"><span class="count">2 linked</span><div class="buttons"><button class="secondary">Cancel</button><button class="primary">Save links</button></div></div>
+          </div>
+        </article>
+        <div class="note"><b>“2 linked” is a count of what you selected, not progress.</b> There is no ratio against the class's topic list, no bar, and no state in which linking fewer topics looks incomplete.</div>
+      </div>
+
+      <div class="view" data-view="exam">
+        <p class="lede">The case that justifies the overlay: exam scope is usually many topics at once, chosen in one sitting from the syllabus.</p>
+        <article class="card peek-stage">
+          <div class="row-head"><div><b>Exam 2 — Units 3–5</b><div class="meta">Exams · In 11 days · 30% weight</div></div><span class="badge">Scope not set</span></div>
+          <div class="peek-dim"></div>
+          <div class="peek">
+            <div class="peek-head"><div class="eyebrow">Exam scope</div><b>What does Exam 2 test?</b><div class="meta">Scope drives Exam prep and the forgetting curve. It is separate from “topics this covers”.</div></div>
+            <div class="peek-body">
+              <div class="pick"><span class="box"></span><span>SN1 and SN2 mechanisms</span><small>Unit 1</small></div>
+              <div class="pick"><span class="box"></span><span>Stereochemistry and conformations</span><small>Unit 1</small></div>
+              <div class="pick"><span class="box on"></span><span>Acid–base and pKa</span><small>Unit 3</small></div>
+              <div class="pick"><span class="box on"></span><span>Radical halogenation</span><small>Unit 3</small></div>
+              <div class="pick"><span class="box on"></span><span>Alkene addition</span><small>Unit 4</small></div>
+            </div>
+            <div class="peek-foot"><span class="count">3 in scope</span><div class="buttons"><button class="secondary">Cancel</button><button class="primary">Set scope</button></div></div>
+          </div>
+        </article>
+      </div>
+
+      <div class="view" data-view="topic">
+        <p class="lede">Opened from a topic, the same overlay lists the class's work instead. One component, two contents — and still one link record.</p>
+        <article class="card peek-stage">
+          <div class="row-head"><div><b>SN1 and SN2 mechanisms</b><div class="meta">Unit 1 · Structure</div></div><span class="badge">3 reviews</span></div>
+          <div class="peek-dim"></div>
+          <div class="peek">
+            <div class="peek-head"><div class="eyebrow">Link work</div><b>What covers this topic?</b><div class="meta">CHEM 262 · 4 assignments recorded</div></div>
+            <div class="peek-body">
+              <div class="pick"><span class="box on"></span><span>Mechanism problem set</span><small>Due in 2 days</small></div>
+              <div class="pick"><span class="box"></span><span>Nomenclature quiz</span><small>Due in 9 days</small></div>
+              <div class="pick"><span class="box on"></span><span>Exam 2 — Units 3–5</span><small>In scope</small></div>
+              <div class="pick"><span class="box"></span><span>Synthesis lab report</span><small>Submitted</small></div>
+            </div>
+            <div class="peek-foot"><span class="count">2 linked</span><div class="buttons"><button class="secondary">Cancel</button><button class="primary">Save links</button></div></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ══════════════ States every variant must answer ══════════════ -->
+    <section class="pair" style="margin-top:22px">
+      <article class="card row">
+        <div class="eyebrow">State · no topics yet</div>
+        <div class="row-head" style="margin-top:4px"><div><b>Nothing to link to</b><div class="meta">A class with no topic records cannot link one.</div></div></div>
+        <div class="empty">
+          <b>This class has no topics yet</b>
+          <span>Add topics from Materials or a syllabus import, then link them here.</span>
+        </div>
+        <p class="hint">The picker says so instead of opening empty, and the affordance stays visible rather than vanishing — a disabled-looking void teaches nothing.</p>
+      </article>
+      <article class="card row">
+        <div class="eyebrow">State · unlinking</div>
+        <div class="row-head" style="margin-top:4px"><div><b>Removal is as reachable as linking</b><div class="meta">Every linked chip carries its own ×; the picker unchecks.</div></div></div>
+        <div class="chips" style="margin-top:11px"><span class="topic">SN1 and SN2 mechanisms <span class="x">×</span></span><span class="topic scope">Exam 2 — in scope <span class="x">×</span></span></div>
+        <p class="hint">Unlinking never deletes the topic or the assignment, and never touches review history. It removes one statement, nothing else.</p>
+      </article>
+    </section>
+
+  </section>
+</main>
+<script>
+const params = new URLSearchParams(location.search)
+const state = { variant: params.get('variant') || 'A', view: params.get('view') || 'assignment' }
+function paint() {
+  document.querySelectorAll('[data-variant]').forEach((node) => node.classList.toggle('on', node.dataset.variant === state.variant))
+  document.querySelectorAll('[data-view]').forEach((node) => node.classList.toggle('on', node.dataset.view === state.view))
+  document.querySelectorAll('.tab[data-tab]').forEach((node) => node.classList.toggle('on', node.dataset.tab === (state.view === 'topic' ? 'topic' : 'assignment')))
+}
+document.querySelectorAll('.subnav .chip').forEach((chip) => chip.addEventListener('click', () => {
+  if (chip.dataset.variant) state.variant = chip.dataset.variant
+  if (chip.dataset.view) state.view = chip.dataset.view
+  paint()
+}))
+paint()
+</script>
+</body>
+</html>
