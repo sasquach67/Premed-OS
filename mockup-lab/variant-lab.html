@@ -414,6 +414,45 @@ const profiles = [
     `
   },
   {
+    id:"study-method",group:"Academics",name:"Study method · UNPATCHED 2026",status:"proposed",
+    path:"01-academics/academics-study-method.html",
+    desc:"The study-cycle surface: per-topic dot track, the class-Overview panel, and lecture-day timing.",
+    variants:[
+      ["All three placements","The track, the grouped panel, and the timing cards as authored."],
+      ["Track and panel","The per-topic atom and the panel it feeds, without the timing cards."],
+      ["Panel only","The class-Overview grouping on its own, including the vanished state."]
+    ],
+    b:`
+      body>.framelabel,body>.frame{display:none!important}
+      body>.framelabel:nth-child(1),body>.frame:nth-child(2),
+      body>.framelabel:nth-child(3),body>.frame:nth-child(4){display:block!important}
+    `,
+    c:`
+      body>.framelabel,body>.frame{display:none!important}
+      body>.framelabel:nth-child(3),body>.frame:nth-child(4),
+      body>.framelabel:nth-child(5),body>.frame:nth-child(6){display:block!important}
+    `
+  },
+  {
+    id:"forgetting-curve",group:"Academics",name:"Forgetting curve",status:"proposed",
+    path:"01-academics/academics-forgetting-curve.html",
+    desc:"The sawtooth panel — solid history, dashed projection, and the honest thin-history state.",
+    variants:[
+      ["Full panel","The curve, its legend, the exam line, and both entry points."],
+      ["Curve only","The sawtooth and its legend, without the thin state or entry points."],
+      ["Thin history","The one-review state and where the panel is reached from."]
+    ],
+    b:`
+      body>.framelabel,body>.frame{display:none!important}
+      body>.framelabel:nth-child(1),body>.frame:nth-child(2){display:block!important}
+    `,
+    c:`
+      body>.framelabel,body>.frame{display:none!important}
+      body>.framelabel:nth-child(3),body>.frame:nth-child(4),
+      body>.framelabel:nth-child(5),body>.frame:nth-child(6){display:block!important}
+    `
+  },
+  {
     id:"exam-prep",group:"Academics",name:"Exam-plan builder",status:"proposed",
     path:"01-academics/academics-exam-prep-mode.html",
     desc:"Accelerated, steady, and catch-up exam preparation states.",
@@ -1343,6 +1382,10 @@ const orderedProfiles = [
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"wrap-per-view"}),
   Object.assign(asProductViews(byId["review-session"],"Session state",["start","recall","gap-report"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"review-session"}),
+  Object.assign(asProductViews(byId["study-method"],"Placement",["dot-track","overview-panel","lecture-timing"]),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
+  Object.assign(asProductViews(byId["forgetting-curve"],"Curve state",["sawtooth","thin-history","entry-points"]),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["exam-prep"],"Plan mode",["accelerated","steady","catch-up"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["syllabus-import"],"Import step",["upload","review","re-import"]),
