@@ -1,6 +1,6 @@
 # Academics · Forgetting curve — decisions
 
-**Status:** PROPOSED · Stage-A coverage · **⚠️ one blocking conflict (C1)**
+**Status:** PROPOSED · Stage-A coverage · **C1 ruled Aug 18, 2026 — no open conflicts**
 **Source:** `academics-forgetting-curve.html` · **Spec:** `tabs/01-academics.md` §4.1-L
 **Drawn under:** `implementation/briefs/T1-academics-mockup-2.md`
 
@@ -53,7 +53,12 @@
   trough they interrupt, each labelled `review` above the plot.
 - **Today** is a thin `--mut` hairline, `2 4` dash, quiet.
 - **Exam day is `--warning` at 2px**, `5 4` dash, labelled with its date, with
-  a filled `--warning` dot at the crossing point.
+  a filled `--warning` dot at the crossing point. The crossing carries a solid
+  `--card` callout outlined in `--warning`: the figure in Baloo 2 800 at 15px
+  `--warning`, `on exam day` beside it in `--mut`, and beneath it the band
+  reading in `--fg` with its consequence clause in `--dim`. **The two lines are
+  one block** — there is no layout in which the figure renders without the
+  reading.
 - The **legend is three equal `--muted` cards** below the plot, not a key
   squeezed into a corner — it carries as much design weight as the chart,
   because teaching is half this panel's job. Above it sits a compact stroke key
@@ -68,32 +73,32 @@
 - Solid-with-depth throughout; glass only on the banner stat strip.
   `:focus-visible` only. The SVG carries an `aria-label` describing the shape.
 
-## ⚠️ C1 — BLOCKING. The exam-day number is not decided, and only Andy can.
+## ✅ C1 — RULED (Andy, Aug 18, 2026): both forms, always together
 
-**§4.1-L rules an exam line** *"with the projected retention where the curve
-crosses it: `≈78% on exam day`. That converts an abstract algorithm into an
-actionable number."*
+**The ruling: the exam line carries a number AND a plain-language reading, and
+neither ships without the other.**
 
-**`U-9` rules** (`05-experience-pillar.md:111`) *"Nothing is scored, ranked, or
-compared — not against a bar, not against other students, **not against the
-student's own past.** No invented composites."*
+This resolves the collision rather than picking a side. §4.1-L's argument was
+that a figure is what makes the panel actionable instead of decorative — that
+survives. `U-9`'s concern was a bare score handed to the student as a verdict —
+that is answered by never letting the number travel alone. **A number with a
+plain reading beside it is a measurement; a number by itself is a grade.**
 
-Both are binding, and here they point opposite ways. The two defensible reads:
+**The wording is banded, never written per-case**, so it cannot editorialise
+and cannot drift into encouragement or scolding:
 
-| Read | Argument |
-|---|---|
-| **The number is fine** | FSRS retrievability is a deterministic model read-out from the student's own review log, not an invented composite. `U-9` was aimed at fabricated scores and rankings, and a physics-style projection with a stated model is neither. Without the number the panel is decorative, which §4.1-L explicitly argues against. |
-| **The number violates U-9** | It is a percentage about the student, on the highest-stakes day, presented as fact. §6.14 (observed vs self-reported) and §6.12 (trust) both constrain claims like this, and a projection shown as a number invites exactly the "am I on track?" comparison `U-9` exists to refuse. |
+| Projected retention | Reading | Consequence clause |
+|---|---|---|
+| **≥ 80%** | Should hold | no action implied |
+| **55–79%** | Fading | one more pass would hold it |
+| **< 55%** | Likely gone by then | worth rebuilding before the exam |
 
-**What the drawing does:** it draws the **crossing** — a fact about the curve —
-and leaves the **figure** as a labelled empty slot on the chart itself, so the
-omission cannot be mistaken for a design choice. **Do not fill it in code.**
+One short clause per band, and no fourth band. The drawing shows the ~55% case:
+**`≈55%` · `Fading — one more pass would hold it`.**
 
-Andy's options, for the record: (a) allow the figure as spec'd; (b) allow a
-non-numeric form — "still solid" / "fading" / "likely gone" — which satisfies
-both rules; (c) drop the exam line entirely and keep the curve as teaching.
-**No option is chosen here.** Related: [[academics-study-method]] C2, the same
-collision over the retrievability bar.
+**Binding on implementation:** the figure and the reading are one component and
+one render. There is no configuration in which the percentage appears without
+its band label. Related: [[academics-study-method]] C2, resolved the same way.
 
 ## Deliberately excluded — do not add these back
 

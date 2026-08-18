@@ -1,6 +1,6 @@
 # Academics · Study method · UNPATCHED 2026 — decisions
 
-**Status:** PROPOSED · Stage-A coverage
+**Status:** PROPOSED · Stage-A coverage · **C2 ruled Aug 18, 2026**
 **Source:** `academics-study-method.html` · **Spec:** `tabs/01-academics.md` §4.1-K, rendering §6.6
 **Drawn under:** `implementation/briefs/T1-academics-mockup-2.md`
 
@@ -20,6 +20,10 @@
   `UNPATCHED 2027`. The working title "The Loop" is retired.
 - **It is not a tab.** A tab would make the cycle a place you visit instead of
   a thing you do. Three placements only, and there is no fourth.
+- **The track sits beside the existing row, replacing nothing.** The
+  retrievability bar, its figure, and the status chip all stay exactly as
+  `academics-class-hub.html` approved them (C2). The figure is never shown
+  without the chip beside it as its non-numeric form.
 - **The track is per-topic, never per-class.** A class is never "at step 4" —
   its topics are all at different stages. Nine dots in three groups of three:
   `prime · pretest · predict` / `recall · feynman · connect` /
@@ -48,8 +52,9 @@
 
 ## Appearance
 
-- **Placement A — the track** sits inline on the topic row, *beside* the
-  existing status chip, and replaces nothing. Dots are 7px, 4px apart within a
+- **Placement A — the track** sits inline on the topic row **after** the
+  approved bar / figure / chip group, and replaces none of it. Row order is
+  unit · name · bar · figure · chip · track. Dots are 7px, 4px apart within a
   group, with a 1px hairline separator between groups and a small uppercase
   group label. Filled dots are `--cat`; hollow dots are a 1.5px `--bd` ring on
   transparent, never a greyed fill. **No load animation** — the track is
@@ -84,20 +89,37 @@ tab and therefore **no panel at all** — not a disabled one.
 
 ## ⚠️ Open conflicts — Andy owns these
 
-### C2 · The retrievability bar (blocks nothing here, but must be ruled)
+### ✅ C2 · The retrievability bar — RULED (Andy, Aug 18, 2026): it stays
 
 §4.1-K-A says *"the existing status chip and retrievability bar stay; the track
-sits beside them."* Two problems:
+sits beside them."* The correction that made this Andy's call rather than a
+routine spec ruling: **the bar is drawn, and it is approved.**
+`academics-class-hub.html:277-278` draws it as a 70px bar, a figure, and a
+status chip — **APPROVED July 2026, `BUILD-MANIFEST.md` `YES`** — and the row
+anatomy is specced three times (§4.1-K lines 361, 395, 529).
 
-1. **`U-9` forbids a progress bar** — *"nothing is scored, ranked, or compared
-   … not against a bar."*
-2. **The bar does not exist.** The audit found `topicRetrievability` exported
-   from `src/lib/academics/fsrs.ts:48` and **imported by nothing**. The spec
-   sentence describes a component that was never built.
+What it is *not* is built: `topicRetrievability` is exported from
+`src/lib/academics/fsrs.ts:48` and imported by nothing.
 
-**This drawing shows the status chip and the track, and no bar.** If Andy rules
-the bar in, it is drawn here first — it is not invented in code. Related:
-[[academics-forgetting-curve]] C1, which is the same collision in sharper form.
+`U-9` was **added Aug 2026**, a month after that drawing was approved. A
+governing rule postdating a cleared, approved mockup is not a case where the
+spec simply wins — which is why it went to Andy.
+
+**The ruling, matching C1: the figure never travels alone.** The bar and its
+percentage stay, and **the status chip beside them is the non-numeric form** —
+`Not Started → Seen → Notes Made → Reviewing → Weak → Ready`. The approved row
+already contained both halves; nothing new is invented, and nothing is removed.
+
+**Rows in this drawing now read:** unit · name · **bar · figure · chip** ·
+track. The first three are the approved class-hub anatomy, untouched, using its
+literal values (`.bar` 70×5px, `#272420` groove; `.pct` Baloo 2 800 11px,
+32px right-aligned). The 9-dot track is appended beside them, which is exactly
+what §4.1-K-A asks for.
+
+**The track still carries no tally of its own.** No "4 of 9", no completion
+count, no second bar. The bar says how well the topic is *known*; the track says
+what has *happened* to it. Two different facts, and only one of them is a
+measurement. Related: [[academics-forgetting-curve]] C1.
 
 ### C3 · A cleared manifest row pointing at a file that does not exist
 
@@ -111,7 +133,9 @@ deletion of both `.html` and `.md` from `specifications/mockups/01-academics/`.
 ## Deliberately excluded — do not add these back
 
 - A nine-step checklist, a completion count, or "3 of 9 done".
-- A progress bar or percentage anywhere on the track or the panel. `U-9`.
+- A progress bar or percentage **on the track or the panel**. The topic row's
+  retrievability bar is a separate, ruled exception (C2) and is not a licence
+  to add others.
 - Any "you skipped a step" or "you're behind" copy.
 - A load animation on the track.
 - A fourth placement, or promoting the panel to a tab.

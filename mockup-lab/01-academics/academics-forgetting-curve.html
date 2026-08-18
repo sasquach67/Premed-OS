@@ -49,15 +49,18 @@
      U-9 explicitly: not against a bar, not against others, not against
      the student's own past.
 
-  ⚠️ OPEN CONFLICT — THE PANEL CANNOT SHIP UNTIL ANDY RULES (see the .md)
-   · C1: §4.1-L rules an exam line "with the projected retention where the
-     curve crosses it: ~78% on exam day." U-9 forbids scoring the student.
-     A projected percentage about the student, on exam day, is either
-       (a) a deterministic model read-out, which U-9 was never aimed at, or
-       (b) exactly the invented composite U-9 exists to stop.
-     THIS FILE DRAWS THE CROSSING AND LEAVES THE NUMBER AS AN EMPTY SLOT.
-     The slot is labelled as unresolved on the drawing itself so nobody
-     mistakes the omission for a design choice. Do not fill it in code.
+  ✅ C1 — RULED BY ANDY (Aug 18, 2026): BOTH FORMS, ALWAYS TOGETHER.
+     §4.1-L wanted a figure; U-9 forbids a bare score. The ruling is that
+     the exam line carries the NUMBER **and** a plain-language reading, and
+     neither ships without the other. The number keeps it actionable
+     (§4.1-L's whole argument); the words keep it from reading as a grade
+     the student is being given (U-9). One is not a fallback for the other.
+
+     Bands, so the wording is deterministic and never editorialised:
+       >= 80%   "Should hold"
+       55-79%   "Fading"          <- drawn here, at ~55%
+       < 55%    "Likely gone by then"
+     Each band carries one short consequence clause, never a scold.
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -251,9 +254,11 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
             <line x1="576.4" y1="34" x2="576.4" y2="224" stroke="#e7b06a" stroke-width="2" stroke-dasharray="5 4"/>
             <text x="576.4" y="30" font-family="Baloo 2" font-size="9.5" font-weight="800" fill="#e7b06a" text-anchor="middle">exam &middot; Dec 14</text>
             <circle cx="576.4" cy="122.4" r="5" fill="#e7b06a" stroke="#211e1a" stroke-width="2"/>
-            <rect x="592" y="107" width="150" height="30" rx="8" fill="none" stroke="#e7b06a" stroke-width="1.5" stroke-dasharray="4 3"/>
-            <text x="667" y="121" font-family="Baloo 2" font-size="10" font-weight="800" fill="#e7b06a" text-anchor="middle">value not decided</text>
-            <text x="667" y="132" font-family="Nunito" font-size="9" font-weight="700" fill="#7c7264" text-anchor="middle">conflict C1 &mdash; see decisions file</text>
+            <rect x="592" y="103" width="196" height="39" rx="9" fill="#2b2722" stroke="#e7b06a" stroke-width="1.5"/>
+            <text x="604" y="118" font-family="Baloo 2" font-size="15" font-weight="800" fill="#e7b06a">&asymp;55%</text>
+            <text x="650" y="118" font-family="Nunito" font-size="10.5" font-weight="800" fill="#a89c8c">on exam day</text>
+            <text x="604" y="133" font-family="Baloo 2" font-size="11" font-weight="800" fill="#ece3d4">Fading</text>
+            <text x="649" y="133" font-family="Nunito" font-size="10" font-weight="700" fill="#7c7264">&mdash; one more pass would hold it</text>
           </svg>
 
           <div class="keyrow">
@@ -295,14 +300,15 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
         </div>
 
         <div class="c1">
-          <span class="t">&#9888; The number on the exam line is not decided</span>
-          §4.1-L rules an exam-day figure &mdash; <i>&ldquo;&asymp;78% on exam day&rdquo;</i>. <b>U-9</b> rules that
-          nothing is scored or compared, <i>&ldquo;not against a bar &hellip; not against the student's own
-          past.&rdquo;</i> Both are binding and they point opposite ways here.
+          <span class="t">&#10003; Both forms, always together (C1 &mdash; ruled)</span>
+          The exam line carries a <b>number</b> and a <b>plain-language reading</b>, and neither ships
+          without the other. The figure is what makes it actionable, which is §4.1-L's whole argument.
+          The words are what stop it reading as a grade the student is being handed, which is what
+          <b>U-9</b> is for.
           <br><br>
-          The drawing shows the <b>crossing</b>, because the crossing is a fact about the curve.
-          It leaves the <b>figure</b> empty, because that is Andy's call. Recorded as
-          <b>C1</b> in <code>academics-forgetting-curve.md</code>.
+          The wording is banded, not written per-case, so it can never editorialise:
+          <b>&ge;80%</b> should hold &middot; <b>55&ndash;79%</b> fading &middot;
+          <b>&lt;55%</b> likely gone by then. Each band gets one short consequence clause and never a scold.
         </div>
       </div>
     </div>

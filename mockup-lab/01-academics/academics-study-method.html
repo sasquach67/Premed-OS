@@ -52,13 +52,18 @@
    · Load animation on the track. §4.1-K: it is decorative-free.
    · A fourth placement, or promoting the panel to a tab. Decision 2.
 
-  ⚠️ OPEN CONFLICT CARRIED FROM THE BRIEF (Andy decides — see the .md)
-   · C2: §4.1-K-A says "the existing status chip and retrievability bar
-     stay; the track sits beside them." U-9 forbids a progress bar, and the
-     audit found NO retrievability bar exists in src/ — topicRetrievability
-     in fsrs.ts is never imported. This file draws the status chip and the
-     track, and does NOT draw a bar. If Andy rules the bar in, it is added
-     here; it is not invented in code.
+  ✅ C2 — RULED BY ANDY (Aug 18, 2026): THE BAR STAYS.
+     §4.1-K-A says "the existing status chip and retrievability bar stay;
+     the track sits beside them." The bar IS drawn — academics-class-hub.html
+     lines 277-278, APPROVED July 2026, BUILD-MANIFEST YES — as a 70px bar
+     plus a figure plus a status chip. What it is NOT is built: fsrs.ts
+     exports topicRetrievability and nothing imports it.
+
+     U-9 (added Aug 2026) postdates that approved drawing, which is what made
+     this Andy's call rather than a spec-beats-mockup ruling. Resolved the
+     same way as C1: the figure never travels alone. The bar and its number
+     stay, and the STATUS CHIP beside them is the non-numeric form.
+     Rows here now draw bar + figure + chip + track, in that order.
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -133,6 +138,11 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
 .unit{font-family:'Baloo 2';font-weight:800;font-size:10px;color:var(--dim);background:var(--bg);
   border:1px solid var(--bd);border-radius:6px;padding:2px 6px}
 .st{font-family:'Baloo 2';font-weight:800;border-radius:999px;padding:2px 9px;font-size:9.5px;white-space:nowrap}
+/* retrievability bar + figure — LITERAL values from academics-class-hub.html
+   (.bar line 100, .pct line 103). C2 ruled Aug 18 2026: the bar stays, and the
+   status chip beside it is the non-numeric form. Track sits beside both. */
+.bar{height:5px;border-radius:999px;background:#272420;overflow:hidden;display:flex;width:70px}
+.pct{font-family:'Baloo 2';font-weight:800;font-size:11px;width:32px;text-align:right}
 
 /* ---------- THE PANEL GROUPS (placement B) ---------- */
 .grp{background:var(--muted);border:1px solid var(--bd);border-radius:12px;overflow:hidden}
@@ -215,6 +225,9 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
         <div class="trow">
           <span class="unit">U7</span>
           <span class="tname">Alcohol nomenclature</span>
+          <span class="bar"><span style="width:72%;background:var(--cat)"></span></span>
+          <span class="pct" style="color:var(--cat)">72%</span>
+          <span class="st" style="background:rgba(75,156,211,.22);color:var(--cat)">Reviewing</span>
           <span class="track">
             <span class="tgroup"><span class="glab">before</span>
               <span class="dot" title="Prime — skim before the lecture"></span>
@@ -231,12 +244,14 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
               <span class="dot off" title="Practice — work problems on it"></span>
               <span class="dot off" title="Mock — test it under exam conditions"></span></span>
           </span>
-          <span class="st" style="background:rgba(75,156,211,.22);color:var(--cat)">Reviewing</span>
         </div>
 
         <div class="trow">
           <span class="unit">U7</span>
           <span class="tname">Williamson ether synthesis</span>
+          <span class="bar"><span style="width:48%;background:var(--danger)"></span></span>
+          <span class="pct" style="color:var(--danger)">48%</span>
+          <span class="st" style="background:rgba(232,128,111,.2);color:var(--danger)">Weak</span>
           <span class="track">
             <span class="tgroup"><span class="glab">before</span>
               <span class="dot" title="Prime — skim before the lecture"></span>
@@ -253,12 +268,14 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
               <span class="dot off" title="Practice — work problems on it"></span>
               <span class="dot off" title="Mock — test it under exam conditions"></span></span>
           </span>
-          <span class="st" style="background:rgba(232,128,111,.2);color:var(--danger)">Weak</span>
         </div>
 
         <div class="trow">
           <span class="unit">U7</span>
           <span class="tname">Oxidation of alcohols</span>
+          <span class="bar"></span>
+          <span class="pct" style="color:var(--dim)">&mdash;</span>
+          <span class="st" style="background:var(--muted);color:var(--mut)">Not started</span>
           <span class="track">
             <span class="tgroup"><span class="glab">before</span>
               <span class="dot off" title="Prime — skim before the lecture"></span>
@@ -275,7 +292,6 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
               <span class="dot off" title="Practice — work problems on it"></span>
               <span class="dot off" title="Mock — test it under exam conditions"></span></span>
           </span>
-          <span class="st" style="background:var(--muted);color:var(--mut)">Not started</span>
         </div>
 
         <div class="legend">
@@ -286,9 +302,14 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
         </div>
 
         <div class="ghost">
-          <b>Not drawn here on purpose.</b> No completion count, no &ldquo;4 of 9&rdquo;, no bar.
-          The track encodes state and nothing else &mdash; a filled-dot tally would be a score of the
-          student against their own past, which <b>U-9</b> forbids. See conflict <b>C2</b> in the decisions file.
+          <b>The track carries no tally of its own.</b> No &ldquo;4 of 9&rdquo;, no completion count,
+          no second bar. A filled-dot count would be a score of the student against their own past,
+          which <b>U-9</b> forbids &mdash; and the row already has an honest pair.
+          <br><br>
+          <b>The bar and the chip are that pair (C2 &mdash; ruled Aug 18, 2026).</b> The retrievability
+          bar and its figure stay, and the <b>status chip beside them is the non-numeric form</b>, exactly
+          as the C1 ruling requires: a number never travels alone. The 9-dot track is a third, different
+          thing &mdash; it says what has <i>happened</i> to the topic, not how well it is <i>known</i>.
         </div>
 
       </div>
