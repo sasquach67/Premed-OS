@@ -1,6 +1,6 @@
 # School List
 
-**Status:** **SPECCED for the ruled scope (Aug 2026).** The governing boundary (`§1`), the two modes (`§1b`), `SL-9`, `SL-16`, `SL-21`, `SL-22`, `SL-23` phase 1, **all of Wave 4**, and **all of Wave 0** are migrated here as binding behaviour. **⭐ Wave 4 CLOSED (Batches 1–3) · Wave 0 CLOSED (Batch 4) · open decisions C, D, E CLOSED** — Aug 2026. **Ten rows remain unruled across Waves 1–3** — see `## Open decisions`.
+**Status:** **SPECCED for the ruled scope (Aug 2026).** The governing boundary (`§1`), the two modes (`§1b`), `SL-16`, `SL-21`, `SL-22`, `SL-23` phase 1, **all of Wave 4**, **all of Wave 0**, and **all of Wave 1** are migrated here as binding behaviour. **⭐ ALL 31 ROWS RULED — Waves 0–4 CLOSED (Batches 1–7), open decisions C, D, E CLOSED, and `§1` AMENDED (`§1a`), Aug 2026.** The spec is complete. **What remains is data and build, not speccing** — see `## Open decisions` and `## Known code drift`.
 **⚠️ The shipped app contradicts ruled behaviour in five places** — see `## Known code drift`. **One is a `U-7` violation live in the product.**
 **Board:** `tabs/08-school-list-board.md` — the decision trail, 31 rows. **Source material, not spec.** Where this file and the board disagree on a *ruled* item, this file is the spec and the board is the record of why.
 **Catalog:** none yet.
@@ -54,7 +54,7 @@ The student already pays for the authoritative data. What nothing holds is the o
 
 ### What Premed OS must NOT build
 
-- **No shipped admissions-profile numbers of any kind** — no medians, no acceptance rates, no in-state percentages, no class sizes, no bundled admissions figures.
+- **No shipped admissions-profile numbers of any kind** — no medians, no acceptance rates, no in-state percentages, no class sizes, no bundled admissions figures. **⭐ AMENDED Aug 2026 — see `§1a`.** A **cycle-stamped snapshot of self-published figures** is now permitted. **Bulk ingestion of licensed datasets, fetching, and acceptance rate remain forbidden.**
 - **No acceptance rate at all, in any layer** (`SL-9`, ruled — see `§6`).
 - **No fetching.** No runtime call to any admissions source, geocoder, portal, or school page. Ever.
 - **No admissions-odds score, chance figure, or application-readiness score** — `U-9`, and a stated non-goal in `00-product-vision`.
@@ -64,6 +64,53 @@ The student already pays for the authoritative data. What nothing holds is the o
 The licensing objection was **overstated** and is recorded as such on the board: facts are not copyrightable, and schools publish their own class profiles. **The reason that actually holds is maintenance** — 240 schools × ~15 admissions fields, re-verified annually, forever, by one student in the summers he is taking the MCAT and applying. **Anyone revisiting this must argue against maintenance, not against licensing.**
 
 **⚠️ The honest cost, recorded with eyes open: a student cannot discover a school they had never heard of by its numbers.** MSAR does that. This is a trade, not a free win.
+
+## 1a. ⭐ AMENDMENT — the self-published snapshot (Aug 2026)
+
+> **`§1` is amended, narrowly. Premed OS MAY ship a cycle-stamped static snapshot of figures schools publish about themselves. It still may not assemble MSAR's dataset, and it still may not fetch.**
+
+### What the research established, and why the amendment is this small
+
+A full official-source pass over all 240 schools was run, and a separate bulk-source audit checked whether a published dataset already carried these fields. **Three findings decided the shape:**
+
+1. **Coverage is low and permanently so.** MCAT 55/240, GPA 53/240, **both together 51/240**. Most schools do not publish class statistics at all.
+2. **No free bulk source exists for MD schools.** AAMC's free FACTS tables are national aggregates — **Table A-1 is the only per-school table and it carries no MCAT or GPA.** Per-school figures are the MSAR product.
+3. **The two usable bulk sources are licence-blocked, not availability-blocked.** MSAR's Advisor Report is individual-use; AACOM's per-college MCAT has no established reuse permission. **IPEDS is public domain but reports at parent-institution grain**, so its tuition and enrolment are not the medical school's.
+
+**`U-12` §4 is therefore confirmed empirically rather than argued.** A mature product does this, the student can get it — **free with AAMC Fee Assistance** — and HQ cannot lawfully rebuild it. `implementation/research-prompts/school-list-u12-admissions-numbers-feasibility.md`.
+
+### ✅ What is now permitted
+
+- **A static, cycle-stamped snapshot of figures a school publishes on its own site**, stored in `data/med-schools.json`.
+- **Prefill of the `SL-7` fields from that snapshot**, proposed and confirmed by the student (`§5a`).
+- **Every figure carries `stat`, `population`, and its cycle**, or it does not ship. **A mean in a field named median is `U-13`'s failure and is forbidden.**
+- **A screening threshold is a separate field** and never renders as a class figure.
+
+### ❌ What remains forbidden — unchanged
+
+- **No bulk ingestion of MSAR, AACOM, or any licensed dataset.** The blocker is the licence, not the effort.
+- **No fetching. Ever.** `§2`'s line is untouched — the snapshot is built offline and committed.
+- **⚠️ No acceptance rate, in any layer.** `SL-9` cut it on **anxiety** grounds, not maintenance. **This amendment does not touch it and must not be read as touching it.**
+- **No admissions-odds score, chance figure, or readiness score.** `U-9`.
+
+### ⚠️ Prerequisites — permitted on a DIFFERENT rationale, stated separately
+
+**Prereqs were never blocked by maintenance. They were blocked by correctness:** no AMCAS / AACOMAS / TMDSAS prerequisite-equivalency standard exists, and school policies on labs, AP, community college, online coursework, and recency all differ (`§7b`, `SL-26`).
+
+- **✅ Permitted: a school's published requirement text, in the school's own wording**, as a record of what the page says.
+- **❌ Forbidden, permanently: any claim that a course satisfies, meets, or fulfils a requirement.** **`SL-26` is unchanged. Grep must still prove no such string exists.**
+
+**Recorded because it is the likeliest future error:** a reader who sees medians permitted may assume every blocked field was blocked for the same reason. **It was not.**
+
+### Refresh posture — decided, not assumed
+
+**The snapshot is stale by design and says so.** `meta.cycle` and `meta.retrievedAt` already exist; **any surface showing a figure carries the cycle**, so an old number reads as *"2026–27 figure"* rather than as current fact.
+
+**⚠️ Deadlines are the exception and do not get this latitude.** A year-old median is a mild inaccuracy; **a year-old deadline is a missed application.** A deadline renders only with a confirmed cycle label, or not at all (`§7d`).
+
+### What would reopen this
+
+**A licensed or public per-school source appearing** — AACOM granting reuse, or AAMC publishing per-school figures freely. **Not "we looked harder."** The 22% ceiling is the market's shape, not a research failure.
 
 ---
 
@@ -75,7 +122,7 @@ The licensing objection was **overstated** and is recorded as such on the board:
 | Layer | What it is | Source | Maintenance cost |
 |---|---|---|---|
 | **A · Directory facts** | Name, city, state, MD/DO, public/private, region, application service, accreditation status | **Shipped** — `data/med-schools.json`, primary-sourced (LCME, AACOM, TMDSAS) | **None.** These facts effectively never change |
-| **B · Student-entered numbers** | Median MCAT · median GPA · in-state % · class size · tuition · requirements · deadlines · secondary prompts | **Typed by the student**, from the source they already pay for, this cycle | **None to Premed OS.** Current by construction |
+| **B · Student-entered numbers** | Median MCAT · median GPA · in-state % · class size · tuition · requirements · deadlines · secondary prompts | **Typed by the student**, from the source they already pay for, this cycle. **⭐ May be PREFILLED from a cycle-stamped snapshot where one exists (`§5a`) — the student still confirms, and the value carries its `stat`, `population`, and cycle** | **None to Premed OS.** Current by construction |
 | **C · Derived** | Arithmetic over Layer B and the student's own record | **Computed locally**, inputs always shown | n/a |
 
 ### The claim test (`U-13`, and it is checkable)
@@ -255,7 +302,74 @@ The licensing objection was **overstated** and is recorded as such on the board:
 - **City centroid is sufficient.** Nobody needs the building.
 - **⚠️ Geocoded once, offline, stored in `data/med-schools.json`. Never a runtime geocoding call** — that would breach `§2`'s no-fetch line.
 
-**Data state:** 238 of 240 entries have a city. **The 2 without one are an open ruling** (`## Open decisions`).
+**Data state:** 238 of 240 entries have a city. **The 2 without one are ruled** — `§3`, regional campuses. **⚠️ No `lat`/`lng` field exists yet. `SL-22` cannot render a pin until the offline geocode pass runs.**
+
+---
+
+## 5a. ⭐ Wave 1 — the numbers, and where they come from (RULED Aug 2026, Batch 5)
+
+### ⚠️ The finding that settled this, and it was not what either option assumed
+
+**An official-source pass over all 240 schools was run in Aug 2026.** Coverage, from the schools' own pages:
+
+| Field | Published | |
+|---|---:|---|
+| MCAT | **55 / 240** | 22% |
+| GPA | **53 / 240** | 22% |
+| **Both, which `SL-11`'s delta needs** | **51 / 240** | **21%** |
+| Class size | 50 / 240 | 20% |
+| Tuition | 42 / 240 | 17% |
+| **In-state percentage** | **5 / 240** | **2%** |
+
+> **⭐ Shipping and typing were never alternatives. At 21%, four schools in five would still be blank.** So `SL-7` survives regardless of what `§1` decides — **a shipped value can prefill the field; it can never replace it.**
+>
+> **This also confirms `U-12` §4 empirically rather than by argument.** MSAR holds these figures because AAMC collects them from admissions offices directly. **Most schools simply do not publish them**, which is exactly why HQ cannot assemble the same dataset by looking harder. `implementation/research-prompts/school-list-u12-admissions-numbers-feasibility.md`.
+
+### `SL-7` — the four fields ✅ BUILD, student-entered, optionally prefilled
+
+**All four stay** — median MCAT · median GPA · in-state % · class size. **Every one optional; a list with none of them is a complete product** (`§2`).
+
+**Where a sourced value exists, it PREFILLS and the student confirms.** It is never silently applied — `U-10` propose-and-wait, the same mechanism already ruled for `SL-26`'s course mapping and `SL-21`'s gate.
+
+> **✅ GATE LIFTED — `§1a`, Aug 2026.** The prefill half is permitted, from a **cycle-stamped snapshot of self-published figures only**. **Every prefilled value carries `stat`, `population`, and its cycle, or it does not ship.**
+>
+> **This ruling is written now because the shape does not depend on that decision** — at 21% coverage the field is student-entered either way, and the `stat` / `population` / cycle requirements below apply to any sourced value whenever one is permitted. **Build the field; leave the prefill wire unconnected.**
+>
+> **The amendment needs three separate sentences, because the fields are blocked for different reasons:**
+> 1. **Medians, GPA, class size, tuition** — blocked on *maintenance*. A cycle-stamped static snapshot answers that.
+> 2. **Prerequisites** — blocked on *correctness*. No cross-service equivalency standard exists (`SL-26`), so they may ship as *"what the school's page says"* and never as a satisfies-claim. **A staleness amendment does not cover this.**
+> 3. **Acceptance rate** — **stays cut**, `SL-9`, on anxiety grounds. **No amendment about staleness touches it.**
+
+**⚠️ A prefilled value carries what it actually is, or it does not ship at all:**
+
+- **`stat`** — median · mean · range · percentile band. **Schools publish different statistics and rarely label them.** A mean displayed in a field called "median" is `U-13`'s failure exactly: a fact-shaped claim that is false.
+- **`population`** — matriculants · accepted · applicants · **unstated**. `unstated` is a real value and the most common one.
+- **The cycle it describes.**
+
+**⚠️ A minimum threshold is NOT a central tendency.** Some schools publish a screening cutoff rather than a class figure. *"Minimum 500 for secondary review"* and *"average 500"* mean opposite things. **They are separate fields and must never merge.**
+
+**In-state percentage is effectively unpublishable — 5 of 240.** The field stays because a student with the number should have somewhere to put it, **but nothing prefills it and no feature may depend on it.** Anything reading it renders dormant with a reason (`U-5`).
+
+### `SL-8` — `enteredOn` ✅ BUILD, and it now does more than it used to
+
+**Two kinds of value will sit in one list**, so every number states which it is:
+
+| Provenance | Stamp | Reads as |
+|---|---|---|
+| **The student typed it** | `enteredOn` | *"you entered this on 2026-08-14"* |
+| **Prefilled from a snapshot** | the file's `cycle` + `retrievedAt` | *"2026–27 figure"* |
+
+**⚠️ A student edit converts the record.** Overwriting a prefilled value makes it theirs — `enteredOn` is set and the snapshot stamp is dropped. **The two stamps never coexist on one value.**
+
+**Nothing warns that a number is old.** *"You entered these on 2026-08-11"* is allowed; *"these numbers are out of date"* is a verdict about the student's application (`§2`'s claim test). **The stamp is the whole feature. The student draws the conclusion.**
+
+### `SL-10` — "Verify on MSAR" ✅ BUILD, and the coverage data justifies it
+
+**One line, stated once, dismissible** (`U-1`, `U-8`).
+
+**This is not a courtesy.** For **79% of schools Premed OS has no figure at all**, and MSAR carries data direct from the MCAT exam, the AMCAS application, and admissions offices. **It is free with AAMC Fee Assistance**, which `U-12` §4's second clause makes decisive: a mature product does it, the student can get it, HQ does not rebuild it.
+
+**Do not** repeat it per school, per field, or per session. **Do not** phrase it as a warning about the student's data.
 
 ---
 
@@ -280,6 +394,58 @@ Premed OS **may** suggest reach / target / safety **only when the student has en
 | **Delta** | *"MCAT 523 · median 520 · +3."* Subtraction, displayed with both operands. **Never a verdict** |
 | **List balance** | *"12 schools: 3 reach, 7 target, 2 safety."* **A count of the student's own tags** — not an opinion about whether that balance is right |
 | **In-state count** | Deterministic from state + residency (`P-33`) |
+
+## 6a. ⭐ Wave 2 — the arithmetic, row by row (RULED Aug 2026, Batch 6)
+
+### ⚠️ Read this before `SL-11`: dormant is the NORMAL state here
+
+**`SL-11`'s delta needs both a median and a GPA. Only 51 of 240 schools publish both** (`§5a`), and the MD half of that gap is permanent — AAMC sells those figures as MSAR and most schools never publish them.
+
+**So for a typical list, the delta is available on roughly one row in five, and typing is the only way it ever appears on the rest.**
+
+> **The question that had to be answered first: is a feature that is dormant on four rows out of five worth building at all?**
+>
+> **Ruled: yes, and narrowly.** **The delta is the only reason typing a number pays off.** Cut it and `SL-7` becomes data entry with no return, which kills the Layer B story entirely. **But it ships as a per-row fact that appears where its inputs exist — never as a list-level feature that looks broken when four rows are blank.**
+
+### `SL-11` — your number vs theirs ✅ BUILD, per row, dormant by default
+
+**`"MCAT 523 · median 520 · +3"` — subtraction, both operands shown.**
+
+- **Renders only where the student has entered that school's number AND has their own.** No inputs, no row. **No placeholder, no dash, no "add your numbers" nag.**
+- **Both operands always visible.** A bare `+3` is a claim; `523 · 520 · +3` is arithmetic the student can check.
+- **⚠️ Never aggregated.** No average delta, no "your list averages −2." **That is a composite, and `U-9` forbids it.**
+- **⚠️ The delta carries the same `stat` caveat as its input** (`§5a`). A delta against a **mean** is not a delta against a **median**, and a delta against a **screening threshold** is not a delta at all. **Where `stat` is unknown, show the two numbers and no delta.**
+
+### `SL-12` — tier suggestion ✅ BUILD, constrained, already bounded by `§6`
+
+**Premed OS may suggest reach / target / safety only under `§6`'s three existing constraints** — shows its arithmetic, never expresses a probability, and the student's tag always wins.
+
+**Row-level additions:**
+
+- **It fires once per school, on the numbers being entered.** **Never re-fires, never nags, never re-suggests after an override** (`U-1`).
+- **⚠️ A suggestion is never the initial value.** `SL-3` ruled `undecided` the default. **A suggestion the student never actively accepted must not become their tag by inaction.**
+- **Dormant wherever `SL-11` is dormant.** Same inputs, same silence.
+
+### `SL-13` — list balance ✅ BUILD, as a count and nothing more
+
+**`"12 schools: 3 reach, 7 target, 2 safety."`**
+
+- **A count of the student's own tags.** Nothing else on the page is more purely descriptive.
+- **⚠️ Never an opinion about the balance.** No "your list is reach-heavy," no recommended ratio, no colour signalling a shortfall. **`U-9`, and it is the most tempting violation in this tab** — every competitor ships exactly that verdict.
+- **`undecided` is counted and shown**, not hidden. A student with twelve untagged schools sees `12 undecided`, which is true.
+- **Renders from tags alone**, so it works with zero numbers entered — **unlike everything else in this section.**
+
+### `SL-14` — in-state count ✅ BUILD, inheriting Batch 4's constraint
+
+**Deterministic from state + residency (`P-33`). Recomputed on read, never stored.**
+
+**⚠️ Dormant while residency is unset** — ruled in `§4a` `SL-5`. **It does not render `0 in-state`; it states that residency is needed and links to Profile.** A zero would be a false fact about the student's list.
+
+### ~~`SL-15`~~ — CUT, and it stays cut
+
+**An application-readiness score or progress bar. `U-9`.** Recorded in `§6`'s rejected list. **The whole of Wave 2 is arithmetic whose operands stay visible; `SL-15` is the opposite — one number standing in for everything, with its inputs hidden.**
+
+---
 
 ### ⚠️ Explicitly rejected — do not reintroduce under another name
 
@@ -475,6 +641,42 @@ Premed OS **may** suggest reach / target / safety **only when the student has en
 
 ---
 
+## 7d. ⭐ Wave 3 close — `SL-17`, `SL-19`, `SL-20` (RULED Aug 2026, Batch 7)
+
+### `SL-17` — secondary prompts and deadlines ✅ BUILD, deadline only
+
+**⚠️ Essays owns the writing. This tab holds the deadline.**
+
+- **The prompt text lives on the `Essay` record**, owned by Essays & Story Bank (`§8`). This tab is the school door onto it — **a filter, never a copy.**
+- **What this tab owns is the school's secondary deadline**, student-entered, cycle-stamped.
+- **The deadline surfaces in the Attention bell and nowhere else** (`§7`). **No second deadline list. Grep proves it.**
+- **`SL-28`'s countdown runs against this** and only this (`§7c`) — a deadline the student entered, never a generic target.
+
+### `SL-19` — cost tracking ✅ BUILD, as a sum of student-entered costs
+
+**Application costs accumulate invisibly and surprise people.** Primary service fee, per-school secondary fees, and score-report costs are separate charges arriving over months.
+
+| ✅ Allowed | ❌ Forbidden |
+|---|---|
+| A running total of costs **the student entered** | A shipped fee schedule — `§1`, cycle data that rots |
+| Per-service and per-school breakdown | Any suggestion about how many schools to apply to |
+| A link to `P-42` **Fee Assistance** | Calling a list expensive, or comparing spend to anyone |
+
+**⚠️ `SL-24` amends this row.** The board wrote *"AMCAS per-school fees"* as though there were one application. **There are three services with different fee structures, so cost groups by `CycleApplication`** (`§7a`) — a student applying to Texas and elsewhere has two primaries and two fee streams.
+
+**⭐ `P-42` Fee Assistance is the reason this row earns its place.** AAMC's programme waives or reduces real costs and **many eligible students never apply for it.** Surfacing the cost picture beside the waiver link is a fact that changes an outcome. **State that it exists; never assess whether the student qualifies.**
+
+### `SL-20` — send-date discipline ✅ BUILD, as a dated fact
+
+**Rolling admissions is real, which is why *"submitted in August"* is worth surfacing.**
+
+- **The submission date renders as a plain dated fact**, attached to the `CycleApplication` (`§7a`), not to each school.
+- **⚠️ It is a fact, never a verdict.** *"Primary submitted August 12"* is allowed. *"You submitted late"* is not — that is `U-13`, and `SL-16`'s ruling already governs the shape.
+- **⚠️ No target send date, no "apply early" nudge, no colour ramp standing in for one.** The `SL-28` research pass established that **no primary source supports a recommended timing window**, and the same finding binds here: **schools say earlier is better; nobody has shown that a given date changes an outcome.**
+- **The student sees when they submitted. They draw the conclusion.**
+
+---
+
 ## 8. `SL-23` phase 1 — secondary prompts
 
 **Two problems, and they are different. *How* is a UI problem. *Remembering to* is a trigger problem — and the trigger problem is the one that kills features.** `LT-23` was cut for exactly this: a record type with no natural trigger is one nobody fills.
@@ -616,7 +818,7 @@ Per shell §10 and `general.md` → Accessibility. Tab-specific:
 
 - **The tab is admissions-aware and admissions-silent.** It knows what a cycle looks like; it says nothing about how yours will go.
 - **Geography is a real variable** — in-state preference and interview travel — which is why `SL-22` exists and why the in-state count is a legitimate fact.
-- **Rolling admissions is real**, which is why *"submitted in August"* is a fact worth surfacing (`SL-20`, still unruled — Batch 7).
+- **Rolling admissions is real**, which is why *"submitted in August"* is a fact worth surfacing (`SL-20`, ruled — `§7d`).
 - **The student's own reasons are the durable asset.** `whyItIsOnMyList` written at nineteen is the material for *"why this school"* at twenty-two. That is the argument for the tab existing before the cycle does.
 
 ## Do Not Generalize From Other Tabs
@@ -711,6 +913,43 @@ Per shell §10 and `general.md` → Accessibility. Tab-specific:
 - [ ] The unset-residency state **never nags** — no prompt, no badge, no attention-budget spend.
 - [ ] Archiving removes a school from the active list and every count; **the record and its note survive**. **Grep proves no destructive delete path.**
 
+**Batch 5 — Wave 1, the numbers**
+
+- [ ] All four `SL-7` fields exist and are optional; **a list with none of them renders complete and warns about nothing.**
+- [ ] Prefill reads **only** from the cycle-stamped snapshot `§1a` permits. **Grep proves nothing fetches, and nothing reads a licensed dataset.**
+- [ ] A prefilled value is **proposed, never silently applied** — the student confirms it.
+- [ ] **Every prefilled number carries `stat`, `population`, and its cycle.** **Grep proves no bare figure ships without them.**
+- [ ] **A mean never renders in a field labelled median.** Where `stat` is absent, the value renders unlabelled or not at all.
+- [ ] **A screening threshold is a separate field from a class figure** and the two never merge.
+- [ ] **Nothing prefills in-state percentage**, and no feature depends on it — anything reading it goes dormant with a reason.
+- [ ] A student-entered value carries `enteredOn`; a prefilled one carries the snapshot's cycle. **The two stamps never appear on the same value.**
+- [ ] Editing a prefilled value sets `enteredOn` and **drops the snapshot stamp**.
+- [ ] **No staleness warning exists at any age.** Grep proves no "out of date," "outdated," or equivalent string near an entered number.
+- [ ] `SL-10`'s MSAR line renders **once, dismissible** — not per school, per field, or per session — and is never phrased as a warning about the student's data.
+
+**Batch 6 — Wave 2, the arithmetic**
+
+- [ ] `SL-11` renders **only on rows where both operands exist**. **No placeholder, no dash, no prompt to add numbers.**
+- [ ] **Both operands are always visible beside the delta.** A bare signed number never renders alone.
+- [ ] **No aggregate delta anywhere** — no list average, no summary figure. **Grep proves it** (`U-9`).
+- [ ] **No delta renders where the source `stat` is unknown**, or where the figure is a screening threshold rather than a central tendency.
+- [ ] `SL-12` fires **once per school, on entry**, never re-fires, and **never becomes the tag without an explicit accept**. Default stays `undecided`.
+- [ ] `SL-13` counts tags only, **renders with zero numbers entered**, and shows `undecided` rather than hiding it.
+- [ ] **`SL-13` states no opinion about balance** — no recommended ratio, no shortfall colour. **The most tempting `U-9` violation in the tab.**
+- [ ] `SL-14` is **dormant while residency is unset** and never renders `0 in-state`.
+- [ ] **No readiness score, progress bar, or composite exists** (`SL-15`, cut).
+
+**Batch 7 — Wave 3 close**
+
+- [ ] `SL-17` holds the **deadline only**; prompt text lives on the `Essay` record. **Grep proves one prompt store.**
+- [ ] Secondary deadlines surface **only in the Attention bell**. **Grep proves no second deadline list.**
+- [ ] `SL-19` totals **student-entered costs only**. **Grep proves no shipped fee schedule.**
+- [ ] Costs group by `CycleApplication`, so a two-service applicant sees two fee streams.
+- [ ] **`P-42` Fee Assistance is linked as a fact**; Premed OS never assesses eligibility.
+- [ ] **No suggestion about how many schools to apply to exists anywhere.**
+- [ ] `SL-20` renders the submission date as a **dated fact on the `CycleApplication`**, not per school.
+- [ ] **No target send date, "apply early" nudge, or lateness signal exists** — no primary source supports one (`SL-28` research).
+
 **Secondary prompts (`SL-23` phase 1)**
 
 - [ ] Flipping a school to `secondary received` offers the prompt paste in place, and **never blocks the status change**.
@@ -759,19 +998,28 @@ Per shell §10 and `general.md` → Accessibility. Tab-specific:
 
 **Nothing below is ruled. Do not implement any of it, and do not let it into acceptance criteria.**
 
-### A · Waves 1–3 — the remaining row-by-row pass
+### ✅ A · Waves 0–4 — ROW-BY-ROW PASS COMPLETE (Aug 2026)
 
-**✅ Wave 0 (`SL-1`–`SL-6`) CLOSED — Batch 4, migrated to `§4a`.**
+**Every row on the board is now ruled, deferred, or cut.**
 
-**Ten rows remain unruled: `SL-7`, `SL-8`, `SL-10`–`SL-14`, `SL-17`, `SL-19`, `SL-20`.** This spec captures the **envelope** they sit inside; it does not rule them. → `tabs/08-school-list-board.md` §3–§5.
+| Wave | Rows | Batch | Landed |
+|---|---|---|---|
+| **0** — the list | `SL-1`–`SL-6` | 4 | `§4a` |
+| **1** — the numbers | `SL-7`, `SL-8`, `SL-10` (`SL-9` earlier) | 5 | `§5a`, `§6` |
+| **2** — the arithmetic | `SL-11`–`SL-14` · `SL-15` **CUT** | 6 | `§6a` |
+| **3** — the cycle | `SL-16`, `SL-21`, `SL-22`, `SL-23` earlier · `SL-17`, `SL-19`, `SL-20` | 7 | `§7`, `§7d`, `§5`, `§8` |
+| **4** | `SL-24`–`SL-31` | 1–3 | `§7a`, `§7b`, `§7c` |
+| **Deferred, visible** | `SL-18`, `SL-25`, `SL-30`, `SL-24c` | — | `§6b` |
 
-| Batch | Wave | Rows |
-|---|---|---|
-| **5** | Wave 1 — the numbers the student enters | `SL-7`, `SL-8`, `SL-10` (`SL-9` already ruled) |
-| **6** | Wave 2 — the arithmetic on those numbers | `SL-11`–`SL-14` (`SL-15` CUT) |
-| **7** | Wave 3 leftovers | `SL-17`, `SL-19`, `SL-20` |
-
-**⚠️ `SL-14` is affected by a Batch 4 ruling and is not fully closed by Wave 2 alone** — `§4a` `SL-5` requires its in-state count to go dormant while residency is unset.
+> **⚠️ Ruled is not built. Three things still block, and none of them is a ruling:**
+>
+> | Blocker | What it holds up | Who moves it |
+> |---|---|---|
+> | **The geocode pass has not run** — no `lat`/`lng` field exists | **`SL-22` cannot render a single pin.** Ruled, locked, and inert | One paste — `PASTE-geocode-238-cities.md` |
+> | **The course→requirement catalog is not written** | `SL-26` prerequisite coverage | A research pass |
+> | **`BUILD-MANIFEST.md` does not clear School List** | **Everything.** Nothing here is buildable | **Andy — one row** |
+>
+> **`§1` is no longer a blocker.** It was amended Aug 2026 (`§1a`) and `SL-7`'s prefill is permitted.
 
 ### B · ⭐ Wave 4 — CLOSED (Aug 2026)
 
@@ -827,9 +1075,9 @@ Per shell §10 and `general.md` → Accessibility. Tab-specific:
 | §1b `SL-23` phase 2 | **Deferred, visible** | `§8` |
 | §1b Deadlines/requirements staging | **Migrated as binding** | `§9` |
 | §2 Wave 0 (`SL-1`–`SL-6`) | ✅ **RULED Aug 2026 — Batch 4** | `§4a` |
-| §3 Wave 1 (`SL-7`–`SL-10`) | **Envelope migrated; `SL-9` ruled; `SL-7`, `SL-8`, `SL-10` OPEN** | `§2`, `§6` · Open decisions A |
-| §4 Wave 2 (`SL-11`–`SL-14`) | **Envelope migrated; rows OPEN.** `SL-15` **CUT** | `§6` · Open decisions A |
-| §5 Wave 3 (`SL-16`–`SL-20`, `SL-22`, `SL-23`) | **`SL-16` ruled and migrated; `SL-18` deferred; rest OPEN** | `§7` · Open decisions A |
+| §3 Wave 1 (`SL-7`–`SL-10`) | ✅ **RULED Aug 2026 — Batch 5.** `SL-9` ruled earlier | `§5a`, `§6` |
+| §4 Wave 2 (`SL-11`–`SL-14`) | ✅ **RULED Aug 2026 — Batch 6.** `SL-15` **CUT** | `§6a` |
+| §5 Wave 3 (`SL-16`–`SL-20`, `SL-22`, `SL-23`) | ✅ **RULED — `SL-16`/`SL-21`/`SL-22`/`SL-23` earlier; `SL-17`/`SL-19`/`SL-20` Batch 7; `SL-18` deferred** | `§7`, `§7d` |
 | §5a / §5a-i Roster audit + static pass | **Migrated as data facts** | `§3`, Open decisions F |
 | §5a Regional-campus grain | ✅ **RULED Aug 2026 — Batch 3.** Both stay; availability-gated | `§3` |
 | §5b Wave 4 · `SL-24` | ✅ **RULED Aug 2026 — Batch 1** | `§7a` |
@@ -840,7 +1088,7 @@ Per shell §10 and `general.md` → Accessibility. Tab-specific:
 | §6 `SL-16` `U-7` mechanism | **Migrated as binding** | `§7` |
 | §6 `SL-21` phase gate | **Migrated as binding; trigger RULED Aug 2026 — Batch 3** | Primary users and stages, `§7`, `§11` |
 | §6b Deferred (`SL-18`, `SL-25`, `SL-30`) | **Deferred, visible** | `§6b` · Open decisions F |
-| §7 Still open | **Carried forward** | Open decisions A |
+| §7 Still open | ✅ **RESOLVED — every row now ruled, deferred, or cut** | `§4a`, `§5a`, `§6a`, `§7d` |
 | `01` §4c "Add to compare" | ✅ **STRUCK Aug 2026 — Batch 3.** Edit applied to `01` §4c | `§6` |
 | Stub's `U-12` / MSAR ruling | **Migrated, with the `§1b` amendment stated** | `§1` |
 

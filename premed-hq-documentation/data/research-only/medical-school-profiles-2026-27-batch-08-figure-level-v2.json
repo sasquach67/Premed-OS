@@ -1,0 +1,4372 @@
+{
+  "batch": 8,
+  "retrievedAt": "2026-08-14",
+  "cycle": "2026-2027",
+  "schools": [
+    {
+      "id": "east-tennessee-state-university-james-h-quillen-college-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "coursework",
+          "lab": null,
+          "amount": "minimum 90 semester hours",
+          "policyNotes": "Must be from a regionally accredited U.S. college or university."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Current field-level data not captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.etsu.edu/com/admissions/collegeinfo/statistics.php",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.etsu.edu/com/admissions/requirements/academic-requirements.php",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.etsu.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official statistics page is dated April 27, 2026 and labels the people as current accepted students rather than matriculants; those figures are retained with that population. No entering-class year is stated.",
+      "mcat": {
+        "value": 512,
+        "stat": "mean",
+        "population": "accepted",
+        "classYear": null,
+        "source": "https://www.etsu.edu/com/admissions/collegeinfo/statistics.php",
+        "nullReasons": {
+          "classYear": "not-published"
+        }
+      },
+      "gpa": {
+        "cumulative": 3.82,
+        "science": 3.76,
+        "stat": "mean",
+        "population": "accepted",
+        "classYear": null,
+        "source": "https://www.etsu.edu/com/admissions/collegeinfo/statistics.php",
+        "nullReasons": {
+          "classYear": "not-published"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "meharry-medical-college",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No verified current field-level data captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://meharryglobal.org/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Only institutional control was confirmed from a first-party institutional source in this pass; all admissions fields remain intentionally null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "thomas-f-frist-jr-college-of-medicine-at-belmont-university",
+      "control": "private",
+      "classSize": 54,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "service-learning",
+        "whole-person",
+        "community"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "biology",
+          "lab": "including lab",
+          "amount": "8 semester hours",
+          "policyNotes": "Required before matriculation."
+        },
+        {
+          "area": "general chemistry",
+          "lab": "including lab",
+          "amount": "8 semester hours",
+          "policyNotes": "Required before matriculation."
+        },
+        {
+          "area": "organic chemistry",
+          "lab": "including lab",
+          "amount": "8 semester hours",
+          "policyNotes": "Required before matriculation."
+        },
+        {
+          "area": "physics",
+          "lab": "including lab",
+          "amount": "8 semester hours",
+          "policyNotes": "Required before matriculation."
+        },
+        {
+          "area": "biochemistry",
+          "lab": null,
+          "amount": "3 credit hours",
+          "policyNotes": "Required before matriculation."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Current field-level data not captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.belmont.edu/medicine/admissions/class-profile-ada.html",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.belmont.edu/medicine/student-affairs/fcom-student-handbook-2025-2026-v2.0.pdf",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.belmont.edu/medicine/admissions/application.html",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.belmont.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Official Class of 2029 profile supplies medians and class size. PREview is displayed as a class metric, not as a requirement, so no SJT requirement is inferred.",
+      "mcat": {
+        "value": 510,
+        "stat": "median",
+        "population": "matriculants",
+        "classYear": "2029",
+        "source": "https://www.belmont.edu/medicine/admissions/class-profile-ada.html",
+        "nullReasons": {}
+      },
+      "gpa": {
+        "cumulative": 3.81,
+        "science": null,
+        "stat": "median",
+        "population": "matriculants",
+        "classYear": "2029",
+        "source": "https://www.belmont.edu/medicine/admissions/class-profile-ada.html",
+        "nullReasons": {
+          "science": "not-published"
+        }
+      },
+      "nullReasons": {
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "university-of-tennessee-health-science-center-college-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": true,
+      "inStateStatement": "Qualified Tennesseans are given priority over out-of-state applicants; the maximum number of non-Tennesseans admitted will not exceed 10 percent of the entering class.",
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Current field-level data not captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "October 15, 2026, 11:59 pm EST",
+        "secondary": null,
+        "interviewSeason": "throughout the entire 2027 admissions cycle",
+        "cycleLabel": "2027 admissions cycle",
+        "nullReasons": {
+          "secondary": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.uthsc.edu/medicine/admissions/documents/2025-college-of-medicine-preparedness-worksheet.pdf",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://webprod8.uthsc.edu/medicine/admissions/requirements.php",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.uthsc.edu/medicine/admissions/application-process.php",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.uthsc.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Official worksheet identifies the 2025 matriculating class and the official process page explicitly labels the 2027 cycle deadline.",
+      "mcat": {
+        "value": 513,
+        "stat": "mean",
+        "population": "matriculants",
+        "classYear": "2025",
+        "source": "https://www.uthsc.edu/medicine/admissions/documents/2025-college-of-medicine-preparedness-worksheet.pdf",
+        "nullReasons": {}
+      },
+      "gpa": {
+        "cumulative": 3.83,
+        "science": 3.78,
+        "stat": "mean",
+        "population": "matriculants",
+        "classYear": "2025",
+        "source": "https://www.uthsc.edu/medicine/admissions/documents/2025-college-of-medicine-preparedness-worksheet.pdf",
+        "nullReasons": {}
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "vanderbilt-university-school-of-medicine",
+      "control": "private",
+      "classSize": 96,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "leadership",
+        "scholarship",
+        "holistic-review"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "course competencies",
+          "lab": null,
+          "amount": null,
+          "policyNotes": "School characterizes these as recommendations rather than requirements; applicants should demonstrate competencies in natural/life sciences, social sciences and mathematics. AP credit is acceptable."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "service",
+        "note": "Letters for incoming 2027 class are received through AMCAS Letter Writer Application; numeric count not captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "2026-11-01",
+        "secondary": "2026-11-15",
+        "interviewSeason": "September 2026 through February 2027",
+        "cycleLabel": "2026-2027",
+        "nullReasons": {}
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://medschool.vanderbilt.edu/md/admissions/process/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://medschool.vanderbilt.edu/md/admissions/process/",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://medschool.vanderbilt.edu/md/admissions/process/",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://medschool.vanderbilt.edu/md/admissions/process/",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://medschool.vanderbilt.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Official 2026-27 page explicitly states the primary application window and interview period. Latest profile offers ranges/percentiles but no total MCAT or GPA statistic, so both figures are null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "baylor-college-of-medicine",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": 100,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "Undergraduate coursework",
+          "lab": null,
+          "amount": "at least 90 semester hours by enrollment",
+          "policyNotes": "Official admissions wording."
+        },
+        {
+          "area": "Mathematics",
+          "lab": null,
+          "amount": "3–4 semester hours",
+          "policyNotes": "Official admissions wording."
+        },
+        {
+          "area": "Expository writing",
+          "lab": null,
+          "amount": "3–4 semester hours",
+          "policyNotes": "Official admissions wording."
+        },
+        {
+          "area": "Humanities/social-behavioral sciences",
+          "lab": null,
+          "amount": "12 semester hours",
+          "policyNotes": "Official admissions wording."
+        },
+        {
+          "area": "Organic chemistry",
+          "lab": "labs not required",
+          "amount": "2 semesters / 6–8 semester hours",
+          "policyNotes": "Official admissions wording."
+        },
+        {
+          "area": "Biochemistry",
+          "lab": "lab not required",
+          "amount": "3–4 semester hours",
+          "policyNotes": "Official admissions wording."
+        },
+        {
+          "area": "Advanced biology",
+          "lab": "lab not required",
+          "amount": "3–4 semester hours",
+          "policyNotes": "Official admissions wording."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Regular MD letter count not captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": "CASPer scores are required before the Admissions Committee will review a complete file.",
+          "completenessEffect": "File is not reviewed until CASPer scores are received.",
+          "cycleLabel": "2026 admissions cycle",
+          "nullReasons": {}
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.bcm.edu/education/school-of-medicine/m-d-program/admissions-process/faqs",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "https://www.bcm.edu/education/school-of-medicine/m-d-program/admissions-process/faqs",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.bcm.edu/education/school-of-medicine/m-d-program/admissions-process/requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.bcm.edu/education/school-of-medicine/m-d-program/admissions-process/faqs",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://www.bcm.edu/education/school-of-medicine/m-d-program/admissions-process/faqs",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.bcm.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official FAQ identifies the 2026 admissions cycle, but its secondary deadline is not expressly tied to the requested 2026-27 cycle, so the date is null. Baylor directs applicants to AAMC MSAR for entering-class score figures; no unofficial replacement used.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "dell-medical-school-at-the-university-of-texas-at-austin",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No verified current field-level data captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://dellmed.utexas.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Only institutional control was confirmed from a first-party institutional source in this pass; all admissions fields remain intentionally null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "long-school-of-medicine-at-ut-health-san-antonio",
+      "control": "public",
+      "classSize": 220,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Current field-level data not captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://som.uthscsa.edu/medicine/education/ume/admissions-old",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://som.uthscsa.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official page reports class-size and means but lacks a verified entry year in captured content. Values are retained with null classYear and low confidence.",
+      "mcat": {
+        "value": 517.6,
+        "stat": "mean",
+        "population": "matriculants",
+        "classYear": null,
+        "source": "https://som.uthscsa.edu/medicine/education/ume/admissions-old",
+        "nullReasons": {
+          "classYear": "not-published"
+        }
+      },
+      "gpa": {
+        "cumulative": 3.87,
+        "science": 3.84,
+        "stat": "mean",
+        "population": "matriculants",
+        "classYear": null,
+        "source": "https://som.uthscsa.edu/medicine/education/ume/admissions-old",
+        "nullReasons": {
+          "classYear": "not-published"
+        }
+      },
+      "nullReasons": {
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "mcgovern-medical-school-at-uthealth-houston",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "patient-centered-care",
+        "research",
+        "texas-health"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current MD admissions requirements page carrying letter details was captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "No explicit 2026-2027 MD deadline captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://med.uth.edu/admissions/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.uth.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official admissions office and mission language confirmed; this pass did not recover a current specific MD requirements page for remaining fields.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "texas-a-m-university-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current MD requirements page captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "No explicit 2026-2027 MD deadline captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://medicine.tamu.edu/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.tamu.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official institutional identity confirmed; unverified MD-specific fields retained as null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "texas-christian-university-burnett-school-of-medicine",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current MD requirements page captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "No explicit 2026-2027 MD deadline captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://medicine.tcu.edu/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.tcu.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official institutional identity confirmed; unverified MD-specific fields retained as null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "texas-tech-university-health-sciences-center-paul-l-foster-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "TMDSAS",
+        "note": "No current Paul L. Foster MD letter policy captured in this pass.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "No explicit 2026-2027 MD deadline captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.elpaso.ttuhsc.edu/som/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.ttuhsc.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official institutional identity confirmed; no current school-specific MD admissions requirements page captured.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "texas-tech-university-health-sciences-center-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "primary-care",
+        "rural-health"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "General Biology or Zoology",
+          "lab": false,
+          "amount": "6 hours",
+          "policyNotes": "Required; biology labs separate."
+        },
+        {
+          "area": "Biology Labs",
+          "lab": true,
+          "amount": "2 hours",
+          "policyNotes": "Required."
+        },
+        {
+          "area": "Upper Division Biology",
+          "lab": false,
+          "amount": "6 hours",
+          "policyNotes": "Required."
+        },
+        {
+          "area": "General Chemistry",
+          "lab": false,
+          "amount": "6 hours",
+          "policyNotes": "Required; labs separate."
+        },
+        {
+          "area": "Organic Chemistry",
+          "lab": false,
+          "amount": "6 hours",
+          "policyNotes": "Required; labs separate."
+        },
+        {
+          "area": "Physics",
+          "lab": false,
+          "amount": "6 hours",
+          "policyNotes": "Required; labs separate."
+        },
+        {
+          "area": "English",
+          "lab": false,
+          "amount": "6 hours",
+          "policyNotes": "Required."
+        },
+        {
+          "area": "Statistics",
+          "lab": false,
+          "amount": "3 hours",
+          "policyNotes": "Required; taught in Math or Statistics Department."
+        },
+        {
+          "area": "Biochemistry",
+          "lab": null,
+          "amount": null,
+          "policyNotes": "Required and may count toward biological sciences or general chemistry."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "TMDSAS",
+        "note": "The reviewed requirements page directs MD applicants to TMDSAS but did not provide letter detail in the captured result.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "The school's page directs applicants to TMDSAS for deadlines; no explicit 2026-2027 date captured here.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.ttuhsc.edu/medicine/admissions/reqs.aspx",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.ttuhsc.edu/medicine/admissions/reqs.aspx",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.ttuhsc.edu/medicine/admissions/reqs.aspx",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.ttuhsc.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Current official requirements recorded; application dates intentionally null because the school routes deadline information to TMDSAS and no explicit date was captured.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "university-of-houston-tilman-j-fertitta-family-college-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current MD requirements page captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "No explicit 2026-2027 MD deadline captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://medicine.uh.edu/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.uh.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official institutional identity confirmed; unverified MD-specific fields retained as null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "university-of-texas-medical-branch-john-sealy-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current MD requirements page captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "No explicit 2026-2027 MD deadline captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.utmb.edu/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.utmb.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official institutional identity confirmed; unverified MD-specific fields retained as null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "university-of-texas-rio-grande-valley-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current MD requirements page captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "No explicit 2026-2027 MD deadline captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.utrgv.edu/school-of-medicine/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.utrgv.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official institutional identity confirmed; unverified MD-specific fields retained as null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "university-of-texas-southwestern-medical-school",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": "Residency classifications for applicants are completed by TMDSAS under Texas higher-education residency rules.",
+      "mission": [
+        "medical-education",
+        "research",
+        "clinical-care"
+      ],
+      "tuition": {
+        "inState": 25436,
+        "outOfState": 38536,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "Biology",
+          "lab": "including formal lab",
+          "amount": "14 semester hours",
+          "policyNotes": "Official admissions wording."
+        },
+        {
+          "area": "Biochemistry",
+          "lab": null,
+          "amount": "3 semester hours",
+          "policyNotes": "Official admissions wording."
+        },
+        {
+          "area": "Chemistry",
+          "lab": "general/inorganic 4 hours with lab; organic 8 hours with lab",
+          "amount": "12 semester hours",
+          "policyNotes": "Official admissions wording."
+        },
+        {
+          "area": "English",
+          "lab": null,
+          "amount": "6 semester hours",
+          "policyNotes": "Official admissions wording."
+        },
+        {
+          "area": "Mathematics",
+          "lab": null,
+          "amount": "3 semester hours",
+          "policyNotes": "Official admissions wording."
+        },
+        {
+          "area": "Physics",
+          "lab": "including lab",
+          "amount": "8 semester hours",
+          "policyNotes": "Official admissions wording."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current letter-detail page captured in this conservative pass.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "2026-10-01",
+        "secondary": null,
+        "interviewSeason": "August through early December 2026",
+        "cycleLabel": "2026-2027 TMDSAS (CASPer deadline Oct. 27; score distribution deadline Nov. 1, 2026)",
+        "nullReasons": {
+          "secondary": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": "All applicants applying to UT Southwestern Medical School are required to complete an online assessment (CASPer).",
+          "completenessEffect": "If invited to interview, scores must be delivered before the interview date.",
+          "cycleLabel": "2026-2027",
+          "nullReasons": {}
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://medschool.utsouthwestern.edu/admissions/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "https://www.utsouthwestern.edu/education/students/financial-aid/cost-of-attendance/medical/",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://medschool.utsouthwestern.edu/admissions/prerequisites.html",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://medschool.utsouthwestern.edu/admissions/",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://medschool.utsouthwestern.edu/admissions/",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.utsouthwestern.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Official current-cycle deadline, interview window, and CASPer rule captured. No official entering-class performance figures or other unsupported fields recorded.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "university-of-texas-at-tyler-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "rural-health",
+        "underserved",
+        "east-texas"
+      ],
+      "tuition": {
+        "inState": 22442,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "Biology",
+          "lab": "two semester hours must be labs",
+          "amount": "14 semester hours",
+          "policyNotes": ""
+        },
+        {
+          "area": "Physics",
+          "lab": "two semester hours must be labs",
+          "amount": "8 semester hours",
+          "policyNotes": ""
+        },
+        {
+          "area": "Chemistry",
+          "lab": "2 hours general chemistry lab and 2 hours organic chemistry lab",
+          "amount": "8 hours general chemistry; 8 hours organic chemistry",
+          "policyNotes": ""
+        },
+        {
+          "area": "Biochemistry",
+          "lab": null,
+          "amount": "3 semester hours",
+          "policyNotes": ""
+        },
+        {
+          "area": "English",
+          "lab": null,
+          "amount": "6 semester hours of composition-based English",
+          "policyNotes": ""
+        },
+        {
+          "area": "Math",
+          "lab": null,
+          "amount": "3 semester hours of statistics",
+          "policyNotes": ""
+        }
+      ],
+      "letterRequirements": {
+        "min": 3,
+        "max": 4,
+        "requiredRoles": [
+          "Individuals who know the applicant academically or professionally"
+        ],
+        "committeePacketAccepted": true,
+        "route": "service",
+        "note": "Submit through TMDSAS; one Health Professions Committee Letter/Packet may replace three letters, with one additional letter optional.",
+        "nullReasons": {}
+      },
+      "deadlines": {
+        "primary": "October 1, 2026",
+        "secondary": "November 13, 2026",
+        "interviewSeason": "August through December 2026",
+        "cycleLabel": "2026-2027",
+        "nullReasons": {}
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": "Completion of the Casper Situational Judgment Test through Acuity Insights.",
+          "completenessEffect": null,
+          "cycleLabel": "2026-2027",
+          "nullReasons": {
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.uttyler.edu/academics/programs/doctor-of-medicine-md.php",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "https://www.uttyler.edu/academics/programs/doctor-of-medicine-md.php",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.uttyler.edu/academics/programs/doctor-of-medicine-md.php",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.uttyler.edu/academics/programs/doctor-of-medicine-md.php",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.uttyler.edu/academics/programs/doctor-of-medicine-md.php",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://www.uttyler.edu/academics/programs/doctor-of-medicine-md.php",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.uttyler.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Official 2026-2027 application and requirement details captured. Published MCAT/GPA values are eligibility thresholds, not entering-class profile figures, so left null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "university-of-utah-spencer-fox-eccles-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "mission-aligned-review",
+        "community-health",
+        "rural-medicine"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "General Chemistry",
+          "lab": "all course-required labs",
+          "amount": "two courses completing a general chemistry series",
+          "policyNotes": ""
+        },
+        {
+          "area": "Organic Chemistry",
+          "lab": "all course-required labs",
+          "amount": "two courses completing an organic chemistry series",
+          "policyNotes": ""
+        },
+        {
+          "area": "Physics",
+          "lab": "all course-required labs",
+          "amount": "two courses",
+          "policyNotes": ""
+        },
+        {
+          "area": "Biology",
+          "lab": "all course-required labs",
+          "amount": "two courses; one course must be Cellular Biology or Biochemistry",
+          "policyNotes": ""
+        },
+        {
+          "area": "Writing/Speech",
+          "lab": null,
+          "amount": "two courses",
+          "policyNotes": "Must emphasize English-language written or verbal communication."
+        },
+        {
+          "area": "Social Science",
+          "lab": null,
+          "amount": "one course",
+          "policyNotes": ""
+        },
+        {
+          "area": "Humanities",
+          "lab": null,
+          "amount": "one course",
+          "policyNotes": ""
+        }
+      ],
+      "letterRequirements": {
+        "min": 3,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": true,
+        "route": "service",
+        "note": "Individual letters, letter packets, and committee letters accepted; all submitted via AMCAS Letter Service.",
+        "nullReasons": {
+          "max": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "September 1, 2026",
+        "secondary": "August 1, 2026 priority review deadline",
+        "interviewSeason": "September 2026 through March 2027 (rolling cycle)",
+        "cycleLabel": "2026-2027",
+        "nullReasons": {}
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": "All SFESOM applicants must complete the AAMC PREview Exam for their secondary application to be considered complete and reviewed for an interview.",
+          "completenessEffect": "Without a submitted score by the provided secondary deadline, application is incomplete and held; applicants who do not complete PREview by August are not considered for interview.",
+          "cycleLabel": "2026-2027",
+          "nullReasons": {}
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://medicine.utah.edu/programs/md/admissions/requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://medicine.utah.edu/programs/md/admissions/requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://medicine.utah.edu/programs/md/admissions/requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://medicine.utah.edu/programs/md/admissions/requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://medicine.utah.edu/programs/md/admissions/requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.utah.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Official 2026-2027 requirements captured. MCAT/GPA page supplies a screening matrix, not an entering-class profile; class-performance fields remain null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "eastern-virginia-medical-school-at-old-dominion-university",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "community-engaged-learning",
+        "caregiving",
+        "health-disparities"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": 3,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": true,
+        "route": "service",
+        "note": "A committee letter counts as one letter. An additional thesis/graduate-advisor letter is required for applicants currently or previously in a graduate program unless submitting a graduate committee letter.",
+        "nullReasons": {
+          "max": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "November 1",
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "Cycle year not stated on official page; primary date is retained as a non-cycle-specific policy only.",
+        "nullReasons": {
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.odu.edu/education/school_of_medicine/application_process",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.odu.edu/education/school_of_medicine/application_process",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.odu.edu/education/school_of_medicine/application_process",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.odu.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official ODU MD application-process page captured, but it does not label its deadline to the 2026-2027 cycle or provide a current entering-class profile. Consequently unsupported fields are null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "university-of-virginia-school-of-medicine",
+      "control": "public",
+      "classSize": 156,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "medical-education",
+        "patient-care",
+        "research"
+      ],
+      "tuition": {
+        "inState": 56700,
+        "outOfState": 71046,
+        "secondaryFee": 80,
+        "feeWaiverPolicy": "Supplemental application fee is waived for applicants with an AMCAS Fee Assistance Program waiver.",
+        "nullReasons": {},
+        "costOfAttendance": {
+          "inState": 88454,
+          "outOfState": 102800,
+          "context": "2026-27 Med 1, Charlottesville, 10-month total COA.",
+          "source": "https://med.virginia.edu/md-program/financial-aid/financing-costs/"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "No required prerequisite courses",
+          "lab": null,
+          "amount": null,
+          "policyNotes": "UVA has no science or humanities requirement; it recommends Cell Biology, Biochemistry, Human Behavior, and Statistics."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": true,
+        "route": "service",
+        "note": "Official page states individual letters may be submitted with a premed advising evaluation; no numerical requirement captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "November 1, 2026",
+        "secondary": "December 15, 2026",
+        "interviewSeason": "September 8, 2026 through first week of March 2027",
+        "cycleLabel": "2027 admissions cycle",
+        "nullReasons": {}
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": "For the 2027 admissions cycle we will be collecting the AAMC PREview Professional Readiness Exam for any applicants who took it for other reasons. Scores will NOT be used for evaluation for the 2027 cycle.",
+          "completenessEffect": "Not used for evaluation.",
+          "cycleLabel": "2027 admissions cycle",
+          "nullReasons": {}
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://med.virginia.edu/md-program/admissions/admissions-to-uva-school-of-medicine/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "https://med.virginia.edu/md-program/financial-aid/financing-costs/",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://med.virginia.edu/md-program/admissions/admissions-to-uva-school-of-medicine/",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://med.virginia.edu/md-program/admissions/admissions-to-uva-school-of-medicine/",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://med.virginia.edu/md-program/admissions/admissions-to-uva-school-of-medicine/",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://med.virginia.edu/md-program/admissions/admissions-to-uva-school-of-medicine/",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.virginia.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Official cycle-specific application page captured. Class size is stated as 156; no official source for entering-class performance figures was captured in this pass.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "virginia-commonwealth-university-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "holistic-review",
+        "medical-education",
+        "community"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current numerical letter policy captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "October 15, 2026",
+        "secondary": "January 30, 2027",
+        "interviewSeason": "August 2026 through March 2027",
+        "cycleLabel": "2026-2027",
+        "nullReasons": {}
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://medschool.vcu.edu/admissions/prospective/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://medschool.vcu.edu/admissions/prospective/",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.vcu.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official page lists average MCAT and GPA but does not state whether those figures describe matriculants, accepted applicants, or another population; performance fields intentionally null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "virginia-tech-carilion-school-of-medicine",
+      "control": "public",
+      "classSize": 56,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": "The school admits Virginia state residents and out-of-state residents.",
+      "mission": [
+        "research",
+        "discovery",
+        "community",
+        "leadership"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": 70,
+        "feeWaiverPolicy": "Discounted secondary fee for candidates who qualify for the AAMC Fee Assistance Program.",
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Letters are required for a complete secondary application; numerical and writer-role policy not captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "December 1, 2026",
+        "secondary": "December 15, 2026",
+        "interviewSeason": "August/September 2026 onward; rolling admissions",
+        "cycleLabel": "2026-2027",
+        "nullReasons": {}
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://medicine.vtc.vt.edu/admissions/class-statistics.html",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "https://medicine.vtc.vt.edu/content/medicine_vtc_vt_edu/en/admissions/application-process.html",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://medicine.vtc.vt.edu/admissions/academic-requirements.html",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://medicine.vtc.vt.edu/content/medicine_vtc_vt_edu/en/admissions/application-process.html",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://medicine.vtc.vt.edu/content/medicine_vtc_vt_edu/en/admissions/admissions-overview.html",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.vt.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "high",
+      "profileStatus": "Official class-statistics page explicitly identifies Class of 2029 matriculants. Fields without direct policy support remain null.",
+      "mcat": {
+        "value": 512,
+        "stat": "mean",
+        "population": "matriculants",
+        "classYear": "Class of 2029",
+        "source": "https://medicine.vtc.vt.edu/admissions/class-statistics.html",
+        "nullReasons": {}
+      },
+      "gpa": {
+        "cumulative": 3.67,
+        "science": null,
+        "stat": "mean",
+        "population": "matriculants",
+        "classYear": "Class of 2029",
+        "source": "https://medicine.vtc.vt.edu/admissions/class-statistics.html",
+        "nullReasons": {
+          "science": "not-published"
+        }
+      },
+      "nullReasons": {
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "robert-larner-m-d-college-of-medicine-at-the-university-of-vermont",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current official MD admissions policy page was captured in this limited pass.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "No explicit 2026-2027 admissions timeline captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.med.uvm.edu/admissions",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.uvm.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Institutional control verified; no immediately accessible, current official Larner MD admissions document with field-level information was captured. All unsupported data are null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "elson-s-floyd-college-of-medicine-at-washington-state-university",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current MD-specific letter policy captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "No explicit 2026-2027 MD deadline captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://medicine.wsu.edu/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://wsu.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official institutional identity confirmed; unverified MD-specific fields remain null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "university-of-washington-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current MD-specific letter policy captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "No explicit 2026-2027 MD deadline captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.uwmedicine.org/school-of-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.washington.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "A dated admissions brochure was available but was not used for current fields. All unconfirmed 2026-2027 fields remain null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "medical-college-of-wisconsin",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "primary-care",
+        "community-based"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "Advanced Biology",
+          "lab": null,
+          "amount": "3-4 credits (one semester)",
+          "policyNotes": "Examples include anatomy and physiology, immunology, microbiology, or neurobiology."
+        },
+        {
+          "area": "Biochemistry",
+          "lab": null,
+          "amount": "3-4 credits (one semester)",
+          "policyNotes": "Provided it required general and organic chemistry as prerequisites."
+        },
+        {
+          "area": "Physics",
+          "lab": null,
+          "amount": "6-8 credits (two semesters)",
+          "policyNotes": "Required."
+        },
+        {
+          "area": "Math",
+          "lab": null,
+          "amount": "3-4 credits (one semester)",
+          "policyNotes": "Statistics recommended."
+        },
+        {
+          "area": "English",
+          "lab": null,
+          "amount": "3-4 credits (one semester)",
+          "policyNotes": "Writing-intensive course may satisfy."
+        },
+        {
+          "area": "Social Science",
+          "lab": null,
+          "amount": "3-4 credits (one semester)",
+          "policyNotes": "Psychology or sociology."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "AMCAS",
+        "note": "No specific letter count captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "2026-11-02",
+        "secondary": "2026-12-07",
+        "interviewSeason": "2026-09 through 2027-03",
+        "cycleLabel": "2026-2027 regular MD, MD/MS and MD/PhD programs.",
+        "nullReasons": {}
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": "not required, nor accepted as a substitute for Casper",
+          "completenessEffect": null,
+          "cycleLabel": "2026-2027",
+          "nullReasons": {
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": "mandatory for all MCW Medical School applicants",
+          "completenessEffect": "Complements screening, evaluation, and review; acceptable dates March 19 through December 3, 2026.",
+          "cycleLabel": "2026-2027",
+          "nullReasons": {}
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.mcw.edu/education/medical-school/prospective-students/admissions",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.mcw.edu/education/medical-school/prospective-students/admissions",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.mcw.edu/education/medical-school/prospective-students/admissions",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://www.mcw.edu/education/medical-school/prospective-students/admissions",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.mcw.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "high",
+      "profileStatus": "Current official 2026-2027 admissions page; fields not specifically stated remain null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "university-of-wisconsin-school-of-medicine-and-public-health",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "Bachelor's degree",
+          "lab": null,
+          "amount": null,
+          "policyNotes": "Required before starting the MD program; degree may be in any discipline."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current MD-specific letter policy captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "No explicit 2026-2027 MD deadline captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.med.wisc.edu/education/md-program/admissions/premedical-requirements-selection-criteria/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.med.wisc.edu/education/md-program/admissions/premedical-requirements-selection-criteria/",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.wisc.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Current official premedical requirements page captured; other fields were not recovered in this pass.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "marshall-university-joan-c-edwards-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current MD-specific letter policy captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "No explicit 2026-2027 MD deadline captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://jcesom.marshall.edu/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.marshall.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official institutional identity confirmed; unverified MD-specific fields remain null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "west-virginia-university-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current MD-specific letter policy captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "No explicit 2026-2027 MD deadline captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://medicine.hsc.wvu.edu/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.wvu.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official institutional identity confirmed; unverified MD-specific fields remain null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": "",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    }
+  ],
+  "researchReport": {
+    "schoolCount": 30,
+    "coverage": {
+      "control": 30,
+      "mcat": 5,
+      "cumulativeGPA": 5,
+      "scienceGPA": 3,
+      "classSize": 5,
+      "inStatePercent": 0,
+      "inStateStatement": 3,
+      "tuitionInState": 3,
+      "tuitionOutOfState": 2,
+      "secondaryFee": 3,
+      "prereqs": 11,
+      "letters": 8,
+      "primaryDeadline": 10,
+      "secondaryDeadline": 7,
+      "interviewSeason": 9,
+      "previewExplicit": 3,
+      "casperExplicit": 4
+    },
+    "nullReasons": "Every null is deliberate: the allowed official source did not publish the field, it was campus-combined rather than campus-specific, or cycle/currentness was unclear. Per-school profileStatus and fieldSources record the source-scoped reason.",
+    "sourcePolicy": "Official school, AACOM, AAMC, or TMDSAS sources only. excluded metrics excluded.",
+    "partFiles": [
+      "medical-school-profiles-2026-27-batch-08-part-01-figure-level-v2.json",
+      "medical-school-profiles-2026-27-batch-08-part-02-figure-level-v2.json",
+      "medical-school-profiles-2026-27-batch-08-part-03-figure-level-v2.json",
+      "medical-school-profiles-2026-27-batch-08-part-04-figure-level-v2.json"
+    ],
+    "nullReasonPolicy": "Every null queryable field carries a structured reason: not-published, not-found, or not-applicable. not-found fields are the only targets for later gap-fill sweeps."
+  }
+}

@@ -1,0 +1,688 @@
+{
+  "batch": 1,
+  "part": 2,
+  "retrievedAt": "2026-08-14",
+  "cycle": "2026-2027",
+  "researchOnly": true,
+  "schools": [
+    {
+      "id": "touro-university-california-college-of-osteopathic-medicine",
+      "control": "private",
+      "medianMCAT": 506.1,
+      "medianGPA": 3.59,
+      "scienceGPA": null,
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "primary-care",
+        "patient-centered"
+      ],
+      "tuition": {
+        "inState": 69300,
+        "outOfState": 69300,
+        "secondaryFee": 100,
+        "feeWaiverPolicy": "AACOMAS fee-waiver recipients may request a waiver by forwarding their AACOMAS fee-waiver email to TUCOM; it is not automatic."
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "AACOM lists accepted sources (AACOMAS, Interfolio, paper, email); number/roles not captured."
+      },
+      "deadlines": {
+        "primary": "2027-03-15",
+        "secondary": "2027-04-15",
+        "interviewSeason": null,
+        "cycleLabel": "2026-2027"
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit PREview policy captured."
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit CASPer policy captured."
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.aacom.org/detail-pages/com/touro-university-california-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14",
+          "stat": "mean/average",
+          "population": "unstated",
+          "classYear": null
+        },
+        "cost": {
+          "source": "https://www.aacom.org/detail-pages/com/touro-university-california-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.aacom.org/detail-pages/com/touro-university-california-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.aacom.org/detail-pages/com/touro-university-california-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://www.aacom.org/detail-pages/com/touro-university-california-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.aacom.org/detail-pages/com/touro-university-california-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Partial official-only snapshot. AACOM labels MCAT/GPA mean/average without a captured class year or population."
+    },
+    {
+      "id": "western-university-of-health-sciences-college-of-osteopathic-medicine-of-the-pacific",
+      "control": "private",
+      "medianMCAT": null,
+      "medianGPA": null,
+      "scienceGPA": null,
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "patient-centered"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Not captured."
+      },
+      "deadlines": {
+        "primary": "2027-03-01",
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "2026-2027"
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.aacom.org/detail-pages/com/western-university-of-health-sciences-college-of-osteopathic-medicine-of-the-pacific",
+          "checkedOn": "2026-08-14",
+          "stat": "",
+          "population": "unstated",
+          "classYear": null
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.aacom.org/detail-pages/com/western-university-of-health-sciences-college-of-osteopathic-medicine-of-the-pacific",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.aacom.org/detail-pages/com/western-university-of-health-sciences-college-of-osteopathic-medicine-of-the-pacific",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://www.aacom.org/detail-pages/com/western-university-of-health-sciences-college-of-osteopathic-medicine-of-the-pacific",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.aacom.org/detail-pages/com/western-university-of-health-sciences-college-of-osteopathic-medicine-of-the-pacific",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Official-only partial. AACOM says online prerequisite coursework/labs are not accepted except COVID-period exceptions; not converted into a prerequisite rule."
+    },
+    {
+      "id": "rocky-vista-university-college-of-osteopathic-medicine",
+      "control": "private",
+      "medianMCAT": null,
+      "medianGPA": null,
+      "scienceGPA": null,
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "rural-health"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Not captured."
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.aacom.org/detail-pages/com/rocky-vista-university-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14",
+          "stat": "",
+          "population": "unstated",
+          "classYear": null
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.aacom.org/detail-pages/com/rocky-vista-university-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official-source discovery record only; all unverified fields are null."
+    },
+    {
+      "id": "university-of-northern-colorado-college-of-osteopathic-medicine",
+      "control": "public",
+      "medianMCAT": null,
+      "medianGPA": null,
+      "scienceGPA": null,
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": "AACOM lists regional connection among selection factors; no explicit residency preference statement captured.",
+      "mission": [
+        "community-health"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": 75,
+        "feeWaiverPolicy": "UNC COM will consider fee waivers for applicants who qualify through AACOMAS or AAMC Fee Assistance Programs."
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [
+          "MD or DO physician letter"
+        ],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Minimum/count not captured."
+      },
+      "deadlines": {
+        "primary": "2027-04-01",
+        "secondary": "2027-04-15",
+        "interviewSeason": null,
+        "cycleLabel": "2026-2027"
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit PREview policy captured."
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit CASPer policy captured."
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.aacom.org/detail-pages/com/university-of-northern-colorado-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14",
+          "stat": "",
+          "population": "unstated",
+          "classYear": null
+        },
+        "cost": {
+          "source": "https://www.aacom.org/detail-pages/com/university-of-northern-colorado-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.aacom.org/detail-pages/com/university-of-northern-colorado-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.aacom.org/detail-pages/com/university-of-northern-colorado-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://www.aacom.org/detail-pages/com/university-of-northern-colorado-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.unco.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Newer college: no entering-class profile captured. Public control from parent institution; no unverified profile stats inserted."
+    },
+    {
+      "id": "burrell-college-of-osteopathic-medicine-florida",
+      "control": "private",
+      "medianMCAT": 500,
+      "medianGPA": 3.46,
+      "scienceGPA": null,
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": 70622,
+        "outOfState": 70622,
+        "secondaryFee": 80,
+        "feeWaiverPolicy": "Applicants approved for AACOMAS or AMCAS fee waiver may request a secondary fee waiver during the secondary process."
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "service",
+        "note": "AACOMAS accepted source; exact letter requirement not captured."
+      },
+      "deadlines": {
+        "primary": "2027-04-30",
+        "secondary": "2027-05-15",
+        "interviewSeason": null,
+        "cycleLabel": "2026-2027"
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit PREview policy captured."
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit CASPer policy captured."
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.aacom.org/detail-pages/com/burrell-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14",
+          "stat": "mean/average",
+          "population": "unstated",
+          "classYear": null
+        },
+        "cost": {
+          "source": "https://www.aacom.org/detail-pages/com/burrell-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.aacom.org/detail-pages/com/burrell-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.aacom.org/detail-pages/com/burrell-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://www.aacom.org/detail-pages/com/burrell-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.aacom.org/detail-pages/com/burrell-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "BCSOM uses a single AACOMAS designation. Mean stats lack captured class year/population; applied to Florida only because AACOM presents the single designation.."
+    },
+    {
+      "id": "lake-erie-college-of-osteopathic-medicine-bradenton",
+      "control": "private",
+      "medianMCAT": null,
+      "medianGPA": null,
+      "scienceGPA": null,
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "patient-centered",
+        "community-service"
+      ],
+      "tuition": {
+        "inState": 42395,
+        "outOfState": 42750,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "AACOM lists accepted sources; exact count/roles not captured."
+      },
+      "deadlines": {
+        "primary": "2027-05-01",
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "2026-2027"
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.aacom.org/detail-pages/com/lake-erie-college-of-osteopathic-medicine-bradenton",
+          "checkedOn": "2026-08-14",
+          "stat": "",
+          "population": "unstated",
+          "classYear": null
+        },
+        "cost": {
+          "source": "https://www.aacom.org/detail-pages/com/lake-erie-college-of-osteopathic-medicine-bradenton",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.aacom.org/detail-pages/com/lake-erie-college-of-osteopathic-medicine-bradenton",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.aacom.org/detail-pages/com/lake-erie-college-of-osteopathic-medicine-bradenton",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.aacom.org/detail-pages/com/lake-erie-college-of-osteopathic-medicine-bradenton",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.aacom.org/detail-pages/com/lake-erie-college-of-osteopathic-medicine-bradenton",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Current 2026-2027 tuition/deadline from official AACOM profile; no profile stats captured."
+    },
+    {
+      "id": "lake-erie-college-of-osteopathic-medicine-at-jacksonville-university",
+      "control": "private",
+      "medianMCAT": null,
+      "medianGPA": null,
+      "scienceGPA": null,
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": 44000,
+        "outOfState": 44000,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Parent LECOM AACOM profile lists accepted sources but no Jacksonville-specific count/roles captured."
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.aacom.org/detail-pages/com/lake-erie-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14",
+          "stat": "",
+          "population": "unstated",
+          "classYear": null
+        },
+        "cost": {
+          "source": "https://www.aacom.org/detail-pages/com/lake-erie-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.aacom.org/detail-pages/com/lake-erie-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.aacom.org/detail-pages/com/lake-erie-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "New teaching location, first class in 2026 per AACOM; profile statistics/deadlines absent. Tuition is parent profile's explicit Jacksonville figure."
+    },
+    {
+      "id": "lincoln-memorial-university-debusk-college-of-osteopathic-medicine-at-orange-park",
+      "control": "private",
+      "medianMCAT": 497,
+      "medianGPA": 3.6,
+      "scienceGPA": null,
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "underserved"
+      ],
+      "tuition": {
+        "inState": 59550,
+        "outOfState": 59550,
+        "secondaryFee": 50,
+        "feeWaiverPolicy": "AACOMAS fee-waiver-qualified applicants receive a supplemental fee waiver."
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Parent AACOM profile lists accepted sources; exact minimum/roles not captured."
+      },
+      "deadlines": {
+        "primary": "2027-04-30",
+        "secondary": "2027-05-15",
+        "interviewSeason": null,
+        "cycleLabel": "2026-2027"
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit PREview policy captured."
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit CASPer policy captured."
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.aacom.org/detail-pages/com/lincoln-memorial-university-debusk-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14",
+          "stat": "mean/average",
+          "population": "unstated",
+          "classYear": null
+        },
+        "cost": {
+          "source": "https://www.aacom.org/detail-pages/com/lincoln-memorial-university-debusk-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.aacom.org/detail-pages/com/lincoln-memorial-university-debusk-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.aacom.org/detail-pages/com/lincoln-memorial-university-debusk-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://www.aacom.org/detail-pages/com/lincoln-memorial-university-debusk-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.aacom.org/detail-pages/com/lincoln-memorial-university-debusk-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Orange Park is an additional location opening fall 2026 and uses the parent application. Parent-published stats/requirements applied across locations only where AACOM explicitly says locations offer same program; stats have no captured class year/population."
+    }
+  ],
+  "researchReport": {
+    "coverage": {
+      "control": 8,
+      "academicProfile": 3,
+      "classSize": 0,
+      "inStatePercent": 0,
+      "tuition": 6,
+      "secondaryFee": 5,
+      "prerequisites": 0,
+      "letters": 7,
+      "primaryDeadline": 6,
+      "secondaryDeadline": 4,
+      "interviewSeason": 0,
+      "PREviewExplicit": 0,
+      "CASPerExplicit": 0
+    },
+    "nullPolicy": "Null means a current, source-scoped official publication was not captured. No inferred residency preference, ratios, excluded metrics, or outside-source figures were inserted.",
+    "knownGaps": [
+      "RVUCOM needs its own complete official admissions pass.",
+      "WesternU/COMP and LECOM need direct school-page prerequisite/letter/test passes.",
+      "New UNC COM, LECOM Jacksonville, and LMU Orange Park may not yet have an entering-class profile; parent-level data were not silently treated as campus-specific."
+    ]
+  }
+}

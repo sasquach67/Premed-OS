@@ -4,7 +4,8 @@
 **Lab:** `variant-lab.html?page=public-landing` — group **Landing & auth**
 **Spec:** `specifications/05-public-and-account.md` (§0.1 auth-not-a-gate · §0.2 merge · §1 landing · §2 auth · §6.1 independence)
 **Exact visual values:** `_shared/_visual-recipes.md` — used literally.
-**Status:** PROPOSED (Aug 2026). `BUILD-MANIFEST.md` governs whether it gets built.
+**Status:** APPROVED (Andy, Aug 14, 2026; A/B/C treatment not specified).
+`BUILD-MANIFEST.md` continues to govern whether it gets built.
 
 Three surfaces in one file for review; each is its own page in the product.
 

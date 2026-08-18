@@ -14,10 +14,13 @@ page and variant.
 The lab mirrors the current Premed OS product navigation:
 
 - Overview first;
-- Academics & GPA in its locked Daily and Planning hierarchy;
+- Academics in its Daily and Planning hierarchy;
 - MCAT in its seven-tab hierarchy;
-- the remaining product areas in application order;
-- superseded concepts in a separate Archived concepts section.
+- Clinical, Volunteering, Shadowing, Research, and Extracurriculars as five
+  peer product categories, each with its own real sub-tabs;
+- School List, Essays & Story Bank, and Letters as complete draft families;
+- only Timeline & Tasks, Profile / CV, Help, and Settings remain deliberately
+  undrawn.
 
 **Every tab carries the bottom A/B/C switcher.** What the letters mean scales
 with how finished the page is:
@@ -79,7 +82,10 @@ These are independent dimensions and must not be combined:
 - **Product views** are real in-product destinations or states. Class Hub uses
   Overview, Materials, Topics, Assignments, and Notes. Assignments uses Agenda,
   Weekly, and Calendar. Review Session, Exam Plan, Syllabus Import, and Class
-  Types likewise use their named state selectors.
+  Types likewise use their named state selectors. Each Experience pillar uses
+  the same selector for its own views, such as Sites / Shifts / Reflections or
+  Projects / Outputs / Lab notes / Reflections / Discover. Experience views are
+  separate lab pages, so every sub-tab has its own review URL and A/B/C state.
 - **Design variants** are competing layouts for the same product view. They use
   A, B, and C and are always controlled by the bottom switcher.
 
@@ -110,5 +116,10 @@ For Overview specifically, A preserves the approved colorful bento while B and C
 hold its exact components and structure constant to compare two less-cartoonish
 visual systems: Graphite precision and Obsidian studio.
 
-Legacy pages are isolated under Archived concepts. They are useful for extracting
-interaction ideas, not for reviving superseded product structure.
+Superseded concept pages are not listed in the lab navigation. Their source
+files remain available for history, but they are not review destinations.
+
+The former generic “feature-state sweep” pages are also no longer review
+destinations. Their content was promoted into full owner surfaces: Academics
+learning signals, grade decisions, and term rollover; MCAT Session, Test Day,
+and full-length validity; and Overview quarterly-goal states.

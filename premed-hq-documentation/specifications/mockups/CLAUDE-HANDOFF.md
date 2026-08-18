@@ -10,6 +10,17 @@
 Continue and finish the Premed OS mockup library in product order while
 preserving the existing Premed OS visual language.
 
+## Approval record — required during review
+
+Read and update
+`premed-hq-documentation/implementation/briefs/MOCKUP-APPROVAL-LEDGER.md`
+whenever Andy selects a direction. It records the exact file, product view,
+variant, date, implementation state, and any superseded treatment so later
+work does not duplicate or overwrite an approved surface.
+
+The ledger is not build permission. Build authorization still comes only from
+`BUILD-MANIFEST.md`.
+
 The review entry point is:
 
 ```text
@@ -89,7 +100,7 @@ the interface overly cartoony, overly saturated, or visually noisy.
 Keep the left navigation in the order a user encounters the product:
 
 1. Overview
-2. Academics & GPA
+2. Academics
    - Daily
      - Class Center
      - Assignments
@@ -97,7 +108,7 @@ Keep the left navigation in the order a user encounters the product:
      - supporting Class Hub and study flows
    - Planning
      - Planner
-     - Requirements
+     - Tar Heel Tracker
      - Grades & Archive
 3. MCAT
    - Dashboard
@@ -107,8 +118,15 @@ Keep the left navigation in the order a user encounters the product:
    - Mistakes
    - Stats
    - Advisor
-4. Remaining Premed OS product areas
-5. Archived concepts
+4. Clinical: Sites, Shifts, Reflections
+5. Volunteering: Organizations, Events, Reflections
+6. Shadowing: Physicians, Visits, Reflections
+7. Research: Projects, Outputs, Lab notes, Reflections, Discover
+8. Extracurriculars: Organizations, Initiatives, Reflections, Discover
+9. School List: Explore, Track
+10. Essays & Story Bank: The bank, Essays, Writing desk
+11. Letters of Rec: People, Dossier, Requests
+12. Remaining Premed OS product areas
 
 Do not reorder the lab by filename or creation date.
 
@@ -154,18 +172,29 @@ because comparing layouts at realistic width is exactly when it is needed.
 
 ## Current classification
 
-### Verification record — Aug 2026
+### Verification record — Aug 14, 2026
 
-Verified in a live browser at `http://localhost:8765`, not by syntax check:
+Verified in a live browser at `http://localhost:8765`, not only by syntax
+check:
 
-- **56 page + view combinations** exercised across all three letters
-  (50 in the first pass, plus the 6 new Planning views).
-- **Switcher present on all 56** — zero tabs hide it.
-- **No letter is geometrically identical to another** on any combination. The
-  check fingerprints every element's bounding box in the iframe, so a treatment
-  that changes nothing is caught even when its CSS parses fine.
-- Both native prototypes (Empty states, Planner) confirmed to serve three
-  genuinely different authored implementations.
+- the current hierarchy exposes **61 review pages**;
+- the five experience pillars appear as peer categories and every canonical
+  sub-tab opens a real authored surface;
+- representative owner states were exercised in A and B: Academics learning
+  signals, MCAT Test Day, Research Outputs, Shadowing Physicians, School List
+  Track, and Letters Requests;
+- those representative routes all rendered their expected content and none
+  fell through to the undrawn placeholder;
+- the Test Day and Shadowing pages were visually inspected at realistic lab
+  width; type, hierarchy, dark surfaces, and A/B/C controls rendered correctly;
+- all inline scripts in the lab shell and the three new shared workspace files
+  parsed successfully;
+- both mockup folders were byte-compared for every new or changed shared source.
+
+The earlier 56-combination geometry audit remains useful historical evidence
+for the pre-expansion pages, but it must not be quoted as verification of the
+new 61-page hierarchy. Run a fresh exhaustive geometry pass before promoting
+the new draft families to approved.
 
 Known cosmetic gaps, recorded rather than hidden:
 
@@ -183,6 +212,11 @@ These currently contain genuine A/B/C design variants:
 - Academics Class Center
 - Academics Empty states
 - Academics Planner
+- MCAT Dashboard, Content, Questions, Mistakes, Stats, and Advisor
+- every sub-tab of Clinical, Volunteering, Shadowing, Research, and
+  Extracurriculars
+- School List, Essays & Story Bank, and Letters of Rec
+- the full owner-state workspaces for Academics, MCAT, and Overview
 
 These now carry A/B/C for **every** named product view (Aug 2026 pass — 20
 views, 60 variant definitions, declared in `VIEW_VARIANTS` in
@@ -194,12 +228,12 @@ views, 60 variant definitions, declared in `VIEW_VARIANTS` in
 - Exam-plan builder: Accelerated / Steady / Catch-up
 - Syllabus import: Upload / Review before apply / Re-import diff
 - Class types: Comparison / STEM / Writing
-- **Requirements: Gap & pace / All requirements / Prior credit** *(new, Aug 2026)*
+- **Tar Heel Tracker: Gap & pace / All requirements / Prior credit** *(new, Aug 2026)*
 - **Grades & Archive: Ledger / GPA / What-if** *(new, Aug 2026)*
 
 ### The `wrap-per-view` DOM contract
 
-Class Hub, Requirements and Grades & Archive share one shape, and any new
+Class Hub, Tar Heel Tracker and Grades & Archive share one shape, and any new
 multi-view page should too:
 
 ```html
@@ -242,10 +276,9 @@ children for the rule to matter.
 These are intentionally unfinished. They are honest placeholders carrying named
 directions only, and must not be presented as completed variant sets:
 
-- most MCAT tabs
-- Letters, Experiences, Essays, School List, Timeline, Profile, Help, Settings
+- Letters, Essays, School List, Timeline, Profile, Help, Settings
 
-**Academics is now fully mocked.** Requirements and Grades & Archive were
+**Academics is now fully mocked.** Tar Heel Tracker and Grades & Archive were
 drawn in Aug 2026 and removed from `placehold()` entirely — that is the pattern
 to follow when a placeholder graduates. Do not leave a dressed-up placeholder
 behind once a real source file exists.
@@ -254,13 +287,13 @@ behind once a real source file exists.
 
 1. ~~Finish A/B/C across every existing Academics product view.~~ Done. Every
    drawn page and every drawn product view now has three working treatments.
-2. ~~Mock Requirements.~~ Done — `01-academics/academics-requirements.html`,
+2. ~~Mock Tar Heel Tracker.~~ Done — `01-academics/academics-tar-heel-tracker.html`,
    three product views, A/B/C each.
 3. ~~Mock Grades & Archive.~~ Done — `01-academics/academics-grades-archive.html`,
    three product views, A/B/C each.
-4. Return to MCAT in its documented product order. Each MCAT tab already has
-   three proposed directions written in `PLACEHOLDER_DIRECTIONS` — start from
-   those rather than inventing new ones.
+4. Complete the remaining MCAT subflows (Test Day, M2M export, coach states,
+   and stamina chart) as separate named product views rather than replacing the
+   rendered tab homes.
 5. Replace a “coming soon” entry only after its substantive mockup exists.
 
 ## How to add a new page
@@ -303,10 +336,7 @@ Do not collapse the lookup back into one flat array.
 ## Preservation and honesty rules
 
 - Documentation is the source of truth.
-- Mockups ARE now being implemented in the app, per
-  `implementation/briefs/W1-SWEEP-PROMPT-SEQUENCE.md` (Andy, Aug 2026).
-  Implementation reads the mockups; it never edits them. The mirror in
-  `specifications/mockups/` is the read source.
+- Do not implement these mockups in the Premed OS app unless separately asked.
 - Do not invent zero-value metrics, fake charts, or empty recommendation shells.
 - Keep Academics cold-start actions inside Daily → Class Center.
 - “Import a syllabus” remains the primary cold-start action.

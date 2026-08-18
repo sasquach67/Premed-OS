@@ -5,7 +5,7 @@
 **Spec:** `specifications/05-public-and-account.md` §5 (billing) · §6 (legal & trust) · §7 (support)
 **Exact visual values:** `_shared/_visual-recipes.md` — used literally.
 **Brief:** `implementation/briefs/P1-public-landing-auth.md`
-**Status:** PROPOSED (Aug 2026). `BUILD-MANIFEST.md` governs whether it gets built.
+**Status:** About, Privacy, and Terms **APPROVED** (Aug 2026). Pricing remains proposed. `BUILD-MANIFEST.md` governs whether any page gets built.
 
 Four pages in one file for review; each is its own route in the product.
 

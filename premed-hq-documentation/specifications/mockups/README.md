@@ -6,7 +6,7 @@
 
 ## Folder structure
 
-**One folder per tab, numbered to match `tabs/`.** One folder holds everything about that surface. **Decisions live in the mockup's own HTML header by default**; see the rules below.
+**One folder per tab, numbered to match `tabs/`.** Each mockup's **decisions file (`.md`) sits beside its `.html`** — one folder holds everything about that surface.
 
 ```
 mockups/
@@ -24,10 +24,7 @@ mockups/
 
 - **Never leave a mockup in the mockups root.** It goes in its tab folder, or `_shared/` if it's a cross-cutting pattern.
 - **New tab = new folder**, numbered to match its spec file.
-- **Every mockup records its decisions. Two valid homes, one rule: never both.**
-  - **Default: the HTML header comment.** It travels with the file, cannot drift from what it documents, and you read it the moment you open the mockup. All eight clinical mockups work this way, with 115 to 200 line headers carrying `DECISIONS THIS FILE ENCODES` and `DELIBERATELY EXCLUDED`.
-  - **A separate `.md` only when the decisions span more than one mockup.** `00-shell/shell-calendar-overlay.md` is the model: one file covering both calendar mockups, because the decisions are about the feature rather than either drawing.
-  - **Never duplicate.** A `.md` restating its own HTML header is a second-best copy, and second-best copies are what rot. If a `.md` exists, the header points at it and stops.
+- **Decisions file beside the mockup**, same base name (`foo.html` + `foo.md`).
 - `_shared/` is for things that govern *every* tab — nav hierarchy, the mascot pattern, visual recipes. If it only affects one tab, it isn't shared.
 
 ---
@@ -48,24 +45,12 @@ mockups/
 | `nav-hierarchy-3-levels.html` | **Three-level nav rule**: glass mode pill → underline tabs → solid filter bar. Shows the anti-pattern (three identical pill rows) beside the fix. `01` §4b-i |
 | `mascot-note-pattern.html` | **`MascotNote`** — the explanation/teaching pattern, five variants, plus the restraint rules. `01` §4f |
 | `_visual-recipes.md` | Concrete visual values to build from **literally** |
-| `hours-map.html` | **REJECTED** — kept as reference only. Overview already covers it twice (§6.5 rows, §6.5a Hours tile). Four surviving elements moved to the AMCAS export preview |
-
-## `00-shell/`
-
-| File | Status | Spec |
-|---|---|---|
-| `sidebar-merged-remock.html` | **APPROVED** — compact merged overlay sidebar; no rail or width peek, top-paced spacing, Atlas clearance above account, and left-edge/top-control hover-triggered opacity/transform fade without content movement | `00-product-shell.md` |
-| `shell-calendar-sequence.html` | **read first** — the five-step flow; settles the ownership question | `00-product-shell.md` §7.9 |
-| `shell-calendar-overlay.html` | Week + Month views | §7.9 |
-
-Decisions for both live in `shell-calendar-overlay.md`.
 
 ## `03-overview/`
 
 | File | Status | Spec |
 |---|---|---|
 | `overview-bento-control-panel.html` | **APPROVED** — the app's design language: bento grid of mixed-size panels, Now/Soon/Done task tabs, star-only prioritization, stat tiles, quick access, horizontal milestone roadmap | `specifications/03-overview.md` |
-| `overview-where-i-stand-expandable.html` | **PROPOSED** — amendment to §6.5. Rows expand in place to show the positions behind each total, plus the cross-link attribution line. Does **not** replace the bento panel | §6.5 |
 
 ## `01-academics/`
 
@@ -76,35 +61,24 @@ Decisions for both live in `shell-calendar-overlay.md`.
 | `academics-class-hub.html` | per-class study hub | §4.1-I |
 | `academics-review-session.html` | active-recall runner | §4.1-J |
 | `academics-class-types.html` | the three class types | §4.1-N |
-| `academics-planner-prototype.html` | Planner & GPA | §4.2 |
-| `academics-requirements.html` | Requirements | §4.3 |
-| `academics-grades-archive.html` | Grades & archive | §4.4 |
-| `academics-empty-states-prototype.html` | empty states across the tab | `01` §8 |
-| `academics-exam-prep-mode.html` | **PROPOSED** — exam-plan builder, 3 frames. One of the two genuinely unbuilt Academics surfaces | §6.15 |
-| `academics-syllabus-import.html` | **PROPOSED** — drag/drop import, upload → review → failure, 3 frames. The other genuinely unbuilt one | §4.1-M |
 | `academics-mode-switch.html` · `class-center-study-hub.html` | **older concept mockups** — flow only; visuals superseded by the approved references | — |
 
 ## `02-mcat/`
 
 | File | Status | Spec |
 |---|---|---|
-| `mcat-bookshelf.html` | Bookshelf | §3.10 |
+| `mcat-dashboard.html` | **DRAFT — 3 lab variants** · study-session home, measured readiness, and one clear next action | §3 |
+| `mcat-plan-spec.html` | **DRAFT — 3 lab variants** · phased plan, protected FL review, and projected-vs-goal rebuild | §3.3 |
+| `mcat-tab-spec.html` | **DRAFT — 3 lab variants per tab** · Content, Questions, Mistakes, Stats, Advisor | §3–§5 |
+| `mcat-bookshelf.html` | archived input for the Content shelf; **not an additional MCAT tab** | §3.10 |
 | `mcat-section-aware-drills.html` | drill scheduling | §3.9-a |
 | `mcat-plan.html` | **older concept mockup** — plan generator flow only | §3.3 |
 
 ## `04-clinical/`
 
-| File | Status | Spec |
-|---|---|---|
-| `clinical-role-typeahead.html` | **APPROVED** — type-to-create roles; the silent / ask-once / catch behavior. Supersedes `clinical-role-presets.html` | §2.1, catalog #8 |
-| `clinical-credentials.html` | certifications: type-to-create, expiry, CE against a sourced standard. 2 frames | §2.5, #20–23 |
-| `clinical-scope-recall.html` | scope-of-practice recall at writing time, 4 states | §2.6, R1-a |
-| `clinical-hour-target.html` | the target, suggested from your own rate. 6 states, including no-target | §7a, #31 |
-| `clinical-hours-chart.html` | **hours over time**: monthly bars default, running total on request, segmented switcher. Frame 2 holds the **cut** setting mix | §8, R8, #34 |
-| `clinical-role-presets.html` | **SUPERSEDED** by the typeahead — frame 1 only, kept for the rejected-alternative record | — |
-| `clinical-pillar.html` | **SUPERSEDED, do not build from it.** Two sub-tabs (ruling is three), emoji as UI icons (forbidden), and a paid/volunteer filter chip (R2 rules it hidden). Header in the file lists all four defects | — |
-
-Clinical mockups carry their decisions **in the HTML header comment**, not in a separate `.md`.
+| File | Status |
+|---|---|
+| `clinical-pillar.html` | **older concept mockup** — experience-pillar flow only |
 
 ---
 
@@ -117,7 +91,7 @@ Clinical mockups carry their decisions **in the HTML header comment**, not in a 
 | Daily → Class center | `components/academics/ClassCenter.tsx` | `/academics` |
 | Daily → Assignments | `components/common/AssignmentsPanel.tsx` | `/academics` |
 | Planning → Planner & GPA | inline in `pages/Academics.tsx` (AMCAS rings + `WhatIf`) | `/academics` |
-| Planning → Requirements | inline in `pages/Academics.tsx` | `/academics` |
+| Planning → Tar Heel tracker | inline in `pages/Academics.tsx` | `/academics` |
 | Planning → Grades & archive | inline in `pages/Academics.tsx` | `/academics` |
 | Class page | `components/academics/ClassHub.tsx` | `/academics/classes/:courseId` |
 | Active-recall runner | `pages/AcademicRecallSession.tsx` | `/academics/review/:courseId` (full-screen) |
@@ -129,15 +103,24 @@ Supporting logic already exists in `lib/academics/`: `coverage`, `fsrs`, `chunkA
 - **Exam-plan builder** — no code. `studyPlan` in `types.ts` is a free-text string on a course, not a builder.
 - **Syllabus import** — `syllabusUrl` is only a paste-a-URL `Input`. There is no parse/extract/review flow, yet `pages/Academics.tsx` copy tells the user to "Import the syllabus." Either build it or fix the copy.
 
-### Not yet mocked
+### Current draft coverage
 
-**MCAT:** Test Day panel (§3.11) · M2M end-to-end flow (§4 + §5h export) · coach states (§5j) · stamina decay chart (§3.12-A)
+- **MCAT:** all seven tabs, working Session, phase-gated Test Day panel, and
+  full-length validity/stamina states. M2M remains attached to Mistakes rather
+  than becoming an extra tab.
+- **Experiences:** Clinical, Volunteering, Shadowing, Research, and
+  Extracurriculars are five peer categories. Every canonical sub-tab has a real
+  page and A/B/C review state, configured from
+  `_shared/experience-pillar-dashboard.html`.
+- **Application:** School List (Explore / Track), Essays & Story Bank (The bank
+  / Essays / Writing desk), and Letters (People / Dossier / Requests) are drawn
+  from `_shared/application-workspaces.html`.
+- **Owner states:** `_shared/deep-state-workspaces.html` contains the full
+  Academics, MCAT, and Overview states that used to exist only on a generic
+  feature-coverage sheet.
 
-**Clinical — partially mocked.** Five surfaces exist (see `04-clinical/` above). Still unmocked: route-from-Shadowing (#15), verifier capture (#38), and the **AMCAS export preview (#48)**, which is the largest remaining piece.
-
-**Not started at all:** Volunteering, Shadowing, Research, Extracurriculars, School List, Essays, Letters, Timeline, Profile, Settings, Help.
-
-> **No final mockups go to the variant lab until every feature in a tab is specced** (Andy, Aug 2026). The clinical files above are working references, not lab entries.
+Only Timeline & Tasks, Profile / CV, Help, and Settings remain deliberately
+undrawn in the lab.
 
 ---
 

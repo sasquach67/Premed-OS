@@ -1,0 +1,50 @@
+# Official-source sweep packet — first 25 unresolved prerequisite/deadline records
+
+**Research date:** 2026-08-14  
+**Scope:** the first 25 canonical records where `prereqsMeta.status` is `unresolved` and/or `deadlines.primary` is null, in canonical-file order.  
+**Method:** school-owned admissions/catalog pages only. This is a research packet, **not** a corpus mutation. Dates below are only reported when the source itself identifies the application/entering cycle. A deadline not explicitly tied to the current cycle is intentionally left unresolved.
+
+## Verified findings ready for a later, reviewed corpus patch
+
+| Canonical id | Official source | Structured prerequisites | Application deadline / cycle label |
+|---|---|---|---|
+| `a-t-still-university-kirksville-college-of-osteopathic-medicine` | [KCOM D.O. program](https://www.atsu.edu/kirksville-college-of-osteopathic-medicine/academics/doctor-of-osteopathic-medicine-program); [application process](https://www.atsu.edu/kirksville-college-of-osteopathic-medicine/admissions/application-process) | One year each biology, physics, general chemistry, organic chemistry, all with labs; 6 semester hours English. Source also says MCAT required. | KCOM's official application-process page says **primary AACOMAS Feb. 1** and **secondary Mar. 1**, but does not put an entering-cycle year beside those dates. Do not write a cycle-labelled corpus deadline until the admissions office publishes the 2026–27 cycle label. |
+| `arizona-college-of-osteopathic-medicine-of-midwestern-university` | [2026–27 catalog admissions](https://catalog.az.midwestern.edu/admissions-22) | Biology + lab 8 semester/12 quarter hours; general chemistry + lab 8/12; organic chemistry + lab 8/12; physics + lab 8/12; English composition 6/9. Catalog requires grades C or better (not C-). | **AACOMAS March 1**, in the **2026–27 catalog**. It is a catalog publication year, not a stated entering-cycle label; retain as source evidence but do not infer an application cycle. |
+| `brody-school-of-medicine-at-east-carolina-university` | [admission requirements](https://medicine.ecu.edu/admissions/admission-requirements/); [2031 entering-class timeline](https://medicine.ecu.edu/admissions/application-procedure/) | Biology 8h + two labs; organic chemistry 4h + lab; physics 8h + two labs; biochemistry 3h; statistics/biostatistics 3h; English 6h; social sciences/humanities 3h. C or higher; no AP or online prerequisites. | **Entering Class of 2031 / 2026–27 application cycle:** Early Decision AMCAS Aug. 3, 2026; Regular AMCAS Oct. 1, 2026; Regular secondary Nov. 1, 2026. |
+| `burrell-college-of-osteopathic-medicine` | [How to Apply](https://burrell.edu/prospective-students/how-to-apply/) | Official page is the right admissions entry point; its detailed prerequisite list requires direct page extraction before data write. No secondary source used. | **2026–27 cycle:** primary AACOMAS Apr. 30, 2027. The page must be rechecked for any separate secondary-completion deadline before filling `secondary`. |
+| `california-health-sciences-university-college-of-osteopathic-medicine` | [CHSU-COM admissions](https://osteopathic.chsu.edu/admissions/) | Behavioral sciences 3 semester/4 quarter; biology 8/12; inorganic or general chemistry 8/12; organic chemistry 8/12; physics 8/12; English composition/literature 6/9. C or higher (not C-); prerequisite completion by July 1 preceding enrollment; AP accepted if on transcript. | **2026–27 cycle:** AACOMAS opens May 4, 2026; EDP primary Jul. 1, 2026; EDP secondary Aug. 1, 2026; general AACOMAS Mar. 1, 2027; supplemental Apr. 1, 2027. |
+| `campbell-university-jerry-m-wallace-school-of-osteopathic-medicine` | [CUSOM FAQ](https://medicine.campbell.edu/admissions/frequently-asked-questions/); [Early Decision track](https://medicine.campbell.edu/admissions/osteopathic-medicine-admissions/early-decision-program/) | The FAQ states courses must be completed before matriculation with C or better, and presents the school’s course list. Extract the rendered course table directly before a data write; this packet does not reconstruct it from a search snippet. | Official EDP page: AACOMAS, transcripts, MCAT, and letter of intent **due Jun. 1** for Early Decision, but does not display a year. Do not treat this as a general-cycle primary deadline. |
+| `chicago-college-of-osteopathic-medicine-of-midwestern-university` | [CCOM D.O. program](https://www.midwestern.edu/academics/degrees-programs/doctor-osteopathic-medicine-program/doctor-osteopathic-medicine-do-chicago-college-osteopathic-medicine); [2026–27 catalog](https://catalog.il.midwestern.edu/colleges-and-programs-0) | CCOM requires completion of catalog admission-course requirements, C or better (not C-), bachelor’s degree, MCAT, and two letters. The official page links the course list/catalog; extract exact course/hour table before filling the structured prereq field. | No school-owned, cycle-labelled general application deadline found in this pass. Do not substitute term-calendar or articulation dates. |
+
+## Official pages located, but no data assertion yet
+
+These entries are deliberately retained as research leads rather than converted into values. The current page needs direct extraction of its course table and/or a cycle-labelled admissions deadline; the search result alone is not evidence enough for the canonical data.
+
+| Canonical id | Official admissions / requirements lead | Why no corpus assertion in this pass |
+|---|---|---|
+| `alice-l-walton-school-of-medicine` | [Alice L. Walton School of Medicine](https://alicewaltonschoolofmedicine.org/) | Newly opening program; no cycle-labelled requirements/timeline captured from an official page in this pass. |
+| `baylor-college-of-medicine` | [Baylor MD admissions](https://www.bcm.edu/education/school-of-medicine/m-d-program/admissions) | Need the MD-specific requirements/timeline page, not graduate/PA results. |
+| `boston-university-aram-v-chobanian-edward-avedisian-school-of-medicine` | [BUMC MD admissions](https://www.bumc.bu.edu/busm/admissions/) | Course list and cycle deadline require direct page extraction. |
+| `burrell-college-of-osteopathic-medicine-florida` | [Burrell How to Apply](https://burrell.edu/prospective-students/how-to-apply/) | Confirm Florida teaching-location applicability and deadline grain before copying the parent-college page. |
+| `california-northstate-university-college-of-medicine` | [CNU College of Medicine](https://medicine.cnsu.edu/) | School status/site content needs live eligibility and current-cycle verification. |
+| `california-university-of-science-and-medicine` | [CUSM admissions](https://cusm.edu/admissions/) | Direct page/table review pending. |
+| `carle-illinois-college-of-medicine` | [Carle Illinois admissions](https://medicine.illinois.edu/admissions) | Direct page/table and current timeline review pending. |
+| `central-michigan-university-college-of-medicine` | [CMU College of Medicine admissions](https://medicine.cmich.edu/academics/doctor-of-medicine/admissions) | Prereqs captured in canonical; missing deadline needs current official timeline review. |
+| `charles-e-schmidt-college-of-medicine-at-florida-atlantic-university` | [FAU Schmidt admissions](https://www.fau.edu/medicine/md/admissions/) | Direct page/table and current timeline review pending. |
+| `columbia-university-vagelos-college-of-physicians-and-surgeons` | [VP&S admissions](https://www.vagelos.columbia.edu/education/academic-programs/md-program/admissions) | Direct page/table and current timeline review pending. |
+| `cooper-medical-school-of-rowan-university` | [Cooper admissions](https://cmsru.rowan.edu/education/medicalschool/admissions/) | Prereqs and primary date are already in corpus; only confirm current-cycle source when refreshing. |
+| `creighton-university-school-of-medicine` | [Creighton MD admissions](https://www.creighton.edu/medicine/programs/md/admissions) | Direct course-table/timeline review pending; campus-specific implications must not be assumed. |
+| `cuny-school-of-medicine` | [CUNY School of Medicine admissions](https://medicine.cuny.edu/admissions/) | Integrated BS/MD / MD routing needs direct program-scope confirmation. |
+| `d-youville-university-college-of-osteopathic-medicine` | [D'Youville osteopathic medicine](https://www.dyouville.edu/academics/colleges-schools/college-of-osteopathic-medicine/index.php) | New program; direct eligibility and cycle review pending. |
+| `dell-medical-school-at-the-university-of-texas-at-austin` | [Dell admissions](https://dellmed.utexas.edu/education/academics/md/admissions) | Texas application-service dates must be school-specific before write; do not infer from TMDSAS common dates. |
+| `drexel-university-college-of-medicine` | [Drexel MD admissions](https://drexel.edu/medicine/academics/md-program/admissions/) | Direct page/table and current timeline review pending. |
+| `duke-university-school-of-medicine` | [Duke MD admissions](https://medschool.duke.edu/education/health-professions-education-programs/doctor-medicine-md-program/admissions) | Existing primary date needs a source that explicitly labels the cycle; prereq table needs direct extraction. |
+| `duquesne-university-nasuti-college-of-osteopathic-medicine` | [Duquesne COM](https://www.duq.edu/academics/schools/osteopathic-medicine) | New program; direct eligibility and cycle review pending. |
+
+## Guardrails for the next patch
+
+1. Copy only a requirement list that is visibly on the linked official page/PDF; do not translate a minimum GPA or “recommended” course into a prerequisite.
+2. Store the source URL and checked date for every filled field. Preserve source-cycle wording exactly (for example, “Entering Class of 2031,” not an inferred academic year).
+3. Do not derive a general deadline from early decision, a student calendar, an application-service common deadline, or an unlabelled catalog publication year.
+4. Keep unresolved nulls as `not-found` until the authoritative page has been checked and genuinely lacks the field; only then use `not-published`.
+

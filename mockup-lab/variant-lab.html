@@ -59,6 +59,10 @@ button{font:inherit}
 .status{align-self:center;font-family:'Baloo 2';font-size:7.5px;font-weight:800;border-radius:999px;padding:2px 6px;
   background:#171512;color:var(--dim);text-transform:uppercase}
 .status.approved{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+/* BUILT — the stage past approved: this drawing now exists in the app.
+   Filled rather than tinted, because it is terminal. An approved mockup is a
+   pending decision; a built one is a reference you check the app against. */
+.status.built{color:var(--bg);background:var(--ok);font-weight:900}
 .status.proposed{color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
 .status.legacy{color:var(--legacy);background:color-mix(in srgb,var(--legacy) 12%,transparent)}
 .status.native{color:var(--cat);background:color-mix(in srgb,var(--cat) 12%,transparent)}
@@ -214,8 +218,89 @@ const BASE_INJECTED_CSS = `
 
 const profiles = [
   {
-    id:"empty-states",group:"Academics",name:"Empty states",status:"native",
+    id:"mcat-dashboard",group:"MCAT",name:"Dashboard",status:"draft",
+    path:"02-mcat/mcat-dashboard.html?shell=dark",desc:"Study-session home with one dominant start action, measured readiness, and calm next steps.",
+    variants:[["Study home","Today’s real study blocks lead; readiness stays explanatory."],["Session runway","The day’s session becomes the wide working surface."],["Scoreboard + plan","Measured progress and the immediate plan share the first read."]],
+    b:`.bento{grid-template-columns:1fr 1fr!important}.bento>.c7{grid-column:1/-1!important}.bento>.c5{grid-column:1/-1!important;display:grid!important;grid-template-columns:1fr 1fr!important;align-items:stretch!important}.bento>.c5>.card{height:100%!important}`,
+    c:`.bento{grid-template-columns:minmax(270px,.65fr) minmax(0,1.35fr)!important}.bento>.c7{grid-column:2!important}.bento>.c5{grid-column:1!important;grid-row:1!important}.section-grid{grid-template-columns:1fr 1fr!important}`
+  },
+  {
+    id:"mcat-content",group:"MCAT",name:"Content",status:"draft",path:"02-mcat/mcat-tab-spec.html?screen=content&shell=spec",
+    desc:"A grounded content map based on the student’s own study evidence.",variants:[["Content map","Mastery and recent review guide the work."],["Review queue","Refresh work becomes a two-column working list."],["Resource rail","Reference context leads while the content map stays in view."]],
+    b:`.workspace{grid-template-columns:1fr!important}.side{grid-template-columns:1fr 1fr!important}.side-card{height:100%!important}.rows{grid-template-columns:1fr 1fr!important}`,
+    c:`.workspace{grid-template-columns:minmax(250px,.68fr) minmax(0,1.32fr)!important}.workspace>article{order:2!important}.workspace>.side{order:1!important}.mini{grid-template-columns:1fr!important}`
+  },
+  {
+    id:"mcat-questions",group:"MCAT",name:"Questions",status:"draft",path:"02-mcat/mcat-tab-spec.html?screen=questions&shell=spec",
+    desc:"A source-aware doorway to legitimate practice, with a short result-log loop.",variants:[["Real-practice door","Owned and official resources lead, not a fake QBank."],["Set workspace","The result log and review cues form the main working surface."],["Resource brief","Resource context and a concise review loop sit side by side."]],
+    b:`.workspace{grid-template-columns:1fr!important}.side{grid-template-columns:1fr 1fr!important}.rows{grid-template-columns:1fr 1fr!important}`,
+    c:`.workspace{grid-template-columns:minmax(250px,.68fr) minmax(0,1.32fr)!important}.workspace>article{order:2!important}.workspace>.side{order:1!important}.mini{grid-template-columns:1fr!important}`
+  },
+  {
+    id:"mcat-mistakes",group:"MCAT",name:"Mistakes",status:"draft",path:"02-mcat/mcat-tab-spec.html?screen=mistakes&shell=spec",
+    desc:"Mistake-to-Mastery: capture the cause, drill a fresh context, resolve what changed.",variants:[["Review loop","Due drills lead before the archive."],["Cause board","A two-column cause-and-remedy working board."],["Drill inbox","The short remediation queue moves to the lead position."]],
+    b:`.workspace{grid-template-columns:1fr!important}.side{grid-template-columns:1fr 1fr!important}.rows{grid-template-columns:1fr 1fr!important}`,
+    c:`.workspace{grid-template-columns:minmax(250px,.68fr) minmax(0,1.32fr)!important}.workspace>article{order:2!important}.workspace>.side{order:1!important}.mini{grid-template-columns:1fr!important}`
+  },
+  {
+    id:"mcat-stats",group:"MCAT",name:"Stats",status:"draft",path:"02-mcat/mcat-tab-spec.html?screen=stats&shell=spec",
+    desc:"Measured study and full-length evidence, without a fictional score-prediction engine.",variants:[["Measured trend","Full-length and study evidence lead."],["Section readout","The individual section changes become a scanable grid."],["Metrics rail","A compact instrument panel supports the next plan decision."]],
+    b:`.workspace{grid-template-columns:1fr!important}.side{grid-template-columns:1fr 1fr!important}.rows{grid-template-columns:1fr 1fr!important}`,
+    c:`.workspace{grid-template-columns:minmax(250px,.68fr) minmax(0,1.32fr)!important}.workspace>article{order:2!important}.workspace>.side{order:1!important}.mini{grid-template-columns:1fr!important}`
+  },
+  {
+    id:"mcat-advisor",group:"MCAT",name:"Advisor",status:"draft",path:"02-mcat/mcat-tab-spec.html?screen=advisor&shell=spec",
+    desc:"Explainable plan adjustments tied to the student’s actual pace and time remaining.",variants:[["Explainable advice","One suggestion, its reason, and a controllable next move."],["Plan control","The schedule adjustment board becomes a two-column workspace."],["Advisor rail","Plan health moves first and advice stays visibly grounded."]],
+    b:`.workspace{grid-template-columns:1fr!important}.side{grid-template-columns:1fr 1fr!important}.rows{grid-template-columns:1fr 1fr!important}`,
+    c:`.workspace{grid-template-columns:minmax(250px,.68fr) minmax(0,1.32fr)!important}.workspace>article{order:2!important}.workspace>.side{order:1!important}.mini{grid-template-columns:1fr!important}`
+  },
+  {
+    id:"mcat-feature-states",group:"MCAT",name:"Feature-state sweep",status:"draft",path:"_shared/feature-coverage-sweep.html?area=mcat",
+    desc:"Previously under-shown session, plan, shelf, M2M, and statistics states, each labelled with its real home surface.",variants:[["Coverage sheet","Every under-shown MCAT state appears in one reviewable sheet."],["Coverage sheet","State coverage is structural, not a competing layout option."],["Coverage sheet","State coverage is structural, not a competing layout option."]]
+  },
+  {
+    id:"experiences-clinical",group:"Experiences",name:"Clinical",status:"draft",path:"_shared/experience-pillar-dashboard.html?pillar=clinical&shell=dark",
+    desc:"Sites, shifts, and reflections as a card grid with one selected site workspace below.",variants:[["Two-up card grid","Cards scan first; the selected site opens in full below."],["Three-card scan","A denser card grid leaves the same full record workspace beneath it."],["Focus-card rail","A compact one-column rail still opens the same workspace below."]],
+    b:`.stack{grid-template-columns:repeat(3,minmax(0,1fr))!important}.expanded-record{margin-top:16px!important}`,
+    c:`.stack{grid-template-columns:1fr!important;gap:8px!important}.record{min-height:74px!important}.record-toggle{min-height:74px!important;padding:10px 12px!important}.expanded-record{margin-top:14px!important}`,
+    variantViews:{A:"sites",B:"empty",C:"empty"},variantSourceRev:"experience-empty-states-20260814"
+  },
+  {
+    id:"volunteering",group:"Experiences",name:"Volunteering",status:"draft",path:"_shared/experience-pillar-dashboard.html?pillar=volunteering&shell=dark",
+    desc:"Organizations, events, and reflection as a card grid with one selected commitment workspace below.",variants:[["Two-up card grid","Commitments scan first; the selected organization opens in full below."],["Three-card scan","A denser organization grid leaves the same workspace beneath it."],["Focus-card rail","A compact one-column rail still opens the same workspace below."]],
+    b:`.stack{grid-template-columns:repeat(3,minmax(0,1fr))!important}.expanded-record{margin-top:16px!important}`,
+    c:`.stack{grid-template-columns:1fr!important;gap:8px!important}.record{min-height:74px!important}.record-toggle{min-height:74px!important;padding:10px 12px!important}.expanded-record{margin-top:14px!important}`,
+    variantViews:{A:"organizations",B:"empty",C:"empty"},variantSourceRev:"experience-empty-states-20260814"
+  },
+  {
+    id:"shadowing",group:"Experiences",name:"Shadowing",status:"draft",path:"_shared/experience-pillar-dashboard.html?pillar=shadowing&shell=dark",
+    desc:"Physician relationships, visits, and observations as a card grid with one selected record workspace below.",variants:[["Two-up card grid","Physicians scan first; the selected relationship opens in full below."],["Three-card scan","A denser physician grid leaves the same workspace beneath it."],["Focus-card rail","A compact one-column rail still opens the same workspace below."]],
+    b:`.stack{grid-template-columns:repeat(3,minmax(0,1fr))!important}.expanded-record{margin-top:16px!important}`,
+    c:`.stack{grid-template-columns:1fr!important;gap:8px!important}.record{min-height:74px!important}.record-toggle{min-height:74px!important;padding:10px 12px!important}.expanded-record{margin-top:14px!important}`,
+    variantViews:{A:"physicians",B:"empty",C:"empty"},variantSourceRev:"experience-empty-states-20260814"
+  },
+  {
+    id:"research",group:"Experiences",name:"Research",status:"draft",path:"_shared/experience-pillar-dashboard.html?pillar=research&shell=dark",
+    desc:"Projects, outputs, and notes as a card grid with one selected project workspace below—not a lab notebook.",variants:[["Two-up card grid","Projects scan first; the selected project opens in full below."],["Three-card scan","A denser project grid leaves the same workspace beneath it."],["Focus-card rail","A compact one-column rail still opens the same workspace below."]],
+    b:`.stack{grid-template-columns:repeat(3,minmax(0,1fr))!important}.expanded-record{margin-top:16px!important}`,
+    c:`.stack{grid-template-columns:1fr!important;gap:8px!important}.record{min-height:74px!important}.record-toggle{min-height:74px!important;padding:10px 12px!important}.expanded-record{margin-top:14px!important}`,
+    variantViews:{A:"projects",B:"empty",C:"empty"},variantSourceRev:"experience-empty-states-20260814"
+  },
+  {
+    id:"extracurriculars",group:"Experiences",name:"Extracurriculars",status:"draft",path:"_shared/experience-pillar-dashboard.html?pillar=extracurriculars&shell=dark",
+    desc:"Organizations, initiatives, and reflection as a card grid with one selected contribution workspace below—never a leadership ladder.",variants:[["Two-up card grid","Contributions scan first; the selected organization opens in full below."],["Three-card scan","A denser organization grid leaves the same workspace beneath it."],["Focus-card rail","A compact one-column rail still opens the same workspace below."]],
+    b:`.stack{grid-template-columns:repeat(3,minmax(0,1fr))!important}.expanded-record{margin-top:16px!important}`,
+    c:`.stack{grid-template-columns:1fr!important;gap:8px!important}.record{min-height:74px!important}.record-toggle{min-height:74px!important;padding:10px 12px!important}.expanded-record{margin-top:14px!important}`,
+    variantViews:{A:"organizations",B:"empty",C:"empty"},variantSourceRev:"experience-empty-states-20260814"
+  },
+  {
+    id:"experience-feature-states",group:"Experiences",name:"Shared feature states",status:"draft",path:"_shared/feature-coverage-sweep.html?area=experiences",
+    desc:"The shared record reads, reflection mechanism, Discover boundary, and honest no-data states that sit behind every experience pillar.",variants:[["Coverage sheet","Shared experience states are visible without becoming a sixth pillar."],["Coverage sheet","State coverage is structural, not a competing layout option."],["Coverage sheet","State coverage is structural, not a competing layout option."]]
+  },
+  {
+    id:"empty-states",group:"Academics",name:"Empty states",status:"built",
     path:"01-academics/academics-empty-states-prototype.html",native:true,
+    variantSourceRev:"empty-states-a-setup-guide-20260814",
     desc:"Zero-class cold start using the MascotNote empty-state pattern.",
     variants:[
       ["Guided launchpad","One calm day-one action with outcomes underneath."],
@@ -308,7 +393,7 @@ const profiles = [
     `
   },
   {
-    id:"class-types",group:"Academics",name:"Class types",status:"proposed",
+    id:"class-types",group:"Academics",name:"Class types",status:"built",
     path:"01-academics/academics-class-types.html",
     desc:"STEM, Writing, and General parity across class workspaces.",
     variants:[
@@ -443,9 +528,9 @@ const profiles = [
     `
   },
   {
-    id:"requirements",group:"Academics",name:"Requirements",status:"proposed",
-    path:"01-academics/academics-requirements.html",
-    desc:"Requirement audit, on-pace verdict against the MCAT, and prior credit.",
+    id:"requirements",group:"Academics",name:"Tar Heel Tracker",status:"proposed",
+    path:"01-academics/academics-tar-heel-tracker.html",
+    desc:"Tar Heel requirement audit, on-pace verdict against the MCAT, and transcript-exact prior credit.",
     variants:[
       ["Gap & pace","The default audit: verdict first, requirement sets below."],
       ["All requirements","The full sets with their confidence labelling."],
@@ -469,7 +554,10 @@ const profiles = [
     variants:[
       ["Resource catalog","Source ownership and private-by-default assessment materials."],
       ["Calendar feed","Path A review of imported calendar dates before they become plan facts."],
-      ["Study guide","Grounded generation with the student's selected class material."]
+      ["Study guide","Grounded generation with the student's selected class material."],
+      ["Feed unavailable","A disconnected calendar feed preserves the course facts already confirmed."],
+      ["Generated guide","A completed guide shows the exact student material that grounded it."],
+      ["Generator unavailable","An unavailable provider keeps the source selection intact and gives a recovery path."]
     ]
   },
   {
@@ -489,7 +577,10 @@ const profiles = [
     variants:[
       ["Requirement preview","A transparent suggested next term is never an enrollment command."],
       ["Plan comparison","A saved plan stays distinct from the plan currently being edited."],
-      ["MCAT decay","A ranked, dated explanation replaces a generic stale-study warning."]
+      ["MCAT decay","A ranked, dated explanation replaces a generic stale-study warning."],
+      ["Registered term","A registered course is visible but intentionally not editable as a plan item."],
+      ["Substitute decision","A substitute names exactly what it clears and what remains open before confirmation."],
+      ["Advisor export","A dated planning snapshot makes its assumptions explicit without masquerading as an official audit."]
     ]
   },
   {
@@ -509,8 +600,12 @@ const profiles = [
     ]
   },
   {
+    id:"academics-feature-states",group:"Academics",name:"Feature-state sweep",status:"draft",path:"_shared/feature-coverage-sweep.html?area=academics",
+    desc:"Previously under-shown learning, grade, lifecycle, and no-data states, each labelled with its real home surface.",variants:[["Coverage sheet","Every under-shown Academics state appears in one reviewable sheet."],["Coverage sheet","State coverage is structural, not a competing layout option."],["Coverage sheet","State coverage is structural, not a competing layout option."]]
+  },
+  {
     id:"overview",group:"Overview",name:"Overview control panel",status:"approved",
-    path:"03-overview/overview-bento-control-panel.html",
+    path:"03-overview/overview-bento-control-panel.html?lab-rev=overview-current-app-20260815",
     desc:"Cross-pillar command center, roadmap, tasks, and readiness.",
     variants:[
       ["Approved bento","The approved mixed-size overview composition."],
@@ -591,7 +686,11 @@ const profiles = [
     `
   },
   {
-    id:"public-landing",group:"Landing & auth",name:"Landing · auth · merge",status:"proposed",
+    id:"overview-feature-states",group:"Overview",name:"Feature-state sweep",status:"draft",path:"_shared/feature-coverage-sweep.html?area=overview",
+    desc:"Cross-pillar decision, goal-type, capture, empty, and reduced-motion states that need a visible review surface.",variants:[["Coverage sheet","Otherwise under-shown Overview states appear in one reviewable sheet."],["Coverage sheet","State coverage is structural, not a competing layout option."],["Coverage sheet","State coverage is structural, not a competing layout option."]]
+  },
+  {
+    id:"public-landing",group:"Landing & auth",name:"Landing · auth · merge",status:"built",
     path:"05-public/public-landing-and-auth.html",
     desc:"Front door, sign-in, and the local\u2192account merge. Primary action is Start tracking, not Sign up.",
     variants:[
@@ -605,9 +704,9 @@ const profiles = [
     `
   },
   {
-    id:"public-docs",group:"Landing & auth",name:"About · Privacy · Terms · Pricing",status:"proposed",
+    id:"public-docs",group:"Landing & auth",name:"About · Privacy · Terms",status:"approved",
     path:"05-public/public-legal-about-pricing.html",
-    desc:"The four doc pages on one shell. About is first person; Pricing is a coming-soon page, deliberately.",
+    desc:"About, Privacy, and Terms are approved. Pricing remains a deliberately proposed coming-soon page.",
     variants:[
       ["All four","About, Privacy, Terms and Pricing stacked as authored."],
       ["About only","The note from the creator fills the canvas; the legal pages recede."],
@@ -640,22 +739,20 @@ const profiles = [
     `
   },
   {
-    id:"mcat-plan",group:"MCAT · legacy",name:"Plan concept",status:"legacy",
-    path:"02-mcat/mcat-plan.html",
-    desc:"Older generated-plan flow retained for sequencing reference.",
+    id:"mcat-plan",group:"MCAT",name:"Plan",status:"draft",
+    path:"02-mcat/mcat-plan-spec.html?shell=spec",
+    desc:"The personalized, phased plan, plus the editable intake review that builds it from the student’s real availability.",
     variants:[
-      ["Original weekly plan","Today and the week remain in one authored stack."],
-      ["Today first","Today’s schedule fills the canvas; the week becomes secondary."],
-      ["Week board","The weekly sequence leads with today as a compact side rail."]
+      ["Plan roadmap","The phase-aware week and projected-versus-goal decision lead."],
+      ["Review before building","Test date, actual availability, goal, evidence, and constraints are confirmed before sessions are generated."],
+      ["No plan yet","A first-run state asks only for the inputs needed to make a plan."]
     ],
+    variantPaths:{B:"02-mcat/mcat-plan-intake.html?state=review",C:"02-mcat/mcat-plan-intake.html?state=cold"},
     b:`
-      .wrap{max-width:1100px!important}.week,h2{display:none!important}
-      .today{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}
+      .bento{grid-template-columns:1fr!important}.bento>.c8,.bento>.c4{grid-column:1/-1!important}
     `,
     c:`
-      .wrap{max-width:1400px!important;display:grid!important;grid-template-columns:360px 1fr;gap:14px}
-      .top,.sub,.legend,.foot{grid-column:1/-1}
-      .banner,.day{grid-column:1}.week,h2{grid-column:2}.week{grid-row:4/span 2}
+      .bento{grid-template-columns:minmax(270px,.65fr) minmax(0,1.35fr)!important}.bento>.c8{grid-column:2!important}.bento>.c4{grid-column:1!important;grid-row:1!important}.week{grid-template-columns:repeat(4,1fr)!important}
     `
   },
   {
@@ -1152,6 +1249,43 @@ const placehold = (id,group,name,desc,section="",depth=0) => ({
   id,group,name,desc,section,depth,status:"soon",placeholder:true,
   variants:PLACEHOLDER_DIRECTIONS[id] || [["Direction pending","No layout direction has been proposed for this tab yet."]]
 });
+const deepPage = (id,group,name,area,view,desc) => ({
+  id,group,name,section:"",depth:1,status:"draft",fitCanvas:true,
+  path:`_shared/application-workspaces.html?area=${area}&view=${view}`,
+  desc,variants:[
+    ["Balanced workspace","The owning records and the selected working context share one composed screen."],
+    ["Working surface","The main work expands while supporting context moves underneath."],
+    ["Context first","The decision or source context leads before the record collection."]
+  ],
+  b:`.grid{grid-template-columns:1fr!important}.grid>.surface{min-height:auto!important}.desk{grid-template-columns:minmax(240px,.7fr) minmax(0,1.3fr)!important}.desk>.desk-col:last-child{grid-column:1/-1!important;border-top:1px solid var(--line)!important}`,
+  c:`.grid{grid-template-columns:minmax(280px,.72fr) minmax(0,1.28fr)!important}.grid>.surface:first-child{order:2!important}.grid>.surface:last-child{order:1!important}.theme-layout{grid-template-columns:230px minmax(0,1fr)!important}.desk{grid-template-columns:minmax(230px,.72fr) minmax(0,1.28fr)!important}.desk>.desk-col:last-child{grid-column:1/-1!important;border-top:1px solid var(--line)!important}`
+});
+const deepState = (id,group,name,area,view,section,depth,desc) => ({
+  id,group,name,section,depth,status:"draft",fitCanvas:true,
+  path:`_shared/deep-state-workspaces.html?area=${area}&view=${view}`,
+  desc,variants:[
+    ["Balanced workspace","The evidence and the decision surface share one composed frame."],
+    ["Stacked focus","The primary working surface leads at full width; context follows below."],
+    ["Context first","The supporting explanation leads before the student’s active record."]
+  ],
+  b:`.grid{grid-template-columns:1fr!important}.surface{min-height:auto!important}`,
+  c:`.grid{grid-template-columns:minmax(280px,.72fr) minmax(0,1.28fr)!important}.grid>.surface:first-child{order:2!important}.grid>.surface:last-child{order:1!important}`
+});
+/* Quarterly Goals is one Overview interaction. Its normal, editor, and
+   no-data treatments are reviewed through the bottom A/B/C switcher rather
+   than appearing as three product tabs or sibling lab pages. */
+const quarterlyGoals = () => ({
+  id:"overview-quarterly-goals",group:"Overview",name:"Quarterly goals",section:"",depth:1,status:"draft",fitCanvas:true,
+  path:"_shared/deep-state-workspaces.html?area=overview",
+  variantViews:{A:"quarterly-goals",B:"goal-editor",C:"no-data"},
+  variantSourceRev:"quarterly-goals-merged-20260814",
+  desc:"Opened from Overview. The bottom selector reviews the normal goals, editor, and no-goal states of this one interaction.",
+  variants:[
+    ["Quarterly goals","The regular Overview detail: check-off, cumulative, and period goals each use honest progress language."],
+    ["Goal editor","The Add or Edit goal center-peek: choose the type and optionally connect real evidence."],
+    ["No goals yet","The in-place empty state: no goal or insufficient evidence never becomes a fake bar or percentage."]
+  ]
+});
 /* State boards are deliberate review surfaces, not A/B/C alternatives. Each
    contains several real states of one interaction; the single lab treatment
    prevents a loading or empty state from pretending to be a competing design. */
@@ -1170,79 +1304,112 @@ const asProductViews = (page,kind,slugs) => {
   delete page.keys;
   return page;
 };
+/* Experience pillars are already authored as one shared, configurable page.
+   Keep their A/B/C layout directions intact while exposing the product's real
+   internal views as a separate selector above the canvas. */
+const withProductViews = (page,kind,views) => {
+  page.views=views.map(([slug,name,desc])=>({slug,name,desc}));
+  page.viewKind=kind;
+  page.passViewToSource=true;
+  return page;
+};
+const experienceTab = (baseId,id,group,name,view,desc) => {
+  const base=byId[baseId];
+  const squareClinicalSites=group==="Clinical" && view==="sites";
+  return {...base,id,group,name,section:"",depth:1,desc,
+    path:`${base.path}&view=${view}`,passViewToSource:false,views:null,viewVariants:null,
+    variantPaths:{B:`${base.path}&view=empty`,C:`${base.path}&view=empty`},
+    variantSourceRev:"experience-empty-states-20260814",
+    b:squareClinicalSites?`.stack{grid-template-columns:repeat(3,minmax(0,1fr))!important}.record,.add-record{aspect-ratio:1!important;min-height:0!important}`:base.b,
+    c:squareClinicalSites?`.stack{grid-template-columns:repeat(2,minmax(0,1fr))!important}.record,.add-record{aspect-ratio:1!important;min-height:0!important}.expanded-record{margin-top:14px!important}`:base.c};
+};
 const orderedProfiles = [
   Object.assign(byId["public-landing"],{group:"Landing & auth",name:"Landing \u00b7 auth \u00b7 merge",section:"",depth:0,fitCanvas:true}),
   Object.assign(byId["public-docs"]||{},{group:"Landing & auth",name:"About \u00b7 Privacy \u00b7 Terms \u00b7 Pricing",section:"",depth:0,fitCanvas:true}),
 
   Object.assign(byId.overview,{group:"Overview",name:"Overview",section:"",depth:0,fitCanvas:true}),
+  quarterlyGoals(),
   overviewStateBoard("overview-task-states","Tasks · states","03-overview/overview-task-states.html?lab-rev=overview-task-states-20260816","Task detail, empty lifecycle, completion, visible context-menu equivalents, and the expanded-list handoff."),
   overviewStateBoard("overview-status-states","Status · absence states","03-overview/overview-status-states.html?lab-rev=overview-status-states-20260816","Where I Stand expansion in the bento, Smart Actions absence, conditional Quick Access, and roadmap empty state."),
   overviewStateBoard("overview-capture-goals-states","Capture · goals · resilience","03-overview/overview-capture-goals-states.html?lab-rev=overview-capture-goals-20260816","Story Bank capture paths, confirmed quarterly-goal types, independent widget loading/error, and mobile order."),
   overviewStateBoard("overview-projection-states","Projection · honest absence","03-overview/overview-projection-states.html?lab-rev=overview-projection-states-20260816","One optional pacing disclosure: unavailable evidence, collapsed Show projection, and a traceable expanded calculation."),
   overviewStateBoard("overview-roadmap-task-linkage","Roadmap · linked task","03-overview/overview-roadmap-task-linkage.html?lab-rev=overview-roadmap-task-linkage-20260817","A Timeline milestone creates one linked Overview implementation task; Timeline checklist steps remain a separate one-record flow.","approved"),
 
-  Object.assign(byId["daily-main"],{group:"Academics & GPA",name:"Class Center",section:"Daily",depth:1,fitCanvas:true}),
+  Object.assign(byId["daily-main"],{group:"Academics",name:"Class Center",section:"Daily",depth:1,fitCanvas:true}),
   Object.assign(asProductViews(byId.assignments,"Assignment view",["agenda","weekly","calendar"]),
-    {group:"Academics & GPA",section:"Daily",depth:1,fitCanvas:true,authoredViews:"assignments"}),
-  Object.assign(byId["empty-states"],{group:"Academics & GPA",section:"Daily",depth:1}),
+    {group:"Academics",section:"Daily",depth:1,fitCanvas:true,authoredViews:"assignments"}),
+  Object.assign(byId["empty-states"],{group:"Academics",section:"Daily",depth:1}),
   Object.assign(asProductViews(byId["class-hub"],"Class Hub tab",["overview","materials","topics","assignments","notes"]),
-    {group:"Academics & GPA",section:"Daily · supporting flows",depth:2,fitCanvas:true,authoredViews:"wrap-per-view"}),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"wrap-per-view"}),
   Object.assign(asProductViews(byId["review-session"],"Session state",["start","recall","gap-report"]),
-    {group:"Academics & GPA",section:"Daily · supporting flows",depth:2,fitCanvas:true,authoredViews:"review-session"}),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"review-session"}),
   Object.assign(asProductViews(byId["exam-prep"],"Plan mode",["accelerated","steady","catch-up"]),
-    {group:"Academics & GPA",section:"Daily · supporting flows",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["syllabus-import"],"Import step",["upload","review","re-import"]),
-    {group:"Academics & GPA",section:"Daily · supporting flows",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["class-types"],"Class example",["comparison","stem","writing"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"class-types"}),
-  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","canvas","generate"]),
+  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","canvas","feed-unavailable","generate","guide-result","guide-unavailable"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
   Object.assign(asProductViews(byId["academics-lecture-capture"],"Capture state",["start","review","unavailable"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
   Object.assign(byId.planner,{group:"Academics",name:"Planner",section:"Planning",depth:1,fitCanvas:true}),
-  Object.assign(asProductViews(byId["academics-planning-decisions"],"Decision state",["preview","compare","decay"]),
+  Object.assign(asProductViews(byId["academics-planning-decisions"],"Decision state",["preview","compare","decay","locked","substitute","export"]),
     {group:"Academics",section:"Planning",depth:2,fitCanvas:true,passViewToSource:true}),
   Object.assign(byId["academics-planning-cold-start"],{group:"Academics",section:"Planning",depth:2,fitCanvas:true}),
   Object.assign(asProductViews(byId["requirements"],"Tracker section",["audit","requirements","prior-credit"]),
-    {group:"Academics & GPA",section:"Planning",depth:1,fitCanvas:true,authoredViews:"wrap-per-view"}),
+    {group:"Academics",name:"Tar Heel Tracker",section:"Planning",depth:1,fitCanvas:true,authoredViews:"wrap-per-view"}),
   Object.assign(asProductViews(byId["grades-archive"],"Record view",["ledger","gpa","what-if"]),
-    {group:"Academics & GPA",section:"Planning",depth:1,fitCanvas:true,authoredViews:"wrap-per-view"}),
+    {group:"Academics",section:"Planning",depth:1,fitCanvas:true,authoredViews:"wrap-per-view"}),
+  {id:"academics-learning-signals",group:"Academics",name:"Learning signals",section:"Daily · Class Center",depth:2,status:"proposed",fitCanvas:true,native:true,variantSourceRev:"academics-learning-signals-20260817",path:"01-academics/academics-learning-signals.html",desc:"A STEM class Overview panel with evidence-first learning signals and no empty intelligence state.",variants:[["Priority rail","Signals and their evidence share a compact bento below the next action."],["Editorial section","The same signals read as a calm class-story section beneath the next action."],["Evidence drawer","The normal class workspace stays quiet until a contextual evidence drawer opens."]]},
+  Object.assign(asProductViews({id:"academics-grade-decisions",group:"Academics",name:"Grade decisions",section:"Planning · Grades",depth:2,status:"proposed",fitCanvas:true,path:"01-academics/academics-grade-decisions.html",desc:"Record-level regrade, policy, missing-input, and mistake-evidence states inside Grades & Archive.",variants:[["Returned work","One returned item, its source record, and a factual regrade window."],["Policy applied","Every calculation rule is shown with its evidence boundary."],["Missing inputs","One unresolved course fact keeps the result dormant-with-a-reason."],["Mistake evidence","Student-marked causes route to different next learning actions."]]},"Decision state",["regrade","policy","incomplete","mistakes"]),
+    {group:"Academics",section:"Planning",depth:2,fitCanvas:true,passViewToSource:true,singleViews:true}),
+  Object.assign(asProductViews(byId["academics-term-rollover"],"Rollover state",["ritual","paused","january"]),
+    {group:"Academics",section:"Planning",depth:2,fitCanvas:true,passViewToSource:true}),
 
-  placehold("mcat-dashboard","MCAT","Dashboard",
-    "The phase-aware MCAT home and test-day panel have not been mocked yet."),
-  Object.assign(byId["mcat-plan"],{group:"MCAT",name:"Plan",section:"",depth:0,status:"draft",single:true,
-    desc:"Existing early Plan concept, retained as a draft source rather than a finished variant set."}),
-  placehold("mcat-content","MCAT","Content",
-    "Content mastery will contain the subject structure and learning workflow."),
-  Object.assign(byId["mcat-bookshelf"],{group:"MCAT",name:"Bookshelf",section:"Content",depth:1,status:"draft",single:true,
-    desc:"Existing Bookshelf draft, correctly nested inside the Content tab."}),
-  placehold("mcat-questions","MCAT","Questions",
-    "Question practice and runner states have not been mocked yet."),
-  placehold("mcat-mistakes","MCAT","Mistakes",
-    "Mistake-to-Mastery review will live in this tab."),
+  Object.assign(byId["mcat-dashboard"],{group:"MCAT",name:"Dashboard",section:"",depth:0,fitCanvas:true}),
+  Object.assign(byId["mcat-plan"],{group:"MCAT",name:"Plan",section:"",depth:0,fitCanvas:true}),
+  Object.assign(byId["mcat-content"],{group:"MCAT",name:"Content",section:"",depth:0,fitCanvas:true}),
+  Object.assign(byId["mcat-questions"],{group:"MCAT",name:"Questions",section:"",depth:0,fitCanvas:true}),
+  Object.assign(byId["mcat-mistakes"],{group:"MCAT",name:"Mistakes",section:"",depth:0,fitCanvas:true}),
   Object.assign(byId["mcat-drills"],{group:"MCAT",name:"M2M drills",section:"Mistakes",depth:1,status:"draft",single:true,
     desc:"Existing section-aware remediation draft, nested under Mistakes."}),
-  placehold("mcat-stats","MCAT","Stats",
-    "Performance trends, stamina, and section-level analytics have not been mocked yet."),
-  placehold("mcat-advisor","MCAT","Advisor",
-    "Advisor guidance and recommendations have not been mocked yet."),
+  Object.assign(byId["mcat-stats"],{group:"MCAT",name:"Stats",section:"",depth:0,fitCanvas:true}),
+  Object.assign(byId["mcat-advisor"],{group:"MCAT",name:"Advisor",section:"",depth:0,fitCanvas:true}),
+  deepState("mcat-session","MCAT","Session","mcat","session","Dashboard states",1,"Customize, focus, capture, pause, resume, end early, and summary behavior in one working session."),
+  deepState("mcat-test-day","MCAT","Test Day","mcat","test-day","Dashboard states",1,"The phase-gated Register, Logistics, and After panel; explicitly not an eighth MCAT tab."),
+  deepState("mcat-validity","MCAT","Full-length validity","mcat","validity","Stats states",1,"Sitting context, trend inclusion, stamina evidence, score anchors, and dated percentile context."),
 
-  placehold("letters","Letters of Rec","Letters of Rec",
-    "Recommendation-letter workflows will be mocked after the current Academics and MCAT work."),
-  placehold("experiences-clinical","Experiences","Clinical",
-    "This product area is organized here but is outside the current mockup pass."),
-  placehold("volunteering","Experiences","Volunteering",
-    "This product area is organized here but is outside the current mockup pass."),
-  placehold("shadowing","Experiences","Shadowing",
-    "This product area is organized here but is outside the current mockup pass."),
-  placehold("research","Experiences","Research",
-    "This product area is organized here but is outside the current mockup pass."),
-  placehold("extracurriculars","Experiences","Extracurriculars",
-    "This product area is organized here but is outside the current mockup pass."),
-  placehold("essays","Your Story","Essays & Story Bank",
-    "Story-bank and essay workflows will be mocked in a later pass."),
-  placehold("school-list","Application","School List",
-    "School research and list-building will be mocked in a later pass."),
+  experienceTab("experiences-clinical","clinical-sites","Clinical","Sites","sites","Clinical sites, credentials, verifier context, and one selected-site workspace."),
+  experienceTab("experiences-clinical","clinical-shifts","Clinical","Shifts","shifts","Every dated shift across sites, with monthly totals, inline correction, and honest estimated history."),
+  experienceTab("experiences-clinical","clinical-reflections","Clinical","Reflections","reflections","Clinical reflection worklist, prompted unpacking, search, and synthesis threads."),
+
+  experienceTab("volunteering","volunteering-organizations","Volunteering","Organizations","organizations","Standing service commitments and single-day service, with one selected organization."),
+  experienceTab("volunteering","volunteering-events","Volunteering","Events","events","Every dated service event across organizations, with continuity and monthly totals."),
+  experienceTab("volunteering","volunteering-reflections","Volunteering","Reflections","reflections","Service reflection worklist, prompted conversation, search, and synthesis."),
+
+  experienceTab("shadowing","shadowing-physicians","Shadowing","Physicians","physicians","Specialty breadth, physician relationships, bios, questions, and selected-record detail."),
+  experienceTab("shadowing","shadowing-visits","Shadowing","Visits","visits","Every completed visit across physicians, with unpacking state and dated hours."),
+  experienceTab("shadowing","shadowing-reflections","Shadowing","Reflections","reflections","Shadowing observations and cross-specialty synthesis, never ranked by quality."),
+
+  experienceTab("research","research-projects","Research","Projects","projects","The longitudinal project hub, PI relationship, role progression, and literature context."),
+  experienceTab("research","research-outputs","Research","Outputs","outputs","The artifact pipeline, authorship, lineage, venues, and external deadlines."),
+  experienceTab("research","research-lab-notes","Research","Lab notes","lab-notes","Decisions, results, anomalies, and blockers—never an electronic lab notebook."),
+  experienceTab("research","research-reflections","Research","Reflections","reflections","Research reflection prompts and synthesis from setbacks, decisions, and growth."),
+  experienceTab("research","research-discover","Research","Discover","discover","Sourced and dated labs, venues, grants, and events without an application pipeline."),
+
+  experienceTab("extracurriculars","extracurricular-organizations","Extracurriculars","Organizations","organizations","Organization commitments and contribution context without a leadership ladder."),
+  experienceTab("extracurriculars","extracurricular-initiatives","Extracurriculars","Initiatives","initiatives","Concrete projects and outcomes across organizations, including handoff."),
+  experienceTab("extracurriculars","extracurricular-reflections","Extracurriculars","Reflections","reflections","Contribution moments, prompted reflection, search, and synthesis."),
+  experienceTab("extracurriculars","extracurricular-discover","Extracurriculars","Discover","discover","Sourced campus opportunities kept distinct from the student's owned record."),
+  deepPage("school-explore","School List","Explore","school-list","explore","A trustworthy directory that separates official facts, sourced profiles, and student judgment."),
+  deepPage("school-track","School List","Track","school-list","track","The student's list, cycle state, prerequisite record presence, letters routing, and pasted secondaries."),
+  deepPage("story-bank","Essays & Story Bank","The bank","story","bank","Newest-first owned material with a seven-theme retrieval rail and journal entries."),
+  deepPage("story-essays","Essays & Story Bank","Essays","story","essays","Prompt records with school, exact pasted text, limit, status, due date, and count."),
+  deepPage("story-desk","Essays & Story Bank","Writing desk","story","desk","Prompt, filtered owned material, draft, and cited direction in one frame."),
+  deepPage("letters-people","Letters of Rec","People","letters","people","The aggregate relationship door across instructors, mentors, physicians, and PIs."),
+  deepPage("letters-dossier","Letters of Rec","Dossier","letters","dossier","A work-scoped relationship record with links, notes, and a real conversation subject."),
+  deepPage("letters-requests","Letters of Rec","Requests","letters","requests","Phase-gated request records and the ready-only writer packet."),
   placehold("timeline-tasks","Application","Timeline & Tasks",
     "Application planning and task management will be mocked in a later pass."),
   placehold("profile","Profile","Profile / CV",
@@ -1250,11 +1417,7 @@ const orderedProfiles = [
   placehold("help","Support","Help",
     "Help and guidance surfaces will be mocked in a later pass."),
   placehold("settings","Support","Settings",
-    "Settings will be mocked in a later pass."),
-
-  Object.assign(byId["mode-switch"],{group:"Archived concepts",name:"Old Daily / Planning concept",section:"",depth:0,single:true}),
-  Object.assign(byId["old-study-hub"],{group:"Archived concepts",name:"Old study hub concept",section:"",depth:0,single:true}),
-  Object.assign(byId.clinical,{group:"Archived concepts",name:"Old clinical pillar concept",section:"",depth:0,single:true})
+    "Settings will be mocked in a later pass.")
 ];
 profiles.splice(0,profiles.length,...orderedProfiles);
 
@@ -1312,7 +1475,7 @@ function renderNav(){
        because nothing is drawn behind them yet; drafts say so too. */
     const meta=page.placeholder ? `Not mocked · ${page.variants.length} directions`
       : page.single ? `Draft source · ${page.variants.length} variants`
-      : page.views ? `${page.views.length} views · A/B/C each`
+      : page.views ? (page.singleViews ? `${page.views.length} decision states` : `${page.views.length} views · A/B/C each`)
       : `${page.variants.length} variants`;
     const statusLabel=page.status==="soon" ? "soon" : page.status==="native" ? "prototype" : page.status;
     button.innerHTML=`<span><span class="pname">${page.name}</span><span class="pmeta">${meta}</span></span><span class="status ${page.status}">${statusLabel}</span>`;
@@ -1334,6 +1497,16 @@ function selectView(index){
   variantIndex=Math.min(variantIndex,Math.max(0,currentKeys().length-1));
   writeUrl(); renderViewbar(); renderMeta(); loadOrApply(false);
 }
+addEventListener("message",event=>{
+  if(event.origin!==location.origin || event.source!==preview.contentWindow) return;
+  if(event.data?.type!=="mockup-lab:select-view") return;
+  const index=current().views?.findIndex(view=>view.slug===event.data.view) ?? -1;
+  if(index>=0 && index!==viewIndex){selectView(index);return}
+  /* Experience sub-tabs are separate lab pages, but the authored mockup still
+     carries its own underline nav. Keep both navigation paths in sync. */
+  const siblingIndex=profiles.findIndex(page=>page.group===current().group && page.path?.includes(`view=${event.data.view}`));
+  if(siblingIndex>=0 && siblingIndex!==pageIndex) selectPage(siblingIndex);
+});
 function cyclePage(direction){selectPage(pageIndex+direction)}
 /* The switcher is live on every tab, including placeholders — on those it moves
    between named directions rather than between rendered layouts. */
@@ -1508,7 +1681,18 @@ function applyVariant(){
 }
 function desiredSrc(){
   const page=current();
-  return page.native ? `${page.path}?variant=${currentKey()}` : page.path;
+  if(page.native) return `${page.path}?variant=${currentKey()}&lab-rev=${encodeURIComponent(page.variantSourceRev || "current")}`;
+  if(page.variantPaths?.[currentKey()]) return page.variantPaths[currentKey()];
+  if(page.variantViews){
+    const join=page.path.includes("?") ? "&" : "?";
+    const view=page.variantViews[currentKey()] || page.variantViews.A;
+    return `${page.path}${join}view=${encodeURIComponent(view)}&lab-rev=${encodeURIComponent(page.variantSourceRev || "current")}`;
+  }
+  if(page.passViewToSource && currentView()){
+    const join=page.path.includes("?") ? "&" : "?";
+    return `${page.path}${join}view=${encodeURIComponent(currentView().slug)}`;
+  }
+  return page.path;
 }
 function loadOrApply(force){
   const page=current();
@@ -1534,7 +1718,7 @@ function loadOrApply(force){
   placeholderView.classList.remove("on");
   const next=desiredSrc();
   const currentPath=preview.getAttribute("src") || "";
-  const mustReload=force || current().native || currentPath.split("?")[0]!==next.split("?")[0];
+  const mustReload=force || current().native || currentPath!==next;
   if(mustReload){
     loading.classList.remove("hide");
     preview.src=next;

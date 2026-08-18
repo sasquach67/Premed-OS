@@ -1,0 +1,853 @@
+{
+  "batch": 1,
+  "part": 1,
+  "retrievedAt": "2026-08-14",
+  "cycle": "2026-2027",
+  "researchOnly": true,
+  "schools": [
+    {
+      "id": "alabama-college-of-osteopathic-medicine",
+      "control": "private",
+      "medianMCAT": 503.6,
+      "medianGPA": 3.58,
+      "scienceGPA": null,
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "primary-care",
+        "underserved"
+      ],
+      "tuition": {
+        "inState": 61788,
+        "outOfState": 61788,
+        "secondaryFee": 50,
+        "feeWaiverPolicy": "ACOM states it waives the supplemental fee for applicants approved for an AACOMAS fee waiver."
+      },
+      "prereqs": [
+        {
+          "area": "Biology/Zoology",
+          "lab": "required with lab",
+          "amount": "8 semester hours",
+          "policyNotes": "AACOM profile wording."
+        },
+        {
+          "area": "Chemistry (Inorganic)",
+          "lab": "required with lab",
+          "amount": "8 semester hours",
+          "policyNotes": "AACOM profile wording."
+        },
+        {
+          "area": "Chemistry (Organic)",
+          "lab": "required with lab",
+          "amount": "8 semester hours",
+          "policyNotes": "AACOM profile wording."
+        },
+        {
+          "area": "Physics",
+          "lab": "required with lab",
+          "amount": "8 semester hours",
+          "policyNotes": "AACOM profile wording."
+        },
+        {
+          "area": "College English",
+          "lab": null,
+          "amount": "6 semester hours",
+          "policyNotes": "AACOM profile wording."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [
+          "MD or DO physician letter"
+        ],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "AACOM lists an MD or DO physician letter requirement; the current public FAQ describes alternatives and says additional letters above three are discouraged, but this extraction did not verify a single current minimum/route rule."
+      },
+      "deadlines": {
+        "primary": "2027-06-01",
+        "secondary": null,
+        "interviewSeason": "August through April",
+        "cycleLabel": "2026-2027 (AACOM profile: earliest submission May 4, 2026; deadline June 1, 2027)"
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "2026-2027: no explicit PREview policy captured from allowed source."
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "2026-2027: no explicit CASPer policy captured from allowed source."
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.aacom.org/detail-pages/com/alabama-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14",
+          "stat": "mean/average",
+          "population": "unstated",
+          "classYear": null
+        },
+        "cost": {
+          "source": "https://www.aacom.org/detail-pages/com/alabama-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.aacom.org/detail-pages/com/alabama-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.acom.edu/admissions-faqs/",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.aacom.org/detail-pages/com/alabama-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://www.aacom.org/detail-pages/com/alabama-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.aacom.org/detail-pages/com/alabama-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Partial official-only snapshot. AACOM labels MCAT 503.6 and GPA 3.58 as mean/average but does not state a class year or population in the captured text; therefore low confidence.."
+    },
+    {
+      "id": "edward-via-college-of-osteopathic-medicine-auburn-campus",
+      "control": "private",
+      "medianMCAT": null,
+      "medianGPA": null,
+      "scienceGPA": null,
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "underserved"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Not extracted before handoff; do not infer VCOM-wide requirements for this campus."
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "No 2026-2027 cycle-specific date captured."
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.vcom.edu/locations/auburn",
+          "checkedOn": "2026-08-14",
+          "stat": "",
+          "population": "unstated",
+          "classYear": null
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.vcom.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Official-source discovery record only; all unverified detail deliberately null."
+    },
+    {
+      "id": "arkansas-college-of-osteopathic-medicine",
+      "control": "private",
+      "medianMCAT": null,
+      "medianGPA": null,
+      "scienceGPA": null,
+      "classSize": 142,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "underserved",
+        "patient-centered",
+        "research"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null
+      },
+      "prereqs": [
+        {
+          "area": "Inorganic Chemistry with Laboratory (8 hours of general/college chemistry will fulfill this requirement)",
+          "lab": "with laboratory",
+          "amount": "8 semester hours",
+          "policyNotes": "School admissions requirements wording."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [
+          "MD or DO physician letter"
+        ],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "AACOM says required letters, secondary, and signed technical standards must be received before interview; minimum/count not captured."
+      },
+      "deadlines": {
+        "primary": "2027-04-16",
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "2026-2027 (AACOM profile: earliest submission May 4, 2026; deadline April 16, 2027)"
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit PREview policy captured."
+        },
+        "CASPer": {
+          "levelVerbatim": "Additional tools offered as part of CASPer—Duet and Snapshot—are not required or taken into consideration as part of the ARCOM admission process.",
+          "completenessEffect": null,
+          "cycleLabel": "Source page is current when checked but does not attach a cycle label to that CASPer statement."
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.aacom.org/detail-pages/com/arkansas-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14",
+          "stat": "count",
+          "population": "matriculants",
+          "classYear": "2024-2025"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://arcom.achehealth.edu/admissions/admissions-requirements/",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.aacom.org/detail-pages/com/arkansas-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.aacom.org/detail-pages/com/arkansas-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://arcom.achehealth.edu/admissions/admissions-requirements/",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.aacom.org/detail-pages/com/arkansas-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Partial official-only snapshot. AACOM gives first-year-matriculant count and residence counts, but it does not publish an in-state percentage; no ratio was calculated."
+    },
+    {
+      "id": "new-york-institute-of-technology-college-of-osteopathic-medicine-at-arkansas-state",
+      "control": "private",
+      "medianMCAT": null,
+      "medianGPA": null,
+      "scienceGPA": null,
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": 70720,
+        "outOfState": 70720,
+        "secondaryFee": 80,
+        "feeWaiverPolicy": "NYITCOM only honors verified AACOMAS fee waivers; verified applicants receive a time-limited unique supplemental fee-waiver code."
+      },
+      "prereqs": [
+        {
+          "area": "English",
+          "lab": null,
+          "amount": "six semester hours",
+          "policyNotes": "NYIT 2026-2027 catalog."
+        },
+        {
+          "area": "Biology, including a basic course in general biology or general zoology",
+          "lab": "lecture and lab",
+          "amount": "eight semester hours",
+          "policyNotes": "NYIT 2026-2027 catalog."
+        },
+        {
+          "area": "General Chemistry",
+          "lab": "lecture and lab",
+          "amount": "eight semester hours",
+          "policyNotes": "NYIT 2026-2027 catalog."
+        },
+        {
+          "area": "Organic Chemistry I",
+          "lab": "lecture and lab",
+          "amount": "four semester hours",
+          "policyNotes": "NYIT 2026-2027 catalog."
+        },
+        {
+          "area": "Organic Chemistry II",
+          "lab": "lecture and lab",
+          "amount": "four semester hours",
+          "policyNotes": "Biochemistry, four semester hours with or without lab, may substitute."
+        },
+        {
+          "area": "Physics",
+          "lab": "lecture and lab",
+          "amount": "eight semester hours",
+          "policyNotes": "NYIT 2026-2027 catalog."
+        }
+      ],
+      "letterRequirements": {
+        "min": 3,
+        "max": 3,
+        "requiredRoles": [
+          "pre-health committee/composite letter preferred OR two faculty letters (at least one science) from faculty who taught applicant",
+          "one supervisor letter from long-term work, service, research, or clinical experience; additional faculty letter allowed if no supervisor letter"
+        ],
+        "committeePacketAccepted": true,
+        "route": "service",
+        "note": "Three letters must be via AACOMAS; NYITCOM does not accept emailed/mailed letters or Virtual Evals."
+      },
+      "deadlines": {
+        "primary": "2027-03-02",
+        "secondary": "2027-03-16",
+        "interviewSeason": null,
+        "cycleLabel": "2026-2027"
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit PREview policy captured."
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit CASPer policy captured."
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://catalog.nyit.edu/medicine/admissions/",
+          "checkedOn": "2026-08-14",
+          "stat": "",
+          "population": "unstated",
+          "classYear": null
+        },
+        "cost": {
+          "source": "https://catalog.nyit.edu/medicine/financial/tuition_and_fees/",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://catalog.nyit.edu/medicine/admissions/",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://catalog.nyit.edu/medicine/admissions/application_procedure/",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.nyit.edu/medicine/college-of-osteopathic-medicine/admissions-and-aid/apply/",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://www.nyit.edu/medicine/college-of-osteopathic-medicine/admissions-and-aid/apply/",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.aacom.org/detail-pages/com/new-york-institute-of-technology-college-of-osteopathic-medicine-at-arkansas-state-university",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Current 2026-2027 catalog/application pages; profile statistics not found in allowed sources and left null. Tuition is NYITCOM-wide; the official catalog does not publish an Arkansas-campus split."
+    },
+    {
+      "id": "a-t-still-university-school-of-osteopathic-medicine-in-arizona",
+      "control": "private",
+      "medianMCAT": null,
+      "medianGPA": null,
+      "scienceGPA": null,
+      "classSize": 154,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "underserved",
+        "research",
+        "community-based",
+        "primary-care"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": 70,
+        "feeWaiverPolicy": null
+      },
+      "prereqs": [
+        {
+          "area": "Biology/Zoology",
+          "lab": null,
+          "amount": "8 semester hours",
+          "policyNotes": "AACOM profile wording."
+        },
+        {
+          "area": "Chemistry (Inorganic)",
+          "lab": null,
+          "amount": "8 semester hours",
+          "policyNotes": "AACOM profile wording."
+        },
+        {
+          "area": "Chemistry (Organic)",
+          "lab": null,
+          "amount": "8 semester hours",
+          "policyNotes": "AACOM profile wording."
+        },
+        {
+          "area": "Physics",
+          "lab": null,
+          "amount": "8 semester hours",
+          "policyNotes": "AACOM profile wording."
+        },
+        {
+          "area": "College English",
+          "lab": null,
+          "amount": "6 semester hours",
+          "policyNotes": "AACOM profile wording."
+        }
+      ],
+      "letterRequirements": {
+        "min": 2,
+        "max": null,
+        "requiredRoles": [
+          "science faculty member",
+          "physician (DO or MD; DO preferred)"
+        ],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Letters may come with AACOMAS application or separately."
+      },
+      "deadlines": {
+        "primary": "2027-03-01",
+        "secondary": "2027-03-15",
+        "interviewSeason": "August through April",
+        "cycleLabel": "2026-2027"
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit PREview policy captured."
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit CASPer policy captured."
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.aacom.org/detail-pages/com/a.t.-still-university-school-of-osteopathic-medicine-in-arizona",
+          "checkedOn": "2026-08-14",
+          "stat": "count",
+          "population": "matriculants",
+          "classYear": "2024-2025"
+        },
+        "cost": {
+          "source": "https://www.aacom.org/detail-pages/com/a.t.-still-university-school-of-osteopathic-medicine-in-arizona",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.aacom.org/detail-pages/com/a.t.-still-university-school-of-osteopathic-medicine-in-arizona",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.aacom.org/detail-pages/com/a.t.-still-university-school-of-osteopathic-medicine-in-arizona",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.aacom.org/detail-pages/com/a.t.-still-university-school-of-osteopathic-medicine-in-arizona",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://www.aacom.org/detail-pages/com/a.t.-still-university-school-of-osteopathic-medicine-in-arizona",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.aacom.org/detail-pages/com/a.t.-still-university-school-of-osteopathic-medicine-in-arizona",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Partial official-only snapshot. 2024-2025 profile gives matriculant counts but does not publish an in-state percentage; no ratio calculated."
+    },
+    {
+      "id": "arizona-college-of-osteopathic-medicine-of-midwestern-university",
+      "control": "private",
+      "medianMCAT": null,
+      "medianGPA": null,
+      "scienceGPA": null,
+      "classSize": 265,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "community-service",
+        "patient-centered"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Not extracted before handoff."
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.aacom.org/detail-pages/com/arizona-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14",
+          "stat": "count",
+          "population": "matriculants",
+          "classYear": "2024-2025"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.aacom.org/detail-pages/com/arizona-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Official profile establishes private non-profit control and 2024-2025 first-year-matriculant count. Other fields intentionally incomplete."
+    },
+    {
+      "id": "the-valley-college-of-osteopathic-medicine",
+      "control": "private",
+      "medianMCAT": null,
+      "medianGPA": null,
+      "scienceGPA": null,
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "community-health",
+        "innovation"
+      ],
+      "tuition": {
+        "inState": 57450,
+        "outOfState": 57450,
+        "secondaryFee": 0,
+        "feeWaiverPolicy": "No supplemental application is required; AACOM profile says supplemental fee waiver is not available (N/A)."
+      },
+      "prereqs": [
+        {
+          "area": "Biology/Zoology",
+          "lab": "required with lab",
+          "amount": "8.00 semester hours",
+          "policyNotes": "AACOM profile wording."
+        },
+        {
+          "area": "Chemistry (Inorganic)",
+          "lab": "required with lab",
+          "amount": "8.00 semester hours",
+          "policyNotes": "AACOM profile wording."
+        },
+        {
+          "area": "Chemistry (Organic)",
+          "lab": "required with lab",
+          "amount": "8.00 semester hours",
+          "policyNotes": "AACOM profile wording."
+        },
+        {
+          "area": "Physics",
+          "lab": "required with lab",
+          "amount": "8.00 semester hours",
+          "policyNotes": "AACOM profile wording."
+        },
+        {
+          "area": "Behavioral Sciences",
+          "lab": null,
+          "amount": "6.00 semester hours",
+          "policyNotes": "AACOM profile wording."
+        },
+        {
+          "area": "College English",
+          "lab": null,
+          "amount": "6.00 semester hours",
+          "policyNotes": "AACOM profile wording."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [
+          "MD or DO physician letter"
+        ],
+        "committeePacketAccepted": null,
+        "route": "service",
+        "note": "AACOMAS is listed as accepted source. AACOM says all required recommendation letters are part of a complete file, but a count was not shown in captured page text."
+      },
+      "deadlines": {
+        "primary": "2027-04-01",
+        "secondary": null,
+        "interviewSeason": "early fall begins (rolling process)",
+        "cycleLabel": "2026-2027"
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit PREview policy captured."
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit CASPer policy captured."
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.aacom.org/detail-pages/com/the-valley-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14",
+          "stat": "",
+          "population": "unstated",
+          "classYear": null
+        },
+        "cost": {
+          "source": "https://www.aacom.org/detail-pages/com/the-valley-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.aacom.org/detail-pages/com/the-valley-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.aacom.org/detail-pages/com/the-valley-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.aacom.org/detail-pages/com/the-valley-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://www.aacom.org/detail-pages/com/the-valley-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.aacom.org/detail-pages/com/the-valley-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Current AACOM profile. Newer, pre-accredited school; no entering-class profile statistics published in captured source."
+    },
+    {
+      "id": "california-health-sciences-university-college-of-osteopathic-medicine",
+      "control": "private",
+      "medianMCAT": null,
+      "medianGPA": null,
+      "scienceGPA": null,
+      "classSize": 182,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "regional-health",
+        "rural-health",
+        "underserved",
+        "research"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Not extracted before handoff."
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.aacom.org/detail-pages/com/california-health-sciences-university-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14",
+          "stat": "count",
+          "population": "matriculants",
+          "classYear": "2024-2025"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.aacom.org/detail-pages/com/california-health-sciences-university-college-of-osteopathic-medicine",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Official profile establishes private for-profit control and 2024-2025 first-year-matriculant count. Other fields intentionally incomplete."
+    }
+  ],
+  "researchReport": {
+    "coverage": {
+      "control": 8,
+      "academicProfile": 1,
+      "classSize": 5,
+      "inStatePercent": 0,
+      "tuition": 4,
+      "secondaryFee": 4,
+      "prerequisites": 5,
+      "letters": 4,
+      "primaryDeadline": 5,
+      "secondaryDeadline": 2,
+      "interviewSeason": 3,
+      "PREviewExplicit": 0,
+      "CASPerExplicit": 1
+    },
+    "nullPolicy": "A null is deliberate: a current-cycle official publication was not captured, a source gave counts but not a percentage, or a source did not make the requested term explicit. No estimates, excluded metrics, or inferred residency preferences were added.",
+    "knownGaps": [
+      "VCOM Auburn requires a full official admissions-page pass.",
+      "AZCOM and CHSU require a full official admissions-page pass for costs, requirements, letters, deadlines, and tests.",
+      "ARCOM prerequisite extraction is incomplete; only the explicit row captured from its official requirements page is included.",
+      "No school in this part has a published in-state percentage copied into the dataset; first-year residence counts were not converted into percentages."
+    ]
+  }
+}

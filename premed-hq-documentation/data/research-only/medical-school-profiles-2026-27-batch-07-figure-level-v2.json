@@ -1,0 +1,4394 @@
+{
+  "batch": 7,
+  "retrievedAt": "2026-08-14",
+  "cycle": "2026-2027",
+  "schools": [
+    {
+      "id": "new-york-university-grossman-school-of-medicine",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "healthcare-challenges",
+        "well-rounded-physicians"
+      ],
+      "tuition": {
+        "inState": 65500,
+        "outOfState": 65500,
+        "secondaryFee": 110,
+        "feeWaiverPolicy": "AAMC Fee Assistance Program waiver holders receive a secondary-fee waiver.",
+        "nullReasons": {}
+      },
+      "prereqs": [
+        {
+          "area": "No required prerequisite coursework",
+          "lab": null,
+          "amount": null,
+          "policyNotes": "NYU Grossman has no prerequisites; it recommends relevant science, statistics, genetics, and English preparation."
+        }
+      ],
+      "letterRequirements": {
+        "min": 2,
+        "max": null,
+        "requiredRoles": [
+          "at least one science professor if using professor letters"
+        ],
+        "committeePacketAccepted": true,
+        "route": "service",
+        "note": "Premedical committee appraisal preferred; alternatively two professor letters. Nontraditional applicants encouraged to submit two colleague letters. AMCAS Letter Service only.",
+        "nullReasons": {
+          "max": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "2026-10-15",
+        "secondary": "2026-11-10",
+        "interviewSeason": "September through December 2026",
+        "cycleLabel": "2026-2027",
+        "nullReasons": {}
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://med.nyu.edu/education/md-degree/md-admissions/admissions-requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "https://med.nyu.edu/education/md-degree/affordability-financial-aid/cost-attendance",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://med.nyu.edu/education/md-degree/md-admissions/admissions-requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://med.nyu.edu/education/md-degree/md-admissions/admissions-requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://med.nyu.edu/education/md-degree/md-admissions/admissions-timeline",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://med.nyu.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Current requirements page gives most-recent incoming-class figures but does not label that class year; figures retained as unstated population/class year.",
+      "mcat": {
+        "value": 523,
+        "stat": "median",
+        "population": "unstated",
+        "classYear": null,
+        "source": "https://med.nyu.edu/education/md-degree/md-admissions/admissions-requirements",
+        "nullReasons": {
+          "classYear": "not-published"
+        }
+      },
+      "gpa": {
+        "cumulative": 3.97,
+        "science": null,
+        "stat": "median",
+        "population": "unstated",
+        "classYear": null,
+        "source": "https://med.nyu.edu/education/md-degree/md-admissions/admissions-requirements",
+        "nullReasons": {
+          "science": "not-published",
+          "classYear": "not-published"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "renaissance-school-of-medicine-at-stony-brook-university",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "physician-scientists",
+        "community-health"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": 100,
+        "feeWaiverPolicy": "Supplemental fee waived for AMCAS fee-waiver recipients.",
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "Biology",
+          "lab": "with lab(s)",
+          "amount": "2 semesters",
+          "policyNotes": "Highly recommended, not required for 2027 entering class."
+        },
+        {
+          "area": "Chemistry",
+          "lab": "minimum 3 semesters lab highly recommended",
+          "amount": "minimum 4 semesters including general, organic, and biochemistry",
+          "policyNotes": "Highly recommended, not required."
+        },
+        {
+          "area": "English/Writing",
+          "lab": null,
+          "amount": "1 semester",
+          "policyNotes": "Highly recommended, not required."
+        },
+        {
+          "area": "Physics",
+          "lab": "with lab",
+          "amount": "1 semester",
+          "policyNotes": "Highly recommended, not required."
+        }
+      ],
+      "letterRequirements": {
+        "min": 2,
+        "max": null,
+        "requiredRoles": [
+          "one science instructor if no premedical adviser"
+        ],
+        "committeePacketAccepted": true,
+        "route": "service",
+        "note": "Premedical adviser letter required; if none, two instructor letters. Current cycle letters direct to AMCAS.",
+        "nullReasons": {
+          "max": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "2026-11-16",
+        "secondary": "2026-12-11",
+        "interviewSeason": null,
+        "cycleLabel": "2027 entering class / 2026-2027 cycle",
+        "nullReasons": {
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": "All applicants... are required to complete an online assessment (CASPer).",
+          "completenessEffect": null,
+          "cycleLabel": "2027 entering class; final date November 12, 2026.",
+          "nullReasons": {
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://renaissance.stonybrookmedicine.edu/admissions/procedures",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "https://renaissance.stonybrookmedicine.edu/admissions/applying",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://renaissance.stonybrookmedicine.edu/admissions/procedures",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://renaissance.stonybrookmedicine.edu/admissions/applying",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://renaissance.stonybrookmedicine.edu/admissions/applying",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://renaissance.stonybrookmedicine.edu/admissions/procedures",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://renaissance.stonybrookmedicine.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "high",
+      "profileStatus": "No current official numerical entering-class profile captured.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "suny-downstate-health-sciences-university-college-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "brooklyn-health",
+        "diverse-communities"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": 100,
+        "feeWaiverPolicy": "AMCAS fee waiver accepted.",
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "English",
+          "lab": null,
+          "amount": "6 semester credits",
+          "policyNotes": "C or better required."
+        },
+        {
+          "area": "General Biology or Zoology",
+          "lab": "including labs",
+          "amount": "8 semester credits",
+          "policyNotes": "C or better required; AP may not fulfill lab component."
+        },
+        {
+          "area": "General Physics",
+          "lab": "including labs",
+          "amount": "8 semester credits",
+          "policyNotes": "C or better required."
+        },
+        {
+          "area": "General/Inorganic Chemistry",
+          "lab": "including labs",
+          "amount": "8 semester credits",
+          "policyNotes": "C or better required."
+        },
+        {
+          "area": "Organic Chemistry",
+          "lab": "including labs",
+          "amount": "8 semester credits",
+          "policyNotes": "C or better required."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": 2,
+        "requiredRoles": [
+          "one science professor if individual letters"
+        ],
+        "committeePacketAccepted": true,
+        "route": "service",
+        "note": "Premed adviser/committee letter preferred; committee packet accepted. Individual option no more than two. Service/VirtualEvals/Interfolio accepted.",
+        "nullReasons": {
+          "min": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "The 2026-27 page confirms January 4, 2027 complete-file deadline but does not clearly distinguish primary/secondary deadlines.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.downstate.edu/education-training/college-of-medicine/admissions/application-procedures.html",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "https://www.downstate.edu/education-training/college-of-medicine/admissions/application-procedures.html",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.downstate.edu/education-training/college-of-medicine/admissions/admissions-requirements.html",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.downstate.edu/education-training/college-of-medicine/admissions/application-procedures.html",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.downstate.edu/education-training/college-of-medicine/admissions/application-procedures.html",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.downstate.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Current page contains a clear complete-file deadline but mixed historic timeline entries; separate deadline fields remain null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "suny-upstate-medical-university-alan-and-marlene-norton-college-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "new-york-health",
+        "health-disparities",
+        "compassionate-care"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Current official 2026-27 announcement encourages strong letters but does not publish count/roles.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "2026-2027",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.upstate.edu/currentstudents/support/articles/2026-07-com-admissions-cycle.php",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.upstate.edu/currentstudents/support/articles/2026-07-com-admissions-cycle.php",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.upstate.edu/currentstudents/support/articles/2026-07-com-admissions-cycle.php",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.upstate.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "A current official cycle announcement was located but it contains no numerical profile, detailed requirements, deadlines, cost, or test policy.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "university-of-rochester-school-of-medicine-and-dentistry",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "medical-education",
+        "research",
+        "community-health"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current official admissions source with field-level content was captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.urmc.rochester.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "No current allowed field-level MD admissions source was located; no substitute or legacy figure used.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "weill-cornell-medicine",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "research",
+        "patient-centered-care",
+        "leadership"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current direct-MD letter rule captured; MD-PhD materials were not substituted.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": "Virtual interviews in the 2026-2027 interview season",
+        "cycleLabel": "2026-2027; direct MD deadline not captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://teach.weill.cornell.edu/medical-education/admissions/selection-criteria-and-requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://teach.weill.cornell.edu/medical-education/admissions/selection-criteria-and-requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://teach.weill.cornell.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Current official selection page confirms interview format but lacks direct-MD field detail; MD-PhD timeline not applied to MD profile.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "case-western-reserve-university-school-of-medicine",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "medical-education",
+        "translational-science",
+        "community-health"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "General chemistry",
+          "lab": "2 semesters laboratory",
+          "amount": "2 semesters/3 quarters",
+          "policyNotes": "AP/IB accepted."
+        },
+        {
+          "area": "Organic chemistry",
+          "lab": "1 semester lab",
+          "amount": "1 semester",
+          "policyNotes": "AP/IB not accepted."
+        },
+        {
+          "area": "Biochemistry including metabolism",
+          "lab": "not required",
+          "amount": "1 semester",
+          "policyNotes": "One quarter accepted; second quarter recommended."
+        },
+        {
+          "area": "Writing/college English",
+          "lab": null,
+          "amount": "1 semester",
+          "policyNotes": "AP/IB not accepted."
+        }
+      ],
+      "letterRequirements": {
+        "min": 3,
+        "max": 5,
+        "requiredRoles": [
+          "at least two science professors/instructors and/or research PI"
+        ],
+        "committeePacketAccepted": null,
+        "route": "service",
+        "note": "All letters through AMCAS.",
+        "nullReasons": {
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "2026-10-15",
+        "secondary": "2026-11-15",
+        "interviewSeason": "September 2026 to February 2027",
+        "cycleLabel": "2026-2027",
+        "nullReasons": {}
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": "We are not requiring the PREview... this year.",
+          "completenessEffect": null,
+          "cycleLabel": "2026-2027.",
+          "nullReasons": {
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": "We are not requiring CASPer... this year.",
+          "completenessEffect": null,
+          "cycleLabel": "2026-2027.",
+          "nullReasons": {
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://case.edu/medicine/md/admission/admission-requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://case.edu/medicine/md/admission/admission-requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://case.edu/medicine/md/admission/admission-requirements/letters-recommendation",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://case.edu/medicine/md/admission/admissions-timeline",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://case.edu/medicine/md/admission/admission-requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://case.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "high",
+      "profileStatus": "Current official source gives 2025 entering-class averages and ranges. Average values preserved; no class size/current cost captured.",
+      "mcat": {
+        "value": 517,
+        "stat": "mean",
+        "population": "matriculants",
+        "classYear": "entering class of 2025",
+        "source": "https://case.edu/medicine/md/admission/admission-requirements",
+        "nullReasons": {}
+      },
+      "gpa": {
+        "cumulative": 3.9,
+        "science": 3.87,
+        "stat": "mean",
+        "population": "matriculants",
+        "classYear": "entering class of 2025",
+        "source": "https://case.edu/medicine/md/admission/admission-requirements",
+        "nullReasons": {}
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "northeast-ohio-medical-university",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "education",
+        "research",
+        "public-service"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "Organic Chemistry",
+          "lab": "one lab",
+          "amount": "2 semesters",
+          "policyNotes": "C- or better."
+        },
+        {
+          "area": "Physics",
+          "lab": null,
+          "amount": "2 semesters",
+          "policyNotes": "C- or better."
+        },
+        {
+          "area": "Biology",
+          "lab": null,
+          "amount": "2 semesters",
+          "policyNotes": "C- or better."
+        },
+        {
+          "area": "Biochemistry",
+          "lab": null,
+          "amount": "1 semester",
+          "policyNotes": "C- or better."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current official letter rule captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "2026-11-01",
+        "secondary": "2026-12-01",
+        "interviewSeason": null,
+        "cycleLabel": "2026-2027",
+        "nullReasons": {
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": "No explicit policy captured.",
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.neomed.edu/medicine/admissions/paths/traditional-admission/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.neomed.edu/medicine/admissions/paths/traditional-admission/",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.neomed.edu/medicine/admissions/paths/traditional-admission/",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.neomed.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "high",
+      "profileStatus": "Current page reports all-first-year 2025 class averages and middle-50% ranges; averages used. It identifies 115 regular-decision students as about 60% of class but does not publish whole-class size directly, so no calculated class size is used.",
+      "mcat": {
+        "value": 511,
+        "stat": "mean",
+        "population": "matriculants",
+        "classYear": "all first-year students, July 2025",
+        "source": "https://www.neomed.edu/medicine/admissions/paths/traditional-admission/",
+        "nullReasons": {}
+      },
+      "gpa": {
+        "cumulative": 3.75,
+        "science": 3.69,
+        "stat": "mean",
+        "population": "matriculants",
+        "classYear": "all first-year students, July 2025",
+        "source": "https://www.neomed.edu/medicine/admissions/paths/traditional-admission/",
+        "nullReasons": {}
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "ohio-state-university-college-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": true,
+      "inStateStatement": "About half of incoming students are from both in-state and out-of-state.",
+      "mission": [
+        "medical-education",
+        "research",
+        "community-health"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": 80,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "Biology",
+          "lab": null,
+          "amount": "2 semesters/3 quarters",
+          "policyNotes": "Within 10 years of enrollment; C- or higher."
+        },
+        {
+          "area": "General Chemistry",
+          "lab": "laboratory incorporating quantitative and qualitative analysis",
+          "amount": "2 semesters/3 quarters",
+          "policyNotes": ""
+        },
+        {
+          "area": "Biochemistry",
+          "lab": null,
+          "amount": "1 semester/quarter",
+          "policyNotes": ""
+        },
+        {
+          "area": "Organic Chemistry",
+          "lab": "one year lab experience or equivalent",
+          "amount": "2 semesters/3 quarters",
+          "policyNotes": ""
+        },
+        {
+          "area": "Physics",
+          "lab": "with lab",
+          "amount": "2 semesters/3 quarters",
+          "policyNotes": "Online lecture accepted; labs in person."
+        }
+      ],
+      "letterRequirements": {
+        "min": 2,
+        "max": null,
+        "requiredRoles": [
+          "one BCPM professor"
+        ],
+        "committeePacketAccepted": true,
+        "route": "service",
+        "note": "AMCAS Letter Service only.",
+        "nullReasons": {
+          "max": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "2026-11-02",
+        "secondary": "2026-12-01",
+        "interviewSeason": "August 2026 through March 2027",
+        "cycleLabel": "2026-2027 regular MD admissions cycle",
+        "nullReasons": {}
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://medicine.osu.edu/education/md/admissions/before-you-apply/requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "https://medicine.osu.edu/education/md/admissions/how-to-apply",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://medicine.osu.edu/education/md/admissions/before-you-apply/requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://medicine.osu.edu/education/md/admissions/before-you-apply/requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://medicine.osu.edu/education/md/admissions/before-you-apply/deadlines",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://medicine.osu.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Current requirements page captured; no current class profile, deadlines, cost, or test policy extracted.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "university-of-cincinnati-college-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "health-disparities",
+        "community-engagement",
+        "service"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current direct-MD admissions requirements page captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": "2026-12-01",
+        "interviewSeason": "August 2026 through February 2027",
+        "cycleLabel": "2027 application (regular admissions)",
+        "nullReasons": {
+          "primary": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://med.uc.edu/admissions/medical-student-admissions/how-to-apply/application-timeline",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://med.uc.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "No current allowed field-level direct-MD source captured; BS/MD and finance material were not substituted.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "university-of-toledo-college-of-medicine-and-life-sciences",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "medical-education",
+        "life-sciences"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "Biochemistry",
+          "lab": null,
+          "amount": "1 semester",
+          "policyNotes": "2026 Cycle Updates."
+        },
+        {
+          "area": "Biological Sciences",
+          "lab": null,
+          "amount": "1 year",
+          "policyNotes": ""
+        },
+        {
+          "area": "Organic Chemistry",
+          "lab": "with labs",
+          "amount": "1 year",
+          "policyNotes": ""
+        },
+        {
+          "area": "Physics",
+          "lab": null,
+          "amount": "1 year",
+          "policyNotes": ""
+        }
+      ],
+      "letterRequirements": {
+        "min": 3,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "At least three letters required.",
+        "nullReasons": {
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "November 15",
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "Page says applicants submit June 30-November 15 but labels requirements 2026 Cycle Updates, not 2026-27.",
+        "nullReasons": {
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.utoledo.edu/med/md/admissions/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.utoledo.edu/med/md/admissions/",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.utoledo.edu/med/md/admissions/",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.utoledo.edu/med/md/admissions/",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.utoledo.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Only a 2026 Cycle Updates page captured; non-year-labelled primary date is retained with warning, all other cycle-sensitive fields null.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "wright-state-university-boonshoft-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current field-level source captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://medicine.wright.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "No current allowed field-level MD admissions source located.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "university-of-oklahoma-college-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current field-level source captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.ou.edu/medicine",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "No current allowed field-level MD admissions source located.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "oregon-health-science-university-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "rural-health",
+        "underserved",
+        "primary-care"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "Premedical core competencies",
+          "lab": null,
+          "amount": "17 recommended competencies",
+          "policyNotes": "OHSU says these have fully replaced prerequisite coursework."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Current page says recommendations are considered; detailed current rule not captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "Academic Year 2026-2027 page uses 2026 application-cycle qualifiers; no 2026-27 applicant dates captured.",
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": "CASPer will no longer also be required as a component of your OHSU application.",
+          "completenessEffect": null,
+          "cycleLabel": "Statement appears on MD/PhD page; not applied as direct-MD policy.",
+          "nullReasons": {
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.ohsu.edu/school-of-medicine/md-program/admissions",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.ohsu.edu/school-of-medicine/md-program/admissions",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://www.ohsu.edu/school-of-medicine/md-phd-program/admissions",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.ohsu.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Official page reports average figures but class year/population unstated; no current direct-MD dates. The 2026-cycle eligibility window makes it unsuitable for 2026-27 timeline.",
+      "mcat": {
+        "value": 509,
+        "stat": "mean",
+        "population": "unstated",
+        "classYear": null,
+        "source": "https://www.ohsu.edu/school-of-medicine/md-program/admissions",
+        "nullReasons": {
+          "classYear": "not-published"
+        }
+      },
+      "gpa": {
+        "cumulative": 3.66,
+        "science": 3.57,
+        "stat": "mean",
+        "population": "unstated",
+        "classYear": null,
+        "source": "https://www.ohsu.edu/school-of-medicine/md-program/admissions",
+        "nullReasons": {
+          "classYear": "not-published"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "drexel-university-college-of-medicine",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "physician-education",
+        "lifelong-learning"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": "Only AMCAS fee-waiver recipients have fee waived.",
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": 4,
+        "requiredRoles": [],
+        "committeePacketAccepted": true,
+        "route": "unstated",
+        "note": "Committee letter preferred; alternatively up to four individual letters.",
+        "nullReasons": {
+          "min": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": "2027-01-01",
+        "interviewSeason": null,
+        "cycleLabel": "2027 application year",
+        "nullReasons": {
+          "primary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://drexel.edu/medicine/academics/md-program/md-program-admissions/application-process/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "https://drexel.edu/medicine/academics/md-program/md-program-admissions/application-process/",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://drexel.edu/medicine/academics/md-program/md-program-admissions/application-process/",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://drexel.edu/medicine/academics/md-program/md-program-admissions/application-process/",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://drexel.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "high",
+      "profileStatus": "Current 2027 application page captured; no current numerical profile, class size, prerequisite matrix, or SJT policy captured.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "geisinger-commonwealth-school-of-medicine",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current field-level source captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.geisinger.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "No current allowed field-level MD admissions source located.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "lewis-katz-school-of-medicine-at-temple-university",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "holistic-review",
+        "physician-education"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "No absolute course requirements",
+          "lab": null,
+          "amount": null,
+          "policyNotes": "Biology, general/organic chemistry, biochemistry, physics, psychology and sociology recommended."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": 6,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "service",
+        "note": "Individual letters: school recommends no more than six; AMCAS Letter Service encouraged.",
+        "nullReasons": {
+          "min": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": "Katz will not use... AAMC PREview in the admissions process.",
+          "completenessEffect": null,
+          "cycleLabel": "Entering 2027.",
+          "nullReasons": {
+            "completenessEffect": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": "All applicants to the MD program are required to complete Casper.",
+          "completenessEffect": null,
+          "cycleLabel": "Entering 2027; March 19, 2026-January 5, 2027 tests considered.",
+          "nullReasons": {
+            "completenessEffect": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://medicine.temple.edu/education/md-program/how-apply",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://medicine.temple.edu/education/md-program/how-apply",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://bulletin.temple.edu/graduate/scd/medicine/medicine-md/medicine-md.pdf",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "https://medicine.temple.edu/education/md-program/how-apply",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://medicine.temple.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Current test policy and MCAT window captured; no current class profile/cost/deadlines found.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "pennsylvania-state-university-college-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "humanistic-physicians",
+        "systems-thinking",
+        "community-service"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "General biology",
+          "lab": "with lab",
+          "amount": "1 year/2 semesters",
+          "policyNotes": ""
+        },
+        {
+          "area": "General/inorganic chemistry",
+          "lab": "with lab",
+          "amount": "1 year/2 semesters",
+          "policyNotes": ""
+        },
+        {
+          "area": "Organic chemistry",
+          "lab": "with lab",
+          "amount": "1 year/2 semesters",
+          "policyNotes": ""
+        },
+        {
+          "area": "Physics",
+          "lab": "with lab",
+          "amount": "1 year/2 semesters",
+          "policyNotes": ""
+        },
+        {
+          "area": "Biochemistry",
+          "lab": null,
+          "amount": "1 semester",
+          "policyNotes": "AP accepted only if earned credits appear on transcript; online generally not recommended."
+        }
+      ],
+      "letterRequirements": {
+        "min": 4,
+        "max": null,
+        "requiredRoles": [
+          "2 science faculty",
+          "1 non-science faculty",
+          "1 faculty/community leader/employer"
+        ],
+        "committeePacketAccepted": null,
+        "route": "service",
+        "note": "Current page also requires letters from degree-granting institutions and extra grad/work supervisor letter in stated circumstances.",
+        "nullReasons": {
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "November 15",
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "Captured process page explicitly labels interview season 2025-26, so it is not assigned to current cycle.",
+        "nullReasons": {
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://med.psu.edu/education/degree-programs/md-doctor-medicine/apply/requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://med.psu.edu/education/degree-programs/md-doctor-medicine/apply/requirements",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://med.psu.edu/education/degree-programs/md-doctor-medicine/apply/process",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://med.psu.edu/education/degree-programs/md-doctor-medicine/apply/process",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://med.psu.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Current requirements page includes 2027 MCAT window but the deadline/process page is potentially stale; no current numerical profile found.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "perelman-school-of-medicine-at-the-university-of-pennsylvania",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "innovation",
+        "medical-leadership",
+        "patient-care"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "No specific courses required",
+          "lab": null,
+          "amount": null,
+          "policyNotes": "Competency in biology, chemistry, physics, biochemistry and math required; community-college credits case-by-case."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [
+          "academic references including one science reference for nontraditional applicants"
+        ],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Current general writer count not captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "2026-10-15",
+        "secondary": "2026-11-15",
+        "interviewSeason": null,
+        "cycleLabel": "2027 applicants / 2026-2027",
+        "nullReasons": {
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.med.upenn.edu/admissions/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "https://www.med.upenn.edu/student/assets/user-content/documents/policies/tuition-2026-27.pdf",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.med.upenn.edu/admissions/faq",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.med.upenn.edu/admissions/faq",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.med.upenn.edu/admissions/",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.med.upenn.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "high",
+      "profileStatus": "Current 2027 application deadlines and 2025 entering-class range captured. Ranges deliberately not reduced to a single figure.",
+      "mcat": {
+        "value": null,
+        "stat": "range",
+        "population": "matriculants",
+        "classYear": "2025 entering class",
+        "source": "https://www.med.upenn.edu/admissions/",
+        "nullReasons": {
+          "value": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": "range",
+        "population": "matriculants",
+        "classYear": "2025 entering class",
+        "source": "https://www.med.upenn.edu/admissions/",
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "sidney-kimmel-medical-college-at-thomas-jefferson-university",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current writer rule captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": "2027-01-01",
+        "interviewSeason": "In-person interviews for 2027 cycle",
+        "cycleLabel": "2027 application cycle",
+        "nullReasons": {
+          "primary": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.jefferson.edu/academics/colleges-schools-institutes/skmc/admissions.html",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.jefferson.edu/academics/colleges-schools-institutes/skmc/admissions.html",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.jefferson.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Current 2027 secondary deadline/interview format located; no other field-level data captured.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "university-of-pittsburgh-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current field-level MD admissions source captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.medschool.pitt.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "No current allowed field-level MD admissions source located.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "ponce-health-sciences-university-school-of-medicine",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Official catalog is 2023-26 and therefore not used for current structured fields.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.psm.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Only a pre-2026 catalog and general portal located; it was not used to populate current profile fields.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "san-juan-bautista-school-of-medicine",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Official admission page found but detailed requirements were not captured in search result.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.sanjuanbautista.edu/academics/programs/medical-doctor/medical-doctor-program-admission",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.sanjuanbautista.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Current official admission page found but no detailed field-level contents captured.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "universidad-central-del-caribe-school-of-medicine",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "service",
+        "note": "AMCAS participation confirmed; current count/rules not captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.uccaribe.edu/som/medicine/admission-requirements-3/",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.uccaribe.edu/som/medicine/admission-requirements-3/",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.uccaribe.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "Current page confirms AMCAS/secondary process but no detailed current profile/requirements data captured.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "university-of-puerto-rico-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current field-level official source captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.rcm.upr.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "No current allowed field-level MD admissions source located.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "the-warren-alpert-medical-school-of-brown-university",
+      "control": "private",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": 75162,
+        "outOfState": 75162,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current field-level official source captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "https://sfs.brown.edu/tuition-and-fees/medical-school",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.brown.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "No current allowed field-level MD admissions source located.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "medical-university-of-south-carolina-college-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": true,
+      "inStateStatement": "Applications from South Carolina residents are reviewed first. Out-of-state applicants must meet academic criteria and demonstrate strong connections to South Carolina, and are reviewed later.",
+      "mission": [
+        "south-carolina-health",
+        "state-service",
+        "community-health"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": true,
+        "route": "unstated",
+        "note": "Pre-Health/Pre-Medical Advisory Committee letter or packet fulfills minimum letter requirement; count not captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "2026-11-02",
+        "secondary": "2026-12-15",
+        "interviewSeason": "September 2026-March 2027",
+        "cycleLabel": "2026-2027 / Fall 2027 matriculation",
+        "nullReasons": {}
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://medicine.musc.edu/programs/doctor-medicine/admissions/selection-criteria",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://medicine.musc.edu/programs/doctor-medicine/admissions/selection-criteria",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://medicine.musc.edu/programs/doctor-medicine/admissions/apply/timeline",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://medicine.musc.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "high",
+      "profileStatus": "Current 2026-27 timeline/SC-resident policy captured. Published 511 is called an average accepted in-state student score; it is retained with stated population only.",
+      "mcat": {
+        "value": 511,
+        "stat": "mean",
+        "population": "accepted",
+        "classYear": null,
+        "source": "https://medicine.musc.edu/programs/doctor-medicine/admissions/selection-criteria",
+        "populationNote": "accepted in-state students",
+        "nullReasons": {
+          "classYear": "not-published"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "university-of-south-carolina-school-of-medicine-columbia",
+      "control": "public",
+      "classSize": 100,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [
+        "south-carolina-physicians",
+        "clinical-skills",
+        "patient-care"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "No course prerequisites",
+          "lab": null,
+          "amount": null,
+          "policyNotes": "English, biology with lab, inorganic/organic chemistry with lab and social science are recommended."
+        }
+      ],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "Deadline page refers to letters but current requirements count not captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": "2026-11-02",
+        "secondary": "2026-12-15",
+        "interviewSeason": "September 9, 2026-March 31, 2027",
+        "cycleLabel": "Fall 2027",
+        "nullReasons": {}
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://sc.edu/study/colleges_schools/medicine/education/md_program/admission_and_application/index.php",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://sc.edu/study/colleges_schools/medicine/education/md_program/admission_and_application/index.php",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://sc.edu/study/colleges_schools/medicine/education/md_program/admission_and_application/index.php",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://sc.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "high",
+      "profileStatus": "Current Fall 2027 table captures full timeline. Page says 100 new students yearly but class-of-2029 profile says 99; annual capacity (100) used rather than creating a conflicting class statistic.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    },
+    {
+      "id": "university-of-south-carolina-school-of-medicine-greenville",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": null,
+      "inStateStatement": null,
+      "mission": [],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": null,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "secondaryFee": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [],
+      "letterRequirements": {
+        "min": null,
+        "max": null,
+        "requiredRoles": [],
+        "committeePacketAccepted": null,
+        "route": "unstated",
+        "note": "No current field-level official source captured.",
+        "nullReasons": {
+          "min": "not-found",
+          "max": "not-found",
+          "committeePacketAccepted": "not-found"
+        }
+      },
+      "deadlines": {
+        "primary": null,
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": null,
+        "nullReasons": {
+          "primary": "not-found",
+          "secondary": "not-found",
+          "interviewSeason": "not-found",
+          "cycleLabel": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://prismahealth.org/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "low",
+      "profileStatus": "No current allowed field-level MD admissions source located.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found",
+        "inStateFriendly": "not-found",
+        "inStateStatement": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "unresolved",
+        "nullReason": "not-found"
+      }
+    },
+    {
+      "id": "university-of-south-dakota-sanford-school-of-medicine",
+      "control": "public",
+      "classSize": null,
+      "inStatePercent": null,
+      "inStateFriendly": true,
+      "inStateStatement": "Applicant must be a South Dakota resident or non-resident with strong ties to South Dakota; examples include SD high school, 90 credits at an SD college, parent in SD, child of alumni, or enrolled tribal member from a bordering state.",
+      "mission": [
+        "south-dakota-health",
+        "physician-leaders",
+        "community-health"
+      ],
+      "tuition": {
+        "inState": null,
+        "outOfState": null,
+        "secondaryFee": 35,
+        "feeWaiverPolicy": null,
+        "nullReasons": {
+          "inState": "not-found",
+          "outOfState": "not-found",
+          "feeWaiverPolicy": "not-found"
+        }
+      },
+      "prereqs": [
+        {
+          "area": "Biology",
+          "lab": "laboratory where available",
+          "amount": "2 semesters",
+          "policyNotes": ""
+        },
+        {
+          "area": "General (inorganic) chemistry",
+          "lab": "laboratory where available",
+          "amount": "2 semesters",
+          "policyNotes": ""
+        },
+        {
+          "area": "Organic chemistry",
+          "lab": "laboratory where available",
+          "amount": "1 semester",
+          "policyNotes": ""
+        },
+        {
+          "area": "Biochemistry",
+          "lab": "laboratory where available",
+          "amount": "1 semester",
+          "policyNotes": ""
+        },
+        {
+          "area": "Physics",
+          "lab": "laboratory where available",
+          "amount": "2 semesters",
+          "policyNotes": ""
+        },
+        {
+          "area": "Mathematics",
+          "lab": null,
+          "amount": "1 semester",
+          "policyNotes": ""
+        },
+        {
+          "area": "Statistics",
+          "lab": null,
+          "amount": "1 semester",
+          "policyNotes": ""
+        }
+      ],
+      "letterRequirements": {
+        "min": 3,
+        "max": 5,
+        "requiredRoles": [],
+        "committeePacketAccepted": true,
+        "route": "service",
+        "note": "Three individual recommendations or committee packet with at least three contributors; AMCAS Letter Writer Service.",
+        "nullReasons": {}
+      },
+      "deadlines": {
+        "primary": "November 1",
+        "secondary": null,
+        "interviewSeason": null,
+        "cycleLabel": "Page specifies June 1-November 1 in year before entry but does not label 2026-27.",
+        "nullReasons": {
+          "secondary": "not-found",
+          "interviewSeason": "not-found"
+        }
+      },
+      "admissionsTests": {
+        "PREview": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        },
+        "CASPer": {
+          "levelVerbatim": null,
+          "completenessEffect": null,
+          "cycleLabel": null,
+          "nullReasons": {
+            "levelVerbatim": "not-found",
+            "completenessEffect": "not-found",
+            "cycleLabel": "not-found"
+          }
+        }
+      },
+      "fieldSources": {
+        "profile": {
+          "source": "https://www.usd.edu/Admissions-and-Aid/Medical-School-Admissions/How-to-Apply",
+          "checkedOn": "2026-08-14"
+        },
+        "cost": {
+          "source": "https://www.usd.edu/Admissions-and-Aid/Medical-School-Admissions/How-to-Apply",
+          "checkedOn": "2026-08-14"
+        },
+        "prereqs": {
+          "source": "https://www.usd.edu/Admissions-and-Aid/Medical-School-Admissions/How-to-Apply",
+          "checkedOn": "2026-08-14"
+        },
+        "letters": {
+          "source": "https://www.usd.edu/Admissions-and-Aid/Medical-School-Admissions/How-to-Apply",
+          "checkedOn": "2026-08-14"
+        },
+        "deadlines": {
+          "source": "https://www.usd.edu/Admissions-and-Aid/Medical-School-Admissions/How-to-Apply",
+          "checkedOn": "2026-08-14"
+        },
+        "admissionsTests": {
+          "source": "",
+          "checkedOn": "2026-08-14"
+        },
+        "control": {
+          "source": "https://www.usd.edu/",
+          "checkedOn": "2026-08-14"
+        }
+      },
+      "confidence": "medium",
+      "profileStatus": "Current general application page captured; GPA/MCAT figures are interview thresholds, not class metrics, and excluded.",
+      "mcat": {
+        "value": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "value": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "gpa": {
+        "cumulative": null,
+        "science": null,
+        "stat": null,
+        "population": "unstated",
+        "classYear": null,
+        "source": null,
+        "nullReasons": {
+          "cumulative": "not-found",
+          "science": "not-found",
+          "stat": "not-found",
+          "classYear": "not-found",
+          "source": "not-found"
+        }
+      },
+      "nullReasons": {
+        "classSize": "not-found",
+        "inStatePercent": "not-found"
+      },
+      "prereqsMeta": {
+        "status": "captured"
+      }
+    }
+  ],
+  "researchReport": {
+    "schoolCount": 30,
+    "coverage": {
+      "control": 30,
+      "mcat": 5,
+      "cumulativeGPA": 4,
+      "scienceGPA": 3,
+      "classSize": 1,
+      "inStatePercent": 0,
+      "inStateStatement": 3,
+      "tuitionInState": 2,
+      "tuitionOutOfState": 2,
+      "secondaryFee": 5,
+      "prereqs": 13,
+      "letters": 9,
+      "primaryDeadline": 11,
+      "secondaryDeadline": 11,
+      "interviewSeason": 8,
+      "previewExplicit": 2,
+      "casperExplicit": 4
+    },
+    "nullReasons": "Every null is deliberate: the allowed official source did not publish the field, it was campus-combined rather than campus-specific, or cycle/currentness was unclear. Per-school profileStatus and fieldSources record the source-scoped reason.",
+    "sourcePolicy": "Official school, AACOM, AAMC, or TMDSAS sources only. excluded metrics excluded.",
+    "partFiles": [
+      "medical-school-profiles-2026-27-batch-07-part-01-figure-level-v2.json",
+      "medical-school-profiles-2026-27-batch-07-part-02-figure-level-v2.json",
+      "medical-school-profiles-2026-27-batch-07-part-03-figure-level-v2.json",
+      "medical-school-profiles-2026-27-batch-07-part-04-figure-level-v2.json"
+    ],
+    "nullReasonPolicy": "Every null queryable field carries a structured reason: not-published, not-found, or not-applicable. not-found fields are the only targets for later gap-fill sweeps."
+  }
+}

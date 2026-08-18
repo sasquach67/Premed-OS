@@ -2,6 +2,19 @@
 
 > Extracted from the mockup header. **Read this instead of the HTML** — the markup is ~90% CSS you must not copy.
 
+## Current-app alignment — Aug 15, 2026
+
+The overview reference now preserves the app's settled Task panel: `Add task`
+opens the standard create form, `↗` opens the expanded task workspace, and the
+overview itself has neither an inline quick-add row nor a permanently open
+context menu. The existing Now / Soon / Done, important group, completion, and
+within-tab reorder behavior remain unchanged.
+
+Quarterly Goals now shows the app's goal-row model rather than inferred
+percentage bars: each goal is either a manual check-off or explicitly names its
+student-set standing target and recorded value. The dedicated Quarterly Goals
+lab entry remains the place to review its editor and no-goals states.
+
 
   PREMED HQ — OVERVIEW / HOME — APPROVED VISUAL + STRUCTURAL REFERENCE
   Status: APPROVED by Andy (July 2026). This is the target for the Overview

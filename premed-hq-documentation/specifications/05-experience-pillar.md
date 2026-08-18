@@ -42,7 +42,7 @@ Identical on all five, including Extracurriculars.
 
 - **Compact headline strip, not stat boxes.** One slim line (`124 hrs · 68% of 150 · 5 active`), optionally a thin inline bar. **Not** three large stat squares plus a progress ring: that is the AI-default look and a waste of space (`04` §6, §10). What goes *in* the strip is the tab file's business. The shape is shared.
 - **The experience list is the hero.** What the user came for is their own records: sites, orgs, physicians, projects, clubs. The list gets the space and the visual weight. The strip is a thin header above it, never the centerpiece.
-- **Cards by default** on all five (`01` §5 per-shape default), opening to a **center peek** (`01` §2).
+- **Cards by default** on all five (`01` §5 per-shape default), opening into a **full-width inline workspace beneath the card grid**. One selected organization, site, physician, project, or initiative remains selected while the grid stays visible above its record context, related activity, people/verification, reflections, and actions. This is the experience-pillar exception to `01` §2's center-peek default: the surrounding commitments remain visible so a student can scan and compare their own record.
 - **Inspector tabs:** Overview/Details · Relations · Files · Reflections · Verification · Activity.
 - **Add** via Quick Add (shell §7.4), prefilled to the pillar.
 - **Standard states:** empty, loading, error (`01` §8). Mobile per `01` §5c. In-app controls per `01` §4a.
@@ -477,7 +477,7 @@ Domain criteria live in the tab files.
 
 - [ ] Clinical, Volunteering, Shadowing, and Research render from **one component**, not four pages. Extracurriculars stays its own page.
 - [ ] Every pillar leads with a **compact stat row**, with the **list as the visual hero**. No stat-square grid, no dominating progress ring.
-- [ ] Experiences open in a **center peek** carrying reflections and verification. People and orgs resolve to **shared entities**.
+- [ ] Experiences open in a **full-width inline workspace below the card grid**, carrying reflections and verification. People and orgs resolve to **shared entities**.
 - [ ] Extracurriculars shows **no hours anywhere**, including in any shared surface it inherits.
 - [ ] Verified in light and dark, desktop and mobile, keyboard-only, reduced-motion.
 
@@ -487,3 +487,4 @@ Domain criteria live in the tab files.
 2. Shadowing specialty breadth is a **count and list, not a chart**, at launch. (Jul 2026)
 3. **Extracurriculars stays a separate page.** The instruction to fold it into the shared builder is withdrawn. (Aug 2026)
 4. **This file stops carrying per-domain configuration.** The config table and per-pillar notes are deleted. Tab files are the source of truth. (Aug 2026)
+5. **A selected experience card opens one full-width inline workspace beneath the grid.** The center-peek default is superseded for these five pillars only; the surrounding cards remain visible above the selected record. (Aug 2026)

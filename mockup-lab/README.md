@@ -67,7 +67,10 @@ mockups/
 
 | File | Status | Spec |
 |---|---|---|
-| `mcat-bookshelf.html` | Bookshelf | §3.10 |
+| `mcat-dashboard.html` | **DRAFT — 3 lab variants** · study-session home, measured readiness, and one clear next action | §3 |
+| `mcat-plan-spec.html` | **DRAFT — 3 lab variants** · phased plan, protected FL review, and projected-vs-goal rebuild | §3.3 |
+| `mcat-tab-spec.html` | **DRAFT — 3 lab variants per tab** · Content, Questions, Mistakes, Stats, Advisor | §3–§5 |
+| `mcat-bookshelf.html` | archived input for the Content shelf; **not an additional MCAT tab** | §3.10 |
 | `mcat-section-aware-drills.html` | drill scheduling | §3.9-a |
 | `mcat-plan.html` | **older concept mockup** — plan generator flow only | §3.3 |
 
@@ -100,10 +103,24 @@ Supporting logic already exists in `lib/academics/`: `coverage`, `fsrs`, `chunkA
 - **Exam-plan builder** — no code. `studyPlan` in `types.ts` is a free-text string on a course, not a builder.
 - **Syllabus import** — `syllabusUrl` is only a paste-a-URL `Input`. There is no parse/extract/review flow, yet `pages/Academics.tsx` copy tells the user to "Import the syllabus." Either build it or fix the copy.
 
-### Not yet mocked
+### Current draft coverage
 
-**MCAT:** Test Day panel (§3.11) · M2M end-to-end flow (§4 + §5h export) · coach states (§5j) · stamina decay chart (§3.12-A)
-**Everything else:** Clinical, Volunteering, Shadowing, Research, Extracurriculars, School List, Essays, Letters, Timeline, Profile, Settings, Help
+- **MCAT:** all seven tabs, working Session, phase-gated Test Day panel, and
+  full-length validity/stamina states. M2M remains attached to Mistakes rather
+  than becoming an extra tab.
+- **Experiences:** Clinical, Volunteering, Shadowing, Research, and
+  Extracurriculars are five peer categories. Every canonical sub-tab has a real
+  page and A/B/C review state, configured from
+  `_shared/experience-pillar-dashboard.html`.
+- **Application:** School List (Explore / Track), Essays & Story Bank (The bank
+  / Essays / Writing desk), and Letters (People / Dossier / Requests) are drawn
+  from `_shared/application-workspaces.html`.
+- **Owner states:** `_shared/deep-state-workspaces.html` contains the full
+  Academics, MCAT, and Overview states that used to exist only on a generic
+  feature-coverage sheet.
+
+Only Timeline & Tasks, Profile / CV, Help, and Settings remain deliberately
+undrawn in the lab.
 
 ---
 
