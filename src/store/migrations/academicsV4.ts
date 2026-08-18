@@ -220,6 +220,7 @@ function migrateRelatedRows(
     assignedReadings: [],
     feedbackNotes: [],
     gradeCategories: [],
+    examPrepPlans: [],
   }
 }
 

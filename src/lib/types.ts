@@ -529,6 +529,43 @@ export interface AcademicMigrationJournalEntry {
   resolvedAt?: number
 }
 
+/** A temporary, class-owned plan for one dated exam. It assembles existing
+ * class records; it deliberately stores no score or forecast. */
+export type ExamPrepIntensity = 'accelerated' | 'steady'
+export type ExamPrepItemOwner = 'topic' | 'assignment' | 'file' | 'manual'
+export type ExamPrepItemState = 'planned' | 'complete' | 'missed'
+
+export interface ExamPrepPlanItem {
+  id: ID
+  owner: ExamPrepItemOwner
+  topicId?: ID
+  assignmentId?: ID
+  fileId?: ID
+  /** Required only when the student adds work that has no existing owner. */
+  manualLabel?: string
+  plannedDate: string
+  order: number
+  state: ExamPrepItemState
+  completedAt?: number
+  missedAt?: number
+  createdAt: number
+  updatedAt: number
+}
+
+export interface ExamPrepPlan {
+  id: ID
+  courseId: ID
+  examAssignmentId: ID
+  intensity: ExamPrepIntensity
+  items: ExamPrepPlanItem[]
+  /** Student-entered factual closeout; never a predicted or computed result. */
+  returnedGrade?: string
+  feedback?: string
+  closedAt?: number
+  createdAt: number
+  updatedAt: number
+}
+
 export interface ClassCenterData {
   workspaces: ClassWorkspace[]
   topics: Topic[]
@@ -546,6 +583,7 @@ export interface ClassCenterData {
   assignedReadings: AssignedReading[]
   feedbackNotes: FeedbackNote[]
   gradeCategories: GradeCategory[]
+  examPrepPlans: ExamPrepPlan[]
 }
 
 /** Parsed or student-entered syllabus category. This intentionally has no grade math. */

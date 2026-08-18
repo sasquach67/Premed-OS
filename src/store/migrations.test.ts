@@ -11,6 +11,7 @@ import { migrateExperienceHoursV15 } from '@/store/migrations/experienceHoursV15
 import { migrateRoadmapTaskLinkV16 } from '@/store/migrations/roadmapTaskLinkV16'
 import { migrateOverviewAttachmentsV17 } from '@/store/migrations/overviewAttachmentsV17'
 import { migrateTaskHorizonsV18 } from '@/store/migrations/taskHorizonsV18'
+import { migrateExamPrepV19 } from '@/store/migrations/examPrepV19'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
 
 function freshData(): AppData {
@@ -19,7 +20,34 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(18)
+  expect(CURRENT_STORE_VERSION).toBe(19)
+})
+
+describe('migrateExamPrepV19', () => {
+  it('adds an empty exam-plan collection without rewriting legacy class data', () => {
+    const data = structuredClone(freshData())
+    delete (data.academics.classCenter as Partial<typeof data.academics.classCenter>).examPrepPlans
+    const before = structuredClone(data)
+    Object.freeze(data)
+    Object.freeze(data.academics)
+    Object.freeze(data.academics.classCenter)
+
+    const out = migrateExamPrepV19(data)
+
+    expect(out.academics.classCenter.examPrepPlans).toEqual([])
+    expect({ ...out.academics.classCenter, examPrepPlans: undefined }).toEqual({ ...before.academics.classCenter, examPrepPlans: undefined })
+    expect(data).toEqual(before)
+  })
+
+  it('is idempotent and preserves a populated plan exactly', () => {
+    const data = structuredClone(freshData())
+    data.academics.classCenter.examPrepPlans = [{
+      id: 'plan-1', courseId: 'course-1', examAssignmentId: 'exam-1', intensity: 'steady',
+      items: [], createdAt: 1, updatedAt: 1,
+    }]
+    expect(migrateExamPrepV19(data)).toBe(data)
+    expect(migrateExamPrepV19(data).academics.classCenter.examPrepPlans).toEqual(data.academics.classCenter.examPrepPlans)
+  })
 })
 
 describe('migrateTaskHorizonsV18', () => {

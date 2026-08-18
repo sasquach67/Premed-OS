@@ -37,6 +37,7 @@ import { migrateExperienceHoursV15 } from '@/store/migrations/experienceHoursV15
 import { migrateRoadmapTaskLinkV16 } from '@/store/migrations/roadmapTaskLinkV16'
 import { migrateOverviewAttachmentsV17 } from '@/store/migrations/overviewAttachmentsV17'
 import { migrateTaskHorizonsV18 } from '@/store/migrations/taskHorizonsV18'
+import { migrateExamPrepV19 } from '@/store/migrations/examPrepV19'
 import { removeStoryAttachment, retainThenPersistStoryAttachment } from '@/lib/overviewFileCapture'
 
 const DEMO_MODE = isDemoMode()
@@ -55,8 +56,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateTaskHorizonsV18`. */
-export const CURRENT_STORE_VERSION = 18
+/** Matches the newest migration in `migrateAll`: `migrateExamPrepV19`. */
+export const CURRENT_STORE_VERSION = 19
 
 function createInitialData() {
   if (!DEMO_MODE) return structuredClone(createSeedData())
@@ -328,7 +329,12 @@ export function migrateAcademicTags(data: AppData): AppData {
   // A non-enumerable compatibility view lets old callers detect that the
   // container exists without serializing duplicate course/workspace data.
   // Defined on the fresh container: object spread never carries it across.
-  const center = { ...classCenterSource, topics, weakAreas, gradeCategories: classCenterSource.gradeCategories ?? [] } as ClassCenterData & { classes?: unknown[] }
+  const center = {
+    ...classCenterSource,
+    topics,
+    weakAreas,
+    gradeCategories: classCenterSource.gradeCategories ?? [],
+  } as unknown as ClassCenterData & { classes?: unknown[] }
   Object.defineProperty(center, 'classes', {
     configurable: true,
     enumerable: false,
@@ -525,7 +531,8 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateExperienceHoursV15(migrated)
   migrated = migrateRoadmapTaskLinkV16(migrated)
   migrated = migrateOverviewAttachmentsV17(migrated)
-  return migrateTaskHorizonsV18(migrated)
+  migrated = migrateTaskHorizonsV18(migrated)
+  return migrateExamPrepV19(migrated)
 }
 
 function nextOrder(arr: AnyRow[]): number {

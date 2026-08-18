@@ -36,6 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatStrip } from '@/components/common/StatStrip'
+import { ExamPrepMode } from '@/components/academics/ExamPrepMode'
 
 type HubTab = 'overview' | 'materials' | 'topics' | 'readings' | 'assignments' | 'notes'
 
@@ -92,6 +93,10 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
   const courseReadings = ordered(data.assignedReadings.filter((item) => item.courseId === course.id))
   const courseFeedback = ordered(data.feedbackNotes.filter((item) => item.courseId === course.id))
   const stats = hubStats(course, courseTopics, courseAssignments)
+  const requestedExamPrepId = params.get('examPrep')
+  const requestedExamPrep = requestedExamPrepId
+    ? courseAssignments.find((item) => item.id === requestedExamPrepId && item.type === 'exam')
+    : undefined
 
   function changeTab(next: string) {
     if (!isHubTab(next) || !availableTabs.includes(next)) return
@@ -119,6 +124,36 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
 
   function startReview() {
     navigate(`/academics/review/${course.id}`)
+  }
+
+  function openExamPrep(examId: string) {
+    const nextParams = new URLSearchParams(params)
+    nextParams.set('examPrep', examId)
+    setParams(nextParams)
+  }
+
+  function exitExamPrep() {
+    const nextParams = new URLSearchParams(params)
+    nextParams.delete('examPrep')
+    setParams(nextParams)
+  }
+
+  function returnToHubTab(next: HubTab) {
+    const nextParams = new URLSearchParams(params)
+    nextParams.delete('examPrep')
+    nextParams.set('classTab', next)
+    setParams(nextParams)
+    setTab(next)
+  }
+
+  if (requestedExamPrep) {
+    return <ExamPrepMode
+      course={course}
+      data={data}
+      exam={requestedExamPrep}
+      onExit={exitExamPrep}
+      onOpenTab={returnToHubTab}
+    />
   }
 
   function primaryAction() {
@@ -219,7 +254,7 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
           </div>
         </PageHeader>
 
-        <TabsContent value="overview"><Overview course={course} data={data} type={classType} topics={courseTopics} drafts={courseDrafts} assignments={courseAssignments} notes={courseNotes} contacts={courseContacts} persons={persons} onTab={changeTab} /></TabsContent>
+        <TabsContent value="overview"><Overview course={course} data={data} type={classType} topics={courseTopics} drafts={courseDrafts} assignments={courseAssignments} notes={courseNotes} contacts={courseContacts} persons={persons} onTab={changeTab} onOpenExamPrep={openExamPrep} /></TabsContent>
         <TabsContent value="materials"><Materials courseId={course.id} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} onTab={changeTab} /></TabsContent>
         <TabsContent value="topics"><Topics courseId={course.id} data={data} topics={courseTopics} assignments={courseAssignments} /></TabsContent>
         <TabsContent value="readings"><WritingTools courseId={course.id} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} /></TabsContent>
@@ -293,7 +328,7 @@ export function ClassHubPeek({
 }
 
 function Overview({
-  course, data, type, topics, drafts, assignments, notes, contacts, persons, onTab,
+  course, data, type, topics, drafts, assignments, notes, contacts, persons, onTab, onOpenExamPrep,
 }: {
   course: Course
   data: ClassCenterData
@@ -305,6 +340,7 @@ function Overview({
   contacts: ClassContact[]
   persons: Person[]
   onTab: (tab: string) => void
+  onOpenExamPrep: (examId: string) => void
 }) {
   const open = assignments.filter((item) => !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
   const today = open.filter((item) => item.dueDate === isoToday())
@@ -342,7 +378,7 @@ function Overview({
         {today.length > 0 && graded.length > 1 && <p className="mt-3 text-xs font-bold text-muted-foreground">At your recorded completion pace, today’s queue is within one focused block.</p>}
       </Panel>
 
-      <Panel className="col-span-12 lg:col-span-4" title="Exam scope">
+      <Panel className="col-span-12 lg:col-span-4" title="Exam scope" action={exam ? <Button size="sm" variant="outline" onClick={() => onOpenExamPrep(exam.id)}>Exam prep</Button> : undefined}>
         {exam ? (
           <ExamScope exam={exam} topics={scopedTopics} allTopics={topics} />
         ) : <EmptyState icon={CalendarClock} title="No upcoming exam" detail="Add an exam and link its covered topics to see scope." />}
