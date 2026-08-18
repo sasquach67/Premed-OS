@@ -35,3 +35,6 @@
 - Requirement preview includes catalog staleness, named/inferred mapping distinction, double-count cap, downstream unlock, and an editable-term action.
 - Plan comparison includes a restore action and an honest advisor export boundary.
 - MCAT timing includes the no-MCAT-date planning-window fallback and explicitly calls out missing tracked-topic information.
+- A registered term is a factual boundary: the term’s student-recorded courses remain visible, but suggestions cannot appear to move or replace them. The planner still explains effects in future editable terms.
+- Substitute choice is a comparison, never an automatic course replacement. Each alternative visibly names what it clears and what remains open before a student reviews placement.
+- Advisor export is a paper-like snapshot with the catalog source date, included terms, open requirements, substitution state, and a plain statement that it is not an official audit or enrollment action.

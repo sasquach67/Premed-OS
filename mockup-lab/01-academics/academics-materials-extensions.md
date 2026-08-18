@@ -34,5 +34,5 @@
 ## States
 
 - Catalog shows populated sources, an explicit unknown-origin private treatment, and the first-action empty rail.
-- Calendar feed shows the handoff, a date conflict that must be reviewed, connected-but-empty, and the non-destructive disconnect consequence.
-- Study guide shows selected sources and the no-eligible-material recovery. Provider failure remains a scoped error state for the eventual build brief.
+- Calendar feed shows the handoff, a date conflict that must be reviewed, connected-but-empty, and the non-destructive disconnect consequence. Its unavailable state is a reconnect recovery: no date changes, no broken class record, and no implication that Canvas is writable.
+- Study guide shows selected sources and the no-eligible-material recovery. Its result keeps a narrow provenance rail with every selected source reachable from the generated material. Its unavailable state happens only after source selection and preserves those selections; it never substitutes general course content.
