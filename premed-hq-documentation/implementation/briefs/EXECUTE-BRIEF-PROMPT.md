@@ -47,7 +47,33 @@ BEFORE YOU START
 
 WHILE WORKING
 - _shared/_visual-recipes.md values are used LITERALLY, never
-  approximated.
+  approximated. **A token NAME is not the value.** `bg-muted/25` is not
+  `var(--muted)`: a translucent fill washes toward whatever sits behind
+  it, and three surfaces that each "use muted" can end up the same
+  colour. Solid where the recipe says solid.
+
+⭐ VISUAL FIDELITY CHECK — REQUIRED BEFORE YOU CALL ANYTHING DONE
+  Andy, Aug 19 2026, after a week of surfaces shipped washed-out:
+  "make sure it's part of the workflow from now on, visually copying
+  from the mockup to the app."
+
+  Open the mockup and the built screen side by side, then MEASURE —
+  do not eyeball, and do not trust that reusing a token name worked:
+
+  1. Serve the lab standalone, NOT through the dev server:
+       cd mockup-lab && python3 -m http.server 4599
+     Vite's Tailwind plugin tries to compile the mockups' own CSS and
+     errors on it.
+  2. Read the mockup's own rule for each surface:
+       grep -o "\.term{[^}]*}" mockup-lab/01-academics/<frame>.html
+  3. In the running app, read the COMPUTED value of the same surfaces:
+       getComputedStyle(el).backgroundColor
+  4. Compare the ladder, not one value. A drawing that steps
+     bg -> muted -> card must step the same way in the app. Equal-looking
+     surfaces are the failure this check exists to catch.
+  5. Do this in BOTH themes.
+
+  Report the before/after table in the commit when it changes anything.
 - Reuse existing components. Do not fork one to change it.
 - No U-9 violations: no score, composite, ranking, or progress bar.
   If the brief or a mockup implies one, flag the conflict and do not

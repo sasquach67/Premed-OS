@@ -56,6 +56,13 @@ fully functional.**
 - Shared components: InlineAddRow, ExpandableEntryRow, ContactCard,
   PillarShell. Reuse — never fork variants.
 - Every logging flow must complete in ≤5 seconds.
+- **Verify surfaces against the drawing by MEASURING, not by eyeballing**
+  (Andy, Aug 19 2026). Reusing a token name is not fidelity: nine Academics
+  surfaces shipped with `bg-muted/15–50` where the recipe rules solid
+  `var(--muted)`, and the translucency collapsed page, panel and inner card
+  into one tone. Compare `getComputedStyle().backgroundColor` against the
+  mockup's own CSS rule, in both themes, before calling a surface done.
+  The check is written up in `implementation/briefs/EXECUTE-BRIEF-PROMPT.md`.
 
 ## Standing MUST-NOT-CHANGE (unless a prompt explicitly overrides)
 
