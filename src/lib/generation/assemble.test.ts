@@ -121,7 +121,18 @@ describe('the assembled request', () => {
   })
 
   it('refuses an unregistered artifact rather than inventing a prompt', () => {
-    expect(() => assembleGenerationRequest({ ...base, specId: 'study-guide-v1' }))
+    // flashcards-v1 is specified in `04` and unbuilt until Phase 4. Registering
+    // a spec whose engine does not exist would let the assembler produce a
+    // prompt for an artifact nothing can generate.
+    expect(() => assembleGenerationRequest({ ...base, specId: 'flashcards-v1' }))
       .toThrow(/No generator registered/)
+  })
+
+  it('now assembles the study guide, which registered in Phase 3', () => {
+    const guide = assembleGenerationRequest({ ...base, specId: 'study-guide-v1' })
+    expect(guide.specId).toBe('study-guide-v1')
+    expect(guide.systemPrompt).toContain('Reorganize the supplied source material')
+    // Its own L2 rules ride alongside the global ones.
+    expect(guide.systemPrompt).toContain('SG-SPLIT')
   })
 })

@@ -1,0 +1,89 @@
+/**
+ * L2 — `study-guide-v1` (`03`).
+ *
+ * **Objective, in the spec's own words:** "Reorganize source material into a
+ * structure that improves understanding. Not a rewrite of lecture notes; not a
+ * compression of them."
+ *
+ * The test a finished guide must pass: *a student who reads this guide and then
+ * re-reads the lecture should find the lecture easier to follow than they did
+ * the first time.* If it is only navigable by someone who already understood
+ * the lecture, it has failed.
+ *
+ * ⚠️ Sections marked conditional are **omitted entirely** when the source does
+ * not support them. An empty section rendered as a heading with nothing under
+ * it is worse than no section.
+ */
+import type { ArtifactSpec } from '@/lib/generation/types'
+
+export interface GuideSectionSpec {
+  id: string
+  title: string
+  required: 'always' | 'conditional'
+  purpose: string
+}
+
+/** `03` §2 — the default skeleton, in order. */
+export const STUDY_GUIDE_SECTIONS: GuideSectionSpec[] = [
+  { id: 'title', title: 'TITLE', required: 'always', purpose: "The topic, in the instructor's terms." },
+  { id: 'big-picture', title: 'BIG PICTURE', required: 'always', purpose: 'What this topic is and how its pieces fit. 3–6 sentences. Not a summary of what follows — the frame that makes what follows make sense.' },
+  { id: 'objectives', title: 'LEARNING OBJECTIVES', required: 'conditional', purpose: 'Preserved verbatim when the professor supplied them; inferred only when clearly supported, capped at 5 and marked as inferred. Omit when neither applies — a guessed objective list is actively misleading.' },
+  { id: 'core-concepts', title: 'CORE CONCEPTS', required: 'always', purpose: 'Organized by concept, not slide order.' },
+  { id: 'mechanisms', title: 'MECHANISMS / PROCESSES', required: 'conditional', purpose: 'Causal or sequential processes, step by step, with why.' },
+  { id: 'relationships', title: 'RELATIONSHIPS', required: 'conditional', purpose: 'Explicit connections: cause/effect, contrast, prerequisite, feedback, hierarchy.' },
+  { id: 'high-yield', title: 'HIGH-YIELD DETAILS', required: 'conditional', purpose: 'Only what passes the §1.7 defensibility test.' },
+  { id: 'comparisons', title: 'COMPARISONS', required: 'conditional', purpose: 'Comparison tables where two or more concepts are genuinely confusable.' },
+  { id: 'confusions', title: 'COMMON CONFUSIONS', required: 'conditional', purpose: 'Plausible confusion points, with the distinction made explicit.' },
+  { id: 'clinical', title: 'CLINICAL / REAL-WORLD', required: 'conditional', purpose: 'Only where the source supports it or the mode permits.' },
+  { id: 'must-understand', title: 'MUST UNDERSTAND', required: 'always', purpose: 'Concepts requiring comprehension.' },
+  { id: 'must-memorize', title: 'MUST MEMORIZE', required: 'always', purpose: 'Facts, terms, formulas, pathways, values requiring direct recall.' },
+  { id: 'active-recall', title: 'ACTIVE RECALL', required: 'always', purpose: 'Concise self-test prompts on the concepts the guide itself marked important. Every answer must exist in the guide.' },
+  { id: 'synthesis', title: 'FINAL SYNTHESIS', required: 'always', purpose: 'Compact integrated overview. Not a repeat of BIG PICTURE — it integrates after the detail rather than framing before it.' },
+]
+
+export const REQUIRED_SECTION_IDS = STUDY_GUIDE_SECTIONS
+  .filter((section) => section.required === 'always')
+  .map((section) => section.id)
+
+export const STUDY_GUIDE_V1: ArtifactSpec = {
+  specId: 'study-guide-v1',
+  objective:
+    'Reorganize the supplied source material into a structure that improves understanding. '
+    + 'This is not a rewrite of the lecture notes and not a compression of them. A student who '
+    + 'reads this guide and then re-reads the lecture should find the lecture easier to follow '
+    + 'than they did the first time.',
+  rules: [
+    { id: 'SG-1', kind: 'tunable', text: 'Do not preserve bad source organization merely because it appeared in that order.' },
+    { id: 'SG-2', kind: 'invariant', text: 'Do preserve sequencing when the sequence is pedagogically important.' },
+    { id: 'SG-3', kind: 'tunable', text: 'Avoid paragraph walls.' },
+    { id: 'SG-4', kind: 'tunable', text: 'Use hierarchy deliberately; every level must carry meaning.' },
+    { id: 'SG-5', kind: 'tunable', text: 'Tables only when tabular comparison actually improves comprehension.' },
+    { id: 'SG-6', kind: 'tunable', text: 'Avoid excessive bullet nesting — maximum depth 2.' },
+    { id: 'SG-7', kind: 'tunable', text: 'Do not restate a concept across sections unless the repetition serves a distinct learning purpose.' },
+    { id: 'SG-8', kind: 'invariant', text: 'Do not inflate output to appear comprehensive.' },
+    { id: 'SG-9', kind: 'invariant', text: 'If material is incomplete, mark the gap explicitly; never invent.' },
+    { id: 'SG-10', kind: 'tunable', text: 'Every major concept gets an explicit representation decision. Bullets are not the default and must be justified by structure — a process in bullets, a comparison in bullets, and a hierarchy in bullets are all defects.' },
+    { id: 'SG-11', kind: 'invariant', text: 'Visual grammar is consistent across the whole artifact.' },
+    {
+      id: 'SG-SPLIT',
+      kind: 'invariant',
+      text: 'MUST UNDERSTAND and MUST MEMORIZE must not collapse into two lists of the same items. '
+        + 'Test each item: could a student who has memorized this still fail to use it? Then understand. '
+        + 'Could a student who understands it still not produce it from memory? Then memorize. Items may '
+        + 'legitimately appear in both, but if more than about a quarter do, the split is not being made.',
+    },
+    {
+      id: 'SG-SECTIONS',
+      kind: 'invariant',
+      text: 'Conditional sections are omitted entirely when the source does not support them. '
+        + 'An empty section rendered as a heading with nothing under it is worse than no section.',
+    },
+  ],
+}
+
+/** `03` §7 — target block counts per coverage depth. */
+export const SECTION_SIZING = {
+  essential: { min: 8, max: 14, note: 'Core concepts only; conditional sections largely omitted.' },
+  standard: { min: 18, max: 30, note: 'Default.' },
+  thorough: { min: 30, max: 50, note: 'Every supported section.' },
+} as const

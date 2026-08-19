@@ -11,6 +11,7 @@
  * error. Never ship a blocking-failed artifact.
  */
 import type { GuideSection, StudyGuideArtifact } from '@/lib/generation/schemas/studyGuide.v1'
+import { REQUIRED_SECTION_IDS, STUDY_GUIDE_SECTIONS } from '@/lib/generation/artifacts/studyGuide.v1'
 import { blocksMissingCitation } from '@/lib/generation/citations'
 import type { SourceMode } from '@/lib/generation/types'
 import { sourceModeSpec } from '@/lib/generation/layers/sourceModes'
@@ -161,11 +162,29 @@ function representationVariety(artifact: StudyGuideArtifact): QualityFinding[] {
   }]
 }
 
+/** `03` §2 — a section the skeleton marks `always` cannot be missing. */
+function requiredSections(artifact: StudyGuideArtifact): QualityFinding[] {
+  const present = new Set(artifact.sections.map((section) => section.id))
+  return REQUIRED_SECTION_IDS
+    .filter((id) => !present.has(id))
+    .map((id) => ({
+      check: 'Required sections present',
+      severity: 'blocking' as const,
+      detail: `${STUDY_GUIDE_SECTIONS.find((section) => section.id === id)?.title ?? id} is missing.`,
+    }))
+}
+
 export function runDeterministicChecks(
   artifact: StudyGuideArtifact,
-  { mode, closedCitationKeys }: { mode: SourceMode; closedCitationKeys?: ReadonlySet<string> },
+  { mode, closedCitationKeys, checkRequiredSections = false }: {
+    mode: SourceMode
+    closedCitationKeys?: ReadonlySet<string>
+    /** Off by default so a partial artifact can be checked mid-pipeline. */
+    checkRequiredSections?: boolean
+  },
 ): QualityFinding[] {
   const findings: QualityFinding[] = [
+    ...(checkRequiredSections ? requiredSections(artifact) : []),
     ...artifact.sections
       .filter((section) => section.blocks.length === 0)
       .map((section) => ({

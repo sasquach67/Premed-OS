@@ -4,6 +4,7 @@ import {
 } from '@/lib/generation/citations'
 import { conceptIdFor } from '@/lib/generation/conceptId'
 import { isPersistable, runDeterministicChecks } from '@/lib/generation/quality/deterministic'
+import { REQUIRED_SECTION_IDS } from '@/lib/generation/artifacts/studyGuide.v1'
 import type {
   ContentBlock, SourceRef, StudyGuideArtifact,
 } from '@/lib/generation/schemas/studyGuide.v1'
@@ -157,6 +158,33 @@ describe('deterministic quality checks', () => {
     const minted = block({ sourceRef: ref({ start: 5, end: 25 }) })
     const findings = runDeterministicChecks(guide([minted]), { ...ok, closedCitationKeys: keys })
     expect(findings.some((f) => f.check === 'Citation integrity' && f.severity === 'blocking')).toBe(true)
+  })
+})
+
+describe('study-guide-v1 structure', () => {
+  it('blocks an artifact missing a section the skeleton requires', () => {
+    const partial = guide([block()])
+    const findings = runDeterministicChecks(partial, {
+      mode: 'SOURCE_PLUS_CLARIFICATION', checkRequiredSections: true,
+    })
+    const missing = findings.filter((f) => f.check === 'Required sections present')
+    expect(missing.length).toBeGreaterThan(0)
+    expect(missing.every((f) => f.severity === 'blocking')).toBe(true)
+    expect(missing.some((f) => f.detail.includes('BIG PICTURE'))).toBe(true)
+  })
+
+  it('does not demand them mid-pipeline, where a partial artifact is normal', () => {
+    const findings = runDeterministicChecks(guide([block()]), { mode: 'SOURCE_PLUS_CLARIFICATION' })
+    expect(findings.some((f) => f.check === 'Required sections present')).toBe(false)
+  })
+
+  it('keeps conditional sections out of the required set', () => {
+    // "An empty section rendered as a heading with nothing under it is worse
+    // than no section" — so conditional ones must never be demanded.
+    expect(REQUIRED_SECTION_IDS).not.toContain('clinical')
+    expect(REQUIRED_SECTION_IDS).not.toContain('objectives')
+    expect(REQUIRED_SECTION_IDS).toContain('big-picture')
+    expect(REQUIRED_SECTION_IDS).toContain('active-recall')
   })
 })
 
