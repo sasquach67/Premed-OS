@@ -205,7 +205,7 @@ function DomainStatusRow({ row, open, onOpenChange }: { row: DomainRow; open: bo
         {row.progress == null ? <span aria-hidden="true" /> : <Progress value={row.progress} className="h-1.5 border-0" aria-label={`${row.label} progress toward student-set goal`} />}
         {records.length > 0 ? <button type="button" onClick={() => onOpenChange(!open)} aria-expanded={open} aria-label={`${open ? 'Collapse' : 'Expand'} ${row.label} records`} className="flex items-center gap-1 rounded-md text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Badge variant="muted" className="justify-center px-1.5 text-[9px]">{row.state}</Badge><ChevronDown className={`size-3 transition-transform duration-150 motion-reduce:transition-none ${open ? 'rotate-180' : ''}`} /></button> : <Badge variant="muted" className="justify-center px-1.5 text-[9px]">{row.state}</Badge>}
       </div>
-      {open && records.length > 0 && <div className="mx-1.5 mb-1 space-y-2 rounded-xl border border-border bg-muted/25 p-2.5">
+      {open && records.length > 0 && <div className="mx-1.5 mb-1 space-y-2 rounded-xl border border-border bg-muted p-2.5">
         <div className="space-y-1.5">{visibleRecords.map((record) => <Link key={record.id} to={row.route} className="flex items-center justify-between gap-2 rounded-lg border border-border/80 bg-card px-2.5 py-2 hover:bg-muted/45"><span className="min-w-0"><span className="block truncate text-xs font-extrabold">{record.title}</span><span className="block truncate text-[11px] font-semibold text-muted-foreground">{record.detail}</span></span><Badge variant="muted" className="shrink-0 px-1.5 text-[9px]">{record.state}</Badge></Link>)}</div>
         {records.length > visibleRecords.length && <Link to={row.route} className="block text-xs font-bold text-primary hover:underline">+{records.length - visibleRecords.length} more →</Link>}
         {row.projectionKey && <ProjectionDisclosure projection={row.projection} projectionKey={row.projectionKey} unavailable={row.projectionUnavailable ?? 'Not enough dated work yet.'} />}
@@ -241,7 +241,7 @@ function ProjectionDisclosure({ projection, projectionKey, unavailable }: { proj
 }
 
 function ProjectionFact({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-md bg-muted/40 px-2 py-1.5"><span className="block text-[9px] font-extrabold uppercase tracking-wide text-muted-foreground">{label}</span><span className="block truncate font-bold text-foreground">{value}</span></div>
+  return <div className="rounded-md bg-muted px-2 py-1.5"><span className="block text-[9px] font-extrabold uppercase tracking-wide text-muted-foreground">{label}</span><span className="block truncate font-bold text-foreground">{value}</span></div>
 }
 
 export function GpaStatTile() {
@@ -384,7 +384,7 @@ export function HoursStatTile() {
         {total === 0 ? (
           <p className="rounded-xl border border-dashed border-border p-4 text-sm font-semibold text-muted-foreground">No experience hours recorded yet.</p>
         ) : rows.map((row) => (
-          <div key={row.label} className="grid grid-cols-[5rem_minmax(0,1fr)_3rem] items-center gap-2 rounded-xl bg-muted/30 px-3 py-2 text-xs">
+          <div key={row.label} className="grid grid-cols-[5rem_minmax(0,1fr)_3rem] items-center gap-2 rounded-xl bg-muted px-3 py-2 text-xs">
             <span className="font-bold text-muted-foreground">{row.label}</span>
             {row.value > 0
               ? <Progress value={(row.value / largest) * 100} className="h-2" aria-label={`${row.label}, ${Math.round(row.value)} hours`} />

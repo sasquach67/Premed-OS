@@ -93,7 +93,7 @@ export function RecordOpenWorkspace({
   }
 
   const listPane = (
-    <section className="h-full overflow-y-auto border-r border-border bg-muted/15" aria-label={`${parentLabel} records`}>
+    <section className="h-full overflow-y-auto border-r border-border bg-muted" aria-label={`${parentLabel} records`}>
       <div className="sticky top-0 z-10 border-b border-border bg-card px-4 py-3">
         <h2 className="font-display text-base font-extrabold">{parentLabel}</h2>
         <p className="text-xs text-muted-foreground">Choose a record or pin one for paired work.</p>
@@ -167,7 +167,7 @@ export function RecordOpenWorkspace({
     >
       {mode === 'split' ? (
         <>
-          <div className="flex border-b border-border bg-muted/20 lg:hidden" role="tablist" aria-label="Split view panes">
+          <div className="flex border-b border-border bg-muted lg:hidden" role="tablist" aria-label="Split view panes">
             {(pinned
               ? ([['record', active.label], ['pinned', pinned.label]] as const)
               : ([['list', parentLabel], ['record', active.label]] as const)

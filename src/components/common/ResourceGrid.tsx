@@ -35,7 +35,7 @@ export function ResourceGrid({ pillar }: { pillar: string }) {
       </div>
 
       {grouped.length === 0 && (
-        <p className="rounded-lg border border-dashed border-border bg-muted/40 px-4 py-6 text-center text-sm text-muted-foreground">
+        <p className="rounded-lg border border-dashed border-border bg-muted px-4 py-6 text-center text-sm text-muted-foreground">
           No resources yet — add your first link.
         </p>
       )}

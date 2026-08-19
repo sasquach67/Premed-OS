@@ -170,7 +170,7 @@ function EntityRail({ category, entities, activeId, addLabel, onSelect, onAdd }:
             <p className={cn('mt-1 text-[10.5px] font-bold leading-snug', entity.tone === 'warn' ? 'text-amber-600 dark:text-amber-300' : 'text-muted-foreground')}>{entity.tail}</p>
           </button>
         ))}
-        <button type="button" onClick={onAdd} className="grid min-h-[70px] place-items-center rounded-xl border border-dashed bg-muted/10 p-3 text-[12.5px] font-extrabold text-muted-foreground hover:border-primary/40 hover:text-primary"><span>+ {addLabel.toLowerCase()}</span></button>
+        <button type="button" onClick={onAdd} className="grid min-h-[70px] place-items-center rounded-xl border border-dashed bg-muted p-3 text-[12.5px] font-extrabold text-muted-foreground hover:border-primary/40 hover:text-primary"><span>+ {addLabel.toLowerCase()}</span></button>
       </div>
     </section>
   )
@@ -195,7 +195,7 @@ function PositionDetail({ entity, onAddDatedHours }: {
 
   return (
     <section className="rounded-[14px] border bg-card p-[18px] shadow-sm">
-      <div className="grid gap-3 rounded-xl border bg-muted/20 px-[17px] py-[15px] sm:grid-cols-[1fr_auto]">
+      <div className="grid gap-3 rounded-xl border bg-muted px-[17px] py-[15px] sm:grid-cols-[1fr_auto]">
         <div className="min-w-0">
           <h2 className="font-display text-[19px] font-extrabold leading-tight">{entity.name}</h2>
           <p className="mt-1.5 text-[12.5px] font-bold text-muted-foreground">{entity.subtitle}</p>

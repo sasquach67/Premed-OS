@@ -89,7 +89,7 @@ export function SmartActionPanel({
                   animate={{ opacity: 1, y: 0 }}
                   exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0, y: -8 }}
                   transition={reduceMotion ? MOTION_TRANSITION.instant : MOTION_TRANSITION.standard}
-                  className="flex min-h-40 flex-col rounded-2xl border border-border bg-muted/35 p-4 shadow-inner"
+                  className="flex min-h-40 flex-col rounded-2xl border border-border bg-muted p-4 shadow-inner"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">

@@ -97,6 +97,8 @@ steps `#211e1a → #322e28 → #2b2722`, matching the planner frame's own
 `.term{background:var(--muted)}` over `.course{background:var(--card)}`.
 25 translucent fills were made solid in `f2ecf9d`.
 
+✅ **SWEPT Aug 19, 2026** — see below. Original text kept for the reasoning.
+
 ⚠️ **Not verified, and deliberately not swept: ~20 base translucent fills in
 `src/components/common/`** — `Kanban`, `EmptyState`, `TrashRecovery`,
 `SmartActionPanel`, `ResourceGrid`, `DocEmbed`, `InlineAddRow`,
@@ -110,6 +112,27 @@ them a defect — only unverified. **A sweep is its own pass and its own
 decision.** Hover-state translucency (`hover:bg-muted/35`) is not in scope
 either way: a translucent hover over a solid surface is a legitimate treatment
 and is not what went wrong here.
+
+### The sweep, once it was cleared
+
+32 inner-surface fills across 18 files in `common/`, `overview/` and
+`experiences/` are now solid. The recipe settles it without ambiguity:
+**"Glass — ONLY on the mode pill and the banner stat strip. Nothing else in the
+app gets glass. Panels, rows, tables, fields, badges are solid."**
+
+Checked before changing, not after: the Overview drawing paints its own inner
+surfaces `background:var(--muted)`, the same as every other frame.
+
+**Deliberately left translucent**, because the recipe permits them: seven
+`bg-card/70–95` surfaces that are floating — `BulkActionBar`, `CenterPeek`'s
+header, `DateField`'s popover, `HeroDailySchedule`, `MascotNote`'s banner
+variant, and the two `OverviewHero` cards — all carrying `backdrop-blur`.
+Accent tints (`bg-primary/8–14`) and hover states are also untouched: a
+translucent hover over a solid surface is a legitimate treatment and was never
+the failure mode.
+
+Verified after: three glass surfaces remain app-wide, all with a real
+`backdrop-filter`.
 
 ## 5b. Learning signals now shipping
 

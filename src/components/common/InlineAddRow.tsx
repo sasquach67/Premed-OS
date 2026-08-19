@@ -23,7 +23,7 @@ export function InlineAddRow({
   return (
     <form
       className={cn(
-        'grid min-w-0 gap-2 rounded-xl border border-dashed border-border bg-muted/10 p-3 md:grid-cols-[repeat(auto-fit,minmax(8rem,1fr))_auto]',
+        'grid min-w-0 gap-2 rounded-xl border border-dashed border-border bg-muted p-3 md:grid-cols-[repeat(auto-fit,minmax(8rem,1fr))_auto]',
         className,
       )}
       onSubmit={(event) => {

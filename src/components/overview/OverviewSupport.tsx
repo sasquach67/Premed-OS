@@ -41,7 +41,7 @@ export function QuickAccess() {
       <CardContent className="space-y-2">
         {nextMcat && (
           <McatSessionSetupDialog
-            triggerClassName="group flex w-full items-center gap-3 rounded-xl border border-border bg-muted/35 px-3 py-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:bg-muted/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            triggerClassName="group flex w-full items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:bg-muted/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             trigger={(
               <>
                 <span className="grid size-9 place-items-center rounded-xl bg-[var(--cat-mcat)] text-white"><Clock3 className="size-4" /></span>
@@ -56,7 +56,7 @@ export function QuickAccess() {
         <button
           type="button"
           onClick={() => document.getElementById('quick-capture')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          className="group flex w-full items-center gap-3 rounded-xl border border-border bg-muted/35 px-3 py-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:bg-muted/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="group flex w-full items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:bg-muted/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground"><Lightbulb className="size-4" /></span>
           <span><span className="block text-sm font-extrabold">Capture a thought</span><span className="block text-xs text-muted-foreground">Saves directly to Story Bank</span></span>
@@ -68,7 +68,7 @@ export function QuickAccess() {
 
 function QuickLink({ to, icon: Icon, color, title, detail }: { to: string; icon: typeof Target; color: string; title: string; detail: string }) {
   return (
-    <Link to={to} className="group flex items-center gap-3 rounded-xl border border-border bg-muted/35 px-3 py-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:bg-muted/65">
+    <Link to={to} className="group flex items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:bg-muted/65">
       <span className="grid size-9 place-items-center rounded-xl text-white" style={{ background: color }}><Icon className="size-4" /></span>
       <span className="min-w-0"><span className="block text-sm font-extrabold">{title}</span><span className="block truncate text-xs text-muted-foreground">{detail}</span></span>
     </Link>
@@ -167,7 +167,7 @@ export function QuarterlyGoalsPanel() {
             const targetValue = target ? goals[target] : 0
             const current = target ? currentForTarget(target, goals) : 0
             return (
-              <div key={goal.id} className="rounded-xl border border-border bg-muted/35 p-3">
+              <div key={goal.id} className="rounded-xl border border-border bg-muted p-3">
                 <div className="flex items-start gap-2">
                   <Checkbox
                     checked={goal.done}
@@ -228,7 +228,7 @@ export function QuarterlyGoalEditor({ goal, onDone, onArchive }: { goal?: Quarte
       <label className="block text-sm font-bold">Goal <Textarea value={text} onChange={(event) => setText(event.target.value)} className="mt-2" rows={3} placeholder="What do you want to make true this term?" /></label>
       <label className="block text-sm font-bold">Quarter or term <Input value={quarter} onChange={(event) => setQuarter(event.target.value)} className="mt-2" /></label>
       <fieldset className="space-y-2"><legend className="text-sm font-bold">Goal type</legend><div className="grid gap-2 sm:grid-cols-2">
-        {(['check-off', 'measured'] as const).map((option) => <button key={option} type="button" onClick={() => setKind(option)} className={`rounded-xl border p-3 text-left text-sm font-bold transition-colors ${kind === option ? 'border-primary bg-primary/10' : 'border-border bg-muted/35 hover:bg-muted/60'}`}><span className="block">{option === 'check-off' ? 'Check-off' : 'Measured'}</span><span className="mt-1 block text-xs font-semibold text-muted-foreground">{option === 'check-off' ? 'A manual completion state.' : 'Recorded evidence against a target you set.'}</span></button>)}
+        {(['check-off', 'measured'] as const).map((option) => <button key={option} type="button" onClick={() => setKind(option)} className={`rounded-xl border p-3 text-left text-sm font-bold transition-colors ${kind === option ? 'border-primary bg-primary/10' : 'border-border bg-muted hover:bg-muted/60'}`}><span className="block">{option === 'check-off' ? 'Check-off' : 'Measured'}</span><span className="mt-1 block text-xs font-semibold text-muted-foreground">{option === 'check-off' ? 'A manual completion state.' : 'Recorded evidence against a target you set.'}</span></button>)}
       </div></fieldset>
       {kind === 'measured' && <label className="block text-sm font-bold">Standing target <select value={standingTarget} onChange={(event) => setStandingTarget(event.target.value as keyof Goals)} className="mt-2 flex h-9 w-full rounded-md border border-border bg-background px-3 text-sm"><option value="">Choose a target</option>{targetOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>}
       <div className="flex flex-wrap justify-between gap-2"><div>{onArchive && <Button type="button" variant="ghost" onClick={onArchive}><Archive className="size-4" />Archive</Button>}</div><Button type="submit" disabled={!text.trim() || (kind === 'measured' && !standingTarget)}>Save goal</Button></div>
@@ -457,7 +457,7 @@ export function ActivityAndCapture() {
             ? <Textarea id="overview-capture" value={value} onChange={(event) => { setValue(event.target.value); setError(null) }} rows={2} placeholder="Type or paste a thought…" />
             : captureKind === 'link'
               ? <><Input id="overview-capture-link" aria-label="Link to save in Story Bank" value={url} onChange={(event) => { setUrl(event.target.value); setError(null) }} placeholder="https://…" /><Input aria-label="Optional note about this link" value={value} onChange={(event) => setValue(event.target.value)} placeholder="Optional note" /></>
-              : <div className="space-y-2 rounded-lg border border-border bg-muted/35 p-2.5">
+              : <div className="space-y-2 rounded-lg border border-border bg-muted p-2.5">
                 <input
                   ref={fileInputRef}
                   id="overview-capture-file"

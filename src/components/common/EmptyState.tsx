@@ -7,7 +7,7 @@ export function EmptyState({
   icon: Icon, title, hint, action,
 }: { icon: LucideIcon; title: string; hint?: string; action?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/40 px-6 py-10 text-center">
+    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted px-6 py-10 text-center">
       <div className="grid size-11 place-items-center rounded-full bg-secondary text-secondary-foreground">
         <Icon className="size-5" />
       </div>

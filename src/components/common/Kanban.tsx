@@ -99,7 +99,7 @@ function Column({
 }: { col: KanbanColumnDef; count: number; children: ReactNode; footer?: (id: string) => ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id: col.id })
   return (
-    <div className="flex min-h-48 flex-col rounded-xl border border-border bg-muted/40 p-2.5">
+    <div className="flex min-h-48 flex-col rounded-xl border border-border bg-muted p-2.5">
       <div className="mb-2 flex items-center gap-2 px-1">
         <span className="size-2.5 rounded-full" style={{ background: col.accent ?? 'var(--primary)' }} />
         <span className="text-sm font-bold">{col.title}</span>

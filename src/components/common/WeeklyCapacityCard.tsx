@@ -138,7 +138,7 @@ export function WeeklyCapacityCard() {
           </div>
 
           {capacity.busyPeriods.map((period) => (
-            <div key={period.id} className="grid gap-2 rounded-xl border border-border bg-muted/25 p-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_5rem_auto] sm:items-end">
+            <div key={period.id} className="grid gap-2 rounded-xl border border-border bg-muted p-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_5rem_auto] sm:items-end">
               <div>
                 <Label className="mb-1 block text-xs font-bold text-muted-foreground">Label</Label>
                 <Input value={period.label} onChange={(event) => patchBusyPeriod(period.id, { label: event.target.value })} />

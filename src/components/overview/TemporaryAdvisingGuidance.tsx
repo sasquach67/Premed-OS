@@ -53,7 +53,7 @@ export function TemporaryAdvisingGuidance() {
         <CardContent className="space-y-2">
           {!guidance.length && <p className="text-sm text-muted-foreground">No saved guidance.</p>}
           {guidance.map((tip) => (
-            <div key={tip.id} className="rounded-lg border border-border bg-muted/40 p-2.5">
+            <div key={tip.id} className="rounded-lg border border-border bg-muted p-2.5">
               <p className="text-xs font-semibold leading-relaxed">{tip.text}</p>
               <p className="mt-1 text-[11px] text-muted-foreground">Source: {tip.source || 'Not recorded'}</p>
             </div>

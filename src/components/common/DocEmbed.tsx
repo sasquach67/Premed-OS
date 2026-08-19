@@ -39,7 +39,7 @@ export function DocEmbed({
 
   if (editing || !value) {
     return (
-      <div className="rounded-xl border border-dashed border-border bg-muted/30 p-5">
+      <div className="rounded-xl border border-dashed border-border bg-muted p-5">
         <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
           <Icon className="size-4 text-primary" /> {title ?? (kind === 'folder' ? 'Embed a Google Drive folder' : 'Embed a Google Doc')}
         </div>
@@ -58,7 +58,7 @@ export function DocEmbed({
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card card-soft">
-      <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-1.5">
+      <div className="flex items-center justify-between gap-2 border-b border-border bg-muted px-3 py-1.5">
         <span className="flex items-center gap-1.5 truncate text-xs font-semibold text-muted-foreground">
           <Icon className="size-3.5" /> {title ?? 'Embedded'}
         </span>

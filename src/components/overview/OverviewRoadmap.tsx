@@ -184,7 +184,7 @@ function RoadmapTaskHandoff({
   if (!milestone.implementationTaskId) {
     if (!creating) return null
     return (
-      <section className="mt-4 rounded-2xl border border-border bg-muted/35 p-3 shadow-sm" aria-label="Create linked task">
+      <section className="mt-4 rounded-2xl border border-border bg-muted p-3 shadow-sm" aria-label="Create linked task">
         <div className="grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
           <span className="grid size-7 place-items-center rounded-full bg-primary/10 text-xs font-extrabold text-primary">1</span>
           <label className="min-w-0 text-sm font-bold">
@@ -220,7 +220,7 @@ function RoadmapTaskHandoff({
   const taskRoute = task && !task.archived ? `/overview/tasks?task=${task.id}` : inTrash || task?.archived ? '/settings?tab=archive' : undefined
 
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-muted/35 px-3 py-2.5 shadow-sm">
+    <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-muted px-3 py-2.5 shadow-sm">
       <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary"><Link2 className="size-4" /></span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold">{task?.title || milestone.label}</p>

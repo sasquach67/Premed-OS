@@ -127,7 +127,7 @@ function HeroLiveStatus({ schedule, now }: { schedule: ReturnType<typeof useHero
           <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-primary/90">{eyebrow}</p>
           <p className="mt-1 truncate text-sm font-extrabold text-foreground dark:text-white">{title}</p>
         </div>
-        <Badge className="border-border/70 bg-muted/65 text-muted-foreground dark:border-white/10 dark:bg-white/8 dark:text-white/72">{detail}</Badge>
+        <Badge className="border-border/70 bg-muted text-muted-foreground dark:border-white/10 dark:bg-white/8 dark:text-white/72">{detail}</Badge>
       </div>
       <NumberFlow
         value={remaining}
@@ -136,7 +136,7 @@ function HeroLiveStatus({ schedule, now }: { schedule: ReturnType<typeof useHero
         className="mt-3 font-display text-[clamp(2.5rem,5vw,3.75rem)] font-extrabold leading-none text-foreground dark:text-white"
       />
       <span className="sr-only">Countdown updates continuously.</span>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted/85 dark:bg-white/16">
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted dark:bg-white/16">
         <div
           className="h-full rounded-full bg-primary shadow-[0_0_18px_rgba(116,192,252,.32)] transition-[width] duration-200"
           style={{ width: `${progress || 14}%` }}

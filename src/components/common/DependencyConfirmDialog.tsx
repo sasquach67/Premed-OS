@@ -44,7 +44,7 @@ export function DependencyConfirmDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-72 space-y-2 overflow-y-auto rounded-xl border border-border bg-muted/20 p-3">
+        <div className="max-h-72 space-y-2 overflow-y-auto rounded-xl border border-border bg-muted p-3">
           {impacts.map((impact) => (
             <section key={impact.recordId} className="rounded-lg bg-card p-3">
               <h3 className="text-sm font-bold">{impact.recordLabel}</h3>

@@ -60,7 +60,7 @@ export function TrashRecovery() {
   return (
     <div className="space-y-4">
       {archived.length > 0 && (
-        <section className="rounded-xl border border-border bg-muted/20 p-3">
+        <section className="rounded-xl border border-border bg-muted p-3">
           <div className="mb-3">
             <h3 className="text-sm font-bold">Archived records</h3>
             <p className="text-xs text-muted-foreground">Restore records that were archived from their owning list.</p>
@@ -88,7 +88,7 @@ export function TrashRecovery() {
         </section>
       )}
 
-      <section className="rounded-xl border border-border bg-muted/20 p-3">
+      <section className="rounded-xl border border-border bg-muted p-3">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <div className="mr-auto">
             <h3 className="text-sm font-bold">Trash</h3>
@@ -128,7 +128,7 @@ export function TrashRecovery() {
       </section>
 
       {recoveryStack.length > 0 && (
-        <section className="rounded-xl border border-border bg-muted/20 p-3">
+        <section className="rounded-xl border border-border bg-muted p-3">
           <h3 className="mb-1 flex items-center gap-2 text-sm font-bold"><History className="size-4 text-primary" /> Recent reversible changes</h3>
           <p className="mb-3 text-xs text-muted-foreground">The latest local changes stay available after reload. This is recovery, not version history.</p>
           <div className="max-h-56 space-y-1 overflow-y-auto">
