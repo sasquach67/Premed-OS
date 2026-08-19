@@ -1,6 +1,6 @@
 # T1 · Academics — Planning decisions
 
-**Stage:** C · DECIDED, NOT BUILT — **built in part, and the part is named.**
+**Stage:** C · **EXECUTED Aug 19, 2026** — built in part, and the part is named.
 
 **Scope:** Of this surface's six states, **two are buildable on records that
 exist and four are not.** This brief builds MCAT timing (#64) and the advisor
@@ -106,11 +106,11 @@ Passes.
 
 ## 4. Done when
 
-- [ ] MCAT timing renders ordinal order with named evidence and no metric.
-- [ ] `grep -n "score" src/lib/academics/mcatTiming.ts` shows no returned field.
-- [ ] The advisor snapshot names every open requirement and its catalog date.
-- [ ] The four unbuilt states are recorded above with their owners.
-- [ ] Build passes; suite green; verified in the running app.
+- [x] MCAT timing renders ordinal order with named evidence and no metric.
+- [x] `grep -n "score" src/lib/academics/mcatTiming.ts` shows no returned field.
+- [x] The advisor snapshot names every open requirement and its catalog date.
+- [x] The four unbuilt states are recorded above with their owners.
+- [x] Build passes; suite green; verified in the running app.
 
 ## 5. Commit
 

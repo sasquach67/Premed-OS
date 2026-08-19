@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "retrievedAt": "2026-07-22",
+    "stability": "MCAT format unchanged since 2015; AAMC confirmed no changes for 2026",
+    "sources": [
+      "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam",
+      "https://students-residents.aamc.org/mcat-scores/mcat-exam-score-scale"
+    ]
+  },
+  "sections": [
+    {
+      "id": "chem-phys",
+      "name": "Chemical and Physical Foundations of Biological Systems",
+      "questions": 59
+    },
+    {
+      "id": "cars",
+      "name": "Critical Analysis and Reasoning Skills",
+      "questions": 53
+    },
+    {
+      "id": "bio-biochem",
+      "name": "Biological and Biochemical Foundations of Living Systems",
+      "questions": 59
+    },
+    {
+      "id": "psych-soc",
+      "name": "Psychological, Social, and Biological Foundations of Behavior",
+      "questions": 59
+    }
+  ],
+  "prereqMap": [
+    {
+      "section": "chem-phys",
+      "uncCourses": [
+        "CHEM 101/102",
+        "CHEM 261/262",
+        "PHYS 114/115 or 118/119"
+      ],
+      "confidence": "high",
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam"
+    },
+    {
+      "section": "cars",
+      "uncCourses": [],
+      "confidence": "high",
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam"
+    },
+    {
+      "section": "bio-biochem",
+      "uncCourses": [
+        "BIOL 101/103/202",
+        "CHEM 430 or BIOL 433"
+      ],
+      "confidence": "high",
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam"
+    },
+    {
+      "section": "psych-soc",
+      "uncCourses": [
+        "PSYC 101",
+        "SOCI 101"
+      ],
+      "confidence": "high",
+      "source": "https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam"
+    }
+  ]
+}

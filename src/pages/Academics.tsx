@@ -23,6 +23,7 @@ import { NotesDB } from '@/components/common/NotesDB'
 import { ClassCenter } from '@/components/academics/ClassCenter'
 import { GradeDecisions } from '@/components/academics/GradeDecisions'
 import { TermRollover } from '@/components/academics/TermRollover'
+import { PlanningDecisions } from '@/components/academics/PlanningDecisions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -245,6 +246,8 @@ export function Academics() {
 
         {/* ---- Planner & GPA ---- */}
         <TabsContent value="planner" className="space-y-6">
+          {/* §4.1 planning decisions — the two states that run on real records. */}
+          <PlanningDecisions />
           <SharedPlanNote
             title="Planner & GPA is the course ledger"
             detail="Edit course names, credits, grades, BCPM status, and term placement here. Tar Heel Tracker uses this same course list to audit UNC, major, and premed requirements."
