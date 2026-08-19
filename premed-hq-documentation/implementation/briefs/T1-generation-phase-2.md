@@ -44,16 +44,33 @@ would otherwise ship silently:
 
 **22 tests**, none of which call a model.
 
-## 3. What is deliberately NOT in this pass
+## 3. Wired Aug 19, 2026 — the `generate` action
 
-- **The two model calls themselves.** They live in the edge function, and the
-  function is transport and enforcement only (`01` §2.1). Wiring them is a
-  deploy Andy owns.
+The edge function now carries the two-pass pipeline as a `generate` action:
+pass 1 drafts with attested citations → **the server** verifies each against
+the chunk text it owns and forwards only survivors as a closed set → pass 2 is
+handed that set and told it may reference nothing else → the server re-verifies
+and returns `citation-not-carried` if anything was minted. `AI_REQUEST_WEIGHT`
+gains `generate: 2` so the limit counts artifacts rather than calls (`08` §2.5,
+decision D-2).
+
+⚠️ **The same rule now exists in two places** — `citations.ts` client-side and
+`closeCitationSet` in the function. That is deliberate: the client module is
+the readable, exhaustively tested reference, and the function is the
+enforcement, because only the server owns the chunk text. The shapes are
+identical so a divergence shows up in a diff. **If one changes, change both.**
+
+⚠️ **Unverified at runtime.** It parses and typechecks, but no request has run
+through it. `09` §6's advice stands and is now actionable: prototype against
+one real lecture's chunks before trusting Phase 3.
+
+## 4. What is still NOT in this pass
+- **The deploy.** `npx --yes supabase@latest functions deploy study-tools`.
 - **Persistence and `edited` tracking.** They depend on where a generated
   artifact is stored, which is a schema decision, not a pipeline one.
-- **`03`'s study-guide L2.** That is Phase 3.
+- **A UI that calls it.** Nothing in the app invokes `generate` yet.
 
-## 4. Recommendation, carried from `09` §6
+## 5. Recommendation, carried from `09` §6
 
 > "Prototype Phase 2 against one real lecture's chunks before committing to
 > Phase 3."
@@ -63,6 +80,6 @@ entirely in whether a real model's pass-2 output carries its citations
 faithfully — which is measurable the moment the edge function runs both passes,
 and cheap to abandon if it does not.
 
-## 5. Commit
+## 6. Commit
 
 `feat(generation): add the closed citation set and deterministic checks (Phase 2)`

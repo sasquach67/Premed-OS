@@ -15,8 +15,13 @@ type Chunk = {
   character_end: number
 }
 
+/**
+ * `08` §2.5 / decision D-2 — the limit counts ARTIFACTS, not calls, so a
+ * two-pass generation costs what it is worth rather than double.
+ */
 const AI_REQUEST_WEIGHT = {
   'gap-check': 1,
+  generate: 2,
 } as const
 
 Deno.serve(async (request) => {
@@ -85,13 +90,75 @@ Deno.serve(async (request) => {
   const { data: allowed, error: limitError } = await client.rpc('claim_ai_request', {
     p_hour_limit: 20,
     p_day_limit: 100,
-    p_weight: AI_REQUEST_WEIGHT['gap-check'],
+    p_weight: body.action === 'generate'
+      ? AI_REQUEST_WEIGHT.generate
+      : AI_REQUEST_WEIGHT['gap-check'],
   })
   if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
   if (!allowed) return failure(429, 'rate-limited', 'Hourly or daily AI usage limit reached.')
 
   const chunks = await retrieveChunks(client, body.courseId, body.topicId, chunkIds)
   if (!chunks.length) return failure(422, 'no-sources', 'No topic-scoped source material is available.')
+
+  /**
+   * `generate` — the two-pass pipeline (`01` §5.1), Phase 2.
+   *
+   * Pass 1 drafts with provider-attested citations. Between the passes THIS
+   * SERVER verifies every attested citation against the chunk text it owns and
+   * forwards only the survivors as a closed set. Pass 2 is told it may
+   * reference those and no others, and is re-verified after.
+   *
+   * ⚠️ A citation outside the closed set REJECTS the artifact. It is never
+   * repaired — repairing would mean choosing a citation on the model's behalf,
+   * which is the fabrication this whole mechanism exists to prevent.
+   *
+   * ⚠️ The same rule is implemented and exhaustively tested client-side in
+   * `src/lib/generation/citations.ts`. That module is the readable reference;
+   * this is the enforcement. If one changes, change both — the shapes are
+   * deliberately identical so a diff is obvious.
+   */
+  if (body.action === 'generate') {
+    const specPrompt = typeof body.systemPrompt === 'string' ? body.systemPrompt : ''
+    if (!specPrompt.trim()) {
+      return failure(400, 'invalid-request', 'An assembled spec prompt is required.')
+    }
+    try {
+      const draft = await callAnthropic(
+        typeof body.request === 'string' ? body.request : 'Generate the artifact.',
+        chunks,
+        specPrompt,
+      )
+      // Between the passes: verify, then close the set.
+      const closed = closeCitationSet(draft.trustedCitations, chunks)
+      if (!closed.length) {
+        return failure(422, 'no-verified-citations', 'No citation from the draft could be verified against your material.')
+      }
+      const structured = await callAnthropic(
+        [
+          'Convert the draft below into the required structure.',
+          'You may reference ONLY these citations, identified as chunkId:start:end —',
+          closed.map((ref) => `${ref.chunkId}:${ref.start}:${ref.end}`).join(', '),
+          'Introducing any other citation is invalid. Do not invent, widen, or shift a range.',
+          '',
+          `Draft:\n${JSON.stringify(draft.value)}`,
+        ].join('\n'),
+        chunks,
+        specPrompt,
+      )
+      // After pass 2: re-verify. Anything minted rejects the artifact.
+      const allowed = new Set(closed.map((ref) => `${ref.chunkId}:${ref.start}:${ref.end}`))
+      const minted = structured.trustedCitations.filter(
+        (ref) => !allowed.has(`${ref.chunkId}:${ref.start}:${ref.end}`),
+      )
+      if (minted.length) {
+        return failure(502, 'citation-not-carried', 'The structuring pass introduced a citation that was not verified. Nothing was saved.')
+      }
+      return json({ artifact: structured.value, citations: closed })
+    } catch (error) {
+      console.error('study-tools generate failure', error instanceof Error ? error.message : 'unknown')
+      return failure(503, 'provider-unavailable', 'The AI provider is unavailable.')
+    }
+  }
 
   try {
     const provider = (Deno.env.get('AI_PROVIDER') || 'anthropic').toLowerCase()
@@ -106,6 +173,27 @@ Deno.serve(async (request) => {
     return failure(503, 'provider-unavailable', 'The AI provider is unavailable.')
   }
 })
+
+/**
+ * Keep a citation only if its chunk exists, its file matches, and its offsets
+ * fall inside that chunk's real content.
+ *
+ * An offset past the end is DROPPED, never clamped: clamping would invent a
+ * quotation the source does not contain, which is worse than losing a citation.
+ */
+function closeCitationSet(
+  attested: Array<{ fileId: string; chunkId: string; start: number; end: number }>,
+  chunks: Chunk[],
+) {
+  const byId = new Map(chunks.map((chunk) => [chunk.chunk_id, chunk]))
+  return attested.filter((ref) => {
+    const chunk = byId.get(ref.chunkId)
+    if (!chunk) return false
+    if (chunk.file_id !== ref.fileId) return false
+    if (!Number.isFinite(ref.start) || !Number.isFinite(ref.end)) return false
+    return ref.start >= 0 && ref.end > ref.start && ref.end <= chunk.content.length
+  })
+}
 
 async function mirrorLocalSources(
   client: ReturnType<typeof createClient>,

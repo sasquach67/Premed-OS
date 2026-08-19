@@ -49,6 +49,26 @@ export interface StudySourceInput {
   end: number
 }
 
+/**
+ * Generation Phase 2 — the two-pass request. The client assembles the spec; the
+ * function runs pass 1, verifies citations against the chunks it owns, closes
+ * the set, runs pass 2 against that set, and re-verifies.
+ *
+ * ⚠️ There is no `sources` field. The function retrieves chunk text itself, so
+ * source content is never uploaded on a generation call.
+ */
+export interface GenerateRequest {
+  action: 'generate'
+  courseId: string
+  topicId: string
+  chunkIds: string[]
+  specId: string
+  specHash: string
+  systemPrompt: string
+  /** L6 — this topic, this scope, this action. */
+  request: string
+}
+
 export interface SyncStudySourcesRequest {
   action: 'sync-sources'
   courseId: string
@@ -87,7 +107,7 @@ export function isGapCheckResult(value: unknown): value is GapCheckResult {
 }
 
 export function createStudyToolsClient(client: FunctionClient | null = supabase) {
-  async function invoke<T>(request: GapCheckRequest | SyncStudySourcesRequest | DeleteStudySourcesRequest): Promise<StudyToolResponse<T>> {
+  async function invoke<T>(request: GapCheckRequest | GenerateRequest | SyncStudySourcesRequest | DeleteStudySourcesRequest): Promise<StudyToolResponse<T>> {
     if (!client) {
       return { ok: false, code: 'unconfigured', message: 'AI study tools are not configured. Local study workflows remain available.' }
     }
@@ -123,6 +143,21 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
         return { ok: false, code: 'invalid-response', message: 'The gap-check returned an invalid result. Nothing was saved.' }
       }
       return { ok: true, data: result.data }
+    },
+
+    /**
+     * Returns the structured artifact and the citation set it was allowed to
+     * use. A rejection here is a real outcome, not a transport error: the
+     * function refuses an artifact whose structuring pass minted a citation,
+     * and nothing is saved.
+     */
+    async generate(request: GenerateRequest): Promise<StudyToolResponse<{ artifact: unknown; citations: unknown[] }>> {
+      const result = await invoke<{ artifact: unknown; citations: unknown[] }>(request)
+      if (!result.ok) return result
+      if (!isRecord(result.data) || !('artifact' in result.data)) {
+        return { ok: false, code: 'invalid-response', message: 'The generator returned an invalid result. Nothing was saved.' }
+      }
+      return result
     },
 
     async deleteSources(): Promise<StudyToolResponse<{ deleted: true }>> {
