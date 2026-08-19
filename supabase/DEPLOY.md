@@ -60,6 +60,19 @@ Paste values raw — no surrounding quotes, no trailing whitespace.
 
 Only this step needs the CLI.
 
+**You do not need Homebrew.** Verified Aug 19, 2026: this machine has no `brew`
+at all, which is what "command not found" actually means here — it is brew that
+is missing, not the Supabase CLI. `npx` runs the CLI without installing
+anything, without sudo, and without touching `package.json`:
+
+```bash
+npx --yes supabase@latest --version
+```
+
+Use `npx --yes supabase@latest <command>` in place of `supabase <command>`
+everywhere below. The Homebrew route still works if you would rather have it
+on PATH permanently:
+
 ```bash
 brew install supabase/tap/supabase
 ```
@@ -68,8 +81,18 @@ brew install supabase/tap/supabase
 cd ~/Documents/premed-os
 ```
 
+First authenticate — **this step is yours**, it opens a browser and signs in to
+your Supabase account:
+
 ```bash
-supabase link --project-ref YOUR_PROJECT_REF
+npx --yes supabase@latest login
+```
+
+Then link. This project's ref is derived from `VITE_SUPABASE_URL` in
+`.env.local`, so it is filled in here rather than left as a placeholder:
+
+```bash
+npx --yes supabase@latest link --project-ref poichxqptuupzrkyewrq
 ```
 
 `link` pairs this folder with one cloud project so later commands know where to
@@ -79,8 +102,24 @@ General → Reference ID. It may prompt for a database password; you can skip
 that for functions and secrets work.
 
 ```bash
-supabase functions deploy study-tools
+npx --yes supabase@latest functions deploy study-tools
 ```
+
+**Check it worked** — this is the fastest way to tell deployment apart from a
+key problem, and they are different failures:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -X POST "$(grep '^VITE_SUPABASE_URL=' .env.local | cut -d= -f2-)/functions/v1/study-tools" -H "Content-Type: application/json" -d '{}'
+```
+
+`404` = the function is not deployed, and no secret can help until it is.
+`401` = deployed and correctly rejecting unauthenticated calls. **As of
+Aug 19, 2026 this returns 404.**
+
+⚠️ **Do not paste the API key into a command someone else runs for you.** Use
+the dashboard's Edge Functions → Secrets form, or run
+`npx --yes supabase@latest secrets set ANTHROPIC_API_KEY=...` yourself in your
+own terminal. The key should never appear in a shared transcript.
 
 ### 5. Sign in
 
