@@ -42,6 +42,7 @@ import { ForgettingCurve } from '@/components/academics/ForgettingCurve'
 import { StudyMethodTrack } from '@/components/academics/StudyMethodTrack'
 import { StudyMethodPanel } from '@/components/academics/StudyMethodPanel'
 import { AssignmentLinkField, TopicLinkField } from '@/components/academics/TopicLinkFields'
+import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
 import { LearningSignalsPanel } from '@/components/academics/LearningSignalsPanel'
 
 type HubTab = 'overview' | 'materials' | 'topics' | 'readings' | 'assignments' | 'notes'
@@ -661,6 +662,8 @@ function Materials({
         detail="Course files stay grouped by their linked unit."
         action={<div className="flex items-center gap-2"><Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button><StudyToolActions onOpenNotes={() => onTab('notes')} /></div>}
       />
+      {/* §4.1 materials extensions — the shelf. Unit → material → provenance. */}
+      <MaterialCatalog files={files} topics={topics} />
       <div className="flex flex-wrap gap-2" aria-label="Material filters">
         {(['all', 'course', 'mine', 'generated', 'unassigned'] as const).map((value) => (
           <Button key={value} size="sm" variant={filter === value ? 'default' : 'outline'} onClick={() => setFilter(value)}>

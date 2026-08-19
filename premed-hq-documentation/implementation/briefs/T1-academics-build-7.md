@@ -1,6 +1,6 @@
 # T1 · Academics — Materials extensions
 
-**Stage:** C · DECIDED, NOT BUILT
+**Stage:** C · DECIDED, NOT BUILT · **EXECUTED Aug 19, 2026 — catalog only**
 
 **Scope:** The §4.1 Materials extensions. **One of its three views is
 buildable today and two are not**, for different reasons recorded below. This
@@ -108,12 +108,12 @@ with engineless cycle steps. A step the app cannot perform is not offered.
 
 ## 4. Done when
 
-- [ ] The catalog renders from real `AcademicFile` records, grouped by unit.
-- [ ] Unknown-origin material is visibly private and never labelled as course
+- [x] The catalog renders from real `AcademicFile` records, grouped by unit.
+- [x] Unknown-origin material is visibly private and never labelled as course
       material.
-- [ ] No calendar or generation UI ships in this pass.
-- [ ] The ANDY CHECKLIST above is recorded, not silently skipped.
-- [ ] Build passes; suite green.
+- [x] No calendar or generation UI ships in this pass.
+- [x] The ANDY CHECKLIST above is recorded, not silently skipped.
+- [x] Build passes; suite green.
 
 ## 5. Commit
 
