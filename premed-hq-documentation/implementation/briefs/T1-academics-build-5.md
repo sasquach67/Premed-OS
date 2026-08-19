@@ -1,6 +1,6 @@
 # T1 · Academics — Topic ↔ assignment linking (the writer)
 
-**Stage:** C · DECIDED, NOT BUILT
+**Stage:** C · DECIDED, NOT BUILT · **EXECUTED Aug 18, 2026**
 
 **Scope:** Build the affordance that **writes** `ClassAssignment.linkedTopicIds`,
 `ClassAssignment.coveredTopicIds`, and `Topic.linkedAssignmentIds`, in the ruled
@@ -114,14 +114,14 @@ Signed-out mode identical. **No ANDY CHECKLIST items.**
 
 ## 5. Done when
 
-- [ ] A student can link and unlink from both directions, and the two sides
+- [x] A student can link and unlink from both directions, and the two sides
       agree after every operation.
-- [ ] Exam scope writes `coveredTopicIds` and is visually distinct from
+- [x] Exam scope writes `coveredTopicIds` and is visually distinct from
       coverage.
-- [ ] `Link many…` appears only above five topics; the picker opens
+- [x] `Link many…` appears only above five topics; the picker opens
       pre-populated and Cancel writes nothing.
-- [ ] `#37` and `#41` fire in the running app once a link exists.
-- [ ] `npm run build` passes; new tests pass; full suite green.
+- [x] `#37` and `#41` fire in the running app once a link exists.
+- [x] `npm run build` passes; new tests pass; full suite green.
 
 ## 6. Commit
 

@@ -41,6 +41,7 @@ import { ExamPrepMode } from '@/components/academics/ExamPrepMode'
 import { ForgettingCurve } from '@/components/academics/ForgettingCurve'
 import { StudyMethodTrack } from '@/components/academics/StudyMethodTrack'
 import { StudyMethodPanel } from '@/components/academics/StudyMethodPanel'
+import { AssignmentLinkField, TopicLinkField } from '@/components/academics/TopicLinkFields'
 import { LearningSignalsPanel } from '@/components/academics/LearningSignalsPanel'
 
 type HubTab = 'overview' | 'materials' | 'topics' | 'readings' | 'assignments' | 'notes'
@@ -916,7 +917,9 @@ function TopicRow({ topic, data, exam }: { topic: Topic; data: ClassCenterData; 
               <DropdownMenuContent align="end"><DropdownMenuItem asChild><Link to={`/academics/review/${topic.courseId}?topicId=${topic.id}`}>Recall this topic</Link></DropdownMenuItem><DropdownMenuItem>Open linked notes</DropdownMenuItem></DropdownMenuContent>
             </DropdownMenu>
           </div>
-          {curveOpen && <div className="md:col-span-5"><ForgettingCurve topic={topic} events={data.reviewEvents} exam={exam} /></div>}
+          {/* The same link record, written from the topic side. */}
+          <AssignmentLinkField topic={topic} />
+          {curveOpen && <div className="md:col-span-6"><ForgettingCurve topic={topic} events={data.reviewEvents} exam={exam} /></div>}
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent><ContextMenuItem asChild><Link to={`/academics/review/${topic.courseId}?topicId=${topic.id}`}><Brain className="size-4" /> Quiz me</Link></ContextMenuItem><ContextMenuItem><NotebookText className="size-4" /> Open context</ContextMenuItem></ContextMenuContent>
@@ -927,11 +930,17 @@ function TopicRow({ topic, data, exam }: { topic: Topic; data: ClassCenterData; 
 function AssignmentRow({ item, topics }: { item: ClassAssignment; topics: Topic[] }) {
   const linked = topics.filter((topic) => [...(item.coveredTopicIds ?? []), ...item.linkedTopicIds].includes(topic.id))
   return (
-    <div className="grid gap-2 rounded-xl border border-border bg-muted/25 p-3 md:grid-cols-[minmax(0,1fr)_140px_110px_auto] md:items-center">
-      <div><p className="font-extrabold">{item.title}</p><p className="text-xs text-muted-foreground">{linked.length ? linked.map((topic) => topic.title).join(', ') : 'No linked topics'}</p></div>
-      <span className="text-sm font-bold text-muted-foreground">{assignmentDateLabel(item)}</span>
-      <Badge variant={isComplete(item) ? 'success' : item.dueDate && item.dueDate < isoToday() ? 'danger' : 'outline'}>{titleCase(item.status)}</Badge>
-      <span className="text-right text-sm font-extrabold tabular-nums">{hasGrade(item) ? `${item.pointsEarned}/${item.pointsPossible}` : item.weight != null ? `${item.weight}%` : '—'}</span>
+    <div className="rounded-xl border border-border bg-muted/25 p-3">
+      <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_140px_110px_auto] md:items-center">
+        <div><p className="font-extrabold">{item.title}</p><p className="text-xs text-muted-foreground">{linked.length ? linked.map((topic) => topic.title).join(', ') : 'No linked topics'}</p></div>
+        <span className="text-sm font-bold text-muted-foreground">{assignmentDateLabel(item)}</span>
+        <Badge variant={isComplete(item) ? 'success' : item.dueDate && item.dueDate < isoToday() ? 'danger' : 'outline'}>{titleCase(item.status)}</Badge>
+        <span className="text-right text-sm font-extrabold tabular-nums">{hasGrade(item) ? `${item.pointsEarned}/${item.pointsPossible}` : item.weight != null ? `${item.weight}%` : '—'}</span>
+      </div>
+      {/* §4.1: what the work covers, and — on an exam only — what it tests.
+          Two fields, never merged. */}
+      <TopicLinkField assignment={item} field="coverage" />
+      {item.type === 'exam' && <TopicLinkField assignment={item} field="scope" />}
     </div>
   )
 }
