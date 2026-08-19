@@ -1,6 +1,8 @@
 # premedOS Generation Engine — specification set
 
-**Status: APPROVED FOR BUILD, Aug 2026. No code has been written yet.** Andy reviewed the
+**Status: APPROVED FOR BUILD, Aug 2026 — documents `00`–`09`. No code has been written yet.**
+**`10-reading-summary-v1.md` is PROPOSED and is NOT part of that approval**; it carries its own
+open decisions and does not gate anything in `09`. Andy reviewed the
 educational philosophy and generation behavior, supplied the flashcard authoring standard (`04`),
 and resolved all nine open decisions — see the decision log below. **Build against `09` §3, starting
 at Phase 0.**
@@ -26,6 +28,7 @@ The governing principle, in one line:
 | 7 | [`07-schemas.md`](./07-schemas.md) | Structured output schemas — content blocks, cards, diagrams |
 | 8 | [`08-regeneration-and-quality.md`](./08-regeneration-and-quality.md) | Regeneration semantics, edit protection, the quality pass |
 | 9 | [`09-migration-plan.md`](./09-migration-plan.md) | Sequenced plan against the real dependency graph |
+| 10 | [`10-reading-summary-v1.md`](./10-reading-summary-v1.md) | **PROPOSED, not approved.** The third Layer-2 generator — reading summaries. Three decisions open in its §8 |
 
 ## Your 12 deliverables → where they landed
 
