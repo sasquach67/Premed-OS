@@ -24,6 +24,7 @@ import { ClassCenter } from '@/components/academics/ClassCenter'
 import { GradeDecisions } from '@/components/academics/GradeDecisions'
 import { TermRollover } from '@/components/academics/TermRollover'
 import { PlanningDecisions } from '@/components/academics/PlanningDecisions'
+import { PlanningColdStart } from '@/components/academics/PlanningColdStart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -246,7 +247,10 @@ export function Academics() {
 
         {/* ---- Planner & GPA ---- */}
         <TabsContent value="planner" className="space-y-6">
-          {/* §4.1 planning decisions — the two states that run on real records. */}
+          {/* §4.1 cold start: with no course recorded the Planner's metric
+              surfaces would render zeros implying data exists. Suppress all of
+              them and ask for the one durable fact instead. */}
+          {!courses.length ? <PlanningColdStart onAddCourse={() => addCourse('This term')} /> : <>
           <PlanningDecisions />
           <SharedPlanNote
             title="Planner & GPA is the course ledger"
@@ -287,6 +291,7 @@ export function Academics() {
             )
           })}
           <Button variant="outline" onClick={() => addCourse('New term')}><Plus className="size-4" /> Add a term</Button>
+          </>}
         </TabsContent>
 
         {/* ---- Tar Heel Tracker ---- */}

@@ -36,9 +36,10 @@ import { migrateTimelineV14 } from '@/store/migrations/timelineV14'
 import { migrateExperienceHoursV15 } from '@/store/migrations/experienceHoursV15'
 import { migrateRoadmapTaskLinkV16 } from '@/store/migrations/roadmapTaskLinkV16'
 import { migrateOverviewAttachmentsV17 } from '@/store/migrations/overviewAttachmentsV17'
-import { migrateGradeDecisionsV19 } from '@/store/migrations/gradeDecisionsV19'
+
 import { migrateTaskHorizonsV18 } from '@/store/migrations/taskHorizonsV18'
 import { migrateExamPrepV19 } from '@/store/migrations/examPrepV19'
+import { migrateGradeDecisionsV20 } from '@/store/migrations/gradeDecisionsV20'
 import { removeStoryAttachment, retainThenPersistStoryAttachment } from '@/lib/overviewFileCapture'
 
 const DEMO_MODE = isDemoMode()
@@ -57,8 +58,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateExamPrepV19`. */
-export const CURRENT_STORE_VERSION = 19
+/** Matches the newest migration in `migrateAll`: `migrateGradeDecisionsV20`. */
+export const CURRENT_STORE_VERSION = 20
 
 function createInitialData() {
   if (!DEMO_MODE) return structuredClone(createSeedData())
@@ -532,9 +533,9 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateExperienceHoursV15(migrated)
   migrated = migrateRoadmapTaskLinkV16(migrated)
   migrated = migrateOverviewAttachmentsV17(migrated)
-  migrated = migrateGradeDecisionsV19(migrated)
   migrated = migrateTaskHorizonsV18(migrated)
-  return migrateExamPrepV19(migrated)
+  migrated = migrateExamPrepV19(migrated)
+  return migrateGradeDecisionsV20(migrated)
 }
 
 function nextOrder(arr: AnyRow[]): number {
