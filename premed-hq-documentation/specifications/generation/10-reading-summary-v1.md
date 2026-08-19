@@ -47,6 +47,40 @@ nothing.
 **The student picks; the generator never infers the kind from the filename or the text.** Guessing
 wrong produces a confidently mis-shaped artifact, which is worse than asking.
 
+### 2.1 What counts as "the reading" — input paths
+
+**A reading a student cannot upload is the common case, not the edge case.** Journal PDFs sit
+behind a library proxy, course readings arrive as a scan of a scan, and a chapter is often a
+photo of a page. An artifact that only works on a clean uploaded PDF will not fire on most of
+the readings a pre-med is actually assigned.
+
+Three input paths, all producing the same `SourceChunk` rows the rest of the engine already
+consumes (`00` §3 — chunk `content` is text-only today, so pasted text needs **no** new
+extraction step and is in some ways the cleanest input this engine can take):
+
+| Path | Record | Status |
+|---|---|---|
+| Upload | `AcademicFile.sourceType: 'upload'` | exists |
+| Link | `AcademicFile.sourceType: 'link'` | exists |
+| **Paste** | **`AcademicFile.sourceType: 'paste'` — new** | **does not exist** |
+
+**The consequence, and it is the reason this is not a trivial addition:** an uploaded PDF carries
+`SourceChunk.sourcePosition` — page and slide labels — so a claim can cite "p. 7". **Pasted text
+has no page structure**, so citations degrade to character offsets into the pasted block. Under
+`RS-2` and `G-FID-7` every claim must still carry its provenance, so:
+
+- `RS-11` (invariant) — **a pasted source is cited by its offset range, and the artifact discloses
+  once that page-level citation is unavailable for this source.** It never fabricates a page,
+  slide, or figure number for pasted text (`G-FID-3` already forbids this; this rule names the
+  case where a generator would be most tempted).
+- Coverage disclosure (`D-8`) names pasted sources as pasted, so a student re-reading the artifact
+  in six weeks knows why the citations look different.
+
+⚠️ **`sourceType: 'paste'` is a cross-cutting schema change, not a reading-summary detail.** It
+benefits `03` and `04` identically, it needs a versioned lossless migration per `CLAUDE.md`, and
+it should be recorded in the data model rather than buried in one L2 spec. Flagged here because
+this document is where the need surfaced — **see D-4.**
+
 ---
 
 ## 3. Section skeletons
@@ -119,6 +153,7 @@ artifact those classes can receive.
 | `RS-8` | Length follows the reading's structure, not its page count | tunable |
 | `RS-9` | Terms are explained only where a first-time reader would stall | tunable |
 | `RS-10` | Every major claim gets a representation decision (`06` §2); prose is not the default | tunable |
+| `RS-11` | A pasted source is cited by offset range and discloses that page-level citation is unavailable. Never fabricate a page or figure number for it | invariant |
 
 `RS-7` is the boundary between this artifact and a literature review. Premed OS says what a paper
 claims and where it stops. It does not tell a student whether the paper is any good.
@@ -161,6 +196,12 @@ material is surfaced, never resolved** — that case is common and pedagogically
 - **D-2 · Where does this sit in `09`?** Phase 6 (deferred) as written, or promoted after Phase 3.
   Promoting is cheap — it reuses the study-guide machinery — but it competes with Phase 4
   flashcards for the same build slot.
+- **D-4 · Does `sourceType: 'paste'` ship, and does it ship here?** §2.1 argues the artifact is
+  substantially less useful without it, since the readings hardest to upload are the ones students
+  most need help with. But it is a schema change that touches `03` and `04` too, needs a lossless
+  migration, and arguably belongs to an ingestion pass rather than to this document. **Two
+  questions: does paste ship at all, and is it a prerequisite of this artifact or a parallel
+  workstream?**
 - **D-3 · Is `assigned-reading` in scope for v1?** It is the only generated artifact a Writing
   class can ever receive, which argues for including it. It also has no topic grounding, so
   Guardrail 1 ("grounded in the class's own materials") is satisfied by the uploaded reading alone
