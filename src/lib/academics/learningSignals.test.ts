@@ -123,6 +123,37 @@ describe('#27 topic difficulty outlier', () => {
   })
 })
 
+describe('#39 concept-map gaps', () => {
+  const linked = [topic({ id: 't1' }), topic({ id: 't2' }), topic({ id: 't3' }), topic({ id: 't4' })]
+  const oneLink = [{
+    id: 'l1', fromTopicId: 't1', toTopicId: 't2', relation: 'builds-on' as const,
+    createdAt: now, updatedAt: now, order: 0,
+  }]
+
+  it('stays silent before the student has authored any link', () => {
+    // Every topic is isolated in a class that has never used Connect. Firing
+    // there would be an accusation, not an observation.
+    const signals = learningSignals(input({ topics: linked, topicLinks: [] }), now)
+    expect(signals.some((signal) => signal.type === 'concept-map-gap')).toBe(false)
+  })
+
+  it('fires once linking has started and topics still stand alone', () => {
+    const signals = learningSignals(input({ topics: linked, topicLinks: oneLink }), now)
+    const gap = signals.find((signal) => signal.type === 'concept-map-gap')!
+    expect(gap.title).toContain('2 topics are not connected')
+    expect(gap.evidenceDetail).toContain('1 link recorded')
+  })
+
+  it('stays silent when fewer than two topics are isolated', () => {
+    const nearlyAll = [
+      { ...oneLink[0] },
+      { id: 'l2', fromTopicId: 't3', toTopicId: 't1', relation: 'builds-on' as const, createdAt: now, updatedAt: now, order: 1 },
+    ]
+    const signals = learningSignals(input({ topics: linked, topicLinks: nearlyAll }), now)
+    expect(signals.some((signal) => signal.type === 'concept-map-gap')).toBe(false)
+  })
+})
+
 describe('panel discipline', () => {
   it('never returns more than three items', () => {
     const signals = learningSignals(input({

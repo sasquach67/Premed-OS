@@ -25,7 +25,8 @@
  * changes when it does.
  */
 import { fmtDate } from '@/lib/date'
-import type { ClassAssignment, ClassWorkspaceType, ReviewEvent, Topic } from '@/lib/types'
+import { isolatedTopics } from '@/lib/academics/topicGraph'
+import type { ClassAssignment, ClassWorkspaceType, ReviewEvent, Topic, TopicLink } from '@/lib/types'
 
 /**
  * What KIND of thing the row is — never a severity, never a rank. `proposal`
@@ -34,7 +35,8 @@ import type { ClassAssignment, ClassWorkspaceType, ReviewEvent, Topic } from '@/
  */
 export type SignalKind = 'routine' | 'timing' | 'proposal'
 
-export type SignalType = 'assignment-topic-link' | 'post-exam-decay' | 'topic-difficulty-outlier'
+export type SignalType =
+  | 'assignment-topic-link' | 'post-exam-decay' | 'topic-difficulty-outlier' | 'concept-map-gap'
 
 export interface LearningSignal {
   id: string
@@ -61,6 +63,8 @@ export interface LearningSignalInput {
   topics: Topic[]
   events: ReviewEvent[]
   assignments: ClassAssignment[]
+  /** §6.6 Connect. Absent means no graph yet — see `conceptMapGap`. */
+  topicLinks?: TopicLink[]
 }
 
 /** §4.1: "Show at most three items at once." */
@@ -177,6 +181,33 @@ function topicDifficultyOutlier(input: LearningSignalInput): LearningSignal | un
 }
 
 /**
+ * #39 — topics with no `TopicLink` at all. "Isolated knowledge is fragile; this
+ * is the Connect step's own coverage meter."
+ *
+ * ⚠️ Dormant until the student has authored at least one link. Before that,
+ * every topic is isolated and the signal would fire on a class that has simply
+ * never used the feature — an accusation, not an observation. It also stays
+ * silent while a class is small enough that a graph would be noise.
+ */
+function conceptMapGap(input: LearningSignalInput): LearningSignal | undefined {
+  const links = input.topicLinks ?? []
+  if (!links.length) return undefined
+  const isolated = isolatedTopics(input.topics, links)
+  if (isolated.length < 2) return undefined
+  return {
+    id: `concept-map-gap:${input.courseId}`,
+    type: 'concept-map-gap',
+    kind: 'routine',
+    title: `${isolated.length} topics are not connected to anything yet.`,
+    cause: `You have started linking topics in this class, and ${isolated.map((topic) => topic.title).slice(0, 2).join(' and ')}${isolated.length > 2 ? ' among others' : ''} still stand alone.`,
+    actionLabel: 'Connect a topic',
+    action: { type: 'tab', tab: 'topics' },
+    evidenceLabel: 'Topic graph',
+    evidenceDetail: `${links.length} ${links.length === 1 ? 'link' : 'links'} recorded, ${isolated.length} topics with none.`,
+  }
+}
+
+/**
  * The signals this class has earned, in a FIXED order — timing first because it
  * is the only one with a deadline attached, then the two routine kinds in
  * catalogue order. This is not a ranking and nothing is scored.
@@ -186,6 +217,7 @@ export function learningSignals(input: LearningSignalInput, now = Date.now()): L
     assignmentTopicLink(input, now),
     postExamDecay(input, now),
     topicDifficultyOutlier(input),
+    conceptMapGap(input),
   ].filter((signal): signal is LearningSignal => signal != null).slice(0, MAX_SIGNALS)
 }
 
