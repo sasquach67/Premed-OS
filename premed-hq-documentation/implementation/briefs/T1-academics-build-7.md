@@ -46,22 +46,26 @@ no variant left open.
 | Dependency | Classification | Consequence |
 |---|---|---|
 | Resource catalog | **No service.** Local `AcademicFile` records only | **Built in this brief.** |
-| Calendar review (Canvas → Google Calendar) | **CODE BUILT, NOT CONFIGURED** — `googleCalendar.ts` is complete; `settings.backup.googleClientId` is empty and no OAuth client exists | **ANDY CHECKLIST. Not a brief item.** |
+| Calendar review (Canvas → Google Calendar) | ✅ **CODE BUILT AND CONFIGURED** — `googleCalendar.ts` is complete and `VITE_GOOGLE_CLIENT_ID` is set in `.env.local`, read by `useBackup.ts:30` and `useCalendarSync.ts:22` | **Buildable. Not a checklist item.** |
 | Source-selected study-guide generation | **CODE MISSING** — `study-tools/index.ts` has `sync-sources`, `delete-sources`, `gap-check` and **no generate action at all**. The whole generation engine is `specifications/generation/09` Phases 0–2, unbuilt | **Out of scope. Not built here.** |
 
-**⚠️ ANDY CHECKLIST — the first this tab has produced.** Both items need
-account access nobody but Andy has:
+**⚠️ CORRECTED Aug 19, 2026.** The first version of this brief claimed the
+Google OAuth client was missing. **That was wrong.** It read
+`googleClientId: ''` out of `demoSeed.ts` — a seeded demo default that
+describes demo state and says nothing about Andy's own configuration. The real
+client id has been in `.env.local` as `VITE_GOOGLE_CLIENT_ID` all along.
 
-1. **Google Calendar OAuth client** — create an OAuth 2.0 Web client in Google
-   Cloud Console, add the app origin to Authorized JavaScript origins, enable
-   the Calendar API, and paste the client id into Settings → Backup. Until then
-   `isCalendarConnected()` is false and the Calendar review view has nothing to
-   render. **What the student sees today: no calendar context at all.** What
-   they see once configured: their own Canvas feed dates, read-only.
-2. **`ANTHROPIC_API_KEY` in Supabase secrets**, plus deploying the
-   `study-tools` edge function. Needed by `gap-check` today and by every
-   generator later. **This does not unblock the study-guide view on its own** —
-   that view also needs the generation engine written.
+**Lesson for future audits: `.env.local`, `.env.example`, and the code paths
+that read them are the evidence for step 1f — never a seed default.**
+
+**ANDY CHECKLIST — one item, and it is unverifiable from this repo:**
+
+1. **`ANTHROPIC_API_KEY` in Supabase Edge Function secrets**, plus a deployed
+   `study-tools` function (`supabase/DEPLOY.md` §3–4). Secrets live in the
+   Supabase dashboard, so **no audit run here can confirm or deny it** — this
+   entry is a "please confirm", not a finding. It is needed by `gap-check`
+   today. **It does not unblock the study-guide view on its own**, which also
+   needs the generation engine written.
 
 **Why the generation view is not built as a shell:** advertising a `Generate`
 button that cannot generate is the mistake `studyMethod.ts` refused to make
@@ -113,6 +117,7 @@ with engineless cycle steps. A step the app cannot perform is not offered.
       material.
 - [x] No calendar or generation UI ships in this pass.
 - [x] The ANDY CHECKLIST above is recorded, not silently skipped.
+- [x] The calendar claim was corrected once `.env.local` was actually read.
 - [x] Build passes; suite green.
 
 ## 5. Commit
@@ -121,6 +126,7 @@ with engineless cycle steps. A step the app cannot perform is not offered.
 
 ## 6. Next stage
 
-Calendar review returns when Andy completes checklist item 1. The study-guide
+Calendar review is now unblocked and buildable — it needs its own pass, not a
+checklist. The study-guide
 view returns after `specifications/generation` Phases 0–2 exist — a separate
 workstream from this tab.
