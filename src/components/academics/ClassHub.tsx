@@ -43,6 +43,7 @@ import { StudyMethodTrack } from '@/components/academics/StudyMethodTrack'
 import { StudyMethodPanel } from '@/components/academics/StudyMethodPanel'
 import { AssignmentLinkField, TopicLinkField } from '@/components/academics/TopicLinkFields'
 import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
+import { TranscriptImport } from '@/components/academics/TranscriptImport'
 import { LearningSignalsPanel } from '@/components/academics/LearningSignalsPanel'
 
 type HubTab = 'overview' | 'materials' | 'topics' | 'readings' | 'assignments' | 'notes'
@@ -664,6 +665,8 @@ function Materials({
       />
       {/* §4.1 materials extensions — the shelf. Unit → material → provenance. */}
       <MaterialCatalog files={files} topics={topics} />
+      {/* §4.1-Q — the transcript arrives as text; the audio never leaves the iPad. */}
+      <TranscriptImport courseId={courseId} />
       <div className="flex flex-wrap gap-2" aria-label="Material filters">
         {(['all', 'course', 'mine', 'generated', 'unassigned'] as const).map((value) => (
           <Button key={value} size="sm" variant={filter === value ? 'default' : 'outline'} onClick={() => setFilter(value)}>

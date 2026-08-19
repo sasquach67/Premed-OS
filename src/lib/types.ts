@@ -192,7 +192,7 @@ export type ClassNoteKind = 'about-class' | 'on-material'
 export type ClassNoteSyncStatus = 'local-only' | 'sync-ready' | 'synced' | 'error'
 export type ClassAssignmentType = 'homework' | 'quiz' | 'exam' | 'project' | 'reading' | 'lab' | 'discussion' | 'other'
 export type ClassAssignmentStatus = 'not-started' | 'in-progress' | 'submitted' | 'graded' | 'dropped'
-export type ClassFileType = 'syllabus' | 'lecture-slides' | 'reading' | 'study-guide' | 'rubric' | 'past-exam' | 'lab-handout' | 'link' | 'other'
+export type ClassFileType = 'syllabus' | 'lecture-slides' | 'reading' | 'study-guide' | 'rubric' | 'past-exam' | 'lab-handout' | 'transcript' | 'link' | 'other'
 export type ClassContactRole = 'professor' | 'TA' | 'advisor' | 'study-partner' | 'tutor' | 'peer' | 'other'
 export type WeakAreaSource = 'manual' | 'flashcard' | 'quiz' | 'exam' | 'practice' | 'practice-exam' | 'assignment' | 'ai' | 'other'
 export type WeakAreaReason = 'conceptual' | 'memorization' | 'careless' | 'misread' | 'timing' | 'application' | 'other'
@@ -372,7 +372,10 @@ export interface ClassAssignment {
   order: number
 }
 
-export type AcademicFileSourceType = 'upload' | 'link' | 'embed'
+/** `paste` is text the student pasted in — a GoodNotes transcript, a reading.
+ *  It is never presented as an uploaded file, because its provenance and its
+ *  citation precision are genuinely different. */
+export type AcademicFileSourceType = 'upload' | 'link' | 'embed' | 'paste'
 /** Materials ownership. Structural, never inferred from file type at read time. */
 export type AcademicFileOwner = 'course' | 'mine' | 'generated'
 

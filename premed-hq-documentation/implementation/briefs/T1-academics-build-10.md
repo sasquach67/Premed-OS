@@ -1,6 +1,6 @@
 # T1 · Academics — Lecture transcript import
 
-**Stage:** C · DECIDED, NOT BUILT
+**Stage:** C · DECIDED, NOT BUILT · **EXECUTED Aug 19, 2026**
 **Supersedes:** `T1-academics-build-8.md`, which recorded lecture capture as
 blocked. **The block is removed by deleting the blocked half, not by solving
 it.**
@@ -105,11 +105,11 @@ the transcript is the input, not the recording.
 
 ## 6. Done when
 
-- [ ] Pasting a timestamped transcript produces one chunk per segment with its
+- [x] Pasting a timestamped transcript produces one chunk per segment with its
       timestamp preserved as `sourcePosition.label`.
-- [ ] Pasting plain prose still imports, and visibly reports no time anchors.
-- [ ] The stored file is visibly `paste` in the material catalog.
-- [ ] Build passes; suite green; verified in the running app.
+- [x] Pasting plain prose still imports, and visibly reports no time anchors.
+- [x] The stored file is visibly `paste` in the material catalog.
+- [x] Build passes; suite green; verified in the running app.
 
 ## 7. Commit
 
