@@ -1,6 +1,6 @@
 # T1 · Academics — Saved plans and plan comparison
 
-**Stage:** C · DECIDED, NOT BUILT
+**Stage:** C · DECIDED, NOT BUILT · **EXECUTED Aug 19, 2026**
 
 **Scope:** The `SavedPlan` entity, the comparison state of planning decisions,
 and a restore that cannot corrupt a transcript.
@@ -76,11 +76,11 @@ here — propose-then-confirm, nothing auto-written, nothing deleted.
 
 ## 6. Done when
 
-- [ ] A plan can be saved, listed, compared, and restored through a diff.
-- [ ] Graded/completed courses are excluded from changes, with a reason shown.
-- [ ] Restore writes only `term`, proven by test.
-- [ ] Migration pure and idempotent.
-- [ ] Build passes; suite green.
+- [x] A plan can be saved, listed, compared, and restored through a diff.
+- [x] Graded/completed courses are excluded from changes, with a reason shown.
+- [x] Restore writes only `term`, proven by test.
+- [x] Migration pure and idempotent.
+- [x] Build passes; suite green.
 
 ## 7. Commit
 

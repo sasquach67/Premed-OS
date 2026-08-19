@@ -290,6 +290,7 @@ function createClassCenterSeed(): AcademicTagSettings['classCenter'] {
     mistakes: [],
     topicLinks: [],
     topicPredictions: [],
+    savedPlans: [],
     examPrepPlans: [],
   }
 }

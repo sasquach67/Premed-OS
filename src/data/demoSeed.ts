@@ -313,6 +313,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
     // §6.6 Connect — seeded empty: a link is a claim the student makes.
     topicLinks: [],
     topicPredictions: [],
+    savedPlans: [],
     examPrepPlans: [],
   }
   data.academics.courseOptions = courses.map((item, order) => ({ id: `demo-option-${item.id}`, name: item.code, title: item.title, color: ['blue', 'green', 'purple', 'orange'][order % 4] as 'blue' | 'green' | 'purple' | 'orange' }))

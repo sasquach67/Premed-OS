@@ -20,6 +20,8 @@ import {
   CONTENT_RETRIEVED_AT, relearningOrder, unknownsNote,
 } from '@/lib/academics/mcatTiming'
 import { buildAdvisorSnapshot } from '@/lib/academics/advisorExport'
+import { applyPlanRestore, capturePlan, planDiff } from '@/lib/academics/savedPlans'
+import type { SavedPlan } from '@/lib/types'
 import { useToast } from '@/components/common/useToast'
 import { Button } from '@/components/ui/button'
 
@@ -37,6 +39,8 @@ export function PlanningDecisions() {
   const { entries, target } = relearningOrder(courses, { mcatDate })
 
   return (
+    <div className="space-y-4">
+    <PlanComparison />
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <section className={cn(CARD, 'p-4')}>
         <p className={EYEBROW}>Relative course timing</p>
@@ -108,5 +112,113 @@ export function PlanningDecisions() {
         )}
       </aside>
     </div>
+    </div>
+  )
+}
+
+/**
+ * §4.1 plan comparison. **Neither plan is coloured as the recommended one** —
+ * the decisions file says so outright, and the whole point is that the student
+ * decides which fits their actual situation.
+ *
+ * Restore never applies directly: it opens the diff, which states both what
+ * would move and what will not be touched.
+ */
+function PlanComparison() {
+  const courses = useStore((s) => s.courses)
+  const plans = useStore((s) => s.academics.classCenter.savedPlans ?? [])
+  const [restoring, setRestoring] = useState<SavedPlan | undefined>()
+  const [name, setName] = useState('')
+  const toast = useToast()
+
+  const save = () => {
+    useStore.getState().update((draft) => {
+      draft.academics.classCenter.savedPlans = [
+        ...(draft.academics.classCenter.savedPlans ?? []),
+        capturePlan(draft.courses, { name, order: (draft.academics.classCenter.savedPlans ?? []).length }),
+      ]
+    })
+    setName('')
+  }
+
+  const diff = restoring ? planDiff(restoring, courses) : undefined
+
+  return (
+    <section className={cn(CARD, 'p-4')}>
+      <p className={EYEBROW}>Saved plan comparison</p>
+      <h3 className="mt-0.5 font-display text-base font-extrabold">See the choice side by side.</h3>
+      <p className="mt-0.5 text-xs font-bold text-muted-foreground">
+        Neither plan is marked as the better one. Restore the one that fits your actual decision.
+      </p>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <input
+          value={name} onChange={(event) => setName(event.target.value)}
+          placeholder="Name this plan…"
+          className="rounded-lg border border-border bg-muted px-2.5 py-1.5 text-xs font-bold"
+        />
+        <Button size="sm" variant="outline" onClick={save} disabled={!name.trim()}>Save current plan</Button>
+      </div>
+
+      {plans.length > 0 && (
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {plans.slice(0, 2).map((plan) => (
+            <article key={plan.id} className="rounded-xl border border-border bg-muted p-3">
+              <p className={EYEBROW}>Saved plan</p>
+              <b className="mt-0.5 block font-display text-sm font-extrabold">{plan.name}</b>
+              <p className="mt-1 text-[11px] font-bold text-muted-foreground">
+                {plan.placements.length} courses · saved {new Date(plan.createdAt).toLocaleDateString()}
+              </p>
+              <Button size="sm" variant="outline" className="mt-2" onClick={() => setRestoring(plan)}>
+                Review restore
+              </Button>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {restoring && diff && (
+        <div className="mt-3 rounded-xl border border-border bg-muted p-3">
+          <b className="font-display text-sm font-extrabold">Restoring “{restoring.name}”</b>
+          {diff.changes.length ? (
+            <ul className="mt-2 space-y-1 text-[11.5px] font-bold">
+              {diff.changes.map((change) => (
+                <li key={change.course.id}>
+                  {change.course.code}: {change.from} → {change.to}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-1 text-[11.5px] font-bold text-muted-foreground">Nothing would move.</p>
+          )}
+
+          {/* Stated, not hidden: the restore is partial and here is why. */}
+          {diff.skipped.length > 0 && (
+            <div className="mt-2 border-t border-border pt-2">
+              <p className={EYEBROW}>Left untouched</p>
+              <ul className="mt-1 space-y-0.5 text-[11px] font-bold text-muted-foreground">
+                {diff.skipped.map((skip) => <li key={skip.courseId}>{skip.label} — {skip.reason}</li>)}
+              </ul>
+            </div>
+          )}
+
+          <div className="mt-3 flex gap-2">
+            <Button
+              size="sm" disabled={!diff.changes.length}
+              onClick={() => {
+                useStore.getState().update((draft) => {
+                  draft.courses = applyPlanRestore(draft.courses, diff.changes)
+                })
+                toast({ title: 'Plan restored', description: `${diff.changes.length} courses moved. Nothing graded was touched.` })
+                setRestoring(undefined)
+              }}
+            >
+              Apply {diff.changes.length} {diff.changes.length === 1 ? 'move' : 'moves'}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setRestoring(undefined)}>Cancel</Button>
+          </div>
+        </div>
+      )}
+    </section>
   )
 }

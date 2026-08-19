@@ -604,6 +604,7 @@ export interface ClassCenterData {
   mistakes: AcademicMistake[]
   topicLinks: TopicLink[]
   topicPredictions: TopicPrediction[]
+  savedPlans: SavedPlan[]
   examPrepPlans: ExamPrepPlan[]
 }
 
@@ -689,6 +690,32 @@ export interface TopicPrediction {
   updatedAt: number
   /** When the student saw it back after the lecture. */
   revealedAt?: number
+  order: number
+}
+
+/** One course's placement at the moment a plan was saved. */
+export interface SavedPlacement {
+  courseId: ID
+  term: string
+  /** What the course was when captured — restore reads this to know what moved. */
+  status: CourseStatus
+}
+
+/**
+ * A named snapshot of course placements (§4.1 plan comparison).
+ *
+ * ⚠️ Restoring one **never touches a completed or graded course** (Andy,
+ * Aug 19 2026). `courses` is the same list the transcript, the tracker and
+ * Class Center all read, so a naive restore would move a course you have
+ * already taken, or discard its grade.
+ */
+export interface SavedPlan {
+  id: ID
+  name: string
+  note?: string
+  placements: SavedPlacement[]
+  createdAt: number
+  updatedAt: number
   order: number
 }
 
