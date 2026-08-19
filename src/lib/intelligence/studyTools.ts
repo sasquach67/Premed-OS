@@ -87,6 +87,11 @@ export type StudyToolFailureCode =
   | 'request-too-large'
   | 'no-sources'
   | 'invalid-response'
+  /** The structuring pass introduced a citation that was never verified, so the
+   *  server refused the artifact. This is a real outcome, not an outage, and it
+   *  is kept distinct so the student is not told to try again later when
+   *  trying again is exactly right. */
+  | 'citation-not-carried'
   | 'unavailable'
 
 export type StudyToolResponse<T> =
@@ -121,6 +126,21 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
       if (status === 429) return { ok: false, code: 'rate-limited', message: 'AI usage limit reached. Try again later.' }
       if (status === 413) return { ok: false, code: 'request-too-large', message: 'This request is too large for one study-tool action.' }
       if (status === 422) return { ok: false, code: 'no-sources', message: 'No synced source material is available for this topic.' }
+      // A 502 carries the server's own reason. Collapsing it into "unavailable"
+      // would tell the student the service is down when in fact it refused a
+      // specific artifact and would accept another attempt immediately.
+      if (status === 502) {
+        const serverCode = (error as { context?: { body?: { code?: string } } }).context?.body?.code
+        if (serverCode === 'citation-not-carried') {
+          return {
+            ok: false,
+            code: 'citation-not-carried',
+            message: 'The generated guide cited something that could not be traced back to your material, '
+              + 'so it was refused rather than corrected. Nothing was saved — generating again usually works.',
+          }
+        }
+        return { ok: false, code: 'invalid-response', message: 'The generator returned an invalid result. Nothing was saved.' }
+      }
       return { ok: false, code: 'unavailable', message: 'AI study tools are unavailable. Your local data was not changed.' }
     }
     return { ok: true, data: data as T }

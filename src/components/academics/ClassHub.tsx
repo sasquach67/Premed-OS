@@ -44,6 +44,7 @@ import { StudyMethodPanel } from '@/components/academics/StudyMethodPanel'
 import { AssignmentLinkField, TopicLinkField } from '@/components/academics/TopicLinkFields'
 import { TopicConnectField } from '@/components/academics/TopicConnectField'
 import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
+import { generateStudyGuide, sourcesFor } from '@/lib/academics/generateStudyGuide'
 import { PredictPanel } from '@/components/academics/PredictPanel'
 import { TranscriptImport } from '@/components/academics/TranscriptImport'
 import { CalendarReview } from '@/components/academics/CalendarReview'
@@ -266,7 +267,7 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
         </PageHeader>
 
         <TabsContent value="overview"><Overview course={course} data={data} type={classType} topics={courseTopics} drafts={courseDrafts} assignments={courseAssignments} notes={courseNotes} contacts={courseContacts} persons={persons} onTab={changeTab} onOpenExamPrep={openExamPrep} /></TabsContent>
-        <TabsContent value="materials"><Materials courseId={course.id} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} onTab={changeTab} /></TabsContent>
+        <TabsContent value="materials"><Materials courseId={course.id} courseCode={course.code} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} onTab={changeTab} /></TabsContent>
         <TabsContent value="topics"><Topics courseId={course.id} data={data} topics={courseTopics} assignments={courseAssignments} /></TabsContent>
         <TabsContent value="readings"><WritingTools courseId={course.id} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} /></TabsContent>
         <TabsContent value="assignments"><Assignments assignments={courseAssignments} topics={courseTopics} classType={classType} /></TabsContent>
@@ -643,8 +644,8 @@ function CoverageMetric({ label, value, tone }: { label: string; value: number; 
 }
 
 function Materials({
-  courseId, data, files, topics, notes, onTab,
-}: { courseId: string; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; onTab: (tab: string) => void }) {
+  courseId, courseCode, data, files, topics, notes, onTab,
+}: { courseId: string; courseCode: string; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; onTab: (tab: string) => void }) {
   const navigate = useNavigate()
   const [filter, setFilter] = useState<'all' | 'course' | 'mine' | 'generated' | 'unassigned'>('all')
   const groups = useMemo(() => groupFiles(files, topics, notes), [files, notes, topics])
@@ -665,7 +666,7 @@ function Materials({
       <SectionToolbar
         title="Materials"
         detail="Course files stay grouped by their linked unit."
-        action={<div className="flex items-center gap-2"><Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button><StudyToolActions onOpenNotes={() => onTab('notes')} /></div>}
+        action={<div className="flex items-center gap-2"><Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button><StudyToolActions onOpenNotes={() => onTab('notes')} courseId={courseId} label={courseCode} /></div>}
       />
       {/* §4.1 materials extensions — the shelf. Unit → material → provenance. */}
       <MaterialCatalog files={files} topics={topics} />
@@ -963,6 +964,8 @@ function AssignmentRow({ item, topics, classType }: { item: ClassAssignment; top
 
 function FileRow({ file, ownership, onReimport }: { file: AcademicFile; ownership: 'course' | 'mine' | 'generated'; onReimport?: () => void }) {
   const toast = useToast()
+  const chunks = useStore((s) => s.academics.classCenter.sourceChunks)
+  const [summarising, setSummarising] = useState(false)
   const label = ownership === 'course' ? 'Course' : ownership === 'mine' ? 'Mine' : 'Generated'
   const content = (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/25 p-3 transition hover:-translate-y-0.5 hover:bg-muted/45 motion-reduce:transform-none">
@@ -975,12 +978,42 @@ function FileRow({ file, ownership, onReimport }: { file: AcademicFile; ownershi
           type="button"
           size="sm"
           variant="ghost"
-          onClick={(event) => {
+          disabled={summarising}
+          onClick={async (event) => {
             event.preventDefault()
-            toast({ title: 'Source selected', description: `${file.title} is ready to summarize when the study generator is connected.` })
+            // §6.2 "summarize / explain a file", grounded in this file's own
+            // chunks. A file with none says so rather than generating from the
+            // rest of the class behind the student's back.
+            setSummarising(true)
+            const sources = sourcesFor(chunks, file.courseId, file.id)
+            const outcome = await generateStudyGuide({ courseId: file.courseId, chunks: sources, label: file.title })
+            setSummarising(false)
+            if (!outcome.ok) {
+              toast({ title: 'Nothing was saved', description: outcome.message ?? 'This material could not be summarized.' })
+              return
+            }
+            useStore.getState().update((draft) => {
+              draft.academics.classCenter.notes.push({
+                id: uid(),
+                courseId: file.courseId,
+                title: outcome.title!,
+                type: 'study-guide',
+                kind: 'on-material',
+                date: isoToday(),
+                unit: '',
+                topicIds: [],
+                content: `${outcome.content}\n\n---\nGenerated from ${file.title} · spec ${outcome.specHash}`,
+                syncStatus: 'local-only',
+                linkedFileIds: [file.id],
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                order: draft.academics.classCenter.notes.length,
+              })
+            })
+            toast({ title: 'Summary generated', description: `Saved to notes as “${outcome.title}”.` })
           }}
         >
-          Summarize
+          {summarising ? 'Summarizing…' : 'Summarize'}
         </Button>
       </div>
     </div>
@@ -1039,18 +1072,67 @@ function SectionToolbar({ title, detail, action }: { title: string; detail: stri
   return <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-display text-2xl font-extrabold">{title}</h2><p className="text-sm font-semibold text-muted-foreground">{detail}</p></div>{action}</div>
 }
 
-function StudyToolActions({ onOpenNotes }: { onOpenNotes: () => void }) {
+/**
+ * §6.2 "generate study guide" — the real one.
+ *
+ * Every failure is reported with its own reason rather than a generic retry:
+ * a refused citation, a missing sign-in, and an unprocessed material are three
+ * different problems with three different fixes.
+ */
+function StudyToolActions({ onOpenNotes, courseId, fileId, label }: {
+  onOpenNotes: () => void
+  courseId: string
+  /** Narrow generation to one material; omit to use every source in the class. */
+  fileId?: string
+  label: string
+}) {
   const toast = useToast()
+  const chunks = useStore((s) => s.academics.classCenter.sourceChunks)
+  const [busy, setBusy] = useState(false)
+
+  async function generate() {
+    setBusy(true)
+    const sources = sourcesFor(chunks, courseId, fileId)
+    const outcome = await generateStudyGuide({ courseId, chunks: sources, label })
+    setBusy(false)
+
+    if (!outcome.ok) {
+      toast({ title: 'Nothing was saved', description: outcome.message ?? 'The guide could not be generated.' })
+      return
+    }
+    // Persisted as a class note of type `study-guide`, carrying its specHash so
+    // the artifact can be traced back to the spec version that produced it.
+    useStore.getState().update((draft) => {
+      draft.academics.classCenter.notes.push({
+        id: uid(),
+        courseId,
+        title: outcome.title!,
+        type: 'study-guide',
+        kind: 'about-class',
+        date: isoToday(),
+        unit: '',
+        topicIds: [],
+        content: `${outcome.content}\n\n---\nGenerated from your own material · spec ${outcome.specHash}`,
+        syncStatus: 'local-only',
+        linkedFileIds: outcome.fileIds ?? [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        order: draft.academics.classCenter.notes.length,
+      })
+    })
+    toast({ title: 'Study guide generated', description: `Saved to notes as “${outcome.title}”.` })
+  }
+
   return (
     <div className="flex items-center gap-2">
-      <Button onClick={() => toast({ title: 'Choose your sources', description: 'Use the material rows below to open or summarize the sources for this guide.' })}>
-        <Sparkles className="size-4" /> Generate study guide
+      <Button onClick={generate} disabled={busy}>
+        <Sparkles className="size-4" /> {busy ? 'Generating…' : 'Generate study guide'}
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="More study tools"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={onOpenNotes}><NotebookText className="size-4" /> Open class notes</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => toast({ title: 'Select one file', description: 'Use Summarize on the relevant material row.' })}><FileText className="size-4" /> Summarize a file</DropdownMenuItem>
+          <DropdownMenuItem onClick={generate}><FileText className="size-4" /> Generate from every source</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

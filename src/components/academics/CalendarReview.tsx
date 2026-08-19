@@ -13,6 +13,7 @@
  * and this reads Google. Neither button here writes a date without an explicit
  * click, and neither is styled as the recommended one.
  */
+import { useState } from 'react'
 import { CalendarClock, CircleAlert, Link2 } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { cn } from '@/lib/utils'
@@ -36,7 +37,13 @@ export function CalendarReview({ assignments }: { assignments: ClassAssignment[]
   // Only a live feed proposes. `cachedEvents` survives a disconnect, and
   // offering changes from a feed the student has switched off would contradict
   // "disconnecting stops new context".
-  const proposals = state === 'connected' ? proposedDateChanges(events, assignments) : []
+  const [kept, setKept] = useState<string[]>([])
+  const dismiss = (assignmentId: string) => setKept((current) => [...current, assignmentId])
+  // "Keep mine" is a decision, and a decision that reappears on the next render
+  // is not one. Dismissals are session-scoped on purpose: the calendar may
+  // change its mind, and a permanent ignore would hide a real later difference.
+  const proposals = (state === 'connected' ? proposedDateChanges(events, assignments) : [])
+    .filter((proposal) => !kept.includes(proposal.assignment.id))
 
   function accept(assignmentId: string, date: string) {
     useStore.getState().update((draft) => {
@@ -129,7 +136,9 @@ export function CalendarReview({ assignments }: { assignments: ClassAssignment[]
                 <Button size="sm" variant="outline" onClick={() => accept(proposal.assignment.id, proposal.calendarDate)}>
                   Use the calendar date
                 </Button>
-                <Button size="sm" variant="ghost">Keep mine</Button>
+                <Button size="sm" variant="ghost" onClick={() => dismiss(proposal.assignment.id)}>
+                  Keep mine
+                </Button>
               </div>
             </div>
           ))}
