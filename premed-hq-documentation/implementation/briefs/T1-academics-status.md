@@ -24,6 +24,10 @@ it.**
 | Transcript import | `42a6f70` | replaced lecture capture |
 | Term rollover | `9e7fd73` | |
 | MCAT relearning order + advisor export | `759d7c8` | |
+| Calendar review | `a9cebc7` | read-only; connected path tested, not browsed |
+| **`TopicLink` + the Connect step** | `e44b4ca` | the spec's "largest missing piece" |
+| Concept-map gaps (#39) | `50d6cb7` | dormant until the first link exists |
+| Prerequisite decay (#21) | `3c6ef1c` | reads only student-marked prerequisites |
 | Planning cold start | `7ef1b81` | recovery state, not onboarding — ruled |
 | Planner term board + inspector | `088144b` | A + C |
 
@@ -34,7 +38,7 @@ every integration coded AND configured.** Academics does not reach it yet:
 
 | Blocker | Owner |
 |---|---|
-| **Study method offers 2 of 5 groups.** Pretest, Predict, Connect and Full mock have no engine, so their groups are correctly absent — but the surface is incomplete against §6.6 | §6.6 features, each its own pass |
+| **Study method offers 3 of 5 groups.** Pretest, Predict and Full mock have no engine, so their groups stay correctly absent. **Connect landed Aug 19** (`e44b4ca`, `fe21120`) — both its group and its dot | the two remaining §6.6 features, each its own pass |
 | **`#37` and `#41` fire only where links exist.** The writer shipped, so a real student can now create them — but no existing user's records have them yet | user action, not code |
 | **Generation is unbuilt.** Study guide, flashcards, summaries: `specifications/generation` Phases 0–2 do not exist. `study-tools` is deployed and keyed but has no generate action | generation workstream |
 | **Calendar review view unbuilt.** `googleCalendar.ts` and the client id are both in place, so this is now buildable — it simply has not been done | its own pass |
@@ -107,8 +111,36 @@ decision.** Hover-state translucency (`hover:bg-muted/35`) is not in scope
 either way: a translucent hover over a solid surface is a legitimate treatment
 and is not what went wrong here.
 
+## 5b. Learning signals now shipping
+
+Five of §4.1's catalogue, all deterministic and all dormant until their own
+evidence exists:
+
+| # | Signal | Fires when |
+|---|---|---|
+| 37 | assignment-to-topic linkage | dated work names an unpractised topic |
+| 41 | post-exam decay | nothing an exam tested has been retrieved since |
+| 27 | topic difficulty outlier | one topic lapses more than every sibling |
+| **39** | **concept-map gaps** | linking has started and topics still stand alone |
+| **21** | **prerequisite decay** | a student-marked prerequisite is fading |
+
+The panel caps at three, so the last two only surface once the earlier ones
+resolve — which is the discipline working, not a bug.
+
 ## 6. Recommendation
 
-Take **calendar review** next — it is the only drawn, cleared, fully-unblocked
-surface left. Then decide the saved-plan restore semantics in §4.1, which is a
-product question before it is a schema one.
+**Everything drawn, cleared, and unblocked is now built.** What remains needs a
+decision or an entity, not an implementation pass:
+
+1. **Saved plans** (plan comparison) — the hard part is what *restore* does to a
+   course that has since been graded. A snapshot must not resurrect a stale
+   grade or un-complete a finished term. **Andy's call.**
+2. **Course catalog** (substitute choice) — gated on the UNC data research Andy
+   is running Aug 20 for major/minor requirements anyway.
+3. **Pretest, Predict, Full mock** (§6.6) — three study-cycle engines. Each is
+   its own feature, and Pretest in particular needs generation.
+4. **Generation Phases 2–4** — study guides, flashcards, reading summaries.
+   Phase 1 shipped (`30db2b9`); Phase 2 is the one `09` §6 says to de-risk
+   first, against one real lecture's chunks.
+5. **The shared-component translucency sweep** (§5a) — cross-pillar, its own
+   decision.
