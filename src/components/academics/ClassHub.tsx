@@ -268,10 +268,23 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
 
         <TabsContent value="overview"><Overview course={course} data={data} type={classType} topics={courseTopics} drafts={courseDrafts} assignments={courseAssignments} notes={courseNotes} contacts={courseContacts} persons={persons} onTab={changeTab} onOpenExamPrep={openExamPrep} /></TabsContent>
         <TabsContent value="materials"><Materials courseId={course.id} courseCode={course.code} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} onTab={changeTab} /></TabsContent>
-        <TabsContent value="topics"><Topics courseId={course.id} data={data} topics={courseTopics} assignments={courseAssignments} /></TabsContent>
+        <TabsContent value="topics"><Topics
+          courseId={course.id} data={data} topics={courseTopics} assignments={courseAssignments}
+          onOpenNotes={(topicId) => {
+            // The Notes tab filters to this topic, so the menu item lands on
+            // something rather than on an unfiltered list.
+            setParams((current) => {
+              const next = new URLSearchParams(current)
+              next.set('classTab', 'notes')
+              next.set('noteTopic', topicId)
+              return next
+            }, { replace: true })
+            changeTab('notes')
+          }}
+        /></TabsContent>
         <TabsContent value="readings"><WritingTools courseId={course.id} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} /></TabsContent>
         <TabsContent value="assignments"><Assignments assignments={courseAssignments} topics={courseTopics} classType={classType} /></TabsContent>
-        <TabsContent value="notes"><Notes courseId={course.id} notes={courseNotes} topics={courseTopics} /></TabsContent>
+        <TabsContent value="notes"><Notes courseId={course.id} notes={courseNotes} topics={courseTopics} topicFilter={params.get('noteTopic') ?? undefined} /></TabsContent>
       </Tabs>
     </div>
   )
@@ -716,8 +729,14 @@ function Materials({
 }
 
 function Topics({
-  courseId, data, topics, assignments,
-}: { courseId: string; data: ClassCenterData; topics: Topic[]; assignments: ClassAssignment[] }) {
+  courseId, data, topics, assignments, onOpenNotes,
+}: {
+  courseId: string
+  data: ClassCenterData
+  topics: Topic[]
+  assignments: ClassAssignment[]
+  onOpenNotes: (topicId: string) => void
+}) {
   const [filter, setFilter] = useState<'all' | TopicStatus>('all')
   const units = groupTopics(topics.filter((item) => filter === 'all' || item.status === filter))
   const examTopicIds = new Set(assignments.filter((item) => item.type === 'exam' && !isComplete(item)).flatMap((item) => item.coveredTopicIds ?? []))
@@ -748,7 +767,7 @@ function Topics({
               <Progress value={unitTopics.length ? (ready / unitTopics.length) * 100 : 0} />
             </CardHeader>
             <CardContent className="space-y-2">
-              {unitTopics.map((topic) => <TopicRow key={topic.id} topic={topic} data={data} exam={exam} />)}
+              {unitTopics.map((topic) => <TopicRow key={topic.id} topic={topic} data={data} exam={exam} onOpenNotes={onOpenNotes} />)}
             </CardContent>
           </Card>
         )
@@ -785,18 +804,48 @@ function Assignments({ assignments, topics, classType }: { assignments: ClassAss
   )
 }
 
-function Notes({ courseId, notes, topics }: { courseId: string; notes: ClassNote[]; topics: Topic[] }) {
+function Notes({ courseId, notes, topics, topicFilter }: {
+  courseId: string
+  notes: ClassNote[]
+  topics: Topic[]
+  /** Set when arriving from a topic's menu, so the tab lands on that topic. */
+  topicFilter?: string
+}) {
+  const scoped = topicFilter ? notes.filter((item) => item.topicIds.includes(topicFilter)) : notes
+  const focus = topicFilter ? topics.find((item) => item.id === topicFilter) : undefined
+  const [, setParams] = useSearchParams()
   const sections = [
-    { key: 'exam', title: 'Exam intel', notes: notes.filter((item) => item.type === 'exam-review') },
-    { key: 'questions', title: 'Questions to ask', notes: notes.filter((item) => item.type === 'question-log') },
-    { key: 'priming', title: 'Priming rollup', notes: notes.filter((item) => item.type === 'reading' && item.title.startsWith('Prime:')) },
-    { key: 'lecture', title: 'Lecture notes by unit', notes: notes.filter((item) => ['lecture', 'lab', 'other'].includes(item.type)) },
+    // Generated guides were previously in no section at all, which made a
+    // successful generation invisible.
+    { key: 'guides', title: 'Study guides', notes: scoped.filter((item) => item.type === 'study-guide') },
+    { key: 'exam', title: 'Exam intel', notes: scoped.filter((item) => item.type === 'exam-review') },
+    { key: 'questions', title: 'Questions to ask', notes: scoped.filter((item) => item.type === 'question-log') },
+    { key: 'priming', title: 'Priming rollup', notes: scoped.filter((item) => item.type === 'reading' && item.title.startsWith('Prime:')) },
+    { key: 'lecture', title: 'Lecture notes by unit', notes: scoped.filter((item) => ['lecture', 'lab', 'other'].includes(item.type)) },
   ]
   const topicNotes = topics.map((topic) => ({ topic, notes: notes.filter((note) => note.topicIds.includes(topic.id)) })).filter((item) => item.notes.length)
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
       <div className="space-y-4">
-        <SectionToolbar title="Notes" detail="About this class. Material files remain separate in Materials." action={<Button onClick={() => addBlankNote(courseId)}><Plus className="size-4" /> New note</Button>} />
+        <SectionToolbar title="Notes" detail="About this class. Material files remain separate in Materials." action={<Button onClick={() => addBlankNote(courseId)}><Plus className="size-4" />
+        {focus && (
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-muted px-3 py-2">
+            <p className="text-xs font-bold">
+              Showing notes linked to <b className="font-display">{focus.title}</b>
+              {!scoped.length && ' — there are none yet.'}
+            </p>
+            <Button
+              size="sm" variant="ghost" className="ml-auto"
+              onClick={() => setParams((current) => {
+                const next = new URLSearchParams(current)
+                next.delete('noteTopic')
+                return next
+              }, { replace: true })}
+            >
+              Show all notes
+            </Button>
+          </div>
+        )} New note</Button>} />
         {sections.map((section) => (
           <Card key={section.key}>
             <CardHeader><CardTitle>{section.title}</CardTitle></CardHeader>
@@ -909,7 +958,13 @@ function WhatIf({ assignments }: { assignments: ClassAssignment[] }) {
   )
 }
 
-function TopicRow({ topic, data, exam }: { topic: Topic; data: ClassCenterData; exam?: ClassAssignment }) {
+function TopicRow({ topic, data, exam, onOpenNotes }: {
+  topic: Topic
+  data: ClassCenterData
+  exam?: ClassAssignment
+  /** Both menu items route here — one record, two entry points. */
+  onOpenNotes: (topicId: string) => void
+}) {
   const [curveOpen, setCurveOpen] = useState(false)
   const lastRecall = topic.fsrs.lastReview ? new Date(topic.fsrs.lastReview).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Never'
   const nextReview = topic.fsrs.reps > 0 ? new Date(topic.fsrs.due).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Not scheduled'
@@ -929,7 +984,7 @@ function TopicRow({ topic, data, exam }: { topic: Topic; data: ClassCenterData; 
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Brain className="size-4" /> Quiz me</Button></DropdownMenuTrigger>
-              <DropdownMenuContent align="end"><DropdownMenuItem asChild><Link to={`/academics/review/${topic.courseId}?topicId=${topic.id}`}>Recall this topic</Link></DropdownMenuItem><DropdownMenuItem>Open linked notes</DropdownMenuItem></DropdownMenuContent>
+              <DropdownMenuContent align="end"><DropdownMenuItem asChild><Link to={`/academics/review/${topic.courseId}?topicId=${topic.id}`}>Recall this topic</Link></DropdownMenuItem><DropdownMenuItem onClick={() => onOpenNotes(topic.id)}>Open linked notes</DropdownMenuItem></DropdownMenuContent>
             </DropdownMenu>
           </div>
           {/* The same link record, written from the topic side. */}
@@ -939,7 +994,7 @@ function TopicRow({ topic, data, exam }: { topic: Topic; data: ClassCenterData; 
           {curveOpen && <div className="md:col-span-6"><ForgettingCurve topic={topic} events={data.reviewEvents} exam={exam} /></div>}
         </div>
       </ContextMenuTrigger>
-      <ContextMenuContent><ContextMenuItem asChild><Link to={`/academics/review/${topic.courseId}?topicId=${topic.id}`}><Brain className="size-4" /> Quiz me</Link></ContextMenuItem><ContextMenuItem><NotebookText className="size-4" /> Open context</ContextMenuItem></ContextMenuContent>
+      <ContextMenuContent><ContextMenuItem asChild><Link to={`/academics/review/${topic.courseId}?topicId=${topic.id}`}><Brain className="size-4" /> Quiz me</Link></ContextMenuItem><ContextMenuItem onSelect={() => onOpenNotes(topic.id)}><NotebookText className="size-4" /> Open notes</ContextMenuItem></ContextMenuContent>
     </ContextMenu>
   )
 }

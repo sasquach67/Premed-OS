@@ -1,4 +1,5 @@
 import { useMemo, useState, type CSSProperties, type DragEvent, type MouseEvent } from 'react'
+import { studySessionPlan, type SessionPlan } from '@/lib/academics/studySession'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle, Archive, ArrowLeft, Atom, BarChart3, BookOpen, Brain, Calculator, CalendarClock, CalendarDays,
@@ -1013,6 +1014,8 @@ function ReviewQueuePanel({
   topics: Topic[]
   onOpenClass: (courseId: string) => void
 }) {
+  const courses = useStore((s) => s.courses)
+  const [sessionPlan, setSessionPlan] = useState<SessionPlan | undefined>()
   const shown = topics.slice(0, 4)
   const first = shown[0]
   return (
@@ -1022,7 +1025,14 @@ function ReviewQueuePanel({
       icon={Timer}
       actions={(
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" disabled={!first}>Plan 90 min</Button>
+          <Button
+            variant="ghost" size="sm" disabled={!first}
+            onClick={() => setSessionPlan(
+              sessionPlan ? undefined : studySessionPlan(topics, courses, { minutes: 90 }),
+            )}
+          >
+            {sessionPlan ? 'Hide plan' : 'Plan 90 min'}
+          </Button>
           <Button size="sm" disabled={!first} asChild={Boolean(first)}>
             {first ? <Link to={`/academics/review/${first.courseId}`}><Play className="size-4" /> Start</Link> : <span><Play className="size-4" /> Start</span>}
           </Button>
@@ -1055,6 +1065,35 @@ function ReviewQueuePanel({
             )
           })}
           {topics.length > shown.length && <p className="text-right text-xs font-bold text-muted-foreground">+{topics.length - shown.length} more due</p>}
+        </div>
+      )}
+
+      {/* §4.1 item 8 — interleaved across classes on purpose: blocking one
+          class at a time is the practice interleaving is meant to beat. */}
+      {sessionPlan && (
+        <div className="mt-3 rounded-xl border border-border bg-muted p-3">
+          <p className="font-display text-xs font-extrabold">
+            {sessionPlan.blocks.length
+              ? `${sessionPlan.minutes} minutes · ${sessionPlan.blocks.length} topics, interleaved`
+              : `${sessionPlan.minutes} minutes is not enough for a full topic`}
+          </p>
+          {sessionPlan.blocks.length > 0 && (
+            <ol className="mt-2 space-y-1">
+              {sessionPlan.blocks.map((block) => (
+                <li key={block.topic.id} className="flex items-baseline gap-2 text-xs font-bold">
+                  <span className="tabular-nums text-muted-foreground">{block.position}.</span>
+                  <span className="text-muted-foreground">{block.courseCode}</span>
+                  <span className="truncate">{block.topic.title}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+          {sessionPlan.deferred > 0 && (
+            <p className="mt-2 text-[11px] font-bold text-muted-foreground">
+              {sessionPlan.deferred} more due and not in this session.
+            </p>
+          )}
+          <p className="mt-2 text-[10.5px] font-bold text-muted-foreground">{sessionPlan.assumption}</p>
         </div>
       )}
     </BentoPanel>
