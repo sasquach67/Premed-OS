@@ -36,6 +36,7 @@ import { migrateTimelineV14 } from '@/store/migrations/timelineV14'
 import { migrateExperienceHoursV15 } from '@/store/migrations/experienceHoursV15'
 import { migrateRoadmapTaskLinkV16 } from '@/store/migrations/roadmapTaskLinkV16'
 import { migrateOverviewAttachmentsV17 } from '@/store/migrations/overviewAttachmentsV17'
+import { migrateGradeDecisionsV19 } from '@/store/migrations/gradeDecisionsV19'
 import { migrateTaskHorizonsV18 } from '@/store/migrations/taskHorizonsV18'
 import { migrateExamPrepV19 } from '@/store/migrations/examPrepV19'
 import { removeStoryAttachment, retainThenPersistStoryAttachment } from '@/lib/overviewFileCapture'
@@ -531,6 +532,7 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateExperienceHoursV15(migrated)
   migrated = migrateRoadmapTaskLinkV16(migrated)
   migrated = migrateOverviewAttachmentsV17(migrated)
+  migrated = migrateGradeDecisionsV19(migrated)
   migrated = migrateTaskHorizonsV18(migrated)
   return migrateExamPrepV19(migrated)
 }

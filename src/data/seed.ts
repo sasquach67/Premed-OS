@@ -287,6 +287,7 @@ function createClassCenterSeed(): AcademicTagSettings['classCenter'] {
     assignedReadings: [],
     feedbackNotes: [],
     gradeCategories: [],
+    mistakes: [],
     examPrepPlans: [],
   }
 }

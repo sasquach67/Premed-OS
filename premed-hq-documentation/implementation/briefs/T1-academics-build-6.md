@@ -1,6 +1,6 @@
 # T1 · Academics — Grade decisions
 
-**Stage:** C · DECIDED, NOT BUILT
+**Stage:** C · DECIDED, NOT BUILT · **EXECUTED Aug 19, 2026**
 
 **Scope:** The §4.1 grade-decision record layer inside **Planning → Grades &
 archive** — its four state views (`regrade`, `policy`, `incomplete`,
@@ -129,12 +129,12 @@ migration per `CLAUDE.md`, following `taskHorizonsV18` as the template.
 
 ## 5. Done when
 
-- [ ] All four states render from real records, with none simulated.
-- [ ] A missing weight blocks the calculation and says which fact is missing.
-- [ ] An unrecorded curve is visibly different from a curve recorded as absent.
-- [ ] A single mistake never produces a pattern claim.
-- [ ] Migration is pure and idempotent, with a test.
-- [ ] `npm run build` passes; full suite green.
+- [x] All four states render from real records, with none simulated.
+- [x] A missing weight blocks the calculation and says which fact is missing.
+- [x] An unrecorded curve is visibly different from a curve recorded as absent.
+- [x] A single mistake never produces a pattern claim.
+- [x] Migration is pure and idempotent, with a test.
+- [x] `npm run build` passes; full suite green.
 
 ## 6. Commit
 

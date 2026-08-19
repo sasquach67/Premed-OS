@@ -21,6 +21,7 @@ import { ResourceGrid } from '@/components/common/ResourceGrid'
 import { AssignmentCreateDialog, AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { NotesDB } from '@/components/common/NotesDB'
 import { ClassCenter } from '@/components/academics/ClassCenter'
+import { GradeDecisions } from '@/components/academics/GradeDecisions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -296,6 +297,8 @@ export function Academics() {
         {/* ---- Archive ---- */}
         <TabsContent value="archive" className="space-y-6">
           <ClassCenter archiveOnly />
+          {/* §4.1: the record-decision layer, beneath the archive it reads. */}
+          <GradeDecisionsSection />
           <ResourceGrid pillar="academics" />
           <NotesDB pillar="academics" title="Notes (study techniques, syllabi, brain dumps)" />
         </TabsContent>
@@ -1166,5 +1169,30 @@ function InlineSelect({
       <SelectTrigger className={className}><SelectValue /></SelectTrigger>
       <SelectContent>{options.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
     </Select>
+  )
+}
+
+/**
+ * §4.1 grade decisions, one section per in-progress course. Courses with
+ * nothing to decide about render nothing at all — `GradeDecisions` owns that
+ * rule, so this wrapper stays a lookup and never a second empty state.
+ */
+function GradeDecisionsSection() {
+  const courses = useStore((s) => s.courses)
+  const center = useStore((s) => s.academics.classCenter)
+  const active = courses.filter((course) => course.status === 'in-progress')
+
+  return (
+    <div className="space-y-6">
+      {active.map((course) => (
+        <GradeDecisions
+          key={course.id}
+          course={course}
+          assignments={center.assignments.filter((item) => item.courseId === course.id)}
+          categories={(center.gradeCategories ?? []).filter((item) => item.courseId === course.id)}
+          mistakes={(center.mistakes ?? []).filter((item) => item.courseId === course.id)}
+        />
+      ))}
+    </div>
   )
 }

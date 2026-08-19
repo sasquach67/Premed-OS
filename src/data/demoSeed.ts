@@ -188,6 +188,13 @@ export function createDemoData(seedTime = Date.now()): AppData {
   byId('demo-a-chem-exam1').coveredTopicIds = ['demo-topic-radical', 'demo-topic-aromatic'] // #41: untouched since
   byId('demo-a-chem-exam2').coveredTopicIds = ['demo-topic-alkene', 'demo-topic-aromatic', 'demo-topic-carbonyl']
   byId('demo-a-chem-lab').linkedTopicIds = ['demo-topic-stereochem']
+
+  // #44 — returned work with a live instructor window, and one whose window
+  // was never recorded, so the "unknown" state is visible too.
+  byId('demo-a-chem-exam1').returnedAt = date(-14)
+  byId('demo-a-chem-exam1').regradeDeadline = date(5)
+  byId('demo-a-chem-lab').returnedAt = date(-3)
+  byId('demo-a-biol-ps').returnedAt = date(-6)
   byId('demo-a-biol-ps').linkedTopicIds = ['demo-topic-potentials']
   byId('demo-a-biol-quiz2').linkedTopicIds = ['demo-topic-sensory']
   byId('demo-a-phys-ps5').linkedTopicIds = ['demo-topic-rotation']
@@ -278,7 +285,23 @@ export function createDemoData(seedTime = Date.now()): AppData {
       { id: 'demo-feedback-engl105-thesis-2', courseId: 'demo-course-engl105', theme: 'Thesis placement', quote: 'The claim arrives on page two; the reader needs it sooner.', createdAt: stamp(-16), updatedAt: stamp(-16), order: 1 },
       { id: 'demo-feedback-engl105-evidence', courseId: 'demo-course-engl105', theme: 'Evidence needs framing', quote: 'Quotations are doing the arguing without you.', createdAt: stamp(-16), updatedAt: stamp(-16), order: 2 },
     ] as FeedbackNote[],
-    gradeCategories: [],
+    // #50 — one category with policy recorded, one deliberately silent, so the
+    // difference between "recorded as not applying" and "never recorded" is
+    // visible in the running app rather than only in a test.
+    gradeCategories: [
+      { id: 'demo-cat-chem-ps', courseId: courses[4].id, name: 'Problem sets', weight: 10, dropLowestCount: 1, replacementRule: false, source: 'CHEM 262 syllabus §4 — student-approved', createdAt: stamp(-30), updatedAt: stamp(-30), order: 0 },
+      { id: 'demo-cat-chem-exams', courseId: courses[4].id, name: 'Exams', weight: 50, createdAt: stamp(-30), updatedAt: stamp(-30), order: 1 },
+      { id: 'demo-cat-biol-quiz', courseId: courses[3].id, name: 'Quizzes', weight: 0, createdAt: stamp(-30), updatedAt: stamp(-30), order: 2 },
+    ],
+    // #47/#48 — four marked, one unmarked. Deliberately below the five-record
+    // sample floor, so the app must refuse to call it a pattern.
+    mistakes: [
+      { id: 'demo-mistake-acid', courseId: courses[4].id, assignmentId: 'demo-a-chem-exam1', topicId: 'demo-topic-acid-base', label: 'Acid–base mechanism', cause: 'blanked' as const, createdAt: stamp(-13), updatedAt: stamp(-13), order: 0 },
+      { id: 'demo-mistake-leaving', courseId: courses[4].id, assignmentId: 'demo-a-chem-exam1', topicId: 'demo-topic-sn2', label: 'Leaving-group order', cause: 'didnt-know' as const, createdAt: stamp(-13), updatedAt: stamp(-13), order: 1 },
+      { id: 'demo-mistake-stereo', courseId: courses[4].id, assignmentId: 'demo-a-chem-exam1', topicId: 'demo-topic-stereochem', label: 'Inversion vs retention', cause: 'blanked' as const, createdAt: stamp(-12), updatedAt: stamp(-12), order: 2 },
+      { id: 'demo-mistake-q7', courseId: courses[4].id, assignmentId: 'demo-a-chem-exam1', label: 'Question 7 is unclassified', createdAt: stamp(-12), updatedAt: stamp(-12), order: 3 },
+      { id: 'demo-mistake-biol', courseId: courses[3].id, assignmentId: 'demo-a-biol-ps', topicId: 'demo-topic-potentials', label: 'Channel gating sequence', cause: 'didnt-know' as const, createdAt: stamp(-5), updatedAt: stamp(-5), order: 4 },
+    ],
     examPrepPlans: [],
   }
   data.academics.courseOptions = courses.map((item, order) => ({ id: `demo-option-${item.id}`, name: item.code, title: item.title, color: ['blue', 'green', 'purple', 'orange'][order % 4] as 'blue' | 'green' | 'purple' | 'orange' }))

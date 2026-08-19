@@ -350,6 +350,10 @@ export interface ClassAssignment {
   linkedFileIds: ID[]
   notes?: string
   coveredTopicIds?: ID[]
+  /** When graded work came back. Absent means unknown — never inferred. */
+  returnedAt?: string
+  /** The instructor's dispute deadline. Absent is `unknown`, never `expired`. */
+  regradeDeadline?: string
   studyPlan?: string
   reflection?: string
   createdAt: number
@@ -583,6 +587,7 @@ export interface ClassCenterData {
   assignedReadings: AssignedReading[]
   feedbackNotes: FeedbackNote[]
   gradeCategories: GradeCategory[]
+  mistakes: AcademicMistake[]
   examPrepPlans: ExamPrepPlan[]
 }
 
@@ -594,6 +599,34 @@ export interface GradeCategory {
   weight: number
   policyNote?: string
   source?: string
+  /** Grade policy, tri-state THROUGH OPTIONALITY. `undefined` means the course
+   *  policy was never recorded; `false`/`0` means it was recorded as not
+   *  applying. Those are different facts and the policy view renders them
+   *  differently — collapsing them is how a projection starts lying. */
+  dropLowestCount?: number
+  replacementRule?: boolean
+  curvePublished?: boolean
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
+/** How a student explained their own error. Never inferred, never predicted. */
+export type AcademicMistakeCause = 'blanked' | 'didnt-know'
+
+/**
+ * One mistake the student chose to mark while reviewing returned work. `cause`
+ * is deliberately optional: an unclassified mistake is a first-class state
+ * ("needs a mark"), not a defect to be filled in automatically.
+ */
+export interface AcademicMistake {
+  id: ID
+  courseId: ID
+  assignmentId?: ID
+  topicId?: ID
+  label: string
+  cause?: AcademicMistakeCause
+  note?: string
   createdAt: number
   updatedAt: number
   order: number
