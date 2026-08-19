@@ -34,7 +34,7 @@ const MARK: Record<SignalKind, string> = {
 const CARD = 'rounded-2xl border border-border bg-card shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]'
 const EYEBROW = 'font-display text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground'
 
-export function LearningSignalsPanel({ courseId, topics, events, assignments, classType, onTab, topicLinks = [] }: {
+export function LearningSignalsPanel({ courseId, topics, events, assignments, classType, onTab, topicLinks = [], allTopics }: {
   courseId: string
   topics: Topic[]
   events: ReviewEvent[]
@@ -42,8 +42,10 @@ export function LearningSignalsPanel({ courseId, topics, events, assignments, cl
   classType?: ClassWorkspaceType
   onTab: (tab: string) => void
   topicLinks?: TopicLink[]
+  /** Every course's topics — #21 reads backwards into prior courses. */
+  allTopics?: Topic[]
 }) {
-  const signals = learningSignals({ courseId, topics, events, assignments, topicLinks })
+  const signals = learningSignals({ courseId, topics, events, assignments, topicLinks, allTopics })
   // The STEM boundary and the no-empty-panel rule are both the model's, so
   // neither can drift into this file and be forgotten.
   if (!signalsShouldRender(signals, classType)) return null

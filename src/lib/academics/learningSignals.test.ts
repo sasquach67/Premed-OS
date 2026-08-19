@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createTopicFsrsState } from '@/lib/academics/fsrs'
+import { replayStates } from '@/lib/academics/forgettingCurve'
 import {
   MAX_SIGNALS, learningSignals, signalsShouldRender,
 } from '@/lib/academics/learningSignals'
@@ -120,6 +121,80 @@ describe('#27 topic difficulty outlier', () => {
 
   it('stays silent below three recorded reviews', () => {
     expect(learningSignals(input({ topics: [lapsing, calm], events: threeReviews.slice(0, 2) }), now)).toEqual([])
+  })
+})
+
+describe('#21 prerequisite decay', () => {
+  const current = topic({ id: 'cur', courseId: 'c1' })
+  // Built by replaying real reviews rather than hand-setting FSRS fields: a
+  // card left in the New state reads as zero retrievability whatever
+  // `stability` says, so a hand-mangled fixture tests nothing.
+  const stateAfter = (offsets: number[]) => {
+    const reviews = offsets.map((offset, index) => review('prior', now - offset * DAY, index))
+    const states = replayStates(reviews)
+    return states[states.length - 1]
+  }
+  const decayedPrior = topic({
+    id: 'prior', courseId: 'c0', title: 'Nucleophilic substitution',
+    fsrs: stateAfter([420, 410, 400]),
+  })
+  const freshPrior = topic({
+    id: 'prior', courseId: 'c0', title: 'Nucleophilic substitution',
+    fsrs: stateAfter([30, 12, 1]),
+  })
+  const prereqLink = [{
+    id: 'l1', fromTopicId: 'cur', toTopicId: 'prior', relation: 'prerequisite' as const,
+    createdAt: now, updatedAt: now, order: 0,
+  }]
+
+  it('names a prior-course topic the student marked as a prerequisite', () => {
+    const [signal] = learningSignals(input({
+      topics: [current], topicLinks: prereqLink, allTopics: [current, decayedPrior],
+    }), now).filter((item) => item.type === 'prerequisite-decay')
+    expect(signal.title).toContain('Nucleophilic substitution')
+    expect(signal.evidenceLabel).toBe('Prerequisite link')
+  })
+
+  it('reports the band label and never a retrievability figure', () => {
+    // C1: the number never ships without its label, and a signal carries no
+    // numbers at all — so the label alone is the honest half.
+    const [signal] = learningSignals(input({
+      topics: [current], topicLinks: prereqLink, allTopics: [current, decayedPrior],
+    }), now).filter((item) => item.type === 'prerequisite-decay')
+    expect(signal.cause).toMatch(/fading|likely gone/i)
+    expect(signal.cause).not.toMatch(/\d+%/)
+  })
+
+  it('stays silent when the prerequisite is still holding', () => {
+    const signals = learningSignals(input({
+      topics: [current], topicLinks: prereqLink, allTopics: [current, freshPrior],
+    }), now)
+    expect(signals.some((item) => item.type === 'prerequisite-decay')).toBe(false)
+  })
+
+  it('stays silent for a prior topic with no review history', () => {
+    // No history means no decay to measure, not decay of zero.
+    const never = topic({ id: 'prior', courseId: 'c0', fsrs: createTopicFsrsState(now) })
+    const signals = learningSignals(input({
+      topics: [current], topicLinks: prereqLink, allTopics: [current, never],
+    }), now)
+    expect(signals.some((item) => item.type === 'prerequisite-decay')).toBe(false)
+  })
+
+  it('ignores a prerequisite link inside the same class', () => {
+    const sibling = topic({ id: 'prior', courseId: 'c1', fsrs: stateAfter([420, 410, 400]) })
+    const signals = learningSignals(input({
+      topics: [current, sibling], topicLinks: prereqLink, allTopics: [current, sibling],
+    }), now)
+    expect(signals.some((item) => item.type === 'prerequisite-decay')).toBe(false)
+  })
+
+  it('never infers a prerequisite the student did not mark', () => {
+    const other = [{ ...prereqLink[0], relation: 'builds-on' as const }]
+    const signals = learningSignals(input({
+      topics: [current], topicLinks: other, allTopics: [current, decayedPrior],
+    }), now)
+    expect(signals.some((item) => item.type === 'prerequisite-decay')).toBe(false)
   })
 })
 

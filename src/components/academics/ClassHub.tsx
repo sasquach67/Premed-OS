@@ -393,7 +393,7 @@ function Overview({
         <LearningSignalsPanel
           courseId={course.id} topics={topics} events={data.reviewEvents}
           assignments={assignments} classType={type} onTab={onTab}
-          topicLinks={data.topicLinks ?? []}
+          topicLinks={data.topicLinks ?? []} allTopics={data.topics}
         />
       </div>
 

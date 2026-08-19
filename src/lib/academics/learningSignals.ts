@@ -25,7 +25,8 @@
  * changes when it does.
  */
 import { fmtDate } from '@/lib/date'
-import { isolatedTopics } from '@/lib/academics/topicGraph'
+import { isolatedTopics, linksForTopic, otherEnd } from '@/lib/academics/topicGraph'
+import { examDayReading } from '@/lib/academics/forgettingCurve'
 import type { ClassAssignment, ClassWorkspaceType, ReviewEvent, Topic, TopicLink } from '@/lib/types'
 
 /**
@@ -36,7 +37,8 @@ import type { ClassAssignment, ClassWorkspaceType, ReviewEvent, Topic, TopicLink
 export type SignalKind = 'routine' | 'timing' | 'proposal'
 
 export type SignalType =
-  | 'assignment-topic-link' | 'post-exam-decay' | 'topic-difficulty-outlier' | 'concept-map-gap'
+  | 'assignment-topic-link' | 'post-exam-decay' | 'topic-difficulty-outlier'
+  | 'concept-map-gap' | 'prerequisite-decay'
 
 export interface LearningSignal {
   id: string
@@ -65,6 +67,9 @@ export interface LearningSignalInput {
   assignments: ClassAssignment[]
   /** §6.6 Connect. Absent means no graph yet — see `conceptMapGap`. */
   topicLinks?: TopicLink[]
+  /** Every topic the student has, across courses — #21 reads backwards out of
+   *  this class into the ones that came before it. */
+  allTopics?: Topic[]
 }
 
 /** §4.1: "Show at most three items at once." */
@@ -208,6 +213,56 @@ function conceptMapGap(input: LearningSignalInput): LearningSignal | undefined {
 }
 
 /**
+ * #21 — prerequisite decay. The spec calls it "the strongest one here": you are
+ * in CHEM 262 while your CHEM 261 topics have quietly rotted, which is exactly
+ * why sequence courses go wrong.
+ *
+ * Only prior topics the student EXPLICITLY marked as prerequisites are read —
+ * `TopicLink` with relation `prerequisite`. Inferring the dependency from
+ * course numbering would put words in their mouth about what this unit rests
+ * on.
+ *
+ * ⚠️ Reports the band label, never the retrievability figure. C1 rules that
+ * the number never ships without its label, and a learning signal carries no
+ * numbers at all — so the label alone is the honest half.
+ */
+function prerequisiteDecay(input: LearningSignalInput, now: number): LearningSignal | undefined {
+  const links = input.topicLinks ?? []
+  if (!links.length) return undefined
+  const everyTopic = input.allTopics ?? input.topics
+  const mine = new Set(input.topics.map((topic) => topic.id))
+
+  const decayed: Topic[] = []
+  for (const topic of input.topics) {
+    for (const link of linksForTopic(links, topic.id)) {
+      if (link.relation !== 'prerequisite') continue
+      const priorId = otherEnd(link, topic.id)
+      if (mine.has(priorId)) continue // same class: not a prerequisite course
+      const prior = everyTopic.find((item) => item.id === priorId)
+      // No review history means no decay to measure, not decay of zero.
+      if (!prior || prior.fsrs.reps === 0) continue
+      const reading = examDayReading(prior.fsrs, now)
+      if (reading.band === 'should-hold') continue
+      if (!decayed.some((item) => item.id === prior.id)) decayed.push(prior)
+    }
+  }
+  if (!decayed.length) return undefined
+
+  const worst = examDayReading(decayed[0].fsrs, now)
+  return {
+    id: `prerequisite-decay:${decayed[0].id}`,
+    type: 'prerequisite-decay',
+    kind: 'routine',
+    title: `${decayed.map((topic) => topic.title).slice(0, 2).join(' and ')} ${decayed.length === 1 ? 'is' : 'are'} fading underneath this class.`,
+    cause: `You marked ${decayed.length === 1 ? 'it' : 'them'} as a prerequisite for work you are doing now, and the reading is "${worst.label.toLowerCase()}"${worst.clause ? ` — ${worst.clause}` : ''}.`,
+    actionLabel: 'Review the prerequisite',
+    action: { type: 'route', to: `/academics/review/${decayed[0].courseId}?topicId=${decayed[0].id}` },
+    evidenceLabel: 'Prerequisite link',
+    evidenceDetail: `You linked ${decayed.length === 1 ? 'this topic' : 'these topics'} as a prerequisite from this class.`,
+  }
+}
+
+/**
  * The signals this class has earned, in a FIXED order — timing first because it
  * is the only one with a deadline attached, then the two routine kinds in
  * catalogue order. This is not a ranking and nothing is scored.
@@ -216,6 +271,7 @@ export function learningSignals(input: LearningSignalInput, now = Date.now()): L
   return [
     assignmentTopicLink(input, now),
     postExamDecay(input, now),
+    prerequisiteDecay(input, now),
     topicDifficultyOutlier(input),
     conceptMapGap(input),
   ].filter((signal): signal is LearningSignal => signal != null).slice(0, MAX_SIGNALS)
