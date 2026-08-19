@@ -21,8 +21,8 @@
   --popover-foreground: #3a3530;
 
   /* Carolina blue accent (single, subtle) */
-  --primary: #3f93cf;
-  --primary-foreground: #ffffff;
+  --primary: #4b9cd3;
+  --primary-foreground: #132535;
   --secondary: #e6f2fb;
   --secondary-foreground: #1f4e6b;
   --accent: #e6f2fb;
@@ -133,8 +133,8 @@
   --popover: #2b2722;
   --popover-foreground: #ece3d4;
 
-  --primary: #6fb3de;
-  --primary-foreground: #14110d;
+  --primary: #4b9cd3;
+  --primary-foreground: #132535;
   --secondary: #33302a;
   --secondary-foreground: #cfe4f3;
   --accent: #33302a;

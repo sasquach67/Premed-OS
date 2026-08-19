@@ -19,8 +19,14 @@ fully functional.**
 
 ## Design foundation (LOCKED — the concrete design system; craft rules in `premed-hq-documentation/specifications/04-visual-craft-standards.md`)
 
-- Warm dark default: bg `#282420`, cards `#322d27`, borders `#423a32`,
-  text `#ece3d4` / `#a89c8c` / `#7c7264`, primary `#4b9cd3`.
+- Warm dark default: bg `#211e1a`, cards `#2b2722`, borders `#3c352d`,
+  muted surfaces `#322e28`, text `#ece3d4` / `#a89c8c` / `#7c7264`,
+  accent `#4b9cd3` on `#132535`.
+  (**Corrected Aug 19, 2026.** This block previously read `#282420` / `#322d27`
+  / `#423a32` — three values that appeared nowhere in `src/` or `mockup-lab/`.
+  The app's `.dark` block and every mockup frame already agreed on the values
+  above; only this file disagreed. Verify against `src/index.css` before
+  editing here — a locked palette that describes nothing is worse than none.)
   (**Do not describe this as "Carolina blue" or any UNC colour.** Premed OS has its own
   design system and is **not affiliated with UNC** — see
   `premed-hq-documentation/specifications/05-public-and-account.md` §6.)
@@ -31,6 +37,14 @@ fully functional.**
   progress pills, status chips, heatmaps, ring gauges.
 - One primary action per view (accent pill, top right).
 - Per-pillar `--cat-*` accent carried in subtab underline + title bar + hero.
+- **One accent, not two.** `--primary` and `--cat-gpa` are both `#4b9cd3` as of
+  Aug 19, 2026. They had drifted apart — `--primary` was `#3f93cf` light and
+  `#6fb3de` dark — so a text route and the `Button` beside it rendered two
+  different blues on the same card. The mockups only ever use one. Aligning
+  also fixed a real contrast failure: light-mode button text was 3.34:1,
+  below AA; it is now 5.21:1 in both themes.
+  The named visual themes (`data-visual-theme='doraemon'`) keep their own
+  palettes on purpose and were not touched.
 - Mascot = illustration only, never a UI icon. Celebrations only on
   real milestones (goal hit, letter submitted, first pub, cert renewed).
   **NOT a ram.** `premed-hq-documentation/specifications/05-public-and-account.md`
