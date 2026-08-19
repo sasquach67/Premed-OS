@@ -25,6 +25,7 @@ import { GradeDecisions } from '@/components/academics/GradeDecisions'
 import { TermRollover } from '@/components/academics/TermRollover'
 import { PlanningDecisions } from '@/components/academics/PlanningDecisions'
 import { PlanningColdStart } from '@/components/academics/PlanningColdStart'
+import { PlannerBoard } from '@/components/academics/PlannerBoard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -251,6 +252,8 @@ export function Academics() {
               surfaces would render zeros implying data exists. Suppress all of
               them and ask for the one durable fact instead. */}
           {!courses.length ? <PlanningColdStart onAddCourse={() => addCourse('This term')} /> : <>
+          {/* §4.2 the sequencing board — A + C. Editing stays in the tables below. */}
+          <PlannerBoard />
           <PlanningDecisions />
           <SharedPlanNote
             title="Planner & GPA is the course ledger"
