@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button'
 
 const CARD = 'rounded-2xl border border-border bg-card shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]'
 const EYEBROW = 'font-display text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground'
-const STEP = 'rounded-xl border border-border bg-muted/25 p-3'
+const STEP = 'rounded-xl border border-border bg-muted p-3'
 
 export function CalendarReview({ assignments }: { assignments: ClassAssignment[] }) {
   const calendar = useStore((s) => s.settings.calendar)
@@ -96,7 +96,7 @@ export function CalendarReview({ assignments }: { assignments: ClassAssignment[]
 
       {/* Ordinary, not an error. */}
       {state === 'connected-empty' && (
-        <p className="mt-3 rounded-xl border border-border bg-muted/25 p-3 text-[11.5px] font-bold text-muted-foreground">
+        <p className="mt-3 rounded-xl border border-border bg-muted p-3 text-[11.5px] font-bold text-muted-foreground">
           <b className="font-display text-foreground">Connected, no course match yet. </b>
           That is ordinary. Add assignments manually or import a syllabus instead.
         </p>
@@ -118,7 +118,7 @@ export function CalendarReview({ assignments }: { assignments: ClassAssignment[]
       {proposals.length > 0 && (
         <div className="mt-3 space-y-2">
           {proposals.map((proposal) => (
-            <div key={proposal.assignment.id} className="rounded-xl border border-border bg-muted/25 p-3">
+            <div key={proposal.assignment.id} className="rounded-xl border border-border bg-muted p-3">
               <b className="font-display text-sm font-extrabold">{proposal.assignment.title} moved</b>
               <p className="mt-0.5 text-[11.5px] font-bold text-muted-foreground">
                 Calendar says {fmtDate(proposal.calendarDate, { weekday: 'short', month: 'short', day: 'numeric' })}

@@ -82,7 +82,7 @@ export function TranscriptImport({ courseId }: { courseId: string }) {
         value={text} onChange={(event) => setText(event.target.value)}
         placeholder={'22:14 If you only take one thing from this unit…\n31:08 These mechanisms look alike until the leaving group changes.'}
         rows={8}
-        className="mt-2 w-full rounded-xl border border-border bg-muted/25 p-3 text-sm font-semibold outline-none focus-visible:border-[var(--cat-gpa)]"
+        className="mt-2 w-full rounded-xl border border-border bg-muted p-3 text-sm font-semibold outline-none focus-visible:border-[var(--cat-gpa)]"
       />
 
       {preview && (

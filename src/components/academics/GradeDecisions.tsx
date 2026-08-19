@@ -28,7 +28,7 @@ const EYEBROW = 'font-display text-[10px] font-extrabold uppercase tracking-[0.1
 /** `not-recorded` reads as absent, never as a settled "no". */
 const POLICY_TONE: Record<PolicyState, string> = {
   applied: 'border-[color-mix(in_srgb,var(--cat-gpa)_38%,var(--border))] bg-[color-mix(in_srgb,var(--cat-gpa)_8%,transparent)]',
-  'not-applied': 'border-border bg-muted/30',
+  'not-applied': 'border-border bg-muted',
   'not-recorded': 'border-dashed border-amber-500/45 bg-amber-500/5',
 }
 const POLICY_LABEL: Record<PolicyState, string> = {
@@ -80,7 +80,7 @@ function ReturnedWork({ item, course }: { item: ClassAssignment; course: Course 
       </p>
 
       <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="rounded-xl border border-border bg-muted/25 p-3">
+        <div className="rounded-xl border border-border bg-muted p-3">
           <p className={EYEBROW}>Instructor record</p>
           <div className="mt-2 space-y-2 text-xs font-bold">
             <Datum label="Regrade request window" value={window.closesOn ? `Closes ${fmtDate(window.closesOn, { weekday: 'long', month: 'short', day: 'numeric' })}` : 'Not recorded'} />
@@ -90,7 +90,7 @@ function ReturnedWork({ item, course }: { item: ClassAssignment; course: Course 
           </div>
         </div>
 
-        <aside className="rounded-xl border border-border bg-muted/25 p-3">
+        <aside className="rounded-xl border border-border bg-muted p-3">
           <p className={EYEBROW}>A bounded next step</p>
           <p className="mt-1 text-sm font-extrabold">Review the marked items first.</p>
           {/* The sentence that keeps this honest — do not soften it into advice. */}
@@ -146,7 +146,7 @@ function MissingInputs({ gaps }: { gaps: ReturnType<typeof missingInputs> }) {
       <p className="mt-0.5 text-xs font-bold text-muted-foreground">No calculation is shown until the source exists.</p>
       <div className="mt-3 space-y-2">
         {gaps.map((gap) => (
-          <div key={gap.id} className="rounded-xl border border-dashed border-border bg-muted/25 p-3">
+          <div key={gap.id} className="rounded-xl border border-dashed border-border bg-muted p-3">
             <b className="font-display text-sm font-extrabold">{gap.fact}</b>
             <p className="mt-1 text-[11.5px] font-bold text-muted-foreground">{gap.recovery}</p>
           </div>
@@ -171,7 +171,7 @@ function MistakeEvidence({ mistakes, course }: { mistakes: AcademicMistake[]; co
           {mistakes.map((item) => {
             const route = mistakeRoute(item)
             return (
-              <section key={item.id} className="flex gap-3 rounded-xl border border-border bg-muted/25 p-3">
+              <section key={item.id} className="flex gap-3 rounded-xl border border-border bg-muted p-3">
                 <span className={cn(
                   'h-fit shrink-0 rounded-lg border px-2 py-1 font-display text-[10.5px] font-extrabold',
                   route === 'recall' ? 'border-[color-mix(in_srgb,var(--cat-gpa)_38%,var(--border))] text-[var(--cat-gpa)]'
@@ -211,7 +211,7 @@ function MistakeEvidence({ mistakes, course }: { mistakes: AcademicMistake[]; co
           The app routes a marked cause. It describes a recurring pattern only once enough marked
           records exist, and it keeps the source items reachable.
         </p>
-        <p className="mt-2 rounded-lg border border-border bg-muted/30 p-2.5 text-[11px] font-bold text-muted-foreground">
+        <p className="mt-2 rounded-lg border border-border bg-muted p-2.5 text-[11px] font-bold text-muted-foreground">
           {reportable
             ? 'Enough marked records exist for a pattern to be described — with its sample shown, never as an exam forecast.'
             : 'Not enough marked records yet for any pattern claim. A course-level observation needs multiple graded examples.'}

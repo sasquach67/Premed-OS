@@ -39,12 +39,12 @@ export function PlanningColdStart({ onAddCourse }: { onAddCourse?: () => void })
             </Button>
           )}
           <div className="mt-3 grid gap-2 text-[11px] font-bold sm:grid-cols-2">
-            <div className="rounded-lg border border-border bg-muted/25 p-2.5">
+            <div className="rounded-lg border border-border bg-muted p-2.5">
               <b className="font-display">Current or completed course</b>
               <p className="mt-0.5 text-muted-foreground">Title, credits, term, and grade.</p>
             </div>
             {/* Subordinate on purpose — starting from AP credit alone is rarer. */}
-            <div className="rounded-lg border border-border bg-muted/25 p-2.5">
+            <div className="rounded-lg border border-border bg-muted p-2.5">
               <b className="font-display">Prior credit</b>
               <p className="mt-0.5 text-muted-foreground">AP, transfer, or dual-enrolment.</p>
             </div>
@@ -54,7 +54,7 @@ export function PlanningColdStart({ onAddCourse }: { onAddCourse?: () => void })
         <div>
           <div className="grid gap-2 sm:grid-cols-3">
             {TERMS.map((term) => (
-              <div key={term} className="rounded-xl border border-border bg-muted/15 p-3">
+              <div key={term} className="rounded-xl border border-border bg-muted p-3">
                 <p className={EYEBROW}>{term}</p>
                 {/* Empty, never a sample course. */}
                 <div className="mt-2 h-16 rounded-lg border border-dashed border-border" />

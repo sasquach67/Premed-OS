@@ -85,7 +85,7 @@ export function PlannerBoard() {
           <div className="flex min-w-max gap-2.5">
             {columns.map((column, index) => (
               <div key={column.term} className="flex items-stretch gap-2.5">
-                <article className="w-52 shrink-0 rounded-xl border border-border bg-muted/20 p-3">
+                <article className="w-52 shrink-0 rounded-xl border border-border bg-muted p-3">
                   <div className="flex items-baseline justify-between gap-2">
                     <p className="font-display text-xs font-extrabold">{column.term}</p>
                     {column.registered && (
@@ -106,7 +106,7 @@ export function PlannerBoard() {
                           'w-full rounded-lg border bg-card p-2 text-left transition-colors duration-150 ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none',
                           course.id === selectedId
                             ? 'border-[var(--cat-gpa)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--cat-gpa)_32%,transparent)]'
-                            : 'border-border hover:bg-muted/40',
+                            : 'border-border hover:bg-muted',
                         )}
                       >
                         <b className="font-display text-[12.5px] font-extrabold">{course.code}</b>
@@ -231,7 +231,7 @@ function Inspector({ course, onClose }: { course: Course; onClose: () => void })
         {effects.clears.length ? (
           <ul className="mt-1.5 space-y-1.5">
             {effects.clears.map((effect) => (
-              <li key={effect.label} className="rounded-lg border border-border bg-muted/25 p-2">
+              <li key={effect.label} className="rounded-lg border border-border bg-muted p-2">
                 <b className="font-display text-[11.5px] font-extrabold">{effect.label}</b>
                 <p className="text-[10.5px] font-bold text-muted-foreground">{effect.group}</p>
                 <p className={cn(
@@ -276,7 +276,7 @@ function Inspector({ course, onClose }: { course: Course; onClose: () => void })
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-border bg-muted/25 p-2">
+    <div className="rounded-lg border border-border bg-muted p-2">
       <p className="text-[10px] font-bold text-muted-foreground">{label}</p>
       <p className="font-display text-lg font-extrabold tabular-nums">{value}</p>
     </div>

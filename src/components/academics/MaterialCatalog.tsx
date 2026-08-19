@@ -28,7 +28,7 @@ const EYEBROW = 'font-display text-[10px] font-extrabold uppercase tracking-[0.1
 /** Unknown origin reads as a caution, because private-by-default is the point. */
 const BADGE: Record<Provenance, string> = {
   course: 'border-[color-mix(in_srgb,var(--cat-gpa)_36%,var(--border))] bg-[color-mix(in_srgb,var(--cat-gpa)_10%,transparent)]',
-  mine: 'border-border bg-muted/40',
+  mine: 'border-border bg-muted',
   generated: 'border-[color-mix(in_srgb,var(--cat-mcat)_36%,var(--border))] bg-[color-mix(in_srgb,var(--cat-mcat)_10%,transparent)]',
   unknown: 'border-dashed border-amber-500/50 bg-amber-500/8',
 }
@@ -72,7 +72,7 @@ export function MaterialCatalog({ files, topics, onAdd }: {
                 'flex w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors duration-150 ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none',
                 row.unit === unit
                   ? 'border-[color-mix(in_srgb,var(--cat-gpa)_44%,var(--border))] bg-[color-mix(in_srgb,var(--cat-gpa)_10%,transparent)]'
-                  : 'border-border bg-muted/25 hover:bg-muted/45',
+                  : 'border-border bg-muted hover:border-[color-mix(in_srgb,var(--cat-gpa)_45%,var(--border))]',
               )}
             >
               <span className="min-w-0 truncate font-display text-xs font-extrabold">{row.unit}</span>
@@ -100,7 +100,7 @@ export function MaterialCatalog({ files, topics, onAdd }: {
 
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {entries.map(({ file, provenance }) => (
-            <div key={file.id} className="rounded-xl border border-border bg-muted/25 p-3">
+            <div key={file.id} className="rounded-xl border border-border bg-muted p-3">
               <div className="flex items-center gap-2">
                 <FileText className="size-3.5 shrink-0 text-[var(--cat-gpa)]" />
                 <b className="min-w-0 truncate font-display text-sm font-extrabold">{file.title}</b>

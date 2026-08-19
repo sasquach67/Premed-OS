@@ -265,7 +265,7 @@ function LinkPicker({
             return (
               <button
                 key={row.id} type="button" role="checkbox" aria-checked={on}
-                className="flex w-full items-center gap-3 border-t border-border px-3 py-2.5 text-left text-sm font-bold first:border-t-0 hover:bg-muted/50"
+                className="flex w-full items-center gap-3 border-t border-border px-3 py-2.5 text-left text-sm font-bold first:border-t-0 hover:bg-muted"
                 onClick={() => setDraft(on ? draft.filter((id) => id !== row.id) : [...draft, row.id])}
               >
                 <span className={cn('size-4 shrink-0 rounded-[5px] border-[1.5px]', on ? 'border-[var(--cat-gpa)] bg-[var(--cat-gpa)]' : 'border-border')} />

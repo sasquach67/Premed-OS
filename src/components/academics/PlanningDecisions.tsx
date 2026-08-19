@@ -50,7 +50,7 @@ export function PlanningDecisions() {
         {entries.length > 0 ? (
           <ol className="mt-3 space-y-2">
             {entries.map((entry) => (
-              <li key={entry.course.id} className="flex gap-3 rounded-xl border border-border bg-muted/25 p-3">
+              <li key={entry.course.id} className="flex gap-3 rounded-xl border border-border bg-muted p-3">
                 {/* Ordinal, not a metric. */}
                 <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--cat-mcat)_18%,transparent)] font-display text-[11px] font-extrabold text-[var(--cat-mcat)]">
                   {entry.position}
@@ -69,7 +69,7 @@ export function PlanningDecisions() {
           </p>
         )}
 
-        <div className="mt-3 rounded-xl border border-border bg-muted/30 p-3 text-[11px] font-bold text-muted-foreground">
+        <div className="mt-3 rounded-xl border border-border bg-muted p-3 text-[11px] font-bold text-muted-foreground">
           <b className="font-display text-foreground">What this does not know. </b>
           {unknownsNote(entries)}
           {target.isPlanningWindow && ' Set an MCAT date to replace the planning window when you have one.'}
@@ -102,7 +102,7 @@ export function PlanningDecisions() {
           <Copy className="size-4" /> Copy advisor summary
         </Button>
         {snapshot && (
-          <pre className="mt-3 max-h-64 overflow-auto rounded-xl border border-border bg-muted/30 p-3 text-[10.5px] font-semibold whitespace-pre-wrap">
+          <pre className="mt-3 max-h-64 overflow-auto rounded-xl border border-border bg-muted p-3 text-[10.5px] font-semibold whitespace-pre-wrap">
             {snapshot}
           </pre>
         )}

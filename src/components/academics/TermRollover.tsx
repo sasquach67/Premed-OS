@@ -104,7 +104,7 @@ function Ritual({ course, courses, topics, currentTerm }: {
       {/* Origin → connector → three narrow fates. The origin is deliberately
           wider than any single fate: it is the thing being transitioned. */}
       <div className="mt-4 grid gap-3 lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <article className="rounded-xl border border-border bg-muted/30 p-3.5">
+        <article className="rounded-xl border border-border bg-muted p-3.5">
           <p className={EYEBROW}>Completed course</p>
           <h4 className="mt-0.5 font-display text-base font-extrabold">{course.code}</h4>
           <p className="text-xs font-bold text-muted-foreground">{course.title}<br />{course.term}</p>
@@ -121,7 +121,7 @@ function Ritual({ course, courses, topics, currentTerm }: {
             const Icon = FATE_ICON[fate]
             const rows = fates.filter((item) => item.fate === fate)
             return (
-              <article key={fate} className="rounded-xl border border-border bg-muted/25 p-3">
+              <article key={fate} className="rounded-xl border border-border bg-muted p-3">
                 <Icon className={cn('size-4', fate === 'retired' ? 'text-muted-foreground' : 'text-[var(--cat-gpa)]')} />
                 <h4 className="mt-1.5 font-display text-sm font-extrabold">{FATE_LABEL[fate]}</h4>
                 <p className="mt-0.5 text-[11px] font-bold text-muted-foreground">{FATE_DETAIL[fate]}</p>
