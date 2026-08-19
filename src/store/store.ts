@@ -40,6 +40,7 @@ import { migrateOverviewAttachmentsV17 } from '@/store/migrations/overviewAttach
 import { migrateTaskHorizonsV18 } from '@/store/migrations/taskHorizonsV18'
 import { migrateExamPrepV19 } from '@/store/migrations/examPrepV19'
 import { migrateGradeDecisionsV20 } from '@/store/migrations/gradeDecisionsV20'
+import { migrateTopicLinksV21 } from '@/store/migrations/topicLinksV21'
 import { removeStoryAttachment, retainThenPersistStoryAttachment } from '@/lib/overviewFileCapture'
 
 const DEMO_MODE = isDemoMode()
@@ -58,8 +59,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateGradeDecisionsV20`. */
-export const CURRENT_STORE_VERSION = 20
+/** Matches the newest migration in `migrateAll`: `migrateTopicLinksV21`. */
+export const CURRENT_STORE_VERSION = 21
 
 function createInitialData() {
   if (!DEMO_MODE) return structuredClone(createSeedData())
@@ -535,7 +536,8 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateOverviewAttachmentsV17(migrated)
   migrated = migrateTaskHorizonsV18(migrated)
   migrated = migrateExamPrepV19(migrated)
-  return migrateGradeDecisionsV20(migrated)
+  migrated = migrateGradeDecisionsV20(migrated)
+  return migrateTopicLinksV21(migrated)
 }
 
 function nextOrder(arr: AnyRow[]): number {

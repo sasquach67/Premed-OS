@@ -602,6 +602,7 @@ export interface ClassCenterData {
   feedbackNotes: FeedbackNote[]
   gradeCategories: GradeCategory[]
   mistakes: AcademicMistake[]
+  topicLinks: TopicLink[]
   examPrepPlans: ExamPrepPlan[]
 }
 
@@ -640,6 +641,28 @@ export interface AcademicMistake {
   topicId?: ID
   label: string
   cause?: AcademicMistakeCause
+  note?: string
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
+/** §6.6 Connect — the five relations the spec rules, and no more. */
+export type TopicLinkRelation =
+  | 'builds-on' | 'contrasts-with' | 'same-mechanism' | 'prerequisite' | 'shared-mcat-category'
+
+/**
+ * An explicit relation the student AUTHORS between two topics. Turns the topic
+ * set into a graph rather than a list.
+ *
+ * ⚠️ Never auto-written. §6.6 and #22 both rule propose-then-confirm, and a
+ * wrong automatic merge would corrupt two classes' review schedules at once.
+ */
+export interface TopicLink {
+  id: ID
+  fromTopicId: ID
+  toTopicId: ID
+  relation: TopicLinkRelation
   note?: string
   createdAt: number
   updatedAt: number

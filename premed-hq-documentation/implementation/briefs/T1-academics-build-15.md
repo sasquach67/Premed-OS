@@ -1,6 +1,6 @@
 # T1 · Academics — `TopicLink` and the Connect step
 
-**Stage:** C · DECIDED, NOT BUILT
+**Stage:** C · DECIDED, NOT BUILT · **EXECUTED Aug 19, 2026**
 
 **Scope:** The `TopicLink` entity (§6.6 Connect) and the affordance that
 authors one. Frontend and backend.
@@ -96,11 +96,11 @@ group turns on with no component change.**
 
 ## 6. Done when
 
-- [ ] A student can link two topics with a named relation, and unlink it.
-- [ ] Duplicates and self-links are refused.
-- [ ] The study-method `Needs connecting` group appears once links exist.
-- [ ] Migration is pure and idempotent, with a test.
-- [ ] Build passes; suite green; **surfaces measured against the drawing**.
+- [x] A student can link two topics with a named relation, and unlink it.
+- [x] Duplicates and self-links are refused.
+- [x] The study-method `Needs connecting` group appears once links exist.
+- [x] Migration is pure and idempotent, with a test.
+- [x] Build passes; suite green; **surfaces measured against the drawing**.
 
 ## 7. Commit
 

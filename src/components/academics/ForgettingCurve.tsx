@@ -128,7 +128,7 @@ export function ForgettingCurve({ topic, events, exam }: {
           ['Every reset slows the next fall', 'That is why the curve flattens each time, and why the gaps can widen.'],
           ['Reviews land just before you’d forget', 'Earlier wastes the effort. Later loses the memory.'],
         ].map(([title, detail]) => (
-          <div key={title} className="rounded-xl border border-border bg-muted/25 p-2.5">
+          <div key={title} className="rounded-xl border border-border bg-muted p-2.5">
             <p className="font-display text-xs font-extrabold">{title}</p>
             <p className="mt-0.5 text-xs font-semibold text-muted-foreground">{detail}</p>
           </div>
@@ -148,7 +148,7 @@ export function ForgettingCurve({ topic, events, exam }: {
 /** §4.1-L: one review is a dot, not a curve. Nothing is drawn rather than something invented. */
 function ThinHistory({ topic, reviewCount }: { topic: Topic; reviewCount: number }) {
   return (
-    <section className="rounded-2xl border border-dashed border-border bg-muted/25 p-6 text-center">
+    <section className="rounded-2xl border border-dashed border-border bg-muted p-6 text-center">
       <div className="mb-3 flex justify-center gap-1.5" aria-hidden="true">
         <span className="size-2.5 rounded-full bg-primary" />
         <span className={reviewCount >= 1 ? 'size-2.5 rounded-full border-[1.5px] border-border' : 'size-2.5 rounded-full border-[1.5px] border-border'} />

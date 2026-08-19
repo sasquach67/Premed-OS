@@ -310,6 +310,8 @@ export function createDemoData(seedTime = Date.now()): AppData {
       { id: 'demo-mistake-q7', courseId: courses[4].id, assignmentId: 'demo-a-chem-exam1', label: 'Question 7 is unclassified', createdAt: stamp(-12), updatedAt: stamp(-12), order: 3 },
       { id: 'demo-mistake-biol', courseId: courses[3].id, assignmentId: 'demo-a-biol-ps', topicId: 'demo-topic-potentials', label: 'Channel gating sequence', cause: 'didnt-know' as const, createdAt: stamp(-5), updatedAt: stamp(-5), order: 4 },
     ],
+    // §6.6 Connect — seeded empty: a link is a claim the student makes.
+    topicLinks: [],
     examPrepPlans: [],
   }
   data.academics.courseOptions = courses.map((item, order) => ({ id: `demo-option-${item.id}`, name: item.code, title: item.title, color: ['blue', 'green', 'purple', 'orange'][order % 4] as 'blue' | 'green' | 'purple' | 'orange' }))

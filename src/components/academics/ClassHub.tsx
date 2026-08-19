@@ -42,6 +42,7 @@ import { ForgettingCurve } from '@/components/academics/ForgettingCurve'
 import { StudyMethodTrack } from '@/components/academics/StudyMethodTrack'
 import { StudyMethodPanel } from '@/components/academics/StudyMethodPanel'
 import { AssignmentLinkField, TopicLinkField } from '@/components/academics/TopicLinkFields'
+import { TopicConnectField } from '@/components/academics/TopicConnectField'
 import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
 import { TranscriptImport } from '@/components/academics/TranscriptImport'
 import { CalendarReview } from '@/components/academics/CalendarReview'
@@ -383,7 +384,7 @@ function Overview({
       </Panel>
 
       <div className="col-span-12">
-        <StudyMethodPanel courseId={course.id} topics={topics} events={data.reviewEvents} classType={type} />
+        <StudyMethodPanel courseId={course.id} topics={topics} events={data.reviewEvents} classType={type} topicLinks={data.topicLinks ?? []} />
       </div>
 
       {/* §4.1: below the class's primary next action, above its supporting
@@ -928,6 +929,8 @@ function TopicRow({ topic, data, exam }: { topic: Topic; data: ClassCenterData; 
           </div>
           {/* The same link record, written from the topic side. */}
           <AssignmentLinkField topic={topic} />
+          {/* §6.6 Connect — the topic graph, authored one relation at a time. */}
+          <TopicConnectField topic={topic} />
           {curveOpen && <div className="md:col-span-6"><ForgettingCurve topic={topic} events={data.reviewEvents} exam={exam} /></div>}
         </div>
       </ContextMenuTrigger>

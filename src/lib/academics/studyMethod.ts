@@ -4,8 +4,9 @@
  * The nine-step cycle of §6.6, rendered as three placements. This module owns
  * only the derivation; the components draw it.
  *
- * ⚠️ The surface outruns its engine. Four of the nine steps — pretest, predict,
- * connect, mock — are specced (§6.6, marked ✗ new) and NOT BUILT. Steps without
+ * ⚠️ The surface outruns its engine. Three of the nine steps — pretest,
+ * predict, mock — are specced (§6.6, marked ✗ new) and NOT BUILT. **Connect
+ * landed Aug 19 2026** with `TopicLink`, so its group is now offered. Steps without
  * an engine can never be marked done, and groups whose action has no engine are
  * not offered at all. Advertising a study step the app cannot perform, on the
  * surface whose job is "what do I do right now?", would be worse than omitting
@@ -63,7 +64,7 @@ export function completedSteps(topic: Topic, events: ReviewEvent[]): Set<CycleSt
   return done
 }
 
-export type GroupId = 'just-covered' | 'due-to-review'
+export type GroupId = 'just-covered' | 'needs-connecting' | 'due-to-review'
 
 export interface StudyGroup {
   id: GroupId
@@ -75,12 +76,20 @@ export interface StudyGroup {
 /**
  * The groups the panel may offer TODAY.
  *
- * Deliberately two, not five. `before-class`, `needs-connecting` and
- * `exam-ready` are omitted because Pretest/Predict, TopicLink and Full mock do
- * not exist. They are added here when their engines land — no rework in the
+ * Three, not five. `before-class` and `exam-ready` are still omitted because
+ * Pretest/Predict and Full mock do not exist; `needs-connecting` turned on when
+ * `TopicLink` landed. They are added here when their engines land — no rework in the
  * component, which renders whatever this returns.
  */
-export function studyGroups(topics: Topic[], events: ReviewEvent[], now = Date.now()): StudyGroup[] {
+export function studyGroups(
+  topics: Topic[],
+  events: ReviewEvent[],
+  now = Date.now(),
+  /** §6.6 Connect. Absent means the caller has no graph yet, and the
+   *  needs-connecting group stays off rather than claiming everything is
+   *  unconnected. */
+  linkedTopicIds?: ReadonlySet<string>,
+): StudyGroup[] {
   const reviewedSince = (topic: Topic, at: number) =>
     events.some((event) => event.topicId === topic.id && event.timestamp >= at)
 
@@ -96,8 +105,19 @@ export function studyGroups(topics: Topic[], events: ReviewEvent[], now = Date.n
   const dueToReview = topics.filter((topic) =>
     topic.fsrs.reps > 0 && topic.fsrs.due <= now && !justCovered.includes(topic))
 
+  // §6.6: recalled, but no TopicLink. Only offered once a graph exists —
+  // without one, every topic would look unconnected and the group would be a
+  // false accusation rather than a prompt.
+  const needsConnecting = linkedTopicIds
+    ? topics.filter((topic) =>
+      topic.fsrs.reps > 0
+      && !linkedTopicIds.has(topic.id)
+      && !justCovered.includes(topic))
+    : []
+
   return [
     { id: 'just-covered' as const, title: 'Just covered', action: 'Recall it', topics: justCovered },
+    { id: 'needs-connecting' as const, title: 'Needs connecting', action: 'Connect it', topics: needsConnecting },
     { id: 'due-to-review' as const, title: 'Due to review', action: 'Start review', topics: dueToReview },
   ].filter((group) => group.topics.length > 0)
 }

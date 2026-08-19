@@ -16,17 +16,22 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { MascotNote } from '@/components/common/MascotNote'
 import { panelShouldRender, studyGroups } from '@/lib/academics/studyMethod'
-import type { ClassWorkspaceType, ReviewEvent, Topic } from '@/lib/types'
+import type { ClassWorkspaceType, ReviewEvent, Topic, TopicLink } from '@/lib/types'
 
-export function StudyMethodPanel({ courseId, topics, events, classType }: {
+export function StudyMethodPanel({ courseId, topics, events, classType, topicLinks = [] }: {
   courseId: string
   topics: Topic[]
   events: ReviewEvent[]
   classType?: ClassWorkspaceType
+  topicLinks?: TopicLink[]
 }) {
   // Both the empty rule (§4.1-K) and the General exclusion (§4.1-N) are owned
   // by panelShouldRender, so they stay testable and cannot drift apart.
-  const groups = studyGroups(topics, events)
+  // §6.6: pass the graph so the needs-connecting group can turn on.
+  const linkedTopicIds = new Set(
+    topicLinks.flatMap((link) => [link.fromTopicId, link.toTopicId]),
+  )
+  const groups = studyGroups(topics, events, undefined, linkedTopicIds)
   if (!panelShouldRender(groups, classType)) return null
 
   return (
@@ -40,7 +45,7 @@ export function StudyMethodPanel({ courseId, topics, events, classType }: {
 
       <div className="space-y-2.5">
         {groups.map((group) => (
-          <div key={group.id} className="overflow-hidden rounded-xl border border-border bg-muted/25">
+          <div key={group.id} className="overflow-hidden rounded-xl border border-border bg-muted">
             <div className="flex items-center gap-3 px-3.5 py-2.5">
               <span className="flex-1 font-display text-sm font-extrabold">{group.title}</span>
               <span className="font-display text-xs font-extrabold tabular-nums text-muted-foreground">{group.topics.length}</span>

@@ -222,6 +222,7 @@ function migrateRelatedRows(
     gradeCategories: [],
     // v19 owns this array; v4 only has to produce a complete shape.
     mistakes: [],
+    topicLinks: [],
     examPrepPlans: [],
   }
 }
