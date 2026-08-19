@@ -603,6 +603,7 @@ export interface ClassCenterData {
   gradeCategories: GradeCategory[]
   mistakes: AcademicMistake[]
   topicLinks: TopicLink[]
+  topicPredictions: TopicPrediction[]
   examPrepPlans: ExamPrepPlan[]
 }
 
@@ -666,6 +667,28 @@ export interface TopicLink {
   note?: string
   createdAt: number
   updatedAt: number
+  order: number
+}
+
+/**
+ * §6.6 Predict — one expectation, written before the lecture and surfaced back
+ * after it. **The violation is where the encoding happens**, so the record only
+ * earns its keep once the student has seen it again.
+ *
+ * ⚠️ There is nothing to be right about. A prediction is never graded, never
+ * scored, and never touches FSRS or weak-topic state — §6.6 rules the whole
+ * pretesting family as priming, not performance.
+ */
+export interface TopicPrediction {
+  id: ID
+  courseId: ID
+  topicId: ID
+  prompt: string
+  answer: string
+  createdAt: number
+  updatedAt: number
+  /** When the student saw it back after the lecture. */
+  revealedAt?: number
   order: number
 }
 

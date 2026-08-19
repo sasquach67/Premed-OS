@@ -44,6 +44,7 @@ import { StudyMethodPanel } from '@/components/academics/StudyMethodPanel'
 import { AssignmentLinkField, TopicLinkField } from '@/components/academics/TopicLinkFields'
 import { TopicConnectField } from '@/components/academics/TopicConnectField'
 import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
+import { PredictPanel } from '@/components/academics/PredictPanel'
 import { TranscriptImport } from '@/components/academics/TranscriptImport'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { LearningSignalsPanel } from '@/components/academics/LearningSignalsPanel'
@@ -668,6 +669,8 @@ function Materials({
       />
       {/* §4.1 materials extensions — the shelf. Unit → material → provenance. */}
       <MaterialCatalog files={files} topics={topics} />
+      {/* §6.6 Predict — a pre-lecture act, beside the priming block. */}
+      <PredictPanel courseId={courseId} topics={topics} />
       {/* §4.1-Q — the transcript arrives as text; the audio never leaves the iPad. */}
       <TranscriptImport courseId={courseId} />
       {/* §4.1 — read-only Canvas context through Google Calendar. */}

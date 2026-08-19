@@ -1,6 +1,6 @@
 # T1 · Academics — Predict (§6.6)
 
-**Stage:** C · DECIDED, NOT BUILT
+**Stage:** C · DECIDED, NOT BUILT · **EXECUTED Aug 19, 2026**
 
 **Scope:** The **Predict** step only. Pretest and Full mock are named here as
 blocked, with what blocks them.
@@ -76,11 +76,11 @@ beside the existing priming block (all three are pre-lecture acts)."*
 
 ## 5. Done when
 
-- [ ] A student can predict an uncovered topic, once.
-- [ ] After the topic is covered, the prediction is surfaced back.
-- [ ] Nothing in FSRS or weak areas changes, proven by test.
-- [ ] Migration pure and idempotent.
-- [ ] Build passes; suite green.
+- [x] A student can predict an uncovered topic, once.
+- [x] After the topic is covered, the prediction is surfaced back.
+- [x] Nothing in FSRS or weak areas changes, proven by test.
+- [x] Migration pure and idempotent.
+- [x] Build passes; suite green.
 
 ## 6. Commit
 
