@@ -97,7 +97,7 @@ Deno.serve(async (request) => {
     const provider = (Deno.env.get('AI_PROVIDER') || 'anthropic').toLowerCase()
     const output = provider === 'openai'
       ? await callOpenAI(body.response, chunks)
-      : await callAnthropic(body.response, chunks)
+      : await callAnthropic(body.response, chunks, typeof body.systemPrompt === 'string' ? body.systemPrompt : undefined)
     const validated = validateResult(output.value, chunks, output.trustedCitations)
     if (!validated) return failure(502, 'invalid-response', 'The provider returned invalid structured data.')
     return json(validated)
@@ -162,7 +162,15 @@ async function retrieveChunks(
   return (data || []) as Chunk[]
 }
 
-async function callAnthropic(response: string, chunks: Chunk[]) {
+/**
+ * `specPrompt` is the client-assembled system prompt (generation Phase 1).
+ * Pedagogy ships with the client build, versioned in git and reviewable in a
+ * diff — `01` §2.1: this function is transport and enforcement only.
+ *
+ * The local fallback below stays so a function that has NOT been redeployed
+ * behaves exactly as it does today. Delete it once every client sends a spec.
+ */
+async function callAnthropic(response: string, chunks: Chunk[], specPrompt?: string) {
   const key = Deno.env.get('ANTHROPIC_API_KEY')
   if (!key) throw new Error('Anthropic is not configured')
   const result = await fetch('https://api.anthropic.com/v1/messages', {
@@ -184,7 +192,11 @@ async function callAnthropic(response: string, chunks: Chunk[]) {
       // chip verifiable rather than an unchecked model claim, so the schema
       // moves into the prompt and `validateResult` stays the enforcement.
       system: [
-        'Compare recall only against the supplied topic sources. Never invent a source or offset.',
+        specPrompt?.trim()
+          // The pre-Phase-1 prompt, kept only as the un-redeployed fallback.
+          || 'Compare recall only against the supplied topic sources. Never invent a source or offset.',
+        // The transport half is always the server's: the response contract is
+        // enforcement, not pedagogy, so a client may never weaken it.
         'Reply with a single JSON object and nothing else — no prose, no markdown fences.',
         `It must match this JSON Schema: ${JSON.stringify(resultSchema)}`,
       ].join('\n'),

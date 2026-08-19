@@ -32,6 +32,13 @@ export interface GapCheckRequest {
   /** The edge function resolves these IDs from the signed-in user's private
    * server mirror. Source content is never trusted from a generation call. */
   chunkIds: string[]
+  /** Generation Phase 1 — the client-assembled spec. Optional so a function
+   *  that has not been redeployed keeps working on its own fallback prompt.
+   *  `specHash` is stamped so "did this change because the prompt changed, or
+   *  because the model moved" stays answerable. */
+  specId?: string
+  specHash?: string
+  systemPrompt?: string
 }
 
 export interface StudySourceInput {

@@ -1,6 +1,6 @@
 # Generation · Phase 1 — the spine, with no new artifact
 
-**Stage:** C · DECIDED, NOT BUILT
+**Stage:** C · DECIDED, NOT BUILT · **EXECUTED Aug 19, 2026**
 **Spec:** `specifications/generation/09` §3 Phase 1, `01` §2, `02` §1–2
 
 ---
@@ -100,13 +100,27 @@ and enforcement only … it contains no pedagogy."**
 
 ## 5. Done when
 
-- [ ] `src/lib/generation/` exists in the `01` §2.1 layout.
-- [ ] All 49 L1 rules are present with ids and classification, drift-tested
+- [x] `src/lib/generation/` exists in the `01` §2.1 layout.
+- [x] All 49 L1 rules are present with ids and classification, drift-tested
       against the spec document.
-- [ ] `assembleGenerationRequest` is pure and stamps a `specHash`.
-- [ ] A preference targeting an invariant throws, with a test.
-- [ ] Gap-check sends the assembled prompt; an un-redeployed function still works.
-- [ ] Build passes; suite green.
+- [x] `assembleGenerationRequest` is pure and stamps a `specHash`.
+- [x] A preference targeting an invariant throws, with a test.
+- [x] Gap-check sends the assembled prompt; an un-redeployed function still works.
+- [x] Build passes; suite green.
+
+## 5a. ⚠️ One action left, and it is Andy's
+
+**Redeploy the function** so gap-check uses the assembled prompt rather than
+its fallback:
+
+```
+npx --yes supabase@latest functions deploy study-tools
+```
+
+Until then everything still works — the client sends the spec, the deployed
+function ignores fields it does not know, and its own three-sentence prompt
+runs exactly as before. **Nothing breaks either way**, which is the point of
+shipping the fallback.
 
 ## 6. Commit
 

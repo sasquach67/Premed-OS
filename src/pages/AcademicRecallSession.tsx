@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import type { ReviewGrade } from '@/lib/types'
 import { useStore } from '@/store/store'
+import { assembleGenerationRequest } from '@/lib/generation'
 import { uid } from '@/lib/id'
 import { homeBanner } from '@/lib/themeAssets'
 import { reviewTopic } from '@/lib/academics/fsrs'
@@ -214,12 +215,22 @@ export function AcademicRecallSession() {
       }
       localStorage.setItem(syncKey, fingerprint)
     }
+    // Generation Phase 1: the prompt is assembled from the versioned layer
+    // stack in `src/lib/generation`, not written inside the edge function.
+    const assembled = assembleGenerationRequest({
+      specId: 'gap-check-v1',
+      chunkIds: sources.map((source) => source.chunkId),
+      request: `Topic: ${current.title}. Action: gap-check on one free-recall attempt.`,
+    })
     const result = await studyTools.gapCheck({
       action: 'gap-check',
       courseId,
       topicId: current.id,
       response,
-      chunkIds: sources.map((source) => source.chunkId),
+      chunkIds: assembled.chunkIds,
+      specId: assembled.specId,
+      specHash: assembled.specHash,
+      systemPrompt: assembled.systemPrompt,
     })
     setCheckingGaps(false)
     if (!result.ok) {
