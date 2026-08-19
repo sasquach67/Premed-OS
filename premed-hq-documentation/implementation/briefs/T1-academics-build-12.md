@@ -86,8 +86,11 @@ onboarding one.**
    but a brand-new user then sees a much emptier app, and every other seeded
    pillar would want the same treatment for consistency.
 
-**Not decided here.** Option 2 changes what every new user sees, which is not a
-change to make inside an implementation pass.
+**RULED Aug 19, 2026 (Andy): option 1 — keep seeding.** The seeded plan is a
+deliberate demo-on-arrival, and the cold start stays as the delete-everything
+recovery screen. It still earns its place: without it that path shows GPA rings
+reading `—` over an empty ledger, which is the U-5 violation this surface
+exists to prevent. No change to `seed.ts`.
 
 ## 6. Commit
 

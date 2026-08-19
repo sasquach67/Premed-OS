@@ -1,10 +1,11 @@
 # Academics Planner — prototype decisions
 
-> **Status:** PROTOTYPE — not approved for implementation.
+> **Status:** APPROVED · **A + C ruled Aug 19, 2026 (Andy)** — the whole-plan
+> board with the selected-course inspector on demand.
 >
 > **Mockup:** `academics-planner-prototype.html`
 >
-> **Question:** Which composition best turns the locked term-column Planner into an understandable course-sequencing tool?
+> **Decided under:** `implementation/briefs/T1-academics-planner-decisions.md`
 
 ## Current spec boundary
 
@@ -70,6 +71,55 @@ The term board stays visible, but selecting a course opens a detailed marginal-e
 - Strongest trust/provenance treatment.
 - Risk: selected-course detail competes with whole-plan guidance.
 
-## Recommendation to test first
+## The ruling — A + C
 
-**A** should remain the default because term columns and a live right rail are already chosen in the specification. The strongest likely final combination is **A’s whole-plan board with C’s selected-course inspector available on demand**.
+**A is the composition. C is an affordance inside it.** B is retired; its frame
+stays only as the record of what was compared.
+
+**Why A leads.** Term columns and a live right rail are already chosen in the
+specification, so A is the only variant that does not argue with it. Whole-plan
+visibility is also what makes the MCAT divider and the unplaced tray legible —
+both of which exist precisely to be impossible to miss.
+
+**Why C survives as an affordance.** "If I take this, it clears that" is the
+question the Planner exists to answer, and a chip cannot carry it. As an
+on-demand inspector it answers that question without spending permanent board
+width on one selected course.
+
+**Why not B.** Its advantage — no dragging required — is already a locked rule
+for every variant ("dragging never becomes the only way to move a course"), so
+B pays the full-sequence view for something A must provide anyway.
+
+### The handoff, specified
+
+1. **The inspector opens from a course chip, never on its own.** One click
+   selects; the chip takes a `--cat` edge mark so the board still shows what
+   is being inspected.
+2. **It is a rail, not a modal.** The board stays visible and interactive
+   beside it; a modal would break the "whole-plan visibility" that A was
+   chosen for.
+3. **It shows what the chip cannot** — named requirement effects with their
+   confidence, the double-count cap, downstream unlocks, and offering risk.
+   It never repeats the chip's own credits and BCPM line.
+4. **Closing returns to the outcome rail**, which is the board's default
+   right-hand occupant. The two never render at once — the inspector replaces
+   the rail for as long as a course is selected.
+5. **Selecting a second course replaces the inspector's contents**, never
+   stacks a second panel.
+6. **Nothing the inspector shows is committed by opening it.** Requirement
+   effects are a preview; placement still needs an explicit action.
+
+### Mobile
+
+- Term columns scroll horizontally with the outcome rail moved beneath the
+  board; the MCAT divider stays inline between terms so the sequence still
+  reads.
+- The inspector becomes a full-width panel below the selected term rather than
+  a side rail, and the board stays scrolled to the selected chip.
+- The unplaced tray stays visible above the board — it is the one thing that
+  must not fall below the fold.
+
+## Retired variant
+
+- **B · Next-term builder** — selected term as the working surface with a
+  compact navigator. Not built.

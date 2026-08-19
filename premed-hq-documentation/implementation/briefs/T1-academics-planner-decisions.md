@@ -1,6 +1,6 @@
 # T1 · Academics — Planner composition decision
 
-**Stage:** B · DRAWN, NOT DECIDED
+**Stage:** B · DRAWN, NOT DECIDED · **EXECUTED Aug 19, 2026 — A + C ruled**
 
 **Scope:** Choose the Planner's composition. Decision pass only — no `src/`,
 store, migration, or manifest change is authorized here.
@@ -85,12 +85,12 @@ panel or a peek, and what closing it returns to.
 
 ## 5. Done when
 
-- [ ] Andy has chosen A, B, C, or A + C after opening the prototype.
-- [ ] The `.md` records the ruling, the composition, mobile, and — if a mix —
+- [x] Andy has chosen A, B, C, or A + C after opening the prototype.
+- [x] The `.md` records the ruling, the composition, mobile, and — if a mix —
       the handoff.
-- [ ] The header stops saying "not approved for implementation".
-- [ ] The lab entry moves to `approved`.
-- [ ] No `src/` change.
+- [x] The header stops saying "not approved for implementation".
+- [x] The lab entry moves to `approved`.
+- [x] No `src/` change.
 
 ## 6. Commit
 
