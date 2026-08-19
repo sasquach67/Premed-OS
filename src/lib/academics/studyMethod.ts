@@ -6,7 +6,8 @@
  *
  * ⚠️ The surface outruns its engine. Three of the nine steps — pretest,
  * predict, mock — are specced (§6.6, marked ✗ new) and NOT BUILT. **Connect
- * landed Aug 19 2026** with `TopicLink`, so its group is now offered. Steps without
+ * landed Aug 19 2026** with `TopicLink`: its group is offered AND its dot fills
+ * for a linked topic, which are two separate things and both had to change. Steps without
  * an engine can never be marked done, and groups whose action has no engine are
  * not offered at all. Advertising a study step the app cannot perform, on the
  * surface whose job is "what do I do right now?", would be worse than omitting
@@ -36,7 +37,8 @@ export const CYCLE: StepDefinition[] = [
   { step: 'predict', stage: 'before', label: 'Predict — what will this lecture cover?', hasEngine: false },
   { step: 'recall', stage: 'after', label: 'Recall — retrieve it without looking', hasEngine: true },
   { step: 'feynman', stage: 'after', label: 'Feynman — explain it plainly', hasEngine: true },
-  { step: 'connect', stage: 'after', label: 'Connect — link it to what you know', hasEngine: false },
+  // Engine landed Aug 19 2026 with `TopicLink` (§6.6 Connect).
+  { step: 'connect', stage: 'after', label: 'Connect — link it to what you know', hasEngine: true },
   { step: 'spaced', stage: 'retain', label: 'Spaced — review just before you’d forget', hasEngine: true },
   { step: 'practice', stage: 'retain', label: 'Practice — work problems on it', hasEngine: true },
   { step: 'mock', stage: 'retain', label: 'Mock — test it under exam conditions', hasEngine: false },
@@ -53,13 +55,20 @@ const SEVEN_DAYS = 7 * 86_400_000
  * A step with no engine is NEVER returned, whatever the topic's state — the
  * app has no way to record it, so claiming it would be an invented signal.
  */
-export function completedSteps(topic: Topic, events: ReviewEvent[]): Set<CycleStep> {
+export function completedSteps(
+  topic: Topic,
+  events: ReviewEvent[],
+  /** §6.6 Connect. Absent means the caller has no graph — the step stays
+   *  hollow rather than being claimed done on no evidence. */
+  linkedTopicIds?: ReadonlySet<string>,
+): Set<CycleStep> {
   const done = new Set<CycleStep>()
   const reviews = events.filter((event) => event.topicId === topic.id)
   if (topic.sourceNoteIds.length > 0 || (topic.linkedNoteIds?.length ?? 0) > 0) done.add('prime')
   if (reviews.length > 0 || topic.fsrs.reps > 0) { done.add('recall'); done.add('feynman') }
   if (topic.fsrs.reps > 1) done.add('spaced')
   if (reviews.length > 2) done.add('practice')
+  if (linkedTopicIds?.has(topic.id)) done.add('connect')
   for (const step of done) if (!CYCLE.find((entry) => entry.step === step)?.hasEngine) done.delete(step)
   return done
 }

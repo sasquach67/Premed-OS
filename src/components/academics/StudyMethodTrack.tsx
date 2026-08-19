@@ -11,8 +11,13 @@ import { cn } from '@/lib/utils'
 
 const STAGES: CycleStage[] = ['before', 'after', 'retain']
 
-export function StudyMethodTrack({ topic, events }: { topic: Topic; events: ReviewEvent[] }) {
-  const done = completedSteps(topic, events)
+export function StudyMethodTrack({ topic, events, linkedTopicIds }: {
+  topic: Topic
+  events: ReviewEvent[]
+  /** §6.6 Connect — passed so the connect dot can fill for a linked topic. */
+  linkedTopicIds?: ReadonlySet<string>
+}) {
+  const done = completedSteps(topic, events, linkedTopicIds)
   return (
     <span className="flex items-center gap-2" aria-label="Study method progress">
       {STAGES.map((stage, index) => (

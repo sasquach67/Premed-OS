@@ -918,7 +918,7 @@ function TopicRow({ topic, data, exam }: { topic: Topic; data: ClassCenterData; 
           <span className="text-xs font-bold text-muted-foreground">Last recall {lastRecall}</span>
           <span className="text-xs font-bold text-muted-foreground">Next review {nextReview}</span>
           <Badge className={cn('justify-self-start', STATUS_TONE[topic.status])}>{STATUS_LABELS[topic.status]}</Badge>
-          <StudyMethodTrack topic={topic} events={data.reviewEvents} />
+          <StudyMethodTrack topic={topic} events={data.reviewEvents} linkedTopicIds={new Set((data.topicLinks ?? []).flatMap((link) => [link.fromTopicId, link.toTopicId]))} />
           <div className="flex items-center gap-1.5">
             <Button size="sm" variant="ghost" aria-expanded={curveOpen} onClick={() => setCurveOpen((open) => !open)}>
               <TrendingDown className="size-4" /> Will I still know this?
