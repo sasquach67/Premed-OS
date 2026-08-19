@@ -97,6 +97,14 @@ export function createDemoData(seedTime = Date.now()): AppData {
     topic('demo-topic-momentum', courses[5].id, 'Momentum and collisions', 'Mechanics', 'seen', fsrs(0, 0), 3, at),
     topic('demo-topic-rotation', courses[5].id, 'Rotational dynamics', 'Rotation', 'not-started', fsrs(0, 0), 4, at),
     topic('demo-topic-oscillation', courses[5].id, 'Simple harmonic motion', 'Oscillations', 'not-started', fsrs(0, 0), 5, at),
+
+    // BIOL 103 is complete, so its topics are what the end-of-term rollover
+    // sorts. One matches a planned course, two carry real retention, one has
+    // none — so all three fates are populated by the defaults.
+    topic('demo-topic-membrane-transport', courses[0].id, 'Membrane transport', 'Unit 3 · Cells', 'ready', fsrs(30, 5), 0, at),
+    topic('demo-topic-enzyme-kinetics', courses[0].id, 'Enzyme kinetics', 'Unit 4 · Metabolism', 'ready', fsrs(24, 4), 1, at),
+    topic('demo-topic-biochemistry-intro', courses[0].id, 'Biochemistry of respiration', 'Unit 5 · Energy', 'ready', fsrs(21, 3), 2, at),
+    topic('demo-topic-microscopy', courses[0].id, 'Microscopy technique', 'Unit 1 · Methods', 'seen', fsrs(0, 0), 3, at),
   ]
   // Stagger when each topic was last touched. Without this every topic carries
   // the seed timestamp, so the study-cycle panel reads the whole term as

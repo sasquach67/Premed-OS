@@ -87,6 +87,10 @@ export interface Course {
   /** med-school prerequisite this course covers, if any */
   prereqOf?: string
   notes?: string
+  /** When the end-of-term ritual was completed (§4.1 term rollover). */
+  rolloverAt?: number
+  /** The one term its re-offer was dismissed for. Per-term, never permanent. */
+  rolloverDismissedTerm?: string
   order: number
 }
 
@@ -282,6 +286,9 @@ export interface TopicFsrsState {
   lastReview?: number
 }
 
+/** Retire stops scheduling. Carrying preserves the topic's study state exactly. */
+export type TopicTermFate = 'retired' | 'mcat' | 'prerequisite'
+
 export interface Topic {
   id: ID
   courseId: ID
@@ -296,6 +303,10 @@ export interface Topic {
   linkedNoteIds?: ID[]
   linkedAssignmentIds?: ID[]
   linkedFileIds?: ID[]
+  /** Where this topic goes after its course ends (§4.1 term rollover).
+   *  Absent means undecided, which is what makes the January re-offer
+   *  possible. `retired` stops scheduling; it never deletes anything. */
+  termFate?: TopicTermFate
   createdAt?: number
   updatedAt?: number
   order: number

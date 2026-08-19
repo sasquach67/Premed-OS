@@ -22,6 +22,7 @@ import { AssignmentCreateDialog, AssignmentsPanel } from '@/components/common/As
 import { NotesDB } from '@/components/common/NotesDB'
 import { ClassCenter } from '@/components/academics/ClassCenter'
 import { GradeDecisions } from '@/components/academics/GradeDecisions'
+import { TermRollover } from '@/components/academics/TermRollover'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -296,6 +297,8 @@ export function Academics() {
 
         {/* ---- Archive ---- */}
         <TabsContent value="archive" className="space-y-6">
+          {/* §4.1: the end-of-term handoff, only when one is owed. */}
+          <TermRollover />
           <ClassCenter archiveOnly />
           {/* §4.1: the record-decision layer, beneath the archive it reads. */}
           <GradeDecisionsSection />

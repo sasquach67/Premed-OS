@@ -1,6 +1,6 @@
 # T1 · Academics — Term rollover
 
-**Stage:** C · DECIDED, NOT BUILT
+**Stage:** C · DECIDED, NOT BUILT · **EXECUTED Aug 19, 2026**
 
 **Scope:** The §4.1 end-of-term transition — its three views (`ritual`,
 `paused`, `january`) and the records they write. Frontend and backend.
@@ -98,12 +98,12 @@ Additive and optional, so old data reads unchanged:
 
 ## 5. Done when
 
-- [ ] The ritual renders only for a completed, un-rolled course.
-- [ ] Defaults are pre-sorted and every one is editable.
-- [ ] Carrying preserves FSRS byte-for-byte; retiring deletes nothing.
-- [ ] Pause everything is one action and is reversible.
-- [ ] A dismissed course does not re-offer within the same term.
-- [ ] Build passes; suite green.
+- [x] The ritual renders only for a completed, un-rolled course.
+- [x] Defaults are pre-sorted and every one is editable.
+- [x] Carrying preserves FSRS byte-for-byte; retiring deletes nothing.
+- [x] Pause everything is one action and is reversible.
+- [x] A dismissed course does not re-offer within the same term.
+- [x] Build passes; suite green.
 
 ## 6. Commit
 
