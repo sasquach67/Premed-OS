@@ -24,6 +24,7 @@
  * timer (#16, #25). Each turns on here when its entity lands; no component
  * changes when it does.
  */
+import { fmtDate } from '@/lib/date'
 import type { ClassAssignment, ClassWorkspaceType, ReviewEvent, Topic } from '@/lib/types'
 
 /**
@@ -140,7 +141,7 @@ function postExamDecay(input: LearningSignalInput, now: number): LearningSignal 
       actionLabel: 'Review the tested topics',
       action: { type: 'route', to: `/academics/review/${input.courseId}` },
       evidenceLabel: 'Exam record',
-      evidenceDetail: `${item.title}${item.dueDate ? ` on ${item.dueDate}` : ''} lists ${covered.length} covered ${covered.length === 1 ? 'topic' : 'topics'}.`,
+      evidenceDetail: `${item.title}${item.dueDate ? ` on ${fmtDate(item.dueDate, { month: 'short', day: 'numeric' })}` : ''} lists ${covered.length} covered ${covered.length === 1 ? 'topic' : 'topics'}.`,
     }
   }
   return undefined

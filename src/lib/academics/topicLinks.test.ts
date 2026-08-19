@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { createTopicFsrsState } from '@/lib/academics/fsrs'
 import {
-  PICKER_THRESHOLD, assignmentsForTopic, isLinked, linkedIds, setLinks,
-  shouldOfferPicker, toggleLink, topicsForAssignment, type LinkState,
+  PICKER_THRESHOLD, assignmentsForTopic, isLinked, linkedIds, linkingApplies,
+  setLinks, shouldOfferPicker, toggleLink, topicsForAssignment, type LinkState,
 } from '@/lib/academics/topicLinks'
 import type { ClassAssignment, Topic } from '@/lib/types'
 
@@ -90,6 +90,17 @@ describe('the picker threshold', () => {
     expect(shouldOfferPicker(5)).toBe(false)
     expect(shouldOfferPicker(6)).toBe(true)
     expect(shouldOfferPicker(0)).toBe(false)
+  })
+})
+
+describe('the STEM boundary', () => {
+  it('offers linking only where topics can exist', () => {
+    expect(linkingApplies('stem')).toBe(true)
+    // A Writing class never has topics, so "no topics yet" would instruct the
+    // student to do something their class type does not support.
+    expect(linkingApplies('writing')).toBe(false)
+    expect(linkingApplies('general')).toBe(false)
+    expect(linkingApplies(undefined)).toBe(false)
   })
 })
 

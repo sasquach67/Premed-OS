@@ -73,7 +73,49 @@ export function createDemoData(seedTime = Date.now()): AppData {
     topic('demo-topic-stereochem', courses[4].id, 'Stereochemistry and conformations', 'Unit 1 · Structure', 'reviewing', fsrs(2, 2), 0, at),
     topic('demo-topic-sn2', courses[4].id, 'SN1 and SN2 mechanisms', 'Unit 1 · Structure', 'not-started', fsrs(0, 0), 1, at),
     topic('demo-topic-work-energy', courses[5].id, 'Work and energy', 'Mechanics', 'ready', fsrs(6, 5), 0, at),
+
+    // BIOL 252 — six topics, so the link-many picker is offered (>5).
+    topic('demo-topic-glia', courses[3].id, 'Glial cells and myelination', 'Unit 1 · Foundations', 'ready', fsrs(7, 3), 2, at),
+    topic('demo-topic-neurotransmitters', courses[3].id, 'Neurotransmitter systems', 'Unit 3 · Systems', 'reviewing', fsrs(1, 2), 3, at),
+    topic('demo-topic-sensory', courses[3].id, 'Sensory transduction', 'Unit 3 · Systems', 'seen', fsrs(0, 0), 4, at),
+    topic('demo-topic-plasticity', courses[3].id, 'Synaptic plasticity and LTP', 'Unit 4 · Plasticity', 'not-started', fsrs(0, 0), 5, at),
+
+    // CHEM 262 — seven topics. `demo-topic-acid-base` is the difficulty outlier
+    // signal #27 reads: three lapses, strictly more than any sibling.
+    {
+      ...topic('demo-topic-acid-base', courses[4].id, 'Acid–base and pKa', 'Unit 2 · Reactivity', 'weak', fsrs(1, 4), 2, at),
+      fsrs: { ...fsrs(1, 4), lapses: 3, difficulty: 7.4, stability: 2.1 },
+    },
+    { ...topic('demo-topic-alkene', courses[4].id, 'Alkene addition reactions', 'Unit 3 · Additions', 'ready', fsrs(9, 4), 3, at), fsrs: { ...fsrs(9, 4), lapses: 1 } },
+    topic('demo-topic-radical', courses[4].id, 'Radical halogenation', 'Unit 3 · Additions', 'seen', fsrs(0, 0), 4, at),
+    topic('demo-topic-aromatic', courses[4].id, 'Aromatic substitution', 'Unit 4 · Aromatics', 'not-started', fsrs(0, 0), 5, at),
+    topic('demo-topic-carbonyl', courses[4].id, 'Carbonyl addition', 'Unit 4 · Aromatics', 'not-started', fsrs(0, 0), 6, at),
+
+    // PHYS 118 — six topics.
+    topic('demo-topic-kinematics', courses[5].id, 'Kinematics in one and two dimensions', 'Mechanics', 'ready', fsrs(11, 4), 1, at),
+    topic('demo-topic-newton', courses[5].id, 'Newton’s laws and free-body diagrams', 'Mechanics', 'reviewing', fsrs(2, 3), 2, at),
+    topic('demo-topic-momentum', courses[5].id, 'Momentum and collisions', 'Mechanics', 'seen', fsrs(0, 0), 3, at),
+    topic('demo-topic-rotation', courses[5].id, 'Rotational dynamics', 'Rotation', 'not-started', fsrs(0, 0), 4, at),
+    topic('demo-topic-oscillation', courses[5].id, 'Simple harmonic motion', 'Oscillations', 'not-started', fsrs(0, 0), 5, at),
   ]
+  // Stagger when each topic was last touched. Without this every topic carries
+  // the seed timestamp, so the study-cycle panel reads the whole term as
+  // "just covered" — which is not what a real class looks like in week eight.
+  const coveredAgo: Record<string, number> = {
+    'demo-topic-synapse': -12, 'demo-topic-potentials': -3, 'demo-topic-glia': -26,
+    'demo-topic-neurotransmitters': -15, 'demo-topic-sensory': -2, 'demo-topic-plasticity': -1,
+    'demo-topic-stereochem': -24, 'demo-topic-sn2': -19, 'demo-topic-acid-base': -17,
+    'demo-topic-alkene': -14, 'demo-topic-radical': -5, 'demo-topic-aromatic': -2,
+    'demo-topic-carbonyl': -1, 'demo-topic-work-energy': -22, 'demo-topic-kinematics': -27,
+    'demo-topic-newton': -18, 'demo-topic-momentum': -6, 'demo-topic-rotation': -2,
+    'demo-topic-oscillation': -1,
+  }
+  for (const item of topics) {
+    const ago = coveredAgo[item.id] ?? -10
+    item.createdAt = stamp(ago - 4)
+    item.updatedAt = stamp(ago)
+  }
+
   const files = [
     {
       id: 'demo-file-biol-syllabus', courseId: courses[3].id, sourceType: 'upload' as const,
@@ -119,12 +161,47 @@ export function createDemoData(seedTime = Date.now()): AppData {
     assignment('demo-a-chem', courses[4].id, 'Mechanism problem set', 'homework', date(2), 'not-started', 'Problem sets', undefined, 25, 10, 4, at),
     assignment('demo-a-engl-draft', courses[7].id, 'Rhetorical analysis draft', 'project', date(3), 'in-progress', 'Essays', undefined, 100, 35, 5, at),
   ]
+  assignments.push(
+    assignment('demo-a-biol-quiz2', courses[3].id, 'Sensory systems quiz', 'quiz', date(4), 'not-started', 'Quizzes', undefined, 20, 5, 6, at),
+    assignment('demo-a-biol-ps', courses[3].id, 'Ion channel problem set', 'homework', date(-9), 'graded', 'Problem sets', 22, 25, 8, 7, at),
+    // CHEM 262's past exam — the record signal #41 reads. Nothing it tested has
+    // been retrieved since, which is the whole point of the check.
+    assignment('demo-a-chem-exam1', courses[4].id, 'Exam 1 — structure and substitution', 'exam', date(-21), 'graded', 'Exams', 78, 100, 25, 8, at),
+    assignment('demo-a-chem-exam2', courses[4].id, 'Exam 2 — additions and aromatics', 'exam', date(16), 'not-started', 'Exams', undefined, 100, 25, 9, at),
+    assignment('demo-a-chem-lab', courses[4].id, 'Recrystallization lab report', 'lab', date(-6), 'graded', 'Laboratory', 17, 20, 10, 10, at),
+    assignment('demo-a-phys-ps5', courses[5].id, 'Problem set 5 — rotational dynamics', 'homework', date(3), 'not-started', 'Problem sets', undefined, 30, 8, 11, at),
+    assignment('demo-a-phys-lab', courses[5].id, 'Conservation of momentum lab', 'lab', date(-2), 'submitted', 'Laboratory', undefined, 25, 7, 12, at),
+    assignment('demo-a-phys-exam', courses[5].id, 'Midterm 2 — momentum and rotation', 'exam', date(10), 'not-started', 'Exams', undefined, 100, 28, 13, at),
+    assignment('demo-a-soci-response', courses[6].id, 'Reading response — social determinants', 'discussion', date(1), 'not-started', 'Responses', undefined, 10, 5, 14, at),
+    assignment('demo-a-soci-paper', courses[6].id, 'Midterm paper — inequality and health', 'project', date(19), 'not-started', 'Papers', undefined, 100, 25, 15, at),
+    assignment('demo-a-engl-final', courses[7].id, 'Final portfolio', 'project', date(38), 'not-started', 'Portfolio', undefined, 100, 40, 16, at),
+  )
+
   assignments[2].important = true
   assignments[2].coveredTopicIds = [topics[0].id, topics[1].id]
+
+  const byId = (id: string) => assignments.find((item) => item.id === id)!
+
+  // Links a real student would have made. These are what the class surfaces
+  // read — nothing infers them, and the unlinked rows below are deliberate.
+  byId('demo-a-chem').linkedTopicIds = ['demo-topic-sn2']            // #37: due in 2 days, no practice recorded
+  byId('demo-a-chem-exam1').coveredTopicIds = ['demo-topic-radical', 'demo-topic-aromatic'] // #41: untouched since
+  byId('demo-a-chem-exam2').coveredTopicIds = ['demo-topic-alkene', 'demo-topic-aromatic', 'demo-topic-carbonyl']
+  byId('demo-a-chem-lab').linkedTopicIds = ['demo-topic-stereochem']
+  byId('demo-a-biol-ps').linkedTopicIds = ['demo-topic-potentials']
+  byId('demo-a-biol-quiz2').linkedTopicIds = ['demo-topic-sensory']
+  byId('demo-a-phys-ps5').linkedTopicIds = ['demo-topic-rotation']
+  byId('demo-a-phys-exam').coveredTopicIds = ['demo-topic-momentum', 'demo-topic-rotation']
+  // demo-a-phys-lab and the SOCI rows stay unlinked on purpose: unlinked is a
+  // normal permanent state and the UI must never treat it as an omission.
 
   const notes: ClassNote[] = [
     note('demo-note-biol', courses[3].id, 'Lecture 5 — electrical signaling and the unexpectedly important role of glial cells', date(-3), 'Unit 2 · Cellular signaling', [topics[0].id, topics[1].id], at),
     note('demo-note-chem', courses[4].id, 'Mechanism patterns', date(-2), 'Unit 1 · Structure', [topics[2].id, topics[3].id], at),
+    note('demo-note-chem-acid', courses[4].id, 'Acid–base: why pKa keeps slipping', date(-6), 'Unit 2 · Reactivity', ['demo-topic-acid-base'], at),
+    note('demo-note-biol-sensory', courses[3].id, 'Lecture 9 — sensory transduction', date(-1), 'Unit 3 · Systems', ['demo-topic-sensory'], at),
+    note('demo-note-phys-rotation', courses[5].id, 'Rotational dynamics worked examples', date(-2), 'Rotation', ['demo-topic-rotation'], at),
+    note('demo-note-soci', courses[6].id, 'Social determinants — discussion notes', date(-3), 'Unit 2', [], at),
   ]
 
   data.academics.classCenter = {
@@ -137,25 +214,70 @@ export function createDemoData(seedTime = Date.now()): AppData {
       syllabusUrl: item.id === courses[3].id ? 'https://canvas.unc.edu/' : undefined,
       createdAt: stamp(-30), updatedAt: at, order,
     })),
-    topics, notes, assignments, files, keyPoints, sourceChunks: chunks,
+    // The mirror `topicLinks.setLinks` maintains, seeded so the topic side and
+    // the assignment side agree before the student touches anything.
+    topics: topics.map((item) => ({
+      ...item,
+      linkedAssignmentIds: assignments.filter((work) => work.linkedTopicIds.includes(item.id)).map((work) => work.id),
+    })),
+    notes, assignments, files, keyPoints, sourceChunks: chunks,
     reviewEvents: [
       { id: 'demo-review-1', topicId: topics[0].id, timestamp: stamp(-8), grade: 'hard', confidence: 3, order: 0 },
       { id: 'demo-review-2', topicId: topics[0].id, timestamp: stamp(-4), grade: 'again', confidence: 3, order: 1 },
       { id: 'demo-review-3', topicId: topics[2].id, timestamp: stamp(-2), grade: 'good', confidence: 2, order: 2 },
+
+      // CHEM 262 acid–base: four attempts, three of them lapses. This is the
+      // history signal #27 reads, and the forgetting curve needs ≥3 points.
+      { id: 'demo-review-ab-1', topicId: 'demo-topic-acid-base', timestamp: stamp(-16), grade: 'again', confidence: 2, order: 3 },
+      { id: 'demo-review-ab-2', topicId: 'demo-topic-acid-base', timestamp: stamp(-11), grade: 'hard', confidence: 2, order: 4 },
+      { id: 'demo-review-ab-3', topicId: 'demo-topic-acid-base', timestamp: stamp(-6), grade: 'again', confidence: 1, order: 5 },
+      { id: 'demo-review-ab-4', topicId: 'demo-topic-acid-base', timestamp: stamp(-2), grade: 'hard', confidence: 2, order: 6 },
+
+      { id: 'demo-review-alkene-1', topicId: 'demo-topic-alkene', timestamp: stamp(-13), grade: 'good', confidence: 3, order: 7 },
+      { id: 'demo-review-alkene-2', topicId: 'demo-topic-alkene', timestamp: stamp(-7), grade: 'good', confidence: 3, order: 8 },
+      { id: 'demo-review-alkene-3', topicId: 'demo-topic-alkene', timestamp: stamp(-3), grade: 'easy', confidence: 3, order: 9 },
+
+      { id: 'demo-review-glia-1', topicId: 'demo-topic-glia', timestamp: stamp(-14), grade: 'good', confidence: 3, order: 10 },
+      { id: 'demo-review-glia-2', topicId: 'demo-topic-glia', timestamp: stamp(-9), grade: 'good', confidence: 3, order: 11 },
+      { id: 'demo-review-glia-3', topicId: 'demo-topic-glia', timestamp: stamp(-3), grade: 'easy', confidence: 3, order: 12 },
+      { id: 'demo-review-nt-1', topicId: 'demo-topic-neurotransmitters', timestamp: stamp(-10), grade: 'hard', confidence: 2, order: 13 },
+      { id: 'demo-review-nt-2', topicId: 'demo-topic-neurotransmitters', timestamp: stamp(-4), grade: 'good', confidence: 3, order: 14 },
+
+      { id: 'demo-review-kin-1', topicId: 'demo-topic-kinematics', timestamp: stamp(-18), grade: 'good', confidence: 3, order: 15 },
+      { id: 'demo-review-kin-2', topicId: 'demo-topic-kinematics', timestamp: stamp(-12), grade: 'easy', confidence: 3, order: 16 },
+      { id: 'demo-review-kin-3', topicId: 'demo-topic-kinematics', timestamp: stamp(-5), grade: 'good', confidence: 3, order: 17 },
+      { id: 'demo-review-newton-1', topicId: 'demo-topic-newton', timestamp: stamp(-15), grade: 'hard', confidence: 2, order: 18 },
+      { id: 'demo-review-newton-2', topicId: 'demo-topic-newton', timestamp: stamp(-8), grade: 'good', confidence: 3, order: 19 },
+      { id: 'demo-review-newton-3', topicId: 'demo-topic-newton', timestamp: stamp(-2), grade: 'good', confidence: 3, order: 20 },
     ],
     contacts: [
       { id: 'demo-contact-prof', courseId: courses[3].id, name: 'Dr. Elena Ruiz', role: 'professor', email: 'eruiz@example.edu', officeHours: 'Tuesday 2–4 PM', location: 'Coker 318', createdAt: stamp(-30), updatedAt: at, order: 0 },
       { id: 'demo-contact-ta', courseId: courses[3].id, name: 'Jordan Lee', role: 'TA', email: 'jlee@example.edu', officeHours: 'Thursday 4 PM', createdAt: stamp(-30), updatedAt: at, order: 1 },
+      { id: 'demo-contact-chem-prof', courseId: courses[4].id, name: 'Dr. Nadia Elamin', role: 'professor', email: 'nelamin@example.edu', officeHours: 'Monday 1–3 PM', location: 'Kenan C210', createdAt: stamp(-30), updatedAt: at, order: 2 },
+      { id: 'demo-contact-chem-partner', courseId: courses[4].id, name: 'Priya Raman', role: 'study-partner', email: 'praman@example.edu', createdAt: stamp(-20), updatedAt: at, order: 3 },
+      { id: 'demo-contact-phys-ta', courseId: courses[5].id, name: 'Marcus Bell', role: 'TA', email: 'mbell@example.edu', officeHours: 'Wednesday 3–5 PM', createdAt: stamp(-28), updatedAt: at, order: 4 },
     ],
     weakAreas: [{ id: 'demo-weak-synapse', courseId: courses[3].id, topicId: topics[0].id, label: 'Synaptic vesicle release sequence', source: 'quiz', reason: 'conceptual', severity: 3, notes: 'Confused calcium entry with vesicle fusion.', createdAt: stamp(-4), lastPracticedAt: stamp(-4), status: 'active', order: 0 }],
     practiceExams: [],
     practiceQuestions: [],
-    paperDrafts: [{ id: 'demo-draft-engl105-rhetorical-analysis', courseId: 'demo-course-engl105', title: 'Rhetorical analysis', stage: 'draft', selfDeadline: date(3), createdAt: stamp(-6), updatedAt: stamp(-1), order: 0 }] as PaperDraft[],
+    paperDrafts: [
+      { id: 'demo-draft-engl105-rhetorical-analysis', courseId: 'demo-course-engl105', title: 'Rhetorical analysis', stage: 'draft', selfDeadline: date(3), createdAt: stamp(-6), updatedAt: stamp(-1), order: 0 },
+      { id: 'demo-draft-engl105-profile', courseId: 'demo-course-engl105', title: 'Profile essay', stage: 'submitted', selfDeadline: date(-17), completedAt: stamp(-16), createdAt: stamp(-30), updatedAt: stamp(-16), order: 1 },
+      { id: 'demo-draft-engl105-portfolio', courseId: 'demo-course-engl105', title: 'Final portfolio', stage: 'outline', selfDeadline: date(34), createdAt: stamp(-1), updatedAt: stamp(-1), order: 2 },
+    ] as PaperDraft[],
     assignedReadings: [
       { id: 'demo-reading-engl105-1', courseId: 'demo-course-engl105', week: 'Week 2', title: 'Writing as a process', source: 'Course reader', status: 'read', dueForDiscussion: date(-1), createdAt: stamp(-9), updatedAt: stamp(-2), order: 0 },
       { id: 'demo-reading-engl105-2', courseId: 'demo-course-engl105', week: 'Week 2', title: 'Audience and evidence', source: 'Course reader', status: 'not-started', dueForDiscussion: date(1), createdAt: stamp(-9), updatedAt: stamp(-9), order: 1 },
+      { id: 'demo-reading-engl105-3', courseId: 'demo-course-engl105', week: 'Week 3', title: 'Counterargument and concession', source: 'Course reader', status: 'skimmed', dueForDiscussion: date(4), createdAt: stamp(-4), updatedAt: stamp(-2), order: 2 },
+      { id: 'demo-reading-engl105-4', courseId: 'demo-course-engl105', week: 'Week 4', title: 'Revising for a reader', source: 'Course reader', status: 'not-started', dueForDiscussion: date(11), createdAt: stamp(-4), updatedAt: stamp(-4), order: 3 },
     ] as AssignedReading[],
-    feedbackNotes: [{ id: 'demo-feedback-engl105-thesis', courseId: 'demo-course-engl105', theme: 'Make the thesis more specific', quote: 'Show the reader what is at stake in the claim.', createdAt: stamp(-3), updatedAt: stamp(-3), order: 0 }] as FeedbackNote[],
+    feedbackNotes: [
+      { id: 'demo-feedback-engl105-thesis', courseId: 'demo-course-engl105', theme: 'Make the thesis more specific', quote: 'Show the reader what is at stake in the claim.', createdAt: stamp(-3), updatedAt: stamp(-3), order: 0 },
+      // Repeated twice more, so #59's "recurring theme" has something real to
+      // aggregate rather than a single instance.
+      { id: 'demo-feedback-engl105-thesis-2', courseId: 'demo-course-engl105', theme: 'Thesis placement', quote: 'The claim arrives on page two; the reader needs it sooner.', createdAt: stamp(-16), updatedAt: stamp(-16), order: 1 },
+      { id: 'demo-feedback-engl105-evidence', courseId: 'demo-course-engl105', theme: 'Evidence needs framing', quote: 'Quotations are doing the arguing without you.', createdAt: stamp(-16), updatedAt: stamp(-16), order: 2 },
+    ] as FeedbackNote[],
     gradeCategories: [],
     examPrepPlans: [],
   }

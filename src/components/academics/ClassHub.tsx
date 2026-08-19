@@ -264,7 +264,7 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
         <TabsContent value="materials"><Materials courseId={course.id} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} onTab={changeTab} /></TabsContent>
         <TabsContent value="topics"><Topics courseId={course.id} data={data} topics={courseTopics} assignments={courseAssignments} /></TabsContent>
         <TabsContent value="readings"><WritingTools courseId={course.id} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} /></TabsContent>
-        <TabsContent value="assignments"><Assignments assignments={courseAssignments} topics={courseTopics} /></TabsContent>
+        <TabsContent value="assignments"><Assignments assignments={courseAssignments} topics={courseTopics} classType={classType} /></TabsContent>
         <TabsContent value="notes"><Notes courseId={course.id} notes={courseNotes} topics={courseTopics} /></TabsContent>
       </Tabs>
     </div>
@@ -743,7 +743,7 @@ function Topics({
   )
 }
 
-function Assignments({ assignments, topics }: { assignments: ClassAssignment[]; topics: Topic[] }) {
+function Assignments({ assignments, topics, classType }: { assignments: ClassAssignment[]; topics: Topic[]; classType?: ClassWorkspaceType }) {
   const groups = groupAssignments(assignments)
   return (
     <div className="space-y-4">
@@ -760,7 +760,7 @@ function Assignments({ assignments, topics }: { assignments: ClassAssignment[]; 
               <div><CardTitle>{category}</CardTitle><p className="mt-1 text-sm text-muted-foreground">{complete.length}/{items.length} completed · {possible ? `${formatNumber((earned / possible) * 100)}% average` : 'Not enough graded work yet'}</p></div>
               <Badge variant="outline">{weight ? `${formatNumber(weight)}% weight` : 'Weight not set'}</Badge>
             </CardHeader>
-            <CardContent className="space-y-2">{items.map((item) => <AssignmentRow key={item.id} item={item} topics={topics} />)}</CardContent>
+            <CardContent className="space-y-2">{items.map((item) => <AssignmentRow key={item.id} item={item} topics={topics} classType={classType} />)}</CardContent>
           </Card>
         )
       })}
@@ -927,7 +927,7 @@ function TopicRow({ topic, data, exam }: { topic: Topic; data: ClassCenterData; 
   )
 }
 
-function AssignmentRow({ item, topics }: { item: ClassAssignment; topics: Topic[] }) {
+function AssignmentRow({ item, topics, classType }: { item: ClassAssignment; topics: Topic[]; classType?: ClassWorkspaceType }) {
   const linked = topics.filter((topic) => [...(item.coveredTopicIds ?? []), ...item.linkedTopicIds].includes(topic.id))
   return (
     <div className="rounded-xl border border-border bg-muted/25 p-3">
@@ -939,8 +939,8 @@ function AssignmentRow({ item, topics }: { item: ClassAssignment; topics: Topic[
       </div>
       {/* §4.1: what the work covers, and — on an exam only — what it tests.
           Two fields, never merged. */}
-      <TopicLinkField assignment={item} field="coverage" />
-      {item.type === 'exam' && <TopicLinkField assignment={item} field="scope" />}
+      <TopicLinkField assignment={item} field="coverage" classType={classType} />
+      {item.type === 'exam' && <TopicLinkField assignment={item} field="scope" classType={classType} />}
     </div>
   )
 }

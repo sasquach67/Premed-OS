@@ -22,7 +22,7 @@
  * import. A future proposal flow shows its evidence and calls this module only
  * after the student confirms.
  */
-import type { ClassAssignment, Topic } from '@/lib/types'
+import type { ClassAssignment, ClassWorkspaceType, Topic } from '@/lib/types'
 
 /** `coverage` → `linkedTopicIds` · `scope` → `coveredTopicIds`. Never merged. */
 export type LinkField = 'coverage' | 'scope'
@@ -42,6 +42,20 @@ export const PICKER_THRESHOLD = 5
 
 export function shouldOfferPicker(topicCount: number): boolean {
   return topicCount > PICKER_THRESHOLD
+}
+
+/**
+ * Linking is STEM-only, for the same reason Learning signals are: topics are a
+ * STEM-workspace record. A Writing class has drafts, readings and feedback and
+ * will never have a topic, so offering the field there — even as "this class
+ * has no topics yet" — instructs the student to do something their class type
+ * does not support. General classes have no study layer at all (§4.1-N).
+ *
+ * The rule lives here rather than in the component so it stays testable and
+ * cannot drift away from `signalsShouldRender`, which draws the same boundary.
+ */
+export function linkingApplies(classType?: ClassWorkspaceType): boolean {
+  return classType === 'stem'
 }
 
 export function linkedIds(assignment: ClassAssignment, field: LinkField): string[] {

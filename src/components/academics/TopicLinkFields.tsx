@@ -16,10 +16,10 @@ import { Plus, X } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { cn } from '@/lib/utils'
 import {
-  assignmentsForTopic, linkedIds, setLinks, shouldOfferPicker, toggleLink,
-  topicsForAssignment, type LinkField, type LinkState,
+  assignmentsForTopic, linkedIds, linkingApplies, setLinks, shouldOfferPicker,
+  toggleLink, topicsForAssignment, type LinkField, type LinkState,
 } from '@/lib/academics/topicLinks'
-import type { ClassAssignment, Topic } from '@/lib/types'
+import type { ClassAssignment, ClassWorkspaceType, Topic } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CenterPeek } from '@/components/common/CenterPeek'
@@ -45,7 +45,11 @@ function useLinkState(): [LinkState, (next: LinkState) => void] {
 }
 
 /** One field on an assignment record. Rendered twice on an exam: coverage, then scope. */
-export function TopicLinkField({ assignment, field }: { assignment: ClassAssignment; field: LinkField }) {
+export function TopicLinkField({ assignment, field, classType }: {
+  assignment: ClassAssignment
+  field: LinkField
+  classType?: ClassWorkspaceType
+}) {
   const [state, write] = useLinkState()
   const [query, setQuery] = useState<string | undefined>()
   const [picking, setPicking] = useState(false)
@@ -56,6 +60,9 @@ export function TopicLinkField({ assignment, field }: { assignment: ClassAssignm
   )
   const linked = topicsForAssignment(state, assignment, field)
   const scope = field === 'scope'
+
+  // STEM-only, owned by the model — see `linkingApplies`.
+  if (!linkingApplies(classType)) return null
 
   const matches = query == null ? [] : candidates
     .filter((topic) => !linkedIds(assignment, field).includes(topic.id))
