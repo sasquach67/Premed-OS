@@ -44,6 +44,7 @@ import { StudyMethodPanel } from '@/components/academics/StudyMethodPanel'
 import { AssignmentLinkField, TopicLinkField } from '@/components/academics/TopicLinkFields'
 import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
 import { TranscriptImport } from '@/components/academics/TranscriptImport'
+import { CalendarReview } from '@/components/academics/CalendarReview'
 import { LearningSignalsPanel } from '@/components/academics/LearningSignalsPanel'
 
 type HubTab = 'overview' | 'materials' | 'topics' | 'readings' | 'assignments' | 'notes'
@@ -667,6 +668,8 @@ function Materials({
       <MaterialCatalog files={files} topics={topics} />
       {/* §4.1-Q — the transcript arrives as text; the audio never leaves the iPad. */}
       <TranscriptImport courseId={courseId} />
+      {/* §4.1 — read-only Canvas context through Google Calendar. */}
+      <CalendarReview assignments={data.assignments.filter((item) => item.courseId === courseId)} />
       <div className="flex flex-wrap gap-2" aria-label="Material filters">
         {(['all', 'course', 'mine', 'generated', 'unassigned'] as const).map((value) => (
           <Button key={value} size="sm" variant={filter === value ? 'default' : 'outline'} onClick={() => setFilter(value)}>

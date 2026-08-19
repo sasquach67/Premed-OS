@@ -1,6 +1,6 @@
 # T1 · Academics — Calendar review
 
-**Stage:** C · DECIDED, NOT BUILT
+**Stage:** C · DECIDED, NOT BUILT · **EXECUTED Aug 19, 2026**
 
 **Scope:** The Materials-extensions **calendar review** view — the read-only
 Canvas → Google Calendar handoff, and the proposed-difference review it makes
@@ -110,11 +110,24 @@ shorten it.
 
 ## 4. Done when
 
-- [ ] A differing calendar date surfaces as a reviewable proposal, not a change.
-- [ ] Accepting writes only `dueDate`.
-- [ ] Connected-but-empty reads as ordinary, distinct from unavailable.
-- [ ] Disconnect and refresh failure leave every recorded date intact.
-- [ ] Build passes; suite green; verified in the running app.
+- [x] A differing calendar date surfaces as a reviewable proposal, not a change.
+- [x] Accepting writes only `dueDate`.
+- [x] Connected-but-empty reads as ordinary, distinct from unavailable.
+- [x] Disconnect and refresh failure leave every recorded date intact.
+- [x] Build passes; suite green; verified in the running app.
+
+## 4a. Verification note
+
+The disconnected, empty, and unavailable states were checked in the running
+app. **The connected path with live proposals is covered by tests, not by the
+browser** — `connected` requires a real Google sign-in through
+`isCalendarConnected()`, which cannot be faked from a console. The 14 model
+tests cover matching, the differ, the single-proposal-per-assignment rule, and
+that accepting writes only `dueDate`.
+
+One change made during the pass: proposals now render **only** when the feed is
+live. `cachedEvents` survives a disconnect, and proposing changes from a feed
+the student switched off would contradict "disconnecting stops new context".
 
 ## 5. Commit
 
