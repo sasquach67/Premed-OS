@@ -81,6 +81,32 @@ The editing surfaces are the term tables beneath it. The only true scratchpad
 in Academics is the **What-if calculator**, which says so: *"Local scratch work
 only — nothing here is saved."*
 
+## 5a. Visual fidelity sweep, Aug 19 2026
+
+Measured against the drawings rather than eyeballed, per the new check in
+`EXECUTE-BRIEF-PROMPT.md`.
+
+**Academics-owned surfaces: now faithful.** Class Center measures panels at
+`#2b2722` / 16px radius and class cards at `#322e28` / 13px — the
+`_visual-recipes.md` panel and class-card recipes exactly. The Planner board
+steps `#211e1a → #322e28 → #2b2722`, matching the planner frame's own
+`.term{background:var(--muted)}` over `.course{background:var(--card)}`.
+25 translucent fills were made solid in `f2ecf9d`.
+
+⚠️ **Not verified, and deliberately not swept: ~20 base translucent fills in
+`src/components/common/`** — `Kanban`, `EmptyState`, `TrashRecovery`,
+`SmartActionPanel`, `ResourceGrid`, `DocEmbed`, `InlineAddRow`,
+`RecordOpenWorkspace`, `PaceProjectionLine`, `WeeklyCapacityCard`,
+`MascotNote`.
+
+These are **cross-pillar**: changing them alters Overview, Clinical, MCAT and
+Experiences, not just Academics. Each was built against its own drawing in an
+earlier pass, and without comparing each to that drawing I cannot call any of
+them a defect — only unverified. **A sweep is its own pass and its own
+decision.** Hover-state translucency (`hover:bg-muted/35`) is not in scope
+either way: a translucent hover over a solid surface is a legitimate treatment
+and is not what went wrong here.
+
 ## 6. Recommendation
 
 Take **calendar review** next — it is the only drawn, cleared, fully-unblocked
