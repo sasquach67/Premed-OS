@@ -1,6 +1,6 @@
 # Academics · Topic ↔ assignment linking — decisions
 
-**Status:** PROPOSED · Stage-A coverage
+**Status:** APPROVED · **A + C mix ruled Aug 18, 2026 (Andy)**
 **Source:** `academics-topic-linking.html` · **Spec:** `tabs/01-academics.md` §4.1 (#37, exam scope), §4.1-H, §4.1-R
 **Drawn under:** `implementation/briefs/T1-academics-mockup-3.md`
 
@@ -66,18 +66,78 @@ real student's records.
 - Motion is `.15s cubic-bezier(.16,1,.3,1)` with a `motion-reduce` fallback;
   focus is `:focus-visible` only.
 
-## Variant question
+## The ruling — A + C, with a specified handoff
 
-**The product rules above are settled; the placement composition is not.**
+**A · inline chips is the primary affordance. C · scope picker is the escape
+hatch for linking many.** B is retired; its frame stays in the lab only as the
+record of what was compared.
 
-| | Treatment | The trade |
-|---|---|---|
-| **A** | **Inline chips** — chips on the record with a typeahead opening in place. | Fastest, and the only one that keeps a one-topic link inside the ≤5-second rule. Crowds a record naming six topics. |
-| **B** | **Expandable row** — the row opens into its record; topics are one field beside weight, points, and status. | Matches the existing row family and gives exam scope its own titled field. Costs a click before any linking. |
-| **C** | **Scope picker** — a focused overlay listing every topic at once. | The only pleasant way to set an exam scope of eight topics. Heaviest for the single-topic case. |
+**Why A leads.** Linking one topic to one problem set is the overwhelmingly
+common act, and it has to clear the ≤5-second logging rule. A does it without
+leaving the row. B spends a click on every link — including the single-link
+case — to buy room the common case does not need.
 
-A mixed answer is legitimate: **A for one or two, C as the "link many" escape
-hatch**. If that is the choice, the handoff between them has to be recorded
-too, not just the two end states.
+**Why C survives as the escape hatch.** Exam scope is the opposite shape: eight
+topics chosen in one sitting from the syllabus. Doing that eight times through a
+typeahead is the worst interaction in the tab. C is the only composition that
+makes it one pass.
 
-**Andy chooses one before any implementation is briefed.**
+**Why not B at all.** B's one genuine advantage — a titled field per record, so
+scope and coverage cannot blur — is achievable in A by the chip tint and the
+separate field label, which the frame already draws. That leaves B paying a
+click for nothing.
+
+### The handoff, specified
+
+This is the part a mix has to answer, and it is **specified here in text; the
+frame draws the two end states but not the transition.** Stage C builds from
+this section.
+
+1. **C opens from A, never independently.** The chip row's last element is
+   `+ Link topic`; a second, quieter control `Link many…` sits beside it **only
+   when the class has more than five topics recorded.** Below that threshold the
+   picker is not offered — it would be a heavier path to the same two chips.
+2. **C opens pre-populated with A's current state.** Every already-linked topic
+   is checked on open. The picker is an editor of the same record, never a
+   fresh start, and never appends a second set.
+3. **On save, C closes and A reflects it immediately** — the chip row is the
+   single rendering of the record's state. There is no separate "linked via
+   picker" presentation.
+4. **On cancel, nothing is written**, including any box toggled while it was
+   open.
+5. **Unlink stays available in both** — the chip's `×` in A, unchecking in C.
+   Neither is the privileged path.
+6. **Exam scope opens C by default** when the class has more than five topics,
+   because scope is the case C exists for. The `+ Add to scope` chip remains,
+   so a one-topic scope correction never requires the overlay.
+
+### Placement and hierarchy
+
+- Chips sit inside the record, under a small uppercase field label, below the
+  record's own title/meta line. The Assignments page composition — agenda
+  default, three views, add as the primary action — does not move.
+- **Coverage chips are `--cat`-tinted; scope chips are `--warning`-tinted**,
+  with separate field labels (`Topics this covers` / `Exam scope`). The tint is
+  what stops the two fields reading as one list at a glance.
+- `+ Link topic` is a dashed `--cat` chip so an empty field still shows where
+  the action is. `Link many…` is plain text weight, quieter than the dashed
+  chip — the escape hatch never outranks the primary path.
+- The picker is a `CenterPeek`: solid card, `0 26px 60px -20px` shadow over a
+  dimmed stage, its own header stating which record is being edited, and a
+  footer carrying the selected count and Cancel / Save.
+
+### Mobile
+
+- The chip row wraps and stays the primary affordance; nothing collapses behind
+  a disclosure control.
+- The typeahead opens full-width beneath the chips rather than as a floating
+  menu.
+- **The picker becomes a full-height sheet below 760px**, not a centred card —
+  a 520px centred overlay on a 375px viewport is a modal with margins.
+- `Link many…` keeps its threshold and its quieter weight on mobile; the
+  five-topic rule does not change by viewport.
+
+## Retired variant
+
+- **B · expandable row** — the row expands into its record with topics as one
+  field among grade, weight, and notes. Not built.

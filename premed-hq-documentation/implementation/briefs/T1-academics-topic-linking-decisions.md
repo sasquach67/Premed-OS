@@ -1,6 +1,6 @@
 # T1 · Academics — Topic ↔ assignment linking decisions
 
-**Stage:** B · DRAWN, NOT DECIDED
+**Stage:** B · DRAWN, NOT DECIDED · **EXECUTED Aug 18, 2026 — A + C mix ruled, manifest row added**
 
 **Scope:** Choose the one placement composition for the affordance that writes
 `linkedTopicIds`, `coveredTopicIds`, and `linkedAssignmentIds`. Decision pass
@@ -127,17 +127,19 @@ edit; the selection is Andy's.**
 
 ## 5. Done when
 
-- [ ] Andy has selected A, B, C, or a recorded mix after opening the frame.
-- [ ] The companion `.md` names the winning treatment and records behaviour
+- [x] Andy has selected A, B, C, or a recorded mix after opening the frame.
+- [x] The companion `.md` names the winning treatment and records behaviour
       **and** appearance, including mobile and the scope/coverage distinction.
-- [ ] The lab entry reads `status:"approved"`.
-- [ ] No `src/`, store, integration, or manifest change.
+- [x] The lab entry reads `status:"approved"`.
+- [x] No `src/`, store, integration, or manifest change.
 
 ## 6. Commit
 
 `docs(mockups): rule the topic-linking composition`
 
 ## 7. Blocked on Andy, separately from the decision
+
+✅ **RESOLVED Aug 18, 2026 — Andy added the row as `YES`.** The original text follows.
 
 **`BUILD-MANIFEST.md` needs a `YES` row for
 `01-academics/academics-topic-linking.html`.** Without it the Stage-C brief can

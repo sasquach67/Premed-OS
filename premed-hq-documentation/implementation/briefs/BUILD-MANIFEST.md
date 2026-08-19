@@ -88,6 +88,7 @@
 | `01-academics/academics-grade-decisions.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
 | `01-academics/academics-materials-extensions.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
 | `01-academics/academics-lecture-capture.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
+| `01-academics/academics-topic-linking.html` | APPROVED (Aug 18, 2026) | **`YES`** — cleared Aug 18, 2026 (Andy). A + C ruled: inline chips lead, the scope picker is the link-many escape hatch above five topics. This is the row that unblocks `#37` and `#41`, which are built and dormant because nothing writes `linkedTopicIds` or `coveredTopicIds` |
 
 ### Academics · Planning
 
