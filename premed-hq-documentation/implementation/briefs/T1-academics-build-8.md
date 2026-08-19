@@ -1,5 +1,16 @@
 # T1 · Academics — Lecture capture
 
+**Stage:** C — **SUPERSEDED Aug 19, 2026 by `T1-academics-build-10.md`.**
+
+The block was real and is now gone, but not because it was solved: the
+capability moved out of Premed OS. GoodNotes records and transcribes
+on-device, Universal Clipboard moves the text, and Premed OS imports a
+transcript instead of audio. The privacy decision below became moot rather
+than answered — there is no audio to have a policy about.
+
+**Original text follows, kept because the reasoning is why the surface
+changed shape.**
+
 **Stage:** C · DECIDED, NOT BUILT — **BLOCKED ON A SERVICE. Nothing built.**
 
 **Scope:** The §4.1-Q lecture capture surface. This brief records why its
