@@ -22,6 +22,9 @@ This artifact therefore is not a précis. Its objective is to answer the questio
 cannot answer after one pass over an unfamiliar reading: **what is being claimed, on what
 evidence, and what am I supposed to take from it.**
 
+**The organizing structure is the deliverable** — see §2.2, which is the authoring standard this
+artifact is built to and which outranks the rest of this document where they compete.
+
 The test a finished artifact must pass: **a student who reads this and then reads the source
 should extract more from the source than they would have unaided** — and should be able to say
 what the reading does *not* establish. If it only saves them the reading, it has failed and is
@@ -80,6 +83,34 @@ has no page structure**, so citations degrade to character offsets into the past
 benefits `03` and `04` identically, it needs a versioned lossless migration per `CLAUDE.md`, and
 it should be recorded in the data model rather than buried in one L2 spec. Flagged here because
 this document is where the need surfaced — **see D-4.**
+
+### 2.2 Structure is the product — *authoring standard supplied by Andy, Aug 2026*
+
+**What makes a summary good is the organization of ideas, not the wording of them.** Stated as
+the standard this artifact is built to:
+
+> A good summary is one whose **structure** does the teaching. Subtitles are not labels stuck on
+> top of paragraphs — they are the organizing device, and a reader should be able to understand
+> how the reading is put together by reading the headings alone.
+
+This outranks fluency, concision, and completeness. An artifact with excellent prose under
+generic headings has failed at the thing it exists to do.
+
+| id | Rule | Kind |
+|---|---|---|
+| `RS-12` | **The heading structure must encode the reading's own logic** — not a template applied over it. Two readings with different argumentative shapes must produce visibly different heading trees | invariant |
+| `RS-13` | **A subheading states a claim or poses a question; it is never a bare label.** "Why the effect disappears above 40 °C" over "Results" — the label carries no information the reader did not already have | invariant |
+| `RS-14` | Every section boundary marks a real shift in the reading's argument. A boundary inserted for visual rhythm is a defect | invariant |
+| `RS-15` | Where the source's own organization is poor, reorganize — the skeleton's section order is the default, not a constraint (compare `SG-1`). Where its sequence is load-bearing, preserve it (compare `SG-2`) | tunable |
+| `RS-16` | The heading tree is at most **two levels deep**. A third level means the section should have been split | tunable |
+
+**Consequence for §3's skeletons:** they are *section sets*, not literal headings. `WHAT THEY
+FOUND` names what a section must do; the rendered heading is written for that specific reading.
+A generator emitting the skeleton's words verbatim as its headings has violated `RS-13`.
+
+**Consequence for the quality gate (`08` §2):** heading quality is partly deterministic and should
+be checked without a model call — depth ≤ 2, no heading duplicated, no heading identical to the
+skeleton's label, no section under one block.
 
 ---
 
