@@ -44,6 +44,7 @@ import { StudyMethodPanel } from '@/components/academics/StudyMethodPanel'
 import { AssignmentLinkField, TopicLinkField } from '@/components/academics/TopicLinkFields'
 import { TopicConnectField } from '@/components/academics/TopicConnectField'
 import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
+import { retainLocalMaterial } from '@/lib/academics/localMaterialFiles'
 import { generateStudyGuide, sourcesFor } from '@/lib/academics/generateStudyGuide'
 import { PredictPanel } from '@/components/academics/PredictPanel'
 import { PretestPanel } from '@/components/academics/PretestPanel'
@@ -661,12 +662,57 @@ function Materials({
   courseId, courseCode, data, files, topics, notes, onTab,
 }: { courseId: string; courseCode: string; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; onTab: (tab: string) => void }) {
   const navigate = useNavigate()
+  const toast = useToast()
   const [filter, setFilter] = useState<'all' | 'course' | 'mine' | 'generated' | 'unassigned'>('all')
   const groups = useMemo(() => groupFiles(files, topics, notes), [files, notes, topics])
   const visible = groups.map((group) => ({
     ...group,
     files: group.files.filter((file) => filter === 'all' || (filter === 'unassigned' ? group.unit === 'Unassigned' : fileOwnership(file, notes) === filter)),
   })).filter((group) => group.files.length)
+  /**
+   * The add path Materials never had (§3.1). Same accept list and the same
+   * retention mechanism as the syllabus importer — no second blob store, no
+   * cloud storage. The unit link is left empty rather than guessed, so the
+   * file lands honestly under `Unfiled` until the student files it.
+   */
+  async function addMaterial() {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.pdf,.docx,image/*,text/plain'
+    input.multiple = true
+    input.onchange = async () => {
+      const picked = Array.from(input.files ?? [])
+      if (!picked.length) return
+      const retained = await Promise.all(picked.map(async (file) => {
+        const id = uid()
+        return { file, id, blobRef: await retainLocalMaterial(file, id) }
+      }))
+      const now = Date.now()
+      useStore.getState().update((draft) => {
+        const center = draft.academics.classCenter
+        retained.forEach(({ file, id, blobRef }) => center.files.unshift({
+          id,
+          courseId,
+          title: file.name.replace(/\.[^.]+$/, '') || file.name,
+          type: 'other',
+          sourceType: 'upload',
+          owner: 'mine',
+          url: '',
+          blobRef,
+          fileName: file.name,
+          mimeType: file.type,
+          notes: '',
+          linkedTopicIds: [],
+          createdAt: now,
+          updatedAt: now,
+          order: center.files.length,
+        }))
+      })
+      toast({ title: retained.length > 1 ? `${retained.length} materials added` : 'Material added', description: 'Filed under Unfiled until you link it to a unit. It stays on this device.' })
+    }
+    input.click()
+  }
+
   const categories = data.gradeCategories.filter((item) => item.courseId === courseId).sort((a, b) => a.order - b.order)
   function patchCategory(id: string, patch: Partial<GradeCategory>) {
     useStore.getState().update((draft) => {
@@ -680,10 +726,10 @@ function Materials({
       <SectionToolbar
         title="Materials"
         detail="Course files stay grouped by their linked unit."
-        action={<div className="flex items-center gap-2"><Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button><StudyToolActions onOpenNotes={() => onTab('notes')} courseId={courseId} label={courseCode} /></div>}
+        action={<div className="flex items-center gap-2"><Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button><Button size="sm" variant="outline" onClick={addMaterial}><Plus className="size-4" /> Add material</Button><StudyToolActions onOpenNotes={() => onTab('notes')} courseId={courseId} label={courseCode} /></div>}
       />
       {/* §4.1 materials extensions — the shelf. Unit → material → provenance. */}
-      <MaterialCatalog files={files} topics={topics} />
+      <MaterialCatalog files={files} topics={topics} onAdd={addMaterial} />
       {/* §6.6 Pretest and Predict — both pre-lecture acts, beside priming. */}
       <PretestPanel topics={topics} />
       <PredictPanel courseId={courseId} topics={topics} />
