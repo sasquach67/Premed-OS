@@ -3,10 +3,15 @@
 **Two prompts run this whole process. Both take just a tab name.**
 
 ```
-TAB-BRIEF-PROMPT.md      + [TAB]  →  audits, writes the brief for the blocked stage
-                                     ⬐ YOU READ IT HERE
-EXECUTE-BRIEF-PROMPT.md  + [TAB]  →  does exactly what that brief says
+TAB-BRIEF-PROMPT.md      + [TAB]   →  audits, writes the brief for the blocked stage
+                                      ⬐ YOU READ IT HERE
+EXECUTE-BRIEF-PROMPT.md  + [TAB]   →  does exactly what that brief says
+PAGE-PROMOTION-PROMPT.md + [PAGE]  →  is THIS page actually built? prove or demote
 ```
+
+**The first two drive a TAB. The third drives a PAGE.** Use the third when a tab has
+many pages and you want specific ones over the line, rather than waiting for the
+tab-level router to happen to pick them. Added Aug 20, 2026.
 
 **Repeat until the router returns stage `F`.** No third prompt, ever.
 
