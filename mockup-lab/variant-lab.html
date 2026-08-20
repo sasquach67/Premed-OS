@@ -298,7 +298,8 @@ const profiles = [
     desc:"The shared record reads, reflection mechanism, Discover boundary, and honest no-data states that sit behind every experience pillar.",variants:[["Coverage sheet","Shared experience states are visible without becoming a sixth pillar."],["Coverage sheet","State coverage is structural, not a competing layout option."],["Coverage sheet","State coverage is structural, not a competing layout option."]]
   },
   {
-    id:"empty-states",group:"Academics",name:"Empty states",status:"built",
+    id:"empty-states",group:"Academics",name:"Empty states",status:"approved",
+    // DEMOTED Aug 20 2026 — condition 4: emptying the store re-seeds 40 courses, so the drawn zero-class state is unreachable without editing storage by hand. Stage D.
     path:"01-academics/academics-empty-states-prototype.html",native:true,
     variantSourceRev:"empty-states-a-setup-guide-20260814",
     desc:"Zero-class cold start using the MascotNote empty-state pattern.",
@@ -393,7 +394,8 @@ const profiles = [
     `
   },
   {
-    id:"class-types",group:"Academics",name:"Class types",status:"built",
+    id:"class-types",group:"Academics",name:"Class types",status:"approved",
+    // DEMOTED Aug 20 2026 — condition 3: locked decision 7 (per-row verb chips Recall/Draft/Read/Log) is not implemented anywhere in src. Stage D.
     path:"01-academics/academics-class-types.html",
     desc:"STEM, Writing, and General parity across class workspaces.",
     variants:[
@@ -729,7 +731,8 @@ const profiles = [
     desc:"Cross-pillar decision, goal-type, capture, empty, and reduced-motion states that need a visible review surface.",variants:[["Coverage sheet","Otherwise under-shown Overview states appear in one reviewable sheet."],["Coverage sheet","State coverage is structural, not a competing layout option."],["Coverage sheet","State coverage is structural, not a competing layout option."]]
   },
   {
-    id:"public-landing",group:"Landing & auth",name:"Landing · auth · merge",status:"built",
+    id:"public-landing",group:"Landing & auth",name:"Landing · auth · merge",status:"approved",
+    // DEMOTED Aug 20 2026 — condition 2: GuidedTour.tsx:170 renders 4 enabled, focusable <button> controls with no handler. Stage D.
     path:"05-public/public-landing-and-auth.html",
     desc:"Front door, sign-in, and the local\u2192account merge. Primary action is Start tracking, not Sign up.",
     variants:[

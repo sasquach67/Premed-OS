@@ -298,7 +298,8 @@ const profiles = [
     desc:"The shared record reads, reflection mechanism, Discover boundary, and honest no-data states that sit behind every experience pillar.",variants:[["Coverage sheet","Shared experience states are visible without becoming a sixth pillar."],["Coverage sheet","State coverage is structural, not a competing layout option."],["Coverage sheet","State coverage is structural, not a competing layout option."]]
   },
   {
-    id:"empty-states",group:"Academics",name:"Empty states",status:"built",
+    id:"empty-states",group:"Academics",name:"Empty states",status:"approved",
+    // DEMOTED Aug 20 2026 — condition 4: emptying the store re-seeds 40 courses, so the drawn zero-class state is unreachable without editing storage by hand. Stage D.
     path:"01-academics/academics-empty-states-prototype.html",native:true,
     variantSourceRev:"empty-states-a-setup-guide-20260814",
     desc:"Zero-class cold start using the MascotNote empty-state pattern.",
@@ -309,9 +310,9 @@ const profiles = [
     ]
   },
   {
-    id:"planner",group:"Academics",name:"Planner",status:"native",
+    id:"planner",group:"Academics",name:"Planner",status:"approved",
     path:"01-academics/academics-planner-prototype.html",native:true,
-    desc:"Future-term sequencing with requirement effects and live GPA outcomes.",
+    desc:"Future-term sequencing with requirement effects and live GPA outcomes. A + C ruled Aug 19, 2026 — the whole-plan board with the selected-course inspector on demand; B retired.",
     variants:[
       ["Timeline first","The whole plan and MCAT divider lead."],
       ["Next-term builder","One semester becomes the working surface."],
@@ -393,7 +394,8 @@ const profiles = [
     `
   },
   {
-    id:"class-types",group:"Academics",name:"Class types",status:"built",
+    id:"class-types",group:"Academics",name:"Class types",status:"approved",
+    // DEMOTED Aug 20 2026 — condition 3: locked decision 7 (per-row verb chips Recall/Draft/Read/Log) is not implemented anywhere in src. Stage D.
     path:"01-academics/academics-class-types.html",
     desc:"STEM, Writing, and General parity across class workspaces.",
     variants:[
@@ -729,7 +731,8 @@ const profiles = [
     desc:"Cross-pillar decision, goal-type, capture, empty, and reduced-motion states that need a visible review surface.",variants:[["Coverage sheet","Otherwise under-shown Overview states appear in one reviewable sheet."],["Coverage sheet","State coverage is structural, not a competing layout option."],["Coverage sheet","State coverage is structural, not a competing layout option."]]
   },
   {
-    id:"public-landing",group:"Landing & auth",name:"Landing · auth · merge",status:"built",
+    id:"public-landing",group:"Landing & auth",name:"Landing · auth · merge",status:"approved",
+    // DEMOTED Aug 20 2026 — condition 2: GuidedTour.tsx:170 renders 4 enabled, focusable <button> controls with no handler. Stage D.
     path:"05-public/public-landing-and-auth.html",
     desc:"Front door, sign-in, and the local\u2192account merge. Primary action is Start tracking, not Sign up.",
     variants:[
@@ -1404,7 +1407,21 @@ const orderedProfiles = [
     {group:"Academics",name:"Tar Heel Tracker",section:"Planning",depth:1,fitCanvas:true,authoredViews:"wrap-per-view"}),
   Object.assign(asProductViews(byId["grades-archive"],"Record view",["ledger","gpa","what-if"]),
     {group:"Academics",section:"Planning",depth:1,fitCanvas:true,authoredViews:"wrap-per-view"}),
-  {id:"academics-learning-signals",group:"Academics",name:"Learning signals",section:"Daily · Class Center",depth:2,status:"proposed",fitCanvas:true,native:true,variantSourceRev:"academics-learning-signals-20260817",path:"01-academics/academics-learning-signals.html",desc:"A STEM class Overview panel with evidence-first learning signals and no empty intelligence state.",variants:[["Priority rail","Signals and their evidence share a compact bento below the next action."],["Editorial section","The same signals read as a calm class-story section beneath the next action."],["Evidence drawer","The normal class workspace stays quiet until a contextual evidence drawer opens."]]},
+  {id:"academics-learning-signals",group:"Academics",name:"Learning signals",section:"Daily · Class Center",depth:2,status:"approved",fitCanvas:true,native:true,variantSourceRev:"academics-learning-signals-20260817",path:"01-academics/academics-learning-signals.html",desc:"A STEM class Overview panel with evidence-first learning signals and no empty intelligence state. A · priority rail ruled Aug 18, 2026; B and C are retired and kept only as the comparison record.",variants:[["Priority rail","Signals and their evidence share a compact bento below the next action."],["Editorial section","The same signals read as a calm class-story section beneath the next action."],["Evidence drawer","The normal class workspace stays quiet until a contextual evidence drawer opens."]]},
+  // ── Registered Aug 20 2026. All eight were drawn and reachable on disk but
+  // absent from the lab, so nobody could review them here. Three are
+  // manifest-YES, which meant Andy had cleared surfaces he could not see.
+  {id:"academics-requirements",group:"Academics",name:"Requirements",section:"Planning",depth:2,status:"proposed",fitCanvas:true,native:true,path:"01-academics/academics-requirements.html",desc:"The requirement screen. ⚠️ Manifest clears the SCREEN, not completion maths — data/unc-requirements.json warns a flat course list produces false completions.",variants:[["Requirement screen","The audit surface. Completion maths is NOT cleared — see the manifest note."]]},
+  {id:"nav-hierarchy",group:"Shared",name:"Nav hierarchy · 3 levels",section:"Patterns",depth:1,status:"approved",fitCanvas:true,native:true,path:"_shared/nav-hierarchy-3-levels.html",desc:"The three-level navigation rule (Option A, approved July 2026). Academics stacks three levels of chrome and they must not all be pill rows.",variants:[["Option A","The approved three-level rule: the levels must not all be pill rows."]]},
+  {id:"mascot-note",group:"Shared",name:"MascotNote pattern",section:"Patterns",depth:1,status:"approved",fitCanvas:true,native:true,path:"_shared/mascot-note-pattern.html",desc:"The explanation pattern — one note maximum per surface, teaching a mechanism rather than narrating the UI.",variants:[["The pattern","One note maximum per surface, teaching a mechanism rather than narrating the UI."]]},
+  {id:"mcat-plan-surface",group:"MCAT",name:"Plan",section:"",depth:1,status:"proposed",fitCanvas:true,native:true,path:"02-mcat/mcat-plan.html",desc:"Generated study plan. Manifest: NO — drawn for review only.",variants:[["Generated plan","The study plan surface. Manifest: NO."]]},
+  {id:"clinical-credentials",group:"Clinical",name:"Credentials",section:"",depth:1,status:"proposed",fitCanvas:true,native:true,path:"04-clinical/clinical-credentials.html",desc:"Credential tracking and renewal. Manifest: NO — drawn for review only.",variants:[["Credentials","Tracking and renewal. Manifest: NO."]]},
+  {id:"clinical-hour-target",group:"Clinical",name:"Hour target",section:"",depth:1,status:"proposed",fitCanvas:true,native:true,path:"04-clinical/clinical-hour-target.html",desc:"Setting an hour target. Manifest: NO — drawn for review only.",variants:[["Hour target","Setting a target. Manifest: NO."]]},
+  {id:"clinical-hours-chart",group:"Clinical",name:"Hours over time",section:"",depth:1,status:"proposed",fitCanvas:true,native:true,path:"04-clinical/clinical-hours-chart.html",desc:"Hours over time (#34). Manifest: NO — drawn for review only.",variants:[["Hours over time","#34 over time. Manifest: NO."]]},
+  {id:"clinical-role-typeahead",group:"Clinical",name:"Role type-to-create",section:"",depth:1,status:"proposed",fitCanvas:true,native:true,path:"04-clinical/clinical-role-typeahead.html",desc:"Role type-to-create. Manifest: NO — drawn for review only.",variants:[["Type-to-create","Role entry. Manifest: NO."]]},
+  {id:"academics-term-retrospective",group:"Academics",name:"Term retrospective",section:"Planning · Grades",depth:2,status:"proposed",fitCanvas:true,native:true,variantSourceRev:"academics-term-retrospective-20260820",path:"01-academics/academics-term-retrospective.html",desc:"#43's end-of-term page — observations with their counts attached, never correlations, and no page at all for a term too lightly tracked.",variants:[["One honest page","What you did, what stands out, what to carry into next term."],["Sectioned review","The same record one question at a time."],["Too little to say","A lightly tracked term, where the honest output is no page."]]},
+  {id:"academics-forecast-accuracy",group:"Academics",name:"Forecast accuracy",section:"Planning · Grades",depth:2,status:"proposed",fitCanvas:true,native:true,variantSourceRev:"academics-forecast-accuracy-20260819",path:"01-academics/academics-forecast-accuracy.html",desc:"§6.12's trust ledger — every prediction scored against what actually happened, and total suppression below the sample gate.",variants:[["Plain-language ledger","What each confidence band has actually been worth, in a sentence."],["Prediction table","The same record itemised, for checking one topic."],["Below the gate","What it shows before it has earned the right to say anything."]]},
+  {id:"academics-topic-linking",group:"Academics",name:"Topic linking",section:"Daily · Class Center",depth:2,status:"approved",fitCanvas:true,native:true,variantSourceRev:"academics-topic-linking-20260818",path:"01-academics/academics-topic-linking.html",desc:"The missing write side of topic-to-assignment linkage and exam scope. Three views switch inside the frame: link from the assignment, exam scope, link from the topic. A + C ruled Aug 18, 2026 — chips lead, the picker is the link-many escape hatch; B retired.",variants:[["Inline chips","Removable topic chips on the record, with a typeahead opening in place."],["Expandable row","The row expands into its record, topics one field among grade, weight and notes."],["Scope picker","A focused overlay listing every topic at once, for linking many."]]},
   Object.assign(asProductViews({id:"academics-grade-decisions",group:"Academics",name:"Grade decisions",section:"Planning · Grades",depth:2,status:"proposed",fitCanvas:true,path:"01-academics/academics-grade-decisions.html",desc:"Record-level regrade, policy, missing-input, and mistake-evidence states inside Grades & Archive.",variants:[["Returned work","One returned item, its source record, and a factual regrade window."],["Policy applied","Every calculation rule is shown with its evidence boundary."],["Missing inputs","One unresolved course fact keeps the result dormant-with-a-reason."],["Mistake evidence","Student-marked causes route to different next learning actions."]]},"Decision state",["regrade","policy","incomplete","mistakes"]),
     {group:"Academics",section:"Planning",depth:2,fitCanvas:true,passViewToSource:true,singleViews:true}),
   Object.assign(asProductViews(byId["academics-term-rollover"],"Rollover state",["ritual","paused","january"]),
