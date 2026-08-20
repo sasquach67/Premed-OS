@@ -4,10 +4,9 @@
  * The nine-step cycle of §6.6, rendered as three placements. This module owns
  * only the derivation; the components draw it.
  *
- * ⚠️ The surface outruns its engine. Three of the nine steps — pretest,
- * predict, mock — are specced (§6.6, marked ✗ new) and NOT BUILT. **Connect
- * landed Aug 19 2026** with `TopicLink`: its group is offered AND its dot fills
- * for a linked topic, which are two separate things and both had to change. Steps without
+ * ⚠️ One of the nine steps — **Full mock** — is specced (§6.6, marked ✗ new)
+ * and NOT BUILT; it needs a generated exam. Connect, Predict and Pretest all
+ * landed Aug 19 2026, so the before-class group is now offered too. Steps without
  * an engine can never be marked done, and groups whose action has no engine are
  * not offered at all. Advertising a study step the app cannot perform, on the
  * surface whose job is "what do I do right now?", would be worse than omitting
@@ -33,8 +32,10 @@ export interface StepDefinition {
 /** Nine steps, three stages of three — the order is the cycle's own. */
 export const CYCLE: StepDefinition[] = [
   { step: 'prime', stage: 'before', label: 'Prime — skim before the lecture', hasEngine: true },
-  { step: 'pretest', stage: 'before', label: 'Pretest — guess before you’re taught', hasEngine: false },
-  { step: 'predict', stage: 'before', label: 'Predict — what will this lecture cover?', hasEngine: false },
+  // Engine landed Aug 19 2026: the class's own KeyPoints are the questions.
+  { step: 'pretest', stage: 'before', label: 'Pretest — guess before you’re taught', hasEngine: true },
+  // Engine landed Aug 19 2026 with `TopicPrediction`.
+  { step: 'predict', stage: 'before', label: 'Predict — what will this lecture cover?', hasEngine: true },
   { step: 'recall', stage: 'after', label: 'Recall — retrieve it without looking', hasEngine: true },
   { step: 'feynman', stage: 'after', label: 'Feynman — explain it plainly', hasEngine: true },
   // Engine landed Aug 19 2026 with `TopicLink` (§6.6 Connect).
@@ -61,6 +62,8 @@ export function completedSteps(
   /** §6.6 Connect. Absent means the caller has no graph — the step stays
    *  hollow rather than being claimed done on no evidence. */
   linkedTopicIds?: ReadonlySet<string>,
+  /** §6.6 Predict — topics with a recorded expectation. */
+  predictedTopicIds?: ReadonlySet<string>,
 ): Set<CycleStep> {
   const done = new Set<CycleStep>()
   const reviews = events.filter((event) => event.topicId === topic.id)
@@ -69,11 +72,13 @@ export function completedSteps(
   if (topic.fsrs.reps > 1) done.add('spaced')
   if (reviews.length > 2) done.add('practice')
   if (linkedTopicIds?.has(topic.id)) done.add('connect')
+  if (topic.pretestedAt != null) done.add('pretest')
+  if (predictedTopicIds?.has(topic.id)) done.add('predict')
   for (const step of done) if (!CYCLE.find((entry) => entry.step === step)?.hasEngine) done.delete(step)
   return done
 }
 
-export type GroupId = 'just-covered' | 'needs-connecting' | 'due-to-review'
+export type GroupId = 'before-class' | 'just-covered' | 'needs-connecting' | 'due-to-review'
 
 export interface StudyGroup {
   id: GroupId
@@ -85,9 +90,9 @@ export interface StudyGroup {
 /**
  * The groups the panel may offer TODAY.
  *
- * Three, not five. `before-class` and `exam-ready` are still omitted because
- * Pretest/Predict and Full mock do not exist; `needs-connecting` turned on when
- * `TopicLink` landed. They are added here when their engines land — no rework in the
+ * Four, not five. Only `exam-ready` is still omitted, because Full mock has no
+ * engine. `needs-connecting` turned on with `TopicLink`, and `before-class`
+ * with Pretest and Predict. They are added here when their engines land — no rework in the
  * component, which renders whatever this returns.
  */
 export function studyGroups(
@@ -98,6 +103,10 @@ export function studyGroups(
    *  needs-connecting group stays off rather than claiming everything is
    *  unconnected. */
   linkedTopicIds?: ReadonlySet<string>,
+  /** Topics with material behind them. Priming a topic the class has published
+   *  nothing for is an instruction with no object, so before-class is offered
+   *  only where there is something to prime from. */
+  primableTopicIds?: ReadonlySet<string>,
 ): StudyGroup[] {
   const reviewedSince = (topic: Topic, at: number) =>
     events.some((event) => event.topicId === topic.id && event.timestamp >= at)
@@ -114,6 +123,18 @@ export function studyGroups(
   const dueToReview = topics.filter((topic) =>
     topic.fsrs.reps > 0 && topic.fsrs.due <= now && !justCovered.includes(topic))
 
+  // §6.6 before-class: an uncovered topic that has not been primed yet. Offered
+  // now that Prime, Pretest and Predict all have engines.
+  const beforeClass = primableTopicIds
+    ? topics.filter((topic) =>
+      !COVERED_STATUSES.includes(topic.status)
+      && topic.status !== 'ready'
+      && topic.status !== 'reviewing'
+      && topic.pretestedAt == null
+      && topic.fsrs.reps === 0
+      && primableTopicIds.has(topic.id))
+    : []
+
   // §6.6: recalled, but no TopicLink. Only offered once a graph exists —
   // without one, every topic would look unconnected and the group would be a
   // false accusation rather than a prompt.
@@ -125,6 +146,7 @@ export function studyGroups(
     : []
 
   return [
+    { id: 'before-class' as const, title: 'Before class', action: 'Prime it', topics: beforeClass },
     { id: 'just-covered' as const, title: 'Just covered', action: 'Recall it', topics: justCovered },
     { id: 'needs-connecting' as const, title: 'Needs connecting', action: 'Connect it', topics: needsConnecting },
     { id: 'due-to-review' as const, title: 'Due to review', action: 'Start review', topics: dueToReview },

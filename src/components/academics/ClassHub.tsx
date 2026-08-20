@@ -46,6 +46,7 @@ import { TopicConnectField } from '@/components/academics/TopicConnectField'
 import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
 import { generateStudyGuide, sourcesFor } from '@/lib/academics/generateStudyGuide'
 import { PredictPanel } from '@/components/academics/PredictPanel'
+import { PretestPanel } from '@/components/academics/PretestPanel'
 import { TranscriptImport } from '@/components/academics/TranscriptImport'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { LearningSignalsPanel } from '@/components/academics/LearningSignalsPanel'
@@ -399,7 +400,7 @@ function Overview({
       </Panel>
 
       <div className="col-span-12">
-        <StudyMethodPanel courseId={course.id} topics={topics} events={data.reviewEvents} classType={type} topicLinks={data.topicLinks ?? []} />
+        <StudyMethodPanel courseId={course.id} topics={topics} events={data.reviewEvents} classType={type} topicLinks={data.topicLinks ?? []} primableTopicIds={new Set((data.keyPoints ?? []).map((point) => point.topicId))} />
       </div>
 
       {/* §4.1: below the class's primary next action, above its supporting
@@ -683,7 +684,8 @@ function Materials({
       />
       {/* §4.1 materials extensions — the shelf. Unit → material → provenance. */}
       <MaterialCatalog files={files} topics={topics} />
-      {/* §6.6 Predict — a pre-lecture act, beside the priming block. */}
+      {/* §6.6 Pretest and Predict — both pre-lecture acts, beside priming. */}
+      <PretestPanel topics={topics} />
       <PredictPanel courseId={courseId} topics={topics} />
       {/* §4.1-Q — the transcript arrives as text; the audio never leaves the iPad. */}
       <TranscriptImport courseId={courseId} />

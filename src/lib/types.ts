@@ -303,6 +303,9 @@ export interface Topic {
   linkedNoteIds?: ID[]
   linkedAssignmentIds?: ID[]
   linkedFileIds?: ID[]
+  /** §6.6 Pretest. Its presence marks the priming act as done and nothing
+   *  more — there is no score, because getting a pretest wrong is the point. */
+  pretestedAt?: number
   /** Where this topic goes after its course ends (§4.1 term rollover).
    *  Absent means undecided, which is what makes the January re-offer
    *  possible. `retired` stops scheduling; it never deletes anything. */

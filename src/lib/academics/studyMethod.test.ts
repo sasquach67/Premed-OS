@@ -20,10 +20,11 @@ describe('the nine-step cycle', () => {
     }
   })
 
-  it('marks exactly the three §6.6 steps that still have no engine', () => {
-    // Connect left this list on Aug 19 2026 when TopicLink landed.
+  it('marks only Full mock as having no engine', () => {
+    // Connect, Pretest and Predict all landed Aug 19 2026. Full mock still
+    // needs a generated exam.
     const missing = CYCLE.filter((entry) => !entry.hasEngine).map((entry) => entry.step)
-    expect(missing).toEqual(['pretest', 'predict', 'mock'])
+    expect(missing).toEqual(['mock'])
   })
 
   it('fills the connect dot only for a topic that actually has a link', () => {
@@ -40,7 +41,7 @@ describe('the nine-step cycle', () => {
       fsrs: { ...createTopicFsrsState(now), reps: 12 },
     })
     const done = completedSteps(busy, [review('t1', now - DAY, 0), review('t1', now - 2 * DAY, 1), review('t1', now - 3 * DAY, 2)])
-    for (const step of ['pretest', 'predict', 'mock'] as const) {
+    for (const step of ['mock'] as const) {
       expect(done.has(step)).toBe(false)
     }
   })

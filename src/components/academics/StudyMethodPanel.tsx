@@ -18,12 +18,14 @@ import { MascotNote } from '@/components/common/MascotNote'
 import { panelShouldRender, studyGroups } from '@/lib/academics/studyMethod'
 import type { ClassWorkspaceType, ReviewEvent, Topic, TopicLink } from '@/lib/types'
 
-export function StudyMethodPanel({ courseId, topics, events, classType, topicLinks = [] }: {
+export function StudyMethodPanel({ courseId, topics, events, classType, topicLinks = [], primableTopicIds }: {
   courseId: string
   topics: Topic[]
   events: ReviewEvent[]
   classType?: ClassWorkspaceType
   topicLinks?: TopicLink[]
+  /** §6.6 before-class: topics with material to prime from. */
+  primableTopicIds?: ReadonlySet<string>
 }) {
   // Both the empty rule (§4.1-K) and the General exclusion (§4.1-N) are owned
   // by panelShouldRender, so they stay testable and cannot drift apart.
@@ -31,7 +33,7 @@ export function StudyMethodPanel({ courseId, topics, events, classType, topicLin
   const linkedTopicIds = new Set(
     topicLinks.flatMap((link) => [link.fromTopicId, link.toTopicId]),
   )
-  const groups = studyGroups(topics, events, undefined, linkedTopicIds)
+  const groups = studyGroups(topics, events, undefined, linkedTopicIds, primableTopicIds)
   if (!panelShouldRender(groups, classType)) return null
 
   return (

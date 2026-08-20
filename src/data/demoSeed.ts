@@ -169,6 +169,14 @@ export function createDemoData(seedTime = Date.now()): AppData {
     keyPoint('demo-kp-synapse', topics[0].id, 'Explain vesicle release and the postsynaptic response.', ['demo-chunk-synapse'], 2, 0, at),
     keyPoint('demo-kp-potentials', topics[1].id, 'Trace the phases of an action potential.', ['demo-chunk-potentials'], 0, 1, at),
     keyPoint('demo-kp-sn2', topics[3].id, 'Predict stereochemical outcomes for an SN2 reaction.', ['demo-chunk-sn2'], 0, 2, at),
+
+    // §6.6 Pretest needs at least three key points on an UNCOVERED topic before
+    // it will offer anything — two questions is not a pretest. Synaptic
+    // plasticity is seeded past that floor so the step is demonstrable.
+    keyPoint('demo-kp-ltp-1', 'demo-topic-plasticity', 'What has to happen at a synapse for a change to persist?', ['demo-chunk-synapse'], 0, 3, at),
+    keyPoint('demo-kp-ltp-2', 'demo-topic-plasticity', 'Why would repeated stimulation strengthen a connection rather than exhaust it?', ['demo-chunk-synapse'], 0, 4, at),
+    keyPoint('demo-kp-ltp-3', 'demo-topic-plasticity', 'What would you expect to block long-term potentiation?', ['demo-chunk-potentials'], 0, 5, at),
+    keyPoint('demo-kp-ltp-4', 'demo-topic-plasticity', 'How might a synapse weaken rather than strengthen?', ['demo-chunk-potentials'], 0, 6, at),
   ]
   const assignments: ClassAssignment[] = [
     assignment('demo-a-lab', courses[3].id, 'Membrane potential lab report', 'lab', date(-4), 'graded', 'Laboratory', 18, 20, 20, 0, at),
