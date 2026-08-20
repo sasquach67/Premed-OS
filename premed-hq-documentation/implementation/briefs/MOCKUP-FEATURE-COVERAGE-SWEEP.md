@@ -1,5 +1,23 @@
 # Mockup feature-coverage map — Aug 14, 2026
 
+> **⚠️ RE-SWEPT Aug 20, 2026 for Academics only.** This map predates the
+> surfaces drawn Aug 17–20, so it is stale for anything added since. The
+> Academics re-sweep ran all **121 numbered features** in `tabs/01-academics.md`
+> against the mockup corpus and found **two** needing a surface of their own:
+>
+> | # | Feature | Drawn |
+> |---|---|---|
+> | 52 | Forecast accuracy ledger ⭐ | `academics-forecast-accuracy.html`, Aug 19 |
+> | 43 | Term retrospective | `academics-term-retrospective.html`, Aug 20 |
+>
+> **Everything else flagged was a false positive.** Most were drawn under
+> different wording — `#47/#48` are the "Blanked / Did not know" tags in
+> `academics-grade-decisions.html`. A whole class of them — `#16`, `#21`,
+> `#25`, `#36`, `#39` — are **learning-signal types**, and the drawn signals
+> panel covers them as a pattern; each does not need its own frame.
+>
+> **Overview, MCAT, Clinical and the other pillars have NOT been re-swept.**
+
 ## Purpose
 
 This is the durable map from canonical product areas to their visible mockup

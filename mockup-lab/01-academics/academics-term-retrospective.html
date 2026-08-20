@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Academics · Term retrospective</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#211e1a;--card:#2b2722;--fg:#ece3d4;--mut:#a89c8c;--dim:#7c7264;--bd:#3c352d;--muted:#322e28;--cat:#4b9cd3;--success:#6fc0a8;--warning:#e7b06a;--violet:#8c7bd4}
+*{box-sizing:border-box}
+body{margin:0;background:#191613;color:var(--fg);font:15px/1.45 Nunito,sans-serif}
+.frame{min-height:100vh;width:min(1240px,100%);margin:auto;background:var(--bg)}
+.banner{padding:18px 24px 0;background:radial-gradient(340px 200px at 88% 6%,rgba(140,123,212,.30),transparent 70%),linear-gradient(115deg,#2a2740 0%,#2c3a4a 45%,#3a3730 100%)}
+.crumb{font:800 11px 'Baloo 2';color:rgba(255,255,255,.68);letter-spacing:.05em}
+.title{margin:3px 0 0;color:#fff;font:800 30px 'Baloo 2';letter-spacing:-.4px}
+.title i{font:700 18px Nunito,sans-serif;color:rgba(255,255,255,.84);font-style:normal}
+.tabs{display:flex;gap:24px;margin-top:14px}
+.tab{position:relative;padding:10px 2px 11px;color:rgba(255,255,255,.6);font:700 14px 'Baloo 2'}
+.tab.on{color:#fff;font-weight:800}
+.tab.on:after{content:"";position:absolute;inset:auto 0 -1px;height:3px;border-radius:3px 3px 0 0;background:var(--violet)}
+.subnav{display:flex;gap:8px;padding:10px 24px;background:var(--card);border-bottom:1px solid var(--bd)}
+.chip{border:1px solid var(--bd);border-radius:9px;padding:6px 10px;background:var(--muted);color:var(--mut);font:800 11px 'Baloo 2';cursor:pointer}
+.chip.on{border-color:color-mix(in srgb,var(--violet) 48%,var(--bd));color:#d7caff;background:color-mix(in srgb,var(--violet) 14%,var(--muted))}
+.wrap{max-width:960px;margin:auto;padding:24px 24px 60px}
+.state{display:none}.state.on{display:block}
+.eyebrow{font:800 10px 'Baloo 2';letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 10px 26px -14px rgba(0,0,0,.55);padding:20px}
+h2{margin:3px 0;font:800 24px 'Baloo 2'}
+h3{margin:2px 0;font:800 15px 'Baloo 2'}
+p{margin:5px 0 0;color:var(--mut);font-size:12px;font-weight:700}
+.page{max-width:660px}
+.section{padding:17px 0;border-top:1px solid var(--bd)}
+.section:first-of-type{border-top:0;padding-top:6px}
+.line{display:flex;gap:12px;align-items:baseline;padding:7px 0}
+.line b{font:800 13px 'Baloo 2';min-width:150px}
+.line span{flex:1;color:var(--mut);font-size:11.5px;font-weight:700}
+.sample{font-size:10.5px;color:var(--dim);font-weight:700;white-space:nowrap}
+.obs{padding:12px 14px;margin-top:9px;border-left:3px solid var(--violet);background:color-mix(in srgb,var(--violet) 7%,var(--muted));border-radius:0 10px 10px 0}
+.obs b{font:800 12.5px 'Baloo 2';color:#d7caff;display:block}
+.obs span{display:block;margin-top:3px;color:var(--mut);font-size:11.5px;font-weight:700}
+.carry{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:11px}
+.carry div{padding:12px;border:1px solid var(--bd);border-radius:12px;background:var(--muted);font-size:11.5px;font-weight:700;color:var(--mut)}
+.carry b{display:block;font:800 12.5px 'Baloo 2';color:var(--fg);margin-bottom:3px}
+.limit{margin-top:17px;padding:13px 15px;border-left:3px solid var(--warning);background:color-mix(in srgb,var(--warning) 7%,var(--muted));border-radius:0 10px 10px 0;font-size:11.5px;color:var(--mut);font-weight:700}
+.limit b{font-family:'Baloo 2';color:var(--fg)}
+.thin{padding:30px 20px;text-align:center;border:1px dashed var(--bd);border-radius:14px;margin-top:16px}
+.thin .mark{width:40px;height:40px;border-radius:13px;border:1px dashed var(--bd);margin:0 auto 11px;display:flex;align-items:center;justify-content:center;color:var(--dim);font:800 18px 'Baloo 2'}
+.btn{display:inline-block;margin-top:14px;border:0;border-radius:10px;background:var(--violet);color:#151024;padding:9px 14px;font:800 12px 'Baloo 2'}
+@media(max-width:760px){.carry{grid-template-columns:1fr}.line{flex-direction:column;gap:2px}}
+</style>
+</head>
+<body>
+<main class="frame">
+  <header class="banner">
+    <div class="crumb">Academics · Planning · end of term</div>
+    <div class="title">Fall 2026 <i>retrospective</i></div>
+    <nav class="tabs"><span class="tab">Planner</span><span class="tab">Tar Heel Tracker</span><span class="tab on">Grades &amp; Archive</span></nav>
+  </header>
+  <nav class="subnav">
+    <span class="chip" data-view="page">A · One honest page</span>
+    <span class="chip" data-view="sections">B · Sectioned review</span>
+    <span class="chip" data-view="thin">Too little to say</span>
+  </nav>
+  <section class="wrap">
+
+    <section class="state" data-state="page">
+      <article class="card page">
+        <div class="eyebrow">What this term actually looked like</div>
+        <h2>You studied differently in the classes that went well.</h2>
+        <p>Counts from your own records. Nothing here is a prediction, and nothing here is a grade on how you studied.</p>
+
+        <div class="section">
+          <div class="eyebrow">What you did</div>
+          <div class="line"><b>Reviews logged</b><span>214 across 19 topics in 3 classes</span><span class="sample">14 weeks</span></div>
+          <div class="line"><b>Topics connected</b><span>11 of 19 carry at least one link to another topic</span><span class="sample">§6.6 Connect</span></div>
+          <div class="line"><b>Mistakes marked</b><span>23, of which 14 were "blanked" rather than "did not know"</span><span class="sample">you classified these</span></div>
+        </div>
+
+        <div class="section">
+          <div class="eyebrow">What stands out</div>
+          <div class="obs">
+            <b>Your blanks outnumbered your knowledge gaps two to one.</b>
+            <span>That split points at retrieval practice rather than more reading — you knew this material and could not get it out under pressure.</span>
+          </div>
+          <div class="obs">
+            <b>CHEM 262 had the most reviews and the most lapses.</b>
+            <span>Both, together. More effort went in and more slipped out; the method may have been the issue rather than the hours.</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="eyebrow">Worth carrying into Spring</div>
+          <div class="carry">
+            <div><b>Keep</b>Recall-first sessions in BIOL 252, where topics you recalled early stayed recalled.</div>
+            <div><b>Change</b>Re-reading in CHEM 262 before an attempt, given how the lapses landed.</div>
+          </div>
+        </div>
+
+        <div class="limit">
+          <b>What this cannot tell you.</b> One term is not enough to say a method
+          <i>caused</i> a grade. These are observations with their counts attached, not findings —
+          and Premed OS will not turn them into a ranking of how you study.
+        </div>
+
+        <button class="btn">Carry these into the Spring plan</button>
+      </article>
+    </section>
+
+    <section class="state" data-state="sections">
+      <article class="card page">
+        <div class="eyebrow">Sectioned review</div>
+        <h2>The same record, taken one question at a time.</h2>
+        <p>Denser and slower to read. Better if you want to interrogate one class rather than the term.</p>
+        <div class="section">
+          <div class="eyebrow">Did I review consistently?</div>
+          <div class="line"><b>BIOL 252</b><span>Reviewed in 12 of 14 weeks</span><span class="sample">86 reviews</span></div>
+          <div class="line"><b>CHEM 262</b><span>Reviewed in 13 of 14 weeks</span><span class="sample">104 reviews</span></div>
+          <div class="line"><b>PHYS 118</b><span>Reviewed in 5 of 14 weeks</span><span class="sample">24 reviews</span></div>
+        </div>
+        <div class="section">
+          <div class="eyebrow">Where did the mistakes come from?</div>
+          <div class="line"><b>Blanked</b><span>14 — knew it, could not retrieve it</span><span class="sample">61%</span></div>
+          <div class="line"><b>Did not know</b><span>7 — the content was not there</span><span class="sample">30%</span></div>
+          <div class="line"><b>Unclassified</b><span>2 — still waiting on a cause</span><span class="sample">9%</span></div>
+        </div>
+        <div class="limit">
+          <b>Percentages of 23 marked mistakes, not of every mistake you made.</b>
+          This reads what you chose to log, and says so rather than implying completeness.
+        </div>
+      </article>
+    </section>
+
+    <section class="state" data-state="thin">
+      <article class="card page">
+        <div class="eyebrow">Fall 2026</div>
+        <h2>There is not enough here for an honest retrospective.</h2>
+        <p>You logged 9 reviews and marked 1 mistake this term.</p>
+        <div class="thin">
+          <div class="mark">—</div>
+          <b style="font:800 14px 'Baloo 2'">A term this lightly tracked cannot say what worked</b>
+          <p style="max-width:470px;margin:7px auto 0">Premed OS would have to invent the pattern, and a made-up lesson about how you study is worse than no page at all. Your course records still archived normally.</p>
+        </div>
+        <div class="limit">
+          <b>This is not a scold.</b> Studying without logging it is still studying. The page returns
+          when there is enough recorded to describe, and nothing is lost in the meantime.
+        </div>
+      </article>
+    </section>
+
+  </section>
+</main>
+<script>
+const params=new URLSearchParams(location.search)
+let view=params.get('view')||'page'
+function paint(){
+  document.querySelectorAll('[data-state]').forEach(n=>n.classList.toggle('on',n.dataset.state===view))
+  document.querySelectorAll('[data-view]').forEach(n=>n.classList.toggle('on',n.dataset.view===view))
+}
+document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{view=c.dataset.view;paint()}))
+paint()
+</script>
+</body>
+</html>
