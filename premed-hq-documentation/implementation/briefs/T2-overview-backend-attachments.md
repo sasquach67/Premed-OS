@@ -1,6 +1,10 @@
 # T2 · Overview — local file-capture persistence
 
 **Stage:** D · **BACKEND MISSING**
+
+> **VERIFIED EXECUTED Aug 19, 2026.** `localBlobStore.ts` and
+> `overviewFileCapture.ts` ship the device-local attachment model, and
+> `createOverviewFileCapture` persists a Story Bank entry through it.
 **Scope:** add the safe, device-local attachment model required by Overview
 Quick Capture. This is a backend/data pass only. The disabled File control and
 all Overview layout remain unchanged in this stage.

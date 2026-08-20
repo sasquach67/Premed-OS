@@ -1,6 +1,11 @@
 # T2 · Overview — File Capture fidelity
 
 **Stage:** E · **FRONTEND MISSING**  
+
+> **VERIFIED EXECUTED Aug 19, 2026 — tested in the running app, not inferred
+> from the code.** Quick Capture offers Thought · Link · File; selecting File
+> reveals the input, a chosen file's name is shown, and submitting reports
+> "Saved file to Story Bank."
 **Scope:** translate the approved Quick Capture File mode into the existing
 Overview widget, using the completed device-local attachment service. This is
 a fidelity pass only: it must not alter the attachment model, migration,

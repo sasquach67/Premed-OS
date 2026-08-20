@@ -2,6 +2,10 @@
 
 **Stage:** D · **BACKEND MISSING**
 
+> **VERIFIED EXECUTED Aug 19, 2026.** `roadmapTaskLinkV16.ts` ships the
+> migration and the store carries the one-linked-task rule. The stage marker
+> above predates the EXECUTED convention; the work was done.
+
 This is a narrow repair to the one remaining Overview data-path violation. It
 does not redraw or restyle Home. The approved Overview build in `3abdb68`
 already translated the other ruled state coverage.
