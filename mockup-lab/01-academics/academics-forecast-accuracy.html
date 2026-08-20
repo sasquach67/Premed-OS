@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Academics · Forecast accuracy ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#211e1a;--card:#2b2722;--fg:#ece3d4;--mut:#a89c8c;--dim:#7c7264;--bd:#3c352d;--muted:#322e28;--cat:#4b9cd3;--success:#6fc0a8;--warning:#e7b06a;--violet:#8c7bd4}
+*{box-sizing:border-box}
+body{margin:0;background:#191613;color:var(--fg);font:15px/1.45 Nunito,sans-serif}
+.frame{min-height:100vh;width:min(1240px,100%);margin:auto;background:var(--bg)}
+.banner{padding:18px 24px 0;background:radial-gradient(340px 200px at 88% 6%,rgba(75,156,211,.34),transparent 70%),linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%)}
+.crumb{font:800 11px 'Baloo 2';color:rgba(255,255,255,.68);letter-spacing:.05em}
+.title{margin:3px 0 0;color:#fff;font:800 30px 'Baloo 2';letter-spacing:-.4px}
+.tabs{display:flex;gap:24px;margin-top:14px}
+.tab{position:relative;padding:10px 2px 11px;color:rgba(255,255,255,.6);font:700 14px 'Baloo 2'}
+.tab.on{color:#fff;font-weight:800}
+.tab.on:after{content:"";position:absolute;inset:auto 0 -1px;height:3px;border-radius:3px 3px 0 0;background:var(--cat)}
+.subnav{display:flex;gap:8px;padding:10px 24px;background:var(--card);border-bottom:1px solid var(--bd)}
+.chip{border:1px solid var(--bd);border-radius:9px;padding:6px 10px;background:var(--muted);color:var(--mut);font:800 11px 'Baloo 2';cursor:pointer}
+.chip.on{border-color:color-mix(in srgb,var(--cat) 48%,var(--bd));color:var(--cat);background:color-mix(in srgb,var(--cat) 13%,var(--muted))}
+.wrap{max-width:1120px;margin:auto;padding:24px}
+.state{display:none}.state.on{display:block}
+.eyebrow{font:800 10px 'Baloo 2';letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 10px 26px -14px rgba(0,0,0,.55);padding:18px}
+h2{margin:3px 0;font:800 21px 'Baloo 2'}
+h3{margin:2px 0;font:800 15px 'Baloo 2'}
+p{margin:4px 0 0;color:var(--mut);font-size:12px;font-weight:700}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:15px;margin-top:15px}
+.row{display:flex;align-items:baseline;gap:12px;padding:11px 0;border-top:1px solid var(--bd)}
+.row:first-of-type{border-top:0}
+.row b{font:800 13px 'Baloo 2';min-width:120px}
+.row .plain{flex:1;color:var(--mut);font-size:11.5px;font-weight:700}
+.sample{font-size:10.5px;color:var(--dim);font-weight:700;white-space:nowrap}
+.band{display:inline-block;padding:2px 7px;border-radius:7px;background:color-mix(in srgb,var(--success) 15%,var(--muted));color:var(--success);font:800 10.5px 'Baloo 2'}
+.band.low{background:color-mix(in srgb,var(--warning) 15%,var(--muted));color:var(--warning)}
+.gate{margin-top:15px;padding:13px 15px;border-left:3px solid var(--warning);background:color-mix(in srgb,var(--warning) 7%,var(--muted));border-radius:0 10px 10px 0;font-size:11.5px;color:var(--mut);font-weight:700}
+.gate b{font-family:'Baloo 2';color:var(--fg)}
+.suppressed{padding:26px 18px;text-align:center;border:1px dashed var(--bd);border-radius:14px;margin-top:15px}
+.suppressed .mark{width:38px;height:38px;border-radius:12px;border:1px dashed var(--bd);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;color:var(--dim);font:800 17px 'Baloo 2'}
+.rail .fact{padding:11px 0;border-top:1px solid var(--bd);font-size:11px;font-weight:700;color:var(--mut)}
+.rail .fact:first-of-type{border-top:0}
+.rail .fact b{display:block;color:var(--fg);font-family:'Baloo 2'}
+.ledger-line{display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:12px;padding:10px 0;border-top:1px solid var(--bd);font-size:11.5px;font-weight:700}
+.ledger-line:first-of-type{border-top:0}
+.when{color:var(--dim);font-size:10.5px}
+.hit{color:var(--success);font:800 11px 'Baloo 2'}
+.miss{color:var(--warning);font:800 11px 'Baloo 2'}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="frame">
+  <header class="banner">
+    <div class="crumb">Academics · Planning</div>
+    <div class="title">Forecast accuracy</div>
+    <nav class="tabs"><span class="tab">Planner</span><span class="tab">Tar Heel Tracker</span><span class="tab on">Grades &amp; Archive</span></nav>
+  </header>
+  <nav class="subnav">
+    <span class="chip" data-view="earning">A · Plain-language ledger</span>
+    <span class="chip" data-view="table">B · Prediction table</span>
+    <span class="chip" data-view="suppressed">Below the gate</span>
+  </nav>
+  <section class="wrap">
+
+    <section class="state" data-state="earning">
+      <div class="grid">
+        <article class="card">
+          <div class="eyebrow">What the app claimed, and what happened</div>
+          <h2>When Premed OS says a topic is solid, it usually is.</h2>
+          <p>Every per-review prediction is scored against the attempt that followed it. Nothing here is a guess about the future — it is a record of the past.</p>
+
+          <div style="margin-top:15px">
+            <div class="row">
+              <b>"Solid"</b>
+              <span class="plain">You recalled it on 8 of the next 9 attempts.</span>
+              <span class="band">Holding up</span>
+            </div>
+            <div class="row">
+              <b>"Fading"</b>
+              <span class="plain">You recalled it on 5 of the next 11 attempts.</span>
+              <span class="band">Holding up</span>
+            </div>
+            <div class="row">
+              <b>"Likely gone"</b>
+              <span class="plain">You still recalled it on 6 of 9 attempts — this call has been pessimistic.</span>
+              <span class="band low">Runs pessimistic</span>
+            </div>
+          </div>
+
+          <div class="gate">
+            <b>Read this as a claim about the app, not about you.</b> A call that misses often means the
+            scheduling is wrong, not that you are behind. Where a band runs consistently off, Premed OS
+            says so rather than quietly continuing to make it.
+          </div>
+        </article>
+
+        <aside class="card rail">
+          <div class="eyebrow">Why this is trustworthy</div>
+          <h3>It scores the fast ones</h3>
+          <div class="fact"><b>Per-review predictions</b>Each one resolves at the next attempt, so there are about a hundred resolved calls within two weeks.</div>
+          <div class="fact"><b>Not exam forecasts</b>A monthly prediction resolves once a month and would say nothing useful for a year.</div>
+          <div class="fact"><b>Sample shown always</b>Every line carries how many attempts it rests on.</div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="state" data-state="table">
+      <article class="card">
+        <div class="eyebrow">Prediction ledger</div>
+        <h2>Every call, and how it resolved.</h2>
+        <p>The same record as A, itemised. Denser, and better for checking one topic rather than the system.</p>
+        <div style="margin-top:15px">
+          <div class="ledger-line"><span class="when">Aug 12</span><span>Synaptic transmission — called <b>fading</b></span><span class="hit">recalled ✓</span></div>
+          <div class="ledger-line"><span class="when">Aug 12</span><span>Action potentials — called <b>solid</b></span><span class="hit">recalled ✓</span></div>
+          <div class="ledger-line"><span class="when">Aug 10</span><span>Acid–base and pKa — called <b>solid</b></span><span class="miss">missed ✗</span></div>
+          <div class="ledger-line"><span class="when">Aug 9</span><span>SN1 and SN2 — called <b>likely gone</b></span><span class="hit">recalled ✓</span></div>
+          <div class="ledger-line"><span class="when">Aug 8</span><span>Work and energy — called <b>fading</b></span><span class="miss">missed ✗</span></div>
+        </div>
+        <div class="gate">
+          <b>A miss is not a failure of yours.</b> It means the app called it wrong. The ledger exists so
+          the app's confidence can be checked rather than assumed.
+        </div>
+      </article>
+    </section>
+
+    <section class="state" data-state="suppressed">
+      <article class="card">
+        <div class="eyebrow">Not enough resolved predictions yet</div>
+        <h2>There is nothing honest to report here yet.</h2>
+        <p>Accuracy needs resolved calls, and this account has 9 so far.</p>
+        <div class="suppressed">
+          <div class="mark">—</div>
+          <b style="font:800 14px 'Baloo 2'">Come back after about two weeks of reviews</b>
+          <p style="max-width:460px;margin:6px auto 0">Roughly forty resolved predictions is the point at which a hit rate stops being noise. Until then Premed OS shows nothing here — and, more importantly, <b style="color:var(--fg)">suppresses the forecasts themselves</b> rather than showing them with a caveat.</p>
+        </div>
+        <div class="gate">
+          <b>Below the gate, forecasts do not ship at all.</b> A caveat under an unreliable number is
+          still an unreliable number, and students read the number.
+        </div>
+      </article>
+    </section>
+
+  </section>
+</main>
+<script>
+const params=new URLSearchParams(location.search)
+let view=params.get('view')||'earning'
+function paint(){
+  document.querySelectorAll('[data-state]').forEach(n=>n.classList.toggle('on',n.dataset.state===view))
+  document.querySelectorAll('[data-view]').forEach(n=>n.classList.toggle('on',n.dataset.view===view))
+}
+document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{view=c.dataset.view;paint()}))
+paint()
+</script>
+</body>
+</html>
