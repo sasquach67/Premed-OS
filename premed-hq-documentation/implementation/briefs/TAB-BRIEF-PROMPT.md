@@ -89,12 +89,20 @@ stage only. Do not write past it.
   │  mockup (audit 1b).
   │  → FIDELITY BRIEF only. Do not touch the logic.
   │
-  └─ F · BUILT, MATCHING, AND RUNNING ON REAL DATA ────────────────
-     ⚠️ Every surface renders from real records or a live service.
-     Nothing on the tab is on mock or placeholder data, and every
-     integration it depends on is coded AND configured.
-     → NO BRIEF. Report that it is done and should be promoted to
-       status:"built" in variant-lab.html.
+  └─ F · BUILT — all six promotion conditions hold ────────────────
+     ⚠️ F is NOT "looks right". It is mockup-lab/VARIANT-LAB.md's
+     six conditions, every one proved:
+       1 visually matches, MEASURED via getComputedStyle, both themes
+       2 ⭐ every Button / DropdownMenuItem / ContextMenuItem has a
+         handler — run the 4fe210f audit, assert zero, paste output
+       3 ⭐ every ruled behaviour persists across a reload
+       4 ⭐ empty the store: no mock, sample or hardcoded data
+         survives. A number that outlives an empty store is a defect
+       5 ⭐ every integration coded AND configured, not just coded
+       6 committed, hash noted in the mockup's .md
+     → NO BRIEF. Promote it yourself: set status:"built" in
+       variant-lab.html and paste all six proofs. Do not leave the
+       flip to Andy — that is why nothing ever gets promoted.
 
   Whichever stage you land on, the brief carries:
 
@@ -141,7 +149,7 @@ and why the stages before it passed.
 run 1 → A  draw it          → you approve a variant
 run 2 → B  decide it        → .md records appearance
 run 3 → C  build it         → frontend + backend
-run 4 → F  done             → promote to status:"built"
+run 4 → F  done             → agent promotes + pastes six proofs
 ```
 
 **A tab already partway through skips ahead.** Academics/Class Center lands on **E — fidelity**, because behaviour shipped and the review screen was never translated. School List lands on **A**, because it is fully specced and barely drawn.
@@ -150,6 +158,6 @@ run 4 → F  done             → promote to status:"built"
 |---|---|
 | Manifest not `YES` | **Andy** — the brief still gets written, nothing gets built |
 | Spec and mockup disagree | **Andy** — spec wins, the mockup needs redrawing |
-| Stage `F` | **Andy** — flip `status:"built"` |
+| Stage `F` | **The agent** — promote it and paste the six proofs. Andy only intervenes if a proof fails |
 
 **Numbering:** `T1` Academics, then `T2`, `T3`… in the order you take the tabs. **Same number across stages** — `T2-mcat-mockup.md`, then `T2-mcat-build.md`.

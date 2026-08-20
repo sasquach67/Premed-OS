@@ -87,11 +87,52 @@ draft → proposed → approved → BUILT
 
 ### Promoting a page to `built`
 
-1. The screen exists in `src/` and **visually matches the mockup**, using `_shared/_visual-recipes.md` values literally.
-2. The change is **committed**. Note the commit in the mockup's `.md`.
-3. Set `status:"built"` on the page's registry entry in `variant-lab.html`.
+> **⚠️ REWRITTEN Aug 20, 2026 (Andy).** The old rule had three conditions and **all
+> three were visual or procedural** — screen exists, matches the drawing, commit
+> noted. Nothing about a working button, a persisted record, or a backend. **A page
+> could be promoted while every control on it was dead.** That is what happened, and
+> it is what this rewrite exists to stop.
+>
+> Andy: *"Being built assumes that not only do its visual effects appear on the app,
+> but also all these backend interfaces, features, and buttons all work."*
+
+**`built` is terminal and it is a claim about the whole surface, not its appearance.**
+All six conditions must hold. **Each one is provable — if you cannot show the proof,
+the page is not `built`.**
+
+| # | Condition | Proof required |
+|---|---|---|
+| **1** | **Visually matches the drawing** | Measured, not eyeballed. Serve the lab standalone (`cd mockup-lab && python3 -m http.server 4599`), read the mockup's own rule for each surface, read `getComputedStyle` in the running app, and compare **the ladder** — `bg → muted → card` must step the same way. Both themes. `_shared/_visual-recipes.md` values used literally |
+| **2** | ⭐ **Every control works** | Run the inert-control audit from `4fe210f`: script every `Button`, `DropdownMenuItem` and `ContextMenuItem` on the surface and assert **zero without a handler**. A control that is deliberately disabled must say why in the code. **Paste the audit output** |
+| **3** | ⭐ **Every ruled behaviour actually persists** | For each behaviour the spec rules, do it in the app and reload. If it does not survive the reload it is not built. Name the store slice or service each one writes to |
+| **4** | ⭐ **No mock, placeholder, sample or hardcoded data** | Empty the store and load the surface. Every panel shows its real empty state. **A number that survives an empty store is a defect** — this is the check that catches a component lying when it has nothing to show |
+| **5** | ⭐ **Every integration it depends on is coded AND configured** | A fully-coded but unconfigured integration is **a gap, not done**. Say what the user sees today versus after configuration. If it needs an account, a console, an OAuth client or an `.env` value, that is an **ANDY CHECKLIST** item and the page stays unpromoted until he does it |
+| **6** | **Committed, and the commit noted in the mockup's `.md`** | The hash |
+
+**Then set `status:"built"` on the page's registry entry in `variant-lab.html`.**
+
+### ⭐ Who flips it
+
+**The agent flips it, not Andy** — changed Aug 20, 2026. The old workflow assigned the
+flip to Andy and it therefore never happened: Overview, Syllabus import, the Forgetting
+curve and the Exam-plan builder all shipped code while still reading `approved` or
+`proposed` in the lab.
+
+**Every one of the six conditions is mechanically checkable, so a human gate adds delay
+and no judgement.** The agent promotes the page in the same commit as the work, and
+**pastes all six proofs in its report.** Andy's judgement is still required for the
+three things that genuinely need it: picking a variant, flipping a `BUILD-MANIFEST`
+row, and resolving a spec-versus-spec conflict.
+
+⚠️ **A promotion without its six proofs is reverted, not questioned.**
 
 **Currently `built`:** Landing · auth · merge (`67155de`) · Class types and Empty states (`cb963a3`).
+
+⚠️ **Nothing else in the lab has been assessed against the six conditions.** The pages
+carrying shipped code but still marked `approved` or `proposed` — Overview, Daily ·
+Class Center, Class hub, Assignments, Review session, Planner, Syllabus import,
+Forgetting curve, Exam-plan builder, Tar Heel Tracker, Grades & Archive — are
+**unassessed, not failed.** Each needs one promotion audit.
 
 ---
 

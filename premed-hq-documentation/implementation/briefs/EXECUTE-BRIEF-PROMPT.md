@@ -14,6 +14,16 @@ EXECUTE-BRIEF-PROMPT.md  + [TAB]  →  does exactly what that brief says
 >
 > **Read the brief. That is the whole job between the two pastes.** Most take a minute; skim the audit and the scope line and move on.
 
+> **⚠️ DO NOT BATCH THESE. Added Aug 20, 2026.** Andy: *"I would tell it to repeat
+> it every week for five iterations unless something requires my attention."*
+> **That deletes the review point five times over** and is the same thing as merging
+> the two prompts, which the box above forbids. It also compounds the router's
+> scatter: `TAB-BRIEF-PROMPT` re-scans the whole tab each run, so five iterations
+> lands on five unrelated features rather than driving one to done.
+>
+> **One write, one read, one execute. Then stop.** If a pass needs no decision from
+> you, the read costs a minute.
+
 > **⚠️ If this runner ever needs stage-specific instructions added to it, the brief was incomplete.** Fix the brief, not the runner. **Rulings, constraints, and settled conflicts belong in the brief** — that is what makes it reviewable before any work starts.
 
 ---
@@ -80,15 +90,61 @@ WHILE WORKING
   build it.
 - If the spec and a mockup disagree, the SPEC wins. Say so.
 
-IF YOU HIT A BLOCKER
-- Name it and keep working on everything else in scope.
-- Do not stop the whole pass for one obstacle.
-- Do not guess a decision the brief left open. Say the brief was
-  incomplete and name what is missing.
+IF YOU HIT A BLOCKER — two kinds, and they are handled differently.
+
+  TECHNICAL BLOCKER — something is missing, broken, or unbuilt.
+  - Name it and keep working on everything else in scope.
+  - Do not stop the whole pass for one obstacle.
+  - Do not guess a decision the brief left open. Say the brief was
+    incomplete and name what is missing.
+
+  ⭐ ANDY DECISION — STOP. Do not work around it, do not pick a
+  reasonable default, and do not bury it in the final report.
+  Put it at the TOP of your reply, alone, and wait.
+  ⚠️ This overrides "do not stop the whole pass" above. Added
+  Aug 20, 2026 because the old text sent every question to the
+  bottom of a report Andy never reached.
+
+  It is an Andy decision if it is any of these:
+    - which A/B/C variant wins
+    - a BUILD-MANIFEST row that is not YES
+    - the spec and a mockup disagree, or two specs disagree
+    - ⭐ THE CONTENT OF A THING, not its shape. What an AI prompt
+      actually says · what copy a student reads · what a generated
+      artifact contains · what a default value should be · what
+      goes in a template. The workflow can rule the STRUCTURE of a
+      feature; it cannot invent Andy's judgement about what belongs
+      inside it. Building a Generate button without asking what it
+      generates is the failure this clause exists to prevent.
+    - anything that would create or migrate a persisted entity
+    - anything needing an account, console, OAuth client, API key
+      or .env value — emit an ANDY CHECKLIST and stop that item
+
+  If you are unsure which kind it is, it is an Andy decision.
 
 WHEN DONE
 - Work through the brief's "done when" list and report each item
   pass or fail. Do not claim completion with items outstanding.
+
+⭐ PROMOTION CHECK — run this on every surface the brief touched.
+  Read mockup-lab/VARIANT-LAB.md → "Promoting a page to `built`".
+  Six conditions. Test each and report pass/fail with its proof:
+    1 visual match, MEASURED with getComputedStyle, both themes
+    2 ⭐ inert-control audit — script every Button, DropdownMenuItem
+      and ContextMenuItem on the surface, assert ZERO without a
+      handler (the 4fe210f audit). Paste the output.
+    3 ⭐ every ruled behaviour survives a page reload
+    4 ⭐ empty the store and load the surface — real empty states
+      only. A number that survives an empty store is a defect.
+    5 ⭐ every integration coded AND CONFIGURED. Coded-but-
+      unconfigured is a gap. Say what Andy sees today vs after.
+    6 committed, hash noted in the mockup's .md
+  ALL SIX PASS → set status:"built" in variant-lab.html yourself, in
+  this same commit, and paste the six proofs in your report.
+  ANY FAIL → leave the status alone and say which failed and why.
+  ⚠️ Do not promote on appearance. `built` is terminal: a built page
+  becomes the reference the app is checked against, so a premature
+  flip locks in a defect.
 - Run tests and the production build if the brief touched src/.
 - Make the brief's commit. Unrelated working-tree changes commit
   separately.
@@ -107,7 +163,7 @@ run EXECUTE           → mockups drawn
 run TAB-BRIEF-PROMPT  → stage C · brief written
 run EXECUTE           → built
 run TAB-BRIEF-PROMPT  → stage F · done
-   you flip status:"built"
+   agent promotes + pastes six proofs
 ```
 
 **Three things only you do:** pick a variant · flip a `BUILD-MANIFEST` row · resolve a spec-versus-spec conflict.
