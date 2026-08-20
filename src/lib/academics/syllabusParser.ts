@@ -73,6 +73,52 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
   return { sourceName, sourceKind, text, items, searched, scanDetected, documentKind, structureFound, numberedItems }
 }
 
+
+interface PdfTextItem {
+  str?: string
+  hasEOL?: boolean
+  /** [a, b, c, d, x, y] — index 5 is the baseline y in PDF user space. */
+  transform?: number[]
+}
+
+/**
+ * Rebuild a page's LINES from pdf.js text items.
+ *
+ * ⚠️ This function exists because joining every item with a space — which is
+ * what this did until Aug 20 2026 — collapses an entire page into one string.
+ * `parseSyllabusText` is line-based, so a two-page syllabus became two lines
+ * and could yield at most two items. A real CHEM 262 syllabus with six dates,
+ * five weight rows and four units extracted **one date and nothing else**.
+ *
+ * pdf.js emits items in reading order with a baseline y per item. Items sharing
+ * a baseline are one visual line, so they are grouped by y within a tolerance
+ * and joined; a new y starts a new line. `hasEOL` is honoured where the build
+ * provides it, since it is the library's own answer to the same question.
+ */
+export function pdfTextToLines(items: PdfTextItem[], tolerance = 2): string {
+  const lines: string[] = []
+  let current: string[] = []
+  let currentY: number | undefined
+
+  const flush = () => {
+    const text = current.join(' ').replace(/\s+/g, ' ').trim()
+    if (text) lines.push(text)
+    current = []
+  }
+
+  for (const item of items) {
+    const str = typeof item.str === 'string' ? item.str : ''
+    const y = Array.isArray(item.transform) ? item.transform[5] : undefined
+
+    if (currentY != null && y != null && Math.abs(y - currentY) > tolerance) flush()
+    if (y != null) currentY = y
+    if (str) current.push(str)
+    if (item.hasEOL) { flush(); currentY = undefined }
+  }
+  flush()
+  return lines.join('\n')
+}
+
 export async function extractSyllabusFile(file: File): Promise<SyllabusProposal> {
   const name = file.name || 'Syllabus'
   const type = file.type.toLowerCase()
@@ -90,7 +136,7 @@ export async function extractSyllabusFile(file: File): Promise<SyllabusProposal>
     const pages: string[] = []
     for (let number = 1; number <= pdf.numPages; number += 1) {
       const content = await (await pdf.getPage(number)).getTextContent()
-      pages.push(content.items.map((item) => 'str' in item ? item.str : '').join(' '))
+      pages.push(pdfTextToLines(content.items as PdfTextItem[]))
     }
     return parseSyllabusText(pages.join('\n'), name, 'pdf')
   }
