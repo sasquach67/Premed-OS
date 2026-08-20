@@ -132,6 +132,15 @@ export async function extractSyllabusFile(file: File): Promise<SyllabusProposal>
   }
   if (type === 'application/pdf' || /\.pdf$/i.test(name)) {
     const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+    // ⚠️ Without this, `getDocument` throws `No "GlobalWorkerOptions.workerSrc"
+    // specified` in a real browser — it does NOT fall back to a same-thread
+    // worker. PDF import was dead in the app while every jsdom test passed,
+    // because Node resolves the worker by a different path. The `?url` import
+    // lets Vite fingerprint and serve the worker in both dev and build.
+    if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+      const workerUrl = (await import('pdfjs-dist/legacy/build/pdf.worker.mjs?url')).default
+      pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
+    }
     const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise
     const pages: string[] = []
     for (let number = 1; number <= pdf.numPages; number += 1) {
