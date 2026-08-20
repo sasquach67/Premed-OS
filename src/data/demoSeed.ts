@@ -7,6 +7,15 @@ import type {
 
 const DAY = 86_400_000
 
+/** One slot per class, so no two demo courses collide on the same hour. */
+const MEETING_PATTERN = [
+  { days: 'MWF', time: '9:05–9:55 AM' },
+  { days: 'Tue/Thu', time: '11:00 AM–12:15 PM' },
+  { days: 'MWF', time: '10:10–11:00 AM' },
+  { days: 'Tue/Thu', time: '2:00–3:15 PM' },
+  { days: 'MWF', time: '1:25–2:15 PM' },
+]
+
 export function createDemoData(seedTime = Date.now()): AppData {
   const data = structuredClone(createSeedData())
   const now = new Date(seedTime)
@@ -224,7 +233,12 @@ export function createDemoData(seedTime = Date.now()): AppData {
       id: `demo-workspace-${item.id}`, courseId: item.id, color: ['green', 'orange', 'blue', 'purple'][order] as 'green' | 'orange' | 'blue' | 'purple',
       type: item.code === 'ENGL 105' ? 'writing' : item.bcpm ? 'stem' : 'general',
       icon: item.code === 'ENGL 105' ? 'pen' : item.bcpm ? 'brain' : 'book', status: 'active', instructor: item.code === 'ENGL 105' ? 'Prof. Maya Bell' : order === 0 ? 'Dr. Elena Ruiz' : undefined,
-      meetingDays: order % 2 ? 'Tue/Thu' : 'MWF', meetingTime: order % 2 ? '11:00 AM–12:15 PM' : '10:10–11:00 AM',
+      // Distinct slots per class. The old rule gave every MWF class the same
+      // 10:10 hour, so the daily hero triple-booked the student — believable
+      // demo data matters here, because this is the surface people judge the
+      // app's honesty by.
+      meetingDays: MEETING_PATTERN[order % MEETING_PATTERN.length].days,
+      meetingTime: MEETING_PATTERN[order % MEETING_PATTERN.length].time,
       location: order === 0 ? 'Coker Hall 201' : undefined,
       syllabusUrl: item.id === courses[3].id ? 'https://canvas.unc.edu/' : undefined,
       createdAt: stamp(-30), updatedAt: at, order,

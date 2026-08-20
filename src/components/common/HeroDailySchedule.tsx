@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { RefreshCw, Wifi } from 'lucide-react'
+import { useStore } from '@/store/store'
 import { useCalendarSync } from '@/hooks/useCalendarSync'
 import type { NormalizedScheduleEvent } from '@/lib/types'
 import {
-  createMockDailyEvents, eventState, formatClock, formatEventTimeRange, isSameLocalDay,
+  classScheduleEvents, eventState, formatClock, formatEventTimeRange, isSameLocalDay,
   minuteOfDay, normalizeTimedEvents, resolveTimelineRange, timelinePercent,
   type TimedScheduleEvent, type TimelineEventState,
 } from '@/lib/schedule'
@@ -41,15 +42,23 @@ export function useHeroScheduleSource() {
     void sync.connectSilent(date)
   }, [date, freshCalendarCache, key, sync])
 
-  const mockEvents = useMemo(() => createMockDailyEvents(date), [key])
-  const shouldUseMock = !sync.calendar.enabled || (!freshCalendarCache && sync.calendar.useMockPreview)
-  const events = freshCalendarCache ? sync.calendar.cachedEvents : shouldUseMock ? mockEvents : []
+  // Precedence, most trustworthy first: a live calendar, then the student's own
+  // class records, then nothing. There is deliberately no fourth option — the
+  // hero previously invented a day when it had neither.
+  const workspaces = useStore((state) => state.academics.classCenter.workspaces)
+  const courses = useStore((state) => state.courses)
+  const derived = useMemo(
+    () => classScheduleEvents(workspaces, courses, date),
+    [workspaces, courses, key],
+  )
+  const events = freshCalendarCache ? sync.calendar.cachedEvents : derived
 
   return {
     ...sync,
     events,
-    source: freshCalendarCache ? 'google' : shouldUseMock ? 'mock' : 'empty',
-    sourceLabel: freshCalendarCache ? 'Google Calendar' : shouldUseMock ? 'Class schedule' : 'Calendar',
+    source: freshCalendarCache ? 'google' : derived.length ? 'class-records' : 'empty',
+    // Never "your calendar" for a derived day — the label says which it is.
+    sourceLabel: freshCalendarCache ? 'Google Calendar' : derived.length ? 'From your class records' : 'Calendar',
     stale: sync.calendar.enabled && !freshCalendarCache && sync.calendar.cachedEvents.length > 0,
   }
 }

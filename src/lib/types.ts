@@ -1111,6 +1111,10 @@ export interface CalendarSettings {
   timeFormat: '12h' | '24h'
   showLocations: boolean
   showAllDayEvents: boolean
+  /** @deprecated Read by nothing since Aug 19 2026. The hero used it to show
+   *  fabricated events when no calendar was connected; it now derives the day
+   *  from ClassWorkspace records or shows an empty day. Kept so existing
+   *  blobs stay valid rather than forcing a migration to drop a boolean. */
   useMockPreview: boolean
 }
 

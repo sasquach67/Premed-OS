@@ -482,7 +482,7 @@ function CalendarIntegrationSection({ onMessage }: { onMessage: (msg: string) =>
           <div className="grid gap-3 sm:grid-cols-3">
             <ToggleRow label="Locations" checked={calendar.showLocations} onChange={(v) => update((d) => { d.settings.calendar.showLocations = v })} />
             <ToggleRow label="All-day" checked={calendar.showAllDayEvents} onChange={(v) => update((d) => { d.settings.calendar.showAllDayEvents = v })} />
-            <ToggleRow label="Mock preview" checked={calendar.useMockPreview} onChange={(v) => update((d) => { d.settings.calendar.useMockPreview = v })} />
+            
           </div>
 
           <div className="rounded-xl border border-border bg-muted/25 px-3 py-2 text-xs text-muted-foreground">

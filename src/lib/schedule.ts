@@ -30,38 +30,122 @@ function localIsoFor(date: Date, hour: number, minute = 0) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute).toISOString()
 }
 
-export function createMockDailyEvents(date = new Date()): NormalizedScheduleEvent[] {
-  return [
-    {
-      id: 'mock-1',
-      title: 'CHEM 101 Lecture',
-      start: localIsoFor(date, 9),
-      end: localIsoFor(date, 9, 50),
-      location: 'Genome Sciences 100',
-      calendarId: 'mock',
+/**
+ * Today's classes, derived from the student's own `ClassWorkspace` records.
+ *
+ * This replaced a set of hard-coded events — `CHEM 101 Lecture`, a
+ * `Neuroscience Seminar`, a `Clinical Shift` — that the hero presented as the
+ * student's day and labelled "Class schedule". None of them were real, and the
+ * plausibility is what made it dangerous: a fabricated day is hardest to catch
+ * when it looks like a day you might have had.
+ *
+ * ⚠️ A workspace whose meeting pattern cannot be parsed contributes **nothing**.
+ * It is never rounded to a plausible hour — an invented 9am class is the bug
+ * this function exists to remove.
+ */
+const DAY_TOKENS: Array<{ match: RegExp; day: number }> = [
+  { match: /^su/i, day: 0 },
+  { match: /^m/i, day: 1 },
+  { match: /^tu/i, day: 2 },
+  { match: /^w/i, day: 3 },
+  { match: /^th/i, day: 4 },
+  { match: /^f/i, day: 5 },
+  { match: /^sa/i, day: 6 },
+]
+
+/** `MWF`, `Tue/Thu`, `Mon, Wed` → weekday numbers. Unrecognised input yields none. */
+export function parseMeetingDays(value: string | undefined): number[] {
+  if (!value?.trim()) return []
+  const days = new Set<number>()
+  const separated = /[\/,\s]/.test(value)
+
+  if (separated) {
+    for (const token of value.split(/[\/,\s]+/).filter(Boolean)) {
+      const hit = DAY_TOKENS.find((entry) => entry.match.test(token))
+      if (hit) days.add(hit.day)
+    }
+    return [...days].sort((a, b) => a - b)
+  }
+
+  // Compact forms like `MWF`, `TTh`, `TR`. A bare `T` is ambiguous on its own,
+  // so two-letter tokens are consumed first and `R` is read as Thursday, which
+  // is the convention that exists precisely to remove the ambiguity.
+  const PAIRS: Array<[string, number]> = [['su', 0], ['tu', 2], ['th', 4], ['sa', 6]]
+  const SINGLES: Record<string, number> = { m: 1, t: 2, w: 3, r: 4, f: 5 }
+
+  // Every character must be a day token. `TBD` would otherwise parse as
+  // Tuesday and put a class on the student's Tuesday that nobody scheduled —
+  // a partial match means the string was not understood at all.
+  let index = 0
+  while (index < value.length) {
+    const pair = value.slice(index, index + 2).toLowerCase()
+    const matched = PAIRS.find(([token]) => token === pair)
+    if (matched) { days.add(matched[1]); index += 2; continue }
+    const single = SINGLES[value[index].toLowerCase()]
+    if (single == null) return []
+    days.add(single)
+    index += 1
+  }
+  return [...days].sort((a, b) => a - b)
+}
+
+/** `10:10–11:00 AM` · `11:00 AM–12:15 PM` → 24h start/end minutes. */
+export function parseMeetingTime(value: string | undefined): { start: number; end: number } | undefined {
+  if (!value?.trim()) return undefined
+  const parts = value.split(/[–—-]/).map((part) => part.trim()).filter(Boolean)
+  if (parts.length !== 2) return undefined
+
+  const meridiemOf = (text: string) => /pm/i.test(text) ? 'pm' : /am/i.test(text) ? 'am' : undefined
+  const endMeridiem = meridiemOf(parts[1])
+
+  const toMinutes = (text: string, fallback?: 'am' | 'pm') => {
+    const match = /(\d{1,2}):(\d{2})/.exec(text)
+    if (!match) return undefined
+    let hour = Number(match[1])
+    const minute = Number(match[2])
+    const meridiem = meridiemOf(text) ?? fallback
+    if (meridiem === 'pm' && hour < 12) hour += 12
+    if (meridiem === 'am' && hour === 12) hour = 0
+    return hour * 60 + minute
+  }
+
+  const start = toMinutes(parts[0], endMeridiem)
+  const end = toMinutes(parts[1])
+  if (start == null || end == null || end <= start) return undefined
+  return { start, end }
+}
+
+export function classScheduleEvents(
+  workspaces: Array<{ courseId: string; meetingDays?: string; meetingTime?: string; location?: string; status?: string }>,
+  courses: Array<{ id: string; code: string; title: string }>,
+  date = new Date(),
+): NormalizedScheduleEvent[] {
+  const weekday = date.getDay()
+  const events: NormalizedScheduleEvent[] = []
+
+  for (const workspace of workspaces) {
+    if (workspace.status && workspace.status !== 'active') continue
+    const days = parseMeetingDays(workspace.meetingDays)
+    if (!days.includes(weekday)) continue
+    const time = parseMeetingTime(workspace.meetingTime)
+    // No usable time means no event. Placing it at a guessed hour would put a
+    // class on the student's day that they never told us about.
+    if (!time) continue
+    const course = courses.find((item) => item.id === workspace.courseId)
+    if (!course) continue
+
+    events.push({
+      id: `class-${workspace.courseId}`,
+      title: `${course.code} ${course.title}`.trim(),
+      start: localIsoFor(date, Math.floor(time.start / 60), time.start % 60),
+      end: localIsoFor(date, Math.floor(time.end / 60), time.end % 60),
+      location: workspace.location,
+      calendarId: 'class-records',
       color: 'var(--cat-gpa)',
       status: 'confirmed',
-    },
-    {
-      id: 'mock-2',
-      title: 'Neuroscience Seminar',
-      start: localIsoFor(date, 11),
-      end: localIsoFor(date, 12, 15),
-      calendarId: 'mock',
-      color: 'var(--cat-research)',
-      status: 'confirmed',
-    },
-    {
-      id: 'mock-3',
-      title: 'Clinical Shift',
-      start: localIsoFor(date, 15),
-      end: localIsoFor(date, 19),
-      location: 'UNC Medical Center',
-      calendarId: 'mock',
-      color: 'var(--cat-clinical)',
-      status: 'confirmed',
-    },
-  ]
+    })
+  }
+  return events.sort((a, b) => a.start.localeCompare(b.start))
 }
 
 export function isSameLocalDay(a: Date, b: Date) {
