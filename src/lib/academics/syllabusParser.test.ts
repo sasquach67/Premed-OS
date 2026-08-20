@@ -14,7 +14,7 @@ Attendance is required. Office hours Tuesday 2 PM.`
   it('extracts deterministic, attributable syllabus facts without a key', () => {
     const proposal = parseSyllabusText(text)
     expect(proposal.items.some((item) => item.kind === 'identity' && item.label === 'CHEM 262')).toBe(true)
-    expect(proposal.items.some((item) => item.kind === 'exams' && item.value?.includes('October 14'))).toBe(true)
+    expect(proposal.items.some((item) => item.kind === 'exams' && item.value === '2026-10-14')).toBe(true)
     expect(proposal.items.filter((item) => item.kind === 'weights')).toHaveLength(3)
     expect(proposal.items.find((item) => item.kind === 'units')?.evidence.location).toBe('line 2')
     expect(weightGap(proposal.items)).toBe(0)

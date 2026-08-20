@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import parserSource from '@/lib/academics/syllabusParser.ts?raw'
-import { extractSyllabusFile, pdfTextToLines, weightGap } from '@/lib/academics/syllabusParser'
+import { extractSyllabusFile, pdfTextToLines, toIsoDate, weightGap } from '@/lib/academics/syllabusParser'
+import { daysUntil } from '@/lib/date'
 
 /**
  * A genuine two-page PDF — real xref table, real text streams — inlined as
@@ -85,13 +86,13 @@ describe('a real two-page syllabus PDF', () => {
   it('finds all three exam dates', async () => {
     const proposal = await extractSyllabusFile(syllabusFile())
     const exams = proposal.items.filter((item) => item.kind === 'exams').map((item) => item.value)
-    expect(exams).toEqual(['October 6, 2026', 'November 10, 2026', 'December 12, 2026'])
+    expect(exams).toEqual(['2026-10-06', '2026-11-10', '2026-12-12'])
   }, 30000)
 
   it('finds all three assignment deadlines', async () => {
     const proposal = await extractSyllabusFile(syllabusFile())
     const due = proposal.items.filter((item) => item.kind === 'deadlines').map((item) => item.value)
-    expect(due).toEqual(['September 8, 2026', 'September 22, 2026', 'October 20, 2026'])
+    expect(due).toEqual(['2026-09-08', '2026-09-22', '2026-10-20'])
   }, 30000)
 
   it('finds every grade weight, and they sum to 100%', async () => {
@@ -131,5 +132,47 @@ describe('pdfjs worker configuration', () => {
   it('resolves the worker through a bundler-aware ?url import, not a CDN string', () => {
     expect(source).toContain("pdfjs-dist/legacy/build/pdf.worker.mjs?url")
     expect(source).not.toMatch(/workerSrc\s*=\s*['"]https?:/)
+  })
+})
+
+// ── Dates must be stored the way the rest of the app reads them ─────────────
+// `date.ts` does `iso.slice(0, 10)`, so a display string like "September 8,
+// 2026" became `new Date('September T12:00:00')` = Invalid Date. Imported
+// deadlines rendered as "Date TBD" with no countdown, and sorting compared
+// month names. Caught by walking the real import in a browser, not by a test.
+describe('syllabus dates are normalised to ISO', () => {
+  it('stores yyyy-MM-dd, not the display text', async () => {
+    const proposal = await extractSyllabusFile(syllabusFile())
+    const dated = proposal.items.filter((item) => item.kind === 'exams' || item.kind === 'deadlines')
+    expect(dated.length).toBe(6)
+    for (const item of dated) {
+      expect(item.value).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      expect(daysUntil(item.value)).not.toBeNull()
+    }
+  })
+
+  it('orders by real chronology rather than by month name', async () => {
+    const proposal = await extractSyllabusFile(syllabusFile())
+    const values = proposal.items
+      .filter((item) => item.kind === 'exams' || item.kind === 'deadlines')
+      .map((item) => item.value as string)
+    expect(values).toEqual([...values].sort())
+    expect(values[0]).toBe('2026-09-08')
+    expect(values[values.length - 1]).toBe('2026-12-12')
+  })
+
+  it('drops the preposition the date left behind', async () => {
+    const proposal = await extractSyllabusFile(syllabusFile())
+    const labels = proposal.items.filter((i) => i.kind === 'exams').map((i) => i.label)
+    expect(labels).toContain('Midterm Exam 1')
+    expect(labels).toContain('Final Exam')
+    for (const label of labels) expect(label).not.toMatch(/\b(?:due|on|by)$/i)
+  })
+
+  it('uses a year from elsewhere in the document when the line omits it', () => {
+    expect(toIsoDate('Oct 6', 2026)).toBe('2026-10-06')
+    expect(toIsoDate('September 8, 2026')).toBe('2026-09-08')
+    // No year anywhere: refuse rather than invent one.
+    expect(toIsoDate('Oct 6')).toBeUndefined()
   })
 })

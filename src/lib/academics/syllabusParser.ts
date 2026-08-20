@@ -34,6 +34,45 @@ const headers: Array<[SyllabusKind, RegExp]> = [
   ['logistics', /\b(?:office hours|meets?|meeting|room|location|instructor|professor)\b/i],
 ]
 
+const MONTH_INDEX: Record<string, number> = {
+  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+  jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+}
+
+/** Turn a matched `September 8, 2026` into `2026-09-08`.
+ *
+ *  The whole app stores dates as yyyy-MM-dd and `date.ts` reads them with
+ *  `iso.slice(0, 10)`. Handing it display text produced `new Date('September
+ *  T12:00:00')` — Invalid Date — so every imported deadline rendered as
+ *  `Date TBD` with no countdown, and sorting compared month NAMES. A syllabus
+ *  full of real dates looked empty.
+ *
+ *  A syllabus often writes `Oct 6` with no year, so the caller passes the year
+ *  it found elsewhere in the document. With no year available we return
+ *  undefined rather than guessing — the row stays, marked low confidence, for
+ *  the student to fill in. */
+export function toIsoDate(raw: string, yearHint?: number): string | undefined {
+  const match = raw.match(/^([A-Za-z]+)\.?\s+(\d{1,2})(?:,?\s+(20\d{2}))?$/)
+  if (!match) return undefined
+  const month = MONTH_INDEX[match[1].slice(0, 3).toLowerCase()]
+  const day = Number(match[2])
+  const year = match[3] ? Number(match[3]) : yearHint
+  if (!month || !day || day > 31 || !year) return undefined
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+/** `Problem Set 1 due` / `Midterm Exam 1 on` — removing the date leaves the
+ *  preposition that introduced it dangling on the end of the label the student
+ *  reads on every card. */
+function trimConnectives(label: string): string {
+  let out = label.trim()
+  for (;;) {
+    const next = out.replace(/[\s,]*\b(?:due|on|by|is|at|scheduled|held)\b[\s,]*$/i, '').replace(/[—:–\-]+$/, '').trim()
+    if (next === out) return out
+    out = next
+  }
+}
+
 function lineEvidence(line: string, index: number): SyllabusEvidence {
   return { quote: line.trim(), location: `line ${index + 1}` }
 }
@@ -48,6 +87,8 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
   const searched: Record<SyllabusKind, string> = {
     identity: 'No course identity found', exams: 'No exam dates found', weights: 'No grade categories found', units: 'No week or unit headings found', deadlines: 'No assignment deadlines found', policies: 'No attendance, late, drop, or replacement policy found', logistics: 'No meeting, instructor, or office-hours details found',
   }
+  // Syllabi date the term at the top (`Fall 2026`) and then write `Oct 6`.
+  const yearHint = Number(text.match(/\b20\d{2}\b/)?.[0]) || undefined
   lines.forEach((line, index) => {
     const evidence = lineEvidence(line, index)
     const course = line.match(/\b([A-Z]{2,5}\s?\d{2,4}[A-Z]?)\s*(?:[-:–—]\s*|\s{2,})(.{3,})/)
@@ -58,7 +99,9 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
     if (date) {
       const isExam = /\b(?:exam|midterm|final|test)\b/i.test(line)
       const kind: SyllabusKind = isExam ? 'exams' : 'deadlines'
-      push(items, kind, line.replace(date[0], '').replace(/[—:–-]+$/, '').trim() || (isExam ? 'Exam' : 'Deadline'), date[0], 'high', evidence)
+      const iso = toIsoDate(date[0], yearHint)
+      const label = trimConnectives(line.replace(date[0], '')) || (isExam ? 'Exam' : 'Deadline')
+      push(items, kind, label, iso ?? date[0], iso ? 'high' : 'low', evidence)
       searched[kind] = isExam ? 'Exam dates found' : 'Assignment deadlines found'
     }
     for (const [kind, pattern] of headers) if (pattern.test(line)) { push(items, kind, line, undefined, kind === 'policies' ? 'low' : 'high', evidence); searched[kind] = `${kind[0].toUpperCase()}${kind.slice(1)} found` }
