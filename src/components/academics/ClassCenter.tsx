@@ -402,7 +402,27 @@ function ClassCenterDashboard({
   const [searchParams, setSearchParams] = useSearchParams()
   const scopedCourseId = searchParams.get('importFor')
   const scopedCourse = scopedCourseId ? courses.find((course) => course.id === scopedCourseId) : undefined
-  const reimporting = searchParams.get('reimport') === '1' && Boolean(scopedCourse)
+  /** A second import into a class that ALREADY holds syllabus-derived records is
+   *  a re-import, whether or not the URL says so.
+   *
+   *  This used to read the `reimport=1` flag alone, and only the "Re-import" action
+   *  on an existing file row ever set it. Coming in through the ordinary "Import
+   *  syllabus" entry — which is what the Class Center's own recommendation card
+   *  links to — ran the plain add path and appended a second copy of everything:
+   *  6 assignments became 12, including two `Midterm Exam 1` rows carrying
+   *  DIFFERENT dates. The student is then reading a class with two conflicting
+   *  midterms and no indication which is real.
+   *
+   *  The diff machinery for this already existed and was already tested; it was
+   *  simply never reached. Deciding from the data rather than the URL means the
+   *  keep/accept review appears whenever there is something to lose. */
+  const scopedHasSyllabusData = Boolean(scopedCourse) && (
+    data.topics.some((item) => item.courseId === scopedCourse?.id)
+    || data.assignments.some((item) => item.courseId === scopedCourse?.id)
+    || data.gradeCategories.some((item) => item.courseId === scopedCourse?.id)
+  )
+  const reimporting = Boolean(scopedCourse)
+    && (searchParams.get('reimport') === '1' || scopedHasSyllabusData)
   const reimportFileId = searchParams.get('reimportFile') ?? undefined
   const [draggedClassId, setDraggedClassId] = useState<string | null>(null)
   const [dragOverClassId, setDragOverClassId] = useState<string | null>(null)
