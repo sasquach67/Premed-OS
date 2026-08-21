@@ -876,15 +876,18 @@ function ClassCard({
           ? 'grid items-center gap-4 p-3 md:grid-cols-[minmax(0,1.2fr)_auto_minmax(160px,.7fr)_auto]'
           : 'flex h-full flex-col space-y-3 p-3',
       )}>
-        <div className="min-w-0">
-          <p className="flex items-center gap-2 font-display text-base font-bold leading-tight">
-            <span className={cn('size-2.5 shrink-0 rounded-full', accent.dot)} aria-hidden="true" />
-            <span>{row.courseCode || row.nickname || 'Untitled class'}</span>
-            <span className="ml-auto whitespace-nowrap font-sans text-sm font-bold tabular-nums text-muted-foreground">
-              {row.grade || '—'}{percent == null ? '' : ` · ${percent}%`}
-            </span>
-          </p>
-          <p className="mt-1 line-clamp-1 text-sm font-semibold text-muted-foreground">{row.courseTitle || row.nickname || 'Add class details'}</p>
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 font-display text-base font-bold leading-tight">
+              <span className={cn('size-2.5 shrink-0 rounded-full', accent.dot)} aria-hidden="true" />
+              <span>{row.courseCode || row.nickname || 'Untitled class'}</span>
+            </p>
+            <p className="mt-1 line-clamp-1 text-sm font-semibold text-muted-foreground">{row.courseTitle || row.nickname || 'Add class details'}</p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className={cn('font-display text-lg font-extrabold leading-none', gradeTone(row.grade))}>{row.grade || '—'}</p>
+            {percent != null && <p className="mt-0.5 text-[10px] font-bold tabular-nums text-muted-foreground">{percent}%</p>}
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-1.5 text-xs font-bold">
@@ -2463,6 +2466,13 @@ function coursePercent(courseId: string, data: ClassCenterViewData) {
   const earned = graded.reduce((sum, assignment) => sum + (assignment.pointsEarned ?? 0), 0)
   const possible = graded.reduce((sum, assignment) => sum + (assignment.pointsPossible ?? 0), 0)
   return possible ? Math.round((earned / possible) * 1000) / 10 : null
+}
+
+function gradeTone(grade: Course['grade']) {
+  if (/^A/.test(grade)) return 'text-success'
+  if (/^B/.test(grade)) return 'text-warning'
+  if (/^[CDF]/.test(grade)) return 'text-destructive'
+  return 'text-muted-foreground'
 }
 
 function normalizedTopicStatus(status: TopicStatus) {
