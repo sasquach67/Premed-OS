@@ -1,335 +1,335 @@
-# T1 · Academics — source-grounded Revised Notes V1
+# T1 · Academics — build the selected output-first Materials intake
 
 **Stage:** C · DECIDED, NOT BUILT
+**Status:** implementation brief. This is one bounded Materials-flow build,
+not permission to rebuild the whole Academics tab or to replace later
+annotation-backed app decisions.
 
-**Scope:** Build the missing **Materials → select sources → Revised Notes**
-vertical slice: selector, generation request, citation-closed result, durable
-record, and result viewer. This is not a rewrite of Materials, Study Guide,
-Flashcards, Canvas, or lecture capture.
+## 0. Outcome
 
-Revised Notes is a distinct output. It repairs a student's lecture record from
-the course material they selected; it is neither a study guide's organized
-teaching plan nor Flashcards' retrieval deck.
+Build the selected **A · Anchored source map** interaction into the existing
+class **Materials** tab. A student starts with the artifact they want—**Study
+Guide**, **Flashcards**, or **Revised Notes**—then selects or adds only the
+class material allowed to ground that one artifact. The selected artifact stays
+visible until the student generates, cancels, or reaches the existing result
+surface.
 
----
+This replaces the old persistent `Add material` generator entry and direct
+"all available chunks" generation. It does **not** remove the Material
+catalog, syllabus import, lecture-capture, assessment, or existing generated
+artifact surfaces.
 
-## 1. Fidelity audit — before implementation
+## 1. Step-1 audit
 
-### a. Spec → paper
+### A. Spec → paper
 
-There is no remaining un-deferred, manifest-cleared Academics behaviour without
-a reviewable paper surface.
+The active amendment is fully drawn and decided:
 
-| Ruled behaviour | Reviewable surface | Decision state |
-|---|---|---|
-| Select slides, student notes, and/or a pasted lecture transcript, then choose an output | `mockup-lab/01-academics/academics-materials-extensions.html` → `generate`, `artifact-choice` | Documented in `academics-materials-extensions.md` |
-| Create a source-linked Revised Notes record; identify unresolved conflicts rather than guessing | Same mockup → `revised-notes-result` | The record contains a literal generation contract and appearance rules |
-| Study Guide and Flashcards remain alternate outputs from the same selection | Same mockup → `guide-result`, `flashcards-result`, `flashcards-export` | Already have separate owners; do not merge their models |
+| Ruled behaviour | Approved paper evidence |
+| --- | --- |
+| Artifact-first Study Guide, Flashcards, and Revised Notes paths | `academics-materials-extensions.html` product views `study-guide-intake`, `flashcards-intake`, and `revised-notes-intake` |
+| Selected artifact stays visible while sources are chosen | Variant A source map, selected-source tray, and compact output rail |
+| Only student/class material may ground an output | Source ownership/readiness markers and the paired Materials decision record |
+| A file without readable text is not usable evidence | `source-not-ready` recovery state |
+| No usable material gives an honest recovery, not a generated answer | `no-eligible-source` recovery state |
+| Revised Notes repairs a selected student note, never overwriting it | `revised-notes-intake` hands off to the existing baseline/no-baseline states |
+| Flashcards leave Premed OS one-way for Anki | `flashcards-intake` leads to the existing export surface |
 
-The following are explicitly outside this brief:
+Variant A is explicitly selected in
+`mockup-lab/01-academics/academics-materials-extensions.md`. Its behaviour,
+appearance, responsive hierarchy, and decision reason are recorded there.
+Stages A and B therefore pass.
 
-- A lecture audio recorder. GoodNotes or another tool may make the recording;
-  the student pastes or uploads its transcript to Materials.
-- Canvas Path B, a course-content lookup, a public resource directory, or any
-  external course knowledge. Those are separate source-owner features.
-- Flashcard generation, Anki export, Study Guide design, and all Anki review /
-  scheduling. Preserve their existing seams.
+### B. Mockup → app
 
-### b. Mockup → app
+| Surface | Current implementation evidence | Result |
+| --- | --- | --- |
+| Materials header | `src/components/academics/ClassHub.tsx` renders `Import syllabus`, persistent `Add material`, `Paste excerpt`, direct Study Guide / Flashcards actions, and overflow actions | **Divergent.** The old toolbar-first flow remains. |
+| Study Guide / Flashcards | `StudyToolActions` directly calls existing generators using available class chunks | **Partial.** The source-only generators exist, but there is no artifact-contextual source picker. |
+| Revised Notes | `RevisedNotesPanel.tsx` and `generateRevisedNotes.ts` implement the student-note baseline contract | **Partial.** The behavior exists but discovery is below the Materials shelf instead of through the selected output’s intake. |
+| Intake and recovery family | `academics-materials-extensions.html` views noted above | **Missing in `src/`.** |
 
-| Surface | Current app evidence | Result |
-|---|---|---|
-| Materials source collection and source sync | `ClassHub.tsx`, `MaterialCatalog`, `syncGenerationSources.ts` | Existing; reuse, do not fork. |
-| Study Guide generation | `generateStudyGuide.ts`, `study-guide-v1`, `study-tools` `generate` action | Existing; preserve as a different artifact. |
-| Flashcards V1 and class full mock | `flashcards-v1`, `class-full-mock-v1`, `generatedFlashcardDecks`, `generatedMockAttempts` | Existing; preserve. |
-| Revised Notes V1 artifact | Registry contains `gap-check-v1`, `study-guide-v1`, `flashcards-v1`, and `class-full-mock-v1` only. `ClassCenterData` has no revised-notes record and no caller exists. | **Missing — first failed ladder stage C.** |
+#### Measured visual baseline — August 21
 
-Measured in the live class Materials surface on Aug 21, 2026:
+The mockup dark ladder is a visual role reference; its inline values must not
+be copied into the application. The previous inspection of the running app
+shows its light theme uses a different, valid token ladder:
 
-| Layer | Live computed value | Required recipe value | Result |
-|---|---|---|---|
-| Page | `rgb(33, 30, 26)` | `#211e1a` | Match |
-| Panel | `rgb(43, 39, 34)`, `16px` radius | `#2b2722`, `16px` | Match |
-| Inner object | `rgb(50, 46, 40)`, `13px` class-card radius | `#322e28`, `13px` | Match |
-| Border | `rgb(60, 53, 45)` | `#3c352d` | Match |
+| Surface | Approved mockup role/value | Running app, light-theme value |
+| --- | --- | --- |
+| Canvas | dark canvas `#211e1a` | `rgb(247, 239, 225)` / `#f7efe1` |
+| Solid intake panel | dark solid `#2b2722`, border `#3c352d`, `16px` radius | Existing Materials content is transparent, with `rgb(233, 226, 213)` border and `14.4px` radius |
+| Dense source object | dark nested `#322e28`, border `#3c352d`, `13px` radius | Existing primary generator is `rgb(75, 156, 211)`, transparent border, `12.4px` radius |
 
-The new result must stay on this warm-dark, solid-with-depth ladder. It must
-not copy the mockup's inline CSS, introduce glass below the shared banner, or
-create a new generator landing page.
+The build must create the analogous **solid** panel/object ladder from the
+real token system in both themes. It must measure all three rungs after
+implementation. It must never make light mode dark merely to match a dark
+mockup screenshot.
 
-### c. Already built — preserve, do not redo
+### C. Already built — preserve, do not rebuild
 
-- Course Materials add/import and source chunks.
-- Syllabus parsing, safe re-import, class assignment/workspace persistence.
-- Shared source preparation and private server sync:
-  `prepareGenerationSources()`.
-- Two-pass, closed-citation generation in `study-tools`.
-- Study Guide, Flashcards V1, class full mock, and `.apkg` export paths.
+- Class Hub’s five-tab grammar, Material catalog, provenance, file storage,
+  assessment catalogue, and Materials-versus-Notes distinction.
+- Source-only generation policy and the existing `generateStudyGuide`,
+  `generateFlashcards`, and `generateRevisedNotes` functions.
+- The bounded textbook excerpt flow, generated-output storage, and Revised
+  Notes baseline/no-baseline paths.
+- Flashcard `.apkg`/TSV export as a one-way Anki handoff. Premed OS neither
+  imports, reviews, schedules, self-rates, nor reads back cards.
+- Every app annotation made after the mockup. An annotation is a later product
+  ruling, not screenshot drift to delete.
 
-The recent artifact work is in `8ca4d65`, `d009cb7`, `326a17a`, and `8a5adc5`.
-This brief extends that one generation system; it must not duplicate it.
-
-### d. Gate
+### D. Gate
 
 `BUILD-MANIFEST.md` marks
-`01-academics/academics-materials-extensions.html` **YES**. Its `PROPOSED`
-lab badge does not override the manifest gate: the manifest expressly clears
-the source for implementation. Do not edit the manifest.
+`01-academics/academics-materials-extensions.html` **YES**. Do not edit the
+manifest.
 
-### e. Decision-record audit
+### E. Integrations and services the surface owns
 
-`mockup-lab/01-academics/academics-materials-extensions.md` has both required
-halves:
+| Dependency | Classification and verification | What the student sees today | Work in this brief |
+| --- | --- | --- | --- |
+| Private source mirror and rate-limit schema | **CODE BUILT AND CONFIGURED.** Remote migration list contains `20260727` and `20260811`; the source-store and usage-bucket migration is present. | No useful source picker; direct actions still use the older flow. | Reuse it; do not change the schema or localStorage shape. |
+| `study-tools` Edge Function | **CODE BUILT AND CONFIGURED.** Remote function list reports `study-tools` as `ACTIVE`, JWT-verified, version 5. | Existing actions can reach the protected service only after sign-in and source disclosure. | Preserve private server retrieval; do not send source text in a generation request. |
+| Anthropic generation and optional embeddings | **Configured names present.** The Edge Function has `ANTHROPIC_API_KEY` and `OPENAI_EMBEDDING_API_KEY` configured; `AI_PROVIDER` is unset, leaving the citation-verified Anthropic generation path active. Secret *values* were not read or exposed. | Existing failures correctly leave local data unchanged, but this pass has not performed an authenticated real-material generation. | Reuse Anthropic's citation-verified path. Do not switch generation to the weaker OpenAI path or add a browser key. |
+| Actual signed-in output proof | **Not yet verified.** This is a user-data operation, not a configuration gap. | No current proof that a real class source produces each saved artifact and Anki-importable deck end to end. | Add an explicit promotion test plan; do not generate from demo or invented content just to claim success. |
 
-- **Behaviour:** one selection can lead to Revised Notes, Study Guide, or
-  Flashcards; all derive only from selected student material; conflicts remain
-  visible; Anki is one-way only.
-- **Appearance:** Materials remains the home; source-map selection leads to a
-  compact three-choice triad; Revised Notes uses the shared paper/provenance
-  result layout; selected sources stay reachable; dense surfaces are solid.
+There is no Andy account checklist in this build: the code, deployed function,
+remote schema, and required secret names are already present. If an actual
+authenticated request reports provider-unavailable later, report the exact
+safe status/error and stop that integration item; do not ask for or expose
+another API key preemptively.
 
-No unresolved A/B/C choice remains. Revised Notes leads visually because it is
-the lecture-record repair path, not because it replaces the two other outputs.
+## 2. References — read in full before implementation
 
-### f. Integrations and services
+- `premed-hq-documentation/tabs/01-academics.md` §4.0b, §4.1-I, §4.1-Q,
+  §6.2, §6.3, §6.7, §6.12, and §6.14.
+- `mockup-lab/01-academics/academics-materials-extensions.{html,md}` —
+  **Variant A only** is the implementation source of truth; retain B/C only
+  as comparison history.
+- `mockup-lab/_shared/_visual-recipes.md` and
+  `premed-hq-documentation/implementation/MOCKUP-TRANSLATION-CONTRACT.md`.
+- `premed-hq-documentation/implementation/component-inventory.md` — reuse
+  `Button`/Smooth Button, `Dialog`, `Select`, `CollectionState`, `EmptyState`,
+  `DocEmbed`, `Tooltip`/`InfoTip`, Sonner, and the existing mobile sheet.
+- `src/components/academics/ClassHub.tsx` and
+  `src/components/academics/RevisedNotesPanel.tsx`.
+- `src/lib/academics/generateStudyGuide.ts`, `generateFlashcards.ts`,
+  `generateRevisedNotes.ts`, `syncGenerationSources.ts`, and
+  `flashcardExport.ts`.
+- `src/lib/intelligence/studyTools.ts`,
+  `supabase/functions/study-tools/index.ts`,
+  `supabase/migrations/20260727_d6_ai_coverage.sql`, and `supabase/DEPLOY.md`.
+- `premed-hq-documentation/specifications/generation/04-flashcards-v1.md`.
 
-| Dependency | State at start | Requirement |
-|---|---|---|
-| Local selected class sources | Built | Reuse selection and sync. Never transmit raw source text in the browser's generation request. |
-| `study-tools` Edge Function | Built in source | Add this artifact through its existing typed `generate` action and closed citation path. |
-| Anthropic generation provider | Code expects `ANTHROPIC_API_KEY` for the two-pass citation flow | **Unconfigured / unproven until a signed-in live request succeeds.** Existing OpenAI embedding credentials do not satisfy `callAnthropic()`. |
-| OpenAI key currently in Supabase | May support embeddings only | Do not silently substitute it for the citation-enforced generation path. A provider change requires its own reviewed citation-equivalence work. |
-| Supabase auth and function deployment | External configuration | The UI must distinguish signed-out, provider-unavailable, and citation-rejected states. A rendered button is not proof it works. |
+## 3. BUILD — one shared artifact-intake implementation
 
-### Andy's configuration checklist after the code commit
+### 3.1 Replace the entry architecture, not the existing data model
 
-1. In the correct Supabase project, deploy the current `study-tools` Edge
-   Function from this repository.
-2. In **Edge Function secrets**, set `ANTHROPIC_API_KEY` and, if desired,
-   `ANTHROPIC_MODEL`. Keep both server-only; neither belongs in Vite or a
-   browser bundle.
-3. Sign in at `https://premedos.app`, upload/paste processed class material,
-   select at least one text-bearing source, and generate Revised Notes.
-4. Reload the class page: the exact result, selected-source list, source traces,
-   `specId`, and `specHash` must still exist.
-5. Confirm a conflict stays labeled rather than being silently resolved, and
-   inspect browser network traffic to ensure no provider secret or unselected
-   material was sent from the client.
+1. Keep **Import syllabus** in the Materials header as class setup.
+2. Remove the persistent header-level **Add material** generator CTA and the
+   separate always-visible **Paste excerpt** CTA from that header.
+3. Retain one prominent **Generate study guide** action and a quiet,
+   accessible **Create study material** menu/overflow containing **Generate
+   flashcards** and **Generate revised notes**. This preserves §4.1-I's one
+   dominant action without a long tab/tool strip.
+4. Each action opens one shared, artifact-contextual intake surface. Do not
+   create three copied components or separate navigation tabs.
+5. Closing, cancelling, or navigating back returns to the same Materials
+   shelf without creating, deleting, or silently changing a source or output.
 
----
+Use a shared typed artifact enum/model and one `MaterialGenerationIntake`
+composition (or a clearly equivalent existing component). Artifact-specific
+rules configure that component; they do not fork the source-picker UI.
 
-## 2. References — read before coding
+### 3.2 Source selection and input paths
 
-- `mockup-lab/01-academics/academics-materials-extensions.{html,md}`, especially
-  `artifact-choice` and `revised-notes-result`.
-- `premed-hq-documentation/tabs/01-academics.md` §§4.1-M, 6.2–6.3 and 6.13.
-- `premed-hq-documentation/specifications/generation/01-*` and
-  `02-global-rules-and-source-modes.md`.
-- `src/lib/generation/`, `src/lib/academics/generationPolicy.ts`,
-  `src/lib/academics/syncGenerationSources.ts`, and
-  `supabase/functions/study-tools/index.ts`.
-- `premed-hq-documentation/specifications/generation/04-flashcards-v1.md` for
-  the shared student-supplied-material boundary only; do not apply its Anki
-  rules to Revised Notes.
-- `premed-hq-documentation/implementation/MOCKUP-TRANSLATION-CONTRACT.md`,
-  `specifications/01-shared-interface-patterns.md`, and
-  `mockup-lab/_shared/_visual-recipes.md`.
+Implement Variant A’s hierarchy with real application tokens:
 
----
+- a solid bounded source-map panel, not translucent glass;
+- the selected output anchored beside the source field on desktop, with a
+  compact explanatory rail;
+- the selected-source tray below the map; and
+- a single contextual source-action chooser, not a permanent header toolbar.
 
-## 3. FRONTEND — one Materials flow, not a fourth app
+The chooser exposes only these input paths, all scoped to the current class:
 
-### 3.1 Placement and selection
+1. **Existing eligible material** — file/chunk has readable, processed text.
+2. **My notes** — an eligible item owned by the student; it is the required
+   baseline choice for Revised Notes.
+3. **Lecture transcript** — reuse the existing transcript/capture path;
+   do not create a second transcript store.
+4. **Instructor/course material** — reuse the existing class-material upload
+   or file intake path in the selected artifact’s context.
+5. **Pasted textbook excerpt** — one named, bounded excerpt using the existing
+   excerpt flow. Do not offer full-textbook upload, fetching, OCR, external
+   lookup, or a general textbook corpus.
 
-1. Keep the entry in the existing class page **Materials** tab. Do not add a
-   class tab, sidebar route, or duplicate material list.
-2. Reuse the existing source selector. Each selected text-bearing file must
-   show its student-owned provenance and a clear role: course slide/material,
-   student's notes, or pasted/uploaded transcript. A file may be selected even
-   when it is the only usable source; the UI encourages other useful sources
-   without inventing a requirement they do not have.
-3. After selection, show one compact **Choose an output** triad. The order is
-   **Revised Notes**, Study Guide, Flashcards. Study Guide and Flashcards use
-   their existing actions; this brief owns only the new Revised Notes action.
-4. If none of the selected sources has processed text, keep the selection,
-   explain the missing condition, and offer the normal material-processing
-   recovery. Never fall back to general course knowledge.
+After adding/pasting through a contextual path, return to the intake with the
+chosen artifact intact and the item’s state truthful. A source becomes
+selected only through an explicit student action.
 
-### 3.2 Generation and result states
+Use source identity, owner, and readiness from the existing records—never
+guess source type from its title. When a file has no usable chunks, preserve
+its identity as **not ready for generation** and offer only: add readable text,
+wait/retry its existing extraction route where one exists, or select/add a
+different allowed source. Never display an invented preview or treat the raw
+file as evidence.
 
-1. The primary action is **Create revised notes**. It calls the new typed
-   `generateRevisedNotes()` owner and is pending/disabled only for the live
-   request; it does not erase source selection or replace it with a spinner
-   page.
-2. On success, show the generated title, a concise source-linked document, and
-   a narrow provenance rail. Every merged passage offers its actual source
-   trace; a selected source that was not used is labeled as such, not implied
-   to have contributed.
-3. Render an explicit **Unresolved source difference** block if the output
-   includes one. It must quote/identify both source traces and say that the
-   supplied material does not settle the detail. It is not an error and it is
-   never auto-resolved by the model.
-4. Results must identify themselves as **Generated · Revised notes** and show
-   the source count / source links plus `specId`/version in an inspectable
-   provenance affordance. Do not call it professor notes, official notes, or a
-   study guide.
-5. Provide copy and local download/export of the student's own generated note
-   as ordinary text/Markdown. This is not an Anki export, does not add a review
-   queue, and does not turn the output into a source of unverified facts.
-6. Implement friendly and distinct states for: signed out, no processed text,
-   source sync failure, provider unavailable, citations not carried, malformed
-   response, and an existing saved result. No blank result surface or fake
-   success.
+### 3.3 Artifact-specific handoffs
 
-### 3.3 Visual translation
+All three artifacts must receive **exactly the selected eligible chunks**, not
+every chunk in the class by default.
 
-1. Match the existing class Materials ladder measured above. Use app tokens,
-   never mockup hex literals in app components.
-2. Preserve the shared banner and Materials underline. The output selector is
-   a quiet tool row, not navigation.
-3. Use the existing paper-and-provenance composition: one generous readable
-   paper surface with restrained source rail. Avoid long, repeated rectangle
-   rows and do not shift to an unrelated dashboard visual language.
-4. All hover/loading transitions use the app's shared motion tokens; reduced
-   motion resolves directly. Keep keyboard focus through selection, generation,
-   result source links, copy, and download.
+- **Study Guide:** call the existing source-only generator; persist the
+  existing generated-note shape and its existing source trace. Return to the
+  existing generated guide view.
+- **Flashcards:** call the existing Flashcards V1 route, preserve its
+  source-trace/validation rules, and lead to the existing `.apkg` primary / TSV
+  secondary export view. Never add a starter deck, Anki import, review,
+  scheduling, rating, or read-back flow.
+- **Revised Notes:** require an explicitly selected eligible **My notes**
+  baseline before enabling generation. Pass the baseline and selected chunks
+  to the existing generator. It creates a new generated Material artifact; it
+  never overwrites the student’s original note. Keep all class logistics,
+  wink-wink/professor remarks, and other notes *about the class* in the
+  separate class Notes tab.
 
----
+Do not modify the contents of `flashcards-v1`, Study Guide, or Revised Notes
+prompts in this pass. This work is wiring and source-intake behavior, not a
+new content ruling.
 
-## 4. BACKEND — real Revision Notes generation, not UI copy
+### 3.4 Backend and trust boundary
 
-### 4.1 Artifact contract and prompt
+Audit and complete only the wiring needed for the selected source set:
 
-1. Add a versioned `revised-notes-v1` `ArtifactSpec`, registered beside the
-   existing artifact specs. Add a named `revised-notes` Academics artifact to
-   `ACADEMICS_ARTIFACTS`; do not rely on the broad `summary` label.
-2. Add a distinct structured response schema. It must support:
-   - title and ordered note sections;
-   - source-linked passages, each with only verified citation references;
-   - an explicit `unresolvedDifferences` collection with the competing cited
-     statements and a neutral label;
-   - selected/used/unused source ids; and
-   - `specId` and `specHash` provenance.
-   Do not reuse `StudyGuideArtifact` or flatten source traces into an opaque
-   Markdown string.
-3. The source mode is **SOURCE_ONLY**. Every factual claim and every
-   reconciliation must be supported by the selected student material. Editorial
-   wording may make a sentence readable, but cannot add a fact, example,
-   definition, or course context not grounded in a cited source.
-4. The versioned system prompt must state, materially:
+- Reuse `prepareGenerationSources()` and its disclosure, fingerprint, private
+  mirror, and authenticated retrieval boundary.
+- Confirm all generator calls pass the selected chunk IDs and retain their
+  existing class-scoped server retrieval. The Edge Function must continue to
+  reject chunks outside the authenticated user/course/scope.
+- Do not put any provider secret, service-role secret, source content, or
+  `VITE_*` provider key in the browser.
+- Do not switch `AI_PROVIDER` to OpenAI. The current Anthropic generation path
+  is the citation-verified one; embeddings remain an optional retrieval
+  enhancement, not evidence.
+- Map sign-in, disclosure refusal, no source, rate limit, server unavailable,
+  invalid response, and citation-not-carried outcomes to actionable in-context
+  states. No failure may save a partial artifact or silently fall back to
+  general course knowledge.
 
-   > Create one accurate, readable lecture-note document from only the selected
-   > student-supplied sources. Preserve the instructor's terms and distinctions.
-   > Reconcile a gap only when another selected source supports it. When sources
-   > conflict or do not settle a detail, label the uncertainty. Do not add
-   > outside course knowledge. Keep a source trace beside every merged passage.
+### 3.5 Interaction, responsive behavior, and accessibility
 
-   It must additionally prohibit silently choosing the "more likely" source,
-   writing a textbook explanation, fabricating headings/evidence, or calling
-   the result official/professor notes.
-5. Require at least one selected, processed text chunk. The generator can make
-   an improved record from one source, but only claims a reconciliation when
-   multiple selected sources actually support it. Never impose an invented word
-   count or pretend source diversity exists.
+- Desktop follows Variant A’s source-map / output-anchor / narrow-rail
+  composition. At the relevant narrow breakpoint, stack source map, output,
+  tray, then rail; preserve source order and the chosen artifact.
+- Use only opacity/transform for the contextual entry/exit; respect
+  `prefers-reduced-motion`. Do not animate layout width, margins, or the
+  Materials page itself.
+- The action menu, chooser, source selection/removal, baseline selection,
+  generate button, cancellation, and errors must all be keyboard reachable,
+  labelled, focus-managed, and have visible focus.
+- Use existing tooltip/InfoTip patterns to explain source-only generation and
+  one-way Anki export without adding copy-heavy dashboard panels.
+- Maintain the approved system type, icons, colours, radii, and theme tokens.
+  No mockup inline CSS values may enter `src/`.
 
-### 4.2 Server path and source boundary
+## 4. Verification
 
-1. Add `src/lib/academics/generateRevisedNotes.ts`, following the existing
-   `generateStudyGuide()` sequence:
-   `assertGenerationAllowed` → `prepareGenerationSources` →
-   `assembleGenerationRequest` → typed `studyTools.generate` → structural
-   validation → persistence-ready outcome.
-2. The browser sends only course id, source scope/chunk ids, spec id/hash, and
-   assembled request metadata. `prepareGenerationSources` owns the authorized
-   source sync; no raw selected source text, provider key, or alternate source
-   retrieval goes from the browser.
-3. Extend the existing `study-tools` response validation so the two-pass
-   closed-citation mechanism validates the new schema. Pass two may reference
-   only the verified closed set; a minted, out-of-range, wrong-file, or absent
-   citation rejects the whole result and saves nothing.
-4. Preserve the current provider seam. The code currently uses Anthropic for
-   this two-pass `generate` action and OpenAI only for optional embeddings.
-   Do not claim an existing OpenAI secret powers Revised Notes unless the
-   citation-equivalent OpenAI generation path has been separately built,
-   reviewed, and tested.
+### Automated and integration checks
 
-### 4.3 Persistence and lossless migration
+Add/extend tests proving:
 
-1. Add a dedicated class-owned `GeneratedRevisedNotes` record to
-   `ClassCenterData`, rather than squeezing citation-bearing data into
-   `ClassNote.content`. It stores id, course id, generated title, structured
-   sections, unresolved differences, selected/used/unused source ids, spec id,
-   spec hash, created/updated timestamps, and order.
-2. Add the next versioned, lossless store migration that initializes
-   `generatedRevisedNotes: []`. It must preserve every existing class-center
-   field exactly, be idempotent, and leave frozen input unmutated. Do not
-   fabricate provenance for older notes.
-3. Saving occurs only after structural and citation validation passes. A failed
-   request leaves the old records and the source selection intact.
-4. The saved result remains a derived, source-linked document. If a later tool
-   offers it in a picker, it must preserve and point back to its original
-   student-supplied chunks; it must never become an independent ground-truth
-   source that can launder unsupported content into Flashcards or a Study Guide.
+1. Study Guide, Flashcards, and Revised Notes receive only the chunk IDs the
+   student selected.
+2. A no-text file cannot be selected as evidence; recovery retains its
+   identity and cannot generate an artifact.
+3. Revised Notes cannot generate without an explicit owned-note baseline and
+   never replaces that source record.
+4. Flashcards keep the existing one-way export boundary.
+5. A generation failure—including disclosure refusal, sign-in required,
+   no source, provider failure, and citation rejection—persists no partial
+   output.
+6. Existing generated artifacts, source data, and local store shapes migrate
+   unchanged. Do not add a migration unless a new persisted property is truly
+   necessary; if one is necessary, obtain an explicit, versioned lossless
+   migration and test it.
+7. The provider call still requests only server-owned selected chunks. A
+   client-supplied source body must not be accepted as a generation substitute.
 
-### 4.4 Tests
+Run `npm run test` and `npm run build`.
 
-Add focused tests for:
+### Visual and behavior proof before calling the build complete
 
-- policy acceptance for `revised-notes` and refusal without sources/course;
-- registry/spec hash and structured schema validation;
-- source-only prompt invariants, including the conflict/no-resolution rule;
-- client caller success and every mapped failure outcome;
-- closed-citation rejection for a minted citation and a wrong source file;
-- persistence, reload, and lossless/idempotent/frozen-input migration;
-- rendering: used versus selected-but-unused source distinction and an explicit
-  unresolved-difference block;
-- no raw source text or secret in the client request contract.
+1. Run the mock lab standalone on port 4599 and the app locally; compare the
+   approved Variant A and the real Materials tab side by side.
+2. In **both themes**, measure computed `backgroundColor`, border colour, and
+   radius for canvas → solid intake → dense source object. Report the values
+   and prove the application ladder matches the mockup’s *roles*, using real
+   tokens rather than copied dark hex values.
+3. Keyboard-test opening each artifact, selecting/removing source material,
+   choosing a Revised Notes baseline, cancelling, and generating where an
+   eligible signed-in source exists. Test reduced motion.
+4. Run the 4fe210f inert-control audit across the touched Materials surface;
+   assert zero `Button`, `DropdownMenuItem`, or `ContextMenuItem` elements
+   lacking a handler.
+5. Reload during selection and after every completed artifact. Selected
+   source/context may be transient if it is not a stored draft, but no saved
+   artifact, original note, selected-source provenance, or source-boundary
+   rule may be lost or broadened.
+6. Empty the local store and open Materials. It must show a friendly honest
+   setup state, with no demo course, source, number, generated note, or deck
+   surviving.
+7. Do one real signed-in run with material the user selected: generate one
+   artifact, download its `.apkg` if Flashcards is exercised, and manually
+   import that file into installed Anki Desktop. This is a promotion proof,
+   not permission to fabricate a test lecture or deck.
 
-Run the full test suite and production build. Then perform the authenticated
-end-to-end proof in §1f before calling this integration configured.
+## 5. Do not break / do not decide silently
 
----
-
-## 5. Do not break / do not broaden
-
-- Never generate from bundled, pre-authored, web-fetched, or general course
-  material. The student's selected sources are the evidence boundary.
-- Do not create an audio recorder, a fourth output type, a second Materials
-  implementation, or another source sync system.
-- Do not overwrite or edit student notes/slides/transcripts. Revised Notes is a
-  new derived record beside its sources.
-- Do not quietly resolve source conflicts, add external explanations, assign
-  “high yield,” calculate a score, or introduce completion/readiness metrics.
-- Do not change Anki ownership: only Flashcards exports `.apkg`; Revised Notes
-  has no Anki behavior.
-- Do not expose `ANTHROPIC_API_KEY`, any OpenAI key, Supabase service keys, or
-  source text to an unauthenticated client.
-- Use design tokens and the existing components; do not copy mockup inline CSS
-  or change global theme tokens, shell, typography, or sidebar.
-
----
+- Do not build new class tabs, a generator subtab strip, an independent
+  material store, a duplicate file uploader, or a separate study-tool
+  component family.
+- Do not delete annotation-backed changes because older mockups differ.
+- Do not render mock/sample class content in an empty store.
+- Do not generate from the internet, a stored corpus, a full textbook, prior
+  decks, or general model knowledge. The source boundary is class/student
+  material only.
+- Do not change provider secrets, auth, RLS, migrations, model prompts,
+  flashcard content policy, colour tokens, fonts, theme system, or Anki
+  ownership without a new explicit ruling.
+- Do not introduce a score, readiness/progress bar, ranking, confidence
+  percentage, or invented metric.
+- Do not make dense Materials content glass. Glass remains limited to true
+  floating surfaces per the contract.
 
 ## 6. Done when
 
-- A student can enter an existing class's Materials tab, choose processed
-  slides, notes, and/or transcript, choose **Revised Notes**, and receive an
-  accurately labeled, source-linked result.
-- The result contains only closed, verified source citations; an unsupported or
-  conflicting detail is absent or explicitly labeled—not guessed.
-- Source selection, result, source trace, artifact version, and spec hash
-  survive reload. No old records are lost in migration.
-- Study Guide, Flashcards, Materials, and the shared class visual language are
-  unchanged except for the one shared output chooser.
-- Signed-out, unavailable, invalid, and no-source paths explain what happened
-  and retain the student's work.
-- Unit tests, production build, keyboard flow, reduced-motion behavior, and an
-  authenticated Supabase generation test pass.
-- The implementation report names the commit and updates the relevant mockup
-  record only after all six promotion conditions are evidenced.
+- One shared output-first Materials intake implements Variant A for all three
+  artifacts; no permanent `Add material` or `Paste excerpt` generator control
+  remains in the header.
+- Every artifact preserves selected-source context and reaches its existing
+  generator/result handoff with only eligible selected chunks.
+- Revised Notes has its explicit baseline and remains a Materials artifact;
+  class Notes remains separate.
+- Existing source-only, citation, private-server, and one-way-Anki rules are
+  proved by tests and behavior checks.
+- Both themes pass the measured visual ladder check; keyboard and
+  reduced-motion checks pass; the inert-control audit reports zero.
+- `npm run test`, `npm run build`, reload proof, and empty-store proof pass.
+- The real signed-in source run is either proved or reported as the sole
+  remaining promotion condition. Do not promote the lab page unless all six
+  `VARIANT-LAB.md` promotion conditions pass.
 
 ## 7. Commit
 
-`feat(academics): add source-grounded revised notes generation`
+`feat(academics): build output-first Materials intake`
 
-No unrelated mockup-lab, Flashcards-spec, decision-brief, or term-start changes
-belong in this commit.
+Commit unrelated working-tree changes separately.
+
+## 8. Next stage — promotion audit (not in scope here)
+
+Re-run `TAB-BRIEF-PROMPT.md` for Academics after this build. It must audit
+the broader tab again and either identify the next first blocked surface or,
+for this Materials page when applicable, apply the six-condition
+`PAGE-PROMOTION-PROMPT.md` test. Do not mark the page `built` in this pass.
