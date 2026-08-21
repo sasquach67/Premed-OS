@@ -104,7 +104,7 @@ export function RevisedNotesPanel({ courseId, files, data }: {
   }
 
   return (
-    <Card className="border-border bg-card shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]">
+    <Card id="revised-notes" className="scroll-mt-6 border-border bg-card shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]">
       <CardHeader className="flex-row items-start justify-between gap-4">
         <div>
           <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground">Study output</p>

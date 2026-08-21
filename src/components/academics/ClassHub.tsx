@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, BookOpen, Brain, CalendarClock, CheckCircle2, ChevronDown,
   Clock3, FileText, Filter, FolderOpen, GraduationCap, HelpCircle,
-  Mail, MapPin, MoreHorizontal, NotebookText, Play, Plus,
+  Mail, MapPin, MoreHorizontal, NotebookPen, NotebookText, Play, Plus,
   Sparkles, Target, UserRound, Users,
   TrendingDown,
 } from 'lucide-react'
@@ -1367,6 +1367,9 @@ function StudyToolActions({ onOpenNotes, courseId, fileId, label }: {
       <DropdownMenu>
         <DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="More study tools"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => document.getElementById('revised-notes')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+            <NotebookPen className="size-4" /> Revise notes
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={onOpenNotes}><NotebookText className="size-4" /> Open class notes</DropdownMenuItem>
           <DropdownMenuItem onClick={generate}><FileText className="size-4" /> Generate from every source</DropdownMenuItem>
         </DropdownMenuContent>
