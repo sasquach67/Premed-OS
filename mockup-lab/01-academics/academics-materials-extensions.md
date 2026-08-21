@@ -10,6 +10,8 @@
 | Calendar feed | Explain the low-cost Canvas → Google Calendar handoff and review proposed changes. |
 | Study outputs | Select only student-supplied sources, then choose Revised Notes, Study Guide, or Flashcards. |
 | Material reader | Inspect an attached local document or hand off to its owned external provider without losing the class, unit, ownership, or topic context. |
+| Folder intake | Preview a user-selected local course folder, then confirm only the material positions the student accepts. |
+| Watched notes | Explain the one-way backup-folder mapping once, then ask again only when a source path is genuinely new or unclear. |
 
 ## Behaviour
 
@@ -21,6 +23,10 @@
 - **Study Guide** is a distinct study-oriented organization of selected material. It does not replace Revised Notes or become an ungrounded textbook chapter.
 - **Flashcards** remain a one-way Anki export artifact. They do not schedule, review, or import cards back into Premed OS.
 - **Material reader** opens from the existing catalog and stays inside Materials. Local preview, provider handoff, and an unavailable embed are three recoverable reader modes—not three new pages or alternate ownership models. An unavailable provider leaves the material record, course position, and linked topics intact; it never produces copied or generated replacement content.
+- **Folder intake** is deliberate local selection, not a file-system claim. Premed OS can preview a selected course folder beside the regular individual-file fallback, but it never moves, renames, edits, or otherwise changes the original folder. It proposes Material positions; applying the review updates only accepted Premed OS metadata.
+- **Folder review** is keep-by-default for anything uncertain. A route with evidence can be confirmed. A file with no unambiguous week is marked **Confirm week** or kept unfiled; it is never put in a semester-wide Misc / Loose Ends bucket and it is never silently overwritten.
+- **Watched notes** are one-way only. A student may later connect a folder created by GoodNotes Auto Backup, Notability, OneNote, Google Drive, Dropbox, or OneDrive; Premed OS reads/imports new notes as `Mine` and never writes back. The drawing is an awaiting-connection setup state, not a fake live provider account.
+- **Mapping confirmation** makes one inferred pattern visible as `class → week → category → document`. The student confirms that pattern once or chooses **Review each import instead**. It re-asks only for a genuinely new course folder or an unguessable segment; a recognised class with no defensible week remains **Confirm week**.
 
 ### Revised Notes generation contract
 
@@ -45,7 +51,12 @@ a general knowledge lookup.
 - **Revised Notes result** uses the same paper-and-provenance layout as the generated guide so source access cannot drift. A short stitched passage shows the practical job: join a slide term, a student note, and a transcript moment without obscuring where each came from.
 - Dense material surfaces are solid-with-depth. The banner is the only floating/glass region. The course-blue bloom is used only for source selection and the active view.
 - **Material reader** is a bounded document stage beside a narrow provenance rail. The source stays visually dominant; the rail carries the unit route, ownership, linked topics, and the route back to the module. The provider-handoff state replaces only the document stage, so the class context does not disappear. At mobile width, the rail stacks after the source stage and its actions stay in the same order.
+- **Folder intake** is a three-part safety composition: a narrow local-source tree, a central course-position board in week order, and a compact review rail. This prevents a multi-file import from becoming another wall of identical file rows. The central board makes proposed placement visible before the student is asked to accept it.
+- **Folder review** becomes a single broad decision sheet: file identity at left, the proposed class/week path in the center, and Confirm / Keep unfiled actions at right. At narrow width, that order stacks without losing the proposed path between the file and its decision.
+- **Watched notes** use a path-to-placement map rather than a provider settings card. Solid path segments converge in one left-to-right line; matched class, week, and category use restrained semantic color, and the one-time confirmation is the only dominant action. The side rail keeps the awaiting-connection status and backup caveats subordinate.
+- **Mapping exception** uses two equal, bounded cards for the only two questions that should recur: a new course folder and an unguessable path level. The exception cards do not restart setup and do not resemble a dashboard.
 - The reader uses the literal warm-dark ladder: page `#211e1a` → solid panel `#2b2722` → document-stage/object `#262320` / `#322e28`, with `#3c352d` borders, 16px panels, and 13px inner objects. Source preview paper is deliberately neutral and contained; it is illustrative framing, never invented course content.
+- Folder and watched-note states use that same literal ladder: page `#211e1a` → solid `#2b2722` panels → `#322e28` decision objects / `#262320` recovery inset; `#3c352d` borders; 16px panels and 13px inner objects. The banner is still the only glass surface.
 
 ## Component translation
 
@@ -58,6 +69,20 @@ a general knowledge lookup.
 - Catalog shows populated sources, an explicit unknown-origin private treatment, and the first-action empty rail.
 - Calendar feed shows the handoff, a date conflict that must be reviewed, connected-but-empty, and the non-destructive disconnect consequence. Its unavailable state is a reconnect recovery: no date changes, no broken class record, and no implication that Canvas is writable.
 - Study guide shows selected sources and the no-eligible-material recovery. Its result keeps a narrow provenance rail with every selected source reachable from the generated material. Its unavailable state happens only after source selection and preserves those selections; it never substitutes general course content.
+- Folder intake shows a selected-folder proposal, no usable files / unsupported file recovery, and individual-file fallback without losing the selected context. Folder review includes Confirm, Keep unfiled, and Confirm week; no action is implied to happen before acceptance.
+- Watched notes shows awaiting connection, one-time mapping confirmation, Review each import instead, a newly visible course folder, and an unguessable path level. The setup help discloses fixed GoodNotes backup roots and that this route is unavailable on GoodNotes for macOS.
+
+### Folder and watched-note variant ruling
+
+These are not A/B/C presentation choices. The necessary variation is state, not
+visual direction: folder intake and watched mapping each have one safety-first
+composition, while folder review and mapping exception are required states
+inside it. Competing layouts would obscure the same review boundary the feature
+exists to protect.
+
+Every chip and action uses `:focus-visible`; hover/view changes use the shared
+`.15s cubic-bezier(.16,1,.3,1)` rule and reduce directly under
+`prefers-reduced-motion`.
 
 ## Flashcards V1 extension
 

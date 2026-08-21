@@ -594,9 +594,11 @@ const profiles = [
   {
     id:"academics-materials-extensions",group:"Academics",name:"Materials extensions",status:"proposed",
     path:"01-academics/academics-materials-extensions.html",
-    desc:"The existing Materials tab gains catalog permission, calendar review, and three student-grounded study outputs.",
+    desc:"The existing Materials tab gains source cataloging, safe folder filing, one-way note mapping, calendar review, and student-grounded study outputs.",
     variants:[
       ["Resource catalog","Source ownership and private-by-default assessment materials."],
+      ["Folder intake","A user-selected local folder becomes a visible placement proposal before any course metadata changes."],
+      ["Watched notes","One-way backup-path mapping is confirmed once and re-asks only for a new or unclear level."],
       ["Material reader","A bounded source preview keeps class position, ownership, and material handoff visible."],
       ["Calendar feed","Path A review of imported calendar dates before they become plan facts."],
       ["Study guide","Grounded generation with the student's selected class material."],
@@ -1405,7 +1407,7 @@ const orderedProfiles = [
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["class-types"],"Class example",["comparison","stem","writing"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"class-types"}),
-  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","reader","canvas","generate","feed-unavailable","guide-result","artifact-choice","revised-notes-result","flashcards-result","flashcards-export","flashcards-unavailable","guide-unavailable"]),
+  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","folder-intake","folder-review","watch-setup","watch-exception","reader","canvas","generate","feed-unavailable","guide-result","artifact-choice","revised-notes-result","flashcards-result","flashcards-export","flashcards-unavailable","guide-unavailable"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
   Object.assign(asProductViews(byId["academics-lecture-capture"],"Capture state",["start","review","index","unavailable"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
