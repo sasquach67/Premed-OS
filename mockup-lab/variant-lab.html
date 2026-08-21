@@ -377,7 +377,11 @@ const profiles = [
       ["Materials","The weekly materials library opens as its own view."],
       ["Topics","The course topic map opens as its own view."],
       ["Assignments","Class-scoped work is grouped by syllabus category with grades and what-if."],
-      ["Notes","Class intel, questions, priming, and lecture notes open as their own view."]
+      ["Notes","Class intel, questions, priming, and lecture notes open as their own view."],
+      ["Professor evidence: dormant","No course-owned returned work has earned a pattern yet."],
+      ["Professor evidence: records","A bounded dated course-only sample is reviewable, not predictive."],
+      ["Writing: readings","Writing classes replace the STEM topic surface with reading state."],
+      ["Writing: current draft","One draft tracks real and self-set deadlines without becoming a project app."]
     ],
     b:`
       .frame>.lab,.frame>.wrap{display:none!important}
@@ -487,7 +491,10 @@ const profiles = [
     variants:[
       ["Session start","The scenic queue introduction opens as one screen."],
       ["Recall","The active recall composer opens as one focused screen."],
-      ["Gap report","The missed-concept report and cited source open as one screen."]
+      ["Gap report","The missed-concept report and cited source open as one screen."],
+      ["Concept canvas","Optional map input stays inside Active Recall, beside the default composer."],
+      ["Link proposal","A suggested topic relation waits for confirmation."],
+      ["Map recovery","An attached map survives until a source and scope are chosen."]
     ],
     b:`
       .frame>.lab{display:none!important}
@@ -588,7 +595,10 @@ const profiles = [
     variants:[
       ["Ledger","Every course ever taken, with status as a filter."],
       ["GPA","Dual UNC/AMCAS numbers and the year-by-year trend."],
-      ["What-if","Scenario mode and the inverse solve."]
+      ["What-if","Scenario mode and the inverse solve."],
+      ["Transcript record","Transcript-exact fields, optional evidence, and unguessed classification."],
+      ["No transcript records","The honest empty and partial state before GPA or export."],
+      ["Coursework export","A student-controlled all-institution record, not a registrar document."]
     ]
   },
   {
@@ -597,11 +607,16 @@ const profiles = [
     desc:"The existing Materials tab gains source cataloging, safe folder filing, one-way note mapping, calendar review, and student-grounded study outputs.",
     variants:[
       ["Resource catalog","Source ownership and private-by-default assessment materials."],
+      ["Actual material","A source-and-permission catalog for material the student may use."],
+      ["Timed attempt","One named item, confirmed scope, and a private time boundary."],
+      ["Return & mistakes","One transparent attempt record and the locked optional cause taxonomy."],
       ["Folder intake","A user-selected local folder becomes a visible placement proposal before any course metadata changes."],
+      ["Folder review","Every proposed file placement waits for the student’s confirmation."],
       ["Watched notes","One-way backup-path mapping is confirmed once and re-asks only for a new or unclear level."],
+      ["Mapping exception","An unclear watched-note level asks without changing the existing mapping."],
       ["Material reader","A bounded source preview keeps class position, ownership, and material handoff visible."],
       ["Calendar feed","Path A review of imported calendar dates before they become plan facts."],
-      ["Study guide","Grounded generation with the student's selected class material."],
+      ["Source selection","Grounded generation begins with the student's selected class material."],
       ["Feed unavailable","A disconnected calendar feed preserves the course facts already confirmed."],
       ["Generated guide","A completed guide shows the exact student material that grounded it."],
       ["Choose output","The selected-source map offers Revised Notes, Study Guide, or Flashcards without creating a second generator home."],
@@ -1348,7 +1363,7 @@ const overviewStateBoard = (id,name,path,desc,status="approved") => ({
   path,desc,variants:[["State coverage","One settled visual treatment; the board makes the required states reviewable together."]]
 });
 const asProductViews = (page,kind,slugs) => {
-  page.views=page.variants.map((view,index)=>({slug:slugs[index],name:view[0],desc:view[1]}));
+  page.views=page.variants.map((view,index)=>({slug:slugs[index],name:view[0],desc:view[1],status:page.viewStatuses?.[index] || page.status}));
   page.viewKind=kind;
   /* Each product view carries its OWN A/B/C set (VIEW_VARIANTS above), so the
      named view selector and the bottom design switcher stay independent.
@@ -1393,10 +1408,10 @@ const orderedProfiles = [
   Object.assign(asProductViews(byId.assignments,"Assignment view",["agenda","weekly","calendar"]),
     {group:"Academics",section:"Daily",depth:1,fitCanvas:true,authoredViews:"assignments"}),
   Object.assign(byId["empty-states"],{group:"Academics",section:"Daily",depth:1}),
-  Object.assign(asProductViews(byId["class-hub"],"Class Hub tab",["overview","materials","topics","assignments","notes"]),
-    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"wrap-per-view"}),
-  Object.assign(asProductViews(byId["review-session"],"Session state",["start","recall","gap-report"]),
-    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"review-session"}),
+  Object.assign(asProductViews(byId["class-hub"],"Class Hub tab",["overview","materials","topics","assignments","notes","professor-dormant","professor-evidence","writing-readings","writing-draft"]),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true,viewStatuses:["approved","approved","approved","approved","approved","proposed","proposed","proposed","proposed"]}),
+  Object.assign(asProductViews(byId["review-session"],"Session state",["start","recall","gap-report","concept-canvas","concept-link-proposal","concept-recovery"]),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true,viewStatuses:["approved","approved","approved","proposed","proposed","proposed"]}),
   Object.assign(asProductViews(byId["study-method"],"Placement",["dot-track","overview-panel","lecture-timing"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["forgetting-curve"],"Curve state",["sawtooth","thin-history","entry-points"]),
@@ -1407,7 +1422,7 @@ const orderedProfiles = [
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["class-types"],"Class example",["comparison","stem","writing"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"class-types"}),
-  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","folder-intake","folder-review","watch-setup","watch-exception","reader","canvas","generate","feed-unavailable","guide-result","artifact-choice","revised-notes-result","flashcards-result","flashcards-export","flashcards-unavailable","guide-unavailable"]),
+  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","assessment-catalog","assessment-take","assessment-return","folder-intake","folder-review","watch-setup","watch-exception","reader","canvas","generate","feed-unavailable","guide-result","artifact-choice","revised-notes-result","flashcards-result","flashcards-export","flashcards-unavailable","guide-unavailable"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
   Object.assign(asProductViews(byId["academics-lecture-capture"],"Capture state",["start","review","index","unavailable"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
@@ -1417,8 +1432,8 @@ const orderedProfiles = [
   Object.assign(byId["academics-planning-cold-start"],{group:"Academics",section:"Planning",depth:2,fitCanvas:true}),
   Object.assign(asProductViews(byId["requirements"],"Tracker section",["audit","requirements","prior-credit"]),
     {group:"Academics",name:"Tar Heel Tracker",section:"Planning",depth:1,fitCanvas:true,authoredViews:"wrap-per-view"}),
-  Object.assign(asProductViews(byId["grades-archive"],"Record view",["ledger","gpa","what-if"]),
-    {group:"Academics",section:"Planning",depth:1,fitCanvas:true,authoredViews:"wrap-per-view"}),
+  Object.assign(asProductViews(byId["grades-archive"],"Record view",["ledger","gpa","what-if","transcript-record","transcript-empty","transcript-export"]),
+    {group:"Academics",section:"Planning",depth:1,fitCanvas:true,passViewToSource:true,viewStatuses:["proposed","proposed","proposed","proposed","proposed","proposed"]}),
   {id:"academics-learning-signals",group:"Academics",name:"Learning signals",section:"Daily · Class Center",depth:2,status:"approved",fitCanvas:true,native:true,variantSourceRev:"academics-learning-signals-20260817",path:"01-academics/academics-learning-signals.html",desc:"A STEM class Overview panel with evidence-first learning signals and no empty intelligence state. A · priority rail ruled Aug 18, 2026; B and C are retired and kept only as the comparison record.",variants:[["Priority rail","Signals and their evidence share a compact bento below the next action."],["Editorial section","The same signals read as a calm class-story section beneath the next action."],["Evidence drawer","The normal class workspace stays quiet until a contextual evidence drawer opens."]]},
   // ── Registered Aug 20 2026. All eight were drawn and reachable on disk but
   // absent from the lab, so nobody could review them here. Three are

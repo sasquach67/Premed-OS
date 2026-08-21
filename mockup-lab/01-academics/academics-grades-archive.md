@@ -157,3 +157,16 @@ information scent and the specification’s one-home rule.
 
 **Decision commit:** `6c4c0fb` — `docs(academics): rule the Grades & Archive
 composition for all three views`.
+
+## Transcript record states
+
+### Behaviour
+
+- **Transcript record** captures institution, number, title, credit, grade, term/year, course type, and a separate display name exactly as entered. A transcript-line image is optional evidence. Classification is chosen from a source and reason; BCPM is never guessed.
+- **Empty / partial** presents one direct record path and keeps existing attempts or institutions additive. It does not render a GPA, trend, or export-ready claim without records.
+- **Export** includes every institution, attempt, and classification evidence in a student-controlled coursework file. It is not a registrar document, application submission, or degree audit.
+
+### Appearance
+
+- The records use the existing Grades & Archive warm-dark surfaces: `#211e1a` page, `#2b2722` 16px panels, `#322e28` 13px field rows, and `#3c352d` borders. Glass remains confined to the existing banner controls, never to the transcript surfaces.
+- Two balanced panels make the record stage and the evidence boundary readable at desktop width; on narrow screens they stack. Fields and export actions retain obvious focus states, short quiet transitions, and direct reduced-motion resolution.

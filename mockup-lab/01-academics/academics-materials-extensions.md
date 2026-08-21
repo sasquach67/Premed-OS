@@ -101,3 +101,17 @@ Every chip and action uses `:focus-visible`; hover/view changes use the shared
 - The preview keeps one generous card at the center and a narrow provenance/type rail. A quiet angled generated stamp proves source attachment without competing with the card. Export is a single centered handoff card with `.apkg` visibly primary and TSV secondary.
 - All surfaces are solid-with-depth. The shared banner alone may use glass because it floats over banner art. Hover and view changes use the shared short ease-out treatment; reduced motion resolves directly to the final selected state.
 - Reader controls use `:focus-visible` and the shared `0.15s cubic-bezier(.16,1,.3,1)` motion language; the reduced-motion rule resolves every reader mode directly.
+
+## Assessment material states
+
+### Behaviour
+
+- **Actual material** is a compact, course-private catalog. Each row carries a confirmed scope plus exactly one source/permission condition: instructor-provided, publicly posted, my returned work, or unknown origin. Unknown-origin material stays private and cannot become an implied shared bank.
+- **Timed attempt** is visibly based on one named item with its unit scope and time boundary. It records an attempt; it never forecasts a course exam or creates a readiness score.
+- **Return & mistakes** stores the actual result with its material source. One optional AcademicMistake capture uses the locked causes `didnt-know`, `knew-it-but-blanked`, `misread-the-question`, `arithmetic`, `ran-out-of-time`, and `wrong-method`; leaving a miss unclassified is always valid. History remains a transparent record only.
+
+### Appearance
+
+- The three views remain nested inside the existing Materials banner and quiet tool row. The catalog uses a narrow evidence rail and a solid, vertically scannable source list; timed work uses a generous question stage with a compact context rail; return uses two equal-height solid panels.
+- The warm-dark ladder is literal: page `#211e1a`, panels `#2b2722`, dense inner objects `#322e28`, and borders `#3c352d`; panels use 16px radii and dense objects 13px. Glass is absent because none of these surfaces floats above the banner.
+- On a narrow desktop the rails stack below their primary stage, keyboard focus is visibly outlined, and reduced motion resolves directly to the selected state rather than sliding the stage.

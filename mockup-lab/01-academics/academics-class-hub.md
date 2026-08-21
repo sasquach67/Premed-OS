@@ -47,6 +47,19 @@
   GLASS (04 §0c): frosted only on the banner stat strip. Everything else solid.
   Build from library components (01-academics.md §7a), never copy this markup.
 
+## Remaining paper-completion states
+
+### Behaviour
+
+- **Professor evidence** has two honest states: dormant when the student has too little of their own returned work, and eligible when a small, dated, course-only record exists. Both show observations and returned work, never predictions or hearsay.
+- **Writing → Readings** replaces the STEM Topics surface without changing the five-tab shell. Reading rows are manually set to Not started, Skimmed, or Read; list input supports paste, one-at-a-time, or this-week entry. A partial syllabus suppresses any implied reading debt.
+- **Writing → Draft** keeps the real deadline beside the student’s own target, then follows outline, draft, revision, and submitted. A feedback rail only appears after repeated feedback; one note remains a normal course note.
+
+### Appearance
+
+- Every state reuses the existing class banner, five tabs, Baloo 2 hierarchy, and warm-dark ladder. The only glass remains the banner stat strip; all state bodies are solid `#2b2722` panels with `#322e28` inner rows and `#3c352d` borders.
+- Desktop uses one broad evidence/draft stage plus a narrower boundary rail. At narrower widths the rail stacks under the main stage, without clipping tabs. Controls have visible keyboard focus; state changes are quiet and resolve directly with reduced motion.
+
  ══ SHARED BANNER (identical on every sub-tab) ════════════════════════ 
 <div class="ban">
  <div class="crumb">‹ Class Center</div>

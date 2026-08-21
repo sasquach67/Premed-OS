@@ -28,6 +28,19 @@
      nothing — you skim and think "I knew that". Show only: what you had,
      what you missed, what you got wrong.
   5. EVERY GAP ITEM CARRIES PROVENANCE, and it is CLICKABLE:
+
+## Concept map states
+
+### Behaviour
+
+- **Concept canvas** is an optional response affordance inside Active Recall: text remains the default, while Draw map and Attach map have equal standing. It supports only text nodes, labeled relationships, delete, and undo.
+- Scope chips remain above the response. **Suggested links** expose the two topics and one locked relationship verb (`builds-on`, `contrasts-with`, `same-mechanism`, `prerequisite`, or `shared-mcat-category`) for confirmation or dismissal; no TopicLink is created automatically.
+- If no source or scope is present, the map remains attached and recovery routes to Materials or topic selection. It never opens the student’s full notes as a substitute.
+
+### Appearance
+
+- These are solid reading states, not scenic session modes: a broad response stage and narrow explanation rail use `#2b2722` panels over the `#211e1a` page, with `#322e28` canvas depth and `#3c352d` borders. The map uses only quiet text nodes and short connector strokes.
+- Desktop holds the rail alongside the response; narrow layouts stack it below. Map actions and relation controls have visible focus, use quiet short transitions, and resolve without movement under reduced motion.
        · blue chip  = "from your materials" → opens the file at the cited
          passage, highlighted (Anthropic Citations returns char offsets)
        · amber chip = "general knowledge — not in your notes"
