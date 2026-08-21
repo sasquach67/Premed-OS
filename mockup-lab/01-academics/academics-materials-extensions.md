@@ -106,6 +106,67 @@ Every chip and action uses `:focus-visible`; hover/view changes use the shared
 `.15s cubic-bezier(.16,1,.3,1)` rule and reduce directly under
 `prefers-reduced-motion`.
 
+## Output-first material intake — proposed A/B/C treatments
+
+### Behaviour
+
+- A student starts from the artifact they want: **Study Guide**,
+  **Flashcards**, or **Revised Notes**. The selected artifact stays visible
+  while they select or add material; source selection is not a separate,
+  forgotten first step.
+- The only contextual input paths are existing eligible class material, **My
+  notes**, a lecture transcript, instructor/course material, and one named,
+  bounded pasted textbook excerpt. A bare upload with no readable/pasted text
+  is shown as **not ready**, is excluded from generation, and keeps its class
+  record intact.
+- There is no permanent `Add material` action in this composition. Input
+  affordances appear inside the selected artifact’s source picker. `Import
+  syllabus` remains class setup and is not represented as generator input.
+- A Study Guide or Flashcard request uses only selected ready sources.
+  Flashcards still lead to one-way Anki export and never gain an in-app review
+  or scheduling path.
+- Revised Notes requires **My notes** as the student-selected baseline, then
+  routes into the existing baseline/no-baseline states. It never overwrites the
+  original note, becomes a study guide, searches a course, or fills gaps with
+  general knowledge.
+- These states preserve annotation-backed app behaviour. When an older drawing
+  differs from a later app annotation, the later ruling is retained and the
+  eventual implementation brief must reconcile it explicitly rather than
+  deleting it for screenshot fidelity.
+
+### Appearance
+
+All three treatments use the literal Materials ladder: page `#211e1a` → solid
+panel `#2b2722` → dense source/input object `#322e28` or recovery inset
+`#262320`; borders `#3c352d`; outer panels `16px`; inner objects `13px`.
+Only a surface floating above the class banner may be glass. Focus is visible,
+hover is quiet, and `prefers-reduced-motion` resolves directly.
+
+| Variant | Layout and hierarchy | Why it is distinct |
+| --- | --- | --- |
+| **A · Anchored source map** | Selected artifact locks at the upper-right of the source map. Five source paths occupy the map; selected sources form a compact adjacent tray; a narrow right rail explains the artifact path. | Preserves the existing source-map grounding metaphor and makes the result destination visually explicit. |
+| **B · Artifact-first workbench** | Chosen artifact sits in the header. Five varied compact input objects surround a wide selected-source tray; the explanatory rail disappears. | Makes source collection the dominant task while retaining the selected output as a fixed badge. It avoids a wall of identical file rows. |
+| **C · Contextual intake sheet** | A bounded solid sheet floats over the Materials shelf. Its artifact label and source count lead; source objects compress above a two-column selected-source tray. | Reads as a temporary focused action, not a new Materials subtab or a permanent toolbar. At narrow widths it becomes the content column without changing order. |
+
+The new product views are `study-guide-intake`, `flashcards-intake`,
+`revised-notes-intake`, `source-not-ready`, and `no-eligible-source`. They
+share the same source grammar; their labels change only to make the artifact’s
+real boundary clear. No fake course facts, grades, readiness, model confidence,
+scores, rankings, progress, scheduling, full-textbook upload, or external
+source lookup appears in any treatment.
+
+### Responsive and state treatment
+
+- At narrow width, source paths become a two-column grid and then stack;
+  provenance remains adjacent to source identity. Variant C’s sheet becomes
+  the full content column rather than creating a nested scrolling region.
+- `source-not-ready` preserves the attached file identity and offers only
+  **Paste readable text** or **Choose another source**. It never invents a
+  preview or silently treats the file as evidence.
+- `no-eligible-source` preserves the requested output and presents only the
+  allowed paths into grounded material. It contains no starter deck, generated
+  content, or course lookup.
+
 ## Flashcards V1 extension
 
 ### Behaviour
