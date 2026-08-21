@@ -587,6 +587,63 @@ export interface ExamPrepPlan {
   updatedAt: number
 }
 
+/** A generated card is a study artifact, never a review/scheduling record. */
+export type GeneratedFlashcardType = 'basic' | 'cloze' | 'conceptual' | 'process' | 'comparison' | 'application' | 'exemplar' | 'free-recall'
+
+export interface GeneratedFlashcard {
+  id: ID
+  type: GeneratedFlashcardType
+  front?: string
+  back?: string
+  cloze?: string
+  extra?: string
+  tags: string[]
+  conceptId: string
+  /** One verified material citation; general/background claims are not cards. */
+  sourceChunkId: ID
+}
+
+/** One successful Flashcards V1 result. Anki owns all scheduling after export. */
+export interface GeneratedFlashcardDeck {
+  id: ID
+  courseId: ID
+  title: string
+  sourceChunkIds: ID[]
+  specId: 'flashcards-v1'
+  specHash: string
+  cards: GeneratedFlashcard[]
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
+export interface GeneratedMockQuestion {
+  id: ID
+  prompt: string
+  sourceChunkId: ID
+  topicId?: ID
+  order: number
+}
+
+/** A student-owned, generated class attempt. It deliberately has no score. */
+export interface GeneratedMockAttempt {
+  id: ID
+  courseId: ID
+  examAssignmentId: ID
+  topicIds: ID[]
+  sourceChunkIds: ID[]
+  specId: 'class-full-mock-v1'
+  specHash: string
+  questions: GeneratedMockQuestion[]
+  answers: Record<ID, string>
+  flaggedQuestionIds: ID[]
+  startedAt: number
+  endedAt?: number
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
 export interface ClassCenterData {
   workspaces: ClassWorkspace[]
   topics: Topic[]
@@ -609,6 +666,8 @@ export interface ClassCenterData {
   topicPredictions: TopicPrediction[]
   savedPlans: SavedPlan[]
   examPrepPlans: ExamPrepPlan[]
+  generatedFlashcardDecks: GeneratedFlashcardDeck[]
+  generatedMockAttempts: GeneratedMockAttempt[]
 }
 
 /** Parsed or student-entered syllabus category. This intentionally has no grade math. */

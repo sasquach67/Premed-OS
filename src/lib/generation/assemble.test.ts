@@ -120,12 +120,10 @@ describe('the assembled request', () => {
     expect(assembled.systemPrompt).not.toContain('c1')
   })
 
-  it('refuses an unregistered artifact rather than inventing a prompt', () => {
-    // flashcards-v1 is specified in `04` and unbuilt until Phase 4. Registering
-    // a spec whose engine does not exist would let the assembler produce a
-    // prompt for an artifact nothing can generate.
-    expect(() => assembleGenerationRequest({ ...base, specId: 'flashcards-v1' }))
-      .toThrow(/No generator registered/)
+  it('assembles registered Flashcards V1 with its own source rules', () => {
+    const cards = assembleGenerationRequest({ ...base, specId: 'flashcards-v1' })
+    expect(cards.specId).toBe('flashcards-v1')
+    expect(cards.systemPrompt).toContain('FC-SOURCE')
   })
 
   it('now assembles the study guide, which registered in Phase 3', () => {
