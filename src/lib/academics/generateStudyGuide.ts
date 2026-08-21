@@ -21,6 +21,7 @@
  */
 import { assembleGenerationRequest } from '@/lib/generation'
 import { assertGenerationAllowed, GenerationNotAllowedError, generatedTitle } from '@/lib/academics/generationPolicy'
+import { prepareGenerationSources } from '@/lib/academics/syncGenerationSources'
 import { studyTools } from '@/lib/intelligence/studyTools'
 import type { SourceChunk } from '@/lib/types'
 
@@ -65,7 +66,7 @@ export function renderGuide(artifact: unknown): string {
   return lines.join('\n').trim()
 }
 
-export async function generateStudyGuide({ courseId, topicId, chunks, label }: {
+export async function generateStudyGuide({ courseId, chunks, label }: {
   courseId: string
   topicId?: string
   chunks: SourceChunk[]
@@ -97,20 +98,25 @@ export async function generateStudyGuide({ courseId, topicId, chunks, label }: {
     }
   }
 
-  const assembled = assembleGenerationRequest({
+  const prepared = await prepareGenerationSources(courseId, sources)
+  if (!prepared.ok || !prepared.scopeId || !prepared.chunkIds) {
+    return { ok: false, failure: 'provider-unavailable', message: prepared.message ?? 'Source material could not be prepared.' }
+  }
+
+  const syncedAssembly = assembleGenerationRequest({
     specId: 'study-guide-v1',
-    chunkIds: sources.map((chunk) => chunk.id),
+    chunkIds: prepared.chunkIds,
     request: `Topic: ${label}. Action: generate a study guide from the attached sources.`,
   })
 
   const result = await studyTools.generate({
     action: 'generate',
     courseId,
-    topicId: topicId ?? sources[0].topicId ?? '',
-    chunkIds: assembled.chunkIds,
-    specId: assembled.specId,
-    specHash: assembled.specHash,
-    systemPrompt: assembled.systemPrompt,
+    topicId: prepared.scopeId,
+    chunkIds: syncedAssembly.chunkIds,
+    specId: syncedAssembly.specId,
+    specHash: syncedAssembly.specHash,
+    systemPrompt: syncedAssembly.systemPrompt,
     request: `Topic: ${label}.`,
   })
 
@@ -143,7 +149,7 @@ export async function generateStudyGuide({ courseId, topicId, chunks, label }: {
     ok: true,
     title: generatedTitle(`${label} study guide`),
     content,
-    specHash: assembled.specHash,
+    specHash: syncedAssembly.specHash,
     fileIds: [...new Set(sources.map((chunk) => chunk.fileId))],
   }
 }

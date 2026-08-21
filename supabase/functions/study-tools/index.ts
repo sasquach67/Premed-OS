@@ -66,11 +66,11 @@ Deno.serve(async (request) => {
 
   if (body.action === 'sync-sources') {
     if (!isText(body.courseId) || !isText(body.topicId)) {
-      return failure(400, 'invalid-request', 'A typed topic-scoped source sync is required.')
+      return failure(400, 'invalid-request', 'A typed source-scope sync is required.')
     }
     const suppliedSources = validateSources(body.sources)
     if (!suppliedSources) {
-      return failure(400, 'invalid-request', 'Sources must use the typed topic-scoped contract.')
+      return failure(400, 'invalid-request', 'Sources must use the typed source-scope contract.')
     }
     try {
       await mirrorLocalSources(client, userData.user.id, body.courseId, body.topicId, suppliedSources)
@@ -81,7 +81,9 @@ Deno.serve(async (request) => {
     }
   }
 
-  if (body.action !== 'gap-check' || !isText(body.courseId) || !isText(body.topicId) || !isText(body.response)) {
+  const isGapCheck = body.action === 'gap-check'
+  const isGeneration = body.action === 'generate'
+  if ((!isGapCheck && !isGeneration) || !isText(body.courseId) || !isText(body.topicId) || (isGapCheck && !isText(body.response))) {
     return failure(400, 'invalid-request', 'A typed study-tool request is required.')
   }
   const chunkIds = validateChunkIds(body.chunkIds)
@@ -97,8 +99,8 @@ Deno.serve(async (request) => {
   if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
   if (!allowed) return failure(429, 'rate-limited', 'Hourly or daily AI usage limit reached.')
 
-  const chunks = await retrieveChunks(client, body.courseId, body.topicId, chunkIds)
-  if (!chunks.length) return failure(422, 'no-sources', 'No topic-scoped source material is available.')
+  const chunks = await retrieveChunks(client, userData.user.id, body.courseId, body.topicId, chunkIds)
+  if (!chunks.length) return failure(422, 'no-sources', 'No selected source material is available.')
 
   /**
    * `generate` — the two-pass pipeline (`01` §5.1), Phase 2.
@@ -164,7 +166,7 @@ Deno.serve(async (request) => {
     const provider = (Deno.env.get('AI_PROVIDER') || 'anthropic').toLowerCase()
     const output = provider === 'openai'
       ? await callOpenAI(body.response, chunks)
-      : await callAnthropic(body.response, chunks, typeof body.systemPrompt === 'string' ? body.systemPrompt : undefined)
+      : await callAnthropic(body.response, chunks, typeof body.systemPrompt === 'string' ? body.systemPrompt : undefined, resultSchema)
     const validated = validateResult(output.value, chunks, output.trustedCitations)
     if (!validated) return failure(502, 'invalid-response', 'The provider returned invalid structured data.')
     return json(validated)
@@ -234,6 +236,7 @@ async function embedTexts(texts: string[]): Promise<number[][] | null> {
 
 async function retrieveChunks(
   client: ReturnType<typeof createClient>,
+  userId: string,
   courseId: string,
   topicId: string,
   chunkIds: string[],
@@ -241,6 +244,7 @@ async function retrieveChunks(
   const { data, error } = await client
     .from('academic_source_chunks')
     .select('chunk_id,file_id,content,character_start,character_end')
+    .eq('user_id', userId)
     .eq('course_id', courseId)
     .eq('topic_id', topicId)
     .in('chunk_id', chunkIds)
@@ -258,7 +262,7 @@ async function retrieveChunks(
  * The local fallback below stays so a function that has NOT been redeployed
  * behaves exactly as it does today. Delete it once every client sends a spec.
  */
-async function callAnthropic(response: string, chunks: Chunk[], specPrompt?: string) {
+async function callAnthropic(response: string, chunks: Chunk[], specPrompt?: string, schema?: object) {
   const key = Deno.env.get('ANTHROPIC_API_KEY')
   if (!key) throw new Error('Anthropic is not configured')
   const result = await fetch('https://api.anthropic.com/v1/messages', {
@@ -286,7 +290,9 @@ async function callAnthropic(response: string, chunks: Chunk[], specPrompt?: str
         // The transport half is always the server's: the response contract is
         // enforcement, not pedagogy, so a client may never weaken it.
         'Reply with a single JSON object and nothing else — no prose, no markdown fences.',
-        `It must match this JSON Schema: ${JSON.stringify(resultSchema)}`,
+        schema
+          ? `It must match this JSON Schema: ${JSON.stringify(schema)}`
+          : 'It must use the exact artifact structure and rules in the specification above.',
       ].join('\n'),
       messages: [{
         role: 'user',

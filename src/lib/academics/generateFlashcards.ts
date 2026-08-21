@@ -1,5 +1,6 @@
 import { assembleGenerationRequest } from '@/lib/generation'
 import { assertGenerationAllowed, GenerationNotAllowedError } from '@/lib/academics/generationPolicy'
+import { prepareGenerationSources } from '@/lib/academics/syncGenerationSources'
 import { studyTools } from '@/lib/intelligence/studyTools'
 import type { GeneratedFlashcard, SourceChunk } from '@/lib/types'
 import type { GenerateFailure } from './generateStudyGuide'
@@ -34,12 +35,14 @@ export function validateFlashcards(value: unknown, closedChunkIds: readonly stri
   return out
 }
 
-export async function generateFlashcards({ courseId, topicId, chunks, label }: { courseId: string; topicId?: string; chunks: SourceChunk[]; label: string }): Promise<FlashcardGenerationOutcome> {
+export async function generateFlashcards({ courseId, chunks, label }: { courseId: string; topicId?: string; chunks: SourceChunk[]; label: string }): Promise<FlashcardGenerationOutcome> {
   if (!chunks.length) return { ok: false, failure: 'no-sources', message: 'Select processed course material first. Premed OS will not create cards from general course knowledge.' }
   try { assertGenerationAllowed({ scope: 'academics', artifact: 'flashcards', courseId, groundedIn: chunks.map((chunk) => chunk.id) }) }
   catch (error) { return { ok: false, failure: 'not-allowed', message: error instanceof GenerationNotAllowedError ? error.message : 'Generation is not permitted here.' } }
-  const assembled = assembleGenerationRequest({ specId: 'flashcards-v1', chunkIds: chunks.map((chunk) => chunk.id), request: `Topic: ${label}. Action: generate Flashcards V1.` })
-  const result = await studyTools.generate({ action: 'generate', courseId, topicId: topicId ?? chunks[0].topicId ?? '', chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `Topic: ${label}.` })
+  const prepared = await prepareGenerationSources(courseId, chunks)
+  if (!prepared.ok || !prepared.scopeId || !prepared.chunkIds) return { ok: false, failure: 'provider-unavailable', message: prepared.message ?? 'Source material could not be prepared.' }
+  const assembled = assembleGenerationRequest({ specId: 'flashcards-v1', chunkIds: prepared.chunkIds, request: `Topic: ${label}. Action: generate Flashcards V1.` })
+  const result = await studyTools.generate({ action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `Topic: ${label}.` })
   if (!result.ok) return { ok: false, failure: result.code === 'no-sources' ? 'no-sources' : result.code === 'sign-in-required' ? 'sign-in-required' : result.code === 'citation-not-carried' ? 'citation-not-carried' : result.code === 'invalid-response' ? 'invalid-response' : 'provider-unavailable', message: result.message }
   const cards = validateFlashcards(result.data.artifact, assembled.chunkIds)
   if (!cards) return { ok: false, failure: 'invalid-response', message: 'The card set did not pass its source and format checks. Nothing was saved.' }
