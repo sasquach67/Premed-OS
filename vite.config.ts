@@ -8,9 +8,10 @@ import tailwindcss from '@tailwindcss/vite'
 // - @tailwindcss/vite  : Tailwind v4 (no separate tailwind.config; tokens live in index.css)
 // - '@' alias          : maps to /src so imports read like "@/components/ui/button"
 export default defineConfig({
-  // base must match the GitHub Pages URL path: https://sasquach67.github.io/Premed-OS/
-  // (If you later move to Netlify/Vercel or a custom domain, change this back to '/')
-  base: '/Premed-OS/',
+  // The app is served from the root of its GitHub Pages custom domain:
+  // https://premedos.app/. The Pages repository path is no longer part of
+  // public asset URLs, so this must stay '/'.
+  base: '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
