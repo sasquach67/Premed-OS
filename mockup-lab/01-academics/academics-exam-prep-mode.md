@@ -107,3 +107,20 @@
   capture stays dormant-with-a-reason and offers the appropriate manual route.
 - **Exam day / closeout:** a skippable autopsy offer and a later decay-check
   reminder, neither framed as compulsory homework.
+
+## Full-mock extension
+
+### Behaviour
+
+- **Eligibility / start** is nested inside the existing Exam Prep mode and names one class, one exam scope, and the exact student-supplied materials it may use. Without either scope or sufficient material, it stays dormant-with-a-reason and routes to Materials or exam-scope setup rather than generating generic questions.
+- **Focused runner** temporarily replaces the ordinary shell. It has elapsed time and one explicit end action, but no pause, answer peek, persistent sidebar, or Class Hub tab system. Its source context states that the item is generated practice, not a real past or upcoming professor exam.
+- **Autopsy** records only topic-level evidence from the attempt: missed or self-flagged topic, its source, and a next action. It does not calculate a readiness score, rank, composite, or forecast for the real exam.
+- The runner and autopsy do not introduce Anki ownership, card scheduling, or any source outside student-supplied class material.
+
+### Appearance
+
+- Eligibility shares the focused Exam Prep banner, then uses one broad scope-and-source panel paired with a restrained honest-absence rail. This makes the source requirement look like a real prerequisite, not an error toast.
+- The runner is deliberately spare: a shallow solid top bar, one centered question card, concise source-context rail, and a clearly separated end action. It is a working surface, not another dashboard.
+- The autopsy returns to the Exam Prep banner and pairs a generous evidence list with a narrow explanation rail. Topic rows are individually actionable and vary by missed versus self-flagged status, avoiding a flat table or a score summary.
+- Literal warm-dark ladder stays `#211e1a` page, `#2b2722` panel, `#322e28` nested surface, `#3c352d` border; 16px panels and 13px inner cards preserve the established density. Glass stays only in the floating banner/chrome treatment because every dense runner and evidence surface is solid-with-depth.
+- Focused-mode entry/exit remains a short shared transition. Reduced motion lands immediately on the runner or autopsy state with no timed choreography.

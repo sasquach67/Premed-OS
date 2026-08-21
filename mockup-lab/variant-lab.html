@@ -457,11 +457,14 @@ const profiles = [
   {
     id:"exam-prep",group:"Academics",name:"Exam-plan builder",status:"proposed",
     path:"01-academics/academics-exam-prep-mode.html",
-    desc:"Accelerated, steady, and catch-up exam preparation states.",
+    desc:"Exam planning plus the nested full-mock eligibility, runner, and autopsy states.",
     variants:[
       ["Accelerated","The default nine-day plan opens as one complete screen."],
       ["Steady","The steady-mode plan and clocked-out state open separately."],
-      ["Catch-up","The detected three-day catch-up plan opens separately."]
+      ["Catch-up","The detected three-day catch-up plan opens separately."],
+      ["Full mock · start","One class exam scope and its student-supplied material are checked before a practice attempt."],
+      ["Full mock · runner","The temporary focused practice runner carries source context, elapsed time, and an explicit end action."],
+      ["Full mock · autopsy","Missed and self-flagged topics route to their sources and next actions, never a readiness score."]
     ],
     b:`
       body>.framelabel,body>.frame{display:none!important}
@@ -591,13 +594,17 @@ const profiles = [
   {
     id:"academics-materials-extensions",group:"Academics",name:"Materials extensions",status:"proposed",
     path:"01-academics/academics-materials-extensions.html",
-    desc:"The existing Materials tab gains catalog permission, calendar-feed review, and student-grounded generation states.",
+    desc:"The existing Materials tab gains catalog permission, calendar review, and student-grounded study-artifact states.",
     variants:[
       ["Resource catalog","Source ownership and private-by-default assessment materials."],
       ["Calendar feed","Path A review of imported calendar dates before they become plan facts."],
       ["Study guide","Grounded generation with the student's selected class material."],
       ["Feed unavailable","A disconnected calendar feed preserves the course facts already confirmed."],
       ["Generated guide","A completed guide shows the exact student material that grounded it."],
+      ["Artifact choice","The selected-source map leads to study guide or Flashcards V1 without creating a second generator home."],
+      ["Flashcards preview","A compact source-grounded deck review includes a readable card and a relational Extra example."],
+      ["Export handoff","One-way `.apkg` export is primary, TSV is fallback, and Anki scheduling stays outside Premed OS."],
+      ["Needs sources","Insufficient selected material preserves the request and routes back to Materials without inventing cards."],
       ["Generator unavailable","An unavailable provider keeps the source selection intact and gives a recovery path."]
     ]
   },
@@ -1389,13 +1396,13 @@ const orderedProfiles = [
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["forgetting-curve"],"Curve state",["sawtooth","thin-history","entry-points"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
-  Object.assign(asProductViews(byId["exam-prep"],"Plan mode",["accelerated","steady","catch-up"]),
+  Object.assign(asProductViews(byId["exam-prep"],"Exam Prep state",["accelerated","steady","catch-up","full-mock-start","full-mock-runner","full-mock-autopsy"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["syllabus-import"],"Import step",["upload","review","re-import"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["class-types"],"Class example",["comparison","stem","writing"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"class-types"}),
-  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","canvas","feed-unavailable","generate","guide-result","guide-unavailable"]),
+  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","canvas","generate","feed-unavailable","guide-result","artifact-choice","flashcards-result","flashcards-export","flashcards-unavailable","guide-unavailable"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
   Object.assign(asProductViews(byId["academics-lecture-capture"],"Capture state",["start","review","unavailable"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
