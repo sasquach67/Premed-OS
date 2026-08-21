@@ -25,6 +25,7 @@ import { isTypingTarget } from '@/lib/keyboard'
 import { AnimatedFileUpload } from '@/components/motion'
 import { FocusModeLayout } from '@/components/common/FocusModeLayout'
 import { MascotNote } from '@/components/common/MascotNote'
+import { ConceptCanvas } from '@/components/academics/ConceptCanvas'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -92,6 +93,7 @@ export function AcademicRecallSession() {
   const [gapResult, setGapResult] = useState<GapCheckResult | null>(null)
   const [gapError, setGapError] = useState('')
   const [checkingGaps, setCheckingGaps] = useState(false)
+  const [showCanvas, setShowCanvas] = useState(false)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -415,6 +417,7 @@ export function AcademicRecallSession() {
                   <Button type="button" variant={recording ? 'destructive' : 'outline'} className={cn(!recording && 'border-white/20 bg-white/7 text-white hover:bg-white/12')} onClick={toggleRecording}>
                     {recording ? <><Square className="size-4 fill-current" /> Stop recording</> : <><Mic className="size-4" /> {audio ? 'Record again' : 'Record response'}</>}
                   </Button>
+                  <Button type="button" variant="outline" className="border-white/20 bg-white/7 text-white hover:bg-white/12" onClick={() => setShowCanvas((value) => !value)}>{showCanvas ? 'Hide map' : 'Draw map'}</Button>
                   {audio && <audio controls src={audio.url} className="h-9 max-w-64" aria-label={audio.durationLabel} />}
                   {images.map((image) => <span key={image.url} className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/8 px-2 py-1 text-xs font-bold"><ImagePlus className="size-3" /> {image.name}<button aria-label={`Remove ${image.name}`} onClick={() => setImages((currentImages) => currentImages.filter((item) => item.url !== image.url))}><X className="size-3" /></button></span>)}
                 </div>
@@ -424,11 +427,12 @@ export function AcademicRecallSession() {
                 accept="image/*"
                 multiple
                 onFiles={attachImages}
-                label="Attach your page"
-                description="Add a drawing or photo at any point."
+                label={showCanvas ? 'Attach map' : 'Attach your page'}
+                description={showCanvas ? 'Add a drawing or photo as a temporary reference; save a material to retain it.' : 'Add a drawing or photo at any point.'}
                 className="min-h-52 border-white/18 bg-white/7 text-white"
               />
             </div>
+            {showCanvas && <ConceptCanvas courseId={courseId} topic={current} data={data} />}
             <div className="mt-7 border-t border-white/12 pt-6">
               <p className="font-display text-xl font-extrabold">Before you reveal: how sure are you?</p>
               <ToggleGroup type="single" value={confidence} onValueChange={(value) => value && setConfidence(value as RecallConfidence)} variant="outline" className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">

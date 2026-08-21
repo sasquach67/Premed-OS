@@ -34,6 +34,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatStrip } from '@/components/common/StatStrip'
@@ -54,6 +55,8 @@ import { TranscriptImport } from '@/components/academics/TranscriptImport'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { LearningSignalsPanel } from '@/components/academics/LearningSignalsPanel'
 import { RevisedNotesPanel } from '@/components/academics/RevisedNotesPanel'
+import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
+import { AssessmentCatalog } from '@/components/academics/AssessmentCatalog'
 
 type HubTab = 'overview' | 'materials' | 'topics' | 'readings' | 'assignments' | 'notes'
 
@@ -287,7 +290,7 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
             changeTab('notes')
           }}
         /></TabsContent>
-        <TabsContent value="readings"><WritingTools courseId={course.id} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} /></TabsContent>
+        <TabsContent value="readings"><WritingTools courseId={course.id} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /></TabsContent>
         <TabsContent value="assignments"><Assignments assignments={courseAssignments} topics={courseTopics} classType={classType} /></TabsContent>
         <TabsContent value="notes"><Notes courseId={course.id} notes={courseNotes} topics={courseTopics} topicFilter={params.get('noteTopic') ?? undefined} /></TabsContent>
       </Tabs>
@@ -476,6 +479,10 @@ function Overview({
         </div>
       </Panel>
 
+      <div className="col-span-12">
+        <ProfessorEvidencePanel courseId={course.id} data={data} assignments={assignments} contacts={contacts} />
+      </div>
+
       <Panel className="col-span-12" title="Recorded recall activity">
         <RecallHistory events={data.reviewEvents.filter((event) => topics.some((topic) => topic.id === event.topicId))} />
       </Panel>
@@ -525,10 +532,18 @@ function NonStemOverview({
   )
 }
 
-function WritingTools({ courseId, drafts, readings, feedback }: { courseId: string; drafts: PaperDraft[]; readings: AssignedReading[]; feedback: FeedbackNote[] }) {
+function WritingTools({ courseId, drafts, readings, feedback, assignments }: { courseId: string; drafts: PaperDraft[]; readings: AssignedReading[]; feedback: FeedbackNote[]; assignments: ClassAssignment[] }) {
   const update = useStore((state) => state.update)
   const incompleteReadings = readings.filter((item) => item.status !== 'read')
   const current = drafts.find((item) => item.stage !== 'submitted')
+  const feedbackGroups = feedback.reduce((groups, note) => {
+    const key = note.theme.trim().toLocaleLowerCase()
+    const currentGroup = groups.get(key) ?? { label: note.theme, notes: [] as FeedbackNote[] }
+    currentGroup.notes.push(note)
+    groups.set(key, currentGroup)
+    return groups
+  }, new Map<string, { label: string; notes: FeedbackNote[] }>())
+  const [pastedReadings, setPastedReadings] = useState('')
   function patchDraft(id: string, stage: PaperDraft['stage']) {
     update((draft) => {
       const item = draft.academics.classCenter.paperDrafts.find((row) => row.id === id)
@@ -541,20 +556,31 @@ function WritingTools({ courseId, drafts, readings, feedback }: { courseId: stri
       if (item) Object.assign(item, { status, updatedAt: Date.now() })
     })
   }
+  function addPastedReadings() {
+    const rows = pastedReadings.split('\n').map((item) => item.trim()).filter(Boolean)
+    if (!rows.length) return
+    const now = Date.now()
+    update((draft) => {
+      const target = draft.academics.classCenter.assignedReadings
+      rows.forEach((title, index) => target.push({ id: uid(), courseId, week: 'Unscheduled', title, status: 'not-started', createdAt: now, updatedAt: now, order: target.filter((item) => item.courseId === courseId).length + index }))
+    })
+    setPastedReadings('')
+  }
   return (
     <div className="grid gap-4 xl:grid-cols-2">
-      <Panel title="Drafts" action={<Button size="sm" variant="outline" onClick={() => {
+      <Panel title="Current draft" action={<Button size="sm" variant="outline" onClick={() => {
         const now = Date.now(); update((draft) => draft.academics.classCenter.paperDrafts.push({ id: uid(), courseId, title: 'Untitled paper', stage: 'outline', createdAt: now, updatedAt: now, order: draft.academics.classCenter.paperDrafts.filter((item) => item.courseId === courseId).length }))
       }}><Plus className="size-4" /> Add paper</Button>}>
-        <div className="space-y-3">{drafts.map((draft) => <div key={draft.id} className="rounded-xl border border-border bg-muted/25 p-3"><div className="flex items-center justify-between gap-3"><p className="font-extrabold">{draft.title}</p><Badge variant={draft.stage === 'submitted' ? 'success' : 'outline'}>{titleCase(draft.stage)}</Badge></div><div className="mt-3 flex flex-wrap gap-2">{(['outline', 'draft', 'revision', 'submitted'] as const).map((stage) => <Button key={stage} size="sm" variant={draft.stage === stage ? 'default' : 'outline'} onClick={() => patchDraft(draft.id, stage)}>{titleCase(stage)}</Button>)}</div>{draft.selfDeadline && <p className="mt-2 text-xs font-semibold text-muted-foreground">Your deadline · {fmtDeadline(draft.selfDeadline)}</p>}</div>)}{!drafts.length && <EmptyState icon={FileText} title="No papers assigned yet" detail="Add a paper when it appears in the syllabus or course site." />}</div>
+        <div className="space-y-3">{drafts.map((draft) => { const assignment = assignments.find((item) => item.id === draft.assignmentId); return <div key={draft.id} className="rounded-xl border border-border bg-muted p-3"><div className="flex items-center justify-between gap-3"><p className="font-extrabold">{draft.title}</p><Badge variant={draft.stage === 'submitted' ? 'success' : 'outline'}>{titleCase(draft.stage)}</Badge></div><div className="mt-3 flex flex-wrap gap-2">{(['outline', 'draft', 'revision', 'submitted'] as const).map((stage) => <Button key={stage} size="sm" variant={draft.stage === stage ? 'default' : 'outline'} onClick={() => patchDraft(draft.id, stage)}>{titleCase(stage)}</Button>)}</div><div className="mt-3 grid gap-2 text-xs font-semibold text-muted-foreground sm:grid-cols-2"><span>Assignment deadline · {assignment?.dueDate ? fmtDeadline(assignment.dueDate) : 'Not recorded'}</span><label>Your target <Input type="date" value={draft.selfDeadline ?? ''} onChange={(event) => update((state) => { const item = state.academics.classCenter.paperDrafts.find((row) => row.id === draft.id); if (item) Object.assign(item, { selfDeadline: event.target.value || undefined, updatedAt: Date.now() }) })} className="mt-1 h-8" /></label></div></div> })}{!drafts.length && <EmptyState icon={FileText} title="No papers assigned yet" detail="Add a paper when it appears in the syllabus or course site." />}</div>
       </Panel>
       <Panel title="Readings" action={<Button size="sm" variant="outline" onClick={() => {
         const now = Date.now(); update((draft) => draft.academics.classCenter.assignedReadings.push({ id: uid(), courseId, week: 'This week', title: 'Untitled reading', status: 'not-started', createdAt: now, updatedAt: now, order: draft.academics.classCenter.assignedReadings.filter((item) => item.courseId === courseId).length }))
       }}><Plus className="size-4" /> Add reading</Button>}>
-        <div className="space-y-2">{readings.map((reading) => <div key={reading.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/25 p-3"><div className="min-w-0"><p className="font-extrabold">{reading.title}</p><p className="text-xs text-muted-foreground">{reading.week}{reading.source ? ` · ${reading.source}` : ''}</p></div><Select value={reading.status} onValueChange={(status) => patchReading(reading.id, status as AssignedReading['status'])}><SelectTrigger className="w-32"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not-started">Not started</SelectItem><SelectItem value="skimmed">Skimmed</SelectItem><SelectItem value="read">Read</SelectItem></SelectContent></Select></div>)}{!readings.length && <EmptyState icon={BookOpen} title="No readings listed yet" detail="Your syllabus doesn't list readings by week — add them as they are assigned." />}</div>
+        <div className="space-y-2">{readings.map((reading) => <div key={reading.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted p-3"><div className="min-w-0"><p className="font-extrabold">{reading.title}</p><p className="text-xs text-muted-foreground">{reading.week}{reading.source ? ` · ${reading.source}` : ''}</p></div><Select value={reading.status} onValueChange={(status) => patchReading(reading.id, status as AssignedReading['status'])}><SelectTrigger className="w-32"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not-started">Not started</SelectItem><SelectItem value="skimmed">Skimmed</SelectItem><SelectItem value="read">Read</SelectItem></SelectContent></Select></div>)}{!readings.length && <EmptyState icon={BookOpen} title="No readings listed yet" detail="Your syllabus doesn't list readings by week — add one, paste a list, or add this week's reading." />}</div>
+        <div className="mt-3 rounded-xl border border-border bg-muted p-3"><p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Paste a reading list</p><Textarea value={pastedReadings} onChange={(event) => setPastedReadings(event.target.value)} className="mt-2 min-h-20" placeholder="One reading per line" /><Button size="sm" variant="outline" className="mt-2" disabled={!pastedReadings.trim()} onClick={addPastedReadings}>Add pasted readings</Button></div>
       </Panel>
       <Panel className="xl:col-span-2" title="Feedback log">
-        <div className="space-y-2">{feedback.map((note) => <div key={note.id} className="rounded-xl border border-border bg-muted/25 p-3"><p className="font-extrabold">{note.theme}</p>{note.quote && <p className="mt-1 text-sm text-muted-foreground">“{note.quote}”</p>}</div>)}{!feedback.length && <EmptyState icon={NotebookText} title="No feedback logged yet" detail="Capture a professor's recurring note after your first draft returns." />}</div>
+        <div className="space-y-2">{[...feedbackGroups.values()].map((group) => <div key={group.label} className="rounded-xl border border-border bg-muted/25 p-3"><div className="flex items-center justify-between gap-2"><p className="font-extrabold">{group.label}</p><span className="text-xs font-bold text-muted-foreground">{group.notes.length >= 2 ? `Recurring · ${group.notes.length} returned notes` : 'One returned note'}</span></div>{group.notes.map((note) => note.quote && <p key={note.id} className="mt-1 text-sm text-muted-foreground">“{note.quote}”</p>)}</div>)}{!feedback.length && <EmptyState icon={NotebookText} title="No feedback logged yet" detail="Capture a professor's recurring note after your first draft returns." />}</div>
       </Panel>
       {current && <p className="sr-only">Current draft: {current.title}</p>}
       {!readings.length && <p className="sr-only">Reading list incomplete.</p>}
@@ -733,6 +759,7 @@ function Materials({
       />
       {/* §4.1 materials extensions — the shelf. Unit → material → provenance. */}
       <MaterialCatalog files={files} topics={topics} onAdd={addMaterial} />
+      <AssessmentCatalog courseId={courseId} data={data} files={files} />
       <RevisedNotesPanel courseId={courseId} files={files} data={data} />
       <FlashcardDecks courseId={courseId} data={data} />
       {/* §6.6 Pretest and Predict — both pre-lecture acts, beside priming. */}

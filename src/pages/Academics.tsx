@@ -43,6 +43,7 @@ import { useToast } from '@/components/common/useToast'
 import { instantCrossfade, sharedAxis } from '@/lib/motion'
 import { AcademicMigrationReview } from '@/components/academics/AcademicMigrationReview'
 import { StatStrip } from '@/components/common/StatStrip'
+import { TranscriptRecordsPanel } from '@/components/academics/TranscriptRecordsPanel'
 
 const GRADES: LetterGrade[] = ['', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F', 'P', 'IP']
 const COURSE_COLUMNS: ColumnDef[] = [
@@ -310,6 +311,7 @@ export function Academics() {
         <TabsContent value="archive" className="space-y-6">
           {/* §4.1: the end-of-term handoff, only when one is owed. */}
           <TermRollover />
+          <TranscriptRecordsPanel courses={courses} />
           <ClassCenter archiveOnly />
           {/* §4.1: the record-decision layer, beneath the archive it reads. */}
           <GradeDecisionsSection />

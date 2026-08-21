@@ -326,9 +326,9 @@ export function createDemoData(seedTime = Date.now()): AppData {
     // #47/#48 — four marked, one unmarked. Deliberately below the five-record
     // sample floor, so the app must refuse to call it a pattern.
     mistakes: [
-      { id: 'demo-mistake-acid', courseId: courses[4].id, assignmentId: 'demo-a-chem-exam1', topicId: 'demo-topic-acid-base', label: 'Acid–base mechanism', cause: 'blanked' as const, createdAt: stamp(-13), updatedAt: stamp(-13), order: 0 },
+      { id: 'demo-mistake-acid', courseId: courses[4].id, assignmentId: 'demo-a-chem-exam1', topicId: 'demo-topic-acid-base', label: 'Acid–base mechanism', cause: 'knew-it-but-blanked' as const, createdAt: stamp(-13), updatedAt: stamp(-13), order: 0 },
       { id: 'demo-mistake-leaving', courseId: courses[4].id, assignmentId: 'demo-a-chem-exam1', topicId: 'demo-topic-sn2', label: 'Leaving-group order', cause: 'didnt-know' as const, createdAt: stamp(-13), updatedAt: stamp(-13), order: 1 },
-      { id: 'demo-mistake-stereo', courseId: courses[4].id, assignmentId: 'demo-a-chem-exam1', topicId: 'demo-topic-stereochem', label: 'Inversion vs retention', cause: 'blanked' as const, createdAt: stamp(-12), updatedAt: stamp(-12), order: 2 },
+      { id: 'demo-mistake-stereo', courseId: courses[4].id, assignmentId: 'demo-a-chem-exam1', topicId: 'demo-topic-stereochem', label: 'Inversion vs retention', cause: 'knew-it-but-blanked' as const, createdAt: stamp(-12), updatedAt: stamp(-12), order: 2 },
       { id: 'demo-mistake-q7', courseId: courses[4].id, assignmentId: 'demo-a-chem-exam1', label: 'Question 7 is unclassified', createdAt: stamp(-12), updatedAt: stamp(-12), order: 3 },
       { id: 'demo-mistake-biol', courseId: courses[3].id, assignmentId: 'demo-a-biol-ps', topicId: 'demo-topic-potentials', label: 'Channel gating sequence', cause: 'didnt-know' as const, createdAt: stamp(-5), updatedAt: stamp(-5), order: 4 },
     ],
@@ -340,6 +340,11 @@ export function createDemoData(seedTime = Date.now()): AppData {
     generatedFlashcardDecks: [],
     generatedMockAttempts: [],
     generatedRevisedNotes: [],
+    professorEvidence: [],
+    conceptCanvases: [],
+    assessmentMaterials: [],
+    assessmentAttempts: [],
+    transcriptRecords: [],
   }
   data.academics.courseOptions = courses.map((item, order) => ({ id: `demo-option-${item.id}`, name: item.code, title: item.title, color: ['blue', 'green', 'purple', 'orange'][order % 4] as 'blue' | 'green' | 'purple' | 'orange' }))
   data.academics.migrationJournal = []

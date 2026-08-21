@@ -229,6 +229,11 @@ function migrateRelatedRows(
     generatedFlashcardDecks: [],
     generatedMockAttempts: [],
     generatedRevisedNotes: [],
+    professorEvidence: [],
+    conceptCanvases: [],
+    assessmentMaterials: [],
+    assessmentAttempts: [],
+    transcriptRecords: [],
   }
 }
 

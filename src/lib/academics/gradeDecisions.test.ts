@@ -98,18 +98,18 @@ describe('missing inputs', () => {
 
 describe('#47/#48 mistake evidence', () => {
   it('routes blanking to retrieval and not-knowing to the source', () => {
-    expect(mistakeRoute(mistake({ cause: 'blanked' }))).toBe('recall')
+    expect(mistakeRoute(mistake({ cause: 'knew-it-but-blanked' }))).toBe('recall')
     expect(mistakeRoute(mistake({ cause: 'didnt-know' }))).toBe('material')
   })
 
   it('routes an unmarked mistake back to the student, never to a guess', () => {
     expect(mistakeRoute(mistake())).toBe('needs-mark')
-    expect(unmarkedMistakes([mistake(), mistake({ id: 'm2', cause: 'blanked' })])).toHaveLength(1)
+    expect(unmarkedMistakes([mistake(), mistake({ id: 'm2', cause: 'knew-it-but-blanked' })])).toHaveLength(1)
   })
 
   it('refuses to call anything a pattern below the sample floor', () => {
     const marked = (count: number) => Array.from({ length: count }, (_, index) =>
-      mistake({ id: `m${index}`, cause: 'blanked' }))
+      mistake({ id: `m${index}`, cause: 'knew-it-but-blanked' }))
     expect(patternIsReportable(marked(1))).toBe(false)
     expect(patternIsReportable(marked(PATTERN_SAMPLE_FLOOR - 1))).toBe(false)
     expect(patternIsReportable(marked(PATTERN_SAMPLE_FLOOR))).toBe(true)

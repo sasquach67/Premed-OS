@@ -698,6 +698,102 @@ export interface GeneratedMockAttempt {
   order: number
 }
 
+/** A dated observation the student wrote from work that has actually returned.
+ * It is evidence, not a professor prediction or readiness verdict. */
+export interface ProfessorEvidenceObservation {
+  id: ID
+  courseId: ID
+  assignmentId: ID
+  personId?: ID
+  observation: string
+  observedAt: number
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
+/** A deliberately small student-authored concept map attached to one review. */
+export interface ConceptCanvasNode {
+  id: ID
+  label: string
+}
+
+export interface ConceptCanvasEdge {
+  id: ID
+  fromNodeId: ID
+  toNodeId: ID
+  label: string
+}
+
+export interface ConceptCanvasResponse {
+  id: ID
+  courseId: ID
+  topicId?: ID
+  reviewEventId?: ID
+  nodes: ConceptCanvasNode[]
+  edges: ConceptCanvasEdge[]
+  attachedFileId?: ID
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
+/** Permission is stated by the student; content from an unknown origin stays private. */
+export type AssessmentMaterialPermission =
+  | 'instructor-provided'
+  | 'publicly-posted'
+  | 'my-returned-work'
+  | 'unknown-origin'
+
+export interface AssessmentMaterialRecord {
+  id: ID
+  courseId: ID
+  fileId?: ID
+  title: string
+  unit?: string
+  permission: AssessmentMaterialPermission
+  sourceLabel: string
+  topicIds: ID[]
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
+/** An attempt on material the student supplied or linked; never a generated mock. */
+export interface AssessmentAttempt {
+  id: ID
+  courseId: ID
+  materialId: ID
+  topicIds: ID[]
+  startedAt: number
+  endedAt?: number
+  result?: string
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
+/** A transcript-faithful entry. Operational Course fields remain separate. */
+export interface TranscriptCourseRecord {
+  id: ID
+  courseId: ID
+  institution: string
+  courseNumberExact: string
+  titleExact: string
+  creditsExact: string
+  gradeExact: string
+  term: string
+  year: string
+  courseType: string
+  displayName?: string
+  evidenceFileId?: ID
+  classificationSource?: string
+  classificationReason?: string
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
 export interface ClassCenterData {
   workspaces: ClassWorkspace[]
   topics: Topic[]
@@ -723,6 +819,11 @@ export interface ClassCenterData {
   generatedFlashcardDecks: GeneratedFlashcardDeck[]
   generatedMockAttempts: GeneratedMockAttempt[]
   generatedRevisedNotes: GeneratedRevisedNotes[]
+  professorEvidence: ProfessorEvidenceObservation[]
+  conceptCanvases: ConceptCanvasResponse[]
+  assessmentMaterials: AssessmentMaterialRecord[]
+  assessmentAttempts: AssessmentAttempt[]
+  transcriptRecords: TranscriptCourseRecord[]
 }
 
 /** Parsed or student-entered syllabus category. This intentionally has no grade math. */
@@ -746,7 +847,13 @@ export interface GradeCategory {
 }
 
 /** How a student explained their own error. Never inferred, never predicted. */
-export type AcademicMistakeCause = 'blanked' | 'didnt-know'
+export type AcademicMistakeCause =
+  | 'didnt-know'
+  | 'knew-it-but-blanked'
+  | 'misread-the-question'
+  | 'arithmetic'
+  | 'ran-out-of-time'
+  | 'wrong-method'
 
 /**
  * One mistake the student chose to mark while reviewing returned work. `cause`

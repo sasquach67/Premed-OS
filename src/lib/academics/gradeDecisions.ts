@@ -152,12 +152,12 @@ export function missingInputs(categories: GradeCategory[], assignments: ClassAss
 export type MistakeRoute = 'recall' | 'material' | 'needs-mark'
 
 /**
- * #48 — the most actionable cut in the taxonomy. `blanked` is a retrieval
+ * #48 — the most actionable cut in the taxonomy. `knew-it-but-blanked` is a retrieval
  * failure and routes to practice; `didnt-know` is a content gap and routes to
  * the source. An unmarked mistake routes to the student, not to a guess.
  */
 export function mistakeRoute(mistake: AcademicMistake): MistakeRoute {
-  if (mistake.cause === 'blanked') return 'recall'
+  if (mistake.cause === 'knew-it-but-blanked') return 'recall'
   if (mistake.cause === 'didnt-know') return 'material'
   return 'needs-mark'
 }
@@ -169,8 +169,12 @@ export const MISTAKE_ROUTE_LABEL: Record<MistakeRoute, string> = {
 }
 
 export const MISTAKE_CAUSE_LABEL = {
-  blanked: 'Blanked',
+  'knew-it-but-blanked': 'Knew it, but blanked',
   'didnt-know': 'Did not know',
+  'misread-the-question': 'Misread the question',
+  arithmetic: 'Arithmetic',
+  'ran-out-of-time': 'Ran out of time',
+  'wrong-method': 'Wrong method',
   unmarked: 'Needs a mark',
 } as const
 

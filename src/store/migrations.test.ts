@@ -20,7 +20,7 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(26)
+  expect(CURRENT_STORE_VERSION).toBe(27)
 })
 
 describe('migrateExamPrepV19', () => {
