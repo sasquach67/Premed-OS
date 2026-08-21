@@ -300,6 +300,10 @@ function createClassCenterSeed(): AcademicTagSettings['classCenter'] {
     assessmentMaterials: [],
     assessmentAttempts: [],
     transcriptRecords: [],
+    lectures: [],
+    lectureFindings: [],
+    lectureMaterialProposals: [],
+    lectureNoteProposals: [],
   }
 }
 

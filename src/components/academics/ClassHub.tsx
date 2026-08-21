@@ -51,12 +51,13 @@ import { generateFlashcards } from '@/lib/academics/generateFlashcards'
 import { downloadFlashcardApkg, downloadFlashcardTsv } from '@/lib/academics/flashcardExport'
 import { PredictPanel } from '@/components/academics/PredictPanel'
 import { PretestPanel } from '@/components/academics/PretestPanel'
-import { TranscriptImport } from '@/components/academics/TranscriptImport'
+import { LectureCapturePanel } from '@/components/academics/LectureCapturePanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { LearningSignalsPanel } from '@/components/academics/LearningSignalsPanel'
 import { RevisedNotesPanel } from '@/components/academics/RevisedNotesPanel'
 import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
 import { AssessmentCatalog } from '@/components/academics/AssessmentCatalog'
+import { readLocalBlob } from '@/lib/localBlobStore'
 
 type HubTab = 'overview' | 'materials' | 'topics' | 'readings' | 'assignments' | 'notes'
 
@@ -292,7 +293,7 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
         /></TabsContent>
         <TabsContent value="readings"><WritingTools courseId={course.id} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /></TabsContent>
         <TabsContent value="assignments"><Assignments assignments={courseAssignments} topics={courseTopics} classType={classType} /></TabsContent>
-        <TabsContent value="notes"><Notes courseId={course.id} notes={courseNotes} topics={courseTopics} topicFilter={params.get('noteTopic') ?? undefined} /></TabsContent>
+        <TabsContent value="notes"><Notes courseId={course.id} notes={courseNotes} topics={courseTopics} data={data} onOpenMaterials={() => changeTab('materials')} topicFilter={params.get('noteTopic') ?? undefined} /></TabsContent>
       </Tabs>
     </div>
   )
@@ -765,8 +766,8 @@ function Materials({
       {/* §6.6 Pretest and Predict — both pre-lecture acts, beside priming. */}
       <PretestPanel topics={topics} />
       <PredictPanel courseId={courseId} topics={topics} />
-      {/* §4.1-Q — the transcript arrives as text; the audio never leaves the iPad. */}
-      <TranscriptImport courseId={courseId} />
+      {/* §4.1-Q — audio is retained locally; transcript evidence is reviewed here. */}
+      <LectureCapturePanel courseId={courseId} data={data} onOpenNotes={() => onTab('notes')} />
       {/* §4.1 — read-only Canvas context through Google Calendar. */}
       <CalendarReview assignments={data.assignments.filter((item) => item.courseId === courseId)} />
       <div className="flex flex-wrap gap-2" aria-label="Material filters">
@@ -884,10 +885,12 @@ function Assignments({ assignments, topics, classType }: { assignments: ClassAss
   )
 }
 
-function Notes({ courseId, notes, topics, topicFilter }: {
+function Notes({ courseId, notes, topics, data, onOpenMaterials, topicFilter }: {
   courseId: string
   notes: ClassNote[]
   topics: Topic[]
+  data: ClassCenterData
+  onOpenMaterials: () => void
   /** Set when arriving from a topic's menu, so the tab lands on that topic. */
   topicFilter?: string
 }) {
@@ -926,6 +929,7 @@ function Notes({ courseId, notes, topics, topicFilter }: {
             </Button>
           </div>
         )} New note</Button>} />
+        <ProfessorRemarkProposals courseId={courseId} data={data} onOpenMaterials={onOpenMaterials} />
         {sections.map((section) => (
           <Card key={section.key}>
             <CardHeader><CardTitle>{section.title}</CardTitle></CardHeader>
@@ -944,6 +948,82 @@ function Notes({ courseId, notes, topics, topicFilter }: {
         {!topicNotes.length && <EmptyState icon={NotebookText} title="No linked topic notes" detail="Link a class note to a topic to build this rail." />}
       </aside>
     </div>
+  )
+}
+
+/**
+ * Transcript analysis never writes a working class note on its own. This is
+ * the deliberate confirmation boundary: every proposed professor remark keeps
+ * its exact source quote and timestamp until the student adds or dismisses it.
+ */
+function ProfessorRemarkProposals({ courseId, data, onOpenMaterials }: { courseId: string; data: ClassCenterData; onOpenMaterials: () => void }) {
+  const [playingId, setPlayingId] = useState<string | null>(null)
+  const proposals = data.lectureNoteProposals
+    .filter((proposal) => proposal.courseId === courseId && proposal.status === 'pending')
+    .sort((a, b) => a.order - b.order)
+
+  if (!proposals.length) return null
+
+  async function playSource(proposalId: string) {
+    const proposal = data.lectureNoteProposals.find((item) => item.id === proposalId)
+    const lecture = proposal ? data.lectures.find((item) => item.id === proposal.lectureId) : undefined
+    if (!lecture?.audioBlobRef) {
+      onOpenMaterials()
+      return
+    }
+    const blob = await readLocalBlob(lecture.audioBlobRef)
+    if (!blob) return
+    const audio = new Audio(URL.createObjectURL(blob))
+    setPlayingId(proposalId)
+    audio.addEventListener('ended', () => setPlayingId((current) => current === proposalId ? null : current), { once: true })
+    void audio.play().catch(() => setPlayingId(null))
+  }
+
+  function accept(proposalId: string) {
+    const now = Date.now()
+    useStore.getState().update((draft) => {
+      const center = draft.academics.classCenter
+      const proposal = center.lectureNoteProposals.find((item) => item.id === proposalId)
+      const finding = proposal ? center.lectureFindings.find((item) => item.id === proposal.findingId) : undefined
+      const lecture = proposal ? center.lectures.find((item) => item.id === proposal.lectureId) : undefined
+      if (!proposal || !finding) return
+      proposal.status = 'accepted'
+      proposal.updatedAt = now
+      center.notes.unshift({
+        id: uid(), courseId, title: `Professor remark: ${finding.label}`, type: 'lecture', kind: 'about-class', date: isoToday(), unit: '', topicIds: [],
+        content: `Professor remark · ${finding.timestamp}\n\n“${finding.quote}”\n\n${finding.detail}`,
+        syncStatus: 'local-only', linkedFileIds: lecture?.transcriptFileId ? [lecture.transcriptFileId] : [], createdAt: now, updatedAt: now, order: center.notes.length,
+      })
+    })
+  }
+
+  function dismiss(proposalId: string) {
+    useStore.getState().update((draft) => {
+      const proposal = draft.academics.classCenter.lectureNoteProposals.find((item) => item.id === proposalId)
+      if (proposal) Object.assign(proposal, { status: 'dismissed', updatedAt: Date.now() })
+    })
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Professor remarks to review</CardTitle>
+        <p className="mt-1 text-sm text-muted-foreground">Exact lecture moments about this class. Add one only if it belongs in your working notes.</p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {proposals.map((proposal) => {
+          const finding = data.lectureFindings.find((item) => item.id === proposal.findingId)
+          const lecture = data.lectures.find((item) => item.id === proposal.lectureId)
+          if (!finding) return null
+          return <article key={proposal.id} className="rounded-xl border border-border bg-muted/25 p-3">
+            <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-extrabold uppercase tracking-[0.1em] text-primary">{finding.timestamp} · {finding.label}</p><p className="mt-2 font-display text-base font-extrabold">“{finding.quote}”</p></div><Badge variant="outline">Pending</Badge></div>
+            <p className="mt-2 text-sm font-semibold text-muted-foreground">{finding.detail}</p>
+            <p className="mt-2 text-xs font-semibold text-muted-foreground">Source: {lecture?.title || 'Lecture transcript'} · {finding.timestamp}</p>
+            <div className="mt-3 flex flex-wrap gap-2"><Button size="sm" onClick={() => accept(proposal.id)}>Add to class notes</Button><Button size="sm" variant="outline" onClick={() => void playSource(proposal.id)}>{playingId === proposal.id ? 'Playing…' : lecture?.audioBlobRef ? 'Listen locally' : 'View in Materials'}</Button><Button size="sm" variant="ghost" onClick={() => dismiss(proposal.id)}>Dismiss</Button></div>
+          </article>
+        })}
+      </CardContent>
+    </Card>
   )
 }
 

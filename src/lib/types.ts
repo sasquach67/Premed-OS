@@ -519,6 +519,75 @@ export interface SourceChunk {
   order: number
 }
 
+/**
+ * A course-owned lecture capture. The optional audio reference points at the
+ * device-local blob store; binary audio never enters persisted app state.
+ */
+export type LectureInputPath = 'recorded' | 'uploaded' | 'pasted'
+export type LectureProcessingState = 'recording' | 'ready' | 'unavailable' | 'failed'
+
+export interface LectureRecord {
+  id: ID
+  courseId: ID
+  title: string
+  inputPath: LectureInputPath
+  /** Present only for a locally retained recording or audio upload. */
+  audioBlobRef?: string
+  /** The existing transcript material which owns the source text. */
+  transcriptFileId?: ID
+  processingState: LectureProcessingState
+  processingError?: string
+  createdAt: number
+  processedAt?: number
+  updatedAt: number
+  order: number
+}
+
+/** A source-backed lecture moment. It remains descriptive, never predictive. */
+export interface LectureEvidenceFinding {
+  id: ID
+  courseId: ID
+  lectureId: ID
+  sourceChunkId: ID
+  /** Exact contiguous source text, validated before persistence. */
+  quote: string
+  /** The transcript's own time label. Timed findings never manufacture one. */
+  timestamp: string
+  label: string
+  detail: string
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
+export type LectureProposalStatus = 'pending' | 'accepted' | 'dismissed'
+
+/** Material and coverage changes stay proposals until the student confirms. */
+export interface LectureMaterialProposal {
+  id: ID
+  courseId: ID
+  lectureId: ID
+  findingId: ID
+  materialFileId?: ID
+  topicId?: ID
+  status: LectureProposalStatus
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
+/** A class-note proposal is visible in Notes but never edits a note by itself. */
+export interface LectureNoteProposal {
+  id: ID
+  courseId: ID
+  lectureId: ID
+  findingId: ID
+  status: LectureProposalStatus
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
 export type AcademicMigrationReviewKind =
   | 'workspace-unmatched'
   | 'workspace-conflict'
@@ -824,6 +893,10 @@ export interface ClassCenterData {
   assessmentMaterials: AssessmentMaterialRecord[]
   assessmentAttempts: AssessmentAttempt[]
   transcriptRecords: TranscriptCourseRecord[]
+  lectures: LectureRecord[]
+  lectureFindings: LectureEvidenceFinding[]
+  lectureMaterialProposals: LectureMaterialProposal[]
+  lectureNoteProposals: LectureNoteProposal[]
 }
 
 /** Parsed or student-entered syllabus category. This intentionally has no grade math. */

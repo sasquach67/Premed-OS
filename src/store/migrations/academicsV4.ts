@@ -234,6 +234,12 @@ function migrateRelatedRows(
     assessmentMaterials: [],
     assessmentAttempts: [],
     transcriptRecords: [],
+    // v28 owns lecture-capture migration; the v4 baseline still needs a
+    // structurally complete ClassCenterData shape for type-safe hydration.
+    lectures: [],
+    lectureFindings: [],
+    lectureMaterialProposals: [],
+    lectureNoteProposals: [],
   }
 }
 
