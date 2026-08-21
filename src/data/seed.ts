@@ -294,6 +294,7 @@ function createClassCenterSeed(): AcademicTagSettings['classCenter'] {
     examPrepPlans: [],
     generatedFlashcardDecks: [],
     generatedMockAttempts: [],
+    generatedRevisedNotes: [],
   }
 }
 

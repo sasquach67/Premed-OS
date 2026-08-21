@@ -25,7 +25,7 @@ export type GenerationScope = 'academics' | 'mcat'
 /** Academics: any study artifact, for a specific class. */
 export const ACADEMICS_ARTIFACTS = [
   'practice-exam', 'practice-problems', 'problem-set', 'quiz', 'worksheet',
-  'study-guide', 'summary', 'explanation', 'flashcards', 'recall-prompts',
+  'study-guide', 'revised-notes', 'summary', 'explanation', 'flashcards', 'recall-prompts',
 ] as const
 
 /** MCAT: unchanged — drills and flashcards only. */

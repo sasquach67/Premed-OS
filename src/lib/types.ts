@@ -617,6 +617,60 @@ export interface GeneratedFlashcardDeck {
   order: number
 }
 
+/** A source-linked repair of a student's own lecture record. It is deliberately
+ * distinct from a ClassNote because individual passages and unresolved source
+ * differences need durable citation provenance. */
+export interface GeneratedRevisedNotesRef {
+  fileId: ID
+  chunkId: ID
+  start: number
+  end: number
+}
+
+export interface GeneratedRevisedNotesPassage {
+  id: ID
+  title?: string
+  content: string
+  /** Revised Notes V1 is source-only. Keeping this explicit makes the contract
+   * inspectable even if a later artifact permits another source mode. */
+  provenance: 'source'
+  sourceRefs: GeneratedRevisedNotesRef[]
+}
+
+export interface GeneratedRevisedNotesSection {
+  id: ID
+  title: string
+  passages: GeneratedRevisedNotesPassage[]
+}
+
+/** The record of a disagreement is an outcome, not an error to be smoothed. */
+export interface GeneratedRevisedNotesDifference {
+  id: ID
+  label: 'Unresolved source difference'
+  detail: string
+  sourceRefs: GeneratedRevisedNotesRef[]
+}
+
+export interface GeneratedRevisedNotes {
+  id: ID
+  courseId: ID
+  title: string
+  specId: 'revised-notes-v1'
+  specHash: string
+  sections: GeneratedRevisedNotesSection[]
+  unresolvedDifferences: GeneratedRevisedNotesDifference[]
+  /** The precise selection, then the subset that actually supports output. */
+  selectedSourceChunkIds: ID[]
+  usedSourceChunkIds: ID[]
+  unusedSourceChunkIds: ID[]
+  selectedFileIds: ID[]
+  usedFileIds: ID[]
+  unusedFileIds: ID[]
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
 export interface GeneratedMockQuestion {
   id: ID
   prompt: string
@@ -668,6 +722,7 @@ export interface ClassCenterData {
   examPrepPlans: ExamPrepPlan[]
   generatedFlashcardDecks: GeneratedFlashcardDeck[]
   generatedMockAttempts: GeneratedMockAttempt[]
+  generatedRevisedNotes: GeneratedRevisedNotes[]
 }
 
 /** Parsed or student-entered syllabus category. This intentionally has no grade math. */

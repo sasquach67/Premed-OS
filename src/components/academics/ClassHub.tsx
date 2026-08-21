@@ -53,6 +53,7 @@ import { PretestPanel } from '@/components/academics/PretestPanel'
 import { TranscriptImport } from '@/components/academics/TranscriptImport'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { LearningSignalsPanel } from '@/components/academics/LearningSignalsPanel'
+import { RevisedNotesPanel } from '@/components/academics/RevisedNotesPanel'
 
 type HubTab = 'overview' | 'materials' | 'topics' | 'readings' | 'assignments' | 'notes'
 
@@ -732,6 +733,7 @@ function Materials({
       />
       {/* §4.1 materials extensions — the shelf. Unit → material → provenance. */}
       <MaterialCatalog files={files} topics={topics} onAdd={addMaterial} />
+      <RevisedNotesPanel courseId={courseId} files={files} data={data} />
       <FlashcardDecks courseId={courseId} data={data} />
       {/* §6.6 Pretest and Predict — both pre-lecture acts, beside priming. */}
       <PretestPanel topics={topics} />

@@ -45,6 +45,7 @@ import { migrateTopicPredictionsV22 } from '@/store/migrations/topicPredictionsV
 import { migrateSavedPlansV23 } from '@/store/migrations/savedPlansV23'
 import { migrateAssignmentDueDateIsoV24 } from '@/store/migrations/assignmentDueDateIsoV24'
 import { migrateGeneratedArtifactsV25 } from '@/store/migrations/generatedArtifactsV25'
+import { migrateRevisedNotesV26 } from '@/store/migrations/revisedNotesV26'
 import { removeStoryAttachment, retainThenPersistStoryAttachment } from '@/lib/overviewFileCapture'
 
 const DEMO_MODE = isDemoMode()
@@ -63,8 +64,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateGeneratedArtifactsV25`. */
-export const CURRENT_STORE_VERSION = 25
+/** Matches the newest migration in `migrateAll`: `migrateRevisedNotesV26`. */
+export const CURRENT_STORE_VERSION = 26
 
 function createInitialData() {
   if (!DEMO_MODE) return structuredClone(createSeedData())
@@ -545,7 +546,8 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateTopicPredictionsV22(migrated)
   migrated = migrateSavedPlansV23(migrated)
   migrated = migrateAssignmentDueDateIsoV24(migrated)
-  return migrateGeneratedArtifactsV25(migrated)
+  migrated = migrateGeneratedArtifactsV25(migrated)
+  return migrateRevisedNotesV26(migrated)
 }
 
 function nextOrder(arr: AnyRow[]): number {

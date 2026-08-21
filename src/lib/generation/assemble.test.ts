@@ -133,4 +133,13 @@ describe('the assembled request', () => {
     // Its own L2 rules ride alongside the global ones.
     expect(guide.systemPrompt).toContain('SG-SPLIT')
   })
+
+  it('exposes the revised-notes response shape to the provider and hashes it', () => {
+    const revised = assembleGenerationRequest({ ...base, specId: 'revised-notes-v1', controls: { source_mode: 'SOURCE_ONLY' } })
+    const ordinary = assembleGenerationRequest({ ...base, specId: 'revised-notes-v1' })
+    expect(revised.systemPrompt).toContain('RN-SOURCE-ONLY')
+    expect(revised.systemPrompt).toContain('# Required JSON response schema')
+    expect(revised.systemPrompt).toContain('unresolvedDifferences')
+    expect(revised.specHash).not.toBe(ordinary.specHash)
+  })
 })

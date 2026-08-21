@@ -228,6 +228,7 @@ function migrateRelatedRows(
     examPrepPlans: [],
     generatedFlashcardDecks: [],
     generatedMockAttempts: [],
+    generatedRevisedNotes: [],
   }
 }
 

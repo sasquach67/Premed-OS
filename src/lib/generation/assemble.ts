@@ -105,6 +105,9 @@ export function assembleGenerationRequest(input: AssembleInput): AssembledReques
     '# Resolved controls',
     controlLines,
   ]
+  if (artifact.outputSchema) {
+    layers.push('', '# Required JSON response schema', JSON.stringify(artifact.outputSchema))
+  }
   if (input.request) layers.push('', '# This request', input.request)
 
   return {
@@ -117,6 +120,7 @@ export function assembleGenerationRequest(input: AssembleInput): AssembledReques
       artifact.specId,
       artifact.objective,
       artifact.rules.map((rule) => `${rule.id}=${rule.text}`).join('|'),
+      artifact.outputSchema ? JSON.stringify(artifact.outputSchema) : '',
       preset.id,
       mode.instruction,
       CONTROL_KEYS.map((key) => `${key}=${resolvedControls[key]}`).join('|'),
