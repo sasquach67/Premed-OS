@@ -148,6 +148,25 @@ hover is quiet, and `prefers-reduced-motion` resolves directly.
 | **B · Artifact-first workbench** | Chosen artifact sits in the header. Five varied compact input objects surround a wide selected-source tray; the explanatory rail disappears. | Makes source collection the dominant task while retaining the selected output as a fixed badge. It avoids a wall of identical file rows. |
 | **C · Contextual intake sheet** | A bounded solid sheet floats over the Materials shelf. Its artifact label and source count lead; source objects compress above a two-column selected-source tray. | Reads as a temporary focused action, not a new Materials subtab or a permanent toolbar. At narrow widths it becomes the content column without changing order. |
 
+### Implementation selection — A · Anchored source map (Aug 21, 2026)
+
+**A · Anchored source map** is the implementation source of truth for the
+output-first intake family. The selected artifact remains fixed at the right of
+the source map, the five contextual input paths remain visible in the map, and
+the selected-source tray stays immediately adjacent. The narrow route rail is
+retained because it makes the evidence boundary and the next artifact-specific
+step legible without adding a generator-tab row.
+
+This choice applies to `study-guide-intake`, `flashcards-intake`, and
+`revised-notes-intake`. The recovery views inherit the same anchored hierarchy:
+they retain the requested artifact and source identity before showing one safe
+next action. Variants B and C remain available in the lab as comparison
+records, but they are not implementation directions.
+
+The eventual app implementation still translates the dark mockup's visual
+roles through `src/index.css` tokens and separately measures light and dark
+themes. It does not copy the mockup's inline colors, radii, type, or spacing.
+
 The new product views are `study-guide-intake`, `flashcards-intake`,
 `revised-notes-intake`, `source-not-ready`, and `no-eligible-source`. They
 share the same source grammar; their labels change only to make the artifact’s
