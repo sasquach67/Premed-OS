@@ -47,15 +47,13 @@ import { TopicConnectField } from '@/components/academics/TopicConnectField'
 import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
 import { retainLocalMaterial } from '@/lib/academics/localMaterialFiles'
 import { generateStudyGuide, sourcesFor } from '@/lib/academics/generateStudyGuide'
-import { generateFlashcards } from '@/lib/academics/generateFlashcards'
 import { downloadFlashcardApkg, downloadFlashcardTsv } from '@/lib/academics/flashcardExport'
 import { PredictPanel } from '@/components/academics/PredictPanel'
 import { PretestPanel } from '@/components/academics/PretestPanel'
 import { LectureCapturePanel } from '@/components/academics/LectureCapturePanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { LearningSignalsPanel } from '@/components/academics/LearningSignalsPanel'
-import { RevisedNotesPanel } from '@/components/academics/RevisedNotesPanel'
-import { PastedExcerptDialog } from '@/components/academics/PastedExcerptDialog'
+import { MaterialGenerationIntake, type MaterialArtifact } from '@/components/academics/MaterialGenerationIntake'
 import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
 import { AssessmentCatalog } from '@/components/academics/AssessmentCatalog'
 import { readLocalBlob } from '@/lib/localBlobStore'
@@ -695,6 +693,7 @@ function Materials({
   const navigate = useNavigate()
   const toast = useToast()
   const [filter, setFilter] = useState<'all' | 'course' | 'mine' | 'generated' | 'unassigned'>('all')
+  const [artifact, setArtifact] = useState<MaterialArtifact | null>(null)
   const groups = useMemo(() => groupFiles(files, topics, notes), [files, notes, topics])
   const visible = groups.map((group) => ({
     ...group,
@@ -757,12 +756,12 @@ function Materials({
       <SectionToolbar
         title="Materials"
         detail="Course files stay grouped by their linked unit."
-        action={<div className="flex flex-wrap items-center gap-2"><Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button><Button size="sm" variant="outline" onClick={addMaterial}><Plus className="size-4" /> Add material</Button><PastedExcerptDialog courseId={courseId} /><StudyToolActions onOpenNotes={() => onTab('notes')} courseId={courseId} label={courseCode} /></div>}
+        action={<div className="flex flex-wrap items-center gap-2"><Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button><Button size="sm" onClick={() => setArtifact('study-guide')}><Sparkles className="size-4" /> Generate study guide</Button><DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" aria-label="More study material actions"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => setArtifact('flashcards')}><Sparkles className="size-4" /> Generate flashcards</DropdownMenuItem><DropdownMenuItem onClick={() => setArtifact('revised-notes')}><NotebookText className="size-4" /> Generate revised notes</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div>}
       />
+      {artifact && <MaterialGenerationIntake artifact={artifact} courseId={courseId} courseLabel={courseCode} files={files} onClose={() => setArtifact(null)} onAddMaterial={addMaterial} />}
       {/* §4.1 materials extensions — the shelf. Unit → material → provenance. */}
       <MaterialCatalog files={files} topics={topics} onAdd={addMaterial} />
       <AssessmentCatalog courseId={courseId} data={data} files={files} />
-      <RevisedNotesPanel courseId={courseId} files={files} data={data} />
       <FlashcardDecks courseId={courseId} data={data} />
       {/* §6.6 Pretest and Predict — both pre-lecture acts, beside priming. */}
       <PretestPanel topics={topics} />
@@ -1286,93 +1285,6 @@ function Panel({ title, action, className, children }: { title: string; action?:
 
 function SectionToolbar({ title, detail, action }: { title: string; detail: string; action?: React.ReactNode }) {
   return <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-display text-2xl font-extrabold">{title}</h2><p className="text-sm font-semibold text-muted-foreground">{detail}</p></div>{action}</div>
-}
-
-/**
- * §6.2 "generate study guide" — the real one.
- *
- * Every failure is reported with its own reason rather than a generic retry:
- * a refused citation, a missing sign-in, and an unprocessed material are three
- * different problems with three different fixes.
- */
-function StudyToolActions({ onOpenNotes, courseId, fileId, label }: {
-  onOpenNotes: () => void
-  courseId: string
-  /** Narrow generation to one material; omit to use every source in the class. */
-  fileId?: string
-  label: string
-}) {
-  const toast = useToast()
-  const chunks = useStore((s) => s.academics.classCenter.sourceChunks)
-  const [busy, setBusy] = useState(false)
-  const [cardBusy, setCardBusy] = useState(false)
-
-  async function generate() {
-    setBusy(true)
-    const sources = sourcesFor(chunks, courseId, fileId)
-    const outcome = await generateStudyGuide({ courseId, chunks: sources, label })
-    setBusy(false)
-
-    if (!outcome.ok) {
-      toast({ title: 'Nothing was saved', description: outcome.message ?? 'The guide could not be generated.' })
-      return
-    }
-    // Persisted as a class note of type `study-guide`, carrying its specHash so
-    // the artifact can be traced back to the spec version that produced it.
-    useStore.getState().update((draft) => {
-      draft.academics.classCenter.notes.push({
-        id: uid(),
-        courseId,
-        title: outcome.title!,
-        type: 'study-guide',
-        kind: 'about-class',
-        date: isoToday(),
-        unit: '',
-        topicIds: [],
-        content: `${outcome.content}\n\n---\nGenerated from your own material · spec ${outcome.specHash}`,
-        syncStatus: 'local-only',
-        linkedFileIds: outcome.fileIds ?? [],
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        order: draft.academics.classCenter.notes.length,
-      })
-    })
-    toast({ title: 'Study guide generated', description: `Saved to notes as “${outcome.title}”.` })
-  }
-
-  async function flashcards() {
-    setCardBusy(true)
-    const sources = sourcesFor(chunks, courseId, fileId)
-    const outcome = await generateFlashcards({ courseId, chunks: sources, label })
-    setCardBusy(false)
-    if (!outcome.ok || !outcome.cards || !outcome.specHash) {
-      toast({ title: 'Nothing was saved', description: outcome.message ?? 'Flashcards could not be generated.' })
-      return
-    }
-    useStore.getState().update((draft) => {
-      const decks = draft.academics.classCenter.generatedFlashcardDecks
-      decks.unshift({ id: uid(), courseId, title: `${label} flashcards`, sourceChunkIds: sources.map((source) => source.id), specId: 'flashcards-v1', specHash: outcome.specHash!, cards: outcome.cards!, createdAt: Date.now(), updatedAt: Date.now(), order: decks.length })
-    })
-    toast({ title: 'Flashcards generated', description: 'Saved as a source-grounded deck. Export it to Anki when you are ready.' })
-  }
-
-  return (
-    <div className="flex items-center gap-2">
-      <Button onClick={generate} disabled={busy}>
-        <Sparkles className="size-4" /> {busy ? 'Generating…' : 'Generate study guide'}
-      </Button>
-      <Button variant="outline" onClick={flashcards} disabled={cardBusy}>
-        <Sparkles className="size-4" /> {cardBusy ? 'Generating…' : 'Generate flashcards'}
-      </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="More study tools"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={onOpenNotes}><NotebookText className="size-4" /> Open class notes</DropdownMenuItem>
-          <DropdownMenuItem onClick={generate}><FileText className="size-4" /> Generate from every source</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  )
 }
 
 /** Materials-owned preview. The deck remains inspectable and exportable later;
