@@ -46,6 +46,8 @@ import { TopicConnectField } from '@/components/academics/TopicConnectField'
 import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
 import { retainLocalMaterial } from '@/lib/academics/localMaterialFiles'
 import { generateStudyGuide, sourcesFor } from '@/lib/academics/generateStudyGuide'
+import { generateFlashcards } from '@/lib/academics/generateFlashcards'
+import { downloadFlashcardTsv } from '@/lib/academics/flashcardExport'
 import { PredictPanel } from '@/components/academics/PredictPanel'
 import { PretestPanel } from '@/components/academics/PretestPanel'
 import { TranscriptImport } from '@/components/academics/TranscriptImport'
@@ -730,6 +732,7 @@ function Materials({
       />
       {/* §4.1 materials extensions — the shelf. Unit → material → provenance. */}
       <MaterialCatalog files={files} topics={topics} onAdd={addMaterial} />
+      <FlashcardDecks courseId={courseId} data={data} />
       {/* §6.6 Pretest and Predict — both pre-lecture acts, beside priming. */}
       <PretestPanel topics={topics} />
       <PredictPanel courseId={courseId} topics={topics} />
@@ -1192,6 +1195,7 @@ function StudyToolActions({ onOpenNotes, courseId, fileId, label }: {
   const toast = useToast()
   const chunks = useStore((s) => s.academics.classCenter.sourceChunks)
   const [busy, setBusy] = useState(false)
+  const [cardBusy, setCardBusy] = useState(false)
 
   async function generate() {
     setBusy(true)
@@ -1226,10 +1230,29 @@ function StudyToolActions({ onOpenNotes, courseId, fileId, label }: {
     toast({ title: 'Study guide generated', description: `Saved to notes as “${outcome.title}”.` })
   }
 
+  async function flashcards() {
+    setCardBusy(true)
+    const sources = sourcesFor(chunks, courseId, fileId)
+    const outcome = await generateFlashcards({ courseId, chunks: sources, label })
+    setCardBusy(false)
+    if (!outcome.ok || !outcome.cards || !outcome.specHash) {
+      toast({ title: 'Nothing was saved', description: outcome.message ?? 'Flashcards could not be generated.' })
+      return
+    }
+    useStore.getState().update((draft) => {
+      const decks = draft.academics.classCenter.generatedFlashcardDecks
+      decks.unshift({ id: uid(), courseId, title: `${label} flashcards`, sourceChunkIds: sources.map((source) => source.id), specId: 'flashcards-v1', specHash: outcome.specHash!, cards: outcome.cards!, createdAt: Date.now(), updatedAt: Date.now(), order: decks.length })
+    })
+    toast({ title: 'Flashcards generated', description: 'Saved as a source-grounded deck. Anki export is not configured yet.' })
+  }
+
   return (
     <div className="flex items-center gap-2">
       <Button onClick={generate} disabled={busy}>
         <Sparkles className="size-4" /> {busy ? 'Generating…' : 'Generate study guide'}
+      </Button>
+      <Button variant="outline" onClick={flashcards} disabled={cardBusy}>
+        <Sparkles className="size-4" /> {cardBusy ? 'Generating…' : 'Generate flashcards'}
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="More study tools"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
@@ -1240,6 +1263,17 @@ function StudyToolActions({ onOpenNotes, courseId, fileId, label }: {
       </DropdownMenu>
     </div>
   )
+}
+
+/** Materials-owned preview. The deck remains inspectable and exportable later;
+ * it is never a card-review queue. */
+function FlashcardDecks({ courseId, data }: { courseId: string; data: ClassCenterData }) {
+  const decks = data.generatedFlashcardDecks.filter((deck) => deck.courseId === courseId)
+  if (!decks.length) return null
+  const deck = decks[0]
+  const card = deck.cards[0]
+  if (!card) return null
+  return <Card className="border-border bg-card"><CardHeader className="flex-row items-start justify-between gap-3"><div><CardTitle>Flashcards</CardTitle><p className="mt-1 text-sm text-muted-foreground">Generated from your selected class material. Premed OS does not schedule or review these cards.</p></div><Badge variant="outline">{deck.cards.length} cards</Badge></CardHeader><CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem]"><div className="rounded-[13px] border border-border bg-muted/30 p-5"><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">{card.type}</p><p className="mt-3 font-display text-xl font-extrabold">{card.cloze ?? card.front}</p><p className="mt-4 text-sm text-muted-foreground">{card.back}</p>{card.extra && <p className="mt-4 border-l-2 border-primary/40 pl-3 text-sm text-muted-foreground">{card.extra}</p>}</div><aside className="rounded-[13px] border border-border bg-muted/20 p-4 text-sm"><p className="font-extrabold">Source</p><p className="mt-1 text-muted-foreground">Material chunk {card.sourceChunkId}</p><p className="mt-4 font-extrabold">Export</p><Button size="sm" className="mt-2 w-full" onClick={() => downloadFlashcardTsv(deck)}>Download TSV</Button><Button size="sm" variant="outline" className="mt-2 w-full" disabled title="A valid .apkg writer has not been approved yet.">Anki package unavailable</Button><p className="mt-3 text-xs text-muted-foreground">Anki schedules and reviews cards after export.</p></aside></CardContent></Card>
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
