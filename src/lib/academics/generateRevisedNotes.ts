@@ -26,10 +26,24 @@ function failureFor(code: string): GenerateFailure {
  * than a study-guide formatter with a different label.
  */
 export async function generateRevisedNotes({
-  courseId, chunks, label,
-}: { courseId: string; chunks: SourceChunk[]; label: string }): Promise<RevisedNotesGenerationOutcome> {
+  courseId, chunks, baselineFileId, baselineChunks, label,
+}: {
+  courseId: string
+  chunks: SourceChunk[]
+  /** Explicit student choice; never inferred from a filename or file type. */
+  baselineFileId?: string
+  baselineChunks?: SourceChunk[]
+  label: string
+}): Promise<RevisedNotesGenerationOutcome> {
   if (!chunks.length) {
     return { ok: false, failure: 'no-sources', message: 'Select processed course material first. Premed OS will not fill missing lecture content from general knowledge.' }
+  }
+  const baseline = baselineChunks ?? []
+  const includedBaseline = baselineFileId && baseline.length
+    && chunks.some((chunk) => chunk.fileId === baselineFileId)
+    && baseline.every((chunk) => chunk.fileId === baselineFileId && chunks.some((candidate) => candidate.id === chunk.id))
+  if (!includedBaseline) {
+    return { ok: false, failure: 'no-sources', message: 'Choose the student notes that should be the revision baseline before creating revised notes.' }
   }
   try {
     assertGenerationAllowed({ scope: 'academics', artifact: 'revised-notes', courseId, groundedIn: chunks.map((chunk) => chunk.id) })
@@ -48,12 +62,12 @@ export async function generateRevisedNotes({
     specId: 'revised-notes-v1',
     chunkIds: prepared.chunkIds,
     controls: { source_mode: 'SOURCE_ONLY' },
-    request: `Lecture: ${label}. Action: create a source-linked revised-notes record from this selected material only.`,
+    request: `Lecture: ${label}. Baseline notes file: ${baselineFileId}. Action: revise that student-selected baseline from this selected material only.`,
   })
   const result = await studyTools.generate({
     action: 'generate', courseId, topicId: prepared.scopeId,
     chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash,
-    systemPrompt: assembled.systemPrompt, request: `Lecture: ${label}.`,
+    systemPrompt: assembled.systemPrompt, request: `Lecture: ${label}. Baseline notes file: ${baselineFileId}.`,
   })
   if (!result.ok) return { ok: false, failure: failureFor(result.code), message: result.message }
 
@@ -85,6 +99,8 @@ export async function generateRevisedNotes({
       specHash: assembled.specHash,
       sections: artifact.sections,
       unresolvedDifferences: artifact.unresolvedDifferences,
+      baselineFileId,
+      baselineSourceChunkIds: baseline.map((chunk) => chunk.id),
       selectedSourceChunkIds,
       usedSourceChunkIds,
       unusedSourceChunkIds: selectedSourceChunkIds.filter((id) => !usedSourceChunkIds.includes(id)),

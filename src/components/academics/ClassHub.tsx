@@ -55,6 +55,7 @@ import { LectureCapturePanel } from '@/components/academics/LectureCapturePanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { LearningSignalsPanel } from '@/components/academics/LearningSignalsPanel'
 import { RevisedNotesPanel } from '@/components/academics/RevisedNotesPanel'
+import { PastedExcerptDialog } from '@/components/academics/PastedExcerptDialog'
 import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
 import { AssessmentCatalog } from '@/components/academics/AssessmentCatalog'
 import { readLocalBlob } from '@/lib/localBlobStore'
@@ -756,7 +757,7 @@ function Materials({
       <SectionToolbar
         title="Materials"
         detail="Course files stay grouped by their linked unit."
-        action={<div className="flex items-center gap-2"><Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button><Button size="sm" variant="outline" onClick={addMaterial}><Plus className="size-4" /> Add material</Button><StudyToolActions onOpenNotes={() => onTab('notes')} courseId={courseId} label={courseCode} /></div>}
+        action={<div className="flex flex-wrap items-center gap-2"><Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button><Button size="sm" variant="outline" onClick={addMaterial}><Plus className="size-4" /> Add material</Button><PastedExcerptDialog courseId={courseId} /><StudyToolActions onOpenNotes={() => onTab('notes')} courseId={courseId} label={courseCode} /></div>}
       />
       {/* §4.1 materials extensions — the shelf. Unit → material → provenance. */}
       <MaterialCatalog files={files} topics={topics} onAdd={addMaterial} />

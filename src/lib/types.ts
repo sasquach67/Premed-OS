@@ -729,6 +729,10 @@ export interface GeneratedRevisedNotes {
   sections: GeneratedRevisedNotesSection[]
   unresolvedDifferences: GeneratedRevisedNotesDifference[]
   /** The precise selection, then the subset that actually supports output. */
+  /** The one student-selected record the revision preserves first. Legacy
+   * artifacts predate this choice and intentionally leave it absent. */
+  baselineFileId?: ID
+  baselineSourceChunkIds?: ID[]
   selectedSourceChunkIds: ID[]
   usedSourceChunkIds: ID[]
   unusedSourceChunkIds: ID[]
