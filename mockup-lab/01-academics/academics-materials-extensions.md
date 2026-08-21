@@ -9,6 +9,7 @@
 | Resource catalog | File real assessment material by unit and source permission. |
 | Calendar feed | Explain the low-cost Canvas → Google Calendar handoff and review proposed changes. |
 | Study outputs | Select only student-supplied sources, then choose Revised Notes, Study Guide, or Flashcards. |
+| Material reader | Inspect an attached local document or hand off to its owned external provider without losing the class, unit, ownership, or topic context. |
 
 ## Behaviour
 
@@ -19,6 +20,7 @@
 - **Revised Notes** is a distinct generated artifact: it reconciles the selected slides, transcript, and the student's notes into one coherent lecture record. It preserves course vocabulary; when the selected sources do not settle a detail, it names that uncertainty rather than filling it with general knowledge.
 - **Study Guide** is a distinct study-oriented organization of selected material. It does not replace Revised Notes or become an ungrounded textbook chapter.
 - **Flashcards** remain a one-way Anki export artifact. They do not schedule, review, or import cards back into Premed OS.
+- **Material reader** opens from the existing catalog and stays inside Materials. Local preview, provider handoff, and an unavailable embed are three recoverable reader modes—not three new pages or alternate ownership models. An unavailable provider leaves the material record, course position, and linked topics intact; it never produces copied or generated replacement content.
 
 ### Revised Notes generation contract
 
@@ -42,6 +44,8 @@ a general knowledge lookup.
 - **Choose an output** is a compact three-choice triad, not a dropdown and not a second generator home: Revised Notes leads because it is the lecture-record repair path, with Study Guide and Flashcards alongside it. On narrow screens the triad becomes a two-up and then one-column sequence without changing its order.
 - **Revised Notes result** uses the same paper-and-provenance layout as the generated guide so source access cannot drift. A short stitched passage shows the practical job: join a slide term, a student note, and a transcript moment without obscuring where each came from.
 - Dense material surfaces are solid-with-depth. The banner is the only floating/glass region. The course-blue bloom is used only for source selection and the active view.
+- **Material reader** is a bounded document stage beside a narrow provenance rail. The source stays visually dominant; the rail carries the unit route, ownership, linked topics, and the route back to the module. The provider-handoff state replaces only the document stage, so the class context does not disappear. At mobile width, the rail stacks after the source stage and its actions stay in the same order.
+- The reader uses the literal warm-dark ladder: page `#211e1a` → solid panel `#2b2722` → document-stage/object `#262320` / `#322e28`, with `#3c352d` borders, 16px panels, and 13px inner objects. Source preview paper is deliberately neutral and contained; it is illustrative framing, never invented course content.
 
 ## Component translation
 
@@ -71,3 +75,4 @@ a general knowledge lookup.
 - Warm-dark ladder is literal: page `#211e1a`, panel `#2b2722`, inner card `#322e28`, border `#3c352d`; panels use the 16px card radius and inner objects use the 13px class-card radius. Blue uses `#4b9cd3`, success `#6fc0a8`, and warning `#e7b06a` only for semantic emphasis.
 - The preview keeps one generous card at the center and a narrow provenance/type rail. A quiet angled generated stamp proves source attachment without competing with the card. Export is a single centered handoff card with `.apkg` visibly primary and TSV secondary.
 - All surfaces are solid-with-depth. The shared banner alone may use glass because it floats over banner art. Hover and view changes use the shared short ease-out treatment; reduced motion resolves directly to the final selected state.
+- Reader controls use `:focus-visible` and the shared `0.15s cubic-bezier(.16,1,.3,1)` motion language; the reduced-motion rule resolves every reader mode directly.

@@ -597,6 +597,7 @@ const profiles = [
     desc:"The existing Materials tab gains catalog permission, calendar review, and three student-grounded study outputs.",
     variants:[
       ["Resource catalog","Source ownership and private-by-default assessment materials."],
+      ["Material reader","A bounded source preview keeps class position, ownership, and material handoff visible."],
       ["Calendar feed","Path A review of imported calendar dates before they become plan facts."],
       ["Study guide","Grounded generation with the student's selected class material."],
       ["Feed unavailable","A disconnected calendar feed preserves the course facts already confirmed."],
@@ -616,6 +617,7 @@ const profiles = [
     variants:[
       ["Capture","Optional local recording or upload begins from Materials."],
       ["Review","Quotes and timestamps become explicit material proposals."],
+      ["Lecture index","Searchable quotes retain their timestamp and material connection."],
       ["Unavailable","No permission and no match remain recoverable states."]
     ]
   },
@@ -1403,9 +1405,9 @@ const orderedProfiles = [
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["class-types"],"Class example",["comparison","stem","writing"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"class-types"}),
-  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","canvas","generate","feed-unavailable","guide-result","artifact-choice","revised-notes-result","flashcards-result","flashcards-export","flashcards-unavailable","guide-unavailable"]),
+  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","reader","canvas","generate","feed-unavailable","guide-result","artifact-choice","revised-notes-result","flashcards-result","flashcards-export","flashcards-unavailable","guide-unavailable"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
-  Object.assign(asProductViews(byId["academics-lecture-capture"],"Capture state",["start","review","unavailable"]),
+  Object.assign(asProductViews(byId["academics-lecture-capture"],"Capture state",["start","review","index","unavailable"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
   Object.assign(byId.planner,{group:"Academics",name:"Planner",section:"Planning",depth:1,fitCanvas:true}),
   Object.assign(asProductViews(byId["academics-planning-decisions"],"Decision state",["preview","compare","decay","locked","substitute","export"]),
