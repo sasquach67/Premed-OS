@@ -12,6 +12,9 @@
 | Material reader | Inspect an attached local document or hand off to its owned external provider without losing the class, unit, ownership, or topic context. |
 | Folder intake | Preview a user-selected local course folder, then confirm only the material positions the student accepts. |
 | Watched notes | Explain the one-way backup-folder mapping once, then ask again only when a source path is genuinely new or unclear. |
+| Textbook excerpt | Let a student paste one bounded textbook section as a named, student-owned source for the existing output triad. |
+| Revised Notes baseline | Make the selected student note the visible repair anchor, with slides, transcript, and excerpts as supporting evidence. |
+| No notes baseline | Keep selected sources visible when Revised Notes lacks student notes, then route to notes selection or a non-revision output. |
 
 ## Behaviour
 
@@ -19,7 +22,8 @@
 - Canvas is read-only calendar context: no Canvas token, no write action, and no silent overwrite. A connected course with no items is ordinary.
 - Catalog entries keep their source/permission. Unknown-origin material remains private.
 - Generation cannot run without selected student-supplied course material. Every output retains source links and a generated ownership marker.
-- **Revised Notes** is a distinct generated artifact: it reconciles the selected slides, transcript, and the student's notes into one coherent lecture record. It preserves course vocabulary; when the selected sources do not settle a detail, it names that uncertainty rather than filling it with general knowledge.
+- **Pasted textbook excerpt** is a bounded source that the student enters and names. It is never a whole-book upload, search, or remote lookup; it becomes eligible only when the student adds it to the current source selection, and no output can use material outside that selection.
+- **Revised Notes** is a distinct generated artifact. It begins from the student's selected notes, preserves their organization, language, and emphasis where the selected sources support them, and uses selected slides, transcript, or excerpts only to fill supported gaps or expose an unresolved source difference. If there is no student note selected, no Revised Notes artifact can begin: the student chooses notes or uses the current sources for Study Guide or Flashcards instead.
 - **Study Guide** is a distinct study-oriented organization of selected material. It does not replace Revised Notes or become an ungrounded textbook chapter.
 - **Flashcards** remain a one-way Anki export artifact. They do not schedule, review, or import cards back into Premed OS.
 - **Material reader** opens from the existing catalog and stays inside Materials. Local preview, provider handoff, and an unavailable embed are three recoverable reader modes—not three new pages or alternate ownership models. An unavailable provider leaves the material record, course position, and linked topics intact; it never produces copied or generated replacement content.
@@ -30,16 +34,28 @@
 
 ### Revised Notes generation contract
 
-The implementation prompt stays short and restrictive:
+> Create a Revised Notes material from the student-selected sources only.
+> The student’s own notes are the baseline: preserve their organization,
+> language, and emphasis where possible. Compare those notes against the
+> complete selected lecture transcript and instructor-provided materials, then
+> add or clarify only details those sources directly support.
+>
+> Improve gaps in the student’s record without turning it into a study guide,
+> textbook chapter, summary of outside knowledge, or a replacement for the
+> original notes. Preserve meaningful instructor terminology, distinctions,
+> examples, and qualifiers.
+>
+> Every factual passage must include one or more traceable references to the
+> selected source material. If sources conflict or do not settle a detail,
+> place the competing details in an Unresolved source difference section with
+> both traces. Never silently choose a version, invent a fact, or use general
+> background knowledge.
+>
+> Return a coherent lecture-note document with clear sections, source-linked
+> passages, and unresolved differences only when they genuinely exist.
 
-> Create one accurate, readable lecture-note document from only the selected
-> student-supplied sources. Preserve the instructor's terms and distinctions.
-> Reconcile a gap only when another selected source supports it. When sources
-> conflict or do not settle a detail, label the uncertainty. Do not add outside
-> course knowledge. Keep a source trace beside every merged passage.
-
-This is deliberately a record-repair task, not a second explanation engine or
-a general knowledge lookup.
+This is deliberately a student-record repair task, not a second explanation
+engine or a general knowledge lookup.
 
 ## Appearance
 
@@ -47,8 +63,11 @@ a general knowledge lookup.
 - **Resource catalog** is a material shelf: a narrow unit spine at left, a selected-unit canvas of compact object tiles at center, and one restrained empty-state rail. The hierarchy is unit → material → provenance, so the source badge is visible without turning every item into a long row.
 - **Calendar feed** is a left-to-right handoff trail. Its vertical event thread makes the calendar source, one proposed change, and the student-controlled course record feel sequential rather than like three settings cards.
 - **Source selection** is a source map. Selected slides, notes, and transcript nodes converge into a single **Choose an output** node; the linework expresses grounding without claiming that the model knows more than the inputs.
+- **Textbook excerpt** extends that map rather than opening a file-upload dashboard: the textarea is the dominant dense object, compact optional labels carry only student-entered provenance, and the resulting `Pasted excerpt · Mine` node sits with the other selected sources. The too-short recovery remains directly below the typed input so the student keeps their work and knows what to add.
 - **Choose an output** is a compact three-choice triad, not a dropdown and not a second generator home: Revised Notes leads because it is the lecture-record repair path, with Study Guide and Flashcards alongside it. On narrow screens the triad becomes a two-up and then one-column sequence without changing its order.
 - **Revised Notes result** uses the same paper-and-provenance layout as the generated guide so source access cannot drift. A short stitched passage shows the practical job: join a slide term, a student note, and a transcript moment without obscuring where each came from.
+- **Revised Notes baseline** turns the source map into an evidence diagram: `My notes · baseline` occupies the central anchor, supporting nodes line toward it, then the route continues to Revised Notes. The note is primary by geometry and label, not by a new color system or a claim that support sources are ranked. The paper-plus-provenance result below it shows one bounded repair trail.
+- **No notes baseline** is a quiet in-flow recovery, not an empty dashboard: the selected-source stack remains at right, the absence mark and plain explanation occupy the center, and the three next actions preserve the existing output vocabulary. No artifact preview appears.
 - Dense material surfaces are solid-with-depth. The banner is the only floating/glass region. The course-blue bloom is used only for source selection and the active view.
 - **Material reader** is a bounded document stage beside a narrow provenance rail. The source stays visually dominant; the rail carries the unit route, ownership, linked topics, and the route back to the module. The provider-handoff state replaces only the document stage, so the class context does not disappear. At mobile width, the rail stacks after the source stage and its actions stay in the same order.
 - **Folder intake** is a three-part safety composition: a narrow local-source tree, a central course-position board in week order, and a compact review rail. This prevents a multi-file import from becoming another wall of identical file rows. The central board makes proposed placement visible before the student is asked to accept it.
@@ -57,6 +76,7 @@ a general knowledge lookup.
 - **Mapping exception** uses two equal, bounded cards for the only two questions that should recur: a new course folder and an unguessable path level. The exception cards do not restart setup and do not resemble a dashboard.
 - The reader uses the literal warm-dark ladder: page `#211e1a` → solid panel `#2b2722` → document-stage/object `#262320` / `#322e28`, with `#3c352d` borders, 16px panels, and 13px inner objects. Source preview paper is deliberately neutral and contained; it is illustrative framing, never invented course content.
 - Folder and watched-note states use that same literal ladder: page `#211e1a` → solid `#2b2722` panels → `#322e28` decision objects / `#262320` recovery inset; `#3c352d` borders; 16px panels and 13px inner objects. The banner is still the only glass surface.
+- The three source-baseline states use that same literal ladder: page `#211e1a` → solid panel `#2b2722` → dense input/source object `#322e28` or recovery inset `#262320`, with `#3c352d` borders, 16px panels, and 13px inner objects. At narrow width, supporting rails stack after the primary source/input surface; focus remains visible and reduced motion resolves directly. No A/B/C variants are drawn because these are ownership/evidence states inside one established source-map composition, not competing visual directions.
 
 ## Component translation
 
@@ -69,6 +89,8 @@ a general knowledge lookup.
 - Catalog shows populated sources, an explicit unknown-origin private treatment, and the first-action empty rail.
 - Calendar feed shows the handoff, a date conflict that must be reviewed, connected-but-empty, and the non-destructive disconnect consequence. Its unavailable state is a reconnect recovery: no date changes, no broken class record, and no implication that Canvas is writable.
 - Study guide shows selected sources and the no-eligible-material recovery. Its result keeps a narrow provenance rail with every selected source reachable from the generated material. Its unavailable state happens only after source selection and preserves those selections; it never substitutes general course content.
+- Pasted excerpt intake shows a bounded student-owned text box, optional student-entered labels, and a too-short recovery that preserves the typed text. It never supplies demo textbook content, uploads a whole book, or searches a provider.
+- Revised Notes baseline shows the student note as the selected anchor and one paper/provenance repair trail. No notes baseline preserves the selected sources and offers Select my notes, Study Guide, or Flashcards; it never labels another source as notes or previews a Revised Notes artifact.
 - Folder intake shows a selected-folder proposal, no usable files / unsupported file recovery, and individual-file fallback without losing the selected context. Folder review includes Confirm, Keep unfiled, and Confirm week; no action is implied to happen before acceptance.
 - Watched notes shows awaiting connection, one-time mapping confirmation, Review each import instead, a newly visible course folder, and an unguessable path level. The setup help discloses fixed GoodNotes backup roots and that this route is unavailable on GoodNotes for macOS.
 
