@@ -39,6 +39,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { CenterPeek, type RecordOpenMode } from '@/components/common/CenterPeek'
+import { Progress } from '@/components/ui/progress'
 import {
   ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger,
 } from '@/components/ui/context-menu'
@@ -391,7 +392,6 @@ function ClassCenterDashboard({
   const navigate = useNavigate()
   const [semester, setSemester] = useState(archiveOnly ? 'Archived' : currentTerm)
   const [query, setQuery] = useState('')
-  const [view, setView] = useState<'cards' | 'list'>('cards')
   const [peekCourseId, setPeekCourseId] = useState<string | null>(null)
   const [peekMode, setPeekMode] = useState<RecordOpenMode>('peek')
   const [editor, setEditor] = useState<{ open: boolean; courseId?: string; form: ClassFormState }>({
@@ -400,6 +400,13 @@ function ClassCenterDashboard({
   })
   const [syllabusImportOpen, setSyllabusImportOpen] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
+  const view = searchParams.get('classView') === 'list' ? 'list' : 'cards'
+  const setView = (nextView: 'cards' | 'list') => {
+    const next = new URLSearchParams(searchParams)
+    if (nextView === 'cards') next.delete('classView')
+    else next.set('classView', nextView)
+    setSearchParams(next, { replace: true })
+  }
   const scopedCourseId = searchParams.get('importFor')
   const scopedCourse = scopedCourseId ? courses.find((course) => course.id === scopedCourseId) : undefined
   /** A second import into a class that ALREADY holds syllabus-derived records is
@@ -651,7 +658,9 @@ function ClassCenterDashboard({
           {!archiveOnly && <Badge variant="outline">{filtered.length} active</Badge>}
         </CardHeader>
         <CardContent>
-          <div className={cn(view === 'cards' ? 'grid gap-4 md:grid-cols-2 xl:grid-cols-3' : 'space-y-2')}>
+          <div className={cn(view === 'cards'
+            ? 'grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+            : 'space-y-2')}>
             {filtered.map((row) => (
               <ClassCard
                 key={row.id}
@@ -716,7 +725,7 @@ function ClassCenterDashboard({
               <button
                 onClick={() => setEditor({ open: true, form: emptyClassForm(semester) })}
                 className={cn(
-                  'flex min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card p-6 text-center transition duration-200 hover:-translate-y-0.5 hover:border-primary/55 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
+                  'flex h-full min-h-44 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-5 text-center transition duration-200 hover:-translate-y-0.5 hover:border-primary/55 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
                   view === 'list' && 'min-h-20 flex-row gap-3',
                 )}
               >
@@ -837,6 +846,7 @@ function ClassCard({
       aria-label={`Preview ${row.courseCode || row.nickname || 'Untitled class'} ${row.courseTitle}`}
       onClick={openFromCard}
       onKeyDown={(event) => {
+        if ((event.target as HTMLElement).closest('button,a,[role="menuitem"]')) return
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
           onOpen()
@@ -849,7 +859,7 @@ function ClassCard({
       onDragEnd={onDragEnd}
       style={cardAccentVars(row.color)}
       className={cn(
-        'academics-class-card group/class relative cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
+        'academics-class-card group/class relative h-full cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
         actionHovered && 'action-hovered',
         compact && 'min-h-0',
         dragging && 'scale-[0.98] opacity-55',
@@ -862,8 +872,9 @@ function ClassCard({
         !actionHovered && 'group-hover/class:scale-x-100',
       )} aria-hidden="true" />
       <CardContent className={cn(
-        'space-y-3 p-3',
-        compact && 'grid items-center gap-4 space-y-0 md:grid-cols-[minmax(0,1.2fr)_auto_minmax(160px,.7fr)_auto]',
+        compact
+          ? 'grid items-center gap-4 p-3 md:grid-cols-[minmax(0,1.2fr)_auto_minmax(160px,.7fr)_auto]'
+          : 'flex h-full flex-col space-y-3 p-3',
       )}>
         <div className="min-w-0">
           <p className="flex items-center gap-2 font-display text-base font-bold leading-tight">
@@ -893,12 +904,22 @@ function ClassCard({
           {row.bcpm && <Badge variant="secondary">BCPM</Badge>}
         </div>
 
-        <p className="text-xs font-bold text-muted-foreground">{signal}</p>
+        <div className="space-y-1.5">
+          <p className="text-xs font-bold text-muted-foreground">{signal}</p>
+          {stats.topicCount > 0 && (
+            <Progress
+              value={(stats.readyCount / stats.topicCount) * 100}
+              className="h-1.5 border-0 bg-background/80"
+              indicatorClassName={accent.bar}
+              aria-label={`${stats.readyCount} of ${stats.topicCount} topics ready`}
+            />
+          )}
+        </div>
 
-        <div className={cn('border-t border-border pt-3', compact && 'md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
+        <div className={cn('mt-auto border-t border-border pt-3', compact && 'mt-0 md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
           <p className="text-xs font-bold text-muted-foreground">
-            <span className="group-hover/class:hidden">{nextText}</span>
-            <span className="hidden text-primary group-hover/class:inline">Open class hub →</span>
+            <span className={cn(!actionHovered && 'group-hover/class:hidden')}>{nextText}</span>
+            <span className={cn('hidden text-primary', !actionHovered && 'group-hover/class:inline')}>Open class hub →</span>
           </p>
           <div
             className={cn(
@@ -914,7 +935,7 @@ function ClassCard({
               onFocus={() => setActionHovered(true)}
               onBlur={() => setActionHovered(false)}
             >
-              <BookOpen className="size-4" /> Open
+              <Play className="size-4" /> Review
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
