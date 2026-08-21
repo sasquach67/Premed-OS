@@ -54,3 +54,29 @@ The empty state sits exactly where the `Your classes` collection will later appe
 - Planning-mode cold start — design it with Planner & GPA so its setup request is grounded in that surface.
 - No-topics and no-assignments states — place those in the populated Class hub and Assignments references, where their surrounding controls and recovery actions can be judged honestly.
 - Copy or layout inside the syllabus import flow — owned by `academics-syllabus-import.html`.
+
+## Behaviour
+
+- Variant A is the shipped empty mode: **Import syllabus** starts the existing
+  import flow for the first course, and **Add manually** is always an available
+  quiet secondary path. “What this sets up” explains extraction/review only;
+  it does not perform import itself.
+- The state disappears as soon as a real current-term class exists. No empty
+  metrics, recommendations, charts, study queue, or placeholder course record
+  may survive an empty store.
+
+## Appearance
+
+- A centered launchpad is the visual owner: short explanatory copy, one
+  high-emphasis import action, the manual link immediately beneath it, then
+  B's compact “What this sets up” explanation. The familiar shell remains as
+  context without inoperable controls.
+- The dashed transparent `MascotNote` is the one friendly supportive surface;
+  it does not become a card wall. Banner-borne navigation alone can use glass;
+  the launchpad and explanation are solid-with-depth using the recipe's shared
+  spacing, card radius, and warm-dark ladder.
+- Import emphasis may use a restrained upward-biased glow that never washes
+  over the manual link. Focus remains visible, hover feedback is quiet, and
+  `prefers-reduced-motion` removes the glow/entrance animation. At small
+  widths the explanation stacks below the action rather than competing beside
+  it.

@@ -108,3 +108,32 @@
 </div></div></div>
 
  ══════════ ALTERNATE: CALENDAR ══════════ 
+
+## Behaviour
+
+- Agenda is the default and buckets class-owned work by urgency. Weekly and
+  Calendar project the exact same assignment records; “Edit as table” remains
+  a secondary overflow path for bulk work.
+- The banner `Add assignment` action is the primary creation path, with the
+  dashed list-end add row as its reachable repeat. The wording is contextual:
+  assignments are **due**; exams, presentations, and other scheduled class
+  events are **upcoming**, not falsely due.
+- Buckets collapse, cap visible items, and keep Completed collapsed by default.
+  Workload is an optional collapsible panel, never a competing primary view.
+
+## Appearance
+
+- The common banner stays visually identical to Daily. Below it, the solid
+  filter bar carries the Agenda/Weekly/Calendar control, class filter, search,
+  and overflow; it never becomes a second pill-navigation track.
+- Agenda uses compact, solid urgency buckets; Weekly uses seven balanced day
+  columns; Calendar uses the same solid event objects in month geometry. Each
+  makes time legible by placement before a student reads the date.
+- Use the shared signed-in surface ladder, panel/card radii, and border/shadow
+  depth literally. Glass is confined to the banner mode pill and stat strip;
+  all rows, day cells, cards, and workload treatment are solid.
+- Hover and selection only change color/background at the shared quiet timing;
+  keyboard focus is visible without mouse focus rings. On narrow screens,
+  Agenda stays single-column, Weekly permits horizontal day exploration, and
+  Calendar preserves legible event cells. Reduced motion removes drag/entry
+  movement but retains the selected/view state.

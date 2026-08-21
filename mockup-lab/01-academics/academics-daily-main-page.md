@@ -66,3 +66,31 @@
 <div class="wrap"><div class="bento">
 
   <!-- HEADS UP — same component as Overview Smart next actions 
+
+## Behaviour
+
+- The filter bar is controls, not a fourth navigation level: term is a Select,
+  search narrows the current term, and Cards/List changes only the collection
+  presentation. The mode pill and underline tab flow remain unchanged.
+- Class cards are shared record-open surfaces. A card opens its class hub;
+  `Review` begins review without lighting or opening the card; overflow holds
+  secondary class-scoped actions. Cards wrap rather than create horizontal
+  scrolling.
+- A pane with insufficient honest data is absent or explains its dormancy. The
+  bento never substitutes mock counts, zero charts, or invented projections.
+
+## Appearance
+
+- The hierarchy is banner and three navigation forms, then a solid filter bar,
+  then a breathable 12-column bento. “Heads up” sits before the class grid;
+  cards remain a distinct collection rather than a stack of full-width rows.
+- Use the signed-in warm-dark ladder from `_shared/_visual-recipes.md`:
+  page field → solid card → muted nested object → border. Panel corners follow
+  the shared card recipe; class cards use the shared 13px record-card recipe.
+- Only the mode pill and banner stat strip answer **yes** to the glass test.
+  Class cards, filters, bento panels, rows, and fields are solid with depth.
+- Hover/selection follows the shared `.15s cubic-bezier(.16,1,.3,1)` recipe:
+  the card lifts and its left accent ignites only when the card itself is the
+  target. Focus is `:focus-visible`; reduced motion removes the lift/glow
+  movement while preserving the state change. At narrow widths cards wrap to
+  fewer columns and bento spans stack without clipping the filter controls.

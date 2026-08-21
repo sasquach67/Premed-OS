@@ -56,3 +56,30 @@ Readings frequently aren't parseable (table-as-image, "posted weekly on Sakai", 
 - Do not give General any study layer at all.
 - Do not build separate page components per type — one page, three configurations.
 - Do not compute a blended cross-type "readiness" number. It doesn't exist (§6.12: no false precision).
+
+## Behaviour
+
+- `stem`, `writing`, and `general` configure one class workspace; switching
+  type never deletes dormant data and never changes GPA, BCPM, credits, or
+  requirement logic. No calculation may read `type`.
+- Shared tabs and owner actions retain their behavior. The substituted third
+  surface is Topics/Start review for STEM, Readings/Open current draft for
+  Writing, and absent for General; General retains only its legitimate grade
+  action.
+- A partial reading list offers paste, inline add, and this-week entry. Until
+  that list is complete, reading debt has no denominator and is not rendered.
+
+## Appearance
+
+- Every type inherits the same class banner, stat-strip footprint, tab edge,
+  panel count, and warm-dark surface ladder. Writing is equal density to STEM,
+  never a greyed-out or hollow substitute; General removes inapplicable study
+  machinery rather than rendering zeros.
+- The type-specific signal is content in the shared geometry: a draft rail and
+  readings state for Writing, topic/review state for STEM, and factual grade
+  context for General. There is no type badge on the card or daily list.
+- Use solid panels and rows with the shared radii/borders; only the banner stat
+  strip is glass. Draft-pip and status changes use color/background feedback
+  at the shared quiet timing, keyboard focus is `:focus-visible`, and reduced
+  motion resolves the state without rail/pip travel. On narrow screens rails
+  and supporting columns stack under the same banner without clipping tabs.

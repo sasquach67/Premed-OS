@@ -61,3 +61,32 @@ Per view, declared in `VIEW_VARIANTS`:
 - `audit` — verdict-led bento · pace as the working surface · two-column audit
 - `requirements` — grouped sets · gap-first (met recede) · two-column sets
 - `prior-credit` — ledger with context · ledger only · entry-first
+
+## Behaviour
+
+- The Tracker is a planning library, not an official graduation audit. It
+  states what catalog mapping is present, what evidence is uncertain, and what
+  a student might inspect or plan next; ConnectCarolina remains authoritative.
+- Gap & pace leads with named unscheduled/uncertain items and **Suggested next
+  term**. All requirements keeps sets transparent, and Prior credit preserves
+  transcript-exact course text with a separate display name.
+- Confidence is explicit: students can confirm an unverified mapping, but the
+  app never silently promotes it to official fact. No degree-completion score,
+  false percentage, composite, retention percentage, ranking, or automatic
+  course advice is allowed.
+
+## Appearance
+
+- Audit view is verdict-led bento: one plain-language status callout, a
+  suggested-next-term area, overlap context, then requirement groups. Met rows
+  recede in All requirements; Prior credit uses a ledger with visible exact
+  transcript text and contextual provenance.
+- Requirement groups, rows, confidence warnings, and course chips are solid
+  data surfaces using the shared warm-dark ladder, border/shadow depth, and
+  shared radius/spacing family. Only banner chrome that floats over banner art
+  answers yes to glass.
+- Confidence uses labelled chips and a dedicated warning boundary, never a
+  color-only state. Keyboard focus is visible, selection/expansion changes are
+  quiet at the shared timing, and reduced motion disables expansion travel.
+  At narrow widths bento columns stack and transcript columns become a readable
+  card/ledger sequence without hiding verification context.

@@ -123,3 +123,29 @@ B pays the full-sequence view for something A must provide anyway.
 
 - **B · Next-term builder** — selected term as the working surface with a
   compact navigator. Not built.
+
+## Behaviour
+
+- Variant A is the planner composition: terms remain visible as a sequence,
+  the unplaced tray remains available, and dragging is optional rather than
+  required. A course chip opens the inspector; opening, closing, or selecting
+  another chip never commits a placement.
+- The inspector previews named requirement effects, confidence, double-count
+  caps, unlocks, and offering risk. Explicit placement is the committing action;
+  the Planner remains distinct from the Tracker audit.
+
+## Appearance
+
+- The board is a bounded sequence of solid term columns with one outcome rail.
+  It is not a wall of long rectangles: compact course chips create the rhythm,
+  the inline MCAT divider preserves the sequence, and selection adds a narrow
+  academics edge rather than duplicating the whole chip in a modal.
+- The inspector replaces the outcome rail at desktop, so board context remains
+  visible. Both are solid data surfaces with the shared card/row ladder,
+  borders, radii, and depth; neither is glass. Adjacent controls and columns
+  stay equal-height and bounded.
+- Desktop may horizontally explore term columns without creating an internal
+  vertical sidebar scroll. On mobile the outcome rail and inspector move below
+  the selected term while the unplaced tray stays above the board. Focus is
+  visible; hover/selection uses the shared quiet transition; reduced motion
+  removes chip/rail movement but preserves the selection edge.
