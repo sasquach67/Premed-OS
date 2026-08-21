@@ -897,6 +897,13 @@ const profiles = [
    of the isolated view. Never toggle sibling frames/views from here.
 --------------------------------------------------------------------------- */
 const VIEW_VARIANTS = {
+  "academics-materials-extensions":{
+    "study-guide-intake":{v:[["Anchored source map","The guide stays visible beside a deliberate, named evidence path."],["Artifact-first workbench","Available sources become a compact workbench while the chosen guide remains the destination."],["Contextual intake sheet","A focused Materials sheet keeps the output context while source selection stays calm."]]},
+    "flashcards-intake":{v:[["Anchored source map","The deck destination, selected sources, and Anki handoff remain visible together."],["Artifact-first workbench","Source choices become a compact workbench before the deck is previewed."],["Contextual intake sheet","A focused sheet collects only the course material this deck may use."]]},
+    "revised-notes-intake":{v:[["Anchored source map","The student note is visibly central; support sources surround it rather than replacing it."],["Artifact-first workbench","The baseline note and supporting source choices read as one focused repair setup."],["Contextual intake sheet","Revision begins in a bounded Materials sheet with the required student-note baseline visible."]]},
+    "source-not-ready":{v:[["Recovery card","The retained file, exact limitation, and two safe recovery paths share one card."],["Repair-first","Recovery actions lead before the retained-file context."],["Source context","The file record stays prominent while the repair options stay compact."]]},
+    "no-eligible-source":{v:[["Output-preserving empty","The requested artifact remains visible while the student chooses the first usable source."],["Source picker first","The available next inputs lead without changing or losing the requested output."],["Minimal contextual empty","One short recovery sheet keeps the output context without inventing material."]]}
+  },
   assignments:{
     agenda:{v:[["Bucketed queue","Time buckets stack in one column; position alone encodes urgency."],
                ["Two-column triage","The same buckets run in two columns so a whole week is visible without scrolling."],
@@ -1426,7 +1433,7 @@ const orderedProfiles = [
   Object.assign(asProductViews(byId["class-types"],"Class example",["comparison","stem","writing"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"class-types"}),
   Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","assessment-catalog","assessment-take","assessment-return","folder-intake","folder-review","watch-setup","watch-exception","reader","canvas","generate","textbook-excerpt","feed-unavailable","study-guide-intake","flashcards-intake","revised-notes-intake","source-not-ready","no-eligible-source","guide-result","artifact-choice","revised-notes-result","revised-notes-baseline","revised-notes-no-baseline","flashcards-result","flashcards-export","flashcards-unavailable","guide-unavailable"]),
-    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true,sourceHandlesVariant:true}),
   Object.assign(asProductViews(byId["academics-lecture-capture"],"Capture state",["start","review","index","unavailable"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
   Object.assign(byId.planner,{group:"Academics",name:"Planner",section:"Planning",depth:1,fitCanvas:true}),
@@ -1780,7 +1787,8 @@ function desiredSrc(){
   }
   if(page.passViewToSource && currentView()){
     const join=page.path.includes("?") ? "&" : "?";
-    return `${page.path}${join}view=${encodeURIComponent(currentView().slug)}`;
+    const variantParam=page.sourceHandlesVariant ? `&variant=${encodeURIComponent(currentKey())}` : "";
+    return `${page.path}${join}view=${encodeURIComponent(currentView().slug)}${variantParam}`;
   }
   return page.path;
 }
