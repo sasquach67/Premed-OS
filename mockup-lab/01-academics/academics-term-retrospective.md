@@ -1,6 +1,6 @@
 # Academics · Term retrospective — decisions
 
-**Status:** PROPOSED · Stage-A coverage
+**Status:** PROPOSED · DECIDED, awaiting manifest authorization
 **Source:** `academics-term-retrospective.html` · **Spec:** `tabs/01-academics.md` #43, §6.10-C
 
 ## Why it exists
@@ -62,11 +62,18 @@ say a method caused a grade."**
   always last, so the page cannot be read without it.
 - Solid-with-depth; the banner is the only floating surface.
 
-## Variant question
+## Implementation selection — A · One honest page
 
-**The rules are settled; the composition is not.** A is the spec's own "one
-honest page" and reads as prose. B answers one question at a time and is easier
-to interrogate but loses the through-line the spec asks for.
+**Ruled Aug. 22, 2026.** The implementation is Variant A: a single narrow
+reading column that moves in order from what was recorded, to a few
+count-attached observations, to what to carry into the next term, and finally
+to the non-causation limit.
 
-**Andy chooses A or B before this is built.** The thin state belongs to whichever
-wins.
+This is the spec's "one honest page," not a dashboard or a per-course scorecard.
+The sectioned review remains in the lab as a comparison treatment, but is not a
+product subtab. If a later implementation needs a class-specific detail, it
+opens from a quiet contextual disclosure without breaking the page's narrative.
+
+The **Too little to say** state inherits this same reading-column composition:
+the page remains absent when history is too thin, explains the evidence boundary
+without scolding, and never substitutes inferred study data.

@@ -1,6 +1,6 @@
 # Academics · Forecast accuracy ledger — decisions
 
-**Status:** PROPOSED · Stage-A coverage
+**Status:** PROPOSED · DECIDED, awaiting manifest authorization
 **Source:** `academics-forecast-accuracy.html` · **Spec:** `tabs/01-academics.md` #52, §6.12
 
 ## Why it exists
@@ -48,10 +48,18 @@ catalogue against the mockup corpus, not by anyone noticing it missing.
 - **Below the gate** is spacious and quiet, with one dashed mark and no chart.
   Solid-with-depth throughout; the banner is the only floating surface.
 
-## Variant question
+## Implementation selection — A default, B on demand
 
-**The product rules above are settled; the composition is not.** A reads as
-prose and is kinder but coarser; B is checkable per topic and colder. The
-suppressed state is a state of whichever wins, not a third option.
+**Ruled Aug. 22, 2026.** Variant A is the default product view: the
+plain-language, sample-attached ledger is the first thing a student sees, so
+the surface reads as an accountability claim about Premed OS rather than a
+performance report about the student.
 
-**Andy chooses A or B — or A with B available on demand — before this is built.**
+Variant B remains available only through a quiet **See resolved calls** action
+inside that view. It opens the itemised calls as contextual detail; it is not a
+permanent Grades & Archive subtab or a second dashboard. The return route
+preserves the default reading sequence.
+
+The **Below the gate** state suppresses both the visible forecast and both
+ledger views. It uses the selected A composition's quiet, spacious absence and
+does not offer a caveated number, synthetic hit rate, or empty table.
