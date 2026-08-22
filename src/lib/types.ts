@@ -958,6 +958,83 @@ export interface ClassCenterData {
   lectureFindings: LectureEvidenceFinding[]
   lectureMaterialProposals: LectureMaterialProposal[]
   lectureNoteProposals: LectureNoteProposal[]
+  /** Frozen, explainable readings of a completed term. They never replace or
+   * mutate the course records from which they were compiled. */
+  termReports: TermReport[]
+}
+
+/** A record the report may point back to. The report never contains an
+ * inference without one of these references. */
+export type TermReportEvidenceKind =
+  | 'course'
+  | 'assignment'
+  | 'mistake'
+  | 'review-event'
+  | 'note'
+  | 'feedback'
+  | 'material'
+
+export interface TermReportEvidenceRef {
+  kind: TermReportEvidenceKind
+  id: ID
+  courseId: ID
+  label: string
+  /** Material references retain their exact stored chunk span. */
+  fileId?: ID
+  chunkId?: ID
+  start?: number
+  end?: number
+}
+
+/** A deterministic, human-readable fact compiled before any provider call. */
+export interface TermReportEvidenceItem {
+  id: ID
+  ref: TermReportEvidenceRef
+  label: string
+  detail: string
+  /** Kept only for an explicitly selected material span. It is not rendered in
+   * the report, but freezes exactly what an AI-assisted revision could read. */
+  sourceText?: string
+  category: 'course' | 'returned-work' | 'study-record' | 'class-note' | 'feedback' | 'selected-material'
+}
+
+export interface TermReportSnapshot {
+  term: string
+  courseIds: ID[]
+  facts: TermReportEvidenceItem[]
+  compiledAt: number
+  /** Kept with the snapshot so a reopened report explains its own boundary. */
+  evidenceLimit: string
+}
+
+export type TermReportStatus = 'draft' | 'ready' | 'unavailable' | 'insufficient-evidence'
+export type TermReportBlockKind = 'fact' | 'takeaway' | 'experiment' | 'limit'
+
+export interface TermReportBlock {
+  id: ID
+  kind: TermReportBlockKind
+  title: string
+  text: string
+  evidenceIds: ID[]
+  source: 'deterministic' | 'ai'
+}
+
+/** A saved report is a historical reading, not a changing dashboard. A
+ * regeneration creates another record linked through `supersedesReportId`. */
+export interface TermReport {
+  id: ID
+  term: string
+  courseIds: ID[]
+  status: TermReportStatus
+  snapshot: TermReportSnapshot
+  blocks: TermReportBlock[]
+  selectedFileIds: ID[]
+  providerMessage?: string
+  supersedesReportId?: ID
+  carryForwardDraft?: string
+  createdAt: number
+  updatedAt: number
+  order: number
 }
 
 /** Parsed or student-entered syllabus category. This intentionally has no grade math. */

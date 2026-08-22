@@ -45,6 +45,7 @@ import { AcademicMigrationReview } from '@/components/academics/AcademicMigratio
 import { StatStrip } from '@/components/common/StatStrip'
 import { TranscriptRecordsPanel } from '@/components/academics/TranscriptRecordsPanel'
 import { RequirementsAudit } from '@/components/academics/RequirementsAudit'
+import { TermReportPanel } from '@/components/academics/TermReportPanel'
 
 const GRADES: LetterGrade[] = ['', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F', 'P', 'IP']
 const COURSE_COLUMNS: ColumnDef[] = [
@@ -308,6 +309,7 @@ export function Academics() {
         <TabsContent value="archive" className="space-y-6">
           {/* §4.1: the end-of-term handoff, only when one is owed. */}
           <TermRollover />
+          <TermReportPanel />
           <TranscriptRecordsPanel courses={courses} />
           <ClassCenter archiveOnly />
           {/* §4.1: the record-decision layer, beneath the archive it reads. */}

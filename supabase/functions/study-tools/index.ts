@@ -22,6 +22,7 @@ type Chunk = {
 const AI_REQUEST_WEIGHT = {
   'gap-check': 1,
   generate: 2,
+  'term-report': 2,
 } as const
 
 Deno.serve(async (request) => {
@@ -78,6 +79,66 @@ Deno.serve(async (request) => {
     } catch (error) {
       console.error('study-tools source sync failure', error instanceof Error ? error.message : 'unknown')
       return failure(503, 'sync-failed', 'Source material could not be synced.')
+    }
+  }
+
+  /**
+   * A Term Report deliberately has a separate route from material generation.
+   * The user reviews the compact record snapshot before it leaves the device;
+   * evidence IDs are passed as titled documents so citations and returned refs
+   * can be mechanically closed without pretending local records live in the
+   * source-chunk mirror.
+   */
+  if (body.action === 'term-report') {
+    if (!isText(body.term) || !isText(body.systemPrompt)) {
+      return failure(400, 'invalid-request', 'A term and assembled report spec are required.')
+    }
+    const evidence = validateTermEvidence(body.evidence)
+    if (!evidence?.length) return failure(422, 'no-sources', 'No reviewed term evidence is available.')
+
+    const { data: allowed, error: limitError } = await client.rpc('claim_ai_request', {
+      p_hour_limit: 20,
+      p_day_limit: 100,
+      p_weight: AI_REQUEST_WEIGHT['term-report'],
+    })
+    if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
+    if (!allowed) return failure(429, 'rate-limited', 'Hourly or daily AI usage limit reached.')
+
+    const chunks: Chunk[] = evidence.map((item) => ({
+      chunk_id: item.id,
+      file_id: 'local-term-record',
+      content: item.content,
+      character_start: 0,
+      character_end: item.content.length,
+    }))
+    try {
+      const draft = await callAnthropic('Create the Term Report from this reviewed evidence snapshot.', chunks, body.systemPrompt)
+      const closed = closeCitationSet(draft.trustedCitations, chunks)
+      if (!closed.length) return failure(422, 'no-verified-citations', 'No report claim could be traced to the reviewed evidence.')
+      const structured = await callAnthropic(
+        [
+          'Convert the draft below into the required Term Report JSON structure.',
+          'Use only evidenceIds from this closed set:',
+          closed.map((ref) => ref.chunkId).join(', '),
+          'Every takeaway and experiment needs one or more exact evidenceIds.',
+          'Do not introduce any other evidence ID or a causal claim.',
+          '',
+          `Draft:\n${JSON.stringify(draft.value)}`,
+        ].join('\n'),
+        chunks,
+        body.systemPrompt,
+      )
+      const allowedCitationIds = new Set(closed.map((ref) => ref.chunkId))
+      if (structured.trustedCitations.some((ref) => !allowedCitationIds.has(ref.chunkId))) {
+        return failure(502, 'citation-not-carried', 'The structuring pass introduced evidence that was not verified. Nothing was saved.')
+      }
+      if (!validateTermReportArtifact(structured.value, allowedCitationIds)) {
+        return failure(502, 'invalid-response', 'The report included unsupported or invalid wording. Nothing was saved.')
+      }
+      return json({ artifact: structured.value, citations: closed })
+    } catch (error) {
+      console.error('term report generation failure', error instanceof Error ? error.message : 'unknown')
+      return failure(503, 'provider-unavailable', 'The AI provider is unavailable.')
     }
   }
 
@@ -470,6 +531,37 @@ function validateChunkIds(value: unknown) {
   const ids = value.filter(isText)
   if (ids.length !== value.length || new Set(ids).size !== ids.length) return null
   return ids
+}
+
+function validateTermEvidence(value: unknown) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > 80) return null
+  const rows: Array<{ id: string; label: string; content: string }> = []
+  for (const raw of value) {
+    if (!raw || typeof raw !== 'object') return null
+    const item = raw as Record<string, unknown>
+    if (!isText(item.id) || !isText(item.label) || !isText(item.content)) return null
+    if (item.id.length > 180 || item.label.length > 500 || item.content.length > 12_000) return null
+    rows.push({ id: item.id, label: item.label, content: item.content })
+  }
+  return new Set(rows.map((row) => row.id)).size === rows.length ? rows : null
+}
+
+const TERM_REPORT_CAUSAL_LANGUAGE = /\b(caus(?:e|ed|es|ing)|improv(?:e|ed|es|ing)|because you|therefore|led to|resulted in|determined|predict(?:s|ed|ing)?|visual learner|auditory learner|learning style|spent too little time)\b/i
+
+function validateTermReportArtifact(value: unknown, allowedEvidenceIds: Set<string>) {
+  if (!value || typeof value !== 'object') return false
+  const artifact = value as Record<string, unknown>
+  if (!Array.isArray(artifact.takeaways) || artifact.takeaways.length < 2 || artifact.takeaways.length > 4) return false
+  if (!Array.isArray(artifact.experiments) || artifact.experiments.length < 1 || artifact.experiments.length > 2) return false
+  if (!isText(artifact.limit)) return false
+  return [...artifact.takeaways, ...artifact.experiments].every((raw) => {
+    if (!raw || typeof raw !== 'object') return false
+    const item = raw as Record<string, unknown>
+    return isText(item.title) && isText(item.text)
+      && !TERM_REPORT_CAUSAL_LANGUAGE.test(`${item.title} ${item.text}`)
+      && Array.isArray(item.evidenceIds) && item.evidenceIds.length > 0
+      && item.evidenceIds.every((id) => isText(id) && allowedEvidenceIds.has(id))
+  })
 }
 
 function json(body: unknown, status = 200) {

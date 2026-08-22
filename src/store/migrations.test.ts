@@ -13,6 +13,7 @@ import { migrateOverviewAttachmentsV17 } from '@/store/migrations/overviewAttach
 import { migrateTaskHorizonsV18 } from '@/store/migrations/taskHorizonsV18'
 import { migratePlannerTermsV29 } from '@/store/migrations/plannerTermsV29'
 import { migrateRequirementsAuditV30 } from '@/store/migrations/requirementsAuditV30'
+import { migrateTermReportsV31 } from '@/store/migrations/termReportsV31'
 import { isCatalogWarningAcknowledged } from '@/lib/academics/requirementsAudit'
 import { migrateExamPrepV19 } from '@/store/migrations/examPrepV19'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
@@ -23,7 +24,36 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(30)
+  expect(CURRENT_STORE_VERSION).toBe(31)
+})
+
+describe('migrateTermReportsV31', () => {
+  it('adds an empty report collection without changing any existing Academics data', () => {
+    const data = freshData()
+    delete (data.academics.classCenter as Partial<typeof data.academics.classCenter>).termReports
+    const before = structuredClone(data)
+    Object.freeze(data)
+    Object.freeze(data.academics)
+    Object.freeze(data.academics.classCenter)
+
+    const out = migrateTermReportsV31(data)
+
+    expect(out.academics.classCenter.termReports).toEqual([])
+    expect({ ...out.academics.classCenter, termReports: undefined })
+      .toEqual({ ...before.academics.classCenter, termReports: undefined })
+    expect(data).toEqual(before)
+  })
+
+  it('is idempotent and never clobbers a saved report', () => {
+    const data = freshData()
+    data.academics.classCenter.termReports = [{
+      id: 'report', term: 'Fall 2026', courseIds: [], status: 'insufficient-evidence',
+      snapshot: { term: 'Fall 2026', courseIds: [], facts: [], compiledAt: 1, evidenceLimit: 'limit' },
+      blocks: [], selectedFileIds: [], createdAt: 1, updatedAt: 1, order: 0,
+    }]
+    expect(migrateTermReportsV31(data)).toBe(data)
+    expect(migrateTermReportsV31(data).academics.classCenter.termReports[0]?.id).toBe('report')
+  })
 })
 
 describe('migrateRequirementsAuditV30', () => {

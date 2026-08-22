@@ -100,6 +100,7 @@
 | `01-academics/academics-planning-decisions.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
 | `01-academics/academics-planning-cold-start.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
 | `01-academics/academics-term-rollover.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
+| `01-academics/academics-term-retrospective.html` | PROPOSED (Aug 2026) | **`YES`** — Variant A, Term Report (Andy, Aug 22, 2026) |
 
 ### Clinical
 

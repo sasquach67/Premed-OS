@@ -69,6 +69,17 @@ export interface GenerateRequest {
   request: string
 }
 
+/** A compact, student-reviewed term snapshot. Unlike material generation, its
+ * local record evidence is intentionally sent only after the disclosure step. */
+export interface TermReportRequest {
+  action: 'term-report'
+  term: string
+  evidence: Array<{ id: string; label: string; content: string }>
+  specId: string
+  specHash: string
+  systemPrompt: string
+}
+
 export interface SyncStudySourcesRequest {
   action: 'sync-sources'
   courseId: string
@@ -112,7 +123,7 @@ export function isGapCheckResult(value: unknown): value is GapCheckResult {
 }
 
 export function createStudyToolsClient(client: FunctionClient | null = supabase) {
-  async function invoke<T>(request: GapCheckRequest | GenerateRequest | SyncStudySourcesRequest | DeleteStudySourcesRequest): Promise<StudyToolResponse<T>> {
+  async function invoke<T>(request: GapCheckRequest | GenerateRequest | TermReportRequest | SyncStudySourcesRequest | DeleteStudySourcesRequest): Promise<StudyToolResponse<T>> {
     if (!client) {
       return { ok: false, code: 'unconfigured', message: 'AI study tools are not configured. Local study workflows remain available.' }
     }
@@ -176,6 +187,15 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
       if (!result.ok) return result
       if (!isRecord(result.data) || !('artifact' in result.data)) {
         return { ok: false, code: 'invalid-response', message: 'The generator returned an invalid result. Nothing was saved.' }
+      }
+      return result
+    },
+
+    async termReport(request: TermReportRequest): Promise<StudyToolResponse<{ artifact: unknown; citations: unknown[] }>> {
+      const result = await invoke<{ artifact: unknown; citations: unknown[] }>(request)
+      if (!result.ok) return result
+      if (!isRecord(result.data) || !('artifact' in result.data)) {
+        return { ok: false, code: 'invalid-response', message: 'The Term Report generator returned an invalid result. Nothing was saved.' }
       }
       return result
     },

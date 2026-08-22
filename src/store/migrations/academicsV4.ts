@@ -242,6 +242,7 @@ function migrateRelatedRows(
     lectureFindings: [],
     lectureMaterialProposals: [],
     lectureNoteProposals: [],
+    termReports: [],
   }
 }
 

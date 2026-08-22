@@ -306,6 +306,7 @@ function createClassCenterSeed(): AcademicTagSettings['classCenter'] {
     lectureFindings: [],
     lectureMaterialProposals: [],
     lectureNoteProposals: [],
+    termReports: [],
   }
 }
 

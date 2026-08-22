@@ -14,11 +14,13 @@
 import { useState } from 'react'
 import { ArrowRight, ArrowUpRight, X } from 'lucide-react'
 import { useStore } from '@/store/store'
+import { uid } from '@/lib/id'
 import { cn } from '@/lib/utils'
 import {
   FATE_DETAIL, FATE_LABEL, applyFates, defaultFates, dismissUntilNextTerm,
   pauseEverything, pendingRollovers, type FateProposal,
 } from '@/lib/academics/termRollover'
+import { createTermReport } from '@/lib/academics/termReport'
 import type { Course, Topic, TopicTermFate } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 
@@ -48,6 +50,7 @@ function Ritual({ course, courses, topics, currentTerm }: {
   const planned = courses.filter((item) => item.status === 'planned')
   const [fates, setFates] = useState<FateProposal[]>(() => defaultFates(courseTopics, planned))
   const [done, setDone] = useState<'none' | 'applied' | 'paused'>('none')
+  const [reportId, setReportId] = useState<string | null>(null)
 
   function write(next: (state: { courses: Course[]; topics: Topic[] }) => { courses: Course[]; topics: Topic[] }) {
     useStore.getState().update((draft) => {
@@ -55,6 +58,31 @@ function Ritual({ course, courses, topics, currentTerm }: {
       draft.courses = result.courses
       draft.academics.classCenter.topics = result.topics
     })
+  }
+
+  /** A report happens only after the final pending course in this term is
+   * handed off. That avoids making one duplicate report per course. */
+  function finish(kind: 'apply' | 'pause') {
+    let createdId: string | null = null
+    useStore.getState().update((draft) => {
+      const result = kind === 'apply'
+        ? applyFates({ courses: draft.courses, topics: draft.academics.classCenter.topics }, { courseId: course.id, fates })
+        : pauseEverything({ courses: draft.courses, topics: draft.academics.classCenter.topics }, course.id)
+      draft.courses = result.courses
+      draft.academics.classCenter.topics = result.topics
+
+      const stillPending = pendingRollovers(result.courses, currentTerm).some((item) => item.term === course.term)
+      if (stillPending) return
+      const report = createTermReport({
+        id: uid(),
+        input: { courses: result.courses, center: draft.academics.classCenter, term: course.term },
+        order: draft.academics.classCenter.termReports.length,
+      })
+      draft.academics.classCenter.termReports.push(report)
+      createdId = report.id
+    })
+    setReportId(createdId)
+    setDone(kind === 'apply' ? 'applied' : 'paused')
   }
 
   if (done === 'paused') {
@@ -66,6 +94,7 @@ function Ritual({ course, courses, topics, currentTerm }: {
           All {course.code} topics retire for now. Nothing was deleted, and a topic can be carried
           later if a future course or MCAT plan makes it useful.
         </p>
+        {reportId && <Button size="sm" variant="outline" className="mt-4" onClick={() => document.getElementById(`term-report-${reportId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>View your Term Report</Button>}
       </section>
     )
   }
@@ -78,6 +107,7 @@ function Ritual({ course, courses, topics, currentTerm }: {
         <p className="mx-auto mt-1 max-w-md text-xs font-bold text-muted-foreground">
           Its record is in your ledger, and every choice above can be changed later.
         </p>
+        {reportId && <Button size="sm" variant="outline" className="mt-4" onClick={() => document.getElementById(`term-report-${reportId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>View your Term Report</Button>}
       </section>
     )
   }
@@ -159,11 +189,11 @@ function Ritual({ course, courses, topics, currentTerm }: {
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Button size="sm" onClick={() => { write((state) => applyFates(state, { courseId: course.id, fates })); setDone('applied') }}>
+        <Button size="sm" onClick={() => finish('apply')}>
           Confirm these fates
         </Button>
         {/* Spacious and non-celebratory, per the decisions file. */}
-        <Button size="sm" variant="outline" onClick={() => { write((state) => pauseEverything(state, course.id)); setDone('paused') }}>
+        <Button size="sm" variant="outline" onClick={() => finish('pause')}>
           Pause everything
         </Button>
         {currentTerm && (
