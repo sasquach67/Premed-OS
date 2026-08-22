@@ -44,6 +44,7 @@ import { instantCrossfade, sharedAxis } from '@/lib/motion'
 import { AcademicMigrationReview } from '@/components/academics/AcademicMigrationReview'
 import { StatStrip } from '@/components/common/StatStrip'
 import { TranscriptRecordsPanel } from '@/components/academics/TranscriptRecordsPanel'
+import { RequirementsAudit } from '@/components/academics/RequirementsAudit'
 
 const GRADES: LetterGrade[] = ['', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F', 'P', 'IP']
 const COURSE_COLUMNS: ColumnDef[] = [
@@ -194,7 +195,7 @@ export function Academics() {
               ) : (
                 <>
                   <AcademicsTab value="planner" icon={Calculator} count={tabCounts.courses}>Planner</AcademicsTab>
-                  <AcademicsTab value="tracker" icon={NcMark} count={tabCounts.requirements}>Tar Heel tracker</AcademicsTab>
+                  <AcademicsTab value="tracker" icon={NcMark} count={tabCounts.requirements}>Requirements</AcademicsTab>
                   <AcademicsTab value="archive" icon={Archive} count={tabCounts.archive}>Grades &amp; archive</AcademicsTab>
                 </>
               )}
@@ -258,7 +259,7 @@ export function Academics() {
           <PlanningDecisions />
           <SharedPlanNote
             title="Planner & GPA is the course ledger"
-            detail="Edit course names, credits, grades, BCPM status, and term placement here. Tar Heel Tracker uses this same course list to audit UNC, major, and premed requirements."
+            detail="Edit course names, credits, grades, BCPM status, and term placement here. Requirements reads the same local course list as planning context; ConnectCarolina remains the official audit."
           />
           <div className="grid gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2">
@@ -298,12 +299,8 @@ export function Academics() {
           </>}
         </TabsContent>
 
-        {/* ---- Tar Heel Tracker ---- */}
+        {/* ---- Requirements audit ---- */}
         <TabsContent value="tracker" className="space-y-4">
-          <SharedPlanNote
-            title="Tar Heel Tracker is the requirement audit"
-            detail="This view does not maintain a second plan. Moving or adding courses here updates the same course list used by Planner & GPA."
-          />
           <TarHeelTracker />
         </TabsContent>
 
@@ -582,6 +579,11 @@ function isPremedRequirement(req: RequirementItem) {
 }
 
 function TarHeelTracker() {
+  // The prior checklist is deliberately unreachable while its local planner
+  // helpers are retired separately. Requirements renders the source-aware
+  // audit and never executes this completion calculation path.
+  return <RequirementsAudit />
+
   const courses = useStore((s) => s.courses)
   const requirements = useStore((s) => s.requirements)
   const addItem = useStore((s) => s.addItem)

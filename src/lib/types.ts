@@ -69,6 +69,35 @@ export type LetterGrade =
 
 export type CourseStatus = 'planned' | 'in-progress' | 'completed'
 
+/** How a course appears on a student-held transcript or transfer record.
+ * This deliberately describes the record; it does not make an equivalency,
+ * BCPM, enrolment, or degree-completion claim. */
+export type TranscriptCourseType =
+  | 'regular'
+  | 'ap'
+  | 'transfer'
+  | 'dual-enrollment'
+  | 'repeat'
+  | 'withdrawal'
+  | 'pass-fail'
+
+/** Exact, student-entered transcript context attached to one operational course.
+ * The normal Course fields remain useful for local planning; this nested record
+ * preserves what the transcript actually said without normalising it. */
+export interface CourseTranscriptContext {
+  institution: string
+  courseNumber: string
+  courseTitle: string
+  termLabel: string
+  creditHours: number | null
+  gradeRecorded: string
+  courseType: TranscriptCourseType
+  /** Reference only; file bytes must never be placed in localStorage. */
+  transcriptLineBlobRef?: string
+  capturedAt: number
+  updatedAt: number
+}
+
 /** A single course — drives both the GPA engine and the degree planner. */
 export interface Course {
   id: ID
@@ -93,6 +122,8 @@ export interface Course {
   rolloverDismissedTerm?: string
   /** Stable Planner slot identity. `term` stays the human-readable record. */
   plannerTermId?: ID
+  /** Optional exact transcript context, entered only by the student. */
+  transcript?: CourseTranscriptContext
   order: number
 }
 
@@ -884,6 +915,13 @@ export interface TranscriptCourseRecord {
   order: number
 }
 
+/** A personal acknowledgement never changes the source's own status. */
+export interface CatalogWarningAcknowledgement {
+  requirementId: ID
+  sourceVersion: string
+  acknowledgedAt: number
+}
+
 export interface ClassCenterData {
   workspaces: ClassWorkspace[]
   topics: Topic[]
@@ -915,6 +953,7 @@ export interface ClassCenterData {
   assessmentMaterials: AssessmentMaterialRecord[]
   assessmentAttempts: AssessmentAttempt[]
   transcriptRecords: TranscriptCourseRecord[]
+  acknowledgedCatalogWarnings: CatalogWarningAcknowledgement[]
   lectures: LectureRecord[]
   lectureFindings: LectureEvidenceFinding[]
   lectureMaterialProposals: LectureMaterialProposal[]

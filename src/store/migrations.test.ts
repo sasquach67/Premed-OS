@@ -12,6 +12,8 @@ import { migrateRoadmapTaskLinkV16 } from '@/store/migrations/roadmapTaskLinkV16
 import { migrateOverviewAttachmentsV17 } from '@/store/migrations/overviewAttachmentsV17'
 import { migrateTaskHorizonsV18 } from '@/store/migrations/taskHorizonsV18'
 import { migratePlannerTermsV29 } from '@/store/migrations/plannerTermsV29'
+import { migrateRequirementsAuditV30 } from '@/store/migrations/requirementsAuditV30'
+import { isCatalogWarningAcknowledged } from '@/lib/academics/requirementsAudit'
 import { migrateExamPrepV19 } from '@/store/migrations/examPrepV19'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
 
@@ -21,7 +23,57 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(29)
+  expect(CURRENT_STORE_VERSION).toBe(30)
+})
+
+describe('migrateRequirementsAuditV30', () => {
+  it('adds an empty acknowledgement collection without inventing transcript context', () => {
+    const data = freshData()
+    data.courses = [{
+      id: 'legacy-course', term: 'Prior credit', code: 'BIOL 101', title: 'Biology', credits: 3,
+      grade: 'P', bcpm: true, status: 'completed', inResidence: false, satisfies: [], order: 0,
+    }]
+    delete (data.academics.classCenter as Partial<typeof data.academics.classCenter>).acknowledgedCatalogWarnings
+    const before = structuredClone(data)
+    Object.freeze(data)
+    Object.freeze(data.courses)
+    Object.freeze(data.academics)
+    Object.freeze(data.academics.classCenter)
+
+    const out = migrateRequirementsAuditV30(data)
+
+    expect(out.academics.classCenter.acknowledgedCatalogWarnings).toEqual([])
+    expect(out.courses[0]).toEqual(before.courses[0])
+    expect(out.courses[0]).not.toHaveProperty('transcript')
+    expect(data).toEqual(before)
+  })
+
+  it('is idempotent and preserves acknowledgements exactly', () => {
+    const data = freshData()
+    data.academics.classCenter.acknowledgedCatalogWarnings = [{
+      requirementId: 'req-1', sourceVersion: '2026-2027|https://catalog.unc.edu', acknowledgedAt: 123,
+    }]
+
+    expect(migrateRequirementsAuditV30(data)).toBe(data)
+    expect(migrateRequirementsAuditV30(data).academics.classCenter.acknowledgedCatalogWarnings)
+      .toEqual(data.academics.classCenter.acknowledgedCatalogWarnings)
+  })
+
+  it('keeps a saved acknowledgement through hydration without mutating requirement metadata', () => {
+    const data = freshData()
+    const requirement = data.requirements.find((item) => item.verificationStatus === 'needs-verification')!
+    const saved = structuredClone(data)
+    saved.academics.classCenter.acknowledgedCatalogWarnings = [{
+      requirementId: requirement.id,
+      sourceVersion: `${requirement.lastVerified ?? 'undated'}|${requirement.sourceUrl ?? 'no-source'}`,
+      acknowledgedAt: 456,
+    }]
+
+    const reloaded = migrateAll(JSON.parse(JSON.stringify(saved)) as AppData)
+
+    expect(isCatalogWarningAcknowledged(reloaded.academics.classCenter.acknowledgedCatalogWarnings, reloaded.requirements.find((item) => item.id === requirement.id)!)).toBe(true)
+    expect(reloaded.requirements.find((item) => item.id === requirement.id)?.verificationStatus).toBe(requirement.verificationStatus)
+  })
 })
 
 describe('migratePlannerTermsV29', () => {
