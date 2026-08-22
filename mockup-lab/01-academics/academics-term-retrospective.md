@@ -23,10 +23,12 @@ of data cannot support a correlation claim, and §6.12 forbids false precision
 in the same breath — *"one visibly wrong number costs more than ten vague
 ones."*
 
-**Resolved: the page reports observations with their counts attached, never
-findings.** *"Your blanks outnumbered your knowledge gaps two to one"* is a
-count. *"Blurting improved your grade"* is a claim this app cannot make from one
-term, and does not.
+**Resolved: the page reports useful, plain-English observations with their
+evidence attached, never findings.** It may lead with recorded final grades,
+returned assignments/exams, and student-marked trouble spots; it then turns
+those facts into a small next-term experiment. *"Try a closed-notes check
+before re-reading"* is actionable. *"Blurting improved your grade"* is a
+causal claim this app cannot make from one term, and does not.
 
 The limit is stated on the page rather than buried: **"One term is not enough to
 say a method caused a grade."**
@@ -44,7 +46,11 @@ say a method caused a grade."**
 - **Fires at term rollover**, not as a standing tab. It is a moment, not a place.
 - Reads history that rollover deliberately preserves — retired topics stay
   queryable precisely so this can run.
-- **Counts, never correlations.** Every line carries its sample.
+- **Useful course context first.** Where recorded, final grades, returned work,
+  exams, and instructor feedback are the report's understandable starting
+  facts—not internal app counters such as connected topics.
+- **Counts, never correlations.** Every pattern carries its sample or named
+  source record, and becomes a next-term experiment rather than a conclusion.
 - **Percentages state their denominator.** "61% of 23 marked mistakes" — never
   "61% of your mistakes", which would imply the log is complete.
 - **The thin state is not a scold.** *"Studying without logging it is still
@@ -54,8 +60,8 @@ say a method caused a grade."**
 
 ## Appearance
 
-- One narrow column — a page, not a dashboard. Nothing here is a widget, and
-  there is no chart.
+- One narrow column — a readable report, not a dashboard. Nothing here is a
+  widget, and there is no chart.
 - Violet accent, matching the rollover ritual it fires from, so the two read as
   one end-of-term moment rather than two features.
 - Observations sit in a left-ruled block; the limit note is warning-toned and
@@ -66,8 +72,8 @@ say a method caused a grade."**
 
 **Ruled Aug. 22, 2026.** The implementation is Variant A, reframed as a
 compact **Term report**: a single narrow reading column with an end-of-term
-stamp and four ordered sections — the record, count-attached observations,
-carry-forward, and the non-causation limit.
+stamp and four ordered sections — term-at-a-glance facts, plain-language
+course takeaways, specific carry-forward experiments, and the evidence limit.
 
 This is the spec's "one honest page," made to feel more deliberate than a
 reflection card. It is not a dashboard, a printable transcript, or a
