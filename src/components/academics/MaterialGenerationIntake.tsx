@@ -6,12 +6,18 @@ import { uid } from '@/lib/id'
 import { generateStudyGuide } from '@/lib/academics/generateStudyGuide'
 import { generateFlashcards } from '@/lib/academics/generateFlashcards'
 import { generateRevisedNotes } from '@/lib/academics/generateRevisedNotes'
+import {
+  materialGenerationChoices,
+  selectedMaterialChunks,
+  selectedNotesBaseline,
+} from '@/lib/academics/materialGenerationIntake'
 import { useStore } from '@/store/store'
 import { useToast } from '@/components/common/useToast'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { PastedExcerptDialog } from '@/components/academics/PastedExcerptDialog'
+import { TranscriptImport } from '@/components/academics/TranscriptImport'
 
 export type MaterialArtifact = 'study-guide' | 'flashcards' | 'revised-notes'
 
@@ -47,15 +53,12 @@ export function MaterialGenerationIntake({
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([])
   const [baselineFileId, setBaselineFileId] = useState('')
   const [busy, setBusy] = useState(false)
-  const choices = useMemo(() => files.map((file) => ({
-    file,
-    chunks: allChunks.filter((chunk) => chunk.courseId === courseId && chunk.fileId === file.id && Boolean(chunk.content.trim())),
-  })), [allChunks, courseId, files])
+  const choices = useMemo(() => materialGenerationChoices({ courseId, files, chunks: allChunks }), [allChunks, courseId, files])
   const ready = choices.filter((choice) => choice.chunks.length)
   const notReady = choices.filter((choice) => !choice.chunks.length)
+  const selectedChunks = selectedMaterialChunks(choices, selectedFileIds)
   const selected = ready.filter((choice) => selectedFileIds.includes(choice.file.id))
-  const selectedChunks = selected.flatMap((choice) => choice.chunks)
-  const baseline = ready.find((choice) => choice.file.id === baselineFileId && choice.file.owner === 'mine')
+  const baseline = selectedNotesBaseline(choices, baselineFileId, selectedFileIds)
   const canGenerate = selectedChunks.length > 0 && (artifact !== 'revised-notes' || Boolean(baseline))
 
   function toggle(fileId: string) {
@@ -126,7 +129,7 @@ export function MaterialGenerationIntake({
             })}</div> : <div className="mt-3 rounded-xl border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">No readable class material is ready yet. Add material inside this flow or paste one bounded excerpt. Premed OS will not fill the gap with general course content.</div>}
             {!!notReady.length && <div className="mt-3 rounded-xl border border-dashed border-border bg-card p-3"><p className="font-display text-sm font-extrabold">Not ready for generation</p>{notReady.map((choice) => <p key={choice.file.id} className="mt-1 text-xs font-semibold text-muted-foreground"><b className="text-foreground">{choice.file.title}</b> is kept in Materials, but has no readable text yet. Add readable text or choose another source.</p>)}</div>}
           </section>
-          <aside className="rounded-2xl border border-border bg-card p-3.5"><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-muted-foreground">Add a source</p><p className="mt-1 font-display text-sm font-extrabold">Stay in this output</p><p className="mt-1 text-xs font-semibold text-muted-foreground">New material returns here; it is never silently selected.</p><div className="mt-4 grid gap-2"><Button size="sm" variant="outline" onClick={onAddMaterial}>Add course material</Button><PastedExcerptDialog courseId={courseId} triggerClassName="w-full" /></div><p className="mt-4 border-t border-border pt-3 text-xs font-semibold text-muted-foreground">Flashcards export one way to Anki. Premed OS never reviews or schedules them.</p></aside>
+          <aside className="rounded-2xl border border-border bg-card p-3.5"><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-muted-foreground">Add a source</p><p className="mt-1 font-display text-sm font-extrabold">Stay in this output</p><p className="mt-1 text-xs font-semibold text-muted-foreground">New material returns here; it is never silently selected.</p><div className="mt-4 grid gap-2"><Button size="sm" variant="outline" onClick={onAddMaterial}>Add course material</Button><TranscriptImport courseId={courseId} triggerClassName="w-full" /><PastedExcerptDialog courseId={courseId} triggerClassName="w-full" /></div><p className="mt-4 border-t border-border pt-3 text-xs font-semibold text-muted-foreground">Flashcards export one way to Anki. Premed OS never reviews or schedules them.</p></aside>
         </div>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3"><p className="text-sm font-semibold text-muted-foreground">{artifact === 'revised-notes' && !baseline ? 'Choose your notes baseline to continue.' : selectedChunks.length ? `${selected.length} selected ${selected.length === 1 ? 'source' : 'sources'} will ground this output.` : 'Choose at least one ready source.'}</p><Button onClick={() => void generate()} disabled={busy || !canGenerate}><Sparkles className="size-4" /> {busy ? 'Creating…' : ARTIFACT[artifact].action}</Button></div>
       </CardContent>

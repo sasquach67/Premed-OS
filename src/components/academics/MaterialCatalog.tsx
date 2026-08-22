@@ -14,7 +14,7 @@
  * app cannot do. See `T1-academics-build-7.md` §1f.
  */
 import { useState } from 'react'
-import { FileText, FolderOpen, Plus } from 'lucide-react'
+import { FileText, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   PROVENANCE_LABEL, catalogEntries, catalogUnits, type Provenance,
@@ -57,7 +57,7 @@ export function MaterialCatalog({ files, topics, onAdd }: {
   }
 
   return (
-    <div className="grid gap-3 lg:grid-cols-[13rem_minmax(0,1fr)_15rem]">
+    <div className={cn('grid gap-3', onAdd ? 'lg:grid-cols-[13rem_minmax(0,1fr)_15rem]' : 'lg:grid-cols-[13rem_minmax(0,1fr)]')}>
       <aside className={cn(CARD, 'h-fit p-3.5')}>
         <p className={EYEBROW}>Course shelf</p>
         <h3 className="mt-0.5 font-display text-sm font-extrabold">By unit</h3>
@@ -116,17 +116,14 @@ export function MaterialCatalog({ files, topics, onAdd }: {
         </div>
       </article>
 
-      <aside className={cn(CARD, 'h-fit p-3.5')}>
+      {onAdd && <aside className={cn(CARD, 'h-fit p-3.5')}>
         <p className={EYEBROW}>Adding more</p>
         <h3 className="mt-0.5 font-display text-sm font-extrabold">Nothing relevant yet?</h3>
         <p className="mt-1 text-[11px] font-bold text-muted-foreground">
           Add a past exam, review sheet, or your own returned work when one becomes useful.
         </p>
-        <div className="mt-3 flex h-16 items-center justify-center rounded-xl border border-dashed border-border text-muted-foreground">
-          <FolderOpen className="size-5" />
-        </div>
-        {onAdd && <Button size="sm" variant="outline" className="mt-3 w-full" onClick={onAdd}><Plus className="size-4" /> Add material</Button>}
-      </aside>
+        <Button size="sm" variant="outline" className="mt-3 w-full" onClick={onAdd}><Plus className="size-4" /> Add material</Button>
+      </aside>}
     </div>
   )
 }
