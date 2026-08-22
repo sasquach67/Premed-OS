@@ -62,6 +62,35 @@ Per view, declared in `VIEW_VARIANTS`:
 - `requirements` — grouped sets · gap-first (met recede) · two-column sets
 - `prior-credit` — ledger with context · ledger only · entry-first
 
+### Ruling — Aug. 22, 2026
+
+**Selected set: A / B / A.** This is one coherent Requirements screen, not
+three independent experiments:
+
+- **Gap & pace → A, verdict-led bento.** A calm plain-language callout leads,
+  followed by named open/uncertain items, a compact Suggested next term area,
+  overlap context, then requirement groups. It reads as an occasional audit,
+  not a second course-planning board.
+- **All requirements → B, gap-first.** Open and uncertain rows lead their
+  verified sets; met rows recede but remain visible for traceability. Group
+  headers, confidence chips, source date, and the dedicated uncertainty
+  boundary remain visible at every width.
+- **Prior credit → A, ledger with context.** Exact transcript course number and
+  title lead the row, with the app display name, institution/type, and
+  provenance shown alongside rather than hidden behind a record detail.
+
+The selected hierarchy uses the warm-dark ladder literally: `--card` 16px
+outer bento panels; `--muted` 13px inner data surfaces; quiet 11px source and
+confidence context; and a labelled warning boundary rather than color alone.
+The segmented control stays solid, compact, and level-three—never a second tab
+row. At narrow widths the bento stacks and the ledger becomes a readable card
+sequence without losing exact transcript text or confidence context.
+
+**Build boundary repeated:** the manifest clears this **screen only**. It may
+show student-held records and labelled catalog evidence, but may not calculate
+or certify degree completion, emit a degree percentage/composite/ranking, or
+silently auto-advise a course. ConnectCarolina remains the official audit.
+
 ## Behaviour
 
 - The Tracker is a planning library, not an official graduation audit. It
