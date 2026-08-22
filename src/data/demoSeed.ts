@@ -336,6 +336,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
     topicLinks: [],
     topicPredictions: [],
     savedPlans: [],
+    plannerTerms: [],
     examPrepPlans: [],
     generatedFlashcardDecks: [],
     generatedMockAttempts: [],

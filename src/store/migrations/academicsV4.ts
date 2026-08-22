@@ -225,6 +225,7 @@ function migrateRelatedRows(
     topicLinks: [],
     topicPredictions: [],
     savedPlans: [],
+    plannerTerms: [],
     examPrepPlans: [],
     generatedFlashcardDecks: [],
     generatedMockAttempts: [],

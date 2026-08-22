@@ -20,7 +20,7 @@ import {
   CONTENT_RETRIEVED_AT, relearningOrder, unknownsNote,
 } from '@/lib/academics/mcatTiming'
 import { buildAdvisorSnapshot } from '@/lib/academics/advisorExport'
-import { applyPlanRestore, capturePlan, planDiff } from '@/lib/academics/savedPlans'
+import { applyPlanRestore, applyPlannerTermRestore, capturePlan, planDiff, plannerTermDiff } from '@/lib/academics/savedPlans'
 import type { SavedPlan } from '@/lib/types'
 import { useToast } from '@/components/common/useToast'
 import { Button } from '@/components/ui/button'
@@ -127,6 +127,7 @@ export function PlanningDecisions() {
 function PlanComparison() {
   const courses = useStore((s) => s.courses)
   const plans = useStore((s) => s.academics.classCenter.savedPlans ?? [])
+  const plannerTerms = useStore((s) => s.academics.classCenter.plannerTerms ?? [])
   const [restoring, setRestoring] = useState<SavedPlan | undefined>()
   const [name, setName] = useState('')
   const toast = useToast()
@@ -135,13 +136,18 @@ function PlanComparison() {
     useStore.getState().update((draft) => {
       draft.academics.classCenter.savedPlans = [
         ...(draft.academics.classCenter.savedPlans ?? []),
-        capturePlan(draft.courses, { name, order: (draft.academics.classCenter.savedPlans ?? []).length }),
+        capturePlan(draft.courses, {
+          name,
+          plannerTerms: draft.academics.classCenter.plannerTerms ?? [],
+          order: (draft.academics.classCenter.savedPlans ?? []).length,
+        }),
       ]
     })
     setName('')
   }
 
   const diff = restoring ? planDiff(restoring, courses) : undefined
+  const slotChanges = restoring ? plannerTermDiff(restoring, plannerTerms) : []
 
   return (
     <section className={cn(CARD, 'p-4')}>
@@ -202,18 +208,35 @@ function PlanComparison() {
             </div>
           )}
 
+          {restoring.plannerTerms ? (
+            <div className="mt-2 border-t border-border pt-2">
+              <p className={EYEBROW}>Planning slots</p>
+              {slotChanges.length ? (
+                <ul className="mt-1 space-y-0.5 text-[11px] font-bold text-muted-foreground">
+                  {slotChanges.map((change) => <li key={change.term.id}>{change.kind === 'add' ? 'Add' : 'Update'} {change.term.label}{change.term.lockedAt ? ' · locked' : ''}</li>)}
+                </ul>
+              ) : <p className="mt-1 text-[11px] font-bold text-muted-foreground">No saved slot details would change.</p>}
+            </div>
+          ) : (
+            <p className="mt-2 border-t border-border pt-2 text-[11px] font-bold text-muted-foreground">This older saved plan predates planning slots; only course moves can be restored.</p>
+          )}
+
           <div className="mt-3 flex gap-2">
             <Button
-              size="sm" disabled={!diff.changes.length}
+              size="sm" disabled={!diff.changes.length && !slotChanges.length}
               onClick={() => {
                 useStore.getState().update((draft) => {
                   draft.courses = applyPlanRestore(draft.courses, diff.changes)
+                  draft.academics.classCenter.plannerTerms = applyPlannerTermRestore(
+                    draft.academics.classCenter.plannerTerms ?? [],
+                    slotChanges,
+                  )
                 })
                 toast({ title: 'Plan restored', description: `${diff.changes.length} courses moved. Nothing graded was touched.` })
                 setRestoring(undefined)
               }}
             >
-              Apply {diff.changes.length} {diff.changes.length === 1 ? 'move' : 'moves'}
+              Apply saved plan
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setRestoring(undefined)}>Cancel</Button>
           </div>

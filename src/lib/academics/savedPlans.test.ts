@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  applyPlanRestore, capturePlan, hasRealGrade, isProtected, planDiff,
+  applyPlanRestore, applyPlannerTermRestore, capturePlan, hasRealGrade, isProtected, planDiff, plannerTermDiff,
 } from '@/lib/academics/savedPlans'
-import type { Course } from '@/lib/types'
+import type { Course, PlannerTerm } from '@/lib/types'
 
 const now = Date.UTC(2026, 8, 19)
 const course = (id: string, patch: Partial<Course> = {}): Course => ({
@@ -12,13 +12,27 @@ const course = (id: string, patch: Partial<Course> = {}): Course => ({
 
 describe('capturing a plan', () => {
   it('records each course’s term and what it was at the time', () => {
-    const plan = capturePlan([course('chem262', { status: 'planned' })], { name: 'Plan A', now })
-    expect(plan.placements).toEqual([{ courseId: 'chem262', term: 'Fall 2027', status: 'planned' }])
+    const plan = capturePlan([course('chem262', { status: 'planned', plannerTermId: 'fall-2027' })], { name: 'Plan A', now })
+    expect(plan.placements).toEqual([{ courseId: 'chem262', term: 'Fall 2027', plannerTermId: 'fall-2027', status: 'planned' }])
     expect(plan.name).toBe('Plan A')
   })
 
   it('falls back to a real name rather than an empty one', () => {
     expect(capturePlan([], { name: '   ', now }).name).toBe('Untitled plan')
+  })
+})
+
+describe('saved planner slots', () => {
+  const fall: PlannerTerm = { id: 'fall', label: 'Fall 2027', kind: 'standard', origin: 'student-created', createdAt: 1, updatedAt: 1, order: 0 }
+  const summer: PlannerTerm = { id: 'summer', label: 'Summer 2027', kind: 'summer', origin: 'student-created', createdAt: 1, updatedAt: 1, order: 1, lockedAt: 1 }
+
+  it('restores a reviewed slot without deleting a newer live slot', () => {
+    const plan = capturePlan([], { name: 'A', now, plannerTerms: [fall, summer] })
+    const live = [{ ...fall, note: 'Moved after advising' }, { id: 'new', label: 'Gap year', kind: 'gap' as const, origin: 'student-created' as const, createdAt: 2, updatedAt: 2, order: 2 }]
+    const changes = plannerTermDiff(plan, live)
+    const restored = applyPlannerTermRestore(live, changes)
+    expect(restored.find((term) => term.id === 'summer')).toMatchObject({ label: 'Summer 2027', lockedAt: 1 })
+    expect(restored.find((term) => term.id === 'new')).toMatchObject({ label: 'Gap year' })
   })
 })
 

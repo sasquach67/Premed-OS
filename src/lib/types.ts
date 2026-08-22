@@ -91,6 +91,23 @@ export interface Course {
   rolloverAt?: number
   /** The one term its re-offer was dismissed for. Per-term, never permanent. */
   rolloverDismissedTerm?: string
+  /** Stable Planner slot identity. `term` stays the human-readable record. */
+  plannerTermId?: ID
+  order: number
+}
+
+/** A student-owned planning slot, never a registrar or enrollment record. */
+export interface PlannerTerm {
+  id: ID
+  label: string
+  kind: 'standard' | 'summer' | 'gap'
+  /** A migrated label is a convenience record, not a claimed university fact. */
+  origin: 'legacy-derived' | 'student-created'
+  note?: string
+  lockedAt?: number
+  lockReason?: string
+  createdAt: number
+  updatedAt: number
   order: number
 }
 
@@ -888,6 +905,7 @@ export interface ClassCenterData {
   topicLinks: TopicLink[]
   topicPredictions: TopicPrediction[]
   savedPlans: SavedPlan[]
+  plannerTerms: PlannerTerm[]
   examPrepPlans: ExamPrepPlan[]
   generatedFlashcardDecks: GeneratedFlashcardDeck[]
   generatedMockAttempts: GeneratedMockAttempt[]
@@ -998,6 +1016,8 @@ export interface TopicPrediction {
 export interface SavedPlacement {
   courseId: ID
   term: string
+  /** Stable planner slot when the snapshot was created (optional for v28 plans). */
+  plannerTermId?: ID
   /** What the course was when captured — restore reads this to know what moved. */
   status: CourseStatus
 }
@@ -1015,6 +1035,8 @@ export interface SavedPlan {
   name: string
   note?: string
   placements: SavedPlacement[]
+  /** Optional because plans saved before v29 have no slot metadata. */
+  plannerTerms?: PlannerTerm[]
   createdAt: number
   updatedAt: number
   order: number

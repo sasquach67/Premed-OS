@@ -17,13 +17,18 @@
  */
 import { gpaStats } from '@/lib/selectors'
 import { termToMonths } from '@/lib/academics/mcatTiming'
-import type { Course, RequirementItem } from '@/lib/types'
+import type { Course, PlannerTerm, RequirementItem } from '@/lib/types'
 
 /** A term with no parseable name still gets a column — see `plannerTerms`. */
 export const UNSCHEDULED = 'Unscheduled'
 
 export interface PlannerColumn {
+  id?: string
   term: string
+  kind?: PlannerTerm['kind']
+  note?: string
+  lockedAt?: number
+  lockReason?: string
   /** Orderable month index, or undefined for an unparseable term. */
   months?: number
   courses: Course[]
@@ -40,21 +45,39 @@ export interface PlannerColumn {
  * exactly what this board exists to surface, so it lands in a trailing column
  * instead of disappearing from the plan.
  */
-export function plannerTerms(courses: Course[]): PlannerColumn[] {
+export function plannerTerms(courses: Course[], slots: PlannerTerm[] = []): PlannerColumn[] {
   const byTerm = new Map<string, Course[]>()
   for (const course of courses) {
     const term = course.term?.trim() || UNSCHEDULED
     byTerm.set(term, [...(byTerm.get(term) ?? []), course])
   }
 
-  const columns = [...byTerm.entries()].map(([term, rows]): PlannerColumn => ({
+  const slotByLabel = new Map(slots.map((slot) => [slot.label.trim().toLocaleLowerCase(), slot]))
+  const rowsForSlot = new Map<string, Course[]>()
+  for (const course of courses) {
+    if (course.plannerTermId) rowsForSlot.set(course.plannerTermId, [...(rowsForSlot.get(course.plannerTermId) ?? []), course])
+  }
+  const columns = slots.map((slot): PlannerColumn => {
+    const rows = rowsForSlot.get(slot.id) ?? byTerm.get(slot.label) ?? []
+    return {
+      id: slot.id, term: slot.label, kind: slot.kind, note: slot.note, lockedAt: slot.lockedAt, lockReason: slot.lockReason,
+      months: termToMonths(slot.label), courses: [...rows].sort((a, b) => a.order - b.order),
+      credits: rows.reduce((sum, course) => sum + (course.credits || 0), 0),
+      bcpmCredits: rows.filter((course) => course.bcpm).reduce((sum, course) => sum + (course.credits || 0), 0),
+      registered: rows.some((course) => course.status === 'completed' || course.status === 'in-progress'),
+    }
+  })
+  for (const [term, rows] of byTerm.entries()) {
+    if (slotByLabel.has(term.trim().toLocaleLowerCase())) continue
+    columns.push({
     term,
     months: termToMonths(term),
     courses: [...rows].sort((a, b) => a.order - b.order),
     credits: rows.reduce((sum, course) => sum + (course.credits || 0), 0),
     bcpmCredits: rows.filter((course) => course.bcpm).reduce((sum, course) => sum + (course.credits || 0), 0),
     registered: rows.some((course) => course.status === 'completed' || course.status === 'in-progress'),
-  }))
+    })
+  }
 
   return columns.sort((a, b) => {
     if (a.months == null && b.months == null) return a.term.localeCompare(b.term)
@@ -85,7 +108,7 @@ const codesOf = (requirement: RequirementItem) =>
 
 /** Open requirements no recorded course satisfies, each keeping its confidence. */
 export function unplacedRequirements(requirements: RequirementItem[], courses: Course[]): RequirementItem[] {
-  const placed = new Set(courses.map((course) => course.code.trim().toUpperCase()))
+  const placed = new Set(courses.filter((course) => course.term?.trim() && course.term !== UNSCHEDULED).map((course) => course.code.trim().toUpperCase()))
   return requirements.filter((requirement) => {
     if (requirement.done) return false
     const codes = codesOf(requirement)

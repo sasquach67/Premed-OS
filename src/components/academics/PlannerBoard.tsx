@@ -18,16 +18,19 @@
  * composite, no "on track" badge.
  */
 import { useState } from 'react'
-import { GraduationCap, X } from 'lucide-react'
+import { CalendarPlus, GraduationCap, LockKeyhole, Pencil, X } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { cn } from '@/lib/utils'
+import { uid } from '@/lib/id'
 import { fmtGpa } from '@/lib/selectors'
 import {
   courseEffects, mcatDividerAfter, outcomeProjection,
   plannerTerms, prereqVsMcat, unplacedRequirements,
 } from '@/lib/academics/planner'
-import type { Course } from '@/lib/types'
+import { isProtected } from '@/lib/academics/savedPlans'
+import type { Course, PlannerTerm } from '@/lib/types'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const CARD = 'rounded-2xl border border-border bg-card shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]'
 const EYEBROW = 'font-display text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground'
@@ -36,14 +39,45 @@ export function PlannerBoard() {
   const courses = useStore((s) => s.courses)
   const requirements = useStore((s) => s.requirements)
   const mcatDate = useStore((s) => s.mcat.targetDate)
+  const slots = useStore((s) => s.academics.classCenter.plannerTerms ?? [])
   const [selectedId, setSelectedId] = useState<string | undefined>()
+  const [placingCourse, setPlacingCourse] = useState<Course | undefined>()
+  const [placementOpen, setPlacementOpen] = useState(false)
+  const [editingSlot, setEditingSlot] = useState<PlannerTerm | undefined>()
+  const [newTermLabel, setNewTermLabel] = useState('')
+  const [newTermKind, setNewTermKind] = useState<PlannerTerm['kind']>('standard')
 
-  const columns = plannerTerms(courses)
+  const columns = plannerTerms(courses, slots)
   const divider = mcatDividerAfter(columns, mcatDate)
   const unplaced = unplacedRequirements(requirements, courses)
   const selected = courses.find((course) => course.id === selectedId)
 
   if (!columns.length) return null
+
+  const addSlot = () => {
+    const label = newTermLabel.trim()
+    if (!label) return
+    const already = slots.some((slot) => slot.label.trim().toLocaleLowerCase() === label.toLocaleLowerCase())
+    if (already) return
+    const now = Date.now()
+    const slot: PlannerTerm = {
+      id: uid(), label, kind: newTermKind, origin: 'student-created', createdAt: now, updatedAt: now, order: slots.length,
+    }
+    useStore.getState().update((draft) => { draft.academics.classCenter.plannerTerms.push(slot) })
+    setNewTermLabel('')
+  }
+
+  const place = (course: Course, term: { id?: string; term: string; lockedAt?: number; registered: boolean }) => {
+    if (term.lockedAt || term.registered || isProtected(course)) return
+    useStore.getState().update((draft) => {
+      const row = draft.courses.find((item) => item.id === course.id)
+      if (row && !isProtected(row)) {
+        row.term = term.term
+        row.plannerTermId = term.id
+      }
+    })
+    setPlacingCourse(undefined)
+  }
 
   return (
     <section className={cn(CARD, 'p-4')}>
@@ -52,9 +86,12 @@ export function PlannerBoard() {
           <p className={EYEBROW}>Course sequence</p>
           <h3 className="mt-0.5 font-display text-lg font-extrabold">Plan the order, not just the list.</h3>
           <p className="mt-0.5 text-xs font-bold text-muted-foreground">
-            Select a course to see what it clears. Editing stays in the term tables below.
+            Select a course to see what it clears, then preview its placement before saving it.
           </p>
         </div>
+        <Button size="sm" variant="outline" onClick={() => { setPlacingCourse(undefined); setPlacementOpen(true) }}>
+          <CalendarPlus className="size-4" /> Add term
+        </Button>
       </header>
 
       {/* Always visible, and above the board — the one thing that must not
@@ -84,19 +121,22 @@ export function PlannerBoard() {
         <div className="overflow-x-auto">
           <div className="flex min-w-max gap-2.5">
             {columns.map((column, index) => (
-              <div key={column.term} className="flex items-stretch gap-2.5">
+              <div key={column.id ?? column.term} className="flex items-stretch gap-2.5">
                 <article className="w-52 shrink-0 rounded-xl border border-border bg-muted p-3">
                   <div className="flex items-baseline justify-between gap-2">
-                    <p className="font-display text-xs font-extrabold">{column.term}</p>
-                    {column.registered && (
-                      <span className="rounded border border-border px-1 py-0.5 text-[9.5px] font-bold text-muted-foreground">
-                        registered
-                      </span>
-                    )}
+                    <div className="flex min-w-0 items-center gap-1">
+                      <p className="truncate font-display text-xs font-extrabold">{column.term}</p>
+                      {column.lockedAt && <LockKeyhole className="size-3 text-muted-foreground" aria-label="Term locked" />}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {column.registered && <span className="rounded border border-border px-1 py-0.5 text-[9.5px] font-bold text-muted-foreground">registered</span>}
+                      {column.id && <Button size="icon" variant="ghost" className="size-6" onClick={() => setEditingSlot(slots.find((slot) => slot.id === column.id))} aria-label={`Edit ${column.term}`}><Pencil className="size-3" /></Button>}
+                    </div>
                   </div>
                   <p className="mt-0.5 text-[10.5px] font-bold text-muted-foreground">
                     {column.credits} cr · {column.bcpmCredits} BCPM
                   </p>
+                  {column.note && <p className="mt-1 line-clamp-2 text-[10px] font-bold text-muted-foreground">{column.note}</p>}
                   <div className="mt-2 space-y-1.5">
                     {column.courses.map((course) => (
                       <button
@@ -140,9 +180,23 @@ export function PlannerBoard() {
 
         {/* C replaces the rail — the two never render at once. */}
         {selected
-          ? <Inspector course={selected} onClose={() => setSelectedId(undefined)} />
+          ? <Inspector course={selected} onClose={() => setSelectedId(undefined)} onPlace={() => { setPlacingCourse(selected); setPlacementOpen(true) }} />
           : <OutcomeRail mcatDate={mcatDate} />}
       </div>
+
+      <PlacementDialog key={placingCourse?.id ?? 'new-term'}
+        course={placingCourse}
+        open={placementOpen}
+        columns={columns}
+        label={newTermLabel}
+        onLabelChange={setNewTermLabel}
+        kind={newTermKind}
+        onKindChange={setNewTermKind}
+        onAdd={addSlot}
+        onPlace={place}
+        onOpenChange={(open) => { setPlacementOpen(open); if (!open) setPlacingCourse(undefined) }}
+      />
+      <TermEditor key={editingSlot?.id ?? 'term-editor-closed'} term={editingSlot} onOpenChange={(open) => { if (!open) setEditingSlot(undefined) }} />
     </section>
   )
 }
@@ -208,7 +262,7 @@ function OutcomeRail({ mcatDate }: { mcatDate?: string }) {
 }
 
 /** C — opens from a chip, commits nothing, and says which mappings are inferred. */
-function Inspector({ course, onClose }: { course: Course; onClose: () => void }) {
+function Inspector({ course, onClose, onPlace }: { course: Course; onClose: () => void; onPlace: () => void }) {
   const courses = useStore((s) => s.courses)
   const requirements = useStore((s) => s.requirements)
   const effects = courseEffects(course, requirements, courses)
@@ -267,10 +321,94 @@ function Inspector({ course, onClose }: { course: Course; onClose: () => void })
         </div>
       )}
 
-      <p className="mt-3 border-t border-border pt-2.5 text-[10.5px] font-bold text-muted-foreground">
-        Nothing is placed or changed by looking. Editing stays in the term tables below.
-      </p>
+      <div className="mt-3 border-t border-border pt-2.5">
+        {isProtected(course) ? (
+          <p className="text-[10.5px] font-bold text-muted-foreground">This recorded course is locked from planning moves.</p>
+        ) : (
+          <Button size="sm" variant="outline" onClick={onPlace}>Choose term</Button>
+        )}
+        <p className="mt-2 text-[10.5px] font-bold text-muted-foreground">Nothing changes until you choose a destination.</p>
+      </div>
     </aside>
+  )
+}
+
+function PlacementDialog({
+  course, open, columns, label, onLabelChange, kind, onKindChange, onAdd, onPlace, onOpenChange,
+}: {
+  course?: Course
+  open: boolean
+  columns: ReturnType<typeof plannerTerms>
+  label: string
+  onLabelChange: (value: string) => void
+  kind: PlannerTerm['kind']
+  onKindChange: (value: PlannerTerm['kind']) => void
+  onAdd: () => void
+  onPlace: (course: Course, term: { id?: string; term: string; lockedAt?: number; registered: boolean }) => void
+  onOpenChange: (open: boolean) => void
+}) {
+  const [previewTermId, setPreviewTermId] = useState<string | undefined>()
+  const preview = columns.find((column) => (column.id ?? column.term) === previewTermId)
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-card sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>{course ? `Place ${course.code}` : 'Add a planning term'}</DialogTitle>
+          <DialogDescription>{course ? 'Choose a recorded term. Locked or registered terms cannot be changed here.' : 'A term is a planning slot, not an official registration record.'}</DialogDescription>
+        </DialogHeader>
+        {course && <div className="grid gap-2 sm:grid-cols-2">
+          {columns.map((column) => {
+            const blocked = Boolean(column.lockedAt || column.registered)
+            return <Button key={column.id ?? column.term} variant={preview === column ? 'default' : 'outline'} className="h-auto justify-start py-3 text-left" disabled={blocked} onClick={() => setPreviewTermId(column.id ?? column.term)}>
+              <span><b className="block font-display">{column.term}</b><span className="text-[11px] text-muted-foreground">{blocked ? (column.lockedAt ? 'Locked term' : 'Registered term') : `${column.credits} credits placed`}</span></span>
+            </Button>
+          })}
+        </div>}
+        {course && preview && <div className="rounded-xl border border-border bg-muted p-3 text-xs font-bold">
+          <p><b className="font-display">Preview:</b> move {course.code} from {course.term} to {preview.term}.</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">The inspector names recorded requirement effects; no catalog substitute or official completion is inferred here.</p>
+          <Button size="sm" className="mt-2" onClick={() => onPlace(course, preview)}>Place in {preview.term}</Button>
+        </div>}
+        <div className="border-t border-border pt-3">
+          <p className={EYEBROW}>New term slot</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <input value={label} onChange={(event) => onLabelChange(event.target.value)} placeholder="e.g. Summer 2027" className="min-w-0 flex-1 rounded-lg border border-border bg-muted px-2.5 py-2 text-xs font-bold" />
+            <select value={kind} onChange={(event) => onKindChange(event.target.value as PlannerTerm['kind'])} className="rounded-lg border border-border bg-muted px-2 text-xs font-bold"><option value="standard">Standard</option><option value="summer">Summer</option><option value="gap">Gap</option></select>
+            <Button size="sm" variant="outline" onClick={onAdd} disabled={!label.trim()}>Add term</Button>
+          </div>
+        </div>
+        <DialogFooter><Button variant="ghost" onClick={() => onOpenChange(false)}>Done</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function TermEditor({ term, onOpenChange }: { term?: PlannerTerm; onOpenChange: (open: boolean) => void }) {
+  const [note, setNote] = useState(term?.note ?? '')
+  const [locked, setLocked] = useState(Boolean(term?.lockedAt))
+  const openedId = term?.id
+  return (
+    <Dialog open={Boolean(term)} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-card">
+        <DialogHeader><DialogTitle>Term details</DialogTitle><DialogDescription>Keep a short reason for a locked planning term. This is not an official registration status.</DialogDescription></DialogHeader>
+        {term && <div className="space-y-3">
+          <p className="font-display text-sm font-extrabold">{term.label}</p>
+          <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional note or constraint" className="min-h-20 w-full rounded-lg border border-border bg-muted p-2 text-xs font-bold" />
+          <label className="flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={locked} onChange={(event) => setLocked(event.target.checked)} /> Lock this planning term</label>
+        </div>}
+        <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button onClick={() => {
+          if (!openedId) return
+          useStore.getState().update((draft) => {
+            const target = draft.academics.classCenter.plannerTerms.find((slot) => slot.id === openedId)
+            if (!target) return
+            target.note = note.trim() || undefined
+            target.lockedAt = locked ? (target.lockedAt ?? Date.now()) : undefined
+            target.updatedAt = Date.now()
+          })
+          onOpenChange(false)
+        }}>Save term details</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

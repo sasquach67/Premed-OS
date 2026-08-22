@@ -3,7 +3,7 @@ import {
   UNSCHEDULED, courseEffects, mcatDividerAfter, outcomeProjection,
   plannerTerms, prereqVsMcat, unplacedRequirements,
 } from '@/lib/academics/planner'
-import type { Course, RequirementItem } from '@/lib/types'
+import type { Course, PlannerTerm, RequirementItem } from '@/lib/types'
 
 const course = (code: string, term: string, patch: Partial<Course> = {}): Course => ({
   id: code, term, code, title: `${code} title`, credits: 3, grade: '', bcpm: true,
@@ -46,6 +46,14 @@ describe('term columns', () => {
     expect(done[0].registered).toBe(true)
     expect(future[0].registered).toBe(false)
   })
+
+  it('keeps an explicitly created empty summer or gap slot visible', () => {
+    const slots: PlannerTerm[] = [{
+      id: 'summer-2027', label: 'Summer 2027', kind: 'summer', origin: 'student-created', createdAt: 1, updatedAt: 1, order: 0,
+    }]
+    const [column] = plannerTerms([], slots)
+    expect(column).toMatchObject({ id: 'summer-2027', term: 'Summer 2027', kind: 'summer', courses: [] })
+  })
 })
 
 describe('the MCAT divider', () => {
@@ -81,6 +89,11 @@ describe('unplaced requirements', () => {
   it('keeps verification status, so a verified gap reads differently', () => {
     const flagged = [requirement('Biochemistry', { satisfiedBy: ['CHEM 430'], verificationStatus: 'needs-verification' })]
     expect(unplacedRequirements(flagged, [])[0].verificationStatus).toBe('needs-verification')
+  })
+
+  it('does not call an unscheduled course a satisfied requirement', () => {
+    const open = unplacedRequirements([requirement('Biochemistry', { satisfiedBy: ['CHEM 430'] })], [course('CHEM 430', UNSCHEDULED)])
+    expect(open.map((item) => item.label)).toEqual(['Biochemistry'])
   })
 })
 

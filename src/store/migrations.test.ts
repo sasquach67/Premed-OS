@@ -11,16 +11,47 @@ import { migrateExperienceHoursV15 } from '@/store/migrations/experienceHoursV15
 import { migrateRoadmapTaskLinkV16 } from '@/store/migrations/roadmapTaskLinkV16'
 import { migrateOverviewAttachmentsV17 } from '@/store/migrations/overviewAttachmentsV17'
 import { migrateTaskHorizonsV18 } from '@/store/migrations/taskHorizonsV18'
+import { migratePlannerTermsV29 } from '@/store/migrations/plannerTermsV29'
 import { migrateExamPrepV19 } from '@/store/migrations/examPrepV19'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
 
 function freshData(): AppData {
-  return createSeedData()
+  return structuredClone(createSeedData())
 }
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(28)
+  expect(CURRENT_STORE_VERSION).toBe(29)
+})
+
+describe('migratePlannerTermsV29', () => {
+  it('adds durable legacy-derived slots without losing course records', () => {
+    const data = freshData()
+    data.courses = [{
+      id: 'chem', term: 'Fall 2026', code: 'CHEM 101', title: 'Chemistry', credits: 4,
+      grade: '', bcpm: true, status: 'planned', inResidence: true, satisfies: [], order: 0,
+    }]
+    delete (data.academics.classCenter as Partial<typeof data.academics.classCenter>).plannerTerms
+    const before = structuredClone(data)
+    Object.freeze(data)
+    Object.freeze(data.courses)
+    Object.freeze(data.academics)
+    Object.freeze(data.academics.classCenter)
+
+    const out = migratePlannerTermsV29(data)
+    expect(out.academics.classCenter.plannerTerms).toMatchObject([{
+      id: 'planner-term-fall-2026', label: 'Fall 2026', origin: 'legacy-derived', kind: 'standard',
+    }])
+    expect(out.courses[0]).toMatchObject({ ...before.courses[0], plannerTermId: 'planner-term-fall-2026' })
+    expect(data).toEqual(before)
+  })
+
+  it('is a no-op when planner terms already exist', () => {
+    const data = freshData()
+    data.courses = []
+    data.academics.classCenter.plannerTerms = []
+    expect(migratePlannerTermsV29(data)).toBe(data)
+  })
 })
 
 describe('migrateExamPrepV19', () => {

@@ -18,7 +18,7 @@
  *     not reverting the world to it.
  */
 import { uid } from '@/lib/id'
-import type { Course, SavedPlacement, SavedPlan } from '@/lib/types'
+import type { Course, PlannerTerm, SavedPlacement, SavedPlan } from '@/lib/types'
 
 /**
  * Grades that record no outcome. `IP` in particular is an in-progress marker
@@ -46,7 +46,7 @@ export function isProtected(course: Course): boolean {
 
 export function capturePlan(
   courses: Course[],
-  { name, note, now = Date.now(), order = 0 }: { name: string; note?: string; now?: number; order?: number },
+  { name, note, now = Date.now(), order = 0, plannerTerms = [] }: { name: string; note?: string; now?: number; order?: number; plannerTerms?: PlannerTerm[] },
 ): SavedPlan {
   return {
     id: uid(),
@@ -55,8 +55,10 @@ export function capturePlan(
     placements: courses.map((course): SavedPlacement => ({
       courseId: course.id,
       term: course.term,
+      plannerTermId: course.plannerTermId,
       status: course.status,
     })),
+    plannerTerms: plannerTerms.map((term) => ({ ...term })),
     createdAt: now,
     updatedAt: now,
     order,
@@ -67,6 +69,8 @@ export interface PlanChange {
   course: Course
   from: string
   to: string
+  fromTermId?: string
+  toTermId?: string
 }
 
 export interface PlanSkip {
@@ -114,8 +118,8 @@ export function planDiff(plan: SavedPlan, courses: Course[]): PlanDiff {
       })
       continue
     }
-    if (course.term === placement.term) continue
-    changes.push({ course, from: course.term, to: placement.term })
+    if (course.term === placement.term && course.plannerTermId === placement.plannerTermId) continue
+    changes.push({ course, from: course.term, to: placement.term, fromTermId: course.plannerTermId, toTermId: placement.plannerTermId })
   }
   return { changes, skipped }
 }
@@ -129,11 +133,34 @@ export function applyPlanRestore(
   courses: Course[],
   changes: PlanChange[],
 ): Course[] {
-  const moves = new Map(changes.map((change) => [change.course.id, change.to]))
+  const moves = new Map(changes.map((change) => [change.course.id, change]))
   return courses.map((course) => {
-    const term = moves.get(course.id)
+    const move = moves.get(course.id)
     // Belt and braces: even a hand-built change list cannot move a protected course.
-    if (term == null || isProtected(course)) return course
-    return { ...course, term }
+    if (!move || isProtected(course)) return course
+    return { ...course, term: move.to, plannerTermId: move.toTermId }
   })
+}
+
+export interface PlannerTermChange {
+  term: PlannerTerm
+  kind: 'add' | 'update'
+}
+
+/** Slot metadata is part of a saved plan, but restore never deletes a newer slot. */
+export function plannerTermDiff(plan: SavedPlan, liveTerms: PlannerTerm[]): PlannerTermChange[] {
+  if (!plan.plannerTerms) return []
+  const liveById = new Map(liveTerms.map((term) => [term.id, term]))
+  return plan.plannerTerms.flatMap<PlannerTermChange>((term) => {
+    const live = liveById.get(term.id)
+    if (!live) return [{ term, kind: 'add' as const }]
+    return JSON.stringify(live) === JSON.stringify(term) ? [] : [{ term, kind: 'update' as const }]
+  })
+}
+
+/** Merge only the reviewed snapshot slots. Newer live slots intentionally survive. */
+export function applyPlannerTermRestore(liveTerms: PlannerTerm[], changes: PlannerTermChange[]): PlannerTerm[] {
+  const byId = new Map(liveTerms.map((term) => [term.id, term]))
+  for (const change of changes) byId.set(change.term.id, { ...change.term })
+  return [...byId.values()].sort((a, b) => a.order - b.order)
 }
