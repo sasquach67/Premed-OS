@@ -191,7 +191,7 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="class-hub space-y-5">
       <Tabs value={tab} onValueChange={changeTab}>
         {/* The class hub wears the same banner as every other Academics
          *  surface (04 §0c): themed art → scrim → glass stat strip floating
@@ -274,9 +274,9 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
           </div>
         </PageHeader>
 
-        <TabsContent value="overview"><Overview course={course} data={data} type={classType} topics={courseTopics} drafts={courseDrafts} assignments={courseAssignments} notes={courseNotes} contacts={courseContacts} persons={persons} onTab={changeTab} onOpenExamPrep={openExamPrep} /></TabsContent>
-        <TabsContent value="materials"><Materials courseId={course.id} courseCode={course.code} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} onTab={changeTab} /></TabsContent>
-        <TabsContent value="topics"><Topics
+        <TabsContent value="overview" className="class-hub-tab"><Overview course={course} data={data} type={classType} topics={courseTopics} drafts={courseDrafts} assignments={courseAssignments} notes={courseNotes} contacts={courseContacts} persons={persons} onTab={changeTab} onOpenExamPrep={openExamPrep} /></TabsContent>
+        <TabsContent value="materials" className="class-hub-tab"><Materials courseId={course.id} courseCode={course.code} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} onTab={changeTab} /></TabsContent>
+        <TabsContent value="topics" className="class-hub-tab"><Topics
           courseId={course.id} data={data} topics={courseTopics} assignments={courseAssignments}
           onOpenNotes={(topicId) => {
             // The Notes tab filters to this topic, so the menu item lands on
@@ -290,9 +290,9 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
             changeTab('notes')
           }}
         /></TabsContent>
-        <TabsContent value="readings"><WritingTools courseId={course.id} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /></TabsContent>
-        <TabsContent value="assignments"><Assignments assignments={courseAssignments} topics={courseTopics} classType={classType} /></TabsContent>
-        <TabsContent value="notes"><Notes courseId={course.id} notes={courseNotes} topics={courseTopics} data={data} onOpenMaterials={() => changeTab('materials')} topicFilter={params.get('noteTopic') ?? undefined} /></TabsContent>
+        <TabsContent value="readings" className="class-hub-tab"><WritingTools courseId={course.id} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /></TabsContent>
+        <TabsContent value="assignments" className="class-hub-tab"><Assignments assignments={courseAssignments} topics={courseTopics} classType={classType} /></TabsContent>
+        <TabsContent value="notes" className="class-hub-tab"><Notes courseId={course.id} notes={courseNotes} topics={courseTopics} data={data} onOpenMaterials={() => changeTab('materials')} topicFilter={params.get('noteTopic') ?? undefined} /></TabsContent>
       </Tabs>
     </div>
   )
@@ -393,8 +393,8 @@ function Overview({
   }
 
   return (
-    <div className="grid grid-cols-12 gap-4">
-      <Panel className="col-span-12" title="Class status" action={<Button size="sm" variant="outline" onClick={() => onTab('topics')}>Open topics</Button>}>
+    <div className="class-hub-overview grid grid-cols-12 gap-4">
+      <Panel className="class-hub-primary-band col-span-12" title="Class status" action={<Button size="sm" variant="outline" onClick={() => onTab('topics')}>Open topics</Button>}>
         <div className="grid gap-3 sm:grid-cols-3">
           <StatusMetric label="Course grade" value={course.grade || 'Not graded yet'} />
           <StatusMetric label="Topics ready" value={`${topics.filter((item) => item.status === 'ready').length} of ${topics.length}`} />
@@ -402,17 +402,17 @@ function Overview({
         </div>
       </Panel>
 
-      <Panel className="col-span-12" title="Material coverage" action={<Button size="sm" variant="outline" onClick={() => onTab('materials')}>Open materials</Button>}>
+      <Panel className="class-hub-primary-band col-span-12" title="Material coverage" action={<Button size="sm" variant="outline" onClick={() => onTab('materials')}>Open materials</Button>}>
         <CoverageLedger courseId={course.id} data={data} topics={topics} onOpenMaterials={() => onTab('materials')} />
       </Panel>
 
-      <div className="col-span-12">
+      <div className="class-hub-primary-band col-span-12">
         <StudyMethodPanel courseId={course.id} topics={topics} events={data.reviewEvents} classType={type} topicLinks={data.topicLinks ?? []} primableTopicIds={new Set((data.keyPoints ?? []).map((point) => point.topicId))} />
       </div>
 
       {/* §4.1: below the class's primary next action, above its supporting
           class information. Absent entirely when no signal is earned. */}
-      <div className="col-span-12">
+      <div className="class-hub-primary-band col-span-12">
         <LearningSignalsPanel
           courseId={course.id} topics={topics} events={data.reviewEvents}
           assignments={assignments} classType={type} onTab={onTab}
@@ -479,7 +479,7 @@ function Overview({
         </div>
       </Panel>
 
-      <div className="col-span-12">
+      <div className="class-hub-primary-band col-span-12">
         <ProfessorEvidencePanel courseId={course.id} data={data} assignments={assignments} contacts={contacts} />
       </div>
 
@@ -508,8 +508,8 @@ function NonStemOverview({
   const label = type === 'writing' ? 'Open readings' : 'Open assignments'
   const destination = type === 'writing' ? 'readings' : 'assignments'
   return (
-    <div className="grid grid-cols-12 gap-4">
-      <Panel className="col-span-12" title="Class status" action={<Button size="sm" variant="outline" onClick={() => onTab(destination)}>{label}</Button>}>
+    <div className="class-hub-overview grid grid-cols-12 gap-4">
+      <Panel className="class-hub-primary-band col-span-12" title="Class status" action={<Button size="sm" variant="outline" onClick={() => onTab(destination)}>{label}</Button>}>
         <div className="grid gap-3 sm:grid-cols-3">
           <StatusMetric label="Course grade" value={course.grade || 'Not graded yet'} />
           <StatusMetric label={type === 'writing' ? 'Open papers' : 'Open work'} value={String(type === 'writing' ? drafts.filter((draft) => draft.stage !== 'submitted').length : open.length)} />
@@ -635,7 +635,7 @@ function CoverageLedger({
   return (
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_repeat(3,minmax(8rem,.42fr))]">
-        <div className="rounded-2xl border border-border bg-card/66 p-4 shadow-sm backdrop-blur">
+        <div className="class-hub-metric rounded-2xl p-4">
           <div className="flex items-center justify-between gap-3 text-sm font-extrabold"><span>Confirmed</span><span className="tabular-nums">{coverage.mappedPercent}%</span></div>
           <Progress className="mt-3" value={coverage.mappedPercent} />
           <p className="mt-2 text-xs font-semibold text-muted-foreground">{coverage.mappedChunks} of {coverage.totalChunks} chunks have a student-confirmed topic label.</p>
@@ -680,7 +680,7 @@ function CoverageLedger({
 
 function CoverageMetric({ label, value, tone }: { label: string; value: number; tone: 'warning' | 'neutral' }) {
   return (
-    <div className={cn('rounded-2xl border p-4 shadow-sm backdrop-blur', tone === 'warning' ? 'border-amber-500/25 bg-amber-500/7' : 'border-border bg-card/66')}>
+    <div className={cn('class-hub-metric rounded-2xl p-4', tone === 'warning' && 'border-amber-500/25 bg-amber-500/7')}>
       <p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-1 font-display text-3xl font-extrabold tabular-nums">{value}</p>
     </div>
@@ -777,9 +777,9 @@ function Materials({
           </Button>
         ))}
       </div>
-      {!!categories.length && <Card>
-        <CardHeader><CardTitle>Grade categories</CardTitle><p className="mt-1 text-sm text-muted-foreground">Saved from your syllabus. These are editable records only—grade calculations are not enabled here.</p></CardHeader>
-        <CardContent className="space-y-2">{categories.map((category) => <div key={category.id} className="grid gap-2 rounded-xl border border-border bg-muted/20 p-3 sm:grid-cols-[1fr_7rem]">
+      {!!categories.length && <Card className="class-hub-panel">
+        <CardHeader className="class-hub-panel-header"><CardTitle>Grade categories</CardTitle><p className="mt-1 text-sm text-muted-foreground">Saved from your syllabus. These are editable records only—grade calculations are not enabled here.</p></CardHeader>
+        <CardContent className="class-hub-panel-content space-y-2">{categories.map((category) => <div key={category.id} className="class-hub-record-row grid gap-2 rounded-xl p-3 sm:grid-cols-[1fr_7rem]">
           <Input aria-label="Grade category" value={category.name} onChange={(event) => patchCategory(category.id, { name: event.target.value })} />
           <Input aria-label="Grade category weight" type="number" min="0" max="100" value={category.weight} onChange={(event) => patchCategory(category.id, { weight: Number(event.target.value) || 0 })} />
           {category.policyNote && <p className="text-xs font-semibold text-muted-foreground sm:col-span-2">Policy (verbatim): {category.policyNote}</p>}
@@ -787,12 +787,12 @@ function Materials({
         </div>)}</CardContent>
       </Card>}
       {visible.map((group) => (
-        <Card key={group.unit}>
-          <CardHeader className="flex-row items-start justify-between gap-3">
+        <Card key={group.unit} className="class-hub-panel">
+          <CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3">
             <div><CardTitle>{group.unit}</CardTitle><p className="mt-1 text-sm text-muted-foreground">Weeks not mapped · {group.ready}/{group.topicCount} linked topics ready</p></div>
             <Badge variant={group.unit === 'Unassigned' ? 'warning' : 'outline'}>{group.files.length} files</Badge>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="class-hub-panel-content space-y-3">
             {group.unit === 'Unassigned' && <div className="rounded-xl border border-dashed border-amber-500/45 bg-amber-500/8 p-3 text-sm font-semibold">These files have no linked topic, so their position is not known yet. Link a topic to file them without moving or deleting anything.</div>}
             {group.files.map((file) => <FileRow key={file.id} file={file} ownership={fileOwnership(file, notes)} onReimport={file.type === 'syllabus' ? () => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}&reimport=1&reimportFile=${file.id}`) : undefined} />)}
             <div className="rounded-2xl border border-violet-500/30 bg-violet-500/9 p-4">
@@ -839,15 +839,15 @@ function Topics({
         const ready = unitTopics.filter((item) => item.status === 'ready').length
         const inScope = unitTopics.some((item) => examTopicIds.has(item.id))
         return (
-          <Card key={unit}>
-            <CardHeader>
+          <Card key={unit} className="class-hub-panel">
+            <CardHeader className="class-hub-panel-header">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div><CardTitle>{unit}</CardTitle><p className="mt-1 text-sm text-muted-foreground">Weeks not mapped · {ready}/{unitTopics.length} ready</p></div>
                 {inScope && <Badge variant="warning">Upcoming exam scope</Badge>}
               </div>
               <Progress value={unitTopics.length ? (ready / unitTopics.length) * 100 : 0} />
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="class-hub-panel-content space-y-2">
               {unitTopics.map((topic) => <TopicRow key={topic.id} topic={topic} data={data} exam={exam} onOpenNotes={onOpenNotes} />)}
             </CardContent>
           </Card>
@@ -870,12 +870,12 @@ function Assignments({ assignments, topics, classType }: { assignments: ClassAss
         const possible = graded.reduce((sum, item) => sum + (item.pointsPossible ?? 0), 0)
         const weight = items.reduce((sum, item) => sum + (item.weight ?? 0), 0)
         return (
-          <Card key={category}>
-            <CardHeader className="flex-row items-start justify-between gap-3">
+          <Card key={category} className="class-hub-panel">
+            <CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3">
               <div><CardTitle>{category}</CardTitle><p className="mt-1 text-sm text-muted-foreground">{complete.length}/{items.length} completed · {possible ? `${formatNumber((earned / possible) * 100)}% average` : 'Not enough graded work yet'}</p></div>
               <Badge variant="outline">{weight ? `${formatNumber(weight)}% weight` : 'Weight not set'}</Badge>
             </CardHeader>
-            <CardContent className="space-y-2">{items.map((item) => <AssignmentRow key={item.id} item={item} topics={topics} classType={classType} />)}</CardContent>
+            <CardContent className="class-hub-panel-content space-y-2">{items.map((item) => <AssignmentRow key={item.id} item={item} topics={topics} classType={classType} />)}</CardContent>
           </Card>
         )
       })}
@@ -931,9 +931,9 @@ function Notes({ courseId, notes, topics, data, onOpenMaterials, topicFilter }: 
         )} New note</Button>} />
         <ProfessorRemarkProposals courseId={courseId} data={data} onOpenMaterials={onOpenMaterials} />
         {sections.map((section) => (
-          <Card key={section.key}>
-            <CardHeader><CardTitle>{section.title}</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
+          <Card key={section.key} className="class-hub-panel">
+            <CardHeader className="class-hub-panel-header"><CardTitle>{section.title}</CardTitle></CardHeader>
+            <CardContent className="class-hub-panel-content space-y-2">
               {section.notes.map((note) => <NoteRow key={note.id} note={note} checkbox={section.key === 'questions'} />)}
               {!section.notes.length && <p className="text-sm font-semibold text-muted-foreground">Nothing recorded here yet.</p>}
             </CardContent>
@@ -943,7 +943,7 @@ function Notes({ courseId, notes, topics, data, onOpenMaterials, topicFilter }: 
       <aside className="space-y-3 xl:sticky xl:top-20 xl:self-start">
         <h2 className="font-display text-xl font-extrabold">Topic notes</h2>
         {topicNotes.map(({ topic, notes: linked }) => (
-          <Card key={topic.id}><CardContent className="p-4"><p className="font-extrabold">{topic.title}</p><p className="mt-1 text-sm text-muted-foreground">{linked.map((note) => note.title).join(' · ')}</p></CardContent></Card>
+          <Card key={topic.id} className="class-hub-panel"><CardContent className="class-hub-panel-content p-4"><p className="font-extrabold">{topic.title}</p><p className="mt-1 text-sm text-muted-foreground">{linked.map((note) => note.title).join(' · ')}</p></CardContent></Card>
         ))}
         {!topicNotes.length && <EmptyState icon={NotebookText} title="No linked topic notes" detail="Link a class note to a topic to build this rail." />}
       </aside>
@@ -1005,12 +1005,12 @@ function ProfessorRemarkProposals({ courseId, data, onOpenMaterials }: { courseI
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="class-hub-panel">
+      <CardHeader className="class-hub-panel-header">
         <CardTitle>Professor remarks to review</CardTitle>
         <p className="mt-1 text-sm text-muted-foreground">Exact lecture moments about this class. Add one only if it belongs in your working notes.</p>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="class-hub-panel-content space-y-3">
         {proposals.map((proposal) => {
           const finding = data.lectureFindings.find((item) => item.id === proposal.findingId)
           const lecture = data.lectures.find((item) => item.id === proposal.lectureId)
@@ -1092,9 +1092,9 @@ function WhatIf({ assignments }: { assignments: ClassAssignment[] }) {
     ? currentWeighted - (selected.average ?? 0) * selected.weight / 100 + target * selected.weight / 100
     : null
   return (
-    <Card>
-      <CardHeader><CardTitle>What-if calculator</CardTitle><p className="text-sm text-muted-foreground">Local scratch work only — nothing here is saved.</p></CardHeader>
-      <CardContent>
+    <Card className="class-hub-panel">
+      <CardHeader className="class-hub-panel-header"><CardTitle>What-if calculator</CardTitle><p className="text-sm text-muted-foreground">Local scratch work only — nothing here is saved.</p></CardHeader>
+      <CardContent className="class-hub-panel-content">
         {categories.length ? (
           <div className="grid gap-4 lg:grid-cols-[1fr_180px_1fr]">
             <label className="text-sm font-bold">Category
@@ -1280,7 +1280,7 @@ function HubTabTrigger({ value, label, count }: { value: HubTab; label: string; 
 }
 
 function Panel({ title, action, className, children }: { title: string; action?: React.ReactNode; className?: string; children: React.ReactNode }) {
-  return <Card className={className}><CardHeader className="flex-row items-center justify-between gap-3"><CardTitle>{title}</CardTitle>{action}</CardHeader><CardContent>{children}</CardContent></Card>
+  return <Card className={cn('class-hub-panel', className)}><CardHeader className="class-hub-panel-header flex-row items-center justify-between gap-3"><CardTitle>{title}</CardTitle>{action}</CardHeader><CardContent className="class-hub-panel-content">{children}</CardContent></Card>
 }
 
 function SectionToolbar({ title, detail, action }: { title: string; detail: string; action?: React.ReactNode }) {
@@ -1305,7 +1305,7 @@ function FlashcardDecks({ courseId, data }: { courseId: string; data: ClassCente
     }
   }
 
-  return <Card className="border-border bg-card"><CardHeader className="flex-row items-start justify-between gap-3"><div><CardTitle>Flashcards</CardTitle><p className="mt-1 text-sm text-muted-foreground">Generated from your selected class material. Premed OS does not schedule or review these cards.</p></div><Badge variant="outline">{deck.cards.length} cards</Badge></CardHeader><CardContent className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem]"><div className="rounded-[13px] border border-border bg-muted/30 p-5"><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">{card.type}</p><p className="mt-3 font-display text-xl font-extrabold">{card.cloze ?? card.front}</p><p className="mt-4 text-sm text-muted-foreground">{card.back}</p>{card.extra && <p className="mt-4 border-l-2 border-primary/40 pl-3 text-sm text-muted-foreground">{card.extra}</p>}</div><aside className="rounded-[13px] border border-border bg-muted/20 p-4 text-sm"><p className="font-extrabold">Source</p><p className="mt-1 text-muted-foreground">Material chunk {card.sourceChunkId}</p><p className="mt-4 font-extrabold">Export</p><Button size="sm" className="mt-2 w-full" onClick={() => void downloadApkg()}>Download Anki package</Button><Button size="sm" variant="outline" className="mt-2 w-full" onClick={() => downloadFlashcardTsv(deck)}>Download TSV</Button><p className="mt-3 text-xs text-muted-foreground">One-way export. Anki schedules and reviews cards after import.</p></aside></CardContent></Card>
+  return <Card className="class-hub-panel"><CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3"><div><CardTitle>Flashcards</CardTitle><p className="mt-1 text-sm text-muted-foreground">Generated from your selected class material. Premed OS does not schedule or review these cards.</p></div><Badge variant="outline">{deck.cards.length} cards</Badge></CardHeader><CardContent className="class-hub-panel-content grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem]"><div className="class-hub-record-row rounded-[13px] p-5"><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">{card.type}</p><p className="mt-3 font-display text-xl font-extrabold">{card.cloze ?? card.front}</p><p className="mt-4 text-sm text-muted-foreground">{card.back}</p>{card.extra && <p className="mt-4 border-l-2 border-primary/40 pl-3 text-sm text-muted-foreground">{card.extra}</p>}</div><aside className="class-hub-record-row rounded-[13px] p-4 text-sm"><p className="font-extrabold">Source</p><p className="mt-1 text-muted-foreground">Material chunk {card.sourceChunkId}</p><p className="mt-4 font-extrabold">Export</p><Button size="sm" className="mt-2 w-full" onClick={() => void downloadApkg()}>Download Anki package</Button><Button size="sm" variant="outline" className="mt-2 w-full" onClick={() => downloadFlashcardTsv(deck)}>Download TSV</Button><p className="mt-3 text-xs text-muted-foreground">One-way export. Anki schedules and reviews cards after import.</p></aside></CardContent></Card>
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -1313,7 +1313,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function StatusMetric({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-2xl border border-border bg-muted/30 p-4"><p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 font-display text-2xl font-extrabold tabular-nums">{value}</p></div>
+  return <div className="class-hub-metric rounded-2xl p-4"><p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 font-display text-2xl font-extrabold tabular-nums">{value}</p></div>
 }
 
 function EmptyState({ icon: Icon, title, detail }: { icon: typeof BookOpen; title: string; detail: string }) {
@@ -1321,7 +1321,7 @@ function EmptyState({ icon: Icon, title, detail }: { icon: typeof BookOpen; titl
 }
 
 function AssignmentMini({ item }: { item: ClassAssignment }) {
-  return <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/25 px-3 py-2"><div className="min-w-0"><p className="truncate font-bold">{item.title}</p><p className="text-xs text-muted-foreground">{titleCase(item.type)}</p></div><Badge variant={item.dueDate && item.dueDate < isoToday() ? 'danger' : 'outline'}>{assignmentDateLabel(item)}</Badge></div>
+  return <div className="class-hub-record-row flex items-center justify-between gap-3 rounded-xl px-3 py-2"><div className="min-w-0"><p className="truncate font-bold">{item.title}</p><p className="text-xs text-muted-foreground">{titleCase(item.type)}</p></div><Badge variant={item.dueDate && item.dueDate < isoToday() ? 'danger' : 'outline'}>{assignmentDateLabel(item)}</Badge></div>
 }
 
 function Legend({ color, label }: { color: string; label: string }) {
@@ -1331,11 +1331,11 @@ function Legend({ color, label }: { color: string; label: string }) {
 function ContactRow({ contact, person }: { contact: ClassContact; person?: Person }) {
   const name = person?.name || contact.name
   const email = person?.email || contact.email
-  return <div className="rounded-xl border border-border bg-muted/25 p-3"><p className="font-extrabold">{name}</p><p className="text-xs text-muted-foreground">{titleCase(contact.role)} · {contact.officeHours || 'Office hours not set'}</p>{email && <a className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-primary" href={`mailto:${email}`}><Mail className="size-3" /> {email}</a>}</div>
+  return <div className="class-hub-record-row rounded-xl p-3"><p className="font-extrabold">{name}</p><p className="text-xs text-muted-foreground">{titleCase(contact.role)} · {contact.officeHours || 'Office hours not set'}</p>{email && <a className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-primary" href={`mailto:${email}`}><Mail className="size-3" /> {email}</a>}</div>
 }
 
 function CategoryBar({ item }: { item: CategoryStat }) {
-  return <div><div className="mb-1 flex justify-between gap-3 text-sm font-bold"><span>{item.name}</span><span className="tabular-nums text-muted-foreground">{item.average == null ? 'Not graded' : `${formatNumber(item.average)}%`} · {formatNumber(item.weight)}% wt</span></div><Progress value={item.average ?? 0} /></div>
+  return <div><div className="mb-1 flex justify-between gap-3 text-sm font-bold"><span>{item.name}</span><span className="tabular-nums text-muted-foreground">{item.average == null ? 'Not graded' : `${formatNumber(item.average)}%`} · {formatNumber(item.weight)}% wt</span></div>{item.average != null && <Progress value={item.average} />}</div>
 }
 
 function addQuestionNote(courseId: string, unit: string) {

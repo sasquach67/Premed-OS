@@ -794,3 +794,50 @@
 .syllabus-import-breathe {
   animation: syllabus-import-breathe 2.8s ease-in-out infinite;
 }
+
+/* Class Hub is a dense record surface: the banner holds the one floating
+   glass surface, while all class evidence beneath it is solid and grouped. */
+.class-hub-tab {
+  margin-top: 1.25rem;
+}
+
+.class-hub-panel,
+.class-hub-primary-band {
+  overflow: hidden;
+  background: var(--card);
+  border-color: var(--border);
+}
+
+.class-hub-panel-header {
+  padding: 0.9rem 1rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 42%, var(--card));
+}
+
+.class-hub-panel-content {
+  padding: 0.9rem 1rem 1rem;
+}
+
+.class-hub-primary-band:not(.class-hub-panel) {
+  padding: 1px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.class-hub-primary-band:not(.class-hub-panel) > * {
+  border-radius: calc(var(--radius) - 1px);
+}
+
+.class-hub-record-row,
+.class-hub-metric {
+  border: 1px solid var(--border);
+  background: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .class-hub-panel-header,
+  .class-hub-panel-content {
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
+}
