@@ -1,4 +1,4 @@
-# Academics · Term retrospective — decisions
+# Academics · Term report — decisions
 
 **Status:** PROPOSED · DECIDED, awaiting manifest authorization
 **Source:** `academics-term-retrospective.html` · **Spec:** `tabs/01-academics.md` #43, §6.10-C
@@ -35,7 +35,7 @@ say a method caused a grade."**
 
 | View | Job |
 |---|---|
-| One honest page | The spec's own framing — what you did, what stands out, what to carry. |
+| Term report | The selected one-page report — the record, observations, carry-forward, and evidence limit. |
 | Sectioned review | The same record per question, for interrogating one class. |
 | Too little to say | A lightly-tracked term, where the honest output is no page. |
 
@@ -62,14 +62,16 @@ say a method caused a grade."**
   always last, so the page cannot be read without it.
 - Solid-with-depth; the banner is the only floating surface.
 
-## Implementation selection — A · One honest page
+## Implementation selection — A · Term report
 
-**Ruled Aug. 22, 2026.** The implementation is Variant A: a single narrow
-reading column that moves in order from what was recorded, to a few
-count-attached observations, to what to carry into the next term, and finally
-to the non-causation limit.
+**Ruled Aug. 22, 2026.** The implementation is Variant A, reframed as a
+compact **Term report**: a single narrow reading column with an end-of-term
+stamp and four ordered sections — the record, count-attached observations,
+carry-forward, and the non-causation limit.
 
-This is the spec's "one honest page," not a dashboard or a per-course scorecard.
+This is the spec's "one honest page," made to feel more deliberate than a
+reflection card. It is not a dashboard, a printable transcript, or a
+per-course scorecard.
 The sectioned review remains in the lab as a comparison treatment, but is not a
 product subtab. If a later implementation needs a class-specific detail, it
 opens from a quiet contextual disclosure without breaking the page's narrative.
