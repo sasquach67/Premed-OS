@@ -863,7 +863,7 @@ function ClassCard({
       className={cn(
         'academics-class-card group/class relative self-start cursor-pointer overflow-hidden shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
         actionHovered && 'action-hovered',
-        compact ? 'min-h-0' : 'aspect-square h-full',
+        compact ? 'min-h-0' : 'min-h-[210px]',
         dragging && 'scale-[0.98] opacity-55',
         dragOver && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
       )}
@@ -876,7 +876,7 @@ function ClassCard({
       <CardContent className={cn(
         compact
           ? 'grid items-center gap-4 p-3 md:grid-cols-[minmax(0,1.2fr)_auto_minmax(160px,.7fr)_auto]'
-          : 'flex h-full min-h-0 flex-col gap-3 p-3',
+          : 'flex min-h-0 flex-col gap-3 p-3',
       )}>
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="min-w-0">
@@ -931,7 +931,9 @@ function ClassCard({
           <div
             className={cn(
               'mt-2 items-center justify-end gap-2',
-              compact ? 'flex' : 'hidden group-focus-within/class:flex group-hover/class:flex',
+              compact
+                ? 'flex'
+                : 'flex invisible pointer-events-none opacity-0 group-focus-within/class:pointer-events-auto group-focus-within/class:visible group-focus-within/class:opacity-100 group-hover/class:pointer-events-auto group-hover/class:visible group-hover/class:opacity-100',
             )}
             onPointerEnter={() => setActionHovered(true)}
             onPointerLeave={() => setActionHovered(false)}
