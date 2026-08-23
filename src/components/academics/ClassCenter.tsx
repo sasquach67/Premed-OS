@@ -876,7 +876,7 @@ function ClassCard({
       <CardContent className={cn(
         compact
           ? 'grid items-center gap-4 p-3 md:grid-cols-[minmax(0,1.2fr)_auto_minmax(160px,.7fr)_auto]'
-          : 'flex h-full min-h-0 flex-col justify-between gap-2 p-3',
+          : 'flex h-full min-h-0 flex-col gap-3 p-3',
       )}>
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="min-w-0">
@@ -906,7 +906,6 @@ function ClassCard({
               {stats.failedCount} failed
             </Badge>
           )}
-          {row.bcpm && <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="secondary">BCPM</Badge>}
         </div>
 
         <div className="space-y-1.5">
@@ -924,7 +923,7 @@ function ClassCard({
           )}
         </div>
 
-        <div className={cn('border-t border-border pt-2', compact && 'mt-0 md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
+        <div className={cn('mt-auto border-t border-border pt-2', compact && 'mt-0 md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
           <p className="min-h-4 text-[10.5px] font-bold text-muted-foreground">
             <span className={cn(!actionHovered && 'group-hover/class:hidden')}>{nextText}</span>
             <span className={cn('hidden font-display font-extrabold text-[var(--class-accent)]', !actionHovered && 'group-hover/class:inline')}>Open class hub →</span>
