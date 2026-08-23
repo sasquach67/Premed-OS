@@ -937,6 +937,8 @@ function ClassCard({
           >
             <Button
               size="sm"
+              variant="outline"
+              className="h-8 flex-1 border-[var(--class-accent)] bg-[color-mix(in_srgb,var(--class-accent)_10%,transparent)] font-display font-extrabold text-[var(--class-accent)] shadow-none hover:bg-[color-mix(in_srgb,var(--class-accent)_18%,transparent)] hover:text-[var(--class-accent)]"
               onClick={(event) => { event.stopPropagation(); onReview() }}
               onFocus={() => setActionHovered(true)}
               onBlur={() => setActionHovered(false)}
