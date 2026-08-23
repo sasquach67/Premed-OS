@@ -923,7 +923,7 @@ function ClassCard({
           )}
         </div>
 
-        <div className={cn('mt-auto border-t border-border pt-2', compact && 'mt-0 md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
+        <div className={cn('border-t border-border pt-2', compact && 'md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
           <p className="min-h-4 text-[10.5px] font-bold text-muted-foreground">
             <span className={cn(!actionHovered && 'group-hover/class:hidden')}>{nextText}</span>
             <span className={cn('hidden font-display font-extrabold text-[var(--class-accent)]', !actionHovered && 'group-hover/class:inline')}>Open class hub →</span>
