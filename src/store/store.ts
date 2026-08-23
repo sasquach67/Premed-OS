@@ -14,6 +14,7 @@ import type {
 } from '@/lib/types'
 import { createSeedData } from '@/data/seed'
 import { createDemoData } from '@/data/demoSeed'
+import { createEmptyClassCenterData, createPersonalInitialData } from '@/data/personalInitialData'
 import {
   activeStorageKey, clearUnstampedDemoNamespace, isDemoMode,
   LEGACY_STORAGE_KEY, REAL_STORAGE_KEY, stampDemoNamespace,
@@ -73,6 +74,13 @@ export const OLDEST_SUPPORTED_STORE_VERSION = 0
 export const CURRENT_STORE_VERSION = 31
 
 function createInitialData() {
+  const initial = createInitialDataForMode(DEMO_MODE)
+  if (DEMO_MODE) stampDemoNamespace()
+  return initial
+}
+
+/** Settings' explicit reset keeps the existing seeded-plan behavior. */
+function createResetData() {
   if (!DEMO_MODE) return migrateAll(structuredClone(createSeedData()))
   const demo = migrateAll(createDemoData())
   stampDemoNamespace()
@@ -148,7 +156,7 @@ function normalizeLabel(value: string) {
 }
 
 function classCenterDefaults() {
-  return createSeedData().academics.classCenter
+  return createEmptyClassCenterData()
 }
 
 /** Additive L4 migration: legacy backups gain recovery containers without
@@ -560,6 +568,14 @@ export function migrateAll(data: AppData): AppData {
   return migrateTermReportsV31(migrated)
 }
 
+/**
+ * Pure first-run factory used by the store and regression tests. Real mode
+ * must remain record-free; demo mode is the only route that produces fixtures.
+ */
+export function createInitialDataForMode(demoMode: boolean): AppData {
+  return migrateAll(demoMode ? createDemoData() : createPersonalInitialData())
+}
+
 function nextOrder(arr: AnyRow[]): number {
   return arr.reduce((m, x) => Math.max(m, x.order ?? 0), -1) + 1
 }
@@ -846,7 +862,7 @@ export const useStore = create<Store>()(
         ...migrateAll({ ...createInitialData(), ...data } as AppData),
       })),
 
-      resetToSeed: () => set(() => ({ ...migrateAll(createInitialData()) })),
+      resetToSeed: () => set(() => ({ ...createResetData() })),
     })),
     {
       name: STORAGE_KEY,
