@@ -465,7 +465,7 @@ export function AssignmentsPanel({
 
   return (
     <div className="space-y-5">
-      <div className="card-soft flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 lg:flex-row lg:items-center">
+      <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-2.5 lg:flex-row lg:items-center">
         <ToggleGroup
           type="single"
           value={view}
@@ -635,6 +635,10 @@ function AgendaView({
     return result
   }, [assignments])
   const empty = assignments.length === 0
+  const visibleBuckets = BUCKETS.filter((bucket) => {
+    const rows = grouped.get(bucket.id) ?? []
+    return rows.length > 0 && (bucket.id !== 'completed' || showCompleted)
+  })
 
   if (empty) {
     return (
@@ -650,13 +654,13 @@ function AgendaView({
 
   return (
     <div className="space-y-4">
-      {BUCKETS.map((bucket) => {
+      <section className="card-soft overflow-hidden rounded-2xl border border-border bg-card">
+      {visibleBuckets.map((bucket, index) => {
         const rows = grouped.get(bucket.id) ?? []
-        if (!rows.length || (bucket.id === 'completed' && !showCompleted)) return null
         const isCollapsed = collapsed.has(bucket.id)
         const visible = bucket.capped && !expandedBuckets.has(bucket.id) ? rows.slice(0, 5) : rows
         return (
-          <section key={bucket.id} className="card-soft overflow-hidden rounded-2xl border border-border bg-card">
+          <section key={bucket.id} className={cn(index > 0 && 'border-t border-border')}>
             <button
               type="button"
               onClick={() => onToggleBucket(bucket.id)}
@@ -701,13 +705,16 @@ function AgendaView({
           </section>
         )
       })}
-      <button
-        type="button"
-        onClick={onAdd}
-        className="flex min-h-16 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/45 bg-primary/5 text-sm font-bold text-primary transition hover:-translate-y-0.5 hover:border-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none motion-reduce:transition-none"
-      >
-        <Plus className="size-4" /> Add an assignment, exam, or important date…
-      </button>
+        <div className="border-t border-border p-3">
+          <button
+            type="button"
+            onClick={onAdd}
+            className="flex min-h-14 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-primary/45 bg-primary/5 text-sm font-bold text-primary transition hover:-translate-y-0.5 hover:border-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none motion-reduce:transition-none"
+          >
+            <Plus className="size-4" /> Add an assignment, exam, or important date…
+          </button>
+        </div>
+      </section>
     </div>
   )
 }
@@ -838,16 +845,20 @@ function WeeklyView({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between rounded-xl border border-border bg-card p-2">
+      <section className="card-soft rounded-2xl border border-border bg-card p-3">
+      <div className="flex items-center justify-between border-b border-border pb-2">
         <Button variant="ghost" size="icon" onClick={() => onCursor(addDays(cursor, -7))} aria-label="Previous week"><ChevronLeft className="size-4" /></Button>
         <p className="font-bold tabular-nums">Week of {cursor.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
         <Button variant="ghost" size="icon" onClick={() => onCursor(addDays(cursor, 7))} aria-label="Next week"><ChevronRight className="size-4" /></Button>
       </div>
       <DndContext sensors={sensors} onDragEnd={dragEnd}>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
-          {days.map((day) => <WeekDay key={isoDate(day)} day={day} assignments={byDay.get(isoDate(day)) ?? []} courses={courses} onEdit={onEdit} />)}
+        <div className="mt-3 overflow-x-auto pb-1" tabIndex={0} aria-label="Weekly assignments, horizontally scrollable">
+          <div className="grid min-w-[70rem] grid-cols-7 gap-2">
+            {days.map((day) => <WeekDay key={isoDate(day)} day={day} assignments={byDay.get(isoDate(day)) ?? []} courses={courses} onEdit={onEdit} />)}
+          </div>
         </div>
       </DndContext>
+      </section>
       <button type="button" onClick={onAdd} className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/45 bg-primary/5 font-bold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <Plus className="size-4" /> Add an assignment, exam, or important date…
       </button>
@@ -860,7 +871,7 @@ function WeekDay({ day, assignments, courses, onEdit }: { day: Date; assignments
   const { setNodeRef, isOver } = useDroppable({ id })
   const total = assignments.reduce((sum, item) => sum + (item.weight ?? 0), 0)
   return (
-    <section ref={setNodeRef} className={cn('card-soft min-h-48 rounded-2xl border border-border bg-card p-2.5 transition-colors', isOver && 'border-primary bg-primary/10')}>
+    <section ref={setNodeRef} className={cn('min-h-48 min-w-40 rounded-xl border border-border bg-muted p-2.5 transition-colors', isOver && 'border-primary bg-primary/10')}>
       <div className="mb-2 flex items-start justify-between gap-1">
         <div><p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">{day.toLocaleDateString(undefined, { weekday: 'short' })}</p><p className="font-display text-xl font-extrabold tabular-nums">{day.getDate()}</p></div>
         <Badge variant={workloadLabel(total) === 'Heavy' ? 'danger' : workloadLabel(total) === 'Busy' ? 'warning' : workloadLabel(total) === 'Light' ? 'success' : 'muted'}>{workloadLabel(total)}</Badge>
@@ -883,7 +894,7 @@ function WeekCard({ assignment, courses, onEdit }: { assignment: ClassAssignment
       {...attributes}
       type="button"
       onDoubleClick={() => onEdit(assignment)}
-      className={cn('w-full rounded-xl border border-border border-l-4 bg-background p-2 text-left shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', isDragging && 'z-20 opacity-70 shadow-xl')}
+      className={cn('w-full rounded-lg border border-border border-l-4 bg-card p-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', isDragging && 'z-20 opacity-70 shadow-xl')}
     >
       <span className="block text-xs font-bold">{assignment.title}</span>
       <span className="mt-1 block text-[11px] text-muted-foreground">{courseLabel(assignment.courseId, courses)}{assignment.weight != null ? ` · ${assignment.weight}%` : ''}</span>
@@ -922,7 +933,7 @@ function AssignmentCalendar({
           // height to column width — cells grow taller as the viewport widens
           // and refuse to shrink as it narrows. Height comes from min-h-24.
           // min-w-0 lets the seven columns actually share the row.
-          'aspect-auto min-h-24 min-w-0 items-stretch justify-start gap-1 overflow-hidden rounded-xl border border-border p-1.5 text-left',
+          'aspect-auto min-h-24 min-w-0 items-stretch justify-start gap-1 overflow-hidden rounded-lg border border-border bg-muted p-1.5 text-left',
           total > 30 && 'bg-destructive/10',
         )}
       >
@@ -959,11 +970,11 @@ function AssignmentCalendar({
           components={{ DayButton: AssignmentDayButton }}
         />
       </section>
-      <aside className="card-soft rounded-2xl border border-border bg-card p-4">
+      <aside className="rounded-2xl border border-border bg-muted p-4">
         <p className="font-display text-lg font-extrabold">{selectedDay.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         <div className="mt-3 space-y-2">
           {selected.map((assignment) => (
-            <button key={assignment.id} type="button" onClick={() => onEdit(assignment)} className="w-full rounded-xl border border-border bg-background p-3 text-left hover:border-primary/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <button key={assignment.id} type="button" onClick={() => onEdit(assignment)} className="w-full rounded-xl border border-border bg-card p-3 text-left hover:border-primary/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <span className="block font-bold">{assignment.title}</span>
               <span className="mt-1 block text-xs text-muted-foreground">{courseLabel(assignment.courseId, courses)} · {assignment.type}</span>
             </button>
@@ -1017,7 +1028,7 @@ function ProjectedWorkload({
         : 'Your weighted deadlines are currently spread without a heavy week.'
 
   return (
-    <section className="card-soft overflow-hidden rounded-2xl border border-border bg-card">
+    <section className="overflow-hidden rounded-2xl border border-border bg-muted">
       <button type="button" onClick={onToggle} className="flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" aria-expanded={!collapsed}>
         <ChevronDown className={cn('size-4 text-muted-foreground transition-transform motion-reduce:transition-none', collapsed && '-rotate-90')} />
         <span className="font-display text-lg font-extrabold">Projected workload</span>
