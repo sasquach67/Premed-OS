@@ -555,22 +555,20 @@
   }
   .academics-surface .academics-class-card:not(.action-hovered):hover {
     transform: translateY(-3px);
-    border-color: var(--class-accent, var(--border));
+    border-color: var(--class-accent-45, var(--border));
     box-shadow:
       0 18px 34px -16px rgba(0, 0, 0, .75),
-      0 0 0 1px var(--class-accent-45, transparent),
-      0 0 22px -6px var(--class-accent-45, transparent);
+      0 0 0 1px var(--class-accent-45, transparent);
   }
   /* The bar ignites with the card — glow included. */
   .academics-surface .academics-class-card:not(.action-hovered):hover .academics-class-bar {
     box-shadow: 0 0 14px var(--class-accent-75, transparent);
   }
   .academics-surface .academics-class-card:focus-visible {
-    border-color: var(--class-accent, var(--ring));
+    border-color: var(--class-accent-45, var(--ring));
     box-shadow:
       0 18px 34px -16px rgba(0, 0, 0, .75),
-      0 0 0 1px var(--class-accent-45, transparent),
-      0 0 22px -6px var(--class-accent-45, transparent);
+      0 0 0 1px var(--class-accent-45, transparent);
   }
   .academics-surface .academics-class-card:focus-visible .academics-class-bar {
     transform: scaleX(1);

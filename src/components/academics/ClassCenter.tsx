@@ -120,10 +120,11 @@ const CARD_ACCENT_HEX: Record<AcademicTagColor, string> = {
   green: '#10b981', blue: '#0ea5e9', purple: '#8b5cf6', pink: '#ec4899', red: '#f43f5e',
 }
 
-/** The recipe mixes the accent at 45% (ring/glow) and 75% (bar glow). Those are
- *  precomputed here rather than written as `color-mix(... , transparent)` in CSS:
- *  the build's CSS minifier folds that form down to the bare colour, silently
- *  dropping the alpha and rendering both effects at full strength. */
+/** Card accents stay deliberately restrained: the course colour identifies a
+ *  card, while the content remains the visual focus. These are precomputed
+ *  rather than written as `color-mix(... , transparent)` in CSS because the
+ *  build's CSS minifier can fold that form down to the bare colour and turn a
+ *  subtle treatment into a full-strength glow. */
 function accentAlpha(hex: string, alpha: number): string {
   const value = hex.replace('#', '')
   const r = parseInt(value.slice(0, 2), 16)
@@ -143,8 +144,8 @@ function cardAccentVars(color: unknown): CSSProperties {
   const hex = CARD_ACCENT_HEX[classCardColor(color)]
   return {
     '--class-accent': hex,
-    '--class-accent-45': accentAlpha(hex, 0.45),
-    '--class-accent-75': accentAlpha(hex, 0.75),
+    '--class-accent-45': accentAlpha(hex, 0.3),
+    '--class-accent-75': accentAlpha(hex, 0.55),
   } as CSSProperties
 }
 
@@ -930,7 +931,8 @@ function ClassCard({
           </p>
           <div
             className={cn(
-              'mt-2 flex items-center justify-end gap-2',
+              'mt-2 items-center justify-end gap-2',
+              compact ? 'flex' : 'hidden group-focus-within/class:flex group-hover/class:flex',
             )}
             onPointerEnter={() => setActionHovered(true)}
             onPointerLeave={() => setActionHovered(false)}
@@ -938,7 +940,7 @@ function ClassCard({
             <Button
               size="sm"
               variant="outline"
-              className="h-9 flex-1 border-[var(--class-accent)] bg-[var(--class-accent)] font-display font-extrabold text-white shadow-[0_8px_18px_-12px_var(--class-accent)] hover:brightness-110 hover:text-white active:translate-y-px"
+              className="h-9 flex-1 border-[var(--class-accent-75)] bg-[color-mix(in_srgb,var(--class-accent)_72%,transparent)] font-display font-extrabold text-white shadow-[0_8px_18px_-14px_var(--class-accent-75)] hover:bg-[color-mix(in_srgb,var(--class-accent)_82%,transparent)] hover:text-white active:translate-y-px"
               onClick={(event) => { event.stopPropagation(); onReview() }}
               onFocus={() => setActionHovered(true)}
               onBlur={() => setActionHovered(false)}
