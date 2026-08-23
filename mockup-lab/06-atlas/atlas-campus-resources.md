@@ -1,6 +1,6 @@
 # Atlas · Campus resources — decisions
 
-**Status:** PROPOSED · design only, not cleared to build
+**Status:** APPROVED · Variant A, Route by situation · design selected; not yet cleared to build
 **Source:** `atlas-campus-resources.html`
 **Corpus:** `Atlas/atlas-research-corpus/research/UNC-P1-Assignment-to-Support-Router-01.md`; `premed-hq-documentation/data/UNC-academic-course-support-routes-research-2026-08-13.md`; `premed-hq-documentation/data/UNC-libraries-research-tech-and-study-access-routes-research-2026-08-14.md`
 
@@ -19,6 +19,9 @@ It has three genuine treatments:
 | **A · Route by situation** | The selected default | Narrow left-side “I’m here now” chooser; two-to-four solid route cards at a time; a warm owner/boundary note closes the result. | Select a situation such as starting a review session, finding research/work/service, or encountering a barrier. Every card opens the owner’s live page. |
 | **B · Browse directories** | Directory argument | A three-column directory index with four named official routes in each collection and a local filter. | Opens a named owner route, while making no claim that an appointment, listing, room, program, or eligibility is currently available. |
 | **C · Use a course** | Contextual course argument | One course selector followed by a horizontal owner ladder: course team, current peer support, study-process support. | Makes the authority order explicit. It can configure course code/title later but must never infer a live tutor or office-hour slot. |
+
+**Ruling (Andy, Aug. 23, 2026):** Variant A is approved. B and C remain
+reference treatments, not alternate implementation directions.
 
 ## Behaviour rules
 
