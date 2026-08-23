@@ -514,12 +514,12 @@ export function AcademicRecallSession() {
     <FocusModeLayout
       exitTo={exitTo}
       exitLabel={`Back to ${course.code}`}
-      className="bg-slate-950 text-white"
+      className="bg-background text-foreground"
       background={(
         <>
           <img src={homeBanner(visualTheme)} alt="" className="absolute inset-0 size-full object-cover" />
-          <div className={cn('absolute inset-0 transition-colors duration-300 motion-reduce:transition-none', reading ? 'bg-slate-950/92' : 'bg-slate-950/55')} />
-          <div className={cn('absolute inset-0 bg-gradient-to-b', reading ? 'from-slate-950/80 via-slate-950/90 to-slate-950/96' : 'from-slate-950/20 via-slate-950/38 to-slate-950/78')} />
+          <div className={cn('absolute inset-0 transition-colors duration-300 motion-reduce:transition-none', reading ? 'bg-black/78' : 'bg-slate-950/55')} />
+          <div className={cn('absolute inset-0 bg-gradient-to-b', reading ? 'from-black/45 via-black/65 to-black/78' : 'from-slate-950/20 via-slate-950/38 to-slate-950/78')} />
         </>
       )}
       headerEnd={(
@@ -560,46 +560,46 @@ export function AcademicRecallSession() {
 
       {phase === 'active' && current && (
         <section className="mx-auto grid w-full max-w-5xl flex-1 place-items-center py-8">
-          <div className="w-full rounded-3xl border border-white/14 bg-slate-950/82 p-5 shadow-2xl sm:p-8">
+          <div className="w-full rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl sm:p-8">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div><p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Topic {index + 1} of {queue.length}</p><h1 className="mt-1 font-display text-3xl font-extrabold sm:text-4xl">{current.title}</h1></div>
-              <Button variant="ghost" className="text-white/64 hover:bg-white/10 hover:text-white" onClick={skipTopic}><SkipForward className="size-4" /> Skip <kbd className="ml-1">N</kbd></Button>
+              <Button variant="ghost" className="text-muted-foreground hover:bg-muted hover:text-foreground" onClick={skipTopic}><SkipForward className="size-4" /> Skip <kbd className="ml-1">N</kbd></Button>
             </div>
             <div className="mt-5">
-              <p className="text-sm font-extrabold text-white/70">Cover this scope — these chips are the grading checklist:</p>
-              <div className="mt-2 flex flex-wrap gap-2">{scope.map((item) => <Badge key={item.id} className="border-primary/28 bg-primary/15 text-sky-100">{item.label}</Badge>)}</div>
+              <p className="text-sm font-extrabold text-muted-foreground">Cover this scope — these chips are the grading checklist:</p>
+              <div className="mt-2 flex flex-wrap gap-2">{scope.map((item) => <Badge key={item.id} className="border-primary/28 bg-muted text-primary">{item.label}</Badge>)}</div>
             </div>
-            {breakSuggestion && <p role="status" className="mt-4 rounded-xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm font-bold text-sky-100">{breakSuggestion}</p>}
+            {breakSuggestion && <p role="status" className="mt-4 rounded-[13px] border border-primary/25 bg-muted px-4 py-3 text-sm font-bold text-foreground">{breakSuggestion}</p>}
             <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_15rem]">
               <div>
-                <Textarea value={response} onChange={(event) => setResponse(event.target.value)} className="min-h-52 border-white/15 bg-white/7 text-base text-white placeholder:text-white/38 focus-visible:ring-primary" placeholder="Explain it from memory. Speak, type, draw—or combine all three." />
+                <Textarea value={response} onChange={(event) => setResponse(event.target.value)} className="min-h-52 rounded-[13px] !border-border !bg-muted text-base text-foreground placeholder:text-muted-foreground focus-visible:ring-primary" placeholder="Explain it from memory. Speak, type, draw—or combine all three." />
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <Button type="button" variant={recording ? 'destructive' : 'outline'} className={cn(!recording && 'border-white/20 bg-white/7 text-white hover:bg-white/12')} onClick={toggleRecording}>
+                  <Button type="button" variant={recording ? 'destructive' : 'outline'} className={cn(!recording && 'border-border bg-muted text-foreground hover:bg-secondary')} onClick={toggleRecording}>
                     {recording ? <><Square className="size-4 fill-current" /> Stop recording</> : <><Mic className="size-4" /> {audio ? 'Record again' : 'Record response'}</>}
                   </Button>
-                  <Button type="button" variant="outline" className="border-white/20 bg-white/7 text-white hover:bg-white/12" onClick={() => setShowCanvas((value) => !value)}>{showCanvas ? 'Hide map' : 'Draw map'}</Button>
+                  <Button type="button" variant="outline" className="border-border bg-muted text-foreground hover:bg-secondary" onClick={() => setShowCanvas((value) => !value)}>{showCanvas ? 'Hide map' : 'Draw map'}</Button>
                   {audio && <audio controls src={audio.url} className="h-9 max-w-64" aria-label={audio.durationLabel} />}
-                  {image && <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/8 px-2 py-1 text-xs font-bold"><ImagePlus className="size-3" /> {image.name}<button aria-label={`Remove ${image.name}`} onClick={() => setImage((currentImage) => { if (currentImage?.url) URL.revokeObjectURL(currentImage.url); return null })}><X className="size-3" /></button></span>}
+                  {image && <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-1 text-xs font-bold"><ImagePlus className="size-3" /> {image.name}<button aria-label={`Remove ${image.name}`} onClick={() => setImage((currentImage) => { if (currentImage?.url) URL.revokeObjectURL(currentImage.url); return null })}><X className="size-3" /></button></span>}
                 </div>
-                {audio?.transcript !== undefined && <div className="mt-3 rounded-xl border border-primary/25 bg-primary/10 p-3"><p className="text-xs font-extrabold uppercase tracking-wide text-sky-100">Reviewed transcript</p><Textarea value={audio.transcript} onChange={(event) => setAudio((currentAudio) => currentAudio ? { ...currentAudio, transcript: event.target.value } : currentAudio)} className="mt-2 min-h-24 border-white/15 bg-slate-950/30 text-sm text-white" /></div>}
-                {recordingError && <p className="mt-2 text-sm font-bold text-amber-200">{recordingError}</p>}
+                {audio?.transcript !== undefined && <div className="mt-3 rounded-[13px] border border-border bg-muted p-3"><p className="text-xs font-extrabold uppercase tracking-wide text-primary">Reviewed transcript</p><Textarea value={audio.transcript} onChange={(event) => setAudio((currentAudio) => currentAudio ? { ...currentAudio, transcript: event.target.value } : currentAudio)} className="mt-2 min-h-24 !border-border !bg-card text-sm text-foreground" /></div>}
+                {recordingError && <p className="mt-2 text-sm font-bold text-warning">{recordingError}</p>}
               </div>
               <AnimatedFileUpload
                 accept="image/*"
                 onFiles={attachImages}
                 label={showCanvas ? 'Attach map' : 'Attach your page'}
                 description={showCanvas ? 'One final drawing or photo up to 3 MB; it is compared only if you request the gap check.' : 'One final drawing or photo up to 3 MB.'}
-                className="min-h-52 border-white/18 bg-white/7 text-white"
+                className="min-h-52 rounded-[13px] border-border bg-muted text-foreground"
               />
             </div>
             {showCanvas && <ConceptCanvas courseId={courseId} topic={current} data={data} />}
-            <div className="mt-7 border-t border-white/12 pt-6">
+            <div className="mt-7 border-t border-border pt-6">
               <p className="font-display text-xl font-extrabold">Before you reveal: how sure are you?</p>
               <ToggleGroup type="single" value={confidence} onValueChange={(value) => value && setConfidence(value as RecallConfidence)} variant="outline" className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {CONFIDENCE_OPTIONS.map((option) => <ToggleGroupItem key={option.value} value={option.value} className="h-12 border-white/18 bg-white/6 text-white data-[state=on]:border-primary data-[state=on]:bg-primary/20">{option.label}</ToggleGroupItem>)}
+                {CONFIDENCE_OPTIONS.map((option) => <ToggleGroupItem key={option.value} value={option.value} className="h-12 rounded-[13px] border-border bg-muted text-foreground data-[state=on]:border-primary data-[state=on]:bg-card">{option.label}</ToggleGroupItem>)}
               </ToggleGroup>
               <Button size="lg" className="mt-4 w-full" disabled={!confidence} onClick={() => setPhase('report')}>Reveal gap report <ArrowRight className="size-4" /></Button>
-              <p className="mt-2 text-center text-xs font-bold text-white/48">Space reveals after confidence · N skips</p>
+              <p className="mt-2 text-center text-xs font-bold text-muted-foreground">Space reveals after confidence · N skips</p>
             </div>
           </div>
         </section>
@@ -607,20 +607,20 @@ export function AcademicRecallSession() {
 
       {phase === 'report' && current && confidence && (
         <section className="mx-auto grid w-full max-w-5xl flex-1 place-items-center py-8">
-          <div className="w-full rounded-3xl border border-white/14 bg-slate-950/88 p-5 shadow-2xl sm:p-8">
-            <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Gap report</p><h1 className="mt-1 font-display text-3xl font-extrabold">{current.title}</h1></div><Badge className="border-white/15 bg-white/8 text-white">{confidenceLabel(confidence)} before reveal</Badge></div>
-            <div className="mt-5 rounded-2xl border border-amber-400/25 bg-amber-400/8 p-4">
+          <div className="w-full rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl sm:p-8">
+            <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Gap report</p><h1 className="mt-1 font-display text-3xl font-extrabold">{current.title}</h1></div><Badge className="border-border bg-muted text-foreground">{confidenceLabel(confidence)} before reveal</Badge></div>
+            <div className="mt-5 rounded-[13px] border border-warning/35 bg-muted p-4">
               <p className="font-extrabold">{apiGapAvailable ? 'AI gap-check available' : 'Deterministic self-check — no API key required'}</p>
-              <p className="mt-1 text-sm text-white/64">{apiGapAvailable ? 'Run the structured gap check against only the scope below.' : 'Classify each stated scope item yourself. Topic scheduling, grading, and the summary remain fully available.'}</p>
-              <Button size="sm" variant="outline" className="mt-3 border-white/18 bg-white/7 text-white" disabled={!apiGapAvailable || checkingGaps} onClick={runGapCheck}><Sparkles className="size-4" /> {checkingGaps ? 'Checking…' : 'Run AI gap-check'}</Button>
+              <p className="mt-1 text-sm text-muted-foreground">{apiGapAvailable ? 'Run the structured gap check against only the scope below.' : 'Classify each stated scope item yourself. Topic scheduling, grading, and the summary remain fully available.'}</p>
+              <Button size="sm" variant="outline" className="mt-3 border-border bg-card text-foreground" disabled={!apiGapAvailable || checkingGaps} onClick={runGapCheck}><Sparkles className="size-4" /> {checkingGaps ? 'Checking…' : 'Run AI gap-check'}</Button>
             </div>
-            {gapError && <p role="status" className="mt-3 rounded-xl border border-amber-300/25 bg-amber-300/8 px-4 py-3 text-sm font-bold text-amber-100">{gapError} Nothing was saved.</p>}
+            {gapError && <p role="status" className="mt-3 rounded-[13px] border border-warning/35 bg-muted px-4 py-3 text-sm font-bold text-warning">{gapError} Nothing was saved.</p>}
             {gapResult && <StructuredGapReport result={gapResult} onOpenCitation={openGapCitation} />}
             <div className="mt-5 space-y-3">
               {scope.map((item) => (
-                <div key={item.id} className="grid gap-3 rounded-2xl border border-white/12 bg-white/5 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                <div key={item.id} className="grid gap-3 rounded-[13px] border border-border bg-muted p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
                   <div><p className="font-extrabold">{item.label}</p><ProvenanceChip item={item} onOpen={() => item.provenance.kind === 'material' && setSourceItem(item)} /></div>
-                  <div className="flex flex-wrap gap-2">{DISPOSITION_OPTIONS.map((option) => <Button key={option.value} size="sm" variant={dispositions[item.id] === option.value ? 'default' : 'outline'} className={cn(dispositions[item.id] !== option.value && 'border-white/18 bg-white/5 text-white')} onClick={() => setDispositions((currentValue) => ({ ...currentValue, [item.id]: option.value }))}>{option.label}</Button>)}</div>
+                  <div className="flex flex-wrap gap-2">{DISPOSITION_OPTIONS.map((option) => <Button key={option.value} size="sm" variant={dispositions[item.id] === option.value ? 'default' : 'outline'} className={cn(dispositions[item.id] !== option.value && 'border-border bg-card text-foreground')} onClick={() => setDispositions((currentValue) => ({ ...currentValue, [item.id]: option.value }))}>{option.label}</Button>)}</div>
                 </div>
               ))}
             </div>
@@ -628,29 +628,29 @@ export function AcademicRecallSession() {
               <div className="mt-5 grid gap-3 md:grid-cols-3">
                 {(['had', 'missed', 'wrong'] as const).map((kind) => {
                   const items = scope.filter((item) => dispositions[item.id] === kind)
-                  return <div key={kind} className="rounded-2xl border border-white/12 bg-white/5 p-4"><p className={cn('font-display font-extrabold', kind === 'had' ? 'text-emerald-300' : kind === 'missed' ? 'text-amber-200' : 'text-rose-300')}>{kind === 'had' ? '✓ You had it' : kind === 'missed' ? 'What you missed' : 'What you got wrong'}</p><div className="mt-2 space-y-2">{items.map((item) => <p key={item.id} className="text-sm font-semibold text-white/78">{item.label}</p>)}{!items.length && <p className="text-sm text-white/42">None marked.</p>}</div></div>
+                  return <div key={kind} className="rounded-[13px] border border-border bg-muted p-4"><p className={cn('font-display font-extrabold', kind === 'had' ? 'text-success' : kind === 'missed' ? 'text-warning' : 'text-destructive')}>{kind === 'had' ? '✓ You had it' : kind === 'missed' ? 'What you missed' : 'What you got wrong'}</p><div className="mt-2 space-y-2">{items.map((item) => <p key={item.id} className="text-sm font-semibold text-foreground">{item.label}</p>)}{!items.length && <p className="text-sm text-muted-foreground">None marked.</p>}</div></div>
                 })}
               </div>
             )}
-            <div className="mt-6 rounded-xl border border-amber-400/20 bg-amber-400/8 px-4 py-3 text-sm font-bold text-white/72">
-              You said <strong className="text-white">{confidenceLabel(confidence)}</strong>. Grade the recall honestly; the interval becomes the next Premed OS review.
+            <div className="mt-6 rounded-[13px] border border-warning/35 bg-muted px-4 py-3 text-sm font-bold text-muted-foreground">
+              You said <strong className="text-foreground">{confidenceLabel(confidence)}</strong>. Grade the recall honestly; the interval becomes the next Premed OS review.
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {GRADE_OPTIONS.map((option) => <Button key={option.grade} variant="outline" disabled={!scope.every((item) => dispositions[item.id])} className="h-16 flex-col border-white/18 bg-white/5 text-white" onClick={() => gradeTopic(option.grade)}><span className="font-display text-lg font-extrabold">{titleCase(option.grade)}</span><span className="text-xs text-white/54">{option.interval} · {option.key}</span></Button>)}
+              {GRADE_OPTIONS.map((option) => <Button key={option.grade} variant="outline" disabled={!scope.every((item) => dispositions[item.id])} className="h-16 flex-col rounded-[13px] border-border bg-muted text-foreground" onClick={() => gradeTopic(option.grade)}><span className="font-display text-lg font-extrabold">{titleCase(option.grade)}</span><span className="text-xs text-muted-foreground">{option.interval} · {option.key}</span></Button>)}
             </div>
-            <div className="mt-3 flex items-center justify-between text-xs font-bold text-white/45"><span>1–4 grades · N skips</span><button disabled={!apiGapAvailable || checkingGaps} onClick={runGapCheck} className="underline decoration-dotted disabled:no-underline disabled:opacity-50">Second opinion</button></div>
+            <div className="mt-3 flex items-center justify-between text-xs font-bold text-muted-foreground"><span>1–4 grades · N skips</span><button disabled={!apiGapAvailable || checkingGaps} onClick={runGapCheck} className="underline decoration-dotted disabled:no-underline disabled:opacity-50">Second opinion</button></div>
           </div>
         </section>
       )}
 
       {phase === 'focus' && (
         <section className="mx-auto grid w-full max-w-3xl flex-1 place-items-center py-8">
-          <div className="w-full rounded-3xl border border-white/14 bg-slate-950/82 p-6 text-center shadow-2xl sm:p-10">
+          <div className="w-full rounded-2xl border border-border bg-card p-6 text-center text-card-foreground shadow-2xl sm:p-10">
             <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Focus session · {course.code}</p>
             <h1 className="mt-3 font-display text-5xl font-extrabold tabular-nums sm:text-7xl">{formatTime(elapsed)}</h1>
-            <p className="mt-4 text-sm font-bold text-white/62">Timer-only study time. No recall grade, confidence score, or FSRS update is created.</p>
-            <p className="mt-2 text-xs font-bold text-white/45">Work block {preferences.workMinutes} min · break {preferences.breakMinutes} min{preferences.enforceBreaks ? ' · breaks enforced' : ''}</p>
-            {breakSuggestion && <p role="status" className="mt-4 rounded-xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm font-bold text-sky-100">{breakSuggestion}</p>}
+            <p className="mt-4 text-sm font-bold text-muted-foreground">Timer-only study time. No recall grade, confidence score, or FSRS update is created.</p>
+            <p className="mt-2 text-xs font-bold text-muted-foreground">Work block {preferences.workMinutes} min · break {preferences.breakMinutes} min{preferences.enforceBreaks ? ' · breaks enforced' : ''}</p>
+            {breakSuggestion && <p role="status" className="mt-4 rounded-[13px] border border-primary/25 bg-muted px-4 py-3 text-sm font-bold text-foreground">{breakSuggestion}</p>}
             <Button size="lg" className="mt-8" onClick={completeFocus}>End and save focus time</Button>
           </div>
         </section>
@@ -658,10 +658,10 @@ export function AcademicRecallSession() {
 
       {phase === 'break' && breakState && (
         <section className="mx-auto grid w-full max-w-3xl flex-1 place-items-center py-8">
-          <div className="w-full rounded-3xl border border-white/14 bg-slate-950/82 p-6 text-center shadow-2xl sm:p-10">
+          <div className="w-full rounded-2xl border border-border bg-card p-6 text-center text-card-foreground shadow-2xl sm:p-10">
             <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Break in progress · {course.code}</p>
             <h1 className="mt-3 font-display text-5xl font-extrabold tabular-nums sm:text-7xl">{formatTime(breakState.remaining)}</h1>
-            <p className="mt-4 text-sm font-bold text-white/62">Your configured break is holding this session. Resume early if you need to.</p>
+            <p className="mt-4 text-sm font-bold text-muted-foreground">Your configured break is holding this session. Resume early if you need to.</p>
             <Button size="lg" className="mt-8" onClick={() => { setPhase(breakState.resumePhase); setBreakState(null) }}>Resume early</Button>
           </div>
         </section>
@@ -720,8 +720,8 @@ function SessionSpine({ current, total, results }: { current: number; total: num
 }
 
 function ProvenanceChip({ item, onOpen }: { item: RecallScopeItem; onOpen: () => void }) {
-  if (item.provenance.kind === 'general') return <Badge className="mt-2 border-amber-400/28 bg-amber-400/12 text-amber-100">general knowledge — not in your notes</Badge>
-  return <button type="button" onClick={onOpen} className="mt-2 inline-flex rounded-full border border-primary/30 bg-primary/15 px-2.5 py-1 text-xs font-extrabold text-sky-100 hover:bg-primary/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">from your materials ↗</button>
+  if (item.provenance.kind === 'general') return <Badge className="mt-2 border-warning/35 bg-muted text-warning">general knowledge — not in your notes</Badge>
+  return <button type="button" onClick={onOpen} className="mt-2 inline-flex rounded-full border border-primary/35 bg-muted px-2.5 py-1 text-xs font-extrabold text-primary hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">from your materials ↗</button>
 }
 
 function SourceDialog({
@@ -743,7 +743,7 @@ function SourceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader><DialogTitle className="flex items-center gap-2"><FileText className="size-5 text-primary" /> {source?.file?.title || 'Source passage'}</DialogTitle></DialogHeader>
-        <div className="max-h-[60vh] overflow-y-auto rounded-2xl border border-border bg-muted/30 p-5 text-sm font-semibold leading-7">
+        <div className="max-h-[60vh] overflow-y-auto rounded-[13px] border border-border bg-muted p-5 text-sm font-semibold leading-7">
           {content ? <>{before}<mark className="rounded bg-primary/25 px-0.5 text-foreground">{highlighted}</mark>{after}</> : 'The cited passage is no longer available in local materials.'}
         </div>
         {source?.file?.url && <Button asChild variant="outline"><a href={source.file.url} target="_blank" rel="noreferrer">Open file ↗</a></Button>}
@@ -765,26 +765,26 @@ function StructuredGapReport({
     { key: 'wrong', label: 'Wrong', items: result.wrong, tone: 'text-rose-300' },
   ]
   return (
-    <section className="mt-4 rounded-2xl border border-primary/25 bg-primary/8 p-4" aria-label="AI gap-check result">
+    <section className="mt-4 rounded-[13px] border border-primary/35 bg-muted p-4" aria-label="AI gap-check result">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-display text-lg font-extrabold">Structured second opinion</p>
-        <Badge className="border-primary/30 bg-primary/15 text-sky-100">Suggested grade: {titleCase(result.suggestedGrade)}</Badge>
+        <Badge className="border-primary/35 bg-card text-primary">Suggested grade: {titleCase(result.suggestedGrade)}</Badge>
       </div>
-      <p className="mt-1 text-xs font-bold text-white/52">Advisory only — your manual classification and grade remain in control.</p>
+      <p className="mt-1 text-xs font-bold text-muted-foreground">Advisory only — your manual classification and grade remain in control.</p>
       <div className="mt-3 grid gap-3 md:grid-cols-3">
         {groups.map((group) => (
-          <div key={group.key} className="rounded-xl border border-white/12 bg-white/5 p-3">
+          <div key={group.key} className="rounded-[13px] border border-border bg-card p-3">
             <p className={cn('font-extrabold', group.tone)}>{group.label}</p>
             <div className="mt-2 space-y-2">
               {group.items.map((item, index) => (
                 <div key={`${group.key}-${index}`}>
-                  <p className="text-sm font-semibold text-white/82">{item.text}</p>
+                  <p className="text-sm font-semibold text-foreground">{item.text}</p>
                   {item.citation.kind === 'material'
-                    ? <button type="button" onClick={() => onOpenCitation(item)} className="mt-1 text-xs font-bold text-sky-200 underline decoration-dotted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">from your materials ↗</button>
-                    : <span className="mt-1 block text-xs font-bold text-amber-100">general knowledge — not in your notes</span>}
+                    ? <button type="button" onClick={() => onOpenCitation(item)} className="mt-1 text-xs font-bold text-primary underline decoration-dotted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">from your materials ↗</button>
+                    : <span className="mt-1 block text-xs font-bold text-warning">general knowledge — not in your notes</span>}
                 </div>
               ))}
-              {!group.items.length && <p className="text-sm text-white/38">None.</p>}
+              {!group.items.length && <p className="text-sm text-muted-foreground">None.</p>}
             </div>
           </div>
         ))}
