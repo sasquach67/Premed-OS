@@ -16,6 +16,7 @@ import { TermRollover } from '@/components/academics/TermRollover'
 import { TermReportPanel } from '@/components/academics/TermReportPanel'
 import { TranscriptRecordsPanel } from '@/components/academics/TranscriptRecordsPanel'
 import { GradeDecisions } from '@/components/academics/GradeDecisions'
+import { isSavedTermReportId } from '@/lib/academics/termReportRoute'
 
 type ArchiveView = 'ledger' | 'gpa' | 'what-if'
 type ScenarioRow = { id: string; title: string; credits: number; grade: LetterGrade; bcpm: boolean }
@@ -29,12 +30,18 @@ export function GradesArchive({ courses }: { courses: Course[] }) {
   const [params, setParams] = useSearchParams()
   const requested = params.get('gradeView')
   const view: ArchiveView = VIEWS.some((item) => item.id === requested) ? requested as ArchiveView : 'ledger'
+  const requestedReportId = params.get('termReport')
+  const reports = center.termReports ?? []
+  const hasRequestedReport = isSavedTermReportId(requestedReportId, reports)
+  const showReport = view === 'ledger' && hasRequestedReport
+  const invalidReportId = view === 'ledger' && Boolean(requestedReportId) && !hasRequestedReport
   const ledger = useMemo(() => buildGradeLedger(courses, center.transcriptRecords), [courses, center.transcriptRecords])
 
   function selectView(next: ArchiveView) {
     setParams((current) => {
       const updated = new URLSearchParams(current)
       updated.set('gradeView', next)
+      updated.delete('termReport')
       return updated
     }, { replace: true })
   }
@@ -46,13 +53,42 @@ export function GradesArchive({ courses }: { courses: Course[] }) {
         {VIEWS.map((item) => <button key={item.id} role="tab" aria-selected={view === item.id} onClick={() => selectView(item.id)} className={cn('rounded-[7px] px-3 py-1.5 font-display text-sm font-extrabold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary', view === item.id ? 'bg-[var(--card)] text-foreground' : 'text-muted-foreground hover:text-foreground')}>{item.label}</button>)}
       </div>
     </div>
-    {view === 'ledger' && <LedgerView courses={courses} ledger={ledger} />}
+    {showReport && requestedReportId && <TermReportPanel focusReportId={requestedReportId} onBack={() => {
+      setParams((current) => {
+        const updated = new URLSearchParams(current)
+        updated.delete('termReport')
+        return updated
+      })
+    }} onSelectReport={(reportId) => {
+      setParams((current) => {
+        const updated = new URLSearchParams(current)
+        updated.set('gradeView', 'ledger')
+        updated.set('termReport', reportId)
+        return updated
+      })
+    }} />}
+    {view === 'ledger' && !showReport && <LedgerView courses={courses} ledger={ledger} reports={reports} invalidReportId={invalidReportId} onOpenReport={(reportId) => {
+      setParams((current) => {
+        const updated = new URLSearchParams(current)
+        updated.set('gradeView', 'ledger')
+        updated.set('termReport', reportId)
+        return updated
+      })
+    }} />}
     {view === 'gpa' && <GpaView ledger={ledger} />}
     {view === 'what-if' && <WhatIfView courses={courses} ledger={ledger} />}
   </section>
 }
 
-function LedgerView({ courses, ledger }: { courses: Course[]; ledger: ReturnType<typeof buildGradeLedger> }) {
+function LedgerView({
+  courses, ledger, reports, invalidReportId, onOpenReport,
+}: {
+  courses: Course[]
+  ledger: ReturnType<typeof buildGradeLedger>
+  reports: Array<{ id: string; term: string; status: string }>
+  invalidReportId: boolean
+  onOpenReport: (reportId: string) => void
+}) {
   const center = useStore((state) => state.academics.classCenter)
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<'all' | LedgerStatus>('all')
@@ -67,15 +103,17 @@ function LedgerView({ courses, ledger }: { courses: Course[]; ledger: ReturnType
     <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-[0_10px_26px_-14px_rgba(0,0,0,.55)]">
       <Input aria-label="Search coursework" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search coursework" className="h-9 max-w-xs bg-[var(--muted)]" />
       <Select value={status} onValueChange={(next) => setStatus(next as typeof status)}><SelectTrigger className="h-9 w-[150px] bg-[var(--muted)]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All records</SelectItem><SelectItem value="complete">Completed</SelectItem><SelectItem value="in-progress">In progress</SelectItem><SelectItem value="repeat">Repeat</SelectItem><SelectItem value="withdrawn">Withdrawn</SelectItem><SelectItem value="needs-details">Needs details</SelectItem></SelectContent></Select>
+      {reports.length > 0 && <Button size="sm" variant="ghost" className="h-9" onClick={() => onOpenReport(reports.at(-1)!.id)}>Term reports <span className="ml-1 text-xs text-muted-foreground">{reports.length}</span></Button>}
       <Badge variant="outline" className="ml-auto">{visible.length} record{visible.length === 1 ? '' : 's'}</Badge>
     </div>
+    {invalidReportId && <Card><CardContent className="p-4 text-sm font-semibold text-muted-foreground">That saved term report is no longer available. You’re viewing your ledger instead.</CardContent></Card>}
     {!ledger.rows.length ? <Card><CardContent className="p-6 text-center"><FileSpreadsheet className="mx-auto size-6 text-primary" /><p className="mt-3 font-display text-lg font-extrabold">Add prior or current coursework to start a transcript-faithful ledger.</p><p className="mt-1 text-sm text-muted-foreground">Enter only the fields you can see on your transcript or transfer evaluation.</p></CardContent></Card> : <div className="space-y-3">
       {groups.map(([key, rows]) => <Card key={key}><CardHeader className="flex-row items-start justify-between gap-3"><div><CardTitle>{key}</CardTitle><p className="mt-1 text-sm text-muted-foreground">Exact transcript strings stay separate from your class workspace name.</p></div><Badge variant="outline">{rows.length} course{rows.length === 1 ? '' : 's'}</Badge></CardHeader><CardContent className="space-y-2">
         {rows.map((row) => <div key={row.id} className="grid gap-2 rounded-[13px] border border-[var(--border)] bg-[var(--muted)] p-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"><div className="min-w-0"><p className="font-display font-extrabold">{row.courseNumberExact} · {row.titleExact}</p><p className="mt-0.5 text-xs font-semibold text-muted-foreground">{row.institution} · {row.creditsExact || 'Credits not entered'} · {row.gradeExact || 'Grade not entered'}</p></div><div className="flex flex-wrap gap-1.5"><LedgerBadge status={row.status} />{row.bcpm === true && <Badge variant="outline">BCPM evidence recorded</Badge>}{row.bcpm == null && <Badge variant="outline">Classification not recorded</Badge>}</div><Link className="inline-flex items-center gap-1 text-sm font-extrabold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" to={`/academics/classes/${row.courseId}?classTab=assignments`}>Open class <ChevronRight className="size-4" /></Link></div>)}
       </CardContent></Card>)}
       {!groups.length && <Card><CardContent className="p-5 text-sm font-semibold text-muted-foreground">No coursework matches that filter.</CardContent></Card>}
     </div>}
-    <Collapsible title="Transcript record tools" defaultOpen={!ledger.rows.length}><div className="space-y-4"><TranscriptRecordsPanel courses={courses} /><TermRollover /><TermReportPanel />{courses.filter((course) => course.status === 'in-progress').map((course) => <GradeDecisions key={course.id} course={course} assignments={center.assignments.filter((item) => item.courseId === course.id)} categories={center.gradeCategories.filter((item) => item.courseId === course.id)} mistakes={center.mistakes.filter((item) => item.courseId === course.id)} />)}</div></Collapsible>
+    <Collapsible title="Transcript record tools" defaultOpen={!ledger.rows.length}><div className="space-y-4"><TranscriptRecordsPanel courses={courses} /><TermRollover />{courses.filter((course) => course.status === 'in-progress').map((course) => <GradeDecisions key={course.id} course={course} assignments={center.assignments.filter((item) => item.courseId === course.id)} categories={center.gradeCategories.filter((item) => item.courseId === course.id)} mistakes={center.mistakes.filter((item) => item.courseId === course.id)} />)}</div></Collapsible>
   </>
 }
 

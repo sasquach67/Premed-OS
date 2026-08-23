@@ -12,6 +12,7 @@
  * study state. The ledger archive happens regardless of any choice made below.
  */
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ArrowRight, ArrowUpRight, X } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { uid } from '@/lib/id'
@@ -21,6 +22,7 @@ import {
   pauseEverything, pendingRollovers, type FateProposal,
 } from '@/lib/academics/termRollover'
 import { createTermReport } from '@/lib/academics/termReport'
+import { termReportRoute } from '@/lib/academics/termReportRoute'
 import type { Course, Topic, TopicTermFate } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 
@@ -46,6 +48,7 @@ function Ritual({ course, courses, topics, currentTerm }: {
   topics: Topic[]
   currentTerm?: string
 }) {
+  const navigate = useNavigate()
   const courseTopics = topics.filter((topic) => topic.courseId === course.id)
   const planned = courses.filter((item) => item.status === 'planned')
   const [fates, setFates] = useState<FateProposal[]>(() => defaultFates(courseTopics, planned))
@@ -85,6 +88,10 @@ function Ritual({ course, courses, topics, currentTerm }: {
     setDone(kind === 'apply' ? 'applied' : 'paused')
   }
 
+  function openReport() {
+    if (reportId) navigate(termReportRoute(reportId))
+  }
+
   if (done === 'paused') {
     return (
       <section className={cn(CARD, 'p-6 text-center')}>
@@ -94,7 +101,7 @@ function Ritual({ course, courses, topics, currentTerm }: {
           All {course.code} topics retire for now. Nothing was deleted, and a topic can be carried
           later if a future course or MCAT plan makes it useful.
         </p>
-        {reportId && <Button size="sm" variant="outline" className="mt-4" onClick={() => document.getElementById(`term-report-${reportId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>View your Term Report</Button>}
+        {reportId && <Button size="sm" variant="outline" className="mt-4" onClick={openReport}>View your Term Report</Button>}
       </section>
     )
   }
@@ -107,7 +114,7 @@ function Ritual({ course, courses, topics, currentTerm }: {
         <p className="mx-auto mt-1 max-w-md text-xs font-bold text-muted-foreground">
           Its record is in your ledger, and every choice above can be changed later.
         </p>
-        {reportId && <Button size="sm" variant="outline" className="mt-4" onClick={() => document.getElementById(`term-report-${reportId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>View your Term Report</Button>}
+        {reportId && <Button size="sm" variant="outline" className="mt-4" onClick={openReport}>View your Term Report</Button>}
       </section>
     )
   }

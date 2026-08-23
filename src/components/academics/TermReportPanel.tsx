@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
-import { ArrowUpRight, FileText, Info, Sparkles } from 'lucide-react'
-import type { TermReport, TermReportEvidenceItem } from '@/lib/types'
+import { type ReactNode, useMemo, useState } from 'react'
+import { ArrowLeft, ArrowUpRight, Info, Sparkles } from 'lucide-react'
+import type { TermReport, TermReportBlock, TermReportEvidenceItem } from '@/lib/types'
 import { useStore } from '@/store/store'
 import { uid } from '@/lib/id'
 import { createTermReport, termReportEvidence } from '@/lib/academics/termReport'
@@ -12,6 +12,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { Collapsible } from '@/components/common/Collapsible'
 
 const CARD = 'rounded-2xl border border-border bg-card shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]'
 const EYEBROW = 'font-display text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground'
@@ -21,7 +22,15 @@ const EYEBROW = 'font-display text-[10px] font-extrabold uppercase tracking-[0.1
  * frozen snapshot, so the evidence control always explains the exact record
  * that supported the saved wording.
  */
-export function TermReportPanel({ focusReportId }: { focusReportId?: string }) {
+export function TermReportPanel({
+  focusReportId,
+  onBack,
+  onSelectReport,
+}: {
+  focusReportId?: string
+  onBack?: () => void
+  onSelectReport?: (reportId: string) => void
+}) {
   const reports = useStore((state) => state.academics.classCenter.termReports ?? [])
   const center = useStore((state) => state.academics.classCenter)
   const courses = useStore((state) => state.courses)
@@ -32,7 +41,7 @@ export function TermReportPanel({ focusReportId }: { focusReportId?: string }) {
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([])
   const [acceptedDisclosure, setAcceptedDisclosure] = useState(() => hasAcceptedStudySourceDisclosure())
   const [generating, setGenerating] = useState(false)
-  const report = reports.find((item) => item.id === selectedId) ?? reports.at(-1)
+  const report = reports.find((item) => item.id === (focusReportId ?? selectedId)) ?? reports.at(-1)
   const courseNames = useMemo(() => new Map(courses.map((course) => [course.id, `${course.code} · ${course.title}`])), [courses])
   const factsById = useMemo(() => new Map(report?.snapshot.facts.map((fact) => [fact.id, fact]) ?? []), [report])
   const sourceFiles = useMemo(() => center.files.filter((file) => report?.courseIds.includes(file.courseId) && center.sourceChunks.some((chunk) => chunk.fileId === file.id && chunk.content.trim())), [center.files, center.sourceChunks, report?.courseIds])
@@ -47,27 +56,37 @@ export function TermReportPanel({ focusReportId }: { focusReportId?: string }) {
 
   if (!report) return null
 
+  const facts = report.blocks.filter((block) => block.kind === 'fact')
+  const takeaways = report.blocks.filter((block) => block.kind === 'takeaway')
+  const experiments = report.blocks.filter((block) => block.kind === 'experiment')
+  const limit = report.blocks.find((block) => block.kind === 'limit')
+
   return (
-    <section id={`term-report-${report.id}`} className={cn(CARD, 'scroll-mt-24 p-5')}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className={EYEBROW}>Term report</p>
-          <h2 className="mt-1 font-display text-xl font-extrabold">{report.term}: what to take into next term.</h2>
-          <p className="mt-1 text-sm font-semibold text-muted-foreground">
-            Created from the course record you saved on {new Date(report.createdAt).toLocaleDateString()}.
-          </p>
+    <section id={`term-report-${report.id}`} className="mx-auto max-w-[660px] scroll-mt-24">
+      {onBack && <Button size="sm" variant="ghost" className="mb-3 -ml-2" onClick={onBack}><ArrowLeft className="size-4" /> Grades ledger</Button>}
+      <article className={cn(CARD, 'p-5')}>
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
+          <div className="min-w-0">
+            <p className={EYEBROW}>End-of-term record</p>
+            <h2 className="mt-1 font-display text-xl font-extrabold">{report.term}: what to take into next term.</h2>
+            <p className="mt-1 text-sm font-semibold text-muted-foreground">
+              A plain-language reading of the grades, returned work, and study notes you chose to record on {new Date(report.createdAt).toLocaleDateString()}.
+            </p>
+          </div>
+          <span className="rounded-[10px] border border-[#8c7bd4]/50 bg-[#8c7bd4]/10 px-2.5 py-2 text-right font-display text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#c9bdf5]">
+            Term complete<span className="mt-0.5 block normal-case tracking-normal text-muted-foreground">Saved report</span>
+          </span>
+          {reports.length > 1 && (
+            <select
+              aria-label="Choose a saved term report"
+              value={report.id}
+              onChange={(event) => { setSelectedId(event.target.value); onSelectReport?.(event.target.value) }}
+              className="h-9 basis-full rounded-lg border border-border bg-muted px-2 text-xs font-bold"
+            >
+              {reports.slice().reverse().map((item) => <option key={item.id} value={item.id}>{item.term} · {statusLabel(item)}</option>)}
+            </select>
+          )}
         </div>
-        {reports.length > 1 && (
-          <select
-            aria-label="Choose a saved term report"
-            value={report.id}
-            onChange={(event) => setSelectedId(event.target.value)}
-            className="h-9 rounded-lg border border-border bg-muted px-2 text-xs font-bold"
-          >
-            {reports.slice().reverse().map((item) => <option key={item.id} value={item.id}>{item.term} · {statusLabel(item)}</option>)}
-          </select>
-        )}
-      </div>
 
       {report.status === 'insufficient-evidence' && (
         <div className="mt-4 rounded-xl border border-dashed border-border bg-muted p-4">
@@ -92,37 +111,29 @@ export function TermReportPanel({ focusReportId }: { focusReportId?: string }) {
       )}
       {report.status === 'unavailable' && <Button size="sm" variant="outline" className="mt-3" onClick={() => setSourceReviewOpen(true)}><Sparkles className="size-4" /> Try again</Button>}
 
-      <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_17rem]">
-        <div className="space-y-3">
-          {report.blocks.filter((block) => block.kind !== 'limit').map((block) => (
-            <article key={block.id} className="rounded-xl border border-border bg-muted p-4">
-              <p className={EYEBROW}>{block.kind === 'experiment' ? 'Carry into next term' : block.source === 'ai' ? 'What stands out' : 'Your term at a glance'}</p>
-              <h3 className="mt-1 font-display text-base font-extrabold">{block.title}</h3>
-              <p className="mt-1.5 text-sm font-semibold leading-relaxed text-muted-foreground">{block.text}</p>
-              {block.evidenceIds.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">
-                {block.evidenceIds.map((id) => {
-                  const fact = factsById.get(id)
-                  if (!fact) return null
-                  return <button key={id} type="button" onClick={() => setEvidence(fact)} className="rounded-md border border-border bg-card px-2 py-1 text-[11px] font-bold text-[var(--cat-gpa)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Why this appears</button>
-                })}
-              </div>}
-            </article>
-          ))}
-          {!report.blocks.some((block) => block.kind !== 'limit') && <p className="rounded-xl border border-dashed border-border bg-muted p-4 text-sm font-semibold text-muted-foreground">No report claims were saved for this term.</p>}
-        </div>
+        <div className="mt-5">
+          <ReportSection number="01" title="Your term at a glance">
+            {facts.map((block) => <ReportBlock key={block.id} block={block} factsById={factsById} onEvidence={setEvidence} />)}
+            {!facts.length && <p className="text-sm font-semibold text-muted-foreground">No final grades, returned work, or saved study-note facts were available in this record.</p>}
+            <Collapsible title="Courses included"><ul className="space-y-1.5 text-sm font-semibold text-muted-foreground">{report.courseIds.map((courseId) => <li key={courseId}>{courseNames.get(courseId) ?? 'Saved course'}</li>)}</ul></Collapsible>
+          </ReportSection>
 
-        <aside className="rounded-xl border border-border bg-muted p-4">
-          <p className={EYEBROW}>How to read this</p>
-          <p className="mt-1.5 text-sm font-semibold leading-relaxed text-muted-foreground">{report.snapshot.evidenceLimit}</p>
-          <div className="mt-4 border-t border-border pt-3">
-            <p className={EYEBROW}>Courses included</p>
-            <ul className="mt-1.5 space-y-1.5 text-xs font-bold text-muted-foreground">
-              {report.courseIds.map((courseId) => <li key={courseId} className="flex gap-1.5"><FileText className="mt-0.5 size-3.5 text-[var(--cat-gpa)]" />{courseNames.get(courseId) ?? 'Saved course'}</li>)}
-            </ul>
+          <ReportSection number="02" title="What stands out">
+            {takeaways.map((block) => <ReportBlock key={block.id} block={block} factsById={factsById} onEvidence={setEvidence} observation />)}
+            {!takeaways.length && report.status === 'ready' && <p className="text-sm font-semibold text-muted-foreground">No evidence-led observations were saved with this report.</p>}
+          </ReportSection>
+
+          <ReportSection number="03" title="Carry into next term">
+            {experiments.map((block) => <ReportBlock key={block.id} block={block} factsById={factsById} onEvidence={setEvidence} experiment />)}
+            {report.status === 'ready' && nextTerm && <Button size="sm" variant="outline" className="mt-3" onClick={() => saveCarryForward(report, nextTerm.id, update)}><ArrowUpRight className="size-4" /> {report.carryForwardDraft ? 'Planning draft saved' : 'Save a planning draft'}</Button>}
+            {!experiments.length && report.status === 'ready' && <p className="text-sm font-semibold text-muted-foreground">No next-term experiment was saved with this report.</p>}
+          </ReportSection>
+
+          <div className="mt-4 rounded-r-[10px] border-l-[3px] border-[var(--warning)] bg-muted px-4 py-3">
+            <p className={EYEBROW}>How to read this</p>
+            <p className="mt-1.5 text-sm font-semibold leading-relaxed text-muted-foreground">{limit?.text ?? report.snapshot.evidenceLimit}</p>
           </div>
-          {report.status === 'ready' && nextTerm && <Button size="sm" variant="outline" className="mt-4 w-full" onClick={() => saveCarryForward(report, nextTerm.id, update)}><ArrowUpRight className="size-4" /> {report.carryForwardDraft ? 'Planning draft saved' : 'Save a planning draft'}</Button>}
-        </aside>
-      </div>
+        </div>
 
       <Dialog open={Boolean(evidence)} onOpenChange={(open) => { if (!open) setEvidence(null) }}>
         <DialogContent>
@@ -151,6 +162,7 @@ export function TermReportPanel({ focusReportId }: { focusReportId?: string }) {
           <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setSourceReviewOpen(false)}>Cancel</Button><Button disabled={!acceptedDisclosure || generating} onClick={() => void generateReport()}><Sparkles className="size-4" /> {generating ? 'Generating…' : 'Generate report'}</Button></div>
         </DialogContent>
       </Dialog>
+      </article>
     </section>
   )
 
@@ -192,12 +204,43 @@ export function TermReportPanel({ focusReportId }: { focusReportId?: string }) {
     revision.supersedesReportId = report.id
     update((draft) => { draft.academics.classCenter.termReports.push(revision) })
     setSelectedId(revision.id)
+    onSelectReport?.(revision.id)
     setSourceReviewOpen(false)
   }
 }
 
 function statusLabel(report: TermReport) {
   return ({ draft: 'local facts', ready: 'report ready', unavailable: 'AI unavailable', 'insufficient-evidence': 'too little evidence' } as const)[report.status]
+}
+
+function ReportSection({ number, title, children }: { number: string; title: string; children: ReactNode }) {
+  return <section className="border-b border-border py-4 first:pt-1 last:border-b-0"><p className={EYEBROW}>{number} · {title}</p><div className="mt-2.5 space-y-2.5">{children}</div></section>
+}
+
+function ReportBlock({
+  block, factsById, onEvidence, observation = false, experiment = false,
+}: {
+  block: TermReportBlock
+  factsById: Map<string, TermReportEvidenceItem>
+  onEvidence: (fact: TermReportEvidenceItem) => void
+  observation?: boolean
+  experiment?: boolean
+}) {
+  return <article className={cn(
+    observation && 'rounded-r-[10px] border-l-[3px] border-[#8c7bd4] bg-muted px-4 py-3',
+    experiment && 'rounded-xl border border-border bg-muted p-3.5',
+    !observation && !experiment && 'py-1',
+  )}>
+    <h3 className="font-display text-base font-extrabold">{block.title}</h3>
+    <p className="mt-1 text-sm font-semibold leading-relaxed text-muted-foreground">{block.text}</p>
+    {block.evidenceIds.length > 0 && <div className="mt-2.5 flex flex-wrap gap-1.5">
+      {block.evidenceIds.map((id) => {
+        const fact = factsById.get(id)
+        if (!fact) return null
+        return <button key={id} type="button" onClick={() => onEvidence(fact)} className="rounded-md border border-border bg-card px-2 py-1 text-[11px] font-bold text-[var(--cat-gpa)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Why this appears</button>
+      })}
+    </div>}
+  </article>
 }
 
 function saveCarryForward(report: TermReport, plannerTermId: string, update: ReturnType<typeof useStore.getState>['update']) {

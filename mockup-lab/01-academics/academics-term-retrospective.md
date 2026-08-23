@@ -85,3 +85,11 @@ opens from a quiet contextual disclosure without breaking the page's narrative.
 The **Too little to say** state inherits this same reading-column composition:
 the page remains absent when history is too thin, explains the evidence boundary
 without scolding, and never substitutes inferred study data.
+
+## Implementation history
+
+- 2026-08-23 — `fix(academics): route and align the end-of-term report` moved
+  the saved report out of Ledger's generic tool stack, added its contextual
+  reloadable Archive route, and aligned the renderer to Variant A's solid,
+  one-column reading composition. It remains **proposed** until its configured
+  provider run is proved end to end.
