@@ -279,6 +279,11 @@ function createClassCenterSeed(): AcademicTagSettings['classCenter'] {
     keyPoints: [],
     sourceChunks: [],
     reviewEvents: [],
+    reviewSessionPreferences: {
+      defaultInput: 'microphone', interleave: true, weakFirst: true,
+      workMinutes: 25, breakMinutes: 5, enforceBreaks: false, sound: true,
+    },
+    focusSessions: [],
     contacts,
     weakAreas,
     practiceExams: [],

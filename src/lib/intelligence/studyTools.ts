@@ -28,7 +28,14 @@ export interface GapCheckRequest {
   action: 'gap-check'
   courseId: string
   topicId: string
-  response: string
+  /** Kept for older deployed functions. New callers use `evidence` so the
+   * server can distinguish typed recall from a reviewed transcript. */
+  response?: string
+  evidence: {
+    text?: string
+    audioTranscript?: string
+    image?: StudyImageEvidence
+  }
   /** The edge function resolves these IDs from the signed-in user's private
    * server mirror. Source content is never trusted from a generation call. */
   chunkIds: string[]
@@ -39,6 +46,25 @@ export interface GapCheckRequest {
   specId?: string
   specHash?: string
   systemPrompt?: string
+}
+
+export interface StudyImageEvidence {
+  name: string
+  mimeType: string
+  size: number
+  dataBase64: string
+}
+
+export interface TranscribeResponseRequest {
+  action: 'transcribe-response'
+  courseId: string
+  topicId: string
+  audio: {
+    name: string
+    mimeType: string
+    size: number
+    dataBase64: string
+  }
 }
 
 export interface StudySourceInput {
@@ -123,7 +149,7 @@ export function isGapCheckResult(value: unknown): value is GapCheckResult {
 }
 
 export function createStudyToolsClient(client: FunctionClient | null = supabase) {
-  async function invoke<T>(request: GapCheckRequest | GenerateRequest | TermReportRequest | SyncStudySourcesRequest | DeleteStudySourcesRequest): Promise<StudyToolResponse<T>> {
+  async function invoke<T>(request: GapCheckRequest | TranscribeResponseRequest | GenerateRequest | TermReportRequest | SyncStudySourcesRequest | DeleteStudySourcesRequest): Promise<StudyToolResponse<T>> {
     if (!client) {
       return { ok: false, code: 'unconfigured', message: 'AI study tools are not configured. Local study workflows remain available.' }
     }
@@ -174,6 +200,15 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
         return { ok: false, code: 'invalid-response', message: 'The gap-check returned an invalid result. Nothing was saved.' }
       }
       return { ok: true, data: result.data }
+    },
+
+    async transcribeResponse(request: TranscribeResponseRequest): Promise<StudyToolResponse<{ transcript: string }>> {
+      const result = await invoke<{ transcript: string }>(request)
+      if (!result.ok) return result
+      if (!isRecord(result.data) || typeof result.data.transcript !== 'string' || !result.data.transcript.trim()) {
+        return { ok: false, code: 'invalid-response', message: 'The transcription returned an invalid response. Nothing was saved.' }
+      }
+      return { ok: true, data: { transcript: result.data.transcript } }
     },
 
     /**

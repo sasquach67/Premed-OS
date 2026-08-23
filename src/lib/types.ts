@@ -374,6 +374,30 @@ export interface ReviewEvent {
   order: number
 }
 
+/** Preferences are local, course-agnostic defaults for the one review-session
+ * surface. They are intentionally narrow: each field changes real queue,
+ * timer, or input behavior rather than decorating a global settings page. */
+export interface ReviewSessionPreferences {
+  defaultInput: 'microphone' | 'keyboard'
+  interleave: boolean
+  weakFirst: boolean
+  workMinutes: number
+  breakMinutes: number
+  enforceBreaks: boolean
+  sound: boolean
+}
+
+/** Focus is deliberately timer-only. Unlike a ReviewEvent it never implies a
+ * recall grade, confidence judgment, or FSRS scheduling decision. */
+export interface FocusStudySession {
+  id: ID
+  courseId: ID
+  startedAt: number
+  completedAt: number
+  durationSeconds: number
+  order: number
+}
+
 export interface ClassNote {
   id: ID
   courseId: ID
@@ -931,6 +955,8 @@ export interface ClassCenterData {
   keyPoints: KeyPoint[]
   sourceChunks: SourceChunk[]
   reviewEvents: ReviewEvent[]
+  reviewSessionPreferences: ReviewSessionPreferences
+  focusSessions: FocusStudySession[]
   contacts: ClassContact[]
   weakAreas: ClassWeakArea[]
   practiceExams: PracticeExam[]

@@ -212,6 +212,11 @@ function migrateRelatedRows(
     notes: mapRows('notes') as never,
     assignments: mapRows('assignments') as never,
     files,
+    reviewSessionPreferences: {
+      defaultInput: 'microphone', interleave: true, weakFirst: true,
+      workMinutes: 25, breakMinutes: 5, enforceBreaks: false, sound: true,
+    },
+    focusSessions: [],
     contacts: mapRows('contacts') as never,
     weakAreas: mapRows('weakAreas') as never,
     practiceExams: mapRows('practiceExams') as never,

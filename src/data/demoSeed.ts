@@ -287,6 +287,11 @@ export function createDemoData(seedTime = Date.now()): AppData {
       { id: 'demo-review-newton-2', topicId: 'demo-topic-newton', timestamp: stamp(-8), grade: 'good', confidence: 3, order: 19 },
       { id: 'demo-review-newton-3', topicId: 'demo-topic-newton', timestamp: stamp(-2), grade: 'good', confidence: 3, order: 20 },
     ],
+    reviewSessionPreferences: {
+      defaultInput: 'microphone', interleave: true, weakFirst: true,
+      workMinutes: 25, breakMinutes: 5, enforceBreaks: false, sound: true,
+    },
+    focusSessions: [],
     contacts: [
       { id: 'demo-contact-prof', courseId: courses[3].id, name: 'Dr. Elena Ruiz', role: 'professor', email: 'eruiz@example.edu', officeHours: 'Tuesday 2–4 PM', location: 'Coker 318', createdAt: stamp(-30), updatedAt: at, order: 0 },
       { id: 'demo-contact-ta', courseId: courses[3].id, name: 'Jordan Lee', role: 'TA', email: 'jlee@example.edu', officeHours: 'Thursday 4 PM', createdAt: stamp(-30), updatedAt: at, order: 1 },

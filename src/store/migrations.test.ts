@@ -14,6 +14,7 @@ import { migrateTaskHorizonsV18 } from '@/store/migrations/taskHorizonsV18'
 import { migratePlannerTermsV29 } from '@/store/migrations/plannerTermsV29'
 import { migrateRequirementsAuditV30 } from '@/store/migrations/requirementsAuditV30'
 import { migrateTermReportsV31 } from '@/store/migrations/termReportsV31'
+import { migrateReviewSessionV32 } from '@/store/migrations/reviewSessionV32'
 import { isCatalogWarningAcknowledged } from '@/lib/academics/requirementsAudit'
 import { migrateExamPrepV19 } from '@/store/migrations/examPrepV19'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
@@ -24,7 +25,35 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(31)
+  expect(CURRENT_STORE_VERSION).toBe(32)
+})
+
+describe('migrateReviewSessionV32', () => {
+  it('adds honest defaults without changing frozen legacy records', () => {
+    const data = freshData()
+    delete (data.academics.classCenter as Partial<typeof data.academics.classCenter>).reviewSessionPreferences
+    delete (data.academics.classCenter as Partial<typeof data.academics.classCenter>).focusSessions
+    const before = structuredClone(data)
+    Object.freeze(data)
+    Object.freeze(data.academics)
+    Object.freeze(data.academics.classCenter)
+
+    const out = migrateReviewSessionV32(data)
+
+    expect(out.academics.classCenter.reviewSessionPreferences.defaultInput).toBe('microphone')
+    expect(out.academics.classCenter.focusSessions).toEqual([])
+    expect({ ...out.academics.classCenter, reviewSessionPreferences: undefined, focusSessions: undefined })
+      .toEqual({ ...before.academics.classCenter, reviewSessionPreferences: undefined, focusSessions: undefined })
+    expect(data).toEqual(before)
+  })
+
+  it('is a no-op on a second pass and never clobbers saved session state', () => {
+    const data = freshData()
+    data.academics.classCenter.reviewSessionPreferences.workMinutes = 40
+    data.academics.classCenter.focusSessions = [{ id: 'focus', courseId: 'course', startedAt: 1, completedAt: 2, durationSeconds: 1, order: 0 }]
+    expect(migrateReviewSessionV32(data)).toBe(data)
+    expect(migrateReviewSessionV32(data).academics.classCenter.focusSessions[0]?.id).toBe('focus')
+  })
 })
 
 describe('migrateTermReportsV31', () => {

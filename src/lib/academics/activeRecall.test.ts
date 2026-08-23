@@ -3,7 +3,7 @@ import { Rating } from 'ts-fsrs'
 import { createTopicFsrsState } from '@/lib/academics/fsrs'
 import { reviewTopic } from '@/lib/academics/fsrs'
 import {
-  REVIEW_RATINGS, buildRecallQueue, noKeyLoopAvailable,
+  REVIEW_RATINGS, arrangeRecallQueue, buildRecallQueue, noKeyLoopAvailable,
 } from '@/lib/academics/activeRecall'
 import type { Topic } from '@/lib/types'
 
@@ -37,6 +37,18 @@ describe('active recall deterministic loop', () => {
       topic('weak', 100, 'weak', 1),
     ], 200, 'never')
     expect(queue.map((item) => item.id)).toEqual(['never', 'weak'])
+  })
+
+  it('only interleaves or prioritizes weak topics when the saved session preferences say so', () => {
+    const queue = [
+      { ...topic('u1-weak', 1, 'weak', 1), unit: 'Unit 1' },
+      { ...topic('u1-ready', 2, 'ready', 1), unit: 'Unit 1' },
+      { ...topic('u2-ready', 3, 'ready', 1), unit: 'Unit 2' },
+    ]
+    expect(arrangeRecallQueue(queue, { weakFirst: false, interleave: false }).map((item) => item.id))
+      .toEqual(['u1-weak', 'u1-ready', 'u2-ready'])
+    expect(arrangeRecallQueue(queue, { weakFirst: true, interleave: true }).map((item) => item.id))
+      .toEqual(['u1-weak', 'u2-ready', 'u1-ready'])
   })
 
 })

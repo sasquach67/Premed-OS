@@ -1,7 +1,9 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
-const MAX_REQUEST_BYTES = 64 * 1024
+const MAX_REQUEST_BYTES = 8 * 1024 * 1024
 const MAX_CHUNKS = 24
+const MAX_AUDIO_BYTES = 4 * 1024 * 1024
+const MAX_IMAGE_BYTES = 3 * 1024 * 1024
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -21,6 +23,7 @@ type Chunk = {
  */
 const AI_REQUEST_WEIGHT = {
   'gap-check': 1,
+  'transcribe-response': 1,
   generate: 2,
   'term-report': 2,
 } as const
@@ -30,7 +33,7 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') return failure(405, 'method-not-allowed', 'POST required.')
 
   const length = Number(request.headers.get('content-length') || 0)
-  if (length > MAX_REQUEST_BYTES) return failure(413, 'request-too-large', 'Request exceeds the 64 KB limit.')
+  if (length > MAX_REQUEST_BYTES) return failure(413, 'request-too-large', 'Request exceeds the 8 MB limit.')
 
   const authorization = request.headers.get('Authorization')
   if (!authorization) return failure(401, 'sign-in-required', 'Authentication required.')
@@ -48,7 +51,7 @@ Deno.serve(async (request) => {
 
   const raw = await request.text()
   if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
-    return failure(413, 'request-too-large', 'Request exceeds the 64 KB limit.')
+    return failure(413, 'request-too-large', 'Request exceeds the 8 MB limit.')
   }
   let body: Record<string, unknown>
   try {
@@ -79,6 +82,26 @@ Deno.serve(async (request) => {
     } catch (error) {
       console.error('study-tools source sync failure', error instanceof Error ? error.message : 'unknown')
       return failure(503, 'sync-failed', 'Source material could not be synced.')
+    }
+  }
+
+  if (body.action === 'transcribe-response') {
+    if (!isText(body.courseId) || !isText(body.topicId)) {
+      return failure(400, 'invalid-request', 'A typed course and topic are required for transcription.')
+    }
+    const audio = validateAudioEvidence(body.audio)
+    if (!audio) return failure(400, 'invalid-request', 'Use one supported audio recording no larger than 4 MB.')
+    const { data: allowed, error: limitError } = await client.rpc('claim_ai_request', {
+      p_hour_limit: 20, p_day_limit: 100, p_weight: AI_REQUEST_WEIGHT['transcribe-response'],
+    })
+    if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
+    if (!allowed) return failure(429, 'rate-limited', 'Hourly or daily AI usage limit reached.')
+    try {
+      const transcript = await transcribeAudio(audio)
+      return json({ transcript })
+    } catch (error) {
+      console.error('study-tools transcription failure', error instanceof Error ? error.message : 'unknown')
+      return failure(503, 'provider-unavailable', 'Audio transcription is unavailable. You can still type your recall.')
     }
   }
 
@@ -144,7 +167,8 @@ Deno.serve(async (request) => {
 
   const isGapCheck = body.action === 'gap-check'
   const isGeneration = body.action === 'generate'
-  if ((!isGapCheck && !isGeneration) || !isText(body.courseId) || !isText(body.topicId) || (isGapCheck && !isText(body.response))) {
+  const evidence = isGapCheck ? validateGapEvidence(body.evidence) : null
+  if ((!isGapCheck && !isGeneration) || !isText(body.courseId) || !isText(body.topicId) || (isGapCheck && !evidence)) {
     return failure(400, 'invalid-request', 'A typed study-tool request is required.')
   }
   const chunkIds = validateChunkIds(body.chunkIds)
@@ -225,9 +249,10 @@ Deno.serve(async (request) => {
 
   try {
     const provider = (Deno.env.get('AI_PROVIDER') || 'anthropic').toLowerCase()
+    const response = responseForGapEvidence(evidence!)
     const output = provider === 'openai'
-      ? await callOpenAI(body.response, chunks)
-      : await callAnthropic(body.response, chunks, typeof body.systemPrompt === 'string' ? body.systemPrompt : undefined, resultSchema)
+      ? await callOpenAI(response, chunks, evidence!.image)
+      : await callAnthropic(response, chunks, typeof body.systemPrompt === 'string' ? body.systemPrompt : undefined, resultSchema, evidence!.image)
     const validated = validateResult(output.value, chunks, output.trustedCitations)
     if (!validated) return failure(502, 'invalid-response', 'The provider returned invalid structured data.')
     return json(validated)
@@ -323,7 +348,13 @@ async function retrieveChunks(
  * The local fallback below stays so a function that has NOT been redeployed
  * behaves exactly as it does today. Delete it once every client sends a spec.
  */
-async function callAnthropic(response: string, chunks: Chunk[], specPrompt?: string, schema?: object) {
+async function callAnthropic(
+  response: string,
+  chunks: Chunk[],
+  specPrompt?: string,
+  schema?: object,
+  image?: ImageEvidence,
+) {
   const key = Deno.env.get('ANTHROPIC_API_KEY')
   if (!key) throw new Error('Anthropic is not configured')
   const result = await fetch('https://api.anthropic.com/v1/messages', {
@@ -365,6 +396,10 @@ async function callAnthropic(response: string, chunks: Chunk[], specPrompt?: str
             citations: { enabled: true },
           })),
           { type: 'text', text: `Student recall:\n${response}` },
+          ...(image ? [{
+            type: 'image',
+            source: { type: 'base64', media_type: image.mimeType, data: image.dataBase64 },
+          }] : []),
         ],
       }],
     }),
@@ -407,7 +442,7 @@ function parseJsonObject(text: string): unknown {
   }
 }
 
-async function callOpenAI(response: string, chunks: Chunk[]) {
+async function callOpenAI(response: string, chunks: Chunk[], image?: ImageEvidence) {
   const key = Deno.env.get('OPENAI_API_KEY')
   if (!key) throw new Error('OpenAI is not configured')
   const sources = chunks.map((chunk) => ({
@@ -422,7 +457,13 @@ async function callOpenAI(response: string, chunks: Chunk[]) {
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: Deno.env.get('OPENAI_MODEL') || 'gpt-4.1-mini',
-      input: `Compare the student's recall only to these sources.\nSources:${JSON.stringify(sources)}\nRecall:${response}`,
+      input: [{
+        role: 'user',
+        content: [
+          { type: 'input_text', text: `Compare the student's recall only to these sources.\nSources:${JSON.stringify(sources)}\nRecall:${response}` },
+          ...(image ? [{ type: 'input_image', image_url: `data:${image.mimeType};base64,${image.dataBase64}` }] : []),
+        ],
+      }],
       text: { format: { type: 'json_schema', name: 'gap_check', strict: true, schema: resultSchema } },
     }),
   })
@@ -505,6 +546,75 @@ function validateResult(
 
 function isText(value: unknown): value is string {
   return typeof value === 'string' && Boolean(value.trim())
+}
+
+type AudioEvidence = { name: string; mimeType: string; size: number; dataBase64: string }
+type ImageEvidence = { name: string; mimeType: string; size: number; dataBase64: string }
+type GapEvidence = { text?: string; audioTranscript?: string; image?: ImageEvidence }
+
+function validateAudioEvidence(value: unknown): AudioEvidence | null {
+  if (!value || typeof value !== 'object') return null
+  const audio = value as Record<string, unknown>
+  if (!isText(audio.name) || !isText(audio.mimeType) || !isText(audio.dataBase64) || !Number.isInteger(audio.size)) return null
+  if (!/^audio\/(webm|mpeg|mp4|wav|ogg)$/i.test(audio.mimeType) || Number(audio.size) < 1 || Number(audio.size) > MAX_AUDIO_BYTES) return null
+  return base64MatchesSize(audio.dataBase64, Number(audio.size))
+    ? { name: audio.name.slice(0, 160), mimeType: audio.mimeType, size: Number(audio.size), dataBase64: audio.dataBase64 }
+    : null
+}
+
+function validateImageEvidence(value: unknown): ImageEvidence | null {
+  if (!value || typeof value !== 'object') return null
+  const image = value as Record<string, unknown>
+  if (!isText(image.name) || !isText(image.mimeType) || !isText(image.dataBase64) || !Number.isInteger(image.size)) return null
+  if (!/^image\/(png|jpe?g|webp)$/i.test(image.mimeType) || Number(image.size) < 1 || Number(image.size) > MAX_IMAGE_BYTES) return null
+  return base64MatchesSize(image.dataBase64, Number(image.size))
+    ? { name: image.name.slice(0, 160), mimeType: image.mimeType, size: Number(image.size), dataBase64: image.dataBase64 }
+    : null
+}
+
+function validateGapEvidence(value: unknown): GapEvidence | null {
+  if (!value || typeof value !== 'object') return null
+  const evidence = value as Record<string, unknown>
+  const text = typeof evidence.text === 'string' && evidence.text.trim() ? evidence.text.trim() : undefined
+  const audioTranscript = typeof evidence.audioTranscript === 'string' && evidence.audioTranscript.trim()
+    ? evidence.audioTranscript.trim()
+    : undefined
+  const image = evidence.image === undefined ? undefined : validateImageEvidence(evidence.image)
+  if (evidence.image !== undefined && !image) return null
+  if (!text && !audioTranscript && !image) return null
+  if ((text?.length ?? 0) > 24_000 || (audioTranscript?.length ?? 0) > 24_000) return null
+  return { text, audioTranscript, image }
+}
+
+function responseForGapEvidence(evidence: GapEvidence) {
+  return [
+    evidence.text ? `Typed recall:\n${evidence.text}` : '',
+    evidence.audioTranscript ? `Reviewed audio transcript:\n${evidence.audioTranscript}` : '',
+    evidence.image ? `A single student-supplied response image is attached. Inspect only what is visible in it.` : '',
+  ].filter(Boolean).join('\n\n')
+}
+
+function base64MatchesSize(value: string, size: number) {
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(value)) return false
+  const decodedEstimate = Math.floor(value.length * 3 / 4) - (value.endsWith('==') ? 2 : value.endsWith('=') ? 1 : 0)
+  return decodedEstimate === size
+}
+
+async function transcribeAudio(audio: AudioEvidence) {
+  const key = Deno.env.get('OPENAI_API_KEY')
+  if (!key) throw new Error('OpenAI transcription is not configured')
+  const bytes = Uint8Array.from(atob(audio.dataBase64), (character) => character.charCodeAt(0))
+  const form = new FormData()
+  form.append('model', Deno.env.get('OPENAI_TRANSCRIPTION_MODEL') || 'gpt-4o-mini-transcribe')
+  form.append('response_format', 'json')
+  form.append('file', new File([bytes], audio.name, { type: audio.mimeType }))
+  const result = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    method: 'POST', headers: { Authorization: `Bearer ${key}` }, body: form,
+  })
+  if (!result.ok) throw new Error(`OpenAI transcription ${result.status}`)
+  const payload = await result.json()
+  if (!isText(payload?.text)) throw new Error('No transcript returned')
+  return payload.text.trim()
 }
 
 function validateSources(value: unknown) {

@@ -1,6 +1,6 @@
 import { Rating } from 'ts-fsrs'
 import type {
-  AcademicFile, ClassCenterData, KeyPoint, SourceChunk, Topic,
+  AcademicFile, ClassCenterData, KeyPoint, ReviewSessionPreferences, SourceChunk, Topic,
 } from '@/lib/types'
 
 export type RecallConfidence = 'no-idea' | 'shaky' | 'pretty-sure' | 'know-it-cold'
@@ -35,6 +35,41 @@ export function buildRecallQueue(
   const fallback = rest.filter((topic) => topic.status === 'weak' || topic.fsrs.reps === 0)
   const selected = due.length ? due : fallback.length ? fallback : rest
   return requested ? [requested, ...selected] : selected
+}
+
+/** Applies the student's explicit session settings after the deterministic due
+ * selection. Interleave means round-robin by unit; weak-first is a stable
+ * ordering preference, never a hidden new scheduling algorithm. */
+export function arrangeRecallQueue(
+  queue: Topic[],
+  preferences: Pick<ReviewSessionPreferences, 'interleave' | 'weakFirst'>,
+): Topic[] {
+  const weakFirst = preferences.weakFirst
+    ? [...queue].sort((a, b) => Number(b.status === 'weak') - Number(a.status === 'weak'))
+    : [...queue]
+  if (!preferences.interleave) return weakFirst
+
+  const buckets = new Map<string, Topic[]>()
+  for (const topic of weakFirst) {
+    const key = topic.unit?.trim() || 'Unmapped'
+    const bucket = buckets.get(key) ?? []
+    bucket.push(topic)
+    buckets.set(key, bucket)
+  }
+  const result: Topic[] = []
+  let round = 0
+  while (true) {
+    let added = false
+    for (const bucket of buckets.values()) {
+      const item = bucket[round]
+      if (item) {
+        result.push(item)
+        added = true
+      }
+    }
+    if (!added) return result
+    round += 1
+  }
 }
 
 export function buildScopeItems(

@@ -18,7 +18,11 @@ describe('personal first-run data', () => {
       savedPlans: [], plannerTerms: [], examPrepPlans: [], generatedFlashcardDecks: [], generatedMockAttempts: [],
       generatedRevisedNotes: [], professorEvidence: [], conceptCanvases: [], assessmentMaterials: [], assessmentAttempts: [],
       transcriptRecords: [], acknowledgedCatalogWarnings: [], lectures: [], lectureFindings: [], lectureMaterialProposals: [],
-      lectureNoteProposals: [], termReports: [],
+      lectureNoteProposals: [], termReports: [], focusSessions: [],
+      reviewSessionPreferences: {
+        defaultInput: 'microphone', interleave: true, weakFirst: true,
+        workMinutes: 25, breakMinutes: 5, enforceBreaks: false, sound: true,
+      },
     })
     expect(data.settings.calendar.useMockPreview).toBe(false)
   })

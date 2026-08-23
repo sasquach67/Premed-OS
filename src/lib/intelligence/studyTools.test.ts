@@ -7,7 +7,7 @@ describe('study tools boundary', () => {
       action: 'gap-check',
       courseId: 'course-1',
       topicId: 'topic-1',
-      response: 'My recall',
+      evidence: { text: 'My recall' },
       chunkIds: ['chunk-1'],
     })
     expect(result).toEqual({
@@ -29,13 +29,35 @@ describe('study tools boundary', () => {
       },
     }
     const result = await createStudyToolsClient(client as never).gapCheck({
-      action: 'gap-check', courseId: 'course-1', topicId: 'topic-1', response: 'Recall', chunkIds: ['chunk-1'],
+      action: 'gap-check', courseId: 'course-1', topicId: 'topic-1', evidence: { text: 'Recall' }, chunkIds: ['chunk-1'],
     })
     expect(result.ok).toBe(true)
     expect(requests).toEqual([{
-      action: 'gap-check', courseId: 'course-1', topicId: 'topic-1', response: 'Recall', chunkIds: ['chunk-1'],
+      action: 'gap-check', courseId: 'course-1', topicId: 'topic-1', evidence: { text: 'Recall' }, chunkIds: ['chunk-1'],
     }])
     expect(JSON.stringify(requests)).not.toContain('source content')
+  })
+
+  it('sends a bounded recording only to the transcription action', async () => {
+    const requests: unknown[] = []
+    const client = {
+      auth: { getSession: async () => ({ data: { session: { access_token: 'test' } } }) },
+      functions: {
+        invoke: async (_name: string, options: { body: unknown }) => {
+          requests.push(options.body)
+          return { data: { transcript: 'ATP transfers energy.' }, error: null }
+        },
+      },
+    }
+    const result = await createStudyToolsClient(client as never).transcribeResponse({
+      action: 'transcribe-response', courseId: 'course-1', topicId: 'topic-1',
+      audio: { name: 'recall.webm', mimeType: 'audio/webm', size: 3, dataBase64: 'YWJj' },
+    })
+    expect(result).toEqual({ ok: true, data: { transcript: 'ATP transfers energy.' } })
+    expect(requests).toEqual([{
+      action: 'transcribe-response', courseId: 'course-1', topicId: 'topic-1',
+      audio: { name: 'recall.webm', mimeType: 'audio/webm', size: 3, dataBase64: 'YWJj' },
+    }])
   })
 
   it('fingerprints content changes without storing the content itself', () => {
