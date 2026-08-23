@@ -16,6 +16,7 @@ import { uid } from '@/lib/id'
 import { fmtDeadline, fmtEventDate } from '@/lib/date'
 import { createTopicFsrsState } from '@/lib/academics/fsrs'
 import { calculateCourseCoverage } from '@/lib/academics/coverage'
+import { calculateCourseScenario } from '@/lib/academics/gradeLedger'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/components/common/useToast'
 import { InfoTip } from '@/components/common/InfoTip'
@@ -291,7 +292,7 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
           }}
         /></TabsContent>
         <TabsContent value="readings" className="class-hub-tab"><WritingTools courseId={course.id} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /></TabsContent>
-        <TabsContent value="assignments" className="class-hub-tab"><Assignments assignments={courseAssignments} topics={courseTopics} classType={classType} /></TabsContent>
+        <TabsContent value="assignments" className="class-hub-tab"><Assignments assignments={courseAssignments} topics={courseTopics} categories={data.gradeCategories.filter((item) => item.courseId === course.id)} classType={classType} /></TabsContent>
         <TabsContent value="notes" className="class-hub-tab"><Notes courseId={course.id} notes={courseNotes} topics={courseTopics} data={data} onOpenMaterials={() => changeTab('materials')} topicFilter={params.get('noteTopic') ?? undefined} /></TabsContent>
       </Tabs>
     </div>
@@ -858,7 +859,7 @@ function Topics({
   )
 }
 
-function Assignments({ assignments, topics, classType }: { assignments: ClassAssignment[]; topics: Topic[]; classType?: ClassWorkspaceType }) {
+function Assignments({ assignments, topics, categories, classType }: { assignments: ClassAssignment[]; topics: Topic[]; categories: GradeCategory[]; classType?: ClassWorkspaceType }) {
   const groups = groupAssignments(assignments)
   return (
     <div className="space-y-4">
@@ -880,7 +881,7 @@ function Assignments({ assignments, topics, classType }: { assignments: ClassAss
         )
       })}
       {!groups.length && <EmptyState icon={FileText} title="No assignments yet" detail="Import a syllabus or add work from the Assignments page." />}
-      <WhatIf assignments={assignments} />
+      <WhatIf assignments={assignments} categories={categories} />
     </div>
   )
 }
@@ -1081,36 +1082,40 @@ function RecallHistory({ events }: { events: ReviewEvent[] }) {
   )
 }
 
-function WhatIf({ assignments }: { assignments: ClassAssignment[] }) {
-  const categories = categoryStats(assignments).filter((item) => item.weight > 0)
-  const [category, setCategory] = useState(categories[0]?.name ?? '')
+function WhatIf({ assignments, categories }: { assignments: ClassAssignment[]; categories: GradeCategory[] }) {
+  const weighted = categories.filter((item) => item.weight > 0)
+  const [categoryId, setCategoryId] = useState(weighted[0]?.id ?? '')
   const [assumption, setAssumption] = useState('90')
-  const selected = categories.find((item) => item.name === category)
-  const target = Number(assumption)
-  const currentWeighted = categories.reduce((sum, item) => sum + (item.average ?? 0) * item.weight / 100, 0)
-  const projected = selected && Number.isFinite(target)
-    ? currentWeighted - (selected.average ?? 0) * selected.weight / 100 + target * selected.weight / 100
-    : null
+  const [target, setTarget] = useState('90')
+  const selected = weighted.find((item) => item.id === categoryId) ?? weighted[0]
+  const scenario = calculateCourseScenario({ assignments, categories: weighted, selectedCategoryId: selected?.id, assumedPercent: Number(assumption), targetPercent: Number(target) })
   return (
     <Card className="class-hub-panel">
-      <CardHeader className="class-hub-panel-header"><CardTitle>What-if calculator</CardTitle><p className="text-sm text-muted-foreground">Local scratch work only — nothing here is saved.</p></CardHeader>
+      <CardHeader className="class-hub-panel-header"><CardTitle>What-if calculator</CardTitle><p className="text-sm text-muted-foreground">Local scratch work only — nothing here is saved or applied to your grade record.</p></CardHeader>
       <CardContent className="class-hub-panel-content">
-        {categories.length ? (
-          <div className="grid gap-4 lg:grid-cols-[1fr_180px_1fr]">
+        {weighted.length ? (
+          <div className="space-y-4">
+            <div className="grid gap-4 lg:grid-cols-[1fr_180px_180px]">
             <label className="text-sm font-bold">Category
-              <Select value={category} onValueChange={setCategory}>
+              <Select value={selected?.id ?? ''} onValueChange={setCategoryId}>
                 <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
-                <SelectContent>{categories.map((item) => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{weighted.map((item) => <SelectItem key={item.id} value={item.id}>{item.name} · {formatNumber(item.weight)}% weight</SelectItem>)}</SelectContent>
               </Select>
             </label>
             <label className="text-sm font-bold">Assumed category %
               <Input className="mt-2" inputMode="decimal" value={assumption} onChange={(event) => setAssumption(event.target.value)} />
             </label>
-            <div className="rounded-2xl bg-muted/35 p-4">
-              <p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Projected course result</p>
-              <p className="mt-1 font-display text-3xl font-extrabold tabular-nums">{projected == null ? '—' : `${formatNumber(projected)}%`}</p>
-              <p className="mt-1 text-xs text-muted-foreground">Assumes every other recorded category stays at its current average. GPA knock-on cannot be calculated until the projected course grade is mapped to a final letter grade.</p>
+            <label className="text-sm font-bold">Target course %
+              <Input className="mt-2" inputMode="decimal" value={target} onChange={(event) => setTarget(event.target.value)} />
+            </label>
             </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="class-hub-record-row rounded-[13px] p-4"><p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Projected course result</p><p className="mt-1 font-display text-3xl font-extrabold tabular-nums">{scenario.projectedPercent == null ? '—' : `${formatNumber(scenario.projectedPercent)}%`}</p><p className="mt-1 text-xs text-muted-foreground">Assumes every other recorded category stays at its current average.</p></div>
+              <div className="class-hub-record-row rounded-[13px] p-4"><p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Needed in {selected?.name ?? 'selected category'}</p><p className="mt-1 font-display text-3xl font-extrabold tabular-nums">{scenario.requiredPercent == null ? '—' : `${formatNumber(scenario.requiredPercent)}%`}</p><p className="mt-1 text-xs text-muted-foreground">To reach the target above, based only on recorded category weights.</p></div>
+            </div>
+            <div className="grid gap-2 text-xs font-semibold text-muted-foreground md:grid-cols-2"><p>{scenario.highestLeverageCategory ? `${scenario.highestLeverageCategory} has the most recorded leverage.` : 'No weighted category has enough data yet.'}</p><p>GPA knock-on stays in Planning until a final letter-grade assumption is chosen.</p></div>
+            {scenario.reason && <p className="rounded-[13px] border border-dashed border-[var(--border)] p-3 text-xs font-semibold text-muted-foreground">{scenario.reason}</p>}
+            {categories.some((item) => item.policyNote || item.dropLowestCount != null || item.replacementRule != null || item.curvePublished != null) && <div className="rounded-[13px] border border-[var(--border)] bg-[var(--muted)] p-3 text-xs font-semibold text-muted-foreground"><p className="font-extrabold text-foreground">Recorded policies</p>{categories.map((item) => (item.policyNote || item.dropLowestCount != null || item.replacementRule != null || item.curvePublished != null) && <p key={item.id} className="mt-1">{item.name}: {item.policyNote || 'Structured policy recorded'} <span className="text-muted-foreground">— listed, not applied automatically until its rule is fully structured and student-confirmed.</span></p>)}</div>}
           </div>
         ) : <EmptyState icon={HelpCircle} title="Not enough weighted categories yet" detail="Record category, points, and weight before testing a grade scenario." />}
       </CardContent>

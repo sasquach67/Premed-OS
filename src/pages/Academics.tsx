@@ -4,12 +4,12 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import {
   Archive,
   AlertTriangle, Calculator, CalendarDays, CheckCircle2, ChevronDown,
-  Clock, Flame, FlaskConical, GraduationCap, Library, MoreHorizontal, Plus,
+  Clock, Flame, GraduationCap, Library, MoreHorizontal, Plus,
   Search, ShieldCheck, Sparkles, Trash2, X,
 } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { ROUTE_MAP } from '@/app/routes'
-import { gpaStats, fmtGpa, GRADE_POINTS } from '@/lib/selectors'
+import { gpaStats, fmtGpa } from '@/lib/selectors'
 import type { Course, LetterGrade, RequirementItem } from '@/lib/types'
 import { uid } from '@/lib/id'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -17,12 +17,8 @@ import { InfoTip } from '@/components/common/InfoTip'
 import { Ring } from '@/components/common/Ring'
 import { TrackerTable, type ColumnDef } from '@/components/common/TrackerTable'
 import { Collapsible } from '@/components/common/Collapsible'
-import { ResourceGrid } from '@/components/common/ResourceGrid'
 import { AssignmentCreateDialog, AssignmentsPanel } from '@/components/common/AssignmentsPanel'
-import { NotesDB } from '@/components/common/NotesDB'
 import { ClassCenter } from '@/components/academics/ClassCenter'
-import { GradeDecisions } from '@/components/academics/GradeDecisions'
-import { TermRollover } from '@/components/academics/TermRollover'
 import { PlanningDecisions } from '@/components/academics/PlanningDecisions'
 import { PlanningColdStart } from '@/components/academics/PlanningColdStart'
 import { PlannerBoard } from '@/components/academics/PlannerBoard'
@@ -43,9 +39,9 @@ import { useToast } from '@/components/common/useToast'
 import { instantCrossfade, sharedAxis } from '@/lib/motion'
 import { AcademicMigrationReview } from '@/components/academics/AcademicMigrationReview'
 import { StatStrip } from '@/components/common/StatStrip'
-import { TranscriptRecordsPanel } from '@/components/academics/TranscriptRecordsPanel'
 import { RequirementsAudit } from '@/components/academics/RequirementsAudit'
-import { TermReportPanel } from '@/components/academics/TermReportPanel'
+import { GradesArchive } from '@/components/academics/GradesArchive'
+import { buildGradeLedger } from '@/lib/academics/gradeLedger'
 
 const GRADES: LetterGrade[] = ['', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F', 'P', 'IP']
 const COURSE_COLUMNS: ColumnDef[] = [
@@ -75,6 +71,7 @@ export function Academics() {
   const [assignmentCreateOpen, setAssignmentCreateOpen] = useState(false)
 
   const gpa = useMemo(() => gpaStats(courses), [courses])
+  const transcriptLedger = useMemo(() => buildGradeLedger(courses, classCenter.transcriptRecords), [courses, classCenter.transcriptRecords])
 
   // Terms in plan order (incoming credit last for display? keep first).
   const terms = useMemo(() => {
@@ -264,19 +261,25 @@ export function Academics() {
           />
           <div className="grid gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2">
-              <CardHeader><CardTitle>AMCAS GPA</CardTitle></CardHeader>
+              <CardHeader><CardTitle>Local course GPA</CardTitle></CardHeader>
               <CardContent className="flex flex-wrap items-center justify-around gap-4">
-                <Ring value={(gpa.cum / 4) * 100} color="var(--cat-gpa)" label="Cumulative" sublabel={fmtGpa(gpa.cum)} size={104} />
-                <Ring value={(gpa.science / 4) * 100} color="var(--cat-research)" label="Science (BCPM)" sublabel={fmtGpa(gpa.science)} size={104} />
-                <Ring value={(gpa.ao / 4) * 100} color="var(--cat-shadow)" label="All Other (AO)" sublabel={fmtGpa(gpa.ao)} size={104} />
+                <Ring value={((transcriptLedger.local.value ?? 0) / 4) * 100} color="var(--cat-gpa)" label="Cumulative" sublabel={fmtGpa(transcriptLedger.local.value ?? 0)} size={104} />
+                <Ring value={((transcriptLedger.local.scienceValue ?? 0) / 4) * 100} color="var(--cat-research)" label="Science (BCPM)" sublabel={fmtGpa(transcriptLedger.local.scienceValue ?? 0)} size={104} />
+                <Ring value={((transcriptLedger.local.allOtherValue ?? 0) / 4) * 100} color="var(--cat-shadow)" label="All Other (AO)" sublabel={fmtGpa(transcriptLedger.local.allOtherValue ?? 0)} size={104} />
                 <div className="text-sm text-muted-foreground">
-                  <p><b className="text-foreground">{gpa.credits}</b> graded credits</p>
-                  <p><b className="text-foreground">{gpa.scienceCredits}</b> BCPM · <b className="text-foreground">{gpa.aoCredits}</b> AO</p>
-                  <p className="mt-1 text-xs">No grade replacement · repeats averaged</p>
+                  <p><b className="text-foreground">{transcriptLedger.local.credits}</b> graded credits</p>
+                  <p><b className="text-foreground">{transcriptLedger.local.scienceCredits}</b> BCPM · <b className="text-foreground">{transcriptLedger.local.allOtherCredits}</b> AO</p>
+                  <p className="mt-1 text-xs">Completed in-residence courses only. Use Grades &amp; Archive for the transcript-faithful AMCAS preview.</p>
                 </div>
               </CardContent>
             </Card>
-            <WhatIf baseline={courses} />
+            <Card>
+              <CardHeader><CardTitle>Grade scenarios</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm font-semibold text-muted-foreground">Keep transcript-faithful GPA scenarios and the per-class weight calculator together in Grades &amp; Archive.</p>
+                <Button size="sm" variant="outline" onClick={() => setSearchParams((current) => { const next = new URLSearchParams(current); next.set('mode', 'planning'); next.set('tab', 'archive'); next.set('gradeView', 'what-if'); return next })}><Calculator className="size-4" /> Open scenarios</Button>
+              </CardContent>
+            </Card>
           </div>
 
           {terms.map((term) => {
@@ -308,14 +311,7 @@ export function Academics() {
         {/* ---- Archive ---- */}
         <TabsContent value="archive" className="space-y-6">
           {/* §4.1: the end-of-term handoff, only when one is owed. */}
-          <TermRollover />
-          <TermReportPanel />
-          <TranscriptRecordsPanel courses={courses} />
-          <ClassCenter archiveOnly />
-          {/* §4.1: the record-decision layer, beneath the archive it reads. */}
-          <GradeDecisionsSection />
-          <ResourceGrid pillar="academics" />
-          <NotesDB pillar="academics" title="Notes (study techniques, syllabi, brain dumps)" />
+          <GradesArchive courses={courses} />
         </TabsContent>
           </m.div>
         </AnimatePresence>
@@ -389,54 +385,6 @@ function consecutiveDayStreak(timestamps: number[]) {
     cursor.setDate(cursor.getDate() - 1)
   }
   return streak
-}
-
-/** What-if simulator: project GPA after hypothetical grades. */
-function WhatIf({ baseline }: { baseline: Course[] }) {
-  const [rows, setRows] = useState<{ id: string; credits: number; grade: LetterGrade; bcpm: boolean }[]>([])
-
-  const projected = useMemo(() => {
-    const hypo: Course[] = rows.map((r) => ({
-      id: r.id, term: 'What-if', code: '', title: '', credits: r.credits, grade: r.grade,
-      bcpm: r.bcpm, status: 'completed', inResidence: true, satisfies: [], order: 0,
-    }))
-    return gpaStats([...baseline, ...hypo])
-  }, [rows, baseline])
-
-  return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2"><FlaskConical className="size-4 text-primary" /> What-if</CardTitle>
-        <Button size="sm" variant="ghost" onClick={() => setRows((r) => [...r, { id: uid(), credits: 3, grade: 'A', bcpm: true }])}>
-          <Plus className="size-4" /> Add
-        </Button>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {rows.length === 0 && <p className="text-xs text-muted-foreground">Add hypothetical future grades to see your projected GPA.</p>}
-        {rows.map((r) => (
-          <div key={r.id} className="flex items-center gap-1.5">
-            <input
-              type="number" value={r.credits} min={0}
-              onChange={(e) => setRows((rs) => rs.map((x) => x.id === r.id ? { ...x, credits: Number(e.target.value) || 0 } : x))}
-              className="h-8 w-14 rounded-md border border-input bg-card px-2 text-sm"
-            />
-            <InlineSelect value={r.grade} options={Object.keys(GRADE_POINTS)} onChange={(grade) => setRows((rs) => rs.map((x) => x.id === r.id ? { ...x, grade: grade as LetterGrade } : x))} className="h-8 w-20" />
-            <button
-              onClick={() => setRows((rs) => rs.map((x) => x.id === r.id ? { ...x, bcpm: !x.bcpm } : x))}
-              className={`rounded-full px-2 py-0.5 text-xs font-bold ${r.bcpm ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
-            >{r.bcpm ? 'BCPM' : 'AO'}</button>
-            <button onClick={() => setRows((rs) => rs.filter((x) => x.id !== r.id))} className="ml-auto text-xs text-muted-foreground hover:text-destructive">✕</button>
-          </div>
-        ))}
-        {rows.length > 0 && (
-          <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-2 text-center">
-            <div><p className="font-display text-xl font-bold text-primary">{fmtGpa(projected.cum)}</p><p className="text-xs text-muted-foreground">proj. cumulative</p></div>
-            <div><p className="font-display text-xl font-bold" style={{ color: 'var(--cat-research)' }}>{fmtGpa(projected.science)}</p><p className="text-xs text-muted-foreground">proj. science</p></div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
 }
 
 function SharedPlanNote({ title, detail }: { title: string; detail: string }) {
@@ -1189,30 +1137,5 @@ function InlineSelect({
       <SelectTrigger className={className}><SelectValue /></SelectTrigger>
       <SelectContent>{options.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
     </Select>
-  )
-}
-
-/**
- * §4.1 grade decisions, one section per in-progress course. Courses with
- * nothing to decide about render nothing at all — `GradeDecisions` owns that
- * rule, so this wrapper stays a lookup and never a second empty state.
- */
-function GradeDecisionsSection() {
-  const courses = useStore((s) => s.courses)
-  const center = useStore((s) => s.academics.classCenter)
-  const active = courses.filter((course) => course.status === 'in-progress')
-
-  return (
-    <div className="space-y-6">
-      {active.map((course) => (
-        <GradeDecisions
-          key={course.id}
-          course={course}
-          assignments={center.assignments.filter((item) => item.courseId === course.id)}
-          categories={(center.gradeCategories ?? []).filter((item) => item.courseId === course.id)}
-          mistakes={(center.mistakes ?? []).filter((item) => item.courseId === course.id)}
-        />
-      ))}
-    </div>
   )
 }
