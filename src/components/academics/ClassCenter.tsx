@@ -726,6 +726,7 @@ function ClassCenterDashboard({
                 onClick={() => setEditor({ open: true, form: emptyClassForm(semester) })}
                 className={cn(
                   'flex h-full min-h-44 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-5 text-center transition duration-200 hover:-translate-y-0.5 hover:border-primary/55 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
+                  view === 'cards' && 'aspect-square min-h-0',
                   view === 'list' && 'min-h-20 flex-row gap-3',
                 )}
               >
@@ -861,7 +862,7 @@ function ClassCard({
       className={cn(
         'academics-class-card group/class relative self-start cursor-pointer overflow-hidden shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
         actionHovered && 'action-hovered',
-        compact && 'min-h-0',
+        compact ? 'min-h-0' : 'aspect-square h-full',
         dragging && 'scale-[0.98] opacity-55',
         dragOver && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
       )}
@@ -874,7 +875,7 @@ function ClassCard({
       <CardContent className={cn(
         compact
           ? 'grid items-center gap-4 p-3 md:grid-cols-[minmax(0,1.2fr)_auto_minmax(160px,.7fr)_auto]'
-          : 'flex flex-col gap-2 p-3',
+          : 'flex h-full min-h-0 flex-col justify-between gap-2 p-3',
       )}>
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="min-w-0">
@@ -929,8 +930,7 @@ function ClassCard({
           </p>
           <div
             className={cn(
-              'mt-2 items-center justify-end gap-2',
-              compact ? 'flex' : 'hidden group-focus-within/class:flex group-hover/class:flex',
+              'mt-2 flex items-center justify-end gap-2',
             )}
             onPointerEnter={() => setActionHovered(true)}
             onPointerLeave={() => setActionHovered(false)}
@@ -938,12 +938,12 @@ function ClassCard({
             <Button
               size="sm"
               variant="outline"
-              className="h-8 flex-1 border-[var(--class-accent)] bg-[color-mix(in_srgb,var(--class-accent)_10%,transparent)] font-display font-extrabold text-[var(--class-accent)] shadow-none hover:bg-[color-mix(in_srgb,var(--class-accent)_18%,transparent)] hover:text-[var(--class-accent)]"
+              className="h-9 flex-1 border-[var(--class-accent)] bg-[var(--class-accent)] font-display font-extrabold text-white shadow-[0_8px_18px_-12px_var(--class-accent)] hover:brightness-110 hover:text-white active:translate-y-px"
               onClick={(event) => { event.stopPropagation(); onReview() }}
               onFocus={() => setActionHovered(true)}
               onBlur={() => setActionHovered(false)}
             >
-              <Play className="size-4" /> Review
+              <Play className="size-4 fill-white text-white" /> Review
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
