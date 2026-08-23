@@ -6,24 +6,26 @@
 
 ## What this draws
 
-An Atlas destination that turns a student’s immediate block into a precise,
+An Atlas destination that turns a student’s immediate situation into a precise,
 official outbound route. It is not an all-campus catalog, a booking product, or
-a recommendation engine. The first release covers the highest-confidence
-academic routes and presents broader campus collections as directories to
-explore.
+a recommendation engine. It can appear at the start of a review session, while
+planning a project, or when a practical barrier blocks academic work, then
+offers the responsible current route without claiming an outcome.
 
 It has three genuine treatments:
 
 | Variant | Treatment | Appearance | Behaviour |
 |---|---|---|---|
-| **A · Route by need** | The selected default | Narrow left-side need chooser; two solid route cards at a time; a warm owner/boundary note closes the result. | Select a block such as space, concepts, writing, sources, or planning. Every card opens the owner’s live page. |
+| **A · Route by situation** | The selected default | Narrow left-side “I’m here now” chooser; two-to-four solid route cards at a time; a warm owner/boundary note closes the result. | Select a situation such as starting a review session, finding research/work/service, or encountering a barrier. Every card opens the owner’s live page. |
 | **B · Browse directories** | Directory argument | A three-column directory index with four named official routes in each collection and a local filter. | Opens a named owner route, while making no claim that an appointment, listing, room, program, or eligibility is currently available. |
 | **C · Use a course** | Contextual course argument | One course selector followed by a horizontal owner ladder: course team, current peer support, study-process support. | Makes the authority order explicit. It can configure course code/title later but must never infer a live tutor or office-hour slot. |
 
 ## Behaviour rules
 
-- The user begins with **the kind of help needed**, not a search across raw
-  campus names.
+- The user begins with **what they are doing or what is blocking them**, not a
+  search across raw campus names. “Start a review session” is a contextual entry
+  point: it can be invoked from a review-session flow and begins with a study
+  space, only escalating to tutoring or study-process support if needed.
 - Every route is an owner-verified outbound link. Dynamic facts—room access,
   reservation status, staffing, eligibility, current course coverage,
   appointment availability, hours, and costs—remain at the destination.
@@ -43,6 +45,15 @@ It has three genuine treatments:
 - No in-app booking, no imported live availability, no ranking, no opaque
   recommendation score, and no vendor/marketplace links merely because students
   commonly use them.
+
+## Situations represented
+
+- Starting a review session: live study-space discovery, course-support route,
+  and Learning Center study tools.
+- Finding research, work, or service: OUR, Handshake, and GivePulse; a live
+  listing is never treated as an available or suitable opportunity.
+- A barrier getting in the way: basic-needs support, financial aid, wellbeing,
+  and transit, with every eligibility and timing decision left to the provider.
 
 ## Initial verified routes represented
 
