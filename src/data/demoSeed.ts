@@ -287,6 +287,10 @@ export function createDemoData(seedTime = Date.now()): AppData {
       { id: 'demo-review-newton-2', topicId: 'demo-topic-newton', timestamp: stamp(-8), grade: 'good', confidence: 3, order: 19 },
       { id: 'demo-review-newton-3', topicId: 'demo-topic-newton', timestamp: stamp(-2), grade: 'good', confidence: 3, order: 20 },
     ],
+    // Forecast calibration begins only after this release. Existing review
+    // history remains intact but cannot honestly be backfilled with calls the
+    // system did not make at the time.
+    retrievabilityPredictions: [],
     reviewSessionPreferences: {
       defaultInput: 'microphone', interleave: true, weakFirst: true,
       workMinutes: 25, breakMinutes: 5, enforceBreaks: false, sound: true,

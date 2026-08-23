@@ -16,6 +16,7 @@ import { TermRollover } from '@/components/academics/TermRollover'
 import { TermReportPanel } from '@/components/academics/TermReportPanel'
 import { TranscriptRecordsPanel } from '@/components/academics/TranscriptRecordsPanel'
 import { GradeDecisions } from '@/components/academics/GradeDecisions'
+import { ForecastAccuracyPanel } from '@/components/academics/ForecastAccuracyPanel'
 import { isSavedTermReportId } from '@/lib/academics/termReportRoute'
 
 type ArchiveView = 'ledger' | 'gpa' | 'what-if'
@@ -34,6 +35,7 @@ export function GradesArchive({ courses }: { courses: Course[] }) {
   const reports = center.termReports ?? []
   const hasRequestedReport = isSavedTermReportId(requestedReportId, reports)
   const showReport = view === 'ledger' && hasRequestedReport
+  const showForecastAccuracy = view === 'ledger' && params.get('forecastAccuracy') === '1'
   const invalidReportId = view === 'ledger' && Boolean(requestedReportId) && !hasRequestedReport
   const ledger = useMemo(() => buildGradeLedger(courses, center.transcriptRecords), [courses, center.transcriptRecords])
 
@@ -42,6 +44,7 @@ export function GradesArchive({ courses }: { courses: Course[] }) {
       const updated = new URLSearchParams(current)
       updated.set('gradeView', next)
       updated.delete('termReport')
+      updated.delete('forecastAccuracy')
       return updated
     }, { replace: true })
   }
@@ -53,7 +56,14 @@ export function GradesArchive({ courses }: { courses: Course[] }) {
         {VIEWS.map((item) => <button key={item.id} role="tab" aria-selected={view === item.id} onClick={() => selectView(item.id)} className={cn('rounded-[7px] px-3 py-1.5 font-display text-sm font-extrabold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary', view === item.id ? 'bg-[var(--card)] text-foreground' : 'text-muted-foreground hover:text-foreground')}>{item.label}</button>)}
       </div>
     </div>
-    {showReport && requestedReportId && <TermReportPanel focusReportId={requestedReportId} onBack={() => {
+    {showForecastAccuracy && <ForecastAccuracyPanel predictions={center.retrievabilityPredictions ?? []} onBack={() => {
+      setParams((current) => {
+        const updated = new URLSearchParams(current)
+        updated.delete('forecastAccuracy')
+        return updated
+      })
+    }} />}
+    {showReport && !showForecastAccuracy && requestedReportId && <TermReportPanel focusReportId={requestedReportId} onBack={() => {
       setParams((current) => {
         const updated = new URLSearchParams(current)
         updated.delete('termReport')
@@ -67,7 +77,14 @@ export function GradesArchive({ courses }: { courses: Course[] }) {
         return updated
       })
     }} />}
-    {view === 'ledger' && !showReport && <LedgerView courses={courses} ledger={ledger} reports={reports} invalidReportId={invalidReportId} onOpenReport={(reportId) => {
+    {view === 'ledger' && !showReport && !showForecastAccuracy && <LedgerView courses={courses} ledger={ledger} reports={reports} predictionCount={center.retrievabilityPredictions?.length ?? 0} invalidReportId={invalidReportId} onOpenForecastAccuracy={() => {
+      setParams((current) => {
+        const updated = new URLSearchParams(current)
+        updated.set('gradeView', 'ledger')
+        updated.set('forecastAccuracy', '1')
+        return updated
+      })
+    }} onOpenReport={(reportId) => {
       setParams((current) => {
         const updated = new URLSearchParams(current)
         updated.set('gradeView', 'ledger')
@@ -81,12 +98,14 @@ export function GradesArchive({ courses }: { courses: Course[] }) {
 }
 
 function LedgerView({
-  courses, ledger, reports, invalidReportId, onOpenReport,
+  courses, ledger, reports, predictionCount, invalidReportId, onOpenForecastAccuracy, onOpenReport,
 }: {
   courses: Course[]
   ledger: ReturnType<typeof buildGradeLedger>
   reports: Array<{ id: string; term: string; status: string }>
+  predictionCount: number
   invalidReportId: boolean
+  onOpenForecastAccuracy: () => void
   onOpenReport: (reportId: string) => void
 }) {
   const center = useStore((state) => state.academics.classCenter)
@@ -104,6 +123,7 @@ function LedgerView({
       <Input aria-label="Search coursework" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search coursework" className="h-9 max-w-xs bg-[var(--muted)]" />
       <Select value={status} onValueChange={(next) => setStatus(next as typeof status)}><SelectTrigger className="h-9 w-[150px] bg-[var(--muted)]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All records</SelectItem><SelectItem value="complete">Completed</SelectItem><SelectItem value="in-progress">In progress</SelectItem><SelectItem value="repeat">Repeat</SelectItem><SelectItem value="withdrawn">Withdrawn</SelectItem><SelectItem value="needs-details">Needs details</SelectItem></SelectContent></Select>
       {reports.length > 0 && <Button size="sm" variant="ghost" className="h-9" onClick={() => onOpenReport(reports.at(-1)!.id)}>Term reports <span className="ml-1 text-xs text-muted-foreground">{reports.length}</span></Button>}
+      {predictionCount > 0 && <Button size="sm" variant="ghost" className="h-9" onClick={onOpenForecastAccuracy}>Forecast accuracy</Button>}
       <Badge variant="outline" className="ml-auto">{visible.length} record{visible.length === 1 ? '' : 's'}</Badge>
     </div>
     {invalidReportId && <Card><CardContent className="p-4 text-sm font-semibold text-muted-foreground">That saved term report is no longer available. You’re viewing your ledger instead.</CardContent></Card>}

@@ -10,6 +10,7 @@ import { assembleGenerationRequest } from '@/lib/generation'
 import { uid } from '@/lib/id'
 import { homeBanner } from '@/lib/themeAssets'
 import { reviewTopic } from '@/lib/academics/fsrs'
+import { createRetrievabilityPrediction } from '@/lib/academics/forecastAccuracy'
 import {
   REVIEW_RATINGS, arrangeRecallQueue, buildRecallQueue, buildScopeItems,
   confidenceForEvent, sourceForScope,
@@ -415,16 +416,29 @@ export function AcademicRecallSession() {
       const center = draft.academics.classCenter
       const topic = center.topics.find((item) => item.id === current.id)
       if (!topic) return
+      const reviewEventId = uid()
+      const predictionId = uid()
+      const prediction = createRetrievabilityPrediction({
+        id: predictionId,
+        courseId,
+        topicId: topic.id,
+        reviewEventId,
+        state: topic.fsrs,
+        grade,
+        now,
+        order: center.retrievabilityPredictions.length,
+      })
       topic.fsrs = reviewTopic(topic.fsrs, REVIEW_RATINGS[grade], now)
       topic.updatedAt = now
       center.reviewEvents.push({
-        id: uid(),
+        id: reviewEventId,
         topicId: topic.id,
         timestamp: now,
         grade,
         confidence: confidenceForEvent(confidence),
         order: center.reviewEvents.length,
       })
+      center.retrievabilityPredictions.push(prediction)
       for (const item of scope) {
         if (!item.keyPointId) continue
         const keyPoint = center.keyPoints.find((point) => point.id === item.keyPointId)

@@ -212,6 +212,7 @@ function migrateRelatedRows(
     notes: mapRows('notes') as never,
     assignments: mapRows('assignments') as never,
     files,
+    retrievabilityPredictions: [],
     reviewSessionPreferences: {
       defaultInput: 'microphone', interleave: true, weakFirst: true,
       workMinutes: 25, breakMinutes: 5, enforceBreaks: false, sound: true,
@@ -466,6 +467,7 @@ export function migrateAcademicsV4(data: AppData, now = Date.now()): AppData {
         keyPoints: [],
         sourceChunks: [],
         reviewEvents: [],
+        retrievabilityPredictions: [],
       },
     },
   }

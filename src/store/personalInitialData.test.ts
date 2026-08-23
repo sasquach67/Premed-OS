@@ -13,7 +13,7 @@ describe('personal first-run data', () => {
     expect(data.experiences).toEqual([])
     expect(data.academics.classCenter).toEqual({
       workspaces: [], topics: [], notes: [], assignments: [], files: [], keyPoints: [], sourceChunks: [],
-      reviewEvents: [], contacts: [], weakAreas: [], practiceExams: [], practiceQuestions: [], paperDrafts: [],
+      reviewEvents: [], retrievabilityPredictions: [], contacts: [], weakAreas: [], practiceExams: [], practiceQuestions: [], paperDrafts: [],
       assignedReadings: [], feedbackNotes: [], gradeCategories: [], mistakes: [], topicLinks: [], topicPredictions: [],
       savedPlans: [], plannerTerms: [], examPrepPlans: [], generatedFlashcardDecks: [], generatedMockAttempts: [],
       generatedRevisedNotes: [], professorEvidence: [], conceptCanvases: [], assessmentMaterials: [], assessmentAttempts: [],

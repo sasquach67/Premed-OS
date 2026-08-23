@@ -15,6 +15,7 @@ import { migratePlannerTermsV29 } from '@/store/migrations/plannerTermsV29'
 import { migrateRequirementsAuditV30 } from '@/store/migrations/requirementsAuditV30'
 import { migrateTermReportsV31 } from '@/store/migrations/termReportsV31'
 import { migrateReviewSessionV32 } from '@/store/migrations/reviewSessionV32'
+import { migrateRetrievabilityPredictionsV33 } from '@/store/migrations/retrievabilityPredictionsV33'
 import { isCatalogWarningAcknowledged } from '@/lib/academics/requirementsAudit'
 import { migrateExamPrepV19 } from '@/store/migrations/examPrepV19'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
@@ -25,7 +26,20 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(32)
+  expect(CURRENT_STORE_VERSION).toBe(33)
+})
+
+describe('migrateRetrievabilityPredictionsV33', () => {
+  it('adds a future-only collection without rewriting saved review events', () => {
+    const data = freshData()
+    delete (data.academics.classCenter as Partial<typeof data.academics.classCenter>).retrievabilityPredictions
+    const before = structuredClone(data)
+
+    const out = migrateRetrievabilityPredictionsV33(data)
+
+    expect(out.academics.classCenter.retrievabilityPredictions).toEqual([])
+    expect(out.academics.classCenter.reviewEvents).toEqual(before.academics.classCenter.reviewEvents)
+  })
 })
 
 describe('migrateReviewSessionV32', () => {

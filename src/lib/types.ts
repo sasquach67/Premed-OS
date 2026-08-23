@@ -374,6 +374,29 @@ export interface ReviewEvent {
   order: number
 }
 
+/** A system reading captured immediately before one recall response is graded.
+ * This is deliberately distinct from TopicPrediction, which is a student's
+ * pre-lecture expectation and is never graded. */
+export type RetrievabilityBand = 'solid' | 'fading' | 'likely-gone'
+export type RetrievabilityOutcome = 'recalled' | 'blanked'
+
+export interface RetrievabilityPrediction {
+  id: ID
+  courseId: ID
+  topicId: ID
+  /** The review event that resolved this call. Present at creation because a
+   * call is persisted atomically with its outcome, after the student grades it. */
+  reviewEventId: ID
+  predictedAt: number
+  predictedBand: RetrievabilityBand
+  /** The bounded interval the current model used. It is provenance, not a UI score. */
+  predictedRange: '80–100%' | '55–79%' | '0–54%'
+  modelVersion: 'fsrs-v1'
+  outcome: RetrievabilityOutcome
+  resolvedAt: number
+  order: number
+}
+
 /** Preferences are local, course-agnostic defaults for the one review-session
  * surface. They are intentionally narrow: each field changes real queue,
  * timer, or input behavior rather than decorating a global settings page. */
@@ -955,6 +978,7 @@ export interface ClassCenterData {
   keyPoints: KeyPoint[]
   sourceChunks: SourceChunk[]
   reviewEvents: ReviewEvent[]
+  retrievabilityPredictions: RetrievabilityPrediction[]
   reviewSessionPreferences: ReviewSessionPreferences
   focusSessions: FocusStudySession[]
   contacts: ClassContact[]
