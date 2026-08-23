@@ -148,16 +148,16 @@ function cardAccentVars(color: unknown): CSSProperties {
   } as CSSProperties
 }
 
-const CARD_ACCENTS: Record<AcademicTagColor, { dot: string; border: string; bar: string; glow: string }> = {
-  gray: { dot: 'bg-slate-400', border: 'hover:border-slate-400/70', bar: 'bg-slate-400', glow: 'hover:shadow-slate-500/15' },
-  brown: { dot: 'bg-stone-500', border: 'hover:border-stone-500/70', bar: 'bg-stone-500', glow: 'hover:shadow-stone-500/15' },
-  orange: { dot: 'bg-orange-500', border: 'hover:border-orange-500/70', bar: 'bg-orange-500', glow: 'hover:shadow-orange-500/15' },
-  yellow: { dot: 'bg-yellow-500', border: 'hover:border-yellow-500/70', bar: 'bg-yellow-500', glow: 'hover:shadow-yellow-500/15' },
-  green: { dot: 'bg-emerald-500', border: 'hover:border-emerald-500/70', bar: 'bg-emerald-500', glow: 'hover:shadow-emerald-500/15' },
-  blue: { dot: 'bg-sky-500', border: 'hover:border-sky-500/70', bar: 'bg-sky-500', glow: 'hover:shadow-sky-500/15' },
-  purple: { dot: 'bg-violet-500', border: 'hover:border-violet-500/70', bar: 'bg-violet-500', glow: 'hover:shadow-violet-500/15' },
-  pink: { dot: 'bg-pink-500', border: 'hover:border-pink-500/70', bar: 'bg-pink-500', glow: 'hover:shadow-pink-500/15' },
-  red: { dot: 'bg-rose-500', border: 'hover:border-rose-500/70', bar: 'bg-rose-500', glow: 'hover:shadow-rose-500/15' },
+const CARD_ACCENTS: Record<AcademicTagColor, { dot: string; bar: string }> = {
+  gray: { dot: 'bg-slate-400', bar: 'bg-slate-400' },
+  brown: { dot: 'bg-stone-500', bar: 'bg-stone-500' },
+  orange: { dot: 'bg-orange-500', bar: 'bg-orange-500' },
+  yellow: { dot: 'bg-yellow-500', bar: 'bg-yellow-500' },
+  green: { dot: 'bg-emerald-500', bar: 'bg-emerald-500' },
+  blue: { dot: 'bg-sky-500', bar: 'bg-sky-500' },
+  purple: { dot: 'bg-violet-500', bar: 'bg-violet-500' },
+  pink: { dot: 'bg-pink-500', bar: 'bg-pink-500' },
+  red: { dot: 'bg-rose-500', bar: 'bg-rose-500' },
 }
 
 type ClassWorkspaceView = Omit<ClassWorkspace, 'id'> & {
@@ -859,7 +859,7 @@ function ClassCard({
       onDragEnd={onDragEnd}
       style={cardAccentVars(row.color)}
       className={cn(
-        'academics-class-card group/class relative h-full cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
+        'academics-class-card group/class relative self-start cursor-pointer overflow-hidden shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
         actionHovered && 'action-hovered',
         compact && 'min-h-0',
         dragging && 'scale-[0.98] opacity-55',
@@ -874,15 +874,15 @@ function ClassCard({
       <CardContent className={cn(
         compact
           ? 'grid items-center gap-4 p-3 md:grid-cols-[minmax(0,1.2fr)_auto_minmax(160px,.7fr)_auto]'
-          : 'flex h-full flex-col space-y-3 p-3',
+          : 'flex flex-col gap-2 p-3',
       )}>
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="flex items-center gap-2 font-display text-base font-bold leading-tight">
-              <span className={cn('size-2.5 shrink-0 rounded-full', accent.dot)} aria-hidden="true" />
+            <p className="flex items-center gap-2 font-display text-[15.5px] font-bold leading-tight">
+              <span className={cn('size-2 shrink-0 rounded-[3px]', accent.dot)} aria-hidden="true" />
               <span>{row.courseCode || row.nickname || 'Untitled class'}</span>
             </p>
-            <p className="mt-1 line-clamp-1 text-sm font-semibold text-muted-foreground">{row.courseTitle || row.nickname || 'Add class details'}</p>
+            <p className="mt-0.5 line-clamp-1 text-[10.5px] font-semibold text-muted-foreground">{row.courseTitle || row.nickname || 'Add class details'}</p>
           </div>
           <div className="shrink-0 text-right">
             <p className={cn('font-display text-lg font-extrabold leading-none', gradeTone(row.grade))}>{row.grade || '—'}</p>
@@ -890,44 +890,47 @@ function ClassCard({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 text-xs font-bold">
-          {stats.weakCount > 0 && <Badge variant="warning">{stats.weakCount} review notes</Badge>}
+        <div className="flex flex-wrap gap-1.5">
+          {stats.weakCount > 0 && <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="warning">{stats.weakCount} review notes</Badge>}
           {stats.processingCount > 0 && (
-            <Badge variant="muted" aria-live="polite">
+            <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="muted" aria-live="polite">
               <Loader2 className="size-3 animate-spin motion-reduce:animate-none" aria-hidden="true" />
               {stats.processingCount} processing
             </Badge>
           )}
           {stats.failedCount > 0 && (
-            <Badge variant="danger" title="Some material could not be processed. Open the class to retry.">
+            <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="danger" title="Some material could not be processed. Open the class to retry.">
               <AlertTriangle className="size-3" aria-hidden="true" />
               {stats.failedCount} failed
             </Badge>
           )}
-          {row.bcpm && <Badge variant="secondary">BCPM</Badge>}
+          {row.bcpm && <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="secondary">BCPM</Badge>}
         </div>
 
         <div className="space-y-1.5">
-          <p className="text-xs font-bold text-muted-foreground">{signal}</p>
+          <p className="flex min-h-4 items-center gap-1.5 text-[10.5px] font-bold text-muted-foreground">
+            {signal.verb && <span className="rounded-md bg-[color-mix(in_srgb,var(--class-accent)_18%,transparent)] px-1.5 py-0.5 font-display text-[9.5px] font-extrabold tracking-wide text-[var(--class-accent)]">{signal.verb}</span>}
+            {signal.text && <span>{signal.text}</span>}
+          </p>
           {stats.topicCount > 0 && (
             <Progress
               value={(stats.readyCount / stats.topicCount) * 100}
-              className="h-1.5 border-0 bg-background/80"
+              className="h-[5px] border-0 bg-background/80"
               indicatorClassName={accent.bar}
               aria-label={`${stats.readyCount} of ${stats.topicCount} topics ready`}
             />
           )}
         </div>
 
-        <div className={cn('mt-auto border-t border-border pt-3', compact && 'mt-0 md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
-          <p className="text-xs font-bold text-muted-foreground">
+        <div className={cn('border-t border-border pt-2', compact && 'mt-0 md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
+          <p className="min-h-4 text-[10.5px] font-bold text-muted-foreground">
             <span className={cn(!actionHovered && 'group-hover/class:hidden')}>{nextText}</span>
-            <span className={cn('hidden text-primary', !actionHovered && 'group-hover/class:inline')}>Open class hub →</span>
+            <span className={cn('hidden font-display font-extrabold text-[var(--class-accent)]', !actionHovered && 'group-hover/class:inline')}>Open class hub →</span>
           </p>
           <div
             className={cn(
-              'mt-3 flex items-center justify-end gap-2 transition-opacity duration-200',
-              compact ? 'opacity-100' : 'opacity-0 group-focus-within/class:opacity-100 group-hover/class:opacity-100',
+              'mt-2 items-center justify-end gap-2',
+              compact ? 'flex' : 'hidden group-focus-within/class:flex group-hover/class:flex',
             )}
             onPointerEnter={() => setActionHovered(true)}
             onPointerLeave={() => setActionHovered(false)}
@@ -2443,15 +2446,25 @@ function classStats(courseId: string, data: ClassCenterViewData) {
   }
 }
 
-function classSignal(row: ClassWorkspaceView, data: ClassCenterViewData, stats: ReturnType<typeof classStats>, fallback: string) {
+type ClassDailyVerb = 'Recall' | 'Draft' | 'Read' | 'Log'
+type ClassSignal = { text?: string; verb?: ClassDailyVerb }
+
+function classSignal(row: ClassWorkspaceView, data: ClassCenterViewData, stats: ReturnType<typeof classStats>, fallback: string): ClassSignal {
   if (row.type === 'writing') {
     const draft = data.paperDrafts.filter((item) => item.courseId === row.id).sort((a, b) => a.order - b.order).find((item) => item.stage !== 'submitted')
-    const behind = data.assignedReadings.filter((item) => item.courseId === row.id && item.status === 'not-started' && item.dueForDiscussion && item.dueForDiscussion < new Date().toISOString().slice(0, 10)).length
-    if (draft) return `${draft.title} · ${draft.stage === 'outline' ? 'outline' : draft.stage}`
-    return behind ? `${behind} reading${behind === 1 ? '' : 's'} behind` : fallback
+    const readings = data.assignedReadings.filter((item) => item.courseId === row.id && item.status !== 'read')
+    const behind = readings.filter((item) => item.status === 'not-started' && item.dueForDiscussion && item.dueForDiscussion < new Date().toISOString().slice(0, 10)).length
+    if (draft) return { verb: 'Draft', text: `${draft.title} · ${draft.stage}` }
+    if (readings.length) return { verb: 'Read', text: behind ? `${behind} reading${behind === 1 ? '' : 's'} behind` : readings[0].title }
+    return { text: fallback }
   }
-  if (row.type === 'general') return fallback
-  return `${stats.readyCount} marked ready · ${stats.topicCount} topics recorded`
+  if (row.type === 'general') {
+    // The deadline line below already names the record. Keep the action
+    // legible without duplicating the same deadline on a compact card.
+    return stats.nextDeadline ? { verb: 'Log' } : { text: fallback }
+  }
+  if (stats.topicCount > 0) return { verb: 'Recall', text: `${stats.readyCount} marked ready · ${stats.topicCount} topics recorded` }
+  return { text: 'No topics recorded yet' }
 }
 
 function coursePercent(courseId: string, data: ClassCenterViewData) {
