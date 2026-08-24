@@ -32,4 +32,16 @@ describe('class types v10', () => {
     expect(() => migrateClassTypesV10(data)).not.toThrow()
     expect(migrateClassTypesV10(once)).toEqual(once)
   })
+
+  it('preserves an already selected workspace type instead of reclassifying it', () => {
+    const data = createSeedData()
+    const english = data.courses.find((course) => course.code === 'ENGL 105')!
+    const workspace = data.academics.classCenter.workspaces.find((item) => item.courseId === english.id)!
+    workspace.type = 'general'
+
+    const migrated = migrateClassTypesV10(data)
+
+    expect(migrated.academics.classCenter.workspaces.find((item) => item.id === workspace.id)).toEqual(workspace)
+    expect(migrated.academics.classCenter.workspaces.find((item) => item.id === workspace.id)?.type).toBe('general')
+  })
 })
