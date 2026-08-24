@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  ArrowLeft, BookOpen, Brain, CalendarClock, CheckCircle2, ChevronDown,
+  ArrowLeft, BookOpen, Brain, CalendarClock, Check, CheckCircle2, ChevronDown,
   Clock3, FileText, Filter, FolderOpen, GraduationCap, HelpCircle,
   Mail, MapPin, MoreHorizontal, NotebookText, Play, Plus,
   Sparkles, Target, UserRound, Users,
@@ -20,6 +20,7 @@ import { calculateCourseScenario } from '@/lib/academics/gradeLedger'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/components/common/useToast'
 import { InfoTip } from '@/components/common/InfoTip'
+import { Collapsible } from '@/components/common/Collapsible'
 import { PageHeader } from '@/components/common/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -536,7 +537,7 @@ function NonStemOverview({
   )
 }
 
-function WritingTools({ courseId, readingListState, drafts, readings, feedback, assignments }: {
+export function WritingTools({ courseId, readingListState, drafts, readings, feedback, assignments }: {
   courseId: string
   readingListState: NonNullable<ClassWorkspace['readingListState']>
   drafts: PaperDraft[]
@@ -607,14 +608,28 @@ function WritingTools({ courseId, readingListState, drafts, readings, feedback, 
     setFeedbackAssignmentId('')
   }
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className="writing-type-tools space-y-4">
       <Panel title="Current draft" action={<Button size="sm" variant="outline" onClick={() => {
-        const now = Date.now(); update((draft) => draft.academics.classCenter.paperDrafts.push({ id: uid(), courseId, title: 'Untitled paper', stage: 'outline', createdAt: now, updatedAt: now, order: draft.academics.classCenter.paperDrafts.filter((item) => item.courseId === courseId).length }))
+        const now = Date.now()
+        update((draft) => draft.academics.classCenter.paperDrafts.push({
+          id: uid(), courseId, title: 'Untitled paper', stage: 'outline', createdAt: now, updatedAt: now,
+          order: draft.academics.classCenter.paperDrafts.filter((item) => item.courseId === courseId).length,
+        }))
       }}><Plus className="size-4" /> Add paper</Button>}>
-        <div className="space-y-3">{drafts.map((draft) => { const assignment = assignments.find((item) => item.id === draft.assignmentId); return <div key={draft.id} className="rounded-xl border border-border bg-muted p-3"><div className="flex items-center justify-between gap-3"><p className="font-extrabold">{draft.title}</p><Badge variant={draft.stage === 'submitted' ? 'success' : 'outline'}>{titleCase(draft.stage)}</Badge></div><div className="mt-3 flex flex-wrap gap-2">{(['outline', 'draft', 'revision', 'submitted'] as const).map((stage) => <Button key={stage} size="sm" variant={draft.stage === stage ? 'default' : 'outline'} onClick={() => patchDraft(draft.id, stage)}>{titleCase(stage)}</Button>)}</div><div className="mt-3 grid gap-2 text-xs font-semibold text-muted-foreground sm:grid-cols-2"><span>Assignment deadline · {assignment?.dueDate ? fmtDeadline(assignment.dueDate) : 'Not recorded'}</span><label>Your target <Input type="date" value={draft.selfDeadline ?? ''} onChange={(event) => update((state) => { const item = state.academics.classCenter.paperDrafts.find((row) => row.id === draft.id); if (item) Object.assign(item, { selfDeadline: event.target.value || undefined, updatedAt: Date.now() }) })} className="mt-1 h-8" /></label></div></div> })}{!drafts.length && <EmptyState icon={FileText} title="No papers assigned yet" detail="Add a paper when it appears in the syllabus or course site." />}</div>
+        <div className="space-y-2">
+          {drafts.map((draft) => {
+            const assignment = assignments.find((item) => item.id === draft.assignmentId)
+            return <WritingDraftRow key={draft.id} draft={draft} assignment={assignment} onStage={patchDraft} onTarget={(selfDeadline) => update((state) => {
+              const item = state.academics.classCenter.paperDrafts.find((row) => row.id === draft.id)
+              if (item) Object.assign(item, { selfDeadline: selfDeadline || undefined, updatedAt: Date.now() })
+            })} />
+          })}
+          {!drafts.length && <WritingEmptyState icon={FileText} title="No papers assigned yet" detail="Add a paper when it appears in the syllabus or course site." />}
+        </div>
       </Panel>
+
       <Panel title="Readings" action={<div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => addReading('Unscheduled')}><Plus className="size-4" /> Add reading</Button><Button size="sm" variant="outline" onClick={() => addReading('This week')}><Plus className="size-4" /> Add this week&apos;s reading</Button></div>}>
-        <div className="rounded-xl border border-border bg-muted p-3 text-sm font-semibold text-muted-foreground">
+        <div className="writing-boundary-row">
           <p>{READING_LIST_STATE_COPY[readingListState]}</p>
           {readingListState === 'complete' && <p className="mt-1 text-xs">{currentDebt ? `${currentDebt} reading${currentDebt === 1 ? '' : 's'} behind before discussion.` : 'No readings are behind.'}</p>}
           <div className="mt-3 flex flex-wrap gap-2">
@@ -623,22 +638,95 @@ function WritingTools({ courseId, readingListState, drafts, readings, feedback, 
             {readingListState === 'not-applicable' && <Button size="sm" variant="outline" onClick={() => setReadingListState('partial')}>Start a reading list</Button>}
           </div>
         </div>
-        <div className="mt-3 space-y-2">{readings.map((reading) => <div key={reading.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted p-3"><div className="min-w-0"><p className="font-extrabold">{reading.title}</p><p className="text-xs text-muted-foreground">{reading.week}{reading.source ? ` · ${reading.source}` : ''}</p></div><Select value={reading.status} onValueChange={(status) => patchReading(reading.id, status as AssignedReading['status'])}><SelectTrigger className="w-32"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not-started">Not started</SelectItem><SelectItem value="skimmed">Skimmed</SelectItem><SelectItem value="read">Read</SelectItem></SelectContent></Select></div>)}{!readings.length && <EmptyState icon={BookOpen} title="No readings listed yet" detail="Your syllabus doesn't list readings by week — add one, paste a list, or add this week's reading." />}</div>
-        <div className="mt-3 rounded-xl border border-border bg-muted p-3"><p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Paste a reading list</p><Textarea value={pastedReadings} onChange={(event) => setPastedReadings(event.target.value)} className="mt-2 min-h-20" placeholder="One reading per line" /><Button size="sm" variant="outline" className="mt-2" disabled={!pastedReadings.trim()} onClick={addPastedReadings}>Add pasted readings</Button></div>
+        <div className="mt-3 space-y-2">
+          {readings.map((reading) => <WritingReadingRow key={reading.id} reading={reading} onStatus={patchReading} />)}
+          {!readings.length && <WritingEmptyState icon={BookOpen} title="No readings listed yet" detail="Add one, paste a list, or add this week's reading." />}
+        </div>
+        {!!readings.length && <ReadingTermDots readings={readings} />}
+        <Collapsible title="Paste a reading list">
+          <Textarea value={pastedReadings} onChange={(event) => setPastedReadings(event.target.value)} className="min-h-20" placeholder="One reading per line" aria-label="Paste a reading list" />
+          <Button size="sm" variant="outline" className="mt-2" disabled={!pastedReadings.trim()} onClick={addPastedReadings}>Add pasted readings</Button>
+        </Collapsible>
       </Panel>
-      <Panel className="xl:col-span-2" title="What keeps coming back" action={<Button size="sm" variant="outline" onClick={logFeedback} disabled={!feedbackTheme.trim()}><Plus className="size-4" /> Log feedback</Button>}>
-        <p className="text-sm font-semibold text-muted-foreground">Themes appear after the same feedback comes back on another paper.</p>
+
+      <Panel title="What keeps coming back" action={<Button size="sm" variant="outline" onClick={logFeedback} disabled={!feedbackTheme.trim()}><Plus className="size-4" /> Log feedback</Button>}>
+        <p className="text-sm font-semibold text-muted-foreground">Themes appear only after the same feedback comes back on another paper.</p>
         <div className="mt-3 grid gap-2 sm:grid-cols-2"><Input value={feedbackTheme} onChange={(event) => setFeedbackTheme(event.target.value)} placeholder="Feedback theme" aria-label="Feedback theme" /><Select value={feedbackAssignmentId || 'none'} onValueChange={(value) => setFeedbackAssignmentId(value === 'none' ? '' : value)}><SelectTrigger aria-label="Paper for feedback"><SelectValue placeholder="Link a paper (optional)" /></SelectTrigger><SelectContent><SelectItem value="none">No paper linked</SelectItem>{assignments.map((assignment) => <SelectItem key={assignment.id} value={assignment.id}>{assignment.title}</SelectItem>)}</SelectContent></Select></div>
         <Textarea value={feedbackQuote} onChange={(event) => setFeedbackQuote(event.target.value)} className="mt-2 min-h-20" placeholder="Professor quote (optional)" aria-label="Professor quote" />
-        <div className="mt-3 space-y-2">{feedbackThemes.map((theme) => {
-          const linkedPapers = theme.paperIds.map((id) => assignments.find((assignment) => assignment.id === id)?.title).filter(Boolean)
-          const evidenceLabel = theme.paperIds.length >= 2 ? `${theme.paperIds.length} papers` : `${theme.notes.length} notes${linkedPapers.length ? ` · ${linkedPapers.join(', ')}` : ''}`
-          return <div key={theme.key} className="rounded-xl border border-border bg-muted p-3"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-extrabold">{theme.label}</p><Badge variant="outline">Recurring · {evidenceLabel}</Badge></div>{theme.notes.map((note) => note.quote && <p key={note.id} className="mt-2 text-sm text-muted-foreground">“{note.quote}”</p>)}</div>
-        })}{!feedbackThemes.length && <p className="rounded-xl border border-dashed border-border p-4 text-sm font-semibold text-muted-foreground">No recurring feedback theme yet. Individual notes are saved, but one comment is not a pattern.</p>}</div>
+        <div className="mt-3 space-y-2">{feedbackThemes.map((theme) => <WritingFeedbackTheme key={theme.key} theme={theme} assignments={assignments} />)}{!feedbackThemes.length && <p className="writing-empty-copy">No recurring feedback theme yet. Individual notes are saved, but one comment is not a pattern.</p>}</div>
       </Panel>
       {current && <p className="sr-only">Current draft: {current.title}</p>}
     </div>
   )
+}
+
+const DRAFT_STAGES: PaperDraft['stage'][] = ['outline', 'draft', 'revision', 'submitted']
+
+function WritingDraftRow({ draft, assignment, onStage, onTarget }: {
+  draft: PaperDraft
+  assignment?: ClassAssignment
+  onStage: (id: string, stage: PaperDraft['stage']) => void
+  onTarget: (value: string) => void
+}) {
+  const stageIndex = DRAFT_STAGES.indexOf(draft.stage)
+  return <div className="writing-record-row">
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="font-extrabold">{draft.title}</p>
+        <p className="mt-1 text-xs font-semibold text-muted-foreground">Professor deadline · {assignment?.dueDate ? fmtDeadline(assignment.dueDate) : 'Not recorded'}</p>
+      </div>
+      <label className="min-w-[10rem] text-xs font-bold text-muted-foreground">Your target
+        <Input type="date" value={draft.selfDeadline ?? ''} onChange={(event) => onTarget(event.target.value)} className="mt-1 h-8 rounded-[11px] bg-card text-xs" aria-label={`Your target for ${draft.title}`} />
+      </label>
+    </div>
+    <div className="writing-draft-rail" aria-label={`Draft stage for ${draft.title}`}>
+      {DRAFT_STAGES.map((stage, index) => <div key={stage} className="contents">
+        <button type="button" onClick={() => onStage(draft.id, stage)} data-state={index < stageIndex ? 'done' : index === stageIndex ? 'current' : 'upcoming'} className="writing-draft-stage" aria-pressed={draft.stage === stage} aria-label={`Set ${draft.title} to ${titleCase(stage)}${draft.stage === stage ? ', current stage' : ''}`}>
+          <span className="writing-stage-pip" aria-hidden="true">{index < stageIndex && <Check className="size-2.5 stroke-[3]" />}</span>
+          <span>{titleCase(stage)}</span>
+        </button>
+        {index < DRAFT_STAGES.length - 1 && <span className={cn('writing-stage-link', index < stageIndex && 'is-done')} aria-hidden="true" />}
+      </div>)}
+    </div>
+    {draft.selfDeadline && <p className="writing-target-note">Your target · {fmtDeadline(draft.selfDeadline)}. The professor&apos;s deadline stays separate.</p>}
+  </div>
+}
+
+function WritingReadingRow({ reading, onStatus }: { reading: AssignedReading; onStatus: (id: string, status: AssignedReading['status']) => void }) {
+  const status = readingStatus(reading.status)
+  return <div className="writing-record-row flex flex-wrap items-center justify-between gap-3">
+    <div className="min-w-0"><p className="font-extrabold">{reading.title}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{reading.week}{reading.dueForDiscussion ? ` · ${fmtEventDate(reading.dueForDiscussion)} discussion` : reading.source ? ` · ${reading.source}` : ''}</p></div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild><Button size="sm" variant="outline" className={cn('writing-reading-status', status.className)} aria-label={`Reading status for ${reading.title}: ${status.label}`}>{status.label}<ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger>
+      <DropdownMenuContent align="end"><DropdownMenuItem onClick={() => onStatus(reading.id, 'read')}>Read</DropdownMenuItem><DropdownMenuItem onClick={() => onStatus(reading.id, 'skimmed')}>Skimmed</DropdownMenuItem><DropdownMenuItem onClick={() => onStatus(reading.id, 'not-started')}>Not started</DropdownMenuItem></DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+}
+
+function ReadingTermDots({ readings }: { readings: AssignedReading[] }) {
+  return <div className="writing-term-dots" role="list" aria-label={`${readings.length} recorded reading${readings.length === 1 ? '' : 's'} this term`}><span>Term</span>{readings.map((reading) => <i key={reading.id} role="listitem" title={`${reading.title}: ${readingStatus(reading.status).label}`} aria-label={`${reading.title}: ${readingStatus(reading.status).label}`} className={cn('writing-term-dot', reading.status)} />)}</div>
+}
+
+function WritingFeedbackTheme({ theme, assignments }: { theme: ReturnType<typeof recurringFeedbackThemes>[number]; assignments: ClassAssignment[] }) {
+  const linkedPapers = theme.paperIds.map((id) => assignments.find((assignment) => assignment.id === id)?.title).filter((title): title is string => Boolean(title))
+  const quote = theme.notes.find((note) => note.quote)?.quote
+  const evidenceLabel = theme.paperIds.length ? `${theme.paperIds.length} paper${theme.paperIds.length === 1 ? '' : 's'}` : `${theme.notes.length} recorded note${theme.notes.length === 1 ? '' : 's'}`
+  return <div className="writing-feedback-theme"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-display text-base font-extrabold">{theme.label}</p><Badge variant="warning">{evidenceLabel}</Badge></div>{quote && <q>{quote}</q>}<p className="writing-feedback-source">{linkedPapers.length ? linkedPapers.join(' · ') : `${theme.notes.length} recorded note${theme.notes.length === 1 ? '' : 's'} without a linked paper`} · most recent {fmtFeedbackDate(theme.notes)}</p></div>
+}
+
+function WritingEmptyState({ icon: Icon, title, detail }: { icon: typeof BookOpen; title: string; detail: string }) {
+  return <div className="writing-empty-state"><Icon className="size-5 text-muted-foreground" /><div><p className="font-extrabold">{title}</p><p className="mt-1 text-sm font-semibold text-muted-foreground">{detail}</p></div></div>
+}
+
+function readingStatus(status: AssignedReading['status']) {
+  if (status === 'read') return { label: 'Read', className: 'is-read' }
+  if (status === 'skimmed') return { label: 'Skimmed', className: 'is-skimmed' }
+  return { label: 'Not started', className: 'is-not-started' }
+}
+
+function fmtFeedbackDate(notes: FeedbackNote[]) {
+  const latest = notes.reduce((current, note) => Math.max(current, note.createdAt), 0)
+  return latest ? new Date(latest).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'date not recorded'
 }
 
 function CoverageLedger({

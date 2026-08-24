@@ -835,10 +835,227 @@
   background: var(--muted);
 }
 
+/* Writing is an equal Class Hub configuration, not a generic utility grid.
+ * These compact, solid rows are deliberately scoped to its substitute study
+ * layer so the rest of the app keeps its approved component geometry. */
+.writing-type-tools .class-hub-panel {
+  border-radius: 16px;
+}
+
+.writing-record-row,
+.writing-empty-state,
+.writing-boundary-row,
+.writing-feedback-theme,
+.writing-empty-copy {
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--muted);
+}
+
+.writing-record-row,
+.writing-boundary-row,
+.writing-feedback-theme,
+.writing-empty-copy {
+  padding: 0.75rem;
+}
+
+.writing-empty-state {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 1rem;
+  border-style: dashed;
+}
+
+.writing-boundary-row {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.writing-draft-rail {
+  display: flex;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.writing-draft-stage {
+  display: inline-flex;
+  flex: 0 1 auto;
+  gap: 0.375rem;
+  align-items: center;
+  min-width: 0;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  padding: 0.125rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1;
+  transition: color 150ms cubic-bezier(.16, 1, .3, 1), transform 150ms cubic-bezier(.16, 1, .3, 1);
+}
+
+.writing-draft-stage:hover {
+  color: var(--foreground);
+  transform: translateY(-1px);
+}
+
+.writing-draft-stage:focus-visible,
+.writing-reading-status:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.writing-stage-pip {
+  display: inline-flex;
+  width: 0.9375rem;
+  height: 0.9375rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--primary-foreground);
+}
+
+.writing-draft-stage[data-state='done'] {
+  color: var(--foreground);
+}
+
+.writing-draft-stage[data-state='done'] .writing-stage-pip {
+  border-color: var(--success);
+  background: var(--success);
+}
+
+.writing-draft-stage[data-state='current'] {
+  color: var(--foreground);
+}
+
+.writing-draft-stage[data-state='current'] .writing-stage-pip {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
+.writing-stage-link {
+  height: 2px;
+  min-width: 0.5rem;
+  flex: 1;
+  margin: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.writing-stage-link.is-done {
+  background: var(--success);
+}
+
+.writing-target-note {
+  margin-top: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--warning) 26%, var(--border));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--warning) 10%, var(--muted));
+  padding: 0.4375rem 0.625rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.writing-reading-status {
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+.writing-reading-status.is-read {
+  border-color: color-mix(in srgb, var(--success) 30%, var(--border));
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+  color: color-mix(in srgb, var(--success) 62%, var(--foreground));
+}
+
+.writing-reading-status.is-skimmed {
+  border-color: color-mix(in srgb, var(--warning) 30%, var(--border));
+  background: color-mix(in srgb, var(--warning) 15%, transparent);
+  color: color-mix(in srgb, var(--warning) 62%, var(--foreground));
+}
+
+.writing-reading-status.is-not-started {
+  border-color: color-mix(in srgb, var(--destructive) 30%, var(--border));
+  background: color-mix(in srgb, var(--destructive) 13%, transparent);
+  color: color-mix(in srgb, var(--destructive) 62%, var(--foreground));
+}
+
+.writing-term-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3125rem;
+  align-items: center;
+  margin-top: 0.75rem;
+  padding: 0.125rem 0.125rem 0;
+}
+
+.writing-term-dots > span {
+  margin-right: 0.25rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.writing-term-dot {
+  display: inline-block;
+  width: 0.5625rem;
+  height: 0.5625rem;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--muted-foreground) 18%, transparent);
+}
+
+.writing-term-dot.read { background: var(--success); }
+.writing-term-dot.skimmed { background: var(--warning); }
+
+.writing-feedback-theme q {
+  display: block;
+  margin-top: 0.375rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.writing-feedback-source {
+  margin-top: 0.3125rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .writing-draft-stage {
+    transition: none;
+  }
+
+  .writing-draft-stage:hover {
+    transform: none;
+  }
+}
+
 @media (max-width: 640px) {
   .class-hub-panel-header,
   .class-hub-panel-content {
     padding-left: 0.85rem;
     padding-right: 0.85rem;
+  }
+
+  .writing-draft-rail {
+    align-items: stretch;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .writing-stage-link {
+    display: none;
   }
 }
