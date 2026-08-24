@@ -679,7 +679,7 @@ function ClassCenterDashboard({
         </CardHeader>
         <CardContent>
           <div className={cn(view === 'cards'
-            ? 'grid auto-rows-[198px] gap-3 sm:grid-cols-2 md:auto-rows-[206px] md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+            ? 'grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
             : 'space-y-2')}>
             {filtered.map((row) => (
               <ClassCard
@@ -746,7 +746,7 @@ function ClassCenterDashboard({
                 onClick={() => setEditor({ open: true, form: emptyClassForm(semester) })}
                 className={cn(
                   'flex h-full min-h-44 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-5 text-center transition duration-200 hover:-translate-y-0.5 hover:border-primary/55 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
-                  view === 'cards' && 'min-h-0',
+                  view === 'cards' && 'aspect-square min-h-0',
                   view === 'list' && 'min-h-20 flex-row gap-3',
                 )}
               >
@@ -851,11 +851,10 @@ export function ClassCard({
   const stats = classStats(row.id, data)
   const nextText = stats.nextDeadline?.title
     ? `${stats.nextDeadline.title}${stats.nextDeadline.dueDate ? ` · ${assignmentDateLabel(stats.nextDeadline)}` : ''}`
-    : compact ? 'No deadline scheduled' : 'No dated class item yet'
+    : 'No deadline scheduled'
   const percent = coursePercent(row.id, data)
   const accent = CARD_ACCENTS[classCardColor(row.color)]
   const signal = classSignal(row, data, stats, nextText)
-  const showGrade = compact ? Boolean(row.grade) : hasLetterStanding(row.grade)
 
   function openFromCard(event: MouseEvent<HTMLElement>) {
     if ((event.target as HTMLElement).closest('button,a,[role="menuitem"]')) return
@@ -885,7 +884,7 @@ export function ClassCard({
       className={cn(
         'academics-class-card group/class relative self-start cursor-pointer overflow-hidden shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
         actionHovered && 'action-hovered',
-        compact ? 'min-h-0' : 'h-full min-h-0',
+        compact ? 'min-h-0' : 'min-h-[210px]',
         dragging && 'scale-[0.98] opacity-55',
         dragOver && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
       )}
@@ -898,7 +897,7 @@ export function ClassCard({
       <CardContent className={cn(
         compact
           ? 'grid items-center gap-4 p-3 md:grid-cols-[minmax(0,1.2fr)_auto_minmax(160px,.7fr)_auto]'
-          : 'flex h-full min-h-0 flex-col gap-2.5 p-3',
+          : 'flex min-h-0 flex-col gap-3 p-3',
       )}>
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="min-w-0">
@@ -908,38 +907,34 @@ export function ClassCard({
             </p>
             <p className="mt-0.5 line-clamp-1 text-[10.5px] font-semibold text-muted-foreground">{row.courseTitle || row.nickname || 'Add class details'}</p>
           </div>
-          {showGrade && row.grade && (
-            <div className="shrink-0 text-right">
-              <p className={cn('font-display text-lg font-extrabold leading-none', gradeTone(row.grade))}>{row.grade}</p>
-              {compact && percent != null && <p className="mt-0.5 text-[10px] font-bold tabular-nums text-muted-foreground">{percent}%</p>}
-            </div>
+          <div className="shrink-0 text-right">
+            <p className={cn('font-display text-lg font-extrabold leading-none', gradeTone(row.grade))}>{row.grade || '—'}</p>
+            {percent != null && <p className="mt-0.5 text-[10px] font-bold tabular-nums text-muted-foreground">{percent}%</p>}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5">
+          {stats.weakCount > 0 && <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="warning">{stats.weakCount} review notes</Badge>}
+          {stats.processingCount > 0 && (
+            <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="muted" aria-live="polite">
+              <Loader2 className="size-3 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              {stats.processingCount} processing
+            </Badge>
+          )}
+          {stats.failedCount > 0 && (
+            <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="danger" title="Some material could not be processed. Open the class to retry.">
+              <AlertTriangle className="size-3" aria-hidden="true" />
+              {stats.failedCount} failed
+            </Badge>
           )}
         </div>
 
-        {compact && (
-          <div className="flex flex-wrap gap-1.5">
-            {stats.weakCount > 0 && <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="warning">{stats.weakCount} review notes</Badge>}
-            {stats.processingCount > 0 && (
-              <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="muted" aria-live="polite">
-                <Loader2 className="size-3 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                {stats.processingCount} processing
-              </Badge>
-            )}
-            {stats.failedCount > 0 && (
-              <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="danger" title="Some material could not be processed. Open the class to retry.">
-                <AlertTriangle className="size-3" aria-hidden="true" />
-                {stats.failedCount} failed
-              </Badge>
-            )}
-          </div>
-        )}
-
-        <div className={cn(compact && 'space-y-1.5')}>
+        <div className="space-y-1.5">
           <p className="flex min-h-4 items-center gap-1.5 text-[10.5px] font-bold text-muted-foreground">
             {signal.verb && <span className="rounded-md bg-[color-mix(in_srgb,var(--class-accent)_18%,transparent)] px-1.5 py-0.5 font-display text-[9.5px] font-extrabold tracking-wide text-[var(--class-accent)]">{signal.verb}</span>}
             {signal.text && <span>{signal.text}</span>}
           </p>
-          {compact && stats.topicCount > 0 && (
+          {stats.topicCount > 0 && (
             <Progress
               value={(stats.readyCount / stats.topicCount) * 100}
               className="h-[5px] border-0 bg-background/80"
@@ -949,7 +944,7 @@ export function ClassCard({
           )}
         </div>
 
-        <div className={cn('border-t border-border pt-2', !compact && 'mt-auto', compact && 'md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
+        <div className={cn('border-t border-border pt-2', compact && 'md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
           <p className="min-h-4 text-[10.5px] font-bold text-muted-foreground">
             <span className={cn(!actionHovered && 'group-hover/class:hidden')}>{nextText}</span>
             <span className={cn('hidden font-display font-extrabold text-[var(--class-accent)]', !actionHovered && 'group-hover/class:inline')}>Open class hub →</span>
@@ -957,34 +952,23 @@ export function ClassCard({
           <div
             className={cn(
               'mt-2 items-center justify-end gap-2',
-              compact ? 'flex' : 'flex',
+              compact
+                ? 'flex'
+                : 'flex invisible pointer-events-none opacity-0 group-focus-within/class:pointer-events-auto group-focus-within/class:visible group-focus-within/class:opacity-100 group-hover/class:pointer-events-auto group-hover/class:visible group-hover/class:opacity-100',
             )}
             onPointerEnter={() => setActionHovered(true)}
             onPointerLeave={() => setActionHovered(false)}
           >
-            {compact ? (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-9 flex-1 border-[var(--class-accent-75)] bg-[color-mix(in_srgb,var(--class-accent)_72%,transparent)] font-display font-extrabold text-white shadow-[0_8px_18px_-14px_var(--class-accent-75)] hover:bg-[color-mix(in_srgb,var(--class-accent)_82%,transparent)] hover:text-white active:translate-y-px"
-                onClick={(event) => { event.stopPropagation(); onReview() }}
-                onFocus={() => setActionHovered(true)}
-                onBlur={() => setActionHovered(false)}
-              >
-                <Play className="size-4 fill-white text-white" /> Review
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 flex-1 justify-start px-0 font-display font-extrabold text-[var(--class-accent)] hover:bg-transparent hover:text-[var(--class-accent)]"
-                onClick={(event) => { event.stopPropagation(); onOpen() }}
-                onFocus={() => setActionHovered(true)}
-                onBlur={() => setActionHovered(false)}
-              >
-                Preview
-              </Button>
-            )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-9 flex-1 border-[var(--class-accent-75)] bg-[color-mix(in_srgb,var(--class-accent)_72%,transparent)] font-display font-extrabold text-white shadow-[0_8px_18px_-14px_var(--class-accent-75)] hover:bg-[color-mix(in_srgb,var(--class-accent)_82%,transparent)] hover:text-white active:translate-y-px"
+              onClick={(event) => { event.stopPropagation(); onReview() }}
+              onFocus={() => setActionHovered(true)}
+              onBlur={() => setActionHovered(false)}
+            >
+              <Play className="size-4 fill-white text-white" /> Review
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="Class actions" onClick={(event) => event.stopPropagation()}>
@@ -2579,13 +2563,6 @@ function gradeTone(grade: Course['grade']) {
   if (/^B/.test(grade)) return 'text-warning'
   if (/^[CDF]/.test(grade)) return 'text-destructive'
   return 'text-muted-foreground'
-}
-
-/** `IP`/pass markers describe enrollment or grading treatment, not a letter
- * standing. Primary cards reserve this compact slot for a student-entered
- * A–F standing; List view keeps its existing, fuller record treatment. */
-function hasLetterStanding(grade: Course['grade']) {
-  return /^[A-F](?:[+-])?$/.test(grade)
 }
 
 function normalizedTopicStatus(status: TopicStatus) {

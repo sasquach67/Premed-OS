@@ -66,7 +66,7 @@ describe('Class Center primary card hierarchy', () => {
     container.remove()
   })
 
-  it('keeps cards factual and opens a no-date class through Preview', async () => {
+  it('keeps the full card status ladder and opens a no-date class through Review', async () => {
     const seed = structuredClone(createSeedData())
     const course = seed.courses.find((item) => item.code === 'BIOL 103')!
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.courseId === course.id)!
@@ -109,19 +109,17 @@ describe('Class Center primary card hierarchy', () => {
       }))
     })
 
-    expect(container.textContent).toContain('No dated class item yet')
-    expect(container.textContent).toContain('Preview')
+    expect(container.textContent).toContain('No deadline scheduled')
+    expect(container.textContent).toContain('Review')
     expect(container.textContent).toContain('A-')
     expect(container.textContent).not.toContain('BCPM')
-    expect(container.textContent).not.toContain('Review')
-    expect(container.querySelector('[role="progressbar"]')).toBeNull()
-    expect(container.textContent).not.toMatch(/\d+(?:\.\d+)?%/)
+    expect(container.querySelector('[role="progressbar"]')).toBeTruthy()
 
-    await act(async () => (Array.from(container.querySelectorAll('button')).find((button) => button.textContent === 'Preview') as HTMLButtonElement).click())
-    expect(onOpen).toHaveBeenCalledTimes(1)
+    await act(async () => (Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('Review')) as HTMLButtonElement).click())
+    expect(onOpen).not.toHaveBeenCalled()
   })
 
-  it('does not present an in-progress marker as a letter standing on a card', async () => {
+  it('keeps an in-progress marker visible on a full card', async () => {
     const seed = structuredClone(createSeedData())
     const course = seed.courses.find((item) => item.code === 'BIOL 103')!
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.courseId === course.id)!
@@ -146,7 +144,7 @@ describe('Class Center primary card hierarchy', () => {
       }))
     })
 
-    expect(container.textContent).not.toContain('IP')
+    expect(container.textContent).toContain('IP')
   })
 
   it('keeps every non-link card action attributable to its callback', async () => {
@@ -178,9 +176,9 @@ describe('Class Center primary card hierarchy', () => {
       })))
     })
 
-    const preview = [...container.querySelectorAll('button')].find((button) => button.textContent === 'Preview') as HTMLButtonElement
-    await act(async () => preview.click())
-    expect(actions.onOpen).toHaveBeenCalledTimes(1)
+    const review = [...container.querySelectorAll('button')].find((button) => button.textContent?.includes('Review')) as HTMLButtonElement
+    await act(async () => review.click())
+    expect(actions.onReview).toHaveBeenCalledTimes(1)
 
     const overflow = container.querySelector('button[aria-label="Class actions"]') as HTMLButtonElement
     const choose = async (label: string) => {
@@ -200,7 +198,7 @@ describe('Class Center primary card hierarchy', () => {
     await choose('Delete')
 
     expect(actions.onImport).toHaveBeenCalledTimes(1)
-    expect(actions.onReview).toHaveBeenCalledTimes(1)
+    expect(actions.onReview).toHaveBeenCalledTimes(2)
     expect(actions.onEdit).toHaveBeenCalledTimes(1)
     expect(actions.onArchive).toHaveBeenCalledTimes(1)
     expect(actions.onDelete).toHaveBeenCalledTimes(1)
@@ -217,6 +215,6 @@ describe('Class Center primary card hierarchy', () => {
     const contextReview = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((node) => node.textContent?.trim() === 'Review')
     expect(contextReview).toBeTruthy()
     await act(async () => contextReview!.click())
-    expect(actions.onReview).toHaveBeenCalledTimes(2)
+    expect(actions.onReview).toHaveBeenCalledTimes(3)
   })
 })
