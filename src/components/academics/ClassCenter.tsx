@@ -52,6 +52,7 @@ import { retainLocalSyllabus } from '@/lib/academics/localSyllabusFiles'
 import type { ReimportRow } from '@/lib/academics/syllabusReimport'
 import { classTypeDraftDecision } from '@/lib/academics/classTypeDraftDecision'
 import { nextIncompleteReading, readingDebt, READING_LIST_STATE_COPY } from '@/lib/academics/writingEvidence'
+import { inferAcademicTerm } from '@/store/migrations/academicsV4'
 
 const COLORS: AcademicTagColor[] = ['blue', 'green', 'purple', 'orange', 'yellow', 'red', 'pink', 'gray', 'brown']
 const CLASS_ICONS: { id: string; label: string; Icon: LucideIcon }[] = [
@@ -397,7 +398,12 @@ function ClassCenterDashboard({
   archiveOnly: boolean
 }) {
   const navigate = useNavigate()
-  const [semester, setSemester] = useState(archiveOnly ? 'Archived' : currentTerm)
+  // A first-run profile has no confirmed term yet. The store uses this same
+  // fallback when it synchronizes current-term workspaces; using it here keeps
+  // a cold syllabus import from creating a Course whose workspace is then
+  // immediately pruned as "outside the current term."
+  const activeTerm = currentTerm || inferAcademicTerm()
+  const [semester, setSemester] = useState(archiveOnly ? 'Archived' : activeTerm)
   const [query, setQuery] = useState('')
   const [peekCourseId, setPeekCourseId] = useState<string | null>(null)
   const [peekMode, setPeekMode] = useState<RecordOpenMode>('peek')
@@ -441,9 +447,9 @@ function ClassCenterDashboard({
   const [draggedClassId, setDraggedClassId] = useState<string | null>(null)
   const [dragOverClassId, setDragOverClassId] = useState<string | null>(null)
   const semesters = useMemo(() => {
-    const list = Array.from(new Set([currentTerm, ...terms, ...data.classes.map((row) => row.semester)])).filter(Boolean)
+    const list = Array.from(new Set([activeTerm, ...terms, ...data.classes.map((row) => row.semester)])).filter(Boolean)
     return archiveOnly ? ['Archived'] : list
-  }, [archiveOnly, currentTerm, data.classes, terms])
+  }, [activeTerm, archiveOnly, data.classes, terms])
   const filtered = data.classes
     .filter((row) => {
       if (archiveOnly || semester === 'Archived') return row.status === 'archived'
