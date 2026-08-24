@@ -50,6 +50,7 @@ import { SyllabusImportMode } from '@/components/academics/SyllabusImportMode'
 import type { SyllabusProposal } from '@/lib/academics/syllabusParser'
 import { retainLocalSyllabus } from '@/lib/academics/localSyllabusFiles'
 import type { ReimportRow } from '@/lib/academics/syllabusReimport'
+import { classTypeDraftDecision } from '@/lib/academics/classTypeDraftDecision'
 
 const COLORS: AcademicTagColor[] = ['blue', 'green', 'purple', 'orange', 'yellow', 'red', 'pink', 'gray', 'brown']
 const CLASS_ICONS: { id: string; label: string; Icon: LucideIcon }[] = [
@@ -174,7 +175,10 @@ type ClassWorkspaceView = Omit<ClassWorkspace, 'id'> & {
 
 type ClassCenterViewData = ClassCenterData & { classes: ClassWorkspaceView[] }
 
-type ClassFormState = Omit<ClassWorkspaceView, 'id' | 'workspaceId' | 'courseId' | 'createdAt' | 'updatedAt' | 'order' | 'grade' | 'bcpm' | 'credits'>
+type ClassFormState = Omit<ClassWorkspaceView, 'id' | 'workspaceId' | 'courseId' | 'createdAt' | 'updatedAt' | 'order' | 'grade' | 'bcpm' | 'credits' | 'type'> & {
+  /** New drafts deliberately have no saved study layer until the student chooses one. */
+  type?: ClassWorkspaceType
+}
 type ReimportDecision = { row: ReimportRow; action: ReimportRow['defaultAction'] }
 
 function emptyClassForm(semester = 'Fall 2026'): ClassFormState {
@@ -189,7 +193,6 @@ function emptyClassForm(semester = 'Fall 2026'): ClassFormState {
     location: '',
     color: 'blue',
     icon: 'book',
-    type: 'stem',
     background: '',
     status: 'active',
     currentTopicId: '',
@@ -247,13 +250,14 @@ function joinWorkspaces(workspaces: ClassWorkspace[], courses: Course[]): ClassW
 }
 
 function workspaceFields(form: ClassFormState): Omit<ClassWorkspace, 'id' | 'courseId' | 'createdAt' | 'updatedAt' | 'order'> {
+  if (!form.type) throw new Error('A class type is required before a workspace is saved.')
   const {
     courseCode: _courseCode,
     courseTitle: _courseTitle,
     semester: _semester,
     ...workspace
   } = form
-  return workspace
+  return { ...workspace, type: form.type }
 }
 
 const reimportNormalized = (value: string | undefined) => (value ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
@@ -525,7 +529,10 @@ function ClassCenterDashboard({
       }}
       onExit={exitImport}
       onImport={(form, files, proposal, courseId, decisions, replaceFileId) => importSyllabus(
-        { ...emptyClassForm(form.semester), courseCode: form.courseCode, courseTitle: form.courseTitle },
+        // Syllabus import owns a separate confirmation flow. Preserve its
+        // established workspace shape here; the manual add dialog below is
+        // the only surface this fidelity pass changes.
+        { ...emptyClassForm(form.semester), type: 'stem', courseCode: form.courseCode, courseTitle: form.courseTitle },
         files, proposal, courseId, decisions, replaceFileId,
       )}
     />
@@ -550,14 +557,24 @@ function ClassCenterDashboard({
             ].map(([number, title, detail]) => <div key={number} className="flex gap-3 bg-card p-5"><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary/12 font-display text-sm font-extrabold text-primary">{number}</span><div><p className="font-display text-sm font-extrabold">{title}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{detail}</p></div></div>)}
           </div>
         </div>
-        <ClassEditorDialog open={editor.open} title="Create class" form={editor.form} onOpenChange={(open) => setEditor((prev) => ({ ...prev, open }))} onChange={(patch) => setEditor((prev) => ({ ...prev, form: { ...prev.form, ...patch } }))} onSave={saveClass} onSaveAndImport={() => saveClass(true)} />
+        <ClassEditorDialog
+          key={editor.open ? 'create-open' : 'create-closed'}
+          open={editor.open}
+          title="Create class"
+          isCreate
+          form={editor.form}
+          onOpenChange={(open) => setEditor((prev) => ({ ...prev, open }))}
+          onChange={(patch) => setEditor((prev) => ({ ...prev, form: { ...prev.form, ...patch } }))}
+          onSave={(type) => saveClass(type)}
+          onSaveAndImport={(type) => saveClass(type, true)}
+        />
       </>
     )
   }
 
-  function saveClass(openImportAfterCreate = false) {
+  function saveClass(type: ClassWorkspaceType, openImportAfterCreate = false) {
     const now = Date.now()
-    const form = editor.form
+    const form = { ...editor.form, type }
     if (!form.courseCode.trim() && !form.courseTitle.trim()) return
     let createdCourseId: string | undefined
     updateAll((draft) => {
@@ -760,13 +777,15 @@ function ClassCenterDashboard({
       )}
 
       <ClassEditorDialog
+        key={`${editor.courseId ?? 'create'}-${editor.open ? 'open' : 'closed'}`}
         open={editor.open}
         title={editor.courseId ? 'Edit class' : 'Create class'}
+        isCreate={!editor.courseId}
         form={editor.form}
         onOpenChange={(open) => setEditor((prev) => ({ ...prev, open }))}
         onChange={(patch) => setEditor((prev) => ({ ...prev, form: { ...prev.form, ...patch } }))}
-        onSave={saveClass}
-        onSaveAndImport={editor.courseId ? undefined : () => saveClass(true)}
+        onSave={(type) => saveClass(type)}
+        onSaveAndImport={editor.courseId ? undefined : (type) => saveClass(type, true)}
       />
 
       <CenterPeek
@@ -1465,12 +1484,13 @@ function ClassWorkspace({
   const noteCount = data.notes.filter((note) => note.courseId === row.id).length
   const assignmentCount = data.assignments.filter((assignment) => assignment.courseId === row.id && assignment.status !== 'graded' && assignment.status !== 'submitted').length
 
-  function saveClass() {
+  function saveClass(type: ClassWorkspaceType) {
+    const nextForm = { ...form, type }
     useStore.getState().update((draft) => {
       const course = draft.courses.find((item) => item.id === row.id)
       const workspace = draft.academics.classCenter.workspaces.find((item) => item.courseId === row.id)
-      if (course) Object.assign(course, { code: form.courseCode, title: form.courseTitle, term: form.semester })
-      if (workspace) Object.assign(workspace, workspaceFields(form), { updatedAt: Date.now() })
+      if (course) Object.assign(course, { code: nextForm.courseCode, title: nextForm.courseTitle, term: nextForm.semester })
+      if (workspace) Object.assign(workspace, workspaceFields(nextForm), { updatedAt: Date.now() })
     })
     setClassEditorOpen(false)
   }
@@ -1564,8 +1584,10 @@ function ClassWorkspace({
       </Tabs>
 
       <ClassEditorDialog
+        key={classEditorOpen ? 'edit-open' : 'edit-closed'}
         open={classEditorOpen}
         title="Edit class"
+        isCreate={false}
         form={form}
         onOpenChange={setClassEditorOpen}
         onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
@@ -2117,19 +2139,37 @@ function PracticeExamRunner({
 }
 
 function ClassEditorDialog({
-  open, title, form, onOpenChange, onChange, onSave, onSaveAndImport,
+  open, title, isCreate, form, onOpenChange, onChange, onSave, onSaveAndImport,
 }: {
   open: boolean
   title: string
+  isCreate: boolean
   form: ClassFormState
   onOpenChange: (open: boolean) => void
   onChange: (patch: Partial<ClassFormState>) => void
-  onSave: () => void
-  onSaveAndImport?: () => void
+  onSave: (type: ClassWorkspaceType) => void
+  onSaveAndImport?: (type: ClassWorkspaceType) => void
 }) {
+  const [studentChoice, setStudentChoice] = useState<ClassWorkspaceType | undefined>()
+  const decision = useMemo(() => classTypeDraftDecision({
+    isCreate,
+    courseCode: form.courseCode,
+    savedType: form.type,
+    studentChoice,
+  }), [form.courseCode, form.type, isCreate, studentChoice])
+  const canSave = Boolean(decision.selectedType)
+
+  const chooseType = (type: ClassWorkspaceType) => {
+    if (isCreate) {
+      setStudentChoice(type)
+      return
+    }
+    onChange({ type })
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] max-w-3xl overflow-y-auto">
+      <DialogContent className="max-h-[88vh] max-w-3xl overflow-y-auto !rounded-2xl !border-border !bg-card !shadow-[0_22px_55px_-27px_rgba(0,0,0,0.8)] ![backdrop-filter:none]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -2139,32 +2179,55 @@ function ClassEditorDialog({
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Course code"><Input value={form.courseCode} onChange={(e) => onChange({ courseCode: e.target.value })} placeholder="BIOL 103" /></Field>
               <Field label="Course title"><Input value={form.courseTitle} onChange={(e) => onChange({ courseTitle: e.target.value })} placeholder="How Cells Function" /></Field>
-              <Field label="Instructor"><Input value={form.instructor ?? ''} onChange={(e) => onChange({ instructor: e.target.value })} /></Field>
               <Field label="Semester"><Input value={form.semester} onChange={(e) => onChange({ semester: e.target.value })} placeholder="Fall 2026" /></Field>
+            </div>
+            <Field label="Class type">
+              <div className="grid gap-2 sm:grid-cols-3">
+                {CLASS_TYPES.map((type) => {
+                  const selected = decision.selectedType === type.value
+                  const isSuggestion = selected && decision.selectionKind === 'suggestion'
+                  return (
+                    <button
+                      key={type.value}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => chooseType(type.value)}
+                      className={cn(
+                        'min-h-[104px] rounded-[13px] border bg-muted p-3 text-left transition-[background-color,border-color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none',
+                        selected
+                          ? 'border-primary bg-[color-mix(in_srgb,var(--primary)_12%,var(--muted))] text-foreground shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_42%,transparent),0_10px_22px_-18px_color-mix(in_srgb,var(--primary)_75%,transparent)]'
+                          : 'border-border text-muted-foreground hover:border-primary/60 hover:bg-muted',
+                      )}
+                    >
+                      <span className="block font-display text-sm font-extrabold text-foreground">{type.label}</span>
+                      <span className="mt-0.5 block text-xs font-semibold leading-snug">{type.detail}</span>
+                      <span className={cn('mt-2 block min-h-3 text-[10px] font-extrabold uppercase tracking-wide text-primary', !selected && 'invisible')}>
+                        {isSuggestion ? 'Suggested' : 'Selected'}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+              {isCreate && decision.selectionKind === 'suggestion' && decision.proposal && (
+                <p className="mt-3 rounded-[11px] border border-primary/30 bg-[color-mix(in_srgb,var(--primary)_7%,var(--muted))] px-3 py-2 text-xs font-semibold leading-relaxed text-muted-foreground">
+                  <span className="font-extrabold text-foreground">{decision.proposal.reason}</span>
+                </p>
+              )}
+              {isCreate && decision.selectionKind === 'needs-choice' && (
+                <p className="mt-3 rounded-[11px] border border-border bg-muted px-3 py-2 text-xs font-semibold leading-relaxed text-muted-foreground">Choose the study layer that fits this class.</p>
+              )}
+              {isCreate && decision.selectionKind === 'student' && (
+                <p className="mt-3 rounded-[11px] border border-primary/30 bg-[color-mix(in_srgb,var(--primary)_7%,var(--muted))] px-3 py-2 text-xs font-semibold leading-relaxed text-muted-foreground"><span className="font-extrabold text-foreground">Your choice</span> — this is the study layer for this class.</p>
+              )}
+              <p className="mt-2 text-xs font-semibold text-muted-foreground">You can change this later. Grades, credits, and requirements stay the same.</p>
+            </Field>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Instructor"><Input value={form.instructor ?? ''} onChange={(e) => onChange({ instructor: e.target.value })} /></Field>
               <Field label="Meeting days"><Input value={form.meetingDays ?? ''} onChange={(e) => onChange({ meetingDays: e.target.value })} placeholder="MWF" /></Field>
               <Field label="Meeting time"><Input value={form.meetingTime ?? ''} onChange={(e) => onChange({ meetingTime: e.target.value })} placeholder="10:10 AM-11:00 AM" /></Field>
               <Field label="Location"><Input value={form.location ?? ''} onChange={(e) => onChange({ location: e.target.value })} /></Field>
               <Field label="Nickname"><Input value={form.nickname ?? ''} onChange={(e) => onChange({ nickname: e.target.value })} placeholder="Optional" /></Field>
             </div>
-            <Field label="Class type">
-              <div className="grid gap-2 sm:grid-cols-3">
-                {CLASS_TYPES.map((type) => (
-                  <button
-                    key={type.value}
-                    type="button"
-                    onClick={() => onChange({ type: type.value })}
-                    className={cn(
-                      'rounded-xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                      form.type === type.value ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card text-muted-foreground hover:bg-muted/50',
-                    )}
-                  >
-                    <span className="block font-display text-sm font-extrabold">{type.label}</span>
-                    <span className="mt-0.5 block text-xs font-semibold">{type.detail}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="mt-2 text-xs font-semibold text-muted-foreground">This changes the study tools in this class only. Grades, credits, and requirements never change.</p>
-            </Field>
           </section>
           <section className="space-y-3 border-t border-border pt-4">
             <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Look</h3>
@@ -2216,8 +2279,11 @@ function ClassEditorDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          {onSaveAndImport && <Button variant="outline" onClick={onSaveAndImport}><Upload className="size-4" /> Create & import syllabus</Button>}
-          <Button onClick={onSave}>Save class</Button>
+          {onSaveAndImport && <Button variant="outline" disabled={!canSave} onClick={() => decision.selectedType && onSaveAndImport(decision.selectedType)}><Upload className="size-4" /> Create & import syllabus</Button>}
+          <div className="flex flex-col items-end gap-1">
+            {isCreate && !canSave && <span className="text-xs font-semibold text-muted-foreground">Choose a class type to continue.</span>}
+            <Button disabled={!canSave} onClick={() => decision.selectedType && onSave(decision.selectedType)}>{isCreate ? 'Add class' : 'Save class'}</Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
