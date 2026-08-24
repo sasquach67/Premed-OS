@@ -102,6 +102,28 @@ The Aug. 23 compact-card experiment removed card percent, topic progress, and
 the Review rail and used fixed equal tiles. It is retained as decision history
 only; it is not a future implementation target.
 
+## Promotion evidence — Aug. 24, 2026
+
+Daily · Class Center is built. The visual source of truth is the restored card
+hierarchy in `3accbee`, recorded above and mirrored in the approved mockup
+update `9a88db8`.
+
+1. The running app was checked in both themes: its dark card uses the mock's
+   `#322e28` surface, `#3c352d` resting border, and 13px radius; its light card
+   uses `#efe6d4` with the matching light border and radius.
+2. `ClassCenter.test.ts` verifies the card's Review, overflow, context-menu,
+   import, settings, archive, delete, and link actions.
+3. `ClassCenter.dashboard.test.tsx` verifies a real grade survives persistence
+   and rehydration, while Cards/List view selection survives remounting.
+4. The same dashboard test verifies the empty personal store: no demo course
+   facts leak into it, and its Import syllabus and Add manually paths work.
+5. This card surface has no external integration prerequisite: its grade,
+   readiness, assignments, and syllabus routes operate from the student's
+   persisted records. Syllabus intake is explicitly user-supplied.
+6. The restored implementation is committed in `3accbee`; the mockup decision
+   record is committed in `9a88db8`. On Aug. 24, the focused 11-test suite and
+   production build both passed.
+
 ## Behaviour
 
 - The filter bar is controls, not a fourth navigation level: term is a Select,
