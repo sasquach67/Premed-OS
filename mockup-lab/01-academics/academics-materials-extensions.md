@@ -2,12 +2,17 @@
 
 **Status:** PROPOSED · Stage-A coverage
 
+> **U-12 correction (Aug. 2026):** the historical Canvas calendar-feed states
+> in the source HTML are retained only for recordkeeping. They are cut from the
+> active lab: Premed OS does not spec, propose, or prototype Canvas sync. This
+> does not affect manual records, syllabus import, pasted text, or ordinary
+> external links.
+
 ## Product views
 
 | View | Job |
 |---|---|
 | Resource catalog | File real assessment material by unit and source permission. |
-| Calendar feed | Explain the low-cost Canvas → Google Calendar handoff and review proposed changes. |
 | Study outputs | Select only student-supplied sources, then choose Revised Notes, Study Guide, or Flashcards. |
 | Material reader | Inspect an attached local document or hand off to its owned external provider without losing the class, unit, ownership, or topic context. |
 | Folder intake | Preview a user-selected local course folder, then confirm only the material positions the student accepts. |
@@ -19,7 +24,8 @@
 ## Behaviour
 
 - This extends the existing **Materials** tab; it never adds a sixth class tab.
-- Canvas is read-only calendar context: no Canvas token, no write action, and no silent overwrite. A connected course with no items is ordinary.
+- No Canvas token, feed, API, or sync is part of this Materials surface. Course
+  dates remain student-entered or syllabus-derived and are always reviewable.
 - Catalog entries keep their source/permission. Unknown-origin material remains private.
 - Generation cannot run without selected student-supplied course material. Every output retains source links and a generated ownership marker.
 - **Pasted textbook excerpt** is a bounded source that the student enters and names. It is never a whole-book upload, search, or remote lookup; it becomes eligible only when the student adds it to the current source selection, and no output can use material outside that selection.
@@ -87,7 +93,9 @@ engine or a general knowledge lookup.
 ## States
 
 - Catalog shows populated sources, an explicit unknown-origin private treatment, and the first-action empty rail.
-- Calendar feed shows the handoff, a date conflict that must be reviewed, connected-but-empty, and the non-destructive disconnect consequence. Its unavailable state is a reconnect recovery: no date changes, no broken class record, and no implication that Canvas is writable.
+- Historical Canvas feed frames are not active views and must not be translated
+  into application behavior. Existing manual/syllabus dates remain independent
+  and are not removed by this correction.
 - Study guide shows selected sources and the no-eligible-material recovery. Its result keeps a narrow provenance rail with every selected source reachable from the generated material. Its unavailable state happens only after source selection and preserves those selections; it never substitutes general course content.
 - Pasted excerpt intake shows a bounded student-owned text box, optional student-entered labels, and a too-short recovery that preserves the typed text. It never supplies demo textbook content, uploads a whole book, or searches a provider.
 - Revised Notes baseline shows the student note as the selected anchor and one paper/provenance repair trail. No notes baseline preserves the selected sources and offers Select my notes, Study Guide, or Flashcards; it never labels another source as notes or previews a Revised Notes artifact.

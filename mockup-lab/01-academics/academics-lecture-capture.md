@@ -1,6 +1,12 @@
 # Academics · Lecture capture — decisions
 
-**Status:** PROPOSED · Stage-A coverage
+**Status:** LEGACY / CUT · historical source only
+
+> **Superseded product ruling (Aug. 2026):** transcript import and other
+> student-provided course material replace lecture audio. Premed OS does not
+> record, upload, store, or transcribe lecture audio. This source stays on disk
+> solely so the earlier route is recoverable and cannot be reintroduced by
+> accident; it is no longer an active lab page or approval candidate.
 
 ## Behaviour
 

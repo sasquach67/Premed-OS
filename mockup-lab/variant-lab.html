@@ -543,6 +543,16 @@ const profiles = [
     `
   },
   {
+    id:"academics-syllabus-structure-share",group:"Academics",name:"Shareable syllabus structure",status:"proposed",
+    path:"01-academics/academics-syllabus-structure-share.html",
+    desc:"A privacy-first, anonymous shareable parse: extracted course structure only, always reviewed before any local apply.",
+    variants:[
+      ["Consent-led","Private-by-default consent and the exact allow-list lead the owner decision."],
+      ["Evidence-led","The candidate structure and independent agreement lead, with privacy still inspectable."],
+      ["Diff-led","The private structure and candidate fields share the working surface; conflicts lead." ]
+    ]
+  },
+  {
     id:"mode-switch",group:"Academics · legacy",name:"Daily / Planning concept",status:"legacy",
     path:"01-academics/academics-mode-switch.html",
     desc:"Superseded flow concept retained for historical comparison.",
@@ -616,7 +626,7 @@ const profiles = [
   {
     id:"academics-materials-extensions",group:"Academics",name:"Materials extensions",status:"proposed",
     path:"01-academics/academics-materials-extensions.html",
-    desc:"The existing Materials tab gains source cataloging, safe folder filing, one-way note mapping, calendar review, and student-grounded study outputs.",
+    desc:"The existing Materials tab gains source cataloging, safe folder filing, one-way note mapping, and student-grounded study outputs.",
     variants:[
       ["Resource catalog","Source ownership and private-by-default assessment materials."],
       ["Actual material","A source-and-permission catalog for material the student may use."],
@@ -627,10 +637,8 @@ const profiles = [
       ["Watched notes","One-way backup-path mapping is confirmed once and re-asks only for a new or unclear level."],
       ["Mapping exception","An unclear watched-note level asks without changing the existing mapping."],
       ["Material reader","A bounded source preview keeps class position, ownership, and material handoff visible."],
-      ["Calendar feed","Path A review of imported calendar dates before they become plan facts."],
       ["Source selection","Grounded generation begins with the student's selected class material."],
       ["Textbook excerpt","A bounded pasted section becomes one student-owned source in the selected-source map."],
-      ["Feed unavailable","A disconnected calendar feed preserves the course facts already confirmed."],
       ["Generated guide","A completed guide shows the exact student material that grounded it."],
       ["Choose output","The selected-source map offers Revised Notes, Study Guide, or Flashcards without creating a second generator home."],
       ["Revised notes","A consolidated lecture record preserves the selected sources and names any unresolved gap."],
@@ -643,9 +651,9 @@ const profiles = [
     ]
   },
   {
-    id:"academics-lecture-capture",group:"Academics",name:"Lecture capture",status:"proposed",
+    id:"academics-lecture-capture",group:"Academics · legacy",name:"Lecture capture · cut",status:"legacy",
     path:"01-academics/academics-lecture-capture.html",
-    desc:"Optional local-first lecture capture with quote-and-timestamp review, never an importance prediction.",
+    desc:"Superseded: student-provided transcript and course materials replace any audio capture, upload, or transcription route.",
     variants:[
       ["Capture","Optional local recording or upload begins from Materials."],
       ["Review","Quotes and timestamps become explicit material proposals."],
@@ -1442,14 +1450,14 @@ const orderedProfiles = [
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["syllabus-import"],"Import step",["upload","review","re-import"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
+  Object.assign(asProductViews(byId["academics-syllabus-structure-share"],"Share state",["owner-opt-in","recipient-review","no-result"]),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
   Object.assign(asProductViews(byId["class-types"],"Class example",["comparison","stem","writing"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"class-types"}),
   Object.assign(asProductViews(byId["class-type-selection"],"Selection state",["suggested-writing","suggested-stem","needs-choice","mobile"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
-  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","assessment-catalog","assessment-take","assessment-return","folder-intake","folder-review","watch-setup","watch-exception","reader","canvas","generate","textbook-excerpt","feed-unavailable","study-guide-intake","flashcards-intake","revised-notes-intake","source-not-ready","no-eligible-source","guide-result","artifact-choice","revised-notes-result","revised-notes-baseline","revised-notes-no-baseline","flashcards-result","flashcards-export","flashcards-unavailable","guide-unavailable"]),
+  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","assessment-catalog","assessment-take","assessment-return","folder-intake","folder-review","watch-setup","watch-exception","reader","generate","textbook-excerpt","study-guide-intake","flashcards-intake","revised-notes-intake","source-not-ready","no-eligible-source","guide-result","artifact-choice","revised-notes-result","revised-notes-baseline","revised-notes-no-baseline","flashcards-result","flashcards-export","flashcards-unavailable","guide-unavailable"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true,sourceHandlesVariant:true}),
-  Object.assign(asProductViews(byId["academics-lecture-capture"],"Capture state",["start","review","index","unavailable"]),
-    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
   Object.assign(byId.planner,{group:"Academics",name:"Planner",section:"Planning",depth:1,fitCanvas:true}),
   Object.assign(asProductViews(byId["academics-planning-decisions"],"Decision state",["preview","compare","decay","locked","substitute","export"]),
     {group:"Academics",section:"Planning",depth:2,fitCanvas:true,passViewToSource:true}),
