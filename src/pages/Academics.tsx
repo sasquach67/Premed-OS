@@ -104,6 +104,11 @@ export function Academics() {
   } as const
   const requestedTab = searchParams.get('tab')
   const activeTab = tabsByMode[mode].includes(requestedTab as never) ? requestedTab! : tabsByMode[mode][0]
+  // §4.1-M is intentionally a temporary import composition. ClassCenter
+  // renders its own contextual header in that mode; keeping the Academics
+  // banner around it creates two competing heroes and breaks the approved
+  // full-screen-like hierarchy. The route and import state remain unchanged.
+  const syllabusImportActive = Boolean(searchParams.get('importFor'))
   const firstEditableTerm = terms.find((term) => !/transfer|ap credit/i.test(term))
   const currentTermCourses = courses.filter((course) => course.term === currentTerm)
   const currentTermGpa = gpaStats(currentTermCourses)
@@ -144,7 +149,7 @@ export function Academics() {
     setSearchParams(next, { replace: true })
   }, [searchParams, storedMode, update, setSearchParams])
 
-  if (courseId) {
+  if (courseId || syllabusImportActive) {
     return <div className="academics-surface"><ClassCenter /></div>
   }
 

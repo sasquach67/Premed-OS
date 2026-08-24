@@ -812,7 +812,17 @@
 .class-hub-panel-header {
   padding: 0.9rem 1rem 0.7rem;
   border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--muted) 42%, var(--card));
+  /* The class-page drawing uses a literal second layer here. Mixing the
+     header into the panel made grouped records read as one flat surface. */
+  background: var(--muted);
+}
+
+/* Class Hub panels sit on the 16px outer layer; their editable rows and
+   metrics are deliberately the tighter 13px inner objects from the approved
+   class-hub drawing. */
+.class-hub-record-row,
+.class-hub-metric {
+  border-radius: 13px;
 }
 
 .class-hub-panel-content {
@@ -833,6 +843,14 @@
 .class-hub-metric {
   border: 1px solid var(--border);
   background: var(--muted);
+}
+
+/* Syllabus Import is one temporary reading mode. Its review objects follow
+   the same page → panel → inner-object ladder as the Class Hub; status tints
+   can layer on top, but a normal decision row is never translucent. */
+.syllabus-import-mode .syllabus-import-inner {
+  background: var(--muted);
+  border-radius: 13px;
 }
 
 /* Writing is an equal Class Hub configuration, not a generic utility grid.

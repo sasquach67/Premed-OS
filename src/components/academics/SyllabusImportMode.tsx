@@ -165,7 +165,7 @@ export function SyllabusImportMode({
   }
 
   return (
-    <main className="min-h-full bg-background" aria-labelledby="syllabus-import-title">
+    <main className="syllabus-import-mode min-h-full bg-background" aria-labelledby="syllabus-import-title">
       <PageHeader
         scene="academics"
         title={heading}
@@ -229,7 +229,7 @@ export function SyllabusImportMode({
                         </section>
                       )}
                       {scopedCourse && (
-                        <p className="rounded-2xl border border-border bg-muted/25 p-3 text-sm font-bold">
+                        <p className="syllabus-import-inner rounded-2xl border border-border p-3 text-sm font-bold">
                           Importing into <span className="text-primary">{scopedCourse.code} · {scopedCourse.title}</span>
                         </p>
                       )}
@@ -320,7 +320,7 @@ function ReviewGroup({ kind, items, searched, onPatch, onAddManual }: {
       {open && (
         <div className="space-y-2 px-4 pb-4">
           {items.map((item) => (
-            <div key={item.id} className="rounded-xl border border-border bg-muted/25 p-2.5">
+            <div key={item.id} className="syllabus-import-inner rounded-xl border border-border p-2.5">
               <div className="flex gap-2">
                 <Input aria-label={`${GROUP_LABEL[kind]} label`} value={item.label} onChange={(event) => onPatch(item.id, { label: event.target.value })}
                   className={cn('h-8 font-bold', item.confidence === 'low' && 'border-warning')} />
@@ -386,7 +386,7 @@ function ReimportDiff({ rows, actions, onAction }: {
   const unchanged = rows.filter((row) => row.status === 'unchanged')
   return (
     <div className="flex flex-col gap-3">
-      <p className="rounded-2xl border border-border bg-muted/25 p-3 text-sm font-semibold">
+      <p className="syllabus-import-inner rounded-2xl border border-border p-3 text-sm font-semibold">
         Changed and removed records default to <b>Keep mine</b>; nothing is overwritten or deleted until you explicitly accept it.
       </p>
       {(['added', 'changed', 'removed'] as const).map((status) => {
@@ -399,7 +399,7 @@ function ReimportDiff({ rows, actions, onAction }: {
               {group.map((row) => {
                 const action = actions[reimportActionKey(row)] ?? row.defaultAction
                 return (
-                  <div key={reimportActionKey(row)} className="flex flex-col gap-2 rounded-xl border border-border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div key={reimportActionKey(row)} className="syllabus-import-inner flex flex-col gap-2 rounded-xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <p className="font-display text-xs font-extrabold uppercase tracking-wide text-muted-foreground">{row.kind}</p>
                       <p className="mt-0.5 text-sm font-bold">
@@ -422,7 +422,7 @@ function ReimportDiff({ rows, actions, onAction }: {
         )
       })}
       {unchanged.length > 0 && (
-        <p className="rounded-2xl border border-border bg-muted/15 p-3 text-sm font-semibold text-muted-foreground">
+        <p className="syllabus-import-inner rounded-2xl border border-border p-3 text-sm font-semibold text-muted-foreground">
           {unchanged.length} items are unchanged and are not listed again. Nothing to do.
         </p>
       )}
