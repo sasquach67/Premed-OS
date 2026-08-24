@@ -558,7 +558,8 @@
     border-color: var(--class-accent-45, var(--border));
     box-shadow:
       0 18px 34px -16px rgba(0, 0, 0, .75),
-      0 0 0 1px var(--class-accent-45, transparent);
+      0 0 0 1px var(--class-accent-45, transparent),
+      0 0 22px -6px var(--class-accent-45, transparent);
   }
   /* The bar ignites with the card — glow included. */
   .academics-surface .academics-class-card:not(.action-hovered):hover .academics-class-bar {
@@ -568,11 +569,53 @@
     border-color: var(--class-accent-45, var(--ring));
     box-shadow:
       0 18px 34px -16px rgba(0, 0, 0, .75),
-      0 0 0 1px var(--class-accent-45, transparent);
+      0 0 0 1px var(--class-accent-45, transparent),
+      0 0 22px -6px var(--class-accent-45, transparent);
   }
   .academics-surface .academics-class-card:focus-visible .academics-class-bar {
     transform: scaleX(1);
     box-shadow: 0 0 14px var(--class-accent-75, transparent);
+  }
+  /* The Daily reference uses a single compact, slightly violet-tinted Heads
+     up panel. Its contained suggestions are nested records, not a second row
+     of equal dashboard cards. */
+  .academics-surface .academics-heads-up [data-slot='card'] {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--cat-mcat) 9%, var(--card)), var(--card));
+    border-color: color-mix(in srgb, var(--cat-mcat) 26%, var(--border));
+  }
+  .academics-surface .academics-heads-up [data-slot='card-header'] {
+    padding-bottom: 7px;
+  }
+  .academics-surface .academics-heads-up article {
+    min-height: 0;
+    border-radius: 11px;
+    padding: 10px;
+    background: var(--muted);
+    box-shadow: none;
+  }
+  .academics-surface .academics-heads-up article > div:first-child > span {
+    width: 27px;
+    height: 27px;
+    border-radius: 8px;
+  }
+  .academics-surface .academics-heads-up article h3 {
+    margin-top: 8px;
+    font-size: 12.5px;
+  }
+  .academics-surface .academics-heads-up article p {
+    margin-top: 2px;
+    font-size: 10.5px;
+    line-height: 1.35;
+  }
+  .academics-surface .academics-heads-up article a {
+    margin-top: 6px;
+  }
+  .academics-surface .academics-filter-bar {
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .academics-surface .academics-bento-panel [data-slot='card-content'] {
+    gap: 8px;
   }
   @media (prefers-reduced-motion: reduce) {
     .academics-surface .academics-class-card {

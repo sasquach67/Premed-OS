@@ -120,8 +120,8 @@ const PILL_STYLES: Record<AcademicTagColor, string> = {
  *  so the literal _visual-recipes values apply rather than a Tailwind
  *  approximation of them. */
 const CARD_ACCENT_HEX: Record<AcademicTagColor, string> = {
-  gray: '#94a3b8', brown: '#78716c', orange: '#f97316', yellow: '#eab308',
-  green: '#10b981', blue: '#0ea5e9', purple: '#8b5cf6', pink: '#ec4899', red: '#f43f5e',
+  gray: '#9aa3ad', brown: '#a38465', orange: '#df9b52', yellow: '#d5b768',
+  green: '#6fc0a8', blue: '#6fb3de', purple: '#a987ca', pink: '#c98ac9', red: '#e8806f',
 }
 
 /** Card accents stay deliberately restrained: the course colour identifies a
@@ -148,21 +148,9 @@ function cardAccentVars(color: unknown): CSSProperties {
   const hex = CARD_ACCENT_HEX[classCardColor(color)]
   return {
     '--class-accent': hex,
-    '--class-accent-45': accentAlpha(hex, 0.3),
-    '--class-accent-75': accentAlpha(hex, 0.55),
+    '--class-accent-45': accentAlpha(hex, 0.45),
+    '--class-accent-75': accentAlpha(hex, 0.75),
   } as CSSProperties
-}
-
-const CARD_ACCENTS: Record<AcademicTagColor, { dot: string; bar: string }> = {
-  gray: { dot: 'bg-slate-400', bar: 'bg-slate-400' },
-  brown: { dot: 'bg-stone-500', bar: 'bg-stone-500' },
-  orange: { dot: 'bg-orange-500', bar: 'bg-orange-500' },
-  yellow: { dot: 'bg-yellow-500', bar: 'bg-yellow-500' },
-  green: { dot: 'bg-emerald-500', bar: 'bg-emerald-500' },
-  blue: { dot: 'bg-sky-500', bar: 'bg-sky-500' },
-  purple: { dot: 'bg-violet-500', bar: 'bg-violet-500' },
-  pink: { dot: 'bg-pink-500', bar: 'bg-pink-500' },
-  red: { dot: 'bg-rose-500', bar: 'bg-rose-500' },
 }
 
 export type ClassWorkspaceView = Omit<ClassWorkspace, 'id'> & {
@@ -681,7 +669,7 @@ function ClassCenterDashboard({
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm lg:flex-row lg:items-center">
+      <div className="academics-filter-bar flex flex-col gap-3 border border-border bg-card px-4 py-3 lg:flex-row lg:items-center lg:px-6">
         <Select
           value={semester}
           onValueChange={(value) => {
@@ -711,7 +699,7 @@ function ClassCenterDashboard({
         </ToggleGroup>
       </div>
 
-      {!archiveOnly && <SmartActionPanel title="Heads up" recommendations={recommendations} />}
+      {!archiveOnly && <SmartActionPanel className="academics-heads-up" title="Heads up" recommendations={recommendations} />}
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">
@@ -790,7 +778,7 @@ function ClassCenterDashboard({
                 onClick={() => setEditor({ open: true, form: emptyClassForm(semester) })}
                 className={cn(
                   'flex h-full min-h-44 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-5 text-center transition duration-200 hover:-translate-y-0.5 hover:border-primary/55 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
-                  view === 'cards' && 'aspect-square min-h-0',
+                  view === 'cards' && 'min-h-0',
                   view === 'list' && 'min-h-20 flex-row gap-3',
                 )}
               >
@@ -897,7 +885,6 @@ export function ClassCard({
     ? `${stats.nextDeadline.title}${stats.nextDeadline.dueDate ? ` · ${assignmentDateLabel(stats.nextDeadline)}` : ''}`
     : 'No deadline scheduled'
   const percent = coursePercent(row.id, data)
-  const accent = CARD_ACCENTS[classCardColor(row.color)]
   const signal = classSignal(row, data, stats, nextText)
 
   function openFromCard(event: MouseEvent<HTMLElement>) {
@@ -928,14 +915,14 @@ export function ClassCard({
       className={cn(
         'academics-class-card group/class relative self-start cursor-pointer overflow-hidden shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
         actionHovered && 'action-hovered',
-        compact ? 'min-h-0' : 'aspect-square min-h-60',
+        compact ? 'min-h-0' : 'min-h-0',
         dragging && 'scale-[0.98] opacity-55',
         dragOver && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
       )}
     >
       <span className={cn(
         'academics-class-bar absolute inset-y-0 left-0 w-1 origin-left scale-x-0 transition-transform duration-150 ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none',
-        accent.bar,
+        'bg-[var(--class-accent)]',
         !actionHovered && 'group-hover/class:scale-x-100',
       )} aria-hidden="true" />
       <CardContent className={cn(
@@ -946,7 +933,7 @@ export function ClassCard({
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="flex items-center gap-2 font-display text-[15.5px] font-bold leading-tight">
-              <span className={cn('size-2 shrink-0 rounded-[3px]', accent.dot)} aria-hidden="true" />
+              <span className="size-2 shrink-0 rounded-[3px] bg-[var(--class-accent)]" aria-hidden="true" />
               <span>{row.courseCode || row.nickname || 'Untitled class'}</span>
             </p>
             <p className="mt-0.5 line-clamp-1 text-[10.5px] font-semibold text-muted-foreground">{row.courseTitle || row.nickname || 'Add class details'}</p>
@@ -982,7 +969,7 @@ export function ClassCard({
             <Progress
               value={(stats.readyCount / stats.topicCount) * 100}
               className="h-[5px] border-0 bg-background/80"
-              indicatorClassName={accent.bar}
+              indicatorClassName="bg-[var(--class-accent)]"
               aria-label={`${stats.readyCount} of ${stats.topicCount} topics ready`}
             />
           )}
@@ -1074,7 +1061,7 @@ function AcademicsBento({
     .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
 
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+    <div className="academics-bento grid grid-cols-1 gap-[15px] lg:grid-cols-12">
       <ReviewQueuePanel data={data} topics={dueTopics} onOpenClass={onOpenClass} />
       <ReviewTopicsPanel data={data} classes={classes} onOpenClass={onOpenClass} />
       <UpNextPanel data={data} assignments={pending} onOpenClass={onOpenClass} />
@@ -1102,7 +1089,7 @@ function BentoPanel({
 }) {
   const spanClass = span === 7 ? 'lg:col-span-7' : span === 5 ? 'lg:col-span-5' : 'lg:col-span-4'
   return (
-    <Card className={cn(spanClass, 'min-w-0')}>
+    <Card className={cn(spanClass, 'academics-bento-panel min-w-0')}>
       <CardHeader className="flex-row items-start justify-between gap-3">
         <div>
           <CardTitle className="flex items-center gap-2"><Icon className="size-5 text-primary" /> {title}</CardTitle>
@@ -1169,7 +1156,7 @@ function ReviewQueuePanel({
             return (
               <button
                 key={topic.id}
-                className="grid w-full gap-2 rounded-xl border border-border bg-background p-3 text-left transition hover:border-primary/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+                className="grid w-full gap-2 rounded-xl border border-border bg-muted p-3 text-left transition hover:border-primary/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_minmax(0,1fr)_auto]"
                 onClick={() => onOpenClass(topic.courseId)}
               >
                 <Badge variant="outline">{classLabel(topic.courseId, data)}</Badge>
@@ -1267,7 +1254,7 @@ function ReviewTopicsPanel({
       )}
     >
       {effectiveScope === 'exam' && nextExam && (
-        <div className="mb-3 rounded-xl bg-muted/35 p-3">
+        <div className="mb-3 rounded-xl border border-border bg-muted p-3">
           <p className="font-display text-xl font-bold tabular-nums">{fmtEventDate(nextExam.dueDate)}</p>
           <p className="text-sm font-bold">{classLabel(nextExam.courseId, data)} · {nextExam.title}</p>
           <p className="text-xs font-semibold text-muted-foreground">{examTopicIds.length} topics in scope</p>
@@ -1279,7 +1266,7 @@ function ReviewTopicsPanel({
       {!topics.length ? <BentoEmpty>No topics are due or manually marked in this scope.</BentoEmpty> : (
         <div className="space-y-2">
           {topics.map((topic) => (
-              <button key={topic.id} className="w-full rounded-xl bg-muted/25 p-3 text-left hover:bg-muted/45" onClick={() => onOpenClass(topic.courseId)}>
+              <button key={topic.id} className="w-full rounded-xl border border-border bg-muted p-3 text-left hover:border-primary/45" onClick={() => onOpenClass(topic.courseId)}>
                 <span className="flex items-center justify-between gap-2">
                   <span className="font-bold">{topic.title}</span>
                   <Badge variant="muted">{topic.status === 'weak' ? 'Manually marked' : 'Due'}</Badge>
@@ -1376,7 +1363,7 @@ function GpaPanel({ courses, currentTerm }: { courses: Course[]; currentTerm: st
         <div className="mt-4 space-y-2">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Recorded grades</p>
           {graded.slice(0, 4).map((course) => (
-            <div key={course.id} className="grid grid-cols-[minmax(0,1fr)_4rem_3rem] items-center gap-2 rounded-xl bg-muted/30 px-3 py-2 text-xs font-bold">
+            <div key={course.id} className="grid grid-cols-[minmax(0,1fr)_4rem_3rem] items-center gap-2 rounded-xl border border-border bg-muted px-3 py-2 text-xs font-bold">
               <span className="truncate">{course.code}</span>
               <span className="text-right text-muted-foreground">{course.credits} cr</span>
               <span className="text-right tabular-nums text-muted-foreground">{course.grade}</span>
@@ -1390,7 +1377,7 @@ function GpaPanel({ courses, currentTerm }: { courses: Course[]; currentTerm: st
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-muted/30 p-3 text-center">
+    <div className="rounded-xl border border-border bg-muted p-3 text-center">
       <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-1 font-display text-2xl font-bold tabular-nums">{value}</p>
     </div>
@@ -1457,7 +1444,7 @@ function UpcomingPanel({ data, assignments }: { data: ClassCenterViewData; assig
       {!items.length ? <BentoEmpty>No important dated work is pending.</BentoEmpty> : (
         <div className="space-y-2">
           {items.map((item) => (
-            <div key={item.id} className="rounded-xl border border-border bg-background p-3">
+            <div key={item.id} className="rounded-xl border border-border bg-muted p-3">
               <div className="flex items-start justify-between gap-2">
                 <span className="font-bold">{item.title}</span>
                 <span className="whitespace-nowrap text-xs font-bold tabular-nums text-muted-foreground">{assignmentDateLabel(item)}</span>
@@ -1498,7 +1485,7 @@ function HistoryPanel({
       ) : (
         <div className="space-y-2">
           {[...events].sort((a, b) => b.timestamp - a.timestamp).slice(0, 4).map((event) => (
-            <div key={event.id} className="flex items-center justify-between rounded-xl bg-muted/30 px-3 py-2 text-xs font-bold">
+            <div key={event.id} className="flex items-center justify-between rounded-xl border border-border bg-muted px-3 py-2 text-xs font-bold">
               <span>{data.topics.find((topic) => topic.id === event.topicId)?.title || 'Topic unavailable'}</span>
               <span className="text-muted-foreground">{statusLabel(event.grade)} · {new Date(event.timestamp).toLocaleDateString()}</span>
             </div>
