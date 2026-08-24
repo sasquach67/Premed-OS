@@ -1,5 +1,6 @@
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ClassCard, classCardColor, type ClassCenterViewData, type ClassWorkspaceView } from './ClassCenter'
 import { classTypeDraftDecision } from '@/lib/academics/classTypeDraftDecision'
@@ -146,5 +147,76 @@ describe('Class Center primary card hierarchy', () => {
     })
 
     expect(container.textContent).not.toContain('IP')
+  })
+
+  it('keeps every non-link card action attributable to its callback', async () => {
+    const seed = structuredClone(createSeedData())
+    const course = seed.courses.find((item) => item.code === 'BIOL 103')!
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.courseId === course.id)!
+    const row: ClassWorkspaceView = {
+      ...workspace,
+      id: course.id,
+      workspaceId: workspace.id,
+      courseCode: course.code,
+      courseTitle: course.title,
+      semester: course.term,
+      grade: 'A-',
+      bcpm: true,
+      credits: course.credits,
+      type: 'stem',
+    }
+    const data: ClassCenterViewData = { ...seed.academics.classCenter, assignments: [], classes: [row] }
+    const actions = {
+      onOpen: vi.fn(), onReview: vi.fn(), onEdit: vi.fn(), onImport: vi.fn(), onArchive: vi.fn(), onDelete: vi.fn(),
+    }
+
+    await act(async () => {
+      root.render(createElement(MemoryRouter, null, createElement(ClassCard, {
+        row, data, compact: false, dragging: false, dragOver: false,
+        ...actions,
+        onDragStart: () => {}, onDragOver: () => {}, onDragLeave: () => {}, onDrop: () => {}, onDragEnd: () => {},
+      })))
+    })
+
+    const preview = [...container.querySelectorAll('button')].find((button) => button.textContent === 'Preview') as HTMLButtonElement
+    await act(async () => preview.click())
+    expect(actions.onOpen).toHaveBeenCalledTimes(1)
+
+    const overflow = container.querySelector('button[aria-label="Class actions"]') as HTMLButtonElement
+    const choose = async (label: string) => {
+      await act(async () => {
+        overflow.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }))
+        overflow.click()
+      })
+      const item = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((node) => node.textContent?.trim() === label)
+      expect(item).toBeTruthy()
+      await act(async () => item!.click())
+    }
+
+    await choose('Import syllabus')
+    await choose('Review')
+    await choose('Class settings')
+    await choose('Archive')
+    await choose('Delete')
+
+    expect(actions.onImport).toHaveBeenCalledTimes(1)
+    expect(actions.onReview).toHaveBeenCalledTimes(1)
+    expect(actions.onEdit).toHaveBeenCalledTimes(1)
+    expect(actions.onArchive).toHaveBeenCalledTimes(1)
+    expect(actions.onDelete).toHaveBeenCalledTimes(1)
+
+    expect(document.body.querySelector('a[href="/academics/classes/' + course.id + '"]')).toBeNull()
+    await act(async () => {
+      overflow.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }))
+      overflow.click()
+    })
+    expect(document.body.querySelector('a[href="/academics/classes/' + course.id + '"]')).toBeTruthy()
+
+    const card = container.querySelector('[role="button"][aria-label^="Preview"]') as HTMLElement
+    await act(async () => card.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 12, clientY: 12 })))
+    const contextReview = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((node) => node.textContent?.trim() === 'Review')
+    expect(contextReview).toBeTruthy()
+    await act(async () => contextReview!.click())
+    expect(actions.onReview).toHaveBeenCalledTimes(2)
   })
 })
