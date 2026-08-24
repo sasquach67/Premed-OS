@@ -16,6 +16,7 @@ import { migrateRequirementsAuditV30 } from '@/store/migrations/requirementsAudi
 import { migrateTermReportsV31 } from '@/store/migrations/termReportsV31'
 import { migrateReviewSessionV32 } from '@/store/migrations/reviewSessionV32'
 import { migrateRetrievabilityPredictionsV33 } from '@/store/migrations/retrievabilityPredictionsV33'
+import { migrateWritingEvidenceV34 } from '@/store/migrations/writingEvidenceV34'
 import { isCatalogWarningAcknowledged } from '@/lib/academics/requirementsAudit'
 import { migrateExamPrepV19 } from '@/store/migrations/examPrepV19'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
@@ -26,7 +27,26 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(33)
+  expect(CURRENT_STORE_VERSION).toBe(34)
+})
+
+describe('migrateWritingEvidenceV34', () => {
+  it('adds the honest reading-list boundary without rewriting existing records', () => {
+    const data = freshData()
+    data.academics.classCenter.workspaces.forEach((workspace) => delete (workspace as { readingListState?: string }).readingListState)
+    const before = structuredClone(data)
+    Object.freeze(data)
+    Object.freeze(data.academics)
+    Object.freeze(data.academics.classCenter)
+
+    const out = migrateWritingEvidenceV34(data)
+
+    expect(out.academics.classCenter.workspaces.every((workspace) => workspace.readingListState === 'unknown')).toBe(true)
+    expect(out.academics.classCenter.paperDrafts).toEqual(before.academics.classCenter.paperDrafts)
+    expect(out.academics.classCenter.assignedReadings).toEqual(before.academics.classCenter.assignedReadings)
+    expect(out.academics.classCenter.feedbackNotes).toEqual(before.academics.classCenter.feedbackNotes)
+    expect(migrateWritingEvidenceV34(out)).toBe(out)
+  })
 })
 
 describe('migrateRetrievabilityPredictionsV33', () => {

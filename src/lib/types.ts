@@ -263,6 +263,8 @@ export interface ClassWorkspace {
   icon: string
   /** Controls the class hub's study layer only. Course/GPA data stay type-blind. */
   type: ClassWorkspaceType
+  /** Writing-only evidence boundary. Absent in legacy data until v34 hydration. */
+  readingListState?: ReadingListState
   background?: string
   status: ClassStatus
   currentTopicId?: ID
@@ -279,6 +281,10 @@ export interface ClassWorkspace {
 
 export type PaperDraftStage = 'outline' | 'draft' | 'revision' | 'submitted'
 export type AssignedReadingStatus = 'not-started' | 'skimmed' | 'read'
+/** Whether the student has recorded the whole assigned-reading list, not how
+ * much of that list they have finished. Keeping this separate prevents a
+ * partial list from becoming a false "behind" claim. */
+export type ReadingListState = 'unknown' | 'partial' | 'complete' | 'not-applicable'
 
 /** Writing-only workspace records. They remain intact when a class changes type. */
 export interface PaperDraft {

@@ -51,6 +51,7 @@ import type { SyllabusProposal } from '@/lib/academics/syllabusParser'
 import { retainLocalSyllabus } from '@/lib/academics/localSyllabusFiles'
 import type { ReimportRow } from '@/lib/academics/syllabusReimport'
 import { classTypeDraftDecision } from '@/lib/academics/classTypeDraftDecision'
+import { nextIncompleteReading, readingDebt, READING_LIST_STATE_COPY } from '@/lib/academics/writingEvidence'
 
 const COLORS: AcademicTagColor[] = ['blue', 'green', 'purple', 'orange', 'yellow', 'red', 'pink', 'gray', 'brown']
 const CLASS_ICONS: { id: string; label: string; Icon: LucideIcon }[] = [
@@ -218,6 +219,7 @@ function classToForm(row: ClassWorkspaceView): ClassFormState {
     color: row.color,
     icon: normalizeClassIcon(row.icon),
     type: row.type,
+    readingListState: row.readingListState,
     background: row.background ?? '',
     status: row.status,
     currentTopicId: row.currentTopicId ?? '',
@@ -257,7 +259,7 @@ function workspaceFields(form: ClassFormState): Omit<ClassWorkspace, 'id' | 'cou
     semester: _semester,
     ...workspace
   } = form
-  return { ...workspace, type: form.type }
+  return { ...workspace, type: form.type, readingListState: form.readingListState ?? 'unknown' }
 }
 
 const reimportNormalized = (value: string | undefined) => (value ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
@@ -2523,10 +2525,14 @@ type ClassSignal = { text?: string; verb?: ClassDailyVerb }
 function classSignal(row: ClassWorkspaceView, data: ClassCenterViewData, stats: ReturnType<typeof classStats>, fallback: string): ClassSignal {
   if (row.type === 'writing') {
     const draft = data.paperDrafts.filter((item) => item.courseId === row.id).sort((a, b) => a.order - b.order).find((item) => item.stage !== 'submitted')
-    const readings = data.assignedReadings.filter((item) => item.courseId === row.id && item.status !== 'read')
-    const behind = readings.filter((item) => item.status === 'not-started' && item.dueForDiscussion && item.dueForDiscussion < new Date().toISOString().slice(0, 10)).length
+    const courseReadings = data.assignedReadings.filter((item) => item.courseId === row.id)
+    const nextReading = nextIncompleteReading(courseReadings)
+    const listState = row.readingListState ?? 'unknown'
+    const behind = readingDebt(courseReadings, listState, new Date().toISOString().slice(0, 10))
     if (draft) return { verb: 'Draft', text: `${draft.title} · ${draft.stage}` }
-    if (readings.length) return { verb: 'Read', text: behind ? `${behind} reading${behind === 1 ? '' : 's'} behind` : readings[0].title }
+    if (behind) return { verb: 'Read', text: `${behind} reading${behind === 1 ? '' : 's'} behind` }
+    if (nextReading) return { verb: 'Read', text: nextReading.title }
+    if (listState === 'unknown' || listState === 'partial') return { text: READING_LIST_STATE_COPY[listState] }
     return { text: fallback }
   }
   if (row.type === 'general') {
