@@ -1,6 +1,6 @@
 # Academics · Shareable syllabus structure — decisions
 
-**Status:** PROPOSED · Stage-A paper completion
+**Status:** APPROVED · Consent-led treatment selected · not yet built
 
 ## Behaviour
 
@@ -24,15 +24,11 @@
 - The shallow Academics import banner establishes a temporary mode. The active
   underline is the only selected-tab indicator; the body never creates another
   global navigation row.
-- **A · Consent-led** is the primary comparison treatment: private-by-default
-  copy leads, then two clearly opposed solid disclosure objects show what may
-  and may not leave the parse. The decision rail is narrow and factual.
-- **B · Evidence-led** widens the candidate structure and corroboration so a
-  recipient can inspect what exists before acting; the consent boundary stays
-  immediately visible rather than becoming a hidden legal footnote.
-- **C · Diff-led** gives the current/private structure and a candidate equal
-  working weight. Matching facts and unresolved fields read as compact editorial
-  rows, never a score or ranking.
+- **Approved treatment — A · Consent-led.** Private-by-default copy leads,
+  followed by two clearly opposed solid disclosure objects showing what may and
+  may not leave the parse. The decision rail stays narrow and factual. Consent
+  leads because the student first needs to understand the privacy boundary,
+  not the prospective network benefit.
 - All work surfaces use the literal ladder: page `#211e1a` → panel `#2b2722`
   → dense disclosure/diff object `#322e28`, with `#3c352d` borders, 16px outer
   panels and 13px inner objects. The banner affordance alone may use the shared
@@ -47,8 +43,9 @@
 - `no-result` — ordinary no-match state that routes to private import rather
   than a network/error recovery.
 
-## Pending decision
+## Decision recorded
 
-Andy must choose A, B, or C before a shareable-structure implementation brief
-is written. No backend, remote table, source-file upload, or account claim is
-implied by this proposed mockup.
+Andy selected **A · Consent-led** on August 24, 2026. The mockup is approved as
+an appearance and behavior contract, but it is not built. No backend, remote
+table, source-file upload, or account claim is implied until the dedicated
+implementation brief is authorized and executed.
