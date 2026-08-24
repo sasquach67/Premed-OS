@@ -360,6 +360,8 @@ export function createDemoData(seedTime = Date.now()): AppData {
     lectureFindings: [],
     lectureMaterialProposals: [],
     lectureNoteProposals: [],
+    watchedNoteSources: [],
+    watchedNoteProposals: [],
     termReports: [],
   }
   data.academics.courseOptions = courses.map((item, order) => ({ id: `demo-option-${item.id}`, name: item.code, title: item.title, color: ['blue', 'green', 'purple', 'orange'][order % 4] as 'blue' | 'green' | 'purple' | 'orange' }))

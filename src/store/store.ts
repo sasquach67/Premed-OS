@@ -55,6 +55,7 @@ import { migrateTermReportsV31 } from '@/store/migrations/termReportsV31'
 import { migrateReviewSessionV32 } from '@/store/migrations/reviewSessionV32'
 import { migrateRetrievabilityPredictionsV33 } from '@/store/migrations/retrievabilityPredictionsV33'
 import { migrateWritingEvidenceV34 } from '@/store/migrations/writingEvidenceV34'
+import { migrateWatchedNotesV35 } from '@/store/migrations/watchedNotesV35'
 import { removeStoryAttachment, retainThenPersistStoryAttachment } from '@/lib/overviewFileCapture'
 
 const DEMO_MODE = isDemoMode()
@@ -73,8 +74,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateWritingEvidenceV34`. */
-export const CURRENT_STORE_VERSION = 34
+/** Matches the newest migration in `migrateAll`: `migrateWatchedNotesV35`. */
+export const CURRENT_STORE_VERSION = 35
 
 function createInitialData() {
   const initial = createInitialDataForMode(DEMO_MODE)
@@ -571,7 +572,8 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateTermReportsV31(migrated)
   migrated = migrateReviewSessionV32(migrated)
   migrated = migrateRetrievabilityPredictionsV33(migrated)
-  return migrateWritingEvidenceV34(migrated)
+  migrated = migrateWritingEvidenceV34(migrated)
+  return migrateWatchedNotesV35(migrated)
 }
 
 /**

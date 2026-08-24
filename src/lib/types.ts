@@ -479,7 +479,7 @@ export interface ClassAssignment {
 /** `paste` is text the student pasted in — a GoodNotes transcript, a reading.
  *  It is never presented as an uploaded file, because its provenance and its
  *  citation precision are genuinely different. */
-export type AcademicFileSourceType = 'upload' | 'link' | 'embed' | 'paste'
+export type AcademicFileSourceType = 'upload' | 'link' | 'embed' | 'paste' | 'folder-intake'
 /** Materials ownership. Structural, never inferred from file type at read time. */
 export type AcademicFileOwner = 'course' | 'mine' | 'generated'
 
@@ -502,6 +502,19 @@ export interface AcademicFile {
   owner: AcademicFileOwner
   processingStatus?: 'pending' | 'ready' | 'failed'
   processingError?: string
+  /**
+   * A reviewed selected-folder proposal can create a material record before
+   * its bytes are attached. This carries only user-visible logical placement
+   * metadata — never a machine path, provider token, or filesystem handle.
+   */
+  folderIntake?: {
+    sourceId: ID
+    proposalId: ID
+    displayPath: string
+    category?: 'notes' | 'homework' | 'practice-problems'
+    week?: string
+    placementState: 'confirmed' | 'confirm-week'
+  }
   createdAt: number
   updatedAt: number
   order: number
@@ -1014,9 +1027,64 @@ export interface ClassCenterData {
   lectureFindings: LectureEvidenceFinding[]
   lectureMaterialProposals: LectureMaterialProposal[]
   lectureNoteProposals: LectureNoteProposal[]
+  /** One-way, review-first selected-backup-folder metadata. */
+  watchedNoteSources: WatchedNoteSource[]
+  watchedNoteProposals: WatchedNoteProposal[]
   /** Frozen, explainable readings of a completed term. They never replace or
    * mutate the course records from which they were compiled. */
   termReports: TermReport[]
+}
+
+export type WatchedNoteProvider = 'local-folder' | 'google-drive' | 'dropbox' | 'onedrive'
+export type WatchedNoteCategory = 'notes' | 'homework' | 'practice-problems'
+export type WatchedNoteProposalStatus = 'pending' | 'accepted' | 'skipped'
+export type WatchedNoteMappingConfidence = 'confirmed' | 'inferred' | 'needs-confirmation'
+
+/** A student-confirmed mapping for exactly one logical folder level. */
+export interface WatchedNoteMapping {
+  id: ID
+  logicalLevel: string
+  courseId?: ID
+  week?: string
+  category?: WatchedNoteCategory
+  confirmedAt: number
+}
+
+/** Metadata for a backup source. No credential, provider handle, or local path is persisted. */
+export interface WatchedNoteSource {
+  id: ID
+  provider: WatchedNoteProvider
+  rootLabel: string
+  courseId?: ID
+  selectedAt: number
+  reviewEachImport: boolean
+  confirmedMappings: WatchedNoteMapping[]
+  createdAt: number
+  updatedAt: number
+}
+
+/** A proposal is an import preview, never a silently-added material. */
+export interface WatchedNoteProposal {
+  id: ID
+  sourceId: ID
+  stableKey: string
+  /** Relative display path only; never an operating-system path. */
+  displayPath: string
+  displayName: string
+  mimeType?: string
+  modifiedAt?: number
+  sizeBytes?: number
+  /** Used only to deduplicate a re-intake when the display tree changes. */
+  sourceIdentity?: string
+  proposedCourseId?: ID
+  proposedWeek?: string
+  proposedCategory?: WatchedNoteCategory
+  mappingConfidence: WatchedNoteMappingConfidence
+  mappingReason: string
+  status: WatchedNoteProposalStatus
+  acceptedFileId?: ID
+  createdAt: number
+  updatedAt: number
 }
 
 /** A record the report may point back to. The report never contains an

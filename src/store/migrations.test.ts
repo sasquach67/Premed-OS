@@ -17,6 +17,7 @@ import { migrateTermReportsV31 } from '@/store/migrations/termReportsV31'
 import { migrateReviewSessionV32 } from '@/store/migrations/reviewSessionV32'
 import { migrateRetrievabilityPredictionsV33 } from '@/store/migrations/retrievabilityPredictionsV33'
 import { migrateWritingEvidenceV34 } from '@/store/migrations/writingEvidenceV34'
+import { migrateWatchedNotesV35 } from '@/store/migrations/watchedNotesV35'
 import { isCatalogWarningAcknowledged } from '@/lib/academics/requirementsAudit'
 import { migrateExamPrepV19 } from '@/store/migrations/examPrepV19'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
@@ -27,7 +28,40 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(34)
+  expect(CURRENT_STORE_VERSION).toBe(35)
+})
+
+describe('migrateWatchedNotesV35', () => {
+  it('adds empty watched-note collections without rewriting existing Academics data', () => {
+    const data = freshData()
+    delete (data.academics.classCenter as Partial<typeof data.academics.classCenter>).watchedNoteSources
+    delete (data.academics.classCenter as Partial<typeof data.academics.classCenter>).watchedNoteProposals
+    const before = structuredClone(data)
+    Object.freeze(data)
+    Object.freeze(data.academics)
+    Object.freeze(data.academics.classCenter)
+
+    const out = migrateWatchedNotesV35(data)
+
+    expect(out.academics.classCenter.watchedNoteSources).toEqual([])
+    expect(out.academics.classCenter.watchedNoteProposals).toEqual([])
+    expect({ ...out.academics.classCenter, watchedNoteSources: undefined, watchedNoteProposals: undefined })
+      .toEqual({ ...before.academics.classCenter, watchedNoteSources: undefined, watchedNoteProposals: undefined })
+    expect(data).toEqual(before)
+  })
+
+  it('is a no-op when reviewed sources and proposals already exist', () => {
+    const data = freshData()
+    data.academics.classCenter.watchedNoteSources = [{
+      id: 'source', provider: 'local-folder', rootLabel: 'GoodNotes', selectedAt: 1,
+      reviewEachImport: true, confirmedMappings: [], createdAt: 1, updatedAt: 1,
+    }]
+    data.academics.classCenter.watchedNoteProposals = [{
+      id: 'proposal', sourceId: 'source', stableKey: 'stable', displayPath: 'Week 1/notes.pdf', displayName: 'notes.pdf',
+      mappingConfidence: 'needs-confirmation', mappingReason: 'Confirm the week before filing.', status: 'skipped', createdAt: 1, updatedAt: 1,
+    }]
+    expect(migrateWatchedNotesV35(data)).toBe(data)
+  })
 })
 
 describe('migrateWritingEvidenceV34', () => {

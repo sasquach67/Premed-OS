@@ -52,6 +52,8 @@ export function createEmptyClassCenterData(): ClassCenterData {
     lectureFindings: [],
     lectureMaterialProposals: [],
     lectureNoteProposals: [],
+    watchedNoteSources: [],
+    watchedNoteProposals: [],
     termReports: [],
   }
 }
