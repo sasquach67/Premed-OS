@@ -1,0 +1,74 @@
+<!doctype html>
+<!--
+  CLASS-TYPE SELECTION — the one add-class decision.
+  Product views: suggested-writing | suggested-stem | needs-choice | mobile
+  The three chips are a proposal/selection before class creation, never a saved
+  workspace mutation. See the adjacent .md for the behavioral contract.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Add class — choose its study layer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#211e1a;--card:#2b2722;--muted:#322e28;--fg:#ece3d4;--mut:#a89c8c;--dim:#7c7264;--bd:#3c352d;
+      --cat:#4b9cd3;--pri:#6fb3de;--success:#6fc0a8;--warning:#e7b06a;--danger:#e8806f;
+    }
+    *{box-sizing:border-box}html,body{min-height:100%;margin:0}body{background:var(--bg);color:var(--fg);font-family:'Nunito',system-ui,sans-serif;padding:clamp(18px,4vw,56px)}
+    button{font:inherit}button:focus-visible{outline:2px solid var(--pri);outline-offset:3px}.frame{max-width:920px;margin:0 auto}.eyebrow{color:var(--cat);font:800 11px 'Baloo 2',sans-serif;letter-spacing:.1em;text-transform:uppercase}.crumb{display:flex;align-items:center;gap:7px;color:var(--mut);font-size:13px;font-weight:700;margin-bottom:18px}.crumb b{color:var(--fg)}
+    .dialog{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 22px 55px -27px #000c;overflow:hidden}.top{padding:22px 24px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:flex-start;justify-content:space-between;gap:20px}.top h1{font:800 27px/1.05 'Baloo 2',sans-serif;letter-spacing:-.25px;margin:5px 0 6px}.top p{color:var(--mut);font-size:13px;line-height:1.5;margin:0;max-width:540px;font-weight:600}.view{flex:none;color:var(--dim);font:800 10px 'Baloo 2',sans-serif;letter-spacing:.07em;text-transform:uppercase;border:1px solid var(--bd);background:var(--muted);border-radius:999px;padding:6px 9px}
+    .content{padding:22px 24px 24px}.course{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:13px 14px;background:var(--muted);border:1px solid var(--bd);border-radius:13px}.course-label{color:var(--dim);font:800 10px 'Baloo 2',sans-serif;letter-spacing:.08em;text-transform:uppercase}.course-code{font:800 18px 'Baloo 2',sans-serif;margin-top:2px}.course-title{font-weight:800;font-size:15px;margin:2px 0 5px}.course-meta{color:var(--mut);font-size:12px;font-weight:600}
+    .decision{margin-top:24px}.heading{display:flex;align-items:baseline;justify-content:space-between;gap:16px}.heading h2{font:800 20px 'Baloo 2',sans-serif;margin:0}.heading p{color:var(--mut);font-size:12px;font-weight:600;margin:0}.chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:12px}.chip{appearance:none;min-height:104px;text-align:left;padding:13px 13px 12px;background:var(--muted);border:1px solid var(--bd);border-radius:13px;color:var(--mut);cursor:pointer;transition:.15s cubic-bezier(.16,1,.3,1)}.chip:hover{border-color:color-mix(in srgb,var(--cat) 58%,var(--bd));transform:translateY(-1px)}.chip[aria-pressed="true"]{background:color-mix(in srgb,var(--cat) 12%,var(--muted));border-color:var(--cat);box-shadow:0 0 0 1px color-mix(in srgb,var(--cat) 42%,transparent),0 10px 22px -18px color-mix(in srgb,var(--cat) 75%,transparent);color:var(--fg)}.chip .kind{display:block;font:800 15px 'Baloo 2',sans-serif;color:var(--fg)}.chip .detail{display:block;font-size:11.5px;line-height:1.35;font-weight:700;margin-top:5px}.chip .mark{display:block;min-height:16px;color:var(--cat);font:800 10px 'Baloo 2',sans-serif;letter-spacing:.04em;text-transform:uppercase;margin-top:7px}.chip[aria-pressed="false"] .mark{visibility:hidden}
+    .explain{display:flex;gap:10px;align-items:flex-start;margin-top:13px;padding:10px 12px;border:1px solid color-mix(in srgb,var(--cat) 28%,var(--bd));background:color-mix(in srgb,var(--cat) 7%,var(--muted));border-radius:11px;color:var(--mut);font-size:12.5px;line-height:1.45;font-weight:700}.explain .spark{color:var(--cat);font-size:15px;line-height:1}.explain b{color:var(--fg)}.explain.choice{border-color:var(--bd);background:var(--muted)}.explain.choice .spark{color:var(--warning)}
+    .reassure{margin:11px 2px 0;color:var(--dim);font-size:11.5px;font-weight:600}.actions{display:flex;align-items:center;justify-content:flex-end;gap:11px;border-top:1px solid var(--bd);margin:24px -24px -24px;padding:15px 24px}.hint{margin-right:auto;color:var(--dim);font-size:11.5px;font-weight:700}.button{border:0;border-radius:11px;padding:10px 16px;background:var(--pri);color:#17222c;font:800 14px 'Baloo 2',sans-serif;cursor:pointer;transition:.15s cubic-bezier(.16,1,.3,1)}.button:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.04)}.button:disabled{background:#4b4944;color:#9d9386;cursor:not-allowed}.secondary{border:1px solid var(--bd);border-radius:11px;padding:9px 13px;background:transparent;color:var(--mut);font:800 13px 'Baloo 2',sans-serif}
+    .after{margin-top:16px;padding:11px 14px;border-left:3px solid var(--cat);background:var(--card);border-radius:0 11px 11px 0;color:var(--mut);font-size:12px;line-height:1.45;font-weight:600}.after b{color:var(--fg)}
+    body[data-view="mobile"]{padding:18px}body[data-view="mobile"] .frame{max-width:390px}body[data-view="mobile"] .top{padding:18px 18px 16px}body[data-view="mobile"] .top h1{font-size:24px}body[data-view="mobile"] .view{display:none}body[data-view="mobile"] .content{padding:18px}body[data-view="mobile"] .course{grid-template-columns:1fr;gap:4px;padding:12px}body[data-view="mobile"] .chips{gap:6px}body[data-view="mobile"] .chip{min-height:122px;padding:11px 9px}body[data-view="mobile"] .chip .kind{font-size:13px}body[data-view="mobile"] .chip .detail{font-size:10.5px}body[data-view="mobile"] .heading{align-items:flex-start;flex-direction:column;gap:3px}body[data-view="mobile"] .actions{margin:20px -18px -18px;padding:13px 18px;align-items:flex-start;flex-wrap:wrap}body[data-view="mobile"] .hint{flex-basis:100%;margin:0}.motion-note{display:none}
+    @media (max-width:560px){body{padding:18px}.top{padding:18px}.content{padding:18px}.course{grid-template-columns:1fr;gap:4px}.chips{gap:6px}.chip{min-height:112px;padding:11px 9px}.chip .kind{font-size:13px}.chip .detail{font-size:10.5px}.actions{margin:20px -18px -18px;padding:13px 18px;flex-wrap:wrap}.hint{flex-basis:100%;margin:0}}
+    @media (prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
+  </style>
+</head>
+<body data-view="suggested-writing">
+  <main class="frame">
+    <div class="crumb">‹ Class Center <span>·</span> <b>Add class</b></div>
+    <section class="dialog" aria-labelledby="title">
+      <header class="top">
+        <div><div class="eyebrow">One setup decision</div><h1 id="title">Choose this class’s study layer</h1><p>It changes the tools in this class—not its grade, credits, or requirements.</p></div>
+        <div class="view" id="view-label">Syllabus signal</div>
+      </header>
+      <div class="content">
+        <section class="course" aria-label="Course details"><div><div class="course-label">Course code</div><div class="course-code" id="course-code">ENGL 105</div></div><div><div class="course-label">Resolved class</div><div class="course-title" id="course-title">Writing in the Sciences</div><div class="course-meta" id="course-meta">Fall 2026 · 3 credits</div></div></section>
+        <section class="decision" aria-labelledby="decision-title">
+          <div class="heading"><h2 id="decision-title">What kind of work will this class need?</h2><p>Choose what fits—you can change it later.</p></div>
+          <div class="chips" role="group" aria-label="Class type">
+            <button class="chip" type="button" data-type="stem" aria-pressed="false"><span class="kind">STEM</span><span class="detail">Topics and recall tools</span><span class="mark">Selected</span></button>
+            <button class="chip" type="button" data-type="writing" aria-pressed="true"><span class="kind">Writing</span><span class="detail">Drafts, readings, feedback</span><span class="mark">Suggested</span></button>
+            <button class="chip" type="button" data-type="general" aria-pressed="false"><span class="kind">General</span><span class="detail">Grades and deadlines</span><span class="mark">Selected</span></button>
+          </div>
+          <div class="explain" id="explain"><span class="spark">✦</span><div><b>Suggested Writing</b> — this syllabus includes writing work.</div></div>
+          <p class="reassure">You can change this later. Grades, credits, and requirements stay the same.</p>
+        </section>
+        <footer class="actions"><span class="hint" id="hint">Suggestion only — you can choose a different type.</span><button class="secondary" type="button">Cancel</button><button class="button" id="add" type="button">Add class</button></footer>
+      </div>
+    </section>
+    <aside class="after"><b>What this protects:</b> a suggestion is visible and reversible. Nothing becomes a saved workspace until <b>Add class</b>.</aside>
+  </main>
+  <script>
+    const views={
+      'suggested-writing':{code:'ENGL 105',title:'Writing in the Sciences',meta:'Fall 2026 · 3 credits',type:'writing',label:'Syllabus signal',reason:'Suggested Writing — this syllabus includes writing work.',hint:'Suggestion only — you can choose a different type.'},
+      'suggested-stem':{code:'BIOL 252',title:'Neurobiology',meta:'Fall 2026 · 3 credits · BCPM',type:'stem',label:'Course metadata',reason:'Suggested STEM — this course is marked BCPM.',hint:'Suggestion only — you can choose a different type.'},
+      'needs-choice':{code:'MUSC 143',title:'History of Jazz',meta:'Fall 2026 · 3 credits',type:null,label:'Choose explicitly',reason:'Choose the study layer that fits this class.',hint:'Choose a class type to continue.'},
+      mobile:{code:'MUSC 143',title:'History of Jazz',meta:'Fall 2026 · 3 credits',type:null,label:'Choose explicitly',reason:'Choose the study layer that fits this class.',hint:'Choose a class type to continue.'}
+    };
+    const view=new URLSearchParams(location.search).get('view')||'suggested-writing';
+    const state=views[view]||views['suggested-writing'];let choice=state.type;
+    document.body.dataset.view=view;document.querySelector('#course-code').textContent=state.code;document.querySelector('#course-title').textContent=state.title;document.querySelector('#course-meta').textContent=state.meta;document.querySelector('#view-label').textContent=state.label;
+    const chips=[...document.querySelectorAll('.chip')], explain=document.querySelector('#explain'), hint=document.querySelector('#hint'), add=document.querySelector('#add');
+    function render(manual=false){chips.forEach(chip=>{const selected=chip.dataset.type===choice;chip.setAttribute('aria-pressed',String(selected));chip.querySelector('.mark').textContent=selected?(manual?'Selected':'Suggested'):'Selected'});const hasChoice=Boolean(choice);add.disabled=!hasChoice;hint.textContent=hasChoice?(manual?'Your choice — you can change it later.':state.hint):state.hint;explain.classList.toggle('choice',!hasChoice);explain.innerHTML=hasChoice?`<span class="spark">✦</span><div><b>${manual?choice[0].toUpperCase()+choice.slice(1)+' selected':state.reason.split(' — ')[0]}</b>${manual?' — this is your choice for this class.':' — '+state.reason.split(' — ')[1]}</div>`:`<span class="spark">!</span><div><b>${state.reason}</b></div>`}
+    chips.forEach(chip=>chip.addEventListener('click',()=>{choice=chip.dataset.type;render(true)}));add.addEventListener('click',()=>{if(choice)hint.textContent='Ready to add — this mockup never writes a class.'});render();
+  </script>
+</body>
+</html>

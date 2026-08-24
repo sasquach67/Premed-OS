@@ -420,6 +420,17 @@ const profiles = [
     `
   },
   {
+    id:"class-type-selection",group:"Academics",name:"Add class · type",status:"proposed",fitCanvas:true,
+    path:"01-academics/academics-class-type-selection.html",
+    desc:"The one add-class decision: an explainable STEM/Writing proposal or an honest explicit choice.",
+    variants:[
+      ["Suggested Writing","Syllabus evidence proposes Writing; the choice remains editable before class creation."],
+      ["Suggested STEM","Course metadata proposes STEM; the choice remains editable before class creation."],
+      ["Choose explicitly","No evidence means no highlighted type and a disabled Add action until the student decides."],
+      ["Mobile","The same explicit-choice state holds the three equal targets at narrow width."]
+    ]
+  },
+  {
     id:"study-method",group:"Academics",name:"Study method · UNPATCHED 2026",status:"proposed",
     path:"01-academics/academics-study-method.html",
     desc:"The study-cycle surface: per-topic dot track, the class-Overview panel, and lecture-day timing.",
@@ -1432,6 +1443,8 @@ const orderedProfiles = [
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["class-types"],"Class example",["comparison","stem","writing"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"class-types"}),
+  Object.assign(asProductViews(byId["class-type-selection"],"Selection state",["suggested-writing","suggested-stem","needs-choice","mobile"]),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
   Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","assessment-catalog","assessment-take","assessment-return","folder-intake","folder-review","watch-setup","watch-exception","reader","canvas","generate","textbook-excerpt","feed-unavailable","study-guide-intake","flashcards-intake","revised-notes-intake","source-not-ready","no-eligible-source","guide-result","artifact-choice","revised-notes-result","revised-notes-baseline","revised-notes-no-baseline","flashcards-result","flashcards-export","flashcards-unavailable","guide-unavailable"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true,sourceHandlesVariant:true}),
   Object.assign(asProductViews(byId["academics-lecture-capture"],"Capture state",["start","review","index","unavailable"]),
