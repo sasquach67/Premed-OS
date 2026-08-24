@@ -82,6 +82,7 @@
 | `01-academics/class-center-study-hub.html` | **none** (concept) | `NO` |
 | `01-academics/academics-exam-prep-mode.html` | PROPOSED (July 2026) | **`YES`** |
 | `01-academics/academics-syllabus-import.html` | PROPOSED (July 2026) | **`YES`** |
+| `01-academics/academics-syllabus-structure-share.html` | APPROVED (Consent-led, Aug 24 2026) | **`YES`** — cleared Aug 24, 2026 (Andy, execution approval). Optional anonymous extracted structure only; never source document/text, personal edits, student data, grades, notes, or progress. |
 | `01-academics/academics-study-method.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy). §4.1-K, all three placements. C2 ruled: the retrievability bar stays and the status chip is its non-numeric form |
 | `01-academics/academics-forgetting-curve.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy). §4.1-L. C1 ruled: the exam-day figure ships **only** with its band label, never alone |
 | `01-academics/academics-learning-signals.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |

@@ -4,7 +4,7 @@ export interface SyllabusEvidence { quote: string; location: string }
 export interface SyllabusItem { id: string; kind: SyllabusKind; label: string; value?: string; confidence: 'high' | 'low'; evidence: SyllabusEvidence }
 export interface SyllabusProposal {
   sourceName: string
-  sourceKind: 'pdf' | 'docx' | 'text' | 'image'
+  sourceKind: 'pdf' | 'docx' | 'text' | 'image' | 'shared'
   text: string
   items: SyllabusItem[]
   searched: Record<SyllabusKind, string>

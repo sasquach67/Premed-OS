@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/components/common/useToast'
+import { SharedSyllabusStructurePanel } from '@/components/academics/SharedSyllabusStructurePanel'
 import {
   extractSyllabusFile, parseSyllabusText, weightGap,
   type SyllabusProposal, type SyllabusKind, type StructuralSignal,
@@ -233,6 +234,12 @@ export function SyllabusImportMode({
                           Importing into <span className="text-primary">{scopedCourse.code} · {scopedCourse.title}</span>
                         </p>
                       )}
+                      <SharedSyllabusStructurePanel
+                        proposal={proposal}
+                        courseCode={scopedCourse?.code || courseCode}
+                        term={semester}
+                        onStageCandidate={(items) => setProposal((current) => current ? { ...current, items } : current)}
+                      />
                       {grouped.map(([kind, items]) => (
                         <ReviewGroup
                           key={kind} kind={kind} items={items}

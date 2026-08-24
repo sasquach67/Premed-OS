@@ -452,7 +452,10 @@ function ClassCenterDashboard({
   async function importSyllabus(form: ClassFormState, selectedFiles: File[], proposal?: SyllabusProposal, existingCourseId?: string, reimportDecisions?: ReimportDecision[], replaceSyllabusFileId?: string) {
     const now = Date.now()
     const courseId = existingCourseId ?? uid()
-    const sourceFiles = selectedFiles.length ? selectedFiles : proposal ? [new File([proposal.text], `${proposal.sourceName}.txt`, { type: 'text/plain' })] : []
+    // A shared candidate is extracted structure only, never a remote source
+    // document. It therefore creates no synthetic local file on apply.
+    const sourceFiles = selectedFiles.length ? selectedFiles : proposal && proposal.sourceKind !== 'shared'
+      ? [new File([proposal.text], `${proposal.sourceName}.txt`, { type: 'text/plain' })] : []
     const retained = await Promise.all(sourceFiles.map(async (file) => {
       const id = uid()
       return { file, id, blobRef: await retainLocalSyllabus(file, id) }
