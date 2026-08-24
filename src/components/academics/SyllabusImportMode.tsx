@@ -46,7 +46,7 @@ export type ReimportDecision = { row: ReimportRow; action: ReimportRow['defaultA
 const reimportActionKey = (row: ReimportRow) => `${row.kind}:${row.key}`
 
 export function SyllabusImportMode({
-  semester, scopedCourse, reimport = false, reimportFileId, current, onExit, onImport,
+  semester, scopedCourse, reimport = false, reimportFileId, current, onExit, onImport, onFileMaterial,
 }: {
   semester: string
   scopedCourse?: Course
@@ -59,6 +59,9 @@ export function SyllabusImportMode({
     files: File[], proposal?: SyllabusProposal, existingCourseId?: string,
     decisions?: ReimportDecision[], replaceSyllabusFileId?: string,
   ) => Promise<void>
+  /** A readable non-syllabus can be filed only into an existing class's
+   * Materials shelf. It never enters the syllabus apply path. */
+  onFileMaterial?: (files: File[], proposal: SyllabusProposal, courseId: string) => Promise<void>
 }) {
   const [courseCode, setCourseCode] = useState('')
   const [courseTitle, setCourseTitle] = useState('')
@@ -123,7 +126,9 @@ export function SyllabusImportMode({
     : proposal ? 'Here’s what I found'
     : scopedCourse ? `Add a syllabus to ${scopedCourse.code}` : 'Add a class from its syllabus'
 
-  const subline = misfiled ? 'I read the whole thing — there’s just no syllabus in it. Your file is saved to this class either way.'
+  const subline = misfiled ? scopedCourse
+    ? 'I read the whole thing — there’s just no syllabus in it. You can file it in this class’s Materials without changing class records.'
+    : 'I read the whole thing — there’s just no syllabus in it. Nothing will be saved until you choose where it belongs.'
     : reimport && proposal ? 'Nothing you’ve already confirmed will be touched unless you accept it here.'
     : proposal ? 'Check it over and fix anything wrong. Nothing is written to your account until you press Add.'
     : 'Drop the file and HQ pulls out your units, exam dates, deadlines, and grade weights — then you confirm all of it before anything is saved.'
@@ -141,13 +146,20 @@ export function SyllabusImportMode({
   async function apply() {
     setApplying(true)
     try {
-      await onImport(
-        { courseCode, courseTitle, semester }, files, proposal ?? undefined, scopedCourse?.id,
-        reimport ? decisions : undefined, reimport ? reimportFileId : undefined,
-      )
+      if (misfiled) {
+        // A cold import has no course-owned Materials shelf. Never create a
+        // class just because the selected document is not a syllabus.
+        if (!proposal || !scopedCourse || !onFileMaterial) return
+        await onFileMaterial(files, proposal, scopedCourse.id)
+      } else {
+        await onImport(
+          { courseCode, courseTitle, semester }, files, proposal ?? undefined, scopedCourse?.id,
+          reimport ? decisions : undefined, reimport ? reimportFileId : undefined,
+        )
+      }
       toast({
-        title: reimport ? 'Syllabus changes applied' : 'Syllabus applied',
-        description: reimport ? 'Only the changes you accepted were applied.' : `Updated ${scopedCourse?.code || courseCode || 'your class'} from the reviewed proposal.`,
+        title: misfiled ? 'Material filed' : reimport ? 'Syllabus changes applied' : 'Syllabus applied',
+        description: misfiled ? `Added to ${scopedCourse?.code} Materials without changing class records.` : reimport ? 'Only the changes you accepted were applied.' : `Updated ${scopedCourse?.code || courseCode || 'your class'} from the reviewed proposal.`,
       })
     } finally { setApplying(false) }
   }
@@ -181,7 +193,14 @@ export function SyllabusImportMode({
           <div className="grid items-start gap-4 lg:grid-cols-[1fr_372px]">
             <div className="flex flex-col gap-4">
               {misfiled ? (
-                <MisfiledCard proposal={proposal} onFile={apply} onReviewAnyway={() => setReviewAnyway(true)} onRetry={() => setProposal(null)} />
+                <MisfiledCard
+                  proposal={proposal}
+                  canFile={Boolean(scopedCourse && onFileMaterial)}
+                  onFile={apply}
+                  onChooseClass={onExit}
+                  onReviewAnyway={() => setReviewAnyway(true)}
+                  onRetry={() => setProposal(null)}
+                />
               ) : (
                 <>
                   {proposal.scanDetected && (
@@ -236,6 +255,7 @@ export function SyllabusImportMode({
               misfiled={misfiled} reimport={reimport} proposal={proposal}
               rows={reimportRows} decided={decided} applying={applying}
               courseLabel={scopedCourse?.code || courseCode || courseTitle || 'this class'}
+              canFileMaterial={Boolean(scopedCourse && onFileMaterial)}
               onApply={apply}
               onAcceptAll={() => setReimportActions(Object.fromEntries(reimportRows.map((row) => [reimportActionKey(row), 'accept' as const])))}
               onKeepAll={() => setReimportActions(Object.fromEntries(reimportRows.map((row) => [reimportActionKey(row), 'keep' as const])))}
@@ -317,8 +337,8 @@ function ReviewGroup({ kind, items, searched, onPatch, onAddManual }: {
 }
 
 /** Wrong document (§4.1-M-d). Academics accent, NOT the warning tone: nothing failed. */
-function MisfiledCard({ proposal, onFile, onReviewAnyway, onRetry }: {
-  proposal: SyllabusProposal; onFile: () => void; onReviewAnyway: () => void; onRetry: () => void
+function MisfiledCard({ proposal, canFile, onFile, onChooseClass, onReviewAnyway, onRetry }: {
+  proposal: SyllabusProposal; canFile: boolean; onFile: () => void; onChooseClass: () => void; onReviewAnyway: () => void; onRetry: () => void
 }) {
   const missing = (Object.keys(STRUCTURE_LABEL) as StructuralSignal[]).filter((signal) => !proposal.structureFound.includes(signal))
   return (
@@ -343,7 +363,9 @@ function MisfiledCard({ proposal, onFile, onReviewAnyway, onRetry }: {
         </ul>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button onClick={onFile}><FileText className="size-4" /> File it in Materials</Button>
+        {canFile
+          ? <Button onClick={onFile}><FileText className="size-4" /> File it in Materials</Button>
+          : <Button onClick={onChooseClass}><ArrowLeft className="size-4" /> Choose a class first</Button>}
         <Button variant="outline" onClick={onReviewAnyway}>It really is my syllabus — review anyway</Button>
         <Button variant="ghost" onClick={onRetry}>Try another file</Button>
       </div>
@@ -409,9 +431,9 @@ function ReimportDiff({ rows, actions, onAction }: {
 }
 
 /** The sticky rail: the exact records that will be written, and nothing softer. */
-function ApplyRail({ misfiled, reimport, proposal, rows, decided, applying, courseLabel, onApply, onAcceptAll, onKeepAll }: {
+function ApplyRail({ misfiled, reimport, proposal, rows, decided, applying, courseLabel, canFileMaterial, onApply, onAcceptAll, onKeepAll }: {
   misfiled: boolean; reimport: boolean; proposal: SyllabusProposal
-  rows: ReimportRow[]; decided: number; applying: boolean; courseLabel: string
+  rows: ReimportRow[]; decided: number; applying: boolean; courseLabel: string; canFileMaterial: boolean
   onApply: () => void; onAcceptAll: () => void; onKeepAll: () => void
 }) {
   const differences = rows.filter((row) => row.status !== 'unchanged').length
@@ -430,9 +452,11 @@ function ApplyRail({ misfiled, reimport, proposal, rows, decided, applying, cour
                 </div>
               ))}
             </dl>
-            <Button className="mt-3 w-full" onClick={onApply} disabled={applying}><FileText className="size-4" /> File it in Materials</Button>
+            {canFileMaterial && <Button className="mt-3 w-full" onClick={onApply} disabled={applying}><FileText className="size-4" /> File it in Materials</Button>}
             <p className="mt-2 text-center text-[11px] font-semibold text-muted-foreground">
-              This import would write nothing. Filing the file is a Materials action, not an import.
+              {canFileMaterial
+                ? 'This import would write nothing. Filing the file is a Materials action, not an import.'
+                : 'This import would write nothing. Choose a class first, or explicitly review this as a syllabus.'}
             </p>
           </>
         ) : reimport ? (

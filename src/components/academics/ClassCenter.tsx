@@ -49,6 +49,7 @@ import { MascotNote } from '@/components/common/MascotNote'
 import { SyllabusImportMode } from '@/components/academics/SyllabusImportMode'
 import type { SyllabusProposal } from '@/lib/academics/syllabusParser'
 import { retainLocalSyllabus } from '@/lib/academics/localSyllabusFiles'
+import { retainLocalMaterial } from '@/lib/academics/localMaterialFiles'
 import type { ReimportRow } from '@/lib/academics/syllabusReimport'
 import { classTypeDraftDecision } from '@/lib/academics/classTypeDraftDecision'
 import { nextIncompleteReading, readingDebt, READING_LIST_STATE_COPY } from '@/lib/academics/writingEvidence'
@@ -512,6 +513,42 @@ function ClassCenterDashboard({
     if (existingCourseId) { const next = new URLSearchParams(searchParams); next.delete('importFor'); next.delete('reimport'); next.delete('reimportFile'); setSearchParams(next, { replace: true }) }
   }
 
+  /** §4.1-M-d: a non-syllabus file belongs in Materials only after the
+   * student selected its real course. It cannot create a synthetic course. */
+  async function fileMisfiledMaterial(selectedFiles: File[], proposal: SyllabusProposal, courseId: string) {
+    const sourceFiles = selectedFiles.length
+      ? selectedFiles
+      : [new File([proposal.text], `${proposal.sourceName}.txt`, { type: 'text/plain' })]
+    const retained = await Promise.all(sourceFiles.map(async (file) => {
+      const id = uid()
+      return { file, id, blobRef: await retainLocalMaterial(file, id) }
+    }))
+    const now = Date.now()
+    updateAll((draft) => {
+      if (!draft.courses.some((course) => course.id === courseId)) return
+      const center = draft.academics.classCenter
+      retained.forEach(({ file, id, blobRef }) => center.files.unshift({
+        id,
+        courseId,
+        title: file.name.replace(/\.[^.]+$/, '') || file.name,
+        type: 'other',
+        sourceType: proposal.sourceKind === 'text' ? 'paste' : 'upload',
+        owner: 'course',
+        url: '',
+        blobRef,
+        fileName: file.name,
+        mimeType: file.type,
+        notes: '',
+        linkedTopicIds: [],
+        createdAt: now,
+        updatedAt: now,
+        order: center.files.length,
+      }))
+    })
+    setSyllabusImportOpen(false)
+    navigate(`/academics/classes/${courseId}?classTab=materials`)
+  }
+
   // §4.1-M-a: import is a temporary FULL-SCREEN flow, not a permanent surface.
   // It replaces the Class Center view while active, the same way ExamPrepMode
   // replaces the Class Hub view — it is not a dialog over the top of it.
@@ -543,6 +580,7 @@ function ClassCenterDashboard({
         { ...emptyClassForm(form.semester), type: 'stem', courseCode: form.courseCode, courseTitle: form.courseTitle },
         files, proposal, courseId, decisions, replaceFileId,
       )}
+      onFileMaterial={fileMisfiledMaterial}
     />
   }
 
