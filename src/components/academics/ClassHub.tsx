@@ -56,6 +56,7 @@ import { LectureCapturePanel } from '@/components/academics/LectureCapturePanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { LearningSignalsPanel } from '@/components/academics/LearningSignalsPanel'
 import { MaterialGenerationIntake, type MaterialArtifact } from '@/components/academics/MaterialGenerationIntake'
+import { MaterialFolderIntake } from '@/components/academics/MaterialFolderIntake'
 import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
 import { AssessmentCatalog } from '@/components/academics/AssessmentCatalog'
 import { readLocalBlob } from '@/lib/localBlobStore'
@@ -280,7 +281,7 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
         </PageHeader>
 
         <TabsContent value="overview" className="class-hub-tab"><Overview course={course} data={data} type={classType} topics={courseTopics} drafts={courseDrafts} assignments={courseAssignments} notes={courseNotes} contacts={courseContacts} persons={persons} onTab={changeTab} onOpenExamPrep={openExamPrep} /></TabsContent>
-        <TabsContent value="materials" className="class-hub-tab"><Materials courseId={course.id} courseCode={course.code} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} onTab={changeTab} /></TabsContent>
+        <TabsContent value="materials" className="class-hub-tab"><Materials course={course} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} onTab={changeTab} /></TabsContent>
         <TabsContent value="topics" className="class-hub-tab"><Topics
           courseId={course.id} data={data} topics={courseTopics} assignments={courseAssignments}
           onOpenNotes={(topicId) => {
@@ -828,12 +829,15 @@ function CoverageMetric({ label, value, tone }: { label: string; value: number; 
 }
 
 function Materials({
-  courseId, courseCode, data, files, topics, notes, onTab,
-}: { courseId: string; courseCode: string; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; onTab: (tab: string) => void }) {
+  course, data, files, topics, notes, onTab,
+}: { course: Course; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; onTab: (tab: string) => void }) {
+  const courseId = course.id
+  const courseCode = course.code
   const navigate = useNavigate()
   const toast = useToast()
   const [filter, setFilter] = useState<'all' | 'course' | 'mine' | 'generated' | 'unassigned'>('all')
   const [artifact, setArtifact] = useState<MaterialArtifact | null>(null)
+  const [folderIntakeOpen, setFolderIntakeOpen] = useState(false)
   const groups = useMemo(() => groupFiles(files, topics, notes), [files, notes, topics])
   const visible = groups.map((group) => ({
     ...group,
@@ -891,12 +895,14 @@ function Materials({
     })
   }
 
+  if (folderIntakeOpen) return <MaterialFolderIntake course={course} onBack={() => setFolderIntakeOpen(false)} />
+
   return (
     <div className="space-y-4">
       <SectionToolbar
         title="Materials"
         detail="Course files stay grouped by their linked unit."
-        action={<div className="flex flex-wrap items-center gap-2"><Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button><DropdownMenu><DropdownMenuTrigger asChild><Button size="sm"><Sparkles className="size-4" /> Create study material</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => setArtifact('flashcards')}><Sparkles className="size-4" /> Generate flashcards</DropdownMenuItem><DropdownMenuItem onClick={() => setArtifact('revised-notes')}><NotebookText className="size-4" /> Generate revised notes</DropdownMenuItem><DropdownMenuItem onClick={() => setArtifact('study-guide')}><BookOpen className="size-4" /> Generate study guide</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div>}
+        action={<div className="flex flex-wrap items-center gap-2"><Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button><DropdownMenu><DropdownMenuTrigger asChild><Button size="sm"><Sparkles className="size-4" /> Create study material</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => setArtifact('flashcards')}><Sparkles className="size-4" /> Generate flashcards</DropdownMenuItem><DropdownMenuItem onClick={() => setArtifact('revised-notes')}><NotebookText className="size-4" /> Generate revised notes</DropdownMenuItem><DropdownMenuItem onClick={() => setArtifact('study-guide')}><BookOpen className="size-4" /> Generate study guide</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={() => setFolderIntakeOpen(true)}><FolderOpen className="size-4" /> Connect a notes folder</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div>}
       />
       {artifact && <MaterialGenerationIntake artifact={artifact} courseId={courseId} courseLabel={courseCode} files={files} onClose={() => setArtifact(null)} onAddMaterial={addMaterial} />}
       {/* §4.1 materials extensions — the shelf. Unit → material → provenance. */}

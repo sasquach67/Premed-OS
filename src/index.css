@@ -454,7 +454,7 @@
   }
   .dark .glass-surface {
     --glass-foreground: #fffaf0;
-    background: rgba(20, 26, 34, .62);
+    background: rgba(20, 26, 34, .5);
     border-color: rgba(255, 255, 255, .16);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16);
   }
@@ -462,7 +462,7 @@
      Dark banner art needs ink glass even while the rest of the app is light. */
   .glass-surface.glass-surface--dark {
     --glass-foreground: #fffaf0;
-    background: rgba(20, 26, 34, .62);
+    background: rgba(20, 26, 34, .5);
     color: var(--glass-foreground);
     border-color: rgba(255, 255, 255, .16);
     box-shadow:
