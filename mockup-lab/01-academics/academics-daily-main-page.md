@@ -20,13 +20,14 @@
      do NOT earn the space.
   3. HEADS UP = the same component as Overview's Smart next actions.
      Dismiss animates out; last dismissal unmounts the whole widget.
-  4. CLASS CARDS: at REST no left bar + neutral border (class identity =
-     small colored dot). On HOVER the left bar ignites + full border and
-     glow turn the class accent + card lifts + the deadline line swaps to
-     "Open class hub →". Hovering the Review button leaves the
-     card UNLIT so the two click targets never compete.
-     ONE primary action (Review) + overflow (⋯). No instructor/meeting
-     clutter. Cards WRAP. "8 of 18 topics ready" — one line, one bar.
+  4. CLASS CARDS: compact, uniform record cards. At REST no left bar + neutral
+     border (class identity = small colored dot). On HOVER the left bar ignites
+     + full border and glow turn the class accent + card lifts. The primary
+     action previews / opens the class hub. Review is a deliberate follow-up in
+     the record peek or overflow, never a permanent card button. No
+     instructor/meeting clutter, BCPM/type badge, invented denominator,
+     percentage, or progress bar. A missing next date names the absence and
+     leads to the class-owned add route.
   5. STUDY TOOLS LIVE ON/IN THE CLASS, never floating on the page —
      a tool with no class selected has no subject.
   6. WHERE YOU'RE WEAK is EXAM-SCOPED by default (topics filtered to the
@@ -67,15 +68,41 @@
 
   <!-- HEADS UP — same component as Overview Smart next actions 
 
+## Later app annotations — authoritative (Aug. 23, 2026)
+
+These later rulings supersede the July sample composition wherever they differ.
+They are the source of truth for a future fidelity pass; do not reintroduce an
+older card chip or direct action merely because it remains visible in an older
+reference screenshot.
+
+- **Footprint:** all primary course records use the same compact, square-ish
+  grid footprint. They do not gain a decorative blank middle zone or stretch
+  just because a neighbouring card has longer content.
+- **Colour:** the course dot and quiet edge/hover accent carry class identity.
+  There is no bold full-card colour fill, permanent glow, or generic blue
+  action that defeats the course-owned accent.
+- **Information:** show the course code/name, a student-entered letter standing
+  when one exists, one type-appropriate factual context line, and one next
+  dated class item when one exists. Do not show BCPM, a class-type badge, a
+  fabricated denominator, a percentage, a cross-course score, or a card-level
+  progress bar.
+- **Actions:** `Preview` / `Open class hub` is the card action. `Review` starts
+  only from the preview/peek or overflow follow-up. If its play icon appears
+  there, the triangle is solid white. It is never a permanently visible action
+  on every main-page card.
+- **Honest absence:** when the course has no dated item, say so plainly and
+  offer the class-owned add/import route; do not substitute a demo deadline,
+  countdown, grade, review count, or progress fact.
+
 ## Behaviour
 
 - The filter bar is controls, not a fourth navigation level: term is a Select,
   search narrows the current term, and Cards/List changes only the collection
   presentation. The mode pill and underline tab flow remain unchanged.
-- Class cards are shared record-open surfaces. A card opens its class hub;
-  `Review` begins review without lighting or opening the card; overflow holds
-  secondary class-scoped actions. Cards wrap rather than create horizontal
-  scrolling.
+- Class cards are shared record-open surfaces. Their primary action previews or
+  opens the class hub; `Review` is offered only after that record interaction
+  or from overflow. Overflow holds other secondary class-scoped actions.
+  Cards reflow to fewer equal columns rather than create horizontal scrolling.
 - A pane with insufficient honest data is absent or explains its dormancy. The
   bento never substitutes mock counts, zero charts, or invented projections.
 
@@ -83,7 +110,8 @@
 
 - The hierarchy is banner and three navigation forms, then a solid filter bar,
   then a breathable 12-column bento. “Heads up” sits before the class grid;
-  cards remain a distinct collection rather than a stack of full-width rows.
+  cards remain a distinct, compact equal-footprint collection rather than a
+  stack of full-width rows.
 - Use the signed-in warm-dark ladder from `_shared/_visual-recipes.md`:
   page field → solid card → muted nested object → border. Panel corners follow
   the shared card recipe; class cards use the shared 13px record-card recipe.
@@ -92,5 +120,6 @@
 - Hover/selection follows the shared `.15s cubic-bezier(.16,1,.3,1)` recipe:
   the card lifts and its left accent ignites only when the card itself is the
   target. Focus is `:focus-visible`; reduced motion removes the lift/glow
-  movement while preserving the state change. At narrow widths cards wrap to
-  fewer columns and bento spans stack without clipping the filter controls.
+  movement while preserving the state change. At narrow widths the equal card
+  columns step down without clipping the filter controls or growing into
+  full-width dashboard rows.

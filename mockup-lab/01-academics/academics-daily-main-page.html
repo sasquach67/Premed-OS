@@ -24,13 +24,14 @@
      do NOT earn the space.
   3. HEADS UP = the same component as Overview's Smart next actions.
      Dismiss animates out; last dismissal unmounts the whole widget.
-  4. CLASS CARDS: at REST no left bar + neutral border (class identity =
-     small colored dot). On HOVER the left bar ignites + full border and
-     glow turn the class accent + card lifts + the deadline line swaps to
-     "Open class hub →". Hovering the Review button leaves the
-     card UNLIT so the two click targets never compete.
-     ONE primary action (Review) + overflow (⋯). No instructor/meeting
-     clutter. Cards WRAP. "8 of 18 topics ready" — one line, one bar.
+  4. CLASS CARDS: compact, uniform record cards. At REST no left bar + neutral
+     border (class identity = small colored dot). On HOVER the left bar ignites
+     + full border and glow turn the class accent + card lifts. The primary
+     card action is Preview / Open class hub; Review is a deliberate follow-up
+     in the record peek or overflow, never a permanent card button. No
+     instructor/meeting clutter, BCPM/type badge, invented denominator,
+     percentage, or progress bar. A missing next date names the absence and
+     leads to the class-owned add route.
   5. STUDY TOOLS LIVE ON/IN THE CLASS, never floating on the page —
      a tool with no class selected has no subject.
   6. WHERE YOU'RE WEAK is EXAM-SCOPED by default (topics filtered to the
@@ -152,9 +153,9 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
 .bsm.p{background:var(--cat);color:#0d1f2c}.bsm.g{background:transparent;border-color:var(--bd);color:var(--mut)}
 
 /* ══ CLASS CARDS ═══════════════════════════════════════════════════════ */
-.ccards{display:flex;flex-wrap:wrap;gap:12px}
+.ccards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-auto-rows:206px;gap:12px}
 .cc{background:var(--muted);border:1px solid var(--bd);border-radius:13px;padding:12px;display:flex;flex-direction:column;
-  gap:8px;position:relative;overflow:hidden;width:calc((100% - 48px)/5);min-width:180px;transition:.15s cubic-bezier(.16,1,.3,1)}
+  gap:8px;position:relative;overflow:hidden;min-width:0;transition:.15s cubic-bezier(.16,1,.3,1)}
 .ccbar{position:absolute;left:0;top:0;bottom:0;width:4px;background:transparent;transition:.15s}   /* hidden at rest */
 .cc.hover{transform:translateY(-3px);border-color:var(--accent);
   box-shadow:0 18px 34px -16px rgba(0,0,0,.75),0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent),
@@ -165,26 +166,22 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
 .cdot{width:8px;height:8px;border-radius:3px;flex-shrink:0}    /* class identity at rest */
 .ccname{font-size:10.5px;color:var(--mut);font-weight:600;margin-top:1px}
 .ccgrade{font-family:'Baloo 2';font-weight:800;font-size:18px;line-height:1}
-.ccgs{font-size:9px;color:var(--dim);font-weight:700;text-align:right;margin-top:2px}
-.ccm{font-size:9.5px;font-weight:800;font-family:'Baloo 2';border-radius:999px;padding:2px 7px}
-.rdy{font-size:10.5px;color:var(--mut);font-weight:700}
-.rdy b{font-family:'Baloo 2';font-weight:800;color:var(--fg)}
-.rbarline{height:5px;border-radius:999px;background:#272420;overflow:hidden}
+.cccontext{font-size:10.5px;color:var(--mut);font-weight:700;line-height:1.35}
 .ccnext{font-size:10.5px;color:var(--mut);font-weight:600;display:flex;align-items:center;gap:5px;min-height:16px}
 .ccnext svg{width:11px;height:11px;flex-shrink:0}
-.openhint{display:none;align-items:center;gap:5px;font-size:10.5px;font-weight:800;font-family:'Baloo 2';color:var(--accent);min-height:16px}
-.cc.hover .openhint{display:flex}
-.cc.hover .ccnext{display:none}
-.openhint svg{width:12px;height:12px}
-.cc.hover .ccacts{display:flex;gap:6px;padding-top:8px;margin-top:auto;border-top:1px solid var(--bd)}
+.ccempty{font-size:10px;font-weight:800;font-family:'Baloo 2';color:var(--accent);margin-top:-3px}
+.ccacts{display:flex;gap:6px;padding-top:8px;margin-top:auto;border-top:1px solid var(--bd)}
 .cca{flex:1;padding:6px;border-radius:8px;background:color-mix(in srgb,var(--accent) 18%,transparent);
   border:1px solid color-mix(in srgb,var(--accent) 38%,transparent);color:var(--accent);
   font-family:'Baloo 2';font-weight:800;font-size:11.5px;display:flex;align-items:center;justify-content:center;gap:5px}
 .cca svg{width:12px;height:12px}
 .ccdots{padding:6px 9px;border-radius:8px;background:var(--card);border:1px solid var(--bd);color:var(--mut);display:grid;place-items:center}
 .ccdots svg{width:13px;height:13px}
-.ccadd{background:transparent;border:1px dashed var(--bd);display:grid;place-items:center;gap:4px;color:var(--dim);text-align:center;padding:10px;width:120px;min-width:120px}
+.ccadd{background:transparent;border:1px dashed var(--bd);display:grid;place-items:center;gap:4px;color:var(--dim);text-align:center;padding:10px;min-width:0}
 .ccadd svg{width:18px;height:18px}
+@media (max-width:1080px){.frame{width:100%}.ccards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:800px){.ccards{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:198px}.fbar{flex-wrap:wrap}.srch{order:3;max-width:none;flex-basis:100%}}
+@media (max-width:460px){.ccards{grid-template-columns:1fr}.cc{min-height:192px}.wrap{padding-inline:14px}.fbar{padding-inline:14px}.utabs{padding-inline:14px;gap:16px}}
 
 /* ══ REVIEW QUEUE ══════════════════════════════════════════════════════ */
 .qrow{display:flex;align-items:center;gap:9px;background:var(--muted);border:1px solid var(--bd);border-radius:11px;padding:8px 10px}
@@ -309,50 +306,39 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
     </div></div>
   </div>
 
-  <!-- CLASSES — first card shown in HOVER state to document the pattern -->
+  <!-- CLASSES — compact, uniform records; Review is only inside Preview/overflow -->
   <div class="card c12">
-    <div class="hd"><div class="ti">Your classes</div><div class="sub">click a card to open its study hub</div></div>
+    <div class="hd"><div class="ti">Your classes</div><div class="sub">preview a class; start Review from its follow-up menu</div></div>
     <div class="bd">
       <div class="ccards">
         <div class="cc hover" style="--accent:var(--cat)">
           <div class="ccbar"></div>
-          <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--cat)"></span>CHEM 262</div><div class="ccname">Organic Chemistry II</div></div><div><div class="ccgrade" style="color:var(--warning)">B+</div><div class="ccgs">88.4%</div></div></div>
-          <div style="display:flex;gap:4px;flex-wrap:wrap"><span class="ccm" style="background:color-mix(in srgb,var(--danger) 18%,transparent);color:var(--danger)">3 weak</span><span class="ccm" style="background:color-mix(in srgb,var(--research) 18%,transparent);color:var(--research)">BCPM</span></div>
-          <div class="rdy"><b>8</b> of 18 topics ready</div>
-          <div class="rbarline"><div style="height:100%;width:44%;background:var(--cat);border-radius:999px"></div></div>
+          <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--cat)"></span>CHEM 262</div><div class="ccname">Organic Chemistry II</div></div><div class="ccgrade" style="color:var(--warning)">B+</div></div>
+          <div class="cccontext">1 marked ready · 6 topics recorded</div>
           <div class="ccnext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18"/></svg>Midterm 2 · Friday</div>
-          <div class="openhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Open class hub</div>
-          <div class="ccacts"><div class="cca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 5v14l11-7z"/></svg>Review</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
+          <div class="ccacts"><div class="cca">Preview</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
         </div>
         <div class="cc" style="--accent:var(--research)">
           <div class="ccbar"></div>
-          <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--research)"></span>BIOL 252</div><div class="ccname">Neurobiology</div></div><div><div class="ccgrade" style="color:var(--success)">A−</div><div class="ccgs">91.2%</div></div></div>
-          <div style="display:flex;gap:4px;flex-wrap:wrap"><span class="ccm" style="background:color-mix(in srgb,var(--warning) 18%,transparent);color:var(--warning)">2 due</span><span class="ccm" style="background:color-mix(in srgb,var(--research) 18%,transparent);color:var(--research)">BCPM</span></div>
-          <div class="rdy"><b>14</b> of 21 topics ready</div>
-          <div class="rbarline"><div style="height:100%;width:67%;background:var(--research);border-radius:999px"></div></div>
+          <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--research)"></span>BIOL 252</div><div class="ccname">Neurobiology</div></div><div class="ccgrade" style="color:var(--success)">A−</div></div>
+          <div class="cccontext">1 review note · 6 topics recorded</div>
           <div class="ccnext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H5.2L4 17.5Z"/></svg>Lab report · Mon</div>
-          <div class="openhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Open class hub</div>
-          <div class="ccacts"><div class="cca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 5v14l11-7z"/></svg>Review</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
+          <div class="ccacts"><div class="cca">Preview</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
         </div>
         <div class="cc" style="--accent:var(--shadow)">
           <div class="ccbar"></div>
-          <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--shadow)"></span>PHYS 118</div><div class="ccname">Mechanics</div></div><div><div class="ccgrade" style="color:var(--success)">A</div><div class="ccgs">95.0%</div></div></div>
-          <div style="display:flex;gap:4px;flex-wrap:wrap"><span class="ccm" style="background:#272420;color:var(--dim)">1 new</span><span class="ccm" style="background:color-mix(in srgb,var(--research) 18%,transparent);color:var(--research)">BCPM</span></div>
-          <div class="rdy"><b>10</b> of 12 topics ready</div>
-          <div class="rbarline"><div style="height:100%;width:83%;background:var(--shadow);border-radius:999px"></div></div>
+          <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--shadow)"></span>PHYS 118</div><div class="ccname">Mechanics</div></div><div class="ccgrade" style="color:var(--success)">A</div></div>
+          <div class="cccontext">1 assignment awaiting a grade</div>
           <div class="ccnext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H5.2L4 17.5Z"/></svg>Problem set 7 · Wed</div>
-          <div class="openhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Open class hub</div>
-          <div class="ccacts"><div class="cca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 5v14l11-7z"/></svg>Review</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
+          <div class="ccacts"><div class="cca">Preview</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
         </div>
         <div class="cc" style="--accent:var(--clinical)">
           <div class="ccbar"></div>
-          <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--clinical)"></span>PSYC 210</div><div class="ccname">Statistics</div></div><div><div class="ccgrade" style="color:var(--success)">A</div><div class="ccgs">94.1%</div></div></div>
-          <div style="display:flex;gap:4px;flex-wrap:wrap"><span class="ccm" style="background:color-mix(in srgb,var(--mcat) 18%,transparent);color:var(--mcat)">Anki</span></div>
-          <div class="rdy"><b>10</b> of 14 topics ready</div>
-          <div class="rbarline"><div style="height:100%;width:71%;background:var(--clinical);border-radius:999px"></div></div>
-          <div class="ccnext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Nothing this week</div>
-          <div class="openhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Open class hub</div>
-          <div class="ccacts"><div class="cca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 5v14l11-7z"/></svg>Review</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
+          <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--clinical)"></span>PSYC 210</div><div class="ccname">Statistics</div></div></div>
+          <div class="cccontext">Lecture notes added this week</div>
+          <div class="ccnext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>No dated class item yet</div>
+          <div class="ccempty">＋ Add a dated class item</div>
+          <div class="ccacts"><div class="cca">Preview</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
         </div>
         <div class="cc ccadd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span style="font-family:'Baloo 2';font-weight:800;font-size:11.5px">Add class</span></div>
       </div>
