@@ -150,3 +150,38 @@ OpenAI path either produces verified citations or marks its items as unverified.
 
 `claim_ai_request` caps usage at **20/hour and 100/day per user**. Fine for one
 person; revisit before anyone else uses it.
+
+## Optional Google Drive materials folder
+
+`google-drive-materials` is separate from the existing browser-only Google
+Drive **backup** integration. It requests `drive.readonly` only after a
+student explicitly selects one folder; the server uses it only to stage
+metadata proposals and to retrieve a single file after that proposal is
+accepted. It never mirrors a folder to Supabase Storage.
+
+Before deploying it, apply
+`migrations/20260824044417_academic_material_source_connections.sql`, then set
+these **Edge Function Secrets** (never `VITE_*`):
+
+| Secret | Purpose |
+|---|---|
+| `GOOGLE_DRIVE_CLIENT_ID` | OAuth web client ID for the server-side folder reader |
+| `GOOGLE_DRIVE_CLIENT_SECRET` | matching OAuth client secret |
+| `MATERIAL_SOURCE_TOKEN_ENCRYPTION_KEY` | random 32-byte key, base64 encoded; encrypts refresh tokens before database storage |
+| `PREMEDOS_APP_ORIGIN` | exact deployed app origin, e.g. `https://premedos.app` |
+| `MATERIAL_SOURCE_ALLOWED_ORIGINS` | comma-separated exact browser origins, including the production and deliberate local dev origin |
+
+Enable the Google Drive API and add
+`https://<project-ref>.supabase.co/functions/v1/google-drive-materials?action=callback`
+as the OAuth client’s **exact** redirect URI. Add `drive.readonly` to the
+consent-screen scope disclosure and update the public privacy explanation
+before asking a user to connect a folder. Deploy with:
+
+```bash
+npx --yes supabase@latest functions deploy google-drive-materials
+```
+
+Then use a non-admin account and a disposable folder to verify: connect → list
+metadata → review/accept locally → record accepted revision → download that one
+file → disconnect. A static GitHub Pages browser cannot watch a folder in the
+background; v1 offers an explicit check only.

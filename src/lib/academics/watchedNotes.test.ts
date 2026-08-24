@@ -5,6 +5,7 @@ import {
   acceptWatchedNotesProposal, addWatchedNotesSource, confirmWatchedNotesMapping,
   intakeWatchedNotesManifest, mapWatchedNotesEntry, skipWatchedNotesProposal,
 } from './watchedNotes'
+import { googleDriveContentIdentity } from './googleDriveMaterialSource'
 
 const course = (id: string, code: string, title: string): Course => ({
   id, term: 'Fall 2026', code, title, credits: 3, grade: '', bcpm: false,
@@ -104,6 +105,27 @@ describe('watched-note review-before-apply', () => {
     expect(skipWatchedNotesProposal(data, changed.created[0].id, 6)).toBe(true)
     expect(data.watchedNoteProposals.find((proposal) => proposal.id === changed.created[0].id)?.status).toBe('skipped')
     expect(data.files).toHaveLength(1)
+  })
+
+  it('stages a changed Google Drive revision while a folder reorganization reuses the same proposal', () => {
+    const data = center()
+    addWatchedNotesSource(data, { id: 'drive', provider: 'google-drive', rootLabel: 'GoodNotes backup', courseId: 'biol', selectedAt: 1 })
+    const original = intakeWatchedNotesManifest({
+      center: data, sourceId: 'drive', courses, now: 2,
+      entries: [{ displayPath: 'Week 1/Notes/lecture.pdf', contentIdentity: googleDriveContentIdentity('drive-file', '1') }],
+    })
+    expect(original.created).toHaveLength(1)
+    const reorganized = intakeWatchedNotesManifest({
+      center: data, sourceId: 'drive', courses, now: 3,
+      entries: [{ displayPath: 'Fall/Week 1/Notes/lecture.pdf', contentIdentity: googleDriveContentIdentity('drive-file', '1') }],
+    })
+    expect(reorganized.reused).toHaveLength(1)
+    const changed = intakeWatchedNotesManifest({
+      center: data, sourceId: 'drive', courses, now: 4,
+      entries: [{ displayPath: 'Fall/Week 1/Notes/lecture.pdf', contentIdentity: googleDriveContentIdentity('drive-file', '2') }],
+    })
+    expect(changed.created).toHaveLength(1)
+    expect(data.files).toEqual([])
   })
 
   it('keeps personal mode record-free until the student chooses a source and accepts a proposal', async () => {
