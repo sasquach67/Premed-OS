@@ -723,7 +723,7 @@ function ClassCenterDashboard({
         </CardHeader>
         <CardContent>
           <div className={cn(view === 'cards'
-            ? 'grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+            ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4'
             : 'space-y-2')}>
             {filtered.map((row) => (
               <ClassCard
@@ -928,7 +928,7 @@ export function ClassCard({
       className={cn(
         'academics-class-card group/class relative self-start cursor-pointer overflow-hidden shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
         actionHovered && 'action-hovered',
-        compact ? 'min-h-0' : 'min-h-[210px]',
+        compact ? 'min-h-0' : 'aspect-square min-h-60',
         dragging && 'scale-[0.98] opacity-55',
         dragOver && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
       )}
