@@ -1,0 +1,15 @@
+{
+  "specId": "flashcards-v1",
+  "specHash": "6cef68c92cac",
+  "sourceMode": "SOURCE_ONLY",
+  "deckTitle": "UNC::Fall 2026::BIOL103::Lesson 2 \u2014 Refined",
+  "course": "BIOL103",
+  "topic": "Lesson 2",
+  "noteTypes": [
+    "Basic",
+    "Cloze",
+    "Image Occlusion"
+  ],
+  "imageOcclusionRequires": "Anki 23.10+",
+  "cards": 129
+}

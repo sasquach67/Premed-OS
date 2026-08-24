@@ -101,16 +101,37 @@ spacing, no hierarchy ruling. Its closing section says:
 > `gpa` — dual hero · trend first · instrument panel
 > `what-if` — landing then inputs · inputs first · solve-first
 
-⚠️ **`VIEW_VARIANTS` does not exist.** `grep -c VIEW_VARIANTS
-academics-grades-archive.html` returns **`0`**, and no mockup in
-`01-academics/` declares one. The nine alternatives are named in prose and
-**never drawn**. `variant-lab.html`'s three "variants" for this row are
-`Ledger` / `GPA` / `What-if` — the three product *views*, not appearance
-alternatives.
+**The nine alternatives are drawn and can be compared right now.** They are
+not in the mockup file — `grep -c VIEW_VARIANTS
+academics-grades-archive.html` returns `0` — they live in **`variant-lab.html`
+line 866**, in `const VIEW_VARIANTS = {`, whose `"grades-archive"` entry begins
+at **line 1098** and runs 3,335 characters: `v:[[name, description]…]` per view
+plus `b:` / `c:` CSS overrides injected into the mockup's iframe. Opening the
+lab and stepping A → B → C renders all three, captioned exactly as the `.md`
+describes them:
 
-**So the ruling cannot be made from the drawing, because the drawing does not
-contain the choices.** That is why this is stage B and not stage E: there is no
-settled appearance for an implementation to be unfaithful to.
+| View | A | B | C |
+|---|---|---|---|
+| `ledger` | Terms as cards | Dense transcript | Two-column terms |
+| `gpa` | Dual hero | Trend first | Instrument panel |
+| `what-if` | Landing then inputs | Inputs first | Solve-first |
+
+**Verified in the running lab, not read off a file.**
+
+⚠️ **CORRECTED Aug 20.** An earlier reading of this brief claimed the `.md`
+named a mechanism that does not exist. **It does exist.** `const VIEW_VARIANTS`
+is declared at `variant-lab.html:866` and carries entries for eight pages —
+`assignments`, `class-hub`, `review-session`, `exam-prep`, `syllabus-import`,
+`requirements`, `grades-archive`, `class-types`. **The `.md`'s cross-reference
+is accurate and must be left alone.** The original grep looked only at the
+`.md` and `.html` mockup files, where the registry does not live — a negative
+grep in the wrong file is not evidence of absence.
+
+**So this is stage B for one reason only: no variant has been ruled.** The
+comparison is ready; the choice has not been made, and nothing records
+appearance once it is. That is also why it is not stage E — behaviour shipped
+ahead of appearance, but there is no ruled appearance for an implementation to
+be unfaithful to yet.
 
 Same pattern, unruled, in: `academics-requirements.md`, `academics-class-types.md`,
 `academics-empty-states-prototype.md`, `academics-tar-heel-tracker.md`,
@@ -185,23 +206,21 @@ requires every integration coded *and* configured.
 **Nothing in `src/` is touched this pass.** The deliverable is a drawing plus a
 ruling recorded in the `.md`.
 
-### 3.1 Draw the alternatives that were only ever described
+### 3.1 Compare what is already drawn, and rule it
 
-`academics-grades-archive.md` names nine compositions and the file contains
-none of them. **Render them in the mockup so there is something to choose
-between**, using the file's existing tokens and data — no new palette, no new
-copy, no invented numbers.
+**Nothing needs drawing.** Serve `mockup-lab/` over http and open
+`variant-lab.html` → Academics → Planning → **Grades & Archive** (page 26 of
+81). The `RECORD VIEW` switcher moves between `Ledger` / `GPA` / `What-if`, and
+← / → step A / B / C within the selected view. All nine render.
 
-| View | A | B | C |
-|---|---|---|---|
-| `ledger` | Terms as cards | Dense transcript | Two-column terms |
-| `gpa` | Dual hero | Trend first | Instrument panel |
-| `what-if` | Landing then inputs | Inputs first | Solve-first |
+⚠️ **It must be served over `http://`, not opened as `file://`** — variant
+injection needs the parent page and the embedded mockup to share an origin.
+`mockup-lab/open-lab.command` does this on port 8765.
 
-Declare them the way the lab already reads variants — `variants:[…]` per row in
-`variant-lab.html` — and **correct the `.md`'s claim that `VIEW_VARIANTS`
-exists**, or add the mechanism it names. One or the other; the file must stop
-describing something that is not there.
+**Do not touch the `.md`'s `VIEW_VARIANTS` reference.** It is correct: the
+registry is `const VIEW_VARIANTS` at `variant-lab.html:866`, and the
+`"grades-archive"` entry starts at line 1098. Adding a line number to the
+cross-reference is optional; removing or renaming it is wrong.
 
 ### 3.2 What each ruling must settle
 
@@ -262,12 +281,12 @@ drawing.
 
 Every line is a command, not a judgement:
 
-1. **The alternatives exist.**
-   `grep -c 'variants:\[' mockup-lab/variant-lab.html` includes a
-   `grades-archive` row with three entries per view — or the mockup declares
-   its own switcher. **Today `grep -c VIEW_VARIANTS
-   mockup-lab/01-academics/academics-grades-archive.html` returns `0`; it must
-   not still return `0` while the `.md` claims otherwise.**
+1. **The `.md`'s registry cross-reference survives.**
+   `grep -c VIEW_VARIANTS mockup-lab/01-academics/academics-grades-archive.md`
+   still returns **`1`**, and `grep -n "const VIEW_VARIANTS"
+   mockup-lab/variant-lab.html` returns **`866`**. The variants are already
+   drawn (§1e) and the reference to them is accurate — **nothing to draw and
+   nothing to rename.** The only deliverable here is the ruling itself.
 2. **A ruling is recorded per view.**
    `grep -ci 'the ruling' mockup-lab/01-academics/academics-grades-archive.md`
    returns ≥ `3`. Today it returns **`0`**.
@@ -279,8 +298,8 @@ Every line is a command, not a judgement:
 5. **No `src/` diff.** `git diff --name-only -- src/` is **empty**.
 6. **No store-version change.** `grep -n 'CURRENT_STORE_VERSION = ' src/store/store.ts`
    still reads **24**.
-7. **The `.md` no longer describes a mechanism that does not exist** — either
-   `VIEW_VARIANTS` is real, or the sentence naming it is corrected.
+7. **Each ruling is reproducible.** The `.md` names the lab page and the
+   view/variant coordinates a reader can re-open to see the same comparison.
 
 ---
 

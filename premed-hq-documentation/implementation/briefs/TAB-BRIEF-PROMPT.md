@@ -19,8 +19,26 @@ STEP 1 — AUDIT FIRST. Report this before writing anything:
      field, state, or screen. That list is what still needs drawing.
 
   b) MOCKUP → APP. For each mockup: does it exist in src/, and does it
-     LOOK like the drawing? Behaviour shipping is not the same as the
+     MATCH the drawing? Behaviour shipping is not the same as the
      drawing being translated. Say which.
+
+     ⚠️ MEASURE ONE SURFACE. Do not answer this from reading code, and
+     do not answer "looks right". For the tab's primary record surface,
+     paste a three-column row — surface · mockup value · app value:
+       grep -o "\.<class>{[^}]*}" mockup-lab/<path>/<frame>.html
+       getComputedStyle(el).backgroundColor   (in the running app)
+     Compare the LADDER. A drawing that steps bg -> muted -> card must
+     step the same way in the app. Two surfaces that both look like
+     plausible panels, one rung apart, is the failure this catches.
+
+     ⚠️ A token NAME is not the value. `bg-card` is not `var(--muted)`.
+
+     ⚠️ ANYTHING BUILT BEFORE Aug 19 2026 WAS NEVER MEASURED. The
+     visual-fidelity check entered EXECUTE-BRIEF-PROMPT.md on Aug 19,
+     after a week of washed-out surfaces. Every surface older than that
+     -- Class Center, Class Hub, Assignments, Review session -- carries
+     a fidelity commit proving only that someone looked. Treat an older
+     fidelity commit as UNVERIFIED, not as evidence.
 
   c) ALREADY BUILT. What must NOT be rebuilt. Cite the commit.
 
