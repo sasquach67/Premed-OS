@@ -20,14 +20,15 @@
      do NOT earn the space.
   3. HEADS UP = the same component as Overview's Smart next actions.
      Dismiss animates out; last dismissal unmounts the whole widget.
-  4. CLASS CARDS: compact, uniform record cards. At REST no left bar + neutral
-     border (class identity = small colored dot). On HOVER the left bar ignites
-     + full border and glow turn the class accent + card lifts. The primary
-     action previews / opens the class hub. Review is a deliberate follow-up in
-     the record peek or overflow, never a permanent card button. No
-     instructor/meeting clutter, BCPM/type badge, invented denominator,
-     percentage, or progress bar. A missing next date names the absence and
-     leads to the class-owned add route.
+  4. CLASS CARDS: the restored original record hierarchy. At REST no left bar
+     + neutral border (class identity = small colored dot). On HOVER the left
+     bar ignites + full border and glow turn the class accent + card lifts.
+     The card opens the class hub preview; its hover/focus action rail keeps
+     the original Review button beside overflow. The card may show an entered
+     standing, exact grade percent when its grade evidence exists, a labelled
+     topic-ready line + progress meter, and a real next dated item. No
+     instructor/meeting clutter or invented facts. A missing next date names
+     the absence and leads to the class-owned add route.
   5. STUDY TOOLS LIVE ON/IN THE CLASS, never floating on the page —
      a tool with no class selected has no subject.
   6. WHERE YOU'RE WEAK is EXAM-SCOPED by default (topics filtered to the
@@ -68,31 +69,38 @@
 
   <!-- HEADS UP — same component as Overview Smart next actions 
 
-## Later app annotations — authoritative (Aug. 23, 2026)
+## Later app annotations — authoritative (Aug. 24, 2026)
 
-These later rulings supersede the July sample composition wherever they differ.
-They are the source of truth for a future fidelity pass; do not reintroduce an
-older card chip or direct action merely because it remains visible in an older
-reference screenshot.
+Andy restored the original Class Center card hierarchy in app commit
+`3accbee`. These rulings are the source of truth for every future fidelity or
+promotion pass. They supersede the Aug. 23 compact/no-percent/no-progress/
+no-Review experiment below.
 
-- **Footprint:** all primary course records use the same compact, square-ish
-  grid footprint. They do not gain a decorative blank middle zone or stretch
-  just because a neighbouring card has longer content.
-- **Colour:** the course dot and quiet edge/hover accent carry class identity.
-  There is no bold full-card colour fill, permanent glow, or generic blue
-  action that defeats the course-owned accent.
-- **Information:** show the course code/name, a student-entered letter standing
-  when one exists, one type-appropriate factual context line, and one next
-  dated class item when one exists. Do not show BCPM, a class-type badge, a
-  fabricated denominator, a percentage, a cross-course score, or a card-level
-  progress bar.
-- **Actions:** `Preview` / `Open class hub` is the card action. `Review` starts
-  only from the preview/peek or overflow follow-up. If its play icon appears
-  there, the triangle is solid white. It is never a permanently visible action
-  on every main-page card.
+- **Footprint:** primary course cards remain compact and responsive, with the
+  original content-led vertical rhythm. Do not impose a fixed 206px/198px
+  equal-tile rule and do not manufacture a blank middle zone.
+- **Colour:** the course dot and restrained edge/hover accent carry class
+  identity. Keep the solid warm-dark card surface; no permanent full-card
+  colour wash or generic global-blue action.
+- **Information:** show course code/name, an entered letter standing or factual
+  in-progress state, and the exact computed grade percent only when grade
+  evidence exists. A labelled topic-ready line and its progress meter are
+  allowed when topics exist; the next item is shown only when it is a real
+  dated class record. These are facts about the record, never a score, rank,
+  readiness judgement, or composite.
+- **Actions:** clicking the record still opens the Center Peek. The restored
+  `Review` action appears in the card's hover/focus action rail and remains in
+  overflow/context paths; its play triangle is solid white. Hovering Review
+  itself does not light the parent card.
 - **Honest absence:** when the course has no dated item, say so plainly and
-  offer the class-owned add/import route; do not substitute a demo deadline,
-  countdown, grade, review count, or progress fact.
+  offer the class-owned add/import route. Do not substitute a demo deadline,
+  percent, review count, or progress fact.
+
+### Historical note — superseded Aug. 24
+
+The Aug. 23 compact-card experiment removed card percent, topic progress, and
+the Review rail and used fixed equal tiles. It is retained as decision history
+only; it is not a future implementation target.
 
 ## Behaviour
 
@@ -110,8 +118,8 @@ reference screenshot.
 
 - The hierarchy is banner and three navigation forms, then a solid filter bar,
   then a breathable 12-column bento. “Heads up” sits before the class grid;
-  cards remain a distinct, compact equal-footprint collection rather than a
-  stack of full-width rows.
+  cards remain a distinct, compact responsive collection rather than a stack
+  of full-width rows.
 - Use the signed-in warm-dark ladder from `_shared/_visual-recipes.md`:
   page field → solid card → muted nested object → border. Panel corners follow
   the shared card recipe; class cards use the shared 13px record-card recipe.
