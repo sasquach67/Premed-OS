@@ -131,6 +131,15 @@ following:
 Do not re-mark this page `built` until Andy accepts a live side-by-side visual
 check in addition to the six functional promotion conditions.
 
+### Variant ruling — A selected Aug. 24, 2026
+
+Andy selected **Variant A — Approved bento** as the only Class Center visual
+target. Its mixed-size, information-dense control-panel composition is the
+reference; Variant B's study-cockpit emphasis and Variant C's class-first
+canvas remain comparison history only. This ruling does not permit removing
+newer app-specific annotations or working record facts. The implementation must
+combine them with A's layout, depth, and interaction treatment.
+
 ## Behaviour
 
 - The filter bar is controls, not a fourth navigation level: term is a Select,
