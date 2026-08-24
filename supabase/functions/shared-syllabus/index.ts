@@ -101,7 +101,7 @@ Deno.serve(async (request) => {
   }
   if (body.action === 'lookup') {
     const scope = scopeOf(body.scope); if (!scope) return failure(400, 'invalid-scope', 'An exact institution, course, term, and section are required.')
-    const { data, error } = await admin.from('shared_syllabus_structures').select('*').eq('institution', scope.institution).eq('course_code', scope.courseCode).eq('term_label', scope.term).eq('section_label', scope.section).is('revoked_at', null).gte('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(3)
+    const { data, error } = await admin.from('shared_syllabus_structures').select('*').eq('institution', scope.institution).eq('course_code', scope.courseCode).eq('term_label', scope.term).eq('section_label', scope.section).is('revoked_at', null).gte('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(12)
     if (error) return failure(503, 'lookup-failed', 'Shared structures could not be checked.')
     const grouped = new Map<string, any>()
     for (const candidate of data ?? []) {
