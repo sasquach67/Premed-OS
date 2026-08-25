@@ -131,6 +131,14 @@ following:
 Do not re-mark this page `built` until Andy accepts a live side-by-side visual
 check in addition to the six functional promotion conditions.
 
+### Visual acceptance — Aug. 25, 2026
+
+Andy accepted the current live **Variant A — Approved bento** visual treatment.
+This closes the student-owned visual-acceptance portion of promotion condition
+1 for Daily · Class Center. It does **not** promote the page: the separate
+first-use, control, reload, integration, and provenance proofs remain required
+under `T1-academics-first-use-promotion-49.md`.
+
 ### Variant ruling — A selected Aug. 24, 2026
 
 Andy selected **Variant A — Approved bento** as the only Class Center visual
