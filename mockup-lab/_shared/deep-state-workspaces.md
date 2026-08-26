@@ -2,6 +2,13 @@
 
 Companion notes for `deep-state-workspaces.html`.
 
+**Overview · Quarterly goals status:** BUILT after Andy's approval on August 26, 2026.
+**Implementation commit:** `f173cdd`
+
+The selected treatment is the student-confirmed check-off, cumulative metric,
+and period metric composition. Metric progress must name real linked evidence
+or an explicit student-entered measurement; absence never becomes a zero bar.
+
 These are not new product tabs. They are full mockups of states that previously
 appeared only as small cards in the coverage sweep. Each state remains attached
 to its canonical owner:
