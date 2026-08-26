@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { Progress } from '@/components/ui/progress'
 import { Textarea } from '@/components/ui/textarea'
 import { fmtTimeAgo } from '@/lib/date'
 import { uid } from '@/lib/id'
@@ -102,6 +103,22 @@ function formatGoalValue(target: keyof Goals, value: number): string {
   return target === 'gpaTarget' ? value.toFixed(2) : String(Math.round(value))
 }
 
+function normalizedGoalKind(goal: QuarterlyGoal): 'check-off' | 'cumulative' | 'period' {
+  return goal.kind === 'measured' ? 'cumulative' : goal.kind
+}
+
+function goalKindLabel(kind: ReturnType<typeof normalizedGoalKind>): string {
+  if (kind === 'cumulative') return 'Cumulative'
+  if (kind === 'period') return 'Period'
+  return 'Check-off'
+}
+
+function standingTargetUnit(target: keyof Goals): string {
+  if (target === 'gpaTarget') return 'GPA'
+  if (target === 'mcatTarget') return 'points'
+  return 'hours'
+}
+
 export function QuarterlyGoalsPanel() {
   const goals = useStore((state) => state.goals)
   const quarterlyGoals = useStore((state) => state.quarterlyGoals)
@@ -163,28 +180,52 @@ export function QuarterlyGoalsPanel() {
             </MascotNote>
           )}
           {visibleGoals.map((goal) => {
+            const kind = normalizedGoalKind(goal)
             const target = goal.standingTarget
             const targetValue = target ? goals[target] : 0
             const current = target ? currentForTarget(target, goals) : 0
+            const periodHasMeasurement = kind === 'period' && goal.currentValue != null && Boolean(goal.targetValue && goal.targetValue > 0)
+            const cumulativeHasMeasurement = kind === 'cumulative' && Boolean(target && targetValue > 0 && current > 0)
+            const progress = periodHasMeasurement
+              ? Math.min(100, Math.max(0, (goal.currentValue! / goal.targetValue!) * 100))
+              : cumulativeHasMeasurement
+                ? Math.min(100, Math.max(0, (current / targetValue) * 100))
+                : null
             return (
-              <div key={goal.id} className="rounded-xl border border-border bg-muted p-3">
+              <div key={goal.id} className={`rounded-xl border bg-background p-3 ${goal.done ? 'border-[color-mix(in_srgb,var(--success)_38%,var(--border))]' : 'border-border'}`}>
                 <div className="flex items-start gap-2">
-                  <Checkbox
-                    checked={goal.done}
-                    onCheckedChange={(checked) => patchItem('quarterlyGoals', goal.id, { done: Boolean(checked) })}
-                    aria-label={goal.done ? `${goal.text} completed` : `Complete ${goal.text}`}
-                  />
+                  {kind === 'check-off' ? (
+                    <Checkbox
+                      checked={goal.done}
+                      onCheckedChange={(checked) => patchItem('quarterlyGoals', goal.id, { done: Boolean(checked) })}
+                      aria-label={goal.done ? `${goal.text} completed` : `Complete ${goal.text}`}
+                    />
+                  ) : <span className="mt-0.5 size-4 shrink-0 rounded-full border border-primary/35 bg-primary/10" aria-hidden="true" />}
                   <button type="button" onClick={() => openGoalEditor(goal)} className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                    <p className="text-sm font-bold leading-snug">{goal.text}</p>
-                    {goal.kind === 'measured' && target ? (
-                      <p className="mt-2 text-xs font-semibold text-muted-foreground">
-                        {current
-                          ? `${formatGoalValue(target, current)} recorded · ${formatGoalValue(target, targetValue)} student-set target`
-                          : `No recorded value yet · ${formatGoalValue(target, targetValue)} student-set target`}
-                      </p>
-                    ) : <p className="mt-2 text-xs font-semibold text-muted-foreground">{goal.done ? 'Completed' : 'Open'}</p>}
+                    <p className={`text-sm font-bold leading-snug ${goal.done ? 'text-muted-foreground line-through' : ''}`}>{goal.text}</p>
+                    {kind === 'cumulative' && target ? (
+                      <>
+                        <p className="mt-2 text-lg font-extrabold tabular-nums">
+                          {current > 0 ? `${formatGoalValue(target, current)} / ${formatGoalValue(target, targetValue)} ${standingTargetUnit(target)}` : 'No recorded value yet'}
+                        </p>
+                        {progress != null && <Progress value={progress} className="mt-2 h-1.5" aria-label={`${goal.text}: ${Math.round(progress)}% of student-set target`} />}
+                        <p className="mt-2 text-[11px] font-semibold text-muted-foreground">
+                          {current > 0 ? `Connected to recorded ${standingTargetUnit(target).toLowerCase()}` : `${formatGoalValue(target, targetValue)} ${standingTargetUnit(target)} student-set target`}
+                        </p>
+                      </>
+                    ) : kind === 'period' ? (
+                      <>
+                        <p className="mt-2 text-lg font-extrabold tabular-nums">
+                          {periodHasMeasurement ? `${goal.currentValue} / ${goal.targetValue}${goal.unit ? ` ${goal.unit}` : ''}` : 'No measured value yet'}
+                        </p>
+                        {progress != null && <Progress value={progress} className="mt-2 h-1.5" indicatorClassName="bg-[var(--cat-mcat)]" aria-label={`${goal.text}: ${Math.round(progress)}% for ${goal.periodLabel || 'this period'}`} />}
+                        <p className="mt-2 text-[11px] font-semibold text-muted-foreground">
+                          {[goal.periodLabel || 'Current period', goal.evidenceLabel || 'Student-entered measurement'].join(' · ')}
+                        </p>
+                      </>
+                    ) : <p className="mt-2 text-xs font-semibold text-muted-foreground">{goal.done ? 'Completed manually' : 'Open'}</p>}
                   </button>
-                  <Badge variant="muted" className="shrink-0 px-1.5 text-[9px]">{goal.kind === 'measured' ? 'Measured' : 'Check-off'}</Badge>
+                  <Badge variant="muted" className="shrink-0 px-1.5 text-[9px]">{goalKindLabel(kind)}</Badge>
                 </div>
               </div>
             )
@@ -207,8 +248,13 @@ export function QuarterlyGoalEditor({ goal, onDone, onArchive }: { goal?: Quarte
   const existingCount = useStore((state) => state.quarterlyGoals.length)
   const [text, setText] = useState(goal?.text ?? '')
   const [quarter, setQuarter] = useState(goal?.quarter ?? 'Current term')
-  const [kind, setKind] = useState<QuarterlyGoal['kind']>(goal?.kind ?? 'check-off')
+  const [kind, setKind] = useState<'check-off' | 'cumulative' | 'period'>(goal ? normalizedGoalKind(goal) : 'check-off')
   const [standingTarget, setStandingTarget] = useState<keyof Goals | ''>(goal?.standingTarget ?? '')
+  const [currentValue, setCurrentValue] = useState(goal?.currentValue == null ? '' : String(goal.currentValue))
+  const [targetValue, setTargetValue] = useState(goal?.targetValue == null ? '' : String(goal.targetValue))
+  const [unit, setUnit] = useState(goal?.unit ?? '')
+  const [periodLabel, setPeriodLabel] = useState(goal?.periodLabel ?? 'Current week')
+  const [evidenceLabel, setEvidenceLabel] = useState(goal?.evidenceLabel ?? '')
   const targetOptions: Array<{ value: keyof Goals; label: string }> = [
     { value: 'gpaTarget', label: 'GPA' }, { value: 'mcatTarget', label: 'MCAT' },
     { value: 'clinical', label: 'Clinical hours' }, { value: 'volunteering', label: 'Volunteering hours' },
@@ -216,8 +262,18 @@ export function QuarterlyGoalEditor({ goal, onDone, onArchive }: { goal?: Quarte
   ]
   function submit(event: FormEvent) {
     event.preventDefault()
-    if (!text.trim() || (kind === 'measured' && !standingTarget)) return
-    const patch = { quarter: quarter.trim() || 'Current term', text: text.trim(), kind, standingTarget: kind === 'measured' ? standingTarget as keyof Goals : undefined }
+    if (!text.trim() || (kind === 'cumulative' && !standingTarget) || (kind === 'period' && (!targetValue || Number(targetValue) <= 0))) return
+    const patch = {
+      quarter: quarter.trim() || 'Current term',
+      text: text.trim(),
+      kind,
+      standingTarget: kind === 'cumulative' ? standingTarget as keyof Goals : undefined,
+      currentValue: kind === 'period' && currentValue !== '' ? Math.max(0, Number(currentValue) || 0) : undefined,
+      targetValue: kind === 'period' ? Math.max(0, Number(targetValue) || 0) : undefined,
+      unit: kind === 'period' ? unit.trim() || undefined : undefined,
+      periodLabel: kind === 'period' ? periodLabel.trim() || 'Current period' : undefined,
+      evidenceLabel: kind === 'period' ? evidenceLabel.trim() || undefined : undefined,
+    }
     if (goal) patchItem('quarterlyGoals', goal.id, patch)
     else addItem('quarterlyGoals', { id: uid(), ...patch, done: false, order: existingCount })
     onDone()
@@ -227,11 +283,16 @@ export function QuarterlyGoalEditor({ goal, onDone, onArchive }: { goal?: Quarte
       <div><h2 className="font-display text-2xl font-extrabold">{goal ? 'Edit quarterly goal' : 'Add a quarterly goal'}</h2><p className="mt-1 text-sm text-muted-foreground">You choose how this goal is represented; nothing is inferred from its wording.</p></div>
       <label className="block text-sm font-bold">Goal <Textarea value={text} onChange={(event) => setText(event.target.value)} className="mt-2" rows={3} placeholder="What do you want to make true this term?" /></label>
       <label className="block text-sm font-bold">Quarter or term <Input value={quarter} onChange={(event) => setQuarter(event.target.value)} className="mt-2" /></label>
-      <fieldset className="space-y-2"><legend className="text-sm font-bold">Goal type</legend><div className="grid gap-2 sm:grid-cols-2">
-        {(['check-off', 'measured'] as const).map((option) => <button key={option} type="button" onClick={() => setKind(option)} className={`rounded-xl border p-3 text-left text-sm font-bold transition-colors ${kind === option ? 'border-primary bg-primary/10' : 'border-border bg-muted hover:bg-muted/60'}`}><span className="block">{option === 'check-off' ? 'Check-off' : 'Measured'}</span><span className="mt-1 block text-xs font-semibold text-muted-foreground">{option === 'check-off' ? 'A manual completion state.' : 'Recorded evidence against a target you set.'}</span></button>)}
+      <fieldset className="space-y-2"><legend className="text-sm font-bold">Goal type</legend><div className="grid gap-2 md:grid-cols-3">
+        {([
+          ['check-off', 'Check-off', 'One finish line that you complete manually.'],
+          ['cumulative', 'Cumulative metric', 'Progress from an owned lifetime tracker and its standing target.'],
+          ['period', 'Period metric', 'A measured value that resets over a named period.'],
+        ] as const).map(([option, label, description]) => <button key={option} type="button" onClick={() => setKind(option)} className={`rounded-xl border p-3 text-left text-sm font-bold transition-colors ${kind === option ? 'border-primary bg-primary/10' : 'border-border bg-background hover:bg-muted/60'}`}><span className="block">{label}</span><span className="mt-1 block text-xs font-semibold text-muted-foreground">{description}</span></button>)}
       </div></fieldset>
-      {kind === 'measured' && <label className="block text-sm font-bold">Standing target <select value={standingTarget} onChange={(event) => setStandingTarget(event.target.value as keyof Goals)} className="mt-2 flex h-9 w-full rounded-md border border-border bg-background px-3 text-sm"><option value="">Choose a target</option>{targetOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>}
-      <div className="flex flex-wrap justify-between gap-2"><div>{onArchive && <Button type="button" variant="ghost" onClick={onArchive}><Archive className="size-4" />Archive</Button>}</div><Button type="submit" disabled={!text.trim() || (kind === 'measured' && !standingTarget)}>Save goal</Button></div>
+      {kind === 'cumulative' && <label className="block text-sm font-bold">Connected standing target <select value={standingTarget} onChange={(event) => setStandingTarget(event.target.value as keyof Goals)} className="mt-2 flex h-9 w-full rounded-md border border-border bg-background px-3 text-sm"><option value="">Choose a target</option>{targetOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><span className="mt-2 block text-xs font-semibold text-muted-foreground">Premed OS uses only the recorded value and target owned by that tracker.</span></label>}
+      {kind === 'period' && <div className="space-y-4 rounded-xl border border-border bg-background p-4"><div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-bold">Current value <Input type="number" min={0} value={currentValue} onChange={(event) => setCurrentValue(event.target.value)} className="mt-2" placeholder="Optional until measured" /></label><label className="block text-sm font-bold">Target <Input type="number" min={0} value={targetValue} onChange={(event) => setTargetValue(event.target.value)} className="mt-2" /></label><label className="block text-sm font-bold">Unit <Input value={unit} onChange={(event) => setUnit(event.target.value)} className="mt-2" placeholder="questions, pages, hours…" /></label><label className="block text-sm font-bold">Period <Input value={periodLabel} onChange={(event) => setPeriodLabel(event.target.value)} className="mt-2" placeholder="Current week" /></label></div><label className="block text-sm font-bold">Evidence note <Input value={evidenceLabel} onChange={(event) => setEvidenceLabel(event.target.value)} className="mt-2" placeholder="Where this measured value came from" /><span className="mt-2 block text-xs font-semibold text-muted-foreground">Leave the current value blank until you have a real record. Premed OS will not invent zero progress.</span></label></div>}
+      <div className="flex flex-wrap justify-between gap-2"><div>{onArchive && <Button type="button" variant="ghost" onClick={onArchive}><Archive className="size-4" />Archive</Button>}</div><Button type="submit" disabled={!text.trim() || (kind === 'cumulative' && !standingTarget) || (kind === 'period' && (!targetValue || Number(targetValue) <= 0))}>Save goal</Button></div>
     </form>
   )
 }

@@ -5,7 +5,7 @@ import type { AppData } from '@/lib/types'
  * other legacy goals remain manual check-offs. */
 export function migrateOverviewV13(data: AppData): AppData {
   const quarterlyGoals = data.quarterlyGoals.map((goal) => {
-    if (goal.kind === 'check-off' || goal.kind === 'measured') return goal
+    if (goal.kind === 'check-off' || goal.kind === 'measured' || goal.kind === 'cumulative' || goal.kind === 'period') return goal
     return { ...goal, kind: goal.standingTarget ? 'measured' as const : 'check-off' as const }
   })
   return quarterlyGoals.some((goal, index) => goal !== data.quarterlyGoals[index])

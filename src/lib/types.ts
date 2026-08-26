@@ -1518,10 +1518,19 @@ export interface QuarterlyGoal {
   quarter: string
   text: string
   done: boolean
-  /** Student-confirmed presentation: never inferred from the goal wording. */
-  kind: 'check-off' | 'measured'
-  /** Optional link to the long-horizon target stored in `goals`. */
+  /** Student-confirmed presentation: never inferred from the goal wording.
+   * `measured` remains readable as the legacy name for `cumulative`. */
+  kind: 'check-off' | 'cumulative' | 'period' | 'measured'
+  /** Optional link to the long-horizon target stored in `goals`. Cumulative
+   * goals read their recorded value and target from this linked domain. */
   standingTarget?: keyof Goals
+  /** Period goals may use a student-entered measurement when no owned tracker
+   * can supply it. Undefined means insufficient evidence, never zero. */
+  currentValue?: number
+  targetValue?: number
+  unit?: string
+  periodLabel?: string
+  evidenceLabel?: string
   order: number
 }
 

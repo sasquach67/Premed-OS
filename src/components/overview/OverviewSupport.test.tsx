@@ -134,6 +134,39 @@ describe('Overview File Capture', () => {
     expect(headings).not.toContain('Standing targets')
   })
 
+  it('renders period goals with their explicit measurement and source context', async () => {
+    useStore.setState({
+      quarterlyGoals: [{
+        id: 'weekly-questions', quarter: 'Current term', text: '150 practice questions each week',
+        done: false, kind: 'period', currentValue: 132, targetValue: 150,
+        unit: 'questions', periodLabel: 'Current week', evidenceLabel: 'Student-entered practice log', order: 0,
+      }],
+    })
+    await renderQuarterlyGoals()
+
+    expect(container.textContent).toContain('132 / 150 questions')
+    expect(container.textContent).toContain('Current week · Student-entered practice log')
+    expect(container.querySelector('[role="progressbar"][aria-label*="88%"]')).toBeTruthy()
+    expect(container.querySelector('input[type="checkbox"]')).toBeNull()
+  })
+
+  it('keeps the honest no-goal state actionable', async () => {
+    useStore.setState({ quarterlyGoals: [] })
+    await renderQuarterlyGoals()
+
+    expect(container.textContent).toContain('No quarterly goal yet')
+    expect(button(container, 'Set a goal')).toBeTruthy()
+  })
+
+  it('offers the three student-confirmed goal types in the editor', async () => {
+    await renderQuarterlyGoals()
+    await act(async () => button(container, 'Add goal').click())
+
+    expect(buttonContaining(document.body, 'Check-off')).toBeTruthy()
+    expect(buttonContaining(document.body, 'Cumulative metric')).toBeTruthy()
+    expect(buttonContaining(document.body, 'Period metric')).toBeTruthy()
+  })
+
   it('opens the goal editor expand control at its full-page Overview route', async () => {
     await act(async () => {
       root.render(
