@@ -300,8 +300,9 @@ const profiles = [
   {
     id:"empty-states",group:"Academics",name:"Empty states",status:"approved",
     // DEMOTED Aug 20 2026 — condition 4: emptying the store re-seeds 40 courses, so the drawn zero-class state is unreachable without editing storage by hand. Stage D.
+    // STILL NOT BUILT Aug 27 2026 — the Aug 20 reason is resolved (the zero-class state renders correctly on a clean origin), but condition 1 now fails on measurement: the approved "What this sets up" explanation is absent from the app, replaced by a three-item strip ("Review before saving / Keep work in one place / Change it any time") whose content appears in no variant, and Variant A's partial-parse line is omitted entirely. The button label "Import syllabus" and the quiet "Add manually" link do match the decision record.
     path:"01-academics/academics-empty-states-prototype.html",native:true,
-    variantSourceRev:"empty-states-a-setup-guide-20260814",
+    variantSourceRev:"daily-copy-pass-20260826-v1",
     desc:"Zero-class cold start using the MascotNote empty-state pattern.",
     variants:[
       ["Guided launchpad","One calm day-one action with outcomes underneath."],
@@ -310,9 +311,9 @@ const profiles = [
     ]
   },
   {
-    id:"planner",group:"Academics",name:"Planner",status:"approved",
+    id:"planner",group:"Academics",name:"Planner",status:"approved",variantSourceRev:"planner-local-library-v5-20260827",
     path:"01-academics/academics-planner-prototype.html",native:true,
-    desc:"Future-term sequencing with requirement effects and live GPA outcomes. A + C ruled Aug 19, 2026 — the whole-plan board with the selected-course inspector on demand; B retired.",
+    desc:"Timeline-first local planning with persistent first-class Plan coverage and Find a course workbench regions; full source-bearing drawers add depth. ConnectCarolina remains authoritative for the official audit and live enrollment.",
     variants:[
       ["Timeline first","The whole plan and MCAT divider lead."],
       ["Next-term builder","One semester becomes the working surface."],
@@ -346,7 +347,7 @@ const profiles = [
     `
   },
   {
-    id:"daily-main",group:"Academics",name:"Daily · Class Center",status:"approved",
+    id:"daily-main",group:"Academics",name:"Daily · Class Center",status:"approved",variantSourceRev:"daily-copy-pass-20260826-v1",
     path:"01-academics/academics-daily-main-page.html",
     desc:"The populated Academics landing page and cross-class study outlook.",
     variants:[
@@ -373,11 +374,19 @@ const profiles = [
     desc:"Five-tab per-class workspace and study loop.",
     keys:["A","B","C","D","E"],
     variants:[
-      ["Overview","The class overview appears as one complete workspace."],
+      ["Overview","A bounded Class journal and direct transcript-first panel lead; Course pulse, Class Plan, and the retention panel follow."],
+      ["Overview · lecture record","A selected numbered lecture opens its saved transcript, supporting evidence, and study work without entering capture."],
+      ["Overview · transcript","A new numbered lecture opens transcript upload or paste inside the Class Hub Overview."],
+      ["Overview · evidence","Optional files, clipboard screenshots, and textbook excerpts stay attached inside Overview."],
+      ["Overview · study work","The student selects attached sources before creating sourceable study work inside Overview."],
       ["Materials","The weekly materials library opens as its own view."],
       ["Topics","The course topic map opens as its own view."],
-      ["Assignments","Class-scoped work is grouped by syllabus category with grades and what-if."],
-      ["Notes","Class intel, questions, priming, and lecture notes open as their own view."]
+      ["Assignments","Overview task behavior in the Daily agenda, permanently filtered to this course; grade scenarios stay below."],
+      ["Guide","Source-backed class intel, questions, priming, and lecture context; syllabus/transcript suggestions require review before saving."],
+      ["Professor evidence: dormant","No course-owned returned work has earned a pattern yet."],
+      ["Professor evidence: records","A bounded dated course-only sample is reviewable, not predictive."],
+      ["Writing: readings","Writing classes replace the STEM topic surface with reading state."],
+      ["Writing: current draft","One draft tracks real and self-set deadlines without becoming a project app."]
     ],
     b:`
       .frame>.lab,.frame>.wrap{display:none!important}
@@ -394,8 +403,9 @@ const profiles = [
     `
   },
   {
-    id:"class-types",group:"Academics",name:"Class types",status:"approved",
-    // DEMOTED Aug 20 2026 — condition 3: locked decision 7 (per-row verb chips Recall/Draft/Read/Log) is not implemented anywhere in src. Stage D.
+    id:"class-types",group:"Academics",name:"Class types",status:"built",variantSourceRev:"daily-copy-pass-20260826-v1",
+    // PROMOTED Aug 23 2026 — 997fd0a / cdc7308 prove the compact Writing ladder,
+    // real persisted reload, clear-store state, zero inert controls, and no external configuration gap.
     path:"01-academics/academics-class-types.html",
     desc:"STEM, Writing, and General parity across class workspaces.",
     variants:[
@@ -416,56 +426,31 @@ const profiles = [
     `
   },
   {
-    id:"study-method",group:"Academics",name:"Study method · UNPATCHED 2026",status:"proposed",
-    path:"01-academics/academics-study-method.html",
-    desc:"The study-cycle surface: per-topic dot track, the class-Overview panel, and lecture-day timing.",
+    id:"class-type-selection",group:"Academics",name:"Add class · type",status:"approved",fitCanvas:true,
+    path:"01-academics/academics-class-type-selection.html",
+    desc:"The one add-class decision: an explainable STEM/Writing proposal or an honest explicit choice.",
     variants:[
-      ["All three placements","The track, the grouped panel, and the timing cards as authored."],
-      ["Track and panel","The per-topic atom and the panel it feeds, without the timing cards."],
-      ["Panel only","The class-Overview grouping on its own, including the vanished state."]
-    ],
-    b:`
-      body>.framelabel,body>.frame{display:none!important}
-      body>.framelabel:nth-child(1),body>.frame:nth-child(2),
-      body>.framelabel:nth-child(3),body>.frame:nth-child(4){display:block!important}
-    `,
-    c:`
-      body>.framelabel,body>.frame{display:none!important}
-      body>.framelabel:nth-child(3),body>.frame:nth-child(4),
-      body>.framelabel:nth-child(5),body>.frame:nth-child(6){display:block!important}
-    `
+      ["Suggested Writing","Syllabus evidence proposes Writing; the choice remains editable before class creation."],
+      ["Suggested STEM","Course metadata proposes STEM; the choice remains editable before class creation."],
+      ["Choose explicitly","No evidence means no highlighted type and a disabled Add action until the student decides."],
+      ["Mobile","The same explicit-choice state holds the three equal targets at narrow width."]
+    ]
   },
   {
-    id:"forgetting-curve",group:"Academics",name:"Forgetting curve",status:"proposed",
-    path:"01-academics/academics-forgetting-curve.html",
-    desc:"The sawtooth panel — solid history, dashed projection, and the honest thin-history state.",
-    variants:[
-      ["Full panel","The curve, its legend, the exam line, and both entry points."],
-      ["Curve only","The sawtooth and its legend, without the thin state or entry points."],
-      ["Thin history","The one-review state and where the panel is reached from."]
-    ],
-    b:`
-      body>.framelabel,body>.frame{display:none!important}
-      body>.framelabel:nth-child(1),body>.frame:nth-child(2){display:block!important}
-    `,
-    c:`
-      body>.framelabel,body>.frame{display:none!important}
-      body>.framelabel:nth-child(3),body>.frame:nth-child(4),
-      body>.framelabel:nth-child(5),body>.frame:nth-child(6){display:block!important}
-    `
-  },
-  {
-    id:"exam-prep",group:"Academics",name:"Exam-plan builder",status:"proposed",
+    id:"exam-prep",group:"Academics",name:"Exam-plan builder",status:"approved",variantSourceRev:"daily-copy-pass-20260826-v1",
     path:"01-academics/academics-exam-prep-mode.html",
-    desc:"Accelerated, steady, and catch-up exam preparation states.",
+    desc:"Exam planning plus the nested full-mock eligibility, runner, and autopsy states.",
     variants:[
       ["Accelerated","The default nine-day plan opens as one complete screen."],
       ["Steady","The steady-mode plan and clocked-out state open separately."],
-      ["Catch-up","The detected three-day catch-up plan opens separately."]
+      ["Catch-up","The detected three-day catch-up plan opens separately."],
+      ["Full mock · start","One class exam scope and its student-supplied material are checked before a practice attempt."],
+      ["Full mock · runner","The temporary focused practice runner carries source context, elapsed time, and an explicit end action."],
+      ["Full mock · autopsy","Missed and self-flagged topics route to their sources and next actions, never a readiness score."]
     ],
     b:`
-      body>.framelabel,body>.frame{display:none!important}
-      body>.framelabel:nth-child(1),body>.frame:nth-child(2){display:block!important}
+      body>.frame{display:none!important}
+      body>.frame:nth-child(2){display:block!important}
       body>.frame:nth-child(2){margin-bottom:50px!important}
     `,
     c:`
@@ -478,13 +463,16 @@ const profiles = [
     `
   },
   {
-    id:"review-session",group:"Academics",name:"Review session",status:"approved",
+    id:"review-session",group:"Academics",name:"Review session",status:"approved",variantSourceRev:"daily-copy-pass-20260826-v1",
     path:"01-academics/academics-review-session.html",
     desc:"Active-recall cue, composer, confidence, reveal, and grading loop.",
     variants:[
       ["Session start","The scenic queue introduction opens as one screen."],
-      ["Recall","The active recall composer opens as one focused screen."],
-      ["Gap report","The missed-concept report and cited source open as one screen."]
+      ["Recall","The active recall composer includes optional continuous-dictation guidance and an official voice-tools directory."],
+      ["Gap report","The missed-concept report and cited source open as one screen."],
+      ["Concept canvas","Draw in-app or add a picture or file; both stay inside Active Recall beside the default composer."],
+      ["Link proposal","A suggested topic relation waits for confirmation."],
+      ["Map recovery","An attached map survives until a source and scope are chosen."]
     ],
     b:`
       .frame>.lab{display:none!important}
@@ -498,7 +486,7 @@ const profiles = [
     `
   },
   {
-    id:"syllabus-import",group:"Academics",name:"Syllabus import",status:"proposed",
+    id:"syllabus-import",group:"Academics",name:"Syllabus import",status:"approved",variantSourceRev:"daily-copy-pass-20260826-v1",
     path:"01-academics/academics-syllabus-import.html",
     desc:"Upload, parse, review-before-apply, diff, and failure recovery.",
     variants:[
@@ -507,8 +495,8 @@ const profiles = [
       ["Re-import diff","The safe diff and failure-recovery state opens alone."]
     ],
     b:`
-      body>.framelabel,body>.frame{display:none!important}
-      body>.framelabel:nth-child(3),body>.frame:nth-child(4){display:block!important}
+      body>.frame{display:none!important}
+      body>.frame:nth-child(4){display:block!important}
       body>.frame:nth-child(4){margin-bottom:50px!important}
     `,
     c:`
@@ -519,6 +507,16 @@ const profiles = [
       body>.framelabel:nth-child(3){grid-column:2;grid-row:1}body>.frame:nth-child(4){grid-column:2;grid-row:2}
       body>.framelabel:nth-child(5){grid-column:3;grid-row:1}body>.frame:nth-child(6){grid-column:3;grid-row:2}
     `
+  },
+  {
+    id:"academics-syllabus-structure-share",group:"Academics",name:"Shareable syllabus structure",status:"approved",
+    path:"01-academics/academics-syllabus-structure-share.html",
+    desc:"A privacy-first, anonymous shareable parse: extracted course structure only, always reviewed before any local apply.",
+    variants:[
+      ["Consent-led","Private-by-default consent and the exact allow-list lead the owner decision."],
+      ["Evidence-led","The candidate structure and independent agreement lead, with privacy still inspectable."],
+      ["Diff-led","The private structure and candidate fields share the working surface; conflicts lead." ]
+    ]
   },
   {
     id:"mode-switch",group:"Academics · legacy",name:"Daily / Planning concept",status:"legacy",
@@ -569,9 +567,9 @@ const profiles = [
     `
   },
   {
-    id:"requirements",group:"Academics",name:"Tar Heel Tracker",status:"proposed",
+    id:"requirements-legacy",group:"Academics · legacy",name:"Requirements audit · retired",status:"legacy",variantSourceRev:"planning-review-20260826-v2",
     path:"01-academics/academics-tar-heel-tracker.html",
-    desc:"Tar Heel requirement audit, on-pace verdict against the MCAT, and transcript-exact prior credit.",
+    desc:"Retired numeric gap-and-pace direction; requirements now live inside Planner’s term-sequencing rail.",
     variants:[
       ["Gap & pace","The default audit: verdict first, requirement sets below."],
       ["All requirements","The full sets with their confidence labelling."],
@@ -579,40 +577,59 @@ const profiles = [
     ]
   },
   {
-    id:"grades-archive",group:"Academics",name:"Grades & Archive",status:"proposed",
+    id:"grades-archive",group:"Academics",name:"Grades & Archive",status:"approved",
     path:"01-academics/academics-grades-archive.html",
     desc:"The full record, dual UNC/AMCAS GPA, and weight-aware what-if.",
     variants:[
       ["Ledger","Every course ever taken, with status as a filter."],
       ["GPA","Dual UNC/AMCAS numbers and the year-by-year trend."],
-      ["What-if","Scenario mode and the inverse solve."]
+      ["What-if","Scenario mode and the inverse solve."],
+      ["Transcript record","Transcript-exact fields, optional evidence, and unguessed classification."],
+      ["No transcript records","The honest empty and partial state before GPA or export."],
+      ["Coursework export","A student-controlled all-institution record, not a registrar document."],
+      ["Term report","The rollover-fired retrospective, observations, carry-forward experiments, and honest thin state."]
     ]
   },
   {
-    id:"academics-materials-extensions",group:"Academics",name:"Materials extensions",status:"proposed",
+    id:"academics-materials-extensions",group:"Academics",name:"Materials extensions",status:"approved",variantSourceRev:"daily-copy-pass-20260826-v1",
     path:"01-academics/academics-materials-extensions.html",
-    desc:"The existing Materials tab gains catalog permission, calendar-feed review, and student-grounded generation states.",
+    desc:"The existing Materials tab gains source cataloging, safe folder filing, one-way note mapping, and student-grounded study outputs.",
     variants:[
       ["Resource catalog","Source ownership and private-by-default assessment materials."],
-      ["Calendar feed","Path A review of imported calendar dates before they become plan facts."],
-      ["Study guide","Grounded generation with the student's selected class material."],
-      ["Feed unavailable","A disconnected calendar feed preserves the course facts already confirmed."],
+      ["Actual material","A source-and-permission catalog for material the student may use."],
+      ["Timed attempt","One named item, confirmed scope, and a private time boundary."],
+      ["Return & mistakes","One transparent attempt record and the locked optional cause taxonomy."],
+      ["Folder intake","A user-selected local folder becomes a visible placement proposal before any course metadata changes."],
+      ["Folder review","Every proposed file placement waits for the student’s confirmation."],
+      ["Watched notes","One-way backup-path mapping is confirmed once and re-asks only for a new or unclear level."],
+      ["Mapping exception","An unclear watched-note level asks without changing the existing mapping."],
+      ["Material reader","A bounded source preview keeps class position, ownership, and material handoff visible."],
+      ["Source selection","Grounded generation begins with the student's selected class material."],
+      ["Textbook excerpt","A bounded pasted section becomes one student-owned source in the selected-source map."],
       ["Generated guide","A completed guide shows the exact student material that grounded it."],
+      ["Choose output","The selected-source map offers Revised Notes, Study Guide, or Flashcards without creating a second generator home."],
+      ["Revised notes","A consolidated lecture record preserves the selected sources and names any unresolved gap."],
+      ["Revised Notes baseline","The student's selected notes anchor the repair path; other material stays visibly supporting evidence."],
+      ["No notes baseline","No artifact is shown until the student selects notes to revise or chooses a different output."],
+      ["Flashcards preview","A compact source-grounded deck review includes a readable card and a relational Extra example."],
+      ["Export handoff","One-way `.apkg` export is primary, TSV is fallback, and Anki scheduling stays outside Premed OS."],
+      ["Needs sources","Insufficient selected material preserves the request and routes back to Materials without inventing cards."],
       ["Generator unavailable","An unavailable provider keeps the source selection intact and gives a recovery path."]
     ]
   },
   {
-    id:"academics-lecture-capture",group:"Academics",name:"Lecture capture",status:"proposed",
+    id:"academics-lecture-capture",group:"Academics · legacy",name:"Lecture capture · cut",status:"legacy",
     path:"01-academics/academics-lecture-capture.html",
-    desc:"Optional local-first lecture capture with quote-and-timestamp review, never an importance prediction.",
+    desc:"Superseded: student-provided transcript and course materials replace any audio capture, upload, or transcription route.",
     variants:[
       ["Capture","Optional local recording or upload begins from Materials."],
       ["Review","Quotes and timestamps become explicit material proposals."],
+      ["Lecture index","Searchable quotes retain their timestamp and material connection."],
       ["Unavailable","No permission and no match remain recoverable states."]
     ]
   },
   {
-    id:"academics-planning-decisions",group:"Academics",name:"Planner decision states",status:"proposed",
+    id:"academics-planning-decisions",group:"Academics",name:"Planner decision states",status:"approved",
     path:"01-academics/academics-planning-decisions.html",
     desc:"Requirement preview, saved-plan comparison, and a ranked MCAT-decay explanation inside Planning.",
     variants:[
@@ -625,13 +642,13 @@ const profiles = [
     ]
   },
   {
-    id:"academics-planning-cold-start",group:"Academics",name:"Planning empty state",status:"proposed",
+    id:"academics-planning-cold-start",group:"Academics",name:"Planning empty state",status:"approved",
     path:"01-academics/academics-planning-cold-start.html",native:true,keys:["A"],
     desc:"Planning asks for one durable course fact rather than showing empty metrics or a fake degree plan.",
     variants:[["One fact first","A quiet Planning-specific cold state, distinct from the Daily syllabus launchpad."]]
   },
   {
-    id:"academics-term-rollover",group:"Academics",name:"Term rollover",status:"proposed",
+    id:"academics-term-rollover",group:"Academics",name:"Term rollover",status:"approved",
     path:"01-academics/academics-term-rollover.html",
     desc:"A bounded end-of-term transition separates archived course records from the next home for topics.",
     variants:[
@@ -641,7 +658,7 @@ const profiles = [
     ]
   },
   {
-    id:"academics-feature-states",group:"Academics",name:"Feature-state sweep",status:"draft",path:"_shared/feature-coverage-sweep.html?area=academics",
+    id:"academics-feature-states",group:"Academics",name:"Feature-state sweep",status:"approved",path:"_shared/feature-coverage-sweep.html?area=academics",
     desc:"Previously under-shown learning, grade, lifecycle, and no-data states, each labelled with its real home surface.",variants:[["Coverage sheet","Every under-shown Academics state appears in one reviewable sheet."],["Coverage sheet","State coverage is structural, not a competing layout option."],["Coverage sheet","State coverage is structural, not a competing layout option."]]
   },
   {
@@ -867,6 +884,13 @@ const profiles = [
    of the isolated view. Never toggle sibling frames/views from here.
 --------------------------------------------------------------------------- */
 const VIEW_VARIANTS = {
+  "academics-materials-extensions":{
+    "study-guide-intake":{v:[["Anchored source map","The guide stays visible beside a deliberate, named evidence path."],["Artifact-first workbench","Available sources become a compact workbench while the chosen guide remains the destination."],["Contextual intake sheet","A focused Materials sheet keeps the output context while source selection stays calm."]]},
+    "flashcards-intake":{v:[["Anchored source map","The deck destination, selected sources, and Anki handoff remain visible together."],["Artifact-first workbench","Source choices become a compact workbench before the deck is previewed."],["Contextual intake sheet","A focused sheet collects only the course material this deck may use."]]},
+    "revised-notes-intake":{v:[["Anchored source map","The student note is visibly central; support sources surround it rather than replacing it."],["Artifact-first workbench","The baseline note and supporting source choices read as one focused repair setup."],["Contextual intake sheet","Revision begins in a bounded Materials sheet with the required student-note baseline visible."]]},
+    "source-not-ready":{v:[["Recovery card","The retained file, exact limitation, and two safe recovery paths share one card."],["Repair-first","Recovery actions lead before the retained-file context."],["Source context","The file record stays prominent while the repair options stay compact."]]},
+    "no-eligible-source":{v:[["Output-preserving empty","The requested artifact remains visible while the student chooses the first usable source."],["Source picker first","The available next inputs lead without changing or losing the requested output."],["Minimal contextual empty","One short recovery sheet keeps the output context without inventing material."]]}
+  },
   assignments:{
     agenda:{v:[["Bucketed queue","Time buckets stack in one column; position alone encodes urgency."],
                ["Two-column triage","The same buckets run in two columns so a whole week is visible without scrolling."],
@@ -878,11 +902,11 @@ const VIEW_VARIANTS = {
          .frame>.body .acbar{display:none!important}`},
     /* Day columns are .wkcol inside .wkgrid; .wkd is only the label inside a
        column. Target .wkgrid/.wkcol — never .wkd — for weekly layout work. */
-    weekly:{v:[["Seven lanes","Every weekday gets equal width — the honest shape of the week."],
-               ["Weekday focus","Weekends compress so the five working days carry the space."],
+    weekly:{v:[["Weekday focus","Weekends compress so the five working days carry the space."],
+               ["Seven lanes","Every day gets equal width when weekend work needs equal prominence."],
                ["Day rows","Days become full-width rows so a heavy day can show all of its work."]],
-      b:`.frame>.body .wkgrid{grid-template-columns:.62fr repeat(5,1fr) .62fr!important}
-         .frame>.body .wkcol:first-child,.frame>.body .wkcol:last-child{opacity:.5!important}
+      b:`.frame>.body .wkgrid{grid-template-columns:repeat(7,1fr)!important}
+         .frame>.body .wkcol:first-child,.frame>.body .wkcol:last-child{opacity:1!important}
          .frame>.body .wkcol.today{box-shadow:0 0 0 1px var(--pri)!important}`,
       c:`.frame>.body .wkgrid{display:flex!important;flex-direction:column!important;gap:7px!important}
          .frame>.body .wkcol{display:grid!important;grid-template-columns:132px minmax(0,1fr)!important;
@@ -901,19 +925,24 @@ const VIEW_VARIANTS = {
          .frame>.body .calev{font-size:8px!important;padding:1px 3px!important}`}
   },
   "class-hub":{
-    overview:{v:[["Bento status board","Mixed-size panels; the approved composition."],
-                 ["Study-first column","Due-today and weak topics lead in one wide column; status demotes."],
-                 ["Two-pane workspace","Status left, study right — nothing stacks below the fold."]],
+    overview:{v:[["Transcript-first workspace","A bounded Class journal and direct transcript import/paste panel lead at equal visual weight."],
+                 ["Study-first column","Due-today and weak topics lead in one wide column while the journal remains idle."],
+                 ["Two-pane workspace","Course context and class work occupy a stable two-pane composition beside the idle journal."]],
       b:`.frame>.wrap .bento{display:flex!important;flex-direction:column!important}
          .frame>.wrap .bento>.card:nth-child(2),.frame>.wrap .bento>.card:nth-child(3){order:-1}`,
       c:`.frame>.wrap .bento{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
          .frame>.wrap .bento>.card{grid-column:auto!important}`},
+    "lecture-record":{v:[["Selected lecture record","Transcript, attached evidence, and study work share one compact saved record."],
+                         ["Evidence-first record","Saved source material leads before generated work."],
+                         ["Compact record","The saved objects collapse into a single scan-friendly column."]],
+      b:`.journal-evidence{grid-template-columns:repeat(2,minmax(0,1fr))!important}`,
+      c:`.journal-evidence{grid-template-columns:1fr!important}`},
     /* Each Class Hub view is one .frame > .wrap. Their children differ, so C
        treatments place children explicitly rather than using nth-child sweeps:
          materials  .fb .grp .warn
          topics     .fb .grp .grp
          assignments .fb .grp .grp .pace [what-if]
-         notes      [filter] .card                                        */
+         guide      [filter] .card                                        */
     materials:{v:[["Weekly modules","Grouped by week, the way the syllabus orders them."],
                   ["Library index","A flat, filterable index for finding one file fast."],
                   ["List + side pane","Files on the left, unmapped-file triage pinned beside them."]],
@@ -925,20 +954,19 @@ const VIEW_VARIANTS = {
          .frame>.wrap>.fb{grid-column:1/-1!important}
          .frame>.wrap>.grp{grid-column:1!important;margin-bottom:0!important}
          .frame>.wrap>.warn{grid-column:2!important;position:sticky;top:10px}`},
-    topics:{v:[["Unit sections","Topics grouped into units in course order."],
-               ["Mastery table","One flat table sorted by weakness rather than by unit."],
-               ["Two-column map","Units run in two columns to expose the whole course at once."]],
+    topics:{v:[["Week sections","Topics grouped by syllabus week in course order; units remain supporting context."],
+               ["Mastery table","One flat table sorted by weakness rather than by week."],
+               ["Two-column map","Weeks run in two columns to expose the whole course at once."]],
       b:`.frame>.wrap .grp{border:0!important;background:transparent!important;margin-bottom:4px!important}
          .frame>.wrap .gh{display:none!important}
          .frame>.wrap .row{border-radius:0!important;border-left:0!important;border-right:0!important}`,
       c:`.frame>.wrap{columns:2!important;column-gap:14px!important}
          .frame>.wrap>.fb{column-span:all!important}
          .frame>.wrap>.grp{break-inside:avoid!important}`},
-    assignments:{v:[["Category groups","Grouped by syllabus category, because that is how the grade computes."],
-                    ["Weight ledger","Categories become a weight-and-average ledger; items collapse."],
-                    ["Split with what-if","Categories left, the what-if calculator pinned right."]],
-      b:`.frame>.wrap .row{display:none!important}
-         .frame>.wrap .gh{padding:11px 13px!important}
+    assignments:{v:[["Class task agenda","Overview task behavior in the familiar assignment queue, fixed to this course; grade scenarios stay below."],
+                    ["Compressed agenda","The same course-only queue, with compact urgency buckets and no lost rows."],
+                    ["Agenda + grade scenario","The queue stays primary while the what-if scenario becomes a stable secondary pane."]],
+      b:`.frame>.wrap .gh{padding:11px 13px!important}
          .frame>.wrap .grp{margin-bottom:8px!important}`,
       c:`.frame>.wrap{display:grid!important;grid-template-columns:minmax(0,1.4fr) minmax(290px,.6fr)!important;
            gap:12px!important;align-items:start!important}
@@ -946,9 +974,9 @@ const VIEW_VARIANTS = {
          .frame>.wrap>.grp{grid-column:1!important;margin-bottom:0!important}
          .frame>.wrap>.pace{grid-column:1!important}
          .frame>.wrap>*:last-child{grid-column:2!important;grid-row:2/span 3!important;position:sticky;top:10px}`},
-    notes:{v:[["Filed by kind","Exam intel, questions, priming and lecture notes stay separated."],
+    guide:{v:[["Filed by kind","A sourceable Course lens leads; syllabus/transcript suggestions are reviewed beside separated exam intel, questions, priming, and lecture context."],
               ["Single stream","One chronological stream with kind as a chip."],
-              ["Two-column desk","The kind filter and per-topic notes sit side by side."]],
+              ["Two-column desk","The kind filter, reviewable Course lens, and linked class context sit side by side."]],
       b:`.frame>.wrap .grp{border:0!important;background:transparent!important;padding:0!important;margin-bottom:6px!important}
          .frame>.wrap .gh{display:none!important}`,
       c:`.frame>.wrap{display:grid!important;grid-template-columns:minmax(260px,.42fr) minmax(0,1fr)!important;
@@ -976,7 +1004,7 @@ const VIEW_VARIANTS = {
     /* NOTE: .col / .sbody / .sc2 / .qr live inside .scene, NOT .focus. The
        recall and gap-report views are .focus > .ftop + .stage > .cardw, so
        every treatment below hangs off .stage / .cardw. */
-    recall:{v:[["Centered composer","One centred column; nothing competes with recall."],
+    recall:{v:[["Centered composer","One centred column with optional dictation guidance; nothing competes with recall."],
                ["Full-bleed composer","The composer takes the whole width for long free-recall."],
                ["Composer + scope rail","Scope stays pinned beside the composer instead of above it."]],
       b:`.frame>.focus .stage{padding:26px 5%!important}
@@ -1138,7 +1166,12 @@ const VIEW_VARIANTS = {
            align-items:start!important;gap:10px!important}
          .frame>.wrap .bento>*:nth-child(3) .solve{grid-row:1/span 2!important}
          .frame>.wrap .bento>*:nth-child(1){order:2!important}
-         .frame>.wrap .bento>*:nth-child(2){grid-column:span 12!important;order:3!important}`}
+         .frame>.wrap .bento>*:nth-child(2){grid-column:span 12!important;order:3!important}`},
+    "term-retrospective":{v:[["One honest page","What you did, what stands out, what to carry into next term."],
+                              ["Sectioned review","The same saved record one question at a time."],
+                              ["Too little to say","A lightly tracked term, where the honest output is no report."]],
+      b:`.frame .retrospective-proto .retro-state{display:none!important}.frame .retrospective-proto [data-retro-state="sections"]{display:block!important}`,
+      c:`.frame .retrospective-proto .retro-state{display:none!important}.frame .retrospective-proto [data-retro-state="thin"]{display:block!important}`}
   },
   "class-types":{
     comparison:{v:[["Side by side","STEM and Writing on one canvas — parity is the point."],
@@ -1335,8 +1368,38 @@ const overviewStateBoard = (id,name,path,desc,status="approved") => ({
   id,group:"Overview",name,section:"",depth:1,status,fitCanvas:true,
   path,desc,variants:[["State coverage","One settled visual treatment; the board makes the required states reviewable together."]]
 });
-const asProductViews = (page,kind,slugs) => {
-  page.views=page.variants.map((view,index)=>({slug:slugs[index],name:view[0],desc:view[1]}));
+const MATERIALS_VIEW_COPY = {
+  catalog:["Resource catalog","Source ownership and private-by-default assessment materials."],
+  "assessment-catalog":["Actual material","A source-and-permission catalog for material the student may use."],
+  "assessment-take":["Timed attempt","One named item, confirmed scope, and a private time boundary."],
+  "assessment-return":["Return & mistakes","One transparent attempt record and the locked optional cause taxonomy."],
+  "folder-intake":["Folder intake","A user-selected local folder becomes a visible placement proposal before any course metadata changes."],
+  "folder-review":["Folder review","Every proposed file placement waits for the student’s confirmation."],
+  "watch-setup":["Watched notes","One-way backup-path mapping is confirmed once and re-asks only for a new or unclear level."],
+  "watch-exception":["Mapping exception","An unclear watched-note level asks without changing the existing mapping."],
+  reader:["Material reader","A bounded source preview keeps class position, ownership, and material handoff visible."],
+  generate:["Source selection","Grounded generation begins with the student’s selected class material."],
+  "textbook-excerpt":["Textbook excerpt","A bounded pasted section becomes one student-owned source in the selected-source map."],
+  "study-guide-intake":["Study Guide intake","The requested guide stays visible while the student confirms its selected sources."],
+  "flashcards-intake":["Flashcards intake","The requested deck stays visible while the student confirms its selected sources."],
+  "revised-notes-intake":["Revised Notes intake","The student’s note stays central while supporting evidence is selected."],
+  "source-not-ready":["Source recovery","A retained file names why it is not ready and offers bounded recovery paths."],
+  "no-eligible-source":["No eligible source","The requested output is preserved until the student adds usable material."],
+  "guide-result":["Generated guide","A completed guide shows the exact student material that grounded it."],
+  "artifact-choice":["Choose output","The selected-source map offers Revised Notes, Study Guide, or Flashcards without creating a second generator home."],
+  "revised-notes-result":["Revised notes","A consolidated lecture record preserves selected sources and names any unresolved gap."],
+  "revised-notes-baseline":["Revised Notes baseline","The student’s selected notes anchor the repair path; other material stays visibly supporting evidence."],
+  "revised-notes-no-baseline":["No notes baseline","No artifact is shown until the student selects notes to revise or chooses a different output."],
+  "flashcards-result":["Flashcards preview","A compact source-grounded deck review includes a readable card and relational example."],
+  "flashcards-export":["Export handoff","One-way `.apkg` export is primary, TSV is fallback, and Anki scheduling stays outside Premed OS."],
+  "flashcards-unavailable":["Needs sources","Insufficient selected material preserves the request and routes back to Materials without inventing cards."],
+  "guide-unavailable":["Generator unavailable","An unavailable provider keeps source selection intact and gives a recovery path."]
+};
+const asProductViews = (page,kind,slugs,copyBySlug) => {
+  page.views=slugs.map((slug,index)=>{
+    const view=copyBySlug?.[slug] || page.variants[index] || [slug.replace(/-/g," ").replace(/\b\w/g,char=>char.toUpperCase()),"Registered source state."];
+    return {slug,name:view[0],desc:view[1],status:page.viewStatuses?.[index] || page.status};
+  });
   page.viewKind=kind;
   /* Each product view carries its OWN A/B/C set (VIEW_VARIANTS above), so the
      named view selector and the bottom design switcher stay independent.
@@ -1381,37 +1444,33 @@ const orderedProfiles = [
   Object.assign(asProductViews(byId.assignments,"Assignment view",["agenda","weekly","calendar"]),
     {group:"Academics",section:"Daily",depth:1,fitCanvas:true,authoredViews:"assignments"}),
   Object.assign(byId["empty-states"],{group:"Academics",section:"Daily",depth:1}),
-  Object.assign(asProductViews(byId["class-hub"],"Class Hub tab",["overview","materials","topics","assignments","notes"]),
-    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"wrap-per-view"}),
-  Object.assign(asProductViews(byId["review-session"],"Session state",["start","recall","gap-report"]),
-    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"review-session"}),
-  Object.assign(asProductViews(byId["study-method"],"Placement",["dot-track","overview-panel","lecture-timing"]),
-    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
-  Object.assign(asProductViews(byId["forgetting-curve"],"Curve state",["sawtooth","thin-history","entry-points"]),
-    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
-  Object.assign(asProductViews(byId["exam-prep"],"Plan mode",["accelerated","steady","catch-up"]),
+  Object.assign(asProductViews(byId["class-hub"],"Class Hub view",["overview","lecture-record","lecture-transcript","lecture-evidence","lecture-study-work","materials","topics","assignments","guide","professor-dormant","professor-evidence","writing-readings","writing-draft"]),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"class-hub",passViewToSource:true,variantSourceRev:"class-hub-transcript-first-class-plan-20260826-v4",viewStatuses:["approved","approved","approved","approved","approved","approved","approved","approved","approved","approved","approved","approved","approved"]}),
+  Object.assign(asProductViews(byId["review-session"],"Session state",["start","recall","gap-report","concept-canvas","concept-link-proposal","concept-recovery"]),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true,viewStatuses:["approved","approved","approved","approved","approved","approved"]}),
+  Object.assign(asProductViews(byId["exam-prep"],"Exam Prep state",["accelerated","steady","catch-up","full-mock-start","full-mock-runner","full-mock-autopsy"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
   Object.assign(asProductViews(byId["syllabus-import"],"Import step",["upload","review","re-import"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"top-frames"}),
+  Object.assign(asProductViews(byId["academics-syllabus-structure-share"],"Share state",["owner-opt-in","recipient-review","no-result"]),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
   Object.assign(asProductViews(byId["class-types"],"Class example",["comparison","stem","writing"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,authoredViews:"class-types"}),
-  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","canvas","feed-unavailable","generate","guide-result","guide-unavailable"]),
+  Object.assign(asProductViews(byId["class-type-selection"],"Selection state",["suggested-writing","suggested-stem","needs-choice","mobile"]),
     {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
-  Object.assign(asProductViews(byId["academics-lecture-capture"],"Capture state",["start","review","unavailable"]),
-    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true}),
-  Object.assign(byId.planner,{group:"Academics",name:"Planner",section:"Planning",depth:1,fitCanvas:true}),
+  Object.assign(asProductViews(byId["academics-materials-extensions"],"Materials state",["catalog","assessment-catalog","assessment-take","assessment-return","folder-intake","folder-review","watch-setup","watch-exception","reader","generate","textbook-excerpt","study-guide-intake","flashcards-intake","revised-notes-intake","source-not-ready","no-eligible-source","guide-result","artifact-choice","revised-notes-result","revised-notes-baseline","revised-notes-no-baseline","flashcards-result","flashcards-export","flashcards-unavailable","guide-unavailable"],MATERIALS_VIEW_COPY),
+    {group:"Academics",section:"Daily",depth:2,fitCanvas:true,passViewToSource:true,sourceHandlesVariant:true}),
+  Object.assign(withProductViews(byId.planner,"Planner view",[
+    ["plan","Plan","Timeline-first term sequence with MCAT lane, outcome rail, and unplaced tray."],
+    ["requirements","Requirement map","Every locally modeled major, IDEAs, graduation, and premed row with status and source."],
+    ["catalog","Add course","Subject-index catalog browsing with discipline and plan filters, expandable illustrative rows, warnings, and provenance."]
+  ]),{group:"Academics",name:"Planner",section:"Planning",depth:1,fitCanvas:true,native:false,passViewToSource:true,sourceHandlesVariant:true,variantSourceRev:"planner-local-library-v5-20260827"}),
   Object.assign(asProductViews(byId["academics-planning-decisions"],"Decision state",["preview","compare","decay","locked","substitute","export"]),
-    {group:"Academics",section:"Planning",depth:2,fitCanvas:true,passViewToSource:true}),
-  Object.assign(byId["academics-planning-cold-start"],{group:"Academics",section:"Planning",depth:2,fitCanvas:true}),
-  Object.assign(asProductViews(byId["requirements"],"Tracker section",["audit","requirements","prior-credit"]),
-    {group:"Academics",name:"Tar Heel Tracker",section:"Planning",depth:1,fitCanvas:true,authoredViews:"wrap-per-view"}),
-  Object.assign(asProductViews(byId["grades-archive"],"Record view",["ledger","gpa","what-if"]),
-    {group:"Academics",section:"Planning",depth:1,fitCanvas:true,authoredViews:"wrap-per-view"}),
-  {id:"academics-learning-signals",group:"Academics",name:"Learning signals",section:"Daily · Class Center",depth:2,status:"approved",fitCanvas:true,native:true,variantSourceRev:"academics-learning-signals-20260817",path:"01-academics/academics-learning-signals.html",desc:"A STEM class Overview panel with evidence-first learning signals and no empty intelligence state. A · priority rail ruled Aug 18, 2026; B and C are retired and kept only as the comparison record.",variants:[["Priority rail","Signals and their evidence share a compact bento below the next action."],["Editorial section","The same signals read as a calm class-story section beneath the next action."],["Evidence drawer","The normal class workspace stays quiet until a contextual evidence drawer opens."]]},
-  // ── Registered Aug 20 2026. All eight were drawn and reachable on disk but
-  // absent from the lab, so nobody could review them here. Three are
-  // manifest-YES, which meant Andy had cleared surfaces he could not see.
-  {id:"academics-requirements",group:"Academics",name:"Requirements",section:"Planning",depth:2,status:"proposed",fitCanvas:true,native:true,path:"01-academics/academics-requirements.html",desc:"The requirement screen. ⚠️ Manifest clears the SCREEN, not completion maths — data/unc-requirements.json warns a flat course list produces false completions.",variants:[["Requirement screen","The audit surface. Completion maths is NOT cleared — see the manifest note."]]},
+    {group:"Academics",section:"Planning",depth:2,fitCanvas:true,passViewToSource:true,variantSourceRev:"planning-review-20260826-v2"}),
+  Object.assign(byId["academics-planning-cold-start"],{group:"Academics",section:"Planning",depth:2,fitCanvas:true,variantSourceRev:"planning-review-20260826-v2"}),
+  Object.assign(asProductViews(byId["grades-archive"],"Record view",["ledger","gpa","what-if","transcript-intake","transcript-review","transcript-record","transcript-empty","transcript-export","term-retrospective"]),
+    {group:"Academics",section:"Planning",depth:1,fitCanvas:true,passViewToSource:true,variantSourceRev:"grades-transcript-intake-20260827-v1",viewStatuses:["approved","approved","approved","approved","approved","approved","approved","approved","approved"]}),
+  {id:"academics-learning-signals",group:"Academics",name:"Learning signals",section:"Daily · Class Center",depth:2,status:"approved",fitCanvas:true,native:true,variantSourceRev:"daily-copy-pass-20260826-v1",path:"01-academics/academics-learning-signals.html",desc:"A STEM class Overview panel with evidence-first learning signals and no empty intelligence state. A · priority rail ruled Aug 18, 2026; B and C are retired and kept only as the comparison record.",variants:[["Priority rail","Signals and their evidence share a compact bento below the next action."],["Editorial section","The same signals read as a calm class-story section beneath the next action."],["Evidence drawer","The normal class workspace stays quiet until a contextual evidence drawer opens."]]},
   {id:"nav-hierarchy",group:"Shared",name:"Nav hierarchy · 3 levels",section:"Patterns",depth:1,status:"approved",fitCanvas:true,native:true,path:"_shared/nav-hierarchy-3-levels.html",desc:"The three-level navigation rule (Option A, approved July 2026). Academics stacks three levels of chrome and they must not all be pill rows.",variants:[["Option A","The approved three-level rule: the levels must not all be pill rows."]]},
   {id:"mascot-note",group:"Shared",name:"MascotNote pattern",section:"Patterns",depth:1,status:"approved",fitCanvas:true,native:true,path:"_shared/mascot-note-pattern.html",desc:"The explanation pattern — one note maximum per surface, teaching a mechanism rather than narrating the UI.",variants:[["The pattern","One note maximum per surface, teaching a mechanism rather than narrating the UI."]]},
   {id:"mcat-plan-surface",group:"MCAT",name:"Plan",section:"",depth:1,status:"proposed",fitCanvas:true,native:true,path:"02-mcat/mcat-plan.html",desc:"Generated study plan. Manifest: NO — drawn for review only.",variants:[["Generated plan","The study plan surface. Manifest: NO."]]},
@@ -1419,17 +1478,17 @@ const orderedProfiles = [
   {id:"clinical-hour-target",group:"Clinical",name:"Hour target",section:"",depth:1,status:"proposed",fitCanvas:true,native:true,path:"04-clinical/clinical-hour-target.html",desc:"Setting an hour target. Manifest: NO — drawn for review only.",variants:[["Hour target","Setting a target. Manifest: NO."]]},
   {id:"clinical-hours-chart",group:"Clinical",name:"Hours over time",section:"",depth:1,status:"proposed",fitCanvas:true,native:true,path:"04-clinical/clinical-hours-chart.html",desc:"Hours over time (#34). Manifest: NO — drawn for review only.",variants:[["Hours over time","#34 over time. Manifest: NO."]]},
   {id:"clinical-role-typeahead",group:"Clinical",name:"Role type-to-create",section:"",depth:1,status:"proposed",fitCanvas:true,native:true,path:"04-clinical/clinical-role-typeahead.html",desc:"Role type-to-create. Manifest: NO — drawn for review only.",variants:[["Type-to-create","Role entry. Manifest: NO."]]},
-  {id:"academics-term-retrospective",group:"Academics",name:"Term retrospective",section:"Planning · Grades",depth:2,status:"proposed",fitCanvas:true,native:true,variantSourceRev:"academics-term-retrospective-20260820",path:"01-academics/academics-term-retrospective.html",desc:"#43's end-of-term page — observations with their counts attached, never correlations, and no page at all for a term too lightly tracked.",variants:[["One honest page","What you did, what stands out, what to carry into next term."],["Sectioned review","The same record one question at a time."],["Too little to say","A lightly tracked term, where the honest output is no page."]]},
-  {id:"academics-forecast-accuracy",group:"Academics",name:"Forecast accuracy",section:"Planning · Grades",depth:2,status:"proposed",fitCanvas:true,native:true,variantSourceRev:"academics-forecast-accuracy-20260819",path:"01-academics/academics-forecast-accuracy.html",desc:"§6.12's trust ledger — every prediction scored against what actually happened, and total suppression below the sample gate.",variants:[["Plain-language ledger","What each confidence band has actually been worth, in a sentence."],["Prediction table","The same record itemised, for checking one topic."],["Below the gate","What it shows before it has earned the right to say anything."]]},
-  {id:"academics-topic-linking",group:"Academics",name:"Topic linking",section:"Daily · Class Center",depth:2,status:"approved",fitCanvas:true,native:true,variantSourceRev:"academics-topic-linking-20260818",path:"01-academics/academics-topic-linking.html",desc:"The missing write side of topic-to-assignment linkage and exam scope. Three views switch inside the frame: link from the assignment, exam scope, link from the topic. A + C ruled Aug 18, 2026 — chips lead, the picker is the link-many escape hatch; B retired.",variants:[["Inline chips","Removable topic chips on the record, with a typeahead opening in place."],["Expandable row","The row expands into its record, topics one field among grade, weight and notes."],["Scope picker","A focused overlay listing every topic at once, for linking many."]]},
-  Object.assign(asProductViews({id:"academics-grade-decisions",group:"Academics",name:"Grade decisions",section:"Planning · Grades",depth:2,status:"proposed",fitCanvas:true,path:"01-academics/academics-grade-decisions.html",desc:"Record-level regrade, policy, missing-input, and mistake-evidence states inside Grades & Archive.",variants:[["Returned work","One returned item, its source record, and a factual regrade window."],["Policy applied","Every calculation rule is shown with its evidence boundary."],["Missing inputs","One unresolved course fact keeps the result dormant-with-a-reason."],["Mistake evidence","Student-marked causes route to different next learning actions."]]},"Decision state",["regrade","policy","incomplete","mistakes"]),
+  {id:"academics-forecast-accuracy",group:"Academics",name:"Forecast accuracy",section:"Planning · Grades",depth:2,status:"approved",fitCanvas:true,native:true,variantSourceRev:"planning-review-20260826-v2",path:"01-academics/academics-forecast-accuracy.html",desc:"§6.12's trust ledger — every prediction scored against what actually happened, and total suppression below the sample gate.",variants:[["Plain-language ledger","What each confidence band has actually been worth, in a sentence."],["Prediction table","The same record itemised, for checking one topic."],["Below the gate","What it shows before it has earned the right to say anything."]]},
+  {id:"academics-topic-linking",group:"Academics",name:"Topic linking",section:"Daily · Class Center",depth:2,status:"approved",fitCanvas:true,native:true,variantSourceRev:"daily-copy-pass-20260826-v1",path:"01-academics/academics-topic-linking.html",desc:"The missing write side of topic-to-assignment linkage and exam scope. Three views switch inside the frame: link from the assignment, exam scope, link from the topic. A + C ruled Aug 18, 2026 — chips lead, the picker is the link-many escape hatch; B retired.",variants:[["Inline chips","Removable topic chips on the record, with a typeahead opening in place."],["Expandable row","The row expands into its record, topics one field among grade, weight and notes."],["Scope picker","A focused overlay listing every topic at once, for linking many."]]},
+  Object.assign(asProductViews({id:"academics-grade-decisions",group:"Academics",name:"Grade decisions",section:"Planning · Grades",depth:2,status:"approved",fitCanvas:true,variantSourceRev:"planning-review-20260826-v2",path:"01-academics/academics-grade-decisions.html",desc:"Record-level regrade, policy, missing-input, and mistake-evidence states inside Grades & Archive.",variants:[["Returned work","One returned item, its source record, and a factual regrade window."],["Policy applied","Every calculation rule is shown with its evidence boundary."],["Missing inputs","One unresolved course fact keeps the result dormant-with-a-reason."],["Mistake evidence","Student-marked causes route to different next learning actions."]]},"Decision state",["regrade","policy","incomplete","mistakes"]),
     {group:"Academics",section:"Planning",depth:2,fitCanvas:true,passViewToSource:true,singleViews:true}),
   Object.assign(asProductViews(byId["academics-term-rollover"],"Rollover state",["ritual","paused","january"]),
-    {group:"Academics",section:"Planning",depth:2,fitCanvas:true,passViewToSource:true}),
+    {group:"Academics",section:"Planning",depth:2,fitCanvas:true,passViewToSource:true,variantSourceRev:"planning-review-20260826-v2"}),
 
   {id:"atlas-campus-resources",group:"Atlas",name:"Campus resource router",section:"Resources",depth:0,status:"approved",fitCanvas:true,native:true,variantSourceRev:"atlas-campus-resources-20260823",path:"06-atlas/atlas-campus-resources.html",desc:"Approved A: owner-verified UNC resource routes organised by the student’s situation—study spaces, course support, research, service, aid, wellbeing, and transit. Dynamic availability remains at the source.",variants:[["Route by situation","APPROVED · Start with what you are doing or what is blocking you, then open the office that owns the next step."],["Browse directories","A readable campus-resource index rather than an unbounded card wall."],["Use a course","Course context makes the authority order explicit without claiming live coverage."]]},
 
   Object.assign(byId["mcat-dashboard"],{group:"MCAT",name:"Dashboard",section:"",depth:0,fitCanvas:true}),
+  Object.assign(byId["mcat-bookshelf"],{group:"MCAT",name:"Bookshelf",section:"",depth:0,fitCanvas:true}),
   Object.assign(byId["mcat-plan"],{group:"MCAT",name:"Plan",section:"",depth:0,fitCanvas:true}),
   Object.assign(byId["mcat-content"],{group:"MCAT",name:"Content",section:"",depth:0,fitCanvas:true}),
   Object.assign(byId["mcat-questions"],{group:"MCAT",name:"Questions",section:"",depth:0,fitCanvas:true}),
@@ -1743,6 +1802,7 @@ function applyVariant(){
 }
 function desiredSrc(){
   const page=current();
+  const sourceRevision=encodeURIComponent(page.variantSourceRev || "daily-final-20260826-v17");
   if(page.native) return `${page.path}?variant=${currentKey()}&lab-rev=${encodeURIComponent(page.variantSourceRev || "current")}`;
   if(page.variantPaths?.[currentKey()]) return page.variantPaths[currentKey()];
   if(page.variantViews){
@@ -1752,9 +1812,11 @@ function desiredSrc(){
   }
   if(page.passViewToSource && currentView()){
     const join=page.path.includes("?") ? "&" : "?";
-    return `${page.path}${join}view=${encodeURIComponent(currentView().slug)}`;
+    const variantParam=page.sourceHandlesVariant ? `&variant=${encodeURIComponent(currentKey())}` : "";
+    return `${page.path}${join}view=${encodeURIComponent(currentView().slug)}${variantParam}&lab-rev=${sourceRevision}`;
   }
-  return page.path;
+  const join=page.path.includes("?") ? "&" : "?";
+  return `${page.path}${join}lab-rev=${sourceRevision}`;
 }
 function loadOrApply(force){
   const page=current();

@@ -1,8 +1,11 @@
 # Academics empty states — prototype decisions
 
-> **Status:** APPROVED — Variant A (Andy, Aug 2026). Use A's centered launchpad,
+> **Status:** APPROVED — Variant A (Aug. 26, 2026 visual audit). The selected treatment is A's centered launchpad,
 > with B's concise “What this sets up” explanation. “Add manually” is a quiet
 > text link beneath the primary button.
+>
+> This approval is separate from implementation evidence and does not mark the
+> surface BUILT.
 >
 > **Mockup:** `academics-empty-states-prototype.html`
 >
@@ -23,10 +26,10 @@
 
 ### A — Guided launchpad
 
-A calm centered action with a short three-part outcome rail beneath it.
+A calm centered action followed by a concise “What this sets up” explanation.
 
 - Strongest single-task hierarchy.
-- Makes the review-before-apply safety promise without explaining the parser.
+- Makes the review-before-apply safety promise and shows the concrete outcome.
 - Most clearly behaves like a temporary cold start that disappears after setup.
 
 ### B — Setup explained
@@ -54,3 +57,67 @@ The empty state sits exactly where the `Your classes` collection will later appe
 - Planning-mode cold start — design it with Planner & GPA so its setup request is grounded in that surface.
 - No-topics and no-assignments states — place those in the populated Class hub and Assignments references, where their surrounding controls and recovery actions can be judged honestly.
 - Copy or layout inside the syllabus import flow — owned by `academics-syllabus-import.html`.
+
+## Behaviour
+
+- Variant A is the shipped empty mode: **Import syllabus** starts the existing
+  import flow for the first course, and **Add manually** is always an available
+  quiet secondary path. “What this sets up” explains extraction/review only;
+  it does not perform import itself.
+- The state disappears as soon as a real current-term class exists. No empty
+  metrics, recommendations, charts, study queue, or placeholder course record
+  may survive an empty store.
+
+## Appearance
+
+- A centered launchpad is the visual owner: short explanatory copy, one
+  high-emphasis import action, the manual link immediately beneath it, then
+  B's compact “What this sets up” explanation. The familiar shell remains as
+  context without inoperable controls.
+- The dashed transparent `MascotNote` is the one friendly supportive surface;
+  it does not become a card wall. Banner-borne navigation alone can use glass;
+  the launchpad and explanation are solid-with-depth using the recipe's shared
+  spacing, card radius, and warm-dark ladder.
+- Import emphasis may use a restrained upward-biased glow that never washes
+  over the manual link. Focus remains visible, hover feedback is quiet, and
+  `prefers-reduced-motion` removes the glow/entrance animation. At small
+  widths the explanation stacks below the action rather than competing beside
+  it.
+
+## Implementation gap — measured 2026-08-27
+
+Rendered `#/academics?mode=daily&tab=class-center` on a clean origin at
+1440×900 and 1024×768, dark and paper, and compared against this record.
+
+**The zero-class state is reachable and renders.** The Aug 20 demotion reason —
+that clearing the store re-seeded 40 courses, so the drawn state could not be
+seen — no longer reproduces. That blocker is resolved.
+
+**It still does not match, on the part this record is most specific about.**
+
+| Ruled here | In the app | |
+|---|---|---|
+| `Import syllabus` starts the import flow | `Import syllabus` | ✅ |
+| `Add manually` as a quiet text link beneath the primary button | quiet underlined text link beneath | ✅ |
+| Dashed transparent `MascotNote` as the one supportive surface | dashed `MascotNote` | ✅ |
+| No metric, chart, recommendation or placeholder course survives an empty store | Term GPA `—`, Cumulative `—`, Due today `0`, Day streak `0`; no course rows | ✅ |
+| **B's concise "What this sets up" explanation** — Class details · Dates and deadlines · Grade structure | **absent.** A numbered `1 · 2 · 3` strip appears instead: *Review before saving · Keep work in one place · Change it any time* | ❌ |
+| Variant A's partial-parse promise: *"If part of the syllabus can't be read, we keep what worked and show exactly what needs manual entry."* | **absent** | ❌ |
+| A's centered launchpad headline *"Start with a syllabus"* | *"Bring in your first class"* (Variant B's headline) | ⚠️ |
+
+The headline is marked ⚠️ rather than ❌ because this approval is deliberately a
+blend of A's launchpad with B's explanation, and the record does not quote the
+headline directly. **The two ❌ rows are not ambiguous.** "What this sets up" is
+named in the approval header *and* in Behaviour, and the strip that replaced it
+says something else entirely: it describes the product's posture rather than
+what the import will populate.
+
+The dropped partial-parse line is the more costly loss. It is the one place this
+surface promised what happens when extraction **half-works** — the same promise
+transcript intake now makes explicitly (`academics-grades-archive.md`, ingestion
+revision). Removing it leaves the syllabus path quieter about failure than the
+transcript path beside it.
+
+**Not built.** Condition 1 fails. `VARIANT-LAB.md`'s prose listed this page as
+built while the registry entry already read `approved`; the prose was wrong and
+is corrected. Source: `src/components/academics/ClassCenter.tsx`.

@@ -126,7 +126,20 @@ row, and resolving a spec-versus-spec conflict.
 
 ⚠️ **A promotion without its six proofs is reverted, not questioned.**
 
-**Currently `built`:** Landing · auth · merge (`67155de`) · Class types and Empty states (`cb963a3`).
+**Currently `built`:** Landing · auth · merge (`67155de`) · Class types (`cb963a3`).
+
+> ⚠️ **Empty states was listed here and is not built** (corrected Aug 27, 2026).
+> The registry entry itself has read `approved` since its Aug 20 demotion; only
+> this line still claimed it, which is exactly how a false promotion survives —
+> the prose and the registry disagreed and nobody diffed them.
+>
+> Its original demotion reason (*"emptying the store re-seeds 40 courses, so the
+> drawn zero-class state is unreachable"*) is **resolved**: on a clean origin the
+> zero-class state renders correctly. It stays unbuilt for a different, measured
+> reason — the approved composition's **"What this sets up" explanation is absent
+> from the app**, replaced by a three-item strip whose content appears in no
+> variant, and Variant A's partial-parse promise is dropped entirely. See
+> `01-academics/academics-empty-states-prototype.md`.
 
 ⚠️ **Nothing else in the lab has been assessed against the six conditions.** The pages
 carrying shipped code but still marked `approved` or `proposed` — Overview, Daily ·

@@ -300,6 +300,7 @@ const profiles = [
   {
     id:"empty-states",group:"Academics",name:"Empty states",status:"approved",
     // DEMOTED Aug 20 2026 — condition 4: emptying the store re-seeds 40 courses, so the drawn zero-class state is unreachable without editing storage by hand. Stage D.
+    // STILL NOT BUILT Aug 27 2026 — the Aug 20 reason is resolved (the zero-class state renders correctly on a clean origin), but condition 1 now fails on measurement: the approved "What this sets up" explanation is absent from the app, replaced by a three-item strip ("Review before saving / Keep work in one place / Change it any time") whose content appears in no variant, and Variant A's partial-parse line is omitted entirely. The button label "Import syllabus" and the quiet "Add manually" link do match the decision record.
     path:"01-academics/academics-empty-states-prototype.html",native:true,
     variantSourceRev:"daily-copy-pass-20260826-v1",
     desc:"Zero-class cold start using the MascotNote empty-state pattern.",

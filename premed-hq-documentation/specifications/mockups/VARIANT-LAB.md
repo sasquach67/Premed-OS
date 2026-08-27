@@ -58,6 +58,155 @@ The approved and proposed source mockups remain untouched.
 
 This keeps every approved reference recoverable and makes the experiment obviously disposable.
 
+## Status ladder
+
+Every page carries a status chip. The ladder runs:
+
+```
+draft → proposed → approved → BUILT
+```
+
+| Status | Means | Chip |
+|---|---|---|
+| `draft` | A source exists; the design is not settled | tinted amber |
+| `proposed` | A treatment is offered and awaiting a call | tinted amber |
+| `approved` | Andy picked it. **Cleared as a design; not necessarily cleared to build** — `BUILD-MANIFEST.md` is the build gate | tinted green |
+| **`built`** ⭐ | **This drawing now exists in the app** | **filled green** |
+| `native` | An authored prototype with real `?variant=` implementations | blue |
+| `legacy` · `soon` | Superseded, or deliberately undrawn | grey / violet |
+
+### What `built` means, precisely
+
+**The screen in the app looks like this drawing.** Not "the feature works" — **the drawing was translated.**
+
+> ⚠️ **These come apart, and it has already happened.** Syllabus import's behaviour was built to spec and shipped, while its review screen was never translated from `academics-syllabus-import.html`. It works correctly and does not look like the mockup. **That page is not `built`.**
+>
+> The cause is worth remembering: its decisions `.md` recorded only behaviour and **no visual decisions**, so there was nothing to build appearance from. **A decisions file that says nothing about appearance will produce a screen that works and looks wrong.**
+
+**The chip is filled rather than tinted because `built` is terminal.** An approved mockup is a pending decision. **A built one is a reference you check the app against** — if they diverge, one of them is a bug.
+
+### Promoting a page to `built`
+
+> **⚠️ REWRITTEN Aug 20, 2026 (Andy).** The old rule had three conditions and **all
+> three were visual or procedural** — screen exists, matches the drawing, commit
+> noted. Nothing about a working button, a persisted record, or a backend. **A page
+> could be promoted while every control on it was dead.** That is what happened, and
+> it is what this rewrite exists to stop.
+>
+> Andy: *"Being built assumes that not only do its visual effects appear on the app,
+> but also all these backend interfaces, features, and buttons all work."*
+
+**`built` is terminal and it is a claim about the whole surface, not its appearance.**
+All six conditions must hold. **Each one is provable — if you cannot show the proof,
+the page is not `built`.**
+
+| # | Condition | Proof required |
+|---|---|---|
+| **1** | **Visually matches the drawing** | Measured, not eyeballed. Serve the lab standalone (`cd mockup-lab && python3 -m http.server 4599`), read the mockup's own rule for each surface, read `getComputedStyle` in the running app, and compare **the ladder** — `bg → muted → card` must step the same way. Both themes. `_shared/_visual-recipes.md` values used literally |
+| **2** | ⭐ **Every control works** | Run the inert-control audit from `4fe210f`: script every `Button`, `DropdownMenuItem` and `ContextMenuItem` on the surface and assert **zero without a handler**. A control that is deliberately disabled must say why in the code. **Paste the audit output** |
+| **3** | ⭐ **Every ruled behaviour actually persists** | For each behaviour the spec rules, do it in the app and reload. If it does not survive the reload it is not built. Name the store slice or service each one writes to |
+| **4** | ⭐ **No mock, placeholder, sample or hardcoded data** | Empty the store and load the surface. Every panel shows its real empty state. **A number that survives an empty store is a defect** — this is the check that catches a component lying when it has nothing to show |
+| **5** | ⭐ **Every integration it depends on is coded AND configured** | A fully-coded but unconfigured integration is **a gap, not done**. Say what the user sees today versus after configuration. If it needs an account, a console, an OAuth client or an `.env` value, that is an **ANDY CHECKLIST** item and the page stays unpromoted until he does it |
+| **6** | **Committed, and the commit noted in the mockup's `.md`** | The hash |
+
+**Then set `status:"built"` on the page's registry entry in `variant-lab.html`.**
+
+### ⭐ Who flips it
+
+**The agent flips it, not Andy** — changed Aug 20, 2026. The old workflow assigned the
+flip to Andy and it therefore never happened: Overview, Syllabus import, the Forgetting
+curve and the Exam-plan builder all shipped code while still reading `approved` or
+`proposed` in the lab.
+
+**Every one of the six conditions is mechanically checkable, so a human gate adds delay
+and no judgement.** The agent promotes the page in the same commit as the work, and
+**pastes all six proofs in its report.** Andy's judgement is still required for the
+three things that genuinely need it: picking a variant, flipping a `BUILD-MANIFEST`
+row, and resolving a spec-versus-spec conflict.
+
+⚠️ **A promotion without its six proofs is reverted, not questioned.**
+
+**Currently `built`:** Landing · auth · merge (`67155de`) · Class types (`cb963a3`).
+
+> ⚠️ **Empty states was listed here and is not built** (corrected Aug 27, 2026).
+> The registry entry itself has read `approved` since its Aug 20 demotion; only
+> this line still claimed it, which is exactly how a false promotion survives —
+> the prose and the registry disagreed and nobody diffed them.
+>
+> Its original demotion reason (*"emptying the store re-seeds 40 courses, so the
+> drawn zero-class state is unreachable"*) is **resolved**: on a clean origin the
+> zero-class state renders correctly. It stays unbuilt for a different, measured
+> reason — the approved composition's **"What this sets up" explanation is absent
+> from the app**, replaced by a three-item strip whose content appears in no
+> variant, and Variant A's partial-parse promise is dropped entirely. See
+> `01-academics/academics-empty-states-prototype.md`.
+
+⚠️ **Nothing else in the lab has been assessed against the six conditions.** The pages
+carrying shipped code but still marked `approved` or `proposed` — Overview, Daily ·
+Class Center, Class hub, Assignments, Review session, Planner, Syllabus import,
+Forgetting curve, Exam-plan builder, Tar Heel Tracker, Grades & Archive — are
+**unassessed, not failed.** Each needs one promotion audit.
+
+---
+
+## ⭐ The workflow — one tab at a time
+
+**This is how a page moves from spec to app.** One page at a time, in this order. **Do not run two pages in parallel** — the point of the ladder is that each step is checkable before the next begins.
+
+```
+1  cross-reference   spec  →  is every feature ON PAPER?
+2  mock              draw the missing pieces · A/B/C variants
+3  approve           Andy picks · decisions .md records behaviour AND appearance
+4  brief             ONE brief: frontend from the mockup + the backend behind it
+5  build             code it
+6  promote           status:"built"
+```
+
+### 1 · Cross-reference — spec against the drawing
+
+**Read the tab's spec and confirm every ruled feature exists on the mockup** as a button, a field, a state, or a surface. **A feature that is specced but not drawn will not get built** — nobody codes from prose alone.
+
+**Record what is missing.** That list is what step 2 draws.
+
+### 2 · Mock — draw what is missing
+
+Three real treatments where the page warrants them. **Drafts stay labelled drafts;** do not pretend three finished variants exist when they do not (see *Preservation rule*).
+
+### 3 · Approve — and record BOTH halves
+
+Andy picks. **The decisions `.md` must record two things:**
+
+| | |
+|---|---|
+| **Behaviour** | What it does, what it refuses to do, which rules bind it |
+| **⚠️ Appearance** | Layout, hierarchy, which treatment won and why |
+
+> **⚠️ This is the step that has already failed once.** `academics-syllabus-import.md` recorded **only behaviour** — parsing, review order, source quotes, weight gaps — and **not one visual decision.** The result: a screen built correctly that does not look like its mockup, and a decisions file that could not catch it.
+>
+> **A decisions file silent on appearance produces a screen that works and looks wrong.**
+
+### 4 · Brief — frontend and backend together, in one file
+
+**One brief per page, carrying both.** Template: `implementation/briefs/T1-academics-classcenter-mockup-to-app.md`.
+
+Its shape: **fidelity audit → references → frontend from the mockup → backend behind it → do-not-break → done-when → commit.**
+
+**The fidelity audit comes first for a reason** — most tabs have something already built, and the audit is what stops a brief rebuilding shipped work.
+
+**⚠️ Why both in one brief:** shipping behaviour first and appearance later is exactly how the *"recurring visual-fidelity gap"* in `implementation/briefs/README.md` happened. **A screen is done when it works AND matches the drawing.**
+
+### 5 · Build
+
+**`BUILD-MANIFEST.md` is the gate, not this lab.** A page marked `approved` here is a settled *design*; it is not permission to change the app. **Only Andy moves a manifest row to `YES`.**
+
+Use `_shared/_visual-recipes.md` values **literally, never approximated.**
+
+### 6 · Promote to `built`
+
+Per the three-step rule above: **matches visually → committed, commit noted in the `.md` → flip `status:"built"`.**
+
+**Then the mockup's job changes.** It stops being a proposal and becomes the reference the app is checked against.
+
 ## Navigation
 
 - Click a page in the left rail.
