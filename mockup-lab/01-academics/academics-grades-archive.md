@@ -1,8 +1,15 @@
 # Grades & Archive — decisions
 
-**File:** `academics-grades-archive.html` · **Status:** PROPOSED (Aug 2026)
+**File:** `academics-grades-archive.html` · **Status:** APPROVED (Aug 27,
+2026 — Andy) · TERM REPORT INCLUDED
 **Spec:** `tabs/01-academics.md` §4.2 tab table · §6.8 (grade ledger) ·
-§4.2-D (AMCAS-shaped record) · §6.9 (structural decisions)
+§4.2-D (AMCAS-shaped record) · §6.9 (structural decisions) · §6.10-C/#43
+(term retrospective)
+
+**Approval scope:** Ledger, GPA, What-if, transcript intake and review,
+the three transcript record states,
+and the integrated Term report are approved as one Grades & Archive mockup
+family. Approval does not mark any production surface built.
 
 The one question this tab answers: **what have I earned?**
 
@@ -13,6 +20,12 @@ The one question this tab answers: **what have I earned?**
 | Ledger | `ledger` | The full record, status as a filter. |
 | GPA | `gpa` | Dual UNC/AMCAS, BCPM, year-by-year trend. |
 | What-if | `what-if` | Scenario mode and the inverse solve. |
+| Term report | `term-retrospective` | The rollover-fired, backward-looking term record and its honest thin state. |
+
+The Term report is not a standing Planning page or sidebar destination. It is
+opened from the completed-term record and the rollover ritual, then rendered
+inside Grades & Archive because it reads the durable grade, returned-work, and
+study-history archive.
 
 ## Decisions encoded
 
@@ -59,6 +72,7 @@ Per view, declared in `VIEW_VARIANTS`:
 - `ledger` — terms as cards · dense transcript · two-column terms
 - `gpa` — dual hero · trend first · instrument panel
 - `what-if` — landing then inputs · inputs first · solve-first
+- `term-retrospective` — one honest page · sectioned review · too little to say
 
 ## The ruling — A for Ledger, GPA, and What-if
 
@@ -166,7 +180,85 @@ composition for all three views`.
 - **Empty / partial** presents one direct record path and keeps existing attempts or institutions additive. It does not render a GPA, trend, or export-ready claim without records.
 - **Export** includes every institution, attempt, and classification evidence in a student-controlled coursework file. It is not a registrar document, application submission, or degree audit.
 
+- **Transcript ingestion is the primary path into an empty archive.** `Add a
+  transcript record` opens an intake stage, not a bare field grid. The intake
+  accepts a dropped or chosen **PDF, DOCX, PNG or JPG**, **pasted transcript
+  text**, or a **pasted image**, and it always keeps `Enter one line manually`
+  as an equal route. A file is read on this device; nothing is uploaded.
+- **A parse is a draft, never a save.** Reading a file moves to a **review
+  stage** listing every line it read. Each field stays editable, each row can be
+  kept or dropped, and each row shows the **source quote** it came from. Saving
+  writes only kept rows. `Back` returns to intake with the file still loaded;
+  `Cancel` abandons the whole intake without writing.
+- **Exact strings survive the round trip.** Institution, course number, title,
+  credit, grade, term, year and course type are stored exactly as read or
+  corrected. A field the parser could not read stays **blank**, never inferred,
+  and its row is marked as needing the student. Classification is never derived
+  from a parsed line.
+- **Duplicates are surfaced, not silently merged.** A line matching an existing
+  record on institution + course number + term + year is flagged
+  `Already recorded` and excluded by default; keeping both attempts is an
+  explicit choice, because a repeated attempt is a real transcript fact.
+- **Unreadable input is reported honestly.** An image or scan with no readable
+  text layer, an unsupported file type, and a file that yields no transcript
+  line each produce a named state that offers the manual line. None of them
+  produce an empty or invented record.
+- **Email import is unconfigured and says so.** No mail processor is connected,
+  so the route renders disabled with `Not configured` rather than accepting a
+  message it cannot process.
+
 ### Appearance
 
 - The records use the existing Grades & Archive warm-dark surfaces: `#211e1a` page, `#2b2722` 16px panels, `#322e28` 13px field rows, and `#3c352d` borders. Glass remains confined to the existing banner controls, never to the transcript surfaces.
+- The intake and review stages reuse the transcript shell exactly: `1060px`
+  maximum, `1.35fr / .65fr` columns, `14px` gap, `16px` radius, `17px` padding,
+  and the one-column `760px` rule. The drop target is a dashed `var(--bd)`
+  rectangle on `var(--muted)`; review rows are `var(--muted)` cards whose inner
+  field cells step back up to `var(--card)`, keeping the page → panel → row
+  ladder legible instead of flattening it.
+- A row needing attention is marked with a `var(--warning)` border and a chip,
+  never colour alone; the source quote sits under each row in `var(--dim)`.
 - Two balanced panels make the record stage and the evidence boundary readable at desktop width; on narrow screens they stack. Fields and export actions retain obvious focus states, short quiet transitions, and direct reduced-motion resolution.
+
+## Visual conformance sweep — 2026-08-26
+
+- Verified the Ledger, GPA, What-if, Transcript record, empty, and export views
+  against the layered Academics recipe without changing their settled ownership.
+- The existing canvas already uses the intended solid outer-panel/row ladder,
+  compact labels, evidence-first colors, and narrow stacking behavior. The
+  transcript views now retain the same Academics banner instead of appearing as
+  a detached utility page.
+- Removed the legacy fixed 1400px outer canvas. The six views now use a fluid
+  1400px maximum, while dense ledger tables keep any necessary horizontal
+  exploration inside their own bounded group rather than overflowing the page.
+- Grades & Archive remains the sole owner of historical attempts,
+  classification evidence, what-if calculations, and student-controlled export.
+  This mockup is **APPROVED**; implementation and built status remain separate.
+
+## Final readability and access sweep — 2026-08-26
+
+- Removed the obsolete Tracker tab from all seven current record views. The
+  header now presents the settled two-destination Planning model without a dead
+  or competing route.
+- Verified each narrow view keeps its own next action in the first logical
+  surface: ledger filters/export, dual-GPA explanation, scenario inputs,
+  transcript entry/export, or term-report carry-forward.
+- Ledger tables remain the only intentionally dense region; cards, transcript
+  fields, and term-report rows stack at 480px without page-level clipping.
+
+## Transcript ingestion revision — 2026-08-27
+
+The approved record states described a faithful **manual** line and an optional
+transcript-line image. They did not describe how a transcript gets *into* the
+archive, so the app shipped `Add a transcript record` straight onto a field
+grid: visually consistent with this mockup and functionally misleading, because
+the one thing a student actually holds — a transcript file — had nowhere to go.
+
+This revision adds the `transcript-intake` and `transcript-review` views and the
+behaviour above. It reuses the repository's existing document-ingestion stack
+(`syllabusParser`'s PDF/DOCX/image extraction and `pdfTextToLines`) rather than
+introducing a second parser, per the repo-first rule in `CLAUDE.md`.
+
+The manual line is preserved as a first-class route, so nothing that previously
+worked is removed. **Status remains APPROVED, not built**; promotion still
+requires the six proofs in `mockup-lab/VARIANT-LAB.md`.

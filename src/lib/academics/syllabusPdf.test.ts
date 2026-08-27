@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import parserSource from '@/lib/academics/syllabusParser.ts?raw'
+// The PDF worker fix moved into the shared extractor when transcript intake
+// began reusing it. The guard follows the code it protects.
+import extractorSource from '@/lib/academics/documentText.ts?raw'
 import { extractSyllabusFile, pdfTextToLines, toIsoDate, weightGap } from '@/lib/academics/syllabusParser'
 import { daysUntil } from '@/lib/date'
 
@@ -119,7 +122,7 @@ describe('a real two-page syllabus PDF', () => {
 // browser verification (parse 183–265ms for 20 pages, real Worker constructed,
 // max main-thread block 12ms) was done by hand against the dev server.
 describe('pdfjs worker configuration', () => {
-  const source = parserSource
+  const source = extractorSource
 
   it('sets GlobalWorkerOptions.workerSrc before calling getDocument', () => {
     const workerLine = source.indexOf('GlobalWorkerOptions.workerSrc =')
@@ -132,6 +135,12 @@ describe('pdfjs worker configuration', () => {
   it('resolves the worker through a bundler-aware ?url import, not a CDN string', () => {
     expect(source).toContain("pdfjs-dist/legacy/build/pdf.worker.mjs?url")
     expect(source).not.toMatch(/workerSrc\s*=\s*['"]https?:/)
+  })
+
+  it('keeps syllabus import routed through the one shared extractor', () => {
+    expect(parserSource).toContain('extractDocumentText')
+    // A second inlined pdf.js path here is how the two surfaces drift apart.
+    expect(parserSource).not.toContain('GlobalWorkerOptions')
   })
 })
 

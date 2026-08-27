@@ -1,4 +1,11 @@
-export type SyllabusKind = 'identity' | 'exams' | 'weights' | 'units' | 'deadlines' | 'policies' | 'logistics'
+import { extractDocumentText, pdfTextToLines } from '@/lib/academics/documentText'
+
+// One implementation, shared with transcript intake. Re-exported because the
+// PDF line-grouping regression test targets this module's public surface.
+export { pdfTextToLines }
+export type { PdfTextItem } from '@/lib/academics/documentText'
+
+export type SyllabusKind = 'identity' | 'standards' | 'exams' | 'weights' | 'units' | 'deadlines' | 'policies' | 'logistics'
 
 export interface SyllabusEvidence { quote: string; location: string }
 export interface SyllabusItem { id: string; kind: SyllabusKind; label: string; value?: string; confidence: 'high' | 'low'; evidence: SyllabusEvidence }
@@ -23,15 +30,15 @@ export type DocumentKind = 'syllabus' | 'unrecognized'
 
 /** A lone due date is NOT structural: that is exactly what a problem set carries.
  *  These four are what separates a syllabus from any other course document. */
-export type StructuralSignal = 'weights' | 'exams' | 'units' | 'logistics'
-const STRUCTURAL: StructuralSignal[] = ['weights', 'exams', 'units', 'logistics']
+export type StructuralSignal = 'standards' | 'weights' | 'exams' | 'units' | 'logistics'
+const STRUCTURAL: StructuralSignal[] = ['standards', 'weights', 'exams', 'units', 'logistics']
 
 const month = '(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)'
 const datePattern = new RegExp(`\\b${month}\\.?\\s+\\d{1,2}(?:,?\\s+20\\d{2})?\\b`, 'gi')
 const headers: Array<[SyllabusKind, RegExp]> = [
   ['units', /^(?:week|unit|module|chapter)\s*\d+/i],
   ['policies', /\b(?:attendance|late work|late policy|drop(?:ped)? lowest|replacement|make-?up)\b/i],
-  ['logistics', /\b(?:office hours|meets?|meeting|room|location|instructor|professor)\b/i],
+  ['logistics', /\b(?:office hours|meets?|meeting|room|location|instructor|professor|rm\.?|hall|center|building)\b|\b(?:MWF|TR|TTH)\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/i],
 ]
 
 const MONTH_INDEX: Record<string, number> = {
@@ -61,6 +68,21 @@ export function toIsoDate(raw: string, yearHint?: number): string | undefined {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
+function numericDateToIso(month: string, day: string, yearHint?: number): string | undefined {
+  const numericMonth = Number(month)
+  const numericDay = Number(day)
+  if (!numericMonth || numericMonth > 12 || !numericDay || numericDay > 31 || !yearHint) return undefined
+  return `${yearHint}-${String(numericMonth).padStart(2, '0')}-${String(numericDay).padStart(2, '0')}`
+}
+
+function scheduleTopic(raw: string): string {
+  return raw
+    .replace(/\([^)]*\)/g, '')
+    .replace(/\bchapter\s+\d+\b/ig, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 /** `Problem Set 1 due` / `Midterm Exam 1 on` — removing the date leaves the
  *  preposition that introduced it dangling on the end of the label the student
  *  reads on every card. */
@@ -80,12 +102,22 @@ function push(items: SyllabusItem[], kind: SyllabusKind, label: string, value: s
   items.push({ id: `${kind}-${items.length}`, kind, label, value, confidence, evidence })
 }
 
+const STANDARD_HEADER = /\b(?:learning (?:objectives?|outcomes?|standards?)|student learning outcomes?|course (?:objectives?|outcomes?|goals?))\b/i
+const STANDARD_ITEM = /^(?:[•*‣–-]|\(?\d{1,2}[.)])\s+(.+)$/
+
+function standardLabel(line: string): string | undefined {
+  const bullet = line.match(STANDARD_ITEM)?.[1] ?? line.match(/^(?:students? (?:will|should)|by the end of (?:this )?(?:course|class),? (?:students? )?(?:will|should)|understand|explain|apply|analyze|evaluate|describe|identify|compare|distinguish)\b[:\s-]*(.+)?/i)?.[0]
+  if (!bullet) return undefined
+  const label = bullet.replace(/^(?:students? (?:will|should)s+|by the end of (?:this )?(?:course|class),?\s*(?:students? )?(?:will|should)s+)/i, '').replace(/\s+/g, ' ').trim()
+  return label.length >= 8 ? label : undefined
+}
+
 /** A key-free parser. It deliberately proposes only regular, attributable facts. */
 export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', sourceKind: SyllabusProposal['sourceKind'] = 'text'): SyllabusProposal {
   const lines = text.replace(/\r/g, '').split('\n').map((line) => line.replace(/\s+/g, ' ').trim()).filter(Boolean)
   const items: SyllabusItem[] = []
   const searched: Record<SyllabusKind, string> = {
-    identity: 'No course identity found', exams: 'No exam dates found', weights: 'No grade categories found', units: 'No week or unit headings found', deadlines: 'No assignment deadlines found', policies: 'No attendance, late, drop, or replacement policy found', logistics: 'No meeting, instructor, or office-hours details found',
+    identity: 'No course identity found', standards: 'No stated learning standards found', exams: 'No exam dates found', weights: 'No grade categories found', units: 'No week or unit headings found', deadlines: 'No assignment deadlines found', policies: 'No attendance, late, drop, or replacement policy found', logistics: 'No meeting, instructor, or office-hours details found',
   }
   // Syllabi date the term at the top (`Fall 2026`) and then write `Oct 6`.
   const yearHint = Number(text.match(/\b20\d{2}\b/)?.[0]) || undefined
@@ -93,6 +125,18 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
     const evidence = lineEvidence(line, index)
     const course = line.match(/\b([A-Z]{2,5}\s?\d{2,4}[A-Z]?)\s*(?:[-:–—]\s*|\s{2,})(.{3,})/)
     if (course && !items.some((item) => item.kind === 'identity')) { push(items, 'identity', course[1], course[2], 'high', evidence); searched.identity = 'Course identity found' }
+    // Many university syllabi spell out the subject in the document heading
+    // ("Psychology 101.001 Introduction to Psychology") instead of using the
+    // catalog abbreviation. Preserve the source wording as evidence while
+    // normalizing the one unambiguous subject name students expect in a course
+    // picker.
+    const namedCourse = line.match(/^([A-Za-z][A-Za-z ]+?)\s+(\d{2,4})(?:\.\d{1,3})?\s+(.{3,})$/)
+    if (namedCourse && !items.some((item) => item.kind === 'identity')) {
+      const subject = namedCourse[1].trim()
+      const code = subject.toLowerCase() === 'psychology' ? `PSYC ${namedCourse[2]}` : `${subject} ${namedCourse[2]}`
+      push(items, 'identity', code, namedCourse[3].trim(), 'high', evidence)
+      searched.identity = 'Course identity found'
+    }
     const weight = line.match(/^(.{2,60}?)\s*[-:–]?\s*(\d{1,3}(?:\.\d+)?)\s*%/i)
     if (weight) { push(items, 'weights', weight[1].trim(), `${weight[2]}%`, 'high', evidence); searched.weights = 'Grade categories found' }
     const date = line.match(datePattern)
@@ -104,8 +148,62 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
       push(items, kind, label, iso ?? date[0], iso ? 'high' : 'low', evidence)
       searched[kind] = isExam ? 'Exam dates found' : 'Assignment deadlines found'
     }
-    for (const [kind, pattern] of headers) if (pattern.test(line)) { push(items, kind, line, undefined, kind === 'policies' ? 'low' : 'high', evidence); searched[kind] = `${kind[0].toUpperCase()}${kind.slice(1)} found` }
+    // Schedule tables often use numeric dates, e.g. "Tues 8/25 Research
+    // Enterprise (Forum 1 due 8/25)". Limit this branch to rows beginning
+    // with a weekday so policy prose containing a date cannot become a fake
+    // deadline.
+    const schedule = line.match(/^(?:mon(?:day)?|tues(?:day)?|wed(?:nesday)?|thurs?(?:day)?|fri(?:day)?)\.?\s+(\d{1,2})\/(\d{1,2})\s+(.+)$/i)
+    if (schedule) {
+      const scheduledDate = numericDateToIso(schedule[1], schedule[2], yearHint)
+      const detail = schedule[3].trim()
+      const topic = scheduleTopic(detail)
+      if (topic && !/^(?:exam\s*\d*|final exam|fall break|thanksgiving break|well-being day)$/i.test(topic)) {
+        // The date is planning context for the schedule topic. It must not
+        // create a recall obligation before the student logs that lecture.
+        push(items, 'units', topic, scheduledDate, 'high', evidence)
+        searched.units = 'Units found'
+      }
+      if (scheduledDate && /\b(?:exam|midterm|final)\b/i.test(detail)) {
+        push(items, 'exams', scheduleTopic(detail) || 'Exam', scheduledDate, 'high', evidence)
+        searched.exams = 'Exam dates found'
+      }
+      const inlineDeadline = detail.match(/\(([^)]*?)\s+due\s+(\d{1,2})\/(\d{1,2})\)/i)
+      if (inlineDeadline) {
+        const due = numericDateToIso(inlineDeadline[2], inlineDeadline[3], yearHint)
+        if (due) {
+          push(items, 'deadlines', trimConnectives(inlineDeadline[1]) || 'Deadline', due, 'high', evidence)
+          searched.deadlines = 'Assignment deadlines found'
+        }
+      } else if (/\bresponse paper\s*\d*\s+due\b/i.test(detail) && scheduledDate) {
+        const label = detail.match(/\bresponse paper\s*\d*/i)?.[0] ?? 'Response paper'
+        push(items, 'deadlines', label, scheduledDate, 'high', evidence)
+        searched.deadlines = 'Assignment deadlines found'
+      }
+    }
+    for (const [kind, pattern] of headers) {
+      // A final-exam instruction can refer back to the class location without
+      // providing a location fact of its own.
+      if (kind === 'logistics' && /same location as class meetings/i.test(line)) continue
+      if (pattern.test(line)) { push(items, kind, line, undefined, kind === 'policies' ? 'low' : 'high', evidence); searched[kind] = `${kind[0].toUpperCase()}${kind.slice(1)} found` }
+    }
   })
+  // Standards are a separate pass so a numbered objective is never confused
+  // with a schedule date or a scoreable assessment. Only explicit outcome/
+  // objective blocks supply study topics; a course schedule remains context.
+  lines.forEach((line, index) => {
+    if (!STANDARD_HEADER.test(line)) return
+    const inline = line.split(/[:—–-]/, 2)[1]
+    const inlineLabel = inline ? standardLabel(inline) : undefined
+    if (inlineLabel) push(items, 'standards', inlineLabel, undefined, 'high', lineEvidence(line, index))
+    for (let next = index + 1; next < Math.min(lines.length, index + 16); next += 1) {
+      const candidate = lines[next]
+      if (STANDARD_HEADER.test(candidate) || /^(?:grading|assignments?|schedule|course calendar|attendance|polic(?:y|ies)|required materials?)\b/i.test(candidate)) break
+      const label = standardLabel(candidate)
+      if (label) push(items, 'standards', label, undefined, 'high', lineEvidence(candidate, next))
+      else if (items.some((item) => item.kind === 'standards') && candidate.length > 80) break
+    }
+  })
+  if (items.some((item) => item.kind === 'standards')) searched.standards = 'Stated learning standards found'
   const scanDetected = text.replace(/\s/g, '').length < 80
   const structureFound = STRUCTURAL.filter((signal) => items.some((item) => item.kind === signal))
   const numberedItems = lines.filter((line) => /^\(?\d{1,2}[.)]\s+\S/.test(line)).length
@@ -117,82 +215,10 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
 }
 
 
-interface PdfTextItem {
-  str?: string
-  hasEOL?: boolean
-  /** [a, b, c, d, x, y] — index 5 is the baseline y in PDF user space. */
-  transform?: number[]
-}
-
-/**
- * Rebuild a page's LINES from pdf.js text items.
- *
- * ⚠️ This function exists because joining every item with a space — which is
- * what this did until Aug 20 2026 — collapses an entire page into one string.
- * `parseSyllabusText` is line-based, so a two-page syllabus became two lines
- * and could yield at most two items. A real CHEM 262 syllabus with six dates,
- * five weight rows and four units extracted **one date and nothing else**.
- *
- * pdf.js emits items in reading order with a baseline y per item. Items sharing
- * a baseline are one visual line, so they are grouped by y within a tolerance
- * and joined; a new y starts a new line. `hasEOL` is honoured where the build
- * provides it, since it is the library's own answer to the same question.
- */
-export function pdfTextToLines(items: PdfTextItem[], tolerance = 2): string {
-  const lines: string[] = []
-  let current: string[] = []
-  let currentY: number | undefined
-
-  const flush = () => {
-    const text = current.join(' ').replace(/\s+/g, ' ').trim()
-    if (text) lines.push(text)
-    current = []
-  }
-
-  for (const item of items) {
-    const str = typeof item.str === 'string' ? item.str : ''
-    const y = Array.isArray(item.transform) ? item.transform[5] : undefined
-
-    if (currentY != null && y != null && Math.abs(y - currentY) > tolerance) flush()
-    if (y != null) currentY = y
-    if (str) current.push(str)
-    if (item.hasEOL) { flush(); currentY = undefined }
-  }
-  flush()
-  return lines.join('\n')
-}
-
 export async function extractSyllabusFile(file: File): Promise<SyllabusProposal> {
   const name = file.name || 'Syllabus'
-  const type = file.type.toLowerCase()
-  if (type.startsWith('image/')) {
-    return parseSyllabusText('', name, 'image')
-  }
-  if (/wordprocessingml|\.docx$/i.test(type || name)) {
-    const mammoth = await import('mammoth')
-    const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })
-    return parseSyllabusText(result.value, name, 'docx')
-  }
-  if (type === 'application/pdf' || /\.pdf$/i.test(name)) {
-    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
-    // ⚠️ Without this, `getDocument` throws `No "GlobalWorkerOptions.workerSrc"
-    // specified` in a real browser — it does NOT fall back to a same-thread
-    // worker. PDF import was dead in the app while every jsdom test passed,
-    // because Node resolves the worker by a different path. The `?url` import
-    // lets Vite fingerprint and serve the worker in both dev and build.
-    if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-      const workerUrl = (await import('pdfjs-dist/legacy/build/pdf.worker.mjs?url')).default
-      pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
-    }
-    const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise
-    const pages: string[] = []
-    for (let number = 1; number <= pdf.numPages; number += 1) {
-      const content = await (await pdf.getPage(number)).getTextContent()
-      pages.push(pdfTextToLines(content.items as PdfTextItem[]))
-    }
-    return parseSyllabusText(pages.join('\n'), name, 'pdf')
-  }
-  throw new Error('This file cannot be read directly. Paste its text or enter it manually.')
+  const { text, sourceKind } = await extractDocumentText(file)
+  return parseSyllabusText(text, name, sourceKind)
 }
 
 export function weightGap(items: SyllabusItem[]) {

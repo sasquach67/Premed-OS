@@ -1,0 +1,436 @@
+/*
+ * Visual source: mockup-lab/01-academics/academics-grades-archive.html
+ * Approved target: Variant A · views=ledger,gpa,what-if,transcript-empty.
+ * The values below are a mechanical app-native port of the approved record
+ * toolbar, 16px card ladder, 13px ledger rows, and narrow stacking rules.
+ */
+.grades-workspace {
+  --background: #f7efe1;
+  --foreground: #3a3530;
+  --card: #fffaf0;
+  --card-foreground: #3a3530;
+  --muted: #efe6d4;
+  --muted-foreground: #7a7064;
+  --border: #e9e2d5;
+  --primary: #4b9cd3;
+  --success: #5fb49c;
+  --warning: #e0a458;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  color: var(--foreground);
+  font: 15px/1.42 'Nunito', system-ui, sans-serif;
+}
+
+.dark .grades-workspace {
+  --background: #211e1a;
+  --foreground: #ece3d4;
+  --card: #2b2722;
+  --card-foreground: #ece3d4;
+  --muted: #322e28;
+  --muted-foreground: #a89c8c;
+  --border: #3c352d;
+  --primary: #6fb3de;
+  --success: #6fc0a8;
+  --warning: #e7b06a;
+}
+
+.grades-workspace > * { min-width: 0; }
+
+/* Visual source: mockup-lab/01-academics/academics-grades-archive.html · Variant A/view=transcript-empty. */
+.grades-transcript-proto {
+  display: block;
+  padding: 24px;
+  background: var(--background);
+}
+
+.grades-transcript-shell {
+  width: 100%;
+  max-width: 1060px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr);
+  gap: 14px;
+}
+
+.grades-transcript-card {
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+}
+
+.grades-transcript-kicker {
+  color: var(--primary);
+  font: 800 10px 'Baloo 2', system-ui, sans-serif;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.grades-transcript-title {
+  margin: 4px 0 6px;
+  font: 800 25px 'Baloo 2', system-ui, sans-serif;
+  line-height: 1.16;
+}
+
+.grades-transcript-copy {
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.grades-transcript-actions {
+  display: flex;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.grades-transcript-button {
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--muted);
+  color: var(--foreground);
+  font: 800 12px 'Baloo 2', system-ui, sans-serif;
+}
+
+.grades-transcript-button[data-primary='true'] {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #16232e;
+}
+
+.grades-transcript-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.grades-transcript-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.grades-transcript-form > .grades-transcript-button { justify-self: start; }
+.grades-transcript-course-note { color: var(--muted-foreground); font-size: 11.5px; font-weight: 700; }
+.grades-transcript-entry { min-width: 0; }
+.grades-transcript-entry [data-slot='input'],
+.grades-transcript-entry [data-slot='select-trigger'] {
+  min-height: 34px;
+  border-color: var(--border);
+  border-radius: 10px;
+  background: var(--muted);
+  font-size: 12px;
+}
+
+.grades-view-bar,
+.grades-ledger-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 11px;
+  padding: 11px 24px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.grades-view-bar {
+  border-radius: 16px 16px 0 0;
+  border-bottom: 0;
+}
+
+.grades-view-tabs {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--muted);
+}
+
+.grades-view-tab {
+  padding: 5px 11px;
+  border-radius: 7px;
+  color: color-mix(in srgb, var(--muted-foreground) 72%, transparent);
+  font: 800 11.5px 'Baloo 2', system-ui, sans-serif;
+}
+
+.grades-view-tab[aria-selected='true'] {
+  color: var(--foreground);
+  background: var(--card);
+}
+
+.grades-view-tab:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.grades-view-context {
+  color: var(--muted-foreground);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.grades-view-context b {
+  color: var(--foreground);
+  font-family: 'Baloo 2';
+  font-weight: 800;
+}
+
+.grades-ledger-filters {
+  margin-top: -11px;
+  border-radius: 0 0 16px 16px;
+  box-shadow: 0 10px 26px -14px rgba(0, 0, 0, .55);
+}
+
+.grades-workspace .grades-search,
+.grades-workspace .grades-status-select {
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.grades-workspace .grades-search { max-width: 250px; }
+.grades-workspace .grades-record-count { margin-left: auto; border-radius: 999px; padding: 4px 10px; }
+
+.grades-workspace [data-slot='card'],
+.grades-workspace .grades-empty,
+.grades-workspace .grades-term-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 10px 26px -14px rgba(0, 0, 0, .55);
+}
+
+.grades-workspace .grades-empty {
+  padding: 28px 20px;
+  border-style: dashed;
+  text-align: center;
+}
+
+.grades-workspace .grades-empty h3 {
+  margin-top: 9px;
+  font: 800 16.5px 'Baloo 2', system-ui, sans-serif;
+}
+
+.grades-workspace .grades-empty p {
+  margin: 3px auto 0;
+  max-width: 590px;
+  color: var(--muted-foreground);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.grades-workspace .grades-term-card > [data-slot='card-header'] {
+  padding: 11px 15px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 72%, var(--card));
+}
+
+.grades-workspace .grades-term-card > [data-slot='card-content'] { padding: 0; }
+
+.grades-ledger-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 0;
+  background: var(--card);
+}
+
+.grades-ledger-row:last-child { border-bottom: 0; }
+
+.grades-workspace h2,
+.grades-workspace h3,
+.grades-workspace h4,
+.grades-workspace [data-slot='card-title'] { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; }
+
+.grades-workspace .grades-gpa-grid { gap: 15px; }
+.grades-workspace .grades-gpa-card { border-radius: 14px; background: var(--muted); box-shadow: none; }
+
+@media (max-width: 760px) {
+  .grades-transcript-proto { padding: 14px; }
+  .grades-transcript-shell { grid-template-columns: 1fr; }
+  .grades-view-bar,
+  .grades-ledger-filters { gap: 8px; padding: 10px 14px; }
+  .grades-view-context { width: 100%; }
+  .grades-workspace .grades-search { order: 3; width: 100%; max-width: none; }
+  .grades-workspace .grades-record-count { margin-left: 0; }
+  .grades-ledger-row { grid-template-columns: 1fr; align-items: start; }
+  .grades-workspace .grades-gpa-grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grades-workspace * { transition: none !important; }
+}
+
+/* Visual source: mockup-lab/01-academics/academics-grades-archive.html ·
+   Variant A / view=transcript-intake and view=transcript-review.
+   Values are the mockup's own rules, not approximations. */
+.grades-intake-drop {
+  margin-top: 13px;
+  padding: 22px 16px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: var(--muted);
+  text-align: center;
+  width: 100%;
+  display: block;
+}
+
+.grades-intake-drop[data-dragging='true'] {
+  border-color: var(--primary);
+  border-style: solid;
+}
+
+.grades-intake-drop b {
+  display: block;
+  margin-bottom: 3px;
+  font: 800 15px 'Baloo 2', system-ui, sans-serif;
+}
+
+.grades-intake-drop span {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.grades-intake-or {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 13px;
+  color: var(--muted-foreground);
+  font: 800 10px 'Baloo 2', system-ui, sans-serif;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.grades-intake-or::before,
+.grades-intake-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.grades-intake-paste {
+  margin-top: 13px;
+  width: 100%;
+  min-height: 78px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 700;
+  resize: vertical;
+}
+
+.grades-intake-note {
+  margin-top: 11px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.grades-intake-note b { color: var(--foreground); }
+.grades-intake-note[data-unconfigured='true'] { opacity: .55; }
+
+.grades-intake-chip {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font: 800 10px 'Baloo 2', system-ui, sans-serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.grades-review-row {
+  margin-top: 9px;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--muted);
+}
+
+.grades-review-row[data-flagged='true'] { border-color: var(--warning, #e7b06a); }
+.grades-review-row[data-dropped='true'] { opacity: .5; }
+
+.grades-review-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 9px;
+}
+
+.grades-review-top b { font: 800 14px 'Baloo 2', system-ui, sans-serif; }
+
+.grades-review-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.grades-review-cell {
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--card);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.grades-review-cell small {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--muted-foreground);
+  font-size: 9px;
+}
+
+.grades-review-cell input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0;
+}
+
+.grades-review-cell input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.grades-review-quote {
+  margin-top: 8px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .grades-review-grid { grid-template-columns: 1fr 1fr; }
+}
