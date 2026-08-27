@@ -110,7 +110,9 @@ describe('Academics v4 migration', () => {
     data.profile.startTerm = ''
     data.academics.migrationJournal = []
 
-    syncCurrentTermWorkspaces(data, new Date('2026-07-27T12:00:00-04:00').getTime())
+    // The third argument marks reconciliation of pre-existing records. Only a
+    // real migration passes it; a live edit must never raise this banner.
+    syncCurrentTermWorkspaces(data, new Date('2026-07-27T12:00:00-04:00').getTime(), true)
 
     const confirmation = data.academics.migrationJournal.find((entry) => entry.kind === 'current-term-confirmation')
     expect(inferAcademicTerm(new Date('2026-07-27T12:00:00-04:00'))).toBe('Summer 2026')
@@ -120,6 +122,17 @@ describe('Academics v4 migration', () => {
     resolveAcademicMigration(data, confirmation!.id, { type: 'confirm-term', term: 'Fall 2026' })
     expect(data.profile.startTerm).toBe('Fall 2026')
     expect(confirmation?.status).toBe('resolved')
+  })
+
+  it('raises no confirmation when the same sync runs as a live edit', () => {
+    const data = createSeedData()
+    data.profile.startTerm = ''
+    data.academics.migrationJournal = []
+
+    // Same data, same missing term — but reached the way `addItem` reaches it.
+    syncCurrentTermWorkspaces(data, new Date('2026-07-27T12:00:00-04:00').getTime())
+
+    expect(data.academics.migrationJournal.filter((entry) => entry.kind === 'current-term-confirmation')).toHaveLength(0)
   })
 
   it('is idempotent on already-migrated local data', () => {

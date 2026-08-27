@@ -9,6 +9,7 @@ import type {
   TopicStatus,
 } from '@/lib/types'
 import { createTopicFsrsState } from '@/lib/academics/fsrs'
+import { createEmptyClassCenterData } from '@/data/personalInitialData'
 
 type UnknownRecord = Record<string, unknown>
 type LegacyWorkspace = UnknownRecord & {
@@ -242,22 +243,53 @@ function migrateRelatedRows(
     assessmentAttempts: [],
     transcriptRecords: [],
     acknowledgedCatalogWarnings: [],
+    planningProgramContext: {},
     // v28 owns lecture-capture migration; the v4 baseline still needs a
     // structurally complete ClassCenterData shape for type-safe hydration.
     lectures: [],
     lectureFindings: [],
     lectureMaterialProposals: [],
     lectureNoteProposals: [],
+    guideProposals: [],
     watchedNoteSources: [],
     watchedNoteProposals: [],
     termReports: [],
   }
 }
 
-function currentTermFor(data: AppData, journal: AcademicMigrationJournalEntry[], now: number): string {
+function currentTermFor(
+  data: AppData,
+  journal: AcademicMigrationJournalEntry[],
+  now: number,
+  reconcilingLegacyData: boolean,
+): string {
   const profileTerm = compactWhitespace(data.profile?.startTerm)
   if (profileTerm) return profileTerm
   const inferredTerm = inferAcademicTerm(now)
+  const center = data.academics?.classCenter
+  // ⚠️ Only a migration may raise this banner.
+  //
+  // `hasAcademicRecords` alone is not enough. Live mutations reach this through
+  // `syncCurrentTermWorkspaces`, and `addItem` pushes the new course BEFORE
+  // calling it — so on the very first course a brand-new profile already has
+  // `courses.length === 1`, passed the guard, and was told to review a
+  // "migration" for the record it had just created. The banner then persisted
+  // across reloads. Reconciliation is a property of where we were called from,
+  // not of how many records happen to exist by the time we look.
+  if (!reconcilingLegacyData) return inferredTerm
+  // A genuinely new local workspace has no academic facts to reconcile.  It
+  // needs an inferred term for later course creation, but must not be shown a
+  // migration-recovery banner for records that never existed.
+  const hasAcademicRecords = Boolean(
+    data.courses.length
+    || center?.workspaces?.length
+    || center?.topics?.length
+    || center?.notes?.length
+    || center?.assignments?.length
+    || center?.files?.length
+    || center?.gradeCategories?.length,
+  )
+  if (!hasAcademicRecords) return inferredTerm
   addJournal(journal, {
     kind: 'current-term-confirmation',
     status: 'pending',
@@ -268,15 +300,20 @@ function currentTermFor(data: AppData, journal: AcademicMigrationJournalEntry[],
   return inferredTerm
 }
 
-export function syncCurrentTermWorkspaces(data: AppData, now = Date.now()): AppData {
+export function syncCurrentTermWorkspaces(
+  data: AppData,
+  now = Date.now(),
+  /** True only on the migration/hydration paths, which may journal for review. */
+  reconcilingLegacyData = false,
+): AppData {
   const academics = data.academics
   academics.migrationJournal ??= []
-  const classCenter = academics.classCenter
+  const classCenter = academics.classCenter ?? (academics.classCenter = createEmptyClassCenterData())
   classCenter.workspaces ??= []
   classCenter.keyPoints ??= []
   classCenter.sourceChunks ??= []
   classCenter.reviewEvents ??= []
-  const currentTerm = currentTermFor(data, academics.migrationJournal, now)
+  const currentTerm = currentTermFor(data, academics.migrationJournal, now, reconcilingLegacyData)
 
   const coursesById = new Map(data.courses.map((course) => [course.id, course]))
   const workspaceCounts = new Map<string, number>()
@@ -372,7 +409,11 @@ export function migrateAcademicsV4(data: AppData, now = Date.now()): AppData {
         },
       },
     }
-    return syncCurrentTermWorkspaces(alreadyMigrated, now)
+    // Already on the v4 shape: this is the ordinary rehydration path that every
+    // reload takes, not a reconciliation. `merge` runs migrateAll on EVERY load,
+    // so journalling here re-raised the banner on each reload of a perfectly
+    // normal local profile that simply has no confirmed start term.
+    return syncCurrentTermWorkspaces(alreadyMigrated, now, false)
   }
 
   // Courses may gain rows below, so work on a copy.
@@ -433,7 +474,8 @@ export function migrateAcademicsV4(data: AppData, now = Date.now()): AppData {
   }
 
   const related = migrateRelatedRows(legacy, resolvedByWorkspace, unresolvedWorkspaceIds, now)
-  const currentTerm = currentTermFor(data, journal, now)
+  // Inside the legacy migration itself: this genuinely is reconciliation.
+  const currentTerm = currentTermFor(data, journal, now, true)
   const workspaces: ClassWorkspace[] = []
   for (const [workspaceId, courseId] of resolvedByWorkspace) {
     const result = preliminary.get(workspaceId)!
@@ -473,7 +515,7 @@ export function migrateAcademicsV4(data: AppData, now = Date.now()): AppData {
       },
     },
   }
-  return syncCurrentTermWorkspaces(migrated, now)
+  return syncCurrentTermWorkspaces(migrated, now, true)
 }
 
 function appendUniqueRows(target: UnknownRecord[], incoming: UnknownRecord[], subject: string) {
@@ -525,7 +567,7 @@ export function resolveAcademicMigration(
     entry.status = 'resolved'
     entry.resolvedAt = now
     entry.reason = `Current term confirmed as ${data.profile.startTerm}.`
-    return syncCurrentTermWorkspaces(data, now)
+    return syncCurrentTermWorkspaces(data, now, false)
   }
 
   if (resolution.type === 'journal-only') {
@@ -590,5 +632,5 @@ export function resolveAcademicMigration(
       : `Conflict resolved in favor of workspace ${entry.legacyWorkspaceId}; this snapshot remains in the journal.`
   }
 
-  return syncCurrentTermWorkspaces(data, now)
+  return syncCurrentTermWorkspaces(data, now, false)
 }
