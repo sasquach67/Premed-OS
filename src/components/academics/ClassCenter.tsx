@@ -54,6 +54,7 @@ import type { ReimportRow } from '@/lib/academics/syllabusReimport'
 import { classTypeDraftDecision } from '@/lib/academics/classTypeDraftDecision'
 import { nextIncompleteReading, readingDebt, READING_LIST_STATE_COPY } from '@/lib/academics/writingEvidence'
 import { inferAcademicTerm } from '@/store/migrations/academicsV4'
+import { persistConfirmedSyllabusEvidence } from '@/lib/academics/guideContract'
 
 const COLORS: AcademicTagColor[] = ['blue', 'green', 'purple', 'orange', 'yellow', 'red', 'pink', 'gray', 'brown']
 const CLASS_ICONS: { id: string; label: string; Icon: LucideIcon }[] = [
@@ -257,7 +258,7 @@ const reimportAssignmentKey = (title: string, date?: string) => `${reimportNorma
 
 /** Applies only a student's explicit review choices. The diff itself stays in
  * syllabusReimport.ts; these keys merely locate the records that it identified. */
-function applyAcceptedReimport(center: ClassCenterData, courseId: string, proposal: SyllabusProposal, decisions: ReimportDecision[], now: number) {
+function applyAcceptedReimport(center: ClassCenterData, courseId: string, proposal: SyllabusProposal, decisions: ReimportDecision[], sourceFileId: string | undefined, now: number) {
   const accepted = decisions.filter((decision) => decision.action === 'accept')
   const acceptedRows = new Set(accepted.map((decision) => `${decision.row.kind}:${decision.row.key}`))
   const wants = (kind: ReimportRow['kind'], key: string) => acceptedRows.has(`${kind}:${key}`)
@@ -268,10 +269,10 @@ function applyAcceptedReimport(center: ClassCenterData, courseId: string, propos
   center.assignments = center.assignments.filter((item) => item.courseId !== courseId || !removed.has(`assignment:${reimportAssignmentKey(item.title, item.dueDate)}`))
   center.gradeCategories = center.gradeCategories.filter((item) => item.courseId !== courseId || !removed.has(`category:${reimportNormalized(item.name)}`))
 
-  proposal.items.filter((item) => item.kind === 'units').forEach((item) => {
+  proposal.items.filter((item) => item.kind === 'standards').forEach((item) => {
     const key = reimportNormalized(item.label)
     if (!wants('topic', key) || center.topics.some((topic) => topic.courseId === courseId && reimportNormalized(topic.title) === key)) return
-    center.topics.push({ id: uid(), courseId, title: item.label, unit: item.label, status: 'not-started', fsrs: createTopicFsrsState(now), confidence: 3, sourceNoteIds: [], linkedFileIds: [], createdAt: now, updatedAt: now, order: center.topics.filter((topic) => topic.courseId === courseId).length })
+    center.topics.push({ id: uid(), courseId, title: item.label, unit: '', basis: 'syllabus-standard', status: 'not-started', fsrs: createTopicFsrsState(now), confidence: 3, sourceNoteIds: [], linkedFileIds: [], createdAt: now, updatedAt: now, order: center.topics.filter((topic) => topic.courseId === courseId).length })
   })
   proposal.items.filter((item) => item.kind === 'exams' || item.kind === 'deadlines').forEach((item) => {
     const key = reimportAssignmentKey(item.label, item.value)
@@ -289,6 +290,13 @@ function applyAcceptedReimport(center: ClassCenterData, courseId: string, propos
       center.gradeCategories.push({ id: uid(), courseId, name: item.label || 'Untitled category', weight: Number(item.value?.replace('%', '')) || 0, source: `${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: center.gradeCategories.filter((candidate) => candidate.courseId === courseId).length })
     }
   })
+  const confirmedItems = proposal.items.filter((item) => {
+    if (item.kind === 'units') return wants('topic', reimportNormalized(item.label))
+    if (item.kind === 'exams' || item.kind === 'deadlines') return wants('assignment', reimportAssignmentKey(item.label, item.value))
+    if (item.kind === 'weights') return wants('category', reimportNormalized(item.label))
+    return false
+  })
+  persistConfirmedSyllabusEvidence(center, courseId, sourceFileId, confirmedItems, now)
 }
 
 function normalizeClassIcon(icon?: string) {
@@ -448,6 +456,7 @@ function ClassCenterDashboard({
     .filter((row) => `${row.courseCode} ${row.courseTitle} ${row.nickname ?? ''} ${row.instructor ?? ''}`.toLowerCase().includes(query.toLowerCase()))
     .sort((a, b) => a.order - b.order)
   const activeClasses = data.classes.filter((row) => row.status === 'active')
+  const hasSearch = Boolean(query.trim())
 
   async function importSyllabus(form: ClassFormState, selectedFiles: File[], proposal?: SyllabusProposal, existingCourseId?: string, reimportDecisions?: ReimportDecision[], replaceSyllabusFileId?: string) {
     const now = Date.now()
@@ -460,6 +469,7 @@ function ClassCenterDashboard({
       const id = uid()
       return { file, id, blobRef: await retainLocalSyllabus(file, id) }
     }))
+    const syllabusFileId = replaceSyllabusFileId ?? retained[0]?.id
     updateAll((draft) => {
       if (!existingCourseId) draft.courses.push({
         id: courseId, code: form.courseCode.trim() || 'NEW 101', title: form.courseTitle.trim() || 'Untitled class',
@@ -477,26 +487,35 @@ function ClassCenterDashboard({
         fileName: file.name, mimeType: file.type, notes: '', linkedTopicIds: [], createdAt: now, updatedAt: now, order: center.files.length,
       }))
       if (proposal && existingCourseId && reimportDecisions) {
-        applyAcceptedReimport(center, courseId, proposal, reimportDecisions, now)
+        applyAcceptedReimport(center, courseId, proposal, reimportDecisions, syllabusFileId, now)
       } else if (proposal) {
-        proposal.items.filter((item) => item.kind === 'units').forEach((item, index) => center.topics.push({
-          id: uid(), courseId, title: item.label, unit: item.label, status: 'not-started', fsrs: createTopicFsrsState(), confidence: 3, sourceNoteIds: [], linkedFileIds: [], createdAt: now, updatedAt: now, order: index,
+        persistConfirmedSyllabusEvidence(center, courseId, syllabusFileId, proposal.items, now)
+        proposal.items.filter((item) => item.kind === 'standards').forEach((item, index) => center.topics.push({
+          id: uid(), courseId, title: item.label, unit: '', basis: 'syllabus-standard', status: 'not-started', fsrs: createTopicFsrsState(), confidence: 3, sourceNoteIds: [], linkedFileIds: [], createdAt: now, updatedAt: now, order: index,
         }))
         proposal.items.filter((item) => item.kind === 'exams' || item.kind === 'deadlines').forEach((item, index) => center.assignments.push({
           id: uid(), courseId, title: item.label, type: item.kind === 'exams' ? 'exam' : 'other', dueDate: item.value, status: 'not-started', linkedTopicIds: [], linkedFileIds: [], notes: `Source: ${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: index,
         }))
-        const policyNote = proposal.items.filter((item) => item.kind === 'policies').map((item) => item.label || item.evidence.quote).filter(Boolean).join('\n')
         proposal.items.filter((item) => item.kind === 'weights').forEach((item, index) => center.gradeCategories.push({
-          id: uid(), courseId, name: item.label || 'Untitled category', weight: Number(item.value?.replace('%', '')) || 0, policyNote: policyNote || undefined,
+          id: uid(), courseId, name: item.label || 'Untitled category', weight: Number(item.value?.replace('%', '')) || 0,
           source: `${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: index,
         }))
         const workspace = center.workspaces.find((item) => item.courseId === courseId)
-        const logistics = proposal.items.filter((item) => item.kind === 'logistics').map((item) => item.label || item.evidence.quote).join(' ')
-        if (workspace && logistics) {
-          if (!workspace.instructor) workspace.instructor = logistics.match(/(?:instructor|prof(?:essor)?)\s*[:\-]?\s*([A-Z][\w.' -]+)/i)?.[1]?.trim() ?? workspace.instructor
-          if (!workspace.meetingDays) workspace.meetingDays = logistics.match(/\b(?:MWF|TR|TTH|Mon(?:day)?(?:\s*\/\s*Wed(?:nesday)?(?:\s*\/\s*Fri(?:day)?)?)?|Tue(?:sday)?(?:\s*\/\s*Thu(?:rsday)?)?)\b/i)?.[0] ?? workspace.meetingDays
-          if (!workspace.meetingTime) workspace.meetingTime = logistics.match(/\b\d{1,2}:\d{2}\s*(?:AM|PM)?\s*(?:[-–]\s*\d{1,2}:\d{2}\s*(?:AM|PM)?)?/i)?.[0] ?? workspace.meetingTime
-          if (!workspace.location) workspace.location = logistics.match(/(?:room|location)\s*[:\-]?\s*([\w -]{3,})/i)?.[1]?.trim() ?? workspace.location
+        // Preserve document order and prefer the first credible header fact.
+        // Later exam prose can say "same location as class meetings" without
+        // supplying the class location.
+        const logistics = proposal.items.filter((item) => item.kind === 'logistics').map((item) => item.label || item.evidence.quote)
+        const logisticsText = logistics.join(' ')
+        if (workspace && logisticsText) {
+          if (!workspace.instructor) workspace.instructor = logisticsText.match(/(?:instructor|prof(?:essor)?)\s*[:\-]?\s*([A-Z][\w.' -]+)/i)?.[1]?.trim() ?? workspace.instructor
+          if (!workspace.meetingDays) workspace.meetingDays = logisticsText.match(/\b(?:MWF|TR|TTH|Mon(?:day)?(?:\s*\/\s*Wed(?:nesday)?(?:\s*\/\s*Fri(?:day)?)?)?|Tue(?:sday)?(?:\s*\/\s*Thu(?:rsday)?)?)\b/i)?.[0] ?? workspace.meetingDays
+          if (!workspace.meetingTime) workspace.meetingTime = logisticsText.match(/\b\d{1,2}(?::\d{2})?\s*(?:AM|PM)\s*(?:[-–]\s*\d{1,2}(?::\d{2})?\s*(?:AM|PM))?/i)?.[0] ?? workspace.meetingTime
+          if (!workspace.location) {
+            const locationLine = logistics.find((line) => /\b(?:room|location|hall|center|building)\b/i.test(line) && !/same location as class meetings/i.test(line))
+            workspace.location = locationLine?.match(/(?:room|location)\s*[:\-]?\s*([\w -]{3,})/i)?.[1]?.trim()
+              ?? locationLine?.match(/\b([A-Z][\w ]+(?:Center|Hall|Building|Room|Rm\.?)(?:\s*(?:Room|Rm\.?)?\s*\d+[A-Za-z]?)?)\b/)?.[1]?.trim()
+              ?? workspace.location
+          }
         }
       }
     })
@@ -578,21 +597,53 @@ function ClassCenterDashboard({
   if (!archiveOnly && activeClasses.length === 0) {
     return (
       <>
-        <div className="mx-auto max-w-5xl py-8 sm:py-12">
-          <MascotNote variant="empty-state" className="min-h-[300px] flex-col justify-center px-6 py-10 text-center sm:px-12" title="Bring in your first class">
-            <p className="mx-auto max-w-xl">Start with the syllabus you already have. You’ll review the class details before anything is saved.</p>
+        <div className="mx-auto w-full min-w-0 max-w-5xl py-8 sm:py-12">
+          <MascotNote variant="empty-state" className="w-full max-w-full min-w-0 overflow-hidden min-h-[300px] flex-col justify-center px-6 py-10 text-center sm:px-12" title="Bring in your first class">
+            <p className="mx-auto w-full max-w-[17rem] break-words sm:max-w-xl">Start with the syllabus you already have. You’ll review the class details before anything is saved.</p>
             <div className="mt-5 flex flex-col items-center">
               <Button size="lg" className="syllabus-import-breathe" onClick={() => setSyllabusImportOpen(true)}><Upload className="size-4" /> Import syllabus</Button>
               <button type="button" onClick={() => setEditor({ open: true, form: emptyClassForm(semester) })} className="mt-3 text-sm font-bold text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline">Add manually</button>
             </div>
           </MascotNote>
-          <div className="mt-5 grid overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-3">
-            {[
-              ['1', 'Review before saving', 'Check the course details before the class is created.'],
-              ['2', 'Keep work in one place', 'Materials and deadlines begin with the syllabus.'],
-              ['3', 'Change it any time', 'Class tools can always be adjusted later.'],
-            ].map(([number, title, detail]) => <div key={number} className="flex gap-3 bg-card p-5"><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary/12 font-display text-sm font-extrabold text-primary">{number}</span><div><p className="font-display text-sm font-extrabold">{title}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{detail}</p></div></div>)}
-          </div>
+          {/*
+            Visual source: academics-empty-states-prototype.html · Variant A's
+            `.setup-guide`, carrying Variant B's copy — the composition this
+            surface's decision record approves. Values are the mockup's own
+            rules (31px icon, 14px row padding, 11px radius, 13px/11px type).
+
+            This replaces a numbered "Review before saving / Keep work in one
+            place / Change it any time" strip that appeared in no variant and
+            shipped in cb963a3 under a `built` flag. It described the product's
+            posture; the approved panel says what the import will populate.
+          */}
+          <section aria-label="What this sets up" className="mt-5 rounded-2xl border border-border bg-gradient-to-b from-[color-mix(in_srgb,var(--primary)_5%,var(--card))] to-card px-[22px] pb-5 pt-[19px] text-left">
+            <div className="pb-[13px]">
+              <p className="font-display text-[16.5px] font-extrabold">What this sets up</p>
+              <p className="text-[11.5px] font-bold text-muted-foreground">one import, then you stay in control</p>
+            </div>
+            <div className="flex flex-col gap-2.5">
+              {([
+                [NotebookText, 'Class details', 'Course, instructor, meetings, office hours.'],
+                [CalendarDays, 'Dates and deadlines', 'Exams, assignments, readings, and due dates.'],
+                [BarChart3, 'Grade structure', 'Categories and weights, checked to total 100%.'],
+              ] as const).map(([Icon, title, detail]) => (
+                <div key={title} className="grid grid-cols-[31px_1fr] items-start gap-2.5 rounded-[11px] border border-border bg-muted p-3.5">
+                  <span className="grid size-[31px] place-items-center rounded-lg bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] text-primary">
+                    <Icon className="size-3.5" aria-hidden="true" />
+                  </span>
+                  <div>
+                    <p className="font-display text-[13px] font-extrabold">{title}</p>
+                    <p className="mt-px text-[11px] font-semibold leading-[1.4] text-muted-foreground">{detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* The one place this surface says what happens when extraction
+                half-works. Dropped in cb963a3; restored here. */}
+            <p className="mt-[15px] border-t border-border pt-[14px] text-[11px] font-semibold text-muted-foreground">
+              If part of the syllabus can’t be read, we keep what worked and show exactly what needs manual entry.
+            </p>
+          </section>
         </div>
         <ClassEditorDialog
           key={editor.open ? 'create-open' : 'create-closed'}
@@ -776,7 +827,7 @@ function ClassCenterDashboard({
                 })}
               />
             ))}
-            {!archiveOnly && (
+            {!archiveOnly && !hasSearch && (
               <button
                 onClick={() => setEditor({ open: true, form: emptyClassForm(semester) })}
                 className={cn(
@@ -796,8 +847,9 @@ function ClassCenterDashboard({
           {!filtered.length && (
             <div className="py-10 text-center">
               <BookOpen className="mx-auto size-8 text-muted-foreground" />
-              <p className="mt-3 font-display text-xl font-bold">No classes here yet</p>
-              <p className="mt-1 text-sm text-muted-foreground">Add a class or choose another term.</p>
+              <p className="mt-3 font-display text-xl font-bold">{hasSearch ? 'No classes match this search' : 'No classes here yet'}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{hasSearch ? 'Try another course code, title, or instructor.' : 'Add a class or choose another term.'}</p>
+              {hasSearch && <Button size="sm" variant="outline" className="mt-4" onClick={() => setQuery('')}>Clear search</Button>}
             </div>
           )}
         </CardContent>
@@ -1773,7 +1825,7 @@ function OverviewTab({
                 </a>
               ))}
               {!row.syllabusUrl && !row.canvasUrl && !row.ankiDeckName && !row.driveFolderUrl && (
-                <button type="button" className="rounded-full bg-muted px-3 py-1.5 text-sm font-extrabold text-muted-foreground">Add in Course kit</button>
+                <span className="rounded-full bg-muted px-3 py-1.5 text-sm font-extrabold text-muted-foreground">No links saved</span>
               )}
             </div>
             <p className="text-sm font-bold text-muted-foreground">{row.instructor || 'Professor'} — {data.contacts.find((c) => c.courseId === row.id)?.officeHours || 'office hours TBD'} {data.contacts.find((c) => c.courseId === row.id)?.email && <a className="ml-2 text-primary" href={`mailto:${data.contacts.find((c) => c.courseId === row.id)?.email}`}>email ↗</a>}</p>

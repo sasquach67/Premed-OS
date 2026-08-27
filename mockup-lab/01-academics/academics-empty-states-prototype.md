@@ -101,8 +101,8 @@ seen — no longer reproduces. That blocker is resolved.
 | `Add manually` as a quiet text link beneath the primary button | quiet underlined text link beneath | ✅ |
 | Dashed transparent `MascotNote` as the one supportive surface | dashed `MascotNote` | ✅ |
 | No metric, chart, recommendation or placeholder course survives an empty store | Term GPA `—`, Cumulative `—`, Due today `0`, Day streak `0`; no course rows | ✅ |
-| **B's concise "What this sets up" explanation** — Class details · Dates and deadlines · Grade structure | **absent.** A numbered `1 · 2 · 3` strip appears instead: *Review before saving · Keep work in one place · Change it any time* | ❌ |
-| Variant A's partial-parse promise: *"If part of the syllabus can't be read, we keep what worked and show exactly what needs manual entry."* | **absent** | ❌ |
+| **B's concise "What this sets up" explanation** — Class details · Dates and deadlines · Grade structure | built 2026-08-27 · measured against `.setup-guide`'s own rules | ✅ |
+| Variant A's partial-parse promise: *"If part of the syllabus can't be read, we keep what worked and show exactly what needs manual entry."* | restored 2026-08-27 | ✅ |
 | A's centered launchpad headline *"Start with a syllabus"* | *"Bring in your first class"* (Variant B's headline) | ⚠️ |
 
 The headline is marked ⚠️ rather than ❌ because this approval is deliberately a
@@ -121,3 +121,33 @@ transcript path beside it.
 **Not built.** Condition 1 fails. `VARIANT-LAB.md`'s prose listed this page as
 built while the registry entry already read `approved`; the prose was wrong and
 is corrected. Source: `src/components/academics/ClassCenter.tsx`.
+
+## Gap closed — 2026-08-27
+
+Both ❌ rows above are built. `ClassCenter.tsx` now renders Variant A's
+`.setup-guide` carrying Variant B's copy, using the mockup's own values rather
+than approximations. Measured in the running app at 1440×900 and 1024×768, dark
+and paper:
+
+| Rule | Mockup | App |
+|---|---|---|
+| guide padding | `19px 22px 20px` | `19px` / `22px` ✅ |
+| row padding · radius | `14px` · `11px` | `14px` · `11px` ✅ |
+| row columns | `31px 1fr` | `31px 1fr` ✅ |
+| row background | `--muted` | `#322e28` dark · `#efe6d4` paper ✅ |
+| icon box | `31×31`, accent at 18% | `31×31`, `#4b9cd3` ✅ |
+| title · detail | `13px` · `11px/1.4` | `13px` · `11px` ✅ |
+| honest line | `margin-top 15px`, `border-top 1px --bd`, `padding-top 14px`, `11px`, `--mut` | `15px`, `1px #3c352d`, `14px`, `11px`, `#a89c8c` ✅ |
+
+Six regression tests (`ClassCenter.emptyState.test.tsx`) assert the approved
+copy, the partial-parse promise, and that the unapproved numbered strip cannot
+return. **No test asserted this copy before, which is why the substitution
+survived from `cb963a3` for four months.**
+
+**Still not `built`.** Condition 1 now passes, but the headline remains Variant
+B's *"Bring in your first class"* rather than A's *"Start with a syllabus"* —
+left alone deliberately, because this approval is a blend of A and B and the
+record never quotes a headline, so changing it would be inventing a decision
+rather than implementing one. **Andy's call.** Conditions 2–6 for this surface
+are also unverified: `Import syllabus` and `Add manually` have not been
+click-driven through their full flows.
