@@ -17,8 +17,8 @@
  * ⚠️ U-9: credits and named requirements only. No readiness score, no
  * composite, no "on track" badge.
  */
-import { useState } from 'react'
-import { CalendarPlus, GraduationCap, LockKeyhole, Pencil, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { CalendarPlus, GraduationCap, Pencil, Search, Trash2, X } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { cn } from '@/lib/utils'
 import { uid } from '@/lib/id'
@@ -28,29 +28,67 @@ import {
   plannerTerms, prereqVsMcat, unplacedRequirements,
 } from '@/lib/academics/planner'
 import { isProtected } from '@/lib/academics/savedPlans'
+import { buildAdvisorSnapshot } from '@/lib/academics/advisorExport'
+import {
+  candidatePlanCoverage,
+  planningRequirementSet,
+  UNC_PLANNING_LIBRARY,
+} from '@/lib/academics/uncPlanningLibrary'
+import {
+  localCatalogCandidates,
+  UNC_CATALOG_INTEGRATION,
+  type LocalCatalogCandidate,
+} from '@/lib/academics/planningCatalogAdapter'
 import type { Course, PlannerTerm } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { RequirementsAudit, planningProgramLabel } from '@/components/academics/RequirementsAudit'
+import './PlanningWorkspace.css'
 
-const CARD = 'rounded-2xl border border-border bg-card shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]'
 const EYEBROW = 'font-display text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground'
 
-export function PlannerBoard() {
+/**
+ * Visual source: mockup-lab/01-academics/academics-planner-prototype.html
+ * Approved target: Variant A · view=plan, with requirements/catalog in-context.
+ */
+export function PlannerBoard({ onAddCourse, onComparePlans, openRequirements = false }: {
+  onAddCourse: (term: string) => void
+  onComparePlans: () => void
+  openRequirements?: boolean
+}) {
   const courses = useStore((s) => s.courses)
   const requirements = useStore((s) => s.requirements)
+  const planningContext = useStore((s) => s.academics.classCenter.planningProgramContext ?? {})
+  const selectedProgramId = planningContext.selectedProgramId
   const mcatDate = useStore((s) => s.mcat.targetDate)
+  const studentName = useStore((s) => s.profile.name)
   const slots = useStore((s) => s.academics.classCenter.plannerTerms ?? [])
+  const savedPlans = useStore((s) => s.academics.classCenter.savedPlans ?? [])
+  const transcriptRecords = useStore((s) => s.academics.classCenter.transcriptRecords ?? [])
   const [selectedId, setSelectedId] = useState<string | undefined>()
   const [placingCourse, setPlacingCourse] = useState<Course | undefined>()
   const [placementOpen, setPlacementOpen] = useState(false)
   const [editingSlot, setEditingSlot] = useState<PlannerTerm | undefined>()
+  const [requirementsOpen, setRequirementsOpen] = useState(openRequirements)
   const [newTermLabel, setNewTermLabel] = useState('')
   const [newTermKind, setNewTermKind] = useState<PlannerTerm['kind']>('standard')
 
   const columns = plannerTerms(courses, slots)
   const divider = mcatDividerAfter(columns, mcatDate)
-  const unplaced = unplacedRequirements(requirements, courses)
+  const selectedProgram = selectedProgramId ? planningRequirementSet(selectedProgramId) : undefined
+  const localCoverage = selectedProgram ? candidatePlanCoverage(selectedProgram, courses.map((course) => course.code)) : undefined
+  const unplaced = localCoverage
+    ? localCoverage.filter((item) => item.state !== 'scheduled').map((item) => ({ id: item.node.id, label: item.node.label, verificationStatus: item.state === 'manual-review' ? 'needs-verification' as const : 'verified' as const }))
+    : unplacedRequirements(requirements, courses)
   const selected = courses.find((course) => course.id === selectedId)
+  const planName = savedPlans.at(-1)?.name || 'Current course plan'
+  const programSummary = selectedProgram
+    ? `${planningProgramLabel(selectedProgram)} · ${selectedProgram.catalogYear}`
+    : 'Program not selected · Catalog not recorded'
+  const priorCreditCount = transcriptRecords.filter((record) => {
+    const linked = courses.find((course) => course.id === record.courseId)
+    return linked?.status === 'completed'
+  }).length
 
   if (!columns.length) return null
 
@@ -79,110 +117,112 @@ export function PlannerBoard() {
     setPlacingCourse(undefined)
   }
 
+  const exportAdvisorSnapshot = () => {
+    const snapshot = buildAdvisorSnapshot({
+      courses,
+      requirements,
+      catalogDate: selectedProgram?.catalogYear,
+      studentName,
+      planningContext,
+    })
+    const href = URL.createObjectURL(new Blob([snapshot.text], { type: 'text/plain;charset=utf-8' }))
+    const link = document.createElement('a')
+    link.href = href
+    link.download = 'premed-os-advisor-plan.txt'
+    link.click()
+    URL.revokeObjectURL(href)
+  }
+
   return (
-    <section className={cn(CARD, 'p-4')}>
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className={EYEBROW}>Course sequence</p>
-          <h3 className="mt-0.5 font-display text-lg font-extrabold">Plan the order, not just the list.</h3>
-          <p className="mt-0.5 text-xs font-bold text-muted-foreground">
-            Select a course to see what it clears, then preview its placement before saving it.
-          </p>
-        </div>
-        <Button size="sm" variant="outline" onClick={() => { setPlacingCourse(undefined); setPlacementOpen(true) }}>
-          <CalendarPlus className="size-4" /> Add term
-        </Button>
-      </header>
-
-      {/* Always visible, and above the board — the one thing that must not
-          fall below the fold. */}
-      <div className="mt-3 rounded-xl border border-dashed border-amber-500/45 bg-amber-500/5 p-3">
-        <p className={EYEBROW}>Unplaced requirements</p>
-        {unplaced.length ? (
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {unplaced.map((item) => (
-              <span key={item.id} className="rounded-lg border border-border bg-card px-2 py-1 font-display text-[11px] font-extrabold">
-                {item.label}
-                <span className="ml-1.5 font-body text-[10px] font-bold text-muted-foreground">
-                  {item.verificationStatus === 'needs-verification' ? 'inferred' : 'verified'}
-                </span>
-              </span>
-            ))}
+    <section className="planning-workspace" aria-label="Academic planner">
+      <div className="planning-filter-bar" aria-label="Plan controls">
+        <span className="planning-control" data-primary="true">{planName}</span>
+        <button type="button" className="planning-control" onClick={() => setRequirementsOpen(true)}>{programSummary}</button>
+        <button type="button" className="planning-control" onClick={() => onAddCourse(columns.find((column) => !column.registered && !column.lockedAt)?.term ?? columns[0].term)}>＋ Add course</button>
+        <button type="button" className="planning-control" onClick={onComparePlans}>Compare plans</button>
+        <span className="planning-control"><GraduationCap className="size-3.5" /> MCAT · {mcatDate || 'date not recorded'}</span>
+        <span className="planning-control-spacer" />
+        <button type="button" className="planning-control" onClick={exportAdvisorSnapshot}>Export for advisor</button>
+        <details className="planning-more">
+          <summary className="planning-control" aria-label="More plan actions">•••</summary>
+          <div className="planning-more-menu">
+            <button type="button" onClick={() => { setPlacingCourse(undefined); setPlacementOpen(true) }}><CalendarPlus className="size-3.5" /> Add term</button>
+            <button type="button" onClick={() => setRequirementsOpen(true)}>Open requirement map</button>
           </div>
-        ) : (
-          <p className="mt-1 text-[11.5px] font-bold text-muted-foreground">
-            Every recorded requirement has a course placed against it.
-          </p>
-        )}
+        </details>
       </div>
 
-      <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        {/* A — the board. Columns scroll; a term never wraps. */}
-        <div className="overflow-x-auto">
-          <div className="flex min-w-max gap-2.5">
-            {columns.map((column, index) => (
-              <div key={column.id ?? column.term} className="flex items-stretch gap-2.5">
-                <article className="w-52 shrink-0 rounded-xl border border-border bg-muted p-3">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-1">
-                      <p className="truncate font-display text-xs font-extrabold">{column.term}</p>
-                      {column.lockedAt && <LockKeyhole className="size-3 text-muted-foreground" aria-label="Term locked" />}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {column.registered && <span className="rounded border border-border px-1 py-0.5 text-[9.5px] font-bold text-muted-foreground">registered</span>}
-                      {column.id && <Button size="icon" variant="ghost" className="size-6" onClick={() => setEditingSlot(slots.find((slot) => slot.id === column.id))} aria-label={`Edit ${column.term}`}><Pencil className="size-3" /></Button>}
-                    </div>
-                  </div>
-                  <p className="mt-0.5 text-[10.5px] font-bold text-muted-foreground">
-                    {column.credits} cr · {column.bcpmCredits} BCPM
-                  </p>
-                  {column.note && <p className="mt-1 line-clamp-2 text-[10px] font-bold text-muted-foreground">{column.note}</p>}
-                  <div className="mt-2 space-y-1.5">
-                    {column.courses.map((course) => (
-                      <button
-                        key={course.id} type="button"
-                        onClick={() => setSelectedId(course.id === selectedId ? undefined : course.id)}
-                        className={cn(
-                          'w-full rounded-lg border bg-card p-2 text-left transition-colors duration-150 ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none',
-                          course.id === selectedId
-                            ? 'border-[var(--cat-gpa)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--cat-gpa)_32%,transparent)]'
-                            : 'border-border hover:bg-muted',
-                        )}
-                      >
-                        <b className="font-display text-[12.5px] font-extrabold">{course.code}</b>
-                        <p className="truncate text-[10.5px] font-bold text-muted-foreground">{course.title}</p>
-                        <p className="mt-0.5 text-[10px] font-bold text-muted-foreground">
-                          {course.credits} cr · {course.bcpm ? 'BCPM' : 'AO'}
-                        </p>
-                      </button>
+      <section className="planning-context-bar" aria-label="Planning context">
+        <div className="planning-context-label"><b>Your planning context</b><span>These choices set the requirement map.</span></div>
+        <button type="button" className="planning-context-field" onClick={() => setRequirementsOpen(true)}><small>Major / program</small><b>{selectedProgram ? planningProgramLabel(selectedProgram) : 'Not recorded'}</b></button>
+        <button type="button" className="planning-context-field" onClick={() => setRequirementsOpen(true)}><small>Catalog + cohort</small><b>{selectedProgram?.catalogYear ?? 'Not recorded'}</b></button>
+        <button type="button" className="planning-context-field" onClick={() => setRequirementsOpen(true)}><small>Premed path</small><b>{mcatDate ? `Not recorded · MCAT ${mcatDate}` : 'Not recorded'}</b></button>
+        <button type="button" className="planning-context-field" data-action="true" onClick={() => setRequirementsOpen(true)}><small>Prior credit</small><b>{priorCreditCount ? `${priorCreditCount} completed transcript record${priorCreditCount === 1 ? '' : 's'}` : 'Not recorded'}</b></button>
+        <div className="planning-context-field" data-unavailable="true"><small>Interests</small><b>Not recorded</b></div>
+      </section>
+
+      <div className="planning-canvas">
+        <div className="planning-layout">
+          <div className="planning-main">
+            <section className="planning-card">
+              <header className="planning-card-header">
+                <div><div className="planning-card-title">Your academic plan</div><div className="planning-card-subtitle">past → registered → planned · scroll across terms</div></div>
+                <button type="button" className="planning-control" onClick={() => { setPlacingCourse(undefined); setPlacementOpen(true) }}>＋ Add term</button>
+              </header>
+              <div className="planning-card-body">
+                <div className="planning-board-scroll">
+                  <div className="planning-terms">
+                    {columns.map((column, index) => (
+                      <div key={column.id ?? column.term} className="flex items-stretch gap-2.5">
+                        <article className="planning-term" data-current={column.registered || undefined}>
+                          <header className="planning-term-header">
+                            <div><div className="planning-term-name">{column.term}</div><div className="planning-term-meta">{column.registered ? 'Registered' : column.lockedAt ? 'Locked' : 'Planned'} · {column.credits} credits</div></div>
+                            {column.id ? <button type="button" className="planning-term-lock" data-locked={Boolean(column.lockedAt) || undefined} onClick={() => setEditingSlot(slots.find((slot) => slot.id === column.id))} aria-label={`Edit ${column.term}`}>{column.lockedAt ? 'Locked' : 'Draft'} <Pencil className="inline size-2.5" /></button> : <span className="planning-term-lock" data-locked={column.registered || undefined}>{column.registered ? 'Registered' : 'Recorded'}</span>}
+                          </header>
+                          {column.note && <p className="planning-term-meta">{column.note}</p>}
+                          {column.courses.map((course) => {
+                            const effects = courseEffects(course, requirements, courses)
+                            return <button key={course.id} type="button" className="planning-course" data-selected={course.id === selectedId || undefined} onClick={() => setSelectedId(course.id === selectedId ? undefined : course.id)}>
+                              <span className="planning-course-top"><span className="planning-course-code">{course.code || 'Course code'}</span><span className="planning-course-credits">{course.credits} cr</span></span>
+                              <span className="planning-course-name">{course.title || 'Title not recorded'}</span>
+                              <span className="planning-course-tags"><span className="planning-course-tag">{course.bcpm ? 'BCPM' : 'AO'}</span>{effects.clears.some((effect) => effect.confidence === 'verified') && <span className="planning-course-tag" data-tone="sage">✓ source</span>}</span>
+                              <span className="planning-course-clear"><b>{effects.clears.length ? 'Planning effect:' : 'Requirement effect:'}</b> {effects.clears.map((effect) => effect.label).join(' · ') || 'No recorded mapping'}</span>
+                            </button>
+                          })}
+                          {!column.courses.length && <p className="planning-term-empty">Nothing placed</p>}
+                          {!column.registered && !column.lockedAt && <button type="button" className="planning-term-add" onClick={() => onAddCourse(column.term)}>＋ Add course</button>}
+                          <p className="planning-term-load"><b>{column.credits} credits</b> · {column.bcpmCredits} BCPM</p>
+                        </article>
+                        {divider === index && <div className="planning-mcat-divider"><GraduationCap className="mb-2 size-5" /><b>MCAT</b><span>{mcatDate || 'Date not recorded'}</span></div>}
+                      </div>
                     ))}
-                    {!column.courses.length && (
-                      <p className="rounded-lg border border-dashed border-border p-2 text-[10.5px] font-bold text-muted-foreground">
-                        Nothing placed
-                      </p>
-                    )}
+                    {divider === undefined && <div className="planning-mcat-divider"><GraduationCap className="mb-2 size-5" /><b>MCAT</b><span>Date not recorded</span></div>}
                   </div>
-                </article>
-
-                {/* The MCAT is a divider between terms — never a chip. */}
-                {divider === index && (
-                  <div className="flex w-9 shrink-0 flex-col items-center justify-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--cat-mcat)_45%,var(--border))] bg-[color-mix(in_srgb,var(--cat-mcat)_9%,transparent)]">
-                    <GraduationCap className="size-4 text-[var(--cat-mcat)]" />
-                    <span className="font-display text-[10px] font-extrabold tracking-widest text-[var(--cat-mcat)] [writing-mode:vertical-rl]">
-                      MCAT
-                    </span>
-                  </div>
-                )}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+            </section>
 
-        {/* C replaces the rail — the two never render at once. */}
-        {selected
-          ? <Inspector course={selected} onClose={() => setSelectedId(undefined)} onPlace={() => { setPlacingCourse(selected); setPlacementOpen(true) }} />
-          : <OutcomeRail mcatDate={mcatDate} />}
+            <CourseDiscoveryBay columns={columns} selectedProgramId={selectedProgramId} onInspect={setSelectedId} />
+
+            <section className="planning-tray" aria-label="Unplaced planning work">
+              <header className="planning-tray-header"><div><span className="planning-tray-title">Unplaced</span> <span className="planning-tray-copy">requirements and courses with no term yet</span></div></header>
+              {unplaced.length ? <div className="planning-tray-items">{unplaced.map((item) => <div key={item.id} className="planning-tray-chip"><b>{item.label}</b><span>{item.verificationStatus === 'needs-verification' ? 'Manual review' : 'Source recorded'} · no term selected</span></div>)}</div> : <p className="planning-tray-copy">No uncaptured planning nodes are shown locally.</p>}
+            </section>
+          </div>
+
+          <aside className="planning-rail">
+            <PlanCoverage selectedProgram={selectedProgram} coverage={localCoverage ?? []} onOpen={() => setRequirementsOpen(true)} />
+            {selected ? <Inspector course={selected} onClose={() => setSelectedId(undefined)} onPlace={() => { setPlacingCourse(selected); setPlacementOpen(true) }} /> : <OutcomeRail mcatDate={mcatDate} selectedProgramId={selectedProgramId} />}
+          </aside>
+        </div>
       </div>
+
+      {requirementsOpen && <div className="planning-drawer" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setRequirementsOpen(false) }}>
+        <aside className="planning-drawer-panel" role="dialog" aria-modal="true" aria-label="Planner requirement map">
+          <header className="planning-drawer-top"><div><h2>Requirement map</h2><p>Local planning evidence · live official audit is not configured</p></div><button type="button" className="planning-control" onClick={() => setRequirementsOpen(false)} aria-label="Close requirement map"><X className="size-4" /></button></header>
+          <RequirementsAudit />
+        </aside>
+      </div>}
 
       <PlacementDialog key={placingCourse?.id ?? 'new-term'}
         course={placingCourse}
@@ -201,17 +241,159 @@ export function PlannerBoard() {
   )
 }
 
-function OutcomeRail({ mcatDate }: { mcatDate?: string }) {
+/**
+ * Visual source: mockup-lab/01-academics/academics-planner-prototype.html
+ * Approved target: Variant A · view=plan, persistent Plan coverage rail.
+ */
+function PlanCoverage({ selectedProgram, coverage, onOpen }: {
+  selectedProgram?: NonNullable<ReturnType<typeof planningRequirementSet>>
+  coverage: ReturnType<typeof candidatePlanCoverage>
+  onOpen: () => void
+}) {
+  const courses = useStore((s) => s.courses)
+  const completedCodes = new Set(courses.filter((course) => course.status === 'completed').map((course) => course.code.trim().toUpperCase()))
+  const complete = coverage.filter((item) => item.state === 'scheduled' && item.scheduledCourses.some((code) => completedCodes.has(code.toUpperCase()))).length
+  const planned = coverage.filter((item) => item.state === 'scheduled' && !item.scheduledCourses.some((code) => completedCodes.has(code.toUpperCase()))).length
+  const notScheduled = coverage.filter((item) => item.state === 'not-scheduled').length
+  const manualReview = coverage.filter((item) => item.state === 'manual-review').length
+  return <section className="planning-card planning-coverage">
+    <header className="planning-card-header"><div><p className="planning-eyebrow">Planner tool · Source-bearing context</p><h3 className="planning-card-title">Plan coverage</h3><p className="planning-card-subtitle">why each recorded course belongs in the sequence</p></div><button type="button" className="planning-control" onClick={onOpen}>Open map →</button></header>
+    <div className="planning-card-body">
+      <div className="planning-coverage-identity"><div><b>{selectedProgram ? planningProgramLabel(selectedProgram) : 'No program selected'}</b><span>{selectedProgram ? `${selectedProgram.catalogYear} · retrieved ${selectedProgram.retrievedAt}` : 'Choose an exact program before reading requirement effects.'}</span></div>{selectedProgram && <span className="planning-eyebrow">Local source record</span>}</div>
+      <div className="planning-coverage-counts" aria-label="Local planning evidence"><div className="planning-coverage-count" data-tone="sage"><b>{complete}</b><span>Complete</span></div><div className="planning-coverage-count" data-tone="blue"><b>{planned}</b><span>Planned</span></div><div className="planning-coverage-count" data-tone="amber"><b>{notScheduled}</b><span>Not complete</span></div><div className="planning-coverage-count" data-tone="violet"><b>{manualReview}</b><span>Manual review</span></div></div>
+      {selectedProgram ? coverage.slice(0, 4).map((item) => {
+        const isComplete = item.state === 'scheduled' && item.scheduledCourses.some((code) => completedCodes.has(code.toUpperCase()))
+        const state = item.state === 'manual-review' ? 'manual-review' : isComplete ? 'complete' : item.state === 'scheduled' ? 'planned' : 'not-complete'
+        const label = state === 'complete' ? 'Complete' : state === 'planned' ? 'Planned' : state === 'not-complete' ? 'Not complete' : 'Manual review'
+        return <div key={item.node.id} className="planning-coverage-row"><div className="planning-coverage-row-head"><span>{item.node.label}</span><span className="planning-coverage-state" data-state={state}>{label}</span></div><p>{item.scheduledCourses.length ? `Local record: ${item.scheduledCourses.join(' · ')}` : item.node.detail}</p></div>
+      }) : <div className="planning-coverage-row"><div className="planning-coverage-row-head"><span>Planning context</span><span className="planning-coverage-state" data-state="manual-review">Choose program</span></div><p>No requirement status is inferred until an exact source plan is selected.</p></div>}
+      <div className="planning-boundary">Local planning evidence only. Live catalog, enrollment, official audit, exceptions, and substitutions are not configured here.</div>
+    </div>
+  </section>
+}
+
+/**
+ * Visual source: mockup-lab/01-academics/academics-planner-prototype.html
+ * Approved target: Variant A · view=catalog, course-discovery bay.
+ */
+function CourseDiscoveryBay({ columns, selectedProgramId, onInspect }: {
+  columns: ReturnType<typeof plannerTerms>
+  selectedProgramId?: string
+  onInspect: (courseId: string) => void
+}) {
+  const [query, setQuery] = useState('')
+  const [scope, setScope] = useState<'all' | 'selected'>('all')
+  const [selectedCandidate, setSelectedCandidate] = useState<LocalCatalogCandidate | undefined>()
+  const [addOpen, setAddOpen] = useState(false)
+  const [title, setTitle] = useState('')
+  const [credits, setCredits] = useState('')
+  const [bcpm, setBcpm] = useState(false)
+  const defaultDestination = columns.find((column) => !column.registered && !column.lockedAt)?.term ?? columns[0]?.term ?? 'New term'
+  const [destination, setDestination] = useState(defaultDestination)
+  const candidates = useMemo(() => localCatalogCandidates(), [])
+  const normalizedQuery = query.trim().toLocaleLowerCase()
+  const results = useMemo(() => candidates.filter((candidate) => {
+    if (scope === 'selected' && selectedProgramId && !candidate.programIds.includes(selectedProgramId)) return false
+    const requirementLabels = requirementLabelsForCandidate(candidate)
+    return !normalizedQuery || `${candidate.code} ${requirementLabels.join(' ')}`.toLocaleLowerCase().includes(normalizedQuery)
+  }).slice(0, 8), [candidates, normalizedQuery, scope, selectedProgramId])
+  const selectedProgram = selectedProgramId ? planningRequirementSet(selectedProgramId) : undefined
+
+  function openAdd(candidate: LocalCatalogCandidate) {
+    setSelectedCandidate(candidate)
+    setTitle('')
+    setCredits('')
+    setBcpm(false)
+    setDestination(defaultDestination)
+    setAddOpen(true)
+  }
+
+  function addCandidate() {
+    if (!selectedCandidate || !title.trim()) return
+    const parsedCredits = Number(credits)
+    if (!Number.isFinite(parsedCredits) || parsedCredits <= 0) return
+    const id = uid()
+    const sourceVersion = `${selectedCandidate.catalogYears.join(', ')} · retrieved ${selectedCandidate.retrievedAt.join(', ')}`
+    useStore.getState().addItem('courses', {
+      id,
+      term: destination,
+      code: selectedCandidate.code,
+      title: title.trim(),
+      credits: parsedCredits,
+      grade: '',
+      bcpm,
+      status: 'planned',
+      inResidence: true,
+      satisfies: [],
+      notes: `Local Planning library reference · ${sourceVersion} · official audit required`,
+      order: 0,
+    })
+    setAddOpen(false)
+    onInspect(id)
+  }
+
+  return <section className="planning-catalog-dock" aria-label="In-app planning library">
+    <header className="planning-catalog-head"><div><p className="planning-eyebrow">Planner tool · Local course library</p><h3>Find a course that fits the plan.</h3><p>Browse explicit course codes captured across {UNC_PLANNING_LIBRARY.length} source-versioned program records.</p></div><span className="planning-source-chip">2026–27 · retrieved 2026-08-25</span></header>
+    <div className="planning-catalog-toolbar">
+      <label className="planning-search-wrap" htmlFor="planner-course-search"><Search className="size-3" /><input id="planner-course-search" className="planning-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search captured course code or requirement" /></label>
+      <label className="planning-library-filter"><span className="sr-only">Filter planning library</span><select value={scope} onChange={(event) => setScope(event.target.value as 'all' | 'selected')}><option value="all">All captured records</option><option value="selected" disabled={!selectedProgramId}>Selected program only</option></select></label>
+    </div>
+    <p className="planning-catalog-context"><b>Planning context:</b> {selectedProgram ? planningProgramLabel(selectedProgram) : 'No program selected'} · {defaultDestination}. Course titles, credits, offerings, and live sections are not included in this local evidence.</p>
+    <div className="planning-library-grid">
+      <div className="planning-catalog-results" aria-live="polite">{results.length ? results.map((candidate) => {
+        const labels = requirementLabelsForCandidate(candidate)
+        const selected = candidate.code === selectedCandidate?.code
+        return <button type="button" key={candidate.code} className="planning-catalog-result" data-selected={selected || undefined} onClick={() => setSelectedCandidate(candidate)}><span><b>{candidate.code}</b><p>{labels.slice(0, 2).join(' · ') || 'Captured source mapping'}</p></span><span className="planning-eyebrow">Inspect →</span></button>
+      }) : <div className="planning-catalog-empty"><b>No captured code matches.</b><br />This is a local evidence gap, not an official catalog result.</div>}</div>
+      <div className="planning-library-detail">{selectedCandidate ? <>
+        <p className="planning-eyebrow">Captured course detail</p>
+        <h4>{selectedCandidate.code}</h4>
+        <p>{requirementLabelsForCandidate(selectedCandidate).join(' · ') || 'No named requirement effect is captured.'}</p>
+        <dl><div><dt>Catalog version</dt><dd>{selectedCandidate.catalogYears.join(' · ')}</dd></div><div><dt>Retrieved</dt><dd>{selectedCandidate.retrievedAt.join(' · ')}</dd></div><div><dt>Source records</dt><dd>{selectedCandidate.programIds.length} program record{selectedCandidate.programIds.length === 1 ? '' : 's'}</dd></div><div><dt>Evidence boundary</dt><dd>Code and planning relationship only</dd></div></dl>
+        <button type="button" className="planning-control" data-primary="true" onClick={() => openAdd(selectedCandidate)}>＋ Add to plan</button>
+      </> : <><p className="planning-eyebrow">Captured course detail</p><h4>Select a course code</h4><p>Its source version and local requirement relationship will appear here before you add anything.</p></>}</div>
+    </div>
+    <div className="planning-library-boundary"><b>{UNC_CATALOG_INTEGRATION.mode}.</b> {UNC_CATALOG_INTEGRATION.reason} No official completion or enrollment verdict is shown.</div>
+
+    <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <DialogContent className="planning-workspace bg-card sm:max-w-lg">
+        <DialogHeader><DialogTitle>Add {selectedCandidate?.code ?? 'captured course'} to the plan</DialogTitle><DialogDescription>The library captured the code and source relationship only. Enter the missing course facts from your own record before saving.</DialogDescription></DialogHeader>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="planning-catalog-field sm:col-span-2"><span>Course title</span><input autoFocus required value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Enter the official title you have" /></label>
+          <label className="planning-catalog-field"><span>Credits</span><input required inputMode="decimal" value={credits} onChange={(event) => setCredits(event.target.value)} placeholder="e.g. 3" /></label>
+          <label className="planning-catalog-field"><span>Destination term</span><select value={destination} onChange={(event) => setDestination(event.target.value)}>{columns.filter((column) => !column.registered && !column.lockedAt).map((column) => <option key={column.id ?? column.term} value={column.term}>{column.term}</option>)}</select></label>
+          <label className="planning-catalog-check sm:col-span-2"><input type="checkbox" checked={bcpm} onChange={(event) => setBcpm(event.target.checked)} /> Mark BCPM from your own classification evidence</label>
+        </div>
+        <div className="planning-boundary">Saved as a student-owned planned course. The source relationship remains candidate evidence and does not mark a requirement complete.</div>
+        <DialogFooter><Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button><Button onClick={addCandidate} disabled={!title.trim() || !(Number(credits) > 0)}>Add to {destination}</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </section>
+}
+
+function requirementLabelsForCandidate(candidate: LocalCatalogCandidate) {
+  const ids = new Set(candidate.requirementNodeIds)
+  return UNC_PLANNING_LIBRARY.flatMap((program) => program.nodes
+    .filter((node) => ids.has(`${program.id}:${node.id}`))
+    .map((node) => node.label))
+    .filter((label, index, labels) => labels.indexOf(label) === index)
+}
+
+function OutcomeRail({ mcatDate, selectedProgramId }: { mcatDate?: string; selectedProgramId?: string }) {
   const courses = useStore((s) => s.courses)
   const requirements = useStore((s) => s.requirements)
   const projection = outcomeProjection(courses)
   const late = prereqVsMcat(courses, mcatDate)
-  const open = unplacedRequirements(requirements, courses)
+  const selectedProgram = selectedProgramId ? planningRequirementSet(selectedProgramId) : undefined
+  const coverage = selectedProgram ? candidatePlanCoverage(selectedProgram, courses.map((course) => course.code)) : undefined
+  const open = coverage
+    ? coverage.filter((item) => item.state !== 'scheduled').map((item) => ({ id: item.node.id, label: item.node.label }))
+    : unplacedRequirements(requirements, courses)
 
   return (
-    <aside className={cn(CARD, 'h-fit p-3.5')}>
-      <p className={EYEBROW}>Live outcome</p>
-      <h4 className="mt-0.5 font-display text-sm font-extrabold">What the plan adds up to</h4>
+    <aside className="planning-card h-fit p-[14px]">
+      <p className="planning-eyebrow">Plan outcome</p>
+      <h4 className="mt-0.5 font-display text-sm font-extrabold">If this plan holds</h4>
 
       <div className="mt-2 grid grid-cols-2 gap-2">
         <Stat label="Cumulative" value={fmtGpa(projection.cumulative)} />
@@ -224,10 +406,10 @@ function OutcomeRail({ mcatDate }: { mcatDate?: string }) {
       </p>
 
       <div className="mt-3 border-t border-border pt-2.5">
-        <p className={EYEBROW}>Prerequisites vs the MCAT</p>
+        <p className={EYEBROW}>What this clears</p>
         {!mcatDate ? (
           <p className="mt-1 text-[11px] font-bold text-muted-foreground">
-            No MCAT date recorded, so no sequencing verdict is offered.
+            MCAT sequencing is manual review until a test date is recorded.
           </p>
         ) : late.length ? (
           <ul className="mt-1 space-y-1 text-[11px] font-bold">
@@ -244,18 +426,22 @@ function OutcomeRail({ mcatDate }: { mcatDate?: string }) {
         )}
       </div>
 
-      <div className="mt-3 border-t border-border pt-2.5">
-        <p className={EYEBROW}>Open requirements</p>
+      <div className="mt-2.5">
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground">Local selected-program coverage</p>
         {/* Named, not counted — a count is how one hides. */}
         <ul className="mt-1 space-y-0.5 text-[11px] font-bold text-muted-foreground">
           {open.slice(0, 6).map((item) => <li key={item.id}>{item.label}</li>)}
-          {!open.length && <li>None open against the recorded catalog.</li>}
+          {!open.length && <li>{selectedProgram ? 'No uncaptured selected-plan nodes are shown locally.' : 'None open against the recorded catalog.'}</li>}
         </ul>
         {open.length > 6 && (
           <p className="mt-1 text-[10.5px] font-bold text-muted-foreground/80">
-            …and {open.length - 6} more, all listed in Tar Heel Tracker.
+            …and {open.length - 6} more in the requirement map.
           </p>
         )}
+      </div>
+      <div className="mt-3 border-t border-border pt-2.5">
+        <p className={EYEBROW}>Best next move</p>
+        <p className="mt-1 text-[11px] font-bold text-muted-foreground">{open[0] ? `Place a course against ${open[0].label}, then verify the mapping in the requirement map.` : 'Record a course or planning node when you are ready; this rail will not invent a recommendation.'}</p>
       </div>
     </aside>
   )
@@ -265,10 +451,17 @@ function OutcomeRail({ mcatDate }: { mcatDate?: string }) {
 function Inspector({ course, onClose, onPlace }: { course: Course; onClose: () => void; onPlace: () => void }) {
   const courses = useStore((s) => s.courses)
   const requirements = useStore((s) => s.requirements)
+  const patchItem = useStore((s) => s.patchItem)
+  const softDeleteItems = useStore((s) => s.softDeleteItems)
+  const [editing, setEditing] = useState(false)
   const effects = courseEffects(course, requirements, courses)
 
+  const patch = (fields: Partial<Course>) => patchItem('courses', course.id, fields)
+  // Soft delete, so an accidental removal is recoverable rather than final.
+  const remove = () => { softDeleteItems('courses', [course.id], 'Removed course from plan'); onClose() }
+
   return (
-    <aside className={cn(CARD, 'h-fit p-3.5')}>
+    <aside className="planning-card h-fit p-[14px]">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className={EYEBROW}>Selected course</p>
@@ -325,7 +518,37 @@ function Inspector({ course, onClose, onPlace }: { course: Course; onClose: () =
         {isProtected(course) ? (
           <p className="text-[10.5px] font-bold text-muted-foreground">This recorded course is locked from planning moves.</p>
         ) : (
-          <Button size="sm" variant="outline" onClick={onPlace}>Choose term</Button>
+          <div className="flex flex-wrap gap-1.5">
+            <Button size="sm" variant="outline" onClick={onPlace}>Choose term</Button>
+            {/* A planned course had no edit or remove path: `Add course` writes
+                the row immediately, so an empty or wrong record could be created
+                and then never corrected or taken back. Both live here now. */}
+            <Button size="sm" variant="outline" onClick={() => setEditing((open) => !open)}>
+              {editing ? 'Done editing' : 'Edit details'}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={remove}>
+              <Trash2 className="size-3.5" /> Remove
+            </Button>
+          </div>
+        )}
+        {editing && !isProtected(course) && (
+          <div className="mt-2.5 grid gap-1.5">
+            <label className="planning-inspect-field">
+              <small>Course code</small>
+              <input value={course.code} placeholder="Not recorded" aria-label="Course code"
+                onChange={(event) => patch({ code: event.target.value })} />
+            </label>
+            <label className="planning-inspect-field">
+              <small>Title</small>
+              <input value={course.title} placeholder="Not recorded" aria-label="Course title"
+                onChange={(event) => patch({ title: event.target.value })} />
+            </label>
+            <label className="planning-inspect-field">
+              <small>Credits</small>
+              <input value={String(course.credits ?? '')} inputMode="decimal" aria-label="Credits"
+                onChange={(event) => patch({ credits: Number(event.target.value) || 0 })} />
+            </label>
+          </div>
         )}
         <p className="mt-2 text-[10.5px] font-bold text-muted-foreground">Nothing changes until you choose a destination.</p>
       </div>
