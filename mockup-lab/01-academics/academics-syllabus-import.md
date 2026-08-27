@@ -1,13 +1,14 @@
 # Academics · Syllabus Import — decisions
 
-**Status:** PROPOSED · Stage-B decision record · **translated to the app in `T1-academics-fidelity.md`**
-**Source:** `academics-syllabus-import.html` — 4 frames: upload · review · re-import + nothing-parsed · wrong document (frame 4 added under `T1-academics-mockup-2.md`)
+**Status:** APPROVED by Andy on August 26, 2026 · Stage-B decision record; cold Add-class handoff revised August 27, 2026.
+**Source:** `academics-syllabus-import.html` — cold import dialog · class-details handoff · record review · re-import + recovery · wrong document.
 
 ## Product views
 
 | View | Job |
 |---|---|
-| Upload and read | Accept a syllabus file or pasted text and name the local parse work while it is happening. |
+| Add-class import dialog | Accept a syllabus file or pasted text without leaving Class Center. This is the default first surface for Add class. |
+| Class-details handoff | After a readable cold import, open the existing class-details sheet with attributable identity/logistics prefilled; the student completes the remaining fields and chooses/reviews the class type before saving. |
 | Review before apply | Let the student inspect every extracted class fact before any record is written. |
 | Re-import diff | Compare a newer syllabus to confirmed records without silently replacing student corrections. |
 | Nothing parsed | Keep the file and route directly into manual entry instead of stranding the student. |
@@ -15,14 +16,16 @@
 
 ## Behaviour
 
-- All four entry paths use one temporary Import → Parse → Review → Apply flow:
-  cold start creates the class; Class Hub Materials, Class Center overflow, and
-  Add a class attach to the existing course. Scoped entries replace only the
-  class-identity group with a static course header and never create a second
-  identity.
-- This is one screen changing state, not a multi-step wizard. The temporary
-  banner says that nothing has been saved or that review is pending, never a
-  numbered step.
+- A cold **Add class** starts in a focused Import dialog. Drop or paste the
+  source there; a readable proposal closes that dialog and opens the existing
+  class-details sheet with course identity and attributable meeting facts
+  prefilled. The student completes or edits the fields, chooses the class type,
+  and presses **Add class**. No course, workspace, or syllabus record is
+  written before that final confirmation.
+- Class Hub Materials and Class Center overflow entries remain scoped to an
+  existing course and use the temporary review/re-import flow. They never
+  create a second identity. The cold handoff is a short two-surface decision,
+  not a numbered wizard.
 - Upload and paste are equal first-class inputs. Multiple related course files
   may be read into one proposal. Reading is named, cancellable, and does not
   write a record.
@@ -51,12 +54,17 @@
 
 ## Appearance
 
-- The temporary mode begins with a shallow, layered Academics banner. A quiet
-  cancel/back affordance sits above the title; the mode tag communicates state
-  rather than a wizard count. The banner may use the shared glass treatment
-  only where it floats over its own art.
-- **Upload** gives the dropzone the most visual weight, centered in a narrow
-  reading column. Its equal paste/manual paths sit beneath the source input;
+- The cold entry is a compact, solid dialog over the Class Center context. The
+  underlying page remains recognizable; the title, `Nothing saved` tag,
+  dropzone, paste path, and `Read syllabus` action carry the hierarchy. A
+  quiet `Enter details manually` path remains visible.
+- The post-read state is the existing solid class-details sheet, not a second
+  import dashboard. A short source strip identifies the file and extraction
+  count; fields found in the syllabus are populated in the normal form, while
+  missing values stay editable. The class-type chips retain their proposal
+  semantics: a syllabus signal can be suggested, never silently persisted.
+- **Upload** gives the dropzone the most visual weight, centered in the import
+  dialog. Its equal paste/manual paths sit beneath the source input;
   the supportive MascotNote is secondary. Drag feedback lifts only the
   dropzone. Reading uses named rows and a small determinate strip, never an
   unexplained spinner.
@@ -99,9 +107,10 @@
 
 ## Component translation
 
-- Reuse `AnimatedFileUpload` for the source input, `MascotNote` for the
-  compact guidance/recovery note, and the existing dialog/workspace owner for
-  the temporary flow. Do not fork another upload or review wizard.
+- Reuse `AnimatedFileUpload` for the source input and the existing
+  `ClassEditorDialog` for the details handoff. The cold import dialog is a
+  focused entry surface, not another upload wizard; scoped review continues
+  to use `SyllabusImportMode`.
 - Review groups are configured `InteractiveCard`/`Collapsible` compositions;
   source evidence remains attached to the field it supports. The Apply rail is
   a configured solid card, not a new sidebar system.
@@ -110,8 +119,9 @@
 
 ## States
 
-- Cold-start, scoped-class, and re-import entries share the same composition;
-  only the identity block differs.
+- Cold-start uses import dialog → class-details handoff. Scoped-class and
+  re-import entries use the existing review composition; only their identity
+  scope differs.
 - A low-confidence extract, an incomplete weight total, and a missing field
   each state the exact reason and preserve manual correction.
 - Added, changed, removed, and unchanged re-import rows preserve their distinct
@@ -121,19 +131,45 @@
 - The wrong-document route retains the file, writes no class record, and keeps
   an explicit override back into ordinary review.
 
-## Built
+## Build status
 
-Translated from the dialog to the ruled temporary full-screen mode in
-`src/components/academics/SyllabusImportMode.tsx`, replacing the former
-`SyllabusImportDialog`. Verified in the running app: `1fr 372px` split
-resolving to `700px 372px`, sticky rail at 372px, native `<details>` gone,
-groups in the ruled order collapsing on clean and expanding on flagged, and
-the wrong-document card rendering in the Academics accent with a zeroed Apply
-rail. Both themes and keyboard traversal checked.
+The cold Add-class handoff is implemented in
+`src/components/academics/SyllabusImportDialog.tsx` and
+`src/components/academics/ClassCenter.tsx`: import opens as a focused dialog,
+then a readable proposal opens the existing class-details sheet with
+identity/logistics prefilled and class-type suggestion evidence visible. The
+existing full-screen `SyllabusImportMode` remains for scoped review/re-import.
+The app build passes; live visual verification of the revised cold handoff is
+still required before this surface can be called BUILT.
 
-One open shell question, not owned by this surface: the Academics page header
-and its Daily/Planning tabs remain visible above the mode, because
-`ClassCenter` returns sub-views the same way it returns `ClassHub` and
-`ExamPrepMode`. §4.1-M-a asks import to behave *"like exam prep mode"*, so
-this matches the shipped precedent — but if the mode should suppress the pillar
-chrome, that is a shell decision affecting exam prep equally.
+Scoped imports still use the temporary mode shell; the cold import dialog
+deliberately keeps the Class Center context visible so the student understands
+where the new class will land.
+
+## Action hierarchy — ruled 2026-08-27 (Andy)
+
+The upload step previously put all three actions on one stretched footer row, so
+`Enter details manually`, `Cancel` and `Read syllabus` read as three equal
+choices. They are not equal.
+
+**The ruled hierarchy, top to bottom:**
+
+1. **`Read syllabus` is the primary action, alone on the upper action line**,
+   right-aligned, carrying the accent fill. The local-first note — *"Reading
+   happens on this device. Review comes before save."* — sits at the left of the
+   same line, so the reassurance is read with the action it qualifies.
+2. **`Enter details manually` is the larger left secondary** on the line beneath:
+   full `.btn` size on `var(--muted)`. It is a real route, not a footnote — a
+   student without a readable file must not feel pushed out of the flow.
+3. **`Cancel` is a smaller quiet button on the right**: `.btn.sm.ghost`,
+   transparent, `11.5px`. Leaving is always available and never competes with
+   the two productive actions.
+
+Measured in the lab: `Read syllabus` 108×42 accent; `Enter details manually`
+158×42 on muted; `Cancel` 59×32 transparent. The action line keeps the `1px`
+top rule; the footer beneath carries no second rule, so the two lines read as
+one block rather than two panels.
+
+**Behaviour is unchanged.** Reading still happens on this device, nothing is
+saved before the reviewed details are confirmed, and the manual route still
+reaches the same class-details sheet.

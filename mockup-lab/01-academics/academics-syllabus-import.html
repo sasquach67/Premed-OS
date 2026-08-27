@@ -8,7 +8,7 @@
   ============================================================================
   ACADEMICS — SYLLABUS IMPORT — VISUAL REFERENCE
   ============================================================================
-  Status: PROPOSED (July 2026).
+  Status: APPROVED (August 26, 2026).
   Spec: tabs/01-academics.md §4.1-M (the keystone) + §4.1-M-a/b/c/d.
 
   "Build this first. Without it, most of §6 is decorative." — §4.1-M
@@ -20,22 +20,19 @@
    · mockups/_shared/_visual-recipes.md                  — literal visual values
 
   WHERE IT LIVES (§4.1-M-a) — NO NEW TAB
-  A temporary full-screen flow, like exam prep mode. FOUR entry points, ONE
-  destination:
-    1. Cold-start CTA (no classes yet)  → CREATES the class    ← primary path
-    2. Class page → Materials, top      → attaches
-    3. Class Center card overflow       → attaches
-    4. Add-a-class flow                 → attaches
-  Entry determines scope and changes exactly ONE block: unscoped leads with
-  "Which class is this?" (prefilled from the parsed code); scoped replaces it
-  with a static class header. Everything after is identical.
+  A cold Add-class action opens a focused import dialog first. After a
+  successful read, the existing class-details sheet opens with the identity
+  and logistics it could attribute prefilled. The student chooses/edits the
+  remaining fields and confirms Add class. Nothing is saved before that
+  confirmation. Existing-class Materials and overflow entries continue into
+  the scoped review/re-import flow.
 
   DECISIONS THIS FILE ENCODES
   1. ONE DROPZONE, DROP AND CLICK EQUAL. Reuses `AnimatedFileUpload`, which
      already exists and is already used in 3 places. NOT a forked variant.
-  2. NO WIZARD, NO STEP COUNTER. Upload → parse → review → apply is ONE
-     screen changing state. A 4-step wizard for a 40-second task is how this
-     feature gets abandoned.
+  2. NO WIZARD, NO STEP COUNTER. Import dialog → class-details sheet is one
+     short handoff, not a separate onboarding flow. Record review stays in the
+     existing syllabus review state when there are extracted rows to inspect.
   3. PASTE TEXT IS A FIRST-CLASS PATH, not a fallback. Copying from Canvas is
      common and must not require making a file first.
   4. PARSING NAMES WHAT IT IS DOING and is cancellable. A 20-second silent
@@ -82,8 +79,8 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:13px;padding:26px;overflow:auto}
-.frame{width:1400px;background:var(--bg);border-radius:18px;overflow:hidden;box-shadow:0 30px 90px -30px rgba(0,0,0,.9);margin-bottom:38px}
-.framelabel{width:1400px;font-family:'Baloo 2';font-weight:800;font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;margin:0 0 10px 4px}
+.frame{width:min(1400px,100%);background:var(--bg);border-radius:18px;overflow:hidden;box-shadow:0 30px 90px -30px rgba(0,0,0,.9);margin-bottom:38px}
+.framelabel{display:none}
 .num{font-variant-numeric:tabular-nums}
 
 /* ---------- BANNER ---------- */
@@ -165,7 +162,7 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
 .group.flagged{border-color:color-mix(in srgb,var(--warning) 42%,var(--bd))}
 .ghead{display:flex;align-items:center;gap:11px;padding:12px 14px;cursor:pointer}
 .group.flagged .ghead{background:color-mix(in srgb,var(--warning) 7%,transparent)}
-.gicon{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:13px;flex:none;
+.gicon{min-width:42px;height:26px;padding:0 6px;border-radius:8px;display:grid;place-items:center;font:800 8px 'Baloo 2';letter-spacing:.04em;flex:none;
   background:color-mix(in srgb,var(--cat) 16%,transparent)}
 .gtitle{font-family:'Baloo 2';font-weight:800;font-size:14px}
 .gsum{font-size:11.5px;color:var(--dim);font-weight:700;margin-top:1px}
@@ -272,90 +269,70 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
 .evlab{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
 .evrow{display:flex;gap:9px;font-size:11.5px;font-weight:700;color:var(--mut);padding:3px 0}
 .evrow .no{color:var(--dim);min-width:15px}
+.mock-shell{min-height:286px;background:linear-gradient(140deg,#233448 0%,#2d3947 45%,#3a3730 100%);padding:18px 24px 28px;position:relative}
+.shellbar{display:flex;align-items:center;gap:14px;color:rgba(255,255,255,.76);font-family:'Baloo 2';font-weight:800;font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+.shellbrand{color:#fff;font-size:14px}.shelltab{border-left:1px solid rgba(255,255,255,.2);padding-left:14px}.shellstat{margin-left:auto;color:rgba(255,255,255,.6)}
+.shellcopy{margin:48px auto 0;max-width:600px;text-align:center;color:#fff}.shelltitle{font:800 27px 'Baloo 2'}.shellmut{margin-top:5px;color:rgba(255,255,255,.64);font-size:13px;font-weight:700}.shellactions{display:flex;justify-content:center;gap:8px;margin-top:18px}
+.scrim{position:absolute;inset:0;background:rgba(12,13,15,.58)}
+.dialog{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 22px 55px -27px #000c;overflow:hidden}
+.card-dialog{position:absolute;left:50%;top:38px;transform:translateX(-50%);width:min(650px,calc(100% - 42px));z-index:1}
+.dialog-head{padding:18px 20px 15px;border-bottom:1px solid var(--bd);display:flex;align-items:flex-start;justify-content:space-between;gap:15px}.dialog-title{font:800 24px/1.1 'Baloo 2';margin-top:4px}.dialog-sub{color:var(--mut);font-size:12px;font-weight:600;margin-top:4px}.dialog-body{padding:18px 20px 20px}.compact-drop{padding:28px 18px}.paste-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:11px;padding:11px 12px;border:1px solid var(--bd);border-radius:11px;background:var(--muted)}.paste-row .pt{font:800 12.5px 'Baloo 2'}.paste-row .ps{font-size:10.5px;color:var(--dim);font-weight:700;margin-top:2px}.dialog-foot{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:15px;padding-top:13px;border-top:1px solid var(--bd)}.dialog-act{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px;padding-top:13px;border-top:1px solid var(--bd)}.dialog-act-note{font-size:11.5px;font-weight:700;color:var(--dim)}.dialog-foot{justify-content:space-between;border-top:0;margin-top:9px;padding-top:0}.dialog-foot .btn{flex:0 0 auto}
+.detail-dialog{position:relative;margin:0 auto;width:min(860px,100%);}.detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.field{background:var(--muted);border:1px solid var(--bd);border-radius:10px;padding:10px 11px}.field label{display:block;color:var(--dim);font:800 9px 'Baloo 2';letter-spacing:.08em;text-transform:uppercase}.field strong{display:block;font:800 14px 'Baloo 2';margin-top:3px}.field small{display:block;color:var(--dim);font-size:10px;font-weight:700;margin-top:2px}.type-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.type-chip{border:1px solid var(--bd);border-radius:10px;background:var(--muted);padding:10px;text-align:left}.type-chip.selected{border-color:var(--cat);box-shadow:0 0 0 1px color-mix(in srgb,var(--cat) 38%,transparent);background:color-mix(in srgb,var(--cat) 11%,var(--muted))}.type-chip b{font:800 13px 'Baloo 2';display:block}.type-chip span{font-size:10px;color:var(--dim);font-weight:700;display:block;margin-top:2px}.source-strip{display:flex;align-items:center;gap:9px;border-left:3px solid var(--cat);background:var(--muted);padding:9px 11px;margin-bottom:14px;border-radius:0 10px 10px 0;color:var(--mut);font-size:11px;font-weight:700}.source-strip b{color:var(--fg)}
+@media(max-width:680px){.mock-shell{min-height:330px;padding:16px}.shelltab{display:none}.card-dialog{top:22px;width:calc(100% - 26px)}.dialog-head{padding:15px}.dialog-body{padding:15px}.dialog-title{font-size:21px}.dialog-foot{flex-wrap:wrap;justify-content:stretch}.dialog-foot .btn{flex:1;text-align:center}.dialog-foot .btn.sm{flex:0 0 auto}.detail-grid,.type-row{grid-template-columns:1fr}.compact-drop{padding:24px 13px}.paste-row{align-items:flex-start;flex-direction:column}}
 </style>
 </head>
 <body>
 
 <!-- =====================================================================
-     FRAME 1 — UPLOAD (cold start, unscoped: this import CREATES the class)
+     FRAME 1 — COLD ADD-CLASS ENTRY (import opens as a focused dialog)
      ===================================================================== -->
-<div class="framelabel">Frame 1 &mdash; upload &middot; cold-start entry &middot; dropzone at rest, dragging, and parsing</div>
+<div class="framelabel">Frame 1 &mdash; Add class opens syllabus intake first; no class is written yet</div>
 <div class="frame">
-  <div class="banner">
-    <div class="exitrow">
-      <div class="exit">&larr; Cancel</div>
-      <div class="modetag">Import syllabus &middot; nothing saved yet</div>
-    </div>
-    <div class="brow">
-      <div>
-        <div class="h1">Add a class from its syllabus</div>
-        <div class="subline">Drop the file and HQ pulls out your units, exam dates, deadlines, and grade weights &mdash; then you confirm all of it before anything is saved.</div>
-      </div>
-    </div>
+  <div class="mock-shell">
+    <div class="shellbar"><span class="shellbrand">ACADEMICS</span><span class="shelltab">DAILY · CLASS CENTER</span><span class="shellstat">0 classes</span></div>
+    <div class="shellcopy"><div class="shelltitle">Bring in your first class</div><div class="shellmut">Start with the syllabus you already have.</div><div class="shellactions"><span class="btn pri">Import syllabus</span><span class="btn ghost">Add manually</span></div></div>
   </div>
-
-  <div class="body">
-    <div class="center">
-
-      <!-- REST -->
-      <div class="dropzone" style="margin-bottom:16px">
-        <div class="dzicon">&#128228;</div>
-        <div class="dztitle">Drop your syllabus here</div>
-        <div class="dzsub">or click to browse your files &mdash; both work the same</div>
-        <div class="dztypes">
-          <span class="ftype">PDF</span><span class="ftype">DOCX</span>
-          <span class="ftype">PNG / JPG</span><span class="ftype">PHOTO OF A PRINTOUT</span>
-        </div>
-        <div class="altrow">
-          <span class="altlink">Paste the text instead</span>
-          <span class="altsep">&middot;</span>
-          <span class="altlink">Enter everything manually</span>
-        </div>
-      </div>
-
-      <div class="mnote" style="margin-bottom:16px">
-        <div class="ram">&#128015;</div>
-        <div>
-          <div class="mt">Multiple files are fine</div>
-          <div class="mb">Syllabus plus a separate course schedule? Drop both at once &mdash; they get read together into one proposal rather than two passes. Copying from Canvas instead of downloading? Use <b style="color:var(--mut)">Paste the text</b>; it's an equal path, not a fallback.</div>
-        </div>
-        <div class="x">&#10005;</div>
-      </div>
-
-      <!-- DRAGGING -->
-      <div class="framelabel" style="width:auto;margin:22px 0 8px 2px">While dragging a file over it</div>
-      <div class="dropzone dragging" style="margin-bottom:22px">
-        <div class="dzicon" style="background:color-mix(in srgb,var(--cat) 26%,transparent)">&#128229;</div>
-        <div class="dztitle" style="color:#fff">Drop to read it</div>
-        <div class="dzsub">CHEM262_Fall2026_Syllabus.pdf</div>
-      </div>
-
-      <!-- PARSING -->
-      <div class="framelabel" style="width:auto;margin:0 0 8px 2px">While reading &mdash; names what it's doing, and can be stopped</div>
-      <div class="parsing">
-        <div class="filecard" style="margin-bottom:12px">
-          <div class="fi">PDF</div>
-          <div class="fn">CHEM262_Fall2026_Syllabus.pdf<div class="fs">248 KB &middot; 6 pages</div></div>
-          <div class="btn sm ghost">Cancel</div>
-        </div>
-        <div class="prow done"><span class="ic">&#10003;</span>Found the course &mdash; CHEM 262, Fall 2026</div>
-        <div class="prow done"><span class="ic">&#10003;</span>Read 9 units and their week structure</div>
-        <div class="prow done"><span class="ic">&#10003;</span>Found 3 exam dates</div>
-        <div class="prow now"><span class="ic">&#9679;</span>Reading grade weights&hellip;</div>
-        <div class="prow wait"><span class="ic">&#9675;</span>Deadlines and policies</div>
-        <div class="pbar"><div class="pfill"></div></div>
-        <div style="font-size:11px;color:var(--dim);font-weight:700">Usually about 20 seconds. Nothing is saved until you review it.</div>
-      </div>
-
+  <div class="scrim"></div>
+  <section class="dialog card-dialog" aria-label="Import syllabus dialog">
+    <div class="dialog-head"><div><div class="eyebrow">Add class · Fall 2026</div><div class="dialog-title">Import a syllabus</div><div class="dialog-sub">Read it first, then review the class details before anything is saved.</div></div><span class="modetag">Nothing saved</span></div>
+    <div class="dialog-body">
+      <div class="dropzone compact-drop"><div class="dzicon" aria-hidden="true">＋</div><div class="dztitle">Drop a syllabus or course schedule here</div><div class="dzsub">PDF, DOCX, image, or paste from Canvas. It stays on this device.</div><div class="dztypes"><span class="ftype">PDF</span><span class="ftype">DOCX</span><span class="ftype">IMAGE</span><span class="ftype">PASTE</span></div></div>
+      <div class="paste-row"><div><div class="pt">Or paste the text instead</div><div class="ps">Copying from Canvas works just as well.</div></div><span class="btn sm">Paste text</span></div>
+      <div class="dialog-act"><span class="dialog-act-note">Reading happens on this device. Review comes before save.</span><span class="btn pri">Read syllabus</span></div><div class="dialog-foot"><span class="btn">Enter details manually</span><span class="btn sm ghost">Cancel</span></div>
     </div>
-  </div>
+  </section>
 </div>
 
 
 <!-- =====================================================================
-     FRAME 2 — REVIEW BEFORE APPLY (§4.1-M-c) — the screen that matters
+     FRAME 2 — CLASS DETAILS HANDOFF (after a successful read)
      ===================================================================== -->
-<div class="framelabel">Frame 2 &mdash; review before apply &middot; clean groups collapsed, flagged groups expanded</div>
+<div class="framelabel">Frame 2 &mdash; parsed syllabus hands off to the existing class-details sheet</div>
+<div class="frame">
+  <section class="dialog detail-dialog" aria-label="Review class details">
+    <div class="dialog-head"><div><div class="eyebrow">Syllabus read · review before save</div><div class="dialog-title">Review class details</div><div class="dialog-sub">Fields found in the syllabus are filled in. Complete the rest, then add the class.</div></div><span class="modetag">CHEM 262</span></div>
+    <div class="dialog-body">
+      <div class="source-strip"><span class="fi">PDF</span><span><b>CHEM262_Fall2026_Syllabus.pdf</b> · 12 extracted details · source stays on this device</span></div>
+      <div class="detail-grid">
+        <div class="field"><label>Course code · found</label><strong>CHEM 262</strong><small>from syllabus heading</small></div>
+        <div class="field"><label>Course title · found</label><strong>Organic Chemistry II</strong><small>from syllabus heading</small></div>
+        <div class="field"><label>Semester · found</label><strong>Fall 2026</strong><small>edit if needed</small></div>
+        <div class="field"><label>Instructor · found</label><strong>Dr. Adaeze Elamin</strong><small>from meeting details</small></div>
+        <div class="field"><label>Meeting days · found</label><strong>MWF</strong><small>edit if needed</small></div>
+        <div class="field"><label>Meeting time · found</label><strong>10:10 AM–11:00 AM</strong><small>edit if needed</small></div>
+        <div class="field"><label>Location · found</label><strong>Kenan B12</strong><small>edit if needed</small></div>
+        <div class="field"><label>Nickname · optional</label><strong style="color:var(--dim)">Add a short name</strong><small>student-entered</small></div>
+      </div>
+      <div style="margin-top:15px"><div class="pt">Choose the class type</div><div class="ps" style="margin-top:2px">A syllabus signal is a suggestion, not a saved decision.</div><div class="type-row"><div class="type-chip selected"><b>STEM</b><span>Suggested · units and exams</span></div><div class="type-chip"><b>Writing</b><span>Drafts, readings, feedback</span></div><div class="type-chip"><b>General</b><span>Grades and deadlines</span></div></div></div>
+      <div class="dialog-foot"><span class="btn ghost">Back to import</span><span class="btn ghost">Cancel</span><span class="btn pri">Add to CHEM 262</span></div>
+    </div>
+  </section>
+</div>
+
+<!-- =====================================================================
+     FRAME 3 — REVIEW BEFORE APPLY (§4.1-M-c) — the screen that matters
+     ===================================================================== -->
+<div class="framelabel">Frame 3 &mdash; review extracted syllabus records after class details are confirmed</div>
 <div class="frame">
   <div class="banner">
     <div class="exitrow">
@@ -365,7 +342,7 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
     <div class="brow">
       <div>
         <div class="h1">Here's what I found</div>
-        <div class="subline">Check it over and fix anything wrong. Nothing is written to your account until you press Add.</div>
+        <div class="subline">Nothing is saved until you press Add.</div>
       </div>
       <div class="statstrip">
         <div class="stat"><div class="value num">41</div><div class="label">Items found</div></div>
@@ -383,7 +360,7 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
         <!-- CLASS IDENTITY — only appears on the UNSCOPED entry -->
         <div class="group">
           <div class="ghead">
-            <div class="gicon">&#127891;</div>
+            <div class="gicon">CLASS</div>
             <div>
               <div class="gtitle">Which class is this?</div>
               <div class="gsum">Prefilled from the syllabus &mdash; this import will create it</div>
@@ -411,7 +388,7 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
         <!-- GRADE WEIGHTS — FLAGGED, expanded by default -->
         <div class="group flagged">
           <div class="ghead">
-            <div class="gicon" style="background:color-mix(in srgb,var(--warning) 20%,transparent)">&#9878;</div>
+            <div class="gicon" style="background:color-mix(in srgb,var(--warning) 20%,transparent)">GRADE</div>
             <div>
               <div class="gtitle">Grade weights</div>
               <div class="gsum">5 categories &middot; 2 need a look</div>
@@ -459,7 +436,7 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
         <!-- EXAM DATES — clean, collapsed -->
         <div class="group">
           <div class="ghead">
-            <div class="gicon">&#128197;</div>
+            <div class="gicon">DATE</div>
             <div><div class="gtitle">Exam dates</div><div class="gsum">Sep 23 &middot; Oct 14 &middot; Dec 9 (final, cumulative)</div></div>
             <div class="gright"><span class="chip c-ok">3 &middot; all clear</span><span class="chev">&#9662;</span></div>
           </div>
@@ -468,7 +445,7 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
         <!-- UNITS — clean, collapsed -->
         <div class="group">
           <div class="ghead">
-            <div class="gicon">&#128218;</div>
+            <div class="gicon">TOPIC</div>
             <div><div class="gtitle">Units and topics</div><div class="gsum">9 units mapped to weeks 1&ndash;15 &middot; 47 topics</div></div>
             <div class="gright"><span class="chip c-ok">all clear</span><span class="chev">&#9662;</span></div>
           </div>
@@ -477,7 +454,7 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
         <!-- DEADLINES — clean, collapsed -->
         <div class="group">
           <div class="ghead">
-            <div class="gicon">&#9203;</div>
+            <div class="gicon">TIME</div>
             <div><div class="gtitle">Deadlines</div><div class="gsum">12 problem sets, weekly on Fridays</div></div>
             <div class="gright"><span class="chip c-ok">12 &middot; all clear</span><span class="chev">&#9662;</span></div>
           </div>
@@ -486,7 +463,7 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
         <!-- POLICIES — one flagged item -->
         <div class="group flagged">
           <div class="ghead">
-            <div class="gicon" style="background:color-mix(in srgb,var(--warning) 20%,transparent)">&#128220;</div>
+            <div class="gicon" style="background:color-mix(in srgb,var(--warning) 20%,transparent)">RULE</div>
             <div><div class="gtitle">Policies</div><div class="gsum">3 found &middot; 1 needs a look</div></div>
             <div class="gright"><span class="chip c-warn">check this</span><span class="chev">&#9652;</span></div>
           </div>
@@ -556,9 +533,9 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
 
 
 <!-- =====================================================================
-     FRAME 3 — RE-IMPORT DIFF (#42) + the nothing-parsed path (§4.1-M-d)
+     FRAME 4 — RE-IMPORT DIFF (#42) + the nothing-parsed path (§4.1-M-d)
      ===================================================================== -->
-<div class="framelabel">Frame 3 &mdash; re-import is a diff, never an overwrite &middot; and the failure path</div>
+<div class="framelabel">Frame 4 &mdash; re-import is a diff, never an overwrite &middot; and the failure path</div>
 <div class="frame">
   <div class="banner">
     <div class="exitrow">
@@ -667,11 +644,11 @@ body{background:#14120f;color:var(--fg);font-family:'Nunito',system-ui,sans-seri
 </div>
 
 <!-- =====================================================================
-     FRAME 4 — WRONG DOCUMENT (§4.1-M-d, third state)
+     FRAME 5 — WRONG DOCUMENT (§4.1-M-d, third state)
      The file read fine. It just isn't a syllabus. This is a ROUTING
      decision, not a failure — so it must not look like Frame 3's scan card.
      ===================================================================== -->
-<div class="framelabel">Frame 4 &mdash; wrong document &middot; it read perfectly and it still isn't a syllabus</div>
+<div class="framelabel">Frame 5 &mdash; wrong document &middot; it read perfectly and it still isn't a syllabus</div>
 <div class="frame">
   <div class="banner">
     <div class="exitrow">
