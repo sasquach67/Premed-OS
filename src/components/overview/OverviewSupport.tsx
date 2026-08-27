@@ -18,6 +18,7 @@ import { McatSessionSetupDialog } from '@/components/mcat/McatSessionSetupDialog
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
@@ -290,7 +291,21 @@ export function QuarterlyGoalEditor({ goal, onDone, onArchive }: { goal?: Quarte
           ['period', 'Period metric', 'A measured value that resets over a named period.'],
         ] as const).map(([option, label, description]) => <button key={option} type="button" onClick={() => setKind(option)} className={`rounded-xl border p-3 text-left text-sm font-bold transition-colors ${kind === option ? 'border-primary bg-primary/10' : 'border-border bg-background hover:bg-muted/60'}`}><span className="block">{label}</span><span className="mt-1 block text-xs font-semibold text-muted-foreground">{description}</span></button>)}
       </div></fieldset>
-      {kind === 'cumulative' && <label className="block text-sm font-bold">Connected standing target <select value={standingTarget} onChange={(event) => setStandingTarget(event.target.value as keyof Goals)} className="mt-2 flex h-9 w-full rounded-md border border-border bg-background px-3 text-sm"><option value="">Choose a target</option>{targetOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><span className="mt-2 block text-xs font-semibold text-muted-foreground">Premed OS uses only the recorded value and target owned by that tracker.</span></label>}
+      {/* Shared Select, not a raw <select>: every other field in this form uses
+          the shared controls, and the native element rendered a browser-default
+          arrow and focus ring instead of `field-solid` and `--ring`. */}
+      {kind === 'cumulative' && <div className="text-sm font-bold">
+        <span id="standing-target-label">Connected standing target</span>
+        <Select value={standingTarget} onValueChange={(value) => setStandingTarget(value as keyof Goals)}>
+          <SelectTrigger className="mt-2 font-semibold" aria-labelledby="standing-target-label">
+            <SelectValue placeholder="Choose a target" />
+          </SelectTrigger>
+          <SelectContent>
+            {targetOptions.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <span className="mt-2 block text-xs font-semibold text-muted-foreground">Premed OS uses only the recorded value and target owned by that tracker.</span>
+      </div>}
       {kind === 'period' && <div className="space-y-4 rounded-xl border border-border bg-background p-4"><div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-bold">Current value <Input type="number" min={0} value={currentValue} onChange={(event) => setCurrentValue(event.target.value)} className="mt-2" placeholder="Optional until measured" /></label><label className="block text-sm font-bold">Target <Input type="number" min={0} value={targetValue} onChange={(event) => setTargetValue(event.target.value)} className="mt-2" /></label><label className="block text-sm font-bold">Unit <Input value={unit} onChange={(event) => setUnit(event.target.value)} className="mt-2" placeholder="questions, pages, hours…" /></label><label className="block text-sm font-bold">Period <Input value={periodLabel} onChange={(event) => setPeriodLabel(event.target.value)} className="mt-2" placeholder="Current week" /></label></div><label className="block text-sm font-bold">Evidence note <Input value={evidenceLabel} onChange={(event) => setEvidenceLabel(event.target.value)} className="mt-2" placeholder="Where this measured value came from" /><span className="mt-2 block text-xs font-semibold text-muted-foreground">Leave the current value blank until you have a real record. Premed OS will not invent zero progress.</span></label></div>}
       <div className="flex flex-wrap justify-between gap-2"><div>{onArchive && <Button type="button" variant="ghost" onClick={onArchive}><Archive className="size-4" />Archive</Button>}</div><Button type="submit" disabled={!text.trim() || (kind === 'cumulative' && !standingTarget) || (kind === 'period' && (!targetValue || Number(targetValue) <= 0))}>Save goal</Button></div>
     </form>
