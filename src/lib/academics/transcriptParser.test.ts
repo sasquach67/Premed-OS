@@ -48,9 +48,11 @@ describe('parseTranscriptText', () => {
     expect(candidates[0]).toMatchObject({ term: 'Fall', year: '2026', gradeExact: 'A-' })
   })
 
-  it('normalises a shouting title but leaves a mixed-case one alone', () => {
+  it('preserves the printed title exactly, including all-caps registrar lines', () => {
+    // Was: title-cased "NEUROBIOLOGY" to "Neurobiology". A transcript record's
+    // whole promise is that the printed string survives unchanged.
     const shouting = parseTranscriptText('Duke University\nFall 2026\nBIOL 252 NEUROBIOLOGY 3.000 A-')
-    expect(shouting.candidates[0].titleExact).toBe('Neurobiology')
+    expect(shouting.candidates[0].titleExact).toBe('NEUROBIOLOGY')
     const mixed = parseTranscriptText('Duke University\nFall 2026\nBIOL 252 Neurobiology of Disease 3.000 A-')
     expect(mixed.candidates[0].titleExact).toBe('Neurobiology of Disease')
   })

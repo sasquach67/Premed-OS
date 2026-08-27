@@ -127,6 +127,21 @@ describe('transcript intake', () => {
     expect(useStore.getState().academics.classCenter.transcriptRecords).toHaveLength(2)
   })
 
+  it('keeps the exact source line on each saved record', async () => {
+    await pasteAndReview()
+    await act(async () => { byText(/^Save \d+ record/)!.click() })
+    const [first] = useStore.getState().academics.classCenter.transcriptRecords
+    // Provenance: a saved record must be checkable against the line it came from.
+    expect(first.sourceQuote).toBe('BIOL 252 NEUROBIOLOGY 3.000 A-')
+  })
+
+  it('preserves an all-caps registrar title exactly', async () => {
+    await pasteAndReview()
+    await act(async () => { byText(/^Save \d+ record/)!.click() })
+    const titles = useStore.getState().academics.classCenter.transcriptRecords.map((r) => r.titleExact)
+    expect(titles).toContain('NEUROBIOLOGY')
+  })
+
   it('reports text carrying no course line instead of saving an empty record', async () => {
     await pasteAndReview('Dear student, your deposit has been received.')
     expect(container.textContent).toContain('No transcript line found')

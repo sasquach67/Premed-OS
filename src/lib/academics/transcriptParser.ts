@@ -53,14 +53,6 @@ const YEAR = /\b(19|20)\d{2}\b/
 /** "FA26" / "SP25" style term codes some registrars print inline. */
 const TERM_CODE: Record<string, string> = { FA: 'Fall', SP: 'Spring', SU: 'Summer', WI: 'Winter' }
 
-function titleCaseIfShouting(value: string) {
-  // Registrars print titles in caps. Preserve the student's string when it is
-  // already mixed case; only normalise a fully-shouting line for readability.
-  if (!/[a-z]/.test(value) && /[A-Z]{3,}/.test(value)) {
-    return value.toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase())
-  }
-  return value
-}
 
 function readTermHeader(line: string): { term: string; year: string } | undefined {
   const word = line.match(TERM_WORD)
@@ -162,7 +154,11 @@ function readCourseLine(
     break
   }
 
-  const title = titleCaseIfShouting(tokens.join(' ').replace(/[.\s]+$/, '').trim())
+  // ⚠️ Exact, never prettified. This previously title-cased an all-caps
+  // registrar line ("NEUROBIOLOGY" -> "Neurobiology"), which is precisely what
+  // `titleExact` exists to prevent: the ledger's promise is that the printed
+  // string survives. Only surrounding whitespace/punctuation is trimmed.
+  const title = tokens.join(' ').replace(/[.\s]+$/, '').trim()
   // A bare code with no title and no grade is a heading, not a course line.
   if (!title && !grade) return undefined
 

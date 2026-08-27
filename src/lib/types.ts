@@ -227,6 +227,7 @@ export type ClassStatus = 'active' | 'archived'
 export type ClassWorkspaceType = 'stem' | 'writing' | 'general'
 export type TopicStatus = 'not-started' | 'seen' | 'notes-made' | 'reviewing' | 'weak' | 'ready'
 export type LegacyTopicStatus = TopicStatus | 'cards-made' | 'mastered'
+export type TopicBasis = 'syllabus-standard' | 'manual' | 'legacy-schedule'
 export type TopicConfidence = 1 | 2 | 3
 export type ReviewGrade = 'again' | 'hard' | 'good' | 'easy'
 export type ClassNoteType = 'lecture' | 'reading' | 'lab' | 'study-guide' | 'exam-review' | 'question-log' | 'other'
@@ -249,6 +250,18 @@ export type PracticeExamDifficulty = 'easy' | 'medium' | 'hard' | 'mixed'
 export type PracticeQuestionType = 'multiple-choice' | 'short-answer' | 'free-response'
 export type PracticeExamStatus = 'draft' | 'in-progress' | 'submitted' | 'reviewed'
 
+/**
+ * A student-reviewed, course-specific analytical frame. This is deliberately
+ * not inferred from a course title or treated as background knowledge: it has
+ * to name the course evidence that supports it before generation can use it.
+ */
+export interface CourseLens {
+  text: string
+  sourceFileIds: ID[]
+  sourceChunkIds: ID[]
+  updatedAt: number
+}
+
 /** Operational extension for one canonical Course. It exists only for the
  * profile's current term and never repeats course code/title/term. */
 export interface ClassWorkspace {
@@ -265,6 +278,8 @@ export interface ClassWorkspace {
   type: ClassWorkspaceType
   /** Writing-only evidence boundary. Absent in legacy data until v34 hydration. */
   readingListState?: ReadingListState
+  /** Optional interpretive context for courses whose materials need a course-specific frame. */
+  courseLens?: CourseLens
   background?: string
   status: ClassStatus
   currentTopicId?: ID
@@ -348,6 +363,14 @@ export interface Topic {
   courseId: ID
   title: string
   unit?: string
+  /** Why this record exists. Syllabus standards, not class dates, are the default. */
+  basis?: TopicBasis
+  /** Stable identity of the confirmed syllabus line that created this row.
+   * Student edits may change `title`; re-import must still match the source
+   * rather than append a duplicate. */
+  syllabusSourceKey?: string
+  /** A syllabus schedule date is planning context, never proof of coverage. */
+  scheduledFor?: string
   status: TopicStatus
   fsrs: TopicFsrsState
   /** Legacy confidence is retained losslessly until the review-session chunk
@@ -442,6 +465,9 @@ export interface ClassNote {
   googleDocId?: string
   syncStatus: ClassNoteSyncStatus
   linkedFileIds: ID[]
+  /** Guide records retain the exact reviewed evidence that supported them. */
+  guideProposalId?: ID
+  guideSourceRefs?: GuideSourceReference[]
   createdAt: number
   updatedAt: number
   order: number
@@ -451,6 +477,8 @@ export interface ClassAssignment {
   id: ID
   courseId: ID
   title: string
+  /** Stable identity of the confirmed syllabus line that created this row. */
+  syllabusSourceKey?: string
   type: ClassAssignmentType
   /** The app's single prioritization flag. Absence is equivalent to false. */
   important?: boolean
@@ -487,6 +515,8 @@ export interface AcademicFile {
   id: ID
   courseId: ID
   topicId?: ID
+  /** Explicit lecture home; absent means class-level material. */
+  lectureId?: ID
   sourceType: AcademicFileSourceType
   title: string
   type: ClassFileType
@@ -644,11 +674,17 @@ export interface LectureRecord {
   id: ID
   courseId: ID
   title: string
+  /** A provider-generated descriptive title, kept separate from chronology. */
+  aiTitle?: string
   inputPath: LectureInputPath
   /** Present only for a locally retained recording or audio upload. */
   audioBlobRef?: string
   /** The existing transcript material which owns the source text. */
   transcriptFileId?: ID
+  /** The date this class session occurred. It is student-entered, never inferred. */
+  occurredOn?: string
+  /** Syllabus topics connected when the lecture was saved. */
+  topicIds?: ID[]
   processingState: LectureProcessingState
   processingError?: string
   createdAt: number
@@ -675,6 +711,39 @@ export interface LectureEvidenceFinding {
 }
 
 export type LectureProposalStatus = 'pending' | 'accepted' | 'dismissed'
+
+export type GuideProposalSourceKind = 'syllabus' | 'lecture'
+export type GuideSourceRecordKind = 'assignment' | 'grade-category' | 'lecture-finding'
+
+/** One exact, course-owned evidence reference. A missing passage is an honest
+ * legacy/partial state and cannot be accepted or used for generation. */
+export interface GuideSourceReference {
+  courseId: ID
+  sourceKind: GuideProposalSourceKind
+  sourceId: ID
+  sourceRecordKind: GuideSourceRecordKind
+  sourceRecordId: ID
+  sourceFileId?: ID
+  sourceChunkId?: ID
+  sourceLabel: string
+  sourcePassage: string
+  sourceLocation?: string
+}
+
+/** Generalized Guide proposal. It never writes a ClassNote until accepted. */
+export interface GuideProposal {
+  id: ID
+  courseId: ID
+  source: GuideSourceReference
+  draftTitle: string
+  draftText: string
+  noteType: Extract<ClassNoteType, 'exam-review' | 'question-log' | 'reading' | 'lecture' | 'lab' | 'other'>
+  status: LectureProposalStatus
+  acceptedNoteId?: ID
+  createdAt: number
+  updatedAt: number
+  order: number
+}
 
 /** Material and coverage changes stay proposals until the student confirms. */
 export interface LectureMaterialProposal {
@@ -784,6 +853,18 @@ export interface GeneratedFlashcard {
   conceptId: string
   /** One verified material citation; general/background claims are not cards. */
   sourceChunkId: ID
+  /** Flashcards V1 metadata. It is generated with the card and retained for
+   * deterministic quality checks and lossless Anki export. */
+  clozePattern?: 'single' | 'independent' | 'enumerated-list' | 'definition'
+  listOrdered?: boolean
+  termJustification?: string
+  exemplarDirection?: 'instance-to-concept' | 'concept-to-instance'
+  recallItems?: string[]
+  axis?: string
+  salience?: 'load-bearing' | 'attaching'
+  difficultyEstimate?: 1 | 2 | 3 | 4 | 5
+  conceptKind?: 'framework'
+  relational?: boolean
 }
 
 /** One successful Flashcards V1 result. Anki owns all scheduling after export. */
@@ -974,6 +1055,10 @@ export interface TranscriptCourseRecord {
   courseType: string
   displayName?: string
   evidenceFileId?: ID
+  /** The exact transcript line this record was read from. Additive and
+   *  optional: records entered by hand, and every record written before this
+   *  field existed, simply carry no quote. */
+  sourceQuote?: string
   classificationSource?: string
   classificationReason?: string
   createdAt: number
@@ -986,6 +1071,17 @@ export interface CatalogWarningAcknowledgement {
   requirementId: ID
   sourceVersion: string
   acknowledgedAt: number
+}
+
+/** Student-selected planning context; never an official degree or admission decision. */
+export interface PlanningProgramContext {
+  selectedProgramId?: string
+  matriculationTerm?: string
+  /** Exact applicable IDEAs-in-Action catalog year, never a guessed cohort. */
+  ideasCatalogYear?: string
+  gillingsAdmissionTerm?: string
+  programAdmissionStatus?: 'not-applicable' | 'planning' | 'applied' | 'admitted'
+  updatedAt?: number
 }
 
 export interface ClassCenterData {
@@ -1023,10 +1119,13 @@ export interface ClassCenterData {
   assessmentAttempts: AssessmentAttempt[]
   transcriptRecords: TranscriptCourseRecord[]
   acknowledgedCatalogWarnings: CatalogWarningAcknowledgement[]
+  planningProgramContext: PlanningProgramContext
   lectures: LectureRecord[]
   lectureFindings: LectureEvidenceFinding[]
   lectureMaterialProposals: LectureMaterialProposal[]
   lectureNoteProposals: LectureNoteProposal[]
+  /** v37 generalized, source-reviewable Guide records. */
+  guideProposals: GuideProposal[]
   /** One-way, review-first selected-backup-folder metadata. */
   watchedNoteSources: WatchedNoteSource[]
   watchedNoteProposals: WatchedNoteProposal[]
@@ -1169,6 +1268,8 @@ export interface GradeCategory {
   weight: number
   policyNote?: string
   source?: string
+  /** Stable identity of the confirmed syllabus line that created this row. */
+  syllabusSourceKey?: string
   /** Grade policy, tri-state THROUGH OPTIONALITY. `undefined` means the course
    *  policy was never recorded; `false`/`0` means it was recorded as not
    *  applying. Those are different facts and the policy view renders them

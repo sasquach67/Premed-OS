@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { FileText, Upload } from 'lucide-react'
 import type { Course, LetterGrade } from '@/lib/types'
 import { uid } from '@/lib/id'
+import { retainLocalBlob } from '@/lib/localBlobStore'
 import { useStore } from '@/store/store'
 import {
   extractTranscriptFile, isDuplicateOf, parseTranscriptText,
@@ -34,6 +35,9 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
   const [pasted, setPasted] = useState('')
   const [notice, setNotice] = useState<IntakeNotice | undefined>()
   const [proposal, setProposal] = useState<TranscriptProposal | undefined>()
+  // The file the rows were read from. Retained on save so a saved record can be
+  // checked against the page it came from; a pasted import simply has none.
+  const [sourceFile, setSourceFile] = useState<File | undefined>()
   const [rows, setRows] = useState<TranscriptCandidate[]>([])
   const [dropped, setDropped] = useState<Record<string, boolean>>({})
 
@@ -60,6 +64,7 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
   async function readFile(file: File) {
     setBusy(true)
     try {
+      setSourceFile(file)
       acceptProposal(await extractTranscriptFile(file))
     } catch (error) {
       if (error instanceof UnsupportedDocumentError) {
@@ -75,6 +80,7 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
   function readPasted() {
     const text = pasted.trim()
     if (!text) return
+    setSourceFile(undefined)
     acceptProposal(parseTranscriptText(text, 'Pasted transcript', 'text'))
   }
 
@@ -86,10 +92,19 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
 
   const kept = rows.filter((row) => !dropped[row.id])
 
-  function save() {
+  async function save() {
     const now = Date.now()
+    // Retain the source on this device first, so the id we link is real.
+    let evidenceFileId: string | undefined
+    let blobRef: string | undefined
+    if (sourceFile) {
+      evidenceFileId = uid()
+      try { blobRef = await retainLocalBlob(`idb://academics/transcript/${evidenceFileId}`, sourceFile) }
+      catch { blobRef = undefined }
+    }
     update((draft) => {
       const center = draft.academics.classCenter
+      let evidenceCourseId = ''
       for (const row of kept) {
         // A transcript line is a course the student took. Link it to a matching
         // planned course, or record the course it evidences — otherwise prior
@@ -113,9 +128,12 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
           draft.courses.push(created)
           course = draft.courses[draft.courses.length - 1]
         }
+        if (!evidenceCourseId) evidenceCourseId = course.id
         center.transcriptRecords.push({
           id: uid(),
           courseId: course.id,
+          evidenceFileId,
+          sourceQuote: row.evidenceQuote,
           institution: row.institution.trim(),
           courseNumberExact: row.courseNumberExact.trim(),
           titleExact: row.titleExact.trim(),
@@ -128,6 +146,24 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
           createdAt: now,
           updatedAt: now,
           order: center.transcriptRecords.length,
+        })
+      }
+      // Written after the loop: the file is homed on a course that now exists.
+      if (evidenceFileId && sourceFile && evidenceCourseId) {
+        center.files.push({
+          id: evidenceFileId,
+          courseId: evidenceCourseId,
+          sourceType: 'upload',
+          title: sourceFile.name,
+          type: 'transcript',
+          blobRef,
+          fileName: sourceFile.name,
+          mimeType: sourceFile.type || undefined,
+          linkedTopicIds: [],
+          owner: 'mine',
+          createdAt: now,
+          updatedAt: now,
+          order: center.files.length,
         })
       }
     })
@@ -184,7 +220,7 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
       <div className="grades-transcript-actions">
         <button type="button" className="grades-transcript-button" onClick={() => { setStage('intake'); setNotice(undefined) }}>Back</button>
         <button type="button" className="grades-transcript-button" onClick={onCancel}>Cancel</button>
-        <button type="button" className="grades-transcript-button" data-primary="true" disabled={!kept.length} onClick={save}>
+        <button type="button" className="grades-transcript-button" data-primary="true" disabled={!kept.length} onClick={() => void save()}>
           Save {kept.length} record{kept.length === 1 ? '' : 's'}
         </button>
       </div>
