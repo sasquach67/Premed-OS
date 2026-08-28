@@ -57,6 +57,16 @@ describe('manual transcript entry on an empty store', () => {
     expect(record.courseId).toBe(state.courses[0].id)
   })
 
+  it('offers a real attach control for transcript-line evidence', () => {
+    // The picker could only choose an already-existing file, so a student
+    // holding a photo of the line had no way to attach it from this flow.
+    const attach = [...container.querySelectorAll('button')].find((b) => /Attach/.test(b.textContent || ''))
+    expect(attach).toBeTruthy()
+    const input = [...container.querySelectorAll('input')].find((i) => /transcript-line image/i.test(i.getAttribute('aria-label') || ''))
+    expect(input?.getAttribute('accept')).toContain('image/')
+    expect(input?.getAttribute('accept')).toContain('application/pdf')
+  })
+
   it('links an existing course instead of creating a duplicate', async () => {
     useStore.getState().update((d) => {
       d.courses = [{ id: 'existing', term: 'Fall 2025', code: 'CHM 151', title: 'Gen Chem', credits: 4, grade: '', bcpm: false, status: 'completed', inResidence: false, satisfies: [], order: 0 }]

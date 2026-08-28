@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { Download, FileText, Plus } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Download, FileText, Paperclip, Plus } from 'lucide-react'
 import type { Course } from '@/lib/types'
 import { uid } from '@/lib/id'
+import { retainLocalBlob } from '@/lib/localBlobStore'
 import { courseworkExport } from '@/lib/academics/evidence'
 import { useStore } from '@/store/store'
 import { Button } from '@/components/ui/button'
@@ -12,11 +13,45 @@ const emptyForm = { institution: '', courseNumberExact: '', titleExact: '', cred
 
 export function TranscriptRecordsPanel({ courses, entryOnly = false }: { courses: Course[]; entryOnly?: boolean }) {
   const center = useStore((state) => state.academics.classCenter)
+  const evidenceInput = useRef<HTMLInputElement>(null)
+  const [attaching, setAttaching] = useState(false)
   const update = useStore((state) => state.update)
   const [courseId, setCourseId] = useState(courses[0]?.id ?? '')
   const [form, setForm] = useState(emptyForm)
   const records = [...center.transcriptRecords].sort((a, b) => a.order - b.order)
   const formFields = Object.keys(emptyForm) as Array<keyof typeof emptyForm>
+
+  /**
+   * The evidence picker could only choose a file that already existed, so a
+   * student holding a photo of the transcript line had no way to attach it from
+   * this flow. This retains the image on this device and links it in one step.
+   */
+  async function attachEvidence(file: File) {
+    setAttaching(true)
+    const fileId = uid()
+    let blobRef: string | undefined
+    try { blobRef = await retainLocalBlob(`idb://academics/transcript-line/${fileId}`, file) }
+    catch { blobRef = undefined }
+    update((draft) => {
+      draft.academics.classCenter.files.push({
+        id: fileId,
+        courseId,
+        sourceType: 'upload',
+        title: file.name,
+        type: 'transcript',
+        blobRef,
+        fileName: file.name,
+        mimeType: file.type || undefined,
+        linkedTopicIds: [],
+        owner: 'mine',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        order: draft.academics.classCenter.files.length,
+      })
+    })
+    setForm((current) => ({ ...current, evidenceFileId: fileId }))
+    setAttaching(false)
+  }
 
   function createRecord() {
     if (!form.institution.trim() || !form.courseNumberExact.trim() || !form.titleExact.trim()) return
@@ -68,7 +103,7 @@ export function TranscriptRecordsPanel({ courses, entryOnly = false }: { courses
     {!entryOnly && <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-display text-xl font-extrabold">Transcript-faithful coursework</h2><p className="mt-1 text-sm font-semibold text-muted-foreground">Enter each printed field exactly as it appears. This does not connect to a registrar.</p></div><Button size="sm" variant="outline" disabled={!records.length} onClick={downloadPreview}><Download className="size-4" /> Export coursework preview</Button></div>}
     {!entryOnly && !records.length && <p className="mt-4 rounded-xl border border-dashed border-border bg-muted p-4 text-sm font-semibold text-muted-foreground">No transcript records yet. Add only the details you can see on your own transcript or transfer evaluation.</p>}
     {!entryOnly && records.length > 0 && <div className="mt-4 space-y-2">{records.map((record) => <div key={record.id} className="rounded-xl border border-border bg-muted p-3"><div className="flex flex-wrap items-baseline justify-between gap-2"><p className="font-extrabold">{record.courseNumberExact} · {record.titleExact}</p><span className="text-xs font-semibold text-muted-foreground">{record.institution} · {record.term} {record.year}</span></div><p className="mt-1 text-sm text-muted-foreground">{record.creditsExact || 'Credits not entered'} · {record.gradeExact || 'Grade not entered'} · {record.courseType || 'Type not entered'}</p>{(record.classificationSource || record.classificationReason) && <p className="mt-1 text-xs font-semibold text-muted-foreground">Classification evidence · {record.classificationSource || 'Source not recorded'}{record.classificationReason ? ` — ${record.classificationReason}` : ''}</p>}</div>)}</div>}
-    <div className={entryOnly ? '' : 'mt-5 border-t border-border pt-4'}><p className="font-display font-extrabold">Add transcript record</p><div className="mt-3 grid gap-2 md:grid-cols-2"><Select value={courseId} onValueChange={setCourseId}><SelectTrigger><SelectValue placeholder="Link to your course" /></SelectTrigger><SelectContent>{courses.map((course) => <SelectItem key={course.id} value={course.id}>{course.code} · {course.title}</SelectItem>)}</SelectContent></Select><Input value={form.institution} onChange={(event) => setForm({ ...form, institution: event.target.value })} placeholder="Institution (exact)" />{formFields.filter((field) => field !== 'institution' && field !== 'evidenceFileId').map((field) => <Input key={field} value={form[field]} onChange={(event) => setForm({ ...form, [field]: event.target.value })} placeholder={labelFor(field)} />)}<Select value={form.evidenceFileId} onValueChange={(evidenceFileId) => setForm({ ...form, evidenceFileId })}><SelectTrigger><SelectValue placeholder="Transcript-line image (optional)" /></SelectTrigger><SelectContent>{center.files.filter((file) => file.courseId === courseId).map((file) => <SelectItem key={file.id} value={file.id}>{file.title}</SelectItem>)}</SelectContent></Select></div><Button size="sm" className="mt-3" disabled={!form.institution.trim() || !form.courseNumberExact.trim() || !form.titleExact.trim()} onClick={createRecord}><Plus className="size-4" /> Save transcript record</Button><p className="mt-2 flex items-center gap-1 text-xs font-semibold text-muted-foreground"><FileText className="size-3.5" /> Transcript-line image support is optional, private, and local to the course material you selected.</p></div>
+    <div className={entryOnly ? '' : 'mt-5 border-t border-border pt-4'}><p className="font-display font-extrabold">Add transcript record</p><div className="mt-3 grid gap-2 md:grid-cols-2"><Select value={courseId} onValueChange={setCourseId}><SelectTrigger><SelectValue placeholder="Link to your course" /></SelectTrigger><SelectContent>{courses.map((course) => <SelectItem key={course.id} value={course.id}>{course.code} · {course.title}</SelectItem>)}</SelectContent></Select><Input value={form.institution} onChange={(event) => setForm({ ...form, institution: event.target.value })} placeholder="Institution (exact)" />{formFields.filter((field) => field !== 'institution' && field !== 'evidenceFileId').map((field) => <Input key={field} value={form[field]} onChange={(event) => setForm({ ...form, [field]: event.target.value })} placeholder={labelFor(field)} />)}<div className="flex gap-2"><Select value={form.evidenceFileId} onValueChange={(evidenceFileId) => setForm({ ...form, evidenceFileId })}><SelectTrigger className="flex-1"><SelectValue placeholder="Transcript-line image (optional)" /></SelectTrigger><SelectContent>{center.files.filter((file) => file.courseId === courseId).map((file) => <SelectItem key={file.id} value={file.id}>{file.title}</SelectItem>)}</SelectContent></Select><Button type="button" size="sm" variant="outline" disabled={attaching} onClick={() => evidenceInput.current?.click()}><Paperclip className="size-4" /> {attaching ? 'Attaching…' : 'Attach'}</Button><input ref={evidenceInput} type="file" accept="image/*,application/pdf" className="sr-only" aria-label="Attach a transcript-line image" onChange={(event) => { const file = event.target.files?.[0]; if (file) void attachEvidence(file); event.target.value = '' }} /></div></div><Button size="sm" className="mt-3" disabled={!form.institution.trim() || !form.courseNumberExact.trim() || !form.titleExact.trim()} onClick={createRecord}><Plus className="size-4" /> Save transcript record</Button><p className="mt-2 flex items-center gap-1 text-xs font-semibold text-muted-foreground"><FileText className="size-3.5" /> Transcript-line image support is optional, private, and local to the course material you selected.</p></div>
   </section>
 }
 
