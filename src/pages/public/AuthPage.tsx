@@ -91,10 +91,11 @@ export function AuthPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(() => (readLinkError() ? MESSAGES.expired : ''))
   const [notice, setNotice] = useState('')
   const [cooldown, setCooldown] = useState(0)
   const [user, setUser] = useState<User | null>(null)
+  const [meetsAgeRequirement, setMeetsAgeRequirement] = useState(false)
 
   /** Deep-link preservation (§2.3): signing in from a shared link lands on
    *  that link, not the home page. */
@@ -125,11 +126,6 @@ export function AuthPage() {
       sub.subscription.unsubscribe()
     }
   }, [recoveryMode])
-
-  // ── an expired or already-used link comes back as an error param ─────
-  useEffect(() => {
-    if (readLinkError()) setError(MESSAGES.expired)
-  }, [])
 
   // ── resend cooldown ──────────────────────────────────────────────────
   useEffect(() => {
@@ -381,7 +377,7 @@ export function AuthPage() {
                     <button
                       type="button"
                       className="pl-sbtn pl-sbtn-p pl-sbtn-full"
-                      disabled={busy || !emailValid}
+                      disabled={busy || !emailValid || !meetsAgeRequirement}
                       onClick={sendLink}
                     >
                       Email me a sign-in link
@@ -421,7 +417,7 @@ export function AuthPage() {
                     <button
                       type="button"
                       className="pl-sbtn pl-sbtn-p pl-sbtn-full"
-                      disabled={busy || !emailValid || password.length === 0}
+                      disabled={busy || !emailValid || password.length === 0 || !meetsAgeRequirement}
                       onClick={signInWithPassword}
                     >
                       Sign in
@@ -429,7 +425,7 @@ export function AuthPage() {
                     <button
                       type="button"
                       className="pl-sbtn pl-sbtn-g pl-sbtn-full"
-                      disabled={busy || !emailValid || password.length === 0}
+                      disabled={busy || !emailValid || password.length === 0 || !meetsAgeRequirement}
                       onClick={createWithPassword}
                     >
                       Create an account with this password
@@ -463,7 +459,7 @@ export function AuthPage() {
                 <button
                   type="button"
                   className="pl-sbtn pl-sbtn-g pl-sbtn-full"
-                  disabled={busy}
+                  disabled={busy || !meetsAgeRequirement}
                   onClick={continueWithGoogle}
                 >
                   Continue with Google
@@ -475,6 +471,16 @@ export function AuthPage() {
                   sign-in identity only — Calendar and Drive are requested later, separately, if you
                   want them.
                 </p>
+
+                <label className="pl-fine" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={meetsAgeRequirement}
+                    onChange={(event) => setMeetsAgeRequirement(event.target.checked)}
+                    style={{ marginTop: 3 }}
+                  />
+                  <span>I confirm that I am at least 13 years old.</span>
+                </label>
 
                 <button type="button" className="pl-lk" onClick={enterApp}>
                   <ArrowLeft size={13} style={{ display: 'inline', verticalAlign: '-2px' }} /> Keep

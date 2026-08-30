@@ -10,8 +10,8 @@
      • **The user owns their content**, Premed OS takes only the licence needed to
        operate, and that licence ends on deletion.
 
-   Before the beta is promoted broadly, the age floor and governing law
-   must be added here. They are product-owner decisions, not boilerplate.
+   Age floor and governing law are explicit product-owner decisions, not
+   boilerplate. Keep them aligned with the account flow.
    ============================================================ */
 import { DocLayout, Changelog, type DocSection } from '@/pages/public/DocLayout'
 
@@ -22,7 +22,7 @@ const SECTIONS: DocSection[] = [
     id: 'beta-status',
     heading: 'Beta status',
     summary:
-      'This is a public beta run by one student. There is no uptime guarantee. Keep an exported copy of anything that matters.',
+      'This is an open public beta run by one student. Anyone who meets the eligibility requirement may create an account; there is no invite list.',
     body: (
       <p>
         Features may change or be removed.{' '}
@@ -31,6 +31,17 @@ const SECTIONS: DocSection[] = [
           records
         </b>
         , and export exists so you're never dependent on this service continuing.
+      </p>
+    ),
+  },
+  {
+    id: 'eligibility',
+    heading: 'Who can use Premed OS',
+    summary: 'You must be at least 13 years old to create an account or use Premed OS.',
+    body: (
+      <p>
+        By creating an account or using Premed OS, you confirm that you are at least 13 years old.
+        If you are under 13, do not use Premed OS or provide personal information through it.
       </p>
     ),
   },
@@ -136,10 +147,23 @@ const SECTIONS: DocSection[] = [
     ),
   },
   {
+    id: 'governing-law',
+    heading: 'Governing law',
+    summary: 'North Carolina law governs these Terms, except where another law cannot be excluded.',
+    body: (
+      <p>
+        These Terms are governed by the laws of the State of North Carolina, without regard to its
+        conflict-of-law rules. This does not take away consumer protections that apply to you and
+        cannot legally be waived.
+      </p>
+    ),
+  },
+  {
     id: 'terms-changes',
     heading: 'Changes',
     summary: 'Material changes get a dated entry and notice in the app before they take effect.',
     body: <Changelog entries={[
+      { date: '30 Aug 26', what: 'Set open beta access, a minimum age of 13, and North Carolina governing law.' },
       { date: '30 Aug 26', what: 'Clarified Google Calendar and Canvas behavior.' },
       { date: '8 Aug 26', what: 'First published for the public beta.' },
     ]} />,
