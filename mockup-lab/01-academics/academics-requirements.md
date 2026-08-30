@@ -1,6 +1,8 @@
-# Requirements — decisions
+# Requirements — superseded historical mockup
 
-**File:** `academics-requirements.html` · **Status:** PROPOSED (Aug 2026)
+**File:** `academics-requirements.html` · **Status:** SUPERSEDED — retained
+only as the historical numeric gap-and-pace direction. The final Planning
+review target is `academics-planner-prototype.html?view=requirements`.
 **Spec:** `tabs/01-academics.md` §4.2 tab table · §4.2-A (tracker layout,
 APPROVED July 2026) · §4.2-D (transcript fidelity)
 
@@ -44,8 +46,8 @@ second tab row. Three levels, three forms still holds.
   HQ sees only some of them (§4.2-E "Must not").
 - **No retention percentage for untracked courses.** Rank is defensible, a
   number is not.
-- **No term building.** That is the Planner. The two stay separate surfaces
-  (§4.2-C2); the Tracker is the audit and links across.
+- **No current separate surface.** The useful audit behavior moved into Planner
+  (§4.2-C2); this historical file must not be used as navigation guidance.
 
 ## Rejected alternatives
 
@@ -119,3 +121,11 @@ silently auto-advise a course. ConnectCarolina remains the official audit.
   quiet at the shared timing, and reduced motion disables expansion travel.
   At narrow widths bento columns stack and transcript columns become a readable
   card/ledger sequence without hiding verification context.
+
+## Visual conformance sweep — 2026-08-26
+
+- Intentionally not redesigned. This artifact remains visibly **SUPERSEDED** so
+  it cannot compete with Planner's integrated Requirement map.
+- Its remaining value is historical comparison of the rejected gap-and-pace
+  approach. Refining it into the current visual system would create a second,
+  misleading degree-audit candidate.

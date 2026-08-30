@@ -28,7 +28,7 @@ export type LedgerStatus = 'complete' | 'in-progress' | 'withdrawn' | 'repeat' |
 
 export interface LedgerRow {
   id: string
-  courseId: string
+  courseId?: string
   institution: string
   courseNumberExact: string
   titleExact: string
@@ -94,18 +94,31 @@ function summary(attempts: Array<{ credits: number; points: number; bcpm: boolea
   }
 }
 
-function localAttempts(courses: Course[]) {
-  return courses.flatMap((course) => {
+function localAttempts(courses: Course[], rows: LedgerRow[]) {
+  const courseById = new Map(courses.map((course) => [course.id, course]))
+  const coursesWithTranscriptRows = new Set(rows.flatMap((row) => row.courseId ? [row.courseId] : []))
+  const transcriptAttempts = rows.flatMap((row) => {
+    const course = row.courseId ? courseById.get(row.courseId) : undefined
+    const grade = row.gradeExact.trim().toUpperCase()
+    const credits = numberFromExact(row.creditsExact)
+    if (!course?.inResidence || row.status === 'withdrawn' || !isQualityGrade(grade) || !credits) return []
+    return [{ credits, points: AMCAS_RULE_SNAPSHOT.gradePoints[grade] * credits, bcpm: row.bcpm }]
+  })
+  const operationalFallbacks = courses.flatMap((course) => {
+    if (coursesWithTranscriptRows.has(course.id)) return []
     if (!course.inResidence || course.status !== 'completed' || !isQualityGrade(course.grade) || !course.credits) return []
     return [{ credits: course.credits, points: AMCAS_RULE_SNAPSHOT.gradePoints[course.grade] * course.credits, bcpm: course.bcpm }]
   })
+  return [...transcriptAttempts, ...operationalFallbacks]
 }
 
 function recordStatus(course: Course | undefined, record: TranscriptCourseRecord): LedgerStatus {
   if (/withdraw/i.test(record.courseType) || /^w$/i.test(record.gradeExact.trim())) return 'withdrawn'
   if (/repeat/i.test(record.courseType)) return 'repeat'
   if (course?.status === 'in-progress') return 'in-progress'
-  if (!record.institution || !record.courseNumberExact || !record.titleExact) return 'needs-details'
+  if (!record.institution.trim() || !record.courseNumberExact.trim() || !record.titleExact.trim()
+    || !record.creditsExact.trim() || !record.gradeExact.trim() || !record.term.trim()
+    || !record.year.trim() || !record.courseType.trim()) return 'needs-details'
   return 'complete'
 }
 
@@ -118,7 +131,7 @@ export function buildGradeLedger(courses: Course[], records: TranscriptCourseRec
   const rows = [...records]
     .sort((a, b) => a.order - b.order)
     .map((record) => {
-      const course = courseById.get(record.courseId)
+      const course = record.courseId ? courseById.get(record.courseId) : undefined
       const classified = Boolean(record.classificationSource?.trim() || record.classificationReason?.trim())
       return {
         id: record.id, courseId: record.courseId, institution: record.institution,
@@ -142,7 +155,7 @@ export function buildGradeLedger(courses: Course[], records: TranscriptCourseRec
     if (!isQualityGrade(grade) || !credits) return []
     return [{ credits, points: AMCAS_RULE_SNAPSHOT.gradePoints[grade] * credits, bcpm: row.bcpm, year: row.year }]
   })
-  const local = summary(localAttempts(courses), 'Record a completed in-residence course with a letter grade to calculate this local GPA.')
+  const local = summary(localAttempts(courses, rows), 'Record a completed in-residence course with a letter grade to calculate this local GPA.')
   const amcas = summary(amcasAttempts, 'Add transcript-faithful, graded coursework to calculate an AMCAS preview.')
   const byYear = new Map<string, typeof amcasAttempts>()
   for (const attempt of amcasAttempts) {

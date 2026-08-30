@@ -12,7 +12,6 @@ import type {
   AcademicCourseOption, AcademicTagColor, AcademicTypeOption,
   AppData, ClassCenterData, CollectionKey, ActivityEvent, RequirementItem, RecoveryEntry, StoryEntry,
 } from '@/lib/types'
-import { createSeedData } from '@/data/seed'
 import { createDemoData } from '@/data/demoSeed'
 import { createEmptyClassCenterData, createPersonalInitialData } from '@/data/personalInitialData'
 import {
@@ -56,6 +55,8 @@ import { migrateReviewSessionV32 } from '@/store/migrations/reviewSessionV32'
 import { migrateRetrievabilityPredictionsV33 } from '@/store/migrations/retrievabilityPredictionsV33'
 import { migrateWritingEvidenceV34 } from '@/store/migrations/writingEvidenceV34'
 import { migrateWatchedNotesV35 } from '@/store/migrations/watchedNotesV35'
+import { migratePlanningLibraryV36 } from '@/store/migrations/planningLibraryV36'
+import { migrateGuideProposalsV37 } from '@/store/migrations/guideProposalsV37'
 import { removeStoryAttachment, retainThenPersistStoryAttachment } from '@/lib/overviewFileCapture'
 
 const DEMO_MODE = isDemoMode()
@@ -74,8 +75,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateWatchedNotesV35`. */
-export const CURRENT_STORE_VERSION = 35
+/** Matches the newest migration in `migrateAll`: `migrateGuideProposalsV37`. */
+export const CURRENT_STORE_VERSION = 37
 
 function createInitialData() {
   const initial = createInitialDataForMode(DEMO_MODE)
@@ -83,12 +84,15 @@ function createInitialData() {
   return initial
 }
 
-/** Settings' explicit reset keeps the existing seeded-plan behavior. */
+/** Pure reset factory: real mode is record-free; demo mode restores fixtures. */
+export function createResetDataForMode(demoMode: boolean): AppData {
+  return migrateAll(demoMode ? createDemoData() : createPersonalInitialData())
+}
+
 function createResetData() {
-  if (!DEMO_MODE) return migrateAll(structuredClone(createSeedData()))
-  const demo = migrateAll(createDemoData())
-  stampDemoNamespace()
-  return demo
+  const reset = createResetDataForMode(DEMO_MODE)
+  if (DEMO_MODE) stampDemoNamespace()
+  return reset
 }
 
 type AnyRow = { id: string; order: number; archived?: boolean; deletedAt?: number; [key: string]: unknown }
@@ -573,7 +577,9 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateReviewSessionV32(migrated)
   migrated = migrateRetrievabilityPredictionsV33(migrated)
   migrated = migrateWritingEvidenceV34(migrated)
-  return migrateWatchedNotesV35(migrated)
+  migrated = migrateWatchedNotesV35(migrated)
+  migrated = migratePlanningLibraryV36(migrated)
+  return migrateGuideProposalsV37(migrated)
 }
 
 /**

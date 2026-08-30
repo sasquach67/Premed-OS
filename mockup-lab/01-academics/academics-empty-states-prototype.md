@@ -151,3 +151,20 @@ record never quotes a headline, so changing it would be inventing a decision
 rather than implementing one. **Andy's call.** Conditions 2–6 for this surface
 are also unverified: `Import syllabus` and `Add manually` have not been
 click-driven through their full flows.
+
+## Stage-A proposed state board — 2026-08-29
+
+Variant A’s approved zero-class launchpad is unchanged. Eleven additional
+addressable canvases are **PROPOSED**:
+
+`class-center-loading`, `class-center-error`, `assignments-loading`,
+`assignments-error`, `class-hub-loading`, `class-hub-error`, `review-loading`,
+`review-error`, `exam-prep-loading`, `exam-prep-error`, and
+`global-no-assignments`.
+
+Each state keeps the real host shell, names only the failing scope, preserves
+the last saved local record where one exists, and offers a bounded retry or
+return action. Loading uses compact solid skeleton rows. Errors never substitute
+demo facts, detach lecture material, broaden selected-source scope, or invent a
+score. The desktop state board has one content column plus a short trust rail;
+the rail stacks below at narrow widths.

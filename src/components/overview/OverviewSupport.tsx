@@ -5,8 +5,6 @@ import {
   Lightbulb,
   Link2,
   Plus,
-  RotateCcw,
-  Target,
   X,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
@@ -32,9 +30,6 @@ import { useStore } from '@/store/store'
 
 export function QuickAccess() {
   const mcat = useStore((state) => state.mcat)
-  const classCenter = useStore((state) => state.academics.classCenter)
-  const [now] = useState(Date.now)
-  const dueTopics = classCenter.topics.filter((topic) => topic.fsrs.due <= now).length
   const nextMcat = mcat.schedule.find((item) => !item.done)
 
   return (
@@ -52,9 +47,6 @@ export function QuickAccess() {
             )}
           />
         )}
-        {dueTopics > 0 && (
-          <QuickLink to="/academics?mode=daily&tab=class-center" icon={RotateCcw} color="var(--cat-research)" title="Review session" detail={`${dueTopics} topics due`} />
-        )}
         <button
           type="button"
           onClick={() => document.getElementById('quick-capture')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
@@ -65,15 +57,6 @@ export function QuickAccess() {
         </button>
       </CardContent>
     </Card>
-  )
-}
-
-function QuickLink({ to, icon: Icon, color, title, detail }: { to: string; icon: typeof Target; color: string; title: string; detail: string }) {
-  return (
-    <Link to={to} className="group flex items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:bg-muted/65">
-      <span className="grid size-9 place-items-center rounded-xl text-white" style={{ background: color }}><Icon className="size-4" /></span>
-      <span className="min-w-0"><span className="block text-sm font-extrabold">{title}</span><span className="block truncate text-xs text-muted-foreground">{detail}</span></span>
-    </Link>
   )
 }
 

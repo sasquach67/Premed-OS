@@ -1,0 +1,29 @@
+--- quality_gate.orig.py	2026-08-25 15:14:52.341546671 +0000
++++ quality_gate.py	2026-08-25 15:15:06.261708242 +0000
+@@ -158,6 +158,15 @@
+ reports requires rests runs served sets shape shapes shifted shows sit sits speaks stands
+ states stay stays stop studied studies taught took traced transfer treated turns uses violates
+ watching went worked""".split())
++# --- premedOS patch, BIOL103 build: the lexicon was assembled for a psychology deck and
++# --- lacks ordinary biology verbs. Every word here is a finite verb; none relaxes FC-27.
++FINITE |= set("""binds bind carries carry catalyzes catalyze cleaves cleave codes code
++consume consumes contains contain crosses cross decides decide determines determine enters
++enter expresses express floats float forms form glows glow happens happen joins join lacks
++lack links link locates locate matches match moves move occurs occur pairs pair reads read
++releases release send sends specifies specify tells tell travels travel begins advances
++advance attaches attach leaves leave supplies supply provides provide includes include
++differs differ""".split())
+ PARTICIPLE = re.compile(r"^(emphasi[sz]ing|arguing|describing|highlighting|reflecting|showcasing|"
+                         r"underscoring|encompassing|fostering|ensuring|marking|representing)\b", re.I)
+ LEADING_DET = re.compile(r"^(a|an|the)\s+", re.I)
+@@ -210,7 +219,9 @@
+     for j in range(i + 1, len(CARDS)):
+         a, z = CARDS[i], CARDS[j]
+         fa = a.get('f') or a.get('cz', ''); fb = z.get('f') or z.get('cz', '')
+-        ba = a.get('b') or a.get('cz', ''); bb = z.get('b') or z.get('cz', '')
++        # FREE_RECALL notes carry no 'b', so this scored 1.00 for every same-length blurt pair.
++        ba = a.get('b') or a.get('cz') or ' '.join(a.get('items', []))
++        bb = z.get('b') or z.get('cz') or ' '.join(z.get('items', []))
+         rf = difflib.SequenceMatcher(None, fa.lower(), fb.lower()).ratio()
+         rb = difflib.SequenceMatcher(None, ba.lower(), bb.lower()).ratio()
+         if rf > .9 and rb > .9: add('BLOCK', f'#{i+1}/#{j+1}', 'near-identical', f'{rf:.2f}/{rb:.2f}')

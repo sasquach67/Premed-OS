@@ -1,11 +1,10 @@
-import { useMemo, useState, type CSSProperties, type DragEvent, type MouseEvent } from 'react'
-import { studySessionPlan, type SessionPlan } from '@/lib/academics/studySession'
+import { useEffect, useMemo, useState, type CSSProperties, type DragEvent, type MouseEvent } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
-  AlertTriangle, Archive, ArrowLeft, Atom, BarChart3, BookOpen, Brain, Calculator, CalendarClock, CalendarDays,
-  CheckCircle2, Circle, Dna, Edit3, FlaskConical, FolderOpen, Leaf, Mail, Microscope,
-  MoreHorizontal, NotebookText, PenLine, Play, Plus, Search, Stethoscope, Target,
-  Grid2X2, List, ListChecks, Loader2, Timer, TrendingUp,
+  AlertTriangle, Archive, ArrowLeft, ArrowUpRight, Atom, BarChart3, BookOpen, Brain, BriefcaseBusiness, Building2, Calculator, CalendarClock, CalendarDays,
+  CheckCircle2, Circle, Code2, Coins, Dna, Dumbbell, Earth, Edit3, FlaskConical, FolderOpen, Gavel, GraduationCap, HeartPulse, Landmark, Languages, Leaf, Lightbulb, Mail, Microscope,
+  MoreHorizontal, Music2, NotebookText, Palette, PenLine, Plus, Scale, Search, Speech, Stethoscope, Target, Telescope, Theater, Trees, UsersRound, Wrench, FileText,
+  Grid2X2, List, ListChecks, Loader2, TrendingUp,
   Trash2, Upload, Users, type LucideIcon,
 } from 'lucide-react'
 import { useStore } from '@/store/store'
@@ -44,19 +43,31 @@ import {
   ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { GRADE_POINTS, fmtGpa, gpaStats } from '@/lib/selectors'
-import { ClassHub, ClassHubPeek } from '@/components/academics/ClassHub'
-import { MascotNote } from '@/components/common/MascotNote'
+import { ClassHub } from '@/components/academics/ClassHub'
 import { SyllabusImportMode } from '@/components/academics/SyllabusImportMode'
+import { SyllabusImportDialog } from '@/components/academics/SyllabusImportDialog'
 import type { SyllabusProposal } from '@/lib/academics/syllabusParser'
 import { retainLocalSyllabus } from '@/lib/academics/localSyllabusFiles'
 import { retainLocalMaterial } from '@/lib/academics/localMaterialFiles'
-import type { ReimportRow } from '@/lib/academics/syllabusReimport'
+import {
+  syllabusAssignmentSourceKey,
+  syllabusCategorySourceKey,
+  syllabusReadingSourceKey,
+  syllabusScheduleSourceKey,
+  syllabusTopicSourceKey,
+  type ReimportRow,
+} from '@/lib/academics/syllabusReimport'
 import { classTypeDraftDecision } from '@/lib/academics/classTypeDraftDecision'
 import { nextIncompleteReading, readingDebt, READING_LIST_STATE_COPY } from '@/lib/academics/writingEvidence'
 import { inferAcademicTerm } from '@/store/migrations/academicsV4'
 import { persistConfirmedSyllabusEvidence } from '@/lib/academics/guideContract'
+import { extractClassMeetingDays, extractClassMeetingTime, isOfficeHoursLine, normalizeMeetingDays } from '@/lib/academics/meetingSchedule'
 
-const COLORS: AcademicTagColor[] = ['blue', 'green', 'purple', 'orange', 'yellow', 'red', 'pink', 'gray', 'brown']
+const COLORS: AcademicTagColor[] = [
+  'blue', 'sky', 'cyan', 'teal', 'mint', 'green',
+  'lime', 'yellow', 'orange', 'coral', 'red', 'pink',
+  'purple', 'plum', 'indigo', 'navy', 'brown', 'gray',
+]
 const CLASS_ICONS: { id: string; label: string; Icon: LucideIcon }[] = [
   { id: 'book', label: 'Book', Icon: BookOpen },
   { id: 'dna', label: 'Biology', Icon: Dna },
@@ -69,6 +80,27 @@ const CLASS_ICONS: { id: string; label: string; Icon: LucideIcon }[] = [
   { id: 'pen', label: 'Writing', Icon: PenLine },
   { id: 'leaf', label: 'Life', Icon: Leaf },
   { id: 'calculator', label: 'Math', Icon: Calculator },
+  { id: 'languages', label: 'Languages', Icon: Languages },
+  { id: 'palette', label: 'Art', Icon: Palette },
+  { id: 'music', label: 'Music', Icon: Music2 },
+  { id: 'code', label: 'Computer science', Icon: Code2 },
+  { id: 'landmark', label: 'History', Icon: Landmark },
+  { id: 'earth', label: 'Geography', Icon: Earth },
+  { id: 'scale', label: 'Law and policy', Icon: Scale },
+  { id: 'business', label: 'Business', Icon: BriefcaseBusiness },
+  { id: 'education', label: 'Education', Icon: GraduationCap },
+  { id: 'fitness', label: 'Physical education', Icon: Dumbbell },
+  { id: 'theater', label: 'Performing arts', Icon: Theater },
+  { id: 'engineering', label: 'Engineering', Icon: Wrench },
+  { id: 'economics', label: 'Economics', Icon: Coins },
+  { id: 'philosophy', label: 'Philosophy', Icon: Lightbulb },
+  { id: 'anthropology', label: 'Anthropology and culture', Icon: UsersRound },
+  { id: 'communication', label: 'Communication', Icon: Speech },
+  { id: 'astronomy', label: 'Astronomy', Icon: Telescope },
+  { id: 'architecture', label: 'Architecture', Icon: Building2 },
+  { id: 'public-health', label: 'Public health', Icon: HeartPulse },
+  { id: 'environment', label: 'Environmental science', Icon: Trees },
+  { id: 'government', label: 'Government', Icon: Gavel },
 ]
 const ICON_ALIASES: Record<string, string> = {
   '\u{1F4D8}': 'book',
@@ -87,7 +119,7 @@ const NOTE_TYPES: ClassNoteType[] = ['lecture', 'reading', 'lab', 'study-guide',
 const FILE_TYPES: ClassFileType[] = ['syllabus', 'lecture-slides', 'reading', 'study-guide', 'rubric', 'past-exam', 'lab-handout', 'link', 'other']
 const CONTACT_ROLES: ClassContactRole[] = ['professor', 'TA', 'advisor', 'study-partner', 'tutor', 'peer', 'other']
 const CLASS_TYPES: Array<{ value: ClassWorkspaceType; label: string; detail: string }> = [
-  { value: 'stem', label: 'STEM', detail: 'Topics and recall tools' },
+  { value: 'stem', label: 'STEM', detail: 'Topics and source-backed study work' },
   { value: 'writing', label: 'Writing', detail: 'Drafts, readings, feedback' },
   { value: 'general', label: 'General', detail: 'Grades and deadlines' },
 ]
@@ -96,10 +128,19 @@ const COLOR_STYLES: Record<AcademicTagColor, string> = {
   gray: 'from-slate-400/18 via-slate-200/18 to-slate-500/12 text-slate-700 dark:text-slate-200',
   brown: 'from-stone-500/20 via-amber-200/18 to-stone-400/14 text-stone-800 dark:text-stone-100',
   orange: 'from-orange-400/22 via-amber-200/18 to-orange-500/12 text-orange-800 dark:text-orange-100',
+  coral: 'from-[#ef8b75]/24 via-rose-100/18 to-[#db705f]/14 text-[#9b3f33] dark:text-[#ffc4b8]',
   yellow: 'from-yellow-300/24 via-amber-100/20 to-yellow-500/12 text-yellow-800 dark:text-yellow-100',
+  lime: 'from-lime-400/22 via-lime-100/16 to-lime-500/12 text-lime-800 dark:text-lime-100',
   green: 'from-emerald-400/22 via-lime-100/16 to-green-500/12 text-emerald-800 dark:text-emerald-100',
+  mint: 'from-[#6dcfac]/24 via-emerald-100/16 to-[#4cb18d]/14 text-[#176b54] dark:text-[#b5f4dc]',
+  teal: 'from-teal-400/22 via-cyan-100/16 to-teal-500/12 text-teal-800 dark:text-teal-100',
+  cyan: 'from-cyan-400/22 via-sky-100/16 to-cyan-500/12 text-cyan-800 dark:text-cyan-100',
+  sky: 'from-[#64c3ec]/24 via-sky-100/16 to-[#3da7d7]/14 text-[#17678d] dark:text-[#c2ecff]',
   blue: 'from-sky-400/22 via-blue-100/16 to-blue-500/12 text-sky-800 dark:text-sky-100',
+  navy: 'from-[#476b9e]/24 via-blue-100/14 to-[#304f7d]/16 text-[#29476e] dark:text-[#c5d7f0]',
+  indigo: 'from-indigo-400/22 via-indigo-100/16 to-indigo-500/12 text-indigo-800 dark:text-indigo-100',
   purple: 'from-violet-400/22 via-purple-100/16 to-violet-500/12 text-violet-800 dark:text-violet-100',
+  plum: 'from-[#b06ca9]/24 via-fuchsia-100/16 to-[#8b4f87]/14 text-[#71376d] dark:text-[#efc2ea]',
   pink: 'from-pink-400/22 via-rose-100/16 to-pink-500/12 text-pink-800 dark:text-pink-100',
   red: 'from-red-400/22 via-rose-100/16 to-red-500/12 text-red-800 dark:text-red-100',
 }
@@ -108,10 +149,19 @@ const PILL_STYLES: Record<AcademicTagColor, string> = {
   gray: 'bg-slate-500/12 text-slate-700 dark:text-slate-200',
   brown: 'bg-stone-500/12 text-stone-700 dark:text-stone-200',
   orange: 'bg-orange-500/12 text-orange-700 dark:text-orange-200',
+  coral: 'bg-[#ef8b75]/16 text-[#9b3f33] dark:text-[#ffc4b8]',
   yellow: 'bg-yellow-500/18 text-yellow-800 dark:text-yellow-100',
+  lime: 'bg-lime-500/16 text-lime-800 dark:text-lime-100',
   green: 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-200',
+  mint: 'bg-[#6dcfac]/16 text-[#176b54] dark:text-[#b5f4dc]',
+  teal: 'bg-teal-500/14 text-teal-700 dark:text-teal-200',
+  cyan: 'bg-cyan-500/14 text-cyan-800 dark:text-cyan-100',
+  sky: 'bg-[#64c3ec]/16 text-[#17678d] dark:text-[#c2ecff]',
   blue: 'bg-sky-500/12 text-sky-700 dark:text-sky-200',
+  navy: 'bg-[#476b9e]/16 text-[#29476e] dark:text-[#c5d7f0]',
+  indigo: 'bg-indigo-500/14 text-indigo-700 dark:text-indigo-200',
   purple: 'bg-violet-500/12 text-violet-700 dark:text-violet-200',
+  plum: 'bg-[#b06ca9]/16 text-[#71376d] dark:text-[#efc2ea]',
   pink: 'bg-pink-500/12 text-pink-700 dark:text-pink-200',
   red: 'bg-red-500/12 text-red-700 dark:text-red-200',
 }
@@ -121,8 +171,10 @@ const PILL_STYLES: Record<AcademicTagColor, string> = {
  *  so the literal _visual-recipes values apply rather than a Tailwind
  *  approximation of them. */
 const CARD_ACCENT_HEX: Record<AcademicTagColor, string> = {
-  gray: '#9aa3ad', brown: '#a38465', orange: '#df9b52', yellow: '#d5b768',
-  green: '#6fc0a8', blue: '#6fb3de', purple: '#a987ca', pink: '#c98ac9', red: '#e8806f',
+  gray: '#9aa3ad', brown: '#a38465', orange: '#df9b52', coral: '#e67d69', yellow: '#d5b768',
+  lime: '#98bd63', green: '#6fc0a8', mint: '#62c6a2', teal: '#54b5ad', cyan: '#58b9cf',
+  sky: '#65bfe7', blue: '#6fb3de', navy: '#506f9d', indigo: '#7f8fd3',
+  purple: '#a987ca', plum: '#aa6aa3', pink: '#c98ac9', red: '#e8806f',
 }
 
 /** Card accents stay deliberately restrained: the course colour identifies a
@@ -197,6 +249,69 @@ function emptyClassForm(semester = 'Fall 2026'): ClassFormState {
   }
 }
 
+/** Pull only attributable identity and meeting facts into the review sheet.
+ * The proposal remains the source of truth for syllabus records; these values
+ * are merely a convenient draft and can always be corrected before save. */
+function extractClassLocation(line?: string): string {
+  if (!line) return ''
+  // Prefer the complete named building plus room over the shorter `Room 121`
+  // suffix. A labeled fallback still handles forms such as `Location: Kenan B12`.
+  const locationText = line.replace(/^.*\b(?:AM|PM)\b\s*/i, '')
+  const namedLocations = [...locationText.matchAll(/\b((?:(?:Room|Rm\.?)\s*)?\d+[A-Za-z]?\s+)?([A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*)*\s+(?:Center|Hall|Building)(?:\s+(?:Room|Rm\.?)?\s*[A-Za-z]?\d+[A-Za-z]?)?)\b/g)]
+    .map((match) => `${match[1] ?? ''}${match[2]}`.trim())
+  // DOCX two-column headers are flattened into one line. When that happens,
+  // the instructor office appears first and the class location appears last.
+  if (/^\s*office\s*:/i.test(line)) return namedLocations.length > 1 ? namedLocations.at(-1) ?? '' : ''
+  return namedLocations[0]
+    ?? line.match(/(?:room|location)\s*[:\-]?\s*([\w -]{3,})/i)?.[1]?.trim()
+    ?? ''
+}
+
+function extractInstructor(logistics: string[]): string {
+  const line = logistics.find((candidate) => /(?:instructor|prof(?:essor)?)/i.test(candidate)) ?? ''
+  const remainder = line.match(/(?:instructor|prof(?:essor)?)\.?\s*[:\-]?\s*(.+)$/i)?.[1] ?? ''
+  return remainder
+    .split(/\s+(?=(?:[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|(?:office|student)\s+hours?|MWF|TR|TTH|T\s*(?:[\/&]|and)\s*TH|Mon(?:day)?|Tue(?:sday)?|Wed(?:nesday)?|Thu(?:rsday)?|Fri(?:day)?|\d{1,2}(?::\d{2})?\s*(?:AM|PM)\b))/i)[0]
+    .replace(/[\s,]+$/, '')
+    .trim()
+}
+
+function cleanCourseTitle(value?: string): string {
+  return (value ?? '')
+    .replace(/\s*[-–—|·]\s*(?:Fall|Spring|Summer|Winter)\s+20\d{2}\b.*$/i, '')
+    .replace(/\s*\((?:Fall|Spring|Summer|Winter)\s+20\d{2}\)\s*$/i, '')
+    .trim()
+}
+
+function extractCourseTerm(proposal: SyllabusProposal, fallback: string): string {
+  const match = `${proposal.items.find((item) => item.kind === 'identity')?.value ?? ''}\n${proposal.text}`
+    .match(/\b(Fall|Spring|Summer|Winter)\s+(20\d{2})\b/i)
+  if (!match) return fallback
+  return `${match[1][0].toUpperCase()}${match[1].slice(1).toLowerCase()} ${match[2]}`
+}
+
+export function classFormFromSyllabus(proposal: SyllabusProposal, semester: string): ClassFormState {
+  const identity = proposal.items.find((item) => item.kind === 'identity')
+  const logistics = proposal.items.filter((item) => item.kind === 'logistics').map((item) => item.label || item.evidence.quote)
+  const instructor = extractInstructor(logistics)
+  const scheduleLine = logistics.find((line) => Boolean(extractClassMeetingDays(line))) ?? ''
+  const rawScheduleLine = proposal.text.split(/\r?\n/).find((line) => Boolean(extractClassMeetingDays(line)) && Boolean(extractClassMeetingTime(line))) ?? ''
+  const meetingDays = extractClassMeetingDays(scheduleLine) || extractClassMeetingDays(rawScheduleLine)
+  const meetingTime = extractClassMeetingTime(scheduleLine) || extractClassMeetingTime(rawScheduleLine)
+  const locationLines = logistics.filter((line) => !isOfficeHoursLine(line) && /\b(?:room|location|hall|center|building)\b/i.test(line) && !/same location as class meetings/i.test(line))
+  const location = locationLines.map(extractClassLocation).find(Boolean) ?? ''
+  return {
+    ...emptyClassForm(semester),
+    semester: extractCourseTerm(proposal, semester),
+    courseCode: identity?.label ?? '',
+    courseTitle: cleanCourseTitle(identity?.value),
+    instructor,
+    meetingDays,
+    meetingTime,
+    location,
+  }
+}
+
 function classToForm(row: ClassWorkspaceView): ClassFormState {
   return {
     courseCode: row.courseCode,
@@ -253,9 +368,6 @@ function workspaceFields(form: ClassFormState): Omit<ClassWorkspace, 'id' | 'cou
   return { ...workspace, type: form.type, readingListState: form.readingListState ?? 'unknown' }
 }
 
-const reimportNormalized = (value: string | undefined) => (value ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
-const reimportAssignmentKey = (title: string, date?: string) => `${reimportNormalized(title)}|${reimportNormalized(date)}`
-
 /** Applies only a student's explicit review choices. The diff itself stays in
  * syllabusReimport.ts; these keys merely locate the records that it identified. */
 function applyAcceptedReimport(center: ClassCenterData, courseId: string, proposal: SyllabusProposal, decisions: ReimportDecision[], sourceFileId: string | undefined, now: number) {
@@ -265,37 +377,94 @@ function applyAcceptedReimport(center: ClassCenterData, courseId: string, propos
   const removed = new Set(accepted.filter((decision) => decision.row.status === 'removed').map((decision) => `${decision.row.kind}:${decision.row.key}`))
 
   // A removed syllabus line is preserved unless the student explicitly accepts its removal.
-  center.topics = center.topics.filter((item) => item.courseId !== courseId || !removed.has(`topic:${reimportNormalized(item.title)}`))
-  center.assignments = center.assignments.filter((item) => item.courseId !== courseId || !removed.has(`assignment:${reimportAssignmentKey(item.title, item.dueDate)}`))
-  center.gradeCategories = center.gradeCategories.filter((item) => item.courseId !== courseId || !removed.has(`category:${reimportNormalized(item.name)}`))
+  center.topics = center.topics.filter((item) => item.courseId !== courseId || !removed.has(`topic:${item.syllabusSourceKey ?? syllabusTopicSourceKey(item.title)}`))
+  center.assignments = center.assignments.filter((item) => item.courseId !== courseId || !removed.has(`assignment:${item.syllabusSourceKey ?? syllabusAssignmentSourceKey(item.title, item.dueDate)}`))
+  center.gradeCategories = center.gradeCategories.filter((item) => item.courseId !== courseId || !removed.has(`category:${item.syllabusSourceKey ?? syllabusCategorySourceKey(item.name)}`))
+  center.assignedReadings = center.assignedReadings.filter((item) => item.courseId !== courseId || !removed.has(`reading:${item.syllabusSourceKey ?? syllabusReadingSourceKey(item.title, item.week, item.dueForDiscussion)}`))
+  const workspace = center.workspaces.find((item) => item.courseId === courseId)
+  if (workspace?.syllabusSchedule) workspace.syllabusSchedule = workspace.syllabusSchedule.filter((item) => !removed.has(`schedule:${syllabusScheduleSourceKey(item.label, item.week, item.startDate)}`))
 
   proposal.items.filter((item) => item.kind === 'standards').forEach((item) => {
-    const key = reimportNormalized(item.label)
-    if (!wants('topic', key) || center.topics.some((topic) => topic.courseId === courseId && reimportNormalized(topic.title) === key)) return
-    center.topics.push({ id: uid(), courseId, title: item.label, unit: '', basis: 'syllabus-standard', status: 'not-started', fsrs: createTopicFsrsState(now), confidence: 3, sourceNoteIds: [], linkedFileIds: [], createdAt: now, updatedAt: now, order: center.topics.filter((topic) => topic.courseId === courseId).length })
+    const key = syllabusTopicSourceKey(item.label)
+    if (!wants('topic', key)) return
+    const existing = center.topics.find((topic) => topic.courseId === courseId && (topic.syllabusSourceKey ?? syllabusTopicSourceKey(topic.title)) === key)
+    if (existing) {
+      existing.title = item.label
+      existing.syllabusSourceKey = key
+      if (sourceFileId && !existing.linkedFileIds?.includes(sourceFileId)) existing.linkedFileIds = [...(existing.linkedFileIds ?? []), sourceFileId]
+      existing.updatedAt = now
+      return
+    }
+    center.topics.push({ id: uid(), courseId, title: item.label, syllabusSourceKey: key, unit: '', basis: 'syllabus-standard', status: 'not-started', fsrs: createTopicFsrsState(now), confidence: 3, sourceNoteIds: [], linkedFileIds: sourceFileId ? [sourceFileId] : [], createdAt: now, updatedAt: now, order: center.topics.filter((topic) => topic.courseId === courseId).length })
   })
   proposal.items.filter((item) => item.kind === 'exams' || item.kind === 'deadlines').forEach((item) => {
-    const key = reimportAssignmentKey(item.label, item.value)
-    if (!wants('assignment', key) || center.assignments.some((assignment) => assignment.courseId === courseId && reimportAssignmentKey(assignment.title, assignment.dueDate) === key)) return
-    center.assignments.push({ id: uid(), courseId, title: item.label, type: item.kind === 'exams' ? 'exam' : 'other', dueDate: item.value, status: 'not-started', linkedTopicIds: [], linkedFileIds: [], notes: `Source: ${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: center.assignments.filter((assignment) => assignment.courseId === courseId).length })
+    const key = syllabusAssignmentSourceKey(item.label, item.value)
+    if (!wants('assignment', key)) return
+    const existing = center.assignments.find((assignment) => assignment.courseId === courseId && (assignment.syllabusSourceKey ?? syllabusAssignmentSourceKey(assignment.title, assignment.dueDate)) === key)
+    if (existing) {
+      existing.title = item.label
+      existing.type = item.kind === 'exams' ? 'exam' : 'other'
+      existing.dueDate = item.value
+      existing.syllabusSourceKey = key
+      if (sourceFileId && !existing.linkedFileIds.includes(sourceFileId)) existing.linkedFileIds.push(sourceFileId)
+      existing.notes = `Source: ${item.evidence.location} — “${item.evidence.quote}”`
+      existing.updatedAt = now
+      return
+    }
+    center.assignments.push({ id: uid(), courseId, title: item.label, syllabusSourceKey: key, type: item.kind === 'exams' ? 'exam' : 'other', dueDate: item.value, status: 'not-started', linkedTopicIds: [], linkedFileIds: sourceFileId ? [sourceFileId] : [], notes: `Source: ${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: center.assignments.filter((assignment) => assignment.courseId === courseId).length })
   })
   proposal.items.filter((item) => item.kind === 'weights').forEach((item) => {
-    const key = reimportNormalized(item.label)
-    const category = center.gradeCategories.find((candidate) => candidate.courseId === courseId && reimportNormalized(candidate.name) === key)
+    const key = syllabusCategorySourceKey(item.label)
+    const category = center.gradeCategories.find((candidate) => candidate.courseId === courseId && (candidate.syllabusSourceKey ?? syllabusCategorySourceKey(candidate.name)) === key)
     if (category && wants('category', key)) {
+      category.name = item.label
       category.weight = Number(item.value?.replace('%', '')) || 0
+      category.syllabusSourceKey = key
       category.source = `${item.evidence.location} — “${item.evidence.quote}”`
       category.updatedAt = now
     } else if (!category && wants('category', key)) {
-      center.gradeCategories.push({ id: uid(), courseId, name: item.label || 'Untitled category', weight: Number(item.value?.replace('%', '')) || 0, source: `${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: center.gradeCategories.filter((candidate) => candidate.courseId === courseId).length })
+      center.gradeCategories.push({ id: uid(), courseId, name: item.label || 'Untitled category', syllabusSourceKey: key, weight: Number(item.value?.replace('%', '')) || 0, source: `${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: center.gradeCategories.filter((candidate) => candidate.courseId === courseId).length })
     }
   })
+  proposal.items.filter((item) => item.kind === 'readings').forEach((item) => {
+    const week = item.context ?? 'Unscheduled'
+    const key = syllabusReadingSourceKey(item.label, week, item.value)
+    if (!wants('reading', key)) return
+    const existing = center.assignedReadings.find((reading) => reading.courseId === courseId && (reading.syllabusSourceKey ?? syllabusReadingSourceKey(reading.title, reading.week, reading.dueForDiscussion)) === key)
+    if (existing) {
+      existing.title = item.label
+      existing.week = week
+      existing.dueForDiscussion = item.value
+      existing.syllabusSourceKey = key
+      existing.source = `${item.evidence.location} — “${item.evidence.quote}”`
+      existing.updatedAt = now
+      return
+    }
+    center.assignedReadings.push({ id: uid(), courseId, week, title: item.label, syllabusSourceKey: key, source: `${item.evidence.location} — “${item.evidence.quote}”`, status: 'not-started', dueForDiscussion: item.value, createdAt: now, updatedAt: now, order: center.assignedReadings.filter((reading) => reading.courseId === courseId).length })
+  })
+  proposal.items.filter((item) => item.kind === 'units').forEach((item) => {
+    if (!workspace) return
+    const week = item.context ?? 'Unscheduled'
+    const key = syllabusScheduleSourceKey(item.label, week, item.value)
+    if (!wants('schedule', key)) return
+    const existing = workspace.syllabusSchedule?.find((entry) => syllabusScheduleSourceKey(entry.label, entry.week, entry.startDate) === key)
+    if (existing) {
+      Object.assign(existing, { week, label: item.label, startDate: item.value, source: `${item.evidence.location} — “${item.evidence.quote}”` })
+      return
+    }
+    workspace.syllabusSchedule = [...(workspace.syllabusSchedule ?? []), { id: uid(), week, label: item.label, startDate: item.value, source: `${item.evidence.location} — “${item.evidence.quote}”`, order: workspace.syllabusSchedule?.length ?? 0 }]
+  })
   const confirmedItems = proposal.items.filter((item) => {
-    if (item.kind === 'units') return wants('topic', reimportNormalized(item.label))
-    if (item.kind === 'exams' || item.kind === 'deadlines') return wants('assignment', reimportAssignmentKey(item.label, item.value))
-    if (item.kind === 'weights') return wants('category', reimportNormalized(item.label))
+    if (item.kind === 'standards') return wants('topic', syllabusTopicSourceKey(item.label))
+    if (item.kind === 'exams' || item.kind === 'deadlines') return wants('assignment', syllabusAssignmentSourceKey(item.label, item.value))
+    if (item.kind === 'weights') return wants('category', syllabusCategorySourceKey(item.label))
+    if (item.kind === 'readings') return wants('reading', syllabusReadingSourceKey(item.label, item.context, item.value))
+    if (item.kind === 'units') return wants('schedule', syllabusScheduleSourceKey(item.label, item.context, item.value))
     return false
   })
+  if (proposal.items.some((item) => item.kind === 'readings') && center.assignedReadings.some((item) => item.courseId === courseId)) {
+    if (workspace) workspace.readingListState = 'complete'
+  }
   persistConfirmedSyllabusEvidence(center, courseId, sourceFileId, confirmedItems, now)
 }
 
@@ -402,12 +571,14 @@ function ClassCenterDashboard({
   const activeTerm = currentTerm || inferAcademicTerm()
   const [semester, setSemester] = useState(archiveOnly ? 'Archived' : activeTerm)
   const [query, setQuery] = useState('')
-  const [peekCourseId, setPeekCourseId] = useState<string | null>(null)
-  const [peekMode, setPeekMode] = useState<RecordOpenMode>('peek')
-  const [editor, setEditor] = useState<{ open: boolean; courseId?: string; form: ClassFormState }>({
+  const [previewCourseId, setPreviewCourseId] = useState<string | null>(null)
+  const [previewMode, setPreviewMode] = useState<RecordOpenMode>('peek')
+  const [editor, setEditor] = useState<{ open: boolean; courseId?: string; form: ClassFormState; source?: 'manual' | 'syllabus' }>({
     open: false,
     form: emptyClassForm(),
   })
+  const [syllabusDraft, setSyllabusDraft] = useState<{ proposal: SyllabusProposal; files: File[] } | null>(null)
+  const [syllabusReviewForm, setSyllabusReviewForm] = useState<(ClassFormState & { type: ClassWorkspaceType }) | null>(null)
   const [syllabusImportOpen, setSyllabusImportOpen] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   const view = searchParams.get('classView') === 'list' ? 'list' : 'cards'
@@ -419,6 +590,11 @@ function ClassCenterDashboard({
   }
   const scopedCourseId = searchParams.get('importFor')
   const scopedCourse = scopedCourseId ? courses.find((course) => course.id === scopedCourseId) : undefined
+  useEffect(() => {
+    if (scopedCourseId !== 'new') return
+    setSyllabusDraft(null)
+    setSyllabusImportOpen(true)
+  }, [scopedCourseId])
   /** A second import into a class that ALREADY holds syllabus-derived records is
    *  a re-import, whether or not the URL says so.
    *
@@ -470,6 +646,12 @@ function ClassCenterDashboard({
       return { file, id, blobRef: await retainLocalSyllabus(file, id) }
     }))
     const syllabusFileId = replaceSyllabusFileId ?? retained[0]?.id
+    const sourceFileIdForItem = (item: SyllabusProposal['items'][number]) =>
+      retained.find(({ file }) => file.name === item.evidence.sourceName)?.id ?? syllabusFileId
+    const linkedFileIdsForItem = (item: SyllabusProposal['items'][number]) => {
+      const fileId = sourceFileIdForItem(item)
+      return fileId ? [fileId] : []
+    }
     updateAll((draft) => {
       if (!existingCourseId) draft.courses.push({
         id: courseId, code: form.courseCode.trim() || 'NEW 101', title: form.courseTitle.trim() || 'Untitled class',
@@ -489,32 +671,50 @@ function ClassCenterDashboard({
       if (proposal && existingCourseId && reimportDecisions) {
         applyAcceptedReimport(center, courseId, proposal, reimportDecisions, syllabusFileId, now)
       } else if (proposal) {
-        persistConfirmedSyllabusEvidence(center, courseId, syllabusFileId, proposal.items, now)
+        const evidenceByFile = new Map<string, SyllabusProposal['items']>()
+        proposal.items.forEach((item) => {
+          const fileId = sourceFileIdForItem(item)
+          if (!fileId) return
+          evidenceByFile.set(fileId, [...(evidenceByFile.get(fileId) ?? []), item])
+        })
+        evidenceByFile.forEach((items, fileId) => persistConfirmedSyllabusEvidence(center, courseId, fileId, items, now))
         proposal.items.filter((item) => item.kind === 'standards').forEach((item, index) => center.topics.push({
-          id: uid(), courseId, title: item.label, unit: '', basis: 'syllabus-standard', status: 'not-started', fsrs: createTopicFsrsState(), confidence: 3, sourceNoteIds: [], linkedFileIds: [], createdAt: now, updatedAt: now, order: index,
+          id: uid(), courseId, title: item.label, syllabusSourceKey: syllabusTopicSourceKey(item.label), unit: '', basis: 'syllabus-standard', status: 'not-started', fsrs: createTopicFsrsState(), confidence: 3, sourceNoteIds: [], linkedFileIds: linkedFileIdsForItem(item), createdAt: now, updatedAt: now, order: index,
         }))
         proposal.items.filter((item) => item.kind === 'exams' || item.kind === 'deadlines').forEach((item, index) => center.assignments.push({
-          id: uid(), courseId, title: item.label, type: item.kind === 'exams' ? 'exam' : 'other', dueDate: item.value, status: 'not-started', linkedTopicIds: [], linkedFileIds: [], notes: `Source: ${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: index,
+          id: uid(), courseId, title: item.label, syllabusSourceKey: syllabusAssignmentSourceKey(item.label, item.value), type: item.kind === 'exams' ? 'exam' : 'other', dueDate: item.value, status: 'not-started', linkedTopicIds: [], linkedFileIds: linkedFileIdsForItem(item), notes: `Source: ${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: index,
         }))
         proposal.items.filter((item) => item.kind === 'weights').forEach((item, index) => center.gradeCategories.push({
-          id: uid(), courseId, name: item.label || 'Untitled category', weight: Number(item.value?.replace('%', '')) || 0,
+          id: uid(), courseId, name: item.label || 'Untitled category', syllabusSourceKey: syllabusCategorySourceKey(item.label), weight: Number(item.value?.replace('%', '')) || 0,
           source: `${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: index,
         }))
+        proposal.items.filter((item) => item.kind === 'readings').forEach((item, index) => center.assignedReadings.push({
+          id: uid(), courseId, week: item.context ?? 'Unscheduled', title: item.label,
+          syllabusSourceKey: syllabusReadingSourceKey(item.label, item.context, item.value),
+          source: `${item.evidence.location} — “${item.evidence.quote}”`, status: 'not-started', dueForDiscussion: item.value,
+          createdAt: now, updatedAt: now, order: index,
+        }))
         const workspace = center.workspaces.find((item) => item.courseId === courseId)
+        if (workspace) workspace.syllabusSchedule = proposal.items.filter((item) => item.kind === 'units').map((item, index) => ({
+          id: uid(), week: item.context ?? 'Unscheduled', label: item.label, startDate: item.value,
+          source: `${item.evidence.location} — “${item.evidence.quote}”`, order: index,
+        }))
+        if (workspace && proposal.items.some((item) => item.kind === 'readings')) workspace.readingListState = 'complete'
         // Preserve document order and prefer the first credible header fact.
         // Later exam prose can say "same location as class meetings" without
         // supplying the class location.
         const logistics = proposal.items.filter((item) => item.kind === 'logistics').map((item) => item.label || item.evidence.quote)
-        const logisticsText = logistics.join(' ')
+        const classLogistics = logistics.filter((line) => !isOfficeHoursLine(line))
+        const logisticsText = classLogistics.join(' ')
         if (workspace && logisticsText) {
-          if (!workspace.instructor) workspace.instructor = logisticsText.match(/(?:instructor|prof(?:essor)?)\s*[:\-]?\s*([A-Z][\w.' -]+)/i)?.[1]?.trim() ?? workspace.instructor
-          if (!workspace.meetingDays) workspace.meetingDays = logisticsText.match(/\b(?:MWF|TR|TTH|Mon(?:day)?(?:\s*\/\s*Wed(?:nesday)?(?:\s*\/\s*Fri(?:day)?)?)?|Tue(?:sday)?(?:\s*\/\s*Thu(?:rsday)?)?)\b/i)?.[0] ?? workspace.meetingDays
-          if (!workspace.meetingTime) workspace.meetingTime = logisticsText.match(/\b\d{1,2}(?::\d{2})?\s*(?:AM|PM)\s*(?:[-–]\s*\d{1,2}(?::\d{2})?\s*(?:AM|PM))?/i)?.[0] ?? workspace.meetingTime
+          if (!workspace.instructor) {
+            workspace.instructor = extractInstructor(logistics) || workspace.instructor
+          }
+          if (!workspace.meetingDays) workspace.meetingDays = extractClassMeetingDays(logisticsText) || workspace.meetingDays
+          if (!workspace.meetingTime) workspace.meetingTime = extractClassMeetingTime(logisticsText) || workspace.meetingTime
           if (!workspace.location) {
-            const locationLine = logistics.find((line) => /\b(?:room|location|hall|center|building)\b/i.test(line) && !/same location as class meetings/i.test(line))
-            workspace.location = locationLine?.match(/(?:room|location)\s*[:\-]?\s*([\w -]{3,})/i)?.[1]?.trim()
-              ?? locationLine?.match(/\b([A-Z][\w ]+(?:Center|Hall|Building|Room|Rm\.?)(?:\s*(?:Room|Rm\.?)?\s*\d+[A-Za-z]?)?)\b/)?.[1]?.trim()
-              ?? workspace.location
+            const locationLine = classLogistics.find((line) => /\b(?:room|location|hall|center|building)\b/i.test(line) && !/same location as class meetings/i.test(line))
+            workspace.location = extractClassLocation(locationLine) || workspace.location
           }
         }
       }
@@ -559,19 +759,21 @@ function ClassCenterDashboard({
     navigate(`/academics/classes/${courseId}?classTab=materials`)
   }
 
-  // §4.1-M-a: import is a temporary FULL-SCREEN flow, not a permanent surface.
-  // It replaces the Class Center view while active, the same way ExamPrepMode
-  // replaces the Class Hub view — it is not a dialog over the top of it.
-  function exitImport() {
-    setSyllabusImportOpen(false)
-    if (scopedCourse) {
-      const next = new URLSearchParams(searchParams)
-      next.delete('importFor'); next.delete('reimport'); next.delete('reimportFile')
-      setSearchParams(next, { replace: true })
-    }
+  // §4.1-M-a: scoped re-import remains a temporary full-screen review flow.
+  // The cold Add class path uses the focused import dialog below, then hands
+  // off to the editable class-details sheet before anything is saved.
+  function clearImportRoute() {
+    const next = new URLSearchParams(searchParams)
+    next.delete('importFor'); next.delete('reimport'); next.delete('reimportFile')
+    setSearchParams(next, { replace: true })
   }
 
-  if (syllabusImportOpen || scopedCourse) {
+  function exitImport() {
+    setSyllabusImportOpen(false)
+    if (scopedCourseId) clearImportRoute()
+  }
+
+  if (scopedCourse) {
     return <SyllabusImportMode
       semester={semester}
       scopedCourse={scopedCourse}
@@ -581,6 +783,8 @@ function ClassCenterDashboard({
         topics: data.topics.filter((item) => item.courseId === scopedCourse?.id),
         assignments: data.assignments.filter((item) => item.courseId === scopedCourse?.id),
         categories: data.gradeCategories.filter((item) => item.courseId === scopedCourse?.id),
+        readings: data.assignedReadings.filter((item) => item.courseId === scopedCourse?.id),
+        schedule: data.workspaces.find((item) => item.courseId === scopedCourse?.id)?.syllabusSchedule ?? [],
       }}
       onExit={exitImport}
       onImport={(form, files, proposal, courseId, decisions, replaceFileId) => importSyllabus(
@@ -594,67 +798,163 @@ function ClassCenterDashboard({
     />
   }
 
+  function openColdSyllabusImport() {
+    setSyllabusDraft(null)
+    setSyllabusReviewForm(null)
+    setSyllabusImportOpen(true)
+  }
+
+  function handleColdSyllabusParsed(proposal: SyllabusProposal, files: File[]) {
+    setSyllabusDraft({ proposal, files })
+    setSyllabusImportOpen(false)
+    setEditor({ open: true, source: 'syllabus', form: classFormFromSyllabus(proposal, semester) })
+  }
+
+  function stageImportedClassReview(type: ClassWorkspaceType) {
+    if (!syllabusDraft) return
+    setSyllabusReviewForm({ ...editor.form, type })
+    setEditor((current) => ({ ...current, open: false }))
+  }
+
+  async function finishImportedClass(
+    reviewedClass: { courseCode: string; courseTitle: string; semester: string },
+    files: File[],
+    proposal?: SyllabusProposal,
+  ) {
+    if (!syllabusReviewForm || !proposal) return
+    await importSyllabus({ ...syllabusReviewForm, ...reviewedClass }, files, proposal)
+    setSyllabusDraft(null)
+    setSyllabusReviewForm(null)
+    setEditor({ open: false, form: emptyClassForm(semester) })
+    if (scopedCourseId === 'new') clearImportRoute()
+  }
+
+  function backToImportedClassDetails(reviewedProposal: SyllabusProposal) {
+    if (!syllabusDraft || !syllabusReviewForm) return
+    const form = syllabusReviewForm
+    setSyllabusDraft({ ...syllabusDraft, proposal: reviewedProposal })
+    setSyllabusReviewForm(null)
+    setEditor({ open: true, source: 'syllabus', form })
+  }
+
+  function backToColdImport() {
+    setEditor((current) => ({ ...current, open: false }))
+    setSyllabusDraft(null)
+    setSyllabusReviewForm(null)
+    setSyllabusImportOpen(true)
+  }
+
+  if (syllabusReviewForm && syllabusDraft) {
+    return (
+      <SyllabusImportMode
+        semester={syllabusReviewForm.semester}
+        initialProposal={syllabusDraft.proposal}
+        initialFiles={syllabusDraft.files}
+        initialCourse={{
+          courseCode: syllabusReviewForm.courseCode,
+          courseTitle: syllabusReviewForm.courseTitle,
+          semester: syllabusReviewForm.semester,
+          type: syllabusReviewForm.type,
+        }}
+        onBackFromReview={backToImportedClassDetails}
+        onExit={() => {
+          setSyllabusDraft(null)
+          setSyllabusReviewForm(null)
+          if (scopedCourseId === 'new') clearImportRoute()
+        }}
+        onImport={finishImportedClass}
+      />
+    )
+  }
+
   if (!archiveOnly && activeClasses.length === 0) {
     return (
       <>
-        <div className="mx-auto w-full min-w-0 max-w-5xl py-8 sm:py-12">
-          <MascotNote variant="empty-state" className="w-full max-w-full min-w-0 overflow-hidden min-h-[300px] flex-col justify-center px-6 py-10 text-center sm:px-12" title="Bring in your first class">
-            <p className="mx-auto w-full max-w-[17rem] break-words sm:max-w-xl">Start with the syllabus you already have. You’ll review the class details before anything is saved.</p>
-            <div className="mt-5 flex flex-col items-center">
-              <Button size="lg" className="syllabus-import-breathe" onClick={() => setSyllabusImportOpen(true)}><Upload className="size-4" /> Import syllabus</Button>
-              <button type="button" onClick={() => setEditor({ open: true, form: emptyClassForm(semester) })} className="mt-3 text-sm font-bold text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline">Add manually</button>
+        <div className="academics-empty-wrap">
+          <div className="academics-empty-card">
+            {/*
+              Literal port of academics-empty-states-prototype.html Variant A.
+              Keep the cold-start workspace as one composed card: a centered
+              syllabus action, then the concrete records the import will set up.
+              The dialog/detail handoff remains owned by SyllabusImportDialog
+              and ClassEditorDialog; this surface only starts that flow.
+            */}
+            <div className="academics-empty-primary" role="note" aria-label="Start with a syllabus">
+              <img
+                className="academics-empty-mascot"
+                src="/mascot.png"
+                alt=""
+                aria-hidden="true"
+              />
+              <div>
+                <p className="academics-empty-title">Start with a syllabus</p>
+                <p className="academics-empty-copy">Import it, review the extracted details, then add the class.</p>
+              </div>
+              <div className="academics-empty-actions">
+                <Button className="academics-empty-primary-action" onClick={openColdSyllabusImport}>
+                  <Upload className="size-4" /> Import a syllabus
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setEditor({ open: true, source: 'manual', form: emptyClassForm(semester) })}
+                  className="academics-empty-manual"
+                >
+                  Add manually
+                </button>
+              </div>
             </div>
-          </MascotNote>
-          {/*
-            Visual source: academics-empty-states-prototype.html · Variant A's
-            `.setup-guide`, carrying Variant B's copy — the composition this
-            surface's decision record approves. Values are the mockup's own
-            rules (31px icon, 14px row padding, 11px radius, 13px/11px type).
-
-            This replaces a numbered "Review before saving / Keep work in one
-            place / Change it any time" strip that appeared in no variant and
-            shipped in cb963a3 under a `built` flag. It described the product's
-            posture; the approved panel says what the import will populate.
-          */}
-          <section aria-label="What this sets up" className="mt-5 rounded-2xl border border-border bg-gradient-to-b from-[color-mix(in_srgb,var(--primary)_5%,var(--card))] to-card px-[22px] pb-5 pt-[19px] text-left">
-            <div className="pb-[13px]">
-              <p className="font-display text-[16.5px] font-extrabold">What this sets up</p>
-              <p className="text-[11.5px] font-bold text-muted-foreground">one import, then you stay in control</p>
-            </div>
-            <div className="flex flex-col gap-2.5">
-              {([
-                [NotebookText, 'Class details', 'Course, instructor, meetings, office hours.'],
-                [CalendarDays, 'Dates and deadlines', 'Exams, assignments, readings, and due dates.'],
-                [BarChart3, 'Grade structure', 'Categories and weights, checked to total 100%.'],
-              ] as const).map(([Icon, title, detail]) => (
-                <div key={title} className="grid grid-cols-[31px_1fr] items-start gap-2.5 rounded-[11px] border border-border bg-muted p-3.5">
-                  <span className="grid size-[31px] place-items-center rounded-lg bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] text-primary">
-                    <Icon className="size-3.5" aria-hidden="true" />
-                  </span>
-                  <div>
-                    <p className="font-display text-[13px] font-extrabold">{title}</p>
-                    <p className="mt-px text-[11px] font-semibold leading-[1.4] text-muted-foreground">{detail}</p>
+            <section aria-label="What this sets up" className="academics-empty-setup">
+              <div className="academics-empty-setup-header">
+                <p className="academics-empty-setup-title">What this sets up</p>
+                <p className="academics-empty-setup-subtitle">one import, then you stay in control</p>
+              </div>
+              <div className="academics-empty-setup-list">
+                {([
+                  [NotebookText, 'Class details', 'Course, instructor, meetings, office hours.'],
+                  [CalendarDays, 'Dates and deadlines', 'Exams, assignments, readings, and due dates.'],
+                  [BarChart3, 'Grade structure', 'Categories and weights, checked to total 100%.'],
+                ] as const).map(([Icon, title, detail]) => (
+                  <div key={title} className="academics-empty-setup-row">
+                    <span className="academics-empty-setup-icon">
+                      <Icon className="size-3.5" aria-hidden="true" />
+                    </span>
+                    <div>
+                      <p className="academics-empty-setup-row-title">{title}</p>
+                      <p className="academics-empty-setup-row-detail">{detail}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-            {/* The one place this surface says what happens when extraction
-                half-works. Dropped in cb963a3; restored here. */}
-            <p className="mt-[15px] border-t border-border pt-[14px] text-[11px] font-semibold text-muted-foreground">
-              If part of the syllabus can’t be read, we keep what worked and show exactly what needs manual entry.
-            </p>
-          </section>
+                ))}
+              </div>
+              <p className="academics-empty-honest">
+                If part of the syllabus can’t be read, we keep what worked and show exactly what needs manual entry.
+              </p>
+            </section>
+          </div>
         </div>
         <ClassEditorDialog
           key={editor.open ? 'create-open' : 'create-closed'}
           open={editor.open}
-          title="Create class"
+          title={editor.source === 'syllabus' ? 'Review class details' : 'Create class'}
           isCreate
           form={editor.form}
-          onOpenChange={(open) => setEditor((prev) => ({ ...prev, open }))}
+          syllabusProposal={editor.source === 'syllabus' ? syllabusDraft?.proposal : undefined}
+          confirmLabel={editor.source === 'syllabus' ? 'Review syllabus records' : undefined}
+          onOpenChange={(open) => {
+            setEditor((prev) => ({ ...prev, open }))
+            if (!open && editor.source === 'syllabus') { setSyllabusDraft(null); setSyllabusReviewForm(null) }
+            if (!open && scopedCourseId === 'new') clearImportRoute()
+          }}
           onChange={(patch) => setEditor((prev) => ({ ...prev, form: { ...prev.form, ...patch } }))}
-          onSave={(type) => saveClass(type)}
-          onSaveAndImport={(type) => saveClass(type, true)}
+          onSave={(type) => editor.source === 'syllabus' ? stageImportedClassReview(type) : saveClass(type)}
+          onSaveAndImport={editor.source === 'syllabus' ? undefined : (type) => saveClass(type, true)}
+          onBackToImport={editor.source === 'syllabus' ? backToColdImport : undefined}
+        />
+        <SyllabusImportDialog
+          open={syllabusImportOpen}
+          semester={semester}
+          onOpenChange={(open) => { setSyllabusImportOpen(open); if (!open && scopedCourseId === 'new') clearImportRoute() }}
+          onParsed={handleColdSyllabusParsed}
+          onManual={() => { setSyllabusImportOpen(false); setSyllabusDraft(null); setEditor({ open: true, source: 'manual', form: emptyClassForm(semester) }) }}
         />
       </>
     )
@@ -702,6 +1002,7 @@ function ClassCenterDashboard({
       }
     })
     setEditor({ open: false, form: emptyClassForm(semester === 'Archived' || semester === 'All active' ? 'Fall 2026' : semester) })
+    if (scopedCourseId === 'new' && !openImportAfterCreate) clearImportRoute()
     if (openImportAfterCreate && createdCourseId) {
       const next = new URLSearchParams(searchParams)
       next.set('importFor', createdCourseId)
@@ -761,7 +1062,14 @@ function ClassCenterDashboard({
             <CardTitle>{archiveOnly ? 'Archived classes' : 'Your classes'}</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">{semester}</p>
           </div>
-          {!archiveOnly && <Badge variant="outline">{filtered.length} active</Badge>}
+          {!archiveOnly && (
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{filtered.length} active</Badge>
+              <Button size="sm" onClick={openColdSyllabusImport}>
+                <Plus className="size-4" /> Add class
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className={cn(view === 'cards'
@@ -775,8 +1083,8 @@ function ClassCenterDashboard({
                 compact={view === 'list'}
                 dragging={draggedClassId === row.id}
                 dragOver={dragOverClassId === row.id && draggedClassId !== row.id}
-                onOpen={() => setPeekCourseId(row.id)}
-                onReview={() => setPeekCourseId(row.id)}
+                onPreview={() => setPreviewCourseId(row.id)}
+                onOpen={() => navigate(`/academics/classes/${row.id}`)}
                 onDragStart={(event) => {
                   event.dataTransfer.effectAllowed = 'move'
                   event.dataTransfer.setData('text/plain', row.id)
@@ -827,22 +1135,6 @@ function ClassCenterDashboard({
                 })}
               />
             ))}
-            {!archiveOnly && !hasSearch && (
-              <button
-                onClick={() => setEditor({ open: true, form: emptyClassForm(semester) })}
-                className={cn(
-                  'flex h-full min-h-44 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-5 text-center transition duration-200 hover:-translate-y-0.5 hover:border-primary/55 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
-                  view === 'cards' && 'min-h-0',
-                  view === 'list' && 'min-h-20 flex-row gap-3',
-                )}
-              >
-                <Plus className="size-6 text-muted-foreground" />
-                <span>
-                  <span className="block font-display text-lg font-bold">Add class</span>
-                  <span className="text-sm font-semibold text-muted-foreground">from your course plan or start blank</span>
-                </span>
-              </button>
-            )}
           </div>
           {!filtered.length && (
             <div className="py-10 text-center">
@@ -861,60 +1153,80 @@ function ClassCenterDashboard({
           classes={activeClasses}
           persons={persons}
           courses={courses}
-          onOpenClass={setPeekCourseId}
+          onOpenClass={(courseId) => navigate(`/academics/classes/${courseId}`)}
+          onOpenExamPlan={(courseId, assignmentId) => navigate(`/academics/classes/${courseId}?classTab=overview&examPrep=${assignmentId}`)}
         />
       )}
 
       <ClassEditorDialog
         key={`${editor.courseId ?? 'create'}-${editor.open ? 'open' : 'closed'}`}
         open={editor.open}
-        title={editor.courseId ? 'Edit class' : 'Create class'}
+        title={editor.courseId ? 'Edit class' : editor.source === 'syllabus' ? 'Review class details' : 'Create class'}
         isCreate={!editor.courseId}
         form={editor.form}
-        onOpenChange={(open) => setEditor((prev) => ({ ...prev, open }))}
+        syllabusProposal={editor.source === 'syllabus' ? syllabusDraft?.proposal : undefined}
+        confirmLabel={editor.source === 'syllabus' ? 'Review syllabus records' : undefined}
+        onOpenChange={(open) => {
+          setEditor((prev) => ({ ...prev, open }))
+          if (!open && editor.source === 'syllabus') { setSyllabusDraft(null); setSyllabusReviewForm(null) }
+          if (!open && scopedCourseId === 'new') clearImportRoute()
+        }}
         onChange={(patch) => setEditor((prev) => ({ ...prev, form: { ...prev.form, ...patch } }))}
-        onSave={(type) => saveClass(type)}
-        onSaveAndImport={editor.courseId ? undefined : (type) => saveClass(type, true)}
+        onSave={(type) => editor.source === 'syllabus' ? stageImportedClassReview(type) : saveClass(type)}
+        onSaveAndImport={editor.courseId || editor.source === 'syllabus' ? undefined : (type) => saveClass(type, true)}
+        onBackToImport={editor.source === 'syllabus' ? backToColdImport : undefined}
+      />
+
+      <SyllabusImportDialog
+        open={syllabusImportOpen}
+        semester={semester}
+        onOpenChange={(open) => { setSyllabusImportOpen(open); if (!open && scopedCourseId === 'new') clearImportRoute() }}
+        onParsed={handleColdSyllabusParsed}
+        onManual={() => { setSyllabusImportOpen(false); setSyllabusDraft(null); setEditor({ open: true, source: 'manual', form: emptyClassForm(semester) }) }}
       />
 
       <CenterPeek
-        open={Boolean(peekCourseId)}
-        mode={peekMode}
-        label={data.classes.find((row) => row.id === peekCourseId)?.courseCode ?? 'Class preview'}
-        onOpenChange={(open) => !open && setPeekCourseId(null)}
-        onModeChange={(mode) => {
-          if (mode === 'expanded' && peekCourseId) {
-            setPeekCourseId(null)
-            navigate(`/academics/classes/${peekCourseId}`)
-            return
+        open={Boolean(previewCourseId)}
+        mode={previewMode}
+        label={`${data.classes.find((row) => row.id === previewCourseId)?.courseCode ?? 'Class'} preview`}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreviewCourseId(null)
+            setPreviewMode('peek')
           }
-          setPeekMode(mode)
+        }}
+        onModeChange={setPreviewMode}
+        onExpand={() => {
+          if (!previewCourseId) return
+          const courseId = previewCourseId
+          setPreviewCourseId(null)
+          setPreviewMode('peek')
+          navigate(`/academics/classes/${courseId}`)
         }}
       >
         {(() => {
-          const row = data.classes.find((item) => item.id === peekCourseId)
-          const course = courses.find((item) => item.id === peekCourseId)
-          if (!row || !course) return null
+          const row = data.classes.find((item) => item.id === previewCourseId)
+          if (!row) return null
           return (
-            <ClassHubPeek
-              course={course}
-              workspace={row}
+            <ClassPreview
+              row={row}
               data={data}
-              split={peekMode === 'split'}
               onOpen={() => {
-                setPeekCourseId(null)
+                setPreviewCourseId(null)
+                setPreviewMode('peek')
                 navigate(`/academics/classes/${row.id}`)
               }}
             />
           )
         })()}
       </CenterPeek>
+
     </div>
   )
 }
 
 export function ClassCard({
-  row, data, compact, dragging, dragOver, onOpen, onReview,
+  row, data, compact, dragging, dragOver, onPreview, onOpen,
   onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd, onEdit, onImport, onArchive, onDelete,
 }: {
   row: ClassWorkspaceView
@@ -922,8 +1234,8 @@ export function ClassCard({
   compact: boolean
   dragging: boolean
   dragOver: boolean
+  onPreview: () => void
   onOpen: () => void
-  onReview: () => void
   onDragStart: (event: DragEvent<HTMLElement>) => void
   onDragOver: (event: DragEvent<HTMLElement>) => void
   onDragLeave: () => void
@@ -944,7 +1256,7 @@ export function ClassCard({
 
   function openFromCard(event: MouseEvent<HTMLElement>) {
     if ((event.target as HTMLElement).closest('button,a,[role="menuitem"]')) return
-    onOpen()
+    onPreview()
   }
 
   const card = (
@@ -958,7 +1270,7 @@ export function ClassCard({
         if ((event.target as HTMLElement).closest('button,a,[role="menuitem"]')) return
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
-          onOpen()
+          onPreview()
         }
       }}
       onDragStart={onDragStart}
@@ -1000,7 +1312,7 @@ export function ClassCard({
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          {stats.weakCount > 0 && <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="warning">{stats.weakCount} review notes</Badge>}
+          {stats.materialCount > 0 && <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="secondary">{stats.materialCount} materials</Badge>}
           {stats.processingCount > 0 && (
             <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="muted" aria-live="polite">
               <Loader2 className="size-3 animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -1022,10 +1334,10 @@ export function ClassCard({
           </p>
           {stats.topicCount > 0 && (
             <Progress
-              value={(stats.readyCount / stats.topicCount) * 100}
+              value={(stats.coveredCount / stats.topicCount) * 100}
               className="h-[5px] border-0 bg-background/80"
               indicatorClassName="bg-[var(--class-accent)]"
-              aria-label={`${stats.readyCount} of ${stats.topicCount} topics ready`}
+              aria-label={`${stats.coveredCount} of ${stats.topicCount} topics have linked material`}
             />
           )}
         </div>
@@ -1036,24 +1348,19 @@ export function ClassCard({
             <span className={cn('hidden font-display font-extrabold text-[var(--class-accent)]', !actionHovered && 'group-hover/class:inline')}>Open class hub →</span>
           </p>
           <div
-            className={cn(
-              'mt-2 items-center justify-end gap-2',
-              compact
-                ? 'flex'
-                : 'flex invisible pointer-events-none opacity-0 group-focus-within/class:pointer-events-auto group-focus-within/class:visible group-focus-within/class:opacity-100 group-hover/class:pointer-events-auto group-hover/class:visible group-hover/class:opacity-100',
-            )}
+            className="mt-2 flex items-center justify-end gap-2"
             onPointerEnter={() => setActionHovered(true)}
             onPointerLeave={() => setActionHovered(false)}
           >
             <Button
               size="sm"
               variant="outline"
-              className="h-9 flex-1 border-[var(--class-accent-75)] bg-[color-mix(in_srgb,var(--class-accent)_72%,transparent)] font-display font-extrabold text-white shadow-[0_8px_18px_-14px_var(--class-accent-75)] hover:bg-[color-mix(in_srgb,var(--class-accent)_82%,transparent)] hover:text-white active:translate-y-px"
-              onClick={(event) => { event.stopPropagation(); onReview() }}
+              className="h-9 flex-1 border-[var(--class-accent-75)] bg-[color-mix(in_srgb,var(--class-accent)_72%,transparent)] font-display font-extrabold text-white shadow-[0_8px_18px_-14px_var(--class-accent-75)] motion-safe:transition-[opacity,background-color,transform] hover:bg-[color-mix(in_srgb,var(--class-accent)_82%,transparent)] hover:text-white active:translate-y-px md:pointer-events-none md:opacity-0 md:group-hover/class:pointer-events-auto md:group-hover/class:opacity-100 md:group-focus-within/class:pointer-events-auto md:group-focus-within/class:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
+              onClick={(event) => { event.stopPropagation(); onOpen() }}
               onFocus={() => setActionHovered(true)}
               onBlur={() => setActionHovered(false)}
             >
-              <Play className="size-4 fill-white text-white" /> Review
+              <ArrowUpRight className="size-4 text-white" /> Open
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -1063,9 +1370,9 @@ export function ClassCard({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{row.courseCode || 'Class'}</DropdownMenuLabel>
-                <DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><BookOpen className="size-4" /> Open class hub</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><ArrowUpRight className="size-4" /> Open class hub</Link></DropdownMenuItem>
                 <DropdownMenuItem onClick={onImport}><Upload className="size-4" /> Import syllabus</DropdownMenuItem>
-                {row.type === 'stem' && <><DropdownMenuItem onClick={onReview}><Play className="size-4" /> Review</DropdownMenuItem><DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><Brain className="size-4" /> Quiz me</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><CheckCircle2 className="size-4" /> Covered in lecture today</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><NotebookText className="size-4" /> Generate study guide</Link></DropdownMenuItem></>}
+                {row.type === 'stem' && <><DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=overview&captureLecture=1`}><CheckCircle2 className="size-4" /> Add lecture transcript</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=materials`}><NotebookText className="size-4" /> Create study resources</Link></DropdownMenuItem></>}
                 <DropdownMenuItem onClick={onEdit}><Edit3 className="size-4" /> Class settings</DropdownMenuItem>
                 <DropdownMenuItem onClick={onArchive}><Archive className="size-4" /> {row.status === 'archived' ? 'Restore' : 'Archive'}</DropdownMenuItem>
                 <DropdownMenuItem onClick={onDelete} className="text-destructive"><Trash2 className="size-4" /> Delete</DropdownMenuItem>
@@ -1081,12 +1388,63 @@ export function ClassCard({
     <ContextMenu>
       <ContextMenuTrigger asChild>{card}</ContextMenuTrigger>
       <ContextMenuContent>
-        {row.type === 'stem' && <ContextMenuItem onSelect={onReview}><Play className="size-4" /> Review</ContextMenuItem>}
-        <ContextMenuItem onSelect={onOpen}><BookOpen className="size-4" /> Open class hub</ContextMenuItem>
+        <ContextMenuItem onSelect={onOpen}><ArrowUpRight className="size-4" /> Open class hub</ContextMenuItem>
+        <ContextMenuItem onSelect={onImport}><Upload className="size-4" /> Import syllabus</ContextMenuItem>
+        {row.type === 'stem' && <><ContextMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=overview&captureLecture=1`}><CheckCircle2 className="size-4" /> Add lecture transcript</Link></ContextMenuItem><ContextMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=materials`}><NotebookText className="size-4" /> Create study resources</Link></ContextMenuItem></>}
         <ContextMenuItem onSelect={onEdit}><Edit3 className="size-4" /> Class settings</ContextMenuItem>
         <ContextMenuItem onSelect={onArchive}><Archive className="size-4" /> {row.status === 'archived' ? 'Restore' : 'Archive'}</ContextMenuItem>
+        <ContextMenuItem onSelect={onDelete} className="text-destructive"><Trash2 className="size-4" /> Delete</ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
+  )
+}
+
+function ClassPreview({ row, data, onOpen }: {
+  row: ClassWorkspaceView
+  data: ClassCenterViewData
+  onOpen: () => void
+}) {
+  const stats = classStats(row.id, data)
+  const next = stats.nextDeadline
+  const materials = data.files.filter((file) => file.courseId === row.id)
+
+  return (
+    <div className="flex min-h-full flex-col bg-card p-5 md:p-6" style={cardAccentVars(row.color)}>
+      <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="size-2.5 shrink-0 rounded-[3px] bg-[var(--class-accent)]" aria-hidden="true" />
+            <p className="font-display text-2xl font-extrabold">{row.courseCode || row.nickname || 'Untitled class'}</p>
+          </div>
+          <p className="mt-1 text-sm font-bold text-muted-foreground">{row.courseTitle || 'Add class details'}</p>
+          <p className="mt-2 text-xs font-semibold text-muted-foreground">{row.instructor || 'Instructor TBD'} · {compactMeeting(row) || 'Meeting details TBD'}</p>
+        </div>
+        <div className="shrink-0 text-left sm:text-right">
+          <p className={cn('font-display text-3xl font-extrabold leading-none', gradeTone(row.grade))}>{row.grade || '—'}</p>
+          <p className="mt-1 text-xs font-bold text-muted-foreground">current grade</p>
+        </div>
+      </div>
+
+      <div className="grid gap-3 py-5 sm:grid-cols-3">
+        <Metric label="Topics with material" value={`${stats.coveredCount}/${stats.topicCount}`} />
+        <Metric label="Materials" value={String(materials.length)} />
+        <Metric label="Due next" value={next ? assignmentDateLabel(next) : 'None'} />
+      </div>
+
+      <div className="rounded-[13px] border border-border bg-muted p-4">
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">Next class action</p>
+        <p className="mt-2 font-display text-lg font-extrabold">{next?.title ?? 'No dated work is waiting'}</p>
+        <p className="mt-1 text-sm font-semibold text-muted-foreground">
+          {next ? `${assignmentDateLabel(next)}${next.weight != null ? ` · ${next.weight}%` : ''}` : 'Open the class to capture a lecture or organize course material.'}
+        </p>
+      </div>
+
+      <div className="mt-auto flex justify-end pt-5">
+        <Button onClick={onOpen} className="font-display font-extrabold">
+          <ArrowUpRight className="size-4" /> Open Class Hub
+        </Button>
+      </div>
+    </div>
   )
 }
 
@@ -1096,17 +1454,17 @@ function AcademicsBento({
   persons,
   courses,
   onOpenClass,
+  onOpenExamPlan,
 }: {
   data: ClassCenterViewData
   classes: ClassWorkspaceView[]
   persons: Person[]
   courses: Course[]
   onOpenClass: (courseId: string) => void
+  onOpenExamPlan: (courseId: string, assignmentId: string) => void
 }) {
+  const [renderNow] = useState(() => Date.now())
   const activeIds = new Set(classes.map((row) => row.id))
-  const dueTopics = data.topics
-    .filter((topic) => activeIds.has(topic.courseId) && topic.fsrs.due <= Date.now())
-    .sort((a, b) => a.fsrs.due - b.fsrs.due)
   const pending = data.assignments
     .filter((assignment) =>
       activeIds.has(assignment.courseId)
@@ -1117,16 +1475,33 @@ function AcademicsBento({
 
   return (
     <div className="academics-bento grid grid-cols-1 gap-[15px] lg:grid-cols-12">
-      <ReviewQueuePanel data={data} topics={dueTopics} onOpenClass={onOpenClass} />
-      <ReviewTopicsPanel data={data} classes={classes} onOpenClass={onOpenClass} />
-      <UpNextPanel data={data} assignments={pending} onOpenClass={onOpenClass} />
+      <RecentStudyWorkPanel data={data} classes={classes} onOpenClass={onOpenClass} />
+      <ClassMaterialsPanel data={data} classes={classes} onOpenClass={onOpenClass} />
+      <UpNextPanel data={data} assignments={pending} now={renderNow} onOpenClass={onOpenClass} onOpenExamPlan={onOpenExamPlan} />
       <GpaPanel courses={courses} currentTerm={classes[0]?.semester ?? ''} />
       <ContactsPanel data={data} classes={classes} persons={persons} />
       <UpcomingPanel data={data} assignments={pending} />
-      <HistoryPanel title="Recent recall" kind="recent" data={data} />
-      <HistoryPanel title="Review activity" kind="activity" data={data} />
+      <TopicCoveragePanel data={data} classes={classes} />
+      <LectureJournalPanel data={data} classes={classes} />
     </div>
   )
+}
+
+/** The ranking uses only explicit weight and deadline. Missing weight stays
+ * low-priority instead of receiving an invented percentage. */
+function rankUpNextAssignments(assignments: ClassAssignment[], now = Date.now()): ClassAssignment[] {
+  const day = 86_400_000
+  const score = (item: ClassAssignment) => {
+    const due = item.dueDate ? new Date(`${item.dueDate}T12:00:00`).getTime() : Number.POSITIVE_INFINITY
+    const proximity = Number.isFinite(due) ? 1 / Math.max(1, (due - now) / day) : 0
+    const weight = item.weight ?? (item.important ? 1 : 0)
+    return weight * proximity
+  }
+  return [...assignments].sort((a, b) => score(b) - score(a) || String(a.dueDate).localeCompare(String(b.dueDate)) || a.order - b.order)
+}
+
+function isMajorDeliverable(item: ClassAssignment): boolean {
+  return Boolean(item.important || item.type === 'exam' || item.type === 'project' || (item.weight != null && item.weight >= 15))
 }
 
 function BentoPanel({
@@ -1158,108 +1533,13 @@ function BentoPanel({
 
 function BentoEmpty({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-6 text-center text-sm font-semibold text-muted-foreground">
+    <div className="rounded-xl border border-dashed border-border bg-muted px-4 py-6 text-center text-sm font-semibold text-muted-foreground">
       {children}
     </div>
   )
 }
 
-function ReviewQueuePanel({
-  data,
-  topics,
-  onOpenClass,
-}: {
-  data: ClassCenterViewData
-  topics: Topic[]
-  onOpenClass: (courseId: string) => void
-}) {
-  const courses = useStore((s) => s.courses)
-  const [sessionPlan, setSessionPlan] = useState<SessionPlan | undefined>()
-  const shown = topics.slice(0, 4)
-  const first = shown[0]
-  return (
-    <BentoPanel
-      span={7}
-      title="Today’s review queue"
-      icon={Timer}
-      actions={(
-        <div className="flex gap-2">
-          <Button
-            variant="ghost" size="sm" disabled={!first}
-            onClick={() => setSessionPlan(
-              sessionPlan ? undefined : studySessionPlan(topics, courses, { minutes: 90 }),
-            )}
-          >
-            {sessionPlan ? 'Hide plan' : 'Plan 90 min'}
-          </Button>
-          <Button size="sm" disabled={!first} asChild={Boolean(first)}>
-            {first ? <Link to={`/academics/review/${first.courseId}`}><Play className="size-4" /> Start</Link> : <span><Play className="size-4" /> Start</span>}
-          </Button>
-        </div>
-      )}
-    >
-      {!shown.length ? <BentoEmpty>Nothing is due in Premed OS today.</BentoEmpty> : (
-        <div className="space-y-2">
-          {shown.map((topic) => {
-            const questions = data.practiceQuestions.filter((question) => question.topicIds.includes(topic.id))
-            const missed = questions.filter((question) => question.isCorrect === false || question.selfGrade === 'missed').length
-            const why = questions.length
-              ? `${missed} of ${questions.length} recorded questions were missed`
-              : topic.fsrs.reps
-                ? `FSRS scheduled this review from recorded recall events`
-                : `First retrieval is due · no review history yet`
-            return (
-              <button
-                key={topic.id}
-                className="grid w-full gap-2 rounded-xl border border-border bg-muted p-3 text-left transition hover:border-primary/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_minmax(0,1fr)_auto]"
-                onClick={() => onOpenClass(topic.courseId)}
-              >
-                <Badge variant="outline">{classLabel(topic.courseId, data)}</Badge>
-                <span className="min-w-0">
-                  <span className="block truncate font-bold">{topic.title}</span>
-                  <span className="block truncate text-xs font-semibold text-muted-foreground">{why}</span>
-                </span>
-                <Badge variant={topic.status === 'weak' ? 'warning' : 'secondary'}>{topic.status === 'weak' ? 'Marked for review' : statusLabel(topic.status)}</Badge>
-              </button>
-            )
-          })}
-          {topics.length > shown.length && <p className="text-right text-xs font-bold text-muted-foreground">+{topics.length - shown.length} more due</p>}
-        </div>
-      )}
-
-      {/* §4.1 item 8 — interleaved across classes on purpose: blocking one
-          class at a time is the practice interleaving is meant to beat. */}
-      {sessionPlan && (
-        <div className="mt-3 rounded-xl border border-border bg-muted p-3">
-          <p className="font-display text-xs font-extrabold">
-            {sessionPlan.blocks.length
-              ? `${sessionPlan.minutes} minutes · ${sessionPlan.blocks.length} topics, interleaved`
-              : `${sessionPlan.minutes} minutes is not enough for a full topic`}
-          </p>
-          {sessionPlan.blocks.length > 0 && (
-            <ol className="mt-2 space-y-1">
-              {sessionPlan.blocks.map((block) => (
-                <li key={block.topic.id} className="flex items-baseline gap-2 text-xs font-bold">
-                  <span className="tabular-nums text-muted-foreground">{block.position}.</span>
-                  <span className="text-muted-foreground">{block.courseCode}</span>
-                  <span className="truncate">{block.topic.title}</span>
-                </li>
-              ))}
-            </ol>
-          )}
-          {sessionPlan.deferred > 0 && (
-            <p className="mt-2 text-[11px] font-bold text-muted-foreground">
-              {sessionPlan.deferred} more due and not in this session.
-            </p>
-          )}
-          <p className="mt-2 text-[10.5px] font-bold text-muted-foreground">{sessionPlan.assumption}</p>
-        </div>
-      )}
-    </BentoPanel>
-  )
-}
-
-function ReviewTopicsPanel({
+function RecentStudyWorkPanel({
   data,
   classes,
   onOpenClass,
@@ -1268,71 +1548,54 @@ function ReviewTopicsPanel({
   classes: ClassWorkspaceView[]
   onOpenClass: (courseId: string) => void
 }) {
-  const [scope, setScope] = useState<'exam' | 'all'>('exam')
   const activeIds = new Set(classes.map((row) => row.id))
-  const exams = data.assignments
-    .filter((assignment) => activeIds.has(assignment.courseId) && assignment.type === 'exam' && assignment.dueDate)
-    .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
-  const nextExam = exams[0]
-  const examTopicIds = nextExam ? [...new Set([...(nextExam.coveredTopicIds ?? []), ...nextExam.linkedTopicIds])] : []
-  const examScopeAvailable = Boolean(nextExam && examTopicIds.length)
-  const effectiveScope = scope === 'exam' && examScopeAvailable ? 'exam' : 'all'
-  const topics = data.topics
-    .filter((topic) => activeIds.has(topic.courseId))
-    .filter((topic) => effectiveScope === 'all' || examTopicIds.includes(topic.id))
-    .filter((topic) => topic.status === 'weak' || topic.fsrs.due <= Date.now())
-    .sort((a, b) => a.fsrs.due - b.fsrs.due || a.order - b.order)
-    .slice(0, 5)
-  const readyInScope = data.topics.filter((topic) =>
-    (effectiveScope === 'all' ? activeIds.has(topic.courseId) : examTopicIds.includes(topic.id)) && topic.status === 'ready'
-  ).length
-  const totalInScope = effectiveScope === 'all'
-    ? data.topics.filter((topic) => activeIds.has(topic.courseId)).length
-    : examTopicIds.length
+  const studyWork = [...data.notes]
+    .filter((note) => activeIds.has(note.courseId) && (note.type === 'study-guide' || note.type === 'lecture'))
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, 4)
 
   return (
-    <BentoPanel
-      span={5}
-      title="Marked for review"
-      icon={Target}
-      actions={(
-        <ToggleGroup
-          type="single"
-          value={effectiveScope}
-          onValueChange={(value) => value && setScope(value as 'exam' | 'all')}
-          variant="outline"
-          size="sm"
-        >
-          <ToggleGroupItem value="exam" disabled={!examScopeAvailable}>Next exam</ToggleGroupItem>
-          <ToggleGroupItem value="all">All topics</ToggleGroupItem>
-        </ToggleGroup>
-      )}
-    >
-      {effectiveScope === 'exam' && nextExam && (
-        <div className="mb-3 rounded-xl border border-border bg-muted p-3">
-          <p className="font-display text-xl font-bold tabular-nums">{fmtEventDate(nextExam.dueDate)}</p>
-          <p className="text-sm font-bold">{classLabel(nextExam.courseId, data)} · {nextExam.title}</p>
-          <p className="text-xs font-semibold text-muted-foreground">{examTopicIds.length} topics in scope</p>
+    <BentoPanel span={7} title="Recent study work" icon={NotebookText}>
+      {!studyWork.length ? <BentoEmpty>Create a study outline, guide, or revised note from selected class material.</BentoEmpty> : (
+        <div className="space-y-2">
+          {studyWork.map((note) => (
+            <button key={note.id} type="button" className="grid w-full gap-2 rounded-xl border border-border bg-muted p-3 text-left transition hover:border-primary/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_minmax(0,1fr)_auto]" onClick={() => onOpenClass(note.courseId)}>
+              <Badge variant="outline">{classLabel(note.courseId, data)}</Badge>
+              <span className="min-w-0"><span className="block truncate font-bold">{note.title}</span><span className="block truncate text-xs font-semibold text-muted-foreground">{note.type === 'study-guide' ? 'Source-backed study work' : 'Lecture note'}</span></span>
+              <span className="text-xs font-extrabold text-primary">Open</span>
+            </button>
+          ))}
         </div>
       )}
-      {!examScopeAvailable && scope === 'exam' && (
-        <p className="mb-3 text-xs font-semibold text-muted-foreground">No exam scope is available, so all due or manually marked topics are shown.</p>
-      )}
-      {!topics.length ? <BentoEmpty>No topics are due or manually marked in this scope.</BentoEmpty> : (
+    </BentoPanel>
+  )
+}
+
+function ClassMaterialsPanel({
+  data,
+  classes,
+  onOpenClass,
+}: {
+  data: ClassCenterViewData
+  classes: ClassWorkspaceView[]
+  onOpenClass: (courseId: string) => void
+}) {
+  const rows = classes.map((row) => ({
+    row,
+    files: data.files.filter((file) => file.courseId === row.id).length,
+    lectures: data.lectures.filter((lecture) => lecture.courseId === row.id).length,
+  })).sort((a, b) => (b.files + b.lectures) - (a.files + a.lectures)).slice(0, 5)
+
+  return (
+    <BentoPanel span={5} title="Class materials" icon={FolderOpen}>
+      {!rows.length ? <BentoEmpty>Your imported syllabi, lecture transcripts, and attached files will appear here.</BentoEmpty> : (
         <div className="space-y-2">
-          {topics.map((topic) => (
-              <button key={topic.id} className="w-full rounded-xl border border-border bg-muted p-3 text-left hover:border-primary/45" onClick={() => onOpenClass(topic.courseId)}>
-                <span className="flex items-center justify-between gap-2">
-                  <span className="font-bold">{topic.title}</span>
-                  <Badge variant="muted">{topic.status === 'weak' ? 'Manually marked' : 'Due'}</Badge>
-                </span>
-                <span className="mt-1 block text-xs font-semibold text-muted-foreground">{classLabel(topic.courseId, data)}{topic.unit ? ` · ${topic.unit}` : ''}</span>
-              </button>
+          {rows.map(({ row, files, lectures }) => (
+            <button key={row.id} type="button" className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-muted p-3 text-left transition hover:border-primary/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => onOpenClass(row.id)}>
+              <span><span className="block font-bold">{row.courseCode || row.nickname || 'Untitled class'}</span><span className="block text-xs font-semibold text-muted-foreground">{lectures} {lectures === 1 ? 'lecture' : 'lectures'} · {files} {files === 1 ? 'material' : 'materials'}</span></span>
+              <span className="text-xs font-extrabold text-primary">Open</span>
+            </button>
           ))}
-          <div className="flex items-center justify-between pt-1 text-xs font-bold text-muted-foreground">
-            <span>{readyInScope} of {totalInScope} marked ready</span>
-            {topics[0] ? <Button asChild variant="link" size="sm" className="h-auto p-0"><Link to={`/academics/review/${topics[0].courseId}?topicId=${topics[0].id}`}>Review these →</Link></Button> : null}
-          </div>
         </div>
       )}
     </BentoPanel>
@@ -1342,13 +1605,18 @@ function ReviewTopicsPanel({
 function UpNextPanel({
   data,
   assignments,
+  now,
   onOpenClass,
+  onOpenExamPlan,
 }: {
   data: ClassCenterViewData
   assignments: ClassAssignment[]
+  now: number
   onOpenClass: (courseId: string) => void
+  onOpenExamPlan: (courseId: string, assignmentId: string) => void
 }) {
-  const item = assignments[0]
+  const ranked = rankUpNextAssignments(assignments, now)
+  const item = ranked[0]
   if (!item) return (
     <BentoPanel span={7} title="Up next" icon={CalendarClock}>
       <BentoEmpty>No major dated work is pending.</BentoEmpty>
@@ -1356,17 +1624,13 @@ function UpNextPanel({
   )
   const topicIds = [...new Set([...(item.coveredTopicIds ?? []), ...item.linkedTopicIds])]
   const topics = data.topics.filter((topic) => topicIds.includes(topic.id))
-  const ready = topics.filter((topic) => topic.status === 'ready').length
-  const weak = topics
-    .filter((topic) => topic.status === 'weak')
-    .sort((a, b) => a.order - b.order)
-    .slice(0, 2)
+  const withMaterial = topics.filter((topic) => (topic.linkedFileIds?.length ?? 0) || topic.sourceNoteIds.length).length
   return (
     <BentoPanel
       span={7}
       title="Up next"
       icon={TrendingUp}
-      actions={<Button size="sm" onClick={() => onOpenClass(item.courseId)}>Build {item.type === 'exam' ? 'exam ' : ''}plan</Button>}
+      actions={<Button size="sm" onClick={() => item.type === 'exam' ? onOpenExamPlan(item.courseId, item.id) : onOpenClass(item.courseId)}>Build {item.type === 'exam' ? 'exam ' : ''}plan</Button>}
     >
       <div className="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)]">
         <div>
@@ -1378,17 +1642,12 @@ function UpNextPanel({
           <p className="mt-1 text-sm font-semibold text-muted-foreground">
             {item.weight != null ? `Worth ${item.weight}% of the course grade` : 'Grade weight not available'}
           </p>
-          <p className="mt-4 text-xs font-bold text-muted-foreground">{ready} of {topics.length} linked topics are marked ready.</p>
-          {!!weak.length && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {weak.map((topic) => <Badge key={topic.id} variant="warning">Marked for review · {topic.title}</Badge>)}
-            </div>
-          )}
+          {!!topics.length && <p className="mt-4 text-xs font-bold text-muted-foreground">{topics.length} syllabus {topics.length === 1 ? 'topic' : 'topics'} in scope · {withMaterial} with linked material.</p>}
         </div>
       </div>
-      {!!assignments.slice(1, 4).length && (
+      {!!ranked.slice(1, 4).length && (
         <div className="mt-4 flex flex-wrap gap-2">
-          {assignments.slice(1, 4).map((next) => (
+          {ranked.slice(1, 4).map((next) => (
             <Badge key={next.id} variant="secondary">{next.title} · {assignmentDateLabel(next)}</Badge>
           ))}
         </div>
@@ -1406,7 +1665,7 @@ function GpaPanel({ courses, currentTerm }: { courses: Course[]; currentTerm: st
       span={5}
       title="GPA"
       icon={BarChart3}
-      actions={<Button asChild variant="link" size="sm"><Link to="/academics?mode=planning&tab=planner">What-if →</Link></Button>}
+      actions={<Button asChild variant="link" size="sm"><Link to="/academics?mode=planning&tab=archive&gradeView=what-if">What-if →</Link></Button>}
     >
       <div className="grid grid-cols-3 gap-2">
         <Metric label="Term" value={fmtGpa(term.cum)} />
@@ -1415,18 +1674,77 @@ function GpaPanel({ courses, currentTerm }: { courses: Course[]; currentTerm: st
       </div>
       {!graded.length && <BentoEmpty>Not enough graded work yet to calculate GPA.</BentoEmpty>}
       {!!graded.length && (
-        <div className="mt-4 space-y-2">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Recorded grades</p>
-          {graded.slice(0, 4).map((course) => (
-            <div key={course.id} className="grid grid-cols-[minmax(0,1fr)_4rem_3rem] items-center gap-2 rounded-xl border border-border bg-muted px-3 py-2 text-xs font-bold">
-              <span className="truncate">{course.code}</span>
-              <span className="text-right text-muted-foreground">{course.credits} cr</span>
-              <span className="text-right tabular-nums text-muted-foreground">{course.grade}</span>
-            </div>
-          ))}
+        <div className="mt-4 space-y-3">
+          <GpaTrend courses={courses} currentTerm={currentTerm} />
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Contribution by course</p>
+            {graded.slice(0, 4).map((course) => {
+              const points = GRADE_POINTS[course.grade] ?? 0
+              const contribution = overall.qualityPoints ? (points * course.credits / overall.qualityPoints) * 100 : 0
+              const direction = points >= overall.cum ? 'lifting' : 'dragging'
+              return (
+                <div key={course.id} className="rounded-xl border border-border bg-muted px-3 py-2 text-xs font-bold">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate">{course.code} · {course.grade}</span>
+                    <span className="text-muted-foreground">{direction}</span>
+                  </div>
+                  <Progress value={contribution} className="mt-2 h-1.5" aria-label={`${course.code} ${contribution.toFixed(1)}% of recorded quality points`} />
+                </div>
+              )
+            })}
+          </div>
+          <p className="rounded-lg bg-primary/8 px-3 py-2 text-xs font-bold text-muted-foreground">
+            {term.credits
+              ? `Current term is ${Math.abs(term.cum - overall.cum).toFixed(2)} ${term.cum >= overall.cum ? 'above' : 'below'} the recorded cumulative pace.`
+              : 'Current-term pace appears after a transcript-grade projection is recorded.'}
+          </p>
         </div>
       )}
     </BentoPanel>
+  )
+}
+
+function termOrder(label: string): number {
+  const match = label.match(/(Spring|Summer|Fall|Winter)\s+(\d{4})/i)
+  if (!match) return Number.MAX_SAFE_INTEGER
+  const season = { spring: 0, summer: 1, fall: 2, winter: 3 }[match[1].toLowerCase() as 'spring' | 'summer' | 'fall' | 'winter']
+  return Number(match[2]) * 4 + season
+}
+
+function GpaTrend({ courses, currentTerm }: { courses: Course[]; currentTerm: string }) {
+  const series = [...new Set(courses.map((course) => course.term))]
+    .map((term) => ({ term, stats: gpaStats(courses.filter((course) => course.term === term)) }))
+    .filter((row) => row.stats.credits > 0)
+    .sort((a, b) => termOrder(a.term) - termOrder(b.term))
+  if (!series.length) return null
+  const width = 300
+  const height = 82
+  const x = (index: number) => series.length === 1 ? width / 2 : 8 + index * ((width - 16) / (series.length - 1))
+  const y = (value: number) => 8 + (4 - value) / 4 * (height - 16)
+  const points = series.map((row, index) => `${x(index)},${y(row.stats.cum)}`)
+  const currentIndex = series.findIndex((row) => row.term === currentTerm)
+  const currentProjected = currentIndex >= 0 && courses.some((course) => course.term === currentTerm && course.status === 'in-progress')
+  const actualEnd = currentProjected ? Math.max(0, currentIndex - 1) : series.length - 1
+  const actualPoints = points.slice(0, actualEnd + 1).join(' ')
+  const projectionPoints = currentProjected && currentIndex > 0 ? points.slice(currentIndex - 1, currentIndex + 1).join(' ') : ''
+  return (
+    <div className="rounded-xl border border-border bg-muted p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">GPA trend</p>
+        {projectionPoints ? <span className="text-[10px] font-bold text-muted-foreground">dashed = projection</span> : null}
+      </div>
+      <svg className="mt-2 h-20 w-full overflow-visible" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Recorded GPA by term">
+        <line x1="8" y1={y(4)} x2={width - 8} y2={y(4)} className="stroke-border" />
+        <line x1="8" y1={y(2)} x2={width - 8} y2={y(2)} className="stroke-border" />
+        {actualPoints && <polyline points={actualPoints} fill="none" className="stroke-primary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />}
+        {projectionPoints && <polyline points={projectionPoints} fill="none" className="stroke-primary" strokeWidth="3" strokeDasharray="6 5" strokeLinecap="round" />}
+        {series.map((row, index) => <circle key={row.term} cx={x(index)} cy={y(row.stats.cum)} r="4" className="fill-card stroke-primary" strokeWidth="2" />)}
+      </svg>
+      <div className="flex justify-between gap-2 text-[10px] font-bold text-muted-foreground">
+        <span>{series[0].term}</span>
+        <span>{series.at(-1)?.term}</span>
+      </div>
+    </div>
   )
 }
 
@@ -1491,7 +1809,8 @@ function ContactsPanel({
 }
 
 function UpcomingPanel({ data, assignments }: { data: ClassCenterViewData; assignments: ClassAssignment[] }) {
-  const items = [...assignments]
+  const items = assignments
+    .filter(isMajorDeliverable)
     .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
     .slice(0, 5)
   return (
@@ -1513,40 +1832,60 @@ function UpcomingPanel({ data, assignments }: { data: ClassCenterViewData; assig
   )
 }
 
-function HistoryPanel({
-  title,
-  kind,
-  data,
-}: {
-  title: string
-  kind: 'recent' | 'activity'
-  data: ClassCenterViewData
-}) {
-  const events = data.reviewEvents
-  const enough = events.length > 0
-  const days = [...new Set(events.map((event) => new Date(event.timestamp).toISOString().slice(0, 10)))].sort().slice(-14)
+function TopicCoveragePanel({ data, classes }: { data: ClassCenterViewData; classes: ClassWorkspaceView[] }) {
+  const activeIds = new Set(classes.map((row) => row.id))
+  const topics = data.topics.filter((topic) => activeIds.has(topic.courseId))
+  const linked = topics.filter((topic) => (topic.linkedFileIds?.length ?? 0) || topic.sourceNoteIds.length).length
   return (
-    <BentoPanel span={4} title={title} icon={kind === 'recent' ? Timer : CalendarClock}>
-      {!enough ? <BentoEmpty>No review events recorded yet.</BentoEmpty> : kind === 'activity' ? (
+    <BentoPanel span={4} title="Topic coverage" icon={TrendingUp}>
+      {!topics.length ? <BentoEmpty>Import syllabus objectives to create the course topic structure.</BentoEmpty> : (
         <div>
-          <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Recorded reviews by day</p>
-          <div className="grid grid-cols-7 gap-1.5">
-            {days.map((day) => {
-              const count = events.filter((event) => new Date(event.timestamp).toISOString().slice(0, 10) === day).length
-              return <div key={day} className="aspect-square rounded-md bg-primary/20" style={{ opacity: Math.min(1, 0.25 + count * 0.2) }} title={`${day}: ${count} reviews`} />
-            })}
+          <div className="flex items-end justify-between gap-3">
+            <p className="font-display text-3xl font-bold tabular-nums">{linked}<span className="text-lg text-muted-foreground">/{topics.length}</span></p>
+            <Badge variant="secondary">with material</Badge>
+          </div>
+          <div className="mt-4 rounded-xl border border-dashed border-border bg-muted px-4 py-5">
+            <div className="flex items-center gap-2" aria-hidden="true">
+              <span className="size-2 rounded-full bg-primary" />
+              <span className="h-px flex-1 border-t border-dashed border-muted-foreground/50" />
+              <span className="size-2 rounded-full border-2 border-muted-foreground/50 bg-card" />
+            </div>
+            <p className="mt-3 text-xs font-bold text-muted-foreground">Coverage connects syllabus objectives to the class evidence you captured. It does not claim mastery.</p>
           </div>
         </div>
-      ) : (
-        <div className="space-y-2">
-          {[...events].sort((a, b) => b.timestamp - a.timestamp).slice(0, 4).map((event) => (
-            <div key={event.id} className="flex items-center justify-between rounded-xl border border-border bg-muted px-3 py-2 text-xs font-bold">
-              <span>{data.topics.find((topic) => topic.id === event.topicId)?.title || 'Topic unavailable'}</span>
-              <span className="text-muted-foreground">{statusLabel(event.grade)} · {new Date(event.timestamp).toLocaleDateString()}</span>
-            </div>
-          ))}
-        </div>
       )}
+    </BentoPanel>
+  )
+}
+
+function LectureJournalPanel({ data, classes }: { data: ClassCenterViewData; classes: ClassWorkspaceView[] }) {
+  const activeIds = new Set(classes.map((row) => row.id))
+  const lectures = data.lectures.filter((lecture) => activeIds.has(lecture.courseId))
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const days = Array.from({ length: 28 }, (_, index) => {
+    const date = new Date(today)
+    date.setDate(today.getDate() - (27 - index))
+    const key = date.toISOString().slice(0, 10)
+    return { key, count: lectures.filter((lecture) => new Date(lecture.createdAt).toISOString().slice(0, 10) === key).length }
+  })
+  return (
+    <BentoPanel span={4} title="Lecture journal" icon={CalendarDays}>
+      <div className="flex items-end justify-between gap-3">
+        <p className="font-display text-3xl font-bold tabular-nums">{lectures.length}<span className="ml-1 text-sm text-muted-foreground">captured</span></p>
+      </div>
+      <p className="mt-2 text-xs font-bold text-muted-foreground">lecture records added in the last four weeks</p>
+      <div className="mt-4 grid grid-cols-7 gap-1.5" aria-label="Lecture captures per day for the last four weeks">
+        {days.map((day) => (
+          <span
+            key={day.key}
+            className="aspect-square rounded-md border border-border bg-primary"
+            style={{ opacity: day.count ? Math.min(1, 0.18 + day.count * 0.2) : 0.06 }}
+            title={`${day.key}: ${day.count} lecture${day.count === 1 ? '' : 's'}`}
+          />
+        ))}
+      </div>
+      {!lectures.length && <p className="mt-3 text-xs font-semibold text-muted-foreground">No lecture transcripts captured yet.</p>}
     </BentoPanel>
   )
 }
@@ -1817,14 +2156,13 @@ function OverviewTab({
               {[
                 ['Syllabus', row.syllabusUrl],
                 ['Canvas', row.canvasUrl],
-                ['Anki deck', row.ankiDeckName],
                 ['Drive', row.driveFolderUrl],
               ].filter(([, value]) => Boolean(value)).map(([label, value]) => (
                 <a key={label} href={value && value.startsWith('http') ? value : undefined} className="rounded-full bg-muted px-3 py-1.5 text-sm font-extrabold text-foreground hover:bg-secondary">
                   {label}
                 </a>
               ))}
-              {!row.syllabusUrl && !row.canvasUrl && !row.ankiDeckName && !row.driveFolderUrl && (
+              {!row.syllabusUrl && !row.canvasUrl && !row.driveFolderUrl && (
                 <span className="rounded-full bg-muted px-3 py-1.5 text-sm font-extrabold text-muted-foreground">No links saved</span>
               )}
             </div>
@@ -1928,7 +2266,6 @@ function CourseKitTab({ row, data, mutate }: ClassTabProps) {
   const links = [
     ['Syllabus', row.syllabusUrl],
     ['Canvas', row.canvasUrl],
-    ['Anki deck', row.ankiDeckName],
     ['GoodNotes', row.goodNotesUrl],
     ['Drive folder', row.driveFolderUrl],
   ]
@@ -2000,6 +2337,7 @@ function CourseKitTab({ row, data, mutate }: ClassTabProps) {
 
 function StudyCenterTab({ row, data, mutate }: ClassTabProps) {
   const [activeExamId, setActiveExamId] = useState('')
+  const [renderNow] = useState(() => Date.now())
   const topics = data.topics.filter((topic) => topic.courseId === row.id).sort((a, b) => a.order - b.order)
   const exams = data.practiceExams.filter((exam) => exam.courseId === row.id).sort((a, b) => b.updatedAt - a.updatedAt)
   const activeExam = data.practiceExams.find((exam) => exam.id === activeExamId)
@@ -2053,7 +2391,7 @@ function StudyCenterTab({ row, data, mutate }: ClassTabProps) {
                       {practice.total ? `${practice.correct}/${practice.total} practice correct` : 'Not tested'} · {activeWeakAreasForTopic(topic.id, data).length} review notes
                     </p>
                   </div>
-                  <Badge variant="muted">{topic.fsrs.due <= Date.now() ? 'Due' : 'Scheduled'}</Badge>
+                  <Badge variant="muted">{topic.fsrs.due <= renderNow ? 'Due' : 'Scheduled'}</Badge>
                 </div>
               ))}
             </CardContent>
@@ -2227,16 +2565,19 @@ function PracticeExamRunner({
 }
 
 function ClassEditorDialog({
-  open, title, isCreate, form, onOpenChange, onChange, onSave, onSaveAndImport,
+  open, title, isCreate, form, syllabusProposal, confirmLabel, onOpenChange, onChange, onSave, onSaveAndImport, onBackToImport,
 }: {
   open: boolean
   title: string
   isCreate: boolean
   form: ClassFormState
+  syllabusProposal?: SyllabusProposal
+  confirmLabel?: string
   onOpenChange: (open: boolean) => void
   onChange: (patch: Partial<ClassFormState>) => void
   onSave: (type: ClassWorkspaceType) => void
   onSaveAndImport?: (type: ClassWorkspaceType) => void
+  onBackToImport?: () => void
 }) {
   const [studentChoice, setStudentChoice] = useState<ClassWorkspaceType | undefined>()
   const decision = useMemo(() => classTypeDraftDecision({
@@ -2244,8 +2585,26 @@ function ClassEditorDialog({
     courseCode: form.courseCode,
     savedType: form.type,
     studentChoice,
-  }), [form.courseCode, form.type, isCreate, studentChoice])
-  const canSave = Boolean(decision.selectedType)
+    syllabusItems: syllabusProposal?.items,
+  }), [form.courseCode, form.type, isCreate, studentChoice, syllabusProposal?.items])
+  const missingIdentity = isCreate && (!form.courseCode.trim() || !form.courseTitle.trim())
+  const canSave = Boolean(decision.selectedType) && !missingIdentity
+  const saveBlockReason = !decision.selectedType
+    ? 'Choose a class type to continue.'
+    : missingIdentity ? 'Complete the course code and title to continue.' : ''
+  const extractedClass = useMemo(
+    () => syllabusProposal ? classFormFromSyllabus(syllabusProposal, form.semester) : undefined,
+    [form.semester, syllabusProposal],
+  )
+  const termWasFound = Boolean(syllabusProposal?.text.match(/\b(?:Fall|Spring|Summer|Winter)\s+20\d{2}\b/i))
+  const sourceFieldLabel = (label: string, found: boolean, optional = false) => syllabusProposal
+    ? `${label} · ${optional ? 'optional' : found ? 'found' : 'not found'}`
+    : label
+  const missingClassFacts = syllabusProposal ? [
+    Boolean(extractedClass?.courseCode), Boolean(extractedClass?.courseTitle), termWasFound,
+    Boolean(extractedClass?.instructor), Boolean(extractedClass?.meetingDays),
+    Boolean(extractedClass?.meetingTime), Boolean(extractedClass?.location),
+  ].filter((found) => !found).length : 0
 
   const chooseType = (type: ClassWorkspaceType) => {
     if (isCreate) {
@@ -2262,12 +2621,23 @@ function ClassEditorDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-5">
+          {syllabusProposal && (
+            <section className="flex gap-3 rounded-xl border border-primary/30 bg-primary/8 p-3" aria-label="Syllabus source">
+              <FileText className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="font-display text-sm font-extrabold">Here’s what I found</p>
+                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">
+                  {syllabusProposal.sourceName} · {syllabusProposal.items.length} extracted details · {missingClassFacts} class fields not found. Review and complete anything missing before continuing.
+                </p>
+              </div>
+            </section>
+          )}
           <section className="space-y-3">
             <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Basics</h3>
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Course code"><Input value={form.courseCode} onChange={(e) => onChange({ courseCode: e.target.value })} placeholder="BIOL 103" /></Field>
-              <Field label="Course title"><Input value={form.courseTitle} onChange={(e) => onChange({ courseTitle: e.target.value })} placeholder="How Cells Function" /></Field>
-              <Field label="Semester"><Input value={form.semester} onChange={(e) => onChange({ semester: e.target.value })} placeholder="Fall 2026" /></Field>
+              <Field label={sourceFieldLabel('Course code', Boolean(extractedClass?.courseCode))}><Input value={form.courseCode} onChange={(e) => onChange({ courseCode: e.target.value })} placeholder="BIOL 103" /></Field>
+              <Field label={sourceFieldLabel('Course title', Boolean(extractedClass?.courseTitle))}><Input value={form.courseTitle} onChange={(e) => onChange({ courseTitle: e.target.value })} placeholder="How Cells Function" /></Field>
+              <Field label={sourceFieldLabel('Semester', termWasFound)}><Input value={form.semester} onChange={(e) => onChange({ semester: e.target.value })} placeholder="Fall 2026" /></Field>
             </div>
             <Field label="Class type">
               <div className="grid gap-2 sm:grid-cols-3">
@@ -2310,11 +2680,11 @@ function ClassEditorDialog({
               <p className="mt-2 text-xs font-semibold text-muted-foreground">You can change this later. Grades, credits, and requirements stay the same.</p>
             </Field>
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Instructor"><Input value={form.instructor ?? ''} onChange={(e) => onChange({ instructor: e.target.value })} /></Field>
-              <Field label="Meeting days"><Input value={form.meetingDays ?? ''} onChange={(e) => onChange({ meetingDays: e.target.value })} placeholder="MWF" /></Field>
-              <Field label="Meeting time"><Input value={form.meetingTime ?? ''} onChange={(e) => onChange({ meetingTime: e.target.value })} placeholder="10:10 AM-11:00 AM" /></Field>
-              <Field label="Location"><Input value={form.location ?? ''} onChange={(e) => onChange({ location: e.target.value })} /></Field>
-              <Field label="Nickname"><Input value={form.nickname ?? ''} onChange={(e) => onChange({ nickname: e.target.value })} placeholder="Optional" /></Field>
+              <Field label={sourceFieldLabel('Instructor', Boolean(extractedClass?.instructor))}><Input value={form.instructor ?? ''} onChange={(e) => onChange({ instructor: e.target.value })} /></Field>
+              <Field label={sourceFieldLabel('Meeting days', Boolean(extractedClass?.meetingDays))}><Input value={form.meetingDays ?? ''} onChange={(e) => onChange({ meetingDays: e.target.value })} onBlur={(e) => onChange({ meetingDays: normalizeMeetingDays(e.target.value) })} placeholder="Tuesday · Thursday" /></Field>
+              <Field label={sourceFieldLabel('Meeting time', Boolean(extractedClass?.meetingTime))}><Input value={form.meetingTime ?? ''} onChange={(e) => onChange({ meetingTime: e.target.value })} placeholder="10:10 AM-11:00 AM" /></Field>
+              <Field label={sourceFieldLabel('Location', Boolean(extractedClass?.location))}><Input value={form.location ?? ''} onChange={(e) => onChange({ location: e.target.value })} /></Field>
+              <Field label={sourceFieldLabel('Nickname', false, true)}><Input value={form.nickname ?? ''} onChange={(e) => onChange({ nickname: e.target.value })} placeholder="Optional" /></Field>
             </div>
           </section>
           <section className="space-y-3 border-t border-border pt-4">
@@ -2328,6 +2698,7 @@ function ClassEditorDialog({
                       type="button"
                       title={label}
                       aria-label={label}
+                      aria-pressed={normalizeClassIcon(form.icon) === id}
                       onClick={() => onChange({ icon: id })}
                       className={cn(
                         'grid size-9 place-items-center rounded-xl border text-muted-foreground transition hover:bg-muted hover:text-foreground',
@@ -2340,9 +2711,16 @@ function ClassEditorDialog({
                 </div>
               </Field>
               <Field label="Color">
-                <div className="flex flex-wrap gap-1.5">
+                <div className="grid grid-cols-6 gap-1">
                   {COLORS.map((color) => (
-                    <button type="button" key={color} onClick={() => onChange({ color })} className={cn('rounded-full px-2.5 py-1 text-xs font-bold capitalize', PILL_STYLES[color], form.color === color && 'ring-2 ring-primary')}>
+                    <button
+                      type="button"
+                      key={color}
+                      aria-pressed={form.color === color}
+                      title={`${color[0].toUpperCase()}${color.slice(1)}`}
+                      onClick={() => onChange({ color })}
+                      className={cn('min-w-0 rounded-full px-1.5 py-1 text-center text-xs font-bold capitalize', PILL_STYLES[color], form.color === color && 'ring-2 ring-primary')}
+                    >
                       {color}
                     </button>
                   ))}
@@ -2366,11 +2744,12 @@ function ClassEditorDialog({
           </details>
         </div>
         <DialogFooter>
+          {onBackToImport && <Button variant="ghost" onClick={onBackToImport}><ArrowLeft className="size-4" /> Back to import</Button>}
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           {onSaveAndImport && <Button variant="outline" disabled={!canSave} onClick={() => decision.selectedType && onSaveAndImport(decision.selectedType)}><Upload className="size-4" /> Create & import syllabus</Button>}
           <div className="flex flex-col items-end gap-1">
-            {isCreate && !canSave && <span className="text-xs font-semibold text-muted-foreground">Choose a class type to continue.</span>}
-            <Button disabled={!canSave} onClick={() => decision.selectedType && onSave(decision.selectedType)}>{isCreate ? 'Add class' : 'Save class'}</Button>
+            {isCreate && !canSave && <span className="text-xs font-semibold text-muted-foreground">{saveBlockReason}</span>}
+            <Button disabled={!canSave} onClick={() => decision.selectedType && onSave(decision.selectedType)}>{confirmLabel ?? (isCreate ? 'Add class' : 'Save class')}</Button>
           </div>
         </DialogFooter>
       </DialogContent>
@@ -2587,14 +2966,14 @@ function TopicRow({ topic, current, data, mutate }: { topic: Topic; current: boo
 
 function classStats(courseId: string, data: ClassCenterViewData) {
   const topics = data.topics.filter((item) => item.courseId === courseId)
-  const readyCount = topics.filter((topic) => topic.status === 'ready').length
+  const coveredCount = topics.filter((topic) => (topic.linkedFileIds?.length ?? 0) || topic.sourceNoteIds.length).length
   const upcoming = data.assignments
     .filter((item) => item.courseId === courseId && item.status !== 'submitted' && item.status !== 'graded' && item.dueDate)
     .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
   return {
     topicCount: topics.length,
-    readyCount,
-    weakCount: data.weakAreas.filter((item) => item.courseId === courseId && item.status !== 'resolved').length,
+    coveredCount,
+    materialCount: data.files.filter((item) => item.courseId === courseId).length,
     notesCount: data.notes.filter((item) => item.courseId === courseId).length,
     filesCount: data.files.filter((item) => item.courseId === courseId).length,
     // Remote material processing — the one place on this page where work can
@@ -2605,7 +2984,7 @@ function classStats(courseId: string, data: ClassCenterViewData) {
   }
 }
 
-type ClassDailyVerb = 'Recall' | 'Draft' | 'Read' | 'Log'
+type ClassDailyVerb = 'Study' | 'Draft' | 'Read' | 'Log'
 type ClassSignal = { text?: string; verb?: ClassDailyVerb }
 
 function classSignal(row: ClassWorkspaceView, data: ClassCenterViewData, stats: ReturnType<typeof classStats>, fallback: string): ClassSignal {
@@ -2626,7 +3005,7 @@ function classSignal(row: ClassWorkspaceView, data: ClassCenterViewData, stats: 
     // legible without duplicating the same deadline on a compact card.
     return stats.nextDeadline ? { verb: 'Log' } : { text: fallback }
   }
-  if (stats.topicCount > 0) return { verb: 'Recall', text: `${stats.readyCount} marked ready · ${stats.topicCount} topics recorded` }
+  if (stats.topicCount > 0) return { verb: 'Study', text: `${stats.coveredCount} with material · ${stats.topicCount} syllabus topics` }
   return { text: 'No topics recorded yet' }
 }
 

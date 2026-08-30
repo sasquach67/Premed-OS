@@ -1,10 +1,16 @@
 # academics-daily-main-page — decisions
 
+> **Aug. 29, 2026 authority amendment — approved by Andy:** class cards have one direct **Open** action and no preview layer, Review action, or Quiz me path. The Daily bento uses Recent study work, Class materials, assignment planning, Topic coverage, and Lecture journal activity. Any conflicting historical note below is superseded.
+
 > Extracted from the mockup header. **Read this instead of the HTML** — the markup is ~90% CSS you must not copy.
+
+> **Visual audit (Aug. 26, 2026):** Variant A is APPROVED as the mockup
+> reference. This approval is separate from implementation evidence and does
+> not mark the page BUILT.
 
 
   ACADEMICS — DAILY MODE → CLASS CENTER — APPROVED VISUAL REFERENCE
-  Status: APPROVED (July 2026) after review. This is the target for the
+  Status: APPROVED (Aug. 26, 2026 visual audit). This is the target for the
   Academics Daily main page. Spec: tabs/01-academics.md.
 
   RELATED APPROVED MOCKUPS
@@ -23,12 +29,13 @@
   4. CLASS CARDS: the restored original record hierarchy. At REST no left bar
      + neutral border (class identity = small colored dot). On HOVER the left
      bar ignites + full border and glow turn the class accent + card lifts.
-     The card opens the class hub preview; its hover/focus action rail keeps
-     the original Review button beside overflow. The card may show an entered
-     standing, exact grade percent when its grade evidence exists, a labelled
-     topic-ready line + progress meter, and a real next dated item. No
-     instructor/meeting clutter or invented facts. A missing next date names
-     the absence and leads to the class-owned add route.
+     Four wider records lead at the desktop reference width; Add class sits in
+     the section header instead of consuming a course slot. Each record may
+     show entered standing, exact grade percent when evidence exists, compact
+     status chips, one real latest class record, a labelled topic/study state,
+     and a real next dated item. No instructor/meeting clutter or invented
+     facts. Missing grade, readiness, or date evidence is named and routes to
+     the class-owned add path.
   5. STUDY TOOLS LIVE ON/IN THE CLASS, never floating on the page —
      a tool with no class selected has no subject.
   6. WHERE YOU'RE WEAK is EXAM-SCOPED by default (topics filtered to the
@@ -77,17 +84,20 @@ promotion pass. They supersede the Aug. 23 compact/no-percent/no-progress/
 no-Review experiment below.
 
 - **Footprint:** primary course cards remain compact and responsive, with the
-  original content-led vertical rhythm. Do not impose a fixed 206px/198px
-  equal-tile rule and do not manufacture a blank middle zone.
+  original content-led vertical rhythm. Four wider records lead at the desktop
+  reference width and wrap to two, then one; Add class belongs in the section
+  header rather than taking a record slot. Do not manufacture a blank middle zone.
 - **Colour:** the course dot and restrained edge/hover accent carry class
   identity. Keep the solid warm-dark card surface; no permanent full-card
   colour wash or generic global-blue action.
 - **Information:** show course code/name, an entered letter standing or factual
   in-progress state, and the exact computed grade percent only when grade
-  evidence exists. A labelled topic-ready line and its progress meter are
-  allowed when topics exist; the next item is shown only when it is a real
-  dated class record. These are facts about the record, never a score, rank,
-  readiness judgement, or composite.
+  evidence exists. Compact chips may name factual record state; one latest
+  class record may identify a linked lecture, note, material, or returned-work
+  event. A labelled topic-ready line and its progress meter are allowed when
+  topics exist; the next item appears only when it is a real dated class record.
+  Missing grade, readiness, or date evidence is named. These are facts about
+  the record, never a score, rank, readiness judgement, or composite.
 - **Actions:** clicking the record still opens the Center Peek. The restored
   `Review` action appears in the card's hover/focus action rail and remains in
   overflow/context paths; its play triangle is solid white. Hovering Review
@@ -121,10 +131,10 @@ following:
 1. The literal banner treatment, including its layered warm-dark gradient and
    glass only on the mode pill and stat strip.
 2. The dense solid-surface bento hierarchy: filter bar, Heads up, class grid,
-   review queue, weak-topics panel, Up next, GPA, and supporting panels.
+   Recent study work, Class materials, Up next, GPA, and supporting panels.
 3. The course-card rest, hover, and focus states: neutral rest surface with a
    small identity dot; class-colour rail, border, lift, and glow only on card
-   hover/focus; and the white-triangle Review rail beside overflow.
+   hover/focus; and the direct Open rail beside overflow.
 4. The mockup's restrained class colours and nested warm-dark depth, without a
    permanent colour wash or generic blue replacement.
 
@@ -177,3 +187,24 @@ combine them with A's layout, depth, and interaction treatment.
   movement while preserving the state change. At narrow widths the equal card
   columns step down without clipping the filter controls or growing into
   full-width dashboard rows.
+
+## Stage-A proposed product views — 2026-08-29
+
+These review canvases are **PROPOSED** and require Andy’s approve / deny /
+comment decision. They do not change the approved populated Class Center.
+
+- `contacts`: current-term `Person` records stay a compact supporting bento;
+  each row keeps its class source and one direct class/office-hours action.
+- `class-peek`: selecting a class opens a lean record preview with exactly two
+  handoffs, **Expand Class Hub** and **Split beside Class Center**. It does not
+  duplicate the five-tab hub.
+- `how-to-study`: the revisitable guide states the four real workflow moments:
+  syllabus, transcript-first capture, selected-source study work, and recall.
+- `walkthrough`: a four-step spotlight moves across the real Daily shell. It is
+  skippable, replayable, keyboard-safe, and reduced-motion safe; one teaching
+  note appears at a time.
+
+Appearance follows the approved Daily ladder literally: banner glass only,
+solid card and muted nested surfaces, 16px panels, 13px record surfaces, compact
+Baloo headings and Nunito body copy. Desktop uses the bento/supporting rail;
+narrow widths stack without clipping actions or the walkthrough spotlight.

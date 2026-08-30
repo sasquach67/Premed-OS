@@ -1,650 +1,660 @@
 # BIOL 103 · Lesson 2 — Transcription, Translation & Protein Targeting
 
 Deck: `UNC::Fall 2026::BIOL103::Transcription, Translation & Protein Targeting`  
-144 notes, 151 cards. Authored against `flashcards-v1` (spec 74c66a8a0252).
+106 notes / 122 cards (102 text + 4 image-occlusion).
 
-Sources: Campbell Concept 14.1 (pp. 289 to 294), Concept 14.4 (pp. 299 to 307), Concept 15.4 (pp. 328 to 330), the Lesson 2 GRQ, and the Pearson set.
+spec `flashcards-v1@aug-2026-relate-revision` · preset `premedos-default` · source mode `SOURCE_PLUS_CLARIFICATION`
 
-**Tags for filtering in Anki**  
-`premedos::scope::grq` answers a GRQ question directly · `premedos::scope::core` assigned reading, not GRQ'd · `premedos::scope::extension` from sections the GRQ told you to skip (suspend this tag to shrink the deck)  
-`premedos::type::*` is the retrieval objective · `premedos::cloze::*` is the cloze pattern
+Tested answers are memory-first (§8.1, aim 3 to 15 words); mechanism, qualifiers and context sit in Extra.
+Median tested answer: 8 words.
+
+**Filter tags** — `scope::grq` answers a GRQ question · `scope::core` assigned reading · `scope::extension` from the skipped sections · `scope::figures` occlusion  
+`provenance::source` on every card; no background content, which the source mode forbids.
 
 ---
 
 ### 1. CLOZE · `grq` · Campbell Biology, Concept 14.1, p. 289
 _cloze / definition_  
-A gene is {{c1::a specific sequence of nucleotides along a stretch of DNA that is expressed to form a functional product: either an RNA or a polypeptide}}.
+A gene is {{c1::a stretch of DNA coding for one functional product, RNA or polypeptide}}.
 
-> GRQ Q1. Your answer was right. This wording is the one your Pearson set marked as the most complete: it covers genes whose product is never translated, not just protein-coding genes.
+> GRQ Q1, and your answer was right. Pearson's fullest wording: a DNA sequence that is expressed to form a functional product, either RNA or polypeptide. It covers genes whose product is never translated.
 
 ### 2. CLOZE · `grq` · Campbell Biology, Concept 14.1, p. 289
 _cloze / definition_  
-Gene expression is {{c1::the process by which DNA directs the synthesis of a protein, or in some cases just an RNA}}.
+Gene expression is {{c1::DNA directing the synthesis of its product}}.
+
+> The product is a protein, or in some cases just an RNA. For protein-coding genes it runs in two stages: transcription, then translation.
 
 ### 3. BASIC_QA · `grq` · Campbell Biology, Concept 14.1, p. 290
-**Q.** A gene does not build a protein directly. What molecule bridges DNA and protein synthesis?  
+**Q.** A gene does not build a protein directly. What bridges DNA and protein?  
 **A.** RNA.
 
-> GRQ Q3, which asked whether genes code for protein directly. They do not: RNA is the intermediate.
+> GRQ Q3. Transcription writes the RNA from the gene; translation reads it into a polypeptide.
 
 ### 4. COMPARISON · `grq` · Campbell Biology, Concept 14.1, p. 290
-**Q.** Transcription and translation both copy information, but only one changes the chemical language. Which one, and what is the change?  
-**A.** Translation. Transcription stays in the language of nucleotides, rewriting DNA into RNA. Translation changes languages, turning a nucleotide sequence into an amino acid sequence.
+**Q.** Transcription and translation both copy information. Which one changes the chemical language?  
+**A.** Translation. Transcription stays in nucleotides; translation goes to amino acids.
 
-_axis of contrast: same chemical language, or a change of language_
+_axis: same chemical language, or a change of language_
 
-> This is why the textbook says information is 'transcribed' in one step and 'translated' in the other.
-> Ex (background): transcription is copying a sentence from one notebook into another; translation is rendering it into a different language.
+> Ex (clarification): transcription copies a sentence into a second notebook; translation renders it into another language.
 
-### 5. CLOZE · `grq` · Campbell Biology, Concept 14.1, p. 291
+### 5. BASIC_QA · `grq` · Campbell Biology, Concept 14.1, pp. 290 to 291
+**Q.** Give the template and product for transcription, then translation.  
+**A.** Transcription: DNA in, RNA out. Translation: mRNA in, polypeptide out.
+
+> GRQ Q7.
+
+### 6. CLOZE · `grq` · Campbell Biology, Concept 14.1, p. 291
 _cloze / definition_  
-Messenger RNA (mRNA) is {{c1::the RNA molecule that carries a gene's protein-building instructions from the DNA to the protein-synthesizing machinery of the cell}}.
+Messenger RNA is {{c1::the RNA that carries a gene's instructions to the ribosome}}.
 
-> GRQ Q6.
+> GRQ Q6. Named for the job: it is the message from DNA to the protein-synthesizing machinery.
 
-### 6. BASIC_QA · `core` · Campbell Biology, Concept 14.1, p. 291
-**Q.** What did Francis Crick name the DNA to RNA to protein flow of genetic information?  
+### 7. BASIC_QA · `core` · Campbell Biology, Concept 14.1, p. 291
+**Q.** What did Francis Crick name the DNA to RNA to protein flow?  
 **A.** The central dogma.
 
-### 7. CLOZE · `core` · Pearson, Lesson 2
-_cloze / definition_  
-RNA processing is {{c1::the editing of a pre-mRNA transcript in the nucleus into the finished mRNA}}.
+> Coined 1956. Some enzymes copy RNA back into DNA, but the general direction still holds.
 
-### 8. BASIC_QA · `core` · Pearson, Lesson 2
-**Q.** Besides DNA and RNA, which energy-carrying molecule also contains adenine?  
+### 8. CLOZE · `core` · Pearson, Lesson 2
+_cloze / definition_  
+RNA processing is {{c1::editing pre-mRNA in the nucleus into finished mRNA}}.
+
+### 9. COMPARISON · `grq` · Campbell Biology, Concept 14.1, p. 290
+**Q.** Name the three ways DNA and RNA differ.  
+**A.** DNA: deoxyribose, thymine, double stranded. RNA: ribose, uracil, single stranded.
+
+_axis: sugar, base, and strand count_
+
+> GRQ Q4 table. Adenine, guanine and cytosine are in both.
+
+### 10. BASIC_QA · `core` · Pearson, Lesson 2
+**Q.** Besides DNA and RNA, which energy carrier contains adenine?  
 **A.** ATP.
 
-> Adenine is shared by ATP, RNA and DNA. It is not found in proteins, triglycerides or glucose.
+> Adenine is shared by ATP, RNA and DNA. Not by proteins, triglycerides or glucose.
 
-### 9. CONCEPTUAL · `grq` · Campbell Biology, Concept 14.1, p. 292
-**Q.** Why is an mRNA sequence complementary to its DNA template rather than identical to it?  
-**A.** Because RNA nucleotides are assembled onto the template by base pairing, so each RNA base pairs with a template base rather than matching it. Uracil also replaces thymine.
+### 11. CONCEPTUAL · `grq` · Campbell Biology, Concept 14.1, p. 292
+**Q.** Why is mRNA complementary to its DNA template rather than identical?  
+**A.** It is built by base pairing onto the template, not copied off it.
 
-> GRQ Q5. Note the wrinkle worth holding: mRNA is not identical to the template, but it IS identical to the other strand, the coding strand, apart from U in place of T.
+> GRQ Q5. Uracil also replaces thymine. The wrinkle worth holding: mRNA is not identical to the template, but it is identical to the coding strand apart from U for T.
 
-### 10. CLOZE · `grq` · Campbell Biology, Concept 14.1, p. 292
+### 12. CLOZE · `grq` · Campbell Biology, Concept 14.1, p. 292
 _cloze / definition_  
-The template strand is {{c1::the DNA strand that provides the pattern for the nucleotide sequence of an RNA transcript}}.
+The template strand is {{c1::the DNA strand the RNA is copied from}}.
 
 > GRQ Q13.
 
-### 11. BASIC_QA · `grq` · Campbell Biology, Concept 14.1, p. 292
-**Q.** For any one gene, how many of the two DNA strands are transcribed?  
+### 13. BASIC_QA · `grq` · Campbell Biology, Concept 14.1, p. 292
+**Q.** For one gene, how many DNA strands are transcribed?  
 **A.** One.
 
 > GRQ Q12.
 
-### 12. CONCEPTUAL · `grq` · Campbell Biology, Concept 14.1, p. 292
-**Q.** A given gene always uses the same template strand every time it is transcribed. What is true of a different gene farther along the same DNA molecule?  
-**A.** It may use the opposite strand as its template.
+### 14. CONCEPTUAL · `grq` · Campbell Biology, Concept 14.1, p. 292
+**Q.** A gene always uses the same template strand. What about a different gene farther along the same DNA?  
+**A.** It may use the opposite strand.
 
-> GRQ Q14, which asked whether one strand is the template for every gene on a chromosome. It is not. There is no permanent template strand and coding strand for a whole chromosome.
+> GRQ Q14. There is no permanent template strand for a whole chromosome. Which strand is used depends on the orientation of the transcribing enzyme, set by sequences near that gene.
 
-### 13. COMPARISON · `core` · Campbell Biology, Concept 14.1, p. 292
-**Q.** Which DNA strand has the same sequence as the mRNA apart from T in place of U, and what is it called?  
+### 15. COMPARISON · `core` · Campbell Biology, Concept 14.1, p. 292
+**Q.** Which DNA strand reads the same as the mRNA apart from T for U, and what is it called?  
 **A.** The nontemplate strand, also called the coding strand.
 
-_axis of contrast: which strand the mRNA matches_
+_axis: which strand matches the mRNA_
 
-> This is why a gene's sequence is reported as the coding strand: it reads the same as the message.
+> A gene's sequence is reported as the coding strand, because it shows the message directly.
 
-### 14. CLOZE · `core` · Campbell Biology, Concept 14.1, p. 292
+### 16. CLOZE · `core` · Campbell Biology, Concept 14.1, p. 292
 _cloze / single_  
-Like a new strand of DNA, an RNA molecule is synthesized {{c1::antiparallel}} to the template strand it is copied from.
+RNA is synthesized {{c1::antiparallel}} to its template strand.
 
-> This is the reason 5' and 3' labels flip when you write out a template and its transcript.
+> This is why the 5' and 3' labels flip when you write out a template and its transcript.
 
-### 15. COMPARISON · `grq` · Campbell Biology, Concept 14.1, p. 291
-**Q.** What single structural feature separates transcription from translation in space and time in a eukaryotic cell but not a bacterial one?  
-**A.** The nuclear envelope. Bacteria have none, so their DNA, mRNA and ribosomes share one compartment.
+### 17. COMPARISON · `grq` · Campbell Biology, Concept 14.1, p. 291
+**Q.** What one structure separates transcription from translation in a eukaryote but not a bacterium?  
+**A.** The nuclear envelope.
 
-_axis of contrast: whether a membrane separates transcription from translation_
+_axis: whether a membrane separates the two processes_
 
-> Every other difference in the bacterial vs eukaryotic comparison follows from this one.
-> Ex (background): a bacterium is a one-room workshop; a eukaryote has a separate drafting room whose drawings must be finished and carried out before anyone builds from them.
+> Every other difference follows from it.
+> Ex: Campbell calls the bacterial cell a one-room workshop, which is why it can couple the two processes.
 
-### 16. BASIC_QA · `core` · Campbell Biology, Concept 14.1, p. 291
-**Q.** In a bacterial cell, how soon can translation of an mRNA begin?  
-**A.** As soon as the 5' end of the mRNA peels away from the DNA template, while transcription is still in progress.
+### 18. CONCEPTUAL · `core` · Pearson, Lesson 2
+**Q.** Could a eukaryote couple transcription and translation the way a bacterium does?  
+**A.** No. The nuclear membrane separates them in space and time.
 
-### 17. CONCEPTUAL · `core` · Pearson, Lesson 2
-**Q.** Could a eukaryotic cell couple transcription and translation the way a bacterium does?  
-**A.** No. The nuclear membrane separates the two in space and time, and the transcript must be processed and exported before a ribosome can reach it.
+> A bacterium can start translating as soon as the mRNA's 5' end peels off the template. A eukaryotic transcript must be processed and exported first.
 
-### 18. COMPARISON · `grq` · Campbell Biology, Concept 14.1, p. 291
-**Q.** Where does translation take place in a eukaryotic cell: name both the compartment and the structure.  
-**A.** The compartment is the cytosol. The structure is the ribosome, either free or bound to the ER.
+### 19. COMPARISON · `grq` · Campbell Biology, Concept 14.1, p. 291
+**Q.** Bacterial versus animal cell: where is the DNA, and is the transcript modified?  
+**A.** Bacterial: cytoplasm, not modified. Animal: nucleus, processed into mRNA.
 
-_axis of contrast: compartment versus machine_
+_axis: where the DNA sits, and whether the transcript is edited_
 
-> GRQ Q9. You wrote 'ribosome' for the location row, and your Pearson set also accepted 'ribosomes' for this, so that is not wrong in this course. Hold both framings: Campbell draws the bacterial vs eukaryotic comparison on compartments, where the answer is the cytosol in both, while Pearson asked for the structure.
+> GRQ Q9 table.
 
-### 19. CLOZE · `core` · Campbell Biology, Concept 14.1, p. 291
+### 20. COMPARISON · `grq` · Campbell Biology, Concept 14.1, p. 291
+**Q.** Where does translation happen in a eukaryotic cell: compartment and structure?  
+**A.** Compartment: the cytosol. Structure: the ribosome.
+
+_axis: compartment versus machine_
+
+> GRQ Q9. You wrote 'ribosome' for the location row, and Pearson accepted 'ribosomes' for the same question, so it is not wrong in this course. Campbell draws the comparison on compartments, where the answer is the cytosol in both.
+
+### 21. CLOZE · `core` · Campbell Biology, Concept 14.1, p. 291
 _cloze / definition_  
-A primary transcript is {{c1::the initial RNA transcript from any gene, before any processing}}.
+A primary transcript is {{c1::the RNA straight off the gene, before processing}}.
 
-> The term covers transcripts of genes for tRNA and rRNA too, not only pre-mRNA.
+> The term covers tRNA and rRNA transcripts too, not only pre-mRNA.
 
-### 20. FREE_RECALL · `grq` · Campbell Biology, Concept 14.1, p. 291
+### 22. FREE_RECALL · `grq` · Campbell Biology, Concept 14.1, p. 291
 **BLURT: bacterial versus eukaryotic gene expression. 5 things to hit.**
 
-1. Nuclear envelope: bacteria have none, eukaryotes do, and every difference below follows from that
-2. Location of transcription: cytoplasm in bacteria, nucleus in eukaryotes
-3. Location of translation: the cytosol in both, on ribosomes
-4. Coupling: a bacterium transcribes and translates the same gene at once; a eukaryote cannot
-5. Processing: eukaryotic pre-mRNA is processed into mRNA before leaving the nucleus; bacterial mRNA is translated as made
+1. Nuclear envelope: bacteria have none, eukaryotes do, and the rest follows
+2. Transcription: cytoplasm in bacteria, nucleus in eukaryotes
+3. Translation: the cytosol in both
+4. Coupling: bacteria transcribe and translate at once, eukaryotes cannot
+5. Processing: eukaryotic pre-mRNA is edited before export, bacterial mRNA is not
 
-### 21. CONCEPTUAL · `core` · Campbell Biology, Concept 14.1, p. 292
-**Q.** Why must the genetic code use three-nucleotide words rather than one or two?  
-**A.** Four bases give only 4 one-letter words and 16 two-letter words, neither enough for 20 amino acids. Three-letter words give 64.
+### 23. CONCEPTUAL · `core` · Campbell Biology, Concept 14.1, p. 292
+**Q.** Why does the code use three-base words rather than one or two?  
+**A.** Singles give 4, pairs give 16. Neither covers 20. Triplets give 64.
 
-### 22. CLOZE · `grq` · Campbell Biology, Concept 14.1, p. 292
+### 24. CLOZE · `grq` · Campbell Biology, Concept 14.1, p. 292
 _cloze / definition_  
-A codon is {{c1::a three-nucleotide word in mRNA that specifies one amino acid or a stop signal}}.
+A codon is {{c1::three mRNA bases specifying one amino acid or a stop}}.
 
 > GRQ Q15.
 
-### 23. CONCEPTUAL · `grq` · Campbell Biology, Concept 14.1, p. 292
-**Q.** The term codon is used for DNA triplets as well as mRNA triplets. Which DNA strand carries them, and why that strand?  
-**A.** The nontemplate, or coding, strand. Its triplets are identical in sequence to the mRNA codons apart from T in place of U.
+### 25. CONCEPTUAL · `grq` · Campbell Biology, Concept 14.1, p. 292
+**Q.** Codon is also used for DNA triplets. Which strand carries them?  
+**A.** The nontemplate, or coding, strand.
 
-> GRQ Q11. Your verdict of 'true' was right, but the explanation had the strands swapped: you wrote that the template strand carries the codons. It is the nontemplate strand whose triplets are called codons; the template strand carries their complements.
+> GRQ Q11. Your verdict of true was right, but the explanation had the strands swapped: you wrote that the template strand carries the codons. It is the coding strand, because its triplets match the mRNA apart from T for U.
 
-### 24. BASIC_QA · `core` · Campbell Biology, Concept 14.1, p. 293
-**Q.** Of the 64 codons, how many specify amino acids and how many are stop signals?  
-**A.** 61 specify amino acids; 3 are stop signals.
+### 26. BASIC_QA · `core` · Campbell Biology, Concept 14.1, p. 293
+**Q.** Of the 64 codons, how many code for amino acids?  
+**A.** 61. The other three are stops.
 
-### 25. CLOZE · `core` · Campbell Biology, Concept 14.1, p. 303
+### 27. CLOZE · `core` · Campbell Biology, Concept 14.4, p. 303
 _cloze / enumerated-list_  
 The three stop codons, in any order, are {{c1::UAG}}, {{c2::UAA}} and {{c3::UGA}}.
 
-### 26. BASIC_QA · `core` · Campbell Biology, Concept 14.1, p. 293
-**Q.** What two jobs does the codon AUG do?  
-**A.** It codes for methionine and serves as the start codon.
+### 28. BASIC_QA · `core` · Campbell Biology, Concept 14.1, p. 293
+**Q.** What two jobs does AUG do?  
+**A.** Codes methionine, and starts translation.
 
-> This is why every polypeptide begins with methionine, though an enzyme often removes it afterwards.
+> Every polypeptide therefore begins with methionine, though an enzyme often removes it later.
 
-### 27. COMPARISON · `core` · Campbell Biology, Concept 14.1, p. 293
-**Q.** The genetic code is redundant but not ambiguous. What does each of those two words rule out?  
-**A.** Redundant: several different codons can specify the same amino acid. Unambiguous: no single codon ever specifies more than one amino acid.
+### 29. COMPARISON · `core` · Campbell Biology, Concept 14.1, p. 293
+**Q.** The code is redundant but not ambiguous. What does each word rule out?  
+**A.** Redundant: several codons per amino acid. Unambiguous: never two meanings per codon.
 
-_axis of contrast: one meaning per codon, versus one codon per meaning_
+_axis: one meaning per codon, versus one codon per meaning_
 
 > GAA and GAG both mean glutamic acid, and neither ever means anything else.
 
-### 28. CLOZE · `core` · Campbell Biology, Concept 14.1, p. 293
+### 30. CLOZE · `core` · Campbell Biology, Concept 14.1, p. 293
 _cloze / definition_  
-The reading frame is {{c1::the grouping in which an mRNA's nucleotides are read as consecutive, nonoverlapping triplets}}.
+The reading frame is {{c1::where you start grouping the bases into triplets}}.
 
-> Ex (background): 'The red dog ate the bug' regrouped one letter over becomes 'her edd oga tet heb ug'. Same letters, no meaning.
+> Ex: Campbell's own case, 'The red dog ate the bug' shifted one letter, becomes 'her edd oga tet heb ug'.
 
-### 29. CONCEPTUAL · `core` · Pearson, Lesson 2
-**Q.** Given that the genetic code is essentially universal, what follows about a gene taken from one organism and put into another?  
-**A.** It can in principle be expressed by that other organism, because the same codons specify the same amino acids in both.
+### 31. CONCEPTUAL · `core` · Pearson, Lesson 2
+**Q.** The genetic code is essentially universal. What follows for a gene moved between species?  
+**A.** Any organism can in principle express it.
 
-### 30. EXEMPLAR · `core` · Campbell Biology, Concept 14.1, p. 293
-**Q.** Researchers exploit the shared genetic code by expressing one species' gene in another. Which examples does the chapter give?  
-**A.** A tobacco plant expressing a firefly gene and glowing, and a mosquito larva expressing a jellyfish gene. Bacteria carrying human genes make insulin for medical use.
+> The same codons mean the same amino acids everywhere, so the code must have been in place before the common ancestor of present-day life.
+
+### 32. EXEMPLAR · `core` · Campbell Biology, Concept 14.1, p. 293
+**Q.** Which examples does the chapter give of one species expressing another's gene?  
+**A.** A tobacco plant with a firefly gene, a mosquito larva with a jellyfish gene.
 
 _exemplar direction: concept-to-instance_
 
-### 31. EXEMPLAR · `extension` · Campbell Biology, Concept 14.1, p. 293
-**Q.** Marshall Nirenberg translated an artificial mRNA made only of uracil in a test tube. What came out, and what did it establish?  
-**A.** A chain of phenylalanine, establishing that the codon UUU specifies phenylalanine.
+> Bacteria carrying human genes make insulin for medical use, which is the same principle put to work.
+
+### 33. EXEMPLAR · `extension` · Campbell Biology, Concept 14.1, p. 293
+**Q.** Marshall Nirenberg translated an all-uracil mRNA in a test tube. What did that establish?  
+**A.** UUU codes phenylalanine.
 
 _exemplar direction: instance-to-concept_
 
-> It was the first codon deciphered, in 1961, and the same approach gave AAA, GGG and CCC soon after.
+> The first codon deciphered, in 1961. AAA, GGG and CCC followed by the same method.
 
-### 32. FREE_RECALL · `core` · Campbell Biology, Concept 14.1, pp. 292 to 293
+### 34. FREE_RECALL · `core` · Campbell Biology, Concept 14.1, pp. 292 to 293
 **BLURT: properties of the genetic code. 6 things to hit.**
 
-1. Triplet: three nucleotides per amino acid, because 64 is the smallest power of 4 that covers 20 amino acids
-2. 61 of the 64 codons specify amino acids; the other 3 are stop signals
-3. AUG is both methionine and the start codon; UAG, UAA and UGA are the stops
-4. Redundant: several codons can mean one amino acid, usually differing only at the third base
-5. Unambiguous: no codon ever specifies two different amino acids
-6. Nearly universal: the same codons mean the same amino acids across essentially all life
+1. Triplet: three bases per amino acid, since 64 is the smallest power of 4 that covers 20
+2. 61 codons specify amino acids, 3 are stops
+3. AUG is methionine and the start; UAG, UAA and UGA are the stops
+4. Redundant: several codons per amino acid, usually differing at the third base
+5. Unambiguous: no codon ever means two amino acids
+6. Nearly universal across all life
 
-### 33. PROCESS · `core` · Campbell Biology, Concept 14.1, p. 292
-**Q.** You are given a polypeptide sequence and asked for a DNA template strand. What are the three steps, and where does the direction flip?  
-**A.** 1. Write an mRNA codon for each amino acid, 5' to 3'. 2. Complement every base, T for U. 3. Label the result 3' to 5', since the template is antiparallel.
+### 35. PROCESS · `core` · Campbell Biology, Concept 14.1, p. 292
+**Q.** Polypeptide to DNA template strand: what are the three steps?  
+**A.** Write codons 5' to 3', complement with T for U, then label 3' to 5'.
 
-> Step 3 is where nearly every wrong answer comes from. If your answer is labelled 5' to 3' and reads as a straight complement, the ends are backwards.
+> Step three is where most wrong answers come from. If your answer reads as a straight complement labelled 5' to 3', the ends are backwards.
 
-### 34. APPLICATION · `core` · Pearson, Lesson 2
-**Q.** A triplet in the template strand of DNA is 5'-AGT-3'. What is the corresponding mRNA codon, with ends labelled?  
+### 36. APPLICATION · `core` · Pearson, Lesson 2
+**Q.** A template triplet is 5'-AGT-3'. What is the mRNA codon, ends labelled?  
 **A.** 3'-UCA-5'.
 
 > Complement A,G,T to U,C,A, then flip the labels because the transcript is antiparallel. Written conventionally 5' to 3' the same codon is ACU.
 
-### 35. APPLICATION · `core` · Pearson, Lesson 2
-**Q.** Give a DNA template strand that could code for the polypeptide Phe-Leu-Ile-Val, with ends labelled.  
+### 37. APPLICATION · `core` · Pearson, Lesson 2
+**Q.** Give a DNA template strand coding for Phe-Leu-Ile-Val, ends labelled.  
 **A.** 3'-AAA-GAA-TAA-CAA-5'.
 
-> The mRNA is 5'-UUU-CUU-AUU-GUU-3'. Because the code is redundant, other template sequences would also work; this is one valid answer, not the only one.
+> The mRNA is 5'-UUU-CUU-AUU-GUU-3'. The code is redundant, so other templates also work. This is one valid answer, not the only one.
 
-### 36. APPLICATION · `core` · Pearson, Lesson 2
+### 38. APPLICATION · `core` · Pearson, Lesson 2
 **Q.** Translate 5'-AUG-UCU-UCG-UUA-UCC-UUG-3'.  
 **A.** Met-Ser-Ser-Leu-Ser-Leu.
 
-### 37. APPLICATION · `grq` · GRQ Lesson 2, Q16
-**Q.** An mRNA reads 5'-AUGCGGUUGAUCUCA-3'. Write the DNA template strand and the coding strand, both with ends labelled.  
-**A.** Template: 3'-TACGCCAACTAGAGT-5'. Coding: 5'-ATGCGGTTGATCTCA-3'.
+### 39. APPLICATION · `grq` · GRQ Lesson 2, Q16
+**Q.** mRNA reads 5'-AUGCGGUUGAUCUCA-3'. Give the template and coding strands.  
+**A.** Template 3'-TACGCCAACTAGAGT-5'. Coding 5'-ATGCGGTTGATCTCA-3'.
 
-> GRQ Q16. Both of yours were correct. Note the coding strand is the mRNA with T for U, and it keeps the same 5' to 3' labelling.
+> GRQ Q16, both correct. The coding strand is the mRNA with T for U and keeps the same labelling.
 
-### 38. APPLICATION · `grq` · GRQ Lesson 2, Q16
-**Q.** Translate 5'-AUG CGG UUG AUC UCA-3', labelling the ends of the polypeptide.  
+### 40. APPLICATION · `grq` · GRQ Lesson 2, Q16
+**Q.** Translate 5'-AUG CGG UUG AUC UCA-3', labelling the polypeptide ends.  
 **A.** N-terminus Met-Arg-Leu-Ile-Ser C-terminus.
 
-> GRQ Q16. The amino end is made first, so the amino acid from the 5'-most codon is the N-terminus.
+> GRQ Q16. The amino end is made first, so the 5'-most codon gives the N-terminus.
 
-### 39. CONCEPTUAL · `core` · Campbell Biology, Concept 14.1, p. 290
-**Q.** An answer choice for a DNA strand reads 5'-AUG-CTG-CAG-TAT-3'. What is wrong with it on inspection alone?  
-**A.** It contains uracil. DNA has thymine, so a strand with U in it cannot be DNA.
+### 41. CONCEPTUAL · `core` · Campbell Biology, Concept 14.1, p. 290
+**Q.** An answer choice for a DNA strand reads 5'-AUG-CTG-CAG-TAT-3'. What is wrong on sight?  
+**A.** It has uracil. DNA has thymine.
 
-> Ex (background): a mixed alphabet is the giveaway. Scan for U in a DNA answer and for T in an RNA answer before you do any base pairing.
+> Ex (clarification): scan for a mixed alphabet before doing any base pairing. U in a DNA answer, or T in an RNA answer, kills the option outright.
 
-### 40. CONCEPTUAL · `core` · Campbell Biology, Concept 14.1, p. 293
-**Q.** Why can you not determine one exact DNA sequence from a known polypeptide sequence?  
-**A.** Because the code is redundant: most amino acids are specified by more than one codon, so many DNA sequences would produce the same polypeptide.
+### 42. CONCEPTUAL · `core` · Campbell Biology, Concept 14.1, p. 293
+**Q.** Why can a known polypeptide not give one exact DNA sequence?  
+**A.** The code is redundant, so many sequences give the same chain.
 
-### 41. EXEMPLAR · `extension` · Campbell Biology, Concept 14.1, p. 289
-**Q.** Archibald Garrod noticed in 1902 that people with alkaptonuria excrete black urine. What did he conclude, and what larger idea was that the first statement of?  
-**A.** That they cannot make the enzyme that breaks down alkapton, so it is expelled instead. It was the first suggestion that genes dictate phenotypes through enzymes.
+### 43. EXEMPLAR · `extension` · Campbell Biology, Concept 14.1, p. 289
+**Q.** Archibald Garrod saw that alkaptonuria patients pass black urine. What did he conclude?  
+**A.** They cannot make the enzyme that breaks down alkapton.
 
 _exemplar direction: instance-to-concept_
 
-### 42. APPLICATION · `extension` · Campbell Biology, Concept 14.1, p. 289
-**Q.** A Neurospora mutant grows on minimal medium plus arginine but not on minimal medium alone. What does that tell you about the mutant?  
-**A.** It is missing an enzyme needed to synthesize arginine.
+> 1902, and the first suggestion that genes act on phenotype through enzymes.
 
-### 43. FREE_RECALL · `extension` · Campbell Biology, Concept 14.1, p. 290
-**BLURT: how one gene-one enzyme became one gene-one polypeptide. 4 things to hit.**
+### 44. BASIC_QA · `extension` · Campbell Biology, Concept 14.1, p. 289
+**Q.** A Neurospora mutant grows on minimal medium plus arginine but not minimal alone. What is missing?  
+**A.** An enzyme needed to make arginine.
 
-1. The original claim: the function of a gene is to dictate production of one specific enzyme, from the Neurospora nutritional mutants
-2. First revision, to one gene-one protein: not all proteins are enzymes, and keratin and insulin are gene products too
-3. Second revision, to one gene-one polypeptide: many proteins are built from two or more different polypeptide chains, each specified by its own gene
-4. Why even that is imprecise: alternative splicing lets one eukaryotic gene specify a set of related polypeptides, and some genes make RNAs that are never translated
+> Beadle and Tatum found nutritional mutants this way: they grow on complete medium but not minimal, then you add one nutrient at a time to find the blocked step. Neurospora is haploid, so disabling one allele shows the wild-type gene's job directly.
 
-### 44. EXEMPLAR · `extension` · Campbell Biology, Concept 14.1, p. 290
-**Q.** Which protein does the chapter use to show that one protein can require two genes?  
-**A.** Hemoglobin. It contains two kinds of polypeptide, so two genes code for it, one per chain.
+### 45. FREE_RECALL · `extension` · Campbell Biology, Concept 14.1, p. 290
+**BLURT: one gene-one enzyme becoming one gene-one polypeptide. 4 things to hit.**
+
+1. Original claim, from the Neurospora mutants: a gene dictates one specific enzyme
+2. First revision to one gene-one protein: not all proteins are enzymes, keratin and insulin count
+3. Second revision to one gene-one polypeptide: many proteins have two or more chains, each with its own gene
+4. Still imprecise: alternative splicing gives one gene several polypeptides, and some genes make RNA that is never translated
+
+### 46. EXEMPLAR · `extension` · Campbell Biology, Concept 14.1, p. 290
+**Q.** Which protein shows that one protein can need two genes?  
+**A.** Hemoglobin.
 
 _exemplar direction: concept-to-instance_
 
-> The same example does double duty as the standard illustration of quaternary structure.
+> It has two kinds of polypeptide chain, one gene each. The same example is the standard illustration of quaternary structure.
 
-### 45. EXEMPLAR · `extension` · Campbell Biology, Concept 14.1, p. 290
-**Q.** Albino donkeys on Asinara lack a working copy of the enzyme tyrosinase. What relationship does that illustrate?  
-**A.** That a mutation in one gene produces a faulty enzyme, which blocks a metabolic pathway, here melanin synthesis, and changes the phenotype.
+### 47. EXEMPLAR · `extension` · Campbell Biology, Concept 14.1, p. 290
+**Q.** Asinara's albino donkeys lack tyrosinase. What does that illustrate?  
+**A.** One faulty gene blocks a pathway and changes the phenotype.
 
 _exemplar direction: instance-to-concept_
 
-### 46. CLOZE · `extension` · Campbell Biology, Concept 14.4, p. 299
+> No tyrosinase means no melanin, so the coat is white and the nose, ears and hooves are pink.
+
+### 48. CLOZE · `extension` · Campbell Biology, Concept 14.4, p. 299
 _cloze / definition_  
-A transfer RNA (tRNA) is {{c1::the molecule that carries amino acids from the cytoplasmic pool to a growing polypeptide in a ribosome}}.
+A tRNA is {{c1::the carrier that brings an amino acid to the ribosome}}.
 
-### 47. CONCEPTUAL · `extension` · Campbell Biology, Concept 14.4, p. 300
-**Q.** Why are anticodons conventionally written 3' to 5' when codons are written 5' to 3'?  
-**A.** So the two line up as they actually pair. RNA strands must be antiparallel to base-pair.
+### 49. COMPARISON · `extension` · Campbell Biology, Concept 14.4, pp. 299 to 300
+**Q.** A tRNA does a different job at each end. What is at each?  
+**A.** 3' end carries the amino acid. Far end carries the anticodon.
 
-### 48. APPLICATION · `extension` · Campbell Biology, Concept 14.4, p. 300
-**Q.** An mRNA codon reads 5'-GGC-3'. What is the anticodon of the tRNA that pairs with it, and which amino acid does that tRNA carry?  
-**A.** 3'-CCG-5', carrying glycine.
+_axis: the two ends and the two jobs_
 
-### 49. FREE_RECALL · `extension` · Campbell Biology, Concept 14.4, pp. 299 to 300
+> The anticodon is the triplet that base-pairs with a complementary mRNA codon.
+> Ex (clarification): an adapter plug. One face fits the message, the other carries the cargo.
+
+### 50. CONCEPTUAL · `extension` · Campbell Biology, Concept 14.4, p. 300
+**Q.** Why write anticodons 3' to 5' when codons are written 5' to 3'?  
+**A.** So they line up as they actually pair. RNA strands pair antiparallel.
+
+### 51. APPLICATION · `extension` · Campbell Biology, Concept 14.4, p. 300
+**Q.** Codon 5'-GGC-3'. Give the anticodon and the amino acid.  
+**A.** 3'-CCG-5', glycine.
+
+### 52. FREE_RECALL · `extension` · Campbell Biology, Concept 14.4, pp. 299 to 300
 **BLURT: tRNA structure and function. 5 things to hit.**
 
-1. Job: carries an amino acid from the cytosolic pool to the growing polypeptide in the ribosome
-2. One RNA strand of about 80 nucleotides, folded because complementary stretches within it base-pair
-3. Anticodon at one end: the triplet that pairs with an mRNA codon, written 3' to 5' so it aligns antiparallel
+1. Job: brings an amino acid from the cytosol to the growing chain
+2. One strand, about 80 bases, folded because parts of it base-pair with itself
+3. Anticodon at one end, written 3' to 5' so it aligns antiparallel to the codon
 4. Amino acid attachment site at the protruding 3' end
-5. Reused: it deposits its cargo, leaves the ribosome, and is recharged with the same amino acid
-
-### 50. CLOZE · `extension` · Campbell Biology, Concept 14.4, p. 300
-_cloze / definition_  
-An aminoacyl-tRNA synthetase is {{c1::the enzyme that covalently attaches a specific amino acid to its correct tRNA}}.
-
-### 51. COMPARISON · `extension` · Campbell Biology, Concept 14.4, p. 300
-**Q.** Accurate translation requires two acts of molecular recognition. What are they, and which molecule performs each?  
-**A.** First the synthetase matches an amino acid to the correct tRNA. Second the tRNA's anticodon pairs with the correct mRNA codon at the ribosome.
-
-_axis of contrast: which molecule does the recognizing at each step_
-
-> This is the answer to Concept Check 14.4 question 1.
-
-### 52. CONCEPTUAL · `extension` · Campbell Biology, Concept 14.4, p. 300
-**Q.** A ribosome reads only a tRNA's anticodon, never its cargo. What follows about where translational accuracy is actually enforced?  
-**A.** At the synthetase. If it charged a tRNA with the wrong amino acid, the ribosome would insert that amino acid wherever the anticodon matched.
+5. Reused: drops its cargo, leaves, and is recharged with the same amino acid
 
 ### 53. CLOZE · `extension` · Campbell Biology, Concept 14.4, p. 300
 _cloze / definition_  
-Wobble is {{c1::the flexible base pairing allowed at the third base of a codon, which lets one tRNA bind more than one codon}}.
+An aminoacyl-tRNA synthetase is {{c1::the enzyme that loads an amino acid onto its tRNA}}.
 
-### 54. CONCEPTUAL · `extension` · Campbell Biology, Concept 14.4, p. 300
-**Q.** How does wobble explain why synonymous codons usually differ at their third base rather than the first or second?  
-**A.** Pairing rules are relaxed only at that position, so a change there can still be read by the same tRNA and still bring in the same amino acid.
+> Twenty of them, one per amino acid. ATP hydrolysis drives the attachment; the ATP loses two phosphates and becomes AMP. The loaded tRNA is called a charged tRNA.
 
-### 55. APPLICATION · `extension` · Campbell Biology, Concept 14.4, p. 300
-**Q.** A tRNA has the anticodon 3'-UCU-5'. Given wobble, which two mRNA codons can it read, and what do they specify?  
+### 54. COMPARISON · `extension` · Campbell Biology, Concept 14.4, p. 300
+**Q.** Translation needs two acts of recognition. What are they?  
+**A.** Synthetase matches amino acid to tRNA. Anticodon matches codon at the ribosome.
+
+_axis: which molecule recognizes what, at each step_
+
+> Concept Check 14.4 question 1.
+
+### 55. CONCEPTUAL · `extension` · Campbell Biology, Concept 14.4, p. 300
+**Q.** The ribosome reads only the anticodon, never the cargo. Where is accuracy actually enforced?  
+**A.** At the synthetase.
+
+> If a synthetase charged a tRNA wrongly, the ribosome would insert that amino acid wherever the anticodon matched, with no check.
+
+### 56. CLOZE · `extension` · Campbell Biology, Concept 14.4, p. 300
+_cloze / definition_  
+Wobble is {{c1::loose pairing at a codon's third base}}.
+
+> It lets one tRNA read more than one codon, which is why bacteria manage 61 codons with about 45 tRNAs.
+
+### 57. CONCEPTUAL · `extension` · Campbell Biology, Concept 14.4, p. 300
+**Q.** Why do synonymous codons differ at the third base rather than the first or second?  
+**A.** Pairing is relaxed only there, so the same tRNA still reads it.
+
+### 58. APPLICATION · `extension` · Campbell Biology, Concept 14.4, p. 300
+**Q.** Anticodon 3'-UCU-5'. Given wobble, which two codons can it read, and what do they specify?  
 **A.** 5'-AGA-3' and 5'-AGG-3', both arginine.
 
-### 56. CLOZE · `grq` · Campbell Biology, Concept 14.4, p. 301
+### 59. CLOZE · `grq` · Campbell Biology, Concept 14.4, p. 301
 _cloze / definition_  
-A ribosome is {{c1::the molecular complex of proteins and rRNAs that is the site of translation, where amino acids are linked into polypeptide chains}}.
+A ribosome is {{c1::the rRNA-and-protein machine where translation happens}}.
 
-> GRQ Q8.
+> GRQ Q8. Large subunit plus small subunit, joining only on an mRNA. About two thirds of its mass is rRNA.
 
-### 57. CLOZE · `extension` · Campbell Biology, Concept 14.4, p. 301
-_cloze / enumerated-list_  
-The three tRNA binding sites of a ribosome, in the order a tRNA passes through them, are the {{c1::A site}}, then the {{c2::P site}}, then the {{c3::E site}}.
+### 60. COMPARISON · `extension` · Campbell Biology, Concept 14.4, p. 301
+**Q.** What does each of the ribosome's three tRNA sites hold?  
+**A.** A: incoming amino acid. P: growing chain. E: spent tRNA leaving.
 
-> Laid out across the ribosome they read E, P, A from left to right, but a tRNA travels A to P to E. Know both orders.
+_axis: which tRNA each site holds_
 
-### 58. CONCEPTUAL · `extension` · Campbell Biology, Concept 14.4, p. 301
-**Q.** Why does the chapter say a ribosome could be considered one colossal ribozyme?  
-**A.** Because rRNA, not the ribosomal protein, builds the A and P sites and catalyzes peptide bond formation. The proteins mostly support the rRNA's shape changes.
+> The names say it: aminoacyl, peptidyl, exit. A tRNA travels A to P to E, but they sit E, P, A left to right.
 
-### 59. EXEMPLAR · `extension` · Campbell Biology, Concept 14.4, p. 301
-**Q.** Tetracycline and streptomycin inactivate bacterial ribosomes without stopping ours. What difference makes that possible?  
-**A.** Bacterial and eukaryotic ribosomes differ in molecular composition, so a drug can bind one and not the other.
+### 61. CONCEPTUAL · `extension` · Campbell Biology, Concept 14.4, p. 301
+**Q.** Why is a ribosome called one colossal ribozyme?  
+**A.** rRNA, not protein, builds the A and P sites and makes the peptide bond.
+
+### 62. EXEMPLAR · `extension` · Campbell Biology, Concept 14.4, p. 301
+**Q.** Tetracycline and streptomycin stop bacterial ribosomes but not ours. Why?  
+**A.** Bacterial and eukaryotic ribosomes differ in composition.
 
 _exemplar direction: instance-to-concept_
 
-### 60. FREE_RECALL · `extension` · Campbell Biology, Concept 14.4, p. 301
+### 63. FREE_RECALL · `extension` · Campbell Biology, Concept 14.4, p. 301
 **BLURT: ribosome anatomy. 5 things to hit.**
 
-1. Two subunits, large and small, each of proteins plus one or more rRNAs, joining only on an mRNA
-2. One binding site for the mRNA itself
-3. Three tRNA sites: A holds the incoming aminoacyl tRNA, P holds the tRNA with the growing chain, E is where discharged tRNAs leave
-4. An exit tunnel through the large subunit, where the growing polypeptide emerges
-5. rRNA, not protein, forms the A and P sites and catalyzes the peptide bond, so the ribosome is effectively a ribozyme
+1. Large and small subunit, each rRNA plus protein, joining only on an mRNA
+2. One mRNA binding site
+3. Three tRNA sites: A takes the incoming aminoacyl tRNA, P holds the growing chain, E is the exit
+4. An exit tunnel through the large subunit for the emerging polypeptide
+5. rRNA forms the A and P sites and catalyzes the peptide bond, so it is effectively a ribozyme
 
-### 61. BASIC_QA · `extension` · Campbell Biology, Concept 14.4, p. 303
-**Q.** What is the anticodon of the initiator tRNA, and which amino acid does it carry?  
+### 64. BASIC_QA · `extension` · Campbell Biology, Concept 14.4, p. 303
+**Q.** What is the initiator tRNA's anticodon and cargo?  
 **A.** 3'-UAC-5', carrying methionine.
 
-### 62. COMPARISON · `extension` · Campbell Biology, Concept 14.4, p. 303
-**Q.** How does the small ribosomal subunit find the start codon in a bacterium, and how in a eukaryote?  
-**A.** In a bacterium it binds a specific mRNA sequence just upstream of the AUG. In a eukaryote it binds the 5' cap and then scans downstream until it reaches the AUG.
+> Initiation brings together the mRNA, this tRNA, and both ribosomal subunits. The start codon also sets the reading frame for the whole message.
 
-_axis of contrast: how the small subunit locates the start codon_
+### 65. COMPARISON · `extension` · Campbell Biology, Concept 14.4, p. 303
+**Q.** How does the small subunit find the start codon in bacteria, and in eukaryotes?  
+**A.** Bacteria: bind a sequence just upstream of AUG. Eukaryotes: bind the 5' cap and scan.
 
-### 63. BASIC_QA · `extension` · Campbell Biology, Concept 14.4, p. 303
-**Q.** When initiation is complete, which ribosomal site holds the initiator tRNA and which is empty?  
-**A.** The initiator tRNA sits in the P site. The A site is vacant, ready for the next aminoacyl tRNA.
+_axis: how the small subunit finds the start codon_
 
-### 64. CLOZE · `extension` · Campbell Biology, Concept 14.4, p. 304
+### 66. BASIC_QA · `extension` · Campbell Biology, Concept 14.4, p. 303
+**Q.** After initiation, which site holds the initiator tRNA and which is empty?  
+**A.** P holds it. A is vacant.
+
+### 67. CLOZE · `extension` · Campbell Biology, Concept 14.4, p. 304
 _cloze / enumerated-list_  
-The three steps of the elongation cycle, in order, are {{c1::codon recognition}}, {{c2::peptide bond formation}} and {{c3::translocation}}.
+The three steps of elongation, in order, are {{c1::codon recognition}}, {{c2::peptide bond formation}} and {{c3::translocation}}.
 
-### 65. BASIC_QA · `extension` · Campbell Biology, Concept 14.4, p. 304
-**Q.** During translocation, where does each of the two tRNAs move?  
-**A.** The tRNA in the A site moves to the P site. The tRNA in the P site moves to the E site and is released.
+### 68. BASIC_QA · `extension` · Campbell Biology, Concept 14.4, pp. 303 to 304
+**Q.** Which elongation steps use GTP, and what makes the peptide bond?  
+**A.** Codon recognition and translocation use GTP. An rRNA makes the bond.
 
-### 66. CONCEPTUAL · `extension` · Campbell Biology, Concept 14.4, p. 303
-**Q.** At which end does a polypeptide grow, and which end was made first?  
-**A.** It grows at the carboxyl end. The amino end, starting with methionine, was made first.
+### 69. BASIC_QA · `extension` · Campbell Biology, Concept 14.4, p. 304
+**Q.** In translocation, where does each tRNA go?  
+**A.** A to P, and P to E, where it is released.
 
-### 67. BASIC_QA · `extension` · Campbell Biology, Concept 14.4, p. 303
-**Q.** What ends translation, and what binds in the A site in place of a tRNA?  
-**A.** A stop codon reaching the A site, where a release factor binds instead of an aminoacyl tRNA.
+> The mRNA moves with them, bringing the next codon into the A site. The ribosome advances 5' to 3', one codon at a time.
 
-### 68. CONCEPTUAL · `extension` · Campbell Biology, Concept 14.4, p. 303
-**Q.** A release factor is shaped like an aminoacyl tRNA but brings no amino acid. What does it add instead, and what does that accomplish?  
-**A.** A water molecule. That hydrolyzes the bond between the completed polypeptide and the tRNA in the P site, freeing the chain through the exit tunnel.
+### 70. CONCEPTUAL · `extension` · Campbell Biology, Concept 14.4, p. 303
+**Q.** Which end of a polypeptide grows, and which was made first?  
+**A.** Grows at the carboxyl end. The amino end came first.
 
-### 69. FREE_RECALL · `extension` · Campbell Biology, Concept 14.4, p. 303
+### 71. CONCEPTUAL · `extension` · Campbell Biology, Concept 14.4, p. 303
+**Q.** A release factor looks like a tRNA but carries no amino acid. What does it add?  
+**A.** A water molecule, which cuts the chain free.
+
+> It binds a stop codon in the A site. The hydrolysis breaks the bond between the polypeptide and the P-site tRNA, and the chain leaves through the exit tunnel.
+
+### 72. FREE_RECALL · `extension` · Campbell Biology, Concept 14.4, p. 303
 **BLURT: initiation of translation. 4 things to hit.**
 
-1. A small ribosomal subunit binds the mRNA and an initiator tRNA carrying methionine, anticodon 3'-UAC-5'
-2. Finding the start: bacteria bind a sequence just upstream of the AUG, eukaryotes bind the 5' cap and scan downstream to it
-3. The large subunit joins to complete the translation initiation complex, with initiation factors and GTP hydrolysis supplying the energy
-4. The initiator tRNA ends up in the P site and the A site is left vacant
+1. Small subunit binds the mRNA and an initiator tRNA carrying methionine, anticodon 3'-UAC-5'
+2. Finding the start: bacteria bind a sequence upstream of AUG, eukaryotes bind the 5' cap and scan to it
+3. Large subunit joins to complete the initiation complex, using initiation factors and GTP
+4. Initiator tRNA ends in the P site, A site left vacant
 
-### 70. FREE_RECALL · `extension` · Campbell Biology, Concept 14.4, p. 304
+### 73. FREE_RECALL · `extension` · Campbell Biology, Concept 14.4, p. 304
 **BLURT: the elongation cycle. 3 things to hit.**
 
-1. Codon recognition: the anticodon of an incoming aminoacyl tRNA pairs with the mRNA codon in the A site, and GTP hydrolysis raises accuracy and efficiency
-2. Peptide bond formation: an rRNA of the large subunit joins the new amino acid in the A site to the carboxyl end of the chain in the P site, transferring the polypeptide onto the A-site tRNA
-3. Translocation: the A-site tRNA moves to P, the P-site tRNA moves to E and is released, the mRNA advances one codon, and GTP is hydrolyzed again
+1. Codon recognition: incoming anticodon pairs with the codon in the A site, GTP spent for accuracy
+2. Peptide bond formation: rRNA of the large subunit joins the new amino acid to the chain, moving the polypeptide onto the A-site tRNA
+3. Translocation: A to P, P to E and released, mRNA advances one codon, GTP spent again
 
-### 71. FREE_RECALL · `extension` · Campbell Biology, Concept 14.4, p. 303
+### 74. FREE_RECALL · `extension` · Campbell Biology, Concept 14.4, p. 303
 **BLURT: termination of translation. 4 things to hit.**
 
-1. Trigger: a stop codon, UAG, UAA or UGA, reaches the A site
-2. A release factor, shaped like an aminoacyl tRNA, binds the stop codon in place of a tRNA
-3. It causes a water molecule to be added, hydrolyzing the bond between the polypeptide and the P-site tRNA and freeing the chain through the exit tunnel
-4. The rest of the translation assembly comes apart, using the hydrolysis of two more GTP
+1. A stop codon reaches the A site
+2. A release factor binds it instead of a tRNA
+3. Water is added, freeing the chain from the P-site tRNA and out the exit tunnel
+4. The assembly comes apart, using two more GTP
 
-### 72. CONCEPTUAL · `core` · Campbell Biology, Concept 14.4, p. 305
-**Q.** What determines a polypeptide's three-dimensional shape as it is being made?  
-**A.** Its own amino acid sequence, its primary structure. It coils and folds spontaneously as it is synthesized.
+### 75. CONCEPTUAL · `core` · Campbell Biology, Concept 14.4, p. 305
+**Q.** What determines a polypeptide's shape as it is made?  
+**A.** Its own amino acid sequence. It folds spontaneously.
 
-### 73. COMPARISON · `grq` · Campbell Biology, Concept 14.4, p. 305
-**Q.** What is the difference between a polypeptide and a protein?  
-**A.** A polypeptide is a chain of linked amino acids. A protein is one or more polypeptides folded into a specific functional shape.
+### 76. COMPARISON · `grq` · Campbell Biology, Concept 14.4, p. 305
+**Q.** Polypeptide versus protein?  
+**A.** Polypeptide: a chain of amino acids. Protein: folded chains that work.
 
-_axis of contrast: a chain of monomers versus a folded functional molecule_
+_axis: a chain versus a folded functional molecule_
 
 > GRQ Q18.
 
-### 74. COMPARISON · `grq` · Campbell Biology, Concept 14.4, p. 305
-**Q.** How does a post-translational modification differ from quaternary structure?  
-**A.** A post-translational modification alters a single polypeptide chain. Quaternary structure is two or more separately synthesized polypeptides coming together as subunits of one protein.
+### 77. CLOZE · `grq` · Campbell Biology, Concept 14.4, p. 305
+_cloze / definition_  
+A post-translational modification is {{c1::a change to a polypeptide after translation}}.
 
-_axis of contrast: a change within one chain versus the assembly of several chains_
+> GRQ Q19. Three kinds: sugars, lipids or phosphates attached to certain amino acids; amino acids removed from the amino end; the chain cleaved into pieces.
 
-> GRQ Q20.
+### 78. COMPARISON · `grq` · Campbell Biology, Concept 14.4, p. 305
+**Q.** Post-translational modification versus quaternary structure?  
+**A.** Modification alters one chain. Quaternary is two or more chains joining.
 
-### 75. BASIC_QA · `grq` · Campbell Biology, Concept 14.4, p. 305
-**Q.** How many polypeptides must a protein have to show quaternary structure?  
-**A.** At least two.
+_axis: a change within one chain versus several chains assembling_
 
-> GRQ Q21.
+> GRQ Q20 and Q21. Quaternary structure needs at least two polypeptides.
 
-### 76. CONCEPTUAL · `core` · Campbell Biology, Concept 14.4, p. 305
-**Q.** A ribosome bound to the ER right now: what can it be the next time it is used, and what does that say about the two populations?  
-**A.** Free. Free and bound ribosomes are identical and interchangeable. The distinction describes where a ribosome is working, not what kind of ribosome it is.
+### 79. COMPARISON · `grq` · Campbell Biology, Concept 14.4, p. 305
+**Q.** Free versus bound ribosome: where does each sit, and what does each make?  
+**A.** Free: cytosol, makes cytosolic proteins. Bound: on the ER, makes endomembrane and secreted proteins.
 
-> A common misconception is that they are two different types of organelle. They are not.
+_axis: where the ribosome sits and where its product works_
 
-### 77. CONCEPTUAL · `core` · Campbell Biology, Concept 14.4, p. 305
+> GRQ Q22 to Q24.
+
+### 80. COMPARISON · `grq` · Campbell Biology, Concept 14.4, p. 305
+**Q.** Name two destinations for a free-ribosome protein, and two for a bound-ribosome protein.  
+**A.** Free: nucleus, mitochondrion. Bound: Golgi, lysosome.
+
+_axis: which ribosome sends a protein where_
+
+> GRQ Q23 and Q24, both right. Free-ribosome proteins are imported after translation finishes, the opposite timing from the ER route.
+
+### 81. CONCEPTUAL · `core` · Campbell Biology, Concept 14.4, p. 305
+**Q.** A ribosome bound to the ER now: what can it be next time?  
+**A.** Free. They are identical and interchangeable.
+
+> A common misconception is that free and bound are two kinds of organelle. The distinction is about where a ribosome is working, not what it is.
+
+### 82. CONCEPTUAL · `core` · Campbell Biology, Concept 14.4, p. 305
 **Q.** What decides whether a ribosome stays free or attaches to the ER?  
-**A.** The growing polypeptide itself. If it carries a signal peptide, that cues the ribosome to attach.
+**A.** The growing polypeptide's signal peptide.
 
-### 78. CLOZE · `grq` · Campbell Biology, Concept 14.4, p. 305
+> All synthesis starts on a free ribosome in the cytosol. The signal peptide is what redirects it.
+
+### 83. CLOZE · `grq` · Campbell Biology, Concept 14.4, p. 305
 _cloze / definition_  
-A signal peptide is {{c1::a sequence of about 20 amino acids at or near the amino end of a polypeptide that targets it to the ER}}.
+A signal peptide is {{c1::an amino-end tag that sends a polypeptide to the ER}}.
 
-> GRQ Q26. Your Pearson set phrased its function as assisting translocation of the polypeptide across the ER membrane.
+> GRQ Q26. About 20 amino acids. Pearson phrased its job as helping translocate the polypeptide across the ER membrane.
 
-### 79. CLOZE · `extension` · Campbell Biology, Concept 14.4, p. 305
+### 84. CLOZE · `extension` · Campbell Biology, Concept 14.4, p. 305
 _cloze / definition_  
-A signal-recognition particle (SRP) is {{c1::the protein-RNA complex that binds a signal peptide and escorts the ribosome to a receptor protein in the ER membrane}}.
+An SRP is {{c1::the escort that takes a signal peptide to the ER}}.
 
-### 80. BASIC_QA · `core` · Campbell Biology, Concept 14.4, p. 305
-**Q.** What happens to the signal peptide once the polypeptide is crossing into the ER?  
-**A.** An enzyme in the receptor complex cleaves it off.
+> Signal-recognition particle, a protein-RNA complex. It binds the emerging signal peptide and docks on a receptor in the ER membrane.
 
-> Note the order: the peptide is cleaved during or after entry, not before. A Pearson distractor claimed it must be removed before the polypeptide can enter the ER, which is backwards.
+### 85. BASIC_QA · `core` · Campbell Biology, Concept 14.4, p. 305
+**Q.** What happens to the signal peptide as the chain enters the ER?  
+**A.** An enzyme cuts it off.
 
-### 81. COMPARISON · `core` · Campbell Biology, Concept 14.4, p. 306
-**Q.** Proteins bound for the ER and proteins bound for the mitochondrion both carry signal peptides. What differs in the timing?  
-**A.** An ER-bound protein is translocated across the membrane as it is being made. A mitochondrial protein is translated to completion in the cytosol and only then imported.
+> Note the order. A Pearson distractor claimed it must be removed before the polypeptide can enter the ER, which is backwards.
 
-_axis of contrast: whether translocation happens during translation or after it_
+### 86. COMPARISON · `core` · Campbell Biology, Concept 14.4, p. 306
+**Q.** ER-bound and mitochondrial proteins both have signal peptides. What differs in timing?  
+**A.** ER: translocated while being made. Mitochondrion: finished first, then imported.
 
-> This is the critical difference the chapter draws for organelles outside the endomembrane system.
+_axis: translocation during translation, or after it_
 
-### 82. PROCESS · `grq` · Campbell Biology, Concept 14.4, pp. 305 to 306
-**Q.** Trace the path of a protein that will be secreted from a eukaryotic cell, from where synthesis starts.  
-**A.** Free ribosome in the cytosol, then the ER via its signal peptide, released into the ER lumen, then a transport vesicle to the Golgi, then a vesicle to the plasma membrane, then out of the cell.
+### 87. PROCESS · `grq` · Campbell Biology, Concept 14.4, pp. 305 to 306
+**Q.** Trace a protein that will be secreted, from where synthesis starts.  
+**A.** Free ribosome, ER, ER lumen, vesicle to Golgi, vesicle to plasma membrane, out.
 
-> GRQ Q25. Campbell's Figure 14.21 stops at the ER lumen and points to Figure 5.8 for the rest; the Golgi step is the one your Pearson set tested explicitly.
+> GRQ Q25. Campbell's Figure 14.21 stops at the ER lumen and points to Figure 5.8 for the rest. The Golgi step is the one Pearson tested explicitly.
 
-### 83. FREE_RECALL · `grq` · Campbell Biology, Concept 14.4, p. 305
-**BLURT: the signal mechanism for targeting a protein to the ER. 6 things to hit.**
+### 88. FREE_RECALL · `grq` · Campbell Biology, Concept 14.4, p. 305
+**BLURT: targeting a protein to the ER. 6 things to hit.**
 
-1. Synthesis begins on a free ribosome in the cytosol
-2. An SRP binds the signal peptide as it emerges, halting synthesis momentarily
-3. The SRP binds a receptor protein in the ER membrane, part of a complex that forms a pore
-4. The SRP leaves and synthesis resumes, with the chain translocating across the membrane as it is made
-5. An enzyme in the receptor complex cleaves the signal peptide
-6. The rest of the completed polypeptide leaves the ribosome and folds into its final conformation
+1. Synthesis starts on a free ribosome in the cytosol
+2. An SRP binds the emerging signal peptide and pauses synthesis
+3. The SRP docks on a receptor in the ER membrane, part of a complex forming a pore
+4. The SRP leaves, synthesis resumes, and the chain crosses the membrane as it is made
+5. An enzyme cleaves the signal peptide
+6. The rest of the chain leaves the ribosome and folds
 
-### 84. EXEMPLAR · `core` · Campbell Biology, Concept 14.4, p. 305
-**Q.** Which secreted protein is made by bound ribosomes?  
+### 89. EXEMPLAR · `core` · Campbell Biology, Concept 14.4, p. 305
+**Q.** Which secreted protein does the chapter name as a bound-ribosome product?  
 **A.** Insulin.
 
 _exemplar direction: concept-to-instance_
 
-### 85. CLOZE · `extension` · Campbell Biology, Concept 14.4, p. 306
+### 90. CLOZE · `extension` · Campbell Biology, Concept 14.4, p. 306
 _cloze / definition_  
-A polyribosome, or polysome, is {{c1::a string of several ribosomes translating a single mRNA at the same time}}.
+A polyribosome is {{c1::several ribosomes translating one mRNA at once}}.
 
-### 86. CLOZE · `grq` · Campbell Biology, Concept 15.4, p. 328
-_cloze / definition_  
-Nucleic-acid hybridization is {{c1::the base pairing of one strand of nucleic acid to a complementary sequence on another strand}}.
-
-> GRQ Q27. It is the principle every method below rests on: if you know the sequence you are hunting, you can build its complement and let base pairing find it for you.
-
-### 87. CLOZE · `grq` · Campbell Biology, Concept 15.4, p. 328
-_cloze / definition_  
-A nucleic-acid probe is {{c1::a short single-stranded RNA or DNA molecule, complementary to the sequence being studied, that is labelled so it can be followed}}.
-
-> GRQ Q28.
-
-### 88. PROCESS · `core` · Campbell Biology, Concept 15.4, p. 328
-**Q.** You are given an mRNA sequence and asked to design a DNA probe. What are the two rules for writing the answer?  
-**A.** 1. Take the complement of every base, using T wherever the mRNA has A. 2. Flip the end labels, because the probe must run antiparallel to its target.
-
-> Two traps live in the answer choices: a probe written with U in it is RNA, not DNA, and a probe with the same end labels as the mRNA is not antiparallel.
-
-### 89. APPLICATION · `core` · Pearson, Lesson 2
-**Q.** You want to detect the mRNA 5'-AUGGCCGCACAG-3' by in situ hybridization. Write the probe that would best detect it.  
-**A.** 3'-TACCGGCGTGTC-5'.
-
-### 90. APPLICATION · `grq` · GRQ Lesson 2, Q29
-**Q.** A DNA probe reads 3'-TACGCCGACAAT-5'. To what mRNA sequence would it hybridize, with ends labelled?  
-**A.** 5'-AUGCGGCUGUUA-3'.
-
-> GRQ Q29. Yours was correct.
+> It lets a cell make many copies of a polypeptide quickly. They can be free or bound.
 
 ### 91. CLOZE · `grq` · Campbell Biology, Concept 15.4, p. 328
 _cloze / definition_  
-In situ hybridization is {{c1::a technique that uses labelled probes to locate a specific mRNA in place, within the cells of an intact organism or tissue}}.
+Nucleic-acid hybridization is {{c1::a strand base-pairing to its complement}}.
 
-> In situ is Latin for 'in place', which is exactly what the method buys you: not how much mRNA there is, but where it is.
+> GRQ Q27. It is the principle behind every detection method here: build the complement of what you are hunting and let base pairing find it.
 
-### 92. CONCEPTUAL · `grq` · Pearson, Lesson 2
-**Q.** What kind of research question is in situ hybridization best suited to answer?  
-**A.** Which cells within a tissue express a specific mRNA.
+### 92. CLOZE · `grq` · Campbell Biology, Concept 15.4, p. 328
+_cloze / definition_  
+A nucleic-acid probe is {{c1::a short labelled strand complementary to your target}}.
 
-> GRQ Q30. It answers a 'where' question, not a 'how much' question. For comparing amounts across samples you would reach for RT-PCR or RNA-seq instead.
+> GRQ Q28. RNA or DNA, tagged with a fluorescent label so it can be followed once it binds.
 
-### 93. COMPARISON · `grq` · Immunohistochemistry video, Lesson 2 and Campbell Biology, Concept 15.4
-**Q.** In situ hybridization and immunohistochemistry both show where something is expressed in a tissue. What does each one locate?  
-**A.** In situ hybridization locates a specific mRNA. Immunohistochemistry locates a specific protein.
+### 93. PROCESS · `core` · Campbell Biology, Concept 15.4, p. 328
+**Q.** Designing a DNA probe from an mRNA sequence: what are the two rules?  
+**A.** Complement every base with T for A, then flip the end labels.
 
-_axis of contrast: which kind of molecule the method locates_
+> Two traps in the answer choices: a probe containing U is RNA, and a probe with the same end labels as the mRNA is not antiparallel.
 
-> Ex (background): one asks whether the order was placed, the other whether the product was actually built. A cell can transcribe an mRNA that is never translated, so the two answers can differ.
+### 94. APPLICATION · `core` · Pearson, Lesson 2
+**Q.** Write the probe that best detects the mRNA 5'-AUGGCCGCACAG-3'.  
+**A.** 3'-TACCGGCGTGTC-5'.
 
-### 94. BASIC_QA · `grq` · Immunohistochemistry video, Lesson 2
-**Q.** Break the word immunohistochemistry into its three parts and give the meaning of each.  
-**A.** Immuno: antibody and antigen based. Histo: carried out on tissue. Chemistry: a detection reaction.
+### 95. APPLICATION · `grq` · GRQ Lesson 2, Q29
+**Q.** Probe 3'-TACGCCGACAAT-5'. Which mRNA does it hybridize to?  
+**A.** 5'-AUGCGGCUGUUA-3'.
+
+> GRQ Q29, and yours was correct.
+
+### 96. CLOZE · `grq` · Campbell Biology, Concept 15.4, p. 328
+_cloze / definition_  
+In situ hybridization is {{c1::finding an mRNA in place, inside intact tissue}}.
+
+> In situ is Latin for in place, which is the whole point: it answers where, not how much.
+
+### 97. CONCEPTUAL · `grq` · Pearson, Lesson 2
+**Q.** What question is in situ hybridization best for?  
+**A.** Which cells in a tissue express a given mRNA.
+
+> GRQ Q30. For comparing amounts across samples you would use RT-PCR or RNA-seq instead.
+
+### 98. COMPARISON · `grq` · Immunohistochemistry video, Lesson 2 and Campbell Biology, Concept 15.4
+**Q.** In situ hybridization and immunohistochemistry both map expression. What does each find?  
+**A.** Hybridization finds mRNA. Immunohistochemistry finds protein.
+
+_axis: which kind of molecule each method locates_
+
+> Ex (clarification): one asks whether the order was placed, the other whether the product was built. A cell can transcribe an mRNA that is never translated, so the answers can differ.
+
+### 99. CLOZE · `extension` · Campbell Biology, Concept 15.4, Figure 15.16
+_cloze / definition_  
+cDNA is {{c1::DNA copied from mRNA, so it has no introns}}.
+
+> Reverse transcriptase makes the first strand, primed by a poly-dT that binds the poly-A tail. No introns because mature mRNA is already spliced.
+
+### 100. BASIC_QA · `grq` · Immunohistochemistry video, Lesson 2
+**Q.** Break immunohistochemistry into its three parts.  
+**A.** Immuno: antibodies. Histo: tissue. Chemistry: the detection reaction.
 
 > GRQ Q32.
 
-### 95. FREE_RECALL · `grq` · Immunohistochemistry video, Lesson 2
-**BLURT: the steps of an immunohistochemistry experiment. 4 things to hit.**
+### 101. COMPARISON · `grq` · Immunohistochemistry video, Lesson 2 and Pearson, Lesson 2
+**Q.** In immunohistochemistry, what does each antibody bind, and which is labelled?  
+**A.** Primary binds the antigen. Secondary binds the primary and carries the label.
+
+_axis: what each antibody binds, and which carries the label_
+
+> GRQ Q34. A Pearson distractor had the secondary binding the antigen directly. Using two lets several labelled secondaries pile onto one primary, amplifying the signal.
+
+### 102. FREE_RECALL · `grq` · Immunohistochemistry video, Lesson 2
+**BLURT: an immunohistochemistry experiment. 4 things to hit.**
 
 1. Prepare the tissue section so antibodies can reach their targets
-2. Apply the unlabelled primary antibody, which binds the antigen of interest, then wash away what did not bind
-3. Apply the labelled secondary antibody, which binds the primary, then wash again
-4. Detect the label, by fluorescence or by a colour-producing enzyme reaction, and read which cells are positive
-
-### 96. COMPARISON · `grq` · Campbell Biology, Concept 14.1, p. 290
-**Q.** DNA and RNA differ in three ways. Name all three.  
-**A.** Sugar: deoxyribose in DNA, ribose in RNA. Base: thymine in DNA, uracil in RNA. Strands: DNA is double stranded, RNA is usually single stranded.
-
-_axis of contrast: sugar, base, and number of strands_
-
-> GRQ Q4 table. Adenine, guanine and cytosine are in both.
-
-### 97. BASIC_QA · `grq` · Campbell Biology, Concept 14.1, pp. 290 to 291
-**Q.** Give the template and the product for transcription, then for translation.  
-**A.** Transcription: DNA template, RNA product. Translation: mRNA template, polypeptide product.
-
-> GRQ Q7.
-
-### 98. COMPARISON · `grq` · Campbell Biology, Concept 14.1, p. 291
-**Q.** In a bacterial versus an animal cell: where is the DNA and where does transcription happen, and is the transcript modified before use?  
-**A.** Bacterial: DNA and transcription both in the cytoplasm, transcript not modified. Animal: DNA and transcription both in the nucleus, pre-mRNA processed into mRNA before it leaves.
-
-_axis of contrast: where the DNA sits, and whether the transcript is edited_
-
-> GRQ Q9 table.
-
-### 99. COMPARISON · `extension` · Campbell Biology, Concept 14.4, p. 301
-**Q.** What does each of the ribosome's three tRNA sites hold?  
-**A.** A site: the tRNA carrying the next amino acid. P site: the tRNA carrying the growing polypeptide. E site: discharged tRNAs on their way out.
-
-_axis of contrast: which tRNA each of the three sites holds_
-
-> The names say it: A for aminoacyl-tRNA, P for peptidyl-tRNA, E for exit.
-
-### 100. CLOZE · `grq` · Campbell Biology, Concept 14.4, p. 305
-_cloze / definition_  
-A post-translational modification is {{c1::a change made to a polypeptide after translation, required before the protein can do its job}}.
-
-> GRQ Q19. Three kinds: chemical groups such as sugars, lipids or phosphates attached to certain amino acids; removal of amino acids from the amino end; cleavage of the chain into two or more pieces.
-
-### 101. COMPARISON · `grq` · Campbell Biology, Concept 14.4, p. 305
-**Q.** Where does a free ribosome sit versus a bound ribosome, and what class of protein does each make?  
-**A.** Free: suspended in the cytosol, making proteins that stay and work in the cytosol. Bound: attached to the ER or nuclear envelope, making proteins of the endomembrane system and proteins secreted from the cell.
-
-_axis of contrast: where the ribosome sits, and where its product ends up_
-
-> GRQ Q22 to Q24.
-
-### 102. COMPARISON · `grq` · Campbell Biology, Concept 14.4, p. 305
-**Q.** Give two destinations for a protein made on a free ribosome, and two for one made on a bound ribosome.  
-**A.** Free: the nucleus and the mitochondrion. Bound: the Golgi apparatus and lysosomes, or secretion out of the cell.
-
-_axis of contrast: which ribosome population sends a protein where_
-
-> GRQ Q23 and Q24, both of which you had right. Worth adding: the free-ribosome proteins are imported after translation finishes, the opposite timing from the ER route.
-
-### 103. BASIC_QA · `extension` · Campbell Biology, Concept 14.4, p. 300
-**Q.** How many aminoacyl-tRNA synthetases are there, and what powers the reaction they catalyze?  
-**A.** Twenty, one per amino acid. ATP hydrolysis powers it; the ATP loses two phosphates and becomes AMP.
-
-### 104. COMPARISON · `extension` · Campbell Biology, Concept 14.4, pp. 299 to 300
-**Q.** A tRNA does a different job at each end. What is at each end, and what is the one at the far end called?  
-**A.** The protruding 3' end is the amino acid attachment site. The opposite end carries the anticodon, the nucleotide triplet that base-pairs with a complementary mRNA codon.
-
-_axis of contrast: the two ends of one molecule and the two jobs they do_
-
-> Ex (background): an adapter plug. One face fits the message, the other carries the cargo, and it is useless without both.
-
-### 105. BASIC_QA · `extension` · Campbell Biology, Concept 14.4, pp. 303 to 304
-**Q.** Which elongation steps consume GTP, and what molecule catalyzes the peptide bond?  
-**A.** Codon recognition and translocation consume GTP. An rRNA of the large ribosomal subunit catalyzes the peptide bond.
-
-### 106. CLOZE · `extension` · Campbell Biology, Concept 15.4, Figure 15.16
-_cloze / definition_  
-Complementary DNA (cDNA) is {{c1::DNA made in a test tube from an mRNA template, so it carries a gene's complete coding sequence but no introns}}.
-
-> Reverse transcriptase makes the first strand, primed by a poly-dT that anneals to the mRNA's poly-A tail. It has no introns because mature mRNA has already been spliced.
-
-### 107. COMPARISON · `grq` · Immunohistochemistry video, Lesson 2
-**Q.** In immunohistochemistry, what does each antibody bind, and which one carries the label?  
-**A.** The primary antibody binds the antigen of interest. The secondary antibody binds the primary, and it is the one labelled with a fluorochrome or colorimetric enzyme.
-
-_axis of contrast: which molecule each antibody binds, and which one is labelled_
-
-> GRQ Q34. A Pearson distractor had the secondary binding the antigen directly; it binds the primary. Using two lets several labelled secondaries pile onto one primary, amplifying the signal.
+2. Apply the unlabelled primary antibody, which binds the antigen, then wash
+3. Apply the labelled secondary, which binds the primary, then wash again
+4. Detect the label by fluorescence or a colour reaction and read which cells are positive

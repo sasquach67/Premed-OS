@@ -45,4 +45,20 @@ describe('the advisor snapshot', () => {
   it('never claims a substitution was accepted', () => {
     expect(built().text).toContain('none has been accepted as a replacement')
   })
+
+  it('includes selected Planning provenance without claiming an audit', () => {
+    const snapshot = buildAdvisorSnapshot({
+      courses: [],
+      requirements: [],
+      planningContext: {
+        selectedProgramId: 'neuroscience-bs',
+        matriculationTerm: 'Fall 2026',
+        ideasCatalogYear: '2026-2027',
+      },
+    })
+    expect(snapshot.text).toContain('Selected catalog plan: Neuroscience B.S.')
+    expect(snapshot.text).toContain('IDEAs catalog year: 2026-2027')
+    expect(snapshot.text).toContain('retrieved 2026-08-25')
+    expect(snapshot.text).toContain(NOT_OFFICIAL)
+  })
 })

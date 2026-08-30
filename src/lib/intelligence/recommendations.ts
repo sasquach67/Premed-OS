@@ -330,24 +330,23 @@ function unscheduledPrereqRule(data: AppData): Recommendation[] {
   }]
 }
 
-function coveredNeverReviewedRule(data: AppData): Recommendation[] {
+function coveredNeedsMaterialRule(data: AppData): Recommendation[] {
   const covered = new Set(data.academics.classCenter.assignments.flatMap((assignment) => assignment.coveredTopicIds ?? []))
   return data.academics.classCenter.topics.flatMap((topic) => {
     if (!covered.has(topic.id)) return []
-    const keyPoints = data.academics.classCenter.keyPoints.filter((point) => point.topicId === topic.id)
-    if (!keyPoints.length || keyPoints.some((point) => point.timesSurfaced > 0)) return []
+    if ((topic.linkedFileIds?.length ?? 0) || topic.sourceNoteIds.length) return []
     const course = data.courses.find((item) => item.id === topic.courseId)
-    const cause = `${topic.unit || topic.title} was covered and never reviewed`
+    const cause = `${topic.unit || topic.title} is in the recorded course scope without linked material`
     return [{
-      id: `academics-covered-never-reviewed:${topic.id}`,
-      ruleId: 'academics-covered-never-reviewed',
-      title: 'Covered but never reviewed',
+      id: `academics-covered-needs-material:${topic.id}`,
+      ruleId: 'academics-covered-needs-material',
+      title: 'Course topic needs material',
       severity: 'important' as const,
       rank: rank(3, 2),
-      why: `${cause}. Surface it once while the lecture context is still fresh.`,
+      why: `${cause}. Attach the relevant lecture or course evidence before generating study work.`,
       cause,
-      route: `/academics/classes/${topic.courseId}`,
-      actionLabel: 'Review it',
+      route: `/academics/classes/${topic.courseId}?classTab=materials`,
+      actionLabel: 'Add material',
       entityId: topic.id,
       entityLabel: `${course?.code ?? 'Class'} · ${topic.title}`,
     }]
@@ -361,8 +360,10 @@ function noSyllabusRule(data: AppData): Recommendation[] {
     const syllabusIds = center.files
       .filter((file) => file.courseId === workspace.courseId && file.type === 'syllabus')
       .map((file) => file.id)
-    const parsed = center.sourceChunks.some((chunk) => syllabusIds.includes(chunk.fileId))
-    if (parsed) return []
+    // Syllabus parsing creates structured course records at import time; it
+    // does not require the separate Materials chunking pipeline. A retained
+    // syllabus file is therefore direct evidence that this class has one.
+    if (syllabusIds.length) return []
     const course = data.courses.find((item) => item.id === workspace.courseId)
     if (!course) return []
     const cause = `${course.code || course.title} has no syllabus`
@@ -393,8 +394,8 @@ export function academicsNextActions(
   const muted = data.settings.mutedRecommendationRules ?? {}
   return [
     ...unscheduledPrereqRule(data),
-    ...coveredNeverReviewedRule(data),
     ...noSyllabusRule(data),
+    ...coveredNeedsMaterialRule(data),
   ]
     .sort((a, b) => b.rank - a.rank)
     .filter((rec) => !state[rec.id])

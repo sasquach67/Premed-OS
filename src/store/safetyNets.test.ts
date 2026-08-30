@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { createSeedData } from '@/data/seed'
 import { dependencyImpacts } from '@/lib/dependencies'
 import type { ListViewState, Organization, Person } from '@/lib/types'
 import { snapshotData, useStore } from '@/store/store'
 
 describe('foundation safety nets', () => {
-  beforeEach(() => useStore.getState().resetToSeed())
+  beforeEach(() => useStore.getState().replaceAll(createSeedData()))
 
   it('soft-deletes into Trash and restores without losing record data', () => {
     const course = useStore.getState().courses[0]

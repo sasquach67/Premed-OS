@@ -19,7 +19,7 @@ export function PinList({ items }: { items: Array<{ id: string; label: string }>
 
 export function ThemeToggleButton({ isDark, onToggle }: { isDark: boolean; onToggle: () => void }) {
   return (
-    <m.button type="button" whileTap={MOTION_GESTURE.press} transition={MOTION_TRANSITION.micro} className="glass-surface grid size-9 place-items-center rounded-full border" onClick={onToggle} aria-label={isDark ? 'Switch to light appearance' : 'Switch to dark appearance'}>
+    <m.button type="button" whileTap={MOTION_GESTURE.press} transition={MOTION_TRANSITION.micro} className="grid size-8 place-items-center rounded-full border border-border bg-card shadow-sm transition-[background-color,border-color,color] duration-150 hover:border-primary/25 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={onToggle} aria-label={isDark ? 'Switch to light appearance' : 'Switch to dark appearance'}>
       <m.span key={isDark ? 'moon' : 'sun'} initial={{ opacity: 0, rotate: -20 }} animate={{ opacity: 1, rotate: 0 }} transition={MOTION_TRANSITION.micro}>
         {isDark ? <Moon className="size-4 text-primary" /> : <Sun className="size-4 text-warning" />}
       </m.span>

@@ -31,6 +31,21 @@ describe('grade ledger', () => {
     expect(result.trend).toEqual([])
   })
 
+  it('keeps an incomplete transcript line visibly incomplete until every GPA field is recorded', () => {
+    const result = buildGradeLedger([course('course')], [record('record', 'course', { creditsExact: '', year: '', courseType: '' })])
+    expect(result.rows[0].status).toBe('needs-details')
+    expect(result.amcas.value).toBeNull()
+  })
+
+  it('uses a transcript-faithful in-residence line for local GPA without double-counting its operational course', () => {
+    const result = buildGradeLedger(
+      [course('course', { grade: 'B', status: 'completed', inResidence: true })],
+      [record('record', 'course', { gradeExact: 'A-' })],
+    )
+    expect(result.local.credits).toBe(3)
+    expect(result.local.value).toBeCloseTo(3.7)
+  })
+
   it('names excluded P/F grades and does not guess a BCPM split without evidence', () => {
     const passFail = buildGradeLedger([course('course')], [record('record', 'course', { gradeExact: 'P' })])
     expect(passFail.amcas.value).toBeNull()

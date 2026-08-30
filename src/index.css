@@ -79,6 +79,45 @@
   --sidebar-ring: #7bafd4;
 }
 
+/* Planning follows the approved Academics Planner palette. The older dossier
+   rung used mint as its primary action color, which made the filled state look
+   like a different product even after the empty state correctly unmounted. */
+.planning-dossier {
+  --card: #fffaf0;
+  --card-foreground: #3a3530;
+  --popover: #fffaf0;
+  --popover-foreground: #3a3530;
+  --muted: #efe6d4;
+  --muted-foreground: #7a7064;
+  --border: #e9e2d5;
+  --input: #e6dfd1;
+  --primary: #4b9cd3;
+  --primary-foreground: #132535;
+  --secondary: #e6f2fb;
+  --secondary-foreground: #1f4e6b;
+  --accent: #e6f2fb;
+  --accent-foreground: #1f4e6b;
+  --warning: #e0a458;
+}
+
+.dark .planning-dossier {
+  --card: #2b2722;
+  --card-foreground: #ece3d4;
+  --popover: #2b2722;
+  --popover-foreground: #ece3d4;
+  --muted: #322e28;
+  --muted-foreground: #a89c8c;
+  --border: #3c352d;
+  --input: #463e35;
+  --primary: #4b9cd3;
+  --primary-foreground: #102432;
+  --secondary: #263845;
+  --secondary-foreground: #cae8fb;
+  --accent: #263845;
+  --accent-foreground: #cae8fb;
+  --warning: #e7b06a;
+}
+
 :root[data-visual-theme='doraemon'] {
   --background: #f4fbff;
   --foreground: #27313a;
@@ -614,6 +653,24 @@
     border-radius: 0;
     box-shadow: none;
   }
+  /* Daily uses one quiet control bar, then urgency by placement. The agenda
+     * itself stays a solid record surface rather than borrowing banner glass. */
+  .academics-surface .daily-assignments-filter {
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .academics-surface .daily-assignment-agenda {
+    box-shadow: 0 12px 28px -18px rgba(0, 0, 0, .52);
+  }
+  .academics-surface .daily-assignment-bucket > button {
+    min-height: 3rem;
+  }
+  .academics-surface .daily-assignment-row {
+    background: color-mix(in srgb, var(--card) 88%, var(--muted));
+  }
+  .academics-surface .daily-assignment-row:hover {
+    background: color-mix(in srgb, var(--primary) 5%, var(--card));
+  }
   .academics-surface .academics-bento-panel [data-slot='card-content'] {
     gap: 8px;
   }
@@ -860,6 +917,8 @@
   background: var(--muted);
 }
 
+.class-hub-primary-action { min-height: 2rem; border-radius: 9px; padding-inline: .75rem; font-family: var(--font-display); font-weight: 800; box-shadow: 0 4px 10px -8px color-mix(in srgb, var(--primary) 80%, transparent); }
+
 /* Class Hub panels sit on the 16px outer layer; their editable rows and
    metrics are deliberately the tighter 13px inner objects from the approved
    class-hub drawing. */
@@ -880,6 +939,240 @@
 
 .class-hub-primary-band:not(.class-hub-panel) > * {
   border-radius: calc(var(--radius) - 1px);
+}
+
+/* The lecture ledger is the class's daily intake, not another dashboard card.
+ * Its ruled history makes the day-by-day sequence legible at a glance. */
+.lecture-ledger {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+  border-radius: 22px;
+  background: var(--card);
+  box-shadow: 0 16px 32px -28px color-mix(in srgb, var(--foreground) 55%, transparent);
+}
+
+.lecture-capture-panel { border-radius: 16px; }
+.lecture-capture-stage, .lecture-capture-record { border: 1px solid var(--border); border-radius: 13px; background: var(--muted); }
+.lecture-capture-stage { padding: 1rem; }
+.lecture-capture-record { padding: .75rem; text-align: left; transition: background-color .15s cubic-bezier(.16, 1, .3, 1), border-color .15s cubic-bezier(.16, 1, .3, 1); }
+.lecture-capture-record:hover { border-color: color-mix(in srgb, var(--primary) 42%, var(--border)); background: var(--card); }
+.lecture-capture-record:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+.lecture-ledger-intro {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.2rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.lecture-ledger-kicker,
+.lecture-ledger-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.lecture-ledger h2 {
+  margin-top: 0.26rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.lecture-ledger-count {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+
+.lecture-ledger-capture {
+  display: grid;
+  grid-template-columns: 5.3rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.15rem 1.2rem;
+  background: linear-gradient(104deg, color-mix(in srgb, var(--primary) 10%, var(--card)) 0%, var(--card) 66%);
+}
+
+.lecture-ledger-date {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding-right: 1rem;
+  border-right: 2px solid color-mix(in srgb, var(--primary) 34%, var(--border));
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.lecture-ledger-capture h3 {
+  margin-top: 0.2rem;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.lecture-ledger-capture p:not(.lecture-ledger-label) {
+  margin-top: 0.3rem;
+  max-width: 45rem;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+.lecture-ledger-action { min-width: 10.5rem; }
+
+.lecture-ledger-history { border-top: 1px solid var(--border); }
+.lecture-ledger-history-heading { display: flex; justify-content: space-between; gap: 1rem; padding: 0.72rem 1.2rem; color: var(--muted-foreground); }
+.lecture-ledger-history-heading p { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.lecture-ledger-history-heading span { font-size: 0.75rem; font-weight: 600; }
+.lecture-ledger-list { border-top: 1px solid var(--border); }
+
+.lecture-ledger-entry {
+  display: grid;
+  grid-template-columns: 3.3rem minmax(0, 1fr) auto;
+  width: 100%;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.72rem 1.2rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  text-align: left;
+  transition: background-color 150ms ease;
+}
+
+.lecture-ledger-entry:last-child { border-bottom: 0; }
+.lecture-ledger-entry:hover { background: color-mix(in srgb, var(--primary) 7%, var(--card)); }
+.lecture-ledger-entry:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.lecture-ledger-entry-number { color: var(--primary); font-size: 0.74rem; font-weight: 800; letter-spacing: 0.08em; }
+.lecture-ledger-entry-main { min-width: 0; }
+.lecture-ledger-entry-main b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.88rem; }
+.lecture-ledger-entry-main small { display: block; margin-top: 0.13rem; color: var(--muted-foreground); font-size: 0.72rem; font-weight: 600; }
+.lecture-ledger-entry time { color: var(--muted-foreground); font-size: 0.74rem; font-weight: 700; }
+.lecture-ledger-empty { display: grid; grid-template-columns: 3.3rem minmax(0, 1fr); gap: 0.7rem; align-items: center; padding: 0.85rem 1.2rem; border-top: 1px solid var(--border); }
+.lecture-ledger-empty span { height: 1.5rem; border-left: 2px solid color-mix(in srgb, var(--primary) 30%, var(--border)); }
+.lecture-ledger-empty p { color: var(--muted-foreground); font-size: 0.82rem; font-weight: 600; }
+
+/* The journal is composed into Class Hub Overview: a chronological rail
+ * anchors the active lecture rather than becoming another dashboard surface. */
+.lecture-overview-composition {
+  display: grid;
+  grid-template-columns: minmax(14.75rem, 18rem) minmax(0, 1fr);
+  gap: 0.875rem;
+  align-items: stretch;
+}
+.lecture-rail,
+.lecture-active-context {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 10px 26px -14px rgba(0, 0, 0, .55);
+}
+.lecture-rail { display: flex; flex-direction: column; min-width: 0; padding: 0.85rem; }
+.lecture-rail-heading { display: flex; align-items: start; justify-content: space-between; gap: 0.75rem; }
+.lecture-rail h2,
+.lecture-active-context h2 { margin-top: 0.22rem; font-family: var(--font-display); font-weight: 800; letter-spacing: -0.025em; }
+.lecture-rail h2 { font-size: 1.2rem; }
+.lecture-rail .lecture-ledger-count { margin-top: 0.1rem; color: var(--primary); font-family: var(--font-display); font-size: 1rem; }
+.lecture-rail-caption { margin-top: 0.15rem; color: var(--muted-foreground); font-size: 0.72rem; font-weight: 700; }
+.lecture-rail-list { display: grid; gap: 0.34rem; margin-top: 0.75rem; }
+.lecture-rail-entry { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr); width: 100%; gap: 0.5rem; padding: 0.62rem 0.55rem; border: 1px solid transparent; border-radius: 11px; text-align: left; transition: background-color 150ms ease, border-color 150ms ease; }
+.lecture-rail-entry:hover { background: var(--muted); }
+.lecture-rail-entry.is-active { border-color: var(--border); background: var(--muted); box-shadow: inset 3px 0 0 var(--primary); }
+.lecture-rail-entry:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.lecture-rail-entry time { grid-column: 2; color: var(--muted-foreground); font-size: 0.68rem; font-weight: 700; }
+.lecture-rail .lecture-ledger-action { width: 100%; margin-top: auto; padding-top: 0.5rem; }
+.lecture-active-context { min-width: 0; padding: 1rem; }
+.lecture-active-header { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+.lecture-active-context h2 { font-size: clamp(1.35rem, 2.2vw, 1.8rem); }
+.lecture-active-header > div > p:last-child,
+.lecture-active-empty-copy { margin-top: 0.25rem; color: var(--muted-foreground); font-size: 0.82rem; font-weight: 700; }
+.lecture-active-empty-copy { max-width: 40rem; line-height: 1.5; }
+.lecture-structure-boundary { margin-top: 0.85rem; border-left: 3px solid var(--warning); border-radius: 0 10px 10px 0; background: var(--muted); padding: 0.62rem 0.75rem; color: var(--muted-foreground); font-size: 0.77rem; font-weight: 700; line-height: 1.45; }
+.lecture-structure-boundary b { color: var(--foreground); }
+.lecture-overview-flow { display: grid; gap: 0.5rem; margin-top: 0.75rem; }
+.lecture-overview-flow > li { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 0.85rem; border: 1px solid var(--border); border-radius: 11px; background: var(--muted); padding: 0.65rem 0.7rem; }
+.lecture-overview-flow > li.is-current { border-color: color-mix(in srgb, var(--primary) 46%, var(--border)); background: color-mix(in srgb, var(--primary) 8%, var(--card)); }
+.lecture-overview-flow > li.is-complete { background: color-mix(in srgb, var(--success) 6%, var(--card)); }
+.lecture-overview-step-copy { display: flex; min-width: 0; align-items: flex-start; gap: 0.6rem; }
+.lecture-overview-step-copy > span { display: inline-grid; flex: 0 0 auto; place-items: center; width: 1.25rem; height: 1.25rem; border-radius: 999px; background: var(--card); color: var(--muted-foreground); font-size: 0.66rem; font-weight: 800; }
+.lecture-overview-flow .is-current .lecture-overview-step-copy > span { background: var(--primary); color: var(--primary-foreground); }
+.lecture-overview-flow .is-complete .lecture-overview-step-copy > span { background: color-mix(in srgb, #22c55e 72%, var(--card)); color: white; }
+.lecture-overview-step-copy p { color: var(--muted-foreground); font-size: 0.64rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.lecture-overview-step-copy b { display: block; margin-top: 0.12rem; font-size: 0.8rem; }
+.lecture-overview-step-copy small { display: block; margin-top: 0.16rem; color: var(--muted-foreground); font-size: 0.7rem; font-weight: 650; line-height: 1.3; }
+.lecture-evidence-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin-top: 0.75rem; }
+.lecture-evidence-summary > div { min-width: 0; border: 1px solid var(--border); border-radius: 11px; background: var(--muted); padding: 0.7rem; }
+.lecture-evidence-summary p { color: var(--muted-foreground); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.lecture-evidence-summary b { display: block; margin-top: 0.2rem; font-size: 0.8rem; }
+.lecture-evidence-summary span { display: block; margin-top: 0.22rem; color: var(--muted-foreground); font-size: 0.7rem; font-weight: 650; line-height: 1.35; }
+.lecture-study-handoff { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 0.75rem; border: 1px solid color-mix(in srgb, var(--success) 34%, var(--border)); border-radius: 11px; background: color-mix(in srgb, var(--success) 8%, var(--card)); padding: 0.7rem; }
+.lecture-study-handoff b { display: block; font-family: var(--font-display); font-size: 0.88rem; font-weight: 800; }
+.lecture-study-handoff span { display: block; margin-top: 0.15rem; color: var(--muted-foreground); font-size: 0.72rem; font-weight: 650; line-height: 1.35; }
+
+.lecture-capture-flow,
+.lecture-review-flow {
+  display: flex;
+  gap: 0;
+  margin-top: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.lecture-capture-flow > div {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.62rem 0.7rem;
+  border-right: 1px solid var(--border);
+}
+.lecture-capture-flow > div:last-child { border-right: 0; }
+.lecture-capture-flow > div.is-current { background: color-mix(in srgb, var(--primary) 10%, var(--card)); }
+.lecture-capture-flow span,
+.lecture-review-flow b { display: inline-grid; flex: 0 0 auto; place-items: center; width: 1.25rem; height: 1.25rem; border-radius: 999px; background: var(--muted); color: var(--muted-foreground); font-size: 0.66rem; font-weight: 800; }
+.lecture-capture-flow .is-current span,
+.lecture-review-flow .is-current b { background: var(--primary); color: var(--primary-foreground); }
+.lecture-capture-flow b { display: block; font-size: 0.72rem; line-height: 1.15; }
+.lecture-capture-flow small { display: block; margin-top: 0.1rem; color: var(--muted-foreground); font-size: 0.66rem; line-height: 1.25; }
+.lecture-review-flow { margin-top: 0; padding: 0.52rem; gap: 0.4rem; background: var(--muted); }
+.lecture-review-flow span { display: inline-flex; flex: 1; min-width: 0; align-items: center; gap: 0.4rem; padding: 0.42rem 0.5rem; border-radius: 8px; color: var(--muted-foreground); font-size: 0.7rem; font-weight: 700; }
+.lecture-review-flow .is-complete { color: var(--foreground); }
+.lecture-review-flow .is-complete b { background: color-mix(in srgb, #22c55e 72%, var(--card)); color: white; }
+.lecture-review-flow .is-current { background: var(--card); color: var(--foreground); box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 10%, transparent); }
+.lecture-next-step { box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 36%, transparent), 0 7px 14px -12px color-mix(in srgb, var(--primary) 80%, transparent); }
+
+@media (max-width: 640px) {
+  .lecture-overview-composition { grid-template-columns: 1fr; }
+  .lecture-rail { padding: 0.75rem; }
+  .lecture-rail-list { grid-template-columns: 1fr; }
+  .lecture-active-context { padding: 0.85rem; }
+  .lecture-active-header,
+  .lecture-study-handoff { align-items: flex-start; flex-direction: column; }
+  .lecture-overview-flow > li { align-items: flex-start; flex-direction: column; }
+  .lecture-overview-flow > li > button { width: 100%; }
+  .lecture-evidence-summary { grid-template-columns: 1fr; }
+  .lecture-study-handoff > div:last-child { width: 100%; }
+  .lecture-study-handoff > div:last-child > button { flex: 1; }
+  .lecture-ledger-intro, .lecture-ledger-history-heading { align-items: flex-start; flex-direction: column; }
+  .lecture-ledger-capture { grid-template-columns: 1fr; gap: 0.75rem; }
+  .lecture-ledger-date { min-height: auto; padding: 0 0 0.6rem; border-right: 0; border-bottom: 2px solid color-mix(in srgb, var(--primary) 34%, var(--border)); }
+  .lecture-ledger-action { width: 100%; }
+  .lecture-ledger-entry { grid-template-columns: 2.5rem minmax(0, 1fr); }
+  .lecture-ledger-entry time { grid-column: 2; }
+  .lecture-capture-flow { flex-direction: column; }
+  .lecture-capture-flow > div { border-right: 0; border-bottom: 1px solid var(--border); }
+  .lecture-capture-flow > div:last-child { border-bottom: 0; }
+  .lecture-review-flow { flex-direction: column; }
 }
 
 .class-hub-record-row,
@@ -1118,5 +1411,208 @@
 
   .writing-stage-link {
     display: none;
+  }
+}
+
+/* Class Center cold start — literal port of the approved
+   academics-empty-states-prototype.html Variant A composition. The import
+   action and its promise live in one bounded workspace instead of splitting
+   the action and setup guide into unrelated cards. */
+.academics-empty-wrap {
+  width: 100%;
+  max-width: 1060px;
+  margin: 1.25rem auto 0;
+}
+
+.academics-empty-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--card);
+  box-shadow: 0 10px 26px -14px color-mix(in srgb, var(--foreground) 55%, transparent);
+}
+
+.academics-empty-primary {
+  display: flex;
+  min-height: 248px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px dashed var(--border);
+  padding: 2.125rem;
+  text-align: center;
+}
+
+.academics-empty-mascot {
+  display: block;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  margin-bottom: 1.05rem;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 8px 13px color-mix(in srgb, var(--foreground) 22%, transparent));
+}
+
+.academics-empty-title,
+.academics-empty-setup-title,
+.academics-empty-setup-row-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+.academics-empty-title {
+  color: var(--foreground);
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.academics-empty-copy {
+  max-width: 520px;
+  margin-top: 0.2rem;
+  color: var(--muted-foreground);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.academics-empty-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.05rem;
+  flex-direction: column;
+}
+
+.academics-empty-primary-action {
+  min-width: 182px;
+  height: 40px;
+  border-color: transparent;
+  border-radius: 9px;
+  background: var(--primary);
+  padding: 10px 18px;
+  color: var(--primary-foreground);
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  box-shadow: 0 12px 28px -12px color-mix(in srgb, var(--primary) 90%, transparent);
+}
+
+.academics-empty-primary-action:hover {
+  background: color-mix(in srgb, var(--primary) 90%, white);
+}
+
+.academics-empty-manual {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 1px;
+  color: var(--muted-foreground);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.academics-empty-manual:hover,
+.academics-empty-manual:focus-visible {
+  color: var(--foreground);
+}
+
+.academics-empty-manual:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.academics-empty-setup {
+  border-top: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 5%, var(--card)), var(--card));
+  padding: 19px 22px 20px;
+  text-align: left;
+}
+
+.academics-empty-setup-header {
+  padding-bottom: 13px;
+}
+
+.academics-empty-setup-title {
+  color: var(--foreground);
+  font-size: 1.03rem;
+  line-height: 1.1;
+}
+
+.academics-empty-setup-subtitle {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.academics-empty-setup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.academics-empty-setup-row {
+  display: grid;
+  grid-template-columns: 31px minmax(0, 1fr);
+  align-items: start;
+  gap: 0.625rem;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--muted);
+  padding: 14px;
+}
+
+.academics-empty-setup-icon {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
+  color: var(--primary);
+}
+
+.academics-empty-setup-row-title {
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  line-height: 1.1;
+}
+
+.academics-empty-setup-row-detail {
+  margin-top: 1px;
+  color: var(--muted-foreground);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.academics-empty-honest {
+  margin-top: 15px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  color: var(--muted-foreground);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .academics-empty-wrap {
+    margin-top: 0.875rem;
+  }
+
+  .academics-empty-primary {
+    min-height: 240px;
+    padding: 1.75rem 1.25rem;
+  }
+
+  .academics-empty-setup {
+    padding: 1rem 1rem 1.125rem;
   }
 }

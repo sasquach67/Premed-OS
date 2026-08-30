@@ -54,6 +54,23 @@ describe('term columns', () => {
     const [column] = plannerTerms([], slots)
     expect(column).toMatchObject({ id: 'summer-2027', term: 'Summer 2027', kind: 'summer', courses: [] })
   })
+
+  it('keeps AP, IB, transfer, and dual-enrollment evidence out of semester columns', () => {
+    const prior = (code: string, courseType: 'ap' | 'ib' | 'transfer' | 'dual-enrollment') => course(code, 'Fall 2024', {
+      status: 'completed',
+      inResidence: false,
+      transcript: {
+        institution: 'Prior institution', courseNumber: code, courseTitle: `${code} title`,
+        termLabel: 'Fall 2024', creditHours: 3, gradeRecorded: 'A', courseType,
+        capturedAt: 1, updatedAt: 1,
+      },
+    })
+    const columns = plannerTerms([
+      prior('AP BIO', 'ap'), prior('IB CHEM', 'ib'), prior('TR BIO', 'transfer'), prior('DE ENGL', 'dual-enrollment'),
+      course('CHEM 261', 'Fall 2026'),
+    ], [{ id: 'prior', label: 'Prior credit', kind: 'standard', origin: 'legacy-derived', createdAt: 1, updatedAt: 1, order: 0 }])
+    expect(columns.map((column) => column.term)).toEqual(['Fall 2026'])
+  })
 })
 
 describe('the MCAT divider', () => {

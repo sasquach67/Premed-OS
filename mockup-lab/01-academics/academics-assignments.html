@@ -36,6 +36,8 @@
      know what's urgent.
   2. THREE VIEWS ONLY in the switcher: Agenda · Weekly · Calendar.
      (Was five. Workload and Table were pulled out — see 3 and 4.)
+     Calendar renders the complete six-row month geometry beside its selected-
+     day rail; it never crops the month into a short three-week strip.
   3. WORKLOAD IS NOT A VIEW. It sits at the BOTTOM of the page as its own
      panel titled "Projected workload" — one
      row per week reading "This week — Heavy — 44%". Collapsible.
@@ -48,7 +50,7 @@
      each caps visible rows with "+N more →", and Completed is collapsed by
      default behind a count.
   7. Every row: what it is · which class · type · when · what it's worth.
-     Exams carry their readiness ("4 of 9 topics ready").
+     Exams carry their syllabus scope ("9 topics in scope").
 
   GLASS (04 §0c): frosted glass ONLY on the mode pill + banner stat strip.
   Every panel, row, card, and field below is SOLID-with-depth.
@@ -174,8 +176,9 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
 .lgs{width:10px;height:10px;border-radius:3px}
 
 /* ══ WEEKLY ══ */
-.wkgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:9px}
+.wkgrid{display:grid;grid-template-columns:.62fr repeat(5,1fr) .62fr;gap:9px}
 .wkcol{background:var(--muted);border:1px solid var(--bd);border-radius:12px;padding:9px;min-height:220px;display:flex;flex-direction:column;gap:7px}
+.wkcol:first-child,.wkcol:last-child{opacity:.62}
 .wkcol.today{border-color:color-mix(in srgb,var(--pri) 55%,var(--bd));background:color-mix(in srgb,var(--pri) 7%,var(--muted))}
 .wkhd{display:flex;align-items:baseline;justify-content:space-between}
 .wkd{font-size:9.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
@@ -192,7 +195,7 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
 .calwrap{display:grid;grid-template-columns:1fr 290px;gap:14px}
 .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
 .caldow{font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);text-align:center;padding-bottom:3px}
-.calday{background:var(--muted);border:1px solid var(--bd);border-radius:8px;min-height:66px;padding:5px;display:flex;flex-direction:column;gap:3px}
+.calday{background:var(--muted);border:1px solid var(--bd);border-radius:8px;min-height:72px;padding:6px;display:flex;flex-direction:column;gap:3px}
 .calday.out{opacity:.32}
 .calday.today{border-color:var(--pri);background:color-mix(in srgb,var(--pri) 9%,var(--muted))}
 .calday.heavy{background:color-mix(in srgb,var(--danger) 8%,var(--muted))}
@@ -200,6 +203,7 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
 .calev{font-size:8.5px;font-weight:800;border-radius:4px;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .railcard{background:var(--muted);border:1px solid var(--bd);border-radius:11px;padding:10px 11px;position:relative;overflow:hidden;margin-bottom:8px}
 .railbar{position:absolute;left:0;top:0;bottom:0;width:3px}
+.calrail{display:flex;flex-direction:column;align-self:stretch;min-height:100%}.calrail .crunch{margin-top:auto}
 </style>
 </head>
 <body>
@@ -208,7 +212,7 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
 
 <!-- ══════════ DEFAULT: AGENDA ══════════ -->
 <div class="vlabel"><span class="vlt">Assignments — Agenda</span><span class="tag" style="background:color-mix(in srgb,var(--success) 18%,transparent);color:var(--success)">default view</span></div>
-<div class="vnote">Time buckets, not dates — position encodes urgency. <b>Add is the page's primary action</b> (banner, ⌘N) with a second dashed add-row at the bottom of the list. Buckets collapse and cap; Completed is collapsed by default.</div>
+<div class="vnote">The coursework-only counterpart to Overview Tasks: complete, prioritize, edit, and add class work. Time buckets, not dates — position encodes urgency. <b>Add is the page's primary action</b> (banner, ⌘N) with a second dashed add-row at the bottom of the list. Grade what-if stays secondary in the class grading context.</div>
 
 <div class="ban">
   <div class="bantop">
@@ -265,7 +269,7 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
       <div class="acright"><span class="acweight">4%</span><div><div class="acdue">Wednesday</div><div class="acdued">in 4 days</div></div></div></div>
     <!-- exams carry readiness -->
     <div class="acard"><div class="acbar" style="background:var(--cat)"></div><div class="acb"></div>
-      <div style="flex:1"><div class="actitle">Midterm 2 — Units 4–7</div><div class="acmeta"><span class="chip" style="background:color-mix(in srgb,var(--cat) 18%,transparent);color:var(--cat)">CHEM 262</span><span class="chip" style="background:color-mix(in srgb,var(--danger) 18%,transparent);color:var(--danger)">Exam</span><span>· 4 of 9 topics ready</span></div></div>
+      <div style="flex:1"><div class="actitle">Midterm 2 — Units 4–7</div><div class="acmeta"><span class="chip" style="background:color-mix(in srgb,var(--cat) 18%,transparent);color:var(--cat)">CHEM 262</span><span class="chip" style="background:color-mix(in srgb,var(--danger) 18%,transparent);color:var(--danger)">Exam</span><span>· 9 syllabus topics in scope</span></div></div>
       <div class="acright"><span class="acweight">25%</span><div><div class="acdue" style="color:var(--warning)">Friday</div><div class="acdued">in 6 days · 10:10 AM</div></div></div></div>
     <div class="more">+1 more this week →</div>
 
@@ -386,14 +390,20 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
         <div class="calday"><span class="caln">12</span></div>
         <div class="calday"><span class="caln">13</span><div class="calev" style="background:color-mix(in srgb,var(--research) 25%,transparent);color:var(--research)">Quiz 6</div></div>
         <div class="calday"><span class="caln">14</span></div><div class="calday"><span class="caln">15</span></div>
+        <div class="calday"><span class="caln">16</span></div><div class="calday"><span class="caln">17</span></div><div class="calday"><span class="caln">18</span></div>
+        <div class="calday"><span class="caln">19</span></div><div class="calday"><span class="caln">20</span></div><div class="calday"><span class="caln">21</span></div><div class="calday"><span class="caln">22</span></div>
+        <div class="calday"><span class="caln">23</span></div><div class="calday"><span class="caln">24</span></div><div class="calday"><span class="caln">25</span></div>
+        <div class="calday"><span class="caln">26</span></div><div class="calday"><span class="caln">27</span></div><div class="calday"><span class="caln">28</span></div><div class="calday"><span class="caln">29</span></div>
+        <div class="calday"><span class="caln">30</span></div><div class="calday out"><span class="caln">1</span></div><div class="calday out"><span class="caln">2</span></div>
+        <div class="calday out"><span class="caln">3</span></div><div class="calday out"><span class="caln">4</span></div><div class="calday out"><span class="caln">5</span></div><div class="calday out"><span class="caln">6</span></div>
       </div>
     </div>
-    <div>
+    <div class="calrail">
       <div class="sub" style="font-weight:800;margin-bottom:8px">Friday, Nov 7 · 2 items</div>
       <div class="railcard"><div class="railbar" style="background:var(--cat)"></div>
         <div style="font-size:12.5px;font-weight:700">Midterm 2 — Units 4–7</div>
         <div style="display:flex;gap:5px;margin-top:5px"><span class="chip" style="background:color-mix(in srgb,var(--cat) 18%,transparent);color:var(--cat)">CHEM 262</span><span class="chip" style="background:color-mix(in srgb,var(--danger) 18%,transparent);color:var(--danger)">Exam · 25%</span></div>
-        <div style="font-size:10.5px;color:var(--mut);font-weight:600;margin-top:6px">10:10 AM · 4 of 9 topics ready</div></div>
+        <div style="font-size:10.5px;color:var(--mut);font-weight:600;margin-top:6px">10:10 AM · 9 syllabus topics in scope</div></div>
       <div class="railcard"><div class="railbar" style="background:var(--clinical)"></div>
         <div style="font-size:12.5px;font-weight:700">Reading response 4</div>
         <div style="display:flex;gap:5px;margin-top:5px"><span class="chip" style="background:color-mix(in srgb,var(--clinical) 18%,transparent);color:var(--clinical)">PSYC 210</span><span class="chip" style="background:#272420;color:var(--dim)">5%</span></div></div>

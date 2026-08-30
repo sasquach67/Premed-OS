@@ -67,7 +67,7 @@ export function sharedCandidateToProposal(candidate: SharedSyllabusCandidate): S
   ]
   return {
     sourceName: 'Shared parsed structure', sourceKind: 'shared', text: '', items,
-    searched: { identity: 'Shared structure', exams: 'Shared structure', weights: 'Shared structure', units: 'Shared structure', deadlines: 'Shared structure', policies: 'Not shared', logistics: 'Not shared' },
+    searched: { identity: 'Shared structure', standards: 'Not shared', exams: 'Shared structure', weights: 'Shared structure', units: 'Shared structure', readings: 'Not shared', deadlines: 'Shared structure', policies: 'Not shared', logistics: 'Not shared' },
     scanDetected: false, documentKind: 'syllabus', structureFound: ['weights', 'exams', 'units'], numberedItems: 0,
   }
 }

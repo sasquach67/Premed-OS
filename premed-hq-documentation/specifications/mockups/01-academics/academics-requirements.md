@@ -1,6 +1,8 @@
-# Requirements — decisions
+# Requirements — superseded historical mockup
 
-**File:** `academics-requirements.html` · **Status:** PROPOSED (Aug 2026)
+**File:** `academics-requirements.html` · **Status:** SUPERSEDED — retained
+only as the historical numeric gap-and-pace direction. The final Planning
+review target is `academics-planner-prototype.html?view=requirements`.
 **Spec:** `tabs/01-academics.md` §4.2 tab table · §4.2-A (tracker layout,
 APPROVED July 2026) · §4.2-D (transcript fidelity)
 
@@ -44,8 +46,8 @@ second tab row. Three levels, three forms still holds.
   HQ sees only some of them (§4.2-E "Must not").
 - **No retention percentage for untracked courses.** Rank is defensible, a
   number is not.
-- **No term building.** That is the Planner. The two stay separate surfaces
-  (§4.2-C2); the Tracker is the audit and links across.
+- **No current separate surface.** The useful audit behavior moved into Planner
+  (§4.2-C2); this historical file must not be used as navigation guidance.
 
 ## Rejected alternatives
 
@@ -61,3 +63,69 @@ Per view, declared in `VIEW_VARIANTS`:
 - `audit` — verdict-led bento · pace as the working surface · two-column audit
 - `requirements` — grouped sets · gap-first (met recede) · two-column sets
 - `prior-credit` — ledger with context · ledger only · entry-first
+
+### Ruling — Aug. 22, 2026
+
+**Selected set: A / B / A.** This is one coherent Requirements screen, not
+three independent experiments:
+
+- **Gap & pace → A, verdict-led bento.** A calm plain-language callout leads,
+  followed by named open/uncertain items, a compact Suggested next term area,
+  overlap context, then requirement groups. It reads as an occasional audit,
+  not a second course-planning board.
+- **All requirements → B, gap-first.** Open and uncertain rows lead their
+  verified sets; met rows recede but remain visible for traceability. Group
+  headers, confidence chips, source date, and the dedicated uncertainty
+  boundary remain visible at every width.
+- **Prior credit → A, ledger with context.** Exact transcript course number and
+  title lead the row, with the app display name, institution/type, and
+  provenance shown alongside rather than hidden behind a record detail.
+
+The selected hierarchy uses the warm-dark ladder literally: `--card` 16px
+outer bento panels; `--muted` 13px inner data surfaces; quiet 11px source and
+confidence context; and a labelled warning boundary rather than color alone.
+The segmented control stays solid, compact, and level-three—never a second tab
+row. At narrow widths the bento stacks and the ledger becomes a readable card
+sequence without losing exact transcript text or confidence context.
+
+**Build boundary repeated:** the manifest clears this **screen only**. It may
+show student-held records and labelled catalog evidence, but may not calculate
+or certify degree completion, emit a degree percentage/composite/ranking, or
+silently auto-advise a course. ConnectCarolina remains the official audit.
+
+## Behaviour
+
+- The Tracker is a planning library, not an official graduation audit. It
+  states what catalog mapping is present, what evidence is uncertain, and what
+  a student might inspect or plan next; ConnectCarolina remains authoritative.
+- Gap & pace leads with named unscheduled/uncertain items and **Suggested next
+  term**. All requirements keeps sets transparent, and Prior credit preserves
+  transcript-exact course text with a separate display name.
+- Confidence is explicit: students can confirm an unverified mapping, but the
+  app never silently promotes it to official fact. No degree-completion score,
+  false percentage, composite, retention percentage, ranking, or automatic
+  course advice is allowed.
+
+## Appearance
+
+- Audit view is verdict-led bento: one plain-language status callout, a
+  suggested-next-term area, overlap context, then requirement groups. Met rows
+  recede in All requirements; Prior credit uses a ledger with visible exact
+  transcript text and contextual provenance.
+- Requirement groups, rows, confidence warnings, and course chips are solid
+  data surfaces using the shared warm-dark ladder, border/shadow depth, and
+  shared radius/spacing family. Only banner chrome that floats over banner art
+  answers yes to glass.
+- Confidence uses labelled chips and a dedicated warning boundary, never a
+  color-only state. Keyboard focus is visible, selection/expansion changes are
+  quiet at the shared timing, and reduced motion disables expansion travel.
+  At narrow widths bento columns stack and transcript columns become a readable
+  card/ledger sequence without hiding verification context.
+
+## Visual conformance sweep — 2026-08-26
+
+- Intentionally not redesigned. This artifact remains visibly **SUPERSEDED** so
+  it cannot compete with Planner's integrated Requirement map.
+- Its remaining value is historical comparison of the rejected gap-and-pace
+  approach. Refining it into the current visual system would create a second,
+  misleading degree-audit candidate.

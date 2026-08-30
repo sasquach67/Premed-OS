@@ -35,6 +35,15 @@ describe('class type proposal', () => {
     })
   })
 
+  it('prefers a course with graded reading responses over the generic units-and-exams STEM signal', () => {
+    expect(proposeClassType({ syllabusItems: [
+      { kind: 'weights', label: 'Submit 6 Draft Reading Responses', value: '3%', confidence: 'high' },
+      { kind: 'units', label: 'Week 1', confidence: 'high' },
+      { kind: 'units', label: 'Week 2', confidence: 'high' },
+      { kind: 'exams', label: 'Exam 1', value: '2026-09-15', confidence: 'high' },
+    ] })).toMatchObject({ kind: 'suggestion', type: 'writing', source: 'syllabus' })
+  })
+
   it('falls back to a narrowly recognised writing course code', () => {
     expect(proposeClassType({ courseCode: 'ENGL 105' })).toEqual({
       kind: 'suggestion',

@@ -15,11 +15,10 @@ import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { fmtDate } from '@/lib/date'
 import {
-  MISTAKE_CAUSE_LABEL, MISTAKE_ROUTE_LABEL, appliedPolicies, missingInputs,
-  mistakeRoute, patternIsReportable, regradeWindow, reviewableWork,
+  appliedPolicies, missingInputs, regradeWindow, reviewableWork,
   type PolicyState,
 } from '@/lib/academics/gradeDecisions'
-import type { AcademicMistake, ClassAssignment, Course, GradeCategory } from '@/lib/types'
+import type { ClassAssignment, Course, GradeCategory } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 
 const CARD = 'rounded-2xl border border-border bg-card shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]'
@@ -37,18 +36,17 @@ const POLICY_LABEL: Record<PolicyState, string> = {
   'not-recorded': 'Not recorded',
 }
 
-export function GradeDecisions({ course, assignments, categories, mistakes }: {
+export function GradeDecisions({ course, assignments, categories }: {
   course: Course
   assignments: ClassAssignment[]
   categories: GradeCategory[]
-  mistakes: AcademicMistake[]
 }) {
   const reviewable = reviewableWork(assignments)
   const gaps = missingInputs(categories, assignments)
   const category = categories[0]
 
   // Nothing to decide about is not a state worth drawing (U-5).
-  if (!reviewable.length && !gaps.length && !mistakes.length && !category) return null
+  if (!reviewable.length && !gaps.length && !category) return null
 
   return (
     <section className="space-y-4">
@@ -63,7 +61,6 @@ export function GradeDecisions({ course, assignments, categories, mistakes }: {
       {reviewable.map((item) => <ReturnedWork key={item.id} item={item} course={course} />)}
       {category && <PolicyApplied category={category} />}
       {gaps.length > 0 && <MissingInputs gaps={gaps} />}
-      {mistakes.length > 0 && <MistakeEvidence mistakes={mistakes} course={course} />}
     </section>
   )
 }
@@ -153,71 +150,6 @@ function MissingInputs({ gaps }: { gaps: ReturnType<typeof missingInputs> }) {
         ))}
       </div>
     </article>
-  )
-}
-
-/** #47/#48 — a quiet annotated record, never a chart and never a diagnosis. */
-function MistakeEvidence({ mistakes, course }: { mistakes: AcademicMistake[]; course: Course }) {
-  const reportable = patternIsReportable(mistakes)
-  return (
-    <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-      <article className={cn(CARD, 'p-4')}>
-        <p className={EYEBROW}>{course.code} · review evidence</p>
-        <h4 className="mt-0.5 font-display text-base font-extrabold">Study the cause, not a made-up weakness label.</h4>
-        <p className="mt-0.5 text-xs font-bold text-muted-foreground">
-          These come from mistakes you chose to mark while reviewing returned work or practice material.
-        </p>
-        <div className="mt-3 space-y-2">
-          {mistakes.map((item) => {
-            const route = mistakeRoute(item)
-            return (
-              <section key={item.id} className="flex gap-3 rounded-xl border border-border bg-muted p-3">
-                <span className={cn(
-                  'h-fit shrink-0 rounded-lg border px-2 py-1 font-display text-[10.5px] font-extrabold',
-                  route === 'recall' ? 'border-[color-mix(in_srgb,var(--cat-gpa)_38%,var(--border))] text-[var(--cat-gpa)]'
-                    : route === 'material' ? 'border-amber-500/45 text-amber-600 dark:text-amber-300'
-                      : 'border-dashed border-border text-muted-foreground',
-                )}>
-                  {item.cause ? MISTAKE_CAUSE_LABEL[item.cause] : MISTAKE_CAUSE_LABEL.unmarked}
-                </span>
-                <div className="min-w-0">
-                  <b className="font-display text-sm font-extrabold">{item.label}</b>
-                  <p className="mt-0.5 text-[11.5px] font-bold text-muted-foreground">
-                    {item.note ?? (route === 'recall'
-                      ? 'You marked that you knew this but could not retrieve it during the attempt.'
-                      : route === 'material'
-                        ? 'You marked missing content knowledge. The next route is the linked material before another attempt.'
-                        : 'Until you name a cause, this stays one mistake record — not a trend or a prediction.')}
-                  </p>
-                  <Link
-                    to={route === 'recall' && item.topicId
-                      ? `/academics/review/${item.courseId}?topicId=${item.topicId}`
-                      : `/academics/classes/${item.courseId}?classTab=${route === 'material' ? 'materials' : 'assignments'}`}
-                    className="mt-2 inline-block font-display text-[11px] font-extrabold text-[var(--cat-gpa)] hover:opacity-80"
-                  >
-                    {MISTAKE_ROUTE_LABEL[route]} →
-                  </Link>
-                </div>
-              </section>
-            )
-          })}
-        </div>
-      </article>
-
-      <aside className={cn(CARD, 'h-fit p-4')}>
-        <p className={EYEBROW}>Evidence boundary</p>
-        <h4 className="mt-0.5 font-display text-sm font-extrabold">No diagnosis from one item.</h4>
-        <p className="mt-1 text-[11.5px] font-bold text-muted-foreground">
-          The app routes a marked cause. It describes a recurring pattern only once enough marked
-          records exist, and it keeps the source items reachable.
-        </p>
-        <p className="mt-2 rounded-lg border border-border bg-muted p-2.5 text-[11px] font-bold text-muted-foreground">
-          {reportable
-            ? 'Enough marked records exist for a pattern to be described — with its sample shown, never as an exam forecast.'
-            : 'Not enough marked records yet for any pattern claim. A course-level observation needs multiple graded examples.'}
-        </p>
-      </aside>
-    </div>
   )
 }
 

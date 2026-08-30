@@ -75,6 +75,7 @@ export type CourseStatus = 'planned' | 'in-progress' | 'completed'
 export type TranscriptCourseType =
   | 'regular'
   | 'ap'
+  | 'ib'
   | 'transfer'
   | 'dual-enrollment'
   | 'repeat'
@@ -203,8 +204,8 @@ export interface ExperienceHourEntry extends EntityEnvelope {
 }
 
 export type AcademicTagColor =
-  | 'gray' | 'brown' | 'orange' | 'yellow' | 'green'
-  | 'blue' | 'purple' | 'pink' | 'red'
+  | 'gray' | 'brown' | 'orange' | 'coral' | 'yellow' | 'lime' | 'green' | 'mint'
+  | 'teal' | 'cyan' | 'sky' | 'blue' | 'navy' | 'indigo' | 'purple' | 'plum' | 'pink' | 'red'
 
 export interface AcademicCourseOption {
   id: ID
@@ -262,6 +263,17 @@ export interface CourseLens {
   updatedAt: number
 }
 
+/** Syllabus-derived chronological context. It never creates a Topic; only
+ * explicit syllabus learning standards do that. */
+export interface SyllabusScheduleEntry {
+  id: ID
+  week: string
+  label: string
+  startDate?: string
+  source?: string
+  order: number
+}
+
 /** Operational extension for one canonical Course. It exists only for the
  * profile's current term and never repeats course code/title/term. */
 export interface ClassWorkspace {
@@ -280,6 +292,7 @@ export interface ClassWorkspace {
   readingListState?: ReadingListState
   /** Optional interpretive context for courses whose materials need a course-specific frame. */
   courseLens?: CourseLens
+  syllabusSchedule?: SyllabusScheduleEntry[]
   background?: string
   status: ClassStatus
   currentTopicId?: ID
@@ -321,6 +334,8 @@ export interface AssignedReading {
   courseId: ID
   week: string
   title: string
+  /** Stable identity of a confirmed syllabus schedule reading. */
+  syllabusSourceKey?: string
   source?: string
   status: AssignedReadingStatus
   dueForDiscussion?: string
@@ -513,7 +528,10 @@ export type AcademicFileOwner = 'course' | 'mine' | 'generated'
 
 export interface AcademicFile {
   id: ID
-  courseId: ID
+  /** Transcript evidence may belong to Grades & Archive before (or without)
+   * an operational Class Center course. Other academic materials remain
+   * class-owned and continue to provide this field. */
+  courseId?: ID
   topicId?: ID
   /** Explicit lecture home; absent means class-level material. */
   lectureId?: ID
@@ -854,7 +872,7 @@ export interface GeneratedFlashcard {
   /** One verified material citation; general/background claims are not cards. */
   sourceChunkId: ID
   /** Flashcards V1 metadata. It is generated with the card and retained for
-   * deterministic quality checks and lossless Anki export. */
+   * deterministic quality checks and source-grounded Materials display. */
   clozePattern?: 'single' | 'independent' | 'enumerated-list' | 'definition'
   listOrdered?: boolean
   termJustification?: string
@@ -867,7 +885,7 @@ export interface GeneratedFlashcard {
   relational?: boolean
 }
 
-/** One successful Flashcards V1 result. Anki owns all scheduling after export. */
+/** One successful Flashcards V1 result stored as an inspectable class resource. */
 export interface GeneratedFlashcardDeck {
   id: ID
   courseId: ID
@@ -959,6 +977,9 @@ export interface GeneratedMockAttempt {
   questions: GeneratedMockQuestion[]
   answers: Record<ID, string>
   flaggedQuestionIds: ID[]
+  /** Last question the student visited. Optional for pre-existing attempts;
+   * the runner falls back to the first unanswered question. */
+  currentQuestionId?: ID
   startedAt: number
   endedAt?: number
   createdAt: number
@@ -1044,7 +1065,10 @@ export interface AssessmentAttempt {
 /** A transcript-faithful entry. Operational Course fields remain separate. */
 export interface TranscriptCourseRecord {
   id: ID
-  courseId: ID
+  /** Operational class/course link when this is ordinary UNC coursework.
+   * Prior credit is owned by Grades & Archive and deliberately has no Planner
+   * Course row. Older linked records remain valid and readable. */
+  courseId?: ID
   institution: string
   courseNumberExact: string
   titleExact: string

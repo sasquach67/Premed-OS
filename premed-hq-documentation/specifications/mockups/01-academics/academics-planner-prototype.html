@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Academics Planner — prototype</title>
 <!--
-  PROTOTYPE — NOT APPROVED FOR IMPLEMENTATION
+  APPROVED MOCKUP — IMPLEMENTATION REMAINS MANIFEST-GATED
 
   QUESTION
   Three compositions of the locked Academics Planner, switchable with
@@ -14,23 +14,29 @@
   IMPORTANT RESCOPE
   This is the revised Planner tab, not the superseded "Planner & GPA" tab.
   The Planner answers "what should I take next term?" and keeps projected GPA
-  beside the plan. The full ledger, dual UNC/AMCAS GPA, What-if, and archived
-  courses belong to the later Grades & Archive surface.
+  and the requirement map beside the plan. Major, graduation, IDEAs, and
+  premed requirements belong here because they explain why a course belongs in
+  a term. The full ledger, dual UNC/AMCAS GPA, What-if, and archived courses
+  belong to the later Grades & Archive surface.
 
   LOCKED IN EVERY VARIANT
   · Horizontally scrolling term columns remain the plan's backbone.
   · Every course states what it clears; mapping confidence is visible.
   · MCAT is a divider in the timeline, not a detached stat.
   · An unplaced tray is always visible.
-  · The live outcome rail includes projected cumulative + BCPM, graduation,
-    prereq-vs-MCAT verdict, remaining gaps, ranked suggestions, and watch-outs.
+  · The persistent workbench gives the requirement map and course catalog
+    first-class regions alongside the timeline; outcome projections stay
+    smaller and explanatory.
   · No drag interaction is required to understand or use the plan.
   · Suggestions are optional; nothing is silently enforced.
 
   DATA BASIS
   Course sequence and tags are adapted from src/data/seed.ts.
   Requirement names and confidence vocabulary are adapted from
-  data/unc-requirements.json (IDEAs in Action 2026–27).
+  data/unc-requirements.json and the 2026–27 research packet. The repository
+  contains a source-versioned in-app reference library of requirement-linked
+  course codes; titles, credits, prerequisites, and live availability remain
+  explicit when they have not been captured.
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,6 +51,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:#191613;color:var(--fg);font-family:'Nunito',system-ui,sans-serif;font-size:15px;line-height:1.42}
 button{font:inherit}
+a{color:inherit}
 .frame{width:min(1500px,100%);margin:0 auto;background:var(--bg);min-height:100vh;padding-bottom:86px}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
 svg{display:block}
@@ -81,10 +88,16 @@ svg{display:block}
 .fbar{display:flex;align-items:center;gap:9px;padding:10px 24px;background:var(--card);border-bottom:1px solid var(--bd)}
 .control{display:inline-flex;align-items:center;gap:7px;background:var(--muted);border:1px solid var(--bd);
   border-radius:9px;padding:6px 10px;color:var(--mut);font-size:11.5px;font-weight:800}
+button.control{cursor:pointer}
 .control svg{width:13px;height:13px;color:var(--dim)}
 .control strong{font-family:'Baloo 2';color:var(--fg)}
 .control.primary{background:color-mix(in srgb,var(--cat) 14%,var(--muted));border-color:color-mix(in srgb,var(--cat) 34%,var(--bd))}
 .spacer{margin-left:auto}
+
+/* Editable facts that determine what the requirement map means. */
+.contextbar{display:flex;align-items:stretch;gap:7px;padding:10px 24px;border-bottom:1px solid var(--bd);background:color-mix(in srgb,var(--card) 82%,var(--bg));overflow:auto}
+.context-label{min-width:142px;padding:6px 3px}.context-label b{display:block;font-family:'Baloo 2';font-size:11px}.context-label span{display:block;margin-top:1px;color:var(--dim);font-size:8.8px;font-weight:700}
+.context-field{min-width:156px;padding:7px 9px;border:1px solid var(--bd);border-radius:10px;background:var(--muted);text-align:left;color:var(--fg);font:700 9.5px 'Nunito',sans-serif;cursor:pointer}.context-field:hover{border-color:color-mix(in srgb,var(--cat) 52%,var(--bd))}.context-field:focus-visible{outline:2px solid var(--cat);outline-offset:3px}.context-field small{display:block;color:var(--dim);font-size:8px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}.context-field strong{display:flex;justify-content:space-between;gap:8px;margin-top:2px;font:800 10.5px 'Baloo 2';white-space:nowrap}.context-field.action{border-style:dashed;color:var(--cat);background:color-mix(in srgb,var(--cat) 6%,var(--muted))}
 
 .wrap{padding:15px 24px 0}
 .variant{display:none}.variant.on{display:block}
@@ -99,6 +112,9 @@ svg{display:block}
   font-family:'Baloo 2';font-size:11px;font-weight:800;display:inline-flex;gap:5px;align-items:center}
 .btn svg{width:12px;height:12px}.btn.p{background:var(--cat);border-color:var(--cat);color:#102432}
 
+/* Course catalog controls stay inline in the selected plan. */
+.catalog-search{width:100%;margin-top:0;padding:10px 11px;border:1px solid color-mix(in srgb,var(--cat) 42%,var(--bd));border-radius:11px;background:var(--muted);color:var(--fg);font:700 11px 'Nunito',sans-serif}.catalog-search:focus-visible{outline:2px solid var(--cat);outline-offset:3px}
+
 /* Dense term column language */
 .boardscroll{overflow-x:auto;scrollbar-color:var(--bd) transparent;scrollbar-width:thin;padding-bottom:7px}
 .terms{display:flex;align-items:stretch;gap:10px;min-width:max-content}
@@ -109,6 +125,13 @@ svg{display:block}
 .tname{font-family:'Baloo 2';font-weight:800;font-size:13px}.tmeta{font-size:9.5px;color:var(--dim);font-weight:700;margin-top:1px}
 .lock{font-size:9px;font-family:'Baloo 2';font-weight:800;border-radius:999px;padding:2px 7px;background:#272420;color:var(--dim)}
 .lock.on{background:color-mix(in srgb,var(--cat) 17%,transparent);color:var(--cat)}
+.term-actions{display:flex;align-items:center;justify-content:flex-end;gap:4px;flex-wrap:wrap;max-width:158px;opacity:0;transform:translateY(-2px);pointer-events:none;transition:opacity .14s ease,transform .14s cubic-bezier(.16,1,.3,1)}
+.term:hover .term-actions,.term:focus-within .term-actions{opacity:1;transform:none;pointer-events:auto}
+.term-action{height:24px;border:1px solid var(--bd);border-radius:7px;background:var(--card);color:var(--mut);padding:0 6px;font:800 8.5px 'Baloo 2';cursor:pointer}
+.term-action.add-course{border-color:color-mix(in srgb,var(--cat) 42%,var(--bd));color:var(--cat)}
+.term-action.remove-term{width:24px;padding:0;display:grid;place-items:center;color:var(--dim)}
+.term-action.remove-term svg{width:11px;height:11px}.term-action:hover{border-color:var(--cat);color:var(--fg)}
+.term-action:focus-visible{outline:2px solid var(--cat);outline-offset:2px}
 .course{border:1px solid var(--bd);border-radius:10px;background:var(--card);padding:8px;position:relative}
 .course.selected{border-color:var(--cat);box-shadow:0 0 16px -7px color-mix(in srgb,var(--cat) 60%,transparent)}
 .ctop{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
@@ -138,6 +161,38 @@ svg{display:block}
 .traychip{border:1px solid var(--bd);background:var(--muted);border-radius:9px;padding:7px 9px;min-width:180px}
 .traychip b{font-family:'Baloo 2';font-size:10.5px}.traychip span{display:block;font-size:8.8px;color:var(--dim);font-weight:700;margin-top:1px}
 
+/* Proposed ruled interaction states — one contextual surface, never a second dashboard. */
+.term-nudge{width:100%;border:1px solid color-mix(in srgb,var(--warning) 38%,var(--bd));border-radius:8px;padding:6px 8px;background:color-mix(in srgb,var(--warning) 8%,var(--card));color:var(--warning);font:800 8.5px 'Baloo 2';text-align:left;cursor:pointer}
+.term-nudge:focus-visible{outline:2px solid var(--cat);outline-offset:2px}
+.planner-state-stack{margin-top:10px}.planner-state-card{display:none;padding:14px;background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 10px 26px -14px rgba(0,0,0,.55)}.planner-state-card.on{display:block}
+.state-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding-bottom:10px;border-bottom:1px solid var(--bd)}.state-head h2{margin:1px 0 0;font:800 18px 'Baloo 2'}.state-head p{margin:2px 0 0;color:var(--dim);font-size:9.5px;font-weight:700}.state-close{flex:0 0 auto}
+.state-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}.state-option{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px;border:1px solid var(--bd);border-radius:12px;background:var(--muted)}.state-option.active{border-color:color-mix(in srgb,var(--cat) 48%,var(--bd));box-shadow:inset 3px 0 0 var(--cat)}.state-option.gap-span{box-shadow:inset 3px 0 0 var(--warning)}.state-option b{display:block;font:800 12px 'Baloo 2'}.state-option p{margin:2px 0 0;color:var(--dim);font-size:9px;font-weight:700}.state-option .btn{justify-content:center}
+.state-route{display:flex;align-items:center;gap:6px;margin-top:10px;padding:8px 9px;border-top:1px solid var(--bd);color:var(--dim);font:800 8.5px 'Baloo 2';overflow-x:auto}.state-route span{flex:0 0 auto;padding:4px 7px;border:1px solid var(--bd);border-radius:8px;background:var(--muted)}.state-route span.proposed{border-color:color-mix(in srgb,var(--cat) 48%,var(--bd));color:var(--cat)}.state-route span.pause{border-style:dashed;border-color:color-mix(in srgb,var(--warning) 46%,var(--bd));color:var(--warning)}
+.state-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;color:var(--dim);font-size:8.5px;font-weight:700}
+.note-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(220px,.65fr);gap:10px;margin-top:11px}.note-editor,.note-saved{padding:11px;border:1px solid var(--bd);border-radius:12px;background:var(--muted)}.note-editor label,.note-saved small{display:block;color:var(--dim);font:800 8px 'Baloo 2';letter-spacing:.07em;text-transform:uppercase}.note-editor textarea{width:100%;min-height:88px;margin-top:6px;padding:9px;border:1px solid var(--bd);border-radius:9px;resize:vertical;background:var(--card);color:var(--fg);font:700 10px/1.4 'Nunito'}.note-editor textarea:focus-visible{outline:2px solid var(--cat);outline-offset:2px}.note-actions{display:flex;gap:7px;margin-top:8px}.note-saved b{display:block;margin-top:4px;font:800 11px 'Baloo 2'}.note-saved p{margin:3px 0 0;color:var(--mut);font-size:9px;font-weight:700}.note-saved.saved{border-color:color-mix(in srgb,var(--success) 44%,var(--bd));box-shadow:inset 3px 0 0 var(--success)}
+.registration-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;margin-top:11px;padding:12px;border:1px solid color-mix(in srgb,var(--warning) 38%,var(--bd));border-radius:12px;background:color-mix(in srgb,var(--warning) 7%,var(--muted))}.registration-row b{display:block;font:800 13px 'Baloo 2'}.registration-row p{margin:2px 0 0;color:var(--mut);font-size:9.5px;font-weight:700}.registration-actions{display:flex;gap:7px}.evidence-boundary{margin-top:9px;padding-left:9px;border-left:2px solid var(--warning);color:var(--dim);font-size:8.5px;font-weight:700}
+
+/* Direct review routes focus the proposed state instead of shrinking the full,
+   long-form Planner canvas. The compact timeline remains visible as context. */
+body.planner-state-review .frame{min-height:0;padding-bottom:22px}
+body.planner-state-review .ban{padding-top:11px}
+body.planner-state-review .ban .bstats,body.planner-state-review .ban .mswitch{display:none}
+body.planner-state-review .utabs{margin-top:4px}
+body.planner-state-review .contextbar{display:none}
+body.planner-state-review .wrap{padding-top:10px}
+body.planner-state-review .alayout{grid-template-columns:minmax(0,1fr)}
+body.planner-state-review .alayout>.rail,
+body.planner-state-review .plan-main>.tray,
+body.planner-state-review .plan-main>.trajectory-card,
+body.planner-state-review .inline-requirements{display:none}
+body.planner-state-review .aboard .course,
+body.planner-state-review .aboard .add{display:none}
+body.planner-state-review .aboard .term{min-height:94px}
+body.planner-state-review .aboard .load{margin-top:auto}
+body.planner-state-review .aboard .term-actions{opacity:1;transform:none;pointer-events:auto}
+body.planner-state-review .planner-state-stack{margin-top:10px}
+body.planner-state-review .planner-state-card{box-shadow:0 14px 34px -18px rgba(0,0,0,.7)}
+
 /* Live rail */
 .rail{display:flex;flex-direction:column;gap:10px}
 .rail .card{box-shadow:none}
@@ -150,6 +205,20 @@ svg{display:block}
   background:color-mix(in srgb,var(--warning) 8%,var(--muted));border-radius:9px;padding:8px}
 .verdict b{font-family:'Baloo 2';font-size:10.5px;color:var(--warning)}
 .verdict p{font-size:9px;color:var(--mut);font-weight:700;margin:2px 0 0}
+.next-actions{margin-top:10px;padding-top:9px;border-top:1px solid var(--bd)}
+.next-actions-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:6px}
+.next-actions-head b{font:800 11px 'Baloo 2'}.next-actions-head span{color:var(--dim);font-size:8px;font-weight:800}
+.trajectory-card{overflow:hidden}.trajectory-card .hd{align-items:flex-start}.trajectory-state{color:var(--cat);font:800 8px 'Baloo 2';letter-spacing:.07em;text-transform:uppercase}.trajectory-body{padding-top:2px}.trajectory-readout{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--bd);border-bottom:1px solid var(--bd)}.trajectory-readout>div{padding:10px 7px}.trajectory-readout>div+div{border-left:1px solid var(--bd)}.trajectory-readout b{display:block;font:800 20px 'Baloo 2';font-variant-numeric:tabular-nums}.trajectory-readout span{display:block;margin-top:-2px;color:var(--dim);font:800 7.5px 'Baloo 2';letter-spacing:.07em;text-transform:uppercase}.runway{position:relative;margin:12px 0 4px;padding-left:24px}.runway:before{content:"";position:absolute;left:7px;top:9px;bottom:10px;width:3px;border-radius:3px;background:linear-gradient(to bottom,var(--success) 0 24%,var(--warning) 24% 52%,var(--mcat) 52% 76%,var(--bd) 76%)}.runway-node{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;min-height:50px;padding:7px 0;border-bottom:1px solid var(--bd)}.runway-node:last-child{border-bottom:0}.runway-node:before{content:"";position:absolute;left:-21px;top:18px;width:10px;height:10px;border-radius:50%;background:var(--card);border:3px solid var(--dim);box-shadow:0 0 0 3px var(--card)}.runway-node.done:before{border-color:var(--success)}.runway-node.gap:before{border-color:var(--warning);box-shadow:0 0 0 3px var(--card),0 0 12px color-mix(in srgb,var(--warning) 45%,transparent)}.runway-node.milestone:before{border-color:var(--mcat)}.runway-node small{display:block;color:var(--dim);font:800 7.4px 'Baloo 2';letter-spacing:.08em;text-transform:uppercase}.runway-node b{display:block;margin-top:1px;font:800 11px 'Baloo 2'}.runway-node em{display:block;color:var(--mut);font-size:8.4px;font-style:normal;font-weight:700}.runway-date{color:var(--dim);font:800 8.4px 'Baloo 2';text-align:right}.runway-node.gap .runway-date{color:var(--warning)}.trajectory-actions{margin-top:8px;border-top:1px solid var(--bd)}.trajectory-action{width:100%;display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px 0;border:0;border-bottom:1px solid var(--bd);background:transparent;color:var(--fg);text-align:left;cursor:pointer}.trajectory-action:last-child{border-bottom:0}.trajectory-action>span{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--cat) 17%,transparent);color:var(--cat);font:800 9px 'Baloo 2'}.trajectory-action b{display:block;font:800 10.5px 'Baloo 2'}.trajectory-action small{display:block;color:var(--dim);font-size:8.4px;font-weight:700}.trajectory-action i{color:var(--cat);font:800 13px 'Baloo 2';font-style:normal}.trajectory-action:focus-visible{outline:2px solid var(--cat);outline-offset:2px;border-radius:7px}.trajectory-note{margin-top:7px;color:var(--dim);font-size:7.8px;font-weight:700}
+.trajectory-wide{margin-top:10px}.trajectory-wide .hd{padding:11px 14px 7px}.trajectory-wide .trajectory-body{display:grid;grid-template-columns:150px minmax(0,1fr) 230px;gap:17px;align-items:center;padding:4px 14px 11px}.trajectory-wide .trajectory-readout{align-self:stretch;border-top:0;border-bottom:0;border-right:1px solid var(--bd)}.trajectory-wide .trajectory-readout>div{padding:11px 7px 7px}.trajectory-wide .runway{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0;padding:24px 0 0}.trajectory-wide .runway:before{left:8px;right:8px;top:8px;bottom:auto;width:auto;height:3px;background:linear-gradient(to right,var(--success) 0 24%,var(--warning) 24% 52%,var(--mcat) 52% 76%,var(--bd) 76%)}.trajectory-wide .runway-node{display:block;min-height:58px;padding:0 10px 0 0;border-bottom:0}.trajectory-wide .runway-node:before{left:0;top:-20px}.trajectory-wide .runway-date{display:block;margin-top:5px;text-align:left}.trajectory-wide .trajectory-actions{margin-top:0;padding-left:14px;border-top:0;border-left:1px solid var(--bd)}.trajectory-wide .trajectory-action{padding:7px 0}.trajectory-wide .trajectory-note{grid-column:1/-1;margin-top:-2px;padding-top:6px;border-top:1px solid var(--bd)}
+@media(min-width:1001px){
+  .alayout{align-items:stretch}
+  .alayout>.rail{min-height:0}
+  .alayout>.rail>.requirements-workbench{height:100%}
+  .inline-requirements[open] .req-groups{max-height:375px;overflow:auto}
+  .trajectory-wide{min-height:225px}
+  .trajectory-wide .trajectory-body{min-height:160px}
+}
+@media(max-width:900px){.trajectory-wide .trajectory-body{grid-template-columns:1fr}.trajectory-wide .trajectory-readout{border-right:0;border-bottom:1px solid var(--bd)}.trajectory-wide .runway{display:block;margin:12px 0 4px;padding:0 0 0 24px}.trajectory-wide .runway:before{left:7px;right:auto;top:9px;bottom:10px;width:3px;height:auto;background:linear-gradient(to bottom,var(--success) 0 24%,var(--warning) 24% 52%,var(--mcat) 52% 76%,var(--bd) 76%)}.trajectory-wide .runway-node{display:grid;min-height:50px;padding:7px 0;border-bottom:1px solid var(--bd)}.trajectory-wide .runway-node:before{left:-21px;top:18px}.trajectory-wide .runway-date{margin-top:0;text-align:right}.trajectory-wide .trajectory-actions{padding-left:0;border-left:0;border-top:1px solid var(--bd)}.trajectory-wide .trajectory-note{grid-column:auto;margin-top:0}}
 .rlist{display:flex;flex-direction:column;gap:6px}
 .rrow{display:flex;gap:7px;align-items:flex-start;padding:7px;background:var(--muted);border:1px solid var(--bd);border-radius:9px}
 .ric{width:22px;height:22px;border-radius:7px;background:color-mix(in srgb,var(--cat) 16%,transparent);
@@ -157,10 +226,41 @@ svg{display:block}
 .rrt{font-family:'Baloo 2';font-size:10.5px;font-weight:800}.rrd{font-size:8.8px;color:var(--dim);font-weight:700;margin-top:1px}
 .confidence{font-size:8px;font-family:'Baloo 2';font-weight:800;color:var(--success)}
 
-/* A — timeline first */
-.alayout{display:grid;grid-template-columns:minmax(0,1fr) 292px;gap:12px}
+/* Planner-owned requirement map — a course sequence needs its reasons beside it. */
+.req-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:8px 9px;border:1px solid color-mix(in srgb,var(--cat) 32%,var(--bd));border-radius:10px;background:color-mix(in srgb,var(--cat) 8%,var(--muted))}
+.req-head b{display:block;font-family:'Baloo 2';font-size:10.5px}.req-head span{display:block;margin-top:1px;font-size:8.7px;color:var(--dim);font-weight:700}.req-source{font-family:'Baloo 2';font-size:8px;font-weight:800;color:var(--cat);white-space:nowrap}
+.req-map{display:block}.req-map[hidden]{display:none}
+.req-overview-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.req-overview-card{min-width:0;padding:8px;border:1px solid var(--bd);border-radius:10px;background:var(--muted)}.req-overview-head{display:flex;align-items:baseline;justify-content:space-between;gap:6px}.req-overview-head b{font:800 10.5px 'Baloo 2'}.req-overview-head span{color:var(--dim);font:800 8px 'Baloo 2'}.req-overview-counts{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;font:800 7.6px 'Baloo 2'}.req-overview-counts .complete{color:var(--success)}.req-overview-counts .planned{color:var(--cat)}.req-overview-counts .open{color:var(--warning)}.req-overview-counts .review{color:#d5c8ff}.req-mini-list{display:grid;gap:3px;margin-top:7px;padding-top:6px;border-top:1px solid var(--bd)}.req-mini-list span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--mut);font-size:8.1px;font-weight:800}.req-mini-list .complete{color:var(--success)}.req-mini-list .open{color:var(--warning)}.req-mini-list .review{color:#d5c8ff}.req-boundary{margin-top:8px;padding:6px 8px;border-left:2px solid var(--warning);background:color-mix(in srgb,var(--warning) 6%,transparent);font-size:8.2px;color:var(--mut);font-weight:700}
+
+/* A — one persistent workbench: timeline, requirements, and course discovery. */
+.alayout{display:grid;grid-template-columns:minmax(0,1fr) 334px;gap:12px;align-items:start}
 .alayout>*,.btop>*,.clayout>*{min-width:0}
 .aboard .bd{padding-top:8px}
+.plan-main{min-width:0}
+.requirements-workbench{position:relative;overflow:hidden;border:1px solid color-mix(in srgb,var(--cat) 36%,var(--bd));border-radius:16px;background:var(--card);box-shadow:0 10px 26px -14px rgba(0,0,0,.55)}
+.requirements-workbench::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--cat),var(--success),var(--warning))}
+.requirements-workbench .hd{padding-top:16px}.requirements-workbench .ti{font-size:18px}.requirements-workbench .bd{padding-top:4px}
+.coverage-counts{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:9px 0}
+.coverage-count{padding:7px 5px;border:1px solid var(--bd);border-radius:9px;background:var(--muted);text-align:center}
+.coverage-count b{display:block;font:800 15px 'Baloo 2';font-variant-numeric:tabular-nums}.coverage-count span{display:block;margin-top:1px;color:var(--dim);font:800 6.8px 'Baloo 2';text-transform:uppercase;letter-spacing:.05em}
+.coverage-count.complete b{color:var(--success)}.coverage-count.planned b{color:var(--cat)}.coverage-count.open b{color:var(--warning)}.coverage-count.review b{color:#cfc5f3}
+.requirements-workbench .sub{font-size:9px}
+.catalog-dock{position:relative;margin-top:11px;overflow:hidden;border:1px solid color-mix(in srgb,var(--success) 34%,var(--bd));border-radius:16px;background:linear-gradient(110deg,color-mix(in srgb,var(--success) 7%,var(--card)),var(--card) 48%);box-shadow:0 10px 26px -14px rgba(0,0,0,.55)}
+.catalog-dock[hidden]{display:none}
+.catalog-dock::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--success)}
+.catalog-dock-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 15px 9px 18px}
+.catalog-dock-head h2{margin:1px 0 0;font:800 18px 'Baloo 2'}.catalog-dock-head p{margin:1px 0 0;color:var(--dim);font-size:9px;font-weight:700}
+.catalog-dock-body{display:grid;grid-template-columns:minmax(245px,.85fr) minmax(360px,1.35fr);gap:10px;padding:0 15px 14px 18px}
+.catalog-entry{min-width:0}.catalog-search-entry{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 11px;border:1px solid color-mix(in srgb,var(--cat) 40%,var(--bd));border-radius:11px;background:var(--muted);color:var(--mut);text-align:left;cursor:pointer}.catalog-search-entry b{color:var(--fg);font:800 11px 'Baloo 2'}.catalog-search-entry span{color:var(--cat);font:800 9px 'Baloo 2';white-space:nowrap}.catalog-search-entry:focus-visible{outline:2px solid var(--cat);outline-offset:3px}
+.catalog-quick-filters{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.catalog-quick-filters span{padding:3px 7px;border:1px solid var(--bd);border-radius:999px;background:var(--muted);color:var(--mut);font:800 8px 'Baloo 2'}.catalog-quick-filters span.on{border-color:color-mix(in srgb,var(--cat) 42%,var(--bd));color:var(--cat)}
+.catalog-context-line{margin-top:7px;color:var(--dim);font-size:8.3px;font-weight:700}.catalog-context-line b{color:var(--mut)}
+.catalog-picks{display:grid;grid-template-columns:1fr 1fr;gap:7px}.catalog-pick{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;padding:8px 9px;border:1px solid var(--bd);border-radius:10px;background:var(--muted)}.catalog-pick b{display:block;font:800 10.5px 'Baloo 2'}.catalog-pick p{margin:1px 0 0;color:var(--dim);font-size:8.2px;font-weight:700}.catalog-pick .status{align-self:start}.catalog-pick .source-link{grid-column:1/-1;font-size:7.8px}
+.catalog-dock-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 15px 8px 18px;border-top:1px solid var(--bd);background:color-mix(in srgb,var(--bg) 24%,var(--card));color:var(--dim);font-size:8px;font-weight:700}.catalog-dock-foot b{color:var(--warning);font-family:'Baloo 2'}.catalog-dock-foot .source-link{white-space:nowrap}
+.catalog-mode-tabs{display:flex;gap:5px;flex-wrap:wrap;padding:0 15px 9px 18px}.catalog-mode-tab{border:1px solid var(--bd);border-radius:9px;padding:6px 9px;background:var(--muted);color:var(--mut);font:800 10px 'Baloo 2';cursor:pointer}.catalog-mode-tab.on{border-color:color-mix(in srgb,var(--cat) 48%,var(--bd));background:color-mix(in srgb,var(--cat) 13%,var(--muted));color:var(--cat)}
+.planning-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.planning-tag{padding:4px 7px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--mut);font:800 8px 'Baloo 2'}.planning-tag b{color:var(--fg)}
+.catalog-pick .direct-add{grid-column:1/-1;justify-self:start;margin-top:2px}.catalog-pick[data-catalog-mode="all"]{display:none}.catalog-dock[data-mode="all"] .catalog-pick[data-catalog-mode="suggested"]{display:none}.catalog-dock[data-mode="all"] .catalog-pick[data-catalog-mode="all"]{display:grid}
+.catalog-close-inline{cursor:pointer}
+.inline-requirements{margin-top:9px;border-top:1px solid var(--bd)}.inline-requirements summary{list-style:none;padding:9px 0;color:var(--cat);font:800 9.5px 'Baloo 2';cursor:pointer}.inline-requirements summary::-webkit-details-marker{display:none}.inline-requirements summary:focus-visible{outline:2px solid var(--cat);outline-offset:2px;border-radius:4px}.inline-requirements .req-groups{grid-template-columns:1fr;max-height:520px;overflow:auto;margin-top:0;padding-right:3px}.inline-requirements .req-row{grid-template-columns:minmax(0,1fr) auto}.inline-requirements .req-row .source-link{grid-column:1/-1}.inline-requirements .req-data-note{margin-bottom:9px}
 
 /* B — next-term builder */
 .btop{display:grid;grid-template-columns:235px minmax(430px,1fr) 300px;gap:12px}
@@ -194,6 +294,99 @@ svg{display:block}
 .unlock{margin-top:8px;font-size:9px;color:var(--mut);font-weight:700}.unlock b{color:var(--fg)}
 .imap{margin-top:9px;padding-top:8px;border-top:1px solid var(--bd);font-size:8.8px;color:var(--dim);font-weight:700}
 
+/* Integrated requirements + catalog revision. Persistent workbench regions
+   establish first-class presence; expanded depth stays inline. */
+.eyebrow{font:800 8.5px 'Baloo 2';letter-spacing:.1em;text-transform:uppercase;color:var(--cat)}
+.catalog-panel{width:min(980px,100%);padding:0;overflow:hidden;display:flex;flex-direction:column}
+.catalog-top{padding:18px 20px 14px;border-bottom:1px solid var(--bd);background:var(--card);flex:0 0 auto}
+.catalog-top h2{font-size:25px}.catalog-top p{max-width:620px}
+.catalog-frame{display:flex;flex:1;min-height:0;flex-direction:column;background:var(--card)}
+.catalog-overview{padding:12px 16px 10px;border-bottom:1px solid var(--bd);background:color-mix(in srgb,var(--bg) 36%,var(--card));flex:0 0 auto}
+.catalog-boundary{margin-top:0;padding:8px 10px}
+.catalog-context.compact{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:8px}
+.catalog-toolbar{padding:10px 16px;border-bottom:1px solid var(--bd);background:var(--card);flex:0 0 auto}
+.catalog-search-row{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:8px}
+.catalog-search{margin:0;min-width:0}.catalog-reset{white-space:nowrap;cursor:pointer}
+.catalog-primary-filters{display:grid;grid-template-columns:1.05fr 1fr .72fr 1fr .72fr;gap:6px;margin-top:8px}
+.catalog-field{min-width:0;padding:6px 8px;border:1px solid var(--bd);border-radius:9px;background:var(--muted)}
+.catalog-field label{display:block;color:var(--dim);font:800 7.2px 'Baloo 2';letter-spacing:.06em;text-transform:uppercase}
+.catalog-field select,.catalog-field input{width:100%;min-width:0;margin-top:1px;padding:0;border:0;outline:0;background:transparent;color:var(--fg);font:800 9.5px 'Nunito',sans-serif}
+.catalog-field select:focus-visible,.catalog-field input:focus-visible{outline:2px solid var(--cat);outline-offset:4px;border-radius:3px}
+.catalog-field option{background:var(--card);color:var(--fg)}
+.catalog-lenses{display:flex;gap:6px;align-items:center;overflow-x:auto;padding-top:8px;scrollbar-width:thin}
+.catalog-lenses .catalog-label{flex:0 0 auto;margin-right:2px}.catalog-lenses button{flex:0 0 auto;cursor:pointer}
+.catalog-browser{display:grid;grid-template-columns:230px minmax(0,1fr);flex:1;min-height:0}
+.catalog-subjects{min-height:0;overflow:auto;padding:13px 10px 18px;border-right:1px solid var(--bd);background:color-mix(in srgb,var(--muted) 74%,var(--card));scrollbar-width:thin}
+.subject-head{padding:0 4px 10px}.subject-head b{display:block;font:800 13px 'Baloo 2'}.subject-head span{display:block;margin-top:2px;color:var(--dim);font-size:8.6px;font-weight:700}
+.subject-alpha{display:flex;gap:4px;flex-wrap:wrap;padding:0 4px 9px;border-bottom:1px solid var(--bd)}
+.subject-alpha span{width:19px;height:19px;display:grid;place-items:center;border-radius:6px;background:var(--card);color:var(--dim);font:800 8px 'Baloo 2'}
+.subject-group{padding:10px 0 2px}.subject-letter{padding:0 7px 4px;color:var(--cat);font:800 8px 'Baloo 2';letter-spacing:.09em}
+.subject-button{width:100%;border:0;border-radius:8px;padding:6px 7px;background:transparent;color:var(--mut);text-align:left;font:800 9.5px 'Nunito',sans-serif;cursor:pointer;transition:.15s cubic-bezier(.16,1,.3,1)}
+.subject-button:hover{background:var(--card);color:var(--fg)}.subject-button.on{background:color-mix(in srgb,var(--cat) 13%,var(--card));color:var(--cat)}
+.subject-button:focus-visible{outline:2px solid var(--cat);outline-offset:1px}
+.subject-gap{margin:12px 4px 0;padding:8px;border-left:2px solid var(--warning);background:color-mix(in srgb,var(--warning) 6%,transparent);color:var(--dim);font-size:8.4px;font-weight:700}
+.live-boundary{margin:10px 4px 0;padding:9px;border:1px solid var(--bd);border-radius:10px;background:var(--card);font-size:8.6px;color:var(--mut);font-weight:700}.live-boundary b{display:block;color:var(--warning);font-family:'Baloo 2'}.live-boundary .source-link{display:inline-block;margin-top:5px}
+.catalog-results-pane{min-width:0;min-height:0;overflow:auto;padding:12px 16px 20px;scrollbar-width:thin}
+.catalog-results-head{position:sticky;top:-12px;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin:-12px -16px 10px;padding:12px 16px 9px;border-bottom:1px solid var(--bd);background:color-mix(in srgb,var(--card) 96%,transparent)}
+.catalog-results-head b{display:block;font:800 13px 'Baloo 2'}.catalog-results-head span{display:block;margin-top:1px;color:var(--dim);font-size:8.5px;font-weight:700}.catalog-results-count{color:var(--cat)!important;font:800 9px 'Baloo 2'!important;white-space:nowrap}
+.catalog-categories{display:flex;gap:6px;overflow-x:auto;padding-bottom:9px;scrollbar-width:thin}
+.catalog-category{flex:0 0 auto;border:1px solid var(--bd);border-radius:999px;padding:5px 8px;background:var(--muted);color:var(--mut);font:800 9px 'Baloo 2';cursor:pointer}
+.catalog-category.on{border-color:color-mix(in srgb,var(--cat) 48%,var(--bd));background:color-mix(in srgb,var(--cat) 13%,var(--muted));color:var(--cat)}
+.catalog-result{margin-top:7px;padding:0;overflow:hidden}.catalog-result[hidden]{display:none}
+.catalog-result summary{list-style:none;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:9px;align-items:center;padding:10px 11px;cursor:pointer}.catalog-result summary::-webkit-details-marker{display:none}
+.catalog-result summary:focus-visible{outline:2px solid var(--cat);outline-offset:-2px;border-radius:12px}
+.result-summary-copy{min-width:0}.result-summary-copy .result-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result-fit{color:var(--success);font:800 8.5px 'Baloo 2';white-space:nowrap}.result-chevron{color:var(--dim);font:800 12px 'Baloo 2';transition:.15s cubic-bezier(.16,1,.3,1)}
+.catalog-result[open] .result-chevron{transform:rotate(90deg);color:var(--cat)}
+.result-body{padding:0 11px 11px;border-top:1px solid var(--bd)}
+.catalog-empty{margin-top:12px;padding:18px;border:1px dashed var(--bd);border-radius:12px;text-align:center;background:var(--muted)}.catalog-empty b{font:800 13px 'Baloo 2'}.catalog-empty p{margin:3px auto 0;max-width:430px;color:var(--dim);font-size:9px;font-weight:700}
+.catalog-note{margin-top:12px}
+.catalog-context{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px}
+.context-chip{padding:7px 8px;border:1px solid var(--bd);border-radius:9px;background:var(--muted)}
+.context-chip small{display:block;color:var(--dim);font:800 7.5px 'Baloo 2';letter-spacing:.06em;text-transform:uppercase}
+.context-chip b{display:block;margin-top:1px;font:800 9.5px 'Baloo 2'}
+.boundary-banner{margin-top:13px;padding:10px 11px;border:1px solid color-mix(in srgb,var(--warning) 38%,var(--bd));border-radius:11px;background:color-mix(in srgb,var(--warning) 8%,var(--muted));font-size:9.5px;color:var(--mut);font-weight:700}
+.boundary-banner b{color:var(--warning);font-family:'Baloo 2'}
+.result-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;font-size:8.6px;color:var(--dim);font-weight:800}
+.result-warning{margin-top:7px;padding:7px 8px;border-left:2px solid var(--warning);background:color-mix(in srgb,var(--warning) 6%,transparent);font-size:9px;color:var(--mut);font-weight:700}
+.result-warning b{color:var(--warning);font-family:'Baloo 2'}
+.result-actions{align-items:center;flex-wrap:wrap}
+.source-link{color:var(--cat);font:800 9px 'Baloo 2';text-decoration:none}
+.source-link:hover{text-decoration:underline}
+.source-link:focus-visible{outline:2px solid var(--cat);outline-offset:3px;border-radius:3px}
+.req-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+.req-actions .source-link{font-size:8px}
+.req-open{border-color:color-mix(in srgb,var(--cat) 38%,var(--bd));color:var(--cat)}
+
+.req-identity{margin-top:13px;display:grid;grid-template-columns:1.35fr repeat(4,minmax(88px,.65fr));border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--muted)}
+.req-id-main,.req-id-stat{padding:9px 10px;border-right:1px solid var(--bd)}
+.req-id-stat:last-child{border-right:0}
+.req-id-main b{font:800 13px 'Baloo 2'}
+.req-id-main span{display:block;margin-top:2px;color:var(--dim);font-size:8.8px;font-weight:700}
+.req-id-stat b{display:block;font:800 15px 'Baloo 2';font-variant-numeric:tabular-nums}
+.req-id-stat span{display:block;color:var(--dim);font:800 7.6px 'Baloo 2';text-transform:uppercase;letter-spacing:.06em}
+.req-id-stat.complete b{color:var(--success)}.req-id-stat.planned b{color:var(--cat)}.req-id-stat.open b{color:var(--warning)}.req-id-stat.review b{color:#c4b7f0}
+.req-legend{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.status{display:inline-flex;align-items:center;border-radius:999px;padding:2px 7px;font:800 8px 'Baloo 2';white-space:nowrap}
+.status.complete{background:color-mix(in srgb,var(--success) 14%,transparent);color:var(--success)}
+.status.planned{background:color-mix(in srgb,var(--cat) 16%,transparent);color:var(--cat)}
+.status.open{background:color-mix(in srgb,var(--warning) 15%,transparent);color:var(--warning)}
+.status.review{background:color-mix(in srgb,var(--mcat) 17%,transparent);color:#cfc5f3}
+.status.na{background:#272420;color:var(--dim)}
+.req-groups{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.req-ledger-group{border:1px solid var(--bd);border-radius:14px;background:var(--muted);overflow:hidden}
+.req-ledger-group.major,.req-ledger-group.ideas{grid-row:span 2}
+.req-ledger-head{padding:10px 11px 8px;border-bottom:1px solid var(--bd);display:flex;align-items:flex-start;justify-content:space-between;gap:9px}
+.req-ledger-head h3{margin:0;font:800 13px 'Baloo 2'}
+.req-ledger-head p{margin:2px 0 0;color:var(--dim);font-size:8.6px;font-weight:700}
+.req-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:7px 10px;border-bottom:1px solid color-mix(in srgb,var(--bd) 78%,transparent)}
+.req-row:last-child{border-bottom:0}
+.req-row-copy b{display:block;font:800 9.5px 'Baloo 2'}
+.req-row-copy span{display:block;margin-top:1px;color:var(--dim);font-size:8.1px;font-weight:700;line-height:1.25}
+.req-row .source-link{font-size:7.7px}
+.req-data-note{margin-top:12px;padding:10px 11px;border-left:3px solid var(--mcat);background:color-mix(in srgb,var(--mcat) 7%,var(--muted));font-size:9.2px;color:var(--mut);font-weight:700}
+.req-data-note b{color:#cfc5f3;font-family:'Baloo 2'}
+
 /* Prototype switcher */
 .psw{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:8px;
   padding:7px;background:#f7f3ec;color:#201d19;border:1px solid rgba(0,0,0,.18);border-radius:999px;
@@ -205,15 +398,17 @@ svg{display:block}
 
 @media(max-width:1000px){
   .bstats .bs:nth-child(n+3){display:none}.alayout,.clayout{grid-template-columns:1fr}.rail{display:grid;grid-template-columns:repeat(2,1fr)}
+  .requirements-workbench{grid-column:1/-1}.catalog-dock-body{grid-template-columns:minmax(220px,.72fr) minmax(0,1.28fr)}
   .btop{grid-template-columns:190px 1fr}.btop>.rail{grid-column:1/-1}.coutcomes{grid-template-columns:1fr 1fr}.coutcomes .metricCard:first-child{grid-column:1/-1}
 }
 @media(max-width:700px){
   .frame{padding-bottom:96px}.bantop{align-items:flex-start}.bstats{display:none}.utabs{padding:0 4px;gap:16px;overflow-x:auto}
-  .fbar{padding:9px 12px;overflow-x:auto}.fbar .spacer{display:none}.wrap{padding:12px}
+  .fbar,.contextbar{padding:9px 12px;overflow-x:auto}.fbar .spacer{display:none}.context-label{min-width:124px}.wrap{padding:12px}
   .btop{grid-template-columns:1fr}.termnav{display:grid;grid-template-columns:1fr 1fr}.focusTerm .bd{grid-template-columns:1fr}
-  .rail{grid-template-columns:1fr}.coutcomes{grid-template-columns:1fr}.coutcomes .metricCard:first-child{grid-column:auto}
-  .plabel{min-width:190px}.term{width:220px}
+  .rail{grid-template-columns:1fr}.coutcomes{grid-template-columns:1fr}.coutcomes .metricCard:first-child{grid-column:auto}.catalog-dock-body{grid-template-columns:1fr}.catalog-picks,.state-grid,.note-layout{grid-template-columns:1fr}.catalog-dock-head,.catalog-dock-foot,.state-head,.state-foot,.registration-row{align-items:flex-start;flex-direction:column}.registration-row{display:flex}.catalog-dock-head .btn{width:100%;justify-content:center}.catalog-dock-foot{gap:4px}.coverage-counts{grid-template-columns:1fr 1fr}.state-option{grid-template-columns:1fr}.state-option .btn{width:100%}.registration-actions{width:100%}.registration-actions .btn{flex:1;justify-content:center}
+  .plabel{min-width:190px}.term{width:220px}.catalog-context,.req-groups{grid-template-columns:1fr}.catalog-context.compact{grid-template-columns:1fr 1fr}.catalog-primary-filters{grid-template-columns:1fr 1fr}.catalog-browser{grid-template-columns:1fr}.catalog-subjects{max-height:190px;border-right:0;border-bottom:1px solid var(--bd);display:grid;grid-template-columns:1fr 1fr;gap:2px 4px}.subject-head,.subject-alpha,.subject-gap,.live-boundary{grid-column:1/-1}.subject-group{display:contents}.subject-letter{display:none}.catalog-subjects>.subject-button:first-of-type{grid-column:1/-1}.catalog-result summary{grid-template-columns:minmax(0,1fr) auto}.result-fit{grid-column:1/-1}.req-ledger-group.major,.req-ledger-group.ideas{grid-row:auto}.req-identity{grid-template-columns:1fr 1fr}.req-id-main{grid-column:1/-1}.req-id-main,.req-id-stat{border-bottom:1px solid var(--bd)}.req-id-stat:nth-child(odd){border-right:0}
 }
+@media(hover:none){.term-actions{opacity:1;transform:none;pointer-events:auto}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -236,13 +431,14 @@ svg{display:block}
     </div>
     <nav class="utabs" aria-label="Planning views">
       <div class="ut on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7v10M12 10v7M16 6v11"/></svg>Planner</div>
-      <div class="ut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7H3V5h11"/></svg>Requirements</div>
       <div class="ut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16M4 12h16M4 19h16"/></svg>Grades &amp; Archive</div>
     </nav>
   </header>
 
   <div class="fbar">
     <div class="control primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg><strong>Plan A — Balanced</strong>⌄</div>
+    <div class="control"><strong>Neuroscience B.S.</strong> · 2026–27</div>
+    <button class="control catalog-trigger" type="button" data-term="Spring 2027">＋ Add course</button>
     <div class="control">Compare plans</div>
     <div class="control"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-5"/></svg>MCAT · Jan 2029</div>
     <span class="spacer"></span>
@@ -250,13 +446,22 @@ svg{display:block}
     <div class="control">•••</div>
   </div>
 
+  <section class="contextbar" aria-label="Editable planning context">
+    <div class="context-label"><b>Your planning context</b><span>These choices set the requirement map.</span></div>
+    <button class="context-field"><small>Major / program</small><strong>Neuroscience B.S. <span>⌄</span></strong></button>
+    <button class="context-field"><small>Catalog + cohort</small><strong>2026–27 · Fall ’26 <span>⌄</span></strong></button>
+    <button class="context-field"><small>Premed path</small><strong>Traditional · Jan ’29 MCAT <span>⌄</span></strong></button>
+    <button class="context-field action"><small>Prior credit</small><strong>＋ Add AP, transfer, or dual credit</strong></button>
+    <button class="context-field"><small>Interests</small><strong>Brain &amp; behavior +2 <span>⌄</span></strong></button>
+  </section>
+
   <main class="wrap">
     <!-- A — all terms visible, live rail persistent -->
     <section class="variant" data-variant="A">
       <div class="alayout">
-        <div>
+        <div class="plan-main">
           <div class="card aboard">
-            <div class="hd"><div><div class="ti">Your academic plan</div><div class="sub">past → registered → planned · scroll across terms</div></div><button class="btn">＋ Add term</button></div>
+            <div class="hd"><div><div class="ti">Your academic plan</div><div class="sub">past → registered → planned · scroll across terms</div></div><button class="btn planner-state-trigger" type="button" data-planner-view="term-create">＋ Add term</button></div>
             <div class="bd">
               <div class="boardscroll"><div class="terms">
                 <div class="term current">
@@ -270,45 +475,89 @@ svg{display:block}
                 </div>
 
                 <div class="term risk">
-                  <div class="th"><div><div class="tname">Spring 2027</div><div class="tmeta">Planned · 13 credits</div></div><span class="lock">Draft</span></div>
+                  <div class="th"><div><div class="tname">Spring 2027</div><div class="tmeta">Planned · 13 credits</div></div><div class="term-actions"><span class="lock">Draft</span><button class="term-action planner-state-trigger" type="button" data-planner-view="term-note" aria-label="Edit Spring 2027 note">Note</button><button class="term-action add-course catalog-trigger" type="button" data-term="Spring 2027">＋ Add</button><button class="term-action remove-term" type="button" aria-label="Remove Spring 2027 semester"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"/></svg></button></div></div>
                   <div class="course"><div class="ctop"><span class="code">CHEM 241 + L</span><span class="cr">4 cr</span></div><div class="cname">Modern Analytical Methods</div><div class="tags"><span class="tag">BCPM</span><span class="tag w">❄ Spring path</span></div><div class="clear"><b>Clears:</b> Major chemistry · Orgo lab chain</div></div>
                   <div class="course selected"><div class="ctop"><span class="code">BIOL 220</span><span class="cr">3 cr</span></div><div class="cname">Molecular Genetics</div><div class="tags"><span class="tag">BCPM</span><span class="tag s">✓ verified</span></div><div class="clear"><b>Clears:</b> Major biology · Med biology · unlocks NSCI 27x</div></div>
                   <div class="course"><div class="ctop"><span class="code">SOCI 101</span><span class="cr">3 cr</span></div><div class="cname">Introduction to Sociology</div><div class="tags"><span class="tag v">AO</span><span class="tag">MCAT P/S</span></div><div class="clear"><b>Clears:</b> Med sociology · Power and Society ◑</div></div>
                   <div class="course"><div class="ctop"><span class="code">Focus elective</span><span class="cr">3 cr</span></div><div class="cname">Ways of Knowing</div><div class="tags"><span class="tag s">✓ verified</span></div><div class="clear"><b>Clears:</b> IDEAs Focus Capacity</div></div>
-                  <div class="add">＋ Add course</div>
                   <div class="load warn"><b>13 credits</b> · one credit below on-time pace</div>
                 </div>
 
                 <div class="term risk">
-                  <div class="th"><div><div class="tname">Fall 2027</div><div class="tmeta">Planned · 9 credits</div></div><span class="lock">Draft</span></div>
+                  <div class="th"><div><div class="tname">Fall 2027</div><div class="tmeta">Planned · 9 credits</div></div><div class="term-actions"><span class="lock">Draft</span><button class="term-action add-course catalog-trigger" type="button" data-term="Fall 2027">＋ Add</button><button class="term-action remove-term" type="button" aria-label="Remove Fall 2027 semester"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"/></svg></button></div></div>
                   <div class="course"><div class="ctop"><span class="code">CHEM 261</span><span class="cr">3 cr</span></div><div class="cname">Organic Chemistry I</div><div class="tags"><span class="tag">BCPM</span><span class="tag w">Critical path</span></div><div class="clear"><b>Clears:</b> Major chemistry · Med orgo</div></div>
                   <div class="course"><div class="ctop"><span class="code">NSCI 221</span><span class="cr">3 cr</span></div><div class="cname">Systems Neuroscience</div><div class="tags"><span class="tag">BCPM</span><span class="tag s">✓ verified</span></div><div class="clear"><b>Clears:</b> Major core 1 of 2</div></div>
                   <div class="course"><div class="ctop"><span class="code">COMP 116</span><span class="cr">3 cr</span></div><div class="cname">Introduction to Programming</div><div class="tags"><span class="tag v">AO</span></div><div class="clear"><b>Clears:</b> Major methods</div></div>
-                  <div class="add">＋ Add course</div>
                   <div class="load warn"><b>9 credits</b> · under pace by 5 credits</div>
+                  <button class="term-nudge planner-state-trigger" type="button" data-planner-view="registration-window">Registration opens Apr 6 →</button>
                 </div>
 
                 <div class="term">
-                  <div class="th"><div><div class="tname">Spring 2028</div><div class="tmeta">Planned · 10 credits</div></div><span class="lock">Draft</span></div>
+                  <div class="th"><div><div class="tname">Spring 2028</div><div class="tmeta">Planned · 10 credits</div></div><div class="term-actions"><span class="lock">Draft</span><button class="term-action add-course catalog-trigger" type="button" data-term="Spring 2028">＋ Add</button><button class="term-action remove-term" type="button" aria-label="Remove Spring 2028 semester"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"/></svg></button></div></div>
                   <div class="course"><div class="ctop"><span class="code">CHEM 262 + L</span><span class="cr">4 cr</span></div><div class="cname">Organic Chemistry II + Lab</div><div class="tags"><span class="tag">BCPM</span><span class="tag w">Critical path</span></div><div class="clear"><b>Clears:</b> Med orgo · closes lab chain · unlocks CHEM 430</div></div>
                   <div class="course"><div class="ctop"><span class="code">NSCI 27x</span><span class="cr">3 cr</span></div><div class="cname">Research Methods Lab</div><div class="tags"><span class="tag">BCPM</span></div><div class="clear"><b>Clears:</b> Major research methods</div></div>
                   <div class="course"><div class="ctop"><span class="code">PSYC 210</span><span class="cr">3 cr</span></div><div class="cname">Statistical Principles</div><div class="tags"><span class="tag v">AO</span></div><div class="clear"><b>Clears:</b> Major methods · Med stats</div></div>
-                  <div class="add">＋ Add course</div>
                   <div class="load warn"><b>10 credits</b> · 7 BCPM credits, but still under pace</div>
                 </div>
 
                 <div class="mcatline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/></svg><b>MCAT</b><span>Jan 2029</span><span>1 prereq open</span></div>
 
                 <div class="term">
-                  <div class="th"><div><div class="tname">Fall 2028</div><div class="tmeta">Planned · 6 credits</div></div><span class="lock">Draft</span></div>
+                  <div class="th"><div><div class="tname">Fall 2028</div><div class="tmeta">Planned · 6 credits</div></div><div class="term-actions"><span class="lock">Draft</span><button class="term-action add-course catalog-trigger" type="button" data-term="Fall 2028">＋ Add</button><button class="term-action remove-term" type="button" aria-label="Remove Fall 2028 semester"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"/></svg></button></div></div>
                   <div class="course"><div class="ctop"><span class="code">NSCI 222</span><span class="cr">3 cr</span></div><div class="cname">Behavioral Neuroscience</div><div class="tags"><span class="tag">BCPM</span></div><div class="clear"><b>Clears:</b> Major core 2 of 2</div></div>
                   <div class="course"><div class="ctop"><span class="code">BIOL 240</span><span class="cr">3 cr</span></div><div class="cname">Cell Biology</div><div class="tags"><span class="tag">BCPM</span></div><div class="clear"><b>Clears:</b> Knowledge elective</div></div>
-                  <div class="add">＋ Add course</div>
                   <div class="load"><b>6 credits</b> · deliberately light for MCAT prep</div>
                 </div>
               </div></div>
             </div>
           </div>
+          <section class="planner-state-stack" hidden aria-live="polite">
+            <article class="planner-state-card" data-planner-state="term-create" tabindex="-1">
+              <div class="state-head"><div><div class="eyebrow">Add term</div><h2>Extend the timeline.</h2><p>Choose a study term or mark time away; neither changes the plan until you add it.</p></div><button class="btn state-close" type="button">Cancel</button></div>
+              <div class="state-grid">
+                <section class="state-option active"><div><b>Summer 2027</b><p>Compact study term · credits and courses stay editable.</p></div><button class="btn p mock-state-action" type="button" data-feedback="Summer 2027 added to the draft">Add Summer 2027</button></section>
+                <section class="state-option gap-span"><div><b>Gap-year span</b><p>Fall 2029 → Spring 2030 · no credits or invented enrollment.</p></div><button class="btn mock-state-action" type="button" data-feedback="Gap-year span added to the draft">Add gap-year span</button></section>
+              </div>
+              <div class="state-route" aria-label="Timeline placement preview"><span>Spring 2027</span><b>→</b><span class="proposed">Summer 2027</span><b>→</b><span>Fall 2027</span><b>···</b><span class="pause">Gap-year span</span></div>
+              <div class="state-foot"><span class="state-feedback">Draft preview · nothing saved.</span><span>Registered terms stay locked.</span></div>
+            </article>
+
+            <article class="planner-state-card" data-planner-state="term-note" tabindex="-1">
+              <div class="state-head"><div><div class="eyebrow">Spring 2027 · term note</div><h2>Keep the decision beside the term.</h2><p>The note records planning context; it does not change credits or requirements.</p></div><button class="btn state-close" type="button">Cancel</button></div>
+              <div class="note-layout">
+                <div class="note-editor"><label for="planner-term-note">Edit note</label><textarea id="planner-term-note">Keep Tuesday afternoons open for the lab section. If CHEM 241L conflicts, move the Focus elective first.</textarea><div class="note-actions"><button class="btn p note-save" type="button">Save note</button><button class="btn note-cancel" type="button">Discard changes</button></div></div>
+                <aside class="note-saved"><small>Collapsed term view</small><b>Spring 2027 · note</b><p class="saved-note-copy">Keep Tuesday afternoons open for the lab section.</p><span class="status planned">Saved with Plan A</span></aside>
+              </div>
+            </article>
+
+            <article class="planner-state-card" data-planner-state="registration-window" tabindex="-1">
+              <div class="state-head"><div><div class="eyebrow">Fall 2027 · registration window</div><h2>Review this term before Apr 6.</h2><p>One course is on the critical path and the term remains five credits under pace.</p></div><button class="btn state-close" type="button">Dismiss</button></div>
+              <div class="registration-row"><div><b>CHEM 261 starts the organic chemistry sequence.</b><p>Confirm the planned order and add the remaining credits before registration.</p></div><div class="registration-actions"><button class="btn p review-term" type="button">Review Fall 2027</button><a class="btn" href="https://connectcarolina.unc.edu/" target="_blank" rel="noreferrer">Open ConnectCarolina ↗</a></div></div>
+              <div class="evidence-boundary">Current sections, seats, restrictions, and enrollment stay in ConnectCarolina.</div>
+            </article>
+          </section>
+          <section class="catalog-dock" data-mode="suggested" hidden aria-labelledby="catalog-dock-title">
+            <div class="catalog-dock-head">
+              <div><div class="eyebrow">Add course · <span id="catalog-destination">Spring 2027</span></div><h2 id="catalog-dock-title">Choose from the UNC course catalog.</h2><p>Published course facts and planning fit stay in one workspace; adding a course does not open another popup.</p></div>
+              <button class="btn catalog-close-inline" type="button">Close catalog</button>
+            </div>
+            <div class="catalog-mode-tabs" role="tablist" aria-label="Catalog course sets"><button class="catalog-mode-tab on" type="button" data-catalog-tab="suggested">Suggested for Neuroscience B.S.</button><button class="catalog-mode-tab" type="button" data-catalog-tab="all">All UNC courses</button></div>
+            <div class="catalog-dock-body">
+              <div class="catalog-entry">
+                <input class="catalog-search" type="search" placeholder="Search course code, title, topic, or attribute" aria-label="Search UNC course catalog">
+                <div class="catalog-quick-filters" aria-label="Catalog filters"><span class="on">2026–27 catalog</span><span>Any subject</span><span>Any level</span><span>Any credits</span></div>
+                <div class="planning-tags" aria-label="Planning context used for suggestions"><span class="planning-tag"><b>Major</b> · Neuroscience B.S.</span><span class="planning-tag"><b>IDEAs</b> · 11 open / review</span><span class="planning-tag"><b>MCAT</b> · Jan 2029 · biochem open</span></div>
+                <div class="catalog-context-line">Tags explain why a result appears. They do not mark a requirement complete or confirm a live section.</div>
+              </div>
+              <div class="catalog-picks catalog-results" aria-label="UNC course results">
+                <article class="catalog-pick" data-catalog-mode="suggested"><div><b>CHEM 430 · Biochemistry</b><p>3 credits · suggested because Biochemistry is the last open premed course before the MCAT.</p></div><span class="status open">MCAT</span><span class="source-link">UNC Catalog · 2026–27</span><button class="btn p direct-add" type="button">Add to Spring 2027</button></article>
+                <article class="catalog-pick" data-catalog-mode="suggested"><div><b>STOR 155 · Data Models</b><p>3 credits · Neuroscience statistics option; compare with planned PSYC 210 before counting it.</p></div><span class="status review">Major</span><span class="source-link">UNC Catalog · 2026–27</span><button class="btn direct-add" type="button">Add to Spring 2027</button></article>
+                <article class="catalog-pick" data-catalog-mode="all"><div><b>AAAD 300 · Cultures of Health</b><p>3 credits · published UNC course; no local major or MCAT fit asserted.</p></div><span class="status complete">All UNC</span><span class="source-link">UNC Catalog · 2026–27</span><button class="btn direct-add" type="button">Add to Spring 2027</button></article>
+                <article class="catalog-pick" data-catalog-mode="all"><div><b>BIOL 240 · Cell Biology</b><p>3 credits · published UNC course; IDEAs and major counting require source review.</p></div><span class="status review">IDEAs</span><span class="source-link">UNC Catalog · 2026–27</span><button class="btn direct-add" type="button">Add to Spring 2027</button></article>
+              </div>
+            </div>
+            <div class="catalog-dock-foot"><span><b>Evidence boundary.</b> UNC Catalog owns descriptions, credits, attributes, and requisites. ConnectCarolina owns sections, seats, restrictions, and enrollment.</span><span class="source-link">Live sections not configured</span></div>
+          </section>
           <div class="tray">
             <div class="trayhead"><div><span class="traytitle">Unplaced</span> <span class="traycopy">requirements and courses with no term yet</span></div><span class="link">Find a term →</span></div>
             <div class="trayitems">
@@ -317,31 +566,47 @@ svg{display:block}
               <div class="traychip"><b>Power and Society</b><span>SOCI 101 mapping inferred · confirm before counting</span></div>
             </div>
           </div>
+          <div class="card trajectory-card trajectory-wide">
+            <div class="hd"><div><div class="eyebrow">Plan trajectory</div><div class="ti">If this plan holds</div></div><span class="trajectory-state">Projected</span></div>
+            <div class="bd trajectory-body">
+              <div class="trajectory-readout"><div><b>3.72</b><span>Cumulative GPA</span></div><div><b>3.66</b><span>BCPM GPA</span></div></div>
+              <div class="runway" aria-label="Projected planning sequence">
+                <div class="runway-node done"><div><small>Plan now</small><b>114 / 120 credits placed</b></div><span class="runway-date">6 open</span></div>
+                <div class="runway-node gap"><div><small>Open prerequisite</small><b>CHEM 430 · Biochemistry</b><em>Place before the MCAT</em></div><span class="runway-date">Unplaced</span></div>
+                <div class="runway-node milestone"><div><small>January 2029</small><b>MCAT</b><em>One prerequisite remains</em></div><span class="runway-date">Target</span></div>
+                <div class="runway-node future"><div><small>May 2030</small><b>Graduation</b></div><span class="runway-date">Projected</span></div>
+              </div>
+              <div class="trajectory-actions" aria-label="Next planning actions">
+                <button class="trajectory-action"><span>1</span><div><b>Place CHEM 430</b><small>Spring-only option</small></div><i>→</i></button>
+                <button class="trajectory-action"><span>2</span><div><b>Balance Fall 2027</b><small>Add 4 credits</small></div><i>→</i></button>
+              </div>
+              <div class="trajectory-note">Local projection from placed courses · official completion remains in ConnectCarolina.</div>
+            </div>
+          </div>
         </div>
 
         <aside class="rail">
-          <div class="card">
-            <div class="hd"><div><div class="ti">If this plan holds</div><div class="sub">assuming your current averages</div></div></div>
+          <section class="requirements-workbench" aria-labelledby="coverage-title">
+            <div class="hd"><div><div class="eyebrow">Plan requirements</div><div class="ti" id="coverage-title">Neuroscience B.S.</div><div class="sub">2026–27 · 50 local requirement rows</div></div><a class="req-source source-link" href="https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/" target="_blank" rel="noreferrer">Program source ↗</a></div>
             <div class="bd">
-              <div class="stats"><div class="stat"><div class="sv">3.72</div><div class="sl">Cumulative</div></div><div class="stat"><div class="sv">3.66</div><div class="sl">BCPM</div></div><div class="stat"><div class="sv">May ’30</div><div class="sl">Graduate</div></div><div class="stat"><div class="sv">114</div><div class="sl">Credits</div></div></div>
-              <div class="assume">Projection is an interval in production; this mock uses the plan’s midpoint for layout.</div>
-              <div class="verdict"><b>Not MCAT-ready yet</b><p>Biochemistry has no term. Place it before January 2029 to complete your prerequisite sequence.</p></div>
+              <div class="coverage-counts" aria-label="Local requirement statuses"><div class="coverage-count complete"><b id="req-complete">5</b><span>Complete</span></div><div class="coverage-count planned"><b id="req-planned">19</b><span>Planned</span></div><div class="coverage-count open"><b id="req-open">15</b><span>Not complete</span></div><div class="coverage-count review"><b id="req-review">10</b><span>Manual review</span></div></div>
+              <div class="req-map" id="requirements-map">
+              <div class="req-overview-grid">
+                <section class="req-overview-card"><div class="req-overview-head"><b>Major</b><span>13</span></div><div class="req-overview-counts"><span class="complete">4 done</span><span class="planned">8 planned</span><span class="open">1 open</span></div><div class="req-mini-list"><span class="complete">✓ Intro to Neuroscience</span><span>• Statistics course</span><span class="open">! Methods elective</span></div></section>
+                <section class="req-overview-card"><div class="req-overview-head"><b>IDEAs in Action</b><span>23</span></div><div class="req-overview-counts"><span class="complete">1 done</span><span class="planned">4 planned</span><span class="open">13 open</span><span class="review">4 review</span></div><div class="req-mini-list"><span>• First-Year Foundations</span><span class="open">! Power &amp; Society</span><span class="review">? Course attributes</span></div></section>
+                <section class="req-overview-card"><div class="req-overview-head"><b>Graduation</b><span>5</span></div><div class="req-overview-counts"><span class="planned">3 planned</span><span class="review">2 review</span></div><div class="req-mini-list"><span>• 114 / 120 hours</span><span class="review">? UNC residence hours</span><span>• Declared major</span></div></section>
+                <section class="req-overview-card"><div class="req-overview-head"><b>Premed path</b><span>9</span></div><div class="req-overview-counts"><span class="planned">4 planned</span><span class="open">1 open</span><span class="review">4 review</span></div><div class="req-mini-list"><span>• Organic chemistry</span><span class="open">! Biochemistry</span><span class="review">? AP / transfer rules</span></div></section>
+              </div>
+              <div class="req-boundary">Local plan only · verify completion in ConnectCarolina.</div>
+              <div class="req-actions"><a class="source-link" href="https://catalog.unc.edu/undergraduate/degree-requirements/" target="_blank" rel="noreferrer">Degree requirements ↗</a><a class="source-link" href="https://connectcarolina.unc.edu/" target="_blank" rel="noreferrer">Official audit ↗</a></div>
+              </div>
+              <details class="inline-requirements" open>
+                <summary>All 50 requirements ↓</summary>
+                <div class="req-groups" id="detailed-requirements"></div>
+                <div class="req-data-note"><b>What is real locally</b><br>Every status is a local evaluation of this plan. Course attributes, posted credit, exceptions, and graduation clearance still require official review.</div>
+              </details>
             </div>
-          </div>
-          <div class="card">
-            <div class="hd"><div><div class="ti">What this clears</div><div class="sub">after all placed courses</div></div></div>
-            <div class="bd"><div class="rlist">
-              <div class="rrow"><span class="ric">18</span><div><div class="rrt">Requirements cleared</div><div class="rrd">7 major · 6 med · 5 IDEAs</div></div></div>
-              <div class="rrow"><span class="ric">5</span><div><div class="rrt">Still open</div><div class="rrd">Biochem is the only open med prerequisite.</div></div></div>
-            </div></div>
-          </div>
-          <div class="card">
-            <div class="hd"><div><div class="ti">Best next move</div><div class="sub">ranked, never enforced</div></div></div>
-            <div class="bd"><div class="rlist">
-              <div class="rrow"><span class="ric">1</span><div><div class="rrt">Place CHEM 430</div><div class="rrd">Spring-only · closes the last MCAT prerequisite.</div></div></div>
-              <div class="rrow"><span class="ric">2</span><div><div class="rrt">Add 4 credits to Fall 2027</div><div class="rrd">Currently under the on-time pace.</div></div></div>
-            </div></div>
-          </div>
+          </section>
         </aside>
       </div>
     </section>
@@ -443,10 +708,10 @@ svg{display:block}
             <div class="bd">
               <div class="inspecthero"><div class="ihcode">BIOL 220 · 3 credits</div><div class="ihname">Molecular Genetics · Spring 2027 · BCPM</div></div>
               <div class="diffgrid">
-                <div class="diffbox"><div class="sv">14</div><div class="sl">Requirements left</div></div>
-                <div class="diffbox good"><div class="sv">12</div><div class="sl">After adding</div></div>
+                <div class="diffbox"><div class="sv">Major</div><div class="sl">requirement map</div></div>
+                <div class="diffbox good"><div class="sv">+2</div><div class="sl">named effects</div></div>
               </div>
-              <div class="unlock"><b>Clears:</b> Neuroscience biology · Med biology</div>
+              <div class="unlock"><b>Requirement effect:</b> Neuroscience biology · Med biology</div>
               <div class="unlock"><b>Unlocks:</b> NSCI 27x Research Methods Lab</div>
               <div class="unlock"><b>Plan effect:</b> keeps the biology prerequisite complete 21 months before the MCAT.</div>
               <div class="imap">Mapping source: UNC Neuroscience B.S. catalog · verified July 21, 2026.</div>
@@ -473,6 +738,79 @@ svg{display:block}
 </div>
 
 <script>
+const NSCI_SOURCE = "https://catalog.unc.edu/undergraduate/programs-study/neuroscience-major-bs/";
+const IDEAS_SOURCE = "https://catalog.unc.edu/undergraduate/ideas-in-action/";
+const DEGREE_SOURCE = "https://catalog.unc.edu/undergraduate/degree-requirements/";
+const AAMC_SOURCE = "https://students-residents.aamc.org/applying-medical-school/preparing-medical-school-coursework";
+const requirementGroups = [
+  {key:"major",title:"Major / program",subtitle:"13 Neuroscience B.S. nodes · 2026–27 source",rows:[
+    ["Introduction to Neuroscience","NSCI 175 appears as incoming credit; official posting still belongs to the student record.","complete",NSCI_SOURCE,"UNC program ↗"],
+    ["One statistics course","PSYC 210 is planned; STOR 120 and STOR 155 remain catalog choices.","planned",NSCI_SOURCE,"UNC program ↗"],
+    ["One research methods course","An NSCI 27x placeholder is planned; exact course selection remains unresolved.","planned",NSCI_SOURCE,"UNC program ↗"],
+    ["Two topic courses","NSCI 221 and NSCI 222 are placed in separate terms.","planned",NSCI_SOURCE,"UNC program ↗"],
+    ["Knowledge electives · 6 credits","BIOL 240 is planned for 3 credits; the full eligible list is not normalized locally.","planned",NSCI_SOURCE,"UNC program ↗"],
+    ["Math / methods / statistics electives · 6 credits","No source-matched course is assigned to this separate elective node.","open",NSCI_SOURCE,"UNC program ↗"],
+    ["Biology · C or better","Incoming BIOL 101/101L plus planned BIOL 103 and BIOL 220 form the local sequence.","planned",NSCI_SOURCE,"UNC program ↗"],
+    ["Chemistry · C or better","Incoming general chemistry and planned CHEM 241/261/262 sequence are attached.","planned",NSCI_SOURCE,"UNC program ↗"],
+    ["Programming · C or better","COMP 116 is planned as the choice.","planned",NSCI_SOURCE,"UNC program ↗"],
+    ["Calculus · C or better","MATH 231 and 232 appear as incoming credit in the local plan.","complete",NSCI_SOURCE,"UNC program ↗"],
+    ["Physics I · C or better","PHYS 114 appears as incoming credit.","complete",NSCI_SOURCE,"UNC program ↗"],
+    ["Physics II · C or better","PHYS 115 appears as incoming credit.","complete",NSCI_SOURCE,"UNC program ↗"],
+    ["General Psychology · C or better","PSYC 101 is in the registered Fall 2026 term.","planned",NSCI_SOURCE,"UNC program ↗"]
+  ]},
+  {key:"ideas",title:"IDEAs in Action",subtitle:"23 source rows · cohort and course attributes matter",rows:[
+    ["College Thriving","IDST 101 is in the registered Fall 2026 term.","planned",IDEAS_SOURCE,"UNC IDEAs ↗"],
+    ["Data Literacy Lab","IDST 111L is in the registered Fall 2026 term.","planned",IDEAS_SOURCE,"UNC IDEAs ↗"],
+    ["First-Year Seminar / Launch","The plan shows an open 3-credit first-year slot, not a selected course.","open","https://catalog.unc.edu/undergraduate/ideas-in-action/first-year-seminars-launches/","UNC IDEAs ↗"],
+    ["English Composition and Rhetoric","ENGL 105 is in the registered Fall 2026 term.","planned",IDEAS_SOURCE,"UNC IDEAs ↗"],
+    ["Global Language through level 3","SPAN 203 appears as incoming credit in the local plan.","complete","https://catalog.unc.edu/undergraduate/ideas-in-action/global-language/","UNC IDEAs ↗"],
+    ["Aesthetic and Interpretive Analysis","No course is attached.","open","https://catalog.unc.edu/undergraduate/ideas-in-action/aesthetic-interpretive-analysis/","UNC IDEAs ↗"],
+    ["Creative Expression","No course is attached.","open","https://catalog.unc.edu/undergraduate/ideas-in-action/creative-expression","UNC IDEAs ↗"],
+    ["Engagement with the Human Past","No course is attached.","open","https://catalog.unc.edu/undergraduate/ideas-in-action/human-past","UNC IDEAs ↗"],
+    ["Ethical and Civic Values","No course is attached.","open","https://catalog.unc.edu/undergraduate/ideas-in-action/ethical-civic-values","UNC IDEAs ↗"],
+    ["Global Understanding and Engagement","No course is attached.","open","https://catalog.unc.edu/undergraduate/ideas-in-action/global-understanding","UNC IDEAs ↗"],
+    ["Natural Scientific Investigation","A biology course may carry the attribute, but the local plan lacks official course-attribute evidence.","review","https://catalog.unc.edu/undergraduate/ideas-in-action/natural-scientific","UNC IDEAs ↗"],
+    ["Power and Society","SOCI 101 is planned, but its cohort-correct attribute is not retained locally.","review","https://catalog.unc.edu/undergraduate/ideas-in-action/power-society","UNC IDEAs ↗"],
+    ["Quantitative Reasoning","Incoming math/stat credit exists; attribute and double-count evidence need official review.","review","https://catalog.unc.edu/undergraduate/ideas-in-action/quantitative","UNC IDEAs ↗"],
+    ["Ways of Knowing","A generic Focus elective is planned; the exact course is not selected.","planned","https://catalog.unc.edu/undergraduate/ideas-in-action/ways-of-knowing","UNC IDEAs ↗"],
+    ["Empirical Investigation Lab","Incoming lab credit exists, but catalog attribute and transfer treatment need review.","review","https://catalog.unc.edu/undergraduate/ideas-in-action/lab","UNC IDEAs ↗"],
+    ["Research and Discovery","No course or approved experience is attached.","open","https://catalog.unc.edu/undergraduate/ideas-in-action/research-discovery","UNC IDEAs ↗"],
+    ["High-Impact Experience / second R&D","No eligible experience is attached; the same course cannot be counted twice.","open","https://catalog.unc.edu/undergraduate/ideas-in-action/high-impact","UNC IDEAs ↗"],
+    ["Communication Beyond Carolina","No course is attached.","open","https://catalog.unc.edu/undergraduate/ideas-in-action/communication-beyond","UNC IDEAs ↗"],
+    ["Interdisciplinary","No course is attached.","open","https://catalog.unc.edu/undergraduate/ideas-in-action/interdisciplinary/","UNC IDEAs ↗"],
+    ["Lifetime Fitness","No course or applicable exemption is attached.","open","https://catalog.unc.edu/undergraduate/ideas-in-action/lifetime-fitness","UNC IDEAs ↗"],
+    ["Campus Life Experience","No official event attendance record is attached.","open","https://catalog.unc.edu/undergraduate/ideas-in-action/campus-life-experience/","UNC IDEAs ↗"],
+    ["Foundations of American Democracy","No course or approved evidence is attached.","open","https://catalog.unc.edu/undergraduate/ideas-in-action/foundations-american-democracy/","UNC IDEAs ↗"],
+    ["Supplemental General Education","B.A.-only rule; the selected program is a B.S.","na","https://catalog.unc.edu/undergraduate/ideas-in-action/supplemental-general-education/","UNC IDEAs ↗"]
+  ]},
+  {key:"graduation",title:"Graduation / foundations",subtitle:"University rules that need official evaluated records",rows:[
+    ["At least 120 semester hours","The current local plan projects 114 credits and remains short of the minimum.","planned",DEGREE_SOURCE,"UNC degree rules ↗"],
+    ["Final cumulative UNC GPA ≥ 2.000","The prototype projects GPA; only the official UNC record can establish this requirement.","review",DEGREE_SOURCE,"UNC degree rules ↗"],
+    ["At least 45 UNC academic hours","Institution-of-credit evidence is incomplete in the mock plan.","review",DEGREE_SOURCE,"UNC degree rules ↗"],
+    ["Cohort-correct IDEAs in Action","IDEAs rows are attached to the Fall 2026 cohort and remain partly open.","planned","https://catalog.unc.edu/undergraduate/ideas-in-action/","UNC IDEAs ↗"],
+    ["Complete the declared major","The local sequence plans many Neuroscience nodes but does not establish graduation clearance.","planned",NSCI_SOURCE,"UNC program ↗"]
+  ]},
+  {key:"premed",title:"Premed path",subtitle:"Goal layer · school-specific acceptance must be checked",rows:[
+    ["Biology with lab","Incoming credit and planned biology exist; medical-school AP/IB policy varies.","review",AAMC_SOURCE,"AAMC guidance ↗"],
+    ["General Chemistry with lab","Incoming credit exists; target-school acceptance still needs review.","review",AAMC_SOURCE,"AAMC guidance ↗"],
+    ["Organic Chemistry with lab","CHEM 261, 262, and 262L are planned before the MCAT.","planned",AAMC_SOURCE,"AAMC guidance ↗"],
+    ["Biochemistry","CHEM 430 remains unplaced before the January 2029 MCAT.","open",AAMC_SOURCE,"AAMC guidance ↗"],
+    ["Physics with lab","Incoming physics exists; target-school lab/AP policy needs review.","review",AAMC_SOURCE,"AAMC guidance ↗"],
+    ["Math / Statistics","Incoming calculus and STOR 155 exist; target-school expectations vary.","review",AAMC_SOURCE,"AAMC guidance ↗"],
+    ["English / Writing","ENGL 105 is planned; a second writing course may still be needed by a target school.","planned",AAMC_SOURCE,"AAMC guidance ↗"],
+    ["Psychology","PSYC 101 is in the registered Fall 2026 term.","planned",AAMC_SOURCE,"AAMC guidance ↗"],
+    ["Sociology","SOCI 101 is planned for Spring 2027.","planned",AAMC_SOURCE,"AAMC guidance ↗"]
+  ]}
+];
+const statusLabels = {complete:"Complete",planned:"Planned",open:"Not complete",review:"Manual review",na:"Not applicable"};
+const requirementsContainer = document.getElementById("detailed-requirements");
+requirementsContainer.innerHTML = requirementGroups.map(group => `<section class="req-ledger-group ${group.key}"><div class="req-ledger-head"><div><h3>${group.title}</h3><p>${group.subtitle}</p></div><a class="source-link" href="${group.rows[0][3]}" target="_blank" rel="noreferrer">Group source ↗</a></div>${group.rows.map(([name,detail,status,url,label]) => `<div class="req-row"><div class="req-row-copy"><b>${name}</b><span>${detail}</span></div><span class="status ${status}">${statusLabels[status]}</span><a class="source-link" href="${url}" target="_blank" rel="noreferrer">${label}</a></div>`).join("")}</section>`).join("");
+const requirementCounts = requirementGroups.flatMap(group => group.rows).reduce((counts,row) => { counts[row[2]]=(counts[row[2]]||0)+1; return counts; },{});
+document.getElementById("req-complete").textContent = requirementCounts.complete || 0;
+document.getElementById("req-planned").textContent = requirementCounts.planned || 0;
+document.getElementById("req-open").textContent = requirementCounts.open || 0;
+document.getElementById("req-review").textContent = requirementCounts.review || 0;
+
 const variants = [
   { key: "A", name: "Timeline first" },
   { key: "B", name: "Next-term builder" },
@@ -489,6 +827,112 @@ function render() {
   document.getElementById("variant-label").textContent = `${active.key} — ${active.name}`;
   document.title = `Academics Planner — ${active.key} ${active.name}`;
 }
+document.querySelectorAll(".req-toggle").forEach(button => button.addEventListener("click", () => {
+  const map = document.getElementById(button.getAttribute("aria-controls"));
+  const expanded = button.getAttribute("aria-expanded") === "true";
+  map.hidden = expanded;
+  button.setAttribute("aria-expanded", String(!expanded));
+  button.textContent = expanded ? "Open map" : "Collapse map";
+}));
+const catalog = document.querySelector(".catalog-dock");
+const catalogDestination = document.getElementById("catalog-destination");
+const inlineRequirements = document.querySelector(".inline-requirements");
+const plannerStateStack = document.querySelector(".planner-state-stack");
+const plannerStateViews = new Set(["term-create", "term-note", "registration-window"]);
+let lastCatalogTrigger = null;
+const setPlannerView = view => {
+  const url = new URL(location.href);
+  url.searchParams.set("view", view);
+  history.replaceState({}, "", url);
+};
+const setCatalogDestination = term => {
+  catalogDestination.textContent = term;
+  catalog.querySelectorAll(".direct-add").forEach(button => {
+    button.textContent = `Add to ${term}`;
+  });
+};
+const openCatalog = (term="Spring 2027", syncUrl=true) => {
+  setCatalogDestination(term);
+  plannerStateStack.hidden = true;
+  catalog.hidden = false;
+  if (syncUrl) setPlannerView("catalog");
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  catalog.scrollIntoView({behavior: reduceMotion ? "auto" : "smooth", block: "start"});
+  catalog.querySelector(".catalog-search").focus({preventScroll:true});
+};
+const closeCatalog = (syncUrl=true) => {
+  catalog.hidden = true;
+  if (syncUrl) setPlannerView("plan");
+  lastCatalogTrigger?.focus();
+};
+document.querySelectorAll(".catalog-trigger").forEach(button => button.addEventListener("click", () => {
+  lastCatalogTrigger = button;
+  openCatalog(button.dataset.term || "Spring 2027");
+}));
+document.querySelector(".catalog-close-inline").addEventListener("click", () => closeCatalog());
+document.querySelectorAll("[data-catalog-tab]").forEach(button => button.addEventListener("click", () => {
+  catalog.dataset.mode = button.dataset.catalogTab;
+  document.querySelectorAll("[data-catalog-tab]").forEach(item => item.classList.toggle("on", item === button));
+  catalog.querySelector(".catalog-search").dispatchEvent(new Event("input"));
+}));
+const catalogSearch = catalog.querySelector(".catalog-search");
+const applyCatalogSearch = () => {
+  const query = catalogSearch.value.trim().toLowerCase();
+  catalog.querySelectorAll(".catalog-pick").forEach(result => {
+    const modeMatches = result.dataset.catalogMode === catalog.dataset.mode;
+    const queryMatches = !query || result.textContent.toLowerCase().includes(query);
+    result.hidden = !(modeMatches && queryMatches);
+  });
+};
+catalogSearch.addEventListener("input", applyCatalogSearch);
+function renderPlannerView() {
+  const view = new URLSearchParams(location.search).get("view") || "plan";
+  document.body.classList.toggle("planner-state-review", plannerStateViews.has(view));
+  plannerStateStack.hidden = !plannerStateViews.has(view);
+  plannerStateStack.querySelectorAll("[data-planner-state]").forEach(state => state.classList.toggle("on", state.dataset.plannerState === view));
+  if (plannerStateViews.has(view)) {
+    catalog.hidden = true;
+    const activeState = plannerStateStack.querySelector(".planner-state-card.on");
+    activeState?.scrollIntoView({block:"center"});
+    activeState?.focus({preventScroll:true});
+    return;
+  }
+  if (view === "catalog") {
+    openCatalog("Spring 2027", false);
+    return;
+  }
+  catalog.hidden = true;
+  if (view === "requirements") {
+    inlineRequirements.open = true;
+    inlineRequirements.scrollIntoView({block:"start"});
+    inlineRequirements.querySelector("summary").focus({preventScroll:true});
+  }
+}
+document.querySelectorAll(".planner-state-trigger").forEach(button => button.addEventListener("click", () => {
+  setPlannerView(button.dataset.plannerView);
+  renderPlannerView();
+}));
+document.querySelectorAll(".state-close,.note-cancel").forEach(button => button.addEventListener("click", () => {
+  setPlannerView("plan");
+  renderPlannerView();
+}));
+document.querySelectorAll(".mock-state-action").forEach(button => button.addEventListener("click", () => {
+  const feedback = button.closest(".planner-state-card").querySelector(".state-feedback");
+  feedback.textContent = button.dataset.feedback;
+  button.textContent = "Added to draft";
+  button.disabled = true;
+}));
+document.querySelector(".note-save").addEventListener("click", () => {
+  const note = document.getElementById("planner-term-note").value.trim();
+  document.querySelector(".saved-note-copy").textContent = note || "No note recorded.";
+  document.querySelector(".note-saved").classList.add("saved");
+  document.querySelector(".note-save").textContent = "Saved";
+});
+document.querySelector(".review-term").addEventListener("click", () => {
+  setPlannerView("plan");
+  renderPlannerView();
+  document.querySelector(".term-nudge").focus({preventScroll:true});
+});
 function cycle(direction) {
   const next = variants[(currentIndex() + direction + variants.length) % variants.length];
   const url = new URL(location.href);
@@ -500,11 +944,13 @@ document.querySelectorAll("[data-dir]").forEach(button => button.addEventListene
 addEventListener("keydown", event => {
   const tag = document.activeElement?.tagName;
   if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable) return;
+  if (event.key === "Escape" && !catalog.hidden) { closeCatalog(); return; }
   if (event.key === "ArrowLeft") cycle(-1);
   if (event.key === "ArrowRight") cycle(1);
 });
-addEventListener("popstate", render);
+addEventListener("popstate", () => { render(); renderPlannerView(); });
 render();
+renderPlannerView();
 </script>
 </body>
 </html>

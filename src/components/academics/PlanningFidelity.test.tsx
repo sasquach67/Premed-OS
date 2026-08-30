@@ -1,10 +1,11 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createInitialDataForMode, useStore } from '@/store/store'
 import { GradesArchive } from './GradesArchive'
 import { PlannerBoard } from './PlannerBoard'
+import { PlanningColdStart } from './PlanningColdStart'
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -71,7 +72,7 @@ describe('Planning Variant A fidelity corrections', () => {
     useStore.getState().update((draft) => {
       draft.courses.push({ id: 'chem', term: 'Fall 2026', code: 'CHEM 101', title: 'General Chemistry', credits: 4, grade: '', bcpm: true, status: 'planned', inResidence: true, satisfies: [], order: 0 })
     })
-    await act(async () => root.render(<PlannerBoard onAddCourse={() => undefined} onComparePlans={() => undefined} />))
+    await act(async () => root.render(<PlannerBoard onComparePlans={() => undefined} />))
 
     const controls = container.querySelector('.planning-filter-bar')?.textContent ?? ''
     expect(controls).toContain('Current course plan')
@@ -87,11 +88,31 @@ describe('Planning Variant A fidelity corrections', () => {
     expect(positions).toEqual([...positions].sort((a, b) => a - b))
 
     const context = container.querySelector('.planning-context-bar')?.textContent ?? ''
-    expect(context).toContain('Major / programNot recorded')
-    expect(context).toContain('Catalog + cohortNot recorded')
-    expect(context).toContain('Premed pathNot recorded')
+    expect(context).toContain('Major / programChoose a major')
+    expect(context).toContain('Catalog + cohortSet by major selection')
+    expect(context).toContain('Premed / MCATDate not recorded')
     expect(context).toContain('Prior creditNot recorded')
+    const priorCredit = container.querySelector<HTMLAnchorElement>('.planning-context-field[data-action="true"]')
+    expect(priorCredit?.getAttribute('href')).toContain('tab=archive')
+    expect(priorCredit?.getAttribute('href')).toContain('transcript=intake')
     expect(context).toContain('InterestsNot recorded')
     expect(context).not.toContain('Requirement mapSelect a program first')
+  })
+
+  it('opens saved-plan comparison from the primary plan control', async () => {
+    useStore.getState().update((draft) => {
+      draft.courses = [{ id: 'chem', term: 'Fall 2026', code: 'CHEM 101', title: 'General Chemistry', credits: 4, grade: '', bcpm: true, status: 'planned', inResidence: true, satisfies: [], order: 0 }]
+    })
+    const onComparePlans = vi.fn()
+    await act(async () => root.render(<PlannerBoard onComparePlans={onComparePlans} />))
+    await act(async () => container.querySelector<HTMLButtonElement>('[aria-label^="Open saved plans for"]')!.click())
+    expect(onComparePlans).toHaveBeenCalledOnce()
+  })
+
+  it('routes prior credit from the empty Planner to Grades-owned transcript intake', async () => {
+    await act(async () => root.render(<MemoryRouter><PlanningColdStart currentTerm="Fall 2026" /></MemoryRouter>))
+    const priorCredit = [...container.querySelectorAll<HTMLAnchorElement>('a')].find((link) => link.textContent?.includes('Prior credit'))!
+    expect(priorCredit.getAttribute('href')).toContain('tab=archive')
+    expect(priorCredit.getAttribute('href')).toContain('transcript=intake')
   })
 })

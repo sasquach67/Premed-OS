@@ -36,7 +36,7 @@ describe('manual transcript entry on an empty store', () => {
 
   afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 
-  it('saves the line and records the course it evidences', async () => {
+  it('saves an exact transcript line without fabricating a Planner course', async () => {
     expect(useStore.getState().courses).toHaveLength(0)
     await act(async () => {
       setInput('Institution (exact)', 'Wake Tech')
@@ -50,11 +50,11 @@ describe('manual transcript entry on an empty store', () => {
     await act(async () => { save.click() })
 
     const state = useStore.getState()
-    expect(state.courses.map((c) => c.code)).toEqual(['CHM 151'])
+    expect(state.courses).toHaveLength(0)
     const [record] = state.academics.classCenter.transcriptRecords
     // Exact strings, including the all-caps registrar title.
     expect(record).toMatchObject({ institution: 'Wake Tech', courseNumberExact: 'CHM 151', titleExact: 'GENERAL CHEMISTRY I', creditsExact: '4', gradeExact: 'B+' })
-    expect(record.courseId).toBe(state.courses[0].id)
+    expect(record.courseId).toBeUndefined()
   })
 
   it('offers a real attach control for transcript-line evidence', () => {
@@ -75,6 +75,9 @@ describe('manual transcript entry on an empty store', () => {
       setInput('Institution (exact)', 'Wake Tech')
       setInput('Course number (exact)', 'chm 151')
       setInput('Course title (exact)', 'GENERAL CHEMISTRY I')
+      setInput('Term', 'Fall')
+      setInput('Year', '2025')
+      setInput('Course type', 'regular')
     })
     await act(async () => {
       [...container.querySelectorAll('button')].find((b) => /Save transcript record/.test(b.textContent || ''))!.click()
@@ -82,5 +85,59 @@ describe('manual transcript entry on an empty store', () => {
     const state = useStore.getState()
     expect(state.courses).toHaveLength(1)
     expect(state.academics.classCenter.transcriptRecords[0].courseId).toBe('existing')
+  })
+
+  it('keeps a transfer record in Grades & Archive instead of linking it to a Planner course', async () => {
+    useStore.getState().update((d) => {
+      d.courses = [{ id: 'planned', term: 'Fall 2026', code: 'CHM 151', title: 'Gen Chem', credits: 4, grade: '', bcpm: false, status: 'planned', inResidence: true, satisfies: [], order: 0 }]
+    })
+    await act(async () => {
+      setInput('Institution (exact)', 'Wake Tech')
+      setInput('Course number (exact)', 'CHM 151')
+      setInput('Course title (exact)', 'GENERAL CHEMISTRY I')
+      setInput('Term', 'Fall')
+      setInput('Year', '2024')
+      setInput('Course type', 'transfer')
+    })
+    await act(async () => {
+      [...container.querySelectorAll('button')].find((b) => /Save transcript record/.test(b.textContent || ''))!.click()
+    })
+    const state = useStore.getState()
+    expect(state.courses).toHaveLength(1)
+    expect(state.academics.classCenter.transcriptRecords[0].courseId).toBeUndefined()
+  })
+
+  it('lets a student correct and remove a saved transcript line', async () => {
+    useStore.getState().update((draft) => {
+      draft.academics.classCenter.transcriptRecords.push({
+        id: 'saved-line', institution: 'UNC Chapel Hill', courseNumberExact: 'BIOL 101',
+        titleExact: 'Biology', creditsExact: '4', gradeExact: 'B+', term: 'Fall', year: '2026',
+        courseType: 'regular', createdAt: 1, updatedAt: 1, order: 0,
+      })
+    })
+    await act(async () => root.unmount())
+    root = createRoot(container)
+    await act(async () => { root.render(<TranscriptRecordsPanel courses={[]} />) })
+
+    await act(async () => {
+      ;[...container.querySelectorAll<HTMLButtonElement>('button')]
+        .find((button) => button.getAttribute('aria-label') === 'Edit BIOL 101 transcript record')?.click()
+    })
+    await act(async () => setInput('Course title (exact)', 'GENERAL BIOLOGY'))
+    await act(async () => {
+      ;[...container.querySelectorAll<HTMLButtonElement>('button')]
+        .find((button) => button.textContent?.includes('Save correction'))?.click()
+    })
+    expect(useStore.getState().academics.classCenter.transcriptRecords[0].titleExact).toBe('GENERAL BIOLOGY')
+
+    await act(async () => {
+      ;[...container.querySelectorAll<HTMLButtonElement>('button')]
+        .find((button) => button.getAttribute('aria-label') === 'Remove BIOL 101 transcript record')?.click()
+    })
+    const confirm = [...document.body.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Remove record')
+    expect(confirm).toBeTruthy()
+    await act(async () => confirm?.click())
+    expect(useStore.getState().academics.classCenter.transcriptRecords).toHaveLength(0)
   })
 })

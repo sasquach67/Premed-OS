@@ -18,7 +18,7 @@ export function migrateLectureCaptureV28(data: AppData): AppData {
   const existing = Array.isArray(center.lectures) ? center.lectures : []
   const existingFileIds = new Set(existing.map((lecture) => lecture.transcriptFileId).filter(Boolean))
   const backfilled: LectureRecord[] = center.files
-    .filter((file) => file.type === 'transcript' && file.sourceType === 'paste' && !existingFileIds.has(file.id))
+    .filter((file): file is typeof file & { courseId: string } => file.courseId != null && file.type === 'transcript' && file.sourceType === 'paste' && !existingFileIds.has(file.id))
     .filter((file) => center.sourceChunks.some((chunk) => chunk.fileId === file.id && chunk.courseId === file.courseId))
     .map((file, index) => ({
       id: `lecture-from-${file.id}`,

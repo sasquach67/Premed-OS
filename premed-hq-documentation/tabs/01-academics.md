@@ -1,5 +1,21 @@
 # Academics
 
+> **Aug 29, 2026 authority amendment — Review system retired.** Andy removed
+> the Academics Review Session and every related user-facing review mechanism:
+> Start review / Quiz me entry points, review queues, FSRS/retrievability and
+> forgetting-curve displays, review streaks, Class Plan/Learning Signals review
+> panels, and Academics flashcard review/scheduling plus Anki export. Class cards open
+> the Class Hub directly with one **Open** action. Academics study work is now
+> source-selected flashcards, study guides/outlines, and revised notes. Generated
+> flashcards remain inspectable class Materials and do not create a Review Session,
+> readiness queue, or Anki path. Lecture capture,
+> syllabus-led Topics, assignments, exam planning, Guide/Course lens and MCAT's
+> separate tools remain. Existing persisted review/flashcard records are read
+> only for migration compatibility and are not erased. The per-review Forecast
+> Accuracy ledger and the review-driven Mistake Evidence Grades state are also
+> retired; legacy prediction and mistake records remain readable. Any later section that
+> prescribes the retired review system is superseded by this amendment.
+
 **Status:** Designed — approved for implementation (core decisions locked July 2026). Intelligence list is intentionally extensible.
 **Sidebar group:** Foundation · **Spec type:** domain tab
 **Repo:** `sasquach67/Premed-OS` — `src/pages/Academics.tsx` (917L), `src/components/academics/ClassCenter.tsx` (1890L), `src/components/common/AssignmentsPanel.tsx`
@@ -40,7 +56,7 @@ Today, a real class exists as **two disconnected records**: a `Course` (ledger: 
 - **Assignments** (`ClassAssignment`) link to the **course** (via `courseId`), not a separate class record. One assignment dataset.
 - **Migration:** existing `ClassCenterClass` records reconcile to their matching `Course` by `courseCode`+`term` (create the `Course` if missing, then attach the workspace); surface unmatched ones in a review step (`general.md` import reconciliation). Do not silently drop data.
 
-Result: Class Center, Planner, Assignments, and the Tracker all become **stateless views of one course set** (`01` "views are projections"). Change a grade anywhere → GPA, requirements, Overview all update.
+Result: Class Center, Planner (including its requirement map), Assignments, and Grades & Archive all become **stateless views of one course set** (`01` "views are projections"). Change a grade anywhere → GPA, requirements, Overview all update.
 
 ### 3.3 Study-hub entities (Class Center)
 
@@ -81,11 +97,14 @@ Academics is organized by a **mode switch** (a segmented pill at the top: **Dail
 
 ### Planning mode — the long game
 
-> **SUPERSEDED — see §4.2, which re-scoped these by job (July 2026).** The three Planning tabs are **Planner · Requirements · Grades & Archive**. The old "Planner & GPA / Requirements / Archive" split cut across jobs — *what to take next term* sat in the Tracker while term-building sat in the Planner, and Archive was a thin destination that is really a filter on the ledger.
+> **REVISED — see §4.2 (August 2026).** The two Planning destinations are
+> **Planner · Grades & Archive**. The useful Requirements/Tar Heel Tracker
+> behavior is now a source-bearing in-context view inside Planner, because it
+> explains course placement; it is not a competing destination. Archive remains
+> a filter on the ledger rather than a separate page.
 
 3. **Planner** — *what do I take next term?* Build future terms with requirement coverage and GPA projection live beside you (§4.2-C).
-4. **Requirements** — *what's left, and am I on pace?* The requirement audit; course library; AP-credit and custom-course entry.
-5. **Grades & Archive** — *what have I earned?* Full ledger, cumulative/term/**AMCAS BCPM**, What-if, plus withdrawn/completed/superseded **as a filter, not a separate destination**.
+4. **Grades & Archive** — *what have I earned?* Full ledger, cumulative/term/**AMCAS BCPM**, What-if, plus withdrawn/completed/superseded **as a filter, not a separate destination**.
 
 ### Mode-switch behavior
 
@@ -100,7 +119,7 @@ Academics stacks three levels of chrome. They must **not** all be pill rows — 
 | 3 | **Term · search · view** | `Select` (term) + search `Input` + result count + `Toggle Group` (cards/list) | **filter bar** on the solid page, under the banner |
 
 - The old build rendered mode, tabs, **and** the term picker (`Fall 2026 / Spring 2027 / All / Archived`) as three near-identical pill groups — replaced. **The term picker becomes a `Select` dropdown**, not a pill row (it must scale past 6+ terms), and it sits in the filter bar with search, not in the nav stack.
-- Only the **active mode's** tabs render — Daily shows 2 (Class Center · Assignments), Planning shows 3 (Planner & GPA · Requirements · Archive). The old flat 5-tab bar is gone.
+- Only the **active mode's** tabs render — Daily shows 2 (Class Center · Assignments), Planning shows 2 (Planner · Grades & Archive). Requirement map and Add course are named in-context Planner views, not tabs. The old flat 5-tab bar is gone.
 - Glass judgment (`04` §0c): the mode pill is glass **because it floats over banner imagery**; underline tabs, the filter bar, and every control below are **solid-with-depth, no blur**.
 
 - Segmented control (`ModeSwitch`), iOS-Focus-like; default mode is **Daily**. Persist the last-used mode per user (shell-owned setting).
@@ -146,7 +165,8 @@ A **Contacts** panel on the Class Center bento: professors, TAs, study groups, a
 Follows the global interactive-card pattern (`01` §4e).
 
 - **Rest:** neutral border, **no accent bar**; class identity = a small colored dot beside the code. **Hover:** left bar ignites in the class accent, border + glow turn accent, card lifts, and the deadline line swaps to **"Open class hub →"**. No corner ↗ badge. Hovering the Review button leaves the card **unlit**.
-- **Contents:** code + full name · letter grade **and** exact percent · status chips (`3 weak`, `BCPM`) · **one line** — *"8 of 18 topics ready"* with a single progress bar · next deadline. **No `Anki` chip** — Anki owns cards, not topics (§4.1).
+- **Contents:** code + full name · letter grade **and** exact percent when evidence exists · factual status chips (`3 weak`, `BCPM`) · one real latest class record (linked lecture, note, material, or returned work) · a labelled topic/study-state line with a single progress bar when supported · next deadline. Missing grade, readiness, or date evidence is named rather than filled. **No `Anki` chip** — Anki owns cards, not topics (§4.1).
+- **Density:** four wider course records lead at the desktop reference width and wrap to two, then one. `Add class` sits in the section header instead of consuming a course-card slot.
 - **Deliberately excluded:** instructor, meeting days/time, room, credit count — clutter at this zoom. They live in the class hub's Class Info section.
 - **Actions:** **one primary (`▶ Review`)** + **overflow `⋯`**, divider-separated. Overflow holds Quiz me, Covered in lecture today, Generate study guide, Materials, Notes, Class settings. Right-click gives the same set (`01` §4c).
 - Cards **wrap** to additional rows; they never scroll horizontally.
@@ -268,8 +288,8 @@ A `Toggle Group` in the level-3 filter bar (`01` §4b-i). **Agenda is the defaul
 | View | Shape | Answers |
 |---|---|---|
 | **Agenda** *(default)* | Cards in **time buckets** — Overdue → This week → Next week → Later → Completed | "what's coming and how bad" — position encodes urgency, no date-reading required |
-| **Weekly** | Seven day-columns; each day carries a plain-language **load badge** (Free / Light / Busy / Heavy); cards drag between days to reschedule | "how is my week shaped" |
-| **Calendar** | Month grid + **detail rail**; heavy days carry a subtle tint | "what's coming further out" — a *navigation* view (cells truncate at 2–3 chips), which is why it pairs with a rail |
+| **Weekly** | Seven day-columns with weekday emphasis by default (weekends stay visible but compressed); each day carries a plain-language **load badge** (Free / Light / Busy / Heavy); cards drag between days to reschedule | "how is my week shaped" |
+| **Calendar** | Complete six-row month grid + **full-height detail rail**; heavy days carry a subtle tint | "what's coming further out" — a *navigation* view (cells truncate at 2–3 chips), which is why it pairs with a rail |
 
 #### Row anatomy
 
@@ -342,25 +362,26 @@ A separate panel at the **bottom of the page** titled **"Projected workload"** �
 
 #### Five sub-tabs (revised July 2026 — a semester of content will not fit on one screen)
 
-**Overview · Materials · Topics · Assignments · Notes.** Shared chrome on every tab: breadcrumb to Class Center, class dot + code + name, the **compact info line** (`Dr. Elamin · MWF 10:10a · Kenan B12 · BCPM · office hours, links ⌄`), the glass stat strip (grade · ready · due today · exam countdown), **`Start review`** as the single primary action, and `⋯`.
+**Overview · Materials · Topics · Assignments · Guide.** Shared chrome on every tab: breadcrumb to Class Center, class dot + code + name, the **compact info line** (`Dr. Elamin · MWF 10:10a · Kenan B12 · BCPM · office hours, links ⌄`), the glass stat strip (grade · ready · due today · exam countdown), **`Start review`** as the single primary action, and `⋯`.
 
 **A. Overview — master view of *this* class** (distinct from Class Center, which is cross-class):
-| Panel | Span | Role |
+
+The persistent Class journal and the direct transcript-first capture panel lead as one balanced workspace. The journal is already scoped by this Class Hub, so it has no class selector; its newest-first history is capped to roughly three visible numbered lecture rows and scrolls instead of lengthening the page. The adjacent panel is comparable in height and offers `Import transcript` or `Paste transcript` for today’s next numbered lecture. After transcript capture the same Overview workflow continues to **optional supporting evidence (file, clipboard screenshot, textbook excerpt) → selected-source study work**. Selecting a saved lecture reveals its transcript, attached material, and generated study work. The workflow never adds a sixth tab or asks for a Topic; syllabus standards/objectives continue to define Topics while the lecture supplies evidence and context. The banner glass stat strip is the sole class-status strip; Overview does not repeat it in the content body.
+
+| Layer | Span | Role |
 |---|---|---|
-| Status row | 12 | Grade · topics ready · exam countdown · streak · **MCAT-relevant count** · course coverage bar + mapped %. |
-| Due today | 4 | This class's due topics + **one** pace line. |
-| Exam scope | 4 | See below. |
-| Coming up | 4 | Next deadlines with their weights. |
-| Recently covered | 5 | Last 3 lectures **and whether you've reviewed them** — plus a warning when a covered unit has never been reviewed. |
-| Grade breakdown | 4 | Category averages + **weight-sum validation** ("weights sum to 100% ✓"). |
-| Class contacts | 3 | Professor, TA, study group (shared `Person` records). |
-| Mastery over the semester | 12 | Topics-ready actual vs projected. |
+| Class journal | 12 | Dominant lecture record and transcript → optional evidence → study-work entry. |
+| Course pulse | 12 | One compact surface for the next assignment, exam-scope readiness, material filing, and Guide suggestions. Each item links to its owning tab; it does not repeat the banner stat strip. |
+| Class Plan | 12 | Source-backed, course-specific next steps for before class, captured class evidence, and review after. No explanatory side rail, empty zero-state card, or nine-step checklist. |
+| Forgetting curve | 12 | Full one-topic retention panel; entered from a Topics row or the Midterm item in Course pulse. |
+
+The former Overview card wall is intentionally retired. Grade breakdown and what-if work live in Assignments; contacts and office-hour detail live in the class info/Guide surfaces; recent lecture coverage is already represented by the Class journal and syllabus-led Topics.
 
 **B. Materials** — grouped **by week/module** (syllabus gives week → unit). Each module header shows its unit range **and study state** ("2 weak topics", "3 never reviewed"). Three-way **ownership marker on every file: `Course` / `Mine` / `Generated`** — your own notes sit beside the lecture they belong to but are visually distinct. Filters: All / From the course / **My notes** / Generated / Unassigned. Inline reading; bulk Canvas import; the unassigned-files notice explains positional filing (§6.4).
 
-**C. Topics** — grouped into **unit sections in course order**; each unit header carries name, weeks, exam-scope flag, and its own "1 of 3 ready" progress. Rows: name · last-recall recency · retrievability bar · status chip · **MCAT tag** · notes affordance. Filters by state. Fast-capture add row.
+**C. Topics** — grouped primarily by **syllabus week in course order**; each week header carries the covered standards/objectives, secondary unit context, exam-scope flag, and its own "1 of 3 ready" progress. Unit numbers support course and exam context but do not control the default sort. Rows: name · last-recall recency · retrievability bar · status chip · **MCAT tag** · notes affordance. Filters by state. Fast-capture add row.
 
-**D. Assignments** — grouped by **syllabus category** (Problem sets 15% · Labs 20% · Exams 35+30%), because that is how the grade is computed. Each category header shows weight, completion, and **your average in that category**. Footer validates weights sum to 100% and states what share of the grade is in. Contains **grades** and the **what-if calculator** (§6.5).
+**D. Assignments** — the same practical execution model as Overview Tasks, permanently filtered to this class: complete with Undo, reorder, mark important, and open/edit details inside the familiar urgency-based Agenda/Weekly/Calendar treatment. A visible handoff opens all assignments for cross-class planning. The class-specific grade ledger and **what-if calculator** (§6.5) remain below as supporting context; their calculations stay category-based because syllabus weights are category-based.
 
 **E. Notes** — see the notes-about/notes-on split below.
 
@@ -370,7 +391,7 @@ Segmented bar + **labeled legend** (`Ready 4 · Reviewing 2 · Weak 3`) + a plai
 
 #### Two kinds of notes (LOCKED — do not merge)
 
-- **Notes tab = notes *about* the class** (meta): **Exam intel** (what this professor actually tests), **Questions to ask** (checkboxes, tied to office hours), **Priming questions** (rolled up from Materials), **Lecture notes** by unit, Admin. Filed by kind with counts — never one undifferentiated pile. Per-topic notes roll up in a side rail.
+- **Guide tab = information *about* the class** (meta): **Exam intel** (what this professor actually tests), **Questions to ask** (checkboxes, tied to office hours), **Priming questions** (rolled up from Materials), **Lecture context**, and Admin. Filed by kind with counts — never one undifferentiated pile. Guide may propose additions from confirmed syllabus facts and saved lecture transcripts when available, but every proposal shows its source and requires review/edit/dismiss before saving; nothing is silently written. Without a transcript, syllabus-backed and student-authored Guide entries continue normally. Per-topic/material notes remain in Materials.
 - **Materials → My notes = notes *on* the material** (content): your handwritten pages, annotated slides, whiteboard photos. Lives beside the lecture, tagged `Mine`, indexed like any other source — so **the active-recall gap report can cite your own page**, not just the professor's slide.
 
 #### Priming questions (new)
@@ -427,6 +448,8 @@ The earlier three-mode split (quick recall / blurting / Feynman) is **removed**.
 #### One composer, three input affordances
 
 Used together or alone: **mic (default) · keyboard · image attach.** The primary path is narrating while drawing — speak, then attach the page. **Full video analysis is deliberately not built** (cost/latency); the audio transcript + the final image is the 90% solution. The image drop stays available at any point, including after speaking.
+
+For longer spoken answers, Recall may quietly recommend an optional continuous-dictation tool and expose an official-links directory: **Wispr Flow downloads**, **macOS Dictation setup**, and **Windows Voice Typing setup**. This is guidance, not a dependency or endorsement claim: Premed OS voice, typing, image, and canvas inputs remain equally available, session grading never depends on an external tool, and third-party audio handling is disclosed beside the directory.
 
 #### The loop
 
@@ -486,7 +509,7 @@ Andy: *"my maps are a retrieval kind of thing, so it could be inside the review.
 
 - **A fourth composer affordance** alongside mic, keyboard, and image attach: **draw**. Combinable with the others — narrate while drawing is the intended path, same as today.
 - **Opens on request**, never by default. The composer stays a text field for the student who just wants to type.
-- **Upload is equal to drawing.** Andy is a GoodNotes user; photographing a map drawn on paper or in GoodNotes goes through the identical pipeline. **Neither path is the degraded one** — the in-app canvas exists for people without a tablet, not to replace one.
+- **Upload is equal to drawing.** The canvas exposes a visible **Picture or file** input for a photo, screenshot, exported GoodNotes page, or PDF; photographing a map drawn on paper or in GoodNotes goes through the identical pipeline. **Neither path is the degraded one** — the in-app canvas exists for people without a tablet, not to replace one.
 - **Graded like any other response** — against the scope chips, into the same gap report. HQ's job is to say *what's missing from the map*, which is exactly the gap-identification Andy described.
 - **Confirmed relations may be written as `TopicLink`s** (proposed, confirmed by the student, never auto-written) — so drawing a map feeds #22 and #39 instead of being a dead artifact.
 - **Deliberately simple:** nodes, labelled edges, text. **Not** a diagramming tool, no shape libraries, no styling. If someone wants a real canvas they already have GoodNotes, and §0 of `integration-map` says don't rebuild it.
@@ -499,6 +522,7 @@ FSRS picks the topic deterministically → retrieval pulls **that topic's** chun
 
 - [ ] One mode; no mode switcher anywhere.
 - [ ] Composer accepts voice, text, and image, combinable in one response.
+- [ ] Optional continuous-dictation guidance sits inside the Recall composer, links only to official provider/platform pages, keeps native inputs fully usable, and discloses separate third-party audio handling.
 - [ ] Scope chips shown before responding and used as the grading checklist.
 - [ ] Confidence captured **before** reveal; calibration computed deterministically and surfaced in the summary.
 - [ ] Gap report only (never a full notes dump); every item carries a provenance chip; source chips open the file at the highlighted passage.
@@ -507,15 +531,15 @@ FSRS picks the topic deterministically → retrieval pulls **that topic's** chun
 - [ ] Entire loop works with **no API key** except the AI gap-check (FSRS, calibration, scheduling, summary all deterministic).
 - [ ] **Timer runs in the session shell**, tied to class + topic; Pomodoro and session preferences live in the session's own settings, not global settings. **This is the sole source of study-hours data** for #33/#34/#35. Pausing carries **no penalty and no guilt copy**.
 - [ ] **Two session purposes — Recall and Focus.** Focus is timer-only (no loop, no grading, no FSRS write) so reading and problem-set hours are captured. **This is a purpose, not a recall depth — the one-mode rule still holds and the three-depth split stays rejected.**
-- [ ] **Canvas is a fourth composer affordance**, opened on request and never by default, combinable with mic/keyboard/image. **Uploading a GoodNotes/paper map is equal to drawing in-app — neither is the degraded path.** Graded against the scope chips into the same gap report. Confirmed relations may write `TopicLink`s **only with user confirmation**. **Nodes, labelled edges, and text only — no shape libraries, no styling, not a diagramming tool.**
+- [ ] **Canvas is a fourth composer affordance**, opened on request and never by default, combinable with mic/keyboard/image. A visible **Picture or file** input accepts a photo, screenshot, exported GoodNotes page, or PDF. **Uploading a GoodNotes/paper map is equal to drawing in-app — neither is the degraded path.** Graded against the scope chips into the same gap report. Confirmed relations may write `TopicLink`s **only with user confirmation**. **Nodes, labelled edges, and text only — no shape libraries, no styling, not a diagramming tool.**
 
 ---
 
-### 4.1-K "Study method — UNPATCHED 2026" — the study-cycle surface (ADDED July 2026)
+### 4.1-K Class Plan — the source-backed course plan (RENAMED Aug 26, 2026 · CLASS HUB PLACEMENT APPROVED)
 
-**Official name: `Study method · UNPATCHED 2026`.** The gaming framing is intentional — *unpatched* means never nerfed, still overpowered. It reads as a method that works rather than a chore list, and the **year is a version**: when the method evolves, ship `UNPATCHED 2027` and the name carries its own changelog. Earlier working title "The Loop" is retired — too abstract, said nothing about what it was.
+**Official user-facing name: `Class Plan`.** It is a source-backed, course-specific plan for what comes before class, what is captured during class, and what should be reviewed after. It uses the syllabus standards, schedule context, saved lecture/material evidence, and local review state; it never invents topics or becomes a separate product tab.
 
-The nine-step cycle (§6.6) needs a home. **It is not a tab** — a tab would make it a place you visit instead of a thing you do. It appears in three places, each doing a different job.
+The nine-step cycle (§6.6) needs a home. **It is not a tab** — a tab would make it a place you visit instead of a thing you do. Andy approved the integrated placement on August 26, 2026: the standalone Mockup Lab entry is retired, and the reviewable visual target now lives inside the five-tab Class Hub. It appears there in three ways, each doing a different job.
 
 #### A. Per-topic lifecycle track (the atom)
 
@@ -530,7 +554,7 @@ Filled = done, hollow = not. Hovering names the step. **This replaces nothing** 
 
 Why per-topic: the cycle isn't a class-level ritual, it's what has and hasn't happened to *this piece of material*. A class is never "at step 4" — its topics are all at different stages.
 
-#### B. The `Study method · UNPATCHED 2026` panel on the class Overview (the hand-holding)
+#### B. The `Class Plan` panel on the class Overview (the hand-holding)
 
 A section — not a tab — that groups this class's topics by **what stage they need next**, so the page answers *"what do I do right now?"*:
 
@@ -561,9 +585,9 @@ The insight: the cycle is *inherently prescriptive*. Knowing a topic is "covered
 - **One `MascotNote` maximum** on the panel, teaching one unfamiliar step at a time (Pretest first, since it's the counter-intuitive one).
 - The dot track is **decorative-free** — it encodes state, nothing else. No animation on load.
 
-### 4.1-L Forgetting curve — "will I still know this on Friday?" (ADDED July 2026)
+### 4.1-L Forgetting curve — "will I still know this on Friday?" (ADDED July 2026 · FULL CLASS HUB PLACEMENT APPROVED Aug 26, 2026)
 
-> **Mockup:** the sawtooth panel — Ebbinghaus decay with spaced-repetition resets.
+> **Mockup:** the full sawtooth panel is integrated into Class Hub Overview, with entry points from Topics rows and the exam-scope card. The standalone Mockup Lab entry is retired.
 
 The single best explanation of *why* the app schedules reviews the way it does, and the honest answer to the only question that matters before an exam.
 
@@ -626,18 +650,18 @@ So the shared payload is a **structured record — dates, weights, unit names, p
 
 **The one real risk, stated:** a wrong shared parse propagates faster than a wrong private one. Mitigated by review-before-apply, corroboration, correction diffs, and the fact that **the user's own uploaded syllabus always wins** over a shared one.
 
-#### 4.1-M-a Where it lives — four entry points, one destination (added July 2026)
+#### 4.1-M-a Where it lives — four entry points, one destination (revised August 2026)
 
-**No new tab.** Like exam prep mode (§4.1-R), import is a **temporary full-screen flow**, not a permanent surface. It is reached from wherever the absence of a syllabus is felt:
+**No new tab.** A cold **Add class** action opens a focused syllabus-import dialog over Class Center. Once a readable proposal exists, the dialog hands off to the existing class-details sheet; the student reviews the prefilled facts and completes the remaining fields before anything is written. Existing-course imports still use the temporary review/re-import flow. It is reached from wherever the absence of a syllabus is felt:
 
 | # | Entry point | Context | What it does |
 |---|---|---|---|
-| 1 | **Cold start** — the single day-one CTA (§6.10-A) | no classes exist | **Creates the class from the syllabus.** This is the primary path and the reason the feature exists. |
+| 1 | **Cold start** — the single day-one CTA (§6.10-A) | no classes exist | Opens the import dialog, then the class-details sheet; **creates the class only after final confirmation.** This is the primary path and the reason the feature exists. |
 | 2 | **Class page → Materials, top of tab** | class exists, no syllabus | Attaches to that class. Matches the placement rule that catalog/capture controls sit at the top of Materials. |
 | 3 | **Class Center card overflow** → `Import syllabus` | cross-class view | Attaches to that class. |
 | 4 | **Add a class** flow | mid-term additions | Offered as the fast path, with manual entry always beside it. |
 
-**Entry determines scope, and scope changes one screen only.** Entered **unscoped** (#1), the review screen leads with *"Which class is this?"*, prefilled from the parsed course code, and creates the `Course` + `ClassWorkspace` on apply. Entered **scoped** (#2–4), that block is replaced by a static class header. Everything after it is identical.
+**Entry determines scope.** Entered **unscoped** (#1), the class-details sheet receives the parsed course code/title and attributable logistics as editable drafts; the class type remains a reversible suggestion or an explicit student choice. The `Course` + `ClassWorkspace` and syllabus records are created only after the student presses **Add class**. Entered **scoped** (#2–4), the static course header and existing review/re-import composition remain; no second identity is created.
 
 **Re-import is the same flow in diff mode** (§4.1-M re-ingestion), entered from Materials → the existing syllabus row → `Re-import`.
 
@@ -648,7 +672,7 @@ So the shared payload is a **structured record — dates, weights, unit names, p
 - **One target, drop or click.** Drag a file anywhere onto the zone, or click to open the file picker. Both are equal paths — neither is the degraded one.
 - **Accepts PDF, DOCX, images (photo of a printed syllabus), and pasted text.** A `Paste text instead` affordance sits under the zone for the copy-from-Canvas case, which is common and must not require making a file first.
 - **Multiple files at once.** Students often have a syllabus plus a separate course schedule. Parse them together into one proposal rather than forcing two passes.
-- **No wizard, no step counter.** Upload → parse → review → apply is one screen that changes state, not four screens. A four-step wizard for a 40-second task is how this feature gets abandoned.
+- **No wizard, no step counter.** Cold Add class is import dialog → existing class-details sheet → final confirmation, a short handoff rather than four onboarding pages. Scoped review still changes state in one temporary screen.
 - **Parsing state is honest about time and cancellable.** It names what it's doing ("reading week structure…") rather than showing an indeterminate spinner, because a 20-second silent wait reads as a hang.
 - **Manual entry is always visible**, never behind a failure. The app is never blocked on parsing (§4.1-M).
 
@@ -987,10 +1011,10 @@ The picker says **STEM · Writing · General**. Not "Mastery," not "concept-driv
 
 - Syllabus, materials, notes, contacts, meeting times
 - Assignments and deadlines, the grade ledger and what-if (§6.8), the regrade window
-- GPA, **BCPM**, credit load, requirement satisfaction, the Tracker, Overview, the Planner
+- GPA, **BCPM**, credit load, requirement satisfaction, the Planner requirement map, Overview, the Planner
 - Everything in `Grades & Archive`
 
-**STEM** adds the full memory layer: topics and units, FSRS scheduling, the active recall runner (§4.1-J), the forgetting curve (§4.1-L), `Study method · UNPATCHED 2026` (§4.1-K), exam scope, coverage ledger, prerequisite decay, MCAT-relevance tagging. **This is the layout as currently specified — nothing changes for STEM classes.**
+**STEM** adds the full memory layer: topics and units, FSRS scheduling, the active recall runner (§4.1-J), the forgetting curve (§4.1-L), `Class Plan` (§4.1-K), exam scope, coverage ledger, prerequisite decay, MCAT-relevance tagging. **This is the layout as currently specified — nothing changes for STEM classes.**
 
 **Writing** turns those off and puts its own layer in their place. **Writing is not STEM-minus-features**, or taking English reads as a downgrade:
 
@@ -1055,17 +1079,23 @@ Planning mode is **everything not actively being done** — the zoomed-out, read
 
 Philosophy (Andy): **better too much guidance than not enough — the worst you can do is decline it.** So Planning is as guided as possible, always optional. **Outlook is the default; suggestions are sprinkled in.**
 
-#### Tabs — re-scoped by job (REVISED July 2026)
+#### Tabs — re-scoped by job (REVISED August 2026)
 
-**Planner · Requirements · Grades & Archive.** The former "Planner & GPA / Requirements / Archive" split cut across jobs: *"what to take next term"* sat in the Tracker while the term-building sat in the Planner (split brain), and Archive was a thin destination that is really a filter on the ledger. Three jobs, three tabs:
+**Planner · Grades & Archive.** The former "Planner / Requirements / Grades &
+Archive" split still divided one planning decision across two destinations.
+Requirements now live as a detailed source-bearing tool inside Planner, beside
+the term sequence they explain. Course discovery is also a persistent in-context
+Planner tool with a deeper drawer, not a destination. Two jobs, two tabs:
 
 | Tab | The one question it answers |
 |---|---|
 | **Planner** | *What do I take next term?* — build future terms, with requirement coverage and GPA projection live beside you. |
-| **Requirements** | *What's left, and am I on pace?* — the audit. Standalone; checked a few times a semester. |
 | **Grades & Archive** | *What have I earned?* — full ledger, cumulative/term/**AMCAS BCPM**, what-if, plus withdrawn/completed/superseded as a filter. |
 
-> Do **not** merge Planner and Tracker into one page, and do not put the whole degree on one screen (`04` §10 cramming; same failure the class page's sub-tabs fixed).
+> Do not turn Planner into a static degree dashboard. The timeline remains the
+> largest workspace, while the requirements ledger and course-discovery bay keep
+> an unmistakable first-class presence. Their drawers add depth; they are not the
+> only way to discover either tool. Grades & Archive remains separate.
 
 #### C. Planner — purpose, logic, and candidate views
 
@@ -1080,13 +1110,39 @@ Philosophy (Andy): **better too much guidance than not enough — the worst you 
 - **The MCAT sits *in* the timeline** as a milestone divider between terms — the real deadline, so the plan is visibly built around it. A term after it can be deliberately planned light for prep.
 - **Summer terms** are addable columns; a gap year is a modelled span.
 - **An unplaced tray** sits below the columns — requirements with no term yet, always visible.
-- **Right rail, live as you edit:** "If this plan holds" (projected cumulative + BCPM + graduation, labelled as assuming current averages, plus the prereq-vs-MCAT verdict) · "What this plan clears" (and what's *still* open after it) · ranked suggestions · watch-outs.
+- **Persistent requirement workbench, live as you edit:** source-bearing group rows and Complete / Planned / Not complete / Manual review counts occupy the adjacent rail. The local-plan versus official-audit boundary is visible without opening a drawer.
+- **Subordinate outcome guidance:** "If this plan holds" (projected cumulative + BCPM + graduation, labelled as assuming current averages, plus the prereq-vs-MCAT verdict) · ranked suggestions · watch-outs.
+
+**Add course stays inside Planner.** A persistent course-discovery bay beneath
+the term canvas exposes search, quick filters, current planning context,
+reasoned recommendations, provenance, and the catalog/live boundary. Its drawer uses the official UNC
+subject/department A–Z index as the primary browse structure. Broad discipline
+lenses (STEM & quantitative, health/pre-health, social & behavioral,
+humanities & arts, languages/global, skills/data) are non-exclusive discovery
+tags, never substitutes for catalog subjects or IDEAs attributes. A second
+layer filters by the selected plan: open requirement, known prerequisite fit,
+catalog year/cohort, prior credit, premed path, and stated interests. Results
+are dense expandable rows with a fit explanation, conflicts/data warnings,
+source/version context, and an explicit local-evidence boundary. The in-app
+library is the planning entry point; an outbound catalog link is not a
+substitute for the captured record.
+
+The published course catalog and live class schedule are separate data domains.
+Catalog year, course code/title/description/credits/requisites/attributes, and
+source provenance come from the official catalog. Sections, instructors,
+meeting times, restrictions, seats, waitlists, and enrollment status remain a
+ConnectCarolina action unless a separately authorized live source exists. An
+empty local browse result says **data not ingested**, never **UNC has no course**.
 
 > Explored and set aside (July 2026): a **subway/track map** (prereq chains as connected tracks) — structurally honest but too metaphorical; a **requirements × terms matrix** and a **backward-from-MCAT** framing — both still viable as *secondary view toggles* if the columns prove too sparse, but not the default.
 
 ##### C2. Requirement satisfaction — "if you take this, it clears that" (LOCKED)
 
-**The Planner and the Tracker stay separate surfaces** — the Tracker is the audit (*what's left, am I on pace*), the Planner is where you build (*what do I take*). But the Planner must **consume the Tracker's data** so every course states what it would satisfy, at the moment you're deciding.
+**Requirements are a first-class in-context Planner tool, not a separate Tracker
+surface.** The term board is where the student builds; the persistent adjacent
+ledger answers *what is left and why this course belongs here* without leaving
+that plan. The drawer expands all source-bearing rows. The same source-backed
+nodes drive both the persistent ledger and every course's satisfaction preview.
 
 **Behaviour:**
 - Every course chip lists **what it clears** — `Med prereq` · `Major core` · the **named** gen-ed capacity (e.g. "Power and Society"), never a generic "gen ed."
@@ -1094,7 +1150,7 @@ Philosophy (Andy): **better too much guidance than not enough — the worst you 
 - **Also show what it *unlocks*** (forward-looking, not just backward): "CHEM 262 → unlocks CHEM 430." This makes the cost of dropping a course visible at the moment you'd drop it.
 - **Redundancy warning** — flag a planned course whose requirements are already satisfied ("you already have Quantitative Reasoning; this only adds credits").
 - **Double-count rules must be encoded**, not assumed. Where UNC caps how many requirements one course may satisfy, the cap is applied and explained. Never inflate the "cleared" count.
-- **Mapping confidence is labelled** exactly like the Tracker's (`✓ verified` / `◑ inferred — confirm with your advisor`). A wrong mapping costs a semester, so it is never presented as settled fact.
+- **Mapping confidence is labelled** inside the Planner (`✓ verified` / `◑ inferred — confirm with your advisor`). A wrong mapping costs a semester, so it is never presented as settled fact.
 
 **Data dependency (new — required):** a **course → requirement mapping** dataset. `data/unc-requirements.json` defines the *requirements*; this defines which **courses** satisfy them, from the UNC catalog's per-course gen-ed attributes plus major/prereq lists. Category A, sourced, freshness-tracked (`implementation/data-refresh.md`), same annual catalog cadence. **A catalog change must flag plans built on the old mapping** rather than silently re-deriving them.
 
@@ -1117,7 +1173,7 @@ Philosophy (Andy): **better too much guidance than not enough — the worst you 
 - **"If this plan holds"** — projected cumulative + BCPM (labelled as assuming current averages), graduation date, and the prereq-completion verdict relative to the MCAT.
 - Nothing is enforced; every suggestion is optional (philosophy above).
 
-#### A. Requirement audit — rebuild from research (Requirements)
+#### A. Planner requirement map — rebuild from research
 
 Current state: **broken / not functional / misaligned with UNC's real requirements.** Cause: it's modeled on the retired "Making Connections" curriculum. UNC's live curriculum is **IDEAs in Action** (Fall 2022+, applies to every current student). Requirements also shift (e.g., the UNC System dropped the U.S. Diversity requirement in 2025), so this needs a real rebuild against the current catalog, not a patch.
 
@@ -1126,9 +1182,12 @@ Current state: **broken / not functional / misaligned with UNC's real requiremen
 - **"Every major":** build the requirement data model so *any* UNC major plugs in as data; populate the shared gen-ed + med prereqs first, then common pre-med majors, expandable to all UNC majors over time (later Atlas-sourced). Still UNC-only — comprehensive across UNC majors, not multi-institution.
 - **Deliverable:** a structured, sourced requirements dataset (research task against `catalog.unc.edu`) driving a real done/remaining audit. **Built: `data/unc-requirements.json`** — IDEAs in Action gen-ed (4 groups: First-Year Foundations, Focus Capacities, Reflection & Integration, Additional), 9 med prereqs, 6 majors. Category A, freshness-tracked, annual refresh against the catalog.
 
-##### Tracker layout — gap-and-pace first, everything still present (APPROVED July 2026)
+##### Planner-owned requirement view — source-bearing and detailed (REVISED August 2026)
 
-A requirement audit is normally a dead checklist. This one must answer three questions at once, so it leads with the answers and keeps the lists below:
+A requirement audit is normally a dead checklist. Inside Planner, this tool
+must answer three questions without displacing the timeline, so a substantial
+source-bearing ledger owns the adjacent rail and the full 50-row map opens from
+it as a deeper working surface:
 
 1. **Status row** — requirements left · **prereqs left before the MCAT** · credits · **double-counted count** · degree progress (met / planned / open).
 2. **"Am I on pace?"** — measured against the **MCAT date, not graduation**. States the verdict plainly ("the 3 remaining prereqs fit in Spring + Fall 2027, done 5 months before your MCAT") and flags anything unscheduled.
@@ -1237,7 +1296,7 @@ All rules-based and **explainable** (`02`); each states why it fired. Confirmed 
 
 1. **Prereq pacing vs. MCAT/app timing** — ties course sequencing to roadmap milestones: "CHEM 430 (Biochem) is your last MCAT-content prereq — take it by Spring 2029 to sit the MCAT on your timeline." Feeds/derives from Timeline roadmap milestones.
 2. **Science-GPA (BCPM) watch** — flags a BCPM drop and names the course dragging it; BCPM is weighted heavily in admissions.
-3. **Requirement gap alerts** — from the Tracker audit: "missing one upper-level bio for the major," "a med prereq isn't scheduled yet."
+3. **Requirement gap alerts** — from the Planner requirement map: "missing one upper-level bio for the major," "a med prereq isn't scheduled yet."
 4. **Term load balance** — "Fall 2027 has 3 BCPM-heavy courses — a demanding term," warned before you commit.
 5. **Upward-trend detection** — spots an improving GPA trajectory and flags it as an application/essay strength (cross-links to Essays); warns early on a downward slide.
 6. **Graduation & credit pace** — on track to hit credits/degree requirements by the matriculation target?
@@ -1781,7 +1840,7 @@ Severity mapping for all of the above → the attention model (blocking / import
 - **Planner ledger:** `TrackerTable` of courses (per `01` list pattern), inline-editable typed cells.
 - **Class Center:** card grid of current-term classes; opening a class uses the **center peek** (`01` §2), not the old `CourseDetailDialog` — migrate. Expand → full class workspace; Split → class + its assignment list.
 - **Course inspector (peek) sections** (lean core + progressive, `01` §3): Overview/Details (academic fields), Workspace (instructor, links, materials — only if `ClassWorkspace` exists), Assignments (this course's), Requirements satisfied, Relations/Activity; Notes/Data-quality/History on demand.
-- **Tracker:** requirement audit list with status (met / in-progress / unmet) and transparent component counts.
+- **Planner requirement map:** source-bearing grouped requirements with local status (Complete / Planned / Not complete / Manual review) and transparent component counts; never a separate destination or official audit.
 - **What-if:** scenario calculator overlaying hypothetical grades on the ledger without mutating canonical data (`01` derived/stateless).
 
 ## 7a. Components used (feature → library component)
@@ -1850,7 +1909,7 @@ Explicit traceability — every feature names its component (from `implementatio
 
 ## 9. Empty, loading, error states
 
-- New user: empty ledger invites first course/import; Tracker shows the UNC requirement scaffold with everything "unmet" as the to-do; Class Center invites adding current classes.
+- New user: empty ledger invites first course/import; Planner reveals the UNC requirement scaffold in context with local statuses and source boundaries; Class Center invites adding current classes.
 - Loading: skeletons per view; GPA computes client-side (no spinner).
 - Error: scoped inline; a Class Center workspace failing never blanks the ledger/GPA.
 
@@ -1871,7 +1930,7 @@ GPA/requirement logic is Academics-only; never center hours here. Assignments ar
 - [ ] One canonical `Course`; `ClassWorkspace` links 1:1 by `courseId` (current-term only); assignments link to `courseId`; no duplicate class/course records; existing data migrated with a review step.
 - [ ] Editing a grade/credit anywhere updates GPA, requirements, and Overview consistently (single source of truth).
 - [ ] AMCAS cumulative + BCPM GPA correct; What-if never mutates canonical data.
-- [ ] Mode switch (Daily · Planning) swaps the tab bar; Daily = Class Center + Assignments, Planning = Planner & GPA + Requirements + Archive; mode persists and deep-links (`?mode=&tab=`). All tabs render as views over the unified course; Class Center opens via center peek (no `CourseDetailDialog`).
+- [ ] Mode switch (Daily · Planning) swaps the tab bar; Daily = Class Center + Assignments, Planning = Planner + Grades & Archive; Planner owns the in-context Requirement map and Add course views. Mode persists and deep-links (`?mode=&tab=&view=`). All views render over the unified course; Class Center opens via center peek (no `CourseDetailDialog`).
 - [ ] The 12 smart features present with explanations and correct severity routing.
 - [ ] UNC requirement audit intact; assignments excluded from Home to-do but deadlines reach the bell.
 - [ ] Class Center is a per-class study hub: files upload into HQ + embed + link external; `Topic`s carry status + native FSRS (`ts-fsrs`) scheduling; a cross-class "today's review queue" surfaces due topics.
@@ -1920,13 +1979,14 @@ GPA/requirement logic is Academics-only; never center hours here. Assignments ar
 - [ ] **Shareable syllabus parse (#56) — security model:** shares **extracted structure only, never the source document or its text** (copyright); payload is an **allow-listed field set** in a **separate table with no join path to grades, notes, progress, topics, or files** — structurally incapable of leaking, not merely disallowed; **anonymous by default**; opt-in per syllabus; review-before-apply on import; corroboration across independent parses raises confidence and disagreement surfaces as a conflict; corrections propagate as diffs; scoped to term + section; **the user's own syllabus always wins**.
 - [ ] **Exam/workload/self-knowledge features (§6 #32–43)** present — notably **exam-day readiness forecast**, **review-debt**, **effort-to-outcome**, **concept-map gaps**, **post-exam decay check**, and the **term retrospective**.
 - [ ] **Forgetting curve (§4.1-L):** history solid, projection dashed, exam line with projected exam-day retention, plain-language legend, honest "not enough history yet" below two reviews, one topic at a time, no API required.
-- [ ] **`Study method · UNPATCHED 2026` (§4.1-K):** per-topic 9-dot lifecycle track; a class-Overview panel grouping topics by *what stage they need next*, which **disappears when every group is empty**; lecture-day anchoring from `ClassWorkspace` meeting times that **degrades gracefully when no schedule is set**. Never a tab, never a nine-item checklist, never scolds a skipped step.
-- [ ] **Planning mode has three tabs re-scoped by job** (Planner · Requirements · Grades & Archive); Archive is a filter on the ledger, not a separate destination.
+- [ ] **`Class Plan` (§4.1-K):** per-topic 9-dot lifecycle track; a class-Overview panel grouping topics by *what stage they need next*, which **disappears when every group is empty**; lecture-day anchoring from `ClassWorkspace` meeting times that **degrades gracefully when no schedule is set**. Never a tab, never a nine-item checklist, never scolds a skipped step.
+- [ ] **Planning mode has two destinations re-scoped by job** (Planner · Grades & Archive); Requirements and Add course are named in-context Planner views, while Archive is a filter on the ledger.
 - [ ] **Planner** renders horizontally-scrolling **term columns** (§4.2-C1) with course chips (code · `BCPM` · what it clears · `❄`), per-term load warnings, the **MCAT as an in-timeline divider**, addable summer terms, an **unplaced tray**, and the live right rail.
-- [ ] **Requirement satisfaction in the Planner (§4.2-C2):** every course states what it clears (named capacities, not "gen ed"); **preview diff** before committing; **what it unlocks**; redundancy warning; **double-count caps encoded**; mapping confidence labelled. Planner and Tracker remain separate surfaces over shared data.
+- [ ] **Requirement satisfaction in the Planner (§4.2-C2):** every course states what it clears (named capacities, not "gen ed"); **preview diff** before committing; **what it unlocks**; redundancy warning; **double-count caps encoded**; mapping confidence labelled. The detailed source-bearing requirement ledger is a Planner view, not a separate destination.
 - [ ] **Course → requirement mapping dataset exists**, sourced from the UNC catalog, Category A, freshness-tracked; a catalog change **flags** affected plans rather than silently re-deriving them.
 - [ ] **Planner logic (§4.2-C3):** prereq validation **at drop time** · critical path · **offering-term (`❄`) warnings** · unplaced tray · summer/gap-year slots · **named saved plan versions** + compare · load/BCPM/**cross-pillar** warnings · AMCAS retake rule · substitutes · **registration-window nudge** · **term lock** · term notes · **advisor export** · "if this plan holds".
-- [ ] **Requirements leads with gap-and-pace** (requirements left, prereqs before MCAT, on-pace verdict, what to take next, overlap) with the full requirement sets below — never a bare checklist.
+- [ ] **Planner requirements leads with gap-and-pace** (requirements left, prereqs before MCAT, on-pace verdict, what to take next, overlap) and opens every source-bearing requirement row in context — never a bare checklist or a separate Tracker tab.
+- [ ] **Planner requirements and course discovery are first-class workbench regions** beside/below the term canvas at desktop and deliberate full-width sections at narrow widths; neither depends on a hidden inspector or small metadata card for discovery.
 - [ ] **Overlap is surfaced** — courses satisfying multiple requirements are counted and each row states its `also:`.
 - [ ] **Requirement data confidence is labeled** — verified sets show ✓ + date; unverified majors show ◑ + a confirm-against-your-audit warning and "I confirmed this"; nothing is hidden or presented as settled fact.
 - [ ] **Exam prep mode (§4.1-R):** entered from `Build exam plan`, **full-screen, temporary, ends with the exam — not a tab**. **Assembles existing data only** — no new scoring, no blended "prepared %", projections as **bands**. Day-by-day plan **sized to real available hours**, interleaved, each day stating its why; **re-plans on change and never accumulates a backlog**. **Catch-up is a state of this mode** and must be willing to **name what to abandon**. Closes into the autopsy (#17) and schedules the decay check (#41), both skippable. Works with **no API key**; **degrades without a syllabus** by asking which units are covered. **One exam per plan — never merged.**
@@ -1944,7 +2004,7 @@ GPA/requirement logic is Academics-only; never center hours here. Assignments ar
 - [ ] **AMCAS rules are configurable DATA, not hardcoded logic** — Category A, freshness-tracked, sourced from the official AAMC guides, **guide version cited in the UI**, with a verify-in-application-year prompt. **The "50% content" threshold is verified against the official guide before implementation.**
 - [ ] **BCPM is computed the AMCAS way** (every attempt including retakes, AMCAS conversion) and is visibly distinguished from UNC's GPA.
 - [ ] **Class page has five sub-tabs** (Overview · Materials · Topics · Assignments · Notes) sharing one banner; Overview is a master view of *this* class, not a copy of Class Center.
-- [ ] **Organization:** Materials grouped by week with `Course`/`Mine`/`Generated` ownership markers; Topics grouped into unit sections with per-unit progress; Assignments grouped by syllabus category with per-category averages and a weight-sum check; Notes filed by kind. No undifferentiated lists anywhere.
+- [ ] **Organization:** Materials grouped by week with `Course`/`Mine`/`Generated` ownership markers; Topics grouped primarily by syllabus week with per-week progress and secondary unit context; class Assignments use the course-filtered urgency agenda with task behavior, while category averages and weight validation remain in the supporting grade context; Notes filed by kind. No undifferentiated lists anywhere.
 - [ ] **Exam scope** renders a labeled legend plus an on-screen explanation of how scope was derived. No unlabeled stacked bars.
 - [ ] **Two note kinds kept separate:** Notes tab = about the class; Materials → My notes = on the material, tagged `Mine` and citable by the gap report.
 - [ ] **Priming block** on each Materials module, rolled up as a Notes category.

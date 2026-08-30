@@ -4,7 +4,7 @@
 
 
   ACADEMICS — DAILY MODE → ASSIGNMENTS — APPROVED VISUAL REFERENCE
-  Status: APPROVED (July 2026). Spec: tabs/01-academics.md §4.1-H.
+  Status: APPROVED (Aug. 26, 2026 visual audit). Spec: tabs/01-academics.md §4.1-H.
 
   SCOPE RULE (LOCKED)
   Anything tied to a CLASS lives here — assignments, exams, quizzes, labs,
@@ -27,11 +27,18 @@
   where its real strengths live: bulk entry and bulk grade updates.
 
   DECISIONS THIS FILE ENCODES
+  0. ASSIGNMENTS IS THE COURSEWORK-ONLY COUNTERPART TO OVERVIEW → TASKS.
+     It is the focused execution list for class-owned commitments: check work
+     off, see urgency, edit, reschedule, and add the next due item. Grade
+     scenarios stay in the per-class grading context as supporting analysis,
+     never the reason this page exists.
   1. AGENDA IS THE DEFAULT. Cards bucketed Overdue → This week → Next week →
      Later → Completed. Position encodes urgency; you never read a date to
      know what's urgent.
   2. THREE VIEWS ONLY in the switcher: Agenda · Weekly · Calendar.
      (Was five. Workload and Table were pulled out — see 3 and 4.)
+     Calendar renders the complete six-row month geometry beside its selected-
+     day rail; it never crops the month into a short three-week strip.
   3. WORKLOAD IS NOT A VIEW. It sits at the BOTTOM of the page as its own
      panel titled "Projected workload" — one
      row per week reading "This week — Heavy — 44%". Collapsible.
@@ -114,6 +121,11 @@
 - Agenda is the default and buckets class-owned work by urgency. Weekly and
   Calendar project the exact same assignment records; “Edit as table” remains
   a secondary overflow path for bulk work.
+- This is the assignment-only execution counterpart to Overview → Tasks. It
+  preserves the practical task hierarchy — complete, identify the work and
+  course, read timing, then edit or use overflow — while only showing
+  coursework. Per-class what-if grade scenarios remain secondary support in
+  the class grading context, not a Daily Assignments destination.
 - The banner `Add assignment` action is the primary creation path, with the
   dashed list-end add row as its reachable repeat. The wording is contextual:
   assignments are **due**; exams, presentations, and other scheduled class
@@ -126,9 +138,11 @@
 - The common banner stays visually identical to Daily. Below it, the solid
   filter bar carries the Agenda/Weekly/Calendar control, class filter, search,
   and overflow; it never becomes a second pill-navigation track.
-- Agenda uses compact, solid urgency buckets; Weekly uses seven balanced day
-  columns; Calendar uses the same solid event objects in month geometry. Each
-  makes time legible by placement before a student reads the date.
+- Agenda uses compact, solid urgency buckets; Weekly keeps all seven day
+  columns but defaults to weekday emphasis, with quieter compressed weekend
+  lanes; Calendar uses the same solid event objects in a complete six-row
+  month beside a full-height selected-day rail. Each makes time legible by
+  placement before a student reads the date.
 - Use the shared signed-in surface ladder, panel/card radii, and border/shadow
   depth literally. Glass is confined to the banner mode pill and stat strip;
   all rows, day cells, cards, and workload treatment are solid.

@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AlertTriangle, ChevronRight, FileText, Plus, ShieldCheck } from 'lucide-react'
-import type { AppData, Course, RequirementItem, TranscriptCourseType } from '@/lib/types'
+import type { Course, RequirementItem, TranscriptCourseRecord, TranscriptCourseType } from '@/lib/types'
 import { uid } from '@/lib/id'
 import { createEmptyClassCenterData } from '@/data/personalInitialData'
 import { addCatalogWarningAcknowledgements, isCatalogWarningAcknowledged } from '@/lib/academics/requirementsAudit'
@@ -19,8 +19,8 @@ const views: Array<{ id: RequirementsView; label: string }> = [
   { id: 'prior-credit', label: 'Prior credit' },
 ]
 
-const planningSurface = 'border-[#d8cabb] bg-[#f8f2e8] text-[#211b17] shadow-[0_10px_26px_rgb(54_38_24_/_0.12)] dark:border-[#4a4038] dark:bg-[#241f1b] dark:text-[#f8f2e8] dark:shadow-[0_10px_26px_rgb(0_0_0_/_0.25)]'
-const planningInset = 'border-[#dfd0c0] bg-[#eee5d8] text-[#211b17] dark:border-[#51463d] dark:bg-[#302922] dark:text-[#f8f2e8]'
+const planningSurface = 'border-[#e9e2d5] bg-[#fffaf0] text-[#3a3530] shadow-[0_10px_26px_rgb(54_38_24_/_0.12)] dark:border-[#3c352d] dark:bg-[#2b2722] dark:text-[#ece3d4] dark:shadow-[0_10px_26px_rgb(0_0_0_/_0.25)]'
+const planningInset = 'border-[#e6dfd1] bg-[#efe6d4] text-[#3a3530] dark:border-[#463e35] dark:bg-[#322e28] dark:text-[#ece3d4]'
 
 export function planningProgramLabel(set: (typeof UNC_PLANNING_LIBRARY)[number]) {
   return set.trackOrConcentration
@@ -36,8 +36,8 @@ function groupRequirements(requirements: RequirementItem[]) {
   return [...groups.entries()]
 }
 
-function hasTranscriptFidelityGap(course: Course) {
-  return !course.inResidence && !course.transcript
+function hasTranscriptFidelityGap(course: Course, recordedCourseIds: Set<string>) {
+  return !course.inResidence && !course.transcript && !recordedCourseIds.has(course.id)
 }
 
 function sourceLabel(item: RequirementItem) {
@@ -52,7 +52,6 @@ export function RequirementsAudit() {
   // hydrated. The audit remains readable, and the first local interaction
   // repairs that container rather than throwing while opening the requirement map.
   const center = useStore((state) => state.academics.classCenter) ?? createEmptyClassCenterData()
-  const addItem = useStore((state) => state.addItem)
   const update = useStore((state) => state.update)
   const requestedView = searchParams.get('requirementsView')
   const view: RequirementsView = requestedView === 'requirements' || requestedView === 'prior-credit' ? requestedView : 'audit'
@@ -60,16 +59,22 @@ export function RequirementsAudit() {
   const grouped = useMemo(() => groupRequirements(requirements), [requirements])
   const acknowledged = center.acknowledgedCatalogWarnings ?? []
   const unverified = requirements.filter((item) => item.verificationStatus === 'needs-verification')
-  const fidelityGaps = courses.filter(hasTranscriptFidelityGap)
+  const recordedCourseIds = useMemo(() => new Set(center.transcriptRecords.flatMap((record) => record.courseId ? [record.courseId] : [])), [center.transcriptRecords])
+  const fidelityGaps = courses.filter((course) => hasTranscriptFidelityGap(course, recordedCourseIds))
   const earliestPlannedTerm = useMemo(() => {
     const terms = [...(center.plannerTerms ?? [])].filter((term) => !term.lockedAt).sort((a, b) => a.order - b.order)
-    return terms.find((term) => courses.some((course) => course.plannerTermId === term.id || (!course.plannerTermId && course.term === term.label)))
+    return terms.find((term) => courses.some((course) => (
+      course.status !== 'completed'
+      && course.inResidence
+      && (course.plannerTermId === term.id || (!course.plannerTermId && course.term === term.label))
+    )))
   }, [center.plannerTerms, courses])
   const plannedCourses = earliestPlannedTerm
-    ? courses.filter((course) => course.plannerTermId === earliestPlannedTerm.id || (!course.plannerTermId && course.term === earliestPlannedTerm.label))
+    ? courses.filter((course) => course.status !== 'completed' && course.inResidence && (course.plannerTermId === earliestPlannedTerm.id || (!course.plannerTermId && course.term === earliestPlannedTerm.label)))
     : []
   const overlapEvidence = courses.filter((course) => course.satisfies.length > 1).slice(0, 4)
-  const priorCourses = courses.filter((course) => Boolean(course.transcript) || !course.inResidence)
+  const priorRecords = center.transcriptRecords.filter((record) =>
+    ['ap', 'ib', 'transfer', 'dual-enrollment'].includes(record.courseType.trim().toLocaleLowerCase()))
 
   function selectView(next: RequirementsView) {
     const params = new URLSearchParams(searchParams)
@@ -95,9 +100,9 @@ export function RequirementsAudit() {
       <header className={cn('rounded-[18px] border p-5', planningSurface)}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex max-w-2xl gap-3">
-            <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-[#8fc8b4]/45 bg-[#8fc8b4]/15 text-[#427f70] dark:text-[#8fc8b4]"><ShieldCheck className="size-5" /></div>
+            <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-[#4b9cd3]/45 bg-[#4b9cd3]/15 text-[#357eb5] dark:text-[#6fb3de]"><ShieldCheck className="size-5" /></div>
             <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#427f70] dark:text-[#8fc8b4]">Academics · Planning</p>
+              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#357eb5] dark:text-[#6fb3de]">Academics · Planning</p>
               <h2 id="requirements-heading" className="mt-1 font-display text-2xl font-extrabold">Requirement map</h2>
               <p className="mt-1 text-sm font-semibold text-[#6a5f54] dark:text-[#d0c3b5]">Source-versioned planning evidence and local coursework. Live official audit access is not configured.</p>
             </div>
@@ -141,7 +146,7 @@ export function RequirementsAudit() {
         onViewAll={() => selectView('requirements')}
       />}
       {view === 'requirements' && <AllRequirementsView grouped={grouped} acknowledged={acknowledged} onAcknowledge={acknowledge} />}
-      {view === 'prior-credit' && <PriorCreditView courses={priorCourses} onCreate={addItem} onUpdate={update} />}
+      {view === 'prior-credit' && <PriorCreditView records={priorRecords} onUpdate={update} />}
     </section>
   )
 }
@@ -151,7 +156,7 @@ function PlanningLibraryContext({ context, courseCodes, onChange }: { context: i
   const selected = selectedProgramId ? planningRequirementSet(selectedProgramId) : undefined
   const coverage = selected ? candidatePlanCoverage(selected, courseCodes) : []
   return <section className={cn('rounded-[18px] border p-5', planningSurface)}>
-    <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#427f70] dark:text-[#8fc8b4]">Selected catalog plan</p><h3 className="mt-1 font-display text-xl font-extrabold">{selected ? planningProgramLabel(selected) : 'Choose a program and track'}</h3><p className="mt-1 text-sm font-semibold text-[#6a5f54] dark:text-[#d0c3b5]">Local course matches are candidate evidence only. They never decide official fulfillment or graduation.</p></div>{selected && <span className="rounded-[9px] border border-[#5b5047] bg-[#eee5d8] px-3 py-2 text-xs font-extrabold text-[#427f70] dark:bg-[#302922] dark:text-[#8fc8b4]">Source record · {selected.catalogYear} · {selected.retrievedAt}</span>}</div>
+    <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#357eb5] dark:text-[#6fb3de]">Selected catalog plan</p><h3 className="mt-1 font-display text-xl font-extrabold">{selected ? planningProgramLabel(selected) : 'Choose a program and track'}</h3><p className="mt-1 text-sm font-semibold text-[#7a7064] dark:text-[#a89c8c]">Local course matches are candidate evidence only. They never decide official fulfillment or graduation.</p></div>{selected && <span className="rounded-[9px] border border-[#e9e2d5] bg-[#efe6d4] px-3 py-2 text-xs font-extrabold text-[#357eb5] dark:border-[#3c352d] dark:bg-[#322e28] dark:text-[#6fb3de]">Source record · {selected.catalogYear} · {selected.retrievedAt}</span>}</div>
     <div className="mt-4 grid max-w-4xl gap-3 sm:grid-cols-2">
       <label className="text-xs font-extrabold text-[#6a5f54] dark:text-[#d0c3b5]">Degree / track<select value={selectedProgramId ?? ''} onChange={(event) => onChange({ selectedProgramId: event.target.value || undefined })} className={cn('mt-1 h-10 w-full rounded-[10px] border px-3 text-sm font-bold', planningInset)}><option value="">Select a catalog program</option>{sortedPlanningPrograms.map((set) => <option key={set.id} value={set.id}>{planningProgramLabel(set)}</option>)}</select></label>
       <label className="text-xs font-extrabold text-[#6a5f54] dark:text-[#d0c3b5]">Matriculation term (as recorded)<Input className={cn('mt-1 border', planningInset)} value={matriculationTerm ?? ''} onChange={(event) => onChange({ matriculationTerm: event.target.value || undefined })} placeholder="For example: Fall 2026" /></label>
@@ -159,7 +164,7 @@ function PlanningLibraryContext({ context, courseCodes, onChange }: { context: i
       <label className="text-xs font-extrabold text-[#6a5f54] dark:text-[#d0c3b5]">Program admission status<select value={programAdmissionStatus} onChange={(event) => onChange({ programAdmissionStatus: event.target.value as import('@/lib/types').PlanningProgramContext['programAdmissionStatus'] })} className={cn('mt-1 h-10 w-full rounded-[10px] border px-3 text-sm font-bold', planningInset)}><option value="not-applicable">Not admission-gated</option><option value="planning">Planning only</option><option value="applied">Application submitted</option><option value="admitted">Admission recorded locally</option></select></label>
       {selected?.degree === 'B.S.P.H.' && <label className="text-xs font-extrabold text-[#6a5f54] dark:text-[#d0c3b5] sm:col-span-2">Gillings admission term (as recorded)<Input className={cn('mt-1 border', planningInset)} value={gillingsAdmissionTerm ?? ''} onChange={(event) => onChange({ gillingsAdmissionTerm: event.target.value || undefined })} placeholder="Exact catalog/admission term" /></label>}
     </div>
-    {!selected ? <p className="mt-3 rounded-[12px] border border-dashed border-[#9e7040] bg-[#f0e5d4] p-3 text-sm font-semibold text-[#6a5f54] dark:bg-[#3a2b1e] dark:text-[#d0c3b5]">No program is assumed. Select the exact degree and track before using catalog planning nodes.</p> : <><div className={cn('mt-3 rounded-[12px] border p-3 text-xs font-semibold', planningInset)}><b>2026–27 catalog source, retrieved {selected.retrievedAt}.</b> {selected.sourceStatus === 'official-source-gap' ? 'This record still needs a direct table capture.' : 'Live official verification is not configured.'}{selected.admissionGate ? ' Admission: ' + selected.admissionGate : ''}<span className="mt-1 block">Context: {matriculationTerm ? 'matriculation ' + matriculationTerm : 'matriculation not recorded'} · {ideasCatalogYear ? 'IDEAs catalog ' + ideasCatalogYear : 'IDEAs catalog year not recorded'} · {programAdmissionStatus.replace('-', ' ')}{selected.degree === 'B.S.P.H.' ? ' · Gillings term ' + (gillingsAdmissionTerm || 'not recorded') : ''}.</span></div><div className="mt-3 grid gap-2 md:grid-cols-2">{coverage.map(({ node, state, scheduledCourses, detail }) => <article key={node.id} className={cn('rounded-[12px] border p-3', planningInset)}><div className="flex items-start justify-between gap-2"><p className="text-sm font-extrabold">{node.label}</p><span className="rounded-full border border-[#65584b] px-2 py-0.5 text-[10px] font-extrabold">{state === 'scheduled' ? 'Course recorded' : state === 'not-scheduled' ? 'Not scheduled' : 'Manual review'}</span></div><p className="mt-1 text-xs font-semibold text-[#6a5f54] dark:text-[#d0c3b5]">{node.detail}</p>{scheduledCourses.length > 0 && <p className="mt-2 text-xs font-extrabold text-[#427f70] dark:text-[#8fc8b4]">Local record: {scheduledCourses.join(' · ')}</p>}<p className="mt-2 text-[11px] font-semibold text-[#6a5f54] dark:text-[#d0c3b5]">{detail}</p>{node.exclusions?.length ? <p className="mt-2 text-[11px] font-semibold text-[#966536] dark:text-[#f0c489]">Constraint: {node.exclusions.join(' ')}</p> : null}{node.noDoubleCountWith?.length ? <p className="mt-2 text-[11px] font-semibold text-[#966536] dark:text-[#f0c489]">No double-count: {node.noDoubleCountWith.join(' ')}</p> : null}</article>)}</div><div className="mt-3 rounded-[12px] border border-[#9e7040] bg-[#f0e5d4] p-3 text-xs font-semibold text-[#6a5f54] dark:bg-[#3a2b1e] dark:text-[#d0c3b5]"><b className="text-[#211b17] dark:text-[#f8f2e8]">Manual review needed:</b> {selected.manualReview.join(' · ')}</div></>}
+    {!selected ? <p className="mt-3 rounded-[12px] border border-dashed border-[#e0a458] bg-[#f0e5d4] p-3 text-sm font-semibold text-[#7a7064] dark:bg-[#3a2b1e] dark:text-[#a89c8c]">No program is assumed. Select the exact degree and track before using catalog planning nodes.</p> : <><div className={cn('mt-3 rounded-[12px] border p-3 text-xs font-semibold', planningInset)}><b>2026–27 catalog source, retrieved {selected.retrievedAt}.</b> {selected.sourceStatus === 'official-source-gap' ? 'This record still needs a direct table capture.' : 'Live official verification is not configured.'}{selected.admissionGate ? ' Admission: ' + selected.admissionGate : ''}<span className="mt-1 block">Context: {matriculationTerm ? 'matriculation ' + matriculationTerm : 'matriculation not recorded'} · {ideasCatalogYear ? 'IDEAs catalog ' + ideasCatalogYear : 'IDEAs catalog year not recorded'} · {programAdmissionStatus.replace('-', ' ')}{selected.degree === 'B.S.P.H.' ? ' · Gillings term ' + (gillingsAdmissionTerm || 'not recorded') : ''}.</span></div><div className="mt-3 grid gap-2 md:grid-cols-2">{coverage.map(({ node, state, scheduledCourses, detail }) => <article key={node.id} className={cn('rounded-[12px] border p-3', planningInset)}><div className="flex items-start justify-between gap-2"><p className="text-sm font-extrabold">{node.label}</p><span className="rounded-full border border-[#65584b] px-2 py-0.5 text-[10px] font-extrabold">{state === 'scheduled' ? 'Course recorded' : state === 'not-scheduled' ? 'Not scheduled' : 'Manual review'}</span></div><p className="mt-1 text-xs font-semibold text-[#7a7064] dark:text-[#a89c8c]">{node.detail}</p>{scheduledCourses.length > 0 && <p className="mt-2 text-xs font-extrabold text-[#357eb5] dark:text-[#6fb3de]">Local record: {scheduledCourses.join(' · ')}</p>}<p className="mt-2 text-[11px] font-semibold text-[#7a7064] dark:text-[#a89c8c]">{detail}</p>{node.exclusions?.length ? <p className="mt-2 text-[11px] font-semibold text-[#966536] dark:text-[#f0c489]">Constraint: {node.exclusions.join(' ')}</p> : null}{node.noDoubleCountWith?.length ? <p className="mt-2 text-[11px] font-semibold text-[#966536] dark:text-[#f0c489]">No double-count: {node.noDoubleCountWith.join(' ')}</p> : null}</article>)}</div><div className="mt-3 rounded-[12px] border border-[#e0a458] bg-[#f0e5d4] p-3 text-xs font-semibold text-[#7a7064] dark:bg-[#3a2b1e] dark:text-[#a89c8c]"><b className="text-[#3a3530] dark:text-[#ece3d4]">Manual review needed:</b> {selected.manualReview.join(' · ')}</div></>}
   </section>
 }
 function AuditView({ requirements, grouped, unverified, fidelityGaps, plannedTerm, plannedCourses, overlapEvidence, onViewAll }: {
@@ -217,7 +222,7 @@ function AllRequirementsView({ grouped, acknowledged, onAcknowledge }: { grouped
     .sort(([, a], [, b]) => Number(b.some((entry) => entry.verificationStatus === 'needs-verification')) - Number(a.some((entry) => entry.verificationStatus === 'needs-verification')))
 
   return <section className={cn('rounded-[18px] border p-5', planningSurface)}>
-    <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#427f70] dark:text-[#8fc8b4]">Catalog evidence</p><h3 className="mt-1 font-display text-xl font-extrabold">All requirements</h3><p className="mt-1 text-sm font-semibold text-[#6a5f54] dark:text-[#d0c3b5]">Uncertain source entries lead. This screen does not determine completion or equivalencies.</p></div><label className="w-full sm:w-72"><span className="sr-only">Search catalog entries</span><Input className={cn('border', planningInset)} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search the local catalog library" /></label></div>
+    <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#357eb5] dark:text-[#6fb3de]">Catalog evidence</p><h3 className="mt-1 font-display text-xl font-extrabold">All requirements</h3><p className="mt-1 text-sm font-semibold text-[#7a7064] dark:text-[#a89c8c]">Uncertain source entries lead. This screen does not determine completion or equivalencies.</p></div><label className="w-full sm:w-72"><span className="sr-only">Search catalog entries</span><Input className={cn('border', planningInset)} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search the local catalog library" /></label></div>
     <div className="mt-5 space-y-3">{filtered.length ? filtered.map(([group, entries]) => {
       const uncertain = entries.filter((item) => item.verificationStatus === 'needs-verification')
       const acknowledgedCurrent = uncertain.length > 0 && uncertain.every((item) => isCatalogWarningAcknowledged(acknowledged, item))
@@ -230,30 +235,20 @@ function AllRequirementsView({ grouped, acknowledged, onAcknowledge }: { grouped
   </section>
 }
 
-function PriorCreditView({ courses, onCreate, onUpdate }: { courses: Course[]; onCreate: (key: 'courses', item: Course) => void; onUpdate: (mutator: (draft: AppData) => void) => void }) {
+function PriorCreditView({ records, onUpdate }: { records: TranscriptCourseRecord[]; onUpdate: ReturnType<typeof useStore.getState>['update'] }) {
   const [adding, setAdding] = useState(false)
   const [form, setForm] = useState({ institution: '', courseNumber: '', courseTitle: '', termLabel: '', creditHours: '', gradeRecorded: '', courseType: 'transfer' as TranscriptCourseType })
 
   function save() {
     if (!form.institution.trim() || !form.courseNumber.trim() || !form.courseTitle.trim()) return
     const now = Date.now()
-    const credits = form.creditHours.trim() === '' ? null : Number(form.creditHours)
-    const courseId = uid()
-    onCreate('courses', {
-      id: courseId, term: 'Prior credit', code: form.courseNumber.trim(), title: form.courseTitle.trim(), credits: Number.isFinite(credits) && credits !== null ? credits : 0,
-      grade: '', bcpm: false, status: 'completed', inResidence: form.courseType === 'regular', satisfies: [], order: 0,
-      transcript: { institution: form.institution.trim(), courseNumber: form.courseNumber.trim(), courseTitle: form.courseTitle.trim(), termLabel: form.termLabel.trim(), creditHours: Number.isFinite(credits) ? credits : null, gradeRecorded: form.gradeRecorded.trim(), courseType: form.courseType, capturedAt: now, updatedAt: now },
-    })
-    // Grades & Archive builds its ledger from `classCenter.transcriptRecords`,
-    // not from the legacy `course.transcript` blob. Writing only the latter
-    // left prior credit invisible there: the student entered a transcript line
-    // and the archive stayed empty. Both are written, with the same exact
-    // strings, so neither view can disagree with the other.
+    // Prior credit is owned canonically by Grades & Archive. It deliberately
+    // has no Course foreign key and therefore cannot become a fake Planner
+    // semester or operational class.
     onUpdate((draft) => {
       const records = draft.academics.classCenter.transcriptRecords
       records.push({
         id: uid(),
-        courseId,
         institution: form.institution.trim(),
         courseNumberExact: form.courseNumber.trim(),
         titleExact: form.courseTitle.trim(),
@@ -272,8 +267,8 @@ function PriorCreditView({ courses, onCreate, onUpdate }: { courses: Course[]; o
     setAdding(false)
   }
 
-  return <section className={cn('rounded-[18px] border p-5', planningSurface)}><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#427f70] dark:text-[#8fc8b4]">Student record</p><h3 className="mt-1 font-display text-xl font-extrabold">Prior credit</h3><p className="mt-1 text-sm font-semibold text-[#6a5f54] dark:text-[#d0c3b5]">Exact transcript fields stay separate from planning labels. This is not a registrar, transfer, BCPM, or degree decision.</p></div><Button size="sm" className="bg-[#427f70] text-white hover:bg-[#35695d] dark:bg-[#8fc8b4] dark:text-[#211b17] dark:hover:bg-[#a8ddc8]" onClick={() => setAdding((open) => !open)}><Plus className="size-4" /> Add prior credit</Button></div>
-    {adding && <form className="mt-5 rounded-[13px] border border-border bg-muted p-4" onSubmit={(event) => { event.preventDefault(); save() }}><h4 className="font-display text-base font-extrabold">Record the transcript exactly</h4><div className="mt-3 grid gap-3 md:grid-cols-2"><Input required value={form.institution} onChange={(event) => setForm({ ...form, institution: event.target.value })} placeholder="Institution (exact)" /><Input required value={form.courseNumber} onChange={(event) => setForm({ ...form, courseNumber: event.target.value })} placeholder="Course number (exact)" /><Input required value={form.courseTitle} onChange={(event) => setForm({ ...form, courseTitle: event.target.value })} placeholder="Course title (exact)" /><Input value={form.termLabel} onChange={(event) => setForm({ ...form, termLabel: event.target.value })} placeholder="Term label" /><Input inputMode="decimal" value={form.creditHours} onChange={(event) => setForm({ ...form, creditHours: event.target.value })} placeholder="Credit hours" /><Input value={form.gradeRecorded} onChange={(event) => setForm({ ...form, gradeRecorded: event.target.value })} placeholder="Grade as recorded" /><label className="text-xs font-extrabold text-muted-foreground">Course type<select value={form.courseType} onChange={(event) => setForm({ ...form, courseType: event.target.value as TranscriptCourseType })} className="field-solid mt-1 h-9 w-full rounded-md border px-3 text-sm text-foreground"><option value="transfer">Transfer</option><option value="ap">AP</option><option value="dual-enrollment">Dual enrollment</option><option value="repeat">Repeat</option><option value="withdrawal">Withdrawal</option><option value="pass-fail">Pass/fail</option><option value="regular">Regular</option></select></label></div><div className="mt-4 flex flex-wrap gap-2"><Button type="submit" size="sm">Save prior credit</Button><Button type="button" size="sm" variant="ghost" onClick={() => setAdding(false)}>Cancel</Button></div><p className="mt-3 text-xs font-semibold text-muted-foreground">No transcript-line scan is attached. This local record keeps only the typed fields above.</p></form>}
-    {!courses.length ? <div className="mt-5 rounded-[13px] border border-dashed border-border bg-muted p-5 text-sm font-semibold text-muted-foreground">No prior-credit record yet. Exact course details now make a future AMCAS export reliable.</div> : <div className="mt-5 space-y-2">{courses.map((course) => { const context = course.transcript; return <article key={course.id} className="rounded-[13px] border border-border bg-muted p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-display text-base font-extrabold">{context?.courseNumber || course.code || 'Course number not recorded'} · {context?.courseTitle || course.title || 'Course title not recorded'}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{context ? `${context.institution || 'Institution not recorded'} · ${context.termLabel || 'Term not recorded'} · ${context.courseType}` : 'Exact transcript context not recorded.'}</p></div><span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-extrabold">{context?.creditHours ?? 'Credits not recorded'}{context?.creditHours !== null && context?.creditHours !== undefined ? ' cr' : ''}</span></div><div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-border pt-3 text-xs font-semibold text-muted-foreground"><span>Planning label: {course.code || course.title || 'Not recorded'}</span><span>Grade: {context?.gradeRecorded || 'Not recorded'}</span><span>{context?.transcriptLineBlobRef ? 'Transcript-line reference recorded' : 'No scan attached'}</span></div></article> })}</div>}
+  return <section className={cn('rounded-[18px] border p-5', planningSurface)}><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#357eb5] dark:text-[#6fb3de]">Student record</p><h3 className="mt-1 font-display text-xl font-extrabold">Prior credit</h3><p className="mt-1 text-sm font-semibold text-[#7a7064] dark:text-[#a89c8c]">Exact transcript fields stay separate from planning labels. This is not a registrar, transfer, BCPM, or degree decision.</p></div><Button size="sm" className="bg-[#4b9cd3] text-[#132535] hover:bg-[#3f89bc] dark:bg-[#6fb3de] dark:text-[#102432] dark:hover:bg-[#82c0e5]" onClick={() => setAdding((open) => !open)}><Plus className="size-4" /> Add prior credit</Button></div>
+    {adding && <form className="mt-5 rounded-[13px] border border-border bg-muted p-4" onSubmit={(event) => { event.preventDefault(); save() }}><h4 className="font-display text-base font-extrabold">Record the transcript exactly</h4><div className="mt-3 grid gap-3 md:grid-cols-2"><Input required value={form.institution} onChange={(event) => setForm({ ...form, institution: event.target.value })} placeholder="Institution (exact)" /><Input required value={form.courseNumber} onChange={(event) => setForm({ ...form, courseNumber: event.target.value })} placeholder="Course number (exact)" /><Input required value={form.courseTitle} onChange={(event) => setForm({ ...form, courseTitle: event.target.value })} placeholder="Course title (exact)" /><Input value={form.termLabel} onChange={(event) => setForm({ ...form, termLabel: event.target.value })} placeholder="Term label" /><Input inputMode="decimal" value={form.creditHours} onChange={(event) => setForm({ ...form, creditHours: event.target.value })} placeholder="Credit hours" /><Input value={form.gradeRecorded} onChange={(event) => setForm({ ...form, gradeRecorded: event.target.value })} placeholder="Grade as recorded" /><label className="text-xs font-extrabold text-muted-foreground">Credit source<select value={form.courseType} onChange={(event) => setForm({ ...form, courseType: event.target.value as TranscriptCourseType })} className="field-solid mt-1 h-9 w-full rounded-md border px-3 text-sm text-foreground"><option value="transfer">Transfer</option><option value="ap">AP</option><option value="ib">IB</option><option value="dual-enrollment">Dual enrollment</option></select></label></div><div className="mt-4 flex flex-wrap gap-2"><Button type="submit" size="sm">Save prior credit</Button><Button type="button" size="sm" variant="ghost" onClick={() => setAdding(false)}>Cancel</Button></div><p className="mt-3 text-xs font-semibold text-muted-foreground">No transcript-line scan is attached. This local record keeps only the typed fields above.</p></form>}
+    {!records.length ? <div className="mt-5 rounded-[13px] border border-dashed border-border bg-muted p-5 text-sm font-semibold text-muted-foreground">No prior-credit record yet. Exact course details now make a future AMCAS export reliable.</div> : <div className="mt-5 space-y-2">{records.map((record) => <article key={record.id} className="rounded-[13px] border border-border bg-muted p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-display text-base font-extrabold">{record.courseNumberExact || 'Course number not recorded'} · {record.titleExact || 'Course title not recorded'}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{record.institution || 'Institution not recorded'} · {[record.term, record.year].filter(Boolean).join(' ') || 'Term not recorded'} · {record.courseType || 'Type not recorded'}</p></div><span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-extrabold">{record.creditsExact || 'Credits not recorded'}{record.creditsExact ? ' cr' : ''}</span></div><div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-border pt-3 text-xs font-semibold text-muted-foreground"><span>Grades &amp; Archive record</span><span>Grade: {record.gradeExact || 'Not recorded'}</span><span>{record.evidenceFileId ? 'Transcript evidence attached' : 'No scan attached'}</span></div></article>)}</div>}
   </section>
 }

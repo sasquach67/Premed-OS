@@ -98,7 +98,7 @@ export function CommandSearch() {
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="flex h-9 min-w-0 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm text-muted-foreground card-soft hover:bg-muted sm:w-56 lg:w-72">
+      <button onClick={() => setOpen(true)} className="shell-command-trigger card-soft flex h-9 min-w-0 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-semibold text-muted-foreground transition-[background-color,border-color,box-shadow] duration-150 hover:border-primary/25 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-56 lg:w-72">
         <Search className="size-4" /><span className="hidden truncate md:inline">Search or run a command...</span><Kbd className="ml-auto hidden border border-border bg-transparent text-[10px] md:inline-flex">⌘K</Kbd>
       </button>
       <CommandDialog

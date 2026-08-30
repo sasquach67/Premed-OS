@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { AnimatedFileUpload } from '@/components/motion'
 import { cn } from '@/lib/utils'
-import { extractSyllabusFile, parseSyllabusText, type SyllabusProposal } from '@/lib/academics/syllabusParser'
+import { extractSyllabusFile, mergeSyllabusProposals, parseSyllabusText, type SyllabusProposal } from '@/lib/academics/syllabusParser'
 
 type Props = {
   open: boolean
@@ -45,7 +45,7 @@ export function SyllabusImportDialog({ open, semester, onOpenChange, onParsed, o
     try {
       const proposal = pastedText.trim()
         ? parseSyllabusText(pastedText, 'Pasted syllabus')
-        : await extractSyllabusFile(files[0])
+        : mergeSyllabusProposals(await Promise.all(files.map(extractSyllabusFile)))
       if (proposal.documentKind === 'unrecognized' || proposal.scanDetected) {
         setDiagnosis(proposal)
         return

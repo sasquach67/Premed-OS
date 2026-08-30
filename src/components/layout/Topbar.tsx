@@ -55,15 +55,15 @@ export function Topbar({ onMenu, onShowDesktopSidebar, desktopSidebarHidden = fa
   }, [openQuickAdd])
 
   return (
-    <header className="sticky top-0 z-20">
-      <div className="mx-auto flex w-full max-w-[84rem] min-w-0 items-center gap-2 px-4 py-2.5 md:px-8">
+    <header className="shell-topbar sticky top-0 z-20 border-b border-border/60 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/78">
+      <div className="mx-auto flex min-h-14 w-full max-w-[84rem] min-w-0 items-center gap-2 px-4 py-2 md:px-8">
         <Button variant="ghost" size="icon" className="shrink-0 lg:hidden" onClick={onMenu} aria-label="Open menu"><Menu className="size-5" /></Button>
         {desktopSidebarHidden && onShowDesktopSidebar && <Button variant="ghost" size="icon" className="hidden shrink-0 lg:inline-flex" onPointerDown={(event) => { event.preventDefault(); onShowDesktopSidebar() }} aria-label="Show sidebar"><PanelLeftOpen className="size-5" /></Button>}
         {/* Keep a stable context column so a deep breadcrumb does not visually
          * crowd the command field. The search affordance then begins at a
          * predictable point across Overview detail routes. */}
         <Breadcrumb className="hidden w-36 shrink-0 xl:block">
-          <BreadcrumbList className="h-9 flex-nowrap gap-1 text-xs font-bold sm:gap-1">
+          <BreadcrumbList className="h-9 flex-nowrap gap-1 font-display text-xs font-bold sm:gap-1">
             <BreadcrumbItem className="min-w-0">
               <BreadcrumbLink asChild>
                 <Link to={activeRoute.id === 'home' ? '/' : `/${activeRoute.id}`} className="max-w-32 truncate">{activeRoute.label}</Link>
@@ -81,10 +81,10 @@ export function Topbar({ onMenu, onShowDesktopSidebar, desktopSidebarHidden = fa
         </Breadcrumb>
         <CommandSearch />
         <div className="ml-auto flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
-          {isDemoMode() && <span className="inline-flex h-8 shrink-0 items-center rounded-full border border-primary/30 bg-primary/12 px-2.5 text-xs font-extrabold text-primary shadow-sm">Demo data</span>}
-          <LiveStatusChip label={status.label} tone={status.tone} />
-          <Button variant="default" size="sm" className="h-8 rounded-full px-2.5 sm:px-3" onClick={() => openQuickAdd()} aria-label="Quick Add"><Plus className="size-4" /><span className="hidden sm:inline">Add</span></Button>
+          {isDemoMode() && <span className="inline-flex h-8 shrink-0 items-center rounded-full border border-primary/30 bg-primary/12 px-2.5 font-display text-xs font-extrabold text-primary shadow-sm">Demo data</span>}
+          <Button variant="default" size="sm" className="shell-quick-add h-8 rounded-full px-2.5 font-display font-extrabold tracking-[-0.01em] sm:px-3" onClick={() => openQuickAdd()} aria-label="Quick Add"><Plus className="size-4" strokeWidth={2.4} /><span className="hidden sm:inline">Add</span></Button>
           <AttentionBell />
+          <LiveStatusChip label={status.label} tone={status.tone} />
           <ThemeToggleButton isDark={isDark} onToggle={() => setTheme(isDark ? 'light' : 'dark')} />
         </div>
       </div>
@@ -95,7 +95,7 @@ export function Topbar({ onMenu, onShowDesktopSidebar, desktopSidebarHidden = fa
 function LiveStatusChip({ label, tone }: { label: string; tone: 'alert' | 'due' | 'system' | 'clear' }) {
   return (
     <Link to={tone === 'system' || tone === 'clear' ? '/settings' : '/overview/tasks'} className={cn(
-      'hidden h-8 max-w-[10rem] items-center gap-1.5 truncate rounded-full border px-3 text-xs font-extrabold shadow-sm transition hover:bg-muted sm:inline-flex',
+      'hidden h-8 max-w-[10rem] items-center gap-1.5 truncate rounded-full border px-3 font-display text-xs font-extrabold tracking-[-0.01em] shadow-sm transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex',
       tone === 'alert' && 'border-destructive/35 bg-destructive/10 text-destructive',
       tone === 'due' && 'border-primary/30 bg-primary/10 text-primary',
       tone === 'system' && 'border-warning/35 bg-warning/10 text-warning',

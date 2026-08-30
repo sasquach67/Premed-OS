@@ -271,12 +271,12 @@ export function Settings() {
         <Card className="border-destructive/30">
           <CardHeader><CardTitle className="text-destructive">Danger zone</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">{demoActive ? 'Reset only the isolated demo namespace.' : 'Reset everything back to the seeded UNC plan. Export first if you want a copy.'}</p>
+            <p className="text-sm text-muted-foreground">{demoActive ? 'Reset only the isolated demo namespace.' : 'Reset everything to an empty personal workspace. Export first if you want a copy.'}</p>
             <Button
               variant="destructive"
-              onClick={() => { if (confirm(demoActive ? 'Reset the demo namespace to a fresh state?' : 'Reset all data to the seeded plan? This cannot be undone.')) { resetToSeed(); setMsg(demoActive ? 'Demo data reset.' : 'Reset to the seeded plan.') } }}
+              onClick={() => { if (confirm(demoActive ? 'Reset the demo namespace to a fresh state?' : 'Reset all data to an empty personal workspace? This cannot be undone.')) { resetToSeed(); setMsg(demoActive ? 'Demo data reset.' : 'Personal workspace reset.') } }}
             >
-              <RotateCcw className="size-4" /> {demoActive ? 'Reset demo' : 'Reset to seed'}
+              <RotateCcw className="size-4" /> {demoActive ? 'Reset demo' : 'Reset workspace'}
             </Button>
           </CardContent>
         </Card>

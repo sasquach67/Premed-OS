@@ -75,7 +75,7 @@
 | `01-academics/academics-daily-main-page.html` | APPROVED (July 2026) | **`YES`** |
 | `01-academics/academics-assignments.html` | APPROVED (July 2026) | **`YES`** |
 | `01-academics/academics-class-hub.html` | APPROVED (July 2026, revised) | **`YES`** |
-| `01-academics/academics-review-session.html` | APPROVED (July 2026) | **`YES`** |
+| `01-academics/academics-review-session.html` | **RETIRED (Aug 29, 2026)** | **`NO`** — Andy removed Review Session and all Academics review/Anki entry points |
 | `01-academics/academics-empty-states-prototype.html` | **none** | **`YES`** |
 | `01-academics/academics-class-types.html` | **none** | **`YES`** |
 | `01-academics/academics-mode-switch.html` | **none** (concept) | `NO` |
@@ -83,9 +83,9 @@
 | `01-academics/academics-exam-prep-mode.html` | PROPOSED (July 2026) | **`YES`** |
 | `01-academics/academics-syllabus-import.html` | PROPOSED (July 2026) | **`YES`** |
 | `01-academics/academics-syllabus-structure-share.html` | APPROVED (Consent-led, Aug 24 2026) | **`YES`** — cleared Aug 24, 2026 (Andy, execution approval). Optional anonymous extracted structure only; never source document/text, personal edits, student data, grades, notes, or progress. |
-| `01-academics/academics-study-method.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy). §4.1-K, all three placements. C2 ruled: the retrievability bar stays and the status chip is its non-numeric form |
-| `01-academics/academics-forgetting-curve.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy). §4.1-L. C1 ruled: the exam-day figure ships **only** with its band label, never alone |
-| `01-academics/academics-learning-signals.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
+| `01-academics/academics-study-method.html` | **RETIRED (Aug 29, 2026)** | **`NO`** — the review-driven Class Plan surface was removed |
+| `01-academics/academics-forgetting-curve.html` | **RETIRED (Aug 29, 2026)** | **`NO`** — the review/retention surface was removed |
+| `01-academics/academics-learning-signals.html` | **RETIRED (Aug 29, 2026)** | **`NO`** — the review-driven signal panel was removed with Review Session |
 | `01-academics/academics-grade-decisions.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
 | `01-academics/academics-materials-extensions.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
 | `01-academics/academics-lecture-capture.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
@@ -96,13 +96,14 @@
 | Mockup | Header status | Build? |
 |---|---|---|
 | `01-academics/academics-planner-prototype.html` | **none** | **`YES`** |
-| `01-academics/academics-requirements.html` | PROPOSED (Aug 2026) | **`YES`** — file restored Aug 18, 2026 after a working-tree deletion left this row pointing at nothing (C3). ⚠️ **Cleared to build the SCREEN, not to ship completion maths** — `data/unc-requirements.json` warns that a flat course list produces false completions, and 5 of its 6 majors are unverified. See the note under this table |
+| `01-academics/academics-requirements.html` | SUPERSEDED (Aug 2026) | `NO` — retired numerical audit concept; replaced by the source-backed planning library below. |
+| `01-academics/academics-planning-library.html` | APPROVED — Variant A (Aug 26, 2026) | **`YES`** — direct user authorization. Local catalog planning evidence only: no completion math, degree verdict, or official-audit claim. |
 | `01-academics/academics-grades-archive.html` | PROPOSED (Aug 2026) | **`YES`** |
 | `01-academics/academics-planning-decisions.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
 | `01-academics/academics-planning-cold-start.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
 | `01-academics/academics-term-rollover.html` | PROPOSED (Aug 2026) | **`YES`** — cleared Aug 18, 2026 (Andy) |
 | `01-academics/academics-term-retrospective.html` | PROPOSED (Aug 2026) | **`YES`** — Variant A, Term Report (Andy, Aug 22, 2026) |
-| `01-academics/academics-forecast-accuracy.html` | APPROVED (Aug 23, 2026) | **`YES`** — Variant A default with B as contextual resolved-call detail; cleared by Andy through execution approval |
+| `01-academics/academics-forecast-accuracy.html` | **RETIRED (Aug 29, 2026)** | **`NO`** — depended on per-review retrievability predictions and retired with the Academics review system; legacy prediction records remain migration-readable |
 
 ### Clinical
 

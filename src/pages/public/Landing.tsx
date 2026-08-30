@@ -57,7 +57,7 @@ const TILES = [
     title: 'Study sessions with spaced repetition',
     tint: 'var(--cat-gpa)',
     example:
-      'A session knows which topics are due, times itself, and logs the hours as you work. Your misses become tagged cards you export to Anki in one click — Premed OS never becomes a second flashcard app.',
+      'Turn the class material you select into source-backed study outlines, guides, and revised notes while keeping the original evidence attached.',
   },
   {
     icon: CalendarDays,

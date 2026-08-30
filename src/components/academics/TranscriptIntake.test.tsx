@@ -2,7 +2,9 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TranscriptIntake } from './TranscriptIntake'
-import { createInitialDataForMode, useStore } from '@/store/store'
+import { createInitialDataForMode, CURRENT_STORE_VERSION, STORAGE_KEY, useStore } from '@/store/store'
+
+vi.mock('@/lib/localBlobStore', () => ({ retainLocalBlob: vi.fn(async () => 'idb://academics/transcript/test') }))
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
@@ -78,6 +80,8 @@ describe('transcript intake', () => {
       term: 'Fall',
       year: '2026',
     })
+    expect(useStore.getState().courses).toHaveLength(0)
+    expect(first.courseId).toBeUndefined()
   })
 
   it('never infers classification from a parsed line', async () => {
@@ -154,5 +158,32 @@ describe('transcript intake', () => {
     await act(async () => { byText(/^Back$/)!.click() })
     expect(container.querySelector('.grades-intake-drop')).toBeTruthy()
     expect(useStore.getState().academics.classCenter.transcriptRecords).toHaveLength(0)
+  })
+
+  it('retains uploaded transcript evidence for prior credit without fabricating a Planner owner', async () => {
+    const input = container.querySelector<HTMLInputElement>('input[aria-label="Choose a transcript file"]')!
+    const file = new File([TRANSCRIPT], 'transfer-transcript.txt', { type: 'text/plain' })
+    Object.defineProperty(input, 'files', { configurable: true, value: [file] })
+    await act(async () => { input.dispatchEvent(new Event('change', { bubbles: true })); await Promise.resolve() })
+    expect(rows()).toHaveLength(2)
+    await act(async () => { byText(/^Save \d+ record/)!.click(); await Promise.resolve() })
+
+    const state = useStore.getState()
+    expect(state.courses).toHaveLength(0)
+    expect(state.academics.classCenter.files).toHaveLength(1)
+    const evidence = state.academics.classCenter.files[0]
+    expect(evidence).toMatchObject({ title: 'transfer-transcript.txt', type: 'transcript', blobRef: 'idb://academics/transcript/test' })
+    expect(evidence.courseId).toBeUndefined()
+    expect(state.academics.classCenter.transcriptRecords.every((record) => record.evidenceFileId === evidence.id)).toBe(true)
+
+    const partialize = useStore.persist.getOptions().partialize!
+    const persisted = partialize(state)
+    useStore.getState().replaceAll(createInitialDataForMode(false))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: persisted, version: CURRENT_STORE_VERSION }))
+    await useStore.persist.rehydrate()
+    const restored = useStore.getState().academics.classCenter
+    expect(restored.files[0]).toMatchObject({ id: evidence.id, blobRef: 'idb://academics/transcript/test' })
+    expect(restored.files[0].courseId).toBeUndefined()
+    expect(restored.transcriptRecords.every((record) => record.evidenceFileId === evidence.id)).toBe(true)
   })
 })

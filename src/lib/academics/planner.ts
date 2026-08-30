@@ -21,6 +21,19 @@ import type { Course, PlannerTerm, RequirementItem } from '@/lib/types'
 
 /** A term with no parseable name still gets a column — see `plannerTerms`. */
 export const UNSCHEDULED = 'Unscheduled'
+export const PRIOR_CREDIT = 'Prior credit'
+
+const PRIOR_CREDIT_TYPES = new Set(['ap', 'ib', 'transfer', 'dual-enrollment'])
+
+/**
+ * Transcript-only prior credit belongs to Grades & Archive. It may still have
+ * an exact historical term on its transcript record, but it is not a UNC
+ * semester in the student's editable Planner timeline.
+ */
+export function isPriorCreditCourse(course: Course): boolean {
+  return course.term.trim().toLocaleLowerCase() === PRIOR_CREDIT.toLocaleLowerCase()
+    || PRIOR_CREDIT_TYPES.has(course.transcript?.courseType?.trim().toLocaleLowerCase() ?? '')
+}
 
 export interface PlannerColumn {
   id?: string
@@ -46,18 +59,20 @@ export interface PlannerColumn {
  * instead of disappearing from the plan.
  */
 export function plannerTerms(courses: Course[], slots: PlannerTerm[] = []): PlannerColumn[] {
+  const planningCourses = courses.filter((course) => !isPriorCreditCourse(course))
+  const planningSlots = slots.filter((slot) => slot.label.trim().toLocaleLowerCase() !== PRIOR_CREDIT.toLocaleLowerCase())
   const byTerm = new Map<string, Course[]>()
-  for (const course of courses) {
+  for (const course of planningCourses) {
     const term = course.term?.trim() || UNSCHEDULED
     byTerm.set(term, [...(byTerm.get(term) ?? []), course])
   }
 
-  const slotByLabel = new Map(slots.map((slot) => [slot.label.trim().toLocaleLowerCase(), slot]))
+  const slotByLabel = new Map(planningSlots.map((slot) => [slot.label.trim().toLocaleLowerCase(), slot]))
   const rowsForSlot = new Map<string, Course[]>()
-  for (const course of courses) {
+  for (const course of planningCourses) {
     if (course.plannerTermId) rowsForSlot.set(course.plannerTermId, [...(rowsForSlot.get(course.plannerTermId) ?? []), course])
   }
-  const columns = slots.map((slot): PlannerColumn => {
+  const columns = planningSlots.map((slot): PlannerColumn => {
     const rows = rowsForSlot.get(slot.id) ?? byTerm.get(slot.label) ?? []
     return {
       id: slot.id, term: slot.label, kind: slot.kind, note: slot.note, lockedAt: slot.lockedAt, lockReason: slot.lockReason,

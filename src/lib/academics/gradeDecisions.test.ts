@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  PATTERN_SAMPLE_FLOOR, appliedPolicies, missingInputs, mistakeRoute,
-  patternIsReportable, regradeWindow, reviewableWork, unmarkedMistakes,
+  appliedPolicies, missingInputs, regradeWindow, reviewableWork,
 } from '@/lib/academics/gradeDecisions'
-import type { AcademicMistake, ClassAssignment, GradeCategory } from '@/lib/types'
+import type { ClassAssignment, GradeCategory } from '@/lib/types'
 
 const now = Date.UTC(2026, 8, 18)
 const DAY = 86_400_000
@@ -18,11 +17,6 @@ const category = (patch: Partial<GradeCategory> = {}): GradeCategory => ({
   id: 'g1', courseId: 'c1', name: 'Problem sets', weight: 20,
   createdAt: now, updatedAt: now, order: 0, ...patch,
 })
-const mistake = (patch: Partial<AcademicMistake> = {}): AcademicMistake => ({
-  id: 'm1', courseId: 'c1', label: 'Acid–base mechanism',
-  createdAt: now, updatedAt: now, order: 0, ...patch,
-})
-
 describe('#44 the regrade window', () => {
   it('is open while the instructor deadline is ahead', () => {
     const found = regradeWindow(work({ regradeDeadline: iso(now + 5 * DAY) }), now)
@@ -93,30 +87,5 @@ describe('missing inputs', () => {
 
   it('is empty when every fact is present', () => {
     expect(missingInputs([category()], [work()])).toEqual([])
-  })
-})
-
-describe('#47/#48 mistake evidence', () => {
-  it('routes blanking to retrieval and not-knowing to the source', () => {
-    expect(mistakeRoute(mistake({ cause: 'knew-it-but-blanked' }))).toBe('recall')
-    expect(mistakeRoute(mistake({ cause: 'didnt-know' }))).toBe('material')
-  })
-
-  it('routes an unmarked mistake back to the student, never to a guess', () => {
-    expect(mistakeRoute(mistake())).toBe('needs-mark')
-    expect(unmarkedMistakes([mistake(), mistake({ id: 'm2', cause: 'knew-it-but-blanked' })])).toHaveLength(1)
-  })
-
-  it('refuses to call anything a pattern below the sample floor', () => {
-    const marked = (count: number) => Array.from({ length: count }, (_, index) =>
-      mistake({ id: `m${index}`, cause: 'knew-it-but-blanked' }))
-    expect(patternIsReportable(marked(1))).toBe(false)
-    expect(patternIsReportable(marked(PATTERN_SAMPLE_FLOOR - 1))).toBe(false)
-    expect(patternIsReportable(marked(PATTERN_SAMPLE_FLOOR))).toBe(true)
-  })
-
-  it('does not count unmarked records toward the sample', () => {
-    const mixed = Array.from({ length: 9 }, (_, index) => mistake({ id: `m${index}` }))
-    expect(patternIsReportable(mixed)).toBe(false)
   })
 })

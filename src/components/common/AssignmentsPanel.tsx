@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ComponentProps,
   type FormEvent,
@@ -17,7 +18,7 @@ import {
 } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { AnimatePresence, m, useReducedMotion } from 'motion/react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   CalendarDays,
   Check,
@@ -156,14 +157,21 @@ function preferenceBase(current?: ListViewState): ListViewState {
   return current ?? { filters: {}, visibleColumns: [], density: 'comfortable', view: 'agenda' }
 }
 
+function isAssignmentView(value: string | null | undefined): value is AssignmentView {
+  return value === 'agenda' || value === 'weekly' || value === 'calendar'
+}
+
 export function AssignmentCreateDialog({
   open,
   onOpenChange,
   assignment,
+  fixedCourseId,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   assignment?: ClassAssignment | null
+  /** Used by a Class Hub so new work cannot accidentally be filed elsewhere. */
+  fixedCourseId?: string
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -172,7 +180,7 @@ export function AssignmentCreateDialog({
           <DialogTitle>{assignment ? 'Edit assignment' : 'Add assignment'}</DialogTitle>
           <DialogDescription>Keep the first entry lightweight. A class and title are required.</DialogDescription>
         </DialogHeader>
-        {open && <AssignmentForm key={assignment?.id ?? 'new'} assignment={assignment} onDone={() => onOpenChange(false)} />}
+        {open && <AssignmentForm key={assignment?.id ?? 'new'} assignment={assignment} fixedCourseId={fixedCourseId} onDone={() => onOpenChange(false)} />}
       </DialogContent>
     </Dialog>
   )
@@ -180,9 +188,11 @@ export function AssignmentCreateDialog({
 
 function AssignmentForm({
   assignment,
+  fixedCourseId,
   onDone,
 }: {
   assignment?: ClassAssignment | null
+  fixedCourseId?: string
   onDone: () => void
 }) {
   const courses = useStore((state) => state.courses)
@@ -190,7 +200,7 @@ function AssignmentForm({
   const update = useStore((state) => state.update)
   const toast = useToast()
   const [title, setTitle] = useState(assignment?.title ?? '')
-  const [courseId, setCourseId] = useState(assignment?.courseId ?? '')
+  const [courseId, setCourseId] = useState(assignment?.courseId ?? fixedCourseId ?? '')
   const [type, setType] = useState<ClassAssignmentType>(assignment?.type ?? 'homework')
   const [dueDate, setDueDate] = useState(assignment?.dueDate?.slice(0, 10) ?? '')
   const [weight, setWeight] = useState(assignment?.weight == null ? '' : String(assignment.weight))
@@ -260,12 +270,12 @@ function AssignmentForm({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Class</Label>
-              <Select value={courseId} onValueChange={setCourseId} required>
+              {fixedCourseId ? <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm font-semibold">{courses.find((course) => course.id === fixedCourseId)?.code ?? 'This class'}</div> : <Select value={courseId} onValueChange={setCourseId} required>
                 <SelectTrigger aria-label="Class"><SelectValue placeholder="Choose a class" /></SelectTrigger>
                 <SelectContent>
                   {courses.map((course) => <SelectItem key={course.id} value={course.id}>{course.code} · {course.title}</SelectItem>)}
                 </SelectContent>
-              </Select>
+              </Select>}
             </div>
             <div className="space-y-1.5">
               <Label>Type</Label>
@@ -302,11 +312,14 @@ export function AssignmentsPanel({
   state = 'ready',
   errorMessage,
   onRetry,
+  courseId: scopedCourseId,
 }: {
   onRequestAdd?: () => void
   state?: CollectionLoadState
   errorMessage?: string
   onRetry?: () => void
+  /** Locks this instance to one course while retaining the global agenda UI. */
+  courseId?: string
 }) {
   const assignments = useStore((store) => store.academics.classCenter.assignments)
   const courses = useStore((store) => store.courses)
@@ -315,12 +328,13 @@ export function AssignmentsPanel({
   const update = useStore((store) => store.update)
   const toast = useToast()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const reduceMotion = useReducedMotion()
   const [createOpen, setCreateOpen] = useState(false)
   const [editing, setEditing] = useState<ClassAssignment | null>(null)
   const [tableOpen, setTableOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const [courseFilter, setCourseFilter] = useState('all')
+  const [courseFilter, setCourseFilter] = useState(scopedCourseId ?? 'all')
   const [expandedBuckets, setExpandedBuckets] = useState<Set<BucketId>>(() => new Set())
   const [weekCursor, setWeekCursor] = useState(() => startOfWeek(new Date()))
   const [calendarCursor, setCalendarCursor] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1))
@@ -330,14 +344,18 @@ export function AssignmentsPanel({
     () => assignments.filter((assignment) => Boolean(assignment.courseId)),
     [assignments],
   )
-  const filtered = useMemo(() => linked.filter((assignment) => {
-    if (courseFilter !== 'all' && assignment.courseId !== courseFilter) return false
+  const scoped = useMemo(() => linked.filter((assignment) => !scopedCourseId || assignment.courseId === scopedCourseId), [linked, scopedCourseId])
+  const filtered = useMemo(() => scoped.filter((assignment) => {
+    if (!scopedCourseId && courseFilter !== 'all' && assignment.courseId !== courseFilter) return false
     const needle = query.trim().toLocaleLowerCase()
     return !needle || assignment.title.toLocaleLowerCase().includes(needle)
       || courseLabel(assignment.courseId, courses).toLocaleLowerCase().includes(needle)
-  }), [courseFilter, courses, linked, query])
+  }), [courseFilter, courses, query, scoped, scopedCourseId])
 
-  const view = (preference?.view as AssignmentView | undefined) ?? 'agenda'
+  const requestedView = searchParams.get('view')
+  const assignmentsRouteActive = searchParams.get('tab') === 'assignments' || searchParams.get('classTab') === 'assignments'
+  const preferredView = isAssignmentView(preference?.view) ? preference.view : 'agenda'
+  const view: AssignmentView = isAssignmentView(requestedView) ? requestedView : preferredView
   const collapsed = new Set(
     Array.isArray(preference?.filters.collapsedBuckets)
       ? preference.filters.collapsedBuckets as string[]
@@ -361,7 +379,34 @@ export function AssignmentsPanel({
     })
   }
 
+  useEffect(() => {
+    if (!assignmentsRouteActive) return
+    if (!isAssignmentView(requestedView)) {
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current)
+        next.set('view', preferredView)
+        return next
+      }, { replace: true })
+      return
+    }
+    if (preference?.view !== requestedView) setPreference((next) => { next.view = requestedView })
+  }, [assignmentsRouteActive, preferredView, requestedView])
+
+  function selectView(nextView: AssignmentView) {
+    if (nextView === view) return
+    setPreference((next) => { next.view = nextView })
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.set('view', nextView)
+      return next
+    })
+  }
+
   function requestAdd() {
+    if (!scopedCourseId && !courses.length) {
+      navigate('/academics?mode=daily&tab=class-center&importFor=new')
+      return
+    }
     if (onRequestAdd) onRequestAdd()
     else setCreateOpen(true)
   }
@@ -441,7 +486,7 @@ export function AssignmentsPanel({
 
   function exportCsv() {
     const escape = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`
-    const rows = linked.map((item) => [
+    const rows = scoped.map((item) => [
       item.title,
       courseLabel(item.courseId, courses),
       item.type,
@@ -458,18 +503,28 @@ export function AssignmentsPanel({
     anchor.download = 'premedos-assignments.csv'
     anchor.click()
     URL.revokeObjectURL(url)
-    toast({ title: 'Assignments exported', description: `${linked.length} course-linked records included.` })
+    toast({ title: 'Assignments exported', description: `${scoped.length} course-linked records included.` })
   }
 
   if (state !== 'ready') return <CollectionState state={state} errorMessage={errorMessage} onRetry={onRetry} />
 
+  if (!scopedCourseId && !courses.length) {
+    return <MascotNote
+      variant="empty-state"
+      title="Add a class before an assignment"
+      actions={<Button size="sm" asChild><Link to="/academics?mode=daily&tab=class-center&importFor=new"><Plus className="size-4" /> Import a syllabus</Link></Button>}
+    >
+      Assignments are coursework commitments, so each one needs a real class. Start with the syllabus you already have, or add the class manually from Class Center.
+    </MascotNote>
+  }
+
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-2.5 lg:flex-row lg:items-center">
+    <div className="daily-assignments space-y-5">
+      <div className="daily-assignments-filter flex flex-col gap-2 rounded-xl border border-border bg-card p-2.5 lg:flex-row lg:items-center">
         <ToggleGroup
           type="single"
           value={view}
-          onValueChange={(value) => value && setPreference((next) => { next.view = value })}
+          onValueChange={(value) => isAssignmentView(value) && selectView(value)}
           variant="outline"
           aria-label="Assignment view"
           className="rounded-xl"
@@ -478,13 +533,13 @@ export function AssignmentsPanel({
           <ToggleGroupItem value="weekly" aria-label="Weekly view"><ClipboardList className="size-4" /> Weekly</ToggleGroupItem>
           <ToggleGroupItem value="calendar" aria-label="Calendar view"><CalendarDays className="size-4" /> Calendar</ToggleGroupItem>
         </ToggleGroup>
-        <Select value={courseFilter} onValueChange={setCourseFilter}>
+        {scopedCourseId ? <Badge variant="outline" className="h-9 shrink-0 px-3">{courseLabel(scopedCourseId, courses)} only</Badge> : <Select value={courseFilter} onValueChange={setCourseFilter}>
           <SelectTrigger className="w-full lg:w-44" aria-label="Filter by class"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All classes</SelectItem>
             {courses.map((course) => <SelectItem key={course.id} value={course.id}>{course.code}</SelectItem>)}
           </SelectContent>
-        </Select>
+        </Select>}
         <div className="relative min-w-52 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={query} onChange={(event) => setQuery(event.target.value)} className="pl-9" placeholder="Search assignments…" />
@@ -494,8 +549,8 @@ export function AssignmentsPanel({
           <DropdownMenuContent align="end">
             <DropdownMenuItem onSelect={() => setTableOpen(true)}><TableProperties className="size-4" /> Edit as table</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => {
-              const courseId = courseFilter !== 'all' ? courseFilter : courses[0]?.id
-              if (courseId) navigate(`/academics/classes/${courseId}`)
+              const courseId = scopedCourseId ?? (courseFilter !== 'all' ? courseFilter : 'new')
+              navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)
             }}><FileUp className="size-4" /> Import syllabus</DropdownMenuItem>
             <DropdownMenuCheckboxItem
               checked={showCompleted}
@@ -508,6 +563,10 @@ export function AssignmentsPanel({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      {scopedCourseId && <div className="daily-assignments-handoff flex items-center justify-between gap-3 border-b border-border pb-3">
+        <p className="text-sm font-semibold text-muted-foreground">This course’s execution view. Use all assignments to weigh work across classes.</p>
+        <Button size="sm" variant="outline" asChild><Link to="/academics?mode=daily&tab=assignments">All assignments</Link></Button>
+      </div>}
 
       <AnimatePresence mode="wait" initial={false}>
         <m.div
@@ -567,14 +626,14 @@ export function AssignmentsPanel({
       </AnimatePresence>
 
       <ProjectedWorkload
-        assignments={linked}
+        assignments={scoped}
         courses={courses}
         collapsed={workloadCollapsed}
         onToggle={() => setPreference((next) => { next.filters.workloadCollapsed = !workloadCollapsed })}
       />
 
-      <AssignmentCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
-      <AssignmentCreateDialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)} assignment={editing} />
+      <AssignmentCreateDialog open={createOpen} onOpenChange={setCreateOpen} fixedCourseId={scopedCourseId} />
+      <AssignmentCreateDialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)} assignment={editing} fixedCourseId={scopedCourseId} />
       <Dialog open={tableOpen} onOpenChange={setTableOpen}>
         <DialogContent className="max-h-[92svh] max-w-[min(96vw,86rem)] overflow-y-auto">
           <DialogHeader>
@@ -582,12 +641,12 @@ export function AssignmentsPanel({
             <DialogDescription>Bulk-entry and grade-update mode. Agenda remains the default assignments view.</DialogDescription>
           </DialogHeader>
           <AssignmentTable
-            assignments={linked}
+            assignments={scoped}
             courses={courses}
             onPatch={(id, key, value) => patchAssignment(id, { [key]: value } as Partial<ClassAssignment>)}
             onEdit={(assignment) => setEditing(assignment)}
             onDelete={(id) => {
-              const assignment = linked.find((item) => item.id === id)
+              const assignment = scoped.find((item) => item.id === id)
               if (assignment) remove(assignment)
             }}
           />
@@ -654,13 +713,13 @@ function AgendaView({
 
   return (
     <div className="space-y-4">
-      <section className="card-soft overflow-hidden rounded-2xl border border-border bg-card">
+      <section className="daily-assignment-agenda card-soft overflow-hidden rounded-2xl border border-border bg-card">
       {visibleBuckets.map((bucket, index) => {
         const rows = grouped.get(bucket.id) ?? []
         const isCollapsed = collapsed.has(bucket.id)
         const visible = bucket.capped && !expandedBuckets.has(bucket.id) ? rows.slice(0, 5) : rows
         return (
-          <section key={bucket.id} className={cn(index > 0 && 'border-t border-border')}>
+          <section key={bucket.id} className={cn('daily-assignment-bucket', index > 0 && 'border-t border-border')}>
             <button
               type="button"
               onClick={() => onToggleBucket(bucket.id)}
@@ -709,7 +768,7 @@ function AgendaView({
           <button
             type="button"
             onClick={onAdd}
-            className="flex min-h-14 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-primary/45 bg-primary/5 text-sm font-bold text-primary transition hover:-translate-y-0.5 hover:border-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none motion-reduce:transition-none"
+            className="flex min-h-14 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-primary/45 bg-primary/5 font-display text-sm font-extrabold text-primary transition hover:-translate-y-0.5 hover:border-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none motion-reduce:transition-none"
           >
             <Plus className="size-4" /> Add an assignment, exam, or important date…
           </button>
@@ -786,6 +845,7 @@ function AssignmentRow({
         <m.article
           layout
           className={cn(
+            'daily-assignment-row',
             'group relative flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center',
             assignment.important && 'border-l-4 border-l-warning bg-gradient-to-r from-warning/10 to-transparent',
             complete && 'opacity-65',
@@ -853,13 +913,16 @@ function WeeklyView({
       </div>
       <DndContext sensors={sensors} onDragEnd={dragEnd}>
         <div className="mt-3 overflow-x-auto pb-1" tabIndex={0} aria-label="Weekly assignments, horizontally scrollable">
-          <div className="grid min-w-[70rem] grid-cols-7 gap-2">
+          <div
+            data-week-layout="weekday-emphasis"
+            className="grid min-w-[62rem] grid-cols-[minmax(6.25rem,.62fr)_repeat(5,minmax(9rem,1fr))_minmax(6.25rem,.62fr)] gap-2"
+          >
             {days.map((day) => <WeekDay key={isoDate(day)} day={day} assignments={byDay.get(isoDate(day)) ?? []} courses={courses} onEdit={onEdit} />)}
           </div>
         </div>
       </DndContext>
       </section>
-      <button type="button" onClick={onAdd} className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/45 bg-primary/5 font-bold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <button type="button" onClick={onAdd} className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/45 bg-primary/5 font-display font-extrabold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <Plus className="size-4" /> Add an assignment, exam, or important date…
       </button>
     </div>
@@ -870,15 +933,24 @@ function WeekDay({ day, assignments, courses, onEdit }: { day: Date; assignments
   const id = isoDate(day)
   const { setNodeRef, isOver } = useDroppable({ id })
   const total = assignments.reduce((sum, item) => sum + (item.weight ?? 0), 0)
+  const weekend = day.getDay() === 0 || day.getDay() === 6
   return (
-    <section ref={setNodeRef} className={cn('min-h-48 min-w-40 rounded-xl border border-border bg-muted p-2.5 transition-colors', isOver && 'border-primary bg-primary/10')}>
+    <section
+      ref={setNodeRef}
+      data-week-scope={weekend ? 'weekend' : 'weekday'}
+      className={cn(
+        'min-h-48 rounded-xl border border-border bg-muted p-2.5 transition-colors',
+        weekend && 'bg-muted/45 px-2 opacity-70',
+        isOver && 'border-primary bg-primary/10 opacity-100',
+      )}
+    >
       <div className="mb-2 flex items-start justify-between gap-1">
         <div><p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">{day.toLocaleDateString(undefined, { weekday: 'short' })}</p><p className="font-display text-xl font-extrabold tabular-nums">{day.getDate()}</p></div>
         <Badge variant={workloadLabel(total) === 'Heavy' ? 'danger' : workloadLabel(total) === 'Busy' ? 'warning' : workloadLabel(total) === 'Light' ? 'success' : 'muted'}>{workloadLabel(total)}</Badge>
       </div>
       <div className="space-y-2">
         {assignments.map((assignment) => <WeekCard key={assignment.id} assignment={assignment} courses={courses} onEdit={onEdit} />)}
-        {!assignments.length && <p className="py-8 text-center text-xs text-muted-foreground">Nothing due</p>}
+        {!assignments.length && <p className="py-8 text-center text-xs text-muted-foreground">{weekend ? '—' : 'Nothing due'}</p>}
       </div>
     </section>
   )
@@ -886,6 +958,8 @@ function WeekDay({ day, assignments, courses, onEdit }: { day: Date; assignments
 
 function WeekCard({ assignment, courses, onEdit }: { assignment: ClassAssignment; courses: Course[]; onEdit: (assignment: ClassAssignment) => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: assignment.id })
+  const dragged = useRef(false)
+  const pointerStart = useRef<{ x: number; y: number } | null>(null)
   return (
     <button
       ref={setNodeRef}
@@ -893,7 +967,29 @@ function WeekCard({ assignment, courses, onEdit }: { assignment: ClassAssignment
       {...listeners}
       {...attributes}
       type="button"
-      onDoubleClick={() => onEdit(assignment)}
+      onPointerMoveCapture={(event) => {
+        if (!event.buttons || !pointerStart.current) return
+        if (Math.hypot(event.clientX - pointerStart.current.x, event.clientY - pointerStart.current.y) >= 6) dragged.current = true
+      }}
+      onPointerDownCapture={(event) => {
+        pointerStart.current = { x: event.clientX, y: event.clientY }
+        dragged.current = false
+      }}
+      onClick={() => {
+        if (isDragging || dragged.current) {
+          dragged.current = false
+          pointerStart.current = null
+          return
+        }
+        pointerStart.current = null
+        onEdit(assignment)
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return
+        event.preventDefault()
+        event.stopPropagation()
+        onEdit(assignment)
+      }}
       className={cn('w-full rounded-lg border border-border border-l-4 bg-card p-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', isDragging && 'z-20 opacity-70 shadow-xl')}
     >
       <span className="block text-xs font-bold">{assignment.title}</span>
@@ -957,6 +1053,7 @@ function AssignmentCalendar({
       <section className="card-soft rounded-2xl border border-border bg-card p-3">
         <Calendar
           mode="single"
+          fixedWeeks
           month={cursor}
           onMonthChange={onCursor}
           selected={selectedDay}
@@ -983,7 +1080,7 @@ function AssignmentCalendar({
         </div>
         <Button variant="outline" className="mt-3 w-full" onClick={onAdd}><Plus className="size-4" /> Add assignment</Button>
       </aside>
-      <button type="button" onClick={onAdd} className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/45 bg-primary/5 font-bold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring xl:col-span-2">
+      <button type="button" onClick={onAdd} className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/45 bg-primary/5 font-display font-extrabold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring xl:col-span-2">
         <Plus className="size-4" /> Add an assignment, exam, or important date…
       </button>
     </div>

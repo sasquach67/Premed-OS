@@ -24,6 +24,7 @@ import { assertGenerationAllowed, GenerationNotAllowedError, generatedTitle } fr
 import { prepareGenerationSources } from '@/lib/academics/syncGenerationSources'
 import { studyTools } from '@/lib/intelligence/studyTools'
 import type { SourceChunk } from '@/lib/types'
+import { courseLensInstruction, type CourseLensGenerationContext } from '@/lib/academics/courseLens'
 
 export type GenerateFailure =
   | 'not-allowed' | 'no-sources' | 'sign-in-required' | 'provider-unavailable'
@@ -37,6 +38,7 @@ export interface GenerateOutcome {
   content?: string
   specHash?: string
   fileIds?: string[]
+  courseLens?: CourseLensGenerationContext
 }
 
 /** The chunks this class has, optionally narrowed to one file. */
@@ -66,12 +68,14 @@ export function renderGuide(artifact: unknown): string {
   return lines.join('\n').trim()
 }
 
-export async function generateStudyGuide({ courseId, chunks, label }: {
+export async function generateStudyGuide({ courseId, chunks, label, courseLens }: {
   courseId: string
   topicId?: string
   chunks: SourceChunk[]
   /** What the student pointed at — used for the artifact's title. */
   label: string
+  /** Optional, reviewed course context; its sources must already be selected. */
+  courseLens?: CourseLensGenerationContext
 }): Promise<GenerateOutcome> {
   const sources = chunks
   if (!sources.length) {
@@ -106,7 +110,10 @@ export async function generateStudyGuide({ courseId, chunks, label }: {
   const syncedAssembly = assembleGenerationRequest({
     specId: 'study-guide-v1',
     chunkIds: prepared.chunkIds,
-    request: `Topic: ${label}. Action: generate a study guide from the attached sources.`,
+    request: [
+      `Topic: ${label}. Action: generate a study guide from the attached sources.`,
+      courseLensInstruction(courseLens),
+    ].filter(Boolean).join('\n\n'),
   })
 
   const result = await studyTools.generate({
@@ -117,7 +124,10 @@ export async function generateStudyGuide({ courseId, chunks, label }: {
     specId: syncedAssembly.specId,
     specHash: syncedAssembly.specHash,
     systemPrompt: syncedAssembly.systemPrompt,
-    request: `Topic: ${label}.`,
+    request: [
+      `Topic: ${label}.`,
+      courseLens ? 'Apply the supplied Course lens only within its selected evidence trace.' : '',
+    ].filter(Boolean).join(' '),
   })
 
   if (!result.ok) {
@@ -151,5 +161,6 @@ export async function generateStudyGuide({ courseId, chunks, label }: {
     content,
     specHash: syncedAssembly.specHash,
     fileIds: [...new Set(sources.map((chunk) => chunk.fileId))],
+    courseLens,
   }
 }

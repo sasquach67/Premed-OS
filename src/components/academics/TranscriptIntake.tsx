@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { FileText, Upload } from 'lucide-react'
-import type { Course, LetterGrade } from '@/lib/types'
+import type { Course, LetterGrade, TranscriptCourseType } from '@/lib/types'
 import { uid } from '@/lib/id'
 import { retainLocalBlob } from '@/lib/localBlobStore'
 import { useStore } from '@/store/store'
@@ -19,6 +19,13 @@ type IntakeNotice =
   | { kind: 'failed'; detail: string }
 
 const ACCEPT = '.pdf,.docx,.png,.jpg,.jpeg,.txt,.csv,application/pdf,image/*,text/plain'
+const COURSE_TYPES: TranscriptCourseType[] = ['regular', 'ap', 'ib', 'transfer', 'dual-enrollment', 'repeat', 'withdrawal', 'pass-fail']
+const PLANNER_TERM_TYPES = new Set<TranscriptCourseType>(['regular', 'repeat', 'withdrawal', 'pass-fail'])
+
+function exactCourseType(value: string): TranscriptCourseType | undefined {
+  const normalized = value.trim().toLocaleLowerCase() as TranscriptCourseType
+  return COURSE_TYPES.includes(normalized) ? normalized : undefined
+}
 
 export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
   courses: Course[]
@@ -43,7 +50,7 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
 
   function acceptProposal(next: TranscriptProposal) {
     if (next.scanDetected) {
-      setNotice({ kind: 'scan', detail: `${next.sourceName} has no readable text layer. Paste the text, or enter the line manually.` })
+      setNotice({ kind: 'scan', detail: `${next.sourceName} has no readable text layer. OCR is not configured in this app, so paste the transcript text or enter the line manually.` })
       return
     }
     if (next.unrecognized) {
@@ -106,32 +113,48 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
       const center = draft.academics.classCenter
       let evidenceCourseId = ''
       for (const row of kept) {
-        // A transcript line is a course the student took. Link it to a matching
-        // planned course, or record the course it evidences — otherwise prior
-        // credit could never be entered at all.
-        let course = draft.courses.find((item) =>
-          item.code.trim().toLowerCase().replace(/\s+/g, ' ') === row.courseNumberExact.trim().toLowerCase())
-        if (!course) {
+        // Ordinary coursework can link to the operational plan. Prior credit
+        // is canonical here in Grades & Archive and must not create a shadow
+        // Planner semester/course solely to satisfy a foreign key.
+        const exactTerm = [row.term.trim(), row.year.trim()].filter(Boolean).join(' ')
+        const courseType = exactCourseType(row.courseType)
+        const belongsOnPlanner = Boolean(courseType && PLANNER_TERM_TYPES.has(courseType) && exactTerm)
+        let course = belongsOnPlanner ? draft.courses.find((item) =>
+          item.code.trim().toLowerCase().replace(/\s+/g, ' ') === row.courseNumberExact.trim().toLowerCase().replace(/\s+/g, ' ')
+          && item.term.trim().toLocaleLowerCase() === exactTerm.toLocaleLowerCase()) : undefined
+        if (!course && belongsOnPlanner) {
+          const credits = Number(row.creditsExact) || 0
           const created: Course = {
             id: uid(),
-            term: [row.term, row.year].filter(Boolean).join(' ') || 'Prior credit',
+            term: exactTerm,
             code: row.courseNumberExact,
             title: row.titleExact,
-            credits: Number(row.creditsExact) || 0,
+            credits,
             grade: asLetterGrade(row.gradeExact),
             bcpm: false,
             status: 'completed',
-            inResidence: false,
+            inResidence: courseType === 'regular',
             satisfies: [],
+            ...(courseType ? { transcript: {
+              institution: row.institution.trim(),
+              courseNumber: row.courseNumberExact.trim(),
+              courseTitle: row.titleExact.trim(),
+              termLabel: exactTerm,
+              creditHours: credits || null,
+              gradeRecorded: row.gradeExact.trim(),
+              courseType,
+              capturedAt: now,
+              updatedAt: now,
+            } } : {}),
             order: draft.courses.length,
           }
           draft.courses.push(created)
           course = draft.courses[draft.courses.length - 1]
         }
-        if (!evidenceCourseId) evidenceCourseId = course.id
+        if (course && !evidenceCourseId) evidenceCourseId = course.id
         center.transcriptRecords.push({
           id: uid(),
-          courseId: course.id,
+          ...(course ? { courseId: course.id } : {}),
           evidenceFileId,
           sourceQuote: row.evidenceQuote,
           institution: row.institution.trim(),
@@ -148,11 +171,14 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
           order: center.transcriptRecords.length,
         })
       }
-      // Written after the loop: the file is homed on a course that now exists.
-      if (evidenceFileId && sourceFile && evidenceCourseId) {
+      // Transcript evidence belongs to Grades & Archive even when AP/IB,
+      // transfer, or dual-enrollment has no operational Planner course. Keep
+      // the file record and its local blob link without manufacturing a
+      // "Prior credit" semester merely to satisfy ownership.
+      if (evidenceFileId && sourceFile) {
         center.files.push({
           id: evidenceFileId,
-          courseId: evidenceCourseId,
+          ...(evidenceCourseId ? { courseId: evidenceCourseId } : {}),
           sourceType: 'upload',
           title: sourceFile.name,
           type: 'transcript',
@@ -258,7 +284,7 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
       className="grades-intake-paste"
       value={pasted}
       aria-label="Paste transcript text"
-      placeholder="Paste transcript text, or paste a screenshot of the transcript lines."
+      placeholder="Paste transcript text, or paste a screenshot to check for readable text."
       onChange={(event) => setPasted(event.target.value)}
       onPaste={(event) => {
         const image = [...(event.clipboardData?.files ?? [])].find((file) => file.type.startsWith('image/'))
@@ -282,7 +308,7 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
       The file is read on this device. Nothing is uploaded, and this is not a registrar document or a degree audit.
     </p>
     {!courses.length && <p className="grades-transcript-copy mt-2">
-      No planned course matches a transcript line yet — saving will record the course each line evidences.
+      No planned course matches yet. Prior credit stays in Grades &amp; Archive; ordinary dated coursework can link to the Planner after review.
     </p>}
   </div>
 }

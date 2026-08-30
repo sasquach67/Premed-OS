@@ -1,9 +1,8 @@
 /**
- * Grade decisions — the record layer inside Grades & archive (§4.1 #44, #47,
- * #48, #50).
+ * Grade decisions — the record layer inside Grades & archive (§4.1 #44, #50).
  *
  * Drawing:   mockup-lab/01-academics/academics-grade-decisions.html
- * Decisions: academics-grade-decisions.md — four STATE views of one treatment,
+ * Decisions: academics-grade-decisions.md — three STATE views of one treatment,
  *            not visual variants.
  *
  * ⚠️ The distinction the whole surface turns on: **a policy that was never
@@ -12,11 +11,11 @@
  * two is how a projection starts lying, so `PolicyState` keeps them apart and
  * the component renders them differently.
  *
- * ⚠️ Premed OS never claims a regrade is justified, never estimates an
- * unpublished curve, and never turns one marked mistake into a diagnosis.
+ * ⚠️ Premed OS never claims a regrade is justified and never estimates an
+ * unpublished curve.
  */
 import type {
-  AcademicMistake, ClassAssignment, GradeCategory,
+  ClassAssignment, GradeCategory,
 } from '@/lib/types'
 
 const DAY = 86_400_000
@@ -147,48 +146,4 @@ export function missingInputs(categories: GradeCategory[], assignments: ClassAss
     })
   }
   return out
-}
-
-export type MistakeRoute = 'recall' | 'material' | 'needs-mark'
-
-/**
- * #48 — the most actionable cut in the taxonomy. `knew-it-but-blanked` is a retrieval
- * failure and routes to practice; `didnt-know` is a content gap and routes to
- * the source. An unmarked mistake routes to the student, not to a guess.
- */
-export function mistakeRoute(mistake: AcademicMistake): MistakeRoute {
-  if (mistake.cause === 'knew-it-but-blanked') return 'recall'
-  if (mistake.cause === 'didnt-know') return 'material'
-  return 'needs-mark'
-}
-
-export const MISTAKE_ROUTE_LABEL: Record<MistakeRoute, string> = {
-  recall: 'Open targeted recall',
-  material: 'Open source material',
-  'needs-mark': 'Add your cause',
-}
-
-export const MISTAKE_CAUSE_LABEL = {
-  'knew-it-but-blanked': 'Knew it, but blanked',
-  'didnt-know': 'Did not know',
-  'misread-the-question': 'Misread the question',
-  arithmetic: 'Arithmetic',
-  'ran-out-of-time': 'Ran out of time',
-  'wrong-method': 'Wrong method',
-  unmarked: 'Needs a mark',
-} as const
-
-/** Below this many marked mistakes, there is no pattern — only records. */
-export const PATTERN_SAMPLE_FLOOR = 5
-
-/**
- * #47 — whether a cause profile may be described as a pattern at all. One item
- * is never a trend, and a professor-model claim needs its sample shown.
- */
-export function patternIsReportable(mistakes: AcademicMistake[]): boolean {
-  return mistakes.filter((item) => item.cause != null).length >= PATTERN_SAMPLE_FLOOR
-}
-
-export function unmarkedMistakes(mistakes: AcademicMistake[]): AcademicMistake[] {
-  return mistakes.filter((item) => item.cause == null)
 }

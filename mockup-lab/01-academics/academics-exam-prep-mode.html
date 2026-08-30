@@ -8,7 +8,7 @@
   ============================================================================
   ACADEMICS — EXAM PREP MODE — VISUAL REFERENCE
   ============================================================================
-  Status: PROPOSED (July 2026). Spec: tabs/01-academics.md §4.1-R.
+  Status: APPROVED (August 26, 2026). Spec: tabs/01-academics.md §4.1-R.
   This is the destination `Build exam plan` (§4.1-I) never had.
 
   RELATED
@@ -151,11 +151,11 @@ body{
   padding:26px; overflow:auto;
 }
 .frame{
-  width:1400px; background:var(--bg); border-radius:18px; overflow:hidden;
+  width:min(1400px,100%); background:var(--bg); border-radius:18px; overflow:hidden;
   box-shadow:0 30px 90px -30px rgba(0,0,0,.9); margin-bottom:38px;
 }
-.framelabel{
-  width:1400px; font-family:'Baloo 2'; font-weight:800; font-size:13px;
+.framelabel{display:none;
+  width:min(1400px,100%); font-family:'Baloo 2'; font-weight:800; font-size:13px;
   color:var(--dim); text-transform:uppercase; letter-spacing:.09em;
   margin:0 0 10px 4px;
 }
@@ -1072,7 +1072,7 @@ h1,h2,h3,h4,.num,.btn,.chip,.tab{font-family:'Baloo 2'}
         </div>
 
         <div class="consequence" style="margin-top:11px">
-          <b style="color:var(--fg)">What this costs you, plainly.</b> Three days of concentrated review produces exam-day recall and close to total loss afterwards. That matters here beyond the grade: carbonyl chemistry is MCAT content, so this material comes back. After the exam, HQ will put the four skipped topics &mdash; and the five crammed ones &mdash; into your review queue rather than letting them disappear.
+          <b style="color:var(--fg)">What this costs you, plainly.</b> Three days of concentrated review may help the immediate exam while leaving the underlying material thin. The plan keeps the skipped topics attached to their course evidence so your next outline or guide can cover them explicitly.
           <div style="margin-top:7px;color:var(--dim)">Being behind at this point is ordinary, not a failure. Most of your classmates are here too.</div>
         </div>
 

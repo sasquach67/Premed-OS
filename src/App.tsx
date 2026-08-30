@@ -11,7 +11,6 @@ const Home = lazy(() => import('@/pages/Home').then((m) => ({ default: m.Home })
 const OverviewTasksPage = lazy(() => import('@/pages/OverviewTasksPage').then((m) => ({ default: m.OverviewTasksPage })))
 const OverviewQuarterlyGoalsPage = lazy(() => import('@/pages/OverviewQuarterlyGoalsPage').then((m) => ({ default: m.OverviewQuarterlyGoalsPage })))
 const Academics = lazy(() => import('@/pages/Academics').then((m) => ({ default: m.Academics })))
-const AcademicRecallSession = lazy(() => import('@/pages/AcademicRecallSession').then((m) => ({ default: m.AcademicRecallSession })))
 const Mcat = lazy(() => import('@/pages/Mcat').then((m) => ({ default: m.Mcat })))
 const McatFocusSession = lazy(() => import('@/pages/McatFocusSession').then((m) => ({ default: m.McatFocusSession })))
 const Letters = lazy(() => import('@/pages/Letters').then((m) => ({ default: m.Letters })))
@@ -54,7 +53,6 @@ function App() {
       <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="mcat/session" element={<McatFocusSession />} />
-          <Route path="academics/review/:courseId" element={<AcademicRecallSession />} />
 
           {/* Public layer — outside the shell, own nav and footer. */}
           {/* `/landing` always renders the landing page, for anyone who

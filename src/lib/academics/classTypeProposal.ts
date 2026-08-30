@@ -27,7 +27,7 @@ export interface ClassTypeProposalInput {
 }
 
 const WRITING_CODE = /^\s*(?:ENGL|WRIT|COMP|RHET|LIT)\b/i
-const WRITING_WEIGHT = /\b(?:paper|essay|composition|writing)\b/i
+const WRITING_WEIGHT = /\b(?:paper|essay|composition|writing|reading responses?|revisions?|drafts?)\b/i
 const STAGED_WRITING = /\b(?:draft|revision|revise|peer review)\b/i
 
 function highConfidence(items: readonly Pick<SyllabusItem, 'kind' | 'label' | 'value' | 'confidence'>[]) {

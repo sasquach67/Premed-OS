@@ -1,14 +1,15 @@
 import { extractDocumentText, pdfTextToLines } from '@/lib/academics/documentText'
+import { extractClassMeetingDays, extractClassMeetingTime } from '@/lib/academics/meetingSchedule'
 
 // One implementation, shared with transcript intake. Re-exported because the
 // PDF line-grouping regression test targets this module's public surface.
 export { pdfTextToLines }
 export type { PdfTextItem } from '@/lib/academics/documentText'
 
-export type SyllabusKind = 'identity' | 'standards' | 'exams' | 'weights' | 'units' | 'deadlines' | 'policies' | 'logistics'
+export type SyllabusKind = 'identity' | 'standards' | 'exams' | 'weights' | 'units' | 'readings' | 'deadlines' | 'policies' | 'logistics'
 
-export interface SyllabusEvidence { quote: string; location: string }
-export interface SyllabusItem { id: string; kind: SyllabusKind; label: string; value?: string; confidence: 'high' | 'low'; evidence: SyllabusEvidence }
+export interface SyllabusEvidence { quote: string; location: string; sourceName?: string }
+export interface SyllabusItem { id: string; kind: SyllabusKind; label: string; value?: string; context?: string; confidence: 'high' | 'low'; evidence: SyllabusEvidence }
 export interface SyllabusProposal {
   sourceName: string
   sourceKind: 'pdf' | 'docx' | 'text' | 'image' | 'shared'
@@ -38,8 +39,13 @@ const datePattern = new RegExp(`\\b${month}\\.?\\s+\\d{1,2}(?:,?\\s+20\\d{2})?\\
 const headers: Array<[SyllabusKind, RegExp]> = [
   ['units', /^(?:week|unit|module|chapter)\s*\d+/i],
   ['policies', /\b(?:attendance|late work|late policy|drop(?:ped)? lowest|replacement|make-?up)\b/i],
-  ['logistics', /\b(?:office hours|meets?|meeting|room|location|instructor|professor|rm\.?|hall|center|building)\b|\b(?:MWF|TR|TTH)\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/i],
+  ['logistics', /\b(?:office hours|meets?|meeting|instructor|prof(?:essor)?\.?)\b|^(?:office|room|location)\s*:|^(?=.{3,100}$).+\b(?:Hall|Center|Building)\b(?:\s+(?:Room|Rm\.?)?\s*[A-Za-z]?\d+[A-Za-z]?)?$|\b(?:MWF|TR|TTH)\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/i],
 ]
+
+const NAMED_SUBJECT_CODES: Record<string, string> = {
+  anthropology: 'ANTH',
+  psychology: 'PSYC',
+}
 
 const MONTH_INDEX: Record<string, number> = {
   jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
@@ -75,6 +81,88 @@ function numericDateToIso(month: string, day: string, yearHint?: number): string
   return `${yearHint}-${String(numericMonth).padStart(2, '0')}-${String(numericDay).padStart(2, '0')}`
 }
 
+function scheduleStart(line: string, yearHint?: number): { label: string; date?: string } | undefined {
+  const match = line.match(/^((?:Introduction|Wk|Week)\s*\d*)\s*:\s*(\d{1,2})\/(\d{1,2})/i)
+  if (!match) return undefined
+  return { label: match[1].replace(/^Wk\b/i, 'Week').trim(), date: numericDateToIso(match[2], match[3], yearHint) }
+}
+
+function scheduleExam(line: string): string | undefined {
+  const match = line.match(/\b(?:exam|midterm)\s*#?\s*(\d+)\b/i)
+  if (match) return `Exam ${match[1]}`
+  return /\bfinal exam\b/i.test(line) ? 'Final Exam' : undefined
+}
+
+function looksLikeReading(line: string): boolean {
+  return /[“"]|(?:\bpp?\.|\bvol\.)|\b(?:chapter|ch\.|podcast|episode|publishers?|press|journal|magazine|ISBN)\b|https?:\/\//i.test(line)
+    || /^[A-Z][A-Za-z'’-]+,\s*(?:[A-Z](?:\.|[A-Za-z'’-]+\.)|(?:[A-Z][A-Za-z'’-]+,\s*)?\d{4})/.test(line)
+}
+
+function parseFlattenedSchedule(lines: string[], items: SyllabusItem[], searched: Record<SyllabusKind, string>, yearHint?: number) {
+  const scheduleHeader = lines.findIndex((line) => /^(?:schedule for class|course (?:schedule|calendar))/i.test(line))
+  if (scheduleHeader < 0) return
+  const scheduleEnd = lines.findIndex((line, index) => index > scheduleHeader && /^(?:tips for success|required books|course requirements|honou?r code)\b/i.test(line))
+  const end = scheduleEnd < 0 ? lines.length : scheduleEnd
+  const rowStarts: Array<{ index: number; label: string; date?: string }> = []
+  for (let index = scheduleHeader + 1; index < end; index += 1) {
+    const start = scheduleStart(lines[index], yearHint)
+    if (start) rowStarts.push({ index, ...start })
+  }
+
+  rowStarts.forEach((row, rowIndex) => {
+    const nextIndex = rowStarts[rowIndex + 1]?.index ?? end
+    const cells = lines.slice(row.index + 1, nextIndex)
+    const evidenceAt = (offset: number) => lineEvidence(lines[row.index + 1 + offset], row.index + 1 + offset)
+    const themeParts: string[] = []
+    let genericTheme = ''
+    const readingParts: Array<{ label: string; evidence: SyllabusEvidence }> = []
+    let readingStarted = false
+
+    cells.forEach((cell, offset) => {
+      if (/^(?:week\/theme|reading|recitation to discuss|yes\b|no\b|discussion\b|go over exam)/i.test(cell)) return
+      if (/^(?:\d{1,2}\/\d{1,2}\s*[-:]|\(?no class|fall break|thanksgiving break|in our classroom)/i.test(cell)) return
+      if (/\b(?:review session|review for (?:the )?(?:exam|final)|review all readings)\b/i.test(cell)) return
+      // The dedicated pass below reads the final's own numeric date. Using
+      // the current week's first date here would incorrectly make it 12/1.
+      if (/\bfinal exam\b/i.test(cell)) return
+      const exam = scheduleExam(cell)
+      if (exam) {
+        push(items, 'exams', exam, row.date, row.date ? 'high' : 'low', evidenceAt(offset))
+        searched.exams = 'Exam dates found'
+        return
+      }
+      if (looksLikeReading(cell) || readingStarted) {
+        readingStarted = true
+        const previous = readingParts.at(-1)
+        if (previous && /[:;,–-]\s*$/.test(previous.label)) previous.label = `${previous.label} ${cell}`.replace(/\s+/g, ' ')
+        else readingParts.push({ label: cell, evidence: evidenceAt(offset) })
+        return
+      }
+      if (/^(?:exam week|review week)$/i.test(cell)) genericTheme = cell
+      else themeParts.push(cell)
+    })
+
+    const theme = (themeParts.join(' ') || genericTheme).replace(/\s+/g, ' ').trim()
+    if (theme) {
+      push(items, 'units', theme, row.date, row.date ? 'high' : 'low', lineEvidence(lines[row.index], row.index), row.label)
+      searched.units = 'Schedule scope found'
+    }
+    readingParts.forEach((reading) => push(items, 'readings', reading.label, row.date, row.date ? 'high' : 'low', reading.evidence, row.label))
+    if (readingParts.length) searched.readings = 'Assigned readings found'
+  })
+
+  for (let index = scheduleHeader + 1; index < end; index += 1) {
+    const line = lines[index]
+    const final = line.match(/\bFINAL EXAM\b[^\d]*(\d{1,2})\/(\d{1,2})/i)
+    if (!final) continue
+    const date = numericDateToIso(final[1], final[2], yearHint)
+    if (!items.some((item) => item.kind === 'exams' && item.label === 'Final Exam' && item.value === date)) {
+      push(items, 'exams', 'Final Exam', date, date ? 'high' : 'low', lineEvidence(line, index))
+      searched.exams = 'Exam dates found'
+    }
+  }
+}
+
 function scheduleTopic(raw: string): string {
   return raw
     .replace(/\([^)]*\)/g, '')
@@ -98,17 +186,17 @@ function trimConnectives(label: string): string {
 function lineEvidence(line: string, index: number): SyllabusEvidence {
   return { quote: line.trim(), location: `line ${index + 1}` }
 }
-function push(items: SyllabusItem[], kind: SyllabusKind, label: string, value: string | undefined, confidence: 'high' | 'low', evidence: SyllabusEvidence) {
-  items.push({ id: `${kind}-${items.length}`, kind, label, value, confidence, evidence })
+function push(items: SyllabusItem[], kind: SyllabusKind, label: string, value: string | undefined, confidence: 'high' | 'low', evidence: SyllabusEvidence, context?: string) {
+  items.push({ id: `${kind}-${items.length}`, kind, label, value, context, confidence, evidence })
 }
 
 const STANDARD_HEADER = /\b(?:learning (?:objectives?|outcomes?|standards?)|student learning outcomes?|course (?:objectives?|outcomes?|goals?))\b/i
 const STANDARD_ITEM = /^(?:[•*‣–-]|\(?\d{1,2}[.)])\s+(.+)$/
 
 function standardLabel(line: string): string | undefined {
-  const bullet = line.match(STANDARD_ITEM)?.[1] ?? line.match(/^(?:students? (?:will|should)|by the end of (?:this )?(?:course|class),? (?:students? )?(?:will|should)|understand|explain|apply|analyze|evaluate|describe|identify|compare|distinguish)\b[:\s-]*(.+)?/i)?.[0]
+  const bullet = line.match(STANDARD_ITEM)?.[1] ?? line.match(/^(?:students? (?:will|should)|by the end of (?:this )?(?:course|class),? (?:students? )?(?:will|should)|understand|demonstrate|classify|translate|assess|recognize|interrogate|employ|explain|apply|analyze|evaluate|describe|identify|compare|distinguish)\b[:\s-]*(.+)?/i)?.[0]
   if (!bullet) return undefined
-  const label = bullet.replace(/^(?:students? (?:will|should)s+|by the end of (?:this )?(?:course|class),?\s*(?:students? )?(?:will|should)s+)/i, '').replace(/\s+/g, ' ').trim()
+  const label = bullet.replace(/^(?:students? (?:will|should)\s+|by the end of (?:this )?(?:course|class),?\s*(?:students? )?(?:will|should)\s+)/i, '').replace(/\s+/g, ' ').trim()
   return label.length >= 8 ? label : undefined
 }
 
@@ -117,7 +205,7 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
   const lines = text.replace(/\r/g, '').split('\n').map((line) => line.replace(/\s+/g, ' ').trim()).filter(Boolean)
   const items: SyllabusItem[] = []
   const searched: Record<SyllabusKind, string> = {
-    identity: 'No course identity found', standards: 'No stated learning standards found', exams: 'No exam dates found', weights: 'No grade categories found', units: 'No week or unit headings found', deadlines: 'No assignment deadlines found', policies: 'No attendance, late, drop, or replacement policy found', logistics: 'No meeting, instructor, or office-hours details found',
+    identity: 'No course identity found', standards: 'No stated learning standards found', exams: 'No exam dates found', weights: 'No grade categories found', units: 'No week or unit headings found', readings: 'No assigned readings found', deadlines: 'No assignment deadlines found', policies: 'No attendance, late, drop, or replacement policy found', logistics: 'No meeting, instructor, or office-hours details found',
   }
   // Syllabi date the term at the top (`Fall 2026`) and then write `Oct 6`.
   const yearHint = Number(text.match(/\b20\d{2}\b/)?.[0]) || undefined
@@ -133,15 +221,21 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
     const namedCourse = line.match(/^([A-Za-z][A-Za-z ]+?)\s+(\d{2,4})(?:\.\d{1,3})?\s+(.{3,})$/)
     if (namedCourse && !items.some((item) => item.kind === 'identity')) {
       const subject = namedCourse[1].trim()
-      const code = subject.toLowerCase() === 'psychology' ? `PSYC ${namedCourse[2]}` : `${subject} ${namedCourse[2]}`
+      const code = `${NAMED_SUBJECT_CODES[subject.toLowerCase()] ?? subject} ${namedCourse[2]}`
       push(items, 'identity', code, namedCourse[3].trim(), 'high', evidence)
       searched.identity = 'Course identity found'
     }
-    const weight = line.match(/^(.{2,60}?)\s*[-:–]?\s*(\d{1,3}(?:\.\d+)?)\s*%/i)
-    if (weight) { push(items, 'weights', weight[1].trim(), `${weight[2]}%`, 'high', evidence); searched.weights = 'Grade categories found' }
+    const pointsWeight = !/^total\b/i.test(line) && line.match(/^(.{2,100}?)\s*(?:x\s*\d+(?:\.\d+)?\s*pts?\s*each\s*:\s*)?\d+(?:\.\d+)?\s*pts?\s*\((\d{1,3}(?:\.\d+)?)%\)\s*$/i)
+    const directWeight = !pointsWeight && !/^total\b/i.test(line) ? line.match(/^(.{2,60}?)\s*[-:–]?\s*(\d{1,3}(?:\.\d+)?)\s*%/i) : null
+    const weight = pointsWeight ?? directWeight
+    if (weight) { push(items, 'weights', weight[1].replace(/[\s:–—-]+$/, '').trim(), `${weight[2]}%`, 'high', evidence); searched.weights = 'Grade categories found' }
     const date = line.match(datePattern)
     if (date) {
+      // Publication dates inside citations are source metadata, not course
+      // deadlines. Dated facts need an operational cue before becoming work.
       const isExam = /\b(?:exam|midterm|final|test)\b/i.test(line)
+      const isDeadline = /\b(?:due|deadline|submit|submission|quiz|assignment|paper|response|presentation|project)\b/i.test(line)
+      if (!isExam && !isDeadline) return
       const kind: SyllabusKind = isExam ? 'exams' : 'deadlines'
       const iso = toIsoDate(date[0], yearHint)
       const label = trimConnectives(line.replace(date[0], '')) || (isExam ? 'Exam' : 'Deadline')
@@ -186,6 +280,18 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
       if (kind === 'logistics' && /same location as class meetings/i.test(line)) continue
       if (pattern.test(line)) { push(items, kind, line, undefined, kind === 'policies' ? 'low' : 'high', evidence); searched[kind] = `${kind[0].toUpperCase()}${kind.slice(1)} found` }
     }
+    // Registrar schedules are written in several equivalent forms (TR, T/Th,
+    // Tues Thurs). Keep the exact source line as evidence, while recognizing
+    // all of them as the same class-meeting fact. Office hours remain useful
+    // syllabus logistics but are not class meeting metadata.
+    if (
+      extractClassMeetingDays(line)
+      && extractClassMeetingTime(line)
+      && !items.some((item) => item.kind === 'logistics' && item.evidence.location === evidence.location)
+    ) {
+      push(items, 'logistics', line, undefined, 'high', evidence)
+      searched.logistics = 'Logistics found'
+    }
   })
   // Standards are a separate pass so a numbered objective is never confused
   // with a schedule date or a scoreable assessment. Only explicit outcome/
@@ -195,14 +301,14 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
     const inline = line.split(/[:—–-]/, 2)[1]
     const inlineLabel = inline ? standardLabel(inline) : undefined
     if (inlineLabel) push(items, 'standards', inlineLabel, undefined, 'high', lineEvidence(line, index))
-    for (let next = index + 1; next < Math.min(lines.length, index + 16); next += 1) {
+    for (let next = index + 1; next < Math.min(lines.length, index + 24); next += 1) {
       const candidate = lines[next]
-      if (STANDARD_HEADER.test(candidate) || /^(?:grading|assignments?|schedule|course calendar|attendance|polic(?:y|ies)|required materials?)\b/i.test(candidate)) break
+      if (STANDARD_HEADER.test(candidate) || /^(?:questions for students|grading|assignments?|schedule|course calendar|attendance|polic(?:y|ies)|required (?:materials?|books)|course requirements?)\b/i.test(candidate)) break
       const label = standardLabel(candidate)
       if (label) push(items, 'standards', label, undefined, 'high', lineEvidence(candidate, next))
-      else if (items.some((item) => item.kind === 'standards') && candidate.length > 80) break
     }
   })
+  parseFlattenedSchedule(lines, items, searched, yearHint)
   if (items.some((item) => item.kind === 'standards')) searched.standards = 'Stated learning standards found'
   const scanDetected = text.replace(/\s/g, '').length < 80
   const structureFound = STRUCTURAL.filter((signal) => items.some((item) => item.kind === signal))
@@ -212,6 +318,43 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
   // as a syllabus, and the student can override this either way.
   const documentKind: DocumentKind = !scanDetected && structureFound.length === 0 ? 'unrecognized' : 'syllabus'
   return { sourceName, sourceKind, text, items, searched, scanDetected, documentKind, structureFound, numberedItems }
+}
+
+const SYLLABUS_KINDS: SyllabusKind[] = ['identity', 'standards', 'exams', 'weights', 'units', 'readings', 'deadlines', 'policies', 'logistics']
+
+/** Combines related local course files into one review proposal without
+ * hiding which file supplied each fact. Exact duplicate facts are shown once. */
+export function mergeSyllabusProposals(proposals: SyllabusProposal[]): SyllabusProposal {
+  if (!proposals.length) throw new Error('Choose at least one syllabus file to read.')
+  if (proposals.length === 1) return proposals[0]
+
+  const seen = new Set<string>()
+  const items = proposals.flatMap((proposal, sourceIndex) => proposal.items.flatMap((item) => {
+    const key = `${item.kind}\u0000${item.label.trim().toLowerCase()}\u0000${item.value?.trim().toLowerCase() ?? ''}`
+    if (seen.has(key)) return []
+    seen.add(key)
+    return [{
+      ...item,
+      id: `source-${sourceIndex}-${item.id}`,
+      evidence: { ...item.evidence, sourceName: proposal.sourceName, location: `${proposal.sourceName} · ${item.evidence.location}` },
+    }]
+  }))
+  const searched = Object.fromEntries(SYLLABUS_KINDS.map((kind) => {
+    const count = items.filter((item) => item.kind === kind).length
+    return [kind, count ? `${count} found across ${proposals.length} files` : proposals[0].searched[kind]]
+  })) as Record<SyllabusKind, string>
+
+  return {
+    sourceName: proposals.map((proposal) => proposal.sourceName).join(' + '),
+    sourceKind: proposals[0].sourceKind,
+    text: proposals.map((proposal) => proposal.text).join('\n\n'),
+    items,
+    searched,
+    scanDetected: proposals.every((proposal) => proposal.scanDetected),
+    documentKind: proposals.some((proposal) => proposal.documentKind === 'syllabus') ? 'syllabus' : 'unrecognized',
+    structureFound: [...new Set(proposals.flatMap((proposal) => proposal.structureFound))],
+    numberedItems: proposals.reduce((sum, proposal) => sum + proposal.numberedItems, 0),
+  }
 }
 
 

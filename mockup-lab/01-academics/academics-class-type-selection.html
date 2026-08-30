@@ -1,6 +1,7 @@
 <!doctype html>
 <!--
   CLASS-TYPE SELECTION — the one add-class decision.
+  Status: APPROVED (August 26, 2026).
   Product views: suggested-writing | suggested-stem | needs-choice | mobile
   The three chips are a proposal/selection before class creation, never a saved
   workspace mutation. See the adjacent .md for the behavioral contract.
@@ -44,7 +45,7 @@
         <section class="decision" aria-labelledby="decision-title">
           <div class="heading"><h2 id="decision-title">What kind of work will this class need?</h2><p>Choose what fits—you can change it later.</p></div>
           <div class="chips" role="group" aria-label="Class type">
-            <button class="chip" type="button" data-type="stem" aria-pressed="false"><span class="kind">STEM</span><span class="detail">Topics and recall tools</span><span class="mark">Selected</span></button>
+            <button class="chip" type="button" data-type="stem" aria-pressed="false"><span class="kind">STEM</span><span class="detail">Topics and source-backed study work</span><span class="mark">Selected</span></button>
             <button class="chip" type="button" data-type="writing" aria-pressed="true"><span class="kind">Writing</span><span class="detail">Drafts, readings, feedback</span><span class="mark">Suggested</span></button>
             <button class="chip" type="button" data-type="general" aria-pressed="false"><span class="kind">General</span><span class="detail">Grades and deadlines</span><span class="mark">Selected</span></button>
           </div>
@@ -54,7 +55,6 @@
         <footer class="actions"><span class="hint" id="hint">Suggestion only — you can choose a different type.</span><button class="secondary" type="button">Cancel</button><button class="button" id="add" type="button">Add class</button></footer>
       </div>
     </section>
-    <aside class="after"><b>What this protects:</b> a suggestion is visible and reversible. Nothing becomes a saved workspace until <b>Add class</b>.</aside>
   </main>
   <script>
     const views={

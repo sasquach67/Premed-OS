@@ -18,6 +18,7 @@ import { migrateReviewSessionV32 } from '@/store/migrations/reviewSessionV32'
 import { migrateRetrievabilityPredictionsV33 } from '@/store/migrations/retrievabilityPredictionsV33'
 import { migrateWritingEvidenceV34 } from '@/store/migrations/writingEvidenceV34'
 import { migrateWatchedNotesV35 } from '@/store/migrations/watchedNotesV35'
+import { migratePlanningLibraryV36 } from '@/store/migrations/planningLibraryV36'
 import { isCatalogWarningAcknowledged } from '@/lib/academics/requirementsAudit'
 import { migrateExamPrepV19 } from '@/store/migrations/examPrepV19'
 import type { AppData, ClassWeakArea, Org, RequirementItem, TaskItem, Topic } from '@/lib/types'
@@ -28,7 +29,23 @@ function freshData(): AppData {
 
 it('declares the full supported local migration span', () => {
   expect(OLDEST_SUPPORTED_STORE_VERSION).toBe(0)
-  expect(CURRENT_STORE_VERSION).toBe(35)
+  expect(CURRENT_STORE_VERSION).toBe(37)
+})
+
+describe('migratePlanningLibraryV36', () => {
+  it('adds an empty local planning context without inferring a program', () => {
+    const data = freshData()
+    delete (data.academics.classCenter as Partial<typeof data.academics.classCenter>).planningProgramContext
+    const before = structuredClone(data)
+    Object.freeze(data)
+    Object.freeze(data.academics)
+    Object.freeze(data.academics.classCenter)
+    const out = migratePlanningLibraryV36(data)
+    expect(out.academics.classCenter.planningProgramContext).toEqual({})
+    expect({ ...out.academics.classCenter, planningProgramContext: undefined })
+      .toEqual({ ...before.academics.classCenter, planningProgramContext: undefined })
+    expect(data).toEqual(before)
+  })
 })
 
 describe('migrateWatchedNotesV35', () => {
@@ -230,6 +247,22 @@ describe('migratePlannerTermsV29', () => {
     data.courses = []
     data.academics.classCenter.plannerTerms = []
     expect(migratePlannerTermsV29(data)).toBe(data)
+  })
+
+  it('removes a legacy prior-credit slot without deleting its transcript-backed course', () => {
+    const data = freshData()
+    data.courses = [{
+      id: 'transfer', term: 'Prior credit', plannerTermId: 'planner-term-prior-credit', code: 'BIO 101', title: 'Biology', credits: 4,
+      grade: 'A', bcpm: false, status: 'completed', inResidence: false, satisfies: [], order: 0,
+    }]
+    data.academics.classCenter.plannerTerms = [{
+      id: 'planner-term-prior-credit', label: 'Prior credit', kind: 'standard', origin: 'legacy-derived', createdAt: 0, updatedAt: 0, order: 0,
+    }]
+
+    const out = migratePlannerTermsV29(data)
+    expect(out.academics.classCenter.plannerTerms).toEqual([])
+    expect(out.courses).toHaveLength(1)
+    expect(out.courses[0]).not.toHaveProperty('plannerTermId')
   })
 })
 

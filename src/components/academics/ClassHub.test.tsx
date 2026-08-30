@@ -1,7 +1,9 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { WritingTools } from '@/components/academics/ClassHub'
+import { ClassHub, WritingTools } from '@/components/academics/ClassHub'
+import { ToastProvider } from '@/components/common/ToastProvider'
 import { createSeedData } from '@/data/seed'
 import { recurringFeedbackThemes, readingDebt } from '@/lib/academics/writingEvidence'
 import { createInitialDataForMode, CURRENT_STORE_VERSION, snapshotData, STORAGE_KEY, useStore } from '@/store/store'
@@ -20,6 +22,11 @@ vi.stubGlobal('matchMedia', vi.fn().mockImplementation(() => ({
   addEventListener: vi.fn(),
   removeEventListener: vi.fn(),
 })))
+HTMLElement.prototype.scrollIntoView = vi.fn()
+HTMLElement.prototype.hasPointerCapture = vi.fn(() => false)
+HTMLElement.prototype.setPointerCapture = vi.fn()
+vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => { callback(0); return 1 }))
+vi.stubGlobal('cancelAnimationFrame', vi.fn())
 
 let courseId = ''
 const now = Date.UTC(2026, 7, 23)
@@ -167,5 +174,487 @@ describe('WritingTools', () => {
     expect(container.textContent).toContain('Add paper')
     expect(container.textContent).toContain('Add reading')
     expect(container.textContent).not.toMatch(/Literacy narrative|Writing as revision|clarify your claim|reading behind|BIOL 252|CHEM 262/)
+  })
+})
+
+describe('ClassHub approved Overview', () => {
+  let container: HTMLDivElement
+  let root: Root
+
+  beforeEach(() => {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+  })
+
+  afterEach(async () => {
+    await act(async () => root.unmount())
+    container.remove()
+  })
+
+  it('uses the saved class color as the banner ambience while keeping the study-resource action blue', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    workspace.color = 'red'
+
+    await act(async () => {
+      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>)
+    })
+
+    const banner = container.querySelector<HTMLElement>('.class-hub-banner')!
+    expect(banner.querySelectorAll('.class-hub-identity')).toHaveLength(1)
+    expect(banner.dataset.courseColor).toBe('red')
+    expect(banner.style.getPropertyValue('--class-hub-accent')).toBe('#e8806f')
+    expect(banner.style.getPropertyValue('--class-hub-accent-rgb')).toBe('232 128 111')
+    expect(container.querySelector('button.class-hub-primary-action')?.textContent).toContain('Create study resources')
+  })
+
+  it('keeps transcript capture as the default while the bounded journal opens saved lecture evidence on demand', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    for (const topic of seed.academics.classCenter.topics.filter((item) => item.courseId === course.id)) {
+      topic.status = 'ready'
+      topic.fsrs.reps = 0
+    }
+    seed.academics.classCenter.lectures.push({
+      id: 'lecture-saved-1',
+      courseId: course.id,
+      title: 'Lecture 1',
+      inputPath: 'pasted',
+      processingState: 'ready',
+      occurredOn: '2026-08-26',
+      createdAt: now,
+      updatedAt: now,
+      order: 0,
+    })
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}>
+          <ToastProvider>
+            <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
+          </ToastProvider>
+        </MemoryRouter>,
+      )
+    })
+
+    expect(container.textContent).toContain('Class journal')
+    expect(container.textContent).toContain('Add transcript')
+    expect(container.textContent).toContain('Drop a transcript file')
+    expect(container.querySelector('.lecture-rail-list')).toBeTruthy()
+    expect(container.textContent).toContain('Recent study work')
+    expect(container.textContent).not.toContain('Class Plan')
+    expect([...container.querySelectorAll<HTMLButtonElement>('button')].some((button) => button.textContent?.trim().startsWith('Topics'))).toBe(true)
+
+    const savedLecture = container.querySelector('button.lecture-rail-entry') as HTMLButtonElement
+    await act(async () => savedLecture.click())
+    expect(container.textContent).toContain('Not added yet')
+    expect(container.textContent).toContain('Supporting evidence')
+    expect(container.textContent).toContain('Study work')
+    expect(container.textContent).toContain('Topics stay syllabus-led')
+
+    const addToday = [...container.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Add today’s lecture')
+    expect(addToday).toBeTruthy()
+    await act(async () => addToday!.click())
+    expect(document.body.textContent).toContain('Add a lecture')
+    expect(document.body.textContent).toContain('Add transcript')
+  })
+
+  it('keeps the transcript-first journal on writing and general class overviews', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'writing')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}>
+          <ToastProvider>
+            <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
+          </ToastProvider>
+        </MemoryRouter>,
+      )
+    })
+
+    expect(container.textContent).toContain('Class journal')
+    expect(container.textContent).toContain('Add transcript')
+    expect(container.textContent).toContain('Evidence')
+    expect(container.textContent).toContain('Study work')
+  })
+
+  it('opens Create study work inside the selected lecture instead of the generic Materials tab', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    seed.academics.classCenter.lectures.push({
+      id: 'lecture-with-source', courseId: course.id, title: 'Lecture #1', inputPath: 'pasted',
+      transcriptFileId: 'lecture-source-file', occurredOn: '2026-08-27', topicIds: [], processingState: 'ready',
+      createdAt: now, updatedAt: now, order: 0,
+    })
+    seed.academics.classCenter.files.push({
+      id: 'lecture-source-file', courseId: course.id, lectureId: 'lecture-with-source', sourceType: 'paste',
+      title: 'Lecture transcript source', type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready',
+      createdAt: now, updatedAt: now, order: 0,
+    })
+    seed.academics.classCenter.sourceChunks.push({
+      id: 'lecture-source-chunk', fileId: 'lecture-source-file', courseId: course.id, content: 'Exact saved lecture evidence.',
+      coveredByKeyPoint: false, createdAt: now, updatedAt: now, order: 0,
+    })
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}>
+          <ToastProvider>
+            <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
+          </ToastProvider>
+        </MemoryRouter>,
+      )
+    })
+
+    await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
+    const create = [...container.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Create study work')
+    expect(create).toBeTruthy()
+    await act(async () => create!.click())
+
+    const createResources = [...container.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Create study resources')
+    expect(createResources).toBeTruthy()
+    await act(async () => createResources!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 })))
+    const studyGuide = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
+      .find((item) => item.textContent?.trim() === 'Study guide')
+    expect(studyGuide).toBeTruthy()
+    await act(async () => studyGuide!.click())
+    expect(document.body.textContent).toContain('Lecture transcript source')
+    expect(container.textContent).not.toContain('Materials ·')
+  })
+
+  it('routes Read transcript to the selected lecture transcript instead of a generic review state', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    seed.academics.classCenter.lectures.push({
+      id: 'lecture-read-route', courseId: course.id, title: 'Lecture #1', inputPath: 'pasted', transcriptFileId: 'lecture-read-file',
+      occurredOn: '2026-08-27', topicIds: [], processingState: 'ready', createdAt: now, updatedAt: now, order: 0,
+    })
+    seed.academics.classCenter.files.push({
+      id: 'lecture-read-file', courseId: course.id, lectureId: 'lecture-read-route', sourceType: 'paste', title: 'Lecture transcript source',
+      type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready', createdAt: now, updatedAt: now, order: 0,
+    })
+    seed.academics.classCenter.sourceChunks.push({
+      id: 'lecture-read-chunk', fileId: 'lecture-read-file', courseId: course.id, content: 'Exact transcript passage for the selected lecture.',
+      coveredByKeyPoint: false, createdAt: now, updatedAt: now, order: 0,
+    })
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>)
+    })
+    await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
+    const read = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Read transcript')!
+    await act(async () => read.click())
+
+    expect(document.body.textContent).toContain('Exact transcript passage for the selected lecture.')
+    expect(document.body.textContent).toContain('Hide transcript')
+  })
+
+  it('routes Add evidence to the selected lecture material intake', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    seed.academics.classCenter.lectures.push({
+      id: 'lecture-add-evidence', courseId: course.id, title: 'Lecture #1', inputPath: 'pasted', transcriptFileId: 'lecture-add-evidence-file',
+      occurredOn: '2026-08-27', topicIds: [], processingState: 'ready', createdAt: now, updatedAt: now, order: 0,
+    })
+    seed.academics.classCenter.files.push({
+      id: 'lecture-add-evidence-file', courseId: course.id, lectureId: 'lecture-add-evidence', sourceType: 'paste', title: 'Transcript',
+      type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready', createdAt: now, updatedAt: now, order: 0,
+    })
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>)
+    })
+    await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
+    const add = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Add evidence')!
+    await act(async () => add.click())
+
+    expect(document.body.textContent).toContain('Add material')
+    expect(document.body.textContent).toContain('Choose files, paste a screenshot from your clipboard')
+  })
+
+  it('routes Open materials to the selected lecture evidence section', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    seed.academics.classCenter.lectures.push({
+      id: 'lecture-open-evidence', courseId: course.id, title: 'Lecture #1', inputPath: 'pasted', transcriptFileId: 'lecture-open-transcript',
+      occurredOn: '2026-08-27', topicIds: [], processingState: 'ready', createdAt: now, updatedAt: now, order: 0,
+    })
+    seed.academics.classCenter.files.push(
+      { id: 'lecture-open-transcript', courseId: course.id, lectureId: 'lecture-open-evidence', sourceType: 'paste', title: 'Transcript', type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready', createdAt: now, updatedAt: now, order: 0 },
+      { id: 'lecture-open-slides', courseId: course.id, lectureId: 'lecture-open-evidence', sourceType: 'upload', title: 'Lecture slides', type: 'lecture-slides', linkedTopicIds: [], owner: 'course', processingStatus: 'ready', createdAt: now, updatedAt: now, order: 1 },
+    )
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>)
+    })
+    await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
+    const openMaterials = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Open materials')!
+    await act(async () => openMaterials.click())
+
+    expect(document.body.textContent).toContain('Lecture slides')
+    expect(document.activeElement?.textContent).toContain('Supporting evidence')
+  })
+
+  it('routes Open study work to the selected lecture generated artifacts', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    seed.academics.classCenter.lectures.push({
+      id: 'lecture-open-study', courseId: course.id, title: 'Lecture #1', inputPath: 'pasted', transcriptFileId: 'lecture-study-transcript',
+      occurredOn: '2026-08-27', topicIds: [], processingState: 'ready', createdAt: now, updatedAt: now, order: 0,
+    })
+    seed.academics.classCenter.files.push(
+      { id: 'lecture-study-transcript', courseId: course.id, lectureId: 'lecture-open-study', sourceType: 'paste', title: 'Transcript', type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready', createdAt: now, updatedAt: now, order: 0 },
+      { id: 'lecture-study-guide', courseId: course.id, lectureId: 'lecture-open-study', sourceType: 'paste', title: 'Lecture 1 study guide', type: 'study-guide', linkedTopicIds: [], owner: 'generated', processingStatus: 'ready', createdAt: now, updatedAt: now, order: 1 },
+    )
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>)
+    })
+    await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
+    const openStudy = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Open study work')!
+    await act(async () => openStudy.click())
+
+    expect(document.body.textContent).toContain('Lecture 1 study guide')
+    expect(document.activeElement?.textContent).toContain('Study work')
+  })
+
+  it('keeps Topics syllabus-led and groups scheduled standards by week before unit', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    const topics = seed.academics.classCenter.topics.filter((item) => item.courseId === course.id)
+    topics[0].scheduledFor = '2026-09-09'
+    topics[0].unit = 'Later unit label'
+    topics[1].scheduledFor = '2026-09-01'
+    topics[1].unit = 'Earlier unit label'
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=topics`]}>
+          <ToastProvider>
+            <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
+          </ToastProvider>
+        </MemoryRouter>,
+      )
+    })
+
+    const text = container.textContent ?? ''
+    expect(text).toContain('Syllabus standards, ordered by scheduled week.')
+    expect(text).toContain('Import / refresh syllabus')
+    expect(text).toContain('Week of Aug 31')
+    expect(text).toContain('Week of Sep 7')
+    expect(text.indexOf('Week of Aug 31')).toBeLessThan(text.indexOf('Week of Sep 7'))
+    expect(text).not.toContain('Covered a topic today')
+    expect([...container.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Add topic')).toBe(false)
+  })
+
+  it('keeps class Assignments execution-first with a global handoff and supporting grade scenario', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    const assignment = seed.academics.classCenter.assignments.find((item) => item.courseId === course.id)!
+    Object.assign(assignment, { category: 'Midterms', pointsEarned: 88, pointsPossible: 100, weight: 50, status: 'graded' })
+    seed.academics.classCenter.gradeCategories.push(
+      { id: 'test-midterms', courseId: course.id, name: 'Midterms', weight: 50, createdAt: now, updatedAt: now, order: 0 },
+      { id: 'test-final', courseId: course.id, name: 'Final exam', weight: 50, createdAt: now, updatedAt: now, order: 1 },
+    )
+    useStore.getState().replaceAll(seed)
+
+    const scrollIntoView = vi.mocked(HTMLElement.prototype.scrollIntoView)
+    scrollIntoView.mockClear()
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=assignments&whatIf=1`]}>
+          <ToastProvider>
+            <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
+          </ToastProvider>
+        </MemoryRouter>,
+      )
+    })
+    await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())) })
+
+    expect(container.textContent).toContain('Coursework execution, fixed to this class.')
+    expect(container.textContent).toContain(`${course.code} only`)
+    expect([...container.querySelectorAll('a')].some((link) => link.textContent?.includes('All assignments') && link.getAttribute('href')?.includes('tab=assignments'))).toBe(true)
+    expect(container.textContent).toContain('Course grade context · supporting')
+    expect(container.textContent).toContain('What if…')
+    expect(container.querySelector('.class-hub-what-if-grid')).toBeTruthy()
+    expect(scrollIntoView).toHaveBeenCalled()
+    expect(useStore.getState().academics.classCenter.assignments.find((item) => item.id === assignment.id)?.pointsEarned).toBe(88)
+  })
+
+  it('restores a source-selection handoff from the study-guide deep link', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=materials&createMaterial=study-guide`]}>
+          <ToastProvider>
+            <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
+          </ToastProvider>
+        </MemoryRouter>,
+      )
+    })
+
+    expect(container.textContent).toContain('Create from selected material')
+    expect(container.textContent).toContain('Study guide')
+    expect(container.textContent).toContain('Nothing outside this selection is used.')
+  })
+
+  it('opens Add today’s lecture from the lecture-capture deep link', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=overview&captureLecture=1`]}>
+          <ToastProvider>
+            <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
+          </ToastProvider>
+        </MemoryRouter>,
+      )
+    })
+
+    expect(document.body.textContent).toContain('One home for each day of class')
+    expect(document.body.textContent).toContain('Add a lecture')
+    expect(document.body.textContent).toContain('Add transcript')
+  })
+
+  it('keeps the topic-focused Guide notice outside the New Guide item action', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    const topic = seed.academics.classCenter.topics.find((item) => item.courseId === course.id)!
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=guide&noteTopic=${topic.id}`]}>
+          <ToastProvider>
+            <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
+          </ToastProvider>
+        </MemoryRouter>,
+      )
+    })
+
+    const newItem = [...container.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'New Guide item')
+    const showAll = [...container.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Show all Guide items')
+    expect(newItem).toBeTruthy()
+    expect(showAll).toBeTruthy()
+    expect(newItem!.querySelector('button')).toBeNull()
+    expect(container.textContent).toContain(`Showing Guide items linked to ${topic.title}`)
+  })
+
+  it('groups Materials by week first and lets the student switch to category without hiding generated work', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    const topic = seed.academics.classCenter.topics.find((item) => item.courseId === course.id)!
+    topic.scheduledFor = '2026-09-09'
+    const slides = {
+      id: 'materials-week-slides', courseId: course.id, sourceType: 'upload' as const, title: 'Membrane transport slides', type: 'lecture-slides' as const,
+      topicId: topic.id, linkedTopicIds: [topic.id], owner: 'course' as const, createdAt: now, updatedAt: now, order: 800,
+    }
+    seed.academics.classCenter.files.push(slides, {
+      id: 'materials-learning-objectives', courseId: course.id, sourceType: 'upload', title: 'Unit 2 learning objectives', type: 'other',
+      topicId: topic.id, linkedTopicIds: [topic.id], owner: 'course', createdAt: now, updatedAt: now, order: 799,
+    }, {
+      id: 'materials-unassigned-homework', courseId: course.id, sourceType: 'upload', title: 'Homework 4', type: 'other',
+      linkedTopicIds: [], owner: 'mine', createdAt: now, updatedAt: now, order: 801,
+    })
+    seed.academics.classCenter.notes.unshift({
+      id: 'materials-generated-outline', courseId: course.id, title: 'Study outline · Membrane transport', type: 'study-guide', kind: 'on-material',
+      date: '2026-09-09', unit: '', topicIds: [], content: 'A source-grounded outline.', syncStatus: 'local-only', linkedFileIds: [slides.id], createdAt: now, updatedAt: now, order: 802,
+    })
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=materials`]}>
+          <ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider>
+        </MemoryRouter>,
+      )
+    })
+
+    expect(container.textContent).toContain('week first')
+    expect(container.textContent).toContain('Week of Sep 7')
+    expect(container.textContent).toContain('Study outline · Membrane transport')
+    const grouping = container.querySelector<HTMLButtonElement>('button[aria-label="Group materials"]')!
+    await act(async () => {
+      grouping.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }))
+      grouping.click()
+    })
+    const category = [...document.body.querySelectorAll<HTMLElement>('[role="option"]')].find((option) => option.textContent?.trim() === 'By category')!
+    await act(async () => category.click())
+
+    expect(container.textContent).toContain('Slides')
+    expect(container.textContent).toContain('Learning objectives')
+    expect(container.textContent).toContain('Generated resources')
+    const unassigned = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Unassigned')!
+    await act(async () => unassigned.click())
+    expect(container.textContent).toContain('Homework 4')
+    expect(container.textContent).toContain('Unassigned')
+  })
+
+  it('keeps generated study work in Materials and operational course context in Guide', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    seed.academics.classCenter.notes.unshift(
+      { id: 'boundary-study-guide', courseId: course.id, title: 'Learning objectives outline', type: 'study-guide', kind: 'on-material', date: '2026-09-01', unit: '', topicIds: [], content: 'Generated objectives.', syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: 900 },
+      { id: 'boundary-course-context', courseId: course.id, title: 'Ask about exam format', type: 'question-log', kind: 'about-class', date: '2026-09-01', unit: '', topicIds: [], content: 'Confirm whether the exam uses essays.', syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: 901 },
+    )
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter key="materials-boundary" initialEntries={[`/academics/classes/${course.id}?classTab=materials&materialNote=boundary-study-guide`]}>
+          <ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider>
+        </MemoryRouter>,
+      )
+    })
+    expect(container.textContent).toContain('Learning objectives outline')
+    expect(container.querySelector<HTMLDetailsElement>('#material-note-boundary-study-guide')?.open).toBe(true)
+    expect(container.textContent).not.toContain('Ask about exam format')
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter key="guide-boundary" initialEntries={[`/academics/classes/${course.id}?classTab=guide`]}>
+          <ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider>
+        </MemoryRouter>,
+      )
+      await Promise.resolve()
+    })
+    expect(container.textContent).toContain('Ask about exam format')
+    expect(container.textContent).not.toContain('Learning objectives outline')
+    expect(container.textContent).not.toContain('Study guides')
   })
 })

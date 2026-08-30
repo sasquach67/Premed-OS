@@ -1,5 +1,6 @@
 import type { ClassWorkspaceType } from '@/lib/types'
 import { proposeClassType, type ClassTypeProposal } from '@/lib/academics/classTypeProposal'
+import type { SyllabusItem } from '@/lib/academics/syllabusParser'
 
 export type ClassTypeDraftDecision = {
   selectedType?: ClassWorkspaceType
@@ -17,16 +18,18 @@ export function classTypeDraftDecision({
   courseCode,
   savedType,
   studentChoice,
+  syllabusItems,
 }: {
   isCreate: boolean
   courseCode: string
   savedType?: ClassWorkspaceType
   studentChoice?: ClassWorkspaceType
+  syllabusItems?: readonly Pick<SyllabusItem, 'kind' | 'label' | 'value' | 'confidence'>[]
 }): ClassTypeDraftDecision {
   if (!isCreate && savedType) return { selectedType: savedType, selectionKind: 'saved' }
   if (studentChoice) return { selectedType: studentChoice, selectionKind: 'student' }
 
-  const proposal = proposeClassType({ courseCode })
+  const proposal = proposeClassType({ courseCode, syllabusItems })
   if (proposal.kind === 'suggestion') {
     return { selectedType: proposal.type, proposal, selectionKind: 'suggestion' }
   }

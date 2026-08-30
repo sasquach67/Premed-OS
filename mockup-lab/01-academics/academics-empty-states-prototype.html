@@ -154,8 +154,9 @@ button{font:inherit}
 .nextcopy{font-size:10.5px;color:var(--dim);font-weight:600}
 .privacy{margin-left:auto;font-size:10.5px;color:var(--dim);font-weight:700;white-space:nowrap}
 
+.state-board{display:none;margin:20px 24px 0;background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 10px 26px -14px rgba(0,0,0,.55);overflow:hidden}.state-board.on{display:grid;grid-template-columns:minmax(0,1fr) 290px}.state-main{padding:20px}.state-side{padding:20px;border-left:1px solid var(--bd);background:#262320}.state-kicker{font:800 10px 'Baloo 2';letter-spacing:.1em;text-transform:uppercase;color:var(--cat)}.state-title{font:800 24px 'Baloo 2';line-height:1.12;margin:4px 0}.state-copy{font-size:12.5px;color:var(--mut);font-weight:700;max-width:660px}.skeletons{display:grid;gap:9px;margin-top:17px}.skeleton{height:58px;border:1px solid var(--bd);border-radius:11px;background:linear-gradient(90deg,var(--muted),#3a342d,var(--muted));background-size:220% 100%}.state-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.state-action{border:1px solid var(--bd);background:var(--muted);color:var(--fg);border-radius:9px;padding:8px 12px;font:800 12px 'Baloo 2'}.state-action.primary{background:var(--cat);border-color:var(--cat);color:#152331}.saved-row{margin-top:15px;padding:12px;border:1px solid rgba(111,192,168,.34);background:rgba(111,192,168,.07);border-radius:11px}.saved-row b{display:block;font:800 12px 'Baloo 2'}.saved-row span{display:block;color:var(--dim);font-size:10.5px;font-weight:700;margin-top:2px}.state-side b{font:800 14px 'Baloo 2'}.state-side p{color:var(--dim);font-size:11px;font-weight:700;line-height:1.5}.empty-list{margin-top:16px;border-top:1px solid var(--bd)}.empty-list div{padding:10px 0;border-bottom:1px solid var(--bd);font-size:12px;font-weight:700;color:var(--mut)}body.state-active .frame>main,body.state-active .frame>.fbar{display:none!important}body.state-active .psw{display:none!important}
 /* Prototype-only switcher */
-.psw{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:20;display:flex;
+.psw{display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:20;
   align-items:center;gap:8px;padding:7px;background:#f7f3ec;color:#201d19;border:1px solid rgba(0,0,0,.18);
   border-radius:999px;box-shadow:0 16px 38px rgba(0,0,0,.42);font-family:'Baloo 2';font-weight:800}
 .psw button{width:34px;height:34px;border:0;border-radius:50%;background:#27231f;color:#fff;display:grid;place-items:center;cursor:pointer}
@@ -167,7 +168,7 @@ button{font:inherit}
   .bantop{align-items:flex-start}.ghostbtn{display:none}.utabs{padding:0 4px}.fbar{padding:10px 14px}
   .setup{display:none}.wrap{padding:14px}.vbgrid{grid-template-columns:1fr}
   .vc .mnote{align-items:flex-start;flex-direction:column}.vc .btns{margin-left:0;justify-content:flex-start}
-  .privacy{display:none}.plabel{min-width:180px}.frame{padding-bottom:96px}
+  .privacy{display:none}.plabel{min-width:180px}.frame{padding-bottom:96px}.state-board.on{grid-template-columns:1fr;margin:14px}.state-side{border-left:0;border-top:1px solid var(--bd)}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 </style>
@@ -210,7 +211,7 @@ button{font:inherit}
           <span class="mfig" aria-hidden="true"></span>
           <div>
             <div class="mtitle">Start with a syllabus</div>
-            <div class="mcopy">Drop one in and I’ll pull out your class, topics, exam dates, deadlines, and grade weights. You’ll review everything before it’s added.</div>
+            <div class="mcopy">Import it, review the extracted details, then add the class.</div>
           </div>
           <div class="btns">
             <button class="btn p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M4 15v4h16v-4"/></svg>Import a syllabus</button>
@@ -218,7 +219,7 @@ button{font:inherit}
           </div>
         </div>
         <div class="setup-guide" aria-label="What this sets up">
-          <div class="hd"><div><div class="ti">What this sets up</div><div class="sub">one import, then you stay in control</div></div></div>
+          <div class="hd"><div class="ti">What this sets up</div></div>
           <div class="grow">
             <div class="growitem"><span class="gicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><div><div class="gt">Class details</div><div class="gd">Course, instructor, meetings, and office hours.</div></div></div>
             <div class="growitem"><span class="gicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg></span><div><div class="gt">Dates and deadlines</div><div class="gd">Exams, assignments, readings, and due dates.</div></div></div>
@@ -282,6 +283,15 @@ button{font:inherit}
       </div>
     </section>
   </main>
+  <section class="state-board" data-state-view="class-center-loading"><main class="state-main"><div class="state-kicker">Class Center · loading</div><div class="state-title">Opening your saved classes…</div><div class="skeletons"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div></main><aside class="state-side"><b>Local records first</b><p>The shell stays stable while this device hydrates the class collection.</p></aside></section>
+  <section class="state-board" data-state-view="class-center-error"><main class="state-main"><div class="state-kicker">Class Center · could not finish loading</div><div class="state-title">Your last saved class record is still here.</div><div class="saved-row"><b>CHEM 262 · last opened today</b><span>Lecture 18 and its material links remain on this device.</span></div><div class="state-actions"><button class="state-action primary">Try again</button><button class="state-action">Open saved class</button></div></main><aside class="state-side"><b>Scoped failure</b><p>Assignments and Planning are not replaced by this Class Center error.</p></aside></section>
+  <section class="state-board" data-state-view="assignments-loading"><main class="state-main"><div class="state-kicker">Assignments · loading agenda</div><div class="state-title">Putting saved coursework into time order…</div><div class="skeletons"><div class="skeleton"></div><div class="skeleton"></div></div></main><aside class="state-side"><b>Cross-class scope</b><p>The active Agenda, Weekly, or Calendar view remains selected.</p></aside></section>
+  <section class="state-board" data-state-view="assignments-error"><main class="state-main"><div class="state-kicker">Assignments · unavailable</div><div class="state-title">The agenda did not refresh.</div><div class="state-copy">Saved coursework has not been discarded.</div><div class="state-actions"><button class="state-action primary">Retry agenda</button><button class="state-action">Return to Class Center</button></div></main><aside class="state-side"><b>No invented due dates</b><p>The error does not fill the queue with demo work.</p></aside></section>
+  <section class="state-board" data-state-view="class-hub-loading"><main class="state-main"><div class="state-kicker">Class Hub · CHEM 262</div><div class="state-title">Opening the class record…</div><div class="skeletons"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div></main><aside class="state-side"><b>Five-tab position retained</b><p>Overview, Materials, Topics, Assignments, and Guide do not reshuffle.</p></aside></section>
+  <section class="state-board" data-state-view="class-hub-error"><main class="state-main"><div class="state-kicker">Class Hub · scoped error</div><div class="state-title">Lecture 18 could not reopen.</div><div class="saved-row"><b>Transcript saved · 1,926 words</b><span>Supporting evidence remains linked to this numbered lecture.</span></div><div class="state-actions"><button class="state-action primary">Retry lecture</button><button class="state-action">Open Materials</button></div></main><aside class="state-side"><b>Nothing detached</b><p>The recovery path preserves the lecture-to-material relationship.</p></aside></section>
+  <section class="state-board" data-state-view="exam-prep-loading"><main class="state-main"><div class="state-kicker">Exam Prep · building scope</div><div class="state-title">Checking selected exam material…</div><div class="skeletons"><div class="skeleton"></div><div class="skeleton"></div></div></main><aside class="state-side"><b>Selected sources only</b><p>The plan waits for the exact material map instead of broadening scope.</p></aside></section>
+  <section class="state-board" data-state-view="exam-prep-error"><main class="state-main"><div class="state-kicker">Exam Prep · plan unavailable</div><div class="state-title">The selected scope is still saved.</div><div class="saved-row"><b>Midterm 2 · Units 4–7</b><span>Transcript, slides, and syllabus objectives remain selected.</span></div><div class="state-actions"><button class="state-action primary">Retry plan</button><button class="state-action">Review sources</button></div></main><aside class="state-side"><b>No readiness verdict</b><p>An unavailable plan does not become a score or progress claim.</p></aside></section>
+  <section class="state-board" data-state-view="global-no-assignments"><main class="state-main"><div class="state-kicker">Assignments · all classes</div><div class="state-title">No coursework is waiting.</div><div class="state-copy">Add an assignment or import the first class syllabus. The cross-class Agenda, Weekly, and Calendar remain the same manager.</div><div class="state-actions"><button class="state-action primary">Add assignment</button><button class="state-action">Add a class</button></div><div class="empty-list"><div>Overdue · 0</div><div>This week · 0</div><div>Next week · 0</div></div></main><aside class="state-side"><b>Nothing due</b><p>Zero means the saved store is empty, not that demo assignments were substituted.</p></aside></section>
 </div>
 
 <div class="psw" aria-label="Prototype variant switcher">
@@ -296,12 +306,18 @@ const variants = [
   { key: "B", name: "Setup explained" },
   { key: "C", name: "In-place collection" }
 ];
+const stateView=new URLSearchParams(location.search).get("view");
+const stateBoards=[...document.querySelectorAll("[data-state-view]")];
 function currentIndex() {
   const key = new URLSearchParams(location.search).get("variant") || "A";
   const index = variants.findIndex(v => v.key === key.toUpperCase());
   return index < 0 ? 0 : index;
 }
 function render() {
+  const hasState=stateBoards.some(board=>board.dataset.stateView===stateView);
+  document.body.classList.toggle("state-active",hasState);
+  stateBoards.forEach(board=>board.classList.toggle("on",board.dataset.stateView===stateView));
+  if(hasState){document.title=`Academics state — ${stateView}`;return}
   const index = currentIndex();
   const active = variants[index];
   document.querySelectorAll("[data-variant]").forEach(el => el.classList.toggle("on", el.dataset.variant === active.key));

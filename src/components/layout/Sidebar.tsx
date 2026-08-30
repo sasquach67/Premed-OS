@@ -83,7 +83,7 @@ function DesktopSidebar({ onNavigate, onSignOut, signedIn = false, desktopLocked
 
 function DesktopNavItem({ route, locationPath, onNavigate, onRoute }: { route: RouteDef; locationPath: string; onNavigate?: () => void; onRoute: (route: string) => void }) {
   const to = route.id === 'home' ? '/' : `/${route.id}`
-  const active = route.id === 'home' ? locationPath === '/' : locationPath === to
+  const active = route.id === 'home' ? locationPath === '/' : locationPath === to || locationPath.startsWith(`${to}/`)
   return <li><Link to={to} aria-current={active ? 'page' : undefined} onClick={() => { onRoute(route.id); onNavigate?.() }} className={cn('sidebar-static-row group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring', active && 'sidebar-static-row-active')}><span className="sidebar-static-icon"><route.icon className={cn('size-5', active ? 'text-sidebar-primary' : 'text-muted-foreground group-hover:text-sidebar-primary')} /></span><span className="sidebar-static-label">{route.label}</span></Link></li>
 }
 
@@ -104,7 +104,7 @@ function MobileSidebar({ onNavigate, signedIn = false }: SidebarProps) {
 
 function MobileItem({ route, locationPath, onNavigate, onRoute }: { route: RouteDef; locationPath: string; onNavigate?: () => void; onRoute: (route: string) => void }) {
   const to = route.id === 'home' ? '/' : `/${route.id}`
-  const active = route.id === 'home' ? locationPath === '/' : locationPath === to
+  const active = route.id === 'home' ? locationPath === '/' : locationPath === to || locationPath.startsWith(`${to}/`)
   return <Link to={to} onClick={() => { onRoute(route.id); onNavigate?.() }} className={cn('flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold', active ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/85')}><route.icon className="size-5 text-sidebar-primary" />{route.label}</Link>
 }
 

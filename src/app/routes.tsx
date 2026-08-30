@@ -24,7 +24,7 @@ export interface RouteDef {
 export const ROUTES: RouteDef[] = [
   { id: 'home', label: 'Overview', group: 'Home', icon: Home, tagline: '' },
   { id: 'northstar', label: 'Ultimate Guide', group: 'Home', icon: Compass, tagline: 'The big-picture roadmap to med school.', nav: false },
-  { id: 'academics', label: 'Academics', group: 'Foundation', icon: GraduationCap, tagline: 'AMCAS GPA engine + your UNC Tar Heel tracker.' },
+  { id: 'academics', label: 'Academics', group: 'Foundation', icon: GraduationCap, tagline: 'AMCAS GPA engine + course planning.' },
   { id: 'mcat', label: 'MCAT', group: 'Foundation', icon: Brain, tagline: 'Resources, schedule, score tracker, error log.' },
   { id: 'clinical', label: 'Clinical', group: 'Experiences', icon: Stethoscope, tagline: 'Patient-contact hours toward your goal.' },
   { id: 'volunteering', label: 'Volunteering', group: 'Experiences', icon: HeartHandshake, tagline: 'Service hours, especially with the underserved.' },

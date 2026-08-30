@@ -11,6 +11,8 @@ export const MIN_PASTED_EXCERPT_CHARACTERS = 120
 
 export interface PastedExcerptInput {
   courseId: string
+  lectureId?: string
+  linkedTopicIds?: string[]
   text: string
   title?: string
   sourceLabel?: string
@@ -45,11 +47,12 @@ export function buildPastedExcerpt(input: PastedExcerptInput): PastedExcerptImpo
   const file: AcademicFile = {
     id: fileId,
     courseId: input.courseId,
+    lectureId: input.lectureId,
     sourceType: 'paste',
     title: input.title?.trim() || sectionLabel || 'Pasted excerpt',
     type: 'other',
     owner: 'mine',
-    linkedTopicIds: [],
+    linkedTopicIds: input.linkedTopicIds ?? [],
     processingStatus: 'ready',
     notes: details,
     createdAt: now,

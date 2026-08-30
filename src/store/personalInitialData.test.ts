@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { createPersonalInitialData } from '@/data/personalInitialData'
-import { createInitialDataForMode, migrateAll, snapshotData, useStore } from '@/store/store'
+import { createInitialDataForMode, createResetDataForMode, migrateAll, snapshotData, useStore } from '@/store/store'
 
 describe('personal first-run data', () => {
   it('creates a complete, record-free personal workspace', () => {
     const data = createInitialDataForMode(false)
 
     expect(data.profile).toMatchObject({ name: '', school: '', major: '' })
+    expect(data.academics.migrationJournal).toEqual([])
     expect(data.courses).toEqual([])
     expect(data.tasks).toEqual([])
     expect(data.requirements).toEqual([])
@@ -17,8 +18,8 @@ describe('personal first-run data', () => {
       assignedReadings: [], feedbackNotes: [], gradeCategories: [], mistakes: [], topicLinks: [], topicPredictions: [],
       savedPlans: [], plannerTerms: [], examPrepPlans: [], generatedFlashcardDecks: [], generatedMockAttempts: [],
       generatedRevisedNotes: [], professorEvidence: [], conceptCanvases: [], assessmentMaterials: [], assessmentAttempts: [],
-      transcriptRecords: [], acknowledgedCatalogWarnings: [], lectures: [], lectureFindings: [], lectureMaterialProposals: [],
-      lectureNoteProposals: [], watchedNoteSources: [], watchedNoteProposals: [], termReports: [], focusSessions: [],
+      transcriptRecords: [], acknowledgedCatalogWarnings: [], planningProgramContext: {}, lectures: [], lectureFindings: [], lectureMaterialProposals: [],
+      lectureNoteProposals: [], guideProposals: [], watchedNoteSources: [], watchedNoteProposals: [], termReports: [], focusSessions: [],
       reviewSessionPreferences: {
         defaultInput: 'microphone', interleave: true, weakFirst: true,
         workMinutes: 25, breakMinutes: 5, enforceBreaks: false, sound: true,
@@ -34,6 +35,29 @@ describe('personal first-run data', () => {
     expect(personal.courses).toEqual([])
     expect(demo.courses.length).toBeGreaterThan(0)
     expect(demo.profile.name).toBe('Andy Quach')
+  })
+
+  it('resets real mode to a record-free personal workspace', () => {
+    useStore.getState().replaceAll(createInitialDataForMode(true))
+
+    useStore.getState().resetToSeed()
+
+    const reset = snapshotData()
+    expect(reset.profile).toMatchObject({ name: '', school: '', major: '' })
+    expect(reset.courses).toEqual([])
+    expect(reset.tasks).toEqual([])
+    expect(reset.requirements).toEqual([])
+    expect(reset.academics.classCenter.workspaces).toEqual([])
+    expect(reset.academics.classCenter.transcriptRecords).toEqual([])
+  })
+
+  it('restores the fixture-rich demo dataset for demo reset', () => {
+    const reset = createResetDataForMode(true)
+
+    expect(reset.profile.name).toBe('Andy Quach')
+    expect(reset.courses.length).toBeGreaterThan(0)
+    expect(reset.tasks.length).toBeGreaterThan(0)
+    expect(reset.requirements.length).toBeGreaterThan(0)
   })
 
   it('returns a fresh structure and leaves the factory result independent', () => {

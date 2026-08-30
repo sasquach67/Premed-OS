@@ -12,7 +12,7 @@ vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false, addEventListener: vi.
 
 /**
  * Approved source: academics-empty-states-prototype.html — Variant A's
- * `.setup-guide` carrying Variant B's copy.
+ * composed action + `.setup-guide` workspace.
  *
  * WHY THIS EXISTS: cb963a3 shipped this surface with a numbered
  * "Review before saving / Keep work in one place / Change it any time" strip
@@ -43,6 +43,13 @@ describe('Class Center zero-class empty state', () => {
     expect(panel!.textContent).toContain('one import, then you stay in control')
   })
 
+  it('uses the Premed OS mascot for the first-class prompt', () => {
+    const mascot = container.querySelector<HTMLImageElement>('.academics-empty-mascot')
+    expect(mascot).not.toBeNull()
+    expect(mascot?.getAttribute('src')).toBe('/mascot.png')
+    expect(mascot?.getAttribute('alt')).toBe('')
+  })
+
   it('names what the import will populate, in the approved order', () => {
     const panel = container.querySelector('[aria-label="What this sets up"]')!
     const titles = [...panel.querySelectorAll('p')].map((p) => p.textContent?.trim())
@@ -66,7 +73,7 @@ describe('Class Center zero-class empty state', () => {
 
   it('keeps the ruled primary action and the quiet manual link', () => {
     const buttons = [...container.querySelectorAll('button')].map((b) => b.textContent?.trim())
-    expect(buttons.some((t) => t?.includes('Import syllabus'))).toBe(true)
+    expect(buttons.some((t) => t?.includes('Import a syllabus'))).toBe(true)
     expect(buttons.some((t) => t === 'Add manually')).toBe(true)
   })
 

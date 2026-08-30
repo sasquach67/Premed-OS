@@ -18,12 +18,12 @@ If a build makes the Writing page look emptier than the STEM page, the build is 
 
 1. **Exactly three types** — `stem` · `writing` · `general`. A five-type taxonomy and a per-feature toggle checklist were both proposed and **rejected** (July 2026). Do not reintroduce; do not add a fourth.
 2. **One banner, one page structure.** Breadcrumb · dot + code + name · info line · glass stat strip · one primary action · `⋯`. Identical in every type.
-3. **Overview · Materials · Assignments · Notes exist in STEM and Writing and behave identically.**
+3. **Overview · Materials · Assignments · Guide exist in STEM and Writing and behave identically.**
 4. **Only two things differ between types:**
 
    | Type | Third sub-tab | Primary action |
    |---|---|---|
-   | STEM | **Topics** | `Start review` |
+   | STEM | **Topics** | `Create study resources` → Flashcards / Study Guide / Study Outline / Revised Notes |
    | Writing | **Readings** | `Open current draft` |
    | General | *(none — four tabs)* | `Add a grade` |
 
@@ -63,7 +63,7 @@ Readings frequently aren't parseable (table-as-image, "posted weekly on Sakai", 
   type never deletes dormant data and never changes GPA, BCPM, credits, or
   requirement logic. No calculation may read `type`.
 - Shared tabs and owner actions retain their behavior. The substituted third
-  surface is Topics/Start review for STEM, Readings/Open current draft for
+  surface is Topics/Create study resources for STEM, Readings/Open current draft for
   Writing, and absent for General; General retains only its legitimate grade
   action.
 - A partial reading list offers paste, inline add, and this-week entry. Until

@@ -1,5 +1,18 @@
 import type { CatalogWarningAcknowledgement, RequirementItem } from '@/lib/types'
 
+export {
+  UNC_PLANNING_LIBRARY,
+  UNC_PLANNING_LIBRARY_BY_ID,
+  planningRequirementOutcome,
+  planningRequirementSet,
+} from './uncPlanningLibrary'
+export type {
+  RequirementEvaluation,
+  RequirementNode,
+  RequirementNodeKind,
+  UncPlanningRequirementSet,
+} from './uncPlanningLibrary'
+
 /** Stable only for a specific local source version; a changed source resurfaces. */
 export function requirementsSourceVersion(item: RequirementItem) {
   return `${item.lastVerified ?? 'undated'}|${item.sourceUrl ?? 'no-source'}`

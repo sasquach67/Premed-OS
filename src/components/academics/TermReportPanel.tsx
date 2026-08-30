@@ -44,7 +44,7 @@ export function TermReportPanel({
   const report = reports.find((item) => item.id === (focusReportId ?? selectedId)) ?? reports.at(-1)
   const courseNames = useMemo(() => new Map(courses.map((course) => [course.id, `${course.code} · ${course.title}`])), [courses])
   const factsById = useMemo(() => new Map(report?.snapshot.facts.map((fact) => [fact.id, fact]) ?? []), [report])
-  const sourceFiles = useMemo(() => center.files.filter((file) => report?.courseIds.includes(file.courseId) && center.sourceChunks.some((chunk) => chunk.fileId === file.id && chunk.content.trim())), [center.files, center.sourceChunks, report?.courseIds])
+  const sourceFiles = useMemo(() => center.files.filter((file) => file.courseId != null && report?.courseIds.includes(file.courseId) && center.sourceChunks.some((chunk) => chunk.fileId === file.id && chunk.content.trim())), [center.files, center.sourceChunks, report?.courseIds])
   const nextTerm = useMemo(() => {
     // Only offer a real future planning slot. Selecting the first differently
     // named term could otherwise send an end-of-term reflection backwards.

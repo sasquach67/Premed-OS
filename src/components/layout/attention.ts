@@ -168,7 +168,10 @@ export function attentionStatus(items: AttentionItem[], backupEnabled: boolean) 
   const blocking = items.filter((item) => item.priority === 'blocking').length
   const important = items.filter((item) => item.priority === 'important').length
   if (blocking) return { label: `${blocking} need attention`, tone: 'alert' as const }
-  if (important) return { label: `${important} to review`, tone: 'due' as const }
+  if (important) return {
+    label: important === 1 ? '1 needs attention' : `${important} need attention`,
+    tone: 'due' as const,
+  }
   if (!backupEnabled) return { label: 'Backup off', tone: 'system' as const }
   return { label: 'All clear', tone: 'clear' as const }
 }

@@ -1,8 +1,9 @@
 import { createSeedData } from '@/data/seed'
 import { createTopicFsrsState } from '@/lib/academics/fsrs'
+import { createTermReport } from '@/lib/academics/termReport'
 import type {
-  AppData, AssignedReading, ClassAssignment, ClassNote, Course, ExperienceEntry, ExperienceHourEntry, FeedbackNote, KeyPoint, PaperDraft,
-  LetterEntry, McatAttempt, McatErrorLog, SourceChunk, Topic,
+  AcademicFile, AppData, AssignedReading, ClassAssignment, ClassNote, Course, ExperienceEntry, ExperienceHourEntry, FeedbackNote, KeyPoint, PaperDraft,
+  LetterEntry, LectureEvidenceFinding, LectureRecord, McatAttempt, McatErrorLog, PlannerTerm, SourceChunk, Topic,
 } from '@/lib/types'
 
 const DAY = 86_400_000
@@ -47,6 +48,16 @@ export function createDemoData(seedTime = Date.now()): AppData {
   courses[4].satisfies = ['Neuroscience B.S. — Additional Requirements', 'Med prereq']
   courses[6].satisfies = ['Power and Society', 'MCAT P/S']
   courses[9].satisfies = ['Research and Discovery']
+  const plannerTerms: PlannerTerm[] = ['Spring 2026', 'Fall 2026', 'Spring 2027', 'Fall 2027'].map((label, order) => ({
+    id: `demo-planner-term-${label.toLocaleLowerCase().replace(' ', '-')}`,
+    label,
+    kind: 'standard',
+    origin: order < 2 ? 'legacy-derived' : 'student-created',
+    ...(order < 2 ? { lockedAt: at, lockReason: order === 0 ? 'Completed term' : 'Registered term' } : {}),
+    createdAt: stamp(-30), updatedAt: at, order,
+  }))
+  const plannerTermIdByLabel = new Map(plannerTerms.map((term) => [term.label, term.id]))
+  for (const item of courses) item.plannerTermId = plannerTermIdByLabel.get(item.term)
   data.courses = courses
 
   data.profile = {
@@ -131,9 +142,14 @@ export function createDemoData(seedTime = Date.now()): AppData {
     const ago = coveredAgo[item.id] ?? -10
     item.createdAt = stamp(ago - 4)
     item.updatedAt = stamp(ago)
+    // Topics remain syllabus standards. These dates are only the reviewed
+    // syllabus schedule used to group them by week in the Demo profile.
+    if (courses.find((courseItem) => courseItem.id === item.courseId)?.status === 'in-progress') {
+      item.scheduledFor = date(-21 + Math.floor(item.order / 2) * 7)
+    }
   }
 
-  const files = [
+  const files: AcademicFile[] = [
     {
       id: 'demo-file-biol-syllabus', courseId: courses[3].id, sourceType: 'upload' as const,
       title: 'BIOL 252 parsed syllabus', type: 'syllabus' as const, owner: 'course' as const, fileName: 'BIOL252-syllabus.pdf',
@@ -155,7 +171,31 @@ export function createDemoData(seedTime = Date.now()): AppData {
     {
       id: 'demo-file-chem-reading', courseId: courses[4].id, sourceType: 'link' as const,
       title: 'Chapter 6 reaction mechanisms', type: 'reading' as const, owner: 'course' as const, linkedTopicIds: ['demo-topic-sn2'],
-      processingStatus: 'ready' as const, createdAt: stamp(-5), updatedAt: stamp(-5), order: 3,
+      lectureId: 'demo-lecture-chem-3', processingStatus: 'ready' as const, createdAt: stamp(-5), updatedAt: stamp(-5), order: 3,
+    },
+    {
+      id: 'demo-file-chem-transcript-1', courseId: courses[4].id, lectureId: 'demo-lecture-chem-1', sourceType: 'paste',
+      title: 'Lecture 1 transcript', type: 'transcript', owner: 'mine', linkedTopicIds: [], processingStatus: 'ready',
+      url: 'data:text/plain;charset=utf-8,Lecture%201%20covered%20conformations%20and%20stereochemical%20relationships.',
+      fileName: 'lecture-01.txt', mimeType: 'text/plain', createdAt: stamp(-12), updatedAt: stamp(-12), order: 4,
+    },
+    {
+      id: 'demo-file-chem-transcript-2', courseId: courses[4].id, lectureId: 'demo-lecture-chem-2', sourceType: 'paste',
+      title: 'Lecture 2 transcript', type: 'transcript', owner: 'mine', linkedTopicIds: [], processingStatus: 'ready',
+      url: 'data:text/plain;charset=utf-8,Lecture%202%20worked%20through%20acid-base%20reasoning%20and%20pKa%20comparisons.',
+      fileName: 'lecture-02.txt', mimeType: 'text/plain', createdAt: stamp(-8), updatedAt: stamp(-8), order: 5,
+    },
+    {
+      id: 'demo-file-chem-transcript-3', courseId: courses[4].id, lectureId: 'demo-lecture-chem-3', sourceType: 'paste',
+      title: 'Lecture 3 transcript', type: 'transcript', owner: 'mine', linkedTopicIds: [], processingStatus: 'ready',
+      url: 'data:text/plain;charset=utf-8,Lecture%203%20compared%20SN1%20and%20SN2%20mechanisms%20using%20rate%20and%20stereochemistry%20evidence.',
+      fileName: 'lecture-03.txt', mimeType: 'text/plain', createdAt: stamp(-4), updatedAt: stamp(-4), order: 6,
+    },
+    {
+      id: 'demo-file-engl-transcript-1', courseId: courses[7].id, lectureId: 'demo-lecture-engl-1', sourceType: 'paste',
+      title: 'Lecture 1 transcript', type: 'transcript', owner: 'mine', linkedTopicIds: [], processingStatus: 'ready',
+      url: 'data:text/plain;charset=utf-8,Lecture%201%20connected%20audience%2C%20evidence%2C%20and%20the%20stakes%20of%20a%20claim.',
+      fileName: 'lecture-01.txt', mimeType: 'text/plain', createdAt: stamp(-3), updatedAt: stamp(-3), order: 7,
     },
   ]
   const chunks: SourceChunk[] = [
@@ -164,6 +204,19 @@ export function createDemoData(seedTime = Date.now()): AppData {
     chunk('demo-chunk-potentials', files[1].id, courses[3].id, topics[1].id, 'Voltage-gated sodium channel activation drives the rising phase of the action potential.', 2, at),
     chunk('demo-chunk-unassigned', files[2].id, courses[3].id, undefined, 'Astrocytes influence synaptic strength through neurotransmitter uptake and gliotransmission.', 3, at),
     chunk('demo-chunk-sn2', files[3].id, courses[4].id, topics[3].id, 'SN2 reactions proceed through concerted backside attack with inversion of stereochemistry.', 4, at),
+    chunk('demo-chunk-chem-transcript-1', 'demo-file-chem-transcript-1', courses[4].id, undefined, 'Conformational drawings show how the same connectivity can produce different spatial arrangements.', 5, at),
+    chunk('demo-chunk-chem-transcript-2', 'demo-file-chem-transcript-2', courses[4].id, undefined, 'A useful acid-base comparison starts by locating the charge and then comparing conjugate-base stability.', 6, at),
+    chunk('demo-chunk-chem-transcript-3', 'demo-file-chem-transcript-3', courses[4].id, undefined, 'SN1 and SN2 differ in their rate laws, substrate preferences, and stereochemical outcomes.', 7, at),
+    chunk('demo-chunk-engl-transcript-1', 'demo-file-engl-transcript-1', courses[7].id, undefined, 'A claim becomes meaningful when the writer makes its stakes clear to a specific audience.', 8, at),
+  ]
+  const lectures: LectureRecord[] = [
+    { id: 'demo-lecture-chem-1', courseId: courses[4].id, title: 'Lecture #1', aiTitle: 'Conformations', inputPath: 'pasted', transcriptFileId: 'demo-file-chem-transcript-1', occurredOn: date(-12), processingState: 'ready', createdAt: stamp(-12), processedAt: stamp(-12), updatedAt: stamp(-12), order: 0 },
+    { id: 'demo-lecture-chem-2', courseId: courses[4].id, title: 'Lecture #2', aiTitle: 'Acid-base reasoning', inputPath: 'pasted', transcriptFileId: 'demo-file-chem-transcript-2', occurredOn: date(-8), processingState: 'ready', createdAt: stamp(-8), processedAt: stamp(-8), updatedAt: stamp(-8), order: 1 },
+    { id: 'demo-lecture-chem-3', courseId: courses[4].id, title: 'Lecture #3', aiTitle: 'SN1 vs SN2', inputPath: 'pasted', transcriptFileId: 'demo-file-chem-transcript-3', occurredOn: date(-4), processingState: 'ready', createdAt: stamp(-4), processedAt: stamp(-4), updatedAt: stamp(-4), order: 2 },
+    { id: 'demo-lecture-engl-1', courseId: courses[7].id, title: 'Lecture #1', aiTitle: 'Audience and stakes', inputPath: 'pasted', transcriptFileId: 'demo-file-engl-transcript-1', occurredOn: date(-3), processingState: 'ready', createdAt: stamp(-3), processedAt: stamp(-3), updatedAt: stamp(-3), order: 0 },
+  ]
+  const lectureFindings: LectureEvidenceFinding[] = [
+    { id: 'demo-finding-chem-3', courseId: courses[4].id, lectureId: 'demo-lecture-chem-3', sourceChunkId: 'demo-chunk-chem-transcript-3', quote: 'SN1 and SN2 differ in their rate laws, substrate preferences, and stereochemical outcomes.', timestamp: '18:40', label: 'Exam emphasis', detail: 'Compare the two mechanisms from evidence, not a memorized list.', createdAt: stamp(-4), updatedAt: stamp(-4), order: 0 },
   ]
   const keyPoints: KeyPoint[] = [
     keyPoint('demo-kp-synapse', topics[0].id, 'Explain vesicle release and the postsynaptic response.', ['demo-chunk-synapse'], 2, 0, at),
@@ -345,25 +398,60 @@ export function createDemoData(seedTime = Date.now()): AppData {
     topicLinks: [],
     topicPredictions: [],
     savedPlans: [],
-    plannerTerms: [],
+    plannerTerms,
     examPrepPlans: [],
     generatedFlashcardDecks: [],
     generatedMockAttempts: [],
     generatedRevisedNotes: [],
-    professorEvidence: [],
+    professorEvidence: [
+      { id: 'demo-prof-evidence-chem-exam', courseId: courses[4].id, assignmentId: 'demo-a-chem-exam1', observation: 'Mechanism comparisons were graded on rate and stereochemical evidence.', observedAt: stamp(-14), createdAt: stamp(-14), updatedAt: stamp(-14), order: 0 },
+      { id: 'demo-prof-evidence-chem-lab', courseId: courses[4].id, assignmentId: 'demo-a-chem-lab', observation: 'Lab feedback rewarded explaining why each procedural choice changed purity.', observedAt: stamp(-3), createdAt: stamp(-3), updatedAt: stamp(-3), order: 1 },
+    ],
     conceptCanvases: [],
     assessmentMaterials: [],
     assessmentAttempts: [],
-    transcriptRecords: [],
+    transcriptRecords: courses.slice(0, 8).map((item, order) => {
+      const [term, year] = item.term.split(' ')
+      return { id: `demo-transcript-${item.id}`, courseId: item.id, institution: 'UNC Chapel Hill', courseNumberExact: item.code, titleExact: item.title, creditsExact: String(item.credits), gradeExact: item.grade || 'IP', term, year, courseType: 'regular', classificationSource: 'Student-confirmed demo record', classificationReason: `${item.bcpm ? 'BCPM' : 'AO'} recorded for demo`, createdAt: stamp(-30), updatedAt: stamp(-30), order }
+    }),
     acknowledgedCatalogWarnings: [],
-    lectures: [],
-    lectureFindings: [],
+    planningProgramContext: {},
+    lectures,
+    lectureFindings,
     lectureMaterialProposals: [],
     lectureNoteProposals: [],
+    guideProposals: [],
     watchedNoteSources: [],
     watchedNoteProposals: [],
     termReports: [],
   }
+
+  // Planning proof fixtures are explicit saved records, not production
+  // fallbacks. They let Demo exercise the populated Grades & Archive paths
+  // while the real first-run factory remains record-free.
+  const demoTermReport = createTermReport({
+    id: 'demo-term-report-spring-2026',
+    input: { courses, center: data.academics.classCenter, term: 'Spring 2026', selectedFileIds: [], now: at },
+    order: 0,
+  })
+  demoTermReport.status = 'ready'
+  const reportEvidenceIds = demoTermReport.snapshot.facts.map((fact) => fact.id)
+  demoTermReport.blocks.push(
+    {
+      id: 'demo-term-takeaway', kind: 'takeaway', title: 'The strongest recorded result',
+      text: 'PSYC 101 has the highest final grade recorded in this saved Spring 2026 term.',
+      evidenceIds: reportEvidenceIds.filter((id) => id.includes('demo-course-psyc101')),
+      source: 'deterministic',
+    },
+    {
+      id: 'demo-term-experiment', kind: 'experiment', title: 'Carry one review habit forward',
+      text: 'Keep the saved returned-work record beside next term’s first review plan, then revise the plan from new evidence.',
+      evidenceIds: reportEvidenceIds.filter((id) => id.includes('returned-work')).slice(0, 2),
+      source: 'deterministic',
+    },
+  )
+  data.academics.classCenter.termReports = [demoTermReport]
+
   data.academics.courseOptions = courses.map((item, order) => ({ id: `demo-option-${item.id}`, name: item.code, title: item.title, color: ['blue', 'green', 'purple', 'orange'][order % 4] as 'blue' | 'green' | 'purple' | 'orange' }))
   data.academics.migrationJournal = []
 

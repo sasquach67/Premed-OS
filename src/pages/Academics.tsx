@@ -1,36 +1,35 @@
-import { useEffect, useMemo, useState, type ComponentType } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState, type ComponentType } from 'react'
 import { AnimatePresence, m, useReducedMotion } from 'motion/react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useLocation, useParams, useSearchParams } from 'react-router-dom'
 import {
   Archive,
-  Calculator, CalendarDays, Flame, GraduationCap, Library, Plus,
+  Calculator, CalendarDays, GraduationCap, Library, Plus,
 } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { inferAcademicTerm } from '@/store/migrations/academicsV4'
 import { ROUTE_MAP } from '@/app/routes'
 import { gpaStats, fmtGpa } from '@/lib/selectors'
-import type { Course } from '@/lib/types'
-import { uid } from '@/lib/id'
 import { PageHeader } from '@/components/common/PageHeader'
 import { AssignmentCreateDialog, AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { ClassCenter } from '@/components/academics/ClassCenter'
 import { PlanningDecisions } from '@/components/academics/PlanningDecisions'
-import { PlanningColdStart } from '@/components/academics/PlanningColdStart'
-import { PlannerBoard } from '@/components/academics/PlannerBoard'
+import { coldStartPlanningTerms, PlanningColdStart } from '@/components/academics/PlanningColdStart'
+import { PlannerBoard, PlannerCourseDiscoveryDialog, type PlannerCatalogRequest } from '@/components/academics/PlannerBoard'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { ModeSwitch } from '@/components/common/ModeSwitch'
-import { useToast } from '@/components/common/useToast'
 import { instantCrossfade, sharedAxis } from '@/lib/motion'
 import { AcademicMigrationReview } from '@/components/academics/AcademicMigrationReview'
 import { StatStrip } from '@/components/common/StatStrip'
 import { GradesArchive } from '@/components/academics/GradesArchive'
+import { daysUntil } from '@/lib/date'
 
 export function Academics() {
   const reduceMotion = useReducedMotion()
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const { courseId } = useParams()
   const courses = useStore((s) => s.courses)
@@ -44,15 +43,26 @@ export function Academics() {
   // "Class center 0" directly above "1 class". Same fallback, one definition.
   const inferredTerm = useMemo(() => inferAcademicTerm(), [])
   const currentTerm = storedTerm.trim() || inferredTerm
-  const addItem = useStore((s) => s.addItem)
-  const undoRecovery = useStore((s) => s.undoRecovery)
   const storedMode = useStore((s) => s.settings.academicsMode)
   const update = useStore((s) => s.update)
   const route = ROUTE_MAP.academics
-  const toast = useToast()
   const [studyGuideOpen, setStudyGuideOpen] = useState(false)
   const [assignmentCreateOpen, setAssignmentCreateOpen] = useState(false)
   const [planCompareOpen, setPlanCompareOpen] = useState(false)
+  const [coldCatalogRequest, setColdCatalogRequest] = useState<PlannerCatalogRequest>()
+
+  // Academics uses query parameters for both page-level navigation and modal
+  // state. Reset only when the visible workspace changes so opening an intake
+  // dialog does not unexpectedly move the page behind it.
+  const scrollResetKey = useMemo(() => {
+    const navigationKeys = ['tab', 'classTab', 'view', 'gradeView', 'plannerView', 'requirementsView']
+    return [location.pathname, ...navigationKeys.map((key) => `${key}:${searchParams.get(key) ?? ''}`)].join('|')
+  }, [location.pathname, searchParams])
+
+  useLayoutEffect(() => {
+    document.querySelector<HTMLElement>('[data-app-scroll-container]')
+      ?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [scrollResetKey])
 
   const gpa = useMemo(() => gpaStats(courses), [courses])
 
@@ -62,21 +72,6 @@ export function Academics() {
     for (const c of courses) if (!seen.includes(c.term)) seen.push(c.term)
     return seen
   }, [courses])
-
-  function addCourse(term: string) {
-    const id = uid()
-    addItem('courses', {
-      id, term, code: '', title: '', credits: 3, grade: '', bcpm: false,
-      status: 'planned', inResidence: true, satisfies: [], order: 0,
-    } as Course)
-    const recoveryId = useStore.getState().meta.recoveryStack[0]?.id
-    toast({
-      title: 'Course created',
-      description: `Added to ${term}.`,
-      onOpen: () => setSearchParams({ mode: 'planning', tab: 'planner' }),
-      onUndo: recoveryId ? () => undoRecovery(recoveryId) : undefined,
-    })
-  }
 
   // Store is the single source of truth for the mode — synchronous and always
   // re-renders, so the Daily/Planning toggle can't desync under rapid clicks.
@@ -91,7 +86,9 @@ export function Academics() {
   // renders its own contextual header in that mode; keeping the Academics
   // banner around it creates two competing heroes and breaks the approved
   // full-screen-like hierarchy. The route and import state remain unchanged.
-  const syllabusImportActive = Boolean(searchParams.get('importFor'))
+  const requestedImportFor = searchParams.get('importFor')
+  const syllabusImportActive = requestedImportFor === 'new'
+    || Boolean(requestedImportFor && courses.some((course) => course.id === requestedImportFor))
   const currentTermCourses = courses.filter((course) => course.term === currentTerm)
   const currentTermGpa = gpaStats(currentTermCourses)
   const currentTermIndex = terms.indexOf(currentTerm)
@@ -101,13 +98,22 @@ export function Academics() {
     ? gpaStats(courses.filter((course) => course.term !== currentTerm))
     : null
   const today = new Date().toISOString().slice(0, 10)
-  const dueToday = classCenter.assignments.filter((assignment) =>
-    assignment.dueDate?.slice(0, 10) === today
-    && assignment.status !== 'graded'
+  const openAssignments = classCenter.assignments.filter((assignment) =>
+    assignment.status !== 'graded'
     && assignment.status !== 'submitted'
     && assignment.status !== 'dropped'
+  )
+  const dueToday = openAssignments.filter((assignment) =>
+    assignment.dueDate?.slice(0, 10) === today
   ).length
-  const reviewStreak = consecutiveDayStreak(classCenter.reviewEvents.map((event) => event.timestamp))
+  const overdueAssignments = openAssignments.filter((assignment) => (daysUntil(assignment.dueDate) ?? 0) < 0).length
+  const thisWeekAssignments = openAssignments.filter((assignment) => {
+    const days = daysUntil(assignment.dueDate)
+    return days != null && days >= 0 && days <= 6
+  })
+  const gradeDueThisWeek = Math.round(thisWeekAssignments.reduce((sum, assignment) => sum + (assignment.weight ?? 0), 0))
+  const capturedLectures = classCenter.lectures.filter((lecture) => currentTermCourses.some((course) => course.id === lecture.courseId)).length
+  const coldStartDestinations = coldStartPlanningTerms(currentTerm).map(({ term }) => ({ term, registered: false }))
   const tabCounts = {
     classes: currentTermCourses.length,
     assignments: classCenter.assignments.filter((assignment) =>
@@ -120,16 +126,37 @@ export function Academics() {
     archive: courses.filter((course) => course.status === 'completed').length,
   }
 
-  // Adopt an incoming ?mode= deep-link (from other pages) into the store, then
-  // strip it from the URL so it can't linger and fight the toggle or re-fire.
+  // Adopt an incoming ?mode= deep-link (from other pages), then canonicalize
+  // the URL to the selected mode's first valid tab. Keeping one canonical URL
+  // prevents stale mode/tab pairs from rendering a fallback that the address
+  // bar does not describe.
   useEffect(() => {
+    if (courseId) return
     const urlMode = searchParams.get('mode')
-    if (urlMode !== 'daily' && urlMode !== 'planning') return
-    if (urlMode !== storedMode) update((draft) => { draft.settings.academicsMode = urlMode })
+    const linkedMode = urlMode === 'daily' || urlMode === 'planning' ? urlMode : mode
+    const linkedTabs = tabsByMode[linkedMode]
+    const linkedTab = linkedTabs.includes(searchParams.get('tab') as never)
+      ? searchParams.get('tab')!
+      : linkedTabs[0]
+    if (linkedMode !== storedMode) update((draft) => { draft.settings.academicsMode = linkedMode })
     const next = new URLSearchParams(searchParams)
     next.delete('mode')
-    setSearchParams(next, { replace: true })
-  }, [searchParams, storedMode, update, setSearchParams])
+    next.set('tab', linkedTab)
+    if (next.toString() !== searchParams.toString()) setSearchParams(next, { replace: true })
+  }, [searchParams, storedMode, mode, courseId, update, setSearchParams])
+
+  // A stale or hand-edited import target must not suppress the entire
+  // Academics shell. Keep valid new/scoped imports untouched; recover invalid
+  // targets back to the normal Class Center route.
+  useEffect(() => {
+    if (!requestedImportFor || syllabusImportActive) return
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.delete('importFor')
+      next.set('tab', 'class-center')
+      return next
+    }, { replace: true })
+  }, [requestedImportFor, setSearchParams, syllabusImportActive])
 
   if (courseId || syllabusImportActive) {
     return <div className="academics-surface"><ClassCenter /></div>
@@ -145,15 +172,29 @@ export function Academics() {
     }, { replace: true })
   }
 
+  function requestAssignmentCreation() {
+    if (!courses.length) {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('mode')
+        next.set('tab', 'class-center')
+        next.set('importFor', 'new')
+        return next
+      })
+      return
+    }
+    setAssignmentCreateOpen(true)
+  }
+
   return (
     <div className="academics-surface">
-      <Tabs value={activeTab} onValueChange={(tab) => setSearchParams((prev) => { const next = new URLSearchParams(prev); next.delete('mode'); next.set('tab', tab); return next }, { replace: true })}>
+      <Tabs value={activeTab} onValueChange={(tab) => setSearchParams((prev) => { const next = new URLSearchParams(prev); next.delete('mode'); next.set('tab', tab); return next })}>
         <PageHeader
           title={route.label}
           actions={(
             <div className="flex items-center gap-2">
               {activeTab === 'assignments' && (
-                <Button onClick={() => setAssignmentCreateOpen(true)}>
+                <Button size="lg" className="font-display font-extrabold" onClick={requestAssignmentCreation}>
                   <Plus className="size-4" />
                   Add assignment
                   <kbd className="ml-1 rounded border border-primary-foreground/25 bg-primary-foreground/10 px-1.5 py-0.5 text-[10px] font-bold">⌘N</kbd>
@@ -198,7 +239,11 @@ export function Academics() {
             <StatStrip
               variant="banner"
               className="grid-flow-row grid-cols-2 sm:grid-flow-col sm:grid-cols-none"
-              metrics={[
+              metrics={activeTab === 'assignments' ? [
+                { id: 'overdue', label: 'Overdue', value: String(overdueAssignments), cadence: 'variable' },
+                { id: 'this-week', label: 'This week', value: String(thisWeekAssignments.length), cadence: 'variable' },
+                { id: 'grade-due', label: 'Grade due', value: gradeDueThisWeek ? `${gradeDueThisWeek}%` : '—', cadence: 'variable' },
+              ] : [
                 {
                   id: 'term-gpa', label: 'Term GPA', value: fmtGpa(currentTermGpa.cum), cadence: 'variable',
                   direction: !currentTermGpa.credits || !priorTermGpa?.credits ? undefined : currentTermGpa.cum >= priorTermGpa.cum ? 'up' : 'down',
@@ -208,7 +253,7 @@ export function Academics() {
                   direction: !gpa.credits || !priorCumulative?.credits ? undefined : gpa.cum >= priorCumulative.cum ? 'up' : 'down',
                 },
                 { id: 'due-today', label: 'Due today', value: String(dueToday), cadence: 'variable' },
-                { id: 'day-streak', label: 'Day streak', value: String(reviewStreak), cadence: 'variable', icon: <Flame className="size-3.5 text-orange-300" /> },
+                { id: 'lectures', label: 'Lectures', value: String(capturedLectures), cadence: 'variable', icon: <Library className="size-3.5 text-sky-200" /> },
               ]}
             />
           </div>
@@ -228,7 +273,7 @@ export function Academics() {
 
         {/* ---- Assignments + Calendar (main dashboard) ---- */}
         <TabsContent value="assignments">
-          <AssignmentsPanel onRequestAdd={() => setAssignmentCreateOpen(true)} />
+          <AssignmentsPanel onRequestAdd={requestAssignmentCreation} />
           <AssignmentCreateDialog open={assignmentCreateOpen} onOpenChange={setAssignmentCreateOpen} />
         </TabsContent>
 
@@ -241,7 +286,16 @@ export function Academics() {
           {/* §4.1 cold start: with no course recorded the Planner's metric
               surfaces would render zeros implying data exists. Suppress all of
               them and ask for the one durable fact instead. */}
-          {!courses.length ? <PlanningColdStart onAddCourse={() => addCourse('This term')} /> : <PlannerBoard onAddCourse={addCourse} onComparePlans={() => setPlanCompareOpen(true)} openRequirements={searchParams.get('plannerView') === 'requirements'} />}
+          {!courses.length ? <div className="space-y-4">
+            <PlanningColdStart currentTerm={currentTerm} onAddCourse={(destination) => setColdCatalogRequest((current) => ({ id: (current?.id ?? 0) + 1, destination }))} />
+            <PlannerCourseDiscoveryDialog
+              destinations={coldStartDestinations}
+              selectedProgramId={classCenter.planningProgramContext?.selectedProgramId}
+              request={coldCatalogRequest}
+              onOpenChange={(open) => { if (!open) setColdCatalogRequest(undefined) }}
+              onAdded={() => setColdCatalogRequest(undefined)}
+            />
+          </div> : <PlannerBoard onComparePlans={() => setPlanCompareOpen(true)} openRequirements={searchParams.get('plannerView') === 'requirements'} />}
         </TabsContent>
 
         {/* ---- Archive ---- */}
@@ -264,12 +318,12 @@ export function Academics() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>How to study</DialogTitle>
-            <DialogDescription>A simple loop for turning class material into retrievable knowledge.</DialogDescription>
+            <DialogDescription>A simple loop for turning class evidence into useful study work.</DialogDescription>
           </DialogHeader>
           <ol className="space-y-3 text-sm">
-            <li><strong>1. Capture the scope.</strong> Import the syllabus and connect topics to the next exam.</li>
-            <li><strong>2. Review by retrieval.</strong> Answer before revealing; do not count rereading as mastery.</li>
-            <li><strong>3. Choose the next review.</strong> Open a due topic or one you explicitly marked for review.</li>
+            <li><strong>1. Import the syllabus.</strong> Its learning standards and objectives define the course Topics.</li>
+            <li><strong>2. Capture each lecture.</strong> Add the transcript first, then attach only the supporting evidence you need.</li>
+            <li><strong>3. Create study work.</strong> Build a source-backed outline, guide, or revised notes from the material you select.</li>
           </ol>
         </DialogContent>
       </Dialog>
@@ -299,16 +353,4 @@ function AcademicsTab({
       </span>
     </TabsTrigger>
   )
-}
-
-function consecutiveDayStreak(timestamps: number[]) {
-  if (!timestamps.length) return 0
-  const days = new Set(timestamps.map((timestamp) => new Date(timestamp).toISOString().slice(0, 10)))
-  const cursor = new Date()
-  let streak = 0
-  while (days.has(cursor.toISOString().slice(0, 10))) {
-    streak += 1
-    cursor.setDate(cursor.getDate() - 1)
-  }
-  return streak
 }

@@ -1,5 +1,7 @@
 # Decisions — Add-class type selection
 
+**Status:** APPROVED by Andy on August 26, 2026.
+
 **Mockup:** `01-academics/academics-class-type-selection.html`  
 **Spec:** `tabs/01-academics.md` §3.3 and §4.1-N  
 **Contract:** `src/lib/academics/classTypeProposal.ts`

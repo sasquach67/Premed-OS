@@ -14,6 +14,7 @@ import { ArrowLeft, CheckCircle2, FileText, Upload } from 'lucide-react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { StatStrip } from '@/components/common/StatStrip'
 import { MascotNote } from '@/components/common/MascotNote'
+import { Collapsible } from '@/components/common/Collapsible'
 import { AnimatedFileUpload } from '@/components/motion/AnimatedFileUpload'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,38 +23,46 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/components/common/useToast'
 import { SharedSyllabusStructurePanel } from '@/components/academics/SharedSyllabusStructurePanel'
 import {
-  extractSyllabusFile, parseSyllabusText, weightGap,
+  extractSyllabusFile, mergeSyllabusProposals, parseSyllabusText, weightGap,
   type SyllabusProposal, type SyllabusKind, type StructuralSignal,
 } from '@/lib/academics/syllabusParser'
 import { syllabusReimportDiff, type ReimportRow } from '@/lib/academics/syllabusReimport'
-import type { Course, GradeCategory, Topic } from '@/lib/types'
+import type { AssignedReading, Course, GradeCategory, SyllabusScheduleEntry, Topic } from '@/lib/types'
 import type { ClassAssignment } from '@/lib/types'
 
-/** Ruled review order (§4.1-M-c): identity → exams → weights → units → deadlines → policies → logistics. */
-const REVIEW_ORDER: SyllabusKind[] = ['identity', 'exams', 'weights', 'units', 'deadlines', 'policies', 'logistics']
+/** Ruled review order (§4.1-M-c): identity → standards → exams → weights → units → deadlines → policies → logistics. */
+const REVIEW_ORDER: SyllabusKind[] = ['identity', 'standards', 'exams', 'weights', 'units', 'readings', 'deadlines', 'policies', 'logistics']
 const GROUP_LABEL: Record<SyllabusKind, string> = {
-  identity: 'Class identity', exams: 'Exam dates', weights: 'Grade weights', units: 'Units & topics',
+  identity: 'Class identity', standards: 'Learning standards', exams: 'Exam dates', weights: 'Grade weights', units: 'Schedule scope', readings: 'Assigned readings',
   deadlines: 'Deadlines', policies: 'Policies', logistics: 'Meeting details',
 }
 const STRUCTURE_LABEL: Record<StructuralSignal, string> = {
-  weights: 'Grade weights that sum to 100%', exams: 'Exam or midterm dates',
+  standards: 'Stated learning standards or objectives', weights: 'Grade weights that sum to 100%', exams: 'Exam or midterm dates',
   units: 'A week-by-week or unit schedule', logistics: 'An instructor and office-hours block',
 }
 const APPLY_ROWS: Array<[SyllabusKind, string]> = [
-  ['units', 'units'], ['deadlines', 'deadlines'], ['exams', 'exam dates'], ['weights', 'grade categories'],
+  ['standards', 'learning standards'], ['units', 'schedule scope'], ['readings', 'assigned readings'], ['deadlines', 'deadlines'], ['exams', 'exam dates'], ['weights', 'grade categories'],
 ]
 
 export type ReimportDecision = { row: ReimportRow; action: ReimportRow['defaultAction'] }
 const reimportActionKey = (row: ReimportRow) => `${row.kind}:${row.key}`
 
 export function SyllabusImportMode({
-  semester, scopedCourse, reimport = false, reimportFileId, current, onExit, onImport, onFileMaterial,
+  semester, scopedCourse, reimport = false, reimportFileId, current,
+  initialProposal, initialFiles = [], initialCourse, onBackFromReview,
+  onExit, onImport, onFileMaterial,
 }: {
   semester: string
   scopedCourse?: Course
   reimport?: boolean
   reimportFileId?: string
-  current?: { topics: Topic[]; assignments: ClassAssignment[]; categories: GradeCategory[] }
+  current?: { topics: Topic[]; assignments: ClassAssignment[]; categories: GradeCategory[]; readings?: AssignedReading[]; schedule?: SyllabusScheduleEntry[] }
+  /** Cold Add-class review starts here after the details sheet. These values
+   * are staged UI state only and are never written until `onImport`. */
+  initialProposal?: SyllabusProposal
+  initialFiles?: File[]
+  initialCourse?: { courseCode: string; courseTitle: string; semester: string; type?: string }
+  onBackFromReview?: (proposal: SyllabusProposal) => void
   onExit: () => void
   onImport: (
     form: { courseCode: string; courseTitle: string; semester: string },
@@ -64,11 +73,11 @@ export function SyllabusImportMode({
    * Materials shelf. It never enters the syllabus apply path. */
   onFileMaterial?: (files: File[], proposal: SyllabusProposal, courseId: string) => Promise<void>
 }) {
-  const [courseCode, setCourseCode] = useState('')
-  const [courseTitle, setCourseTitle] = useState('')
-  const [files, setFiles] = useState<File[]>([])
+  const [courseCode, setCourseCode] = useState(initialCourse?.courseCode ?? '')
+  const [courseTitle, setCourseTitle] = useState(initialCourse?.courseTitle ?? '')
+  const [files, setFiles] = useState<File[]>(initialFiles)
   const [pastedText, setPastedText] = useState('')
-  const [proposal, setProposal] = useState<SyllabusProposal | null>(null)
+  const [proposal, setProposal] = useState<SyllabusProposal | null>(initialProposal ?? null)
   const [parsing, setParsing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [reviewAnyway, setReviewAnyway] = useState(false)
@@ -83,7 +92,9 @@ export function SyllabusImportMode({
   async function parse() {
     setError(null); setParsing(true)
     try {
-      const next = pastedText.trim() ? parseSyllabusText(pastedText, 'Pasted syllabus') : await extractSyllabusFile(files[0])
+      const next = pastedText.trim()
+        ? parseSyllabusText(pastedText, 'Pasted syllabus')
+        : mergeSyllabusProposals(await Promise.all(files.map(extractSyllabusFile)))
       setProposal(next)
       setReviewAnyway(false)
       if (reimport && current) {
@@ -116,6 +127,7 @@ export function SyllabusImportMode({
   const decisions: ReimportDecision[] = reimportRows.map((row) => ({ row, action: reimportActions[reimportActionKey(row)] ?? row.defaultAction }))
   const decided = reimportRows.filter((row) => reimportActions[reimportActionKey(row)] !== undefined).length
   const flaggedCount = proposal ? proposal.items.filter((item) => item.confidence === 'low').length : 0
+  const missingCount = proposal ? REVIEW_ORDER.filter((kind) => !proposal.items.some((item) => item.kind === kind)).length : 0
 
   /** Mode tag states what is happening — never a step number (§4.1-M-b: no wizard). */
   const modeTag = reimport
@@ -142,7 +154,21 @@ export function SyllabusImportMode({
   ] : [
     { id: 'found', label: misfiled ? 'Items found' : 'Items found', value: String(misfiled ? 0 : proposal.items.length), cadence: 'variable' as const },
     { id: 'look', label: misfiled ? 'File kept' : 'Need a look', value: String(misfiled ? 1 : flaggedCount), cadence: 'variable' as const },
+    { id: 'missing', label: 'Not found', value: String(misfiled ? REVIEW_ORDER.length : missingCount), cadence: 'variable' as const },
   ]) : []
+
+  function back() {
+    if (proposal && onBackFromReview) {
+      onBackFromReview(proposal)
+      return
+    }
+    if (proposal) {
+      setProposal(null)
+      setReviewAnyway(false)
+      return
+    }
+    onExit()
+  }
 
   async function apply() {
     setApplying(true)
@@ -174,7 +200,7 @@ export function SyllabusImportMode({
         actions={bannerMetrics.length ? <StatStrip variant="banner" metrics={bannerMetrics} /> : undefined}
       >
         <div className="flex flex-wrap items-center gap-3 p-2">
-          <Button variant="ghost" className="text-white/90 hover:bg-white/10 hover:text-white" onClick={proposal ? () => { setProposal(null); setReviewAnyway(false) } : onExit}>
+          <Button variant="ghost" className="text-white/90 hover:bg-white/10 hover:text-white" onClick={back}>
             <ArrowLeft className="size-4" /> {proposal ? 'Back' : 'Cancel'}
           </Button>
           <span className="glass-surface glass-surface--dark rounded-full px-3 py-1 font-display text-[10px] font-extrabold uppercase tracking-[0.1em] text-white/70">
@@ -217,7 +243,16 @@ export function SyllabusImportMode({
                     <ReimportDiff rows={reimportRows} actions={reimportActions} onAction={(row, action) => setReimportActions((state) => ({ ...state, [reimportActionKey(row)]: action }))} />
                   ) : (
                     <>
-                      {!scopedCourse && (
+                      {!scopedCourse && initialCourse && (
+                        <section className="rounded-2xl border border-border bg-card p-4 shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]" aria-label="Staged class">
+                          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary">New class · not saved</p>
+                          <h2 className="mt-1 font-display text-base font-extrabold">{courseCode} · {courseTitle}</h2>
+                          <p className="mt-1 text-xs font-semibold text-muted-foreground">
+                            {[initialCourse.semester, initialCourse.type ? initialCourse.type[0].toUpperCase() + initialCourse.type.slice(1) : ''].filter(Boolean).join(' · ')}
+                          </p>
+                        </section>
+                      )}
+                      {!scopedCourse && !initialCourse && (
                         <section className="rounded-2xl border border-border bg-card p-4 shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]">
                           <h2 className="font-display text-base font-extrabold">Which class is this?</h2>
                           <p className="mt-1 text-xs font-semibold text-muted-foreground">Prefilled from the syllabus. Correct it if it’s wrong.</p>
@@ -234,12 +269,6 @@ export function SyllabusImportMode({
                           Importing into <span className="text-primary">{scopedCourse.code} · {scopedCourse.title}</span>
                         </p>
                       )}
-                      <SharedSyllabusStructurePanel
-                        proposal={proposal}
-                        courseCode={scopedCourse?.code || courseCode}
-                        term={semester}
-                        onStageCandidate={(items) => setProposal((current) => current ? { ...current, items } : current)}
-                      />
                       {grouped.map(([kind, items]) => (
                         <ReviewGroup
                           key={kind} kind={kind} items={items}
@@ -252,6 +281,14 @@ export function SyllabusImportMode({
                           Grade weights are {Math.abs(gap)}% {gap > 0 ? 'short of' : 'over'} 100%. Nothing was normalized.
                         </p>
                       )}
+                      <Collapsible title="Optional shared course structure" badge={<span className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground">Private by default</span>}>
+                        <SharedSyllabusStructurePanel
+                          proposal={proposal}
+                          courseCode={scopedCourse?.code || courseCode}
+                          term={semester}
+                          onStageCandidate={(items) => setProposal((current) => current ? { ...current, items } : current)}
+                        />
+                      </Collapsible>
                     </>
                   )}
                 </>
@@ -479,7 +516,7 @@ function ApplyRail({ misfiled, reimport, proposal, rows, decided, applying, cour
           </>
         ) : (
           <>
-            <h2 className="font-display text-base font-extrabold">What gets added</h2>
+            <h2 className="font-display text-base font-extrabold">What this adds</h2>
             <p className="mt-0.5 text-xs font-semibold text-muted-foreground">Nothing is written until you press this.</p>
             <dl className="mt-3 space-y-1">
               {APPLY_ROWS.map(([kind, label]) => {
@@ -493,7 +530,7 @@ function ApplyRail({ misfiled, reimport, proposal, rows, decided, applying, cour
               })}
             </dl>
             <Button className="mt-3 w-full" onClick={onApply} disabled={applying}>
-              <CheckCircle2 className="size-4" /> Add to {courseLabel}
+              <CheckCircle2 className="size-4" /> Add all of this to {courseLabel}
             </Button>
           </>
         )}

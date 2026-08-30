@@ -3,9 +3,9 @@
   MOCKUP — Class types (§4.1-N): STEM vs Writing, side by side.
   Purpose: prove Writing is NOT a downgraded STEM page.
   Same banner, same Overview/Materials/Assignments/Notes, same card shell.
-  Only the THIRD sub-tab and the PRIMARY ACTION differ.
+  Only the THIRD sub-tab and the source-backed work action differ.
 
-  Left  = STEM      (CHEM 261)  third tab "Topics"   · primary "Start review"
+  Left  = STEM      (CHEM 261)  third tab "Topics"   · primary "Create study resources"
   Right = Writing   (ENGL 105)  third tab "Readings" · primary "Open current draft"
   Bottom strip = the three class-card variants + the unified daily list.
 
@@ -182,7 +182,7 @@ h1,h2,h3,h4,.num,.btn,.tab,.chip,.stat-v,.stat-l{font-family:'Baloo 2',system-ui
 }
 .verb.draft{--v:#c98ac9} .verb.read{--v:var(--warning)} .verb.log{--v:var(--dim)}
 
-.note{
+.note{display:none;
   max-width:1500px;margin:20px auto 0;background:var(--card);border:1px solid var(--bd);
   border-left:3px solid var(--cat);border-radius:12px;padding:14px 17px;
 }
@@ -201,7 +201,7 @@ h1,h2,h3,h4,.num,.btn,.tab,.chip,.stat-v,.stat-l{font-family:'Baloo 2',system-ui
 
 <div class="page-head">
   <h1>Class types — STEM vs Writing</h1>
-  <p>Same banner. Same <span class="key">Overview · Materials · Assignments · Notes</span>. Same card shell, same stat strip, same components.
+  <p>Same banner. Same <span class="key">Overview · Materials · Assignments · Guide</span>. Same card shell, same stat strip, same components.
      <span class="key">Only the third sub-tab and the primary action differ</span> — marked with a dashed outline below.
      Writing isn't STEM with things removed; it substitutes its own layer.</p>
 </div>
@@ -220,12 +220,12 @@ h1,h2,h3,h4,.num,.btn,.tab,.chip,.stat-v,.stat-l{font-family:'Baloo 2',system-ui
             <div class="sub">Dr. Elamin · MWF 10:10a · Kenan B12 · BCPM · office hours ⌄</div>
           </div>
         </div>
-        <button class="btn">Start review</button>
+        <button class="btn">Create study resources⌄</button>
       </div>
       <div class="strip">
         <div class="stat"><div class="stat-v">B+</div><div class="stat-l">Grade</div></div>
-        <div class="stat"><div class="stat-v">4/9</div><div class="stat-l">Ready</div></div>
-        <div class="stat"><div class="stat-v">3</div><div class="stat-l">Due today</div></div>
+        <div class="stat"><div class="stat-v">9</div><div class="stat-l">Topics</div></div>
+        <div class="stat"><div class="stat-v">24</div><div class="stat-l">Materials</div></div>
         <div class="stat"><div class="stat-v">6d</div><div class="stat-l">Exam 2</div></div>
       </div>
       <div class="tabs">
@@ -233,7 +233,7 @@ h1,h2,h3,h4,.num,.btn,.tab,.chip,.stat-v,.stat-l{font-family:'Baloo 2',system-ui
         <div class="tab">Materials <span class="count">24</span></div>
         <div class="tab diff">Topics <span class="count">9</span></div>
         <div class="tab">Assignments <span class="count">11</span></div>
-        <div class="tab">Notes <span class="count">6</span></div>
+        <div class="tab">Guide <span class="count">6</span></div>
       </div>
     </div>
 
@@ -303,7 +303,7 @@ h1,h2,h3,h4,.num,.btn,.tab,.chip,.stat-v,.stat-l{font-family:'Baloo 2',system-ui
         <div class="tab">Materials <span class="count">12</span></div>
         <div class="tab diff">Readings <span class="count">18</span></div>
         <div class="tab">Assignments <span class="count">7</span></div>
-        <div class="tab">Notes <span class="count">4</span></div>
+        <div class="tab">Guide <span class="count">4</span></div>
       </div>
     </div>
 
@@ -402,9 +402,6 @@ h1,h2,h3,h4,.num,.btn,.tab,.chip,.stat-v,.stat-l{font-family:'Baloo 2',system-ui
           <div class="sig">B+ · final Dec 12</div>
         </div>
       </div>
-      <div style="font-size:11.5px;color:var(--dim);line-height:1.55;margin-top:9px;font-weight:600">
-        The signal line already says what kind of class it is. A type badge would label the student instead of the work.
-      </div>
     </div>
   </div>
 
@@ -433,9 +430,6 @@ h1,h2,h3,h4,.num,.btn,.tab,.chip,.stat-v,.stat-l{font-family:'Baloo 2',system-ui
         <div class="grow"><div class="t" style="font-size:12.5px;font-weight:700">Listening quiz grade</div>
         <div class="m" style="font-size:10.5px;color:var(--dim);font-weight:600;margin-top:2px">MUSC 143 · returned Friday</div></div>
       </div>
-      <div style="font-size:11.5px;color:var(--dim);line-height:1.55;margin-top:5px;font-weight:600">
-        Each row carries its own verb, so the kind of work is obvious without ever naming the type.
-      </div>
     </div>
   </div>
 </div>
@@ -444,7 +438,7 @@ h1,h2,h3,h4,.num,.btn,.tab,.chip,.stat-v,.stat-l{font-family:'Baloo 2',system-ui
   <span class="tagline">what to check</span>
   <h4>Does Writing read as an equal, not a downgrade?</h4>
   <p>The two pages have the <b>same number of panels, the same density, and the same visual weight.</b> Writing doesn't have gaps where STEM has features — it has different features. No greyed-out forgetting curve, no "0 topics ready", no empty shell of anything.</p>
-  <p>The dashed outlines mark the <b>only</b> two differences: the third sub-tab (Topics ↔ Readings) and the primary action (Start review ↔ Open current draft). Everything else is one component set.</p>
+  <p>The dashed outlines mark the <b>only</b> two differences: the third sub-tab (Topics ↔ Readings) and the source-backed work action (Create study resources ↔ Open current draft). Everything else is one component set.</p>
   <p><b>General type</b> (MUSC 143 above) isn't shown as a full page because it doesn't have one — four tabs, no third study tab, primary action <b>Add a grade</b>.</p>
 </div>
 

@@ -32,6 +32,9 @@ vi.stubGlobal('matchMedia', vi.fn().mockImplementation(() => ({
 })))
 
 const SYLLABUS = `CHEM 262 — Organic Chemistry II
+Learning outcomes
+1. Explain aromatic substitution.
+2. Distinguish stereochemical relationships.
 Week 1: Aromatic substitution
 Week 2: Stereochemistry
 Midterm Exam — October 14, 2026
@@ -39,6 +42,7 @@ Problem sets — 15%
 Exams — 60%
 Final — 25%
 Problem set 1 due September 9, 2026
+Class meetings TR 10:10 AM-11:00 AM in Kenan B12.
 Attendance is required. Office hours Tuesday 2 PM.`
 
 const PROBLEM_SET = `CHEM 262 Problem Set 6
@@ -46,6 +50,26 @@ Due Oct 24, 2026
 1. Draw the mechanism for the following substitution.
 2. Rank the leaving groups below.
 3. Predict the major product.`
+
+const ANTH_SCHEDULE = `Anthropology 147 Comparative Healing Systems
+Fall 2026
+COURSE GOALS: Upon completion of ANTH 147, the student should be able to:
+Demonstrate knowledge of global cultural understandings of health and healing.
+Explain how biomedicine is shaped by cultural ideas.
+Explain anthropological approaches to clashes between healing systems.
+Submit 6 Draft Reading Responses (RR) x 5 pts each: 30 pts (3%)
+Midterm 1 240 pts (24%)
+Final Exam 280 pts (28%)
+SCHEDULE FOR CLASS, READINGS, RECITATION SECTIONS, AND EXAMS
+Week/Theme
+READING
+Introduction: 8/19-8/21
+Symbols, Political Economy, and the Burdens of Inequality in Illness and Healing
+Berry, N. “The Story of Rosario,” in Unsafe Motherhood, pp. xi-xix.
+Medina, “Communicating with the Dead,” in Religion and Healing in America, pp.205–216.
+Wk 4: 9/15-9/17
+Exam Week
+Tuesday Exam #1`
 
 function setTextareaValue(textarea: HTMLTextAreaElement, value: string) {
   const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set
@@ -102,21 +126,30 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
   }
 
   async function readPastedSyllabus(mode: 'import' | 'reimport' = 'import') {
-    const textarea = container.querySelector('textarea[placeholder="Paste syllabus text from Canvas…"]') as HTMLTextAreaElement
+    const textarea = document.body.querySelector('textarea[placeholder="Paste syllabus text from Canvas…"]') as HTMLTextAreaElement
     expect(textarea).toBeTruthy()
     await act(async () => setTextareaValue(textarea, SYLLABUS))
-    await act(async () => button(container, 'Read syllabus').click())
-    expect(container.textContent).toContain(mode === 'reimport' ? 'things changed' : 'Here’s what I found')
+    await act(async () => button(document.body, 'Read syllabus').click())
+    expect(document.body.textContent).toContain(mode === 'reimport' ? 'things changed' : 'Here’s what I found')
   }
 
   it('creates one class only after review, persists all parsed course records, and retains the source locally', async () => {
     await render('/academics?tab=class-center')
-    await act(async () => button(container, 'Import syllabus').click())
+    await act(async () => button(container, 'Import a syllabus').click())
     expect(snapshotData().courses).toHaveLength(0)
 
     await readPastedSyllabus()
     expect(snapshotData().courses).toHaveLength(0)
-    await act(async () => button(container, 'Add to CHEM 262').click())
+    expect([...document.body.querySelectorAll('button')].some((item) => item.textContent?.trim() === 'Create & import syllabus')).toBe(false)
+    expect(document.body.textContent).toContain('Course code · found')
+    expect(document.body.textContent).toContain('Location · not found')
+    await act(async () => button(document.body, 'Review syllabus records').click())
+
+    expect(snapshotData().courses).toHaveLength(0)
+    expect(document.body.textContent).toContain('Import syllabus · review before apply')
+    expect(document.body.textContent).toContain('What this adds')
+    expect(document.body.textContent).toContain('Not found')
+    await act(async () => button(document.body, 'Add all of this to CHEM 262').click())
 
     const created = snapshotData()
     expect(created.courses).toHaveLength(1)
@@ -124,13 +157,16 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     const center = created.academics.classCenter
     expect(course).toMatchObject({ code: 'CHEM 262', title: 'Organic Chemistry II' })
     expect(center.workspaces.filter((item) => item.courseId === course.id)).toHaveLength(1)
+    expect(center.workspaces.find((item) => item.courseId === course.id)?.syllabusSchedule).toHaveLength(2)
     expect(center.topics.filter((item) => item.courseId === course.id)).toHaveLength(2)
+    expect(center.topics.filter((item) => item.courseId === course.id).every((item) => item.syllabusSourceKey && item.linkedFileIds?.length === 1)).toBe(true)
     expect(center.assignments.filter((item) => item.courseId === course.id)).toEqual(expect.arrayContaining([
       expect.objectContaining({ title: 'Midterm Exam', dueDate: '2026-10-14', type: 'exam' }),
       expect.objectContaining({ title: 'Problem set 1', dueDate: '2026-09-09' }),
     ]))
+    expect(center.assignments.filter((item) => item.courseId === course.id).every((item) => item.syllabusSourceKey && item.linkedFileIds.length === 1)).toBe(true)
     expect(center.gradeCategories.filter((item) => item.courseId === course.id).map((item) => item.weight).sort((a, b) => a - b)).toEqual([15, 25, 60])
-    expect(center.gradeCategories.filter((item) => item.courseId === course.id).every((item) => item.policyNote?.includes('Attendance is required.'))).toBe(true)
+    expect(center.gradeCategories.filter((item) => item.courseId === course.id).every((item) => item.policyNote == null)).toBe(true)
     expect(center.files.filter((item) => item.courseId === course.id && item.type === 'syllabus')).toEqual([
       expect.objectContaining({ blobRef: expect.stringMatching(/^local-syllabus:/), sourceType: 'upload' }),
     ])
@@ -179,6 +215,95 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(hydrated.academics.classCenter.files.filter((item) => item.courseId === course.id).map(fileFieldsOwnedByImport)).toEqual(expected.academics.classCenter.files.filter((item) => item.courseId === course.id).map(fileFieldsOwnedByImport))
   })
 
+  it('persists reviewed humanities schedule and readings without promoting them to Topics', async () => {
+    await render('/academics?tab=class-center')
+    await act(async () => button(container, 'Import a syllabus').click())
+    const textarea = document.body.querySelector('textarea[placeholder="Paste syllabus text from Canvas…"]') as HTMLTextAreaElement
+    await act(async () => setTextareaValue(textarea, ANTH_SCHEDULE))
+    await act(async () => button(document.body, 'Read syllabus').click())
+    await act(async () => button(document.body, 'Review syllabus records').click())
+    await act(async () => button(document.body, 'Add all of this to ANTH 147').click())
+
+    const center = snapshotData().academics.classCenter
+    const course = snapshotData().courses.find((item) => item.code === 'ANTH 147')
+    expect(course).toBeTruthy()
+    const courseId = course!.id
+    expect(center.topics.filter((item) => item.courseId === courseId).map((item) => item.title)).toHaveLength(3)
+    expect(center.topics.some((item) => /Story of Rosario|Symbols, Political Economy/i.test(item.title))).toBe(false)
+    expect(center.assignedReadings.filter((item) => item.courseId === courseId)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ week: 'Introduction', title: expect.stringContaining('Story of Rosario'), dueForDiscussion: '2026-08-19' }),
+      expect.objectContaining({ week: 'Introduction', title: expect.stringContaining('Communicating with the Dead'), dueForDiscussion: '2026-08-19' }),
+    ]))
+    expect(center.workspaces.find((item) => item.courseId === courseId)).toMatchObject({
+      type: 'writing', readingListState: 'complete', syllabusSchedule: expect.arrayContaining([
+        expect.objectContaining({ week: 'Introduction', label: expect.stringContaining('Symbols, Political Economy'), startDate: '2026-08-19' }),
+      ]),
+    })
+    expect(center.assignments).toEqual(expect.arrayContaining([
+      expect.objectContaining({ courseId, type: 'exam', title: 'Exam 1', dueDate: '2026-09-15' }),
+    ]))
+  })
+
+  it('moves backward through final review and class details without saving a partial class', async () => {
+    await render('/academics?tab=class-center')
+    await act(async () => button(container, 'Import a syllabus').click())
+    await readPastedSyllabus()
+    await act(async () => button(document.body, 'Review syllabus records').click())
+
+    expect(snapshotData().courses).toEqual([])
+    await act(async () => button(container, 'Back').click())
+    expect(document.body.textContent).toContain('Review class details')
+    expect(document.body.textContent).toContain('Course code · found')
+    expect(snapshotData().courses).toEqual([])
+
+    await act(async () => button(document.body, 'Back to import').click())
+    expect(document.body.textContent).toContain('Drop a syllabus or course schedule here')
+    expect(snapshotData().courses).toEqual([])
+
+    await act(async () => button(document.body, 'Cancel').click())
+    expect(snapshotData().courses).toEqual([])
+    expect(document.body.textContent).toContain('Start with a syllabus')
+  })
+
+  it('reads multiple local files into one proposal and keeps each fact linked to its source file', async () => {
+    await render('/academics?tab=class-center')
+    await act(async () => button(container, 'Import a syllabus').click())
+    const makeTextFile = (name: string, text: string) => {
+      const file = new File([text], name, { type: 'text/plain' })
+      Object.defineProperty(file, 'text', { value: async () => text })
+      return file
+    }
+    const overview = makeTextFile('CHEM262-overview.txt', `CHEM 262 — Organic Chemistry II
+Fall 2026
+Student learning outcomes
+1. Explain aromatic substitution and predict its major products.
+Problem sets — 15%`)
+    const schedule = makeTextFile('CHEM262-schedule.txt', `CHEM 262 — Organic Chemistry II
+Fall 2026
+Midterm Exam — October 14, 2026
+Week 1: Aromatic substitution and reaction energy diagrams.`)
+    const fileInput = document.body.querySelector('input[type="file"]') as HTMLInputElement
+    Object.defineProperty(fileInput, 'files', { configurable: true, value: [overview, schedule] })
+    await act(async () => fileInput.dispatchEvent(new Event('change', { bubbles: true })))
+    await act(async () => button(document.body, 'Read syllabus').click())
+
+    expect(document.body.textContent).toContain('CHEM262-overview.txt + CHEM262-schedule.txt')
+    expect(snapshotData().courses).toEqual([])
+    await act(async () => button(document.body, 'STEM').click())
+    await act(async () => button(document.body, 'Review syllabus records').click())
+    expect(document.body.textContent).toContain('What this adds')
+    await act(async () => button(document.body, 'Add all of this to CHEM 262').click())
+
+    const saved = snapshotData().academics.classCenter
+    const overviewFile = saved.files.find((file) => file.fileName === 'CHEM262-overview.txt')
+    const scheduleFile = saved.files.find((file) => file.fileName === 'CHEM262-schedule.txt')
+    expect(overviewFile).toBeTruthy()
+    expect(scheduleFile).toBeTruthy()
+    expect(saved.topics.find((topic) => topic.title.includes('aromatic substitution'))?.linkedFileIds).toEqual([overviewFile?.id])
+    expect(saved.assignments.find((assignment) => assignment.title.includes('Midterm Exam'))?.linkedFileIds).toEqual([scheduleFile?.id])
+    expect(retainLocalSyllabus).toHaveBeenCalledTimes(2)
+  })
+
   it('creates a class once, then scopes the Add-class import fast path to that same class', async () => {
     await render('/academics?tab=class-center')
     await act(async () => button(container, 'Add manually').click())
@@ -199,7 +324,7 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(container.textContent).toContain('Add a syllabus to CHEM 262')
 
     await readPastedSyllabus()
-    await act(async () => button(container, 'Add to CHEM 262').click())
+    await act(async () => button(container, 'Add all of this to CHEM 262').click())
 
     const applied = snapshotData()
     expect(applied.courses).toHaveLength(1)
@@ -218,7 +343,7 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
       status: 'active', createdAt: 1, updatedAt: 1, order: 0,
     })
     initial.academics.classCenter.topics.push({
-      id: 'topic-week-1', courseId: 'chem-262', title: 'Week 1: Aromatic substitution', unit: 'Week 1: Aromatic substitution',
+      id: 'topic-standard-1', courseId: 'chem-262', title: 'Explain aromatic substitution.', unit: '', basis: 'syllabus-standard',
       status: 'not-started', fsrs: {} as never, confidence: 3, sourceNoteIds: [], linkedNoteIds: [], linkedAssignmentIds: [], linkedFileIds: [], createdAt: 1, updatedAt: 1, order: 0,
     })
     useStore.getState().replaceAll(initial)
@@ -234,10 +359,10 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(after.courses).toHaveLength(1)
     expect(after.academics.classCenter.workspaces).toHaveLength(1)
     expect(after.courses[0].id).toBe('chem-262')
-    // The pre-existing topic survives its default Keep decision; the new week
+    // The pre-existing learning standard survives unchanged; the other standard
     // is added by its default Accept decision. This is identity-based, not positional.
     expect(after.academics.classCenter.topics.filter((item) => item.courseId === 'chem-262').map((item) => item.title)).toEqual(expect.arrayContaining([
-      'Week 1: Aromatic substitution', 'Week 2: Stereochemistry',
+      'Explain aromatic substitution.', 'Distinguish stereochemical relationships.',
     ]))
   })
 
@@ -255,7 +380,7 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
 
     await render('/academics?tab=class-center&importFor=chem-262')
     await readPastedSyllabus()
-    await act(async () => button(container, 'Add to CHEM 262').click())
+    await act(async () => button(container, 'Add all of this to CHEM 262').click())
 
     const after = snapshotData()
     expect(after.courses).toHaveLength(1)
@@ -265,7 +390,7 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(workspace.meetingDays || workspace.meetingTime || workspace.location).toBeTruthy()
     const categories = after.academics.classCenter.gradeCategories.filter((item) => item.courseId === 'chem-262')
     expect(categories).toHaveLength(3)
-    expect(categories.every((item) => item.policyNote?.includes('Attendance is required.'))).toBe(true)
+    expect(categories.every((item) => item.policyNote == null)).toBe(true)
     expect(categories.every((item) => item.dropLowestCount === undefined && item.replacementRule === undefined)).toBe(true)
   })
 
@@ -295,6 +420,39 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     const categories = snapshotData().academics.classCenter.gradeCategories.filter((item) => item.courseId === 'chem-262')
     expect(categories.find((item) => item.id === 'problem-sets')).toMatchObject({ weight: 15, policyNote: 'Student kept this policy verbatim.' })
     expect(categories.find((item) => item.id === 'participation')).toBeTruthy()
+  })
+
+  it('matches student-renamed syllabus rows by their retained source identity', async () => {
+    const initial = createInitialDataForMode(false)
+    initial.courses.push({
+      id: 'chem-262', code: 'CHEM 262', title: 'Organic Chemistry II', term: 'Fall 2026', credits: 3,
+      grade: '', bcpm: true, status: 'in-progress', inResidence: true, satisfies: [], order: 0,
+    })
+    initial.academics.classCenter.workspaces.push({
+      id: 'workspace-chem-262', courseId: 'chem-262', color: 'blue', icon: 'flask', type: 'stem',
+      status: 'active', createdAt: 1, updatedAt: 1, order: 0,
+    })
+    initial.academics.classCenter.topics.push({
+      id: 'topic-standard-1', courseId: 'chem-262', title: 'Aromatic substitution — my wording', syllabusSourceKey: 'explain aromatic substitution.', unit: '', basis: 'syllabus-standard',
+      status: 'not-started', fsrs: {} as never, confidence: 3, sourceNoteIds: [], linkedNoteIds: [], linkedAssignmentIds: [], linkedFileIds: [], createdAt: 1, updatedAt: 2, order: 0,
+    })
+    initial.academics.classCenter.assignments.push({
+      id: 'assignment-midterm', courseId: 'chem-262', title: 'The first big exam', syllabusSourceKey: 'midterm exam|2026-10-14', type: 'exam', dueDate: '2026-10-14',
+      status: 'not-started', linkedTopicIds: [], linkedFileIds: [], createdAt: 1, updatedAt: 2, order: 0,
+    })
+    useStore.getState().replaceAll(initial)
+
+    await render('/academics?tab=class-center&importFor=chem-262')
+    await readPastedSyllabus('reimport')
+    await act(async () => button(container, 'Apply accepted changes').click())
+
+    const after = snapshotData().academics.classCenter
+    const topics = after.topics.filter((item) => item.courseId === 'chem-262')
+    const assignments = after.assignments.filter((item) => item.courseId === 'chem-262')
+    expect(topics).toHaveLength(2)
+    expect(topics).toContainEqual(expect.objectContaining({ id: 'topic-standard-1', title: 'Aromatic substitution — my wording', syllabusSourceKey: 'explain aromatic substitution.' }))
+    expect(assignments).toHaveLength(2)
+    expect(assignments).toContainEqual(expect.objectContaining({ id: 'assignment-midterm', title: 'The first big exam', syllabusSourceKey: 'midterm exam|2026-10-14' }))
   })
 
   it('files a clearly non-syllabus document into an existing class Materials shelf without changing syllabus records', async () => {
@@ -330,12 +488,12 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
 
   it('never creates a class for a wrong document until the student explicitly reviews it as a syllabus', async () => {
     await render('/academics?tab=class-center')
-    await act(async () => button(container, 'Import syllabus').click())
-    const textarea = container.querySelector('textarea[placeholder="Paste syllabus text from Canvas…"]') as HTMLTextAreaElement
+    await act(async () => button(container, 'Import a syllabus').click())
+    const textarea = document.body.querySelector('textarea[placeholder="Paste syllabus text from Canvas…"]') as HTMLTextAreaElement
     await act(async () => setTextareaValue(textarea, PROBLEM_SET))
-    await act(async () => button(container, 'Read syllabus').click())
-    expect(container.textContent).toContain('Nothing to apply')
-    expect(container.textContent).toContain('Choose a class first')
+    await act(async () => button(document.body, 'Read syllabus').click())
+    expect(document.body.textContent).toContain('Nothing to apply')
+    expect(document.body.textContent).toContain('Choose a class first')
     expect(snapshotData().courses).toHaveLength(0)
     expect(snapshotData().academics.classCenter.files).toHaveLength(0)
   })

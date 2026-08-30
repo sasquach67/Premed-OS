@@ -178,6 +178,22 @@
   font-weight: 800;
 }
 
+.grades-export-button {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 6px 10px;
+  border: 1px solid var(--primary);
+  border-radius: 9px;
+  background: var(--primary);
+  color: #16232e;
+  font: 800 11px 'Baloo 2', system-ui, sans-serif;
+}
+
+.grades-export-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+
 .grades-ledger-filters {
   margin-top: -11px;
   border-radius: 0 0 16px 16px;
@@ -196,6 +212,17 @@
 
 .grades-workspace .grades-search { max-width: 250px; }
 .grades-workspace .grades-record-count { margin-left: auto; border-radius: 999px; padding: 4px 10px; }
+.grades-ledger-status { display: flex; align-items: center; gap: 5px; }
+.grades-ledger-status button { display: inline-flex; min-height: 31px; align-items: center; gap: 5px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 9px; background: var(--muted); color: var(--muted-foreground); font: 800 10px 'Baloo 2', system-ui, sans-serif; }
+.grades-ledger-status button[aria-pressed='true'] { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); background: color-mix(in srgb, var(--primary) 12%, var(--card)); color: var(--foreground); }
+.grades-ledger-status button span { min-width: 17px; padding: 1px 4px; border-radius: 999px; background: color-mix(in srgb, var(--border) 78%, transparent); font-size: 8px; text-align: center; }
+
+.grades-record-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--card); box-shadow: 0 10px 26px -14px rgba(0,0,0,.55); }
+.grades-record-hero div { display: grid; gap: 2px; }
+.grades-record-hero div:last-child { text-align: right; }
+.grades-record-hero span { color: var(--muted-foreground); font-size: 8px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
+.grades-record-hero b { font: 800 16px 'Baloo 2', system-ui, sans-serif; }
+.grades-record-hero div:last-child b { color: var(--primary); }
 
 .grades-workspace [data-slot='card'],
 .grades-workspace .grades-empty,
@@ -234,6 +261,26 @@
 
 .grades-workspace .grades-term-card > [data-slot='card-content'] { padding: 0; }
 
+.grades-term-header { display: flex; flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.grades-term-header p { margin-top: 2px; color: var(--muted-foreground); font-size: 10px; font-weight: 800; text-transform: lowercase; }
+.grades-term-stats { display: flex; align-items: flex-start; gap: 16px; text-align: right; }
+.grades-term-stats div { display: grid; gap: 0; }
+.grades-term-stats b { font: 800 16px 'Baloo 2', system-ui, sans-serif; }
+.grades-term-stats div[data-bcpm='true'] b { color: var(--primary); }
+.grades-term-stats span { color: var(--muted-foreground); font-size: 7px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+
+.grades-ledger-table { display: grid; grid-template-columns: minmax(100px,.75fr) minmax(210px,2fr) 72px 68px minmax(105px,.8fr) minmax(125px,1fr); overflow-x: auto; }
+.grades-ledger-heading { padding: 7px 10px; border-bottom: 1px solid var(--border); background: var(--muted); color: var(--muted-foreground); font-size: 7.5px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.grades-ledger-table-row { display: contents; }
+.grades-ledger-cell { min-width: 0; padding: 10px; border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent); background: var(--card); font-size: 10.5px; font-weight: 800; }
+.grades-ledger-table-row:last-child .grades-ledger-cell { border-bottom: 0; }
+.grades-ledger-code,
+.grades-ledger-number { font-variant-numeric: tabular-nums; }
+.grades-ledger-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.grades-ledger-title a { display: flex; align-items: center; gap: 3px; color: var(--foreground); font-family: 'Baloo 2'; font-weight: 800; }
+.grades-ledger-title a:hover { color: var(--primary); }
+.grades-ledger-title small { display: block; margin-top: 1px; overflow: hidden; color: var(--muted-foreground); font-size: 8.5px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+
 .grades-ledger-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
@@ -256,16 +303,57 @@
 .grades-workspace .grades-gpa-grid { gap: 15px; }
 .grades-workspace .grades-gpa-card { border-radius: 14px; background: var(--muted); box-shadow: none; }
 
+.grades-whatif-hero { padding: 15px; border: 1px solid var(--border); border-radius: 16px; background: var(--card); box-shadow: 0 10px 26px -14px rgba(0,0,0,.55); }
+.grades-whatif-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 13px; background: var(--card); }
+.grades-whatif-toolbar > div:first-child { display: grid; gap: 1px; margin-right: auto; }
+.grades-whatif-toolbar > div:first-child b { font: 800 13px 'Baloo 2', system-ui, sans-serif; }
+.grades-whatif-toolbar > div:first-child span { color: var(--muted-foreground); font-size: 9px; font-weight: 800; }
+.grades-workspace .grades-whatif-term { width: 150px; min-height: 32px; border-color: var(--border); background: var(--muted); font-size: 11px; font-weight: 800; }
+.grades-whatif-hero-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.grades-whatif-hero-top > div { display: grid; gap: 2px; }
+.grades-whatif-hero-top > div:last-child { text-align: right; }
+.grades-whatif-hero-top span { color: var(--muted-foreground); font-size: 8px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.grades-whatif-hero-top b { font: 800 18px 'Baloo 2', system-ui, sans-serif; }
+.grades-whatif-hero-top > div:last-child b { color: var(--success); }
+.grades-whatif-results { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; margin-top: 12px; }
+.grades-whatif-row { display: grid; grid-template-columns: minmax(0,1fr) 76px minmax(178px,auto) 74px auto auto; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 13px; background: var(--muted); }
+.grades-whatif-course { display: grid; gap: 2px; min-width: 0; }
+.grades-whatif-course b { overflow: hidden; font: 800 12px 'Baloo 2', system-ui, sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+.grades-whatif-course span { color: var(--muted-foreground); font-size: 9px; font-weight: 700; }
+.grades-whatif-grade-picks { display: grid; grid-template-columns: repeat(4,minmax(36px,1fr)); gap: 4px; }
+.grades-whatif-grade-picks button { min-height: 31px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--muted-foreground); font: 800 10px 'Baloo 2', system-ui, sans-serif; }
+.grades-whatif-grade-picks button[aria-pressed='true'] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 18%, var(--card)); color: var(--foreground); }
+.grades-whatif-grade-picks button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.grades-workspace .grades-whatif-grade-select { min-height: 32px; border-color: var(--border); background: var(--card); font-size: 10px; font-weight: 800; }
+.grades-whatif-policy { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; border-bottom: 1px solid var(--border); color: var(--muted-foreground); font-size: 11px; font-weight: 700; }
+.grades-whatif-policy:last-child { border-bottom: 0; }
+.grades-whatif-policy b { color: var(--foreground); font-family: 'Baloo 2'; font-weight: 800; }
+
 @media (max-width: 760px) {
   .grades-transcript-proto { padding: 14px; }
   .grades-transcript-shell { grid-template-columns: 1fr; }
   .grades-view-bar,
   .grades-ledger-filters { gap: 8px; padding: 10px 14px; }
   .grades-view-context { width: 100%; }
+  .grades-export-button { margin-left: 0; }
   .grades-workspace .grades-search { order: 3; width: 100%; max-width: none; }
   .grades-workspace .grades-record-count { margin-left: 0; }
+  .grades-ledger-status { width: 100%; overflow-x: auto; padding-bottom: 2px; }
+  .grades-record-hero { align-items: flex-start; flex-direction: column; }
+  .grades-record-hero div:last-child { text-align: left; }
+  .grades-ledger-table { grid-template-columns: 94px minmax(190px,1.8fr) 64px 60px 96px 116px; }
   .grades-ledger-row { grid-template-columns: 1fr; align-items: start; }
   .grades-workspace .grades-gpa-grid { grid-template-columns: 1fr; }
+  .grades-whatif-hero-top { align-items: flex-start; flex-direction: column; }
+  .grades-whatif-hero-top > div:last-child { text-align: left; }
+  .grades-whatif-results { grid-template-columns: 1fr; }
+  .grades-whatif-toolbar { align-items: stretch; }
+  .grades-whatif-toolbar > div:first-child { width: 100%; }
+  .grades-workspace .grades-whatif-term { width: 100%; }
+  .grades-whatif-row { grid-template-columns: minmax(0,1fr) 72px; }
+  .grades-whatif-course { grid-column: 1 / -1; }
+  .grades-whatif-grade-picks { grid-column: 1 / -1; }
+  .grades-workspace .grades-whatif-grade-select { grid-column: 1 / -1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

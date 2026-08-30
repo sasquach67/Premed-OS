@@ -1,31 +1,27 @@
-import { useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  ArrowLeft, BookOpen, Brain, CalendarClock, Check, CheckCircle2, ChevronDown,
-  Clock3, FileText, Filter, FolderOpen, GraduationCap, HelpCircle,
-  Mail, MapPin, MoreHorizontal, NotebookText, Play, Plus,
-  Sparkles, Target, UserRound, Users,
-  TrendingDown,
+  ArrowLeft, BookOpen, Brain, Check, ChevronDown,
+  FileStack, FileText, Filter, FolderOpen, HelpCircle,
+  Mail, MoreHorizontal, NotebookText, Plus,
+  Sparkles, Target,
 } from 'lucide-react'
 import type {
   AcademicFile, ClassAssignment, ClassCenterData, ClassContact, ClassNote,
-  AssignedReading, ClassWorkspace, ClassWorkspaceType, Course, FeedbackNote, GradeCategory, PaperDraft, Person, ReviewEvent, Topic, TopicStatus,
+  AcademicTagColor, AssignedReading, ClassWorkspace, ClassWorkspaceType, Course, FeedbackNote, GradeCategory, PaperDraft, Person, Topic,
 } from '@/lib/types'
 import { useStore } from '@/store/store'
 import { uid } from '@/lib/id'
 import { fmtDeadline, fmtEventDate } from '@/lib/date'
-import { createTopicFsrsState } from '@/lib/academics/fsrs'
 import { calculateCourseCoverage } from '@/lib/academics/coverage'
 import { calculateCourseScenario } from '@/lib/academics/gradeLedger'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/components/common/useToast'
 import { InfoTip } from '@/components/common/InfoTip'
 import { Collapsible } from '@/components/common/Collapsible'
-import { PageHeader } from '@/components/common/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger,
 } from '@/components/ui/context-menu'
@@ -37,32 +33,40 @@ import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { StatStrip } from '@/components/common/StatStrip'
 import { ExamPrepMode } from '@/components/academics/ExamPrepMode'
-import { ForgettingCurve } from '@/components/academics/ForgettingCurve'
-import { StudyMethodTrack } from '@/components/academics/StudyMethodTrack'
-import { StudyMethodPanel } from '@/components/academics/StudyMethodPanel'
-import { AssignmentLinkField, TopicLinkField } from '@/components/academics/TopicLinkFields'
+import { AssignmentLinkField } from '@/components/academics/TopicLinkFields'
 import { TopicConnectField } from '@/components/academics/TopicConnectField'
 import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
-import { retainLocalMaterial } from '@/lib/academics/localMaterialFiles'
+import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialog'
+import { RevisedNotesPanel } from '@/components/academics/RevisedNotesPanel'
+import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
 import { generateStudyGuide, sourcesFor } from '@/lib/academics/generateStudyGuide'
-import { downloadFlashcardApkg, downloadFlashcardTsv } from '@/lib/academics/flashcardExport'
-import { PredictPanel } from '@/components/academics/PredictPanel'
-import { PretestPanel } from '@/components/academics/PretestPanel'
-import { LectureCapturePanel } from '@/components/academics/LectureCapturePanel'
+import { LectureCapturePanel, type LectureDestination } from '@/components/academics/LectureCapturePanel'
+import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
-import { LearningSignalsPanel } from '@/components/academics/LearningSignalsPanel'
 import { MaterialGenerationIntake, type MaterialArtifact } from '@/components/academics/MaterialGenerationIntake'
 import { MaterialFolderIntake } from '@/components/academics/MaterialFolderIntake'
-import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
 import { AssessmentCatalog } from '@/components/academics/AssessmentCatalog'
 import { readLocalBlob } from '@/lib/localBlobStore'
 import { readingDebt, READING_LIST_STATE_COPY, recurringFeedbackThemes } from '@/lib/academics/writingEvidence'
+import {
+  acceptGuideProposal, buildSyllabusGuideProposals, dismissGuideProposal, editGuideProposal,
+  ensureSyllabusGuideProposals, guideProposalsForCourse, isGuideSourceValid,
+} from '@/lib/academics/guideContract'
+import './classHubVariantA.css'
 
-type HubTab = 'overview' | 'materials' | 'topics' | 'readings' | 'assignments' | 'notes'
+type HubTab = 'overview' | 'materials' | 'topics' | 'assignments' | 'guide'
+
+function isMaterialArtifact(value: string | null): value is MaterialArtifact {
+  return value === 'flashcards' || value === 'study-guide' || value === 'study-outline' || value === 'revised-notes'
+}
 
 export interface ClassHubProps {
   course: Course
@@ -71,46 +75,68 @@ export interface ClassHubProps {
   persons: Person[]
 }
 
-const STATUS_LABELS: Record<TopicStatus, string> = {
-  'not-started': 'Not started',
-  seen: 'Covered',
-  'notes-made': 'Notes made',
-  reviewing: 'Reviewing',
-  weak: 'Marked for review',
-  ready: 'Marked ready',
-}
-
-const STATUS_TONE: Record<TopicStatus, string> = {
-  'not-started': 'bg-muted text-muted-foreground',
-  seen: 'bg-sky-500/12 text-sky-700 dark:text-sky-200',
-  'notes-made': 'bg-violet-500/12 text-violet-700 dark:text-violet-200',
-  reviewing: 'bg-amber-500/14 text-amber-800 dark:text-amber-200',
-  weak: 'bg-destructive/12 text-destructive',
-  ready: 'bg-emerald-500/14 text-emerald-700 dark:text-emerald-200',
-}
-
 const COLOR_DOT: Record<string, string> = {
-  gray: 'bg-slate-400', brown: 'bg-stone-500', orange: 'bg-orange-500',
-  yellow: 'bg-yellow-500', green: 'bg-emerald-500', blue: 'bg-sky-500',
-  purple: 'bg-violet-500', pink: 'bg-pink-500', red: 'bg-rose-500',
+  gray: 'bg-slate-400', brown: 'bg-stone-500', orange: 'bg-orange-500', coral: 'bg-[#e67d69]',
+  yellow: 'bg-yellow-500', lime: 'bg-lime-500', green: 'bg-emerald-500',
+  mint: 'bg-[#62c6a2]', teal: 'bg-teal-500', cyan: 'bg-cyan-500', sky: 'bg-[#65bfe7]', blue: 'bg-sky-500',
+  navy: 'bg-[#506f9d]', indigo: 'bg-indigo-500', purple: 'bg-violet-500', plum: 'bg-[#aa6aa3]', pink: 'bg-pink-500', red: 'bg-rose-500',
 }
 
-export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
+const CLASS_HUB_ACCENT: Record<AcademicTagColor, { hex: string; rgb: string }> = {
+  gray: { hex: '#9aa3ad', rgb: '154 163 173' },
+  brown: { hex: '#a38465', rgb: '163 132 101' },
+  orange: { hex: '#df9b52', rgb: '223 155 82' },
+  coral: { hex: '#e67d69', rgb: '230 125 105' },
+  yellow: { hex: '#d5b768', rgb: '213 183 104' },
+  lime: { hex: '#98bd63', rgb: '152 189 99' },
+  green: { hex: '#6fc0a8', rgb: '111 192 168' },
+  mint: { hex: '#62c6a2', rgb: '98 198 162' },
+  teal: { hex: '#54b5ad', rgb: '84 181 173' },
+  cyan: { hex: '#58b9cf', rgb: '88 185 207' },
+  sky: { hex: '#65bfe7', rgb: '101 191 231' },
+  blue: { hex: '#6fb3de', rgb: '111 179 222' },
+  navy: { hex: '#506f9d', rgb: '80 111 157' },
+  indigo: { hex: '#7f8fd3', rgb: '127 143 211' },
+  purple: { hex: '#a987ca', rgb: '169 135 202' },
+  plum: { hex: '#aa6aa3', rgb: '170 106 163' },
+  pink: { hex: '#c98ac9', rgb: '201 138 201' },
+  red: { hex: '#e8806f', rgb: '232 128 111' },
+}
+
+function classHubColor(color: unknown): AcademicTagColor {
+  return typeof color === 'string' && color in CLASS_HUB_ACCENT ? color as AcademicTagColor : 'blue'
+}
+
+function classHubAccentStyle(color: AcademicTagColor): CSSProperties {
+  const accent = CLASS_HUB_ACCENT[color]
+  return {
+    '--class-hub-accent': accent.hex,
+    '--class-hub-accent-rgb': accent.rgb,
+  } as CSSProperties
+}
+
+export function ClassHub({ course, workspace, data }: ClassHubProps) {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const requestedTab = params.get('classTab')
+  // Preserve old deep links while keeping the public shell at five tabs.
+  const canonicalRequestedTab = requestedTab === 'notes' ? 'guide' : requestedTab === 'readings' ? 'materials' : requestedTab
   const classType: ClassWorkspaceType = workspace.type ?? (course.bcpm ? 'stem' : 'general')
-  const availableTabs = classType === 'stem'
-    ? ['overview', 'materials', 'topics', 'assignments', 'notes'] as HubTab[]
-    : classType === 'writing'
-      ? ['overview', 'materials', 'readings', 'assignments', 'notes'] as HubTab[]
-      : ['overview', 'materials', 'assignments', 'notes'] as HubTab[]
-  const initialTab = isHubTab(requestedTab) && availableTabs.includes(requestedTab) ? requestedTab : 'overview'
+  const courseColor = classHubColor(workspace.color)
+  // A class has one stable five-tab shell. Writing-specific tools live inside
+  // Materials rather than replacing the syllabus-led Topics surface.
+  const availableTabs: HubTab[] = ['overview', 'materials', 'topics', 'assignments', 'guide']
+  const initialTab = isHubTab(canonicalRequestedTab) && availableTabs.includes(canonicalRequestedTab) ? canonicalRequestedTab : 'overview'
   const [tab, setTab] = useState<HubTab>(initialTab)
-  const toast = useToast()
+  useEffect(() => {
+    const nextTab = isHubTab(canonicalRequestedTab) && availableTabs.includes(canonicalRequestedTab) ? canonicalRequestedTab : 'overview'
+    setTab((current) => current === nextTab ? current : nextTab)
+  }, [canonicalRequestedTab])
   const courseTopics = ordered(data.topics.filter((item) => item.courseId === course.id))
   const courseFiles = ordered(data.files.filter((item) => item.courseId === course.id))
   const courseNotes = [...data.notes.filter((item) => item.courseId === course.id)].sort((a, b) => b.updatedAt - a.updatedAt)
+  const courseMaterialNotes = courseNotes.filter(isMaterialNote)
+  const courseGuideNotes = courseNotes.filter(isGuideNote)
   const courseAssignments = ordered(data.assignments.filter((item) => item.courseId === course.id))
   const courseContacts = ordered(data.contacts.filter((item) => item.courseId === course.id))
   const courseDrafts = ordered(data.paperDrafts.filter((item) => item.courseId === course.id))
@@ -118,7 +144,7 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
   const courseFeedback = ordered(data.feedbackNotes.filter((item) => item.courseId === course.id))
   const readingListState = workspace.readingListState ?? 'unknown'
   const readingsBehind = readingDebt(courseReadings, readingListState, isoToday())
-  const stats = hubStats(course, courseTopics, courseAssignments)
+  const stats = hubStats(course, courseAssignments)
   const requestedExamPrepId = params.get('examPrep')
   const requestedExamPrep = requestedExamPrepId
     ? courseAssignments.find((item) => item.id === requestedExamPrepId && item.type === 'exam')
@@ -130,26 +156,6 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
     const nextParams = new URLSearchParams(params)
     nextParams.set('classTab', next)
     setParams(nextParams, { replace: true })
-  }
-
-  function addTopic() {
-    const now = Date.now()
-    useStore.getState().update((draft) => {
-      const topics = draft.academics.classCenter.topics
-      topics.push({
-        id: uid(), courseId: course.id, title: 'New topic', unit: '',
-        status: 'not-started', confidence: 3, sourceNoteIds: [],
-        linkedNoteIds: [], linkedAssignmentIds: [], linkedFileIds: [],
-        fsrs: createTopicFsrsState(now), createdAt: now, updatedAt: now,
-        order: topics.filter((item) => item.courseId === course.id).length,
-      })
-    })
-    changeTab('topics')
-    toast({ title: 'Topic added', description: 'Rename it when you are ready.' })
-  }
-
-  function startReview() {
-    navigate(`/academics/review/${course.id}`)
   }
 
   function openExamPrep(examId: string) {
@@ -183,357 +189,242 @@ export function ClassHub({ course, workspace, data, persons }: ClassHubProps) {
   }
 
   function primaryAction() {
-    if (classType === 'stem') return <Button onClick={startReview}><Play className="size-4" /> Start review</Button>
-    if (classType === 'writing') return <Button onClick={() => changeTab('readings')}><NotebookText className="size-4" /> Open current draft</Button>
+    if (classType === 'stem') return <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" className="class-hub-primary-action"><FileStack className="size-4" /> Create study resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems onChoose={(artifact) => { changeTab('materials'); const next = new URLSearchParams(params); next.set('classTab', 'materials'); next.set('createMaterial', artifact); setParams(next) }} /></DropdownMenuContent></DropdownMenu>
+    if (classType === 'writing') return <Button onClick={() => changeTab('materials')}><NotebookText className="size-4" /> Open current draft</Button>
     return <Button onClick={() => changeTab('assignments')}><Plus className="size-4" /> Add a grade</Button>
   }
 
   const counts = {
-    materials: courseFiles.length,
+    materials: courseFiles.length + courseMaterialNotes.length,
     topics: courseTopics.length,
     readings: courseReadings.length,
     assignments: courseAssignments.filter((item) => !isComplete(item)).length,
-    notes: courseNotes.length,
+    notes: courseGuideNotes.length,
   }
 
   return (
     <div className="class-hub space-y-5">
       <Tabs value={tab} onValueChange={changeTab}>
-        {/* The class hub wears the same banner as every other Academics
-         *  surface (04 §0c): themed art → scrim → glass stat strip floating
-         *  over it → underline tabs on the banner's lower edge. The strip is
-         *  the only glass here, so the header's own glass wrapper is off. */}
-        <PageHeader
-          scene="academics"
-          title={course.code}
-          titleAdornment={<span className={cn('size-3 shrink-0 rounded-full', COLOR_DOT[workspace.color] ?? COLOR_DOT.blue)} aria-hidden="true" />}
-          subtitle={course.title}
-          actions={(
-            <div className="flex shrink-0 items-center gap-2">
+        {/* Visual provenance: mockup-lab/01-academics/academics-class-hub.html,
+            Variant A, shared Class Hub banner. This is an app-native
+            reconstruction of that exact composition; the mockup is not
+            embedded at runtime. */}
+        <section
+          className="class-hub-banner"
+          aria-label={`${course.code} header`}
+          data-course-color={courseColor}
+          style={classHubAccentStyle(courseColor)}
+        >
+          <button type="button" className="class-hub-crumb" onClick={() => navigate('/academics?mode=daily&tab=class-center')}>
+            <ArrowLeft aria-hidden="true" /> Class Center
+          </button>
+          <div className="class-hub-banner-main">
+            <div className="class-hub-identity">
+              <h1><span className={cn('class-hub-course-dot', COLOR_DOT[courseColor])} aria-hidden="true" />{course.code}<span>{course.title}</span></h1>
+              <div className="class-hub-info-line">
+                <span>{workspace.instructor || 'Instructor not set'}</span><i>·</i>
+                <span>{meetingText(workspace)}</span><i>·</i>
+                <span>{workspace.location || 'Location not set'}</span><i>·</i>
+                <span className="inline-flex items-center gap-1">{course.bcpm ? 'BCPM' : 'Non-BCPM'}<InfoTip field="course.bcpm" value={course.bcpm} className="border-white/30 text-white/70 hover:bg-white/15 hover:text-white" /></span><i>·</i>
+                <LinksMenu workspace={workspace} contacts={courseContacts} />
+              </div>
+            </div>
+            <div className="class-hub-banner-actions">
+              <StatStrip
+                variant="banner"
+                metrics={[
+                  { id: 'grade', label: 'Grade', value: stats.grade, cadence: 'variable' },
+                  ...(classType === 'stem' ? [
+                    { id: 'topics', label: 'Topics', value: String(courseTopics.length), cadence: 'variable' as const },
+                    { id: 'materials', label: 'Materials', value: String(courseFiles.length), cadence: 'variable' as const },
+                    { id: 'next-exam', label: 'Next exam', value: stats.examCountdown, cadence: 'variable' as const },
+                  ] : classType === 'writing' ? [
+                    { id: 'next-due', label: 'Next due', value: stats.nextDue, cadence: 'variable' as const },
+                    { id: 'draft-stage', label: 'Draft stage', value: currentDraftStage(courseDrafts), cadence: 'variable' as const },
+                    { id: 'readings', label: readingListState === 'complete' ? 'Readings behind' : 'Reading list', value: readingListState === 'complete' ? String(readingsBehind) : 'Not complete', cadence: 'variable' as const },
+                  ] : [
+                    { id: 'next-deadline', label: 'Next deadline', value: stats.nextDue, cadence: 'variable' as const },
+                    { id: 'credits', label: 'Credits', value: String(course.credits), cadence: 'variable' as const },
+                  ]),
+                ]}
+              />
               {primaryAction()}
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" aria-label="Class actions" className="border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white"><MoreHorizontal className="size-4" /></Button>
-                </DropdownMenuTrigger>
+                <DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="Class actions" className="class-hub-more"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>{classType === 'stem' ? 'Study tools' : 'Class actions'}</DropdownMenuLabel>
-                  {classType === 'stem' && <><DropdownMenuItem onClick={() => toast({ title: 'Choose your sources', description: 'Open Materials and select the files to include.' })}>
-                    <Sparkles className="size-4" /> Generate study guide
-                  </DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={addTopic}><Plus className="size-4" /> Add topic</DropdownMenuItem></>}
-                  {classType === 'writing' && <DropdownMenuItem onClick={() => changeTab('readings')}><NotebookText className="size-4" /> Manage drafts and readings</DropdownMenuItem>}
+                  {classType === 'stem' && <><DropdownMenuItem onClick={() => changeTab('materials')}><FileStack className="size-4" /> Create study resources</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${course.id}`)}><FileText className="size-4" /> Import / refresh syllabus</DropdownMenuItem></>}
+                  {classType === 'writing' && <DropdownMenuItem onClick={() => changeTab('materials')}><NotebookText className="size-4" /> Manage drafts and readings</DropdownMenuItem>}
                   {classType === 'general' && <DropdownMenuItem onClick={() => changeTab('assignments')}><Plus className="size-4" /> Add coursework</DropdownMenuItem>}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-          )}
-          footer={(
-            <TabsList className="h-auto w-full justify-start gap-5 overflow-x-auto rounded-none border-0 bg-transparent p-0">
-              <HubTabTrigger value="overview" label="Overview" />
-              <HubTabTrigger value="materials" label="Materials" count={counts.materials} />
-              {classType === 'stem' && <HubTabTrigger value="topics" label="Topics" count={counts.topics} />}
-              {classType === 'writing' && <HubTabTrigger value="readings" label="Readings" count={counts.readings} />}
-              <HubTabTrigger value="assignments" label="Assignments" count={counts.assignments} />
-              <HubTabTrigger value="notes" label="Notes" count={counts.notes} />
-            </TabsList>
-          )}
-          contentGlass={false}
-        >
-          <div className="flex flex-col gap-3 p-2 lg:flex-row lg:items-center lg:justify-between">
-            {/* Class facts are a LINE, not a panel (01 §4b-ii) — fixed facts
-             *  don't earn banner space, so only the strip carries metrics. */}
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm font-semibold text-white/72">
-              <button
-                type="button"
-                onClick={() => navigate('/academics?mode=daily&tab=class-center')}
-                className="inline-flex min-h-8 items-center gap-1 rounded-lg pr-2 font-bold text-white/72 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <ArrowLeft className="size-4" /> Class Center
-              </button>
-              <span><UserRound className="mr-1 inline size-3.5" />{workspace.instructor || 'Instructor not set'}</span>
-              <span><Clock3 className="mr-1 inline size-3.5" />{meetingText(workspace)}</span>
-              <span><MapPin className="mr-1 inline size-3.5" />{workspace.location || 'Location not set'}</span>
-              <span className="inline-flex items-center gap-1 font-bold">
-                {course.bcpm ? 'BCPM' : 'Non-BCPM'}
-                <InfoTip field="course.bcpm" value={course.bcpm} className="border-white/30 text-white/70 hover:bg-white/15 hover:text-white" />
-              </span>
-              <LinksMenu workspace={workspace} contacts={courseContacts} />
-            </div>
-            <StatStrip
-              variant="banner"
-              className="grid-flow-row grid-cols-2 sm:grid-flow-col sm:grid-cols-none"
-              metrics={[
-                { id: 'grade', label: 'Grade', value: stats.grade, cadence: 'variable' },
-                ...(classType === 'stem' ? [
-                  { id: 'ready', label: 'Marked ready', value: `${stats.ready}/${courseTopics.length}`, cadence: 'variable' as const },
-                  { id: 'due-today', label: 'Due today', value: String(stats.dueToday), cadence: 'variable' as const },
-                  { id: 'next-exam', label: 'Next exam', value: stats.examCountdown, cadence: 'variable' as const },
-                ] : classType === 'writing' ? [
-                  { id: 'next-due', label: 'Next due', value: stats.nextDue, cadence: 'variable' as const },
-                  { id: 'draft-stage', label: 'Draft stage', value: currentDraftStage(courseDrafts), cadence: 'variable' as const },
-                  { id: 'readings', label: readingListState === 'complete' ? 'Readings behind' : 'Reading list', value: readingListState === 'complete' ? String(readingsBehind) : 'Not complete', cadence: 'variable' as const },
-                ] : [
-                  { id: 'next-deadline', label: 'Next deadline', value: stats.nextDue, cadence: 'variable' as const },
-                  { id: 'credits', label: 'Credits', value: String(course.credits), cadence: 'variable' as const },
-                ]),
-              ]}
-            />
           </div>
-        </PageHeader>
+          <TabsList className="class-hub-tabs h-auto w-full justify-start overflow-x-auto rounded-none border-0 bg-transparent p-0">
+            <HubTabTrigger value="overview" label="Overview" />
+            <HubTabTrigger value="materials" label="Materials" count={counts.materials} />
+            <HubTabTrigger value="topics" label="Topics" count={counts.topics} />
+            <HubTabTrigger value="assignments" label="Assignments" count={counts.assignments} />
+            <HubTabTrigger value="guide" label="Guide" count={counts.notes} />
+          </TabsList>
+        </section>
 
-        <TabsContent value="overview" className="class-hub-tab"><Overview course={course} data={data} type={classType} topics={courseTopics} drafts={courseDrafts} assignments={courseAssignments} notes={courseNotes} contacts={courseContacts} persons={persons} onTab={changeTab} onOpenExamPrep={openExamPrep} /></TabsContent>
-        <TabsContent value="materials" className="class-hub-tab"><Materials course={course} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} onTab={changeTab} /></TabsContent>
+        <TabsContent value="overview" className="class-hub-tab"><Overview course={course} workspace={workspace} data={data} topics={courseTopics} assignments={courseAssignments} notes={courseNotes} onTab={changeTab} onOpenExamPrep={openExamPrep} /></TabsContent>
+        <TabsContent value="materials" className="class-hub-tab"><Materials course={course} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} writingTools={classType === 'writing' ? <WritingTools courseId={course.id} readingListState={readingListState} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /> : undefined} /></TabsContent>
         <TabsContent value="topics" className="class-hub-tab"><Topics
           courseId={course.id} data={data} topics={courseTopics} assignments={courseAssignments}
           onOpenNotes={(topicId) => {
-            // The Notes tab filters to this topic, so the menu item lands on
+            // The Guide tab filters to this topic, so the menu item lands on
             // something rather than on an unfiltered list.
             setParams((current) => {
               const next = new URLSearchParams(current)
-              next.set('classTab', 'notes')
+              next.set('classTab', 'guide')
               next.set('noteTopic', topicId)
               return next
             }, { replace: true })
-            changeTab('notes')
+            changeTab('guide')
           }}
         /></TabsContent>
-        <TabsContent value="readings" className="class-hub-tab"><WritingTools courseId={course.id} readingListState={readingListState} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /></TabsContent>
-        <TabsContent value="assignments" className="class-hub-tab"><Assignments assignments={courseAssignments} topics={courseTopics} categories={data.gradeCategories.filter((item) => item.courseId === course.id)} classType={classType} /></TabsContent>
-        <TabsContent value="notes" className="class-hub-tab"><Notes courseId={course.id} notes={courseNotes} topics={courseTopics} data={data} onOpenMaterials={() => changeTab('materials')} topicFilter={params.get('noteTopic') ?? undefined} /></TabsContent>
+        <TabsContent value="assignments" className="class-hub-tab"><Assignments courseId={course.id} assignments={courseAssignments} categories={data.gradeCategories.filter((item) => item.courseId === course.id)} focusWhatIf={params.get('whatIf') === '1'} /></TabsContent>
+        <TabsContent value="guide" className="class-hub-tab"><Guide courseId={course.id} workspace={workspace} notes={courseNotes} topics={courseTopics} assignments={courseAssignments} contacts={courseContacts} data={data} onOpenMaterials={() => changeTab('materials')} topicFilter={params.get('noteTopic') ?? undefined} /></TabsContent>
       </Tabs>
     </div>
   )
 }
 
-export function ClassHubPeek({
-  course, workspace, data, split = false, onOpen,
-}: Omit<ClassHubProps, 'persons'> & { split?: boolean; onOpen: () => void }) {
-  const classType: ClassWorkspaceType = workspace.type ?? (course.bcpm ? 'stem' : 'general')
-  const topics = ordered(data.topics.filter((item) => item.courseId === course.id))
-  const assignments = ordered(data.assignments.filter((item) => item.courseId === course.id))
-  const stats = hubStats(course, topics, assignments)
-  const due = assignments
-    .filter((item) => !isComplete(item) && item.dueDate)
-    .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
-  const marked = classType === 'stem' ? topics.filter((item) => item.status === 'weak' || item.status === 'reviewing') : []
-  const recordedItems = [
-    ...due.map((item) => ({ id: `a-${item.id}`, title: item.title, meta: assignmentDateLabel(item), type: 'assignment' })),
-    ...marked.map((item) => ({ id: `t-${item.id}`, title: item.title, meta: STATUS_LABELS[item.status], type: 'topic' })),
-  ]
-
-  return (
-    <div className={cn('grid gap-0', split && 'lg:grid-cols-[minmax(0,1fr)_minmax(320px,.72fr)]')}>
-      <div className="space-y-5 p-5 md:p-7">
-        <div className="flex items-start gap-3">
-          <span className={cn('mt-2 size-3 rounded-full', COLOR_DOT[workspace.color] ?? COLOR_DOT.blue)} />
-          <div>
-            <h2 className="font-display text-3xl font-extrabold">{course.code}</h2>
-            <p className="font-semibold text-muted-foreground">{course.title}</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 overflow-hidden rounded-2xl border border-border bg-card/70">
-          <Stat label="Grade" value={stats.grade} />
-          <Stat label="Due today" value={String(stats.dueToday)} />
-          {classType === 'stem' ? <Stat label="Marked ready" value={`${stats.ready}/${topics.length}`} /> : <Stat label="Credits" value={String(course.credits)} />}
-        </div>
-        <div>
-          <h3 className="font-display text-lg font-extrabold">{classType === 'stem' ? 'Due and marked topics' : 'Due work'}</h3>
-          <div className="mt-2 max-h-60 space-y-2 overflow-y-auto">
-            {recordedItems.map((item) => (
-              <div key={item.id} className="flex items-center justify-between rounded-xl border border-border bg-muted/35 px-3 py-2">
-                <span className="font-bold">{item.title}</span>
-                <Badge variant={item.type === 'topic' ? 'warning' : 'outline'}>{item.meta}</Badge>
-              </div>
-            ))}
-            {!recordedItems.length && <EmptyState icon={CheckCircle2} title="Nothing recorded here" detail={classType === 'stem' ? 'No due assignments or marked review topics are recorded for this class.' : 'No due assignments are recorded for this class.'} />}
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {classType === 'stem' && <Button asChild><Link to={`/academics/review/${course.id}`}>Start review</Link></Button>}
-          <Button variant="outline" onClick={onOpen}>Open full hub</Button>
-        </div>
-      </div>
-      {split && (
-        <aside className="border-t border-border bg-muted/20 p-5 lg:border-l lg:border-t-0">
-          <h3 className="font-display text-xl font-extrabold">Assignments</h3>
-          <p className="mt-1 text-sm text-muted-foreground">The class stays in view while you scan its work.</p>
-          <div className="mt-4 space-y-2">
-            {due.map((item) => <AssignmentMini key={item.id} item={item} />)}
-            {!due.length && <EmptyState icon={CheckCircle2} title="No open assignments" detail="Everything recorded here is complete." />}
-          </div>
-        </aside>
-      )}
-    </div>
-  )
-}
-
 function Overview({
-  course, data, type, topics, drafts, assignments, notes, contacts, persons, onTab, onOpenExamPrep,
+  course, workspace, data, topics, assignments, notes, onTab, onOpenExamPrep,
 }: {
   course: Course
+  workspace: ClassWorkspace
   data: ClassCenterData
-  type: ClassWorkspaceType
   topics: Topic[]
-  drafts: PaperDraft[]
   assignments: ClassAssignment[]
   notes: ClassNote[]
-  contacts: ClassContact[]
-  persons: Person[]
   onTab: (tab: string) => void
   onOpenExamPrep: (examId: string) => void
 }) {
+  const [overviewParams, setOverviewParams] = useSearchParams()
+  const [lectureDialogOpen, setLectureDialogOpen] = useState(false)
+  const [selectedLectureId, setSelectedLectureId] = useState<string | undefined>()
+  const [lectureDestination, setLectureDestination] = useState<LectureDestination>('overview')
   const open = assignments.filter((item) => !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
-  const today = open.filter((item) => item.dueDate === isoToday())
   const exam = open.find((item) => item.type === 'exam')
-  const scopedTopics = exam ? topics.filter((item) => (exam.coveredTopicIds ?? []).includes(item.id)) : []
-  const recentNotes = notes.filter((item) => item.type === 'lecture').slice(0, 3)
-  const graded = assignments.filter(hasGrade)
-  const categories = categoryStats(assignments)
-  const weightSum = assignments.reduce((sum, item) => sum + (item.weight ?? 0), 0)
-  const gradedWeight = assignments.filter(hasGrade).reduce((sum, item) => sum + (item.weight ?? 0), 0)
+  const lectures = data.lectures.filter((item) => item.courseId === course.id).sort((a, b) => b.createdAt - a.createdAt)
+  const chronologicalLectures = [...lectures].sort((a, b) => String(a.occurredOn ?? '').localeCompare(String(b.occurredOn ?? '')) || a.createdAt - b.createdAt)
+  const lectureNumber = (lectureId: string) => chronologicalLectures.findIndex((lecture) => lecture.id === lectureId) + 1
+  const activeLecture = selectedLectureId ? lectures.find((lecture) => lecture.id === selectedLectureId) : undefined
+  // The transcript is stage one. Do not let it masquerade as the optional
+  // supporting evidence required by stage two.
+  const activeLectureFiles = activeLecture ? data.files.filter((file) => file.lectureId === activeLecture.id && file.id !== activeLecture.transcriptFileId) : []
+  const activeLectureMaterials = activeLectureFiles.filter((file) => file.owner !== 'generated')
+  const activeGeneratedMaterialCount = activeLectureFiles.filter((file) => file.owner === 'generated').length
+  const courseFiles = data.files.filter((file) => file.courseId === course.id)
+  const unfiledCount = courseFiles.filter((file) => !file.topicId && file.linkedTopicIds.length === 0).length
+  const guideSuggestionCount = data.lectureNoteProposals.filter((proposal) => proposal.courseId === course.id && proposal.status === 'pending').length
+  const nextLectureNumber = chronologicalLectures.length + 1
+  const scheduleContext = [workspace.meetingTime, workspace.location].filter(Boolean).join(' · ')
+  const examTopics = exam?.coveredTopicIds?.length ? topics.filter((topic) => exam.coveredTopicIds?.includes(topic.id)) : topics
+  const examCovered = examTopics.filter((topic) => (topic.linkedFileIds?.length ?? 0) || topic.sourceNoteIds.length).length
+  const recentStudyWork = notes.filter(isMaterialNote).filter((note) => note.type === 'study-guide' || note.type === 'lecture').slice(0, 3)
 
-  if (type !== 'stem') {
-    return <NonStemOverview
-      course={course} type={type} drafts={drafts} assignments={assignments} notes={notes}
-      contacts={contacts} persons={persons} onTab={onTab}
-    />
+  useEffect(() => {
+    if (overviewParams.get('captureLecture') !== '1') return
+    setSelectedLectureId(undefined)
+    setLectureDestination('transcript')
+    setLectureDialogOpen(true)
+    const next = new URLSearchParams(overviewParams)
+    next.delete('captureLecture')
+    setOverviewParams(next, { replace: true })
+  }, [overviewParams, setOverviewParams])
+
+  function openLecture(lectureId?: string, destination: LectureDestination = 'overview') {
+    setSelectedLectureId(lectureId)
+    setLectureDestination(destination)
+    setLectureDialogOpen(true)
+  }
+
+  function openMaterialNote(noteId: string) {
+    const next = new URLSearchParams(overviewParams)
+    next.set('classTab', 'materials')
+    next.set('materialNote', noteId)
+    setOverviewParams(next)
   }
 
   return (
     <div className="class-hub-overview grid grid-cols-12 gap-4">
-      <Panel className="class-hub-primary-band col-span-12" title="Class status" action={<Button size="sm" variant="outline" onClick={() => onTab('topics')}>Open topics</Button>}>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <StatusMetric label="Course grade" value={course.grade || 'Not graded yet'} />
-          <StatusMetric label="Topics ready" value={`${topics.filter((item) => item.status === 'ready').length} of ${topics.length}`} />
-          <StatusMetric label="Open work" value={String(open.length)} />
-        </div>
-      </Panel>
-
-      <Panel className="class-hub-primary-band col-span-12" title="Material coverage" action={<Button size="sm" variant="outline" onClick={() => onTab('materials')}>Open materials</Button>}>
-        <CoverageLedger courseId={course.id} data={data} topics={topics} onOpenMaterials={() => onTab('materials')} />
-      </Panel>
-
-      <div className="class-hub-primary-band col-span-12">
-        <StudyMethodPanel courseId={course.id} topics={topics} events={data.reviewEvents} classType={type} topicLinks={data.topicLinks ?? []} primableTopicIds={new Set((data.keyPoints ?? []).map((point) => point.topicId))} />
-      </div>
-
-      {/* §4.1: below the class's primary next action, above its supporting
-          class information. Absent entirely when no signal is earned. */}
-      <div className="class-hub-primary-band col-span-12">
-        <LearningSignalsPanel
-          courseId={course.id} topics={topics} events={data.reviewEvents}
-          assignments={assignments} classType={type} onTab={onTab}
-          topicLinks={data.topicLinks ?? []} allTopics={data.topics}
-        />
-      </div>
-
-      <Panel className="col-span-12 lg:col-span-4" title="Due today">
-        {today.length ? <div className="space-y-2">{today.map((item) => <AssignmentMini key={item.id} item={item} />)}</div> : <EmptyState icon={CheckCircle2} title="Clear for today" detail="No unfinished class work is dated today." />}
-        {today.length > 0 && graded.length > 1 && <p className="mt-3 text-xs font-bold text-muted-foreground">At your recorded completion pace, today’s queue is within one focused block.</p>}
-      </Panel>
-
-      <Panel className="col-span-12 lg:col-span-4" title="Exam scope" action={exam ? <Button size="sm" variant="outline" onClick={() => onOpenExamPrep(exam.id)}>Exam prep</Button> : undefined}>
-        {exam ? (
-          <ExamScope exam={exam} topics={scopedTopics} allTopics={topics} events={data.reviewEvents} />
-        ) : <EmptyState icon={CalendarClock} title="No upcoming exam" detail="Add an exam and link its covered topics to see scope." />}
-      </Panel>
-
-      <Panel className="col-span-12 lg:col-span-4" title="Coming up">
-        <div className="space-y-2">
-          {open.slice(0, 4).map((item) => (
-            <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-muted/35 px-3 py-2">
-              <div className="min-w-0"><p className="truncate font-bold">{item.title}</p><p className="text-xs text-muted-foreground">{item.category || titleCase(item.type)}</p></div>
-              <div className="text-right"><p className="text-xs font-extrabold">{assignmentDateLabel(item)}</p><p className="text-xs text-muted-foreground">{item.weight != null ? `${item.weight}% weight` : 'Weight not set'}</p></div>
-            </div>
-          ))}
-          {!open.length && <EmptyState icon={CheckCircle2} title="Nothing coming up" detail="No unfinished dated work is recorded." />}
-        </div>
-      </Panel>
-
-      <Panel className="col-span-12 lg:col-span-5" title="Recently covered">
-        <div className="space-y-2">
-          {recentNotes.map((note) => {
-            const linked = topics.filter((topic) => note.topicIds.includes(topic.id))
-            const reviewed = linked.length > 0 && linked.every((topic) => topic.fsrs.reps > 0)
-            return (
-              <div key={note.id} className="rounded-xl border border-border bg-muted/25 p-3">
-                <div className="flex items-center justify-between gap-3"><p className="font-bold">{note.title}</p><Badge variant={reviewed ? 'success' : 'warning'}>{reviewed ? 'Reviewed' : 'Needs recall'}</Badge></div>
-                <p className="mt-1 text-xs text-muted-foreground">{note.date || 'Date not set'} · {note.unit || 'Unit not mapped'}</p>
-              </div>
-            )
-          })}
-          {!recentNotes.length && <EmptyState icon={NotebookText} title="No lectures logged" detail="Lecture notes will appear here after you capture them." />}
-        </div>
-      </Panel>
-
-      <Panel className="col-span-12 lg:col-span-4" title="Grade breakdown">
-        {categories.length ? (
-          <div className="space-y-3">
-            <p className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm font-extrabold tabular-nums">{formatNumber(gradedWeight)}% of the course grade is in</p>
-            {categories.map((item) => <CategoryBar key={item.name} item={item} />)}
-            <Separator />
-            <p className={cn('text-sm font-extrabold', Math.abs(weightSum - 100) < 0.01 ? 'text-emerald-600' : 'text-amber-700 dark:text-amber-200')}>
-              Recorded weights total {formatNumber(weightSum)}% {Math.abs(weightSum - 100) < 0.01 ? '✓' : '— should total 100%'}
-            </p>
+      {/* Visual provenance: mockup-lab/01-academics/academics-class-hub.html,
+          Variant A, view=overview. Geometry and class names below map directly
+          to the approved journal-shell / journal-rail / journal-stage recipe. */}
+      <section className="lecture-overview-composition col-span-12" aria-labelledby="lecture-ledger-title">
+        <aside className="lecture-rail">
+          <div className="lecture-rail-heading">
+            <div><p className="lecture-ledger-kicker">Class journal</p><h2 id="lecture-ledger-title">Lecture evidence</h2></div>
           </div>
-        ) : <EmptyState icon={GraduationCap} title="Not enough graded work yet" detail="Add points and category weights to calculate this breakdown." />}
-      </Panel>
+          <p className="lecture-rail-caption">{lectures.length ? `${lectures.length} ${lectures.length === 1 ? 'lecture' : 'lectures'} · newest first` : 'No lectures yet'}</p>
+          <div className="lecture-rail-list" tabIndex={0} aria-label="Lecture history">
+            {lectures.length ? [...chronologicalLectures].reverse().map((lecture) => {
+              const materialCount = data.files.filter((file) => file.lectureId === lecture.id && file.id !== lecture.transcriptFileId).length
+              const generatedCount = data.files.filter((file) => file.lectureId === lecture.id && file.owner === 'generated').length
+              const generatedTitle = lecture.aiTitle ?? (lecture.title.startsWith('Lecture #') ? undefined : lecture.title)
+              const isActive = activeLecture?.id === lecture.id
+              return <button key={lecture.id} type="button" onClick={() => setSelectedLectureId(lecture.id)} className={cn('lecture-rail-entry', isActive && 'is-active')} aria-current={isActive ? 'true' : undefined}>
+                <b>Lecture {lectureNumber(lecture.id)}{generatedTitle ? ` · ${generatedTitle}` : ''}</b>
+                <span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'} · {lecture.transcriptFileId ? 'transcript saved' : 'no transcript'}{materialCount ? ` + ${materialCount} ${materialCount === 1 ? 'material' : 'materials'}` : ''}</span>
+                <i className="lecture-journal-status">{generatedCount ? 'study work' : lecture.transcriptFileId ? 'captured' : 'new'}</i>
+              </button>
+            }) : <div className="lecture-ledger-empty"><span aria-hidden="true" /><p>Your first transcript starts the journal.</p></div>}
+          </div>
+          <button type="button" className="lecture-rail-add" onClick={() => openLecture(undefined, 'transcript')}><Plus aria-hidden="true" /> Add today’s lecture</button>
+        </aside>
 
-      <Panel className="col-span-12 lg:col-span-3" title="Class contacts">
-        <div className="space-y-2">
-          {contacts.map((contact) => <ContactRow key={contact.id} contact={contact} person={persons.find((person) => person.id === contact.personId)} />)}
-          {!contacts.length && <EmptyState icon={Users} title="No contacts yet" detail="Add a professor, TA, or study partner from Class Center." />}
-        </div>
-      </Panel>
+        <article className={cn('lecture-active-context', !activeLecture && 'lecture-capture-default')}>
+          {activeLecture ? <>
+            <div className="lecture-active-header">
+              <div><p className="lecture-ledger-kicker">Saved lecture</p><h2>Lecture {lectureNumber(activeLecture.id)}{activeLecture.aiTitle ?? (activeLecture.title.startsWith('Lecture #') ? '' : ` · ${activeLecture.title}`)}</h2><p>{activeLecture.occurredOn ? fmtEventDate(activeLecture.occurredOn) : 'Date not set'}</p></div>
+              <div className="lecture-saved-actions"><Button size="sm" variant="outline" onClick={() => setSelectedLectureId(undefined)}>Close lecture</Button><Button size="sm" variant="outline" onClick={() => openLecture(activeLecture.id, 'overview')}>Open lecture</Button></div>
+            </div>
+            <div className="lecture-evidence-summary">
+              <div><p>Transcript</p><b>{activeLecture.transcriptFileId ? 'Saved with this lecture' : 'Not added yet'}</b><Button size="sm" variant="outline" onClick={() => openLecture(activeLecture.id, 'transcript')}>{activeLecture.transcriptFileId ? 'Read transcript' : 'Add transcript'}</Button></div>
+              <div><p>Supporting evidence</p><b>{activeLectureMaterials.length ? `${activeLectureMaterials.length} ${activeLectureMaterials.length === 1 ? 'item' : 'items'} attached` : 'No material attached'}</b><Button size="sm" variant="outline" onClick={() => openLecture(activeLecture.id, 'evidence')}>{activeLectureMaterials.length ? 'Open materials' : 'Add evidence'}</Button></div>
+              <div><p>Study work</p><b>{activeGeneratedMaterialCount ? `${activeGeneratedMaterialCount} generated ${activeGeneratedMaterialCount === 1 ? 'item' : 'items'}` : 'Nothing generated yet'}</b><Button size="sm" variant="outline" disabled={!activeLecture.transcriptFileId} onClick={() => openLecture(activeLecture.id, 'study-work')}>{activeGeneratedMaterialCount ? 'Open study work' : 'Create study work'}</Button></div>
+            </div>
+            <p className="lecture-journal-next"><b>Topics stay syllabus-led.</b> This lecture remains evidence and study context.</p>
+          </> : <>
+            <div className="lecture-active-header"><div><p className="lecture-ledger-kicker">{scheduleContext ? `Today · ${scheduleContext}` : 'Today'}</p><h2>Add transcript</h2></div><span className="lecture-number-pill">Lecture {nextLectureNumber}</span></div>
+            <div className="lecture-capture-steps" aria-label="Lecture capture workflow"><div className="is-current"><b>1 · Transcript</b><span>Required</span></div><div><b>2 · Evidence</b><span>Optional</span></div><div><b>3 · Study work</b><span>After capture</span></div></div>
+            <button type="button" className="lecture-transcript-drop" onClick={() => openLecture(undefined, 'transcript')}><b>Drop a transcript file</b><span>PDF, DOCX, TXT, or clipboard text</span></button>
+            <div className="lecture-capture-actions"><Button size="sm" onClick={() => openLecture(undefined, 'transcript')}>Import transcript</Button><Button size="sm" variant="outline" onClick={() => openLecture(undefined, 'transcript')}>Paste transcript</Button></div>
+            <p className="lecture-journal-next"><b>Next:</b> optional file, screenshot, or textbook excerpt → study work</p>
+          </>}
+        </article>
+      </section>
 
-      <div className="class-hub-primary-band col-span-12">
-        <ProfessorEvidencePanel courseId={course.id} data={data} assignments={assignments} contacts={contacts} />
-      </div>
+      {/* Visual provenance: mockup-lab/01-academics/academics-class-hub.html,
+          Variant A, view=overview, class-pulse. This replaces duplicate metric
+          cards; every row is a real route or action. */}
+      <section className="class-hub-course-pulse col-span-12" aria-label="Course pulse">
+        <div className="course-pulse-heading"><p>Course pulse</p><b>What needs attention</b></div>
+        <button type="button" className={cn('course-pulse-item', open[0] && 'is-urgent')} onClick={() => onTab('assignments')}><span>Assignments</span><b>{open[0]?.title ?? 'No dated work'}</b><i>{open[0] ? `${assignmentDateLabel(open[0])} · Open →` : 'Open assignments →'}</i></button>
+        <button type="button" className="course-pulse-item" onClick={() => exam ? onOpenExamPrep(exam.id) : onTab('assignments')}><span>{exam?.title ?? 'Next exam'}</span><b>{exam ? `${examCovered} of ${examTopics.length} topics have material` : 'No exam dated'}</b><i>{exam ? 'Open exam plan →' : 'Add exam →'}</i></button>
+        <button type="button" className="course-pulse-item" onClick={() => onTab('materials')}><span>Materials</span><b>{courseFiles.length ? `${courseFiles.length} course ${courseFiles.length === 1 ? 'item' : 'items'}` : 'No materials yet'}</b><i>{unfiledCount ? `${unfiledCount} need filing · Open →` : 'Open materials →'}</i></button>
+        <button type="button" className="course-pulse-item" onClick={() => onTab('guide')}><span>Guide</span><b>{guideSuggestionCount ? `${guideSuggestionCount} ${guideSuggestionCount === 1 ? 'suggestion' : 'suggestions'}` : `${notes.filter(isGuideNote).length} saved ${notes.filter(isGuideNote).length === 1 ? 'item' : 'items'}`}</b><i>Review class context →</i></button>
+      </section>
 
-      <Panel className="col-span-12" title="Recorded recall activity">
-        <RecallHistory events={data.reviewEvents.filter((event) => topics.some((topic) => topic.id === event.topicId))} />
-      </Panel>
-    </div>
-  )
-}
+      <Dialog open={lectureDialogOpen} onOpenChange={setLectureDialogOpen}>
+        <DialogContent className="max-h-[88vh] max-w-6xl overflow-y-auto !rounded-2xl !border-border !bg-card !p-0 !shadow-[0_22px_55px_-27px_rgba(0,0,0,0.8)] ![backdrop-filter:none]">
+          <LectureCapturePanel key={`${selectedLectureId ?? 'new'}:${lectureDestination}`} courseId={course.id} data={data} initialLectureId={selectedLectureId} initialDestination={lectureDestination} onOpenNotes={() => { setLectureDialogOpen(false); onTab('guide') }} />
+        </DialogContent>
+      </Dialog>
 
-function NonStemOverview({
-  course, type, drafts, assignments, notes, contacts, persons, onTab,
-}: {
-  course: Course
-  type: ClassWorkspaceType
-  drafts: PaperDraft[]
-  assignments: ClassAssignment[]
-  notes: ClassNote[]
-  contacts: ClassContact[]
-  persons: Person[]
-  onTab: (tab: string) => void
-}) {
-  const open = assignments.filter((item) => !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
-  const today = open.filter((item) => item.dueDate === isoToday())
-  const recentNotes = notes.slice(0, 3)
-  const label = type === 'writing' ? 'Open readings' : 'Open assignments'
-  const destination = type === 'writing' ? 'readings' : 'assignments'
-  return (
-    <div className="class-hub-overview grid grid-cols-12 gap-4">
-      <Panel className="class-hub-primary-band col-span-12" title="Class status" action={<Button size="sm" variant="outline" onClick={() => onTab(destination)}>{label}</Button>}>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <StatusMetric label="Course grade" value={course.grade || 'Not graded yet'} />
-          <StatusMetric label={type === 'writing' ? 'Open papers' : 'Open work'} value={String(type === 'writing' ? drafts.filter((draft) => draft.stage !== 'submitted').length : open.length)} />
-          <StatusMetric label="Credits" value={String(course.credits)} />
-        </div>
-      </Panel>
-      <Panel className="col-span-12 lg:col-span-4" title="Due today">
-        {today.length ? <div className="space-y-2">{today.map((item) => <AssignmentMini key={item.id} item={item} />)}</div> : <EmptyState icon={CheckCircle2} title="Clear for today" detail="No unfinished class work is dated today." />}
-      </Panel>
-      <Panel className="col-span-12 lg:col-span-4" title="Coming up">
-        <div className="space-y-2">{open.slice(0, 4).map((item) => <AssignmentMini key={item.id} item={item} />)}{!open.length && <EmptyState icon={CheckCircle2} title="Nothing coming up" detail="No unfinished dated work is recorded." />}</div>
-      </Panel>
-      <Panel className="col-span-12 lg:col-span-4" title="Recent notes">
-        <div className="space-y-2">{recentNotes.map((note) => <NoteRow key={note.id} note={note} />)}{!recentNotes.length && <EmptyState icon={NotebookText} title="No notes yet" detail="Class notes will appear here after you capture them." />}</div>
-      </Panel>
-      <Panel className="col-span-12" title="Class contacts">
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">{contacts.map((contact) => <ContactRow key={contact.id} contact={contact} person={persons.find((person) => person.id === contact.personId)} />)}{!contacts.length && <EmptyState icon={Users} title="No contacts yet" detail="Add a professor, TA, or study partner from Class Center." />}</div>
-      </Panel>
+      <Card className="class-hub-panel col-span-12">
+        <CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">From selected class material</p><CardTitle>Recent study work</CardTitle></div><Button size="sm" variant="outline" onClick={() => onTab('materials')}>Open Materials</Button></CardHeader>
+        <CardContent className="class-hub-panel-content grid gap-2 md:grid-cols-3">
+          {recentStudyWork.map((note) => <button key={note.id} type="button" className="class-hub-record-row rounded-[13px] p-3 text-left" onClick={() => openMaterialNote(note.id)}><b>{note.title}</b><span className="mt-1 block text-xs font-semibold text-muted-foreground">{note.type === 'study-guide' ? 'Study outline or guide' : 'Lecture note'} · source links retained</span></button>)}
+          {!recentStudyWork.length && <p className="rounded-[13px] border border-dashed border-border p-4 text-sm font-semibold text-muted-foreground md:col-span-3">Create a study outline, guide, or revised note from the transcript and materials you select.</p>}
+        </CardContent>
+      </Card>
+
     </div>
   )
 }
@@ -761,7 +652,7 @@ function CoverageLedger({
 
   if (!coverage.totalChunks) {
     return (
-      <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-5">
+      <div className="rounded-2xl border border-dashed border-border bg-muted p-5">
         <p className="font-extrabold">{coverage.unprocessedFiles.length ? 'Materials are waiting to be processed' : 'No source material yet'}</p>
         <p className="mt-1 text-sm font-semibold text-muted-foreground">
           {coverage.unprocessedFiles.length
@@ -829,65 +720,42 @@ function CoverageMetric({ label, value, tone }: { label: string; value: number; 
 }
 
 function Materials({
-  course, data, files, topics, notes, onTab,
-}: { course: Course; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; onTab: (tab: string) => void }) {
+  course, data, files, topics, notes, writingTools,
+}: { course: Course; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; writingTools?: React.ReactNode }) {
   const courseId = course.id
   const courseCode = course.code
   const navigate = useNavigate()
-  const toast = useToast()
+  const [materialParams, setMaterialParams] = useSearchParams()
   const [filter, setFilter] = useState<'all' | 'course' | 'mine' | 'generated' | 'unassigned'>('all')
-  const [artifact, setArtifact] = useState<MaterialArtifact | null>(null)
+  const [groupBy, setGroupBy] = useState<MaterialGroupBy>('week')
+  const requestedArtifact = isMaterialArtifact(materialParams.get('createMaterial')) ? materialParams.get('createMaterial') as MaterialArtifact : null
+  const requestedNoteId = materialParams.get('materialNote')
+  const [artifact, setArtifact] = useState<MaterialArtifact | null>(requestedArtifact)
   const [folderIntakeOpen, setFolderIntakeOpen] = useState(false)
-  const groups = useMemo(() => groupFiles(files, topics, notes), [files, notes, topics])
+  const materialNotes = useMemo(() => notes.filter(isMaterialNote), [notes])
+  const groups = useMemo(() => groupMaterials(files, materialNotes, topics, groupBy), [files, groupBy, materialNotes, topics])
   const visible = groups.map((group) => ({
     ...group,
-    files: group.files.filter((file) => filter === 'all' || (filter === 'unassigned' ? group.unit === 'Unassigned' : fileOwnership(file, notes) === filter)),
-  })).filter((group) => group.files.length)
-  /**
-   * The add path Materials never had (§3.1). Same accept list and the same
-   * retention mechanism as the syllabus importer — no second blob store, no
-   * cloud storage. The unit link is left empty rather than guessed, so the
-   * file lands honestly under `Unfiled` until the student files it.
-   */
-  async function addMaterial() {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.pdf,.docx,image/*,text/plain'
-    input.multiple = true
-    input.onchange = async () => {
-      const picked = Array.from(input.files ?? [])
-      if (!picked.length) return
-      const retained = await Promise.all(picked.map(async (file) => {
-        const id = uid()
-        return { file, id, blobRef: await retainLocalMaterial(file, id) }
-      }))
-      const now = Date.now()
-      useStore.getState().update((draft) => {
-        const center = draft.academics.classCenter
-        retained.forEach(({ file, id, blobRef }) => center.files.unshift({
-          id,
-          courseId,
-          title: file.name.replace(/\.[^.]+$/, '') || file.name,
-          type: 'other',
-          sourceType: 'upload',
-          owner: 'mine',
-          url: '',
-          blobRef,
-          fileName: file.name,
-          mimeType: file.type,
-          notes: '',
-          linkedTopicIds: [],
-          createdAt: now,
-          updatedAt: now,
-          order: center.files.length,
-        }))
-      })
-      toast({ title: retained.length > 1 ? `${retained.length} materials added` : 'Material added', description: 'Filed under Unfiled until you link it to a unit. It stays on this device.' })
-    }
-    input.click()
+    files: group.files.filter((file) => materialFilterMatches(filter, file.owner, materialIsUnassigned(file, topics))),
+    notes: group.notes.filter((note) => materialFilterMatches(filter, materialNoteOwner(note), materialNoteIsUnassigned(note, topics, files))),
+  })).filter((group) => group.files.length || group.notes.length)
+  const categories = data.gradeCategories.filter((item) => item.courseId === courseId).sort((a, b) => a.order - b.order)
+  useEffect(() => setArtifact(requestedArtifact), [requestedArtifact])
+
+  function openArtifact(nextArtifact: MaterialArtifact) {
+    setArtifact(nextArtifact)
+    const next = new URLSearchParams(materialParams)
+    next.set('classTab', 'materials')
+    next.set('createMaterial', nextArtifact)
+    setMaterialParams(next, { replace: true })
   }
 
-  const categories = data.gradeCategories.filter((item) => item.courseId === courseId).sort((a, b) => a.order - b.order)
+  function closeArtifact() {
+    setArtifact(null)
+    const next = new URLSearchParams(materialParams)
+    next.delete('createMaterial')
+    setMaterialParams(next, { replace: true })
+  }
   function patchCategory(id: string, patch: Partial<GradeCategory>) {
     useStore.getState().update((draft) => {
       const category = draft.academics.classCenter.gradeCategories.find((item) => item.id === id)
@@ -898,61 +766,91 @@ function Materials({
   if (folderIntakeOpen) return <MaterialFolderIntake course={course} onBack={() => setFolderIntakeOpen(false)} />
 
   return (
-    <div className="space-y-4">
+    // Visual provenance: mockup-lab/01-academics/academics-class-hub.html,
+    // approved Variant A, view=materials.
+    <div className="class-hub-materials space-y-3">
       <SectionToolbar
         title="Materials"
-        detail="Course files stay grouped by their linked unit."
-        action={<div className="flex flex-wrap items-center gap-2"><Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button><DropdownMenu><DropdownMenuTrigger asChild><Button size="sm"><Sparkles className="size-4" /> Create study material</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => setArtifact('flashcards')}><Sparkles className="size-4" /> Generate flashcards</DropdownMenuItem><DropdownMenuItem onClick={() => setArtifact('revised-notes')}><NotebookText className="size-4" /> Generate revised notes</DropdownMenuItem><DropdownMenuItem onClick={() => setArtifact('study-guide')}><BookOpen className="size-4" /> Generate study guide</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={() => setFolderIntakeOpen(true)}><FolderOpen className="size-4" /> Connect a notes folder</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div>}
+        detail={`${files.length + materialNotes.length} ${(files.length + materialNotes.length) === 1 ? 'course item' : 'course items'} · week first`}
+        action={<div className="class-hub-material-add"><MaterialIntakeDialog courseId={courseId} trigger={<Button size="sm"><Plus className="size-4" /> Add material</Button>} /></div>}
       />
-      {artifact && <MaterialGenerationIntake artifact={artifact} courseId={courseId} courseLabel={courseCode} files={files} onClose={() => setArtifact(null)} onAddMaterial={addMaterial} />}
-      {/* §4.1 materials extensions — the shelf. Unit → material → provenance. */}
-      <MaterialCatalog files={files} topics={topics} />
-      <AssessmentCatalog courseId={courseId} data={data} files={files} />
-      <FlashcardDecks courseId={courseId} data={data} />
-      {/* §6.6 Pretest and Predict — both pre-lecture acts, beside priming. */}
-      <PretestPanel topics={topics} />
-      <PredictPanel courseId={courseId} topics={topics} />
-      {/* §4.1-Q — audio is retained locally; transcript evidence is reviewed here. */}
-      <LectureCapturePanel courseId={courseId} data={data} onOpenNotes={() => onTab('notes')} />
-      {/* §4.1 — read-only Canvas context through Google Calendar. */}
-      <CalendarReview assignments={data.assignments.filter((item) => item.courseId === courseId)} />
-      <div className="flex flex-wrap gap-2" aria-label="Material filters">
+      <div className="class-hub-material-filters" aria-label="Material filters">
         {(['all', 'course', 'mine', 'generated', 'unassigned'] as const).map((value) => (
-          <Button key={value} size="sm" variant={filter === value ? 'default' : 'outline'} onClick={() => setFilter(value)}>
-            {value === 'all' ? 'All' : value === 'course' ? 'From course' : value === 'mine' ? 'My notes' : titleCase(value)}
-          </Button>
+          <button key={value} type="button" aria-pressed={filter === value} className={cn('class-hub-material-filter', filter === value && 'is-active')} onClick={() => setFilter(value)}>
+            {value === 'all' ? `All ${files.length + materialNotes.length}` : value === 'course' ? 'From the course' : value === 'mine' ? 'My notes' : titleCase(value)}
+          </button>
         ))}
+        <label className="class-hub-material-sort">
+          <span className="sr-only">Group materials</span>
+          <Select value={groupBy} onValueChange={(value) => setGroupBy(value as MaterialGroupBy)}>
+            <SelectTrigger aria-label="Group materials"><SelectValue /></SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="week">By week</SelectItem>
+              <SelectItem value="unit">By unit</SelectItem>
+              <SelectItem value="category">By category</SelectItem>
+            </SelectContent>
+          </Select>
+        </label>
       </div>
-      {!!categories.length && <Card className="class-hub-panel">
-        <CardHeader className="class-hub-panel-header"><CardTitle>Grade categories</CardTitle><p className="mt-1 text-sm text-muted-foreground">Saved from your syllabus. These are editable records only—grade calculations are not enabled here.</p></CardHeader>
-        <CardContent className="class-hub-panel-content space-y-2">{categories.map((category) => <div key={category.id} className="class-hub-record-row grid gap-2 rounded-xl p-3 sm:grid-cols-[1fr_7rem]">
-          <Input aria-label="Grade category" value={category.name} onChange={(event) => patchCategory(category.id, { name: event.target.value })} />
-          <Input aria-label="Grade category weight" type="number" min="0" max="100" value={category.weight} onChange={(event) => patchCategory(category.id, { weight: Number(event.target.value) || 0 })} />
-          {category.policyNote && <p className="text-xs font-semibold text-muted-foreground sm:col-span-2">Policy (verbatim): {category.policyNote}</p>}
-          {category.source && <p className="text-xs text-muted-foreground sm:col-span-2">{category.source}</p>}
-        </div>)}</CardContent>
-      </Card>}
+      {artifact === 'revised-notes'
+        ? <div className="space-y-2"><div className="flex justify-end"><Button size="sm" variant="ghost" onClick={closeArtifact}>Close revised notes</Button></div><RevisedNotesPanel courseId={courseId} files={files} data={data} /></div>
+        : artifact && <MaterialGenerationIntake artifact={artifact} courseId={courseId} courseLabel={courseCode} files={files} onClose={closeArtifact} />}
+      {writingTools}
       {visible.map((group) => (
-        <Card key={group.unit} className="class-hub-panel">
+        <Card key={group.key} className="class-hub-material-group">
           <CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3">
-            <div><CardTitle>{group.unit}</CardTitle><p className="mt-1 text-sm text-muted-foreground">Weeks not mapped · {group.ready}/{group.topicCount} linked topics ready</p></div>
-            <Badge variant={group.unit === 'Unassigned' ? 'warning' : 'outline'}>{group.files.length} files</Badge>
+            <div><p className="class-hub-material-eyebrow">{group.eyebrow}</p><CardTitle>{group.label}</CardTitle><p className="mt-1 text-xs font-bold text-muted-foreground">{group.topicCount ? `${group.topicCount} linked syllabus ${group.topicCount === 1 ? 'objective' : 'objectives'}` : group.unassigned ? 'No syllabus placement yet' : `${group.files.length + group.notes.length} ${(group.files.length + group.notes.length) === 1 ? 'item' : 'items'}`}</p></div>
+            <Badge variant={group.unassigned ? 'warning' : 'outline'}>{group.files.length + group.notes.length} {group.files.length + group.notes.length === 1 ? 'item' : 'items'}</Badge>
           </CardHeader>
-          <CardContent className="class-hub-panel-content space-y-3">
-            {group.unit === 'Unassigned' && <div className="rounded-xl border border-dashed border-amber-500/45 bg-amber-500/8 p-3 text-sm font-semibold">These files have no linked topic, so their position is not known yet. Link a topic to file them without moving or deleting anything.</div>}
-            {group.files.map((file) => <FileRow key={file.id} file={file} ownership={fileOwnership(file, notes)} onReimport={file.type === 'syllabus' ? () => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}&reimport=1&reimportFile=${file.id}`) : undefined} />)}
-            <div className="rounded-2xl border border-violet-500/30 bg-violet-500/9 p-4">
-              <p className="font-display font-extrabold text-violet-800 dark:text-violet-100">Prime yourself</p>
-              <p className="mt-1 text-sm text-muted-foreground">Write one question you should be able to answer before this module’s next lecture.</p>
-              <Button size="sm" variant="outline" className="mt-3" onClick={() => addQuestionNote(courseId, group.unit)}>Add to Notes</Button>
-            </div>
+          <CardContent className="class-hub-material-group-content">
+            {group.unassigned && <div className="rounded-xl border border-dashed border-amber-500/45 bg-amber-500/8 p-3 text-sm font-semibold">Unassigned items stay available here until a syllabus objective gives them a week or unit.</div>}
+            {group.files.map((file) => <FileRow key={file.id} file={file} ownership={file.owner} unassigned={materialIsUnassigned(file, topics)} onReimport={file.type === 'syllabus' ? () => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}&reimport=1&reimportFile=${file.id}`) : undefined} />)}
+            {group.notes.map((note) => <MaterialNoteRow key={note.id} note={note} open={note.id === requestedNoteId} unassigned={materialNoteIsUnassigned(note, topics, files)} />)}
+            {groupBy !== 'category' && !group.unassigned && <div className="class-hub-material-prime">
+              <div><p>Prime yourself</p><span>Hold one question in mind before this module&apos;s next lecture.</span></div>
+              <Button size="sm" variant="outline" onClick={() => addQuestionNote(courseId, group.unitLabel ?? group.label)}>Add to Guide</Button>
+            </div>}
           </CardContent>
         </Card>
       ))}
       {!visible.length && <EmptyState icon={FolderOpen} title="No materials in this view" detail={files.length ? 'Try another filter.' : 'Add course files from the class actions menu.'} />}
+
+      <Collapsible title="Material tools" badge={<span className="class-hub-material-tools-badge">Import · generate · prepare</span>}>
+        <div className="class-hub-material-tools-actions">
+          <Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button>
+          <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline"><FileStack className="size-4" /> Create study resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems onChoose={openArtifact} /><DropdownMenuSeparator /><DropdownMenuItem onClick={() => setFolderIntakeOpen(true)}><FolderOpen className="size-4" /> Connect a notes folder</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+        </div>
+        <div className="mt-3 space-y-3">
+          <MaterialCatalog files={files} topics={topics} />
+          <AssessmentCatalog courseId={courseId} data={data} files={files} />
+          <GeneratedFlashcardDecks courseId={courseId} data={data} />
+          <CalendarReview assignments={data.assignments.filter((item) => item.courseId === courseId)} />
+          {!!categories.length && <Card className="class-hub-panel"><CardHeader className="class-hub-panel-header"><CardTitle>Grade categories</CardTitle><p className="mt-1 text-sm text-muted-foreground">Saved from your syllabus. Editable records only.</p></CardHeader><CardContent className="class-hub-panel-content space-y-2">{categories.map((category) => <div key={category.id} className="class-hub-record-row grid gap-2 rounded-xl p-3 sm:grid-cols-[1fr_7rem]"><Input aria-label="Grade category" value={category.name} onChange={(event) => patchCategory(category.id, { name: event.target.value })} /><Input aria-label="Grade category weight" type="number" min="0" max="100" value={category.weight} onChange={(event) => patchCategory(category.id, { weight: Number(event.target.value) || 0 })} />{category.policyNote && <p className="text-xs font-semibold text-muted-foreground sm:col-span-2">Policy (verbatim): {category.policyNote}</p>}{category.source && <p className="text-xs text-muted-foreground sm:col-span-2">{category.source}</p>}</div>)}</CardContent></Card>}
+        </div>
+      </Collapsible>
       <p className="sr-only">{data.files.length} files are stored across all classes.</p>
     </div>
   )
+}
+
+function ResourceMenuItems({ onChoose }: { onChoose: (artifact: MaterialArtifact) => void }) {
+  return <>
+    <DropdownMenuLabel>Choose a format</DropdownMenuLabel>
+    <DropdownMenuItem onClick={() => onChoose('flashcards')}><Brain className="size-4" /> Flashcards</DropdownMenuItem>
+    <DropdownMenuItem onClick={() => onChoose('study-guide')}><BookOpen className="size-4" /> Study guide</DropdownMenuItem>
+    <DropdownMenuItem onClick={() => onChoose('study-outline')}><Sparkles className="size-4" /> Study outline</DropdownMenuItem>
+    <DropdownMenuItem onClick={() => onChoose('revised-notes')}><NotebookText className="size-4" /> Revised notes</DropdownMenuItem>
+  </>
+}
+
+function GeneratedFlashcardDecks({ courseId, data }: { courseId: string; data: ClassCenterData }) {
+  const decks = data.generatedFlashcardDecks.filter((deck) => deck.courseId === courseId)
+  if (!decks.length) return null
+  return <section className="rounded-2xl border border-border bg-card p-4" aria-label="Generated flashcards">
+    <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border pb-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Generated resource</p><h3 className="mt-1 font-display text-lg font-extrabold">Flashcards</h3></div><Badge variant="outline">{decks.reduce((total, deck) => total + deck.cards.length, 0)} cards</Badge></div>
+    <div className="mt-3 space-y-2">{decks.map((deck) => <details key={deck.id} className="class-hub-record-row rounded-[13px] p-3"><summary className="cursor-pointer list-none font-display text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{deck.title}<span className="ml-2 font-sans text-xs font-bold text-muted-foreground">{deck.cards.length} cards · {deck.sourceChunkIds.length} source passages</span></summary><div className="mt-3 divide-y divide-border border-t border-border">{deck.cards.map((card, index) => <div key={card.id} className="grid gap-1 py-3 text-sm sm:grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)] sm:gap-3"><span className="text-xs font-extrabold text-primary">{index + 1}</span><p className="font-bold">{card.cloze ?? card.front}</p><p className="text-muted-foreground">{card.back ?? card.extra ?? 'Cloze answer is retained in the card.'}</p></div>)}</div></details>)}</div>
+    <p className="mt-3 text-xs font-semibold text-muted-foreground">Source-backed class resource only. Review scheduling and Anki export are not part of Academics.</p>
+  </section>
 }
 
 function Topics({
@@ -964,103 +862,113 @@ function Topics({
   assignments: ClassAssignment[]
   onOpenNotes: (topicId: string) => void
 }) {
-  const [filter, setFilter] = useState<'all' | TopicStatus>('all')
-  const units = groupTopics(topics.filter((item) => filter === 'all' || item.status === filter))
+  const navigate = useNavigate()
+  const [filter, setFilter] = useState<'all' | 'with-materials' | 'needs-material' | 'exam-scope'>('all')
   const examTopicIds = new Set(assignments.filter((item) => item.type === 'exam' && !isComplete(item)).flatMap((item) => item.coveredTopicIds ?? []))
-  // The next uncompleted exam, so a topic's curve can carry its exam line (§4.1-L).
-  const exam = assignments.filter((item) => item.type === 'exam' && !isComplete(item) && item.dueDate)
-    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())[0]
+  const visibleTopics = topics.filter((item) => {
+    const hasMaterial = Boolean((item.linkedFileIds?.length ?? 0) || item.sourceNoteIds.length)
+    if (filter === 'with-materials') return hasMaterial
+    if (filter === 'needs-material') return !hasMaterial
+    if (filter === 'exam-scope') return examTopicIds.has(item.id)
+    return true
+  })
+  const weeks = groupTopicsByWeek(visibleTopics)
   return (
-    <div className="space-y-4">
+    // Visual provenance: mockup-lab/01-academics/academics-class-hub.html,
+    // approved Variant A, view=topics; Andy's ruled week-primary ordering.
+    <div className="class-hub-topics space-y-3">
       <SectionToolbar
         title="Topics"
-        detail="Syllabus order, recall state, and linked context."
-        action={<Button onClick={() => addCoveredTopic(courseId)}><CheckCircle2 className="size-4" /> Covered a topic today</Button>}
+        detail="Syllabus standards, ordered by scheduled week."
+        action={<Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import / refresh syllabus</Button>}
       />
-      <div className="flex flex-wrap gap-2">
+      <div className="class-hub-topic-filters">
         <Button size="sm" variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}><Filter className="size-4" /> All</Button>
-        {(['weak', 'reviewing', 'ready'] as const).map((status) => <Button key={status} size="sm" variant={filter === status ? 'default' : 'outline'} onClick={() => setFilter(status)}>{STATUS_LABELS[status]}</Button>)}
+        <Button size="sm" variant={filter === 'with-materials' ? 'default' : 'outline'} onClick={() => setFilter('with-materials')}>With materials</Button>
+        <Button size="sm" variant={filter === 'needs-material' ? 'default' : 'outline'} onClick={() => setFilter('needs-material')}>Needs material</Button>
+        <Button size="sm" variant={filter === 'exam-scope' ? 'default' : 'outline'} disabled={!examTopicIds.size} onClick={() => setFilter('exam-scope')}>In exam scope</Button>
       </div>
-      {units.map(([unit, unitTopics]) => {
-        const ready = unitTopics.filter((item) => item.status === 'ready').length
-        const inScope = unitTopics.some((item) => examTopicIds.has(item.id))
+      {weeks.map((week) => {
+        const linked = week.topics.filter((item) => (item.linkedFileIds?.length ?? 0) || item.sourceNoteIds.length).length
+        const inScope = week.topics.some((item) => examTopicIds.has(item.id))
         return (
-          <Card key={unit} className="class-hub-panel">
+          <Card key={week.key} className="class-hub-topic-week">
             <CardHeader className="class-hub-panel-header">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div><CardTitle>{unit}</CardTitle><p className="mt-1 text-sm text-muted-foreground">Weeks not mapped · {ready}/{unitTopics.length} ready</p></div>
+                <div><p className="class-hub-topic-eyebrow">Syllabus order</p><CardTitle>{week.label}</CardTitle><p className="mt-1 text-xs font-bold text-muted-foreground">{week.units.length ? week.units.join(' · ') : 'Unit not named'} · {linked}/{week.topics.length} with material</p></div>
                 {inScope && <Badge variant="warning">Upcoming exam scope</Badge>}
               </div>
-              <Progress value={unitTopics.length ? (ready / unitTopics.length) * 100 : 0} />
+              <Progress value={week.topics.length ? (linked / week.topics.length) * 100 : 0} aria-label={`${linked} of ${week.topics.length} topics have linked material`} />
             </CardHeader>
             <CardContent className="class-hub-panel-content space-y-2">
-              {unitTopics.map((topic) => <TopicRow key={topic.id} topic={topic} data={data} exam={exam} onOpenNotes={onOpenNotes} />)}
+              {week.topics.map((topic) => <TopicRow key={topic.id} topic={topic} data={data} onOpenNotes={onOpenNotes} />)}
             </CardContent>
           </Card>
         )
       })}
-      {!units.length && <EmptyState icon={Target} title="No topics in this view" detail={topics.length ? 'Choose another status filter.' : 'Capture the first topic covered in class.'} />}
+      {!weeks.length && <EmptyState icon={Target} title="No topics in this view" detail={topics.length ? 'Choose another status filter.' : 'Import the syllabus to create learning standards and objectives.'} />}
     </div>
   )
 }
 
-function Assignments({ assignments, topics, categories, classType }: { assignments: ClassAssignment[]; topics: Topic[]; categories: GradeCategory[]; classType?: ClassWorkspaceType }) {
-  const groups = groupAssignments(assignments)
+function Assignments({ courseId, assignments, categories, focusWhatIf = false }: { courseId: string; assignments: ClassAssignment[]; categories: GradeCategory[]; focusWhatIf?: boolean }) {
+  const whatIfRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!focusWhatIf) return
+    const frame = window.requestAnimationFrame(() => {
+      whatIfRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+      whatIfRef.current?.querySelector<HTMLElement>('button, input, [role="combobox"]')?.focus({ preventScroll: true })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [focusWhatIf])
   return (
-    <div className="space-y-4">
-      <SectionToolbar title="Assignments" detail="Grouped by syllabus category with recorded weights and outcomes." />
-      {groups.map(([category, items]) => {
-        const complete = items.filter(isComplete)
-        const graded = items.filter(hasGrade)
-        const earned = graded.reduce((sum, item) => sum + (item.pointsEarned ?? 0), 0)
-        const possible = graded.reduce((sum, item) => sum + (item.pointsPossible ?? 0), 0)
-        const weight = items.reduce((sum, item) => sum + (item.weight ?? 0), 0)
-        return (
-          <Card key={category} className="class-hub-panel">
-            <CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3">
-              <div><CardTitle>{category}</CardTitle><p className="mt-1 text-sm text-muted-foreground">{complete.length}/{items.length} completed · {possible ? `${formatNumber((earned / possible) * 100)}% average` : 'Not enough graded work yet'}</p></div>
-              <Badge variant="outline">{weight ? `${formatNumber(weight)}% weight` : 'Weight not set'}</Badge>
-            </CardHeader>
-            <CardContent className="class-hub-panel-content space-y-2">{items.map((item) => <AssignmentRow key={item.id} item={item} topics={topics} classType={classType} />)}</CardContent>
-          </Card>
-        )
-      })}
-      {!groups.length && <EmptyState icon={FileText} title="No assignments yet" detail="Import a syllabus or add work from the Assignments page." />}
-      <WhatIf assignments={assignments} categories={categories} />
+    <div className="class-hub-assignments space-y-4">
+      <SectionToolbar title="Assignments" detail="Coursework execution, fixed to this class." />
+      <AssignmentsPanel courseId={courseId} />
+      <section ref={whatIfRef} aria-labelledby="course-grade-context" tabIndex={-1}>
+        <p id="course-grade-context" className="class-hub-support-label">Course grade context · supporting</p>
+        <WhatIf assignments={assignments} categories={categories} />
+      </section>
     </div>
   )
 }
 
-function Notes({ courseId, notes, topics, data, onOpenMaterials, topicFilter }: {
+function Guide({ courseId, workspace, notes, topics, assignments, contacts, data, onOpenMaterials, topicFilter }: {
   courseId: string
+  workspace: ClassWorkspace
   notes: ClassNote[]
   topics: Topic[]
+  assignments: ClassAssignment[]
+  contacts: ClassContact[]
   data: ClassCenterData
   onOpenMaterials: () => void
   /** Set when arriving from a topic's menu, so the tab lands on that topic. */
   topicFilter?: string
 }) {
-  const scoped = topicFilter ? notes.filter((item) => item.topicIds.includes(topicFilter)) : notes
+  const guideNotes = notes.filter(isGuideNote)
+  const scoped = topicFilter ? guideNotes.filter((item) => item.topicIds.includes(topicFilter)) : guideNotes
   const focus = topicFilter ? topics.find((item) => item.id === topicFilter) : undefined
   const [, setParams] = useSearchParams()
+  useEffect(() => {
+    const known = new Set(data.guideProposals.map((item) => `${item.source.sourceRecordKind}:${item.source.sourceRecordId}`))
+    if (!buildSyllabusGuideProposals(data, courseId).some((item) => !known.has(`${item.source.sourceRecordKind}:${item.source.sourceRecordId}`))) return
+    useStore.getState().update((draft) => { ensureSyllabusGuideProposals(draft.academics.classCenter, courseId) })
+  }, [courseId, data])
   const sections = [
-    // Generated guides were previously in no section at all, which made a
-    // successful generation invisible.
-    { key: 'guides', title: 'Study guides', notes: scoped.filter((item) => item.type === 'study-guide') },
     { key: 'exam', title: 'Exam intel', notes: scoped.filter((item) => item.type === 'exam-review') },
     { key: 'questions', title: 'Questions to ask', notes: scoped.filter((item) => item.type === 'question-log') },
     { key: 'priming', title: 'Priming rollup', notes: scoped.filter((item) => item.type === 'reading' && item.title.startsWith('Prime:')) },
     { key: 'lecture', title: 'Lecture notes by unit', notes: scoped.filter((item) => ['lecture', 'lab', 'other'].includes(item.type)) },
   ]
-  const topicNotes = topics.map((topic) => ({ topic, notes: notes.filter((note) => note.topicIds.includes(topic.id)) })).filter((item) => item.notes.length)
+  const topicNotes = topics.map((topic) => ({ topic, notes: guideNotes.filter((note) => note.topicIds.includes(topic.id)) })).filter((item) => item.notes.length)
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
       <div className="space-y-4">
-        <SectionToolbar title="Notes" detail="About this class. Material files remain separate in Materials." action={<Button onClick={() => addBlankNote(courseId)}><Plus className="size-4" />
+        <SectionToolbar title="Guide" detail="Exam intel, questions, priming, and class context. Material notes remain in Materials." action={<Button onClick={() => addBlankNote(courseId)}><Plus className="size-4" /> New Guide item</Button>} />
         {focus && (
           <div className="flex items-center gap-2 rounded-xl border border-border bg-muted px-3 py-2">
             <p className="text-xs font-bold">
-              Showing notes linked to <b className="font-display">{focus.title}</b>
+              Showing Guide items linked to <b className="font-display">{focus.title}</b>
               {!scoped.length && ' — there are none yet.'}
             </p>
             <Button
@@ -1071,48 +979,99 @@ function Notes({ courseId, notes, topics, data, onOpenMaterials, topicFilter }: 
                 return next
               }, { replace: true })}
             >
-              Show all notes
+              Show all Guide items
             </Button>
           </div>
-        )} New note</Button>} />
-        <ProfessorRemarkProposals courseId={courseId} data={data} onOpenMaterials={onOpenMaterials} />
+        )}
+        <CourseLensPanel workspace={workspace} data={data} />
+        <GuideSuggestions courseId={courseId} data={data} onOpenMaterials={onOpenMaterials} />
+        <ProfessorEvidencePanel courseId={courseId} data={data} assignments={assignments} contacts={contacts} />
         {sections.map((section) => (
           <Card key={section.key} className="class-hub-panel">
             <CardHeader className="class-hub-panel-header"><CardTitle>{section.title}</CardTitle></CardHeader>
             <CardContent className="class-hub-panel-content space-y-2">
-              {section.notes.map((note) => <NoteRow key={note.id} note={note} checkbox={section.key === 'questions'} />)}
+              {section.notes.map((note) => <NoteRow key={note.id} note={note} />)}
               {!section.notes.length && <p className="text-sm font-semibold text-muted-foreground">Nothing recorded here yet.</p>}
             </CardContent>
           </Card>
         ))}
       </div>
       <aside className="space-y-3 xl:sticky xl:top-20 xl:self-start">
-        <h2 className="font-display text-xl font-extrabold">Topic notes</h2>
+        <h2 className="font-display text-xl font-extrabold">Linked class context</h2>
         {topicNotes.map(({ topic, notes: linked }) => (
           <Card key={topic.id} className="class-hub-panel"><CardContent className="class-hub-panel-content p-4"><p className="font-extrabold">{topic.title}</p><p className="mt-1 text-sm text-muted-foreground">{linked.map((note) => note.title).join(' · ')}</p></CardContent></Card>
         ))}
-        {!topicNotes.length && <EmptyState icon={NotebookText} title="No linked topic notes" detail="Link a class note to a topic to build this rail." />}
+        {!topicNotes.length && <EmptyState icon={NotebookText} title="No linked Guide items" detail="Link a class-context item to a syllabus topic to build this rail." />}
       </aside>
     </div>
   )
 }
 
 /**
- * Transcript analysis never writes a working class note on its own. This is
- * the deliberate confirmation boundary: every proposed professor remark keeps
- * its exact source quote and timestamp until the student adds or dismisses it.
+ * Interpretive courses sometimes need a durable, attributable course frame.
+ * This stays in Guide because it is context ABOUT how the course reads
+ * material; it never becomes a generic material note or a Topic substitute.
  */
-function ProfessorRemarkProposals({ courseId, data, onOpenMaterials }: { courseId: string; data: ClassCenterData; onOpenMaterials: () => void }) {
+function CourseLensPanel({ workspace, data }: { workspace: ClassWorkspace; data: ClassCenterData }) {
+  const toast = useToast()
+  const lens = workspace.courseLens
+  const [editing, setEditing] = useState(!lens)
+  const [text, setText] = useState(lens?.text ?? '')
+  const [selectedFileIds, setSelectedFileIds] = useState<string[]>(lens?.sourceFileIds ?? [])
+  const sources = useMemo(() => data.files.filter((file) => file.courseId === workspace.courseId && file.owner !== 'generated' && (file.type === 'syllabus' || file.type === 'transcript' || file.owner === 'course')).map((file) => ({
+    file,
+    chunks: data.sourceChunks.filter((chunk) => chunk.courseId === workspace.courseId && chunk.fileId === file.id && Boolean(chunk.content.trim())),
+  })).filter((source) => source.chunks.length), [data.files, data.sourceChunks, workspace.courseId])
+  const selectedSources = sources.filter((source) => selectedFileIds.includes(source.file.id))
+  const selectedChunkIds = selectedSources.flatMap((source) => source.chunks.map((chunk) => chunk.id))
+  const canSave = Boolean(text.trim() && selectedSources.length && selectedChunkIds.length)
+
+  function toggle(fileId: string) {
+    setSelectedFileIds((current) => current.includes(fileId) ? current.filter((id) => id !== fileId) : [...current, fileId])
+  }
+
+  function save() {
+    if (!canSave) return
+    const now = Date.now()
+    useStore.getState().update((draft) => {
+      // ClassHub receives a display view keyed by course. Persist through the
+      // stable course link, as the other class-level settings do.
+      const target = draft.academics.classCenter.workspaces.find((item) => item.courseId === workspace.courseId)
+      if (!target) return
+      target.courseLens = { text: text.trim(), sourceFileIds: selectedSources.map((source) => source.file.id), sourceChunkIds: selectedChunkIds, updatedAt: now }
+      target.updatedAt = now
+    })
+    setEditing(false)
+    toast({ title: 'Course lens saved', description: 'It can guide a study guide only when you explicitly include its listed evidence.' })
+  }
+
+  if (!editing && lens) {
+    const labels = lens.sourceFileIds.map((id) => data.files.find((file) => file.id === id)?.title ?? 'Unavailable material')
+    return <Card className="class-hub-panel"><CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">How this class reads material</p><CardTitle className="mt-1">Course lens</CardTitle><p className="mt-2 text-sm font-semibold text-muted-foreground">{lens.text}</p><p className="mt-3 text-xs font-semibold text-muted-foreground">Sourceable from: {labels.join(' · ')}</p></div><Button size="sm" variant="outline" onClick={() => setEditing(true)}>Review / edit</Button></CardHeader></Card>
+  }
+
+  if (!editing) {
+    return <Card className="class-hub-panel"><CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">How this class reads material</p><CardTitle className="mt-1">Course lens</CardTitle><p className="mt-2 text-sm font-semibold text-muted-foreground">Optional, source-backed framing for interpretive course material.</p></div><Button size="sm" variant="outline" onClick={() => setEditing(true)}>Add course lens</Button></CardHeader></Card>
+  }
+
+  return <Card className="class-hub-panel"><CardHeader className="class-hub-panel-header"><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">How this class reads material</p><CardTitle className="mt-1">Course lens</CardTitle><p className="mt-1 text-sm text-muted-foreground">Optional course-level context for interpretive study. Ground it in the syllabus, learning goals, selected course material, or lecture evidence—not a course title or generic analysis.</p></CardHeader><CardContent className="class-hub-panel-content space-y-3"><label className="block text-sm font-extrabold">Course lens<Textarea aria-label="Course lens" className="mt-2 min-h-28" value={text} onChange={(event) => setText(event.target.value)} placeholder="Example: Read cases through the comparative healing systems, ethnographic context, and questions of authority this course has named." /></label><div><p className="text-sm font-extrabold">Evidence for this lens</p><p className="mt-1 text-xs font-semibold text-muted-foreground">Choose the course sources that support the frame. Only listed evidence can travel with a generated guide.</p>{sources.length ? <div className="mt-3 flex flex-wrap gap-2">{sources.map((source) => { const selected = selectedFileIds.includes(source.file.id); return <button key={source.file.id} type="button" aria-pressed={selected} onClick={() => toggle(source.file.id)} className={cn('rounded-xl border px-3 py-2 text-left text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', selected ? 'border-primary bg-primary/8 text-primary' : 'border-border bg-card hover:border-primary/45')}><span className="block">{source.file.title}</span><span className="mt-1 block text-xs font-semibold text-muted-foreground">{source.chunks.length} readable {source.chunks.length === 1 ? 'passage' : 'passages'}</span></button> })}</div> : <p className="mt-3 rounded-xl border border-dashed border-border bg-muted/30 p-3 text-sm font-semibold text-muted-foreground">No readable syllabus, course material, or lecture evidence is ready yet. Keep the lens unset until there is something reviewable.</p>}</div><div className="flex flex-wrap justify-end gap-2"><Button size="sm" variant="ghost" onClick={() => { setText(lens?.text ?? ''); setSelectedFileIds(lens?.sourceFileIds ?? []); setEditing(false) }}>Cancel</Button><Button size="sm" disabled={!canSave} onClick={save}>Save course lens</Button></div></CardContent></Card>
+}
+
+/** Syllabus and lecture suggestions remain editable, sourceable drafts. */
+function GuideSuggestions({ courseId, data, onOpenMaterials }: { courseId: string; data: ClassCenterData; onOpenMaterials: () => void }) {
+  const toast = useToast()
   const [playingId, setPlayingId] = useState<string | null>(null)
-  const proposals = data.lectureNoteProposals
-    .filter((proposal) => proposal.courseId === courseId && proposal.status === 'pending')
-    .sort((a, b) => a.order - b.order)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [draftTitle, setDraftTitle] = useState('')
+  const [draftText, setDraftText] = useState('')
+  const proposals = guideProposalsForCourse(data, courseId, 'pending')
 
   if (!proposals.length) return null
 
   async function playSource(proposalId: string) {
-    const proposal = data.lectureNoteProposals.find((item) => item.id === proposalId)
-    const lecture = proposal ? data.lectures.find((item) => item.id === proposal.lectureId) : undefined
+    const proposal = data.guideProposals.find((item) => item.id === proposalId && item.courseId === courseId)
+    if (proposal?.source.sourceKind !== 'lecture') { onOpenMaterials(); return }
+    const lecture = data.lectures.find((item) => item.id === proposal.source.sourceId && item.courseId === courseId)
     if (!lecture?.audioBlobRef) {
       onOpenMaterials()
       return
@@ -1126,104 +1085,51 @@ function ProfessorRemarkProposals({ courseId, data, onOpenMaterials }: { courseI
   }
 
   function accept(proposalId: string) {
-    const now = Date.now()
+    let outcome: ReturnType<typeof acceptGuideProposal> = { ok: false, reason: 'Nothing changed.' }
     useStore.getState().update((draft) => {
-      const center = draft.academics.classCenter
-      const proposal = center.lectureNoteProposals.find((item) => item.id === proposalId)
-      const finding = proposal ? center.lectureFindings.find((item) => item.id === proposal.findingId) : undefined
-      const lecture = proposal ? center.lectures.find((item) => item.id === proposal.lectureId) : undefined
-      if (!proposal || !finding) return
-      proposal.status = 'accepted'
-      proposal.updatedAt = now
-      center.notes.unshift({
-        id: uid(), courseId, title: `Professor remark: ${finding.label}`, type: 'lecture', kind: 'about-class', date: isoToday(), unit: '', topicIds: [],
-        content: `Professor remark · ${finding.timestamp}\n\n“${finding.quote}”\n\n${finding.detail}`,
-        syncStatus: 'local-only', linkedFileIds: lecture?.transcriptFileId ? [lecture.transcriptFileId] : [], createdAt: now, updatedAt: now, order: center.notes.length,
-      })
+      outcome = acceptGuideProposal(draft.academics.classCenter, courseId, proposalId)
     })
+    toast(outcome.ok ? { title: 'Added to Guide', description: 'The saved item keeps its reviewed source.' } : { title: 'Suggestion not saved', description: outcome.reason, tone: 'error' })
   }
 
   function dismiss(proposalId: string) {
     useStore.getState().update((draft) => {
-      const proposal = draft.academics.classCenter.lectureNoteProposals.find((item) => item.id === proposalId)
-      if (proposal) Object.assign(proposal, { status: 'dismissed', updatedAt: Date.now() })
+      dismissGuideProposal(draft.academics.classCenter, courseId, proposalId)
     })
+  }
+
+  function startEditing(proposal: (typeof proposals)[number]) {
+    setEditingId(proposal.id)
+    setDraftTitle(proposal.draftTitle)
+    setDraftText(proposal.draftText)
+  }
+
+  function saveDraft(proposalId: string) {
+    useStore.getState().update((draft) => {
+      editGuideProposal(draft.academics.classCenter, courseId, proposalId, { title: draftTitle, text: draftText })
+    })
+    setEditingId(null)
   }
 
   return (
     <Card className="class-hub-panel">
       <CardHeader className="class-hub-panel-header">
-        <CardTitle>Professor remarks to review</CardTitle>
-        <p className="mt-1 text-sm text-muted-foreground">Exact lecture moments about this class. Add one only if it belongs in your working notes.</p>
+        <CardTitle>Suggested additions</CardTitle>
+        <p className="mt-1 text-sm text-muted-foreground">Confirmed syllabus facts and exact saved lecture passages. Nothing enters Guide until you review it.</p>
       </CardHeader>
       <CardContent className="class-hub-panel-content space-y-3">
         {proposals.map((proposal) => {
-          const finding = data.lectureFindings.find((item) => item.id === proposal.findingId)
-          const lecture = data.lectures.find((item) => item.id === proposal.lectureId)
-          if (!finding) return null
-          return <article key={proposal.id} className="rounded-xl border border-border bg-muted/25 p-3">
-            <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-extrabold uppercase tracking-[0.1em] text-primary">{finding.timestamp} · {finding.label}</p><p className="mt-2 font-display text-base font-extrabold">“{finding.quote}”</p></div><Badge variant="outline">Pending</Badge></div>
-            <p className="mt-2 text-sm font-semibold text-muted-foreground">{finding.detail}</p>
-            <p className="mt-2 text-xs font-semibold text-muted-foreground">Source: {lecture?.title || 'Lecture transcript'} · {finding.timestamp}</p>
-            <div className="mt-3 flex flex-wrap gap-2"><Button size="sm" onClick={() => accept(proposal.id)}>Add to class notes</Button><Button size="sm" variant="outline" onClick={() => void playSource(proposal.id)}>{playingId === proposal.id ? 'Playing…' : lecture?.audioBlobRef ? 'Listen locally' : 'View in Materials'}</Button><Button size="sm" variant="ghost" onClick={() => dismiss(proposal.id)}>Dismiss</Button></div>
+          const lecture = proposal.source.sourceKind === 'lecture' ? data.lectures.find((item) => item.id === proposal.source.sourceId) : undefined
+          const valid = isGuideSourceValid(data, courseId, proposal.source)
+          const editing = editingId === proposal.id
+          return <article key={proposal.id} className="rounded-xl border border-border bg-muted p-3">
+            <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-extrabold uppercase tracking-[0.1em] text-primary">{proposal.source.sourceLabel}{proposal.source.sourceLocation ? ` · ${proposal.source.sourceLocation}` : ''}</p><blockquote className="mt-2 font-display text-base font-extrabold">“{proposal.source.sourcePassage || 'Source passage unavailable'}”</blockquote></div><Badge variant={valid ? 'outline' : 'warning'}>{valid ? 'Pending' : 'Source unavailable'}</Badge></div>
+            {editing ? <div className="mt-3 space-y-2"><Input value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} aria-label="Guide suggestion title" /><Textarea value={draftText} onChange={(event) => setDraftText(event.target.value)} aria-label="Guide suggestion text" /><div className="flex gap-2"><Button size="sm" onClick={() => saveDraft(proposal.id)}>Save draft</Button><Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button></div></div> : <><p className="mt-2 font-display text-sm font-extrabold">{proposal.draftTitle || 'Untitled suggestion'}</p><p className="mt-1 text-sm font-semibold text-muted-foreground">{proposal.draftText || 'No draft text is available.'}</p></>}
+            {!editing && <div className="mt-3 flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => startEditing(proposal)}>Review / edit</Button><Button size="sm" onClick={() => accept(proposal.id)} disabled={!valid || !proposal.draftTitle.trim() || !proposal.draftText.trim()}>Add to Guide</Button><Button size="sm" variant="outline" onClick={() => void playSource(proposal.id)}>{playingId === proposal.id ? 'Playing…' : lecture?.audioBlobRef ? 'Listen locally' : 'Open source'}</Button><Button size="sm" variant="ghost" onClick={() => dismiss(proposal.id)}>Dismiss</Button></div>}
           </article>
         })}
       </CardContent>
     </Card>
-  )
-}
-
-function ExamScope({ exam, topics, allTopics, events }: { exam: ClassAssignment; topics: Topic[]; allTopics: Topic[]; events: ReviewEvent[] }) {
-  // §4.1-L entry 2: the exam-scope panel is where the exam-day question is
-  // actually asked, so each scoped topic opens its curve here.
-  const [curveTopicId, setCurveTopicId] = useState<string | null>(null)
-  const curveTopic = topics.find((item) => item.id === curveTopicId)
-  if (!(exam.coveredTopicIds?.length)) return <EmptyState icon={Target} title="Scope not mapped" detail={`Link covered topics to ${exam.title} to record its scope.`} />
-  const counts = {
-    ready: topics.filter((item) => item.status === 'ready').length,
-    reviewing: topics.filter((item) => ['reviewing', 'notes-made', 'seen'].includes(item.status)).length,
-    review: topics.filter((item) => item.status === 'weak').length,
-    notStarted: topics.filter((item) => item.status === 'not-started').length,
-  }
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2 text-xs font-bold sm:grid-cols-4" aria-label="Student-recorded topic states">
-        <Legend color="bg-emerald-500" label={`Marked ready ${counts.ready}`} />
-        <Legend color="bg-amber-400" label={`Reviewing ${counts.reviewing}`} />
-        <Legend color="bg-destructive" label={`Marked for review ${counts.review}`} />
-        <Legend color="bg-muted-foreground" label={`Not started ${counts.notStarted}`} />
-      </div>
-      <p className="rounded-xl bg-muted/35 p-3 text-xs font-semibold text-muted-foreground">
-        Scope comes from the {exam.coveredTopicIds.length} topic links recorded on {exam.title}; {topics.length} match this class’s {allTopics.length} current topics.
-      </p>
-      <div className="flex flex-wrap gap-1.5">
-        {topics.map((item) => (
-          <Button
-            key={item.id} size="sm" variant={curveTopicId === item.id ? 'default' : 'outline'}
-            aria-pressed={curveTopicId === item.id}
-            onClick={() => setCurveTopicId((current) => current === item.id ? null : item.id)}
-          >
-            <TrendingDown className="size-4" /> {item.title}
-          </Button>
-        ))}
-      </div>
-      {curveTopic && <ForgettingCurve topic={curveTopic} events={events} exam={exam} />}
-    </div>
-  )
-}
-
-function RecallHistory({ events }: { events: ReviewEvent[] }) {
-  const recent = [...events].sort((a, b) => b.timestamp - a.timestamp).slice(0, 6)
-  if (!recent.length) return <EmptyState icon={Brain} title="No recall activity yet" detail="Completed topic reviews will appear here as recorded events." />
-  return (
-    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-      {recent.map((event) => (
-        <div key={event.id} className="rounded-xl border border-border bg-muted/25 p-3">
-          <p className="font-extrabold">{titleCase(event.grade)}</p>
-          <p className="mt-1 text-xs font-semibold text-muted-foreground">{new Date(event.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
-        </div>
-      ))}
-    </div>
   )
 }
 
@@ -1234,32 +1140,53 @@ function WhatIf({ assignments, categories }: { assignments: ClassAssignment[]; c
   const [target, setTarget] = useState('90')
   const selected = weighted.find((item) => item.id === categoryId) ?? weighted[0]
   const scenario = calculateCourseScenario({ assignments, categories: weighted, selectedCategoryId: selected?.id, assumedPercent: Number(assumption), targetPercent: Number(target) })
+  const categoryRows = weighted.map((category) => {
+    const graded = assignments.filter((assignment) => assignment.category === category.name && hasGrade(assignment))
+    const earned = graded.reduce((total, assignment) => total + (assignment.pointsEarned ?? 0), 0)
+    const possible = graded.reduce((total, assignment) => total + (assignment.pointsPossible ?? 0), 0)
+    return { ...category, average: possible ? earned / possible * 100 : null }
+  })
+  const totalWeight = weighted.reduce((total, category) => total + category.weight, 0)
+  const current = coursePercent(assignments)
   return (
-    <Card className="class-hub-panel">
-      <CardHeader className="class-hub-panel-header"><CardTitle>What-if calculator</CardTitle><p className="text-sm text-muted-foreground">Local scratch work only — nothing here is saved or applied to your grade record.</p></CardHeader>
+    <Card className="class-hub-panel class-hub-what-if">
+      <CardHeader className="class-hub-panel-header"><CardTitle>What if…</CardTitle><p className="text-sm text-muted-foreground">Assume a result for one remaining category.</p></CardHeader>
       <CardContent className="class-hub-panel-content">
         {weighted.length ? (
-          <div className="space-y-4">
-            <div className="grid gap-4 lg:grid-cols-[1fr_180px_180px]">
-            <label className="text-sm font-bold">Category
-              <Select value={selected?.id ?? ''} onValueChange={setCategoryId}>
-                <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
-                <SelectContent>{weighted.map((item) => <SelectItem key={item.id} value={item.id}>{item.name} · {formatNumber(item.weight)}% weight</SelectItem>)}</SelectContent>
-              </Select>
-            </label>
-            <label className="text-sm font-bold">Assumed category %
-              <Input className="mt-2" inputMode="decimal" value={assumption} onChange={(event) => setAssumption(event.target.value)} />
-            </label>
-            <label className="text-sm font-bold">Target course %
-              <Input className="mt-2" inputMode="decimal" value={target} onChange={(event) => setTarget(event.target.value)} />
-            </label>
+          <div className="class-hub-what-if-grid">
+            <div className="class-hub-scenario-stage">
+              <div className="class-hub-grade-row class-hub-grade-row-summary">
+                <span>Locked in so far</span><b>{formatNumber(totalWeight)}% structured</b><strong>{current == null ? 'No graded work' : `${formatNumber(current)}% current`}</strong>
+              </div>
+              {categoryRows.map((category) => (
+                <div key={category.id} className="class-hub-grade-row">
+                  <span>{category.name}</span><b>{formatNumber(category.weight)}%</b><strong>{category.average == null ? 'Not graded' : `${formatNumber(category.average)}%`}</strong>
+                </div>
+              ))}
+              <div className="class-hub-scenario-controls">
+                <label>Category
+                  <Select value={selected?.id ?? ''} onValueChange={setCategoryId}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{weighted.map((item) => <SelectItem key={item.id} value={item.id}>{item.name} · {formatNumber(item.weight)}%</SelectItem>)}</SelectContent>
+                  </Select>
+                </label>
+                <label>Assume %
+                  <Input inputMode="decimal" value={assumption} onChange={(event) => setAssumption(event.target.value)} />
+                </label>
+                <label>Target %
+                  <Input inputMode="decimal" value={target} onChange={(event) => setTarget(event.target.value)} />
+                </label>
+              </div>
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="class-hub-record-row rounded-[13px] p-4"><p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Projected course result</p><p className="mt-1 font-display text-3xl font-extrabold tabular-nums">{scenario.projectedPercent == null ? '—' : `${formatNumber(scenario.projectedPercent)}%`}</p><p className="mt-1 text-xs text-muted-foreground">Assumes every other recorded category stays at its current average.</p></div>
-              <div className="class-hub-record-row rounded-[13px] p-4"><p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Needed in {selected?.name ?? 'selected category'}</p><p className="mt-1 font-display text-3xl font-extrabold tabular-nums">{scenario.requiredPercent == null ? '—' : `${formatNumber(scenario.requiredPercent)}%`}</p><p className="mt-1 text-xs text-muted-foreground">To reach the target above, based only on recorded category weights.</p></div>
-            </div>
-            <div className="grid gap-2 text-xs font-semibold text-muted-foreground md:grid-cols-2"><p>{scenario.highestLeverageCategory ? `${scenario.highestLeverageCategory} has the most recorded leverage.` : 'No weighted category has enough data yet.'}</p><p>GPA knock-on stays in Planning until a final letter-grade assumption is chosen.</p></div>
-            {scenario.reason && <p className="rounded-[13px] border border-dashed border-[var(--border)] p-3 text-xs font-semibold text-muted-foreground">{scenario.reason}</p>}
+            <aside className="class-hub-scenario-result">
+              <p className="class-hub-scenario-label">Result</p>
+              <p className="class-hub-scenario-number">{scenario.projectedPercent == null ? '—' : `${formatNumber(scenario.projectedPercent)}%`}</p>
+              <p className="class-hub-scenario-copy">Projected course result</p>
+              <div className="class-hub-scenario-needed"><b>{scenario.requiredPercent == null ? '—' : `${formatNumber(scenario.requiredPercent)}%`}</b><span>needed in {selected?.name ?? 'the selected category'} to reach {formatNumber(Number(target))}%</span></div>
+              <p>{scenario.highestLeverageCategory ? `${scenario.highestLeverageCategory} has the most recorded leverage.` : 'No weighted category has enough data yet.'}</p>
+              <p>Hypothetical · nothing is saved. GPA impact stays in Planning until a letter grade is chosen.</p>
+            </aside>
+            {scenario.reason && <p className="class-hub-scenario-reason">{scenario.reason}</p>}
             {categories.some((item) => item.policyNote || item.dropLowestCount != null || item.replacementRule != null || item.curvePublished != null) && <div className="rounded-[13px] border border-[var(--border)] bg-[var(--muted)] p-3 text-xs font-semibold text-muted-foreground"><p className="font-extrabold text-foreground">Recorded policies</p>{categories.map((item) => (item.policyNote || item.dropLowestCount != null || item.replacementRule != null || item.curvePublished != null) && <p key={item.id} className="mt-1">{item.name}: {item.policyNote || 'Structured policy recorded'} <span className="text-muted-foreground">— listed, not applied automatically until its rule is fully structured and student-confirmed.</span></p>)}</div>}
           </div>
         ) : <EmptyState icon={HelpCircle} title="Not enough weighted categories yet" detail="Record category, points, and weight before testing a grade scenario." />}
@@ -1268,76 +1195,64 @@ function WhatIf({ assignments, categories }: { assignments: ClassAssignment[]; c
   )
 }
 
-function TopicRow({ topic, data, exam, onOpenNotes }: {
+function TopicRow({ topic, data, onOpenNotes }: {
   topic: Topic
   data: ClassCenterData
-  exam?: ClassAssignment
-  /** Both menu items route here — one record, two entry points. */
+  /** Opens the linked operational context without starting a review session. */
   onOpenNotes: (topicId: string) => void
 }) {
-  const [curveOpen, setCurveOpen] = useState(false)
-  const lastRecall = topic.fsrs.lastReview ? new Date(topic.fsrs.lastReview).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Never'
-  const nextReview = topic.fsrs.reps > 0 ? new Date(topic.fsrs.due).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Not scheduled'
   const noteCount = data.notes.filter((note) => note.topicIds.includes(topic.id)).length
+  const linkedFileCount = topic.linkedFileIds?.length ?? 0
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className="grid gap-3 rounded-xl border border-border bg-muted/25 p-3 md:grid-cols-[minmax(0,1fr)_120px_130px_110px_auto_auto] md:items-center">
-          <div><p className="font-extrabold">{topic.title}</p><p className="text-xs text-muted-foreground">MCAT tag not set · {noteCount} notes</p></div>
-          <span className="text-xs font-bold text-muted-foreground">Last recall {lastRecall}</span>
-          <span className="text-xs font-bold text-muted-foreground">Next review {nextReview}</span>
-          <Badge className={cn('justify-self-start', STATUS_TONE[topic.status])}>{STATUS_LABELS[topic.status]}</Badge>
-          <StudyMethodTrack topic={topic} events={data.reviewEvents} linkedTopicIds={new Set((data.topicLinks ?? []).flatMap((link) => [link.fromTopicId, link.toTopicId]))} />
+        <div className="grid gap-3 rounded-xl border border-border bg-muted p-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center">
+          <div><p className="font-extrabold">{topic.title}</p><p className="text-xs text-muted-foreground">{topic.unit || 'Syllabus objective'} · {linkedFileCount} {linkedFileCount === 1 ? 'material' : 'materials'} · {noteCount} {noteCount === 1 ? 'Guide item' : 'Guide items'}</p></div>
+          <Badge className={cn('justify-self-start', linkedFileCount || noteCount ? 'bg-sky-500/12 text-sky-700 dark:text-sky-200' : 'bg-muted text-muted-foreground')}>{linkedFileCount || noteCount ? 'Evidence linked' : 'Needs material'}</Badge>
           <div className="flex items-center gap-1.5">
-            <Button size="sm" variant="ghost" aria-expanded={curveOpen} onClick={() => setCurveOpen((open) => !open)}>
-              <TrendingDown className="size-4" /> Will I still know this?
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Brain className="size-4" /> Quiz me</Button></DropdownMenuTrigger>
-              <DropdownMenuContent align="end"><DropdownMenuItem asChild><Link to={`/academics/review/${topic.courseId}?topicId=${topic.id}`}>Recall this topic</Link></DropdownMenuItem><DropdownMenuItem onClick={() => onOpenNotes(topic.id)}>Open linked notes</DropdownMenuItem></DropdownMenuContent>
-            </DropdownMenu>
+            <Button size="sm" variant="outline" onClick={() => onOpenNotes(topic.id)}><NotebookText className="size-4" /> Open Guide</Button>
           </div>
           {/* The same link record, written from the topic side. */}
           <AssignmentLinkField topic={topic} />
           {/* §6.6 Connect — the topic graph, authored one relation at a time. */}
           <TopicConnectField topic={topic} />
-          {curveOpen && <div className="md:col-span-6"><ForgettingCurve topic={topic} events={data.reviewEvents} exam={exam} /></div>}
         </div>
       </ContextMenuTrigger>
-      <ContextMenuContent><ContextMenuItem asChild><Link to={`/academics/review/${topic.courseId}?topicId=${topic.id}`}><Brain className="size-4" /> Quiz me</Link></ContextMenuItem><ContextMenuItem onSelect={() => onOpenNotes(topic.id)}><NotebookText className="size-4" /> Open notes</ContextMenuItem></ContextMenuContent>
+      <ContextMenuContent><ContextMenuItem onSelect={() => onOpenNotes(topic.id)}><NotebookText className="size-4" /> Open Guide</ContextMenuItem></ContextMenuContent>
     </ContextMenu>
   )
 }
 
-function AssignmentRow({ item, topics, classType }: { item: ClassAssignment; topics: Topic[]; classType?: ClassWorkspaceType }) {
-  const linked = topics.filter((topic) => [...(item.coveredTopicIds ?? []), ...item.linkedTopicIds].includes(topic.id))
-  return (
-    <div className="rounded-xl border border-border bg-muted/25 p-3">
-      <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_140px_110px_auto] md:items-center">
-        <div><p className="font-extrabold">{item.title}</p><p className="text-xs text-muted-foreground">{linked.length ? linked.map((topic) => topic.title).join(', ') : 'No linked topics'}</p></div>
-        <span className="text-sm font-bold text-muted-foreground">{assignmentDateLabel(item)}</span>
-        <Badge variant={isComplete(item) ? 'success' : item.dueDate && item.dueDate < isoToday() ? 'danger' : 'outline'}>{titleCase(item.status)}</Badge>
-        <span className="text-right text-sm font-extrabold tabular-nums">{hasGrade(item) ? `${item.pointsEarned}/${item.pointsPossible}` : item.weight != null ? `${item.weight}%` : '—'}</span>
-      </div>
-      {/* §4.1: what the work covers, and — on an exam only — what it tests.
-          Two fields, never merged. */}
-      <TopicLinkField assignment={item} field="coverage" classType={classType} />
-      {item.type === 'exam' && <TopicLinkField assignment={item} field="scope" classType={classType} />}
-    </div>
-  )
-}
-
-function FileRow({ file, ownership, onReimport }: { file: AcademicFile; ownership: 'course' | 'mine' | 'generated'; onReimport?: () => void }) {
+function FileRow({ file, ownership, unassigned, onReimport }: { file: AcademicFile; ownership: 'course' | 'mine' | 'generated'; unassigned?: boolean; onReimport?: () => void }) {
   const toast = useToast()
   const chunks = useStore((s) => s.academics.classCenter.sourceChunks)
   const [summarising, setSummarising] = useState(false)
+  const [opening, setOpening] = useState(false)
   const label = ownership === 'course' ? 'Course' : ownership === 'mine' ? 'Mine' : 'Generated'
+  async function openFile() {
+    if (file.url) {
+      window.open(file.url, '_blank', 'noopener,noreferrer')
+      return
+    }
+    if (!file.blobRef) return
+    setOpening(true)
+    const blob = await readLocalBlob(file.blobRef)
+    setOpening(false)
+    if (!blob) {
+      toast({ title: 'Local file is unavailable', description: 'The material record remains, but its device-local bytes could not be opened.' })
+      return
+    }
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener,noreferrer')
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  }
   const content = (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/25 p-3 transition hover:-translate-y-0.5 hover:bg-muted/45 motion-reduce:transform-none">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted p-3 transition hover:-translate-y-0.5 hover:border-primary/45 motion-reduce:transform-none">
       <div className="flex min-w-0 items-center gap-3"><FileText className="size-4 shrink-0 text-primary" /><div className="min-w-0"><p className="truncate font-extrabold">{file.title}</p><p className="text-xs text-muted-foreground">{titleCase(file.type)} · {file.sourceType}</p></div></div>
       <div className="flex items-center gap-2">
+        {unassigned && <Badge variant="warning">Unassigned</Badge>}
         <Badge variant={ownership === 'generated' ? 'secondary' : 'outline'}>{label}</Badge>
-        {file.url && <span className="text-xs font-bold text-primary">Open ↗</span>}
+        {(file.url || file.blobRef) && <Button type="button" size="sm" variant="outline" disabled={opening} onClick={() => void openFile()}>{opening ? 'Opening…' : 'Open'}</Button>}
         {onReimport && <Button type="button" size="sm" variant="outline" onClick={(event) => { event.preventDefault(); onReimport() }}>Re-import</Button>}
         <Button
           type="button"
@@ -1346,12 +1261,17 @@ function FileRow({ file, ownership, onReimport }: { file: AcademicFile; ownershi
           disabled={summarising}
           onClick={async (event) => {
             event.preventDefault()
+            const courseId = file.courseId
+            if (!courseId) {
+              toast({ title: 'Nothing was saved', description: 'This material is not linked to a class yet.' })
+              return
+            }
             // §6.2 "summarize / explain a file", grounded in this file's own
             // chunks. A file with none says so rather than generating from the
             // rest of the class behind the student's back.
             setSummarising(true)
-            const sources = sourcesFor(chunks, file.courseId, file.id)
-            const outcome = await generateStudyGuide({ courseId: file.courseId, chunks: sources, label: file.title })
+            const sources = sourcesFor(chunks, courseId, file.id)
+            const outcome = await generateStudyGuide({ courseId, chunks: sources, label: file.title })
             setSummarising(false)
             if (!outcome.ok) {
               toast({ title: 'Nothing was saved', description: outcome.message ?? 'This material could not be summarized.' })
@@ -1360,7 +1280,7 @@ function FileRow({ file, ownership, onReimport }: { file: AcademicFile; ownershi
             useStore.getState().update((draft) => {
               draft.academics.classCenter.notes.push({
                 id: uid(),
-                courseId: file.courseId,
+                courseId,
                 title: outcome.title!,
                 type: 'study-guide',
                 kind: 'on-material',
@@ -1375,7 +1295,7 @@ function FileRow({ file, ownership, onReimport }: { file: AcademicFile; ownershi
                 order: draft.academics.classCenter.notes.length,
               })
             })
-            toast({ title: 'Summary generated', description: `Saved to notes as “${outcome.title}”.` })
+            toast({ title: 'Summary generated', description: `Saved in Materials as “${outcome.title}”.` })
           }}
         >
           {summarising ? 'Summarizing…' : 'Summarize'}
@@ -1383,14 +1303,127 @@ function FileRow({ file, ownership, onReimport }: { file: AcademicFile; ownershi
       </div>
     </div>
   )
-  return file.url ? <a href={file.url} target="_blank" rel="noreferrer">{content}</a> : content
+  return content
 }
 
-function NoteRow({ note, checkbox = false }: { note: ClassNote; checkbox?: boolean }) {
+function MaterialNoteRow({ note, open, unassigned }: { note: ClassNote; open: boolean; unassigned?: boolean }) {
+  const label = materialCategoryForNote(note)
+  const owner = materialNoteOwner(note)
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/25 p-3">
-      {checkbox ? <Checkbox aria-label={`Mark ${note.title} addressed`} /> : <NotebookText className="mt-0.5 size-4 text-primary" />}
-      <div><p className="font-extrabold">{note.title}</p><p className="text-sm text-muted-foreground">{note.content || 'No note text yet.'}</p><p className="mt-1 text-xs text-muted-foreground">{note.unit || 'Unit not mapped'} · {note.date || 'Date not set'}</p></div>
+    <details id={`material-note-${note.id}`} open={open} className="class-hub-material-note class-hub-record-row rounded-[13px] px-3 py-2">
+      <summary className="flex cursor-pointer list-none items-center gap-3 rounded-lg py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <NotebookText className="size-4 shrink-0 text-primary" />
+        <span className="min-w-0 flex-1"><b className="block truncate">{note.title}</b><span className="block text-xs font-semibold text-muted-foreground">{label} · selected-source trace retained</span></span>
+        {unassigned && <Badge variant="warning">Unassigned</Badge>}
+        <Badge variant={owner === 'generated' ? 'secondary' : 'outline'}>{owner === 'generated' ? 'Generated' : 'Mine'}</Badge>
+        <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      </summary>
+      <div className="class-hub-material-note-body mt-2 border-t border-border pt-3">
+        <p className="whitespace-pre-wrap text-sm font-semibold leading-relaxed text-muted-foreground">{note.content || 'This generated resource has no saved content.'}</p>
+        {note.externalDocUrl && <Button size="sm" variant="outline" className="mt-3" asChild><a href={note.externalDocUrl} target="_blank" rel="noreferrer">Open document</a></Button>}
+      </div>
+    </details>
+  )
+}
+
+function NoteRow({ note }: { note: ClassNote }) {
+  const toast = useToast()
+  const [editing, setEditing] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [title, setTitle] = useState(note.title)
+  const [content, setContent] = useState(note.content)
+  const sourceCount = note.guideSourceRefs?.length ?? 0
+
+  function cancel() {
+    setTitle(note.title)
+    setContent(note.content)
+    setEditing(false)
+  }
+
+  function save() {
+    const nextTitle = title.trim()
+    const nextContent = content.trim()
+    if (!nextTitle) return
+    useStore.getState().update((draft) => {
+      const target = draft.academics.classCenter.notes.find((item) => item.id === note.id)
+      if (!target) return
+      Object.assign(target, { title: nextTitle, content: nextContent, updatedAt: Date.now() })
+    })
+    setEditing(false)
+    toast({ title: 'Guide item saved', description: sourceCount ? 'Your wording changed; its reviewed source references stayed attached.' : undefined, tone: 'success' })
+  }
+
+  function remove() {
+    const center = useStore.getState().academics.classCenter
+    const savedNote = structuredClone(center.notes.find((item) => item.id === note.id) ?? note)
+    const topicRefs = center.topics
+      .filter((topic) => topic.sourceNoteIds.includes(note.id) || topic.linkedNoteIds?.includes(note.id))
+      .map((topic) => ({ id: topic.id, sourceNoteIds: [...topic.sourceNoteIds], linkedNoteIds: [...(topic.linkedNoteIds ?? [])] }))
+    const weakAreaRefs = center.weakAreas.filter((item) => item.relatedNoteId === note.id).map((item) => item.id)
+    const examRefs = center.practiceExams.filter((item) => item.sourceNoteIds.includes(note.id)).map((item) => ({ id: item.id, sourceNoteIds: [...item.sourceNoteIds] }))
+    const proposalSnapshot = note.guideProposalId
+      ? structuredClone(center.guideProposals.find((item) => item.id === note.guideProposalId))
+      : undefined
+
+    useStore.getState().update((draft) => {
+      const target = draft.academics.classCenter
+      target.notes = target.notes.filter((item) => item.id !== note.id)
+      target.topics.forEach((topic) => {
+        topic.sourceNoteIds = topic.sourceNoteIds.filter((id) => id !== note.id)
+        if (topic.linkedNoteIds) topic.linkedNoteIds = topic.linkedNoteIds.filter((id) => id !== note.id)
+      })
+      target.weakAreas.forEach((item) => { if (item.relatedNoteId === note.id) item.relatedNoteId = undefined })
+      target.practiceExams.forEach((item) => { item.sourceNoteIds = item.sourceNoteIds.filter((id) => id !== note.id) })
+      if (note.guideProposalId) {
+        const proposal = target.guideProposals.find((item) => item.id === note.guideProposalId && item.acceptedNoteId === note.id)
+        if (proposal) Object.assign(proposal, { status: 'pending', acceptedNoteId: undefined, updatedAt: Date.now() })
+      }
+    })
+    setDeleting(false)
+    toast({
+      title: 'Guide item deleted',
+      description: sourceCount ? 'The reviewed source was kept and returned to Suggested additions.' : undefined,
+      onUndo: () => useStore.getState().update((draft) => {
+        const target = draft.academics.classCenter
+        if (!target.notes.some((item) => item.id === savedNote.id)) target.notes.push(savedNote)
+        topicRefs.forEach((snapshot) => {
+          const topic = target.topics.find((item) => item.id === snapshot.id)
+          if (topic) Object.assign(topic, { sourceNoteIds: snapshot.sourceNoteIds, linkedNoteIds: snapshot.linkedNoteIds })
+        })
+        weakAreaRefs.forEach((id) => {
+          const item = target.weakAreas.find((row) => row.id === id)
+          if (item) item.relatedNoteId = savedNote.id
+        })
+        examRefs.forEach((snapshot) => {
+          const item = target.practiceExams.find((row) => row.id === snapshot.id)
+          if (item) item.sourceNoteIds = snapshot.sourceNoteIds
+        })
+        if (proposalSnapshot) {
+          const proposal = target.guideProposals.find((item) => item.id === proposalSnapshot.id)
+          if (proposal) Object.assign(proposal, proposalSnapshot)
+        }
+      }),
+    })
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-muted p-3">
+      {editing ? <div className="space-y-3">
+        <label className="block text-xs font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Title<Input aria-label={`Guide item title for ${note.title}`} className="mt-1" value={title} onChange={(event) => setTitle(event.target.value)} autoFocus /></label>
+        <label className="block text-xs font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Details<Textarea aria-label={`Guide item details for ${note.title}`} className="mt-1 min-h-24" value={content} onChange={(event) => setContent(event.target.value)} /></label>
+        {sourceCount > 0 && <p className="text-xs font-semibold text-muted-foreground">{sourceCount} reviewed {sourceCount === 1 ? 'source stays' : 'sources stay'} attached. Editing does not rewrite the evidence.</p>}
+        <div className="flex flex-wrap justify-end gap-2"><Button size="sm" variant="ghost" onClick={cancel}>Cancel</Button><Button size="sm" disabled={!title.trim()} onClick={save}>Save changes</Button></div>
+      </div> : <div className="flex items-start gap-3">
+        <NotebookText className="mt-0.5 size-4 shrink-0 text-primary" />
+        <div className="min-w-0 flex-1"><p className="font-extrabold">{note.title}</p><p className="text-sm text-muted-foreground">{note.content || 'No note text yet.'}</p><p className="mt-1 text-xs text-muted-foreground">{note.unit || 'Unit not mapped'} · {note.date || 'Date not set'}{sourceCount ? ` · ${sourceCount} reviewed ${sourceCount === 1 ? 'source' : 'sources'}` : ''}</p></div>
+        <div className="flex shrink-0 gap-1"><Button size="sm" variant="ghost" aria-label={`Edit ${note.title}`} onClick={() => setEditing(true)}>Edit</Button><Button size="sm" variant="ghost" aria-label={`Delete ${note.title}`} className="text-destructive hover:text-destructive" onClick={() => setDeleting(true)}>Delete</Button></div>
+      </div>}
+      <AlertDialog open={deleting} onOpenChange={setDeleting}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>Delete this Guide item?</AlertDialogTitle><AlertDialogDescription>{sourceCount ? 'This removes your saved Guide wording and its links. The reviewed syllabus or lecture source returns to Suggested additions, where you can use it again.' : 'This removes the saved item and clears its topic, review, and practice-exam links.'}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Keep item</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={remove}>Delete Guide item</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
@@ -1437,51 +1470,8 @@ function SectionToolbar({ title, detail, action }: { title: string; detail: stri
   return <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-display text-2xl font-extrabold">{title}</h2><p className="text-sm font-semibold text-muted-foreground">{detail}</p></div>{action}</div>
 }
 
-/** Materials-owned preview. The deck remains inspectable and exportable later;
- * it is never a card-review queue. */
-function FlashcardDecks({ courseId, data }: { courseId: string; data: ClassCenterData }) {
-  const toast = useToast()
-  const decks = data.generatedFlashcardDecks.filter((deck) => deck.courseId === courseId)
-  if (!decks.length) return null
-  const deck = decks[0]
-  const card = deck.cards[0]
-  if (!card) return null
-  async function downloadApkg() {
-    try {
-      await downloadFlashcardApkg(deck)
-      toast({ title: 'Anki package downloaded', description: 'Import the .apkg in Anki. Anki will own all review and scheduling.' })
-    } catch {
-      toast({ title: 'Anki export could not start', description: 'Download the TSV instead, then try the package export again.', tone: 'error' })
-    }
-  }
-
-  return <Card className="class-hub-panel"><CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3"><div><CardTitle>Flashcards</CardTitle><p className="mt-1 text-sm text-muted-foreground">Generated from your selected class material. Premed OS does not schedule or review these cards.</p></div><Badge variant="outline">{deck.cards.length} cards</Badge></CardHeader><CardContent className="class-hub-panel-content grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem]"><div className="class-hub-record-row rounded-[13px] p-5"><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">{card.type}</p><p className="mt-3 font-display text-xl font-extrabold">{card.cloze ?? card.front}</p><p className="mt-4 text-sm text-muted-foreground">{card.back}</p>{card.extra && <p className="mt-4 border-l-2 border-primary/40 pl-3 text-sm text-muted-foreground">{card.extra}</p>}</div><aside className="class-hub-record-row rounded-[13px] p-4 text-sm"><p className="font-extrabold">Source</p><p className="mt-1 text-muted-foreground">Material chunk {card.sourceChunkId}</p><p className="mt-4 font-extrabold">Export</p><Button size="sm" className="mt-2 w-full" onClick={() => void downloadApkg()}>Download Anki package</Button><Button size="sm" variant="outline" className="mt-2 w-full" onClick={() => downloadFlashcardTsv(deck)}>Download TSV</Button><p className="mt-3 text-xs text-muted-foreground">One-way export. Anki schedules and reviews cards after import.</p></aside></CardContent></Card>
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return <div className="border-b border-border/70 p-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"><p className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">{label}</p><p className="mt-1 font-display text-xl font-extrabold tabular-nums">{value}</p></div>
-}
-
-function StatusMetric({ label, value }: { label: string; value: string }) {
-  return <div className="class-hub-metric rounded-2xl p-4"><p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 font-display text-2xl font-extrabold tabular-nums">{value}</p></div>
-}
-
 function EmptyState({ icon: Icon, title, detail }: { icon: typeof BookOpen; title: string; detail: string }) {
   return <div className="rounded-2xl border border-dashed border-border p-5 text-center"><Icon className="mx-auto size-6 text-muted-foreground" /><p className="mt-2 font-extrabold">{title}</p><p className="mt-1 text-sm text-muted-foreground">{detail}</p></div>
-}
-
-function AssignmentMini({ item }: { item: ClassAssignment }) {
-  return <div className="class-hub-record-row flex items-center justify-between gap-3 rounded-xl px-3 py-2"><div className="min-w-0"><p className="truncate font-bold">{item.title}</p><p className="text-xs text-muted-foreground">{titleCase(item.type)}</p></div><Badge variant={item.dueDate && item.dueDate < isoToday() ? 'danger' : 'outline'}>{assignmentDateLabel(item)}</Badge></div>
-}
-
-function Legend({ color, label }: { color: string; label: string }) {
-  return <span className="inline-flex items-center gap-1.5"><span className={cn('size-2 rounded-full', color)} />{label}</span>
-}
-
-function ContactRow({ contact, person }: { contact: ClassContact; person?: Person }) {
-  const name = person?.name || contact.name
-  const email = person?.email || contact.email
-  return <div className="class-hub-record-row rounded-xl p-3"><p className="font-extrabold">{name}</p><p className="text-xs text-muted-foreground">{titleCase(contact.role)} · {contact.officeHours || 'Office hours not set'}</p>{email && <a className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-primary" href={`mailto:${email}`}><Mail className="size-3" /> {email}</a>}</div>
 }
 
 function CategoryBar({ item }: { item: CategoryStat }) {
@@ -1500,26 +1490,15 @@ function addBlankNote(courseId: string) {
   const now = Date.now()
   useStore.getState().update((draft) => {
     const notes = draft.academics.classCenter.notes
-    notes.unshift({ id: uid(), courseId, title: 'Untitled class note', type: 'lecture', kind: 'about-class', date: isoToday(), unit: '', topicIds: [], content: '', syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: notes.length })
+    notes.unshift({ id: uid(), courseId, title: 'Untitled Guide item', type: 'lecture', kind: 'about-class', date: isoToday(), unit: '', topicIds: [], content: '', syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: notes.length })
   })
 }
 
-function addCoveredTopic(courseId: string) {
-  const now = Date.now()
-  useStore.getState().update((draft) => {
-    const topics = draft.academics.classCenter.topics
-    topics.push({ id: uid(), courseId, title: 'Topic covered today', unit: '', status: 'seen', confidence: 3, sourceNoteIds: [], linkedNoteIds: [], linkedAssignmentIds: [], linkedFileIds: [], fsrs: createTopicFsrsState(now), createdAt: now, updatedAt: now, order: topics.filter((item) => item.courseId === courseId).length })
-  })
-}
-
-function hubStats(course: Course, topics: Topic[], assignments: ClassAssignment[]) {
-  const today = isoToday()
+function hubStats(course: Course, assignments: ClassAssignment[]) {
   const exam = assignments.filter((item) => item.type === 'exam' && !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))[0]
   const next = assignments.filter((item) => !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))[0]
   return {
     grade: course.grade || (coursePercent(assignments) == null ? '—' : `${formatNumber(coursePercent(assignments)!)}%`),
-    ready: topics.filter((item) => item.status === 'ready').length,
-    dueToday: assignments.filter((item) => item.dueDate === today && !isComplete(item)).length,
     nextDue: next ? assignmentDateLabel(next) : '—',
     // Banner metrics are short by design (04 §0c "6d"), so the empty case is a
     // dash rather than a sentence that has to truncate inside the strip.
@@ -1559,33 +1538,141 @@ function groupAssignments(assignments: ClassAssignment[]) {
   return [...map.entries()]
 }
 
-function groupTopics(topics: Topic[]) {
-  const map = new Map<string, Topic[]>()
-  for (const topic of topics) {
-    const key = topic.unit?.trim() || 'Unit not mapped'
-    map.set(key, [...(map.get(key) ?? []), topic])
+function groupTopicsByWeek(topics: Topic[]) {
+  const map = new Map<string, { key: string; label: string; sort: string; topics: Topic[]; units: string[] }>()
+  for (const topic of [...topics].sort((a, b) => a.order - b.order)) {
+    const week = scheduledWeek(topic.scheduledFor)
+    const group = map.get(week.key) ?? { ...week, topics: [], units: [] }
+    group.topics.push(topic)
+    const unit = topic.unit?.trim()
+    if (unit && !group.units.includes(unit)) group.units.push(unit)
+    map.set(week.key, group)
   }
-  return [...map.entries()]
+  return [...map.values()].sort((a, b) => a.sort.localeCompare(b.sort))
 }
 
-function groupFiles(files: AcademicFile[], topics: Topic[], notes: ClassNote[]) {
-  const map = new Map<string, AcademicFile[]>()
+function scheduledWeek(scheduledFor?: string) {
+  if (!scheduledFor) return { key: 'unmapped', label: 'Schedule not mapped', sort: '9999-99-99' }
+  const date = new Date(`${scheduledFor}T00:00:00Z`)
+  if (Number.isNaN(date.getTime())) return { key: 'unmapped', label: 'Schedule not mapped', sort: '9999-99-99' }
+  const day = date.getUTCDay()
+  date.setUTCDate(date.getUTCDate() - (day === 0 ? 6 : day - 1))
+  const key = date.toISOString().slice(0, 10)
+  return { key, label: `Week of ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' })}`, sort: key }
+}
+
+type MaterialGroupBy = 'week' | 'unit' | 'category'
+
+type MaterialPlacement = {
+  key: string
+  label: string
+  eyebrow: string
+  sort: string
+  topicIds: string[]
+  unitLabel?: string
+  unassigned: boolean
+}
+
+type MaterialGroup = MaterialPlacement & { files: AcademicFile[]; notes: ClassNote[]; topicCount: number }
+
+function isMaterialNote(note: ClassNote) {
+  return note.kind === 'on-material' || note.type === 'study-guide'
+}
+
+function isGuideNote(note: ClassNote) {
+  return note.kind === 'about-class' && note.type !== 'study-guide'
+}
+
+function materialNoteOwner(note: ClassNote): 'mine' | 'generated' {
+  return note.type === 'study-guide' ? 'generated' : 'mine'
+}
+
+function materialFilterMatches(filter: 'all' | 'course' | 'mine' | 'generated' | 'unassigned', owner: 'course' | 'mine' | 'generated', unassigned: boolean) {
+  return filter === 'all' || (filter === 'unassigned' ? unassigned : filter === owner)
+}
+
+function linkedTopicsForFile(file: AcademicFile, topics: Topic[]) {
+  const linkedIds = new Set([file.topicId, ...file.linkedTopicIds].filter((id): id is string => Boolean(id)))
+  return topics.filter((topic) => linkedIds.has(topic.id))
+}
+
+function linkedTopicsForNote(note: ClassNote, topics: Topic[], files: AcademicFile[]) {
+  const sourceFiles = files.filter((file) => note.linkedFileIds.includes(file.id))
+  const linkedIds = new Set([
+    ...note.topicIds,
+    ...sourceFiles.flatMap((file) => [file.topicId, ...file.linkedTopicIds]),
+  ].filter((id): id is string => Boolean(id)))
+  return topics.filter((topic) => linkedIds.has(topic.id))
+}
+
+function materialIsUnassigned(file: AcademicFile, topics: Topic[]) {
+  return linkedTopicsForFile(file, topics).length === 0
+}
+
+function materialNoteIsUnassigned(note: ClassNote, topics: Topic[], files: AcademicFile[]) {
+  return linkedTopicsForNote(note, topics, files).length === 0 && !note.unit?.trim()
+}
+
+function materialCategoryForFile(file: AcademicFile) {
+  const title = `${file.title} ${file.notes ?? ''}`.toLowerCase()
+  if (file.owner === 'generated' || file.type === 'study-guide') return 'Generated resources'
+  if (file.folderIntake?.category === 'homework' || /\b(homework|assignment|problem set)\b/.test(title)) return 'Homework'
+  if (file.folderIntake?.category === 'practice-problems' || /\b(question|practice problem)\b/.test(title)) return 'Questions'
+  if (/\b(learning objectives?|learning standards?|course goals?|mastery outline)\b/.test(title)) return 'Learning objectives'
+  if (file.type === 'lecture-slides' || /\bslides?\b/.test(title)) return 'Slides'
+  if (file.folderIntake?.category === 'notes' || file.owner === 'mine' || /\bnotes?\b/.test(title)) return 'Notes'
+  if (file.type === 'reading') return 'Readings'
+  if (file.type === 'syllabus' || file.type === 'rubric' || file.type === 'lab-handout' || file.type === 'past-exam') return 'Course documents'
+  return 'Other'
+}
+
+function materialCategoryForNote(note: ClassNote) {
+  const title = note.title.toLowerCase()
+  if (/\b(learning objectives?|learning standards?|mastery outline)\b/.test(title)) return 'Learning objectives'
+  if (/\bquestions?\b/.test(title)) return 'Questions'
+  if (/\bhomework\b/.test(title)) return 'Homework'
+  if (note.type === 'study-guide') return 'Generated resources'
+  return 'Notes'
+}
+
+const MATERIAL_CATEGORY_ORDER = ['Slides', 'Learning objectives', 'Questions', 'Homework', 'Notes', 'Generated resources', 'Readings', 'Course documents', 'Other']
+
+function placementForTopics(linkedTopics: Topic[], groupBy: Exclude<MaterialGroupBy, 'category'>, fallbackUnit?: string): MaterialPlacement {
+  if (groupBy === 'week') {
+    const weeks = linkedTopics.map((topic) => scheduledWeek(topic.scheduledFor)).filter((week) => week.key !== 'unmapped').sort((a, b) => a.sort.localeCompare(b.sort))
+    const week = weeks[0]
+    if (week) return { key: `week:${week.key}`, label: week.label, eyebrow: 'Scheduled week', sort: week.sort, topicIds: linkedTopics.map((topic) => topic.id), unitLabel: linkedTopics.find((topic) => topic.unit?.trim())?.unit?.trim(), unassigned: false }
+  } else {
+    const units = [...new Set([...linkedTopics.map((topic) => topic.unit?.trim()), fallbackUnit?.trim()].filter((unit): unit is string => Boolean(unit)))]
+    if (units.length) return { key: `unit:${units.join('|')}`, label: units.join(' · '), eyebrow: 'Syllabus unit', sort: units.join('|').toLowerCase(), topicIds: linkedTopics.map((topic) => topic.id), unitLabel: units[0], unassigned: false }
+  }
+  return { key: 'unassigned', label: 'Unassigned', eyebrow: 'Placement needed', sort: 'zzzz', topicIds: linkedTopics.map((topic) => topic.id), unitLabel: fallbackUnit?.trim() || undefined, unassigned: true }
+}
+
+function categoryPlacement(label: string, topicIds: string[]): MaterialPlacement {
+  const order = MATERIAL_CATEGORY_ORDER.indexOf(label)
+  return { key: `category:${label}`, label, eyebrow: 'Material category', sort: String(order < 0 ? 999 : order).padStart(3, '0'), topicIds, unassigned: false }
+}
+
+function groupMaterials(files: AcademicFile[], notes: ClassNote[], topics: Topic[], groupBy: MaterialGroupBy): MaterialGroup[] {
+  const map = new Map<string, MaterialGroup>()
+  const insert = (placement: MaterialPlacement, kind: 'file' | 'note', item: AcademicFile | ClassNote) => {
+    const current = map.get(placement.key) ?? { ...placement, files: [], notes: [], topicCount: 0 }
+    if (kind === 'file') current.files.push(item as AcademicFile)
+    else current.notes.push(item as ClassNote)
+    current.topicIds = [...new Set([...current.topicIds, ...placement.topicIds])]
+    current.topicCount = current.topicIds.length
+    map.set(placement.key, current)
+  }
   for (const file of files) {
-    const linkedIds = new Set([file.topicId, ...file.linkedTopicIds].filter(Boolean))
-    const units = [...new Set(topics.filter((topic) => linkedIds.has(topic.id)).map((topic) => topic.unit?.trim()).filter(Boolean))]
-    const key = units.join(', ') || 'Unassigned'
-    map.set(key, [...(map.get(key) ?? []), file])
+    const linked = linkedTopicsForFile(file, topics)
+    insert(groupBy === 'category' ? categoryPlacement(materialCategoryForFile(file), linked.map((topic) => topic.id)) : placementForTopics(linked, groupBy), 'file', file)
   }
-  return [...map.entries()].map(([unit, groupedFiles]) => {
-    const unitTopics = topics.filter((topic) => topic.unit === unit)
-    return { unit, files: groupedFiles, ready: unitTopics.filter((topic) => topic.status === 'ready').length, topicCount: unitTopics.length, ownership: groupedFiles.map((file) => fileOwnership(file, notes)) }
-  })
-}
-
-function fileOwnership(file: AcademicFile, notes: ClassNote[]): 'course' | 'mine' | 'generated' {
-  if (notes.some((note) => note.linkedFileIds.includes(file.id))) return 'mine'
-  if (file.type === 'study-guide') return 'generated'
-  return 'course'
+  for (const note of notes) {
+    const linked = linkedTopicsForNote(note, topics, files)
+    insert(groupBy === 'category' ? categoryPlacement(materialCategoryForNote(note), linked.map((topic) => topic.id)) : placementForTopics(linked, groupBy, note.unit), 'note', note)
+  }
+  return [...map.values()].sort((a, b) => a.sort.localeCompare(b.sort) || a.label.localeCompare(b.label))
 }
 
 function hasGrade(item: ClassAssignment) {
@@ -1610,7 +1697,7 @@ function ordered<T extends { order: number }>(items: T[]) {
 }
 
 function isHubTab(value: string | null): value is HubTab {
-  return value === 'overview' || value === 'materials' || value === 'topics' || value === 'readings' || value === 'assignments' || value === 'notes'
+  return value === 'overview' || value === 'materials' || value === 'topics' || value === 'assignments' || value === 'guide'
 }
 
 function isoToday() {
@@ -1624,3 +1711,10 @@ function titleCase(value: string) {
 function formatNumber(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1)
 }
+
+// These remain the app-native renderers for follow-on Materials/Assignments
+// briefs. Keeping their typed contracts live prevents those tab implementations
+// from drifting while the approved Overview no longer renders them.
+void CoverageLedger
+void CategoryBar
+void categoryStats

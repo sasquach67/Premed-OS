@@ -6,47 +6,50 @@
 <title>Academics — class page, five sub-tabs (APPROVED)</title>
 <!--
   ============================================================================
-  ACADEMICS — PER-CLASS PAGE (center peek → EXPAND) — APPROVED
+  ACADEMICS — PER-CLASS PAGE (direct Open) — APPROVED
   ============================================================================
-  Status: APPROVED (July 2026). REVISED from the original single-bento hub —
-  a semester of material does not fit on one screen. Spec: tabs/01-academics.md §4.1-I.
+  Status: APPROVED (July 2026). Review Session, Class Plan, Forgetting Curve,
+  and Anki/review handoffs RETIRED by Andy Aug 29, 2026. Source-backed flashcards
+  remain one generated Materials resource. Lecture workflow revision
+  APPROVED by Andy Aug 27, 2026. REVISED from the original single-bento hub — a semester of
+  material does not fit on one screen. Spec: tabs/01-academics.md §4.1-I/K.
 
   RELATED: academics-daily-main-page.html (opens from a class card) ·
-           academics-review-session.html (Start review) ·
            mascot-note-pattern.html · overview-bento-control-panel.html
 
   DECISIONS THIS FILE ENCODES
-  1. FIVE SUB-TABS: Overview · Materials · Topics · Assignments · Notes,
+  1. FIVE SUB-TABS: Overview · Materials · Topics · Assignments · Guide,
      sharing ONE banner (crumb, class dot+code+name, compact info line,
-     glass stat strip, single primary action "Start review", ⋯).
+     glass stat strip and compact class actions).
      Class info is a LINE not a panel (01 §4b-ii) — fixed facts don't earn space.
   2. OVERVIEW is a master view of THIS class — NOT a copy of Class Center
-     (which is cross-class). Leads with a status row, then due-today,
-     exam scope, coming up, recently-covered, grade breakdown, contacts,
-     mastery trend.
-  3. EXAM SCOPE: segmented bar + LABELLED legend + an on-screen explanation
-     of how scope was derived. An unlabelled stacked bar was REJECTED —
-     it implied proportions of something unnamed. Do not reintroduce.
+     (which is cross-class). A bounded Class journal and direct transcript-first
+     panel lead as one balanced workspace. The compact course pulse and recent
+     source-backed study work follow. No review scheduler appears.
+  3. COURSE PULSE consolidates the next assignment, labelled Midterm readiness,
+     material filing, and Guide suggestions into one subordinate surface.
   4. EVERYTHING IS GROUPED — no flat piles:
      · Materials by week/module (module header shows unit range AND study
        state), with 3-way ownership: Course / Mine / Generated.
      · Topics into unit sections in course order, each with its own progress.
-     · Assignments by SYLLABUS CATEGORY (that's how the grade is computed),
-       each with weight, completion, and your average in that category.
-     · Notes by kind: Exam intel · Questions to ask · Priming · Lecture.
+     · Assignments as the familiar time-based agenda, fixed to this course;
+       grade categories and what-if stay here because they are class-specific.
+     · Guide by kind: Exam intel · Questions to ask · Priming · Lecture.
   5. TWO KINDS OF NOTES, never merged:
-     · Notes tab = notes ABOUT the class (meta/intel).
+     · Guide = information ABOUT the class (meta/intel).
      · Materials → My notes = notes ON the material (your own pages),
-       tagged "Mine" and citable by the active-recall gap report.
+       tagged "Mine" and usable as selected evidence for generated study work.
   6. PRIMING block per Materials module — questions to hold in mind BEFORE
-     reading; rolls up as a Notes category.
+     reading; rolls up as a Guide category.
   7. NOTE INGEST via watched folder (Goodnotes Auto Backup → Drive/Dropbox).
      Structure INFERRED and pre-filled, confirmed ONCE, silent thereafter.
      One-way; never writes back. Unplaceable pages import flagged "confirm week".
-  8. Anki decoupled — no sync chips, no scheduler. Optional "Send to Anki"
-     only when AnkiConnect is detected.
-  9. Study tools = ONE primary "Generate study guide" + overflow, plus
-     contextual entry (a topic's ⋯ → "Quiz me on this").
+  8. The shared banner is an 18px rounded shell. Its ambience follows the
+     class's saved colour; the study-resource action stays blue so its meaning
+     is consistent across classes.
+  9. "Create study resources" opens one format menu: Flashcards, Study Guide,
+     Study Outline, or Revised Notes. Academics has no Anki, review queue, or
+     Quiz me action.
 
   GLASS (04 §0c): frosted only on the banner stat strip. Everything else solid.
   Build from library components (01-academics.md §7a), never copy this markup.
@@ -66,7 +69,7 @@ body{margin:0;background:#151310;color:var(--fg);font-family:'Nunito',system-ui,
 .d{font-family:'Baloo 2';font-weight:800;font-variant-numeric:tabular-nums}
 .lab{font-family:'Baloo 2';font-weight:800;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#6b6862;padding:18px 24px 8px;background:#151310}
 /* banner */
-.ban{padding:15px 24px 0;background:radial-gradient(340px 200px at 88% 6%,rgba(75,156,211,.32),transparent 70%),linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%)}
+.ban{padding:15px 24px 0;border:1px solid rgba(75,156,211,.28);border-radius:18px;background:radial-gradient(340px 200px at 88% 6%,rgba(75,156,211,.32),transparent 70%),linear-gradient(115deg,#233448 0%,#2c3a4a 45%,#3a3730 100%);box-shadow:0 14px 32px -28px rgba(75,156,211,.78),inset 0 1px 0 rgba(75,156,211,.2)}
 .crumb{font-family:'Baloo 2';font-weight:700;font-size:12.5px;color:rgba(255,255,255,.72);margin-bottom:9px}
 .h1{font-family:'Baloo 2';font-weight:800;font-size:31px;color:#fff;display:flex;align-items:center;gap:11px;letter-spacing:-.4px}
 .cdot{width:12px;height:12px;border-radius:4px;background:var(--cat);box-shadow:0 0 12px rgba(75,156,211,.7)}
@@ -80,15 +83,31 @@ body{margin:0;background:#151310;color:var(--fg);font-family:'Nunito',system-ui,
 .bsl{font-size:9px;font-family:'Baloo 2';font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.6)}
 .startb{border-radius:12px;padding:11px 19px;font-family:'Baloo 2';font-weight:800;font-size:14px;background:#fff;color:#16222c}
 .ib{width:38px;height:38px;border-radius:11px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);display:grid;place-items:center;color:#fff}
+.resource-chooser{position:relative}.resource-trigger{height:38px;padding:0 13px;border-radius:11px;border:1px solid rgba(255,255,255,.2);background:#4b9cd3;color:#102333;box-shadow:0 8px 20px -14px rgba(75,156,211,.9),inset 0 1px 0 rgba(255,255,255,.25);font:800 11.5px 'Baloo 2';white-space:nowrap}.resource-trigger:hover{background:#64afe0}.resource-menu{display:none;position:absolute;right:0;top:44px;z-index:8;width:190px;padding:6px;border:1px solid var(--bd);border-radius:12px;background:var(--card);box-shadow:0 18px 34px -18px rgba(0,0,0,.88)}.resource-chooser.open .resource-menu{display:block}.resource-menu b{display:block;padding:5px 8px;color:var(--dim);font:800 9px 'Baloo 2';letter-spacing:.08em;text-transform:uppercase}.resource-menu span{display:block;padding:7px 8px;border-radius:8px;color:var(--fg);font:800 11px 'Baloo 2'}.resource-menu span:hover{background:var(--muted)}
 .tabs{display:flex;gap:26px;margin-top:15px;border-bottom:1px solid rgba(255,255,255,.13)}
 .tb{padding:11px 2px 12px;font-family:'Baloo 2';font-weight:700;font-size:14.5px;color:rgba(255,255,255,.6);position:relative;display:flex;gap:8px;align-items:center}
 .tb.on{color:#fff;font-weight:800}
 .tb.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--cat);box-shadow:0 0 12px rgba(75,156,211,.6)}
+.proto-layer{display:none}.proto-grid{padding:22px 24px 28px;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(250px,.65fr);gap:14px}.proto-stack{display:grid;gap:14px}.proto-kicker{font:800 10px 'Baloo 2';letter-spacing:.09em;text-transform:uppercase;color:var(--cat)}.proto-title{font:800 24px 'Baloo 2';margin:3px 0 6px}.proto-copy{color:var(--mut);font-weight:700;font-size:13px}.proto-list{margin-top:14px;border-top:1px solid var(--bd)}.proto-item{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--bd);font-size:13px}.proto-dot{width:10px;height:10px;border-radius:50%;background:var(--success);margin-top:5px;flex:none}.proto-pill{font:800 10px 'Baloo 2';padding:3px 8px;border-radius:999px;background:var(--muted);border:1px solid var(--bd);color:var(--mut)}.proto-pill.warn{color:var(--warning)}.proto-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}.proto-button{font:800 12px 'Baloo 2';padding:8px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--muted);color:var(--fg)}.proto-button.primary{background:var(--cat);color:#16222c;border-color:transparent}.stage-list{display:grid;gap:9px;margin-top:13px}.stage{padding:11px 12px;border-radius:13px;background:var(--muted);border:1px solid var(--bd);display:flex;justify-content:space-between;gap:10px;font-size:12.5px;font-weight:700}.stage.on{border-color:rgba(111,192,168,.65);box-shadow:inset 3px 0 0 var(--success)}body.proto-active .frame>:not(.proto-layer){display:none!important}body.proto-active .proto-layer.on{display:block}@media(max-width:760px){.proto-grid{grid-template-columns:1fr}.tabs{gap:13px;overflow:auto}.bstats{display:none}}
 .cnt{font-size:10.5px;font-family:'Baloo 2';font-weight:800;background:rgba(255,255,255,.14);border-radius:999px;padding:1px 8px}
 /* content */
 .wrap{padding:15px 24px 24px}
 .bento{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:15px 17px}
+.journal-shell{grid-column:span 12;display:grid;grid-template-columns:260px minmax(0,1fr);gap:14px}.journal-rail,.journal-stage{background:var(--card);border:1px solid var(--bd);border-radius:16px;overflow:hidden}.journal-rail{padding:13px}.journal-title{font:800 16px 'Baloo 2';margin:2px 0}.journal-caption{font-size:11px;color:var(--dim);font-weight:700}.journal-add{width:100%;margin-top:11px;padding:8px 9px;border:1px dashed rgba(75,156,211,.6);border-radius:9px;background:rgba(75,156,211,.07);font:800 11.5px 'Baloo 2';color:#8fc4ea;text-align:left}.journal-entry{position:relative;width:100%;margin-top:7px;padding:9px 10px;border:1px solid transparent;border-radius:11px;background:transparent;color:var(--fg);text-align:left}.journal-entry.on{border-color:var(--bd);background:var(--muted);box-shadow:inset 3px 0 0 var(--cat)}.journal-entry b{display:block;font-size:12px}.journal-entry span{display:block;margin-top:2px;color:var(--dim);font-size:10.5px;font-weight:700}.journal-status{position:absolute;right:8px;top:8px;padding:2px 5px;border-radius:99px;background:rgba(111,192,168,.13);color:var(--success);font:800 9px 'Baloo 2'}.journal-stage{padding:16px}.journal-kicker{font:800 10px 'Baloo 2';letter-spacing:.1em;text-transform:uppercase;color:var(--cat)}.journal-stage-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.journal-stage h2{margin:3px 0;font:800 23px 'Baloo 2';line-height:1.1}.journal-rule{margin:12px 0 0;padding:9px 10px;border-left:3px solid var(--warning);background:var(--muted);font-size:11.5px;color:var(--mut);font-weight:700}.journal-evidence{display:grid;grid-template-columns:repeat(3,1fr);margin-top:12px;border:1px solid var(--bd);border-radius:11px;overflow:hidden;background:var(--muted)}.journal-object{padding:10px;border-left:1px solid var(--bd)}.journal-object:first-child{border-left:0}.journal-object b{display:block;font-size:11.5px}.journal-object span{display:block;margin-top:3px;color:var(--dim);font-size:10.5px;font-weight:700}.journal-handoff{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;padding:10px;border:1px solid rgba(111,192,168,.34);border-radius:11px;background:rgba(111,192,168,.07)}.journal-handoff b{font:800 12px 'Baloo 2'}.journal-handoff span{display:block;margin-top:2px;color:var(--dim);font-size:10.5px;font-weight:700}@media(max-width:760px){.journal-shell{grid-template-columns:1fr}.journal-stage-head,.journal-handoff{align-items:flex-start;flex-direction:column}.journal-evidence{grid-template-columns:1fr}.journal-object{border-left:0;border-top:1px solid var(--bd)}.journal-object:first-child{border-top:0}.journal-rail{padding:11px}.journal-entry{margin-top:5px}}
+.journal-button{padding:8px 10px;border:1px solid var(--bd);border-radius:9px;background:var(--muted);color:var(--fg);font:800 11.5px 'Baloo 2';white-space:nowrap}
+.journal-list:focus-visible{outline:2px solid var(--cat);outline-offset:2px;border-radius:9px}
+.journal-shell{align-items:stretch}.journal-rail,.journal-stage{min-height:318px}.journal-list{height:154px;overflow-y:auto;margin-top:7px;padding-right:3px;scrollbar-color:var(--bd) transparent;scrollbar-width:thin}.journal-list .journal-entry{margin-top:0}.journal-list .journal-entry+.journal-entry{margin-top:4px}.journal-all{width:100%;margin-top:9px;padding:7px 9px;border:0;background:transparent;color:#8fc4ea;text-align:left;font:800 10.5px 'Baloo 2'}.journal-all:focus-visible{outline:2px solid var(--cat);outline-offset:2px}.journal-capture-default .capture-steps{margin-top:12px}.journal-capture-default .capture-drop{min-height:112px;margin-top:10px}.journal-capture-default .capture-actions{margin-top:9px}.journal-next{margin-top:9px;color:var(--dim);font:800 10px 'Baloo 2';letter-spacing:.03em}.journal-next b{color:var(--mut)}@media(max-width:760px){.journal-rail,.journal-stage{min-height:0}.journal-list{height:154px}}
+.lecture-shell{padding:22px 24px 28px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:14px}.lecture-shell .journal-rail{align-self:start}.lecture-workbench{min-width:0;background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:17px}.capture-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.capture-title{font:800 24px 'Baloo 2';line-height:1.08;margin:3px 0}.capture-copy{color:var(--mut);font-size:12px;font-weight:700;max-width:680px}.capture-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:15px;border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:#262320}.capture-step{min-width:0;padding:10px 11px;border-left:1px solid var(--bd);color:var(--dim)}.capture-step:first-child{border-left:0}.capture-step b{display:block;font:800 12px 'Baloo 2';color:var(--mut)}.capture-step span{display:block;margin-top:2px;font-size:10px;font-weight:700}.capture-step.on{background:rgba(75,156,211,.1);box-shadow:inset 0 -3px 0 var(--cat)}.capture-step.on b{color:#8fc4ea}.capture-step.done{background:rgba(111,192,168,.06)}.capture-step.done b{color:var(--success)}.capture-panel{margin-top:12px;border:1px solid var(--bd);border-radius:13px;background:#262320;padding:14px}.capture-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.capture-panel h3{font:800 17px 'Baloo 2';margin:2px 0}.capture-drop{margin-top:12px;min-height:160px;border:1px dashed rgba(75,156,211,.58);border-radius:12px;background:rgba(75,156,211,.05);display:grid;place-items:center;text-align:center;padding:24px}.capture-drop b{display:block;font:800 15px 'Baloo 2'}.capture-drop span{display:block;margin-top:4px;color:var(--dim);font-size:11px;font-weight:700}.capture-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:11px}.capture-action{padding:8px 11px;border:1px solid var(--bd);border-radius:9px;background:var(--muted);color:var(--fg);font:800 11px 'Baloo 2'}.capture-action.primary{background:var(--cat);border-color:var(--cat);color:#152331}.capture-action.quiet{background:transparent}.capture-action:focus-visible{outline:2px solid var(--cat);outline-offset:2px}.capture-options,.output-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.capture-option,.output-card{padding:12px;border:1px solid var(--bd);border-radius:11px;background:var(--muted)}.capture-option b,.output-card b{display:block;font:800 12px 'Baloo 2'}.capture-option span,.output-card span{display:block;margin-top:3px;color:var(--dim);font-size:10.5px;font-weight:700;line-height:1.4}.capture-option.on{border-color:rgba(111,192,168,.5);background:rgba(111,192,168,.07)}.source-list{margin-top:12px;border:1px solid var(--bd);border-radius:11px;overflow:hidden}.source-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:9px;align-items:center;padding:10px 11px;border-top:1px solid var(--bd);font-size:11.5px;font-weight:700}.source-row:first-child{border-top:0}.source-check{width:17px;height:17px;border:1px solid var(--bd);border-radius:5px;background:var(--card);display:grid;place-items:center;color:var(--success);font:800 10px 'Baloo 2'}.source-check.on{border-color:var(--success);background:rgba(111,192,168,.1)}.capture-note{margin-top:11px;padding:9px 10px;border-left:3px solid var(--warning);background:var(--muted);color:var(--mut);font-size:11px;font-weight:700}.capture-note b{color:var(--fg)}
+.class-pulse{grid-column:span 12;display:grid;grid-template-columns:170px repeat(4,minmax(0,1fr));background:var(--card);border:1px solid var(--bd);border-radius:16px;overflow:hidden}.pulse-heading{padding:13px 15px}.pulse-heading b{display:block;margin-top:2px;font:800 16px 'Baloo 2'}.pulse-item{min-width:0;padding:12px;border:0;border-left:1px solid var(--bd);background:transparent;color:var(--fg);text-align:left}.pulse-item span{display:block;color:var(--dim);font:800 9px 'Baloo 2';letter-spacing:.08em;text-transform:uppercase}.pulse-item b{display:block;margin-top:3px;font:800 12px 'Baloo 2';white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pulse-item i{display:block;margin-top:2px;color:var(--mut);font-size:10px;font-style:normal;font-weight:700}.pulse-item:focus-visible{outline:2px solid var(--cat);outline-offset:-3px}.pulse-item.urgent{box-shadow:inset 0 -3px 0 var(--warning)}
+.study-method{grid-column:span 12;background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:15px 17px}
+.study-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}.study-eyebrow{font:800 9px 'Baloo 2';letter-spacing:.1em;text-transform:uppercase;color:var(--cat)}.study-title{font:800 18px 'Baloo 2';margin-top:2px}.study-timing{padding:6px 10px;border-radius:9px;background:rgba(231,176,106,.1);border:1px solid rgba(231,176,106,.28);color:var(--warning);font:800 10.5px 'Baloo 2';white-space:nowrap}.study-layout{display:block}.method-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.method-group{border:1px solid var(--bd);border-radius:11px;background:var(--muted);padding:10px}.method-group-head{display:flex;align-items:center;gap:8px}.method-group-title{font:800 12.5px 'Baloo 2';flex:1}.method-count{min-width:22px;padding:1px 6px;border-radius:999px;background:var(--card);color:var(--mut);font:800 10px 'Baloo 2';text-align:center}.method-item{display:flex;align-items:center;gap:8px;margin-top:7px;padding-top:7px;border-top:1px solid var(--bd)}.method-name{min-width:0;flex:1;font-size:11.5px;font-weight:700}.method-action{border:0;border-radius:8px;padding:5px 9px;background:rgba(75,156,211,.16);color:#8fc4ea;font:800 10.5px 'Baloo 2';white-space:nowrap}.method-action.primary{background:var(--cat);color:#152331}.method-action:focus-visible{outline:2px solid var(--cat);outline-offset:2px}.method-track{display:flex;align-items:center;gap:6px;margin-left:2px}.method-stage{display:flex;align-items:center;gap:3px}.method-label{font:800 7.5px 'Baloo 2';letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-right:1px}.method-dot{width:7px;height:7px;border-radius:50%;background:var(--cat)}.method-dot.off{background:transparent;border:1.5px solid var(--bd)}.method-sep{width:1px;height:11px;background:var(--bd)}
+.forgetting-panel{grid-column:span 12;background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:15px 17px;box-shadow:0 10px 26px -14px rgba(0,0,0,.55)}.curve-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}.curve-title{font:800 18px 'Baloo 2';margin-top:2px}.curve-meta{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.curve-chip{padding:5px 9px;border-radius:9px;background:var(--muted);border:1px solid var(--bd);font:800 10px 'Baloo 2';color:var(--mut)}.curve-layout{display:grid;grid-template-columns:minmax(0,1fr) 245px;gap:12px}.curve-main{min-width:0;padding:11px;border:1px solid var(--bd);border-radius:12px;background:#262320}.curve-picker{width:100%;display:flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid var(--bd);border-radius:9px;background:var(--muted);color:var(--mut);font:700 11px 'Nunito';text-align:left}.curve-picker b{color:var(--fg);font:800 12px 'Baloo 2'}.curve-picker span{margin-left:auto;color:var(--cat);font:800 10px 'Baloo 2'}.curve-picker:focus-visible,.curve-link:focus-visible{outline:2px solid var(--cat);outline-offset:2px}.curve-key{display:flex;gap:13px;align-items:center;flex-wrap:wrap;margin-top:7px;color:var(--dim);font-size:10px;font-weight:700}.curve-key-item{display:flex;align-items:center;gap:5px}.curve-line{width:22px;border-top:2px solid var(--cat)}.curve-line.dash{border-top-style:dashed}.curve-line.reset{width:0;height:12px;border-top:0;border-left:2px solid var(--success)}.curve-line.exam{width:0;height:12px;border-top:0;border-left:2px dashed var(--warning)}.curve-legends{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}.curve-teach{padding:9px;border:1px solid var(--bd);border-radius:10px;background:var(--muted)}.curve-teach b{display:block;font:800 11px 'Baloo 2'}.curve-teach span{display:block;margin-top:2px;color:var(--dim);font-size:10px;font-weight:700;line-height:1.4}.curve-rail{border-left:1px solid var(--bd);padding-left:12px}.curve-rail-title{font:800 13px 'Baloo 2';margin:4px 0}.curve-gapbox{margin-top:10px;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--muted)}.curve-gaps{margin-top:4px;color:var(--cat);font:800 16px 'Baloo 2';font-variant-numeric:tabular-nums}.curve-gaps span{color:var(--dim);font-size:10px}.curve-link{border:0;background:transparent;color:var(--cat);font:800 10.5px 'Baloo 2';white-space:nowrap;padding:2px}.topic-method-row .curve-link{margin-left:2px}
+.pretest-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:13px}.pretest-prompt{background:var(--muted);border:1px solid var(--bd);border-radius:12px;padding:13px}.pretest-prompt span{display:block;color:var(--dim);font:800 9px 'Baloo 2';letter-spacing:.08em;text-transform:uppercase}.pretest-prompt b{display:block;margin-top:5px;font:800 13px 'Baloo 2';line-height:1.35}.response-box{min-height:110px;margin-top:12px;border:1px dashed rgba(75,156,211,.5);background:#262320;border-radius:12px;padding:13px;color:var(--dim);font-size:12px;font-weight:700}.predict-row{display:grid;grid-template-columns:135px minmax(0,1fr);gap:10px;padding:11px 0;border-top:1px solid var(--bd)}.predict-row:first-of-type{margin-top:12px}.predict-row>span{font:800 10px 'Baloo 2';text-transform:uppercase;letter-spacing:.07em;color:var(--dim)}.predict-answer{font-size:12.5px;font-weight:700}.resurface{margin-top:13px;border:1px solid rgba(111,192,168,.38);background:rgba(111,192,168,.07);border-radius:13px;padding:13px}.empty-host{max-width:920px;margin:22px auto;background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:22px}.empty-host .proto-title{max-width:620px}.empty-host .proto-copy{max-width:680px}.source-labels{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+@media(max-width:960px){.class-pulse{grid-template-columns:140px repeat(2,minmax(0,1fr))}.pulse-heading{grid-row:span 2}.pulse-item:nth-child(4),.pulse-item:nth-child(5){border-top:1px solid var(--bd)}.topic-method-row{flex-wrap:wrap}.topic-method-row .method-track{width:100%;justify-content:flex-end}}
+@media(max-width:960px){.curve-layout{grid-template-columns:1fr}.curve-rail{border-left:0;border-top:1px solid var(--bd);padding:10px 0 0}}
+@media(max-width:760px){.class-pulse{grid-template-columns:1fr}.pulse-heading{grid-row:auto}.pulse-item{border-left:0;border-top:1px solid var(--bd)}.study-head,.curve-head{flex-direction:column}.study-timing{white-space:normal}.method-groups,.curve-legends{grid-template-columns:1fr}.curve-meta{justify-content:flex-start}.topic-method-row .method-track{justify-content:flex-start;overflow:auto;padding-top:2px}}
+@media(max-width:760px){.lecture-shell{grid-template-columns:1fr;padding:14px}.capture-top,.capture-panel-head{flex-direction:column}.capture-steps{grid-template-columns:1fr}.capture-step{border-left:0;border-top:1px solid var(--bd)}.capture-step:first-child{border-top:0}.capture-options,.output-grid,.pretest-grid{grid-template-columns:1fr}.capture-drop{min-height:130px}.predict-row{grid-template-columns:1fr}.empty-host{margin:14px}}
 .ti{font-family:'Baloo 2';font-weight:800;font-size:15.5px}
 .sb{font-size:11.5px;color:var(--dim);font-weight:700}
 .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px}
@@ -121,6 +140,22 @@ body{margin:0;background:#151310;color:var(--fg);font-family:'Nunito',system-ui,
 .gr{display:flex;align-items:center;gap:11px;padding:9px 14px;border-top:1px solid var(--muted);font-size:12.5px;font-weight:700}
 .gr:first-of-type{border-top:none}
 .gr.mine{background:rgba(111,192,168,.06)}
+.taskrow{cursor:pointer}
+.taskgrip{color:var(--dim);font-weight:800;letter-spacing:-2px}
+.taskcheck{width:17px;height:17px;flex:0 0 17px;border:2px solid var(--dim);border-radius:5px;background:transparent;cursor:pointer}
+.taskcheck:hover,.taskcheck:focus-visible{border-color:var(--pri);outline:none}
+.taskstar,.taskmore{border:0;background:transparent;color:var(--dim);font:800 15px 'Baloo 2';padding:2px;cursor:pointer}
+.taskstar.on{color:var(--warning)}
+.taskstar:focus-visible,.taskmore:focus-visible{outline:2px solid var(--pri);outline-offset:2px;border-radius:4px}
+.support-label{margin:18px 2px 8px;font:800 10px 'Baloo 2';letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.guide-suggest{align-self:start}
+.guide-wrap{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px;align-items:start}
+.suggestion{padding:12px 14px;border-top:1px solid var(--muted)}
+.suggestion:first-of-type{border-top:none}
+.suggest-source{font:800 9px 'Baloo 2';letter-spacing:.08em;text-transform:uppercase;color:#8fc4ea}
+.suggest-title{font:800 13px 'Baloo 2';margin-top:4px;line-height:1.35}
+.suggest-copy{font-size:11.5px;color:var(--mut);line-height:1.45;margin-top:3px}
+.suggest-actions{display:flex;align-items:center;gap:8px;margin-top:9px}
 .ic{width:26px;height:26px;border-radius:7px;background:var(--card);border:1px solid var(--bd);display:grid;place-items:center;font-size:12px}
 .ic.mine{background:rgba(111,192,168,.16);border-color:rgba(111,192,168,.4)}
 .own{font-size:9px;font-family:'Baloo 2';font-weight:800;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;padding:2px 8px}
@@ -137,7 +172,7 @@ body{margin:0;background:#151310;color:var(--fg);font-family:'Nunito',system-ui,
 </head>
 <body>
 <div class="frame">
-<h1 class="sr-only">CHEM 262 class page — Overview, Materials, Topics, Assignments, Notes</h1>
+<h1 class="sr-only">CHEM 262 class page — Overview, Materials, Topics, Assignments, Guide</h1>
 
 <!-- ══ SHARED BANNER (identical on every sub-tab) ════════════════════════ -->
 <div class="ban">
@@ -150,98 +185,41 @@ body{margin:0;background:#151310;color:var(--fg);font-family:'Nunito',system-ui,
   <div style="display:flex;gap:11px;align-items:center">
    <div class="bstats">
     <div class="bs"><div class="bsv" style="color:var(--warning)">B+</div><div class="bsl">Grade</div></div>
-    <div class="bs"><div class="bsv">8<span style="font-size:12px;color:rgba(255,255,255,.6)">/18</span></div><div class="bsl">Ready</div></div>
-    <div class="bs"><div class="bsv" style="color:#f0c68a">2</div><div class="bsl">Due today</div></div>
+    <div class="bs"><div class="bsv">18</div><div class="bsl">Topics</div></div>
+    <div class="bs"><div class="bsv" style="color:#f0c68a">38</div><div class="bsl">Materials</div></div>
     <div class="bs"><div class="bsv" style="color:#f0a08f">6d</div><div class="bsl">Midterm 2</div></div>
    </div>
-   <div class="startb">▶ Start review</div><div class="ib">⋯</div>
+   <div class="resource-chooser"><button class="resource-trigger" type="button">✦ Create study resources⌄</button><div class="resource-menu"><b>Choose a format</b><span>Flashcards</span><span>Study guide</span><span>Study outline</span><span>Revised notes</span></div></div><div class="ib">⋯</div>
   </div>
  </div>
  <div class="tabs">
   <div class="tb on">Overview</div><div class="tb">Materials <span class="cnt">38</span></div>
   <div class="tb">Topics <span class="cnt">18</span></div><div class="tb">Assignments <span class="cnt">9</span></div>
-  <div class="tb">Notes <span class="cnt">14</span></div>
+  <div class="tb">Guide <span class="cnt">14</span></div>
  </div>
 </div>
 
 <!-- ══ TAB 1 — OVERVIEW ══════════════════════════════════════════════════ -->
 <div class="wrap"><div class="bento">
- <div class="card" style="grid-column:span 12;display:flex;gap:28px;align-items:center">
-  <div><div class="big" style="color:var(--warning)">B+</div><div class="l">87.4% · 37% graded</div></div>
-  <div><div class="big">8<span style="font-size:16px;color:var(--dim)">/18</span></div><div class="l">Topics ready</div></div>
-  <div><div class="big" style="color:var(--danger)">6d</div><div class="l">Midterm 2</div></div>
-  <div><div class="big" style="color:var(--success)">13</div><div class="l">Day streak</div></div>
-  <div><div class="big" style="color:var(--mcat)">11</div><div class="l">MCAT-relevant</div></div>
-  <div style="flex:1;max-width:300px"><div class="sb" style="margin-bottom:5px">Course coverage · units 1–8 of 12</div>
-   <div class="bar" style="height:9px"><div style="width:67%;background:var(--cat)"></div></div>
-   <div class="sb" style="margin-top:5px">94% of material mapped · 3 unassigned</div></div>
- </div>
-
- <div class="card" style="grid-column:span 4">
-  <div class="hd"><span class="ti">Due today</span><span class="sb">2 · ~12 min</span></div>
-  <div class="row"><span style="flex:1">SN1 / SN2 mechanisms</span><span class="pct" style="color:var(--danger)">54%</span></div>
-  <div class="row"><span style="flex:1">Stereochemistry — chirality</span><span class="pct" style="color:var(--warning)">87%</span></div>
-  <div class="pace" style="margin-top:10px">↗ At <b>3 topics/day</b> you're <b>exam-ready by Thursday</b>.</div>
- </div>
-
- <!-- exam scope: LABELLED legend + explanation. No unlabelled stacked bar. -->
- <div class="card" style="grid-column:span 4">
-  <div class="hd"><span class="ti">Midterm 2 scope</span><span class="sb">Units 4–7 · Friday</span></div>
-  <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:9px"><span class="d" style="font-size:22px;color:var(--warning)">4</span><span class="sb">of 9 topics exam-ready</span></div>
-  <div class="seg"><div style="width:44.4%;background:var(--success)"></div><div style="width:22.2%;background:var(--cat)"></div><div style="width:33.4%;background:var(--danger)"></div></div>
-  <div class="lg">
-   <span class="lgi"><span class="dot" style="background:var(--success)"></span>Ready 4</span>
-   <span class="lgi"><span class="dot" style="background:var(--cat)"></span>Reviewing 2</span>
-   <span class="lgi"><span class="dot" style="background:var(--danger)"></span>Weak 3</span>
-  </div>
-  <div class="expl">Scope comes from your syllabus: the exam covers <b style="color:var(--mut)">Units 4–7</b>, so every topic in those units counts — 9 in total. The bar is those 9 by review state.</div>
- </div>
-
- <div class="card" style="grid-column:span 4">
-  <div class="hd"><span class="ti">Coming up</span><span class="lk">All →</span></div>
-  <div class="row"><span style="flex:1">Midterm 2 · 20%</span><span style="color:var(--danger)">Fri</span></div>
-  <div class="row"><span style="flex:1">Problem set 6 · 2.5%</span><span style="color:var(--warning)">Wed</span></div>
-  <div class="row"><span style="flex:1">Post-lab writeup 4 · 4%</span><span style="color:var(--dim)">Nov 12</span></div>
-  <div class="row"><span style="flex:1">Final exam · 30%</span><span style="color:var(--dim)">Dec 14</span></div>
- </div>
-
- <div class="card" style="grid-column:span 5">
-  <div class="hd"><span class="ti">Recently covered</span><span class="sb">have you reviewed it yet?</span></div>
-  <div class="row"><span class="unit">U7</span><span style="flex:1">Alcohols &amp; ethers</span><span class="sb">Lec 17 · Nov 4</span><span class="st" style="background:var(--muted);color:var(--mut)">Seen</span></div>
-  <div class="row"><span class="unit">U6</span><span style="flex:1">Zaitsev &amp; Hofmann</span><span class="sb">Lec 16 · Nov 1</span><span class="st" style="background:rgba(75,156,211,.22);color:var(--cat)">Reviewing</span></div>
-  <div class="row"><span class="unit">U6</span><span style="flex:1">E1 / E2 elimination</span><span class="sb">Lec 16 · Nov 1</span><span class="st" style="background:rgba(232,128,111,.2);color:var(--danger)">Weak</span></div>
-  <div class="warn" style="margin-top:10px">◑ <b>Unit 8</b> was covered Nov 6 and has <b>never been reviewed</b>.</div>
- </div>
-
- <div class="card" style="grid-column:span 4">
-  <div class="hd"><span class="ti">Grade breakdown</span><span class="lk">What-if →</span></div>
-  <div class="row"><span style="flex:1">Problem sets</span><span class="sb">15%</span><span class="d" style="color:var(--success)">88%</span></div>
-  <div class="row"><span style="flex:1">Labs</span><span class="sb">20%</span><span class="d" style="color:var(--success)">91%</span></div>
-  <div class="row"><span style="flex:1">Midterms</span><span class="sb">35%</span><span class="d" style="color:var(--warning)">84%</span></div>
-  <div class="row" style="color:var(--dim)"><span style="flex:1">Final</span><span class="sb">30%</span><span class="d">—</span></div>
-  <div class="expl">Weights parsed from your syllabus and they sum to <b style="color:var(--success)">100%</b> ✓</div>
- </div>
-
- <div class="card" style="grid-column:span 3">
-  <div class="hd"><span class="ti">Class contacts</span><span class="lk">All →</span></div>
-  <div class="row"><span class="av">DE</span><div style="flex:1"><div>Dr. Elamin</div><div class="sb">Office hrs Tue 2–4</div></div></div>
-  <div class="row"><span class="av">MR</span><div style="flex:1"><div>Maya Reyes · TA</div><div class="sb">Recitation Thu 3pm</div></div></div>
-  <div class="row"><span class="av">AK</span><div style="flex:1"><div>Study group</div><div class="sb">Sun 6pm · Davis</div></div></div>
- </div>
-
- <div class="card" style="grid-column:span 12">
-  <div class="hd"><span class="ti">Mastery over the semester</span><span class="sb">topics ready · actual vs projected</span></div>
-  <svg viewBox="0 0 1300 90" style="width:100%;height:88px">
-   <line x1="0" y1="74" x2="1300" y2="74" stroke="#3c352d"/><line x1="0" y1="12" x2="1300" y2="12" stroke="#3c352d" stroke-dasharray="3 6"/>
-   <path d="M20 70 L180 66 L340 58 L500 50 L660 42 L820 30 L900 26 L900 78 L20 78 Z" fill="rgba(111,192,168,.16)"/>
-   <path d="M20 70 L180 66 L340 58 L500 50 L660 42 L820 30 L900 26" fill="none" stroke="#6fc0a8" stroke-width="2.5" stroke-linecap="round"/>
-   <circle cx="900" cy="26" r="4" fill="#6fc0a8"/>
-   <path d="M900 26 L1060 20 L1220 12" fill="none" stroke="#4b9cd3" stroke-width="2.5" stroke-dasharray="5 4"/>
-   <circle cx="1220" cy="12" r="3.5" fill="none" stroke="#4b9cd3" stroke-width="2"/>
-   <text x="874" y="88" fill="#a89c8c" font-size="10" font-family="Nunito" font-weight="700">today · 8</text>
-   <text x="1160" y="88" fill="#4b9cd3" font-size="10" font-family="Nunito" font-weight="700">Dec 8 · all 18</text>
-  </svg>
- </div>
+ <section class="journal-shell">
+  <aside class="journal-rail"><div class="journal-kicker">Class journal</div><div class="journal-title">Lecture evidence</div><div class="journal-caption">5 lectures · newest first</div><div class="journal-list" tabindex="0" aria-label="Lecture history"><button class="journal-entry"><b>Lecture 17 · E1 vs E2</b><span>Nov 6 · transcript + 2 materials</span><i class="journal-status">ready</i></button><button class="journal-entry"><b>Lecture 16 · Elimination</b><span>Nov 4 · transcript saved</span><i class="journal-status">captured</i></button><button class="journal-entry"><b>Lecture 15 · Alcohols</b><span>Nov 1 · transcript + 2 materials</span><i class="journal-status">study work</i></button><button class="journal-entry"><b>Lecture 14 · Substitution</b><span>Oct 30 · transcript + slides</span><i class="journal-status">ready</i></button><button class="journal-entry"><b>Lecture 13 · Alkyl halides</b><span>Oct 27 · transcript saved</span><i class="journal-status">captured</i></button></div><button class="journal-all">View all 5 lectures →</button></aside>
+  <article class="journal-stage journal-capture-default"><div class="journal-stage-head"><div><div class="journal-kicker">Today · 10:10a · Kenan B12</div><h2>Add transcript</h2></div><span class="proto-pill">Lecture 18</span></div><div class="capture-steps"><div class="capture-step on"><b>1 · Transcript</b><span>Required</span></div><div class="capture-step"><b>2 · Evidence</b><span>Optional</span></div><div class="capture-step"><b>3 · Study work</b><span>After capture</span></div></div><div class="capture-drop"><div><b>Drop a transcript file</b><span>PDF, DOCX, TXT, or clipboard text</span></div></div><div class="capture-actions"><button class="capture-action primary">Import transcript</button><button class="capture-action">Paste transcript</button></div><div class="journal-next"><b>Next:</b> optional file, screenshot, or textbook excerpt → study work</div></article>
+ </section>
+ <section class="class-pulse">
+  <div class="pulse-heading"><div class="study-eyebrow">Course pulse</div><b>What needs attention</b></div>
+  <button class="pulse-item urgent"><span>Assignments</span><b>Problem set 6 · Wed</b><i>2 due today · Open →</i></button>
+  <button class="pulse-item"><span>Midterm 2</span><b>9 syllabus topics in scope</b><i>Units 4–7 · Open exam plan →</i></button>
+  <button class="pulse-item"><span>Materials</span><b>38 course items</b><i>3 need filing · Open →</i></button>
+  <button class="pulse-item"><span>Guide</span><b>2 suggestions</b><i>Office hours Tue 2–4 · Review →</i></button>
+ </section>
+ <section class="study-method">
+  <div class="study-head"><div><div class="study-eyebrow">Recent study work</div><div class="study-title">Built from this class</div><div class="sb">Every resource keeps its selected sources attached.</div></div><button class="method-action primary">Create study resources⌄</button></div>
+  <div class="study-layout"><div class="method-groups">
+   <div class="method-group"><div class="method-group-head"><span class="method-group-title">Unit 6 study outline</span><span class="method-count">3 sources</span></div><div class="method-item"><span class="method-name">Transcript · slides · textbook excerpt</span><button class="method-action">Open</button></div></div>
+   <div class="method-group"><div class="method-group-head"><span class="method-group-title">Learning objectives</span><span class="method-count">2 sources</span></div><div class="method-item"><span class="method-name">Syllabus standards · Lecture 17</span><button class="method-action">Open</button></div></div>
+   <div class="method-group"><div class="method-group-head"><span class="method-group-title">Revised notes</span><span class="method-count">3 sources</span></div><div class="method-item"><span class="method-name">Your notes remain the baseline</span><button class="method-action">Open</button></div></div>
+  </div></div>
+ </section>
 </div></div>
 
 <!-- ══ TAB 2 — MATERIALS ═════════════════════════════════════════════════ -->
@@ -250,7 +228,7 @@ body{margin:0;background:#151310;color:var(--fg);font-family:'Nunito',system-ui,
  <div class="fb"><span class="f on">All 38</span><span class="f">From the course 26</span>
   <span class="f" style="background:rgba(111,192,168,.16);color:var(--success);border-color:rgba(111,192,168,.4)">My notes 12</span>
   <span class="f">Generated 4</span><span class="f">Unassigned 3</span>
-  <span class="f" style="margin-left:auto">By week ⌄</span><span class="f">＋ Import from Canvas</span><span class="f">＋ Add file</span></div>
+  <span class="f" style="margin-left:auto">By week ⌄</span><span class="f">＋ Add material</span></div>
 
  <div class="grp">
   <div class="gh"><span class="unit">Week 9</span><span class="gt">Elimination reactions</span><span class="gm">Units 6–7</span><span class="st" style="background:rgba(75,156,211,.2);color:#8fc4ea;margin-left:auto">Current</span></div>
@@ -268,39 +246,43 @@ body{margin:0;background:#151310;color:var(--fg);font-family:'Nunito',system-ui,
 </div>
 
 <!-- ══ TAB 3 — TOPICS ════════════════════════════════════════════════════ -->
-<div class="lab">Tab 3 · Topics — grouped into unit sections, course order</div>
+<div class="lab">Tab 3 · Topics — grouped by syllabus week, course order</div>
 <div class="wrap">
- <div class="fb"><span class="f on">All 18</span><span class="f">Weak 3</span><span class="f">Due 2</span><span class="f">Never reviewed 1</span><span class="f">In exam scope 9</span><span class="f" style="margin-left:auto">Group: by unit ⌄</span></div>
+ <div class="fb"><span class="f on">All 18</span><span class="f">With materials 14</span><span class="f">Needs material 4</span><span class="f">In exam scope 9</span><span class="f" style="margin-left:auto">Group: by week ⌄</span></div>
  <div class="grp">
-  <div class="gh"><span class="unit">Unit 5</span><span class="gt">Substitution mechanisms</span><span class="gm">Weeks 7–8 · in exam scope</span>
+  <div class="gh"><span class="unit">Weeks 7–8</span><span class="gt">Substitution mechanisms</span><span class="gm">Unit 5 · in exam scope</span>
    <span style="margin-left:auto;display:flex;gap:9px;align-items:center"><span class="gm">1 of 3 ready</span><div class="bar" style="width:80px"><div style="width:33%;background:var(--success)"></div></div></span></div>
-  <div class="gr"><span style="flex:1">Nucleophilic substitution basics</span><span class="sb">recall 3d ago</span><div class="bar" style="width:70px"><div style="width:90%;background:var(--success)"></div></div><span class="pct" style="color:var(--success)">90%</span><span class="st" style="background:rgba(111,192,168,.2);color:var(--success)">Ready</span><span class="st" style="background:rgba(140,123,212,.2);color:#c4b6f2">MCAT</span></div>
-  <div class="gr"><span style="flex:1">SN1 / SN2 mechanisms</span><span class="sb">recall 4d ago</span><div class="bar" style="width:70px"><div style="width:54%;background:var(--danger)"></div></div><span class="pct" style="color:var(--danger)">54%</span><span class="st" style="background:rgba(232,128,111,.2);color:var(--danger)">Weak</span><span class="st" style="background:rgba(140,123,212,.2);color:#c4b6f2">MCAT</span></div>
+  <div class="gr"><span style="flex:1">Nucleophilic substitution basics</span><span class="sb">Lecture 15 · 3 linked materials</span><span class="st" style="background:rgba(111,192,168,.2);color:var(--success)">Covered</span><span class="st" style="background:rgba(140,123,212,.2);color:#c4b6f2">MCAT</span><button class="curve-link">Open sources →</button></div>
+  <div class="gr"><span style="flex:1">SN1 / SN2 mechanisms</span><span class="sb">Lecture 16 · 4 linked materials</span><span class="st" style="background:rgba(75,156,211,.22);color:#8fc4ea">Notes linked</span><span class="st" style="background:rgba(140,123,212,.2);color:#c4b6f2">MCAT</span><button class="curve-link">Open sources →</button></div>
  </div>
  <div class="grp">
-  <div class="gh"><span class="unit">Unit 8</span><span class="gt">Conjugation &amp; dienes</span><span class="gm">Week 10 · covered Nov 6</span>
+  <div class="gh"><span class="unit">Week 10</span><span class="gt">Conjugation &amp; dienes</span><span class="gm">Unit 8 · covered Nov 6</span>
    <span style="margin-left:auto;display:flex;gap:9px;align-items:center"><span class="gm">0 of 2 ready</span><div class="bar" style="width:80px"></div></span></div>
-  <div class="gr"><span style="flex:1">Conjugated systems &amp; stability</span><span class="sb" style="color:#8fc4ea">never reviewed</span><div class="bar" style="width:70px"></div><span class="pct" style="color:var(--dim)">—</span><span class="st" style="background:rgba(75,156,211,.22);color:#8fc4ea">Not started</span></div>
-  <div class="gr" style="color:var(--dim)"><span style="flex:1">＋ Covered a topic today (starts its review clock)</span></div>
+  <div class="gr"><span style="flex:1">Conjugated systems &amp; stability</span><span class="sb" style="color:#8fc4ea">No linked lecture material yet</span><span class="st" style="background:rgba(75,156,211,.22);color:#8fc4ea">Syllabus objective</span><button class="curve-link">Open topic →</button></div>
  </div>
 </div>
 
 <!-- ══ TAB 4 — ASSIGNMENTS ═══════════════════════════════════════════════ -->
-<div class="lab">Tab 4 · Assignments — grouped by syllabus category (how the grade is computed) + what-if</div>
+<div class="lab">Tab 4 · Assignments — Overview task behavior, fixed to CHEM 262; course-specific grades and what-if stay below</div>
 <div class="wrap">
- <div class="fb"><span class="f on">By category</span><span class="f">By date</span><span class="f">Ungraded 3</span><span class="f" style="margin-left:auto">What-if calculator →</span></div>
+ <div class="fb"><span class="f on">☷ Agenda</span><span class="f">▦ Weekly</span><span class="f">▣ Calendar</span><span class="f">CHEM 262 only</span><span class="f" style="margin-left:auto">＋ Add assignment</span></div>
  <div class="grp">
-  <div class="gh"><span class="gt">Problem sets</span><span class="gm">15% of grade · 4 of 6 graded</span><span class="gm" style="margin-left:auto">avg <b class="d" style="color:var(--success);font-size:14px">88%</b></span></div>
-  <div class="gr"><span style="flex:1">Problem set 4</span><span class="sb">Oct 24</span><span class="d" style="color:var(--success)">48 / 50</span></div>
-  <div class="gr"><span style="flex:1">Problem set 5</span><span class="sb">Oct 31</span><span class="d" style="color:var(--danger)">36 / 50</span></div>
+  <div class="gh"><span class="gt" style="color:var(--danger)">Overdue</span><span class="gm">1 item</span><span class="gm" style="margin-left:auto">⌃</span></div>
+  <div class="gr taskrow"><span class="taskgrip">⠿</span><button class="taskcheck" aria-label="Complete Post-lab writeup 4"></button><span style="flex:1">Post-lab writeup 4</span><span class="st" style="background:rgba(232,128,111,.2);color:var(--danger)">Lab</span><span class="sb">4%</span><span class="d" style="color:var(--danger)">Aug 22</span><button class="taskstar on" aria-label="Important">★</button><button class="taskmore" aria-label="Assignment actions">⋯</button></div>
  </div>
  <div class="grp">
-  <div class="gh"><span class="gt">Exams</span><span class="gm">Midterms 35% · Final 30% · 1 of 3 taken</span><span class="gm" style="margin-left:auto">avg <b class="d" style="color:var(--warning);font-size:14px">84%</b></span></div>
-  <div class="gr"><span style="flex:1">Midterm 1</span><span class="sb">15% · Oct 3</span><span class="d" style="color:var(--warning)">84 / 100</span></div>
-  <div class="gr" style="color:var(--dim)"><span style="flex:1">Midterm 2</span><span class="sb">20% · Friday</span><span class="d">—</span></div>
+  <div class="gh"><span class="gt" style="color:var(--warning)">This week</span><span class="gm">2 items · estimated 3 h 20 m</span><span class="gm" style="margin-left:auto">⌃</span></div>
+  <div class="gr taskrow"><span class="taskgrip">⠿</span><button class="taskcheck" aria-label="Complete Problem set 6"></button><span style="flex:1">Problem set 6</span><span class="st" style="background:rgba(240,198,138,.16);color:var(--warning)">Problem set</span><span class="sb">2.5%</span><span class="d" style="color:var(--warning)">Wed</span><button class="taskstar" aria-label="Mark important">☆</button><button class="taskmore" aria-label="Assignment actions">⋯</button></div>
+  <div class="gr taskrow"><span class="taskgrip">⠿</span><button class="taskcheck" aria-label="Complete Midterm 2"></button><span style="flex:1">Midterm 2 — Units 4–7 <span class="sb">· 9 syllabus topics in scope</span></span><span class="st" style="background:rgba(232,128,111,.2);color:var(--danger)">Exam</span><span class="sb">20%</span><span class="d" style="color:var(--danger)">Fri</span><button class="taskstar on" aria-label="Important">★</button><button class="taskmore" aria-label="Assignment actions">⋯</button></div>
  </div>
- <div class="pace">✓ Category weights sum to <b>100%</b> · <b>37%</b> of the grade is in · standing <b>87.4% · B+</b></div>
+ <div class="grp">
+  <div class="gh"><span class="gt">Next week</span><span class="gm">1 item</span><span class="gm" style="margin-left:auto">⌃</span></div>
+  <div class="gr taskrow"><span class="taskgrip">⠿</span><button class="taskcheck" aria-label="Complete Lab report — synthesis"></button><span style="flex:1">Lab report — synthesis</span><span class="st" style="background:rgba(75,156,211,.18);color:var(--cat)">Report</span><span class="sb">10%</span><span class="d">Sep 2</span><button class="taskstar" aria-label="Mark important">☆</button><button class="taskmore" aria-label="Assignment actions">⋯</button></div>
+ </div>
+ <div class="grp"><div class="gh"><span class="gt" style="color:var(--dim)">Completed</span><span class="gm">4 items</span><span class="gm" style="margin-left:auto">⌄</span></div></div>
+ <div class="pace"><span>Check off work here; it moves to Completed with Undo. Open any row to edit its details.</span><span class="lk" style="margin-left:auto">Open all assignments →</span></div>
 
+ <div class="support-label">Course grade context · supporting</div>
  <div style="display:grid;grid-template-columns:1fr 400px;gap:14px;margin-top:14px">
   <div class="card">
    <div class="hd"><span class="ti">What if…</span><span class="sb">assume a score for what's left</span></div>
@@ -319,10 +301,11 @@ body{margin:0;background:#151310;color:var(--fg);font-family:'Nunito',system-ui,
  </div>
 </div>
 
-<!-- ══ TAB 5 — NOTES ═════════════════════════════════════════════════════ -->
-<div class="lab">Tab 5 · Notes — notes ABOUT the class, filed by kind (notes ON the material live in Materials)</div>
-<div class="wrap" style="display:grid;grid-template-columns:1fr 330px;gap:14px">
+<!-- ══ TAB 5 — GUIDE ═════════════════════════════════════════════════════ -->
+<div class="lab">Tab 5 · Guide — information ABOUT the class, filed by kind (notes ON the material live in Materials)</div>
+<div class="wrap guide-wrap">
  <div>
+  <div class="card" style="margin-bottom:14px"><div class="hd"><span class="ti">How this class reads material</span><span class="sb">Course lens · reviewable</span></div><div class="note"><div class="nt">Optional, sourceable interpretive context</div><div class="nb">Read cases through the comparative healing systems, ethnographic context, kinship and authority this course has named. Surface biomedical assumptions only when selected course evidence supports them.</div><div class="gm" style="margin-top:8px">Sourceable from: syllabus learning goals · Lecture 1 transcript</div></div><div class="row"><span style="font-weight:800">Review / edit</span><span style="margin-left:auto;color:var(--primary);font-weight:800">Used only when included in a study guide</span></div></div>
   <div class="fb"><span class="f on">All 14</span><span class="f">Exam intel 3</span><span class="f">Questions 2</span><span class="f">Priming 4</span><span class="f">Lecture 8</span><span class="f" style="margin-left:auto">＋ New note</span></div>
   <div class="grp">
    <div class="gh"><span class="gt" style="color:var(--warning)">◈ Exam intel</span><span class="gm">what this professor actually tests</span><span class="gm" style="margin-left:auto">3</span></div>
@@ -337,14 +320,57 @@ body{margin:0;background:#151310;color:var(--fg);font-family:'Nunito',system-ui,
    <div class="note"><div class="nb"><span class="unit">Wk 9</span> If both E1 and E2 remove the same H, why does base strength decide which happens?</div></div>
   </div>
  </div>
- <div class="card">
-  <div class="hd"><span class="ti">Per-topic notes</span><span class="sb">11 of 18</span></div>
-  <div class="row"><span class="unit">U5</span><span style="flex:1">SN1 / SN2 mechanisms</span><span style="color:var(--dim)">📝</span></div>
-  <div class="row"><span class="unit">U6</span><span style="flex:1">E1 / E2 elimination</span><span style="color:var(--dim)">📝</span></div>
-  <div class="row" style="color:var(--dim)"><span style="flex:1">7 topics have no notes</span></div>
- </div>
+ <aside class="card guide-suggest">
+  <div class="hd"><span class="ti">Suggested additions</span><span class="sb">2 to review</span></div>
+  <div class="note"><div class="nb">Built from the confirmed syllabus and saved lecture transcripts when they exist. Nothing is added to Guide until you review it.</div></div>
+  <div class="suggestion"><div class="suggest-source">Syllabus · Midterm 2 scope</div><div class="suggest-title">Add to Exam intel: Units 4–7 are in scope.</div><div class="suggest-copy">The confirmed syllabus structure names this range; the suggestion does not change Topics or invent coverage.</div><div class="suggest-actions"><button class="journal-button">Review suggestion</button><span class="sb">Edit or dismiss</span></div></div>
+  <div class="suggestion"><div class="suggest-source">Lecture 17 transcript · 2 references</div><div class="suggest-title">Add to Exam intel: justify the major product, not only name it.</div><div class="suggest-copy">Opens the supporting transcript passages before this becomes saved class guidance.</div><div class="suggest-actions"><button class="journal-button">Review suggestion</button><span class="sb">Edit or dismiss</span></div></div>
+  <div class="note"><div class="nb">No saved transcript? Guide continues with syllabus evidence and student-authored entries; transcript-based suggestions simply stay absent.</div></div>
+ </aside>
 </div>
 
+<section class="proto-layer" data-proto="lecture-record"><div class="ban"><div class="crumb">‹ Class Center · CHEM 262</div><div class="h1"><span class="cdot"></span>CHEM 262 <span class="subn">Organic Chemistry II</span></div><div class="tabs"><div class="tb on">Overview</div><div class="tb">Materials</div><div class="tb">Topics</div><div class="tb">Assignments</div><div class="tb">Guide</div></div></div><div class="lecture-shell"><aside class="journal-rail"><div class="journal-kicker">Class journal</div><div class="journal-title">Lecture evidence</div><div class="journal-caption">3 lectures</div><button class="journal-entry"><b>Lecture 15 · Alcohols</b><span>Nov 1 · transcript + 2 materials</span><i class="journal-status">study work</i></button><button class="journal-entry"><b>Lecture 16 · Elimination</b><span>Nov 4 · transcript saved</span><i class="journal-status">captured</i></button><button class="journal-entry on"><b>Lecture 17 · E1 vs E2</b><span>Nov 6 · transcript + 2 materials</span><i class="journal-status">ready</i></button><button class="journal-add">＋ Add today’s lecture</button></aside><article class="journal-stage"><div class="journal-stage-head"><div><h2>Lecture 17 · E1 vs E2</h2><div class="sb">Nov 6 · one saved class record</div></div><button class="journal-button">Close lecture</button></div><div class="journal-evidence"><div class="journal-object"><b>Transcript</b><span>Saved · 1,842 words</span><button class="journal-button">Read transcript</button></div><div class="journal-object"><b>Supporting evidence</b><span>2 attached · slides + textbook excerpt</span><button class="journal-button">Open materials</button></div><div class="journal-object"><b>Study work</b><span>Study outline + revised notes</span><button class="journal-button">Open study work</button></div></div></article></div></section>
+<section class="proto-layer" data-proto="lecture-transcript"><div class="ban"><div class="crumb">‹ Class Center · CHEM 262</div><div class="h1"><span class="cdot"></span>Lecture 18 <span class="subn">Today’s class record</span></div><div class="tabs"><div class="tb on">Overview</div><div class="tb">Materials</div><div class="tb">Topics</div><div class="tb">Assignments</div><div class="tb">Guide</div></div></div><div class="lecture-shell"><aside class="journal-rail"><div class="journal-kicker">Class journal</div><div class="journal-title">Lecture evidence</div><div class="journal-caption">3 lectures</div><button class="journal-entry"><b>Lecture 16 · Elimination</b><span>Nov 4 · transcript saved</span><i class="journal-status">captured</i></button><button class="journal-entry"><b>Lecture 17 · E1 vs E2</b><span>Nov 6 · study work ready</span><i class="journal-status">ready</i></button><button class="journal-entry on"><b>Lecture 18</b><span>Today · waiting for transcript</span><i class="journal-status">new</i></button></aside><article class="lecture-workbench"><div class="capture-top"><div><div class="journal-kicker">Lecture workflow · step 1 of 3</div><div class="capture-title">Add the transcript first.</div><div class="capture-copy">Lecture 18 · created today</div></div><button class="capture-action quiet">Close</button></div><div class="capture-steps"><div class="capture-step on"><b>1 · Transcript</b><span>Required first input</span></div><div class="capture-step"><b>2 · Supporting evidence</b><span>Optional after transcript</span></div><div class="capture-step"><b>3 · Study work</b><span>Built from selected sources</span></div></div><div class="capture-panel"><div class="capture-panel-head"><h3>Transcript</h3><span class="proto-pill">Lecture 18</span></div><div class="capture-drop"><div><b>Drop a transcript file here</b><span>or paste the transcript</span></div></div><div class="capture-actions"><button class="capture-action primary">Upload transcript</button><button class="capture-action">Paste transcript</button><button class="capture-action quiet">Cancel lecture</button></div></div><div class="capture-note"><b>Topics stay syllabus-led.</b> This transcript is evidence for Lecture 18.</div></article></div></section>
+<section class="proto-layer" data-proto="lecture-evidence"><div class="ban"><div class="crumb">‹ Class Center · CHEM 262</div><div class="h1"><span class="cdot"></span>Lecture 18 <span class="subn">Today’s class record</span></div><div class="tabs"><div class="tb on">Overview</div><div class="tb">Materials</div><div class="tb">Topics</div><div class="tb">Assignments</div><div class="tb">Guide</div></div></div><div class="lecture-shell"><aside class="journal-rail"><div class="journal-kicker">Class journal</div><div class="journal-title">Lecture evidence</div><div class="journal-caption">3 lectures</div><button class="journal-entry"><b>Lecture 16 · Elimination</b><span>Nov 4 · transcript saved</span><i class="journal-status">captured</i></button><button class="journal-entry"><b>Lecture 17 · E1 vs E2</b><span>Nov 6 · study work ready</span><i class="journal-status">ready</i></button><button class="journal-entry on"><b>Lecture 18</b><span>Today · transcript saved</span><i class="journal-status">adding</i></button></aside><article class="lecture-workbench"><div class="capture-top"><div><div class="journal-kicker">Lecture workflow · step 2 of 3</div><div class="capture-title">Add supporting evidence</div><div class="capture-copy">Optional · attached to Lecture 18</div></div><button class="capture-action quiet">Close</button></div><div class="capture-steps"><div class="capture-step done"><b>✓ Transcript</b><span>1,926 words saved</span></div><div class="capture-step on"><b>2 · Supporting evidence</b><span>Optional</span></div><div class="capture-step"><b>3 · Study work</b><span>Next</span></div></div><div class="capture-panel"><div class="capture-panel-head"><h3>Supporting evidence</h3><button class="capture-action">Read transcript</button></div><div class="capture-options"><div class="capture-option"><b>File</b><span>Slides, notes, PDF, or course handout.</span><div class="capture-actions"><button class="capture-action">Add file</button></div></div><div class="capture-option on"><b>Clipboard screenshot</b><span>Paste a board photo, diagram, or selected page.</span><div class="capture-actions"><button class="capture-action">Paste screenshot</button></div></div><div class="capture-option"><b>Textbook excerpt</b><span>Paste or capture the pages discussed today.</span><div class="capture-actions"><button class="capture-action">Add excerpt</button></div></div></div><div class="capture-actions"><button class="capture-action primary">Continue to study work</button><button class="capture-action quiet">Skip for now</button><button class="capture-action quiet">Back to transcript</button></div></div></article></div></section>
+<section class="proto-layer" data-proto="lecture-study-work"><div class="ban"><div class="crumb">‹ Class Center · CHEM 262</div><div class="h1"><span class="cdot"></span>Lecture 18 <span class="subn">Today’s class record</span></div><div class="tabs"><div class="tb on">Overview</div><div class="tb">Materials</div><div class="tb">Topics</div><div class="tb">Assignments</div><div class="tb">Guide</div></div></div><div class="lecture-shell"><aside class="journal-rail"><div class="journal-kicker">Class journal</div><div class="journal-title">Lecture evidence</div><div class="journal-caption">3 lectures</div><button class="journal-entry"><b>Lecture 16 · Elimination</b><span>Nov 4 · transcript saved</span><i class="journal-status">captured</i></button><button class="journal-entry"><b>Lecture 17 · E1 vs E2</b><span>Nov 6 · study work ready</span><i class="journal-status">ready</i></button><button class="journal-entry on"><b>Lecture 18</b><span>Today · transcript + 2 materials</span><i class="journal-status">active</i></button></aside><article class="lecture-workbench"><div class="capture-top"><div><div class="journal-kicker">Lecture workflow · step 3 of 3</div><div class="capture-title">Make study work</div><div class="capture-copy">Only attached Lecture 18 sources can be selected.</div></div><button class="capture-action quiet">Close</button></div><div class="capture-steps"><div class="capture-step done"><b>✓ Transcript</b><span>1,926 words saved</span></div><div class="capture-step done"><b>✓ Supporting evidence</b><span>2 materials attached</span></div><div class="capture-step on"><b>3 · Study work</b><span>Select sources and output</span></div></div><div class="capture-panel"><div class="capture-panel-head"><h3>Selected sources</h3><button class="capture-action">Open attached material</button></div><div class="source-list"><div class="source-row"><span class="source-check on">✓</span><span>Lecture 18 transcript <span class="sb">· 1,926 words</span></span><span class="proto-pill">Transcript</span></div><div class="source-row"><span class="source-check on">✓</span><span>Professor slides · Lecture 18 <span class="sb">· 34 pages</span></span><span class="proto-pill">Course</span></div><div class="source-row"><span class="source-check"></span><span>Textbook excerpt · Chapter 9.2 <span class="sb">· 6 pages</span></span><span class="proto-pill">Mine</span></div></div><div class="output-grid"><div class="output-card"><b>Flashcards</b><span>Create a source-grounded deck stored with this class.</span></div><div class="output-card"><b>Study guide</b><span>Organize the selected lecture evidence against syllabus standards.</span></div><div class="output-card"><b>Study outline</b><span>Arrange selected evidence under syllabus learning objectives.</span></div><div class="output-card"><b>Revised notes</b><span>Requires one of your own notes as the baseline.</span></div></div><div class="capture-actions"><button class="capture-action primary">Create study resources⌄</button><button class="capture-action quiet">Back to evidence</button></div></div></article></div></section>
+<section class="proto-layer" data-proto="professor-dormant"><div class="ban"><div class="crumb">‹ Class Center</div><div class="h1"><span class="cdot"></span>CHEM 262 <span class="subn">Organic Chemistry II</span></div><div class="tabs"><div class="tb on">Overview</div><div class="tb">Materials</div><div class="tb">Topics</div><div class="tb">Assignments</div><div class="tb">Guide</div></div></div><div class="proto-grid"><article class="card"><div class="proto-kicker">Professor evidence</div><div class="proto-title">Nothing solid enough to call a pattern yet.</div><div class="proto-copy">Add your own returned graded work or observation notes when they exist. This class does not turn sparse evidence into a trend, prediction, or rumor.</div><div class="proto-actions"><button class="proto-button primary">Add an observation</button><button class="proto-button">Open returned work</button></div></article><aside class="card"><div class="proto-kicker">Evidence boundary</div><div class="proto-title" style="font-size:18px">Dormant, with a reason</div><div class="proto-copy">Not enough of your own returned work has been recorded for this course.</div></aside></div></section>
+<section class="proto-layer" data-proto="professor-evidence"><div class="ban"><div class="crumb">‹ Class Center</div><div class="h1"><span class="cdot"></span>CHEM 262 <span class="subn">Organic Chemistry II</span></div><div class="tabs"><div class="tb on">Overview</div><div class="tb">Materials</div><div class="tb">Topics</div><div class="tb">Assignments</div><div class="tb">Guide</div></div></div><div class="proto-grid"><article class="card"><div class="proto-kicker">Professor evidence · course-only sample</div><div class="proto-title">Three dated records, kept visible.</div><div class="proto-list"><div class="proto-item"><span class="proto-dot"></span><span><b>Sep 11 · Midterm 1 returned</b><br><span class="proto-copy">You recorded two mechanism-drawing items and their feedback.</span></span></div><div class="proto-item"><span class="proto-dot"></span><span><b>Sep 18 · Office-hours observation</b><br><span class="proto-copy">Your note: asked students to justify the major product.</span></span></div><div class="proto-item"><span class="proto-dot"></span><span><b>Sep 25 · Problem set returned</b><br><span class="proto-copy">Your marked work is attached to this class only.</span></span></div></div></article><aside class="card"><div class="proto-kicker">What is shown</div><div class="proto-title" style="font-size:18px">Records, not asks.</div><div class="proto-copy">This small sample can be reviewed. It does not make a claim about future exams.</div><div class="proto-actions"><button class="proto-button">Open evidence</button></div></aside></div></section>
+<section class="proto-layer" data-proto="writing-readings"><div class="ban"><div class="crumb">‹ Class Center</div><div class="h1"><span class="cdot" style="background:var(--warning)"></span>ENGL 105 <span class="subn">Writing in the Disciplines</span></div><div class="tabs"><div class="tb">Overview</div><div class="tb on">Materials</div><div class="tb">Topics</div><div class="tb">Assignments</div><div class="tb">Guide</div></div></div><div class="proto-grid"><article class="card"><div class="proto-kicker">Readings</div><div class="proto-title">This week’s reading list</div><div class="proto-list"><div class="proto-item"><span class="proto-pill">Not started</span><span><b>Didion · On Keeping a Notebook</b><br><span class="proto-copy">Optional discussion · Thu Sep 12</span></span></div><div class="proto-item"><span class="proto-pill warn">Skimmed</span><span><b>Graff &amp; Birkenstein · They Say / I Say</b><br><span class="proto-copy">Discussion date not set</span></span></div><div class="proto-item"><span class="proto-pill" style="color:var(--success)">Read</span><span><b>Course writing handbook · Chapter 2</b><br><span class="proto-copy">Marked by you</span></span></div></div><div class="proto-actions"><button class="proto-button primary">Paste a list</button><button class="proto-button">Add one</button><button class="proto-button">Add this week</button></div></article><aside class="card"><div class="proto-kicker">Honest syllabus state</div><div class="proto-title" style="font-size:18px">No reading debt yet.</div><div class="proto-copy">This partial syllabus does not identify a reading workshop or enough confirmed readings to infer a backlog.</div></aside></div></section>
+<section class="proto-layer" data-proto="writing-draft"><div class="ban"><div class="crumb">‹ Class Center</div><div class="h1"><span class="cdot" style="background:var(--warning)"></span>ENGL 105 <span class="subn">Writing in the Disciplines</span></div><div class="tabs"><div class="tb">Overview</div><div class="tb">Materials</div><div class="tb">Topics</div><div class="tb on">Assignments</div><div class="tb">Guide</div></div></div><div class="proto-grid"><article class="card"><div class="proto-kicker">Current draft · rhetorical analysis</div><div class="proto-title">Draft 1 is next.</div><div class="proto-copy">Course deadline Oct 3 · your target Sep 29</div><div class="stage-list"><div class="stage"><span>Outline</span><span class="proto-pill" style="color:var(--success)">Done</span></div><div class="stage on"><span>Draft</span><span class="proto-pill">Current</span></div><div class="stage"><span>Revision</span><span class="proto-copy">Not started</span></div><div class="stage"><span>Submitted</span><span class="proto-copy">Waiting</span></div></div></article><aside class="card"><div class="proto-kicker">Feedback themes</div><div class="proto-title" style="font-size:18px">Only repeated feedback appears here.</div><div class="proto-copy">A theme rail opens after a pattern is repeated. One isolated feedback note stays a regular course note.</div></aside></div></section>
+<section class="proto-layer" data-proto="no-topics"><div class="ban"><div class="crumb">‹ Class Center</div><div class="h1"><span class="cdot"></span>CHEM 262 <span class="subn">Organic Chemistry II</span></div><div class="tabs"><div class="tb">Overview</div><div class="tb">Materials</div><div class="tb on">Topics</div><div class="tb">Assignments</div><div class="tb">Guide</div></div></div><main class="empty-host"><div class="proto-kicker">Topics · syllabus standards</div><div class="proto-title">No learning standards are mapped yet.</div><div class="proto-copy">Review the syllabus import or add the missing objective. Lecture transcripts stay linked as evidence and do not become Topics by themselves.</div><div class="proto-actions"><button class="proto-button primary">Review syllabus import</button><button class="proto-button">Add an objective</button></div></main></section>
+<section class="proto-layer" data-proto="no-assignments"><div class="ban"><div class="crumb">‹ Class Center</div><div class="h1"><span class="cdot"></span>CHEM 262 <span class="subn">Organic Chemistry II</span></div><div class="tabs"><div class="tb">Overview</div><div class="tb">Materials</div><div class="tb">Topics</div><div class="tb on">Assignments</div><div class="tb">Guide</div></div></div><main class="empty-host"><div class="proto-kicker">Course assignments · CHEM 262 only</div><div class="proto-title">No coursework is waiting here.</div><div class="proto-copy">Add the first assignment for this class or open the cross-class agenda. Grade and what-if context stays quiet until a graded item exists.</div><div class="proto-actions"><button class="proto-button primary">Add assignment</button><button class="proto-button">Open all assignments</button></div></main></section>
 </div>
+<script>
+const q=new URLSearchParams(location.search).get('view');
+const proto=[...document.querySelectorAll('[data-proto]')];
+const legacy=['overview','materials','topics','assignments','guide'];
+const workflow=['lecture-record','lecture-transcript','lecture-evidence','lecture-study-work'];
+const sharedBanner=document.querySelector('.frame > .ban');
+const journalHistory=document.querySelector('.journal-list');
+journalHistory?.addEventListener('keydown',event=>{
+  const step=event.key==='ArrowDown'?48:event.key==='ArrowUp'?-48:event.key==='PageDown'?journalHistory.clientHeight:event.key==='PageUp'?-journalHistory.clientHeight:0;
+  if(step){journalHistory.scrollTop+=step;event.preventDefault()}
+  if(event.key==='Home'){journalHistory.scrollTop=0;event.preventDefault()}
+  if(event.key==='End'){journalHistory.scrollTop=journalHistory.scrollHeight;event.preventDefault()}
+});
+workflow.forEach(name=>{
+  const layer=document.querySelector(`[data-proto="${name}"]`);
+  if(!layer||!sharedBanner)return;
+  layer.querySelector('.ban')?.replaceWith(sharedBanner.cloneNode(true));
+  const close=layer.querySelector('.capture-top > .capture-action.quiet');
+  if(close)close.textContent='Close capture';
+});
+if(proto.some(x=>x.dataset.proto===q)){
+  document.body.classList.add('proto-active');
+  proto.forEach(x=>x.classList.toggle('on',x.dataset.proto===q));
+}else if(legacy.includes(q)){
+  const f=document.querySelector('.frame');
+  const wraps=[...f.querySelectorAll(':scope > .wrap')],labs=[...f.querySelectorAll(':scope > .lab')],i=legacy.indexOf(q);
+  wraps.forEach((x,n)=>x.style.display=n===i?(i===4?'grid':'block'):'none');
+  labs.forEach((x,n)=>x.style.display=n===i-1?'block':'none');
+  f.querySelectorAll('.tb').forEach((x,n)=>x.classList.toggle('on',n===i));
+}
+document.querySelectorAll('.resource-trigger').forEach(button=>button.addEventListener('click',()=>button.parentElement.classList.toggle('open')));
+</script>
 </body>
 </html>

@@ -373,10 +373,23 @@ describe('Academics D2 recommendations', () => {
     const data = structuredClone(createSeedData())
     const initial = academicsNextActions(data)
     expect(initial).toHaveLength(3)
-    expect(initial.every((recommendation) => recommendation.ruleId === 'academics-no-syllabus')).toBe(true)
+    expect(initial.every((recommendation) => ['academics-no-syllabus', 'academics-covered-needs-material'].includes(recommendation.ruleId))).toBe(true)
+    expect(initial.some((recommendation) => recommendation.ruleId === 'academics-covered-never-reviewed')).toBe(false)
     expect(initial.every((recommendation) => recommendation.cause && recommendation.why.includes(recommendation.cause))).toBe(true)
 
     data.settings.recommendationState[initial[0].id] = { status: 'dismissed', at: NOW.getTime() }
     expect(academicsNextActions(data).some((recommendation) => recommendation.id === initial[0].id)).toBe(false)
+  })
+
+  it('does not ask for a syllabus when the class retains one locally', () => {
+    const data = structuredClone(createSeedData())
+    const workspace = data.academics.classCenter.workspaces[0]
+    data.academics.classCenter.files.push({
+      id: 'local-syllabus', courseId: workspace.courseId, title: 'Course syllabus',
+      type: 'syllabus', sourceType: 'upload', owner: 'course', url: '', blobRef: 'idb://academics/syllabus/local-syllabus',
+      fileName: 'syllabus.txt', mimeType: 'text/plain', notes: '', linkedTopicIds: [], createdAt: NOW.getTime(), updatedAt: NOW.getTime(), order: 0,
+    })
+
+    expect(academicsNextActions(data).some((recommendation) => recommendation.ruleId === 'academics-no-syllabus' && recommendation.entityId === workspace.courseId)).toBe(false)
   })
 })

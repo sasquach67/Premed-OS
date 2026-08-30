@@ -9,7 +9,8 @@
  * that lets an unmet requirement hide, and this document exists to be read by
  * the one person who can catch that.
  */
-import type { Course, RequirementItem } from '@/lib/types'
+import type { Course, PlanningProgramContext, RequirementItem } from '@/lib/types'
+import { planningRequirementSet } from '@/lib/academics/uncPlanningLibrary'
 
 export const NOT_OFFICIAL =
   'Advisor review is still required. This snapshot explains the student’s plan and its source date. '
@@ -21,11 +22,12 @@ export interface AdvisorSnapshot {
   openRequirements: string[]
 }
 
-export function buildAdvisorSnapshot({ courses, requirements, catalogDate, studentName }: {
+export function buildAdvisorSnapshot({ courses, requirements, catalogDate, studentName, planningContext }: {
   courses: Course[]
   requirements: RequirementItem[]
   catalogDate?: string
   studentName?: string
+  planningContext?: PlanningProgramContext
 }): AdvisorSnapshot {
   const terms = [...new Set(courses.map((course) => course.term).filter(Boolean))]
   const open = requirements.filter((item) => !item.done)
@@ -37,6 +39,20 @@ export function buildAdvisorSnapshot({ courses, requirements, catalogDate, stude
   lines.push('')
   lines.push(`Terms included: ${terms.length ? terms.join(', ') : 'none recorded'}`)
   lines.push(`Catalog source: ${catalogDate ? `saved ${catalogDate}` : 'no catalog date recorded'}`)
+  const selectedProgram = planningContext?.selectedProgramId
+    ? planningRequirementSet(planningContext.selectedProgramId)
+    : undefined
+  lines.push(`Selected catalog plan: ${selectedProgram
+    ? `${selectedProgram.program} ${selectedProgram.degree}${selectedProgram.trackOrConcentration ? ` — ${selectedProgram.trackOrConcentration}` : ''}`
+    : planningContext?.selectedProgramId ? `unavailable local source (${planningContext.selectedProgramId})` : 'not recorded'}`)
+  lines.push(`Matriculation term: ${planningContext?.matriculationTerm || 'not recorded'}`)
+  lines.push(`IDEAs catalog year: ${planningContext?.ideasCatalogYear || 'not recorded'}`)
+  if (selectedProgram?.admissionGate || planningContext?.gillingsAdmissionTerm || planningContext?.programAdmissionStatus) {
+    lines.push(`Program admission context: ${planningContext?.gillingsAdmissionTerm || 'term not recorded'} · ${planningContext?.programAdmissionStatus || 'status not recorded'}`)
+  }
+  if (selectedProgram) {
+    lines.push(`Planning reference: ${selectedProgram.sourceUrl} · retrieved ${selectedProgram.retrievedAt} · catalog ${selectedProgram.catalogYear}`)
+  }
   lines.push('')
   lines.push(`Courses (${courses.length}):`)
   for (const course of courses) {
