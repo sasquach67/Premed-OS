@@ -56,7 +56,7 @@ const MESSAGES = {
   expired: 'That link has expired or has already been used. Send yourself a new one.',
   notConfigured:
     'Accounts are not switched on in this build. Everything still works signed out — your data is on this device.',
-  weakPassword: 'Use at least 8 characters and one symbol.',
+  weakPassword: 'Use at least 8 characters with uppercase, lowercase, a number, and a symbol.',
 } as const
 
 function classifyError(error: unknown): string {
@@ -83,7 +83,13 @@ function readLinkError(): string | null {
 }
 
 function meetsNewPasswordRule(value: string) {
-  return value.length >= 8 && /[^A-Za-z0-9\s]/.test(value)
+  return (
+    value.length >= 8 &&
+    /[a-z]/.test(value) &&
+    /[A-Z]/.test(value) &&
+    /\d/.test(value) &&
+    /[^A-Za-z0-9\s]/.test(value)
+  )
 }
 
 export function AuthPage() {
@@ -425,13 +431,13 @@ export function AuthPage() {
                         className="pl-inp"
                         type="password"
                         autoComplete={passwordIntent === 'create' ? 'new-password' : 'current-password'}
-                        placeholder={passwordIntent === 'create' ? '8+ characters, including a symbol' : 'Your password'}
+                        placeholder={passwordIntent === 'create' ? '8+ characters, upper/lowercase, number, symbol' : 'Your password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                       />
                     </div>
                     {passwordIntent === 'create' ? (
-                      <p className="pl-fine">Use at least 8 characters and one symbol.</p>
+                      <p className="pl-fine">Use 8+ characters with uppercase, lowercase, a number, and a symbol.</p>
                     ) : null}
                     <button
                       type="button"
@@ -588,7 +594,7 @@ function PasswordRecovery({
         <div>
           <h1 className="pl-ti">Choose a new password</h1>
           <div className="pl-sub" style={{ marginTop: 4, fontWeight: 600 }}>
-            This link is single-use. Use at least 8 characters and one symbol.
+            This link is single-use. Use 8+ characters with uppercase, lowercase, a number, and a symbol.
           </div>
         </div>
       </div>
