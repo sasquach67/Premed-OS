@@ -30,12 +30,20 @@ import { useEnterApp } from '@/components/public/useEnterApp'
 import { markEnteredApp } from '@/lib/publicLayer'
 import type { User } from '@supabase/supabase-js'
 
-type Screen = 'form' | 'sent' | 'signed-in'
+type Screen = 'form' | 'sent' | 'recovery' | 'signed-in'
 type Method = 'link' | 'password'
 
 /** Client-side cooldown between magic-link requests. The server rate-limits
  *  too; this exists so the limit is stated plainly before it is hit (§2.3). */
 const RESEND_COOLDOWN_S = 60
+
+/** HashRouter needs the recovery route in the fragment. Supabase adds its
+ * PKCE code before the hash, then the client establishes the short-lived
+ * recovery session and this page can safely ask for a new password. */
+function passwordRecoveryRedirect() {
+  if (typeof window === 'undefined') return authRedirectTo
+  return `${window.location.origin}${import.meta.env.BASE_URL}#/auth?mode=recovery`
+}
 
 /** One generic message per failure class. None of them reveal whether an
  *  address has an account. */
@@ -91,6 +99,7 @@ export function AuthPage() {
   /** Deep-link preservation (§2.3): signing in from a shared link lands on
    *  that link, not the home page. */
   const next = params.get('next') || '/'
+  const recoveryMode = params.get('mode') === 'recovery'
 
   // ── already signed in ────────────────────────────────────────────────
   useEffect(() => {
@@ -100,22 +109,22 @@ export function AuthPage() {
       if (!alive) return
       if (data.session?.user) {
         setUser(data.session.user)
-        setScreen('signed-in')
+        setScreen(recoveryMode ? 'recovery' : 'signed-in')
       }
     })
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (!alive) return
       if (session?.user) {
         markEnteredApp()
         setUser(session.user)
-        setScreen('signed-in')
+        setScreen(event === 'PASSWORD_RECOVERY' || recoveryMode ? 'recovery' : 'signed-in')
       }
     })
     return () => {
       alive = false
       sub.subscription.unsubscribe()
     }
-  }, [])
+  }, [recoveryMode])
 
   // ── an expired or already-used link comes back as an error param ─────
   useEffect(() => {
@@ -204,6 +213,56 @@ export function AuthPage() {
     }
   }, [email, password])
 
+  const sendPasswordReset = useCallback(async () => {
+    if (!supabase) {
+      setError(MESSAGES.notConfigured)
+      return
+    }
+    if (!emailValid) {
+      setError('Enter the email address you use to sign in.')
+      return
+    }
+    setBusy(true)
+    setError('')
+    setNotice('')
+    try {
+      // Keep the outcome indistinguishable whether or not the account exists.
+      const { error: e } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: passwordRecoveryRedirect(),
+      })
+      if (e) throw e
+      setNotice('If that address has an account, we sent a password-reset link. Check your email.')
+      setCooldown(RESEND_COOLDOWN_S)
+    } catch (e) {
+      setError(classifyError(e))
+    } finally {
+      setBusy(false)
+    }
+  }, [email, emailValid])
+
+  const updateRecoveryPassword = useCallback(async (nextPassword: string) => {
+    if (!supabase) {
+      setError(MESSAGES.notConfigured)
+      return
+    }
+    if (nextPassword.length < 8) {
+      setError(MESSAGES.weakPassword)
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      const { error: e } = await supabase.auth.updateUser({ password: nextPassword })
+      if (e) throw e
+      setNotice('Your password has been updated.')
+      setScreen('signed-in')
+    } catch (e) {
+      setError(classifyError(e))
+    } finally {
+      setBusy(false)
+    }
+  }, [])
+
   const continueWithGoogle = useCallback(async () => {
     if (!supabase) {
       setError(MESSAGES.notConfigured)
@@ -269,6 +328,12 @@ export function AuthPage() {
                 setUser(null)
                 setScreen('form')
               }}
+            />
+          ) : screen === 'recovery' ? (
+            <PasswordRecovery
+              busy={busy}
+              error={error}
+              onSave={updateRecoveryPassword}
             />
           ) : (
             <>
@@ -368,6 +433,14 @@ export function AuthPage() {
                       onClick={createWithPassword}
                     >
                       Create an account with this password
+                    </button>
+                    <button
+                      type="button"
+                      className="pl-lk"
+                      disabled={busy}
+                      onClick={sendPasswordReset}
+                    >
+                      Forgot your password?
                     </button>
                     <div className="pl-orbar">
                       <i />
@@ -485,6 +558,68 @@ function CheckYourEmail({
         <p className="pl-fine">
           Nothing you've already tracked is affected. <b>Your data is still on this device.</b>
         </p>
+      </div>
+    </>
+  )
+}
+
+/* ── Password recovery ─────────────────────────────────────────────────── */
+function PasswordRecovery({
+  busy,
+  error,
+  onSave,
+}: {
+  busy: boolean
+  error: string
+  onSave: (password: string) => void
+}) {
+  const [password, setPassword] = useState('')
+  const [confirmation, setConfirmation] = useState('')
+  const mismatch = confirmation.length > 0 && password !== confirmation
+
+  return (
+    <>
+      <div className="pl-hd">
+        <div>
+          <h1 className="pl-ti">Choose a new password</h1>
+          <div className="pl-sub" style={{ marginTop: 4, fontWeight: 600 }}>
+            This link is single-use. Choose at least 8 characters.
+          </div>
+        </div>
+      </div>
+      <div className="pl-bd" style={{ gap: 13 }}>
+        {error ? <p className="pl-alert pl-alert-bad" role="alert">{error}</p> : null}
+        <div className="pl-field">
+          <label className="pl-lbl" htmlFor="recovery-password">New password</label>
+          <input
+            id="recovery-password"
+            className="pl-inp"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </div>
+        <div className="pl-field">
+          <label className="pl-lbl" htmlFor="recovery-confirmation">Confirm new password</label>
+          <input
+            id="recovery-confirmation"
+            className="pl-inp"
+            type="password"
+            autoComplete="new-password"
+            value={confirmation}
+            onChange={(event) => setConfirmation(event.target.value)}
+          />
+        </div>
+        {mismatch ? <p className="pl-alert pl-alert-bad" role="alert">Those passwords do not match.</p> : null}
+        <button
+          type="button"
+          className="pl-sbtn pl-sbtn-p pl-sbtn-full"
+          disabled={busy || password.length < 8 || mismatch}
+          onClick={() => onSave(password)}
+        >
+          Save new password
+        </button>
       </div>
     </>
   )

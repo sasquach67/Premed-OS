@@ -29,6 +29,7 @@ import { TrashRecovery } from '@/components/common/TrashRecovery'
 import { clearStudySourceSyncCache, studyTools } from '@/lib/intelligence/studyTools'
 import { isDemoMode, setDemoMode } from '@/lib/demoMode'
 import { mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
+import { supabase } from '@/lib/supabase'
 
 export function Settings() {
   const route = ROUTE_MAP.settings
@@ -220,6 +221,8 @@ export function Settings() {
 
         <CloudSyncSection onMessage={setMsg} />
 
+        <AccountSecuritySection onMessage={setMsg} />
+
         <CalendarIntegrationSection onMessage={setMsg} />
 
         <WeeklyCapacityCard />
@@ -376,6 +379,95 @@ function CloudSyncSection({ onMessage }: { onMessage: (msg: string) => void }) {
             <PublicLayerReset />
           </>
         )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function AccountSecuritySection({ onMessage }: { onMessage: (msg: string) => void }) {
+  const cloud = useCloudSync()
+  const navigate = useNavigate()
+  const [newEmail, setNewEmail] = useState('')
+  const [busy, setBusy] = useState<'email' | 'signout' | 'delete' | null>(null)
+
+  if (!cloud.configured || !cloud.user || !supabase) return null
+  const client = supabase
+
+  async function requestEmailChange() {
+    const candidate = newEmail.trim()
+    if (!/.+@.+\..+/.test(candidate)) {
+      onMessage('Enter a valid new email address.');
+      return
+    }
+    setBusy('email')
+    const { error } = await client.auth.updateUser({ email: candidate })
+    setBusy(null)
+    if (error) {
+      onMessage('That email change could not be started. Check the address and try again.');
+      return
+    }
+    setNewEmail('')
+    onMessage('Check your current and new inboxes to confirm the email change.')
+  }
+
+  async function sendPasswordReset() {
+    setBusy('email')
+    const recoveryUrl = `${window.location.origin}${import.meta.env.BASE_URL}#/auth?mode=recovery`
+    const { error } = await client.auth.resetPasswordForEmail(cloud.user!.email ?? '', { redirectTo: recoveryUrl })
+    setBusy(null)
+    onMessage(error ? 'The password-reset email could not be sent. Try again in a moment.' : 'Password-reset link sent. It is single-use and expires soon.')
+  }
+
+  async function signOutEverywhere() {
+    setBusy('signout')
+    const { error } = await client.auth.signOut({ scope: 'global' })
+    setBusy(null)
+    if (error) {
+      onMessage('Could not sign out every device. Try again in a moment.')
+      return
+    }
+    onMessage('Signed out on every device. This browser’s local workspace is still here.')
+  }
+
+  async function deleteAccount() {
+    // The export happens before the irreversible confirmation. It exports the
+    // browser's canonical workspace; deleting the account never clears it.
+    exportJson()
+    const confirmation = window.prompt('Your local export has started. Type DELETE to permanently delete your cloud account. Your local workspace will stay on this device.')
+    if (confirmation !== 'DELETE') return
+    setBusy('delete')
+    const { error } = await client.functions.invoke('account-delete', { body: { confirmation } })
+    setBusy(null)
+    if (error) {
+      onMessage('The account was not deleted. Your local workspace is still safe on this device.')
+      return
+    }
+    await client.auth.signOut({ scope: 'local' })
+    onMessage('Your cloud account was deleted. Your local workspace remains on this device.')
+    navigate('/auth')
+  }
+
+  return (
+    <Card className="border-primary/20">
+      <CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /> Account &amp; security</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">Signed in as <b className="text-foreground">{cloud.user.email}</b>. Your local workspace is separate from this account.</p>
+        <div className="space-y-2 rounded-xl border border-border bg-card p-3">
+          <Label htmlFor="account-email">Change email</Label>
+          <div className="flex flex-wrap gap-2">
+            <Input id="account-email" type="email" value={newEmail} placeholder="new@email.com" onChange={(event) => setNewEmail(event.target.value)} />
+            <Button variant="outline" onClick={() => void requestEmailChange()} disabled={busy !== null}>Send confirmation</Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => void sendPasswordReset()} disabled={busy !== null}>Change password</Button>
+          <Button variant="outline" onClick={() => void signOutEverywhere()} disabled={busy !== null}>{busy === 'signout' ? 'Signing out…' : 'Sign out everywhere'}</Button>
+        </div>
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+          <p className="text-sm font-bold text-destructive">Delete cloud account</p>
+          <p className="mt-1 text-xs text-muted-foreground">We download your local export first. This deletes cloud data and signs out every device, but never clears this browser’s local workspace.</p>
+          <Button className="mt-3" variant="destructive" size="sm" onClick={() => void deleteAccount()} disabled={busy !== null}>{busy === 'delete' ? 'Deleting…' : 'Export and delete account'}</Button>
+        </div>
       </CardContent>
     </Card>
   )
