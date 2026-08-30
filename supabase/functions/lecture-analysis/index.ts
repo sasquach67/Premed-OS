@@ -1,4 +1,4 @@
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2.110.2'
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -23,9 +23,10 @@ Deno.serve(async (request) => {
   const authorization = request.headers.get('Authorization')
   const url = Deno.env.get('SUPABASE_URL')
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const openaiKey = Deno.env.get('OPENAI_API_KEY')
   if (!authorization) return fail(401, 'Authentication required.')
-  if (!url || !anonKey || !openaiKey) return fail(503, 'Lecture analysis is not configured.')
+  if (!url || !anonKey || !serviceKey || !openaiKey) return fail(503, 'Lecture analysis is not configured.')
 
   const client = createClient(url, anonKey, { global: { headers: { Authorization: authorization } }, auth: { persistSession: false } })
   const { data: userData, error: userError } = await client.auth.getUser()
@@ -38,19 +39,33 @@ Deno.serve(async (request) => {
   const segments = validSegments(body.segments)
   if (typeof body.courseId !== 'string' || !segments?.length) return fail(400, 'A complete typed transcript is required.')
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: Deno.env.get('OPENAI_MODEL') || 'gpt-4.1-mini',
-      response_format: { type: 'json_object' },
-      temperature: 0,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: JSON.stringify({ courseId: body.courseId, segments }) },
-      ],
-    }),
+  const serviceClient = createClient(url, serviceKey, { auth: { persistSession: false } })
+  const { data: allowed, error: usageError } = await serviceClient.rpc('claim_ai_request', {
+    p_user_id: userData.user.id,
+    p_weight: 1,
   })
+  if (usageError) return fail(503, 'Lecture-analysis usage could not be verified.')
+  if (allowed !== true) return fail(429, 'Hourly or daily AI usage limit reached.')
+
+  let response: Response
+  try {
+    response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(30_000),
+      body: JSON.stringify({
+        model: Deno.env.get('OPENAI_MODEL') || 'gpt-4.1-mini',
+        response_format: { type: 'json_object' },
+        temperature: 0,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: JSON.stringify({ courseId: body.courseId, segments }) },
+        ],
+      }),
+    })
+  } catch {
+    return fail(503, 'Lecture analysis timed out. Try again without changing the saved transcript.')
+  }
   if (!response.ok) return fail(503, 'Lecture analysis is unavailable.')
   const payload = await response.json()
   const content = payload?.choices?.[0]?.message?.content

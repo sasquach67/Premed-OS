@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo, useState } from 'react'
+import { type ReactNode, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, ArrowUpRight, Info, Sparkles } from 'lucide-react'
 import type { TermReport, TermReportBlock, TermReportEvidenceItem } from '@/lib/types'
 import { useStore } from '@/store/store'
@@ -41,6 +41,7 @@ export function TermReportPanel({
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([])
   const [acceptedDisclosure, setAcceptedDisclosure] = useState(() => hasAcceptedStudySourceDisclosure())
   const [generating, setGenerating] = useState(false)
+  const reportRequestInFlight = useRef(false)
   const report = reports.find((item) => item.id === (focusReportId ?? selectedId)) ?? reports.at(-1)
   const courseNames = useMemo(() => new Map(courses.map((course) => [course.id, `${course.code} · ${course.title}`])), [courses])
   const factsById = useMemo(() => new Map(report?.snapshot.facts.map((fact) => [fact.id, fact]) ?? []), [report])
@@ -167,7 +168,7 @@ export function TermReportPanel({
   )
 
   async function generateReport() {
-    if (!report || generating) return
+    if (!report || reportRequestInFlight.current) return
     const now = Date.now()
     const compilation = termReportEvidence({ courses, center, term: report.term, selectedFileIds, now })
     if (!compilation.eligible) {
@@ -178,34 +179,47 @@ export function TermReportPanel({
       setSourceReviewOpen(false)
       return
     }
+    reportRequestInFlight.current = true
     setGenerating(true)
-    const request = assembleGenerationRequest({
-      specId: 'term-report-v1',
-      chunkIds: [],
-      request: `Create a concise report for ${report.term}.`,
-      controls: { source_mode: 'SOURCE_ONLY' },
-    })
-    const response = await studyTools.termReport({
-      action: 'term-report', term: report.term, specId: request.specId, specHash: request.specHash, systemPrompt: request.systemPrompt,
-      evidence: compilation.snapshot.facts.map((item) => ({ id: item.id, label: item.label, content: item.sourceText || `${item.label}\n${item.detail}` })),
-    })
-    setGenerating(false)
-    if (!response.ok || !validateTermReportArtifact(response.data.artifact, new Set(compilation.snapshot.facts.map((item) => item.id)))) {
-      const message = response.ok ? 'The generated report did not pass its evidence checks. Nothing new was saved.' : response.message
+    try {
+      const request = assembleGenerationRequest({
+        specId: 'term-report-v1',
+        chunkIds: [],
+        request: `Create a concise report for ${report.term}.`,
+        controls: { source_mode: 'SOURCE_ONLY' },
+      })
+      const response = await studyTools.termReport({
+        action: 'term-report', term: report.term, specId: request.specId, specHash: request.specHash, systemPrompt: request.systemPrompt,
+        evidence: compilation.snapshot.facts.map((item) => ({ id: item.id, label: item.label, content: item.sourceText || `${item.label}\n${item.detail}` })),
+      })
+      if (!response.ok || !validateTermReportArtifact(response.data.artifact, new Set(compilation.snapshot.facts.map((item) => item.id)))) {
+        const message = response.ok ? 'The generated report did not pass its evidence checks. Nothing new was saved.' : response.message
+        update((draft) => {
+          const existing = draft.academics.classCenter.termReports.find((item) => item.id === report.id)
+          if (existing) { existing.status = 'unavailable'; existing.providerMessage = message; existing.updatedAt = now }
+        })
+        return
+      }
+      const revision = createTermReport({ id: uid(), input: { courses, center, term: report.term, selectedFileIds, now }, order: reports.length })
+      revision.status = 'ready'
+      revision.blocks = [...compilation.localBlocks.filter((block) => block.kind !== 'limit'), ...aiBlocks(response.data.artifact)]
+      revision.supersedesReportId = report.id
+      update((draft) => { draft.academics.classCenter.termReports.push(revision) })
+      setSelectedId(revision.id)
+      onSelectReport?.(revision.id)
+      setSourceReviewOpen(false)
+    } catch (error) {
+      const message = error instanceof Error && error.message
+        ? error.message
+        : 'AI observations are unavailable right now. Your local facts remain saved.'
       update((draft) => {
         const existing = draft.academics.classCenter.termReports.find((item) => item.id === report.id)
         if (existing) { existing.status = 'unavailable'; existing.providerMessage = message; existing.updatedAt = now }
       })
-      return
+    } finally {
+      reportRequestInFlight.current = false
+      setGenerating(false)
     }
-    const revision = createTermReport({ id: uid(), input: { courses, center, term: report.term, selectedFileIds, now }, order: reports.length })
-    revision.status = 'ready'
-    revision.blocks = [...compilation.localBlocks.filter((block) => block.kind !== 'limit'), ...aiBlocks(response.data.artifact)]
-    revision.supersedesReportId = report.id
-    update((draft) => { draft.academics.classCenter.termReports.push(revision) })
-    setSelectedId(revision.id)
-    onSelectReport?.(revision.id)
-    setSourceReviewOpen(false)
   }
 }
 

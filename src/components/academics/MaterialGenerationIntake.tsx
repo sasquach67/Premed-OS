@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Check, FileText, Sparkles, X } from 'lucide-react'
 import type { AcademicFile } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -19,6 +19,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialog'
 import { TranscriptImport } from '@/components/academics/TranscriptImport'
 import { applicableCourseLens } from '@/lib/academics/courseLens'
+import { generationSourceLimitMessage } from '@/lib/academics/syncGenerationSources'
 
 export type MaterialArtifact = 'flashcards' | 'study-guide' | 'study-outline' | 'revised-notes'
 
@@ -56,13 +57,14 @@ export function MaterialGenerationIntake({
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([])
   const [baselineFileId, setBaselineFileId] = useState('')
   const [busy, setBusy] = useState(false)
+  const generationLock = useRef(false)
   const [useCourseLens, setUseCourseLens] = useState(false)
   const choices = useMemo(() => materialGenerationChoices({ courseId, files, chunks: allChunks }), [allChunks, courseId, files])
   const ready = choices.filter((choice) => choice.chunks.length)
   const notReady = choices.filter((choice) => !choice.chunks.length)
   const lens = workspace?.courseLens
-  const lensSourceFileIds = lens?.sourceFileIds ?? []
-  const lensSourceChunkIds = new Set(lens?.sourceChunkIds ?? [])
+  const lensSourceFileIds = useMemo(() => lens?.sourceFileIds ?? [], [lens?.sourceFileIds])
+  const lensSourceChunkIds = useMemo(() => new Set(lens?.sourceChunkIds ?? []), [lens?.sourceChunkIds])
   const lensAvailable = Boolean(lens?.text.trim() && lensSourceFileIds.length && lensSourceChunkIds.size
     && lensSourceFileIds.every((id) => ready.some((choice) => choice.file.id === id))
     && [...lensSourceChunkIds].every((id) => allChunks.some((chunk) => chunk.id === id && chunk.courseId === courseId)))
@@ -75,7 +77,10 @@ export function MaterialGenerationIntake({
   const courseLens = artifact === 'study-guide' || artifact === 'study-outline'
     ? applicableCourseLens(lens, selectedChunks, Object.fromEntries(choices.map((choice) => [choice.file.id, choice.file.title])))
     : undefined
-  const canGenerate = selectedChunks.length > 0 && (artifact !== 'revised-notes' || Boolean(baseline))
+  const sourceLimitMessage = generationSourceLimitMessage(selectedChunks.length)
+  const canGenerate = selectedChunks.length > 0
+    && !sourceLimitMessage
+    && (artifact !== 'revised-notes' || Boolean(baseline))
 
   function toggle(fileId: string) {
     // A Revised Notes baseline is itself evidence. Keep it selected so the
@@ -92,7 +97,12 @@ export function MaterialGenerationIntake({
   }
 
   async function generate() {
-    if (!canGenerate) return
+    if (sourceLimitMessage) {
+      toast({ title: 'Choose fewer sources', description: sourceLimitMessage, tone: 'error' })
+      return
+    }
+    if (!canGenerate || busy || generationLock.current) return
+    generationLock.current = true
     setBusy(true)
     try {
       if (artifact === 'flashcards') {
@@ -125,7 +135,14 @@ export function MaterialGenerationIntake({
         toast({ title: 'Revised notes created', description: 'Saved separately with its baseline and source trace.' })
       }
       onClose()
+    } catch {
+      toast({
+        title: 'Nothing was saved',
+        description: 'Generation stopped unexpectedly. Nothing was saved, and your selected sources are still here.',
+        tone: 'error',
+      })
     } finally {
+      generationLock.current = false
       setBusy(false)
     }
   }
@@ -157,7 +174,7 @@ export function MaterialGenerationIntake({
           </section>
           <aside className="rounded-2xl border border-border bg-card p-3.5"><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-muted-foreground">Add a source</p><p className="mt-1 font-display text-sm font-extrabold">Stay in this output</p><p className="mt-1 text-xs font-semibold text-muted-foreground">New material returns here; it is never silently selected.</p><div className="mt-4 grid gap-2"><MaterialIntakeDialog courseId={courseId} lectureId={lectureId} trigger={<Button size="sm" variant="outline" className="w-full">Add material</Button>} />{!lectureId && <TranscriptImport courseId={courseId} triggerClassName="w-full" />}</div><p className="mt-4 border-t border-border pt-3 text-xs font-semibold text-muted-foreground">Every saved output keeps its selected-source trace.</p></aside>
         </div>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3"><p className="text-sm font-semibold text-muted-foreground">{artifact === 'revised-notes' && !baseline ? 'Choose your notes baseline to continue.' : selectedChunks.length ? `${selected.length} selected ${selected.length === 1 ? 'source' : 'sources'} will ground this output.${courseLens ? ' Course lens included with its cited source trace.' : ''}` : 'Choose at least one ready source.'}</p><Button onClick={() => void generate()} disabled={busy || !canGenerate}><Sparkles className="size-4" /> {busy ? 'Creating…' : ARTIFACT[artifact].action}</Button></div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3"><p className={cn('text-sm font-semibold', sourceLimitMessage ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground')}>{sourceLimitMessage ?? (artifact === 'revised-notes' && !baseline ? 'Choose your notes baseline to continue.' : selectedChunks.length ? `${selected.length} selected ${selected.length === 1 ? 'source' : 'sources'} will ground this output.${courseLens ? ' Course lens included with its cited source trace.' : ''}` : 'Choose at least one ready source.')}</p><Button onClick={() => void generate()} disabled={busy || !canGenerate}><Sparkles className="size-4" /> {busy ? 'Creating…' : ARTIFACT[artifact].action}</Button></div>
       </CardContent>
     </Card>
   )

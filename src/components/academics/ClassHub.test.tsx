@@ -385,7 +385,7 @@ describe('ClassHub approved Overview', () => {
     await act(async () => add.click())
 
     expect(document.body.textContent).toContain('Add material')
-    expect(document.body.textContent).toContain('Choose files, paste a screenshot from your clipboard')
+    expect(document.body.textContent).toContain('Choose files, paste a screenshot, or paste textbook text')
   })
 
   it('routes Open materials to the selected lecture evidence section', async () => {

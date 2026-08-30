@@ -110,7 +110,7 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
   return <Dialog open={open} onOpenChange={setOpen}>
     <DialogTrigger asChild>{trigger}</DialogTrigger>
     <DialogContent className="max-w-xl bg-card">
-      <DialogHeader><DialogTitle>Add material</DialogTitle><DialogDescription>Choose files, paste a screenshot from your clipboard, or paste the textbook text you want to study. Everything stays local.</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle>Add material</DialogTitle><DialogDescription>Choose files, paste a screenshot, or paste textbook text. File bytes stay on this device; reviewed records can sync when cloud sync or backup is enabled.</DialogDescription></DialogHeader>
       <div className="grid gap-4">
         <input ref={inputRef} type="file" multiple className="sr-only" onChange={(event) => { addFiles(event.target.files ?? []); event.currentTarget.value = '' }} />
         <div className="grid gap-2 sm:grid-cols-2">

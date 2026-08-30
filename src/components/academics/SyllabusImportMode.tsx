@@ -10,7 +10,7 @@
  * Pattern: components/academics/ExamPrepMode.tsx, the same temporary mode.
  */
 import { useMemo, useState } from 'react'
-import { ArrowLeft, CheckCircle2, FileText, Upload } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, FileText, Upload, X } from 'lucide-react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { StatStrip } from '@/components/common/StatStrip'
 import { MascotNote } from '@/components/common/MascotNote'
@@ -111,6 +111,9 @@ export function SyllabusImportMode({
 
   function patchItem(id: string, patch: Partial<SyllabusProposal['items'][number]>) {
     setProposal((state) => state ? { ...state, items: state.items.map((item) => item.id === id ? { ...item, ...patch } : item) } : state)
+  }
+  function removeItem(id: string) {
+    setProposal((state) => state ? { ...state, items: state.items.filter((item) => item.id !== id) } : state)
   }
   function addManual(kind: SyllabusKind) {
     setProposal((state) => state ? {
@@ -234,8 +237,8 @@ export function SyllabusImportMode({
                     <section className="rounded-2xl border border-warning/40 bg-warning/8 p-4">
                       <h2 className="font-display text-base font-extrabold">I couldn’t read this one</h2>
                       <p className="mt-1 text-sm font-semibold text-muted-foreground">
-                        It looks like a scan without a text layer, so there’s nothing to pull out. A straight-on photo in good
-                        light usually works, or paste the text instead. Your file is saved to this class either way.
+                        It looks like a scan without a text layer, so there’s nothing to pull out on this device. Paste the text
+                        or choose a text-based PDF, DOCX, or TXT file. Your file is saved to this class either way.
                       </p>
                     </section>
                   )}
@@ -273,7 +276,7 @@ export function SyllabusImportMode({
                         <ReviewGroup
                           key={kind} kind={kind} items={items}
                           searched={proposal.searched[kind]}
-                          onPatch={patchItem} onAddManual={() => addManual(kind)}
+                          onPatch={patchItem} onRemove={removeItem} onAddManual={() => addManual(kind)}
                         />
                       ))}
                       {gap !== null && gap !== 0 && (
@@ -319,9 +322,9 @@ function UploadState({ files, pastedText, parsing, error, onFiles, onPaste, onPa
   return (
     <div className="mx-auto max-w-[840px] py-2">
       <AnimatedFileUpload
-        accept=".pdf,.docx,image/*,text/plain" multiple onFiles={onFiles}
+        accept=".pdf,.docx,.txt,text/plain" multiple onFiles={onFiles}
         label="Drop a syllabus or course schedule here"
-        description="PDF, DOCX, image, or text file. It stays on this device."
+        description="Text-based PDF, DOCX, or TXT. The source file stays on this device."
       />
       <div className="mt-4 rounded-2xl border border-border bg-card p-4">
         <p className="font-display text-sm font-extrabold">Or paste the text instead</p>
@@ -331,7 +334,7 @@ function UploadState({ files, pastedText, parsing, error, onFiles, onPaste, onPa
       {error && <p className="mt-3 rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm font-bold">{error} Paste the text or continue with manual entry; importing never blocks you.</p>}
       <div className="mt-4 flex items-center justify-between gap-3">
         <MascotNote variant="tip" className="flex-1">
-          Nothing is saved until you’ve reviewed it. Reading happens on this device.
+          Nothing is saved until you review it. Saved records can sync when cloud sync is enabled.
         </MascotNote>
         <Button size="lg" disabled={(!files.length && !pastedText.trim()) || parsing} onClick={onParse}>
           <Upload className="size-4" /> {parsing ? 'Reading week structure…' : 'Read syllabus'}
@@ -342,9 +345,10 @@ function UploadState({ files, pastedText, parsing, error, onFiles, onPaste, onPa
 }
 
 /** A group collapses to one factual summary when clean; any low-confidence item expands it. */
-function ReviewGroup({ kind, items, searched, onPatch, onAddManual }: {
+function ReviewGroup({ kind, items, searched, onPatch, onRemove, onAddManual }: {
   kind: SyllabusKind; items: SyllabusProposal['items']; searched: string
   onPatch: (id: string, patch: Partial<SyllabusProposal['items'][number]>) => void
+  onRemove: (id: string) => void
   onAddManual: () => void
 }) {
   const flagged = items.some((item) => item.confidence === 'low')
@@ -365,10 +369,20 @@ function ReviewGroup({ kind, items, searched, onPatch, onAddManual }: {
         <div className="space-y-2 px-4 pb-4">
           {items.map((item) => (
             <div key={item.id} className="syllabus-import-inner rounded-xl border border-border p-2.5">
-              <div className="flex gap-2">
+              <div className="flex items-start gap-2">
                 <Input aria-label={`${GROUP_LABEL[kind]} label`} value={item.label} onChange={(event) => onPatch(item.id, { label: event.target.value })}
                   className={cn('h-8 font-bold', item.confidence === 'low' && 'border-warning')} />
                 <Input aria-label={`${GROUP_LABEL[kind]} value`} value={item.value ?? ''} onChange={(event) => onPatch(item.id, { value: event.target.value })} className="h-8" />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="size-8 shrink-0"
+                  aria-label={`Remove ${GROUP_LABEL[kind]} row`}
+                  onClick={() => onRemove(item.id)}
+                >
+                  <X className="size-4" />
+                </Button>
               </div>
               <p className="mt-1.5 text-xs font-semibold text-muted-foreground">{item.evidence.location} · “{item.evidence.quote}”</p>
             </div>

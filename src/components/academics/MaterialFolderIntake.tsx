@@ -39,54 +39,81 @@ export function MaterialFolderIntake({ course, onBack }: { course: Course; onBac
 
   async function refreshDriveStatus() {
     if (!supabase) return setDriveState('unavailable')
-    const status = await googleDriveMaterialConnectionStatus(supabase)
-    if (!status.ok) return setDriveState(status.reason === 'grant-expired' ? 'reconnect' : 'unavailable')
-    setDriveState(status.connection?.state === 'connected' ? 'connected' : status.connection?.state === 'needs-reconnect' ? 'reconnect' : 'available')
-    if (status.connection?.state === 'connected') setDriveLabel(status.connection.rootLabel)
+    try {
+      const status = await googleDriveMaterialConnectionStatus(supabase)
+      if (!status.ok) {
+        setNotice(status.message)
+        return setDriveState(status.reason === 'grant-expired' ? 'reconnect' : 'unavailable')
+      }
+      setDriveState(status.connection?.state === 'connected' ? 'connected' : status.connection?.state === 'needs-reconnect' ? 'reconnect' : 'available')
+      if (status.connection?.state === 'connected') setDriveLabel(status.connection.rootLabel)
+    } catch {
+      setDriveState('unavailable')
+      setNotice('Google Drive could not be checked. Local folders and individual files still work.')
+    }
   }
   useEffect(() => { void refreshDriveStatus() }, [])
 
   async function chooseLocalFolder() {
     setBusy(true)
-    const result = await discoverLocalFolderManifest({ fromUserGesture: true })
-    setBusy(false)
-    if (!result.ok) return setNotice(result.reason)
-    let sourceId = ''; let created = 0
-    update((draft) => {
-      const source = addWatchedNotesSource(draft.academics.classCenter, { provider: 'local-folder', rootLabel: result.rootLabel, courseId: course.id })
-      if (!source) return
-      sourceId = source.id
-      created = intakeWatchedNotesManifest({ center: draft.academics.classCenter, sourceId, entries: result.entries, courses: draft.courses }).created.length
-    })
-    if (!sourceId) return
-    setActiveSourceId(sourceId)
-    setNotice(created ? `${created} file${created === 1 ? '' : 's'} are ready for your review.` : 'No new readable files were found in that folder.')
+    try {
+      const result = await discoverLocalFolderManifest({ fromUserGesture: true })
+      if (!result.ok) return setNotice(result.reason)
+      let sourceId = ''; let created = 0
+      update((draft) => {
+        const source = addWatchedNotesSource(draft.academics.classCenter, { provider: 'local-folder', rootLabel: result.rootLabel, courseId: course.id })
+        if (!source) return
+        sourceId = source.id
+        created = intakeWatchedNotesManifest({ center: draft.academics.classCenter, sourceId, entries: result.entries, courses: draft.courses }).created.length
+      })
+      if (!sourceId) return
+      setActiveSourceId(sourceId)
+      setNotice(created ? `${created} file${created === 1 ? '' : 's'} are ready for your review.` : 'No new readable files were found in that folder.')
+    } catch {
+      setNotice('That folder could not be read. Choose it again or add individual files instead.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function startDrive() {
     if (!supabase) return setDriveState('unavailable')
     setBusy(true)
-    const result = await beginGoogleDriveMaterialConnection(supabase, { folderId: driveFolderId.trim(), rootLabel: driveLabel.trim() })
-    setBusy(false)
-    if (!result.ok) { setDriveState(result.reason === 'grant-expired' ? 'reconnect' : 'unavailable'); return setNotice(result.message) }
-    window.location.assign(result.authorizeUrl)
+    try {
+      const result = await beginGoogleDriveMaterialConnection(supabase, {
+        folderId: driveFolderId.trim(), rootLabel: driveLabel.trim(), returnTo: window.location.hash,
+      })
+      if (!result.ok) { setDriveState(result.reason === 'grant-expired' ? 'reconnect' : 'unavailable'); return setNotice(result.message) }
+      window.location.assign(result.authorizeUrl)
+    } catch {
+      setDriveState('unavailable')
+      setNotice('Google Drive could not start the connection. Local folders and individual files still work.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function reviewDriveFolder() {
     if (!supabase) return
     setBusy(true)
-    const result = await listGoogleDriveMaterialManifest(supabase)
-    setBusy(false)
-    if (!result.ok) { setDriveState(result.reason === 'grant-expired' ? 'reconnect' : 'unavailable'); return setNotice(result.message) }
-    let sourceId = ''; let created = 0
-    update((draft) => {
-      const source = addWatchedNotesSource(draft.academics.classCenter, { id: result.value.connection.id, provider: 'google-drive', rootLabel: result.value.connection.rootLabel, courseId: course.id })
-      if (!source) return
-      sourceId = source.id
-      created = intakeWatchedNotesManifest({ center: draft.academics.classCenter, sourceId, entries: result.value.entries, courses: draft.courses }).created.length
-    })
-    setActiveSourceId(sourceId)
-    setNotice(created ? `${created} Drive file${created === 1 ? '' : 's'} are ready for review. Google-native documents stay unavailable until export is designed.` : 'There are no new supported files to review in this connected folder.')
+    try {
+      const result = await listGoogleDriveMaterialManifest(supabase)
+      if (!result.ok) { setDriveState(result.reason === 'grant-expired' ? 'reconnect' : 'unavailable'); return setNotice(result.message) }
+      let sourceId = ''; let created = 0
+      update((draft) => {
+        const source = addWatchedNotesSource(draft.academics.classCenter, { id: result.value.connection.id, provider: 'google-drive', rootLabel: result.value.connection.rootLabel, courseId: course.id })
+        if (!source) return
+        sourceId = source.id
+        created = intakeWatchedNotesManifest({ center: draft.academics.classCenter, sourceId, entries: result.value.entries, courses: draft.courses }).created.length
+      })
+      setActiveSourceId(sourceId)
+      setNotice(created ? `${created} Drive file${created === 1 ? '' : 's'} are ready for review. Google-native documents stay unavailable until export is designed.` : 'There are no new supported files to review in this connected folder.')
+    } catch {
+      setDriveState('unavailable')
+      setNotice('Google Drive could not review this folder. Reconnect it or use a local folder instead.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   function confirmWeek(proposalId: string) {

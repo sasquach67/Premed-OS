@@ -731,7 +731,7 @@ function Materials({
   const requestedArtifact = isMaterialArtifact(materialParams.get('createMaterial')) ? materialParams.get('createMaterial') as MaterialArtifact : null
   const requestedNoteId = materialParams.get('materialNote')
   const [artifact, setArtifact] = useState<MaterialArtifact | null>(requestedArtifact)
-  const [folderIntakeOpen, setFolderIntakeOpen] = useState(false)
+  const folderIntakeOpen = materialParams.get('folderIntake') === '1'
   const materialNotes = useMemo(() => notes.filter(isMaterialNote), [notes])
   const groups = useMemo(() => groupMaterials(files, materialNotes, topics, groupBy), [files, groupBy, materialNotes, topics])
   const visible = groups.map((group) => ({
@@ -763,7 +763,21 @@ function Materials({
     })
   }
 
-  if (folderIntakeOpen) return <MaterialFolderIntake course={course} onBack={() => setFolderIntakeOpen(false)} />
+  function openFolderIntake() {
+    const next = new URLSearchParams(materialParams)
+    next.set('classTab', 'materials')
+    next.set('folderIntake', '1')
+    setMaterialParams(next, { replace: true })
+  }
+
+  function closeFolderIntake() {
+    const next = new URLSearchParams(materialParams)
+    next.delete('folderIntake')
+    next.delete('driveConnection')
+    setMaterialParams(next, { replace: true })
+  }
+
+  if (folderIntakeOpen) return <MaterialFolderIntake course={course} onBack={closeFolderIntake} />
 
   return (
     // Visual provenance: mockup-lab/01-academics/academics-class-hub.html,
@@ -818,7 +832,7 @@ function Materials({
       <Collapsible title="Material tools" badge={<span className="class-hub-material-tools-badge">Import · generate · prepare</span>}>
         <div className="class-hub-material-tools-actions">
           <Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button>
-          <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline"><FileStack className="size-4" /> Create study resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems onChoose={openArtifact} /><DropdownMenuSeparator /><DropdownMenuItem onClick={() => setFolderIntakeOpen(true)}><FolderOpen className="size-4" /> Connect a notes folder</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+          <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline"><FileStack className="size-4" /> Create study resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems onChoose={openArtifact} /><DropdownMenuSeparator /><DropdownMenuItem onClick={openFolderIntake}><FolderOpen className="size-4" /> Connect a notes folder</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
         </div>
         <div className="mt-3 space-y-3">
           <MaterialCatalog files={files} topics={topics} />

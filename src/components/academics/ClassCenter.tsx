@@ -62,6 +62,8 @@ import { nextIncompleteReading, readingDebt, READING_LIST_STATE_COPY } from '@/l
 import { inferAcademicTerm } from '@/store/migrations/academicsV4'
 import { persistConfirmedSyllabusEvidence } from '@/lib/academics/guideContract'
 import { extractClassMeetingDays, extractClassMeetingTime, isOfficeHoursLine, normalizeMeetingDays } from '@/lib/academics/meetingSchedule'
+import { removeLocalBlob } from '@/lib/localBlobStore'
+import { removeCourseCascade } from '@/lib/academics/removeCourseCascade'
 
 const COLORS: AcademicTagColor[] = [
   'blue', 'sky', 'cyan', 'teal', 'mint', 'green',
@@ -613,6 +615,9 @@ function ClassCenterDashboard({
     data.topics.some((item) => item.courseId === scopedCourse?.id)
     || data.assignments.some((item) => item.courseId === scopedCourse?.id)
     || data.gradeCategories.some((item) => item.courseId === scopedCourse?.id)
+    || data.assignedReadings.some((item) => item.courseId === scopedCourse?.id)
+    || Boolean(data.workspaces.find((item) => item.courseId === scopedCourse?.id)?.syllabusSchedule?.length)
+    || data.files.some((item) => item.courseId === scopedCourse?.id && item.type === 'syllabus')
   )
   const reimporting = Boolean(scopedCourse)
     && (searchParams.get('reimport') === '1' || scopedHasSyllabusData)
@@ -646,8 +651,12 @@ function ClassCenterDashboard({
       return { file, id, blobRef: await retainLocalSyllabus(file, id) }
     }))
     const syllabusFileId = replaceSyllabusFileId ?? retained[0]?.id
-    const sourceFileIdForItem = (item: SyllabusProposal['items'][number]) =>
-      retained.find(({ file }) => file.name === item.evidence.sourceName)?.id ?? syllabusFileId
+    const sourceFileIdForItem = (item: SyllabusProposal['items'][number]) => {
+      const index = retained.findIndex(({ file }) => file.name === item.evidence.sourceName)
+      if (index < 0) return syllabusFileId
+      return replaceSyllabusFileId && index === 0 ? replaceSyllabusFileId : retained[index].id
+    }
+    const sourceType = selectedFiles.length ? 'upload' as const : proposal?.sourceKind === 'text' ? 'paste' as const : 'upload' as const
     const linkedFileIdsForItem = (item: SyllabusProposal['items'][number]) => {
       const fileId = sourceFileIdForItem(item)
       return fileId ? [fileId] : []
@@ -663,9 +672,13 @@ function ClassCenterDashboard({
       if (replaceSyllabusFileId) {
         const latest = retained[0]
         const existing = center.files.find((file) => file.id === replaceSyllabusFileId && file.courseId === courseId && file.type === 'syllabus')
-        if (latest && existing) Object.assign(existing, { title: latest.file.name.replace(/\.[^.]+$/, '') || latest.file.name, sourceType: 'upload', url: '', blobRef: latest.blobRef, fileName: latest.file.name, mimeType: latest.file.type, updatedAt: now })
+        if (latest && existing) Object.assign(existing, { title: latest.file.name.replace(/\.[^.]+$/, '') || latest.file.name, sourceType, url: '', blobRef: latest.blobRef, fileName: latest.file.name, mimeType: latest.file.type, updatedAt: now })
+        retained.slice(1).forEach(({ file, id, blobRef }) => center.files.unshift({
+          id, courseId, title: file.name.replace(/\.[^.]+$/, '') || file.name, type: 'syllabus', sourceType, owner: 'course', url: '', blobRef,
+          fileName: file.name, mimeType: file.type, notes: '', linkedTopicIds: [], createdAt: now, updatedAt: now, order: center.files.length,
+        }))
       } else retained.forEach(({ file, id, blobRef }) => center.files.unshift({
-        id, courseId, title: file.name.replace(/\.[^.]+$/, '') || file.name, type: 'syllabus', sourceType: 'upload', owner: 'course', url: '', blobRef,
+        id, courseId, title: file.name.replace(/\.[^.]+$/, '') || file.name, type: 'syllabus', sourceType, owner: 'course', url: '', blobRef,
         fileName: file.name, mimeType: file.type, notes: '', linkedTopicIds: [], createdAt: now, updatedAt: now, order: center.files.length,
       }))
       if (proposal && existingCourseId && reimportDecisions) {
@@ -1111,20 +1124,12 @@ function ClassCenterDashboard({
                 onImport={() => { const next = new URLSearchParams(searchParams); next.set('importFor', row.id); setSearchParams(next) }}
                 onDelete={() => {
                   if (!window.confirm(`Delete ${row.courseCode || row.courseTitle}?`)) return
+                  let blobRefs: string[] = []
                   updateAll((draft) => {
                     draft.courses = draft.courses.filter((item) => item.id !== row.id)
-                    const center = draft.academics.classCenter
-                    center.workspaces = center.workspaces.filter((item) => item.courseId !== row.id)
-                    center.topics = center.topics.filter((item) => item.courseId !== row.id)
-                    center.notes = center.notes.filter((item) => item.courseId !== row.id)
-                    center.assignments = center.assignments.filter((item) => item.courseId !== row.id)
-                    center.files = center.files.filter((item) => item.courseId !== row.id)
-                    center.contacts = center.contacts.filter((item) => item.courseId !== row.id)
-                    center.weakAreas = center.weakAreas.filter((item) => item.courseId !== row.id)
-                    center.paperDrafts = center.paperDrafts.filter((item) => item.courseId !== row.id)
-                    center.assignedReadings = center.assignedReadings.filter((item) => item.courseId !== row.id)
-                    center.feedbackNotes = center.feedbackNotes.filter((item) => item.courseId !== row.id)
+                    blobRefs = removeCourseCascade(draft.academics.classCenter, row.id).blobRefs
                   })
+                  void Promise.allSettled(blobRefs.map((blobRef) => removeLocalBlob(blobRef)))
                 }}
                 onArchive={() => mutate((draft) => {
                   const item = draft.workspaces.find((course) => course.courseId === row.id)

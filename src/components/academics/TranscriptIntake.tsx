@@ -305,7 +305,7 @@ export function TranscriptIntake({ courses, onManual, onCancel, onSaved }: {
     </div>
     <p className="grades-transcript-copy mt-3 flex items-center gap-1">
       <FileText className="size-3.5" aria-hidden="true" />
-      The file is read on this device. Nothing is uploaded, and this is not a registrar document or a degree audit.
+      The file is read on this device. Its bytes stay local; reviewed records can sync when cloud sync or backup is enabled. This is not a registrar document or degree audit.
     </p>
     {!courses.length && <p className="grades-transcript-copy mt-2">
       No planned course matches yet. Prior credit stays in Grades &amp; Archive; ordinary dated coursework can link to the Planner after review.

@@ -113,11 +113,11 @@ export function SyllabusImportDialog({ open, semester, onOpenChange, onParsed, o
         ) : (
           <div className="space-y-4">
             <AnimatedFileUpload
-              accept=".pdf,.docx,image/*,text/plain"
+              accept=".pdf,.docx,.txt,text/plain"
               multiple
               onFiles={(next) => { setFiles(next); setError(null) }}
               label="Drop a syllabus or course schedule here"
-              description="PDF, DOCX, image, or text file. It stays on this device."
+              description="Text-based PDF, DOCX, or TXT. The source file stays on this device."
             />
             <div className="rounded-xl border border-border bg-muted/45 p-4">
               <p className="font-display text-sm font-extrabold">Or paste the text instead</p>
@@ -131,7 +131,7 @@ export function SyllabusImportDialog({ open, semester, onOpenChange, onParsed, o
             </div>
             {error && <p className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm font-bold" role="alert">{error} Try a different file or paste the text instead.</p>}
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
-              <p className="text-xs font-semibold text-muted-foreground">Reading happens on this device. Review comes before save.</p>
+              <p className="text-xs font-semibold text-muted-foreground">Reading happens on this device. Reviewed records can sync after you save if cloud sync is enabled.</p>
               <Button disabled={!hasSource || parsing} onClick={readSyllabus}>
                 <Upload className={cn('size-4', parsing && 'animate-pulse')} />
                 {parsing ? 'Reading syllabus…' : 'Read syllabus'}

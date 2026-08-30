@@ -33,6 +33,7 @@ export function LectureCapturePanel({ courseId, data, onOpenNotes, initialLectur
   const [activeLectureId, setActiveLectureId] = useState<string | undefined>(initialLectureId)
   const [query, setQuery] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
+  const analysisRequestInFlight = useRef(false)
   const [importingTranscript, setImportingTranscript] = useState(false)
   const [artifact, setArtifact] = useState<MaterialArtifact | null>(null)
 
@@ -137,27 +138,42 @@ export function LectureCapturePanel({ courseId, data, onOpenNotes, initialLectur
   }
 
   async function analyze() {
-    if (!activeLecture || !transcriptChunks.length) return
+    if (!activeLecture || !transcriptChunks.length || analysisRequestInFlight.current) return
+    analysisRequestInFlight.current = true
     setAnalyzing(true)
-    const outcome = await analyzeLectureTranscript({ courseId, chunks: transcriptChunks })
-    setAnalyzing(false)
-    if (!outcome.ok) {
-      toast({ title: 'No lecture remarks were saved', description: outcome.message, tone: 'error' })
-      return
-    }
-    const now = Date.now()
-    useStore.getState().update((draft) => {
-      const center = draft.academics.classCenter
-      outcome.findings.forEach((finding, index) => {
-        const findingId = uid()
-        const savedFinding = { ...finding, id: findingId, courseId, lectureId: activeLecture.id, createdAt: now, updatedAt: now, order: center.lectureFindings.filter((item) => item.lectureId === activeLecture.id).length + index }
-        center.lectureFindings.push(savedFinding)
-        const proposal = buildLectureGuideProposal({ center, courseId, lectureId: activeLecture.id, finding: savedFinding, now })
-        if (proposal) center.guideProposals.push(proposal)
+    try {
+      const outcome = await analyzeLectureTranscript({ courseId, chunks: transcriptChunks })
+      if (!outcome.ok) {
+        toast({ title: 'No lecture remarks were saved', description: outcome.message, tone: 'error' })
+        return
+      }
+      const now = Date.now()
+      let addedCount = 0
+      useStore.getState().update((draft) => {
+        const center = draft.academics.classCenter
+        const existingKeys = new Set(center.lectureFindings
+          .filter((item) => item.lectureId === activeLecture.id)
+          .map((item) => `${item.sourceChunkId}\n${item.timestamp}\n${item.quote}`))
+        outcome.findings.forEach((finding) => {
+          const evidenceKey = `${finding.sourceChunkId}\n${finding.timestamp}\n${finding.quote}`
+          if (existingKeys.has(evidenceKey)) return
+          existingKeys.add(evidenceKey)
+          const findingId = uid()
+          const savedFinding = { ...finding, id: findingId, courseId, lectureId: activeLecture.id, createdAt: now, updatedAt: now, order: center.lectureFindings.filter((item) => item.lectureId === activeLecture.id).length }
+          center.lectureFindings.push(savedFinding)
+          addedCount += 1
+          const proposal = buildLectureGuideProposal({ center, courseId, lectureId: activeLecture.id, finding: savedFinding, now })
+          if (proposal) center.guideProposals.push(proposal)
+        })
       })
-    })
-    toast({ title: outcome.findings.length ? 'Remarks ready for review' : 'No class-specific remarks found', description: outcome.findings.length ? 'They are pending in Guide until you review, edit, add, or dismiss them.' : 'No weak guesses were created.' })
-    if (outcome.findings.length) setView('review')
+      toast({ title: addedCount ? 'Remarks ready for review' : outcome.findings.length ? 'No new remarks found' : 'No class-specific remarks found', description: addedCount ? 'They are pending in Guide until you review, edit, add, or dismiss them.' : outcome.findings.length ? 'Those exact remarks are already saved for this lecture.' : 'No weak guesses were created.' })
+      if (addedCount) setView('review')
+    } catch (error) {
+      toast({ title: 'No lecture remarks were saved', description: error instanceof Error && error.message ? error.message : 'Lecture analysis is unavailable. Your local lecture and transcript were not changed.', tone: 'error' })
+    } finally {
+      analysisRequestInFlight.current = false
+      setAnalyzing(false)
+    }
   }
 
   const openLecture = (lecture: LectureRecord) => {

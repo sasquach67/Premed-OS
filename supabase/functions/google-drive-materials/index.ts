@@ -1,4 +1,4 @@
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2.110.2'
 import {
   GOOGLE_DRIVE_FOLDER_MIME, GOOGLE_DRIVE_READ_SCOPE, MAX_DRIVE_FILES_PER_CHECK,
   decryptRefreshToken, encryptRefreshToken, isSafeDriveFolderId,
@@ -37,6 +37,7 @@ type OAuthStateRecord = {
   folder_id: string
   root_label: string
   code_verifier: string
+  return_to: string | null
 }
 
 type ConnectedFile = GoogleDriveApiFile & { relativePath: string }
@@ -65,6 +66,7 @@ function configured() {
     Deno.env.get('SUPABASE_URL'), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
     Deno.env.get('GOOGLE_DRIVE_CLIENT_ID'), Deno.env.get('GOOGLE_DRIVE_CLIENT_SECRET'),
     Deno.env.get('MATERIAL_SOURCE_TOKEN_ENCRYPTION_KEY'), Deno.env.get('PREMEDOS_APP_ORIGIN'),
+    Deno.env.get('MATERIAL_SOURCE_ALLOWED_ORIGINS'),
   ].every(Boolean)
 }
 
@@ -89,6 +91,17 @@ async function authenticate(request: Request) {
 
 function callbackUrl() {
   return `${Deno.env.get('SUPABASE_URL')}/functions/v1/google-drive-materials?action=callback`
+}
+
+function safeAcademicsReturnHash(value: unknown) {
+  if (typeof value !== 'string' || value.length > 512) return '#/academics?mode=daily&tab=class-center'
+  if (!value.startsWith('#/academics') || value.includes('://') || value.includes('\\') || /[\r\n]/.test(value)) {
+    return '#/academics?mode=daily&tab=class-center'
+  }
+  const [path, query = ''] = value.split('?', 2)
+  const params = new URLSearchParams(query)
+  params.set('driveConnection', 'connected')
+  return `${path}?${params.toString()}`
 }
 
 async function sha256Base64Url(value: string) {
@@ -226,17 +239,20 @@ async function manifestForConnection(admin: AdminClient, connection: GoogleDrive
 
 async function handleBegin(request: Request, userId: string, origin: string | null) {
   if (!configured()) return failure(503, 'configuration-required', 'Google Drive materials must be configured by the app owner first.', origin)
-  const body = await request.json().catch(() => ({})) as { folderId?: unknown; rootLabel?: unknown }
+  const body = await request.json().catch(() => ({})) as { folderId?: unknown; rootLabel?: unknown; returnTo?: unknown }
   if (!isSafeDriveFolderId(body.folderId) || typeof body.rootLabel !== 'string' || !body.rootLabel.trim()) {
     return failure(400, 'invalid-folder', 'Choose one named Google Drive folder before connecting.', origin)
   }
   const admin = adminClient()
-  const connectionId = crypto.randomUUID()
+  const { data: existing, error: existingError } = await connectionForUser(admin, userId)
+  if (existingError) return failure(503, 'provider-unavailable', 'The folder connection could not be prepared.', origin)
+  const connectionId = existing?.id ?? crypto.randomUUID()
   const state = randomUrlSafeToken(32)
   const codeVerifier = randomUrlSafeToken(64)
   const { error } = await admin.from('academic_material_source_oauth_states').insert({
     state, user_id: userId, connection_id: connectionId, folder_id: body.folderId,
     root_label: body.rootLabel.trim().slice(0, 160), code_verifier: codeVerifier,
+    return_to: safeAcademicsReturnHash(body.returnTo).replace(/([?&])driveConnection=connected(?:&|$)/, '$1').replace(/[?&]$/, ''),
     expires_at: new Date(Date.now() + OAUTH_STATE_TTL_MS).toISOString(),
   })
   if (error) return failure(503, 'provider-unavailable', 'The connection request could not be prepared.', origin)
@@ -261,7 +277,7 @@ async function handleCallback(url: URL) {
     .delete()
     .eq('state', state)
     .gt('expires_at', new Date().toISOString())
-    .select('state,user_id,connection_id,folder_id,root_label,code_verifier')
+    .select('state,user_id,connection_id,folder_id,root_label,code_verifier,return_to')
     .maybeSingle<OAuthStateRecord>()
   if (error || !pending) return new Response('Google Drive connection expired. Return to Premed OS and try again.', { status: 400 })
 
@@ -288,7 +304,7 @@ async function handleCallback(url: URL) {
   }, { onConflict: 'connection_id' })
   if (secretError) return new Response('The folder grant could not be stored. Return to Premed OS and try again.', { status: 503 })
   const destination = new URL(appOrigin)
-  destination.searchParams.set('driveConnection', 'connected')
+  destination.hash = safeAcademicsReturnHash(pending.return_to)
   return Response.redirect(destination.toString(), 302)
 }
 

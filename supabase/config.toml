@@ -1,0 +1,16 @@
+project_id = "poichxqptuupzrkyewrq"
+
+[functions.study-tools]
+verify_jwt = true
+
+[functions.shared-syllabus]
+verify_jwt = true
+
+[functions.lecture-analysis]
+verify_jwt = true
+
+# Google redirects to this callback without a Premed OS bearer token. The
+# function validates the short-lived PKCE state itself; every browser-initiated
+# POST action still verifies the Supabase user inside the handler.
+[functions.google-drive-materials]
+verify_jwt = false

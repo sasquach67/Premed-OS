@@ -14,6 +14,7 @@ import type { SourceChunk } from '@/lib/types'
  * but generation still needs one stable server-side bucket.
  */
 export const CLASS_MATERIAL_SCOPE = '__class_material__'
+export const MAX_GENERATION_SOURCE_CHUNKS = 24
 
 export interface GenerationSourcePreparation {
   ok: boolean
@@ -41,6 +42,11 @@ export function generationSourceInputs(chunks: readonly SourceChunk[]): StudySou
   }))
 }
 
+export function generationSourceLimitMessage(chunkCount: number): string | undefined {
+  if (chunkCount <= MAX_GENERATION_SOURCE_CHUNKS) return undefined
+  return `Choose fewer source files or add a shorter excerpt. This selection contains ${chunkCount} passages, and AI study tools can use up to ${MAX_GENERATION_SOURCE_CHUNKS} at a time.`
+}
+
 /**
  * The local store remains canonical. This creates or refreshes only the
  * selected material's private server mirror, after the same disclosure used
@@ -49,6 +55,8 @@ export function generationSourceInputs(chunks: readonly SourceChunk[]): StudySou
 export async function prepareGenerationSources(courseId: string, chunks: readonly SourceChunk[]): Promise<GenerationSourcePreparation> {
   const sources = generationSourceInputs(chunks)
   if (!sources.length) return { ok: false, message: 'Select processed course material first.' }
+  const limitMessage = generationSourceLimitMessage(sources.length)
+  if (limitMessage) return { ok: false, message: limitMessage }
 
   if (!hasAcceptedStudySourceDisclosure()) {
     if (typeof window === 'undefined') return { ok: false, message: 'AI study tools must be opened in the app.' }

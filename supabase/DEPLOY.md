@@ -113,8 +113,8 @@ curl -s -o /dev/null -w "%{http_code}\n" -X POST "$(grep '^VITE_SUPABASE_URL=' .
 ```
 
 `404` = the function is not deployed, and no secret can help until it is.
-`401` = deployed and correctly rejecting unauthenticated calls. **As of
-Aug 19, 2026 this returns 404.**
+`401` = deployed and correctly rejecting unauthenticated calls. The current
+production deployment should return `401` for an unauthenticated request.
 
 ⚠️ **Do not paste the API key into a command someone else runs for you.** Use
 the dashboard's Edge Functions → Secrets form, or run
@@ -175,10 +175,21 @@ Enable the Google Drive API and add
 `https://<project-ref>.supabase.co/functions/v1/google-drive-materials?action=callback`
 as the OAuth client’s **exact** redirect URI. Add `drive.readonly` to the
 consent-screen scope disclosure and update the public privacy explanation
-before asking a user to connect a folder. Deploy with:
+before asking a user to connect a folder.
+
+Google's callback does not carry a Premed OS bearer token. Keep browser-route
+authentication inside the handler and retain this function-specific setting in
+`supabase/config.toml`:
+
+```toml
+[functions.google-drive-materials]
+verify_jwt = false
+```
+
+Deploy with:
 
 ```bash
-npx --yes supabase@latest functions deploy google-drive-materials
+npx --yes supabase@latest functions deploy google-drive-materials --no-verify-jwt
 ```
 
 Then use a non-admin account and a disposable folder to verify: connect → list

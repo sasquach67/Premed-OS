@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { FunctionsHttpError, type SupabaseClient } from '@supabase/supabase-js'
 import type {
   GoogleDriveMaterialListResult, GoogleDriveMaterialSourceConnection,
   GoogleDriveMaterialSourceRecovery,
@@ -14,8 +14,15 @@ export type GoogleDriveStatusResult =
   | { ok: true; connection?: GoogleDriveMaterialSourceConnection }
   | { ok: false; reason: GoogleDriveMaterialSourceRecovery | 'server-unavailable'; message: string }
 
-function failure(error: unknown, fallback: GoogleDriveMaterialSourceRecovery | 'server-unavailable') {
-  const detail = error as EdgeFailure
+async function failure(error: unknown, fallback: GoogleDriveMaterialSourceRecovery | 'server-unavailable') {
+  let detail = error as EdgeFailure
+  if (error instanceof FunctionsHttpError) {
+    try {
+      detail = await error.context.clone().json() as EdgeFailure
+    } catch {
+      detail = {}
+    }
+  }
   return {
     ok: false as const,
     reason: detail?.error?.code === 'configuration-required' ? 'configuration-required' : fallback,
@@ -30,7 +37,7 @@ function failure(error: unknown, fallback: GoogleDriveMaterialSourceRecovery | '
  */
 export async function beginGoogleDriveMaterialConnection(
   client: SupabaseClient,
-  input: { folderId: string; rootLabel: string },
+  input: { folderId: string; rootLabel: string; returnTo?: string },
 ): Promise<GoogleDriveBeginResult> {
   const { data, error } = await client.functions.invoke('google-drive-materials', {
     body: { action: 'begin', ...input },

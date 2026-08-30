@@ -168,7 +168,7 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(center.gradeCategories.filter((item) => item.courseId === course.id).map((item) => item.weight).sort((a, b) => a - b)).toEqual([15, 25, 60])
     expect(center.gradeCategories.filter((item) => item.courseId === course.id).every((item) => item.policyNote == null)).toBe(true)
     expect(center.files.filter((item) => item.courseId === course.id && item.type === 'syllabus')).toEqual([
-      expect.objectContaining({ blobRef: expect.stringMatching(/^local-syllabus:/), sourceType: 'upload' }),
+      expect.objectContaining({ blobRef: expect.stringMatching(/^local-syllabus:/), sourceType: 'paste' }),
     ])
     expect(retainLocalSyllabus).toHaveBeenCalledTimes(1)
 
@@ -302,6 +302,24 @@ Week 1: Aromatic substitution and reaction energy diagrams.`)
     expect(saved.topics.find((topic) => topic.title.includes('aromatic substitution'))?.linkedFileIds).toEqual([overviewFile?.id])
     expect(saved.assignments.find((assignment) => assignment.title.includes('Midterm Exam'))?.linkedFileIds).toEqual([scheduleFile?.id])
     expect(retainLocalSyllabus).toHaveBeenCalledTimes(2)
+  })
+
+  it('lets the student exclude one false-positive row before the first apply', async () => {
+    await render('/academics?tab=class-center')
+    await act(async () => button(container, 'Import a syllabus').click())
+    await readPastedSyllabus()
+    await act(async () => button(document.body, 'STEM').click())
+    await act(async () => button(document.body, 'Review syllabus records').click())
+    await act(async () => button(document.body, 'Learning standards').click())
+
+    const removeButtons = [...document.body.querySelectorAll<HTMLButtonElement>('button[aria-label="Remove Learning standards row"]')]
+    expect(removeButtons).toHaveLength(2)
+    await act(async () => removeButtons[0].click())
+    await act(async () => button(document.body, 'Add all of this to CHEM 262').click())
+
+    const saved = snapshotData().academics.classCenter.topics.filter((item) => item.courseId === snapshotData().courses[0].id)
+    expect(saved).toHaveLength(1)
+    expect(saved[0].title).toContain('Distinguish stereochemical relationships')
   })
 
   it('creates a class once, then scopes the Add-class import fast path to that same class', async () => {

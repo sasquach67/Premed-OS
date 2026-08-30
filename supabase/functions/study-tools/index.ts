@@ -1,4 +1,4 @@
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2.110.2'
 
 const MAX_REQUEST_BYTES = 8 * 1024 * 1024
 const MAX_CHUNKS = 24
@@ -40,7 +40,10 @@ Deno.serve(async (request) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')
-  if (!supabaseUrl || !anonKey) return failure(503, 'server-unconfigured', 'Study tools are not configured.')
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+    return failure(503, 'server-unconfigured', 'Study tools are not configured.')
+  }
 
   const client = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authorization } },
@@ -48,6 +51,9 @@ Deno.serve(async (request) => {
   })
   const { data: userData, error: userError } = await client.auth.getUser()
   if (userError || !userData.user) return failure(401, 'sign-in-required', 'Authentication required.')
+  const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false },
+  })
 
   const raw = await request.text()
   if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
@@ -91,9 +97,11 @@ Deno.serve(async (request) => {
     }
     const audio = validateAudioEvidence(body.audio)
     if (!audio) return failure(400, 'invalid-request', 'Use one supported audio recording no larger than 4 MB.')
-    const { data: allowed, error: limitError } = await client.rpc('claim_ai_request', {
-      p_hour_limit: 20, p_day_limit: 100, p_weight: AI_REQUEST_WEIGHT['transcribe-response'],
-    })
+    const { allowed, error: limitError } = await claimAIRequest(
+      serviceClient,
+      userData.user.id,
+      AI_REQUEST_WEIGHT['transcribe-response'],
+    )
     if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
     if (!allowed) return failure(429, 'rate-limited', 'Hourly or daily AI usage limit reached.')
     try {
@@ -119,11 +127,11 @@ Deno.serve(async (request) => {
     const evidence = validateTermEvidence(body.evidence)
     if (!evidence?.length) return failure(422, 'no-sources', 'No reviewed term evidence is available.')
 
-    const { data: allowed, error: limitError } = await client.rpc('claim_ai_request', {
-      p_hour_limit: 20,
-      p_day_limit: 100,
-      p_weight: AI_REQUEST_WEIGHT['term-report'],
-    })
+    const { allowed, error: limitError } = await claimAIRequest(
+      serviceClient,
+      userData.user.id,
+      AI_REQUEST_WEIGHT['term-report'],
+    )
     if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
     if (!allowed) return failure(429, 'rate-limited', 'Hourly or daily AI usage limit reached.')
 
@@ -174,13 +182,13 @@ Deno.serve(async (request) => {
   const chunkIds = validateChunkIds(body.chunkIds)
   if (!chunkIds?.length) return failure(400, 'invalid-request', 'At least one trusted chunk ID is required.')
 
-  const { data: allowed, error: limitError } = await client.rpc('claim_ai_request', {
-    p_hour_limit: 20,
-    p_day_limit: 100,
-    p_weight: body.action === 'generate'
+  const { allowed, error: limitError } = await claimAIRequest(
+    serviceClient,
+    userData.user.id,
+    body.action === 'generate'
       ? AI_REQUEST_WEIGHT.generate
       : AI_REQUEST_WEIGHT['gap-check'],
-  })
+  )
   if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
   if (!allowed) return failure(429, 'rate-limited', 'Hourly or daily AI usage limit reached.')
 
@@ -240,6 +248,9 @@ Deno.serve(async (request) => {
       if (minted.length) {
         return failure(502, 'citation-not-carried', 'The structuring pass introduced a citation that was not verified. Nothing was saved.')
       }
+      if (!validateArtifactReferences(structured.value, closed)) {
+        return failure(502, 'citation-not-carried', 'The structured artifact referenced material outside the verified citation set. Nothing was saved.')
+      }
       return json({ artifact: structured.value, citations: closed })
     } catch (error) {
       console.error('study-tools generate failure', error instanceof Error ? error.message : 'unknown')
@@ -281,6 +292,65 @@ function closeCitationSet(
     if (!Number.isFinite(ref.start) || !Number.isFinite(ref.end)) return false
     return ref.start >= 0 && ref.end > ref.start && ref.end <= chunk.content.length
   })
+}
+
+/** Enforce the citation IDs written inside generated artifacts, not only the
+ * provider citation metadata returned beside them. This covers Study Guide
+ * `sourceRef`, Revised Notes `sourceRefs`, and Flashcards `sourceChunkId`.
+ */
+function validateArtifactReferences(
+  value: unknown,
+  closed: Array<{ fileId: string; chunkId: string; start: number; end: number }>,
+) {
+  const exact = new Set(closed.map((ref) => `${ref.fileId}:${ref.chunkId}:${ref.start}:${ref.end}`))
+  const chunks = new Set(closed.map((ref) => ref.chunkId))
+  let valid = true
+
+  function exactRef(candidate: unknown) {
+    if (!candidate || typeof candidate !== 'object') return false
+    const ref = candidate as Record<string, unknown>
+    return typeof ref.fileId === 'string'
+      && typeof ref.chunkId === 'string'
+      && typeof ref.start === 'number'
+      && typeof ref.end === 'number'
+      && exact.has(`${ref.fileId}:${ref.chunkId}:${ref.start}:${ref.end}`)
+  }
+
+  function visit(candidate: unknown) {
+    if (!valid || candidate == null) return
+    if (Array.isArray(candidate)) {
+      candidate.forEach(visit)
+      return
+    }
+    if (typeof candidate !== 'object') return
+    const record = candidate as Record<string, unknown>
+    if (record.provenance === 'source' && !exactRef(record.sourceRef)) valid = false
+    if (record.sourceRef != null && !exactRef(record.sourceRef)) valid = false
+    if (record.sourceRefs != null) {
+      if (!Array.isArray(record.sourceRefs) || !record.sourceRefs.length || !record.sourceRefs.every(exactRef)) valid = false
+    }
+    if (record.sourceChunkId != null && (typeof record.sourceChunkId !== 'string' || !chunks.has(record.sourceChunkId))) valid = false
+    if (record.sourceChunkIds != null && (
+      !Array.isArray(record.sourceChunkIds)
+      || record.sourceChunkIds.some((id) => typeof id !== 'string' || !chunks.has(id))
+    )) valid = false
+    Object.values(record).forEach(visit)
+  }
+
+  visit(value)
+  return valid
+}
+
+async function claimAIRequest(
+  serviceClient: ReturnType<typeof createClient>,
+  userId: string,
+  weight: number,
+) {
+  const { data, error } = await serviceClient.rpc('claim_ai_request', {
+    p_user_id: userId,
+    p_weight: weight,
+  })
+  return { allowed: data === true, error }
 }
 
 async function mirrorLocalSources(
@@ -334,10 +404,13 @@ async function retrieveChunks(
     .eq('course_id', courseId)
     .eq('topic_id', topicId)
     .in('chunk_id', chunkIds)
-    .order('created_at', { ascending: true })
     .limit(MAX_CHUNKS)
   if (error) throw error
-  return (data || []) as Chunk[]
+  const byId = new Map(((data || []) as Chunk[]).map((chunk) => [chunk.chunk_id, chunk]))
+  return chunkIds.flatMap((chunkId) => {
+    const chunk = byId.get(chunkId)
+    return chunk ? [chunk] : []
+  })
 }
 
 /**

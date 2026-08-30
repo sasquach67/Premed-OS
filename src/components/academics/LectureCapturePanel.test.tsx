@@ -7,6 +7,9 @@ import { ToastProvider } from '@/components/common/ToastProvider'
 import { createSeedData } from '@/data/seed'
 import { createInitialDataForMode, useStore } from '@/store/store'
 
+const analyzeLectureTranscriptMock = vi.hoisted(() => vi.fn())
+vi.mock('@/lib/academics/lectureAnalysis', () => ({ analyzeLectureTranscript: analyzeLectureTranscriptMock }))
+
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverMock {
@@ -27,6 +30,7 @@ describe('Lecture capture study-work handoff', () => {
   let root: Root
 
   beforeEach(() => {
+    analyzeLectureTranscriptMock.mockReset()
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
@@ -129,5 +133,58 @@ describe('Lecture capture study-work handoff', () => {
     expect(center.lectures.filter((lecture) => lecture.courseId === courseId)).toHaveLength(beforeCount)
     expect(center.lectures.find((lecture) => lecture.id === lectureId)).toEqual(expect.objectContaining({ transcriptFileId: expect.any(String), processingState: 'ready' }))
     expect(center.files.find((file) => file.lectureId === lectureId)?.type).toBe('transcript')
+  })
+
+  it('prevents duplicate analysis, clears busy after a thrown failure, and allows a successful retry', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const courseId = workspace.courseId
+    const lectureId = 'lecture-analysis-retry'
+    seed.academics.classCenter.lectures.push({
+      id: lectureId, courseId, title: 'Lecture #1', inputPath: 'pasted', transcriptFileId: 'analysis-transcript',
+      occurredOn: '2026-08-27', topicIds: [], processingState: 'ready', createdAt: 1, updatedAt: 1, order: 0,
+    })
+    seed.academics.classCenter.files.push({
+      id: 'analysis-transcript', courseId, lectureId, sourceType: 'paste', title: 'Analysis transcript',
+      type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready', createdAt: 1, updatedAt: 1, order: 0,
+    })
+    seed.academics.classCenter.sourceChunks.push({
+      id: 'analysis-chunk', fileId: 'analysis-transcript', courseId, content: 'Exact transcript evidence.',
+      sourcePosition: { index: 0, label: '00:10' }, coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: 0,
+    })
+    useStore.getState().replaceAll(seed)
+    let rejectRequest!: (error: Error) => void
+    analyzeLectureTranscriptMock.mockImplementationOnce(() => new Promise((_, reject) => { rejectRequest = reject }))
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <ToastProvider>
+            <LectureCapturePanel courseId={courseId} data={seed.academics.classCenter} initialLectureId={lectureId} onOpenNotes={() => {}} />
+          </ToastProvider>
+        </MemoryRouter>,
+      )
+    })
+
+    const analyze = [...container.querySelectorAll<HTMLButtonElement>('button')].find((item) => item.textContent?.includes('Find class remarks'))!
+    await act(async () => {
+      analyze.click()
+      analyze.click()
+    })
+    expect(analyzeLectureTranscriptMock).toHaveBeenCalledOnce()
+    expect([...container.querySelectorAll<HTMLButtonElement>('button')].find((item) => item.textContent?.includes('Analyzing complete transcript'))?.disabled).toBe(true)
+
+    await act(async () => {
+      rejectRequest(new Error('Lecture analysis disconnected.'))
+      await Promise.resolve()
+    })
+    expect([...container.querySelectorAll<HTMLButtonElement>('button')].find((item) => item.textContent?.includes('Find class remarks'))?.disabled).toBe(false)
+    expect(document.body.textContent).toContain('No lecture remarks were saved')
+    expect(document.body.textContent).toContain('Lecture analysis disconnected.')
+
+    analyzeLectureTranscriptMock.mockResolvedValueOnce({ ok: true, findings: [] })
+    await act(async () => [...container.querySelectorAll<HTMLButtonElement>('button')].find((item) => item.textContent?.includes('Find class remarks'))?.click())
+    expect(analyzeLectureTranscriptMock).toHaveBeenCalledTimes(2)
+    expect(document.body.textContent).toContain('No class-specific remarks found')
   })
 })

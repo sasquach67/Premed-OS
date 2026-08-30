@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, BookOpen, CheckCircle2, Clock3, Flag, ListChecks, Plus, RotateCcw, Target } from 'lucide-react'
 import type { ClassAssignment, ClassCenterData, Course, ExamPrepIntensity, ExamPrepPlan, ExamPrepPlanItem, GeneratedMockAttempt } from '@/lib/types'
 import { uid } from '@/lib/id'
@@ -56,6 +56,7 @@ export function ExamPrepMode({ course, data, exam, onExit, onOpenTab }: ExamPrep
   const [returnedGrade, setReturnedGrade] = useState(existing?.returnedGrade ?? '')
   const [feedback, setFeedback] = useState(existing?.feedback ?? '')
   const [mockBusy, setMockBusy] = useState(false)
+  const mockRequestInFlight = useRef(false)
   const [capacityOpen, setCapacityOpen] = useState(false)
   const [continueWithoutCapacity, setContinueWithoutCapacity] = useState(false)
   const toast = useToast()
@@ -141,15 +142,22 @@ export function ExamPrepMode({ course, data, exam, onExit, onOpenTab }: ExamPrep
   }
 
   async function startMock() {
-    if (mockDormant.length) return
+    if (mockDormant.length || mockRequestInFlight.current) return
+    mockRequestInFlight.current = true
     setMockBusy(true)
-    const outcome = await generateFullMock({ courseId: course.id, chunks: mockChunks, label: exam.title })
-    setMockBusy(false)
-    if (!outcome.ok || !outcome.questions || !outcome.specHash) { toast({ title: 'Mock not started', description: outcome.message ?? 'Nothing was saved.' }); return }
-    update((draft) => {
-      const attempts = draft.academics.classCenter.generatedMockAttempts
-      attempts.unshift(startGeneratedMock({ id: uid(), courseId: course.id, examAssignmentId: exam.id, topicIds: exam.coveredTopicIds ?? [], sourceChunkIds: mockChunks.map((chunk) => chunk.id), specId: 'class-full-mock-v1', specHash: outcome.specHash!, questions: outcome.questions!, startedAt: Date.now() }))
-    })
+    try {
+      const outcome = await generateFullMock({ courseId: course.id, chunks: mockChunks, label: exam.title })
+      if (!outcome.ok || !outcome.questions || !outcome.specHash) { toast({ title: 'Mock not started', description: outcome.message ?? 'Nothing was saved.' }); return }
+      update((draft) => {
+        const attempts = draft.academics.classCenter.generatedMockAttempts
+        attempts.unshift(startGeneratedMock({ id: uid(), courseId: course.id, examAssignmentId: exam.id, topicIds: exam.coveredTopicIds ?? [], sourceChunkIds: mockChunks.map((chunk) => chunk.id), specId: 'class-full-mock-v1', specHash: outcome.specHash!, questions: outcome.questions!, startedAt: Date.now() }))
+      })
+    } catch (error) {
+      toast({ title: 'Mock not started', description: error instanceof Error && error.message ? error.message : 'Nothing was saved.' })
+    } finally {
+      mockRequestInFlight.current = false
+      setMockBusy(false)
+    }
   }
 
   if (activeMock) return <FullMockRunner attempt={activeMock} course={course} exam={exam} data={data} onExit={onExit} />

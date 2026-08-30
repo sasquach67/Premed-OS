@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { CLASS_MATERIAL_SCOPE, generationSourceInputs, sourceScopeForGeneration } from './syncGenerationSources'
+import {
+  CLASS_MATERIAL_SCOPE,
+  generationSourceInputs,
+  generationSourceLimitMessage,
+  sourceScopeForGeneration,
+} from './syncGenerationSources'
 import type { SourceChunk } from '@/lib/types'
 
 function chunk(overrides: Partial<SourceChunk> = {}): SourceChunk {
@@ -23,5 +28,12 @@ describe('generation source preparation', () => {
     expect(generationSourceInputs([chunk()])).toEqual([{
       chunkId: 'chunk-1', fileId: 'file-1', content: 'A source sentence.', start: 0, end: 18,
     }])
+  })
+
+  it('allows 24 passages and explains how to reduce a larger request', () => {
+    expect(generationSourceLimitMessage(24)).toBeUndefined()
+    expect(generationSourceLimitMessage(25)).toBe(
+      'Choose fewer source files or add a shorter excerpt. This selection contains 25 passages, and AI study tools can use up to 24 at a time.',
+    )
   })
 })

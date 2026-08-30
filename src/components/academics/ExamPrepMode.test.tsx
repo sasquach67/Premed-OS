@@ -6,6 +6,9 @@ import type { ClassAssignment, Course } from '@/lib/types'
 import { ToastProvider } from '@/components/common/ToastProvider'
 import { ExamPrepMode } from './ExamPrepMode'
 
+const generateFullMockMock = vi.hoisted(() => vi.fn())
+vi.mock('@/lib/academics/generateFullMock', () => ({ generateFullMock: generateFullMockMock }))
+
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
 vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })))
@@ -56,6 +59,7 @@ describe('Exam Prep capacity and focused attempt paths', () => {
     root = createRoot(container)
     onExit.mockReset()
     onOpenTab.mockReset()
+    generateFullMockMock.mockReset()
   })
 
   afterEach(async () => {
@@ -84,6 +88,39 @@ describe('Exam Prep capacity and focused attempt paths', () => {
     await act(async () => button(container, 'Create exam plan')?.click())
     expect(useStore.getState().academics.classCenter.examPrepPlans).toHaveLength(1)
     expect(container.querySelector('input[placeholder="Add a specific study task"]')).toBeTruthy()
+  })
+
+  it('prevents duplicate mock requests, clears busy after a thrown failure, and allows a successful retry', async () => {
+    let rejectRequest!: (error: Error) => void
+    generateFullMockMock.mockImplementationOnce(() => new Promise((_, reject) => { rejectRequest = reject }))
+    await render()
+
+    const start = button(container, 'Start full mock')!
+    await act(async () => {
+      start.click()
+      start.click()
+    })
+    expect(generateFullMockMock).toHaveBeenCalledOnce()
+    expect(button(container, 'Building…')?.disabled).toBe(true)
+
+    await act(async () => {
+      rejectRequest(new Error('Mock service disconnected.'))
+      await Promise.resolve()
+    })
+    expect(button(container, 'Start full mock')?.disabled).toBe(false)
+    expect(document.body.textContent).toContain('Mock not started')
+    expect(document.body.textContent).toContain('Mock service disconnected.')
+    expect(useStore.getState().academics.classCenter.generatedMockAttempts).toHaveLength(0)
+
+    generateFullMockMock.mockResolvedValueOnce({
+      ok: true,
+      specHash: 'mock-spec-hash',
+      questions: [{ id: 'generated-q1', prompt: 'Explain the selected evidence.', sourceChunkId: 'chunk', topicId: 'topic', order: 0 }],
+    })
+    await act(async () => button(container, 'Start full mock')?.click())
+    expect(generateFullMockMock).toHaveBeenCalledTimes(2)
+    expect(useStore.getState().academics.classCenter.generatedMockAttempts).toHaveLength(1)
+    expect(container.textContent).toContain('practice set')
   })
 
   it('restores the current question, keeps elapsed time factual, and produces actionable autopsy evidence', async () => {

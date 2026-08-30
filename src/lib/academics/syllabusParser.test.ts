@@ -196,6 +196,20 @@ Villarosa, L. 2018. “Why America’s Black Mothers and Babies Are in a Life-or
       expect.objectContaining({ kind: 'readings', label: expect.stringContaining('Villarosa'), value: '2026-11-24' }),
     ]))
   })
+
+  it('uses the stated term year instead of an earlier publication year', () => {
+    const parsed = parseSyllabusText(`ANTH 147 — Comparative Healing Systems
+Copyright 2018
+Fall 2026
+SCHEDULE FOR CLASS, READINGS, RECITATION SECTIONS, AND EXAMS
+Wk 4: 9/15-9/17
+Exam Week
+Tuesday Exam #1`)
+
+    expect(parsed.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'exams', label: 'Exam 1', value: '2026-09-15' }),
+    ]))
+  })
 })
 
 describe('document classification (§4.1-M-d)', () => {

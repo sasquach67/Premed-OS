@@ -81,6 +81,15 @@ function numericDateToIso(month: string, day: string, yearHint?: number): string
   return `${yearHint}-${String(numericMonth).padStart(2, '0')}-${String(numericDay).padStart(2, '0')}`
 }
 
+/** Prefer the stated academic term over unrelated publication/copyright years. */
+function syllabusYearHint(text: string): number | undefined {
+  const term = text.match(/\b(?:fall|autumn|spring|summer|winter)\s+(20\d{2})\b/i)
+  if (term) return Number(term[1])
+  const academicYear = text.match(/\b(20\d{2})\s*[-–—/]\s*20\d{2}\b/)
+  if (academicYear) return Number(academicYear[1])
+  return Number(text.match(/\b20\d{2}\b/)?.[0]) || undefined
+}
+
 function scheduleStart(line: string, yearHint?: number): { label: string; date?: string } | undefined {
   const match = line.match(/^((?:Introduction|Wk|Week)\s*\d*)\s*:\s*(\d{1,2})\/(\d{1,2})/i)
   if (!match) return undefined
@@ -208,7 +217,7 @@ export function parseSyllabusText(text: string, sourceName = 'Pasted syllabus', 
     identity: 'No course identity found', standards: 'No stated learning standards found', exams: 'No exam dates found', weights: 'No grade categories found', units: 'No week or unit headings found', readings: 'No assigned readings found', deadlines: 'No assignment deadlines found', policies: 'No attendance, late, drop, or replacement policy found', logistics: 'No meeting, instructor, or office-hours details found',
   }
   // Syllabi date the term at the top (`Fall 2026`) and then write `Oct 6`.
-  const yearHint = Number(text.match(/\b20\d{2}\b/)?.[0]) || undefined
+  const yearHint = syllabusYearHint(text)
   lines.forEach((line, index) => {
     const evidence = lineEvidence(line, index)
     const course = line.match(/\b([A-Z]{2,5}\s?\d{2,4}[A-Z]?)\s*(?:[-:–—]\s*|\s{2,})(.{3,})/)
