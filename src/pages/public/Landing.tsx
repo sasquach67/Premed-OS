@@ -19,8 +19,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
-  ArrowRight, CalendarDays, ChevronDown, ClipboardCheck, FileText, GraduationCap,
-  History, LayoutGrid, MessagesSquare, Repeat, Shield, Unplug,
+  ArrowRight, BookOpenText, CalendarDays, ChevronDown, ClipboardCheck, FileText,
+  GraduationCap, LayoutGrid, MessagesSquare, Shield, TrendingUp, Unplug,
 } from 'lucide-react'
 import { PublicShell } from '@/components/public/PublicShell'
 import { PublicNav } from '@/components/public/PublicNav'
@@ -53,11 +53,11 @@ const TILES = [
       'Drop in the CHEM 262 syllabus and the semester builds itself: units, due dates, exam dates, grading weights, late policy. One person in your section uploads it and everyone else imports the same structure.',
   },
   {
-    icon: Repeat,
-    title: 'Study sessions with spaced repetition',
+    icon: TrendingUp,
+    title: 'Your real GPA, always current',
     tint: 'var(--cat-gpa)',
     example:
-      'Turn the class material you select into source-backed study outlines, guides, and revised notes while keeping the original evidence attached.',
+      'Log courses, grades, and prior credit once. Keep your cumulative and science GPA distinct, with the exact course record behind every number.',
   },
   {
     icon: CalendarDays,
@@ -67,18 +67,18 @@ const TILES = [
       "Two study plans that each look reasonable add up to 34 hours a week. Premed OS builds both against the same calendar and says so before you commit. Miss a week and the plan reflows instead of becoming a backlog.",
   },
   {
-    icon: History,
-    title: "Flags what you've forgotten before the exam",
+    icon: BookOpenText,
+    title: 'Capture stories before you need them',
     tint: 'var(--cat-mcat)',
     example:
-      "You took psych freshman year and sit the MCAT in 2029. Premed OS models what you'll be relearning from zero, weighted by how much of the exam it actually is, and schedules it back before it costs you.",
+      'Save the clinical moment, mentor advice, or hard-earned lesson while it is still specific. Tag it now; find it when you write a personal statement or prepare for an interview.',
   },
   {
     icon: GraduationCap,
-    title: 'UNC graduation and major requirements',
+    title: 'Plan a UNC course path with sources',
     tint: 'var(--cat-gpa)',
     example:
-      'Every requirement, what satisfies it, and what a course you are about to drop would break. Prereq order, term load, and the withdrawal deadline you did not know was this week.',
+      'See published course details and prerequisite context beside the plan you are building. It helps you explore options; ConnectCarolina remains your official degree audit.',
   },
   {
     icon: ClipboardCheck,
