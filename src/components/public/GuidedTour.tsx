@@ -9,8 +9,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, UIEvent } from 'react'
 import {
-  BookOpen,
-  Brain,
   CalendarDays,
   CheckCircle2,
   ChevronRight,
@@ -18,7 +16,6 @@ import {
   Clock3,
   GraduationCap,
   LayoutDashboard,
-  Stethoscope,
 } from 'lucide-react'
 import { PublicHeadline } from '@/components/public/PublicHeadline'
 
@@ -30,13 +27,11 @@ function GuideFigure() {
   )
 }
 
-type PreviewTab = 'Overview' | 'Academics' | 'MCAT' | 'Clinical'
+type PreviewTab = 'Overview' | 'Academics'
 
 const PREVIEW_NAV: { label: PreviewTab; icon: typeof LayoutDashboard }[] = [
   { label: 'Overview', icon: LayoutDashboard },
   { label: 'Academics', icon: GraduationCap },
-  { label: 'MCAT', icon: Brain },
-  { label: 'Clinical', icon: Stethoscope },
 ]
 
 const PREVIEW_COPY: Record<PreviewTab, { eyebrow: string; title: string; subline: string }> = {
@@ -47,18 +42,8 @@ const PREVIEW_COPY: Record<PreviewTab, { eyebrow: string; title: string; subline
   },
   Academics: {
     eyebrow: 'Fall 2026 · 3 classes',
-    title: 'Academics, in one place.',
-    subline: 'Due dates, course material and the work behind your GPA.',
-  },
-  MCAT: {
-    eyebrow: 'Your plan · 31 weeks',
-    title: 'Study what will matter next.',
-    subline: 'Your classes and MCAT plan share the same week.',
-  },
-  Clinical: {
-    eyebrow: 'Clinical experience',
-    title: 'Hours with a record behind them.',
-    subline: 'Shifts, reflections and verification stay together.',
+    title: 'Academics',
+    subline: 'Your courses, grades and next steps for the term.',
   },
 }
 
@@ -76,7 +61,7 @@ function OverviewContent() {
           <div className="pl-live-dayhead"><span>Today</span><CalendarDays aria-hidden="true" /></div>
           <div className="pl-live-event"><time>9 AM</time><b>CHEM 101 lecture</b><span>9:50 AM</span></div>
           <div className="pl-live-event"><time>11 AM</time><b>Neuroscience seminar</b><span>12:15 PM</span></div>
-          <div className="pl-live-event"><time>3 PM</time><b>Clinical shift</b><span>7 PM</span></div>
+          <div className="pl-live-event"><time>3 PM</time><b>Research lab</b><span>7 PM</span></div>
         </div>
       </div>
       <PreviewSection title="Smart next actions" action="3 ready">
@@ -87,7 +72,7 @@ function OverviewContent() {
       </PreviewSection>
       <div className="pl-live-split">
         <PreviewSection title="Tasks" action="Add task"><PreviewList rows={['Review amino acids', 'Confirm Thursday shift', 'Read ENGL 105 essay feedback']} /></PreviewSection>
-        <PreviewSection title="Where I stand"><PreviewList rows={['Academics · 3.67', 'Clinical · 146 hrs', 'MCAT · plan begins Aug 24']} /></PreviewSection>
+        <PreviewSection title="Where I stand"><PreviewList rows={['Academics · 3.67', 'Classes · 3 this term', 'Tasks · 3 ready']} /></PreviewSection>
       </div>
     </>
   )
@@ -96,56 +81,24 @@ function OverviewContent() {
 function AcademicsContent() {
   return (
     <>
-      <div className="pl-live-kpis">
-        <PreviewMetric label="Cumulative" value="3.67" tone="blue" />
-        <PreviewMetric label="Term GPA" value="—" />
-        <PreviewMetric label="Due this week" value="4" tone="amber" />
+      <div className="pl-live-mode" aria-label="Academics mode preview">
+        <span className="is-active">Daily</span><span>Planning</span>
       </div>
+      <div className="pl-live-kpis pl-live-kpis-academics">
+        <PreviewMetric label="Term GPA" value="3.67" tone="blue" />
+        <PreviewMetric label="Cumulative" value="3.67" tone="blue" />
+        <PreviewMetric label="Due today" value="1" tone="amber" />
+        <PreviewMetric label="Lectures" value="3" />
+      </div>
+      <div className="pl-live-subtabs" aria-label="Academics workspace preview"><b>Class center <span>3</span></b><span>Assignments <i>4</i></span></div>
       <PreviewSection title="Your classes" action="Add class">
         <div className="pl-live-courses">
-          <PreviewCourse code="CHEM 262" title="Organic Chemistry II" detail="Problem set 7 · due tomorrow" tone="blue" />
-          <PreviewCourse code="ENGL 105" title="Writing in Health & Medicine" detail="Revision notes · Friday" tone="violet" />
-          <PreviewCourse code="NSCI 222" title="Introduction to Neuroscience" detail="Seminar reflection · next week" tone="green" />
+          <PreviewCourse code="CHEM 262" title="Organic Chemistry II" detail="1 assignment due · 2 lectures" tone="blue" />
+          <PreviewCourse code="ENGL 105" title="Writing in Health & Medicine" detail="1 assignment due · Class notes ready" tone="violet" />
+          <PreviewCourse code="NSCI 222" title="Introduction to Neuroscience" detail="No work due today" tone="green" />
         </div>
       </PreviewSection>
-      <PreviewSection title="Coming up"><PreviewList rows={['Thu · CHEM 262 problem set', 'Fri · ENGL 105 revision', 'Mon · NSCI 222 reading response', 'Sep 2 · CHEM 262 exam']} /></PreviewSection>
-    </>
-  )
-}
-
-function McatContent() {
-  return (
-    <>
-      <div className="pl-live-plan">
-        <div><span className="pl-live-mini">This week</span><strong>6 hrs planned</strong><p>One plan across coursework and MCAT.</p></div>
-        <span className="pl-live-ring">3/4</span>
-      </div>
-      <PreviewSection title="Return to these" action="View plan">
-        <PreviewList rows={['Psych/soc · behavior change', 'Biochem · amino acids', 'CARS · passage reasoning']} />
-      </PreviewSection>
-      <PreviewSection title="Recent practice">
-        <div className="pl-live-practice"><span>Biology drill</span><b>18 / 20</b><em>Reviewed</em></div>
-        <div className="pl-live-practice"><span>CARS passage set</span><b>—</b><em>Planned</em></div>
-      </PreviewSection>
-    </>
-  )
-}
-
-function ClinicalContent() {
-  return (
-    <>
-      <div className="pl-live-kpis">
-        <PreviewMetric label="Logged hours" value="146" tone="green" />
-        <PreviewMetric label="This week" value="4" />
-        <PreviewMetric label="Need a verifier" value="1" tone="amber" />
-      </div>
-      <PreviewSection title="Active positions" action="Add position">
-        <PreviewCourse code="CAROLINA ED" title="Emergency Department Volunteer" detail="Thursday · 3 PM–7 PM" tone="green" />
-        <PreviewCourse code="FAMILY MED" title="Clinic Volunteer" detail="Next shift · Aug 20" tone="blue" />
-      </PreviewSection>
-      <PreviewSection title="Keep while it is fresh">
-        <div className="pl-live-reflection"><BookOpen aria-hidden="true" /><span>After a shift, log what you saw and why it mattered.</span><ChevronRight aria-hidden="true" /></div>
-      </PreviewSection>
+      <PreviewSection title="Coming up"><PreviewList rows={['Thu · CHEM 262 problem set', 'Fri · ENGL 105 revision', 'Sep 2 · CHEM 262 exam']} /></PreviewSection>
     </>
   )
 }
@@ -200,8 +153,6 @@ function LivePreview({ tab, onProgress, onSelect }: { tab: PreviewTab; onProgres
           <header className="pl-live-title"><span>{copy.eyebrow}</span><h2>{copy.title}</h2><p>{copy.subline}</p></header>
           {tab === 'Overview' ? <OverviewContent /> : null}
           {tab === 'Academics' ? <AcademicsContent /> : null}
-          {tab === 'MCAT' ? <McatContent /> : null}
-          {tab === 'Clinical' ? <ClinicalContent /> : null}
         </div>
       </div>
     </div>
@@ -226,29 +177,24 @@ const STEPS: TourStep[] = [
     { pin: { left: '73%', top: '50%' }, at: { right: '3%', top: '56%' }, lead: 'Act with context.', body: 'Each next action says why it surfaced, so it is never just another notification.' },
   ] },
   { tab: 'Academics', callouts: [
-    { pin: { left: '24%', top: '29%' }, at: { left: '4%', top: '35%' }, lead: 'One class, one hub.', body: 'Syllabus, due dates, files and feedback stay with the course.' },
-    { pin: { left: '66%', top: '54%' }, at: { right: '3%', top: '60%' }, lead: 'The right GPA math.', body: 'Course details are carried forward rather than reconstructed later.' },
-  ] },
-  { tab: 'MCAT', callouts: [
-    { pin: { left: '23%', top: '31%' }, at: { left: '4%', top: '38%' }, lead: 'One honest plan.', body: 'Classwork and prep draw from the same week instead of competing schedules.' },
-    { pin: { left: '69%', top: '61%' }, at: { right: '3%', top: '67%' }, lead: 'Return to the miss.', body: 'A missed question turns into a specific next review, not a generic topic list.' },
-  ] },
-  { tab: 'Clinical', callouts: [
-    { pin: { left: '26%', top: '31%' }, at: { left: '4%', top: '38%' }, lead: 'Hours with evidence.', body: 'Positions, shifts and verifier details stay connected from the start.' },
-    { pin: { left: '70%', top: '60%' }, at: { right: '3%', top: '66%' }, lead: 'Reflect while it is fresh.', body: 'A short prompt makes the future application easier to write.' },
+    { pin: { left: '24%', top: '29%' }, at: { left: '4%', top: '35%' }, lead: 'A course is a home base.', body: 'Classes hold the schedule, materials and work that belong together.' },
+    { pin: { left: '66%', top: '54%' }, at: { right: '3%', top: '60%' }, lead: 'Plan without losing the record.', body: 'Your course details carry into the GPA and planning views instead of being rebuilt later.' },
   ] },
 ]
 
 export function GuidedTour() {
   const [active, setActive] = useState(0)
   const [progress, setProgress] = useState(0)
+  const [openCallout, setOpenCallout] = useState<number | null>(null)
   const step = STEPS[active]
-  const calloutIndex = Math.min(step.callouts.length - 1, Math.floor(progress * step.callouts.length))
-  const callout = step.callouts[calloutIndex]
+  const visibleCalloutCount = Math.min(step.callouts.length, 1 + Math.floor(progress * step.callouts.length))
 
   const selectTab = (tab: PreviewTab) => {
     const index = STEPS.findIndex((step) => step.tab === tab)
-    if (index >= 0) setActive(index)
+    if (index >= 0) {
+      setActive(index)
+      setOpenCallout(null)
+    }
   }
 
   return (
@@ -264,8 +210,28 @@ export function GuidedTour() {
         <div className="pl-tourhint"><span>Try it</span> Choose a section or scroll inside the preview.</div>
         <div className="pl-shotstage pl-reveal">
           <div className="pl-shotwin"><LivePreview tab={step.tab} onProgress={setProgress} onSelect={selectTab} /></div>
-          <span key={`pin-${callout.lead}`} className="pl-pin" style={callout.pin} aria-hidden="true" />
-          <div key={callout.lead} className="pl-call" style={callout.at}><GuideFigure /><div className="pl-bubble"><b>{callout.lead}</b> {callout.body}</div></div>
+          {step.callouts.map((callout, index) => {
+            const visible = index < visibleCalloutCount
+            const open = openCallout === index
+            return (
+              <div key={callout.lead}>
+                <button
+                  type="button"
+                  className={`pl-pin${visible ? ' is-visible' : ''}`}
+                  style={callout.pin}
+                  aria-label={`${callout.lead} ${visible ? 'Show explanation' : 'Scroll the preview to reveal'}`}
+                  aria-expanded={open}
+                  disabled={!visible}
+                  onClick={() => setOpenCallout(open ? null : index)}
+                  onPointerEnter={() => setOpenCallout(index)}
+                  onPointerLeave={() => setOpenCallout(null)}
+                  onFocus={() => setOpenCallout(index)}
+                  onBlur={() => setOpenCallout(null)}
+                />
+                {open ? <div className="pl-call" style={callout.at}><GuideFigure /><div className="pl-bubble"><b>{callout.lead}</b> {callout.body}</div></div> : null}
+              </div>
+            )
+          })}
         </div>
         <p className="pl-tourfoot">Interactive demo data. Your workspace starts empty, and stays on your device until you say otherwise.</p>
       </div>
