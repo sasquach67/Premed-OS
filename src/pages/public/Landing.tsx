@@ -16,7 +16,7 @@
      • Glass stops at the bottom of the Features section. Everything below
        is solid-with-depth.
    ============================================================ */
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   ArrowRight, BookOpenText, CalendarDays, ChevronDown, ClipboardCheck, FileText,
@@ -127,6 +127,19 @@ export function Landing() {
      Titles-only still holds on the CLOSED tile — the example appears on
      interaction, so the grid at rest is exactly what it was. */
   const [openTile, setOpenTile] = useState<string | null>(null)
+
+  // A browser will otherwise restore its last document position on refresh,
+  // which can reopen the landing page halfway down at Features. The landing
+  // page is a front door: every fresh load starts at its hero. Explicit
+  // section navigation below still runs afterwards when it was requested.
+  useLayoutEffect(() => {
+    const previous = window.history.scrollRestoration
+    window.history.scrollRestoration = 'manual'
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    return () => {
+      window.history.scrollRestoration = previous
+    }
+  }, [])
 
   // `Features` in the nav navigates home first when the visitor is on a
   // doc page; the section only exists once this component has mounted.

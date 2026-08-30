@@ -434,7 +434,10 @@
   .sidebar-static-nav[data-expanded='false'] .sidebar-static-row:focus-visible .sidebar-static-label { opacity: 1; transform: translateY(-50%) scale(1); }
   .sidebar-static-nav[data-expanded='false'] .sidebar-static-account { position: relative; width: 4.25rem; justify-content: center; padding: 0; }
   .sidebar-static-nav[data-expanded='false'] .sidebar-static-account-button { position: absolute; top: 50%; left: 50%; margin: 0; transform: translate(-50%, -50%); }
-  .sidebar-static-nav[data-expanded='true'] .sidebar-static-brand { transform: translateX(5.5rem) scale(1.1); }
+  /* The wordmark is centered in the expanded rail. Its mark needs the same
+     visual center: the previous 5.5rem offset left the bars 11px left of the
+     label, which made “premedOS” look pushed to the right. */
+  .sidebar-static-nav[data-expanded='true'] .sidebar-static-brand { transform: translateX(6.1875rem) scale(1.1); }
   .sidebar-static-nav[data-expanded='true'] .sidebar-static-brand { pointer-events: none; }
   @media (prefers-reduced-motion: reduce) {
     .sidebar-static-nav, .sidebar-static-brand, .sidebar-static-brand-copy, .sidebar-static-toggle, .sidebar-static-row, .sidebar-static-account { transition: none; }
@@ -478,10 +481,11 @@
   }
 
   /* Floating glass follows the active theme: warm paper in light mode and
-     smoky ink in dark mode. Both remain translucent and blurred. */
+     smoky ink in dark mode. It stays recognizably glass, but is opaque enough
+     to keep account menus and reading dialogs legible over real app content. */
   .glass-surface {
     --glass-foreground: #3a3530;
-    background: rgba(255, 250, 240, .64);
+    background: rgba(255, 250, 240, .78);
     color: var(--glass-foreground);
     backdrop-filter: blur(16px) saturate(1.1);
     -webkit-backdrop-filter: blur(16px) saturate(1.1);
@@ -493,7 +497,7 @@
   }
   .dark .glass-surface {
     --glass-foreground: #fffaf0;
-    background: rgba(20, 26, 34, .5);
+    background: rgba(20, 26, 34, .68);
     border-color: rgba(255, 255, 255, .16);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16);
   }
@@ -501,7 +505,7 @@
      Dark banner art needs ink glass even while the rest of the app is light. */
   .glass-surface.glass-surface--dark {
     --glass-foreground: #fffaf0;
-    background: rgba(20, 26, 34, .5);
+    background: rgba(20, 26, 34, .68);
     color: var(--glass-foreground);
     border-color: rgba(255, 255, 255, .16);
     box-shadow:
@@ -693,7 +697,7 @@
      owning panel's frost, then adds tint, highlight, depth, and motion. */
   .interactive-glass {
     --glass-tint: var(--card);
-    --glass-strength: 64%;
+    --glass-strength: 76%;
     background-color: color-mix(in srgb, var(--glass-tint) var(--glass-strength), transparent);
     background-image: linear-gradient(
       135deg,
@@ -770,7 +774,7 @@
     --glass-strength: 92%;
   }
   .glass-inset {
-    background: color-mix(in srgb, var(--card) 52%, transparent);
+    background: color-mix(in srgb, var(--card) 66%, transparent);
     border-color: color-mix(in srgb, var(--foreground) 11%, transparent);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, white 10%, transparent),

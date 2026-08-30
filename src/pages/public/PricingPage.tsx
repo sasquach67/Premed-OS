@@ -25,15 +25,15 @@ const CONTACT_EMAIL = 'elephon08@gmail.com'
 const COMMITMENTS = [
   {
     lead: 'Your records are never paywalled.',
-    rest: "If there's ever a paid tier and you don't want it, you keep everything you've logged and you can still export it.",
+    rest: " If there's ever a paid tier and you don't want it, you keep everything you've logged and can still export it.",
   },
   {
-    lead: 'Export and deletion stay free and self-serve',
-    rest: ', always, and never require emailing anyone.',
+    lead: 'Export stays free, always.',
+    rest: ' Your own records should always be easy to take with you.',
   },
   {
-    lead: 'Any paid tier will state its cap.',
-    rest: ' "Unlimited AI" at a student price is a promise nobody can keep, so I won\'t make it.',
+    lead: 'If anything ever changes, you will know first.',
+    rest: ' There will be no surprise pricing or quiet switch in what you can use.',
   },
   {
     lead: 'No ads, no affiliate links, no sponsored placement',
@@ -59,20 +59,18 @@ export function PricingPage() {
       <div className="pl-soonwrap">
         <span className="pl-soonbadge">
           <Check size={12} aria-hidden="true" />
-          Everything, free, during the beta
+          Free for beta testers
         </span>
 
         <p className="pl-soonp">
           There's no paid plan, no card on file, and nothing here to buy.{' '}
-          <b>Every tracker, every plan, every calculation, and the AI features are all just on.</b>
+          <b>Everything in Premed OS is free for beta testers.</b>
         </p>
         <p className="pl-soonp">
-          Most of Premed OS costs nothing to run. The parts that cost money are the AI ones, and I'd rather
-          measure a full semester of real usage than guess a number now and get it wrong in either
-          direction.{' '}
+          Right now, I want pre-meds to use it, benefit from it, and tell me where it falls short. Your
+          feedback is what helps me make Premed OS genuinely useful before I ever think about charging for it.{' '}
           <b>
-            When there is a real price, it'll be on this page, and you'll know long before anything
-            changes.
+            If that ever changes, I'll be clear about it well before it does.
           </b>
         </p>
 
@@ -89,7 +87,7 @@ export function PricingPage() {
         </div>
 
         <p className="pl-soonp" style={{ fontSize: 13.5, color: 'var(--pl-dim)', marginTop: 26 }}>
-          Curious, or want to argue about what it should cost?{' '}
+          Have feedback already?{' '}
           <a className="pl-inline" href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'var(--pl-pri)', fontWeight: 700 }}>
             Tell me.
           </a>
