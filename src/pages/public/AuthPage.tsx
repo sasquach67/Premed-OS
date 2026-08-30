@@ -32,6 +32,7 @@ import type { User } from '@supabase/supabase-js'
 
 type Screen = 'form' | 'sent' | 'recovery' | 'signed-in'
 type Method = 'link' | 'password'
+type PasswordIntent = 'sign-in' | 'create'
 
 /** Client-side cooldown between magic-link requests. The server rate-limits
  *  too; this exists so the limit is stated plainly before it is hit (§2.3). */
@@ -55,7 +56,7 @@ const MESSAGES = {
   expired: 'That link has expired or has already been used. Send yourself a new one.',
   notConfigured:
     'Accounts are not switched on in this build. Everything still works signed out — your data is on this device.',
-  weakPassword: 'Use at least 8 characters.',
+  weakPassword: 'Use at least 8 characters and one symbol.',
 } as const
 
 function classifyError(error: unknown): string {
@@ -81,13 +82,18 @@ function readLinkError(): string | null {
   return fromSearch ?? fromHash
 }
 
+function meetsNewPasswordRule(value: string) {
+  return value.length >= 8 && /[^A-Za-z0-9\s]/.test(value)
+}
+
 export function AuthPage() {
   const navigate = useNavigate()
   const enterApp = useEnterApp()
   const [params] = useSearchParams()
 
   const [screen, setScreen] = useState<Screen>('form')
-  const [method, setMethod] = useState<Method>('link')
+  const [method, setMethod] = useState<Method>('password')
+  const [passwordIntent, setPasswordIntent] = useState<PasswordIntent>('sign-in')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -185,7 +191,7 @@ export function AuthPage() {
       setError(MESSAGES.notConfigured)
       return
     }
-    if (password.length < 8) {
+    if (!meetsNewPasswordRule(password)) {
       setError(MESSAGES.weakPassword)
       return
     }
@@ -240,7 +246,7 @@ export function AuthPage() {
       setError(MESSAGES.notConfigured)
       return
     }
-    if (nextPassword.length < 8) {
+    if (!meetsNewPasswordRule(nextPassword)) {
       setError(MESSAGES.weakPassword)
       return
     }
@@ -356,6 +362,21 @@ export function AuthPage() {
                   </p>
                 ) : null}
 
+                <button
+                  type="button"
+                  className="pl-sbtn pl-sbtn-p pl-sbtn-full"
+                  disabled={busy}
+                  onClick={continueWithGoogle}
+                >
+                  Continue with Google
+                </button>
+
+                <div className="pl-orbar">
+                  <i />
+                  <span>OR</span>
+                  <i />
+                </div>
+
                 <div className="pl-field">
                   <label className="pl-lbl" htmlFor="auth-email">
                     Email
@@ -379,18 +400,14 @@ export function AuthPage() {
                       disabled={busy || !emailValid}
                       onClick={sendLink}
                     >
-                      Email me a sign-in link
+                      Send me a sign-in link
                     </button>
-                    <div className="pl-orbar">
-                      <i />
-                      <span>OR</span>
-                      <i />
-                    </div>
                     <button
                       type="button"
-                      className="pl-sbtn pl-sbtn-g pl-sbtn-full"
+                      className="pl-lk"
                       onClick={() => {
                         setMethod('password')
+                        setPasswordIntent('sign-in')
                         setError('')
                       }}
                     >
@@ -407,44 +424,46 @@ export function AuthPage() {
                         id="auth-password"
                         className="pl-inp"
                         type="password"
-                        autoComplete="current-password"
-                        placeholder="At least 8 characters"
+                        autoComplete={passwordIntent === 'create' ? 'new-password' : 'current-password'}
+                        placeholder={passwordIntent === 'create' ? '8+ characters, including a symbol' : 'Your password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                       />
                     </div>
+                    {passwordIntent === 'create' ? (
+                      <p className="pl-fine">Use at least 8 characters and one symbol.</p>
+                    ) : null}
                     <button
                       type="button"
                       className="pl-sbtn pl-sbtn-p pl-sbtn-full"
                       disabled={busy || !emailValid || password.length === 0}
-                      onClick={signInWithPassword}
+                      onClick={passwordIntent === 'create' ? createWithPassword : signInWithPassword}
                     >
-                      Sign in
+                      {passwordIntent === 'create' ? 'Create account' : 'Sign in with email'}
                     </button>
                     <button
                       type="button"
-                      className="pl-sbtn pl-sbtn-g pl-sbtn-full"
-                      disabled={busy || !emailValid || password.length === 0}
-                      onClick={createWithPassword}
+                      className="pl-lk"
+                      disabled={busy}
+                      onClick={() => {
+                        setPasswordIntent(passwordIntent === 'create' ? 'sign-in' : 'create')
+                        setError('')
+                        setNotice('')
+                      }}
                     >
-                      Create an account with this password
+                      {passwordIntent === 'create' ? 'Already have an account? Sign in' : 'New here? Create an account'}
                     </button>
-                    <button
+                    {passwordIntent === 'sign-in' ? <button
                       type="button"
                       className="pl-lk"
                       disabled={busy}
                       onClick={sendPasswordReset}
                     >
                       Forgot your password?
-                    </button>
-                    <div className="pl-orbar">
-                      <i />
-                      <span>OR</span>
-                      <i />
-                    </div>
+                    </button> : null}
                     <button
                       type="button"
-                      className="pl-sbtn pl-sbtn-g pl-sbtn-full"
+                      className="pl-lk"
                       onClick={() => {
                         setMethod('link')
                         setError('')
@@ -454,15 +473,6 @@ export function AuthPage() {
                     </button>
                   </>
                 )}
-
-                <button
-                  type="button"
-                  className="pl-sbtn pl-sbtn-g pl-sbtn-full"
-                  disabled={busy}
-                  onClick={continueWithGoogle}
-                >
-                  Continue with Google
-                </button>
 
                 <p className="pl-fine">
                   By continuing, you confirm that you are at least 13 and agree to the{' '}
@@ -578,7 +588,7 @@ function PasswordRecovery({
         <div>
           <h1 className="pl-ti">Choose a new password</h1>
           <div className="pl-sub" style={{ marginTop: 4, fontWeight: 600 }}>
-            This link is single-use. Choose at least 8 characters.
+            This link is single-use. Use at least 8 characters and one symbol.
           </div>
         </div>
       </div>
@@ -610,7 +620,7 @@ function PasswordRecovery({
         <button
           type="button"
           className="pl-sbtn pl-sbtn-p pl-sbtn-full"
-          disabled={busy || password.length < 8 || mismatch}
+          disabled={busy || !meetsNewPasswordRule(password) || mismatch}
           onClick={() => onSave(password)}
         >
           Save new password
