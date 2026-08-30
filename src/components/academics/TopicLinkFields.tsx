@@ -140,7 +140,9 @@ export function TopicLinkField({ assignment, field, classType }: {
         label={`${assignment.title} · ${scope ? 'exam scope' : 'topics covered'}`}
         title={scope ? `What does ${assignment.title} test?` : `What does ${assignment.title} cover?`}
         detail={scope
-          ? 'Scope drives Exam prep and the forgetting curve. It is separate from “topics this covers”.'
+          // Exam prep survives brief 59; the forgetting curve was retired with the
+          // review system, so naming it here promised a surface that no longer exists.
+          ? 'Scope drives Exam prep. It is separate from “topics this covers”.'
           : `${candidates.length} topics recorded in this class.`}
         rows={candidates.map((topic) => ({ id: topic.id, title: topic.title, meta: topic.unit || 'Unit not set' }))}
         selected={linkedIds(assignment, field)}
