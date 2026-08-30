@@ -28,6 +28,18 @@ const AI_REQUEST_WEIGHT = {
   'term-report': 2,
 } as const
 
+// These are reservations, not optimistic estimates: the source/input limits
+// below and the two-pass generation ceiling make each amount a safe maximum.
+// Keeping the $10 weekly budget server-side means a client cannot bypass it.
+const AI_BETA_RESERVATION_CENTS = {
+  'sync-sources': 25,
+  'gap-check': 50,
+  'transcribe-response': 50,
+  generate: 300,
+  'term-report': 350,
+} as const
+const MAX_PROVIDER_SOURCE_CHARS = 48_000
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (request.method !== 'POST') return failure(405, 'method-not-allowed', 'POST required.')
@@ -82,6 +94,17 @@ Deno.serve(async (request) => {
     if (!suppliedSources) {
       return failure(400, 'invalid-request', 'Sources must use the typed source-scope contract.')
     }
+    if (totalSourceChars(suppliedSources) > MAX_PROVIDER_SOURCE_CHARS) {
+      return failure(413, 'request-too-large', 'Selected source material is too large for one AI action.')
+    }
+    const { allowed, error: limitError } = await claimAIRequest(
+      serviceClient,
+      userData.user.id,
+      1,
+      AI_BETA_RESERVATION_CENTS['sync-sources'],
+    )
+    if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
+    if (!allowed) return failure(429, 'rate-limited', 'The weekly AI beta budget or your usage limit has been reached.')
     try {
       await mirrorLocalSources(client, userData.user.id, body.courseId, body.topicId, suppliedSources)
       return json({ synced: suppliedSources.length })
@@ -101,6 +124,7 @@ Deno.serve(async (request) => {
       serviceClient,
       userData.user.id,
       AI_REQUEST_WEIGHT['transcribe-response'],
+      AI_BETA_RESERVATION_CENTS['transcribe-response'],
     )
     if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
     if (!allowed) return failure(429, 'rate-limited', 'Hourly or daily AI usage limit reached.')
@@ -127,14 +151,6 @@ Deno.serve(async (request) => {
     const evidence = validateTermEvidence(body.evidence)
     if (!evidence?.length) return failure(422, 'no-sources', 'No reviewed term evidence is available.')
 
-    const { allowed, error: limitError } = await claimAIRequest(
-      serviceClient,
-      userData.user.id,
-      AI_REQUEST_WEIGHT['term-report'],
-    )
-    if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
-    if (!allowed) return failure(429, 'rate-limited', 'Hourly or daily AI usage limit reached.')
-
     const chunks: Chunk[] = evidence.map((item) => ({
       chunk_id: item.id,
       file_id: 'local-term-record',
@@ -142,6 +158,17 @@ Deno.serve(async (request) => {
       character_start: 0,
       character_end: item.content.length,
     }))
+    if (totalChunkChars(chunks) > MAX_PROVIDER_SOURCE_CHARS) {
+      return failure(413, 'request-too-large', 'Selected term evidence is too large for one AI action.')
+    }
+    const { allowed, error: limitError } = await claimAIRequest(
+      serviceClient,
+      userData.user.id,
+      AI_REQUEST_WEIGHT['term-report'],
+      AI_BETA_RESERVATION_CENTS['term-report'],
+    )
+    if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
+    if (!allowed) return failure(429, 'rate-limited', 'The weekly AI beta budget or your usage limit has been reached.')
     try {
       const draft = await callAnthropic('Create the Term Report from this reviewed evidence snapshot.', chunks, body.systemPrompt)
       const closed = closeCitationSet(draft.trustedCitations, chunks)
@@ -182,18 +209,23 @@ Deno.serve(async (request) => {
   const chunkIds = validateChunkIds(body.chunkIds)
   if (!chunkIds?.length) return failure(400, 'invalid-request', 'At least one trusted chunk ID is required.')
 
+  const chunks = await retrieveChunks(client, userData.user.id, body.courseId, body.topicId, chunkIds)
+  if (!chunks.length) return failure(422, 'no-sources', 'No selected source material is available.')
+  if (totalChunkChars(chunks) > MAX_PROVIDER_SOURCE_CHARS) {
+    return failure(413, 'request-too-large', 'Selected source material is too large for one AI action.')
+  }
   const { allowed, error: limitError } = await claimAIRequest(
     serviceClient,
     userData.user.id,
     body.action === 'generate'
       ? AI_REQUEST_WEIGHT.generate
       : AI_REQUEST_WEIGHT['gap-check'],
+    body.action === 'generate'
+      ? AI_BETA_RESERVATION_CENTS.generate
+      : AI_BETA_RESERVATION_CENTS['gap-check'],
   )
   if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
-  if (!allowed) return failure(429, 'rate-limited', 'Hourly or daily AI usage limit reached.')
-
-  const chunks = await retrieveChunks(client, userData.user.id, body.courseId, body.topicId, chunkIds)
-  if (!chunks.length) return failure(422, 'no-sources', 'No selected source material is available.')
+  if (!allowed) return failure(429, 'rate-limited', 'The weekly AI beta budget or your usage limit has been reached.')
 
   /**
    * `generate` — the two-pass pipeline (`01` §5.1), Phase 2.
@@ -345,12 +377,22 @@ async function claimAIRequest(
   serviceClient: ReturnType<typeof createClient>,
   userId: string,
   weight: number,
+  reservedCents: number,
 ) {
   const { data, error } = await serviceClient.rpc('claim_ai_request', {
     p_user_id: userId,
     p_weight: weight,
+    p_reserved_cents: reservedCents,
   })
   return { allowed: data === true, error }
+}
+
+function totalSourceChars(sources: Array<{ content: string }>) {
+  return sources.reduce((total, source) => total + source.content.length, 0)
+}
+
+function totalChunkChars(chunks: Chunk[]) {
+  return chunks.reduce((total, chunk) => total + chunk.content.length, 0)
 }
 
 async function mirrorLocalSources(
