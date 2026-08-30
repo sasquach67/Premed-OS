@@ -7,7 +7,7 @@
 
    ⚠️ THE PLACEMENT BUG, so it is not reintroduced: `justify-content:
    space-between` across three children centres the middle one BETWEEN ITS
-   NEIGHBOURS, not on the page. `premedOS` and `Start tracking ↗` are
+   NEIGHBOURS, not on the page. `premedOS` and `Get started ↗` are
    different widths, so the pill sat off-centre by half that difference —
    and because the error is a fraction of the leftover space, it GREW as
    the viewport widened. Fine in a small window, visibly wrong at full
@@ -31,7 +31,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import { Wordmark } from '@/components/public/Wordmark'
-import { useEnterApp } from '@/components/public/useEnterApp'
 import { supabase } from '@/lib/supabase'
 
 interface NavLink {
@@ -52,7 +51,6 @@ const LINKS: NavLink[] = [
 export function PublicNav() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const enterApp = useEnterApp()
 
   /* Sign-out lives here as well as in the app sidebar and `/auth`. Every
      other control was behind the very session someone would be trying to
@@ -122,14 +120,10 @@ export function PublicNav() {
             </button>
           ) : null}
 
-          {/* Coloured glass, and it sits BELOW the hero's solid white in the
-              hierarchy — colour attracts, white outweighs it on this field.
-              The outer bloom is load-bearing: it is what makes this the one
-              element that appears to emit light rather than transmit it. */}
-          <button type="button" className="pl-btn pl-btn-tint" onClick={enterApp}>
-            Start tracking
+          <Link to="/auth" className="pl-btn pl-btn-tint">
+            Get started
             <ArrowUpRight className="pl-arw" />
-          </button>
+          </Link>
         </div>
       </div>
     </div>

@@ -10,9 +10,9 @@
    are the third or fourth attempt.
 
    Three constraints that are easy to break by accident:
-     • `Sign up` appears NOWHERE. `Start tracking` is primary everywhere.
-     • The no-account line must be visible WITHOUT SCROLLING, because it
-       is the thing that stops a bounce.
+     • `Get started` opens account access; guest mode is always explicitly
+       secondary, so the local-only path is never confused with sync.
+     • The account/local-storage line must be visible WITHOUT SCROLLING.
      • Glass stops at the bottom of the Features section. Everything below
        is solid-with-depth.
    ============================================================ */
@@ -176,27 +176,22 @@ export function Landing() {
             Everything from your first semester to the day you submit.
           </p>
 
-          {/* 4 · two buttons. The hero CTA is the SOLID white one and stays
-              the primary — white is the heaviest value on this dark field,
-              which is what keeps it ahead of the nav's coloured pill. Do
-              not colour both; a tie is not a hierarchy. */}
+          {/* 4 · Account access leads; guest mode is available but visibly
+              secondary. */}
           <div className="pl-ctarow pl-an pl-an5">
-            <button type="button" className="pl-btn pl-btn-solid pl-btn-lg" onClick={enterApp}>
-              Start tracking
+            <Link to="/auth" className="pl-btn pl-btn-solid pl-btn-lg">
+              Get started
               <ArrowRight className="pl-arw" />
-            </button>
-            <Link to="/auth" className="pl-btn pl-btn-ghost pl-btn-lg">
-              Sign in
             </Link>
+            <button type="button" className="pl-btn pl-btn-ghost pl-btn-lg" onClick={enterApp}>
+              Continue as guest
+            </button>
           </div>
 
-          {/* 5 · ONE fine-print row, not two stacked blocks. The no-account
-              promise is what stops a bounce (P1 §2); the independence line
-              is required in the hero region by 05 §6.1.
-              ⚠️ Both must stay visible without scrolling, and neither is
-              ever reveal-gated. */}
+          {/* 5 · Make the storage boundary plain before anyone chooses a
+              path: an account syncs; guest work remains on this device. */}
           <p className="pl-finerow pl-an pl-an5">
-            <span>No account needed. Your data stays on this device until you choose to sync it.</span>
+            <span>Create an account to sync across devices. Guest work stays in this browser.</span>
             <span className="sep" aria-hidden="true">·</span>
             <span className="ind">
               An independent student project. Not affiliated with UNC-Chapel Hill or the AAMC.
