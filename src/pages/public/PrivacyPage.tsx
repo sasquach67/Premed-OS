@@ -9,14 +9,12 @@
    The three things that make this different from a generic policy:
      • a TABLE of what leaves the device, with the local-only alternative
        for each row;
-     • on-device transcription called out separately — it is at once the
-       largest cost decision in the product and the strongest privacy claim
-       Premed OS can make;
-     • all three processors NAMED, with what each one receives.
+     • the specific action that sends audio for transcription;
+     • every processor named, with what it receives.
    ============================================================ */
 import { DocLayout, Changelog, type DocSection } from '@/pages/public/DocLayout'
 
-const LAST_UPDATED = '8 August 2026'
+const LAST_UPDATED = '30 August 2026'
 
 const SECTIONS: DocSection[] = [
   {
@@ -27,8 +25,8 @@ const SECTIONS: DocSection[] = [
     body: (
       <p>
         Your records are written to local storage on your device as you enter them. Signing in adds
-        sync across devices and a server copy. <b>It does not change what the app can do</b> — there
-        is no feature behind the account, and the signed-out experience is the whole product.
+        a server copy and sync across devices. <b>An account is required for sync and server-side AI
+        study tools.</b> Core tracking can still be used locally without one.
       </p>
     ),
   },
@@ -58,34 +56,43 @@ const SECTIONS: DocSection[] = [
               </tr>
               <tr>
                 <td>
-                  <b>Coursework text</b> for AI features
+                  <b>Coursework text</b> for AI study tools
                 </td>
                 <td>When you use a feature that reads it</td>
-                <td>Yes — those features have deterministic fallbacks</td>
+                <td>Yes — keep working from your own notes without using an AI tool</td>
               </tr>
               <tr>
                 <td>
                   <b>Lecture audio</b>
                 </td>
-                <td>Only if you record a lecture</td>
+                <td>Only when you explicitly ask Premed OS to transcribe an audio file</td>
                 <td>
-                  <b>Yes — transcription runs on your device by default</b>
+                  Yes — type or paste a transcript instead. Goodnotes can also transcribe on your
+                  device before you paste the text here.
                 </td>
               </tr>
               <tr>
                 <td>
-                  <b>Canvas assignment data</b>
+                  <b>Google Calendar events</b>
                 </td>
-                <td>Only if you connect Canvas</td>
-                <td>Yes — don't connect it</td>
+                <td>Only if you connect your Google Calendar</td>
+                <td>Yes — don't connect it; add your schedule manually</td>
+              </tr>
+              <tr>
+                <td>
+                  <b>Google Drive backup</b>
+                </td>
+                <td>Only if you connect Google Drive and choose a backup</td>
+                <td>Yes — keep the local copy or export it yourself</td>
               </tr>
             </tbody>
           </table>
         </div>
         <div className="pl-callout pl-callout-good">
           <p>
-            <b>On-device transcription is the default, not an option you have to find.</b> Lecture
-            audio never has to leave your machine.
+            <b>Canvas is not connected directly.</b> If your school publishes Canvas due dates to a
+            Google Calendar feed, Premed OS can show those dates after you choose to connect your
+            Google Calendar. Premed OS never receives a Canvas login or token.
           </p>
         </div>
       </>
@@ -94,7 +101,7 @@ const SECTIONS: DocSection[] = [
   {
     id: 'processors',
     heading: 'Who receives it',
-    summary: 'Three processors, named, each with what it gets. No one else.',
+    summary: 'The services involved in sync, optional Google connections, and the AI tools are named below.',
     body: (
       <div className="pl-tblwrap">
         <table className="pl-tbl">
@@ -109,21 +116,25 @@ const SECTIONS: DocSection[] = [
               <td>
                 <b>Supabase</b>
               </td>
-              <td>Your account and your synced records, if you have an account</td>
+              <td>Your account, synced records, and the private server workspace used by AI study tools</td>
             </tr>
             <tr>
               <td>
-                <b>The AI provider</b>
+                <b>Google</b>
               </td>
               <td>
-                Only the text a feature needs, at the moment you use it. Never your whole workspace
+                Your primary-calendar events when you connect Google Calendar, or a backup file when
+                you choose Google Drive backup
               </td>
             </tr>
             <tr>
               <td>
-                <b>The transcription provider</b>
+                <b>OpenAI and Anthropic</b>
               </td>
-              <td>Nothing, unless you turn off on-device transcription</td>
+              <td>
+                The selected text or audio needed for the AI study action you ask for. The provider
+                depends on the action.
+              </td>
             </tr>
           </tbody>
         </table>
@@ -147,9 +158,7 @@ const SECTIONS: DocSection[] = [
         <li>
           <b>Your data is never sold or shared for marketing.</b>
         </li>
-        <li>
-          <b>Your content is not used to train external models.</b>
-        </li>
+        <li>Premed OS does not use your content to train its own models.</li>
       </ul>
     ),
   },
@@ -184,15 +193,15 @@ const SECTIONS: DocSection[] = [
     id: 'keeping-exporting-deleting',
     heading: 'Keeping, exporting, deleting',
     summary:
-      'Export any time, in one click. Delete your account and the server copy goes, on a stated timetable, without emailing anyone.',
+      'Export any time. Delete your account yourself without emailing anyone; local browser data stays under your control.',
     body: (
       <ul>
         <li>
           <b>Export</b> is a button in Settings and produces a complete, readable file.
         </li>
         <li>
-          <b>Deletion</b> is self-serve. Server data is removed within 30 days, backups roll off
-          within 90.
+          <b>Deletion</b> is self-serve. Deleting your account immediately removes the account and
+          synced server records, then signs that account out everywhere.
         </li>
         <li>
           <b>Local data is yours to keep or clear</b> — deleting the account doesn't reach into your
@@ -211,6 +220,10 @@ const SECTIONS: DocSection[] = [
     body: (
       <Changelog
         entries={[
+          {
+            date: '30 Aug 26',
+            what: 'Clarified the account requirement for sync and AI tools, plus Google, Canvas, Drive, and transcription handling.',
+          },
           { date: '8 Aug 26', what: 'First published for the public beta.' },
           {
             date: '—',

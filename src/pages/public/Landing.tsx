@@ -102,17 +102,17 @@ const TILES = [
   // path exists (integration-map §2). Do not add a grades claim here.
   {
     icon: Unplug,
-    title: 'Google Calendar, Canvas, Drive, dictation',
+    title: 'Google Calendar, Drive backup, dictation',
     tint: 'var(--cat-research)',
     example:
-      'Canvas due dates arrive through your calendar feed. Drive holds the files. Dictate into any field with the tools you already use. Nothing here asks you to move house.',
+      'Canvas can publish due dates to your calendar feed. Connect Google Calendar to view your primary calendar; Drive backup and dictation stay optional.',
   },
   {
     icon: Shield,
-    title: 'Works signed out. Your data stays yours.',
+    title: 'Start locally. Your data stays yours.',
     tint: 'var(--cat-clinical)',
     example:
-      'The whole app runs with no account, stored in your browser. An account adds sync across devices and nothing else. Export any time, delete in one action, no third-party analytics.',
+      'Track locally in your browser. Sign in to sync across devices or use server-side AI study tools. Export any time and delete account data yourself.',
   },
 ] as const
 

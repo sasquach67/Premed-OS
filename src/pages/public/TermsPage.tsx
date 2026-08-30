@@ -10,15 +10,12 @@
      • **The user owns their content**, Premed OS takes only the licence needed to
        operate, and that licence ends on deletion.
 
-   ⚠ PUBLISHING BLOCKERS, NOT BUILD BLOCKERS (05 §10). Three items are
-   still open and this page cannot go live until Andy closes them:
-   the **age floor** (Terms must state one), the **governing law**
-   (Terms needs a jurisdiction), and the **`Premed OS` trademark and
-   domain check**. The page is built; do not point a public domain at it.
+   Before the beta is promoted broadly, the age floor and governing law
+   must be added here. They are product-owner decisions, not boilerplate.
    ============================================================ */
 import { DocLayout, Changelog, type DocSection } from '@/pages/public/DocLayout'
 
-const LAST_UPDATED = '8 August 2026'
+const LAST_UPDATED = '30 August 2026'
 
 const SECTIONS: DocSection[] = [
   {
@@ -105,9 +102,11 @@ const SECTIONS: DocSection[] = [
       'Canvas, Google, Anki, and any prep provider have their own terms, and those are between you and them.',
     body: (
       <p>
-        Premed OS links to and integrates with third-party services at your direction.{' '}
-        <b>Canvas access is read-only, permanently</b> — Premed OS never submits work, posts, or writes on
-        your behalf. <b>No integration with paid answer-sharing services will ever be built.</b>
+        Premed OS links to and integrates with third-party services at your direction. Canvas can
+        publish a calendar feed you choose to view through Google Calendar. <b>Premed OS never asks
+        for or stores a Canvas token</b>, and it never submits work, posts, or writes on your behalf.
+        Google Calendar access is read-only. <b>No integration with paid answer-sharing services will
+        ever be built.</b>
       </p>
     ),
   },
@@ -140,7 +139,10 @@ const SECTIONS: DocSection[] = [
     id: 'terms-changes',
     heading: 'Changes',
     summary: 'Material changes get a dated entry and notice in the app before they take effect.',
-    body: <Changelog entries={[{ date: '8 Aug 26', what: 'First published for the public beta.' }]} />,
+    body: <Changelog entries={[
+      { date: '30 Aug 26', what: 'Clarified Google Calendar and Canvas behavior.' },
+      { date: '8 Aug 26', what: 'First published for the public beta.' },
+    ]} />,
   },
 ]
 
