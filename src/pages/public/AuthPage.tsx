@@ -95,7 +95,6 @@ export function AuthPage() {
   const [notice, setNotice] = useState('')
   const [cooldown, setCooldown] = useState(0)
   const [user, setUser] = useState<User | null>(null)
-  const [meetsAgeRequirement, setMeetsAgeRequirement] = useState(false)
 
   /** Deep-link preservation (§2.3): signing in from a shared link lands on
    *  that link, not the home page. */
@@ -377,7 +376,7 @@ export function AuthPage() {
                     <button
                       type="button"
                       className="pl-sbtn pl-sbtn-p pl-sbtn-full"
-                      disabled={busy || !emailValid || !meetsAgeRequirement}
+                      disabled={busy || !emailValid}
                       onClick={sendLink}
                     >
                       Email me a sign-in link
@@ -417,7 +416,7 @@ export function AuthPage() {
                     <button
                       type="button"
                       className="pl-sbtn pl-sbtn-p pl-sbtn-full"
-                      disabled={busy || !emailValid || password.length === 0 || !meetsAgeRequirement}
+                      disabled={busy || !emailValid || password.length === 0}
                       onClick={signInWithPassword}
                     >
                       Sign in
@@ -425,7 +424,7 @@ export function AuthPage() {
                     <button
                       type="button"
                       className="pl-sbtn pl-sbtn-g pl-sbtn-full"
-                      disabled={busy || !emailValid || password.length === 0 || !meetsAgeRequirement}
+                      disabled={busy || !emailValid || password.length === 0}
                       onClick={createWithPassword}
                     >
                       Create an account with this password
@@ -459,28 +458,18 @@ export function AuthPage() {
                 <button
                   type="button"
                   className="pl-sbtn pl-sbtn-g pl-sbtn-full"
-                  disabled={busy || !meetsAgeRequirement}
+                  disabled={busy}
                   onClick={continueWithGoogle}
                 >
                   Continue with Google
                 </button>
 
                 <p className="pl-fine">
-                  By continuing you agree to the <Link className="pl-lk" to="/terms">Terms</Link> and{' '}
-                  <Link className="pl-lk" to="/privacy">Privacy Policy</Link>. We ask Google for your
-                  sign-in identity only — Calendar and Drive are requested later, separately, if you
-                  want them.
+                  By continuing, you confirm that you are at least 13 and agree to the{' '}
+                  <Link className="pl-lk" to="/terms">Terms</Link> and{' '}
+                  <Link className="pl-lk" to="/privacy">Privacy Policy</Link>. Google sign-in uses
+                  your identity only; Calendar and Drive are requested later, separately, if you want them.
                 </p>
-
-                <label className="pl-fine" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={meetsAgeRequirement}
-                    onChange={(event) => setMeetsAgeRequirement(event.target.checked)}
-                    style={{ marginTop: 3 }}
-                  />
-                  <span>I confirm that I am at least 13 years old.</span>
-                </label>
 
                 <button type="button" className="pl-lk" onClick={enterApp}>
                   <ArrowLeft size={13} style={{ display: 'inline', verticalAlign: '-2px' }} /> Keep
