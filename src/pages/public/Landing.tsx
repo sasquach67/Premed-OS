@@ -278,10 +278,10 @@ export function Landing() {
             </div>
             <div className="pl-bd">
               <p className="pl-privtext">
-                <b>Premed OS is local-first.</b> Everything works signed out, stored in your browser. An
-                account adds sync across devices — nothing more. AI features send only what they
-                need, we name every processor that receives anything, and there's a local-only path
-                for the parts you'd rather keep offline. <b>No third-party analytics. No ad tech.
+                <b>Premed OS is local-first.</b> Core tracking stays in your browser when you use it
+                signed out. An account adds sync across devices and access to server-side AI study
+                tools. AI features send only what they need, we name every processor that receives
+                anything, and there's a local-only path for the parts you'd rather keep offline. <b>No third-party analytics. No ad tech.
                 Your data is never sold.</b>
               </p>
               <Link className="pl-lk" to="/privacy">
