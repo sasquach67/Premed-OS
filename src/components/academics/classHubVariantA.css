@@ -6,6 +6,7 @@
   --class-hub-inner: color-mix(in srgb, var(--muted) 58%, var(--card));
   --class-hub-accent: #6fb3de;
   --class-hub-accent-rgb: 111 179 222;
+  container-type: inline-size;
   font-size: 15px;
   line-height: 1.45;
 }
@@ -804,7 +805,23 @@
 .class-hub-scenario-reason { grid-column: 1 / -1; padding: 9px 11px; border-left: 3px solid var(--warning); background: var(--muted); color: var(--muted-foreground); font-size: 11.5px; font-weight: 700; }
 
 /* The complete action rail needs more room than a typical tablet header.
-   Stack it before it can collapse the course identity into a tall sliver. */
+   Use the Class Hub's real width rather than the window width: a locked app
+   sidebar can shrink this surface while the viewport still looks desktop. */
+@container (max-width: 1120px) {
+  .class-hub-banner-main { flex-direction: column; }
+  .class-hub-identity { width: 100%; flex-basis: auto; }
+  .class-hub-banner-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .class-hub-banner-actions .glass-surface {
+    max-width: 100%;
+    flex: 0 1 auto;
+  }
+}
+
+/* Viewport fallback for browsers without container-query support. */
 @media (max-width: 1280px) {
   .class-hub-banner-main { flex-direction: column; }
   .class-hub-identity { width: 100%; flex-basis: auto; }
