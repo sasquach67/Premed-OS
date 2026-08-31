@@ -146,6 +146,17 @@ describe('Daily Assignments public interaction contract', () => {
     expect(container.querySelector('button[aria-label="Remove important"]')).toBeTruthy()
   })
 
+  it('shows the weekday with each agenda due date', async () => {
+    const seeded = createDemoData()
+    const courseId = seeded.courses[0].id
+    seeded.academics.classCenter.assignments = [assignment('dated-row', courseId, 'Dated reading', '2026-08-19')]
+    useStore.getState().replaceAll(seeded)
+
+    await render()
+
+    expect(container.textContent).toContain('Wed, Aug 19')
+  })
+
   it('edits, duplicates, deletes, and restores an assignment from its public actions', async () => {
     const seeded = createDemoData()
     const courseId = seeded.courses[0].id

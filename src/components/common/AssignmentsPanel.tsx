@@ -146,7 +146,7 @@ function relativeDue(iso?: string) {
 }
 
 function exactDue(iso?: string) {
-  return localDate(iso)?.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) ?? 'Unscheduled'
+  return localDate(iso)?.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) ?? 'Unscheduled'
 }
 
 function nextOrder(assignments: ClassAssignment[]) {
@@ -864,7 +864,7 @@ function AssignmentRow({
           </div>
           <div className="flex items-center gap-2 sm:ml-auto">
             <Badge variant={due.variant}>{due.label}</Badge>
-            <span className="min-w-16 text-right text-xs font-semibold tabular-nums text-muted-foreground">{exactDue(assignment.dueDate)}</span>
+            <span className="min-w-24 whitespace-nowrap text-right text-xs font-semibold tabular-nums text-muted-foreground">{exactDue(assignment.dueDate)}</span>
             {visibleActions}
             <RecordActionOverflow actions={actions} label={`Actions for ${assignment.title}`} />
           </div>
