@@ -274,12 +274,19 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(document.body.querySelector('input[value="8 AM–9:15 AM"]')).toBeTruthy()
     await act(async () => button(document.body, 'General').click())
     await act(async () => button(document.body, 'Review syllabus records').click())
+    // The class-details dialog has a close transition. The parsed proposal must
+    // survive that handoff instead of being cleared as though the user canceled.
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 300)))
+    expect(document.body.textContent).toContain('Review syllabus')
     expect(document.body.textContent).toContain('Policies & boundaries')
     expect(document.body.textContent).toContain('People, meetings & support')
     const addReviewed = button(document.body, 'above to continue')
     expect(addReviewed.disabled).toBe(true)
     const confirmations = [...document.body.querySelectorAll<HTMLButtonElement>('button[aria-label^="Confirm "]')]
-    expect(confirmations.length).toBeGreaterThan(0)
+    // Every extracted row can be affirmed, not only the low-confidence row
+    // that blocks Apply. This keeps the review interaction consistent.
+    expect(confirmations.length).toBeGreaterThan(1)
+    expect(confirmations.some((confirmation) => confirmation.getAttribute('aria-label') === 'Confirm Meeting time')).toBe(true)
     for (const confirmation of confirmations) await act(async () => confirmation.click())
     expect(document.body.textContent).toContain('Confirmed')
     expect(document.body.textContent).toContain('Ready to add')

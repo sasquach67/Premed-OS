@@ -904,7 +904,9 @@ function ClassCenterDashboard({
   function stageImportedClassReview(type: ClassWorkspaceType) {
     if (!syllabusDraft) return
     setSyllabusReviewForm({ ...editor.form, type })
-    setEditor((current) => ({ ...current, open: false }))
+    // The review surface replaces the editor on the next render. Do not
+    // programmatically close the controlled dialog here: its close callback
+    // treats a dismissal as cancellation and clears the parsed syllabus draft.
     const next = new URLSearchParams(searchParams)
     next.set('reviewImport', '1')
     setSearchParams(next, { replace: true })

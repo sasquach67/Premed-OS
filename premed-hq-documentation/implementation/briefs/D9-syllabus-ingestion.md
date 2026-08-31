@@ -83,7 +83,7 @@
 - **Groups in this order:** class identity → exam dates → grade weights → units/topics → deadlines → policies → logistics.
 - **Clean groups collapse with a summary line** (*"12 deadlines · all confident"*); **any group holding a low-confidence item expands by default.**
 - **Every item shows its source text**, quoted, with page or line. **This is what makes confirmation meaningful rather than ceremonial** — a student cannot verify a weight they cannot trace. **If you cannot produce source text for an item, that item is low-confidence by definition.**
-- **Low-confidence items are flagged, never hidden or dropped**, and edit inline. No modal. Each row has an explicit **Confirm** action; Apply stays unavailable until every flagged row is confirmed or removed, and editing a confirmed row reopens its check.
+- **Low-confidence items are flagged, never hidden or dropped**, and edit inline. No modal. Every extracted row offers an explicit **Confirm** action; Apply stays unavailable until every low-confidence row is confirmed or removed, while clean records remain optional to affirm. Editing any confirmed row reopens its confirmation action.
 - **⚠️ Weight validation is the highest-stakes field on the screen.** Categories must sum to 100%; if they don't, **show the gap** — never auto-normalise, never silently drop a category. *A mis-parsed weight corrupts every downstream projection and the student would have no idea why.*
 - **Apply is one action and states its consequence:** *"Adds 9 units, 12 deadlines, 3 exam dates, and 5 grade categories to CHEM 262."*
 - **Nothing is written before Apply.** No partial writes, no optimistic creates.
@@ -141,7 +141,7 @@ Same flow in diff mode, from Materials → existing syllabus row → `Re-import`
 - [ ] LLM-assisted items are visibly marked (`U-1`).
 - [ ] Every extracted item shows quoted **source text with page or line**.
 - [ ] Groups that parsed cleanly are collapsed; **any group with a low-confidence item is expanded**.
-- [ ] Every low-confidence row can be explicitly confirmed; Apply is unavailable while any flagged row remains unresolved, and editing a confirmed row requires confirmation again.
+- [ ] Every extracted row can be explicitly confirmed; Apply is unavailable while any low-confidence row remains unresolved, and editing a confirmed row offers confirmation again.
 - [ ] **Grade categories not summing to 100% show the gap.** Grep proves no auto-normalise and no silent drop.
 - [ ] Groups that found nothing **say so** rather than being omitted.
 - [ ] Every group has an `Add manually` affordance.

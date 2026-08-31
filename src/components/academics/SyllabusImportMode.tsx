@@ -512,7 +512,7 @@ function ReviewGroup({ kind, items, searched, confirmedItemIds, onPatch, onRemov
                   <summary className="w-fit cursor-pointer text-primary/90">View source</summary>
                   <p className="mt-1 border-l-2 border-primary/30 pl-2">{item.evidence.location} · “{item.evidence.quote}”</p>
                 </details>
-                {item.confidence === 'low' && (confirmedItemIds.has(item.id) ? (
+                {confirmedItemIds.has(item.id) ? (
                   <span className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-3 font-display text-xs font-extrabold text-success" role="status">
                     <CheckCircle2 className="size-3.5" aria-hidden="true" /> Confirmed
                   </span>
@@ -521,13 +521,18 @@ function ReviewGroup({ kind, items, searched, confirmedItemIds, onPatch, onRemov
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="h-8 shrink-0 border-warning/55 bg-warning/10 font-display font-extrabold text-warning hover:bg-warning/18 hover:text-warning"
+                    className={cn(
+                      'h-8 shrink-0 font-display font-extrabold',
+                      item.confidence === 'low'
+                        ? 'border-warning/55 bg-warning/10 text-warning hover:bg-warning/18 hover:text-warning'
+                        : 'border-primary/35 bg-primary/[0.06] text-primary hover:bg-primary/12 hover:text-primary',
+                    )}
                     aria-label={`Confirm ${item.label || GROUP_LABEL[kind]}`}
                     onClick={() => onConfirm(item.id)}
                   >
                     <CheckCircle2 className="size-3.5" aria-hidden="true" /> Confirm
                   </Button>
-                ))}
+                )}
               </div>
             </div>
           ))}
