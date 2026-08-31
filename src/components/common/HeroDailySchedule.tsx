@@ -244,8 +244,13 @@ export function HeroSchedulePanel({ schedule }: { schedule: ReturnType<typeof us
       <div className="flex items-center justify-end gap-1.5 pb-1 text-[11px] font-extrabold text-slate-950 dark:text-white/82">
         <span>{schedule.sourceLabel}{schedule.stale ? ' · cached' : ''}</span>
         {schedule.source === 'google' ? (
-          <button onClick={() => { void schedule.refresh(new Date()) }} className="rounded p-1 hover:bg-foreground/10 dark:hover:bg-white/10" aria-label="Refresh Google Calendar">
+          <button
+            onClick={() => { void schedule.refresh(new Date()) }}
+            className="inline-flex items-center gap-1 rounded-full border border-slate-700/25 bg-white/25 px-2 py-0.5 text-[10px] font-bold hover:bg-white/45 dark:border-white/30 dark:bg-transparent dark:hover:bg-white/10"
+            aria-label="Refresh Google Calendar"
+          >
             <RefreshCw className={cn('size-3.5', schedule.status === 'syncing' && 'animate-spin')} />
+            Refresh
           </button>
         ) : (
           <button
