@@ -38,10 +38,14 @@ export function useHeroScheduleSource() {
   const freshCalendarCache = sync.calendar.enabled && hasFreshCalendarCache(sync.calendar.lastSyncedAt, date)
 
   useEffect(() => {
-    if (!sync.calendar.enabled || !sync.configured || freshCalendarCache || refreshAttempted.current === key) return
+    // A remembered connection should try to restore itself whenever the app
+    // opens, even if today's cached events are still present. Google may allow
+    // this silently; if its browser token has expired, the visible Refresh
+    // action is the user-initiated, policy-compliant reconnect path.
+    if (!sync.calendar.enabled || !sync.configured || refreshAttempted.current === key) return
     refreshAttempted.current = key
     void sync.connectSilent(date)
-  }, [date, freshCalendarCache, key, sync])
+  }, [date, key, sync])
 
   // Google Calendar does not push browser updates to us. Keep the displayed
   // day current without making the student hunt for the refresh button: check

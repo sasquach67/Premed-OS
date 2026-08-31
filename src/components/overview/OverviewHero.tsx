@@ -150,6 +150,12 @@ function HeroLiveStatus({ schedule, now }: { schedule: ReturnType<typeof useHero
 function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof useHeroScheduleSource>; now: Date }) {
   const analysis = useMemo(() => normalizeTimedEvents(schedule.events, now), [schedule.events, now])
   const visible = upcomingTimedEvents(analysis.timedEvents, now).slice(0, 4)
+  const refreshCalendar = () => {
+    // Keep the dashboard action stable after the first connection. If the
+    // short-lived browser token has expired, this user click becomes the
+    // Google-approved reconnect rather than bringing back a second Connect CTA.
+    void (schedule.connected ? schedule.refresh(new Date()) : schedule.connect(new Date()))
+  }
   const dayStart = useMemo(() => {
     const date = new Date(now)
     date.setHours(6, 0, 0, 0)
@@ -167,14 +173,14 @@ function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof use
     <div className="relative rounded-3xl border border-white/65 bg-card/78 p-4 shadow-xl shadow-stone-900/10 backdrop-blur-md dark:border-white/14 dark:bg-slate-950/58 dark:shadow-black/15">
       <div className="mb-3 flex items-center justify-between gap-3 px-1">
         <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground dark:text-white/62">Today</p>
-        {schedule.connected ? (
+        {schedule.calendar.enabled ? (
           <button
             type="button"
-            onClick={() => { void schedule.refresh(new Date()) }}
-            disabled={schedule.status === 'syncing'}
+            onClick={refreshCalendar}
+            disabled={!schedule.configured || schedule.status === 'syncing' || schedule.status === 'connecting'}
             className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-card/88 px-3 py-1 text-[11px] font-extrabold text-primary shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-45 dark:border-white/10 dark:bg-slate-950/62 dark:hover:bg-white/8"
           >
-            <RefreshCw className={cn('size-3.5', schedule.status === 'syncing' && 'animate-spin')} />
+            <RefreshCw className={cn('size-3.5', (schedule.status === 'syncing' || schedule.status === 'connecting') && 'animate-spin')} />
             Refresh
           </button>
         ) : !!visible.length && (
@@ -194,22 +200,30 @@ function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof use
             variant="empty-state"
             priority={10}
             title="No timed events today"
-            actions={!schedule.connected
-              ? schedule.configured ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => { void schedule.connect(new Date()) }}
-                  disabled={!schedule.configured || schedule.status === 'connecting'}
-                >
-                  Connect calendar
-                </Button>
-              ) : <Button asChild size="sm"><Link to="/settings">Set up calendar</Link></Button>
-              : <Button type="button" size="sm" onClick={() => document.getElementById('overview-tasks-heading')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>Review today’s tasks</Button>}
+            actions={schedule.calendar.enabled ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={refreshCalendar}
+                disabled={!schedule.configured || schedule.status === 'syncing' || schedule.status === 'connecting'}
+              >
+                <RefreshCw className={cn('size-4', (schedule.status === 'syncing' || schedule.status === 'connecting') && 'animate-spin')} />
+                Refresh calendar
+              </Button>
+            ) : schedule.configured ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => { void schedule.connect(new Date()) }}
+                disabled={schedule.status === 'connecting'}
+              >
+                Connect calendar
+              </Button>
+            ) : <Button asChild size="sm"><Link to="/settings">Set up calendar</Link></Button>}
             className="border-border text-foreground dark:border-white/20 dark:text-white"
           >
             <span className="text-muted-foreground dark:text-white/75">
-              {schedule.connected ? 'Your calendar is clear—use this window for the next important task.' : 'Connect your calendar to place today’s real schedule here.'}
+              {schedule.calendar.enabled ? 'Your calendar is clear—use this window for the next important task.' : 'Connect your calendar to place today’s real schedule here.'}
             </span>
           </MascotNote>
         )}
