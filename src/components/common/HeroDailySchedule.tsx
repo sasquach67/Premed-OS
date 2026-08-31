@@ -10,6 +10,8 @@ import {
 } from '@/lib/schedule'
 import { cn } from '@/lib/utils'
 
+const CALENDAR_BACKGROUND_REFRESH_MS = 2 * 60_000
+
 function useNow(intervalMs: number) {
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
@@ -56,7 +58,7 @@ export function useHeroScheduleSource() {
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible') refreshIfDue()
     }
-    const interval = window.setInterval(refreshIfDue, 5 * 60_000)
+    const interval = window.setInterval(refreshIfDue, CALENDAR_BACKGROUND_REFRESH_MS)
     window.addEventListener('focus', refreshIfDue)
     document.addEventListener('visibilitychange', onVisibilityChange)
     return () => {

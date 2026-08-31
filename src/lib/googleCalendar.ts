@@ -45,6 +45,57 @@ interface CalendarListEntry {
 let gisPromise: Promise<void> | null = null
 let accessToken: string | null = null
 let tokenExpiry = 0
+const TOKEN_SESSION_KEY = 'premedos.google-calendar-token.v1'
+
+interface StoredCalendarToken {
+  accessToken: string
+  expiresAt: number
+}
+
+function clearStoredToken() {
+  accessToken = null
+  tokenExpiry = 0
+  try {
+    window.sessionStorage.removeItem(TOKEN_SESSION_KEY)
+  } catch {
+    // Calendar still works for the active page when storage is unavailable.
+  }
+}
+
+function storeToken(token: string, expiresAt: number) {
+  accessToken = token
+  tokenExpiry = expiresAt
+  try {
+    const stored: StoredCalendarToken = { accessToken: token, expiresAt }
+    window.sessionStorage.setItem(TOKEN_SESSION_KEY, JSON.stringify(stored))
+  } catch {
+    // Keep the token in memory when private-mode/storage policies block writes.
+  }
+}
+
+function restoreStoredToken() {
+  if (accessToken && Date.now() < tokenExpiry) return true
+  try {
+    const raw = window.sessionStorage.getItem(TOKEN_SESSION_KEY)
+    if (!raw) return false
+    const stored = JSON.parse(raw) as Partial<StoredCalendarToken>
+    if (
+      typeof stored.accessToken !== 'string'
+      || !stored.accessToken
+      || typeof stored.expiresAt !== 'number'
+      || stored.expiresAt <= Date.now()
+    ) {
+      clearStoredToken()
+      return false
+    }
+    accessToken = stored.accessToken
+    tokenExpiry = stored.expiresAt
+    return true
+  } catch {
+    clearStoredToken()
+    return false
+  }
+}
 
 function googleApi(): GoogleOAuth | undefined {
   return (window as unknown as { google?: GoogleOAuth }).google
@@ -66,7 +117,7 @@ function loadGis(): Promise<void> {
 }
 
 export function isCalendarConnected() {
-  return !!accessToken && Date.now() < tokenExpiry
+  return restoreStoredToken()
 }
 
 async function getToken(clientId: string, prompt: 'consent' | '') {
@@ -82,8 +133,8 @@ async function getToken(clientId: string, prompt: 'consent' | '') {
           reject(new Error(resp.error || 'Calendar authorization failed.'))
           return
         }
-        accessToken = resp.access_token
-        tokenExpiry = Date.now() + Math.max(1, (resp.expires_in ?? 3300) - 60) * 1000
+        const expiresAt = Date.now() + Math.max(1, (resp.expires_in ?? 3300) - 60) * 1000
+        storeToken(resp.access_token, expiresAt)
         resolve()
       },
     })
@@ -100,16 +151,20 @@ export function connectCalendarSilent(clientId: string) {
 }
 
 export function disconnectCalendar() {
+  restoreStoredToken()
   if (accessToken && googleApi()?.accounts?.oauth2) {
     googleApi()!.accounts.oauth2.revoke(accessToken)
   }
-  accessToken = null
-  tokenExpiry = 0
+  clearStoredToken()
 }
 
 async function calendarFetch<T>(url: string): Promise<T> {
   if (!isCalendarConnected()) throw new Error('Calendar is not connected.')
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } })
+  if (res.status === 401) {
+    clearStoredToken()
+    throw new Error('Google Calendar access expired. Reconnect once to continue syncing.')
+  }
   if (!res.ok) throw new Error(`Google Calendar request failed (${res.status})`)
   return res.json() as Promise<T>
 }
