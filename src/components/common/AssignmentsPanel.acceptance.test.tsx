@@ -268,6 +268,9 @@ describe('Daily Assignments public interaction contract', () => {
     expect(afterWeek).not.toBe(beforeWeek)
 
     await act(async () => container.querySelector<HTMLButtonElement>('button[aria-label="Calendar view"]')!.click())
+    const monthGrid = container.querySelector<HTMLElement>('[role="grid"]')
+    expect(monthGrid?.className).toContain('table-fixed')
+    expect(monthGrid?.closest('section')?.className).toContain('overflow-hidden')
     const beforeMonth = container.querySelector('.rdp-month_caption')?.textContent
     const nextMonth = container.querySelector<HTMLButtonElement>('button[aria-label*="next month" i]')!
     await act(async () => nextMonth.click())

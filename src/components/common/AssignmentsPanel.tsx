@@ -1049,8 +1049,8 @@ function AssignmentCalendar({
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
-      <section className="card-soft rounded-2xl border border-border bg-card p-3">
+    <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <section className="card-soft min-w-0 overflow-hidden rounded-2xl border border-border bg-card p-3">
         <Calendar
           mode="single"
           fixedWeeks
@@ -1062,8 +1062,8 @@ function AssignmentCalendar({
           // 6rem floored the grid at 7x96px and pushed it off the page on any
           // narrow column. Row height is set by min-h-24 on the button below;
           // the default cell size keeps the nav arrows a sane size too.
-          className="w-full bg-transparent p-0"
-          classNames={{ month: 'w-full', month_grid: 'w-full', day: 'min-w-0 flex-1 p-0' }}
+          className="w-full max-w-full bg-transparent p-0"
+          classNames={{ month: 'w-full min-w-0', month_grid: 'w-full max-w-full table-fixed', day: 'min-w-0 flex-1 p-0' }}
           components={{ DayButton: AssignmentDayButton }}
         />
       </section>
