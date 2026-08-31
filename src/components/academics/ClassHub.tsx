@@ -220,7 +220,11 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
           </button>
           <div className="class-hub-banner-main">
             <div className="class-hub-identity">
-              <h1><span className={cn('class-hub-course-dot', COLOR_DOT[courseColor])} aria-hidden="true" />{course.code}<span>{course.title}</span></h1>
+              <h1>
+                <span className={cn('class-hub-course-dot', COLOR_DOT[courseColor])} aria-hidden="true" />
+                <span className="class-hub-course-code">{course.code}</span>
+                <span className="class-hub-course-title">{course.title}</span>
+              </h1>
               <div className="class-hub-info-line">
                 <span>{workspace.instructor || 'Instructor not set'}</span><i>·</i>
                 <span>{meetingText(workspace)}</span><i>·</i>

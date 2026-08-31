@@ -53,7 +53,10 @@
   gap: 18px;
 }
 
-.class-hub-identity { min-width: 0; }
+.class-hub-identity {
+  min-width: 0;
+  flex: 1 1 360px;
+}
 .class-hub-identity h1 {
   display: flex;
   align-items: center;
@@ -62,6 +65,8 @@
   font: 800 31px 'Baloo 2', var(--font-display);
   letter-spacing: -.4px;
 }
+
+.class-hub-course-code { white-space: nowrap; }
 
 .class-hub-identity h1 > span:last-child {
   min-width: 0;
@@ -102,6 +107,7 @@
 .class-hub-banner-actions {
   display: flex;
   flex: 0 0 auto;
+  min-width: 0;
   align-items: center;
   gap: 11px;
 }
@@ -797,9 +803,23 @@
 .class-hub-scenario-result > p:not(.class-hub-scenario-label):not(.class-hub-scenario-number):not(.class-hub-scenario-copy) { margin-top: 9px; color: var(--muted-foreground); font-size: 11px; font-weight: 700; }
 .class-hub-scenario-reason { grid-column: 1 / -1; padding: 9px 11px; border-left: 3px solid var(--warning); background: var(--muted); color: var(--muted-foreground); font-size: 11.5px; font-weight: 700; }
 
-@media (max-width: 960px) {
+/* The complete action rail needs more room than a typical tablet header.
+   Stack it before it can collapse the course identity into a tall sliver. */
+@media (max-width: 1280px) {
   .class-hub-banner-main { flex-direction: column; }
-  .class-hub-banner-actions { width: 100%; flex-wrap: wrap; }
+  .class-hub-identity { width: 100%; flex-basis: auto; }
+  .class-hub-banner-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .class-hub-banner-actions .glass-surface {
+    max-width: 100%;
+    flex: 0 1 auto;
+  }
+}
+
+@media (max-width: 960px) {
   .class-hub-course-pulse { grid-template-columns: 140px repeat(2, minmax(0, 1fr)); }
   .course-pulse-heading { grid-row: span 2; }
   .course-pulse-item:nth-child(4),
