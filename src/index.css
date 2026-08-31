@@ -1196,6 +1196,21 @@
   border-radius: 13px;
 }
 
+/* The import review is a temporary reading shell. Let its header continue
+   below the control rail so the rail feels anchored inside a surface instead
+   of becoming a hard, cropped edge at the top of the review. */
+.syllabus-import-mode .syllabus-import-header {
+  margin-bottom: 1.25rem;
+}
+
+.syllabus-import-mode .syllabus-import-header > section > div:last-child {
+  padding-bottom: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.syllabus-import-mode .syllabus-import-header > section {
+  box-shadow: 0 16px 34px -26px rgba(8, 17, 29, 0.9);
+}
+
 /* Writing is an equal Class Hub configuration, not a generic utility grid.
  * These compact, solid rows are deliberately scoped to its substitute study
  * layer so the rest of the app keeps its approved component geometry. */

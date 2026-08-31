@@ -218,6 +218,7 @@ export function SyllabusImportMode({
         scene="academics"
         title={heading}
         subtitle={subline}
+        className="syllabus-import-header"
       >
         <div className="flex flex-wrap items-center gap-3 p-2">
           <Button variant="ghost" className="text-white/90 hover:bg-white/10 hover:text-white" onClick={back}>
