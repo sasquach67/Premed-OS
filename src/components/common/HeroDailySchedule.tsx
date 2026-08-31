@@ -31,27 +31,16 @@ function hasFreshCalendarCache(lastSyncedAt: number | undefined, date: Date) {
  *  recurring class schedule, falling back to the schedule-only mock otherwise. */
 export function useHeroScheduleSource() {
   const sync = useCalendarSync()
-  const refreshAttempted = useRef('')
   const lastBackgroundRefresh = useRef(0)
   const date = new Date()
   const key = todayKey(date)
   const freshCalendarCache = sync.calendar.enabled && hasFreshCalendarCache(sync.calendar.lastSyncedAt, date)
 
-  useEffect(() => {
-    // A remembered connection should try to restore itself whenever the app
-    // opens, even if today's cached events are still present. Google may allow
-    // this silently; if its browser token has expired, the visible Refresh
-    // action is the user-initiated, policy-compliant reconnect path.
-    if (!sync.calendar.enabled || !sync.configured || refreshAttempted.current === key) return
-    refreshAttempted.current = key
-    void sync.connectSilent(date)
-  }, [date, key, sync])
-
   // Google Calendar does not push browser updates to us. Keep the displayed
-  // day current without making the student hunt for the refresh button: check
-  // again when they return from Calendar, then every five minutes while the
-  // app is open. The token remains browser-session-only and any expired token
-  // still follows the normal reconnect path.
+  // day current while an in-memory token is still valid. Never request or
+  // restore authorization from this mount path: Google may turn a nominally
+  // silent request into an account chooser. Reconnection belongs exclusively
+  // to the visible Connect/Refresh actions initiated by the student.
   useEffect(() => {
     if (!sync.calendar.enabled || !sync.connected) return
 
