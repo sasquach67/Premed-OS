@@ -330,11 +330,16 @@ export function SyllabusImportMode({
                             {grouped.map(([kind, items]) => {
                               const flagged = items.filter((item) => item.confidence === 'low').length
                               return (
-                                <a key={kind} href={`#syllabus-group-${kind}`} className="group flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:w-full">
+                                <button
+                                  key={kind}
+                                  type="button"
+                                  onClick={() => document.getElementById(`syllabus-group-${kind}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                  className="group flex w-full shrink-0 items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:w-full"
+                                >
                                   <span className={cn('size-2 shrink-0 rounded-full', flagged ? 'bg-warning' : items.length ? 'bg-success' : 'border border-border bg-background')} aria-hidden="true" />
                                   <span className="whitespace-nowrap lg:min-w-0 lg:flex-1 lg:truncate">{GROUP_LABEL[kind]}</span>
                                   <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] tabular-nums', flagged ? 'bg-warning/15 text-warning' : 'bg-muted text-muted-foreground')}>{items.length}</span>
-                                </a>
+                                </button>
                               )
                             })}
                           </nav>
