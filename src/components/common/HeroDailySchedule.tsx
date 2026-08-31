@@ -32,6 +32,7 @@ function hasFreshCalendarCache(lastSyncedAt: number | undefined, date: Date) {
 export function useHeroScheduleSource() {
   const sync = useCalendarSync()
   const refreshAttempted = useRef('')
+  const lastBackgroundRefresh = useRef(0)
   const date = new Date()
   const key = todayKey(date)
   const freshCalendarCache = sync.calendar.enabled && hasFreshCalendarCache(sync.calendar.lastSyncedAt, date)
@@ -41,6 +42,36 @@ export function useHeroScheduleSource() {
     refreshAttempted.current = key
     void sync.connectSilent(date)
   }, [date, freshCalendarCache, key, sync])
+
+  // Google Calendar does not push browser updates to us. Keep the displayed
+  // day current without making the student hunt for the refresh button: check
+  // again when they return from Calendar, then every five minutes while the
+  // app is open. The token remains browser-session-only and any expired token
+  // still follows the normal reconnect path.
+  useEffect(() => {
+    if (!sync.calendar.enabled || !sync.connected) return
+
+    const refreshIfDue = () => {
+      if (document.visibilityState !== 'visible') return
+      if (Date.now() - lastBackgroundRefresh.current < 30_000) return
+      lastBackgroundRefresh.current = Date.now()
+      void sync.refresh(new Date()).catch(() => {
+        // The Settings card and schedule state surface a reconnect/error hint.
+      })
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refreshIfDue()
+    }
+    const interval = window.setInterval(refreshIfDue, 5 * 60_000)
+    window.addEventListener('focus', refreshIfDue)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener('focus', refreshIfDue)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [sync.calendar.enabled, sync.connected, sync.refresh])
 
   // Precedence, most trustworthy first: a live calendar, then the student's own
   // class records, then nothing. There is deliberately no fourth option — the
