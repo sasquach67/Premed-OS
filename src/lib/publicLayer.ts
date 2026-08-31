@@ -143,8 +143,18 @@ export interface LocalCount {
 export function localCounts(data: AppData): LocalCount[] {
   const center = data.academics?.classCenter
   const loggedHours = data.experiences.reduce((sum, e) => sum + (Number(e.hours) || 0), 0)
+  const hasProfileDetails = [
+    data.profile.name,
+    data.profile.email,
+    data.profile.school,
+    data.profile.major,
+    data.profile.track,
+    data.profile.classYear,
+    data.profile.startTerm,
+  ].some((value) => typeof value === 'string' && value.trim().length > 0)
 
   const rows: LocalCount[] = [
+    { key: 'profile', label: 'Profile details', value: hasProfileDetails ? 1 : 0, tint: 'var(--cat-gpa)' },
     { key: 'classes', label: 'Classes', value: data.courses.length, tint: 'var(--cat-gpa)' },
     {
       key: 'topics',

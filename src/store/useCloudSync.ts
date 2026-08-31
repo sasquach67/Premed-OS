@@ -15,6 +15,7 @@ import { supabase, isSupabaseConfigured, authRedirectTo, type DashboardRow } fro
 import { hasLocalWork, hasSeenMerge } from '@/lib/publicLayer'
 import type { AppData } from '@/lib/types'
 import { dataForRemote, mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
+import { ACCOUNT_WORKSPACE_READY_EVENT, decideCloudReconcile } from '@/lib/accountWorkspace'
 
 const DEBOUNCE_MS = 4000
 const META_KEY = 'premed_hq_cloud_meta'
@@ -45,6 +46,7 @@ export function useCloudSync() {
   const [status, setStatus] = useState<CloudStatus>(isSupabaseConfigured ? 'idle' : 'offline')
   const [error, setError] = useState('')
   const [lastSyncAt, setLastSyncAt] = useState<number | undefined>(readMeta().lastSyncAt)
+  const [accountReady, setAccountReady] = useState(false)
   const lastSig = useRef('')
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const reconciledFor = useRef<string | null>(null)
@@ -57,7 +59,7 @@ export function useCloudSync() {
   }, [])
 
   const pushNow = useCallback(async () => {
-    if (!supabase || !user) return
+    if (!supabase || !user || !accountReady) return false
     setStatus('syncing'); setError('')
     try {
       const row: DashboardRow = { user_id: user.id, data: dataForRemote(snapshotData()), updated_at: new Date().toISOString() }
@@ -65,10 +67,12 @@ export function useCloudSync() {
       if (e) throw e
       markSynced(user.id)
       setStatus('synced')
+      return true
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Sync failed'); setStatus('error')
+      return false
     }
-  }, [user, markSynced])
+  }, [user, accountReady, markSynced])
 
   const pullNow = useCallback(async () => {
     if (!supabase || !user) return
@@ -80,6 +84,9 @@ export function useCloudSync() {
       if (data?.data) {
         replaceAll(mergeRemotePreservingLocal(data.data as AppData, snapshotData()))
         markSynced(user.id)
+        setAccountReady(true)
+      } else {
+        setAccountReady(false)
       }
       setStatus('synced')
     } catch (e) {
@@ -98,14 +105,18 @@ export function useCloudSync() {
       const meta = readMeta()
       const remoteAt = data?.updated_at ? Date.parse(data.updated_at) : 0
       const knownAt = meta.userId === u.id ? (meta.lastSyncAt ?? 0) : 0
+      const decision = decideCloudReconcile({ hasRemote: Boolean(data), knownAt, remoteAt })
 
-      if (!data) {
-        // No cloud row yet — seed the cloud from this device.
-        await pushNowFor(u)
-      } else if (knownAt === 0 || remoteAt > knownAt) {
+      if (decision === 'requires-setup') {
+        // A missing account row is not permission to upload whichever local
+        // workspace happens to be open. Setup creates the first clean row.
+        setAccountReady(false)
+        setStatus('idle')
+      } else if (decision === 'pull-remote' && data) {
         // Fresh browser, or cloud has edits we haven't seen -> take the cloud.
         replaceAll(mergeRemotePreservingLocal(data.data as AppData, snapshotData()))
         markSynced(u.id)
+        setAccountReady(true)
         setStatus('synced')
       } else {
         // Local is same-or-newer -> push it up.
@@ -120,6 +131,7 @@ export function useCloudSync() {
       const { error: e2 } = await supabase!.from('dashboards').upsert(row, { onConflict: 'user_id' })
       if (e2) throw e2
       markSynced(u2.id)
+      setAccountReady(true)
       setStatus('synced')
     }
   }, [replaceAll, markSynced])
@@ -144,21 +156,36 @@ export function useCloudSync() {
         reconciledFor.current = u.id
         void reconcile(u)
       }
-      if (!u) { reconciledFor.current = null; setStatus('idle') }
+      if (!u) { reconciledFor.current = null; setAccountReady(false); setStatus('idle') }
     }
     return () => sub.subscription.unsubscribe()
   }, [reconcile])
 
+  // Setup and merge keep sync locked until their server-first write and local
+  // replacement both succeed. Only that completed boundary emits this event.
+  useEffect(() => {
+    function handleAccountReady(event: Event) {
+      const readyFor = (event as CustomEvent<{ userId?: string }>).detail?.userId
+      if (!user || readyFor !== user.id) return
+      reconciledFor.current = user.id
+      markSynced(user.id)
+      setAccountReady(true)
+      setStatus('synced')
+    }
+    window.addEventListener(ACCOUNT_WORKSPACE_READY_EVENT, handleAccountReady)
+    return () => window.removeEventListener(ACCOUNT_WORKSPACE_READY_EVENT, handleAccountReady)
+  }, [user, markSynced])
+
   // ---- debounced auto-push while signed in ----
   useEffect(() => {
-    if (!supabase || !user) return
+    if (!supabase || !user || !accountReady) return
     const unsub = useStore.subscribe(() => {
       if (contentSignature() === lastSig.current) return
       if (timer.current) clearTimeout(timer.current)
       timer.current = setTimeout(() => { void pushNow() }, DEBOUNCE_MS)
     })
     return () => { unsub(); if (timer.current) clearTimeout(timer.current) }
-  }, [user, pushNow])
+  }, [user, accountReady, pushNow])
 
   const signIn = useCallback(async (email: string) => {
     if (!supabase) return
@@ -181,7 +208,7 @@ export function useCloudSync() {
     if (!supabase) return
     const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' })
     if (signOutError) throw signOutError
-    setUser(null); setStatus('idle')
+    setUser(null); setAccountReady(false); setStatus('idle')
   }, [])
 
   return {
@@ -190,6 +217,7 @@ export function useCloudSync() {
     status,
     error,
     lastSyncAt,
+    accountReady,
     signIn,
     signOut,
     pushNow,

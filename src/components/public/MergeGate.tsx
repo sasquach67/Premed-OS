@@ -15,6 +15,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { snapshotData } from '@/store/store'
 import { hasLocalWork, hasSeenMerge, markEnteredApp } from '@/lib/publicLayer'
+import { decideAccountRoute } from '@/lib/accountWorkspace'
 
 export function MergeGate() {
   const navigate = useNavigate()
@@ -23,27 +24,47 @@ export function MergeGate() {
 
   useEffect(() => {
     if (!supabase) return
-    if (pathname.startsWith('/auth')) return
+    if (pathname === '/auth') {
+      handled.current = null
+      return
+    }
+    let alive = true
 
-    const consider = (userId: string | undefined) => {
+    const consider = async (userId: string | undefined) => {
       if (!userId) {
         handled.current = null
         return
       }
       // Signing in is entering — `/` must not fall back to the landing page.
       markEnteredApp()
-      if (handled.current === userId) return
-      handled.current = userId
-      if (hasSeenMerge(userId)) return
-      if (!hasLocalWork(snapshotData())) return
-      navigate('/auth/merge', { replace: true })
+      const handledKey = `${userId}:${pathname}`
+      if (handled.current === handledKey) return
+      handled.current = handledKey
+
+      const { data, error } = await supabase!
+        .from('dashboards')
+        .select('user_id')
+        .eq('user_id', userId)
+        .maybeSingle()
+      if (!alive || error) return
+
+      const route = decideAccountRoute({
+        pathname,
+        hasRemote: Boolean(data),
+        hasLocalWork: hasLocalWork(snapshotData()),
+        hasSeenMerge: hasSeenMerge(userId),
+      })
+      if (route) navigate(route, { replace: true })
     }
 
-    void supabase.auth.getSession().then(({ data }) => consider(data.session?.user?.id))
+    void supabase.auth.getSession().then(({ data }) => { void consider(data.session?.user?.id) })
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) =>
-      consider(session?.user?.id),
+      { void consider(session?.user?.id) },
     )
-    return () => sub.subscription.unsubscribe()
+    return () => {
+      alive = false
+      sub.subscription.unsubscribe()
+    }
   }, [navigate, pathname])
 
   return null

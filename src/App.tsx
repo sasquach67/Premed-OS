@@ -18,12 +18,14 @@ const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m
 const Atlas = lazy(() => import('@/pages/Atlas').then((m) => ({ default: m.Atlas })))
 const Upgrade = lazy(() => import('@/pages/Upgrade').then((m) => ({ default: m.Upgrade })))
 const ReservedSpace = lazy(() => import('@/pages/ReservedSpace').then((m) => ({ default: m.ReservedSpace })))
+const FounderConsolePrototype = lazy(() => import('@/pages/prototypes/FounderConsolePrototype').then((m) => ({ default: m.FounderConsolePrototype })))
 
 /* The public layer. Seven routes outside the app shell — they have their
    own nav, their own footer, and their own scoped stylesheet. `/` itself
    is decided by RootRoute: a first-time visitor gets the landing page,
    everyone else gets their dashboard (05 §0.1 — a front door, not a gate). */
 const AuthPage = lazy(() => import('@/pages/public/AuthPage').then((m) => ({ default: m.AuthPage })))
+const FirstLoginSetupPage = lazy(() => import('@/pages/public/FirstLoginSetupPage').then((m) => ({ default: m.FirstLoginSetupPage })))
 const MergePage = lazy(() => import('@/pages/public/MergePage').then((m) => ({ default: m.MergePage })))
 const AboutPage = lazy(() => import('@/pages/public/AboutPage').then((m) => ({ default: m.AboutPage })))
 const PrivacyPage = lazy(() => import('@/pages/public/PrivacyPage').then((m) => ({ default: m.PrivacyPage })))
@@ -54,11 +56,13 @@ function App() {
               clearing storage. `/` stays the smart route. */}
           <Route path="landing" element={<LandingRoute />} />
           <Route path="auth" element={<AuthPage />} />
+          <Route path="auth/setup" element={<FirstLoginSetupPage />} />
           <Route path="auth/merge" element={<MergePage />} />
           <Route path="about" element={<AboutPage />} />
           <Route path="privacy" element={<PrivacyPage />} />
           <Route path="terms" element={<TermsPage />} />
           <Route path="pricing" element={<PricingPage />} />
+          {import.meta.env.DEV ? <Route path="prototype/founder-console" element={<FounderConsolePrototype />} /> : null}
 
           {/* `/` — landing page for a first-time visitor, dashboard for
               everyone else. RootRoute renders AppShell in the second case,

@@ -8,8 +8,6 @@
      • **Local data survives until the server confirms the write.** The
        upload is `upsert` → await → only then does the local store change.
        Nothing here deletes, and nothing here writes locally first.
-     • **Upload is preselected**, and the safety property is stated IN THE
-       PANEL rather than in a tooltip.
      • **A non-empty account gets a change-by-change review** — never an
        overwrite, never "last write wins". Every area where the two copies
        differ is listed and defaults to KEEPING THE ACCOUNT'S COPY, which
@@ -21,7 +19,7 @@
        never a JSON blob.
    ============================================================ */
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { PublicShell } from '@/components/public/PublicShell'
 import { PublicNav } from '@/components/public/PublicNav'
 import { supabase } from '@/lib/supabase'
@@ -30,9 +28,9 @@ import { localCounts, localWorkSince, markMergeSeen } from '@/lib/publicLayer'
 import type { AppData } from '@/lib/types'
 import type { DashboardRow } from '@/lib/supabase'
 import { dataForRemote, mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
+import { destinationAfterFirstLogin, notifyAccountWorkspaceReady } from '@/lib/accountWorkspace'
 
-type Choice = 'upload' | 'separate'
-type Phase = 'loading' | 'empty-account' | 'review' | 'working' | 'error'
+type Phase = 'loading' | 'review' | 'working' | 'error'
 
 /** Areas a student recognises, each mapping to the `AppData` keys behind
  *  it. The review is per-area because "your experiences" is a decision a
@@ -69,13 +67,13 @@ function areaSize(data: AppData | null, fields: readonly (keyof AppData)[]): num
 
 export function MergePage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const replaceAll = useStore((s) => s.replaceAll)
 
   const [phase, setPhase] = useState<Phase>('loading')
   const [error, setError] = useState('')
   const [userId, setUserId] = useState('')
   const [cloud, setCloud] = useState<AppData | null>(null)
-  const [choice, setChoice] = useState<Choice>('upload')
   /** Per-area resolution. `false` = keep the account's copy (the default,
    *  and the one that cannot lose server-side work). */
   const [useLocal, setUseLocal] = useState<Record<AreaKey, boolean>>(() =>
@@ -111,8 +109,14 @@ export function MergePage() {
         if (e) throw e
         if (!alive) return
         const remote = (data?.data as AppData | undefined) ?? null
+        if (!remote) {
+          // First-login setup is the only path allowed to create an account
+          // snapshot. Never upload the open browser implicitly here.
+          navigate('/auth/setup', { replace: true })
+          return
+        }
         setCloud(remote)
-        setPhase(remote ? 'review' : 'empty-account')
+        setPhase('review')
       } catch (err) {
         if (!alive) return
         setError(err instanceof Error ? err.message : 'Could not read your account.')
@@ -140,31 +144,10 @@ export function MergePage() {
   const finish = useCallback(
     (to: string) => {
       if (userId) markMergeSeen(userId)
-      navigate(to, { replace: true })
+      navigate(destinationAfterFirstLogin(searchParams.get('firstLogin') === '1', to), { replace: true })
     },
-    [userId, navigate],
+    [userId, navigate, searchParams],
   )
-
-  /** Upload into an empty account. Server first; the local store is only
-   *  touched after the write is acknowledged. */
-  const upload = useCallback(async () => {
-    if (!supabase || !userId) return
-    setPhase('working')
-    setError('')
-    try {
-      const row: DashboardRow = {
-        user_id: userId,
-        data: dataForRemote(local),
-        updated_at: new Date().toISOString(),
-      }
-      const { error: e } = await supabase.from('dashboards').upsert(row, { onConflict: 'user_id' })
-      if (e) throw e
-      finish('/')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'The upload did not finish.')
-      setPhase('empty-account')
-    }
-  }, [userId, local, finish])
 
   /** Apply the reviewed merge. Starts from the ACCOUNT's copy and takes
    *  this device's version only for the areas explicitly chosen. */
@@ -191,6 +174,7 @@ export function MergePage() {
       if (e) throw e
       // Server confirmed — only now does the device's copy change.
       replaceAll(mergeRemotePreservingLocal(remoteResult, local))
+      notifyAccountWorkspaceReady(userId)
       finish('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'The merge did not finish. Nothing was changed.')
@@ -249,44 +233,6 @@ export function MergePage() {
 
             {phase === 'loading' ? (
               <p className="pl-fine">Checking what your account already has…</p>
-            ) : null}
-
-            {phase === 'empty-account' || phase === 'working' ? (
-              <>
-                <button
-                  type="button"
-                  className="pl-opt"
-                  data-on={choice === 'upload'}
-                  onClick={() => setChoice('upload')}
-                >
-                  <span className="pl-radio" />
-                  <span>
-                    <span className="pl-ot">
-                      Upload this to my account <span className="pl-rec">Recommended</span>
-                    </span>
-                    <span className="pl-om">
-                      Everything above moves to your account and syncs across devices. Your account
-                      is empty, so nothing can be overwritten.
-                    </span>
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  className="pl-opt"
-                  data-on={choice === 'separate'}
-                  onClick={() => setChoice('separate')}
-                >
-                  <span className="pl-radio" />
-                  <span>
-                    <span className="pl-ot">Keep them separate for now</span>
-                    <span className="pl-om">
-                      Sign in with an empty account. This device's data stays exactly where it is —
-                      you can upload it any time from Settings → Data.
-                    </span>
-                  </span>
-                </button>
-              </>
             ) : null}
 
             {phase === 'review' ? (
@@ -352,29 +298,14 @@ export function MergePage() {
             </p>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              {phase === 'review' ? (
-                <button
-                  type="button"
-                  className="pl-sbtn pl-sbtn-p pl-sbtn-lg"
-                  onClick={applyReview}
-                  disabled={phase !== 'review'}
-                >
-                  Apply and continue
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="pl-sbtn pl-sbtn-p pl-sbtn-lg"
-                  disabled={phase === 'working' || phase === 'loading'}
-                  onClick={() => (choice === 'upload' ? void upload() : finish('/'))}
-                >
-                  {phase === 'working'
-                    ? 'Uploading…'
-                    : choice === 'upload'
-                      ? 'Upload and continue'
-                      : 'Continue without uploading'}
-                </button>
-              )}
+              <button
+                type="button"
+                className="pl-sbtn pl-sbtn-p pl-sbtn-lg"
+                onClick={applyReview}
+                disabled={phase !== 'review'}
+              >
+                {phase === 'working' ? 'Applying…' : 'Apply and continue'}
+              </button>
 
               {/* `Decide later` is a real path that changes nothing. */}
               <button type="button" className="pl-lk" onClick={() => finish('/settings?tab=data')}>
