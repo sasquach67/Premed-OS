@@ -65,6 +65,7 @@ import { persistConfirmedSyllabusEvidence } from '@/lib/academics/guideContract'
 import { extractClassMeetingDays, extractClassMeetingTime, isOfficeHoursLine, isPlausibleClassMeetingTime, normalizeMeetingDays, proposePlausibleMeetingTime } from '@/lib/academics/meetingSchedule'
 import { removeLocalBlob } from '@/lib/localBlobStore'
 import { removeCourseCascade } from '@/lib/academics/removeCourseCascade'
+import { readingTaskDueDate } from '@/lib/academics/readingSchedule'
 
 const COLORS: AcademicTagColor[] = [
   'blue', 'sky', 'cyan', 'teal', 'mint', 'green',
@@ -324,15 +325,16 @@ export function classFormFromSyllabus(proposal: SyllabusProposal, semester: stri
 function upsertReadingCalendarAssignment(center: ClassCenterData, courseId: string, item: SyllabusItem, linkedFileIds: string[], now: number) {
   if (!item.value) return
   const key = syllabusReadingCalendarSourceKey(item.label, item.context, item.value)
+  const dueDate = readingTaskDueDate(item.value)
   const title = `Read ${item.label} before class`
-  const notes = `Due for the scheduled class on ${item.value}. Source: ${item.evidence.location} — “${item.evidence.quote}”`
+  const notes = `Task due ${dueDate}; scheduled class ${item.value}. Source: ${item.evidence.location} — “${item.evidence.quote}”`
   const existing = center.assignments.find((assignment) => assignment.courseId === courseId && assignment.syllabusSourceKey === key)
   if (existing) {
-    Object.assign(existing, { title, type: 'reading' as const, dueDate: item.value, notes, linkedFileIds: [...new Set([...existing.linkedFileIds, ...linkedFileIds])], updatedAt: now })
+    Object.assign(existing, { title, type: 'reading' as const, dueDate, notes, linkedFileIds: [...new Set([...existing.linkedFileIds, ...linkedFileIds])], updatedAt: now })
     return
   }
   center.assignments.push({
-    id: uid(), courseId, title, syllabusSourceKey: key, type: 'reading', dueDate: item.value,
+    id: uid(), courseId, title, syllabusSourceKey: key, type: 'reading', dueDate,
     status: 'not-started', linkedTopicIds: [], linkedFileIds, notes, createdAt: now, updatedAt: now,
     order: center.assignments.filter((assignment) => assignment.courseId === courseId).length,
   })

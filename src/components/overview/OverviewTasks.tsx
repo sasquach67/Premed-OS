@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useToast } from '@/components/common/useToast'
 import { MascotNote } from '@/components/common/MascotNote'
@@ -231,19 +232,20 @@ function TaskGroup({
   onOpenedTaskClose: () => void
 }) {
   const cap = expanded ? tasks.length : 7
-  if (!tasks.length) return null
   return (
     <section aria-label={label}>
-      {label && (
+      {label && tasks.length > 0 && (
         <div className="mb-1 flex items-center gap-2 px-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground">
           {label === 'Important' && <Star className="size-3.5 fill-warning text-warning" />}
           <span>{label}</span>
           <span className="h-px flex-1 bg-border" />
         </div>
       )}
-      {tasks.slice(0, cap).map((task) => (
-        <TaskRow key={task.id} task={task} tab={tab} reduceMotion={reduceMotion} openOnMount={openedTaskId === task.id} onDetailClose={onOpenedTaskClose} />
-      ))}
+      <AnimatePresence initial={false}>
+        {tasks.slice(0, cap).map((task) => (
+          <TaskRow key={task.id} task={task} tab={tab} reduceMotion={reduceMotion} openOnMount={openedTaskId === task.id} onDetailClose={onOpenedTaskClose} />
+        ))}
+      </AnimatePresence>
       {tasks.length > cap && (
         <Link to="/overview/tasks" className="mt-2 block px-2 text-xs font-bold text-primary">
           +{tasks.length - cap} more →
@@ -275,6 +277,7 @@ function TaskRow({
   const rowRef = useRef<HTMLLIElement>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailMode, setDetailMode] = useState<RecordOpenMode>('peek')
+  const [isCompleting, setIsCompleting] = useState(false)
   const days = daysUntil(task.deadline)
 
   useEffect(() => {
@@ -283,6 +286,10 @@ function TaskRow({
 
   function complete() {
     const previous = { progress: task.progress, kanban: task.kanban, archived: task.archived }
+    // Paint the acknowledgement before the store mutation moves this record
+    // into Done. AnimatePresence can then retain that exact visual state for
+    // the sweep-and-collapse exit while persistence still happens immediately.
+    flushSync(() => setIsCompleting(true))
     patchItem('tasks', task.id, { progress: 'Finished', kanban: 'done', archived: false })
     logActivity('overview', `Finished: ${task.title}`)
     toast({
@@ -337,20 +344,57 @@ function TaskRow({
       value={task}
       layout={reduceMotion ? undefined : 'position'}
       transition={reduceMotion ? MOTION_TRANSITION.instant : MOTION_TRANSITION.standard}
+      exit={isCompleting
+        ? reduceMotion
+          ? { opacity: 0, transition: MOTION_TRANSITION.instant }
+          : {
+              opacity: 0,
+              x: 52,
+              height: 0,
+              marginBottom: 0,
+              paddingTop: 0,
+              paddingBottom: 0,
+              transition: { duration: 0.28, delay: 0.22, ease: [0.16, 1, 0.3, 1] },
+            }
+        : { opacity: 0, transition: reduceMotion ? MOTION_TRANSITION.instant : MOTION_TRANSITION.micro }}
+      data-completion-state={isCompleting ? 'acknowledging' : 'idle'}
       className={cn(
-        'group mb-1 flex min-w-0 items-center gap-2 rounded-xl border border-transparent px-2 py-2 transition-colors hover:border-border hover:bg-muted/45',
+        'group relative mb-1 flex min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-transparent px-2 py-2 transition-colors hover:border-border hover:bg-muted/45',
         task.important && 'border-l-warning bg-warning/5 border-l-2',
+        isCompleting && 'border-success/40 bg-success/10',
       )}
     >
+      {isCompleting && !reduceMotion && (
+        <m.span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 origin-left bg-gradient-to-r from-success/25 via-success/12 to-transparent"
+          initial={{ scaleX: 0, opacity: 0.9 }}
+          animate={{ scaleX: 1, opacity: [0.9, 0.6, 0] }}
+          transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+        />
+      )}
       <button type="button" className="cursor-grab touch-none rounded-md p-1 text-muted-foreground active:cursor-grabbing" aria-label={`Reorder ${task.title}`}>
         <GripVertical className="size-4" />
       </button>
-      <Checkbox
-        checked={task.progress === 'Finished'}
-        onCheckedChange={(checked) => checked ? complete() : reopen()}
-        aria-label={task.progress === 'Finished' ? `${task.title} completed` : `Complete ${task.title}`}
-      />
-      <TaskTitle task={task} onRename={(title) => patchItem('tasks', task.id, { title })} onOpen={() => setDetailOpen(true)} />
+      <span className="relative z-10 shrink-0">
+        {isCompleting && !reduceMotion && (
+          <m.span
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-1.5 rounded-full border-2 border-success"
+            initial={{ scale: 0.55, opacity: 0 }}
+            animate={{ scale: [0.55, 1.45, 1.7], opacity: [0, 0.8, 0] }}
+            transition={{ duration: 0.44, ease: 'easeOut' }}
+          />
+        )}
+        <Checkbox
+          checked={isCompleting || task.progress === 'Finished'}
+          disabled={isCompleting}
+          onCheckedChange={(checked) => checked ? complete() : reopen()}
+          aria-label={isCompleting || task.progress === 'Finished' ? `${task.title} completed` : `Complete ${task.title}`}
+          className={cn(isCompleting && 'data-[state=checked]:border-success data-[state=checked]:bg-success data-[state=checked]:text-white')}
+        />
+      </span>
+      <TaskTitle task={task} completing={isCompleting} onRename={(title) => patchItem('tasks', task.id, { title })} onOpen={() => setDetailOpen(true)} />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button type="button" aria-label={`Category: ${task.type}. Change it`} className="hidden sm:block">
@@ -456,7 +500,7 @@ function TaskRow({
 
 /** Click to rename in place. The title is initially set in the standard create form
  *  and editable nowhere in the app. */
-function TaskTitle({ task, onRename, onOpen }: { task: CollectionRecord<TaskItem>; onRename: (title: string) => void; onOpen: () => void }) {
+function TaskTitle({ task, completing, onRename, onOpen }: { task: CollectionRecord<TaskItem>; completing: boolean; onRename: (title: string) => void; onOpen: () => void }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(task.title)
 
@@ -489,7 +533,7 @@ function TaskTitle({ task, onRename, onOpen }: { task: CollectionRecord<TaskItem
       <button
         type="button"
         onClick={() => { setDraft(task.title); setEditing(true) }}
-        className={cn('min-w-0 flex-1 truncate rounded px-1 text-left text-sm font-bold hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', task.progress === 'Finished' && 'text-muted-foreground line-through')}
+        className={cn('min-w-0 flex-1 truncate rounded px-1 text-left text-sm font-bold hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', (completing || task.progress === 'Finished') && 'text-muted-foreground line-through')}
       >
         {task.title || 'Untitled task'}
       </button>

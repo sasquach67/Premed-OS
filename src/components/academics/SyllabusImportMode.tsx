@@ -32,6 +32,7 @@ import {
 import { syllabusReimportDiff, type ReimportRow } from '@/lib/academics/syllabusReimport'
 import type { AssignedReading, Course, GradeCategory, SyllabusScheduleEntry, Topic } from '@/lib/types'
 import type { ClassAssignment } from '@/lib/types'
+import { readingTaskDueDate } from '@/lib/academics/readingSchedule'
 
 /** Ruled review order (§4.1-M-c): identity → standards → exams → weights → units → deadlines → policies → logistics. */
 const REVIEW_ORDER: SyllabusKind[] = ['identity', 'standards', 'exams', 'weights', 'units', 'readings', 'deadlines', 'policies', 'logistics']
@@ -70,7 +71,7 @@ export function pastDatedSyllabusWork(proposal: SyllabusProposal, today = localT
   return proposal.items.filter((item) =>
     (item.kind === 'readings' || item.kind === 'deadlines' || item.kind === 'exams')
     && /^\d{4}-\d{2}-\d{2}$/.test(item.value ?? '')
-    && (item.value ?? '') < today,
+    && (item.kind === 'readings' ? readingTaskDueDate(item.value) : item.value)! < today,
   )
 }
 
@@ -469,12 +470,15 @@ export function SyllabusImportMode({
             {pastDueItems.map((item) => {
               const action = pastDueActions[item.id] ?? 'keep'
               const kind = item.kind === 'readings' ? 'Reading' : item.kind === 'exams' ? 'Exam' : 'Deadline'
+              const actionDate = item.kind === 'readings' ? readingTaskDueDate(item.value) : item.value
               return (
                 <div key={item.id} className="grid gap-3 px-5 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">{kind}</span>
-                      <time className="text-xs font-bold text-muted-foreground" dateTime={item.value}>{item.value}</time>
+                      <time className="text-xs font-bold text-muted-foreground" dateTime={actionDate}>
+                        {item.kind === 'readings' ? `Due ${actionDate} · for class ${item.value}` : item.value}
+                      </time>
                     </div>
                     <p className="mt-1 line-clamp-2 text-sm font-bold leading-snug">{item.label}</p>
                   </div>

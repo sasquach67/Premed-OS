@@ -46,6 +46,7 @@ export function Academics() {
   const update = useStore((s) => s.update)
   const route = ROUTE_MAP.academics
   const [studyGuideOpen, setStudyGuideOpen] = useState(false)
+  const studyGuideRequested = searchParams.get('studyGuide') === 'open'
   const [assignmentCreateOpen, setAssignmentCreateOpen] = useState(false)
   const [planCompareOpen, setPlanCompareOpen] = useState(false)
   const [coldCatalogRequest, setColdCatalogRequest] = useState<PlannerCatalogRequest>()
@@ -157,6 +158,16 @@ export function Academics() {
       return next
     }, { replace: true })
   }, [requestedImportFor, setSearchParams, syllabusImportActive])
+
+  function changeStudyGuideOpen(open: boolean) {
+    setStudyGuideOpen(open)
+    if (open || !studyGuideRequested) return
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.delete('studyGuide')
+      return next
+    }, { replace: true })
+  }
 
   if (courseId) {
     return <div className="academics-surface"><ClassCenter /></div>
@@ -315,7 +326,7 @@ export function Academics() {
         </DialogContent>
       </Dialog>
 
-      <LectureCaptureGuide open={studyGuideOpen} onOpenChange={setStudyGuideOpen} />
+      <LectureCaptureGuide open={studyGuideOpen || studyGuideRequested} onOpenChange={changeStudyGuideOpen} />
     </div>
   )
 }

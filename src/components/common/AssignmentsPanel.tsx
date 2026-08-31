@@ -6,6 +6,7 @@ import {
   type ComponentProps,
   type FormEvent,
 } from 'react'
+import { flushSync } from 'react-dom'
 import {
   DndContext,
   KeyboardSensor,
@@ -692,6 +693,7 @@ function AgendaView({
   onDelete: (assignment: ClassAssignment) => void
   onAdd: () => void
 }) {
+  const reduceMotion = useReducedMotion()
   const grouped = useMemo(() => {
     const result = new Map<BucketId, ClassAssignment[]>(BUCKETS.map((bucket) => [bucket.id, []]))
     for (const assignment of assignments) result.get(assignmentBucket(assignment))?.push(assignment)
@@ -719,12 +721,24 @@ function AgendaView({
   return (
     <div className="space-y-4">
       <section className="daily-assignment-agenda card-soft overflow-hidden rounded-2xl border border-border bg-card">
-      {visibleBuckets.map((bucket, index) => {
-        const rows = grouped.get(bucket.id) ?? []
-        const isCollapsed = collapsed.has(bucket.id)
-        const visible = bucket.capped && !expandedBuckets.has(bucket.id) ? rows.slice(0, 5) : rows
-        return (
-          <section key={bucket.id} className={cn('daily-assignment-bucket', index > 0 && 'border-t border-border')}>
+      <AnimatePresence initial={false}>
+        {visibleBuckets.map((bucket, index) => {
+          const rows = grouped.get(bucket.id) ?? []
+          const isCollapsed = collapsed.has(bucket.id)
+          const visible = bucket.capped && !expandedBuckets.has(bucket.id) ? rows.slice(0, 5) : rows
+          return (
+          <m.section
+            key={bucket.id}
+            layout={reduceMotion ? undefined : 'position'}
+            exit={reduceMotion
+              ? { opacity: 0, transition: MOTION_TRANSITION.instant }
+              : {
+                  opacity: 0,
+                  height: 0,
+                  transition: { duration: 0.24, delay: 0.44, ease: [0.16, 1, 0.3, 1] },
+                }}
+            className={cn('daily-assignment-bucket overflow-hidden', index > 0 && 'border-t border-border')}
+          >
             <button
               type="button"
               onClick={() => onToggleBucket(bucket.id)}
@@ -744,20 +758,22 @@ function AgendaView({
                   className="border-t border-border"
                 >
                   <div className="divide-y divide-border/70">
-                    {visible.map((assignment) => (
-                      <AssignmentRow
-                        key={assignment.id}
-                        assignment={assignment}
-                        courses={courses}
-                        topics={topics}
-                        showCourseLabel={showCourseLabel}
-                        onComplete={onComplete}
-                        onEdit={onEdit}
-                        onDuplicate={onDuplicate}
-                        onImportant={onImportant}
-                        onDelete={onDelete}
-                      />
-                    ))}
+                    <AnimatePresence initial={false}>
+                      {visible.map((assignment) => (
+                        <AssignmentRow
+                          key={assignment.id}
+                          assignment={assignment}
+                          courses={courses}
+                          topics={topics}
+                          showCourseLabel={showCourseLabel}
+                          onComplete={onComplete}
+                          onEdit={onEdit}
+                          onDuplicate={onDuplicate}
+                          onImportant={onImportant}
+                          onDelete={onDelete}
+                        />
+                      ))}
+                    </AnimatePresence>
                   </div>
                   {visible.length < rows.length && (
                     <button type="button" onClick={() => onExpand(bucket.id)} className="w-full border-t border-border px-4 py-2 text-left text-sm font-bold text-primary hover:bg-primary/5">
@@ -767,9 +783,10 @@ function AgendaView({
                 </m.div>
               )}
             </AnimatePresence>
-          </section>
-        )
-      })}
+          </m.section>
+          )
+        })}
+      </AnimatePresence>
         <div className="border-t border-border p-3">
           <button
             type="button"
@@ -806,6 +823,8 @@ function AssignmentRow({
   onDelete: (assignment: ClassAssignment) => void
 }) {
   const complete = COMPLETED.has(assignment.status)
+  const reduceMotion = useReducedMotion()
+  const [isCompleting, setIsCompleting] = useState(false)
   const examDays = daysUntil(assignment.dueDate)
   const due = assignment.type === 'exam'
     ? { label: fmtEventDate(assignment.dueDate), variant: examDays != null && examDays <= 6 ? 'warning' as const : 'muted' as const }
@@ -813,6 +832,15 @@ function AssignmentRow({
   const color = courseColor(assignment.courseId, courses)
   const covered = assignment.coveredTopicIds ?? assignment.linkedTopicIds
   const ready = topics.filter((topic) => covered.includes(topic.id) && topic.status === 'ready').length
+
+  function requestCompletion(checked: boolean) {
+    if (checked && !complete) {
+      // Ensure the checked state and color sweep reach the screen before the
+      // assignment changes buckets. The store update remains immediate.
+      flushSync(() => setIsCompleting(true))
+    }
+    onComplete(assignment, checked)
+  }
 
   const visibleActions = (
     <>
@@ -828,7 +856,7 @@ function AssignmentRow({
       id: 'complete',
       label: complete ? 'Reopen' : 'Mark submitted',
       icon: <Check className="size-4" />,
-      onSelect: () => onComplete(assignment, !complete),
+      onSelect: () => requestCompletion(!complete),
     },
     {
       id: 'important',
@@ -852,16 +880,56 @@ function AssignmentRow({
     <RecordContextMenu actions={actions}>
         <m.article
           layout
+          exit={isCompleting
+            ? reduceMotion
+              ? { opacity: 0, transition: MOTION_TRANSITION.instant }
+              : {
+                  opacity: 0,
+                  x: 56,
+                  height: 0,
+                  paddingTop: 0,
+                  paddingBottom: 0,
+                  transition: { duration: 0.3, delay: 0.22, ease: [0.16, 1, 0.3, 1] },
+                }
+            : { opacity: 0, transition: reduceMotion ? MOTION_TRANSITION.instant : MOTION_TRANSITION.micro }}
+          data-completion-state={isCompleting ? 'acknowledging' : 'idle'}
           className={cn(
             'daily-assignment-row',
-            'group relative flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center',
+            'group relative flex flex-col gap-3 overflow-hidden px-4 py-3 sm:flex-row sm:items-center',
             assignment.important && 'border-l-4 border-l-warning bg-gradient-to-r from-warning/10 to-transparent',
             complete && 'opacity-65',
+            isCompleting && 'bg-success/10',
           )}
         >
-          <Checkbox checked={complete} onCheckedChange={(checked) => onComplete(assignment, Boolean(checked))} aria-label={`Complete ${assignment.title}`} />
-          <div className="min-w-0 flex-1">
-            <p className={cn('font-bold text-foreground', complete && 'line-through')}>{assignment.title}</p>
+          {isCompleting && !reduceMotion && (
+            <m.span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-0 origin-left bg-gradient-to-r from-success/25 via-success/12 to-transparent"
+              initial={{ scaleX: 0, opacity: 0.9 }}
+              animate={{ scaleX: 1, opacity: [0.9, 0.6, 0] }}
+              transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+            />
+          )}
+          <span className="relative z-10 shrink-0">
+            {isCompleting && !reduceMotion && (
+              <m.span
+                aria-hidden="true"
+                className="pointer-events-none absolute -inset-1.5 rounded-full border-2 border-success"
+                initial={{ scale: 0.55, opacity: 0 }}
+                animate={{ scale: [0.55, 1.45, 1.7], opacity: [0, 0.8, 0] }}
+                transition={{ duration: 0.44, ease: 'easeOut' }}
+              />
+            )}
+            <Checkbox
+              checked={isCompleting || complete}
+              disabled={isCompleting}
+              onCheckedChange={(checked) => requestCompletion(Boolean(checked))}
+              aria-label={isCompleting || complete ? `${assignment.title} completed` : `Complete ${assignment.title}`}
+              className={cn(isCompleting && 'data-[state=checked]:border-success data-[state=checked]:bg-success data-[state=checked]:text-white')}
+            />
+          </span>
+          <div className="relative z-10 min-w-0 flex-1">
+            <p className={cn('font-bold text-foreground', (complete || isCompleting) && 'line-through')}>{assignment.title}</p>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               {showCourseLabel && (
                 <Badge
@@ -878,7 +946,7 @@ function AssignmentRow({
               {assignment.pointsPossible != null && <Badge variant="outline">{assignment.pointsPossible} pts</Badge>}
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:ml-auto">
+          <div className="relative z-10 flex items-center gap-2 sm:ml-auto">
             <Badge variant={due.variant}>{due.label}</Badge>
             <span className="min-w-24 whitespace-nowrap text-right text-xs font-semibold tabular-nums text-muted-foreground">{exactDue(assignment.dueDate)}</span>
             {visibleActions}

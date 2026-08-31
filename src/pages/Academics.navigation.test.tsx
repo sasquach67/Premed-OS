@@ -149,4 +149,17 @@ describe('Academics navigation', () => {
       .toBe('/academics?tab=assignments&view=weekly&createMaterial=flashcards')
     expect(scrollTo).not.toHaveBeenCalled()
   })
+
+  it('opens How to study from the first-login handoff and consumes the one-time query', async () => {
+    await render('/academics?mode=daily&tab=class-center&studyGuide=open')
+
+    expect(document.body.textContent).toContain('Record once. Bring the transcript here.')
+
+    const gotIt = [...document.body.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Got it')!
+    await act(async () => gotIt.click())
+
+    expect(container.querySelector('[data-testid="location"]')?.textContent)
+      .toBe('/academics?tab=class-center')
+  })
 })

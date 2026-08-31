@@ -264,7 +264,7 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     })
     expect(center.assignments).toEqual(expect.arrayContaining([
       expect.objectContaining({ courseId, type: 'exam', title: 'Exam 1', dueDate: '2026-09-15' }),
-      expect.objectContaining({ courseId, type: 'reading', dueDate: '2026-08-19', status: 'submitted' }),
+      expect.objectContaining({ courseId, type: 'reading', dueDate: '2026-08-18', status: 'submitted' }),
     ]))
   })
 
@@ -283,7 +283,7 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     const courseId = saved.courses.find((item) => item.code === 'ANTH 147')?.id
     expect(courseId).toBeTruthy()
     expect(saved.academics.classCenter.assignments.filter((item) => item.courseId === courseId && item.type === 'reading')).toEqual(expect.arrayContaining([
-      expect.objectContaining({ dueDate: '2026-08-19', status: 'not-started' }),
+      expect.objectContaining({ dueDate: '2026-08-18', status: 'not-started' }),
     ]))
     expect(saved.academics.classCenter.assignedReadings.filter((item) => item.courseId === courseId)).toEqual(expect.arrayContaining([
       expect.objectContaining({ dueForDiscussion: '2026-08-19', status: 'not-started' }),
@@ -387,7 +387,13 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     ]))
     const assignments = center.assignments.filter((item) => item.courseId === courseId)
     expect(assignments).toEqual(expect.arrayContaining([
-      expect.objectContaining({ title: expect.stringContaining('Read Chapter 1'), type: 'reading', dueDate: '2026-08-20', linkedFileIds: [syllabusFile!.id] }),
+      expect.objectContaining({
+        title: expect.stringContaining('Read Chapter 1'),
+        type: 'reading',
+        dueDate: '2026-08-19',
+        notes: expect.stringContaining('scheduled class 2026-08-20'),
+        linkedFileIds: [syllabusFile!.id],
+      }),
       expect.objectContaining({ title: 'Exam 1', type: 'exam', dueDate: '2026-09-17', linkedFileIds: [syllabusFile!.id] }),
       expect.objectContaining({ title: expect.stringContaining('Research Requirement'), type: 'other', dueDate: '2026-12-01', linkedFileIds: [syllabusFile!.id] }),
     ]))
