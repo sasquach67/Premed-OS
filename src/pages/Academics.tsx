@@ -17,15 +17,14 @@ import { coldStartPlanningTerms, PlanningColdStart } from '@/components/academic
 import { PlannerBoard, PlannerCourseDiscoveryDialog, type PlannerCatalogRequest } from '@/components/academics/PlannerBoard'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ModeSwitch } from '@/components/common/ModeSwitch'
 import { instantCrossfade, sharedAxis } from '@/lib/motion'
 import { AcademicMigrationReview } from '@/components/academics/AcademicMigrationReview'
 import { StatStrip } from '@/components/common/StatStrip'
 import { GradesArchive } from '@/components/academics/GradesArchive'
 import { daysUntil } from '@/lib/date'
+import { LectureCaptureGuide } from '@/components/academics/LectureCaptureGuide'
 
 export function Academics() {
   const reduceMotion = useReducedMotion()
@@ -316,19 +315,7 @@ export function Academics() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={studyGuideOpen} onOpenChange={setStudyGuideOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>How to study</DialogTitle>
-            <DialogDescription>A simple loop for turning class evidence into useful study work.</DialogDescription>
-          </DialogHeader>
-          <ol className="space-y-3 text-sm">
-            <li><strong>1. Import the syllabus.</strong> Its learning standards and objectives define the course Topics.</li>
-            <li><strong>2. Capture each lecture.</strong> Add the transcript first, then attach only the supporting evidence you need.</li>
-            <li><strong>3. Create study work.</strong> Build a source-backed outline, guide, or revised notes from the material you select.</li>
-          </ol>
-        </DialogContent>
-      </Dialog>
+      <LectureCaptureGuide open={studyGuideOpen} onOpenChange={setStudyGuideOpen} />
     </div>
   )
 }

@@ -98,6 +98,28 @@ describe('Lecture capture study-work handoff', () => {
     expect(container.textContent).not.toContain('Unrelated class source')
   })
 
+  it('keeps lecture recording help beside the capture workflow', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <ToastProvider>
+            <LectureCapturePanel courseId={workspace.courseId} data={seed.academics.classCenter} onOpenNotes={() => {}} />
+          </ToastProvider>
+        </MemoryRouter>,
+      )
+    })
+
+    const help = [...container.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('How to record & transcribe'))
+    expect(help).toBeTruthy()
+    await act(async () => help!.click())
+    expect(document.body.textContent).toContain('Record once. Bring the transcript here.')
+  })
+
   it('adds a transcript to the selected numbered lecture without creating a duplicate lecture', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!

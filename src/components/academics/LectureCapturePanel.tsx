@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { BookOpen, Brain, ChevronDown, ClipboardPaste, FilePlus2, FileStack, FileUp, Link2, NotebookText, Search, Sparkles } from 'lucide-react'
+import { BookOpen, Brain, ChevronDown, CircleHelp, ClipboardPaste, FilePlus2, FileStack, FileUp, Link2, NotebookText, Search, Sparkles } from 'lucide-react'
 import type { ClassCenterData, LectureRecord, SourceChunk } from '@/lib/types'
 import { uid } from '@/lib/id'
 import { useStore } from '@/store/store'
@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
+import { LectureCaptureGuide } from '@/components/academics/LectureCaptureGuide'
 
 type View = 'start' | 'review' | 'index'
 export type LectureDestination = 'overview' | 'transcript' | 'evidence' | 'study-work'
@@ -28,6 +29,7 @@ export function LectureCapturePanel({ courseId, data, onOpenNotes, initialLectur
   const toast = useToast()
   const initialLecture = initialLectureId ? data.lectures.find((lecture) => lecture.id === initialLectureId && lecture.courseId === courseId) : undefined
   const [view, setView] = useState<View>(initialLectureId && !(initialDestination === 'transcript' && !initialLecture?.transcriptFileId) ? 'review' : 'start')
+  const [captureGuideOpen, setCaptureGuideOpen] = useState(false)
   const [occurredOn, setOccurredOn] = useState(initialLecture?.occurredOn ?? isoToday)
   const [pasted, setPasted] = useState('')
   const [activeLectureId, setActiveLectureId] = useState<string | undefined>(initialLectureId)
@@ -191,6 +193,7 @@ export function LectureCapturePanel({ courseId, data, onOpenNotes, initialLectur
           <p className="mt-1 text-sm font-semibold text-muted-foreground">Paste the transcript, attach the material you used, then keep notes and generated study tools with that lecture.</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="ghost" onClick={() => setCaptureGuideOpen(true)}><CircleHelp className="size-4" /> How to record &amp; transcribe</Button>
           {(['start', 'review', 'index'] as View[]).map((candidate) => <Button key={candidate} size="sm" variant={view === candidate ? 'default' : 'outline'} onClick={() => setView(candidate)} disabled={candidate !== 'start' && !activeLecture}>
             {candidate === 'start' ? 'Capture' : candidate === 'review' ? 'Review' : 'Index'}
           </Button>)}
@@ -212,6 +215,7 @@ export function LectureCapturePanel({ courseId, data, onOpenNotes, initialLectur
         {view === 'index' && activeLecture && <IndexView query={query} onQuery={setQuery} findings={results} chunks={matchingChunks} onOpenNotes={onOpenNotes} />}
         {!activeLecture && view !== 'start' && <div className="rounded-xl border border-dashed border-border bg-muted/35 p-4 text-sm font-semibold text-muted-foreground">Capture or paste a transcript first. Premed OS never invents a lecture moment.</div>}
       </CardContent>
+      <LectureCaptureGuide open={captureGuideOpen} onOpenChange={setCaptureGuideOpen} />
     </Card>
   )
 }
