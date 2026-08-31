@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
-import { X } from 'lucide-react'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { LogOut, X } from 'lucide-react'
 import { AnimatePresence, m, useReducedMotion } from 'motion/react'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
@@ -15,6 +15,17 @@ import { HelpFeedbackLauncher } from './HelpFeedbackLauncher'
 import { MOTION_TRANSITION } from '@/lib/motion'
 import { crossfade } from '@/lib/motion'
 import { isTypingTarget } from '@/lib/keyboard'
+import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 // The dock becomes the full sidebar in place: short, interruptible, and overlay-only.
 const SIDEBAR_TRANSFORM = { duration: 0.28, ease: [0.2, 0.8, 0.2, 1] as const }
@@ -27,8 +38,12 @@ function readDesktopSidebarLock() {
 export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [desktopSidebarLocked, setDesktopSidebarLocked] = useState(readDesktopSidebarLock)
+  const [signOutOpen, setSignOutOpen] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
+  const [signOutError, setSignOutError] = useState('')
   const reduceMotion = useReducedMotion()
   const location = useLocation()
+  const navigate = useNavigate()
   useTheme()
   useBackup() // wires daily-on-open check + debounced auto-backup
   const cloud = useCloudSync() // wires Supabase login + cross-device cloud sync (no-op until configured/signed in)
@@ -41,6 +56,24 @@ export function AppShell() {
       return nextLocked
     })
   }, [])
+  const requestSignOut = useCallback(() => {
+    setSignOutError('')
+    setSignOutOpen(true)
+  }, [])
+  const confirmSignOut = useCallback(async () => {
+    setSigningOut(true)
+    setSignOutError('')
+    try {
+      await cloud.signOut()
+      setSignOutOpen(false)
+      setMobileOpen(false)
+      navigate('/landing', { replace: true })
+    } catch (error) {
+      setSignOutError(error instanceof Error ? error.message : 'Could not sign out. Try again.')
+    } finally {
+      setSigningOut(false)
+    }
+  }, [cloud, navigate])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -59,7 +92,7 @@ export function AppShell() {
   return (
     <TooltipProvider delayDuration={200}>
       <ToastProvider>
-      <ShellActionsProvider>
+      <ShellActionsProvider onRequestSignOut={requestSignOut}>
       <div className="flex h-svh overflow-hidden">
         <m.aside
           className="fixed inset-y-0 left-0 z-40 hidden w-[15.625rem] lg:block"
@@ -75,7 +108,7 @@ export function AppShell() {
             desktopLocked={desktopSidebarLocked}
             onNavigate={keepDesktopSidebarVisibleOnNavigate}
             onToggleDesktopLock={toggleDesktopSidebarLock}
-            onSignOut={() => { void cloud.signOut() }}
+            onSignOut={requestSignOut}
           />
         </m.aside>
 
@@ -85,7 +118,7 @@ export function AppShell() {
           <m.div className="fixed inset-0 z-40 lg:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={MOTION_TRANSITION.micro}>
             <m.div className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]" onClick={() => setMobileOpen(false)} />
             <m.div className="absolute inset-y-0 left-0" initial={{ x: -16 }} animate={{ x: 0 }} exit={{ x: -16 }} transition={MOTION_TRANSITION.standard}>
-              <Sidebar onNavigate={() => setMobileOpen(false)} signedIn={Boolean(cloud.user)} onSignOut={() => { void cloud.signOut() }} />
+              <Sidebar onNavigate={() => setMobileOpen(false)} signedIn={Boolean(cloud.user)} onSignOut={requestSignOut} />
               <button
                 onClick={() => setMobileOpen(false)}
                 className="absolute right-3 top-3 rounded-md p-1 text-muted-foreground hover:bg-muted"
@@ -119,6 +152,36 @@ export function AppShell() {
         </div>
         <QuickAddDialog />
         <HelpFeedbackLauncher />
+        <AlertDialog
+          open={signOutOpen}
+          onOpenChange={(open) => {
+            if (!signingOut) setSignOutOpen(open)
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogMedia className="bg-primary/10 text-primary">
+                <LogOut className="size-7" />
+              </AlertDialogMedia>
+              <AlertDialogTitle>Sign out of Premed OS?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You’ll return to the public home. Work saved on this device stays here, and cloud sync pauses until you sign in again.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            {signOutError && (
+              <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                {signOutError}
+              </p>
+            )}
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={signingOut}>Stay signed in</AlertDialogCancel>
+              <Button onClick={() => void confirmSignOut()} disabled={signingOut}>
+                <LogOut className="size-4" />
+                {signingOut ? 'Signing out…' : 'Sign out'}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
       </ShellActionsProvider>
       </ToastProvider>

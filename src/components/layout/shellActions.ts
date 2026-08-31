@@ -4,6 +4,7 @@ export type QuickAddKind = 'task' | 'course' | 'assignment' | 'hours' | 'experie
 export interface ShellActionsValue {
   openQuickAdd: (kind?: QuickAddKind) => void
   closeQuickAdd: () => void
+  requestSignOut: () => void
   quickAddOpen: boolean
   quickAddKind?: QuickAddKind
 }

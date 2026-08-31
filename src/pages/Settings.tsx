@@ -30,6 +30,7 @@ import { clearStudySourceSyncCache, studyTools } from '@/lib/intelligence/studyT
 import { isDemoMode, setDemoMode } from '@/lib/demoMode'
 import { mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
 import { supabase } from '@/lib/supabase'
+import { useShellActions } from '@/components/layout/shellActions'
 
 export function Settings() {
   const route = ROUTE_MAP.settings
@@ -306,6 +307,7 @@ function BackupCheck({ ok, label, detail }: { ok: boolean; label: string; detail
 }
 
 function CloudSyncSection({ onMessage }: { onMessage: (msg: string) => void }) {
+  const { requestSignOut } = useShellActions()
   const cloud = useCloudSync()
   const [email, setEmail] = useState('')
 
@@ -361,7 +363,7 @@ function CloudSyncSection({ onMessage }: { onMessage: (msg: string) => void }) {
             <div className="flex flex-wrap items-center gap-2">
               <Button size="sm" variant="outline" onClick={() => void cloud.pullNow()} disabled={busy}><Download className="size-4" /> Pull from cloud</Button>
               <Button size="sm" variant="outline" onClick={() => void cloud.pushNow()} disabled={busy}><Upload className="size-4" /> Push now</Button>
-              <Button size="sm" variant="ghost" onClick={() => void cloud.signOut()} className="ml-auto">Sign out</Button>
+              <Button size="sm" variant="ghost" onClick={requestSignOut} className="ml-auto">Sign out</Button>
             </div>
             <PublicLayerReset />
           </>
