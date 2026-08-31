@@ -581,6 +581,7 @@ export function AssignmentsPanel({
               assignments={filtered}
               courses={courses}
               topics={topics}
+              showCourseLabel={!scopedCourseId}
               collapsed={collapsed}
               expandedBuckets={expandedBuckets}
               showCompleted={showCompleted}
@@ -603,6 +604,7 @@ export function AssignmentsPanel({
             <WeeklyView
               assignments={filtered.filter((item) => !COMPLETED.has(item.status))}
               courses={courses}
+              showCourseLabel={!scopedCourseId}
               cursor={weekCursor}
               onCursor={setWeekCursor}
               onReschedule={reschedule}
@@ -614,6 +616,7 @@ export function AssignmentsPanel({
             <AssignmentCalendar
               assignments={filtered.filter((item) => !COMPLETED.has(item.status))}
               courses={courses}
+              showCourseLabel={!scopedCourseId}
               cursor={calendarCursor}
               selectedDay={selectedDay}
               onCursor={setCalendarCursor}
@@ -660,6 +663,7 @@ function AgendaView({
   assignments,
   courses,
   topics,
+  showCourseLabel,
   collapsed,
   expandedBuckets,
   showCompleted,
@@ -675,6 +679,7 @@ function AgendaView({
   assignments: ClassAssignment[]
   courses: Course[]
   topics: Topic[]
+  showCourseLabel: boolean
   collapsed: Set<string>
   expandedBuckets: Set<BucketId>
   showCompleted: boolean
@@ -745,6 +750,7 @@ function AgendaView({
                         assignment={assignment}
                         courses={courses}
                         topics={topics}
+                        showCourseLabel={showCourseLabel}
                         onComplete={onComplete}
                         onEdit={onEdit}
                         onDuplicate={onDuplicate}
@@ -782,6 +788,7 @@ function AssignmentRow({
   assignment,
   courses,
   topics,
+  showCourseLabel,
   onComplete,
   onEdit,
   onDuplicate,
@@ -791,6 +798,7 @@ function AssignmentRow({
   assignment: ClassAssignment
   courses: Course[]
   topics: Topic[]
+  showCourseLabel: boolean
   onComplete: (assignment: ClassAssignment, checked: boolean) => void
   onEdit: (assignment: ClassAssignment) => void
   onDuplicate: (assignment: ClassAssignment) => void
@@ -855,7 +863,15 @@ function AssignmentRow({
           <div className="min-w-0 flex-1">
             <p className={cn('font-bold text-foreground', complete && 'line-through')}>{assignment.title}</p>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <Badge variant="outline" style={{ borderColor: `${color}88`, backgroundColor: `${color}1f` }}>{courseLabel(assignment.courseId, courses)}</Badge>
+              {showCourseLabel && (
+                <Badge
+                  data-assignment-course
+                  variant="outline"
+                  style={{ borderColor: `${color}88`, backgroundColor: `${color}1f` }}
+                >
+                  {courseLabel(assignment.courseId, courses)}
+                </Badge>
+              )}
               <Badge variant="muted" className="capitalize">{assignment.type}</Badge>
               {assignment.type === 'exam' && <Badge variant="outline">{ready} of {covered.length} topics ready</Badge>}
               {assignment.weight != null && <Badge variant="outline">{assignment.weight}%</Badge>}
@@ -876,6 +892,7 @@ function AssignmentRow({
 function WeeklyView({
   assignments,
   courses,
+  showCourseLabel,
   cursor,
   onCursor,
   onReschedule,
@@ -884,6 +901,7 @@ function WeeklyView({
 }: {
   assignments: ClassAssignment[]
   courses: Course[]
+  showCourseLabel: boolean
   cursor: Date
   onCursor: (date: Date) => void
   onReschedule: (assignment: ClassAssignment, date: string) => void
@@ -917,7 +935,7 @@ function WeeklyView({
             data-week-layout="weekday-emphasis"
             className="grid min-w-[62rem] grid-cols-[minmax(6.25rem,.62fr)_repeat(5,minmax(9rem,1fr))_minmax(6.25rem,.62fr)] gap-2"
           >
-            {days.map((day) => <WeekDay key={isoDate(day)} day={day} assignments={byDay.get(isoDate(day)) ?? []} courses={courses} onEdit={onEdit} />)}
+            {days.map((day) => <WeekDay key={isoDate(day)} day={day} assignments={byDay.get(isoDate(day)) ?? []} courses={courses} showCourseLabel={showCourseLabel} onEdit={onEdit} />)}
           </div>
         </div>
       </DndContext>
@@ -929,7 +947,7 @@ function WeeklyView({
   )
 }
 
-function WeekDay({ day, assignments, courses, onEdit }: { day: Date; assignments: ClassAssignment[]; courses: Course[]; onEdit: (assignment: ClassAssignment) => void }) {
+function WeekDay({ day, assignments, courses, showCourseLabel, onEdit }: { day: Date; assignments: ClassAssignment[]; courses: Course[]; showCourseLabel: boolean; onEdit: (assignment: ClassAssignment) => void }) {
   const id = isoDate(day)
   const { setNodeRef, isOver } = useDroppable({ id })
   const total = assignments.reduce((sum, item) => sum + (item.weight ?? 0), 0)
@@ -949,14 +967,14 @@ function WeekDay({ day, assignments, courses, onEdit }: { day: Date; assignments
         <Badge variant={workloadLabel(total) === 'Heavy' ? 'danger' : workloadLabel(total) === 'Busy' ? 'warning' : workloadLabel(total) === 'Light' ? 'success' : 'muted'}>{workloadLabel(total)}</Badge>
       </div>
       <div className="space-y-2">
-        {assignments.map((assignment) => <WeekCard key={assignment.id} assignment={assignment} courses={courses} onEdit={onEdit} />)}
+        {assignments.map((assignment) => <WeekCard key={assignment.id} assignment={assignment} courses={courses} showCourseLabel={showCourseLabel} onEdit={onEdit} />)}
         {!assignments.length && <p className="py-8 text-center text-xs text-muted-foreground">{weekend ? '—' : 'Nothing due'}</p>}
       </div>
     </section>
   )
 }
 
-function WeekCard({ assignment, courses, onEdit }: { assignment: ClassAssignment; courses: Course[]; onEdit: (assignment: ClassAssignment) => void }) {
+function WeekCard({ assignment, courses, showCourseLabel, onEdit }: { assignment: ClassAssignment; courses: Course[]; showCourseLabel: boolean; onEdit: (assignment: ClassAssignment) => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: assignment.id })
   const dragged = useRef(false)
   const pointerStart = useRef<{ x: number; y: number } | null>(null)
@@ -993,7 +1011,11 @@ function WeekCard({ assignment, courses, onEdit }: { assignment: ClassAssignment
       className={cn('w-full rounded-lg border border-border border-l-4 bg-card p-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', isDragging && 'z-20 opacity-70 shadow-xl')}
     >
       <span className="block text-xs font-bold">{assignment.title}</span>
-      <span className="mt-1 block text-[11px] text-muted-foreground">{courseLabel(assignment.courseId, courses)}{assignment.weight != null ? ` · ${assignment.weight}%` : ''}</span>
+      {(showCourseLabel || assignment.weight != null) && (
+        <span className="mt-1 block text-[11px] text-muted-foreground" data-assignment-course={showCourseLabel ? '' : undefined}>
+          {showCourseLabel ? courseLabel(assignment.courseId, courses) : ''}{showCourseLabel && assignment.weight != null ? ' · ' : ''}{assignment.weight != null ? `${assignment.weight}%` : ''}
+        </span>
+      )}
     </button>
   )
 }
@@ -1001,6 +1023,7 @@ function WeekCard({ assignment, courses, onEdit }: { assignment: ClassAssignment
 function AssignmentCalendar({
   assignments,
   courses,
+  showCourseLabel,
   cursor,
   selectedDay,
   onCursor,
@@ -1010,6 +1033,7 @@ function AssignmentCalendar({
 }: {
   assignments: ClassAssignment[]
   courses: Course[]
+  showCourseLabel: boolean
   cursor: Date
   selectedDay: Date
   onCursor: (date: Date) => void
@@ -1073,7 +1097,9 @@ function AssignmentCalendar({
           {selected.map((assignment) => (
             <button key={assignment.id} type="button" onClick={() => onEdit(assignment)} className="w-full rounded-xl border border-border bg-card p-3 text-left hover:border-primary/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <span className="block font-bold">{assignment.title}</span>
-              <span className="mt-1 block text-xs text-muted-foreground">{courseLabel(assignment.courseId, courses)} · {assignment.type}</span>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {showCourseLabel && <span data-assignment-course>{courseLabel(assignment.courseId, courses)} · </span>}{assignment.type}
+              </span>
             </button>
           ))}
           {!selected.length && <p className="py-8 text-center text-sm text-muted-foreground">Nothing due this day.</p>}

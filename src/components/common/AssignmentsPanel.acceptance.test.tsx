@@ -205,6 +205,7 @@ describe('Daily Assignments public interaction contract', () => {
     await act(async () => setInput(search, second.code))
     expect(container.textContent).toContain('Second course work')
     expect(container.textContent).not.toContain('First course work')
+    expect(container.querySelector('[data-assignment-course]')?.textContent).toContain(second.code)
     await act(async () => setInput(search, ''))
     expect(container.textContent).not.toContain('Completed course work')
 
@@ -230,6 +231,7 @@ describe('Daily Assignments public interaction contract', () => {
     await render({ scopedCourseId: second.id })
     expect(container.textContent).not.toContain(`${second.code} only`)
     expect(container.querySelector('button[aria-label="Filter by class"]')).toBeNull()
+    expect(container.querySelector('[data-assignment-course]')).toBeNull()
     expect(container.textContent).toContain('Second course work')
     expect(container.textContent).not.toContain('First course work')
   })
