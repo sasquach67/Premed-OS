@@ -10,4 +10,8 @@ describe('Class Hub banner responsive contract', () => {
     expect(classHubCss).toMatch(/@media \(max-width: 1280px\)[\s\S]*?\.class-hub-banner-main \{ flex-direction: column; \}/)
     expect(classHubCss).toMatch(/\.class-hub-course-code \{ white-space: nowrap; \}/)
   })
+
+  it('bounds variable metric tracks so a long deadline cannot starve the identity column', () => {
+    expect(classHubCss).toMatch(/\.class-hub-banner-actions \.glass-surface \{[\s\S]*?grid-auto-columns:\s*minmax\(76px, 110px\);/)
+  })
 })
