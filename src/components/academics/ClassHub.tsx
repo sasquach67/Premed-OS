@@ -189,7 +189,7 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
   }
 
   function primaryAction() {
-    if (classType === 'stem') return <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" className="class-hub-primary-action"><FileStack className="size-4" /> Create study resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems onChoose={(artifact) => { changeTab('materials'); const next = new URLSearchParams(params); next.set('classTab', 'materials'); next.set('createMaterial', artifact); setParams(next) }} /></DropdownMenuContent></DropdownMenu>
+    if (classType === 'stem') return <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" className="class-hub-primary-action" aria-label="Create study resources"><FileStack className="size-4" /> Create <span className="class-hub-primary-action-optional">study </span>resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems onChoose={(artifact) => { changeTab('materials'); const next = new URLSearchParams(params); next.set('classTab', 'materials'); next.set('createMaterial', artifact); setParams(next) }} /></DropdownMenuContent></DropdownMenu>
     if (classType === 'writing') return <Button onClick={() => changeTab('materials')}><NotebookText className="size-4" /> Open current draft</Button>
     return <Button onClick={() => changeTab('assignments')}><Plus className="size-4" /> Add a grade</Button>
   }
