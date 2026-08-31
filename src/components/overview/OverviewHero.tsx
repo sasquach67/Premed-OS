@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { RefreshCw } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { NumberFlow } from '@/components/motion'
 import { useHeroScheduleSource } from '@/components/common/HeroDailySchedule'
@@ -166,7 +167,17 @@ function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof use
     <div className="relative rounded-3xl border border-white/65 bg-card/78 p-4 shadow-xl shadow-stone-900/10 backdrop-blur-md dark:border-white/14 dark:bg-slate-950/58 dark:shadow-black/15">
       <div className="mb-3 flex items-center justify-between gap-3 px-1">
         <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground dark:text-white/62">Today</p>
-        {!schedule.connected && !!visible.length && (
+        {schedule.connected ? (
+          <button
+            type="button"
+            onClick={() => { void schedule.refresh(new Date()) }}
+            disabled={schedule.status === 'syncing'}
+            className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-card/88 px-3 py-1 text-[11px] font-extrabold text-primary shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-45 dark:border-white/10 dark:bg-slate-950/62 dark:hover:bg-white/8"
+          >
+            <RefreshCw className={cn('size-3.5', schedule.status === 'syncing' && 'animate-spin')} />
+            Refresh
+          </button>
+        ) : !!visible.length && (
           <button
             type="button"
             onClick={() => { void schedule.connect(new Date()) }}
