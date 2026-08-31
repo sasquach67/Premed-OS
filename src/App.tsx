@@ -11,19 +11,13 @@ const Home = lazy(() => import('@/pages/Home').then((m) => ({ default: m.Home })
 const OverviewTasksPage = lazy(() => import('@/pages/OverviewTasksPage').then((m) => ({ default: m.OverviewTasksPage })))
 const OverviewQuarterlyGoalsPage = lazy(() => import('@/pages/OverviewQuarterlyGoalsPage').then((m) => ({ default: m.OverviewQuarterlyGoalsPage })))
 const Academics = lazy(() => import('@/pages/Academics').then((m) => ({ default: m.Academics })))
-const Mcat = lazy(() => import('@/pages/Mcat').then((m) => ({ default: m.Mcat })))
 const McatFocusSession = lazy(() => import('@/pages/McatFocusSession').then((m) => ({ default: m.McatFocusSession })))
-const Letters = lazy(() => import('@/pages/Letters').then((m) => ({ default: m.Letters })))
-const ExperiencePillar = lazy(() => import('@/pages/ExperiencePillar').then((m) => ({ default: m.ExperiencePillar })))
-const Extracurriculars = lazy(() => import('@/pages/Extracurriculars').then((m) => ({ default: m.Extracurriculars })))
-const Essays = lazy(() => import('@/pages/Essays').then((m) => ({ default: m.Essays })))
-const Schools = lazy(() => import('@/pages/Schools').then((m) => ({ default: m.Schools })))
-const Timeline = lazy(() => import('@/pages/Timeline').then((m) => ({ default: m.Timeline })))
 const Profile = lazy(() => import('@/pages/Profile').then((m) => ({ default: m.Profile })))
 const Help = lazy(() => import('@/pages/Help').then((m) => ({ default: m.Help })))
 const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.Settings })))
 const Atlas = lazy(() => import('@/pages/Atlas').then((m) => ({ default: m.Atlas })))
 const Upgrade = lazy(() => import('@/pages/Upgrade').then((m) => ({ default: m.Upgrade })))
+const ReservedSpace = lazy(() => import('@/pages/ReservedSpace').then((m) => ({ default: m.ReservedSpace })))
 
 /* The public layer. Seven routes outside the app shell — they have their
    own nav, their own footer, and their own scoped stylesheet. `/` itself
@@ -79,17 +73,17 @@ function App() {
             <Route path="overview/goals/:goalId" element={<OverviewQuarterlyGoalsPage />} />
             <Route path="academics" element={<Academics />} />
             <Route path="academics/classes/:courseId" element={<Academics />} />
-            <Route path="mcat" element={<Mcat />} />
-            <Route path="letters" element={<Letters />} />
-            <Route path="clinical" element={<ExperiencePillar key="clinical" category="clinical" />} />
-            <Route path="volunteering" element={<ExperiencePillar key="volunteering" category="volunteering" />} />
-            <Route path="shadowing" element={<ExperiencePillar key="shadowing" category="shadowing" />} />
-            <Route path="research" element={<ExperiencePillar key="research" category="research" />} />
-            <Route path="ecs" element={<Extracurriculars />} />
-            <Route path="ecs/org/:orgId" element={<Extracurriculars />} />
-            <Route path="essays" element={<Essays />} />
-            <Route path="schools" element={<Schools />} />
-            <Route path="timeline" element={<Timeline />} />
+            <Route path="mcat" element={<ReservedSpace routeId="mcat" />} />
+            <Route path="letters" element={<ReservedSpace routeId="letters" />} />
+            <Route path="clinical" element={<ReservedSpace routeId="clinical" />} />
+            <Route path="volunteering" element={<ReservedSpace routeId="volunteering" />} />
+            <Route path="shadowing" element={<ReservedSpace routeId="shadowing" />} />
+            <Route path="research" element={<ReservedSpace routeId="research" />} />
+            <Route path="ecs" element={<ReservedSpace routeId="ecs" />} />
+            <Route path="ecs/org/:orgId" element={<ReservedSpace routeId="ecs" />} />
+            <Route path="essays" element={<ReservedSpace routeId="essays" />} />
+            <Route path="schools" element={<ReservedSpace routeId="schools" />} />
+            <Route path="timeline" element={<ReservedSpace routeId="timeline" />} />
             <Route path="archive" element={<Navigate to="/settings?tab=archive" replace />} />
             <Route path="profile" element={<Profile />} />
             <Route path="help" element={<Help />} />
