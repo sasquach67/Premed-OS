@@ -243,6 +243,8 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     await act(async () => button(document.body, 'Read syllabus').click())
     await act(async () => button(document.body, 'Review syllabus records').click())
     await act(async () => button(document.body, 'Add reviewed syllabus to ANTH 147').click())
+    expect(document.body.textContent).toContain('past-dated items')
+    await act(async () => button(document.body, 'Mark past items done').click())
 
     const center = snapshotData().academics.classCenter
     const course = snapshotData().courses.find((item) => item.code === 'ANTH 147')
@@ -251,8 +253,8 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(center.topics.filter((item) => item.courseId === courseId).map((item) => item.title)).toHaveLength(3)
     expect(center.topics.some((item) => /Story of Rosario|Symbols, Political Economy/i.test(item.title))).toBe(false)
     expect(center.assignedReadings.filter((item) => item.courseId === courseId)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ week: 'Introduction', title: expect.stringContaining('Story of Rosario'), dueForDiscussion: '2026-08-19' }),
-      expect.objectContaining({ week: 'Introduction', title: expect.stringContaining('Communicating with the Dead'), dueForDiscussion: '2026-08-19' }),
+      expect.objectContaining({ week: 'Introduction', title: expect.stringContaining('Story of Rosario'), dueForDiscussion: '2026-08-19', status: 'read' }),
+      expect.objectContaining({ week: 'Introduction', title: expect.stringContaining('Communicating with the Dead'), dueForDiscussion: '2026-08-19', status: 'read' }),
     ]))
     expect(center.workspaces.find((item) => item.courseId === courseId)).toMatchObject({
       type: 'writing', readingListState: 'complete', syllabusSchedule: expect.arrayContaining([
@@ -261,6 +263,29 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     })
     expect(center.assignments).toEqual(expect.arrayContaining([
       expect.objectContaining({ courseId, type: 'exam', title: 'Exam 1', dueDate: '2026-09-15' }),
+      expect.objectContaining({ courseId, type: 'reading', dueDate: '2026-08-19', status: 'submitted' }),
+    ]))
+  })
+
+  it('can keep past syllabus work actionable instead of silently completing it', async () => {
+    await render('/academics?tab=class-center')
+    await act(async () => button(container, 'Import a syllabus').click())
+    const textarea = document.body.querySelector('textarea[placeholder="Paste syllabus text from Canvas…"]') as HTMLTextAreaElement
+    await act(async () => setTextareaValue(textarea, ANTH_SCHEDULE))
+    await act(async () => button(document.body, 'Read syllabus').click())
+    await act(async () => button(document.body, 'Review syllabus records').click())
+    await act(async () => button(document.body, 'Add reviewed syllabus to ANTH 147').click())
+    expect(document.body.textContent).toContain('removes them from Overdue')
+    await act(async () => button(document.body, 'Keep as overdue').click())
+
+    const saved = snapshotData()
+    const courseId = saved.courses.find((item) => item.code === 'ANTH 147')?.id
+    expect(courseId).toBeTruthy()
+    expect(saved.academics.classCenter.assignments.filter((item) => item.courseId === courseId && item.type === 'reading')).toEqual(expect.arrayContaining([
+      expect.objectContaining({ dueDate: '2026-08-19', status: 'not-started' }),
+    ]))
+    expect(saved.academics.classCenter.assignedReadings.filter((item) => item.courseId === courseId)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ dueForDiscussion: '2026-08-19', status: 'not-started' }),
     ]))
   })
 
@@ -299,6 +324,7 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     await act(async () => reconfirmMeetingTime!.click())
     expect(button(document.body, 'Add reviewed syllabus to').disabled).toBe(false)
     await act(async () => button(document.body, 'Add reviewed syllabus to').click())
+    await act(async () => button(document.body, 'Keep as overdue').click())
 
     const saved = snapshotData()
     const course = saved.courses.find((item) => item.code === 'PSYC 101')

@@ -18,6 +18,10 @@ import { AnimatedFileUpload } from '@/components/motion/AnimatedFileUpload'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/components/common/useToast'
 import { SharedSyllabusStructurePanel } from '@/components/academics/SharedSyllabusStructurePanel'
@@ -51,7 +55,23 @@ const APPLY_GROUPS: Array<{ label: string; kinds: SyllabusKind[] }> = [
 ]
 
 export type ReimportDecision = { row: ReimportRow; action: ReimportRow['defaultAction'] }
+export type PastDueImportAction = 'complete' | 'keep'
 const reimportActionKey = (row: ReimportRow) => `${row.kind}:${row.key}`
+
+function localTodayIso(date = new Date()) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+export function pastDatedSyllabusWork(proposal: SyllabusProposal, today = localTodayIso()) {
+  return proposal.items.filter((item) =>
+    (item.kind === 'readings' || item.kind === 'deadlines' || item.kind === 'exams')
+    && /^\d{4}-\d{2}-\d{2}$/.test(item.value ?? '')
+    && (item.value ?? '') < today,
+  )
+}
 
 export function SyllabusImportMode({
   semester, scopedCourse, reimport = false, reimportFileId, current,
@@ -74,6 +94,7 @@ export function SyllabusImportMode({
     form: { courseCode: string; courseTitle: string; semester: string },
     files: File[], proposal?: SyllabusProposal, existingCourseId?: string,
     decisions?: ReimportDecision[], replaceSyllabusFileId?: string,
+    pastDueAction?: PastDueImportAction,
   ) => Promise<void>
   /** A readable non-syllabus can be filed only into an existing class's
    * Materials shelf. It never enters the syllabus apply path. */
@@ -92,6 +113,7 @@ export function SyllabusImportMode({
   const [reimportRows, setReimportRows] = useState<ReimportRow[]>([])
   const [reimportActions, setReimportActions] = useState<Record<string, ReimportRow['defaultAction']>>({})
   const [confirmedItemIds, setConfirmedItemIds] = useState<ReadonlySet<string>>(() => new Set())
+  const [pastDuePromptOpen, setPastDuePromptOpen] = useState(false)
   const toast = useToast()
 
   /** Wrong document (§4.1-M-d): readable, and still not a syllabus. Always overridable. */
@@ -164,6 +186,7 @@ export function SyllabusImportMode({
   const decided = reimportRows.filter((row) => reimportActions[reimportActionKey(row)] !== undefined).length
   const flaggedCount = proposal ? proposal.items.filter((item) => item.confidence === 'low' && !confirmedItemIds.has(item.id)).length : 0
   const missingCount = proposal ? REVIEW_ORDER.filter((kind) => !proposal.items.some((item) => item.kind === kind)).length : 0
+  const pastDueItems = proposal ? pastDatedSyllabusWork(proposal) : []
 
   /** Mode tag states what is happening — never a step number (§4.1-M-b: no wizard). */
   const modeTag = reimport
@@ -208,12 +231,16 @@ export function SyllabusImportMode({
     onExit()
   }
 
-  async function apply() {
+  async function apply(pastDueAction?: PastDueImportAction) {
     if (!misfiled && !reimport && flaggedCount > 0) {
       toast({
         title: 'Confirm the flagged details first',
         description: `${flaggedCount} ${flaggedCount === 1 ? 'item still needs' : 'items still need'} your confirmation or removal.`,
       })
+      return
+    }
+    if (!misfiled && pastDueItems.length > 0 && !pastDueAction) {
+      setPastDuePromptOpen(true)
       return
     }
     setApplying(true)
@@ -226,7 +253,7 @@ export function SyllabusImportMode({
       } else {
         await onImport(
           { courseCode, courseTitle, semester }, files, proposal ?? undefined, scopedCourse?.id,
-          reimport ? decisions : undefined, reimport ? reimportFileId : undefined,
+          reimport ? decisions : undefined, reimport ? reimportFileId : undefined, pastDueAction,
         )
       }
       toast({
@@ -278,7 +305,7 @@ export function SyllabusImportMode({
                 <MisfiledCard
                   proposal={proposal}
                   canFile={Boolean(scopedCourse && onFileMaterial)}
-                  onFile={apply}
+                  onFile={() => void apply()}
                   onChooseClass={onExit}
                   onReviewAnyway={() => setReviewAnyway(true)}
                   onRetry={() => setProposal(null)}
@@ -408,13 +435,31 @@ export function SyllabusImportMode({
               unresolvedCount={flaggedCount}
               courseLabel={scopedCourse?.code || courseCode || courseTitle || 'this class'}
               canFileMaterial={Boolean(scopedCourse && onFileMaterial)}
-              onApply={apply}
+              onApply={() => void apply()}
               onAcceptAll={() => setReimportActions(Object.fromEntries(reimportRows.map((row) => [reimportActionKey(row), 'accept' as const])))}
               onKeepAll={() => setReimportActions(Object.fromEntries(reimportRows.map((row) => [reimportActionKey(row), 'keep' as const])))}
             />
           </div>
         )}
       </div>
+      <AlertDialog open={pastDuePromptOpen} onOpenChange={setPastDuePromptOpen}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>This syllabus includes {pastDueItems.length} past-dated {pastDueItems.length === 1 ? 'item' : 'items'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              If you are adding or updating the syllabus after classes began, these may be work you already handled. Marking them done keeps their dates and source, but removes them from Overdue. You can also keep them as overdue work.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="rounded-xl border border-border bg-muted/55 p-3 text-sm font-semibold text-muted-foreground">
+            {pastDueItems.slice(0, 3).map((item) => <p key={item.id} className="truncate">{item.label} · {item.value}</p>)}
+            {pastDueItems.length > 3 && <p>+{pastDueItems.length - 3} more</p>}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => void apply('keep')}>Keep as overdue</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void apply('complete')}><CheckCircle2 className="size-4" /> Mark past items done</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   )
 }
