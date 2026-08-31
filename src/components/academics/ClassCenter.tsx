@@ -44,7 +44,7 @@ import {
 } from '@/components/ui/context-menu'
 import { GRADE_POINTS, fmtGpa, gpaStats } from '@/lib/selectors'
 import { ClassHub } from '@/components/academics/ClassHub'
-import { SyllabusImportMode, type PastDueImportAction, type ReimportDecision } from '@/components/academics/SyllabusImportMode'
+import { SyllabusImportMode, type PastDueImportDecision, type ReimportDecision } from '@/components/academics/SyllabusImportMode'
 import { SyllabusImportDialog } from '@/components/academics/SyllabusImportDialog'
 import type { SyllabusItem, SyllabusProposal } from '@/lib/academics/syllabusParser'
 import { retainLocalSyllabus } from '@/lib/academics/localSyllabusFiles'
@@ -338,26 +338,43 @@ function upsertReadingCalendarAssignment(center: ClassCenterData, courseId: stri
   })
 }
 
-function markPastSyllabusWorkComplete(center: ClassCenterData, courseId: string, proposal: SyllabusProposal, now: number) {
-  const today = new Date(now)
-  const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-  const pastItems = proposal.items.filter((item) => /^\d{4}-\d{2}-\d{2}$/.test(item.value ?? '') && (item.value ?? '') < todayIso)
-  const assignmentKeys = new Set(pastItems.filter((item) => item.kind === 'exams' || item.kind === 'deadlines').map((item) => syllabusAssignmentSourceKey(item.label, item.value)))
-  const readingKeys = new Set(pastItems.filter((item) => item.kind === 'readings').map((item) => syllabusReadingSourceKey(item.label, item.context, item.value)))
-  const readingCalendarKeys = new Set(pastItems.filter((item) => item.kind === 'readings').map((item) => syllabusReadingCalendarSourceKey(item.label, item.context, item.value)))
-  center.assignments.forEach((assignment) => {
-    if (assignment.courseId !== courseId || !assignment.syllabusSourceKey || (!assignmentKeys.has(assignment.syllabusSourceKey) && !readingCalendarKeys.has(assignment.syllabusSourceKey))) return
-    if (assignment.status === 'not-started' || assignment.status === 'in-progress') {
+function applyPastSyllabusWorkDecisions(center: ClassCenterData, courseId: string, proposal: SyllabusProposal, decisions: PastDueImportDecision[], now: number) {
+  const actionByItemId = new Map(decisions.map((decision) => [decision.itemId, decision.action]))
+  const items = proposal.items.filter((item) => actionByItemId.has(item.id))
+  const assignmentAction = new Map<string, PastDueImportDecision['action']>()
+  const readingAction = new Map<string, PastDueImportDecision['action']>()
+
+  items.forEach((item) => {
+    const action = actionByItemId.get(item.id)!
+    if (item.kind === 'readings') {
+      readingAction.set(syllabusReadingSourceKey(item.label, item.context, item.value), action)
+      assignmentAction.set(syllabusReadingCalendarSourceKey(item.label, item.context, item.value), action)
+    } else if (item.kind === 'exams' || item.kind === 'deadlines') {
+      assignmentAction.set(syllabusAssignmentSourceKey(item.label, item.value), action)
+    }
+  })
+
+  center.assignments = center.assignments.filter((assignment) => {
+    if (assignment.courseId !== courseId || !assignment.syllabusSourceKey) return true
+    const action = assignmentAction.get(assignment.syllabusSourceKey)
+    if (!action) return true
+    if (action === 'ignore') return false
+    if (action === 'complete' && (assignment.status === 'not-started' || assignment.status === 'in-progress')) {
       assignment.status = 'submitted'
       assignment.updatedAt = now
     }
+    return true
   })
-  center.assignedReadings.forEach((reading) => {
-    if (reading.courseId !== courseId || !reading.syllabusSourceKey || !readingKeys.has(reading.syllabusSourceKey)) return
-    if (reading.status !== 'read') {
+  center.assignedReadings = center.assignedReadings.filter((reading) => {
+    if (reading.courseId !== courseId || !reading.syllabusSourceKey) return true
+    const action = readingAction.get(reading.syllabusSourceKey)
+    if (!action) return true
+    if (action === 'ignore') return false
+    if (action === 'complete' && reading.status !== 'read') {
       reading.status = 'read'
       reading.updatedAt = now
     }
+    return true
   })
 }
 
@@ -734,7 +751,7 @@ function ClassCenterDashboard({
   const activeClasses = data.classes.filter((row) => row.status === 'active')
   const hasSearch = Boolean(query.trim())
 
-  async function importSyllabus(form: ClassFormState, selectedFiles: File[], proposal?: SyllabusProposal, existingCourseId?: string, reimportDecisions?: ReimportDecision[], replaceSyllabusFileId?: string, pastDueAction?: PastDueImportAction) {
+  async function importSyllabus(form: ClassFormState, selectedFiles: File[], proposal?: SyllabusProposal, existingCourseId?: string, reimportDecisions?: ReimportDecision[], replaceSyllabusFileId?: string, pastDueDecisions?: PastDueImportDecision[]) {
     const now = Date.now()
     const courseId = existingCourseId ?? uid()
     // A shared candidate is extracted structure only, never a remote source
@@ -830,7 +847,7 @@ function ClassCenterDashboard({
         }
         applySyllabusOperationalContext(center, courseId, proposal, sourceFileIdForItem, now)
       }
-      if (pastDueAction === 'complete' && proposal) markPastSyllabusWorkComplete(center, courseId, proposal, now)
+      if (pastDueDecisions?.length && proposal) applyPastSyllabusWorkDecisions(center, courseId, proposal, pastDueDecisions, now)
     })
     setSyllabusImportOpen(false)
     if (existingCourseId) { const next = new URLSearchParams(searchParams); next.delete('importFor'); next.delete('reimport'); next.delete('reimportFile'); setSearchParams(next, { replace: true }) }
@@ -941,10 +958,10 @@ function ClassCenterDashboard({
     _existingCourseId?: string,
     _decisions?: ReimportDecision[],
     _replaceFileId?: string,
-    pastDueAction?: PastDueImportAction,
+    pastDueDecisions?: PastDueImportDecision[],
   ) {
     if (!syllabusReviewForm || !proposal) return
-    await importSyllabus({ ...syllabusReviewForm, ...reviewedClass }, files, proposal, undefined, undefined, undefined, pastDueAction)
+    await importSyllabus({ ...syllabusReviewForm, ...reviewedClass }, files, proposal, undefined, undefined, undefined, pastDueDecisions)
     setSyllabusDraft(null)
     setSyllabusReviewForm(null)
     setEditor({ open: false, form: emptyClassForm(semester) })

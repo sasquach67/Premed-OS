@@ -243,8 +243,9 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     await act(async () => button(document.body, 'Read syllabus').click())
     await act(async () => button(document.body, 'Review syllabus records').click())
     await act(async () => button(document.body, 'Add reviewed syllabus to ANTH 147').click())
-    expect(document.body.textContent).toContain('past-dated items')
-    await act(async () => button(document.body, 'Mark past items done').click())
+    expect(document.body.textContent).toContain('What is actually overdue?')
+    await act(async () => button(document.body, 'All completed').click())
+    await act(async () => button(document.body, 'Apply these statuses').click())
 
     const center = snapshotData().academics.classCenter
     const course = snapshotData().courses.find((item) => item.code === 'ANTH 147')
@@ -275,8 +276,8 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     await act(async () => button(document.body, 'Read syllabus').click())
     await act(async () => button(document.body, 'Review syllabus records').click())
     await act(async () => button(document.body, 'Add reviewed syllabus to ANTH 147').click())
-    expect(document.body.textContent).toContain('removes them from Overdue')
-    await act(async () => button(document.body, 'Keep as overdue').click())
+    expect(document.body.textContent).toContain('Review each item before it enters your agenda')
+    await act(async () => button(document.body, 'Apply these statuses').click())
 
     const saved = snapshotData()
     const courseId = saved.courses.find((item) => item.code === 'ANTH 147')?.id
@@ -287,6 +288,40 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(saved.academics.classCenter.assignedReadings.filter((item) => item.courseId === courseId)).toEqual(expect.arrayContaining([
       expect.objectContaining({ dueForDiscussion: '2026-08-19', status: 'not-started' }),
     ]))
+  })
+
+  it('lets the student classify each past syllabus item as overdue, completed, or ignored', async () => {
+    await render('/academics?tab=class-center')
+    await act(async () => button(container, 'Import a syllabus').click())
+    const textarea = document.body.querySelector('textarea[placeholder="Paste syllabus text from Canvas…"]') as HTMLTextAreaElement
+    await act(async () => setTextareaValue(textarea, ANTH_SCHEDULE))
+    await act(async () => button(document.body, 'Read syllabus').click())
+    await act(async () => button(document.body, 'Review syllabus records').click())
+    await act(async () => button(document.body, 'Add reviewed syllabus to ANTH 147').click())
+
+    const completeRosario = document.body.querySelector<HTMLButtonElement>('button[aria-label*="Story of Rosario"][aria-label$=" completed"]')
+    const ignoreMedina = document.body.querySelector<HTMLButtonElement>('button[aria-label^="Ignore Medina"]')
+    expect(completeRosario).toBeTruthy()
+    expect(ignoreMedina).toBeTruthy()
+    await act(async () => completeRosario!.click())
+    await act(async () => ignoreMedina!.click())
+    expect(document.body.textContent).toContain('0 overdue · 1 completed · 1 ignored')
+    await act(async () => button(document.body, 'Apply these statuses').click())
+
+    const saved = snapshotData()
+    const courseId = saved.courses.find((item) => item.code === 'ANTH 147')?.id
+    expect(courseId).toBeTruthy()
+    const readings = saved.academics.classCenter.assignedReadings.filter((item) => item.courseId === courseId)
+    expect(readings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: expect.stringContaining('Story of Rosario'), status: 'read' }),
+    ]))
+    expect(readings.some((item) => item.title.includes('Communicating with the Dead'))).toBe(false)
+    const readingTasks = saved.academics.classCenter.assignments.filter((item) => item.courseId === courseId && item.type === 'reading')
+    expect(readingTasks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: expect.stringContaining('Story of Rosario'), status: 'submitted' }),
+    ]))
+    expect(readingTasks.some((item) => item.title.includes('Communicating with the Dead'))).toBe(false)
+    expect(saved.academics.classCenter.files.some((item) => item.courseId === courseId && item.type === 'syllabus')).toBe(true)
   })
 
   it('maps reviewed syllabus facts to their operational homes without turning class context into tasks', async () => {
@@ -324,7 +359,7 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     await act(async () => reconfirmMeetingTime!.click())
     expect(button(document.body, 'Add reviewed syllabus to').disabled).toBe(false)
     await act(async () => button(document.body, 'Add reviewed syllabus to').click())
-    await act(async () => button(document.body, 'Keep as overdue').click())
+    await act(async () => button(document.body, 'Apply these statuses').click())
 
     const saved = snapshotData()
     const course = saved.courses.find((item) => item.code === 'PSYC 101')

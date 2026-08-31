@@ -55,7 +55,8 @@ const APPLY_GROUPS: Array<{ label: string; kinds: SyllabusKind[] }> = [
 ]
 
 export type ReimportDecision = { row: ReimportRow; action: ReimportRow['defaultAction'] }
-export type PastDueImportAction = 'complete' | 'keep'
+export type PastDueImportDisposition = 'keep' | 'complete' | 'ignore'
+export type PastDueImportDecision = { itemId: string; action: PastDueImportDisposition }
 const reimportActionKey = (row: ReimportRow) => `${row.kind}:${row.key}`
 
 function localTodayIso(date = new Date()) {
@@ -94,7 +95,7 @@ export function SyllabusImportMode({
     form: { courseCode: string; courseTitle: string; semester: string },
     files: File[], proposal?: SyllabusProposal, existingCourseId?: string,
     decisions?: ReimportDecision[], replaceSyllabusFileId?: string,
-    pastDueAction?: PastDueImportAction,
+    pastDueDecisions?: PastDueImportDecision[],
   ) => Promise<void>
   /** A readable non-syllabus can be filed only into an existing class's
    * Materials shelf. It never enters the syllabus apply path. */
@@ -114,6 +115,7 @@ export function SyllabusImportMode({
   const [reimportActions, setReimportActions] = useState<Record<string, ReimportRow['defaultAction']>>({})
   const [confirmedItemIds, setConfirmedItemIds] = useState<ReadonlySet<string>>(() => new Set())
   const [pastDuePromptOpen, setPastDuePromptOpen] = useState(false)
+  const [pastDueActions, setPastDueActions] = useState<Record<string, PastDueImportDisposition>>({})
   const toast = useToast()
 
   /** Wrong document (§4.1-M-d): readable, and still not a syllabus. Always overridable. */
@@ -133,6 +135,7 @@ export function SyllabusImportMode({
         : mergeSyllabusProposals(proposals)
       setProposal(next)
       setConfirmedItemIds(new Set())
+      setPastDueActions({})
       setReviewAnyway(false)
       if (reimport && current) {
         const rows = syllabusReimportDiff(current, next.items)
@@ -231,7 +234,7 @@ export function SyllabusImportMode({
     onExit()
   }
 
-  async function apply(pastDueAction?: PastDueImportAction) {
+  async function apply(pastDueDecisions?: PastDueImportDecision[]) {
     if (!misfiled && !reimport && flaggedCount > 0) {
       toast({
         title: 'Confirm the flagged details first',
@@ -239,7 +242,8 @@ export function SyllabusImportMode({
       })
       return
     }
-    if (!misfiled && pastDueItems.length > 0 && !pastDueAction) {
+    if (!misfiled && pastDueItems.length > 0 && !pastDueDecisions) {
+      setPastDueActions(Object.fromEntries(pastDueItems.map((item) => [item.id, 'keep' as const])))
       setPastDuePromptOpen(true)
       return
     }
@@ -253,7 +257,7 @@ export function SyllabusImportMode({
       } else {
         await onImport(
           { courseCode, courseTitle, semester }, files, proposal ?? undefined, scopedCourse?.id,
-          reimport ? decisions : undefined, reimport ? reimportFileId : undefined, pastDueAction,
+          reimport ? decisions : undefined, reimport ? reimportFileId : undefined, pastDueDecisions,
         )
       }
       toast({
@@ -443,20 +447,62 @@ export function SyllabusImportMode({
         )}
       </div>
       <AlertDialog open={pastDuePromptOpen} onOpenChange={setPastDuePromptOpen}>
-        <AlertDialogContent className="max-w-lg">
+        <AlertDialogContent className="gap-0 overflow-hidden p-0 sm:!max-w-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>This syllabus includes {pastDueItems.length} past-dated {pastDueItems.length === 1 ? 'item' : 'items'}</AlertDialogTitle>
-            <AlertDialogDescription>
-              If you are adding or updating the syllabus after classes began, these may be work you already handled. Marking them done keeps their dates and source, but removes them from Overdue. You can also keep them as overdue work.
-            </AlertDialogDescription>
+            <div className="border-b border-border bg-muted/45 px-5 py-4">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-warning">Past syllabus dates</p>
+              <AlertDialogTitle className="mt-1">What is actually overdue?</AlertDialogTitle>
+              <AlertDialogDescription className="mt-1.5 max-w-2xl">
+                Review each item before it enters your agenda. Completed work stays in your history; ignored items stay in the source syllabus but are not added as tasks.
+              </AlertDialogDescription>
+            </div>
           </AlertDialogHeader>
-          <div className="rounded-xl border border-border bg-muted/55 p-3 text-sm font-semibold text-muted-foreground">
-            {pastDueItems.slice(0, 3).map((item) => <p key={item.id} className="truncate">{item.label} · {item.value}</p>)}
-            {pastDueItems.length > 3 && <p>+{pastDueItems.length - 3} more</p>}
+          <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-2.5">
+            <p className="text-xs font-semibold text-muted-foreground">{pastDueItems.length} {pastDueItems.length === 1 ? 'item needs' : 'items need'} a status</p>
+            <div className="flex flex-wrap justify-end gap-1.5" aria-label="Set all past items">
+              <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setPastDueActions(Object.fromEntries(pastDueItems.map((item) => [item.id, 'keep'])))}>All overdue</Button>
+              <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setPastDueActions(Object.fromEntries(pastDueItems.map((item) => [item.id, 'complete'])))}>All completed</Button>
+              <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setPastDueActions(Object.fromEntries(pastDueItems.map((item) => [item.id, 'ignore'])))}>Ignore all</Button>
+            </div>
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => void apply('keep')}>Keep as overdue</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void apply('complete')}><CheckCircle2 className="size-4" /> Mark past items done</AlertDialogAction>
+          <div className="max-h-[min(54vh,520px)] divide-y divide-border overflow-y-auto">
+            {pastDueItems.map((item) => {
+              const action = pastDueActions[item.id] ?? 'keep'
+              const kind = item.kind === 'readings' ? 'Reading' : item.kind === 'exams' ? 'Exam' : 'Deadline'
+              return (
+                <div key={item.id} className="grid gap-3 px-5 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">{kind}</span>
+                      <time className="text-xs font-bold text-muted-foreground" dateTime={item.value}>{item.value}</time>
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-sm font-bold leading-snug">{item.label}</p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1 rounded-xl bg-muted/60 p-1" role="group" aria-label={`Status for ${item.label}`}>
+                    <Button type="button" size="sm" variant="ghost" aria-pressed={action === 'keep'} aria-label={`Keep ${item.label} overdue`}
+                      className={cn('h-8 px-2 text-xs', action === 'keep' && 'bg-warning/18 text-warning shadow-sm hover:bg-warning/22 hover:text-warning')}
+                      onClick={() => setPastDueActions((current) => ({ ...current, [item.id]: 'keep' }))}>Overdue</Button>
+                    <Button type="button" size="sm" variant="ghost" aria-pressed={action === 'complete'} aria-label={`Mark ${item.label} completed`}
+                      className={cn('h-8 px-2 text-xs', action === 'complete' && 'bg-success/14 text-success shadow-sm hover:bg-success/18 hover:text-success')}
+                      onClick={() => setPastDueActions((current) => ({ ...current, [item.id]: 'complete' }))}>Completed</Button>
+                    <Button type="button" size="sm" variant="ghost" aria-pressed={action === 'ignore'} aria-label={`Ignore ${item.label}`}
+                      className={cn('h-8 px-2 text-xs', action === 'ignore' && 'bg-background text-foreground shadow-sm hover:bg-background')}
+                      onClick={() => setPastDueActions((current) => ({ ...current, [item.id]: 'ignore' }))}>Ignore</Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <AlertDialogFooter className="border-t border-border bg-card px-5 py-4 sm:items-center sm:justify-between">
+            <p className="text-left text-xs font-semibold text-muted-foreground">
+              {Object.values(pastDueActions).filter((action) => action === 'keep').length} overdue · {Object.values(pastDueActions).filter((action) => action === 'complete').length} completed · {Object.values(pastDueActions).filter((action) => action === 'ignore').length} ignored
+            </p>
+            <div className="flex justify-end gap-2">
+              <AlertDialogCancel>Back</AlertDialogCancel>
+              <AlertDialogAction onClick={() => void apply(pastDueItems.map((item) => ({ itemId: item.id, action: pastDueActions[item.id] ?? 'keep' })))}>
+                <CheckCircle2 className="size-4" /> Apply these statuses
+              </AlertDialogAction>
+            </div>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
