@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en" data-style="ledger" data-theme="light" data-color="mindset">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>premedOS · Anki card style directions</title>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:#e9eaec;color:#16181a;-webkit-font-smoothing:antialiased}
+[data-theme="dark"] body{background:#0c0d0e;color:#e8e8ea}
+.harness{max-width:1180px;margin:0 auto;padding:26px 24px 80px}
+.hd{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.hd h1{font-size:19px;font-weight:650;letter-spacing:-.01em;margin:0}
+.hd p{margin:5px 0 0;font-size:13.5px;color:#5f6368;max-width:60ch}
+[data-theme="dark"] .hd p{color:#9aa0a6}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ctl{display:flex;flex-direction:column;gap:5px}
+.ctl>span{font:600 9.5px/1 inherit;letter-spacing:.12em;text-transform:uppercase;color:#80868b;padding-left:2px}
+.seg{display:flex;background:#dcdee1;border-radius:9px;padding:3px;gap:2px}
+[data-theme="dark"] .seg{background:#1e2022}
+.seg button{appearance:none;border:0;background:transparent;cursor:pointer;
+  font:600 12.5px/1 inherit;color:#5f6368;padding:8px 12px;border-radius:7px;transition:.12s}
+[data-theme="dark"] .seg button{color:#9aa0a6}
+.seg button[aria-pressed="true"]{background:#fff;color:#16181a;box-shadow:0 1px 2px rgba(0,0,0,.10)}
+[data-theme="dark"] .seg button[aria-pressed="true"]{background:#35383b;color:#fff}
+
+.meta{margin:20px 0 6px;padding:13px 16px;border-radius:11px;background:#fff;border:1px solid #d5d7da;
+  font-size:13px;line-height:1.62;color:#3c4043}
+[data-theme="dark"] .meta{background:#161819;border-color:#2a2d2f;color:#b8bcc0}
+.meta b{font-weight:650;color:#16181a}
+[data-theme="dark"] .meta b{color:#e8e8ea}
+.meta code{font:500 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#eceef0;padding:1.5px 5px;border-radius:4px}
+[data-theme="dark"] .meta code{background:#26292b}
+
+.legend{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 4px}
+.lg{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #d5d7da;
+  border-radius:999px;padding:6px 13px 6px 9px;font-size:12.5px;color:#3c4043}
+[data-theme="dark"] .lg{background:#161819;border-color:#2a2d2f;color:#b8bcc0}
+.lg i{width:9px;height:9px;border-radius:3px;background:var(--c)}
+.lg b{font-weight:650;color:#16181a}
+[data-theme="dark"] .lg b{color:#e8e8ea}
+.lg s{text-decoration:none;color:#80868b}
+
+.lbl{font-size:11px;font-weight:650;letter-spacing:.10em;text-transform:uppercase;color:#80868b;margin:28px 0 9px}
+.win{border-radius:13px;overflow:hidden;border:1px solid #cfd2d5;background:#fff;
+  box-shadow:0 1px 2px rgba(0,0,0,.05),0 8px 24px -12px rgba(0,0,0,.18);margin-bottom:16px}
+[data-theme="dark"] .win{background:#161819;border-color:#2a2d2f}
+.win-bar{height:34px;background:#f1f2f4;border-bottom:1px solid #dfe1e4;display:flex;align-items:center;padding:0 12px;gap:7px}
+[data-theme="dark"] .win-bar{background:#1c1e20;border-bottom-color:#2a2d2f}
+.dot{width:10px;height:10px;border-radius:50%;background:#d3d6d9}
+[data-theme="dark"] .dot{background:#3a3d40}
+.win-bar span{margin-left:6px;font-size:11.5px;color:#80868b;font-weight:500}
+
+/* ═══ ANKI VIEWPORT ═══ */
+.anki{background:var(--bg);min-height:320px;display:flex;flex-direction:column}
+.topnav{display:flex;justify-content:center;padding:13px 0 4px}
+.topnav .pill{display:flex;gap:2px;background:var(--nav-bg);border-radius:9px;padding:4px;box-shadow:0 1px 3px rgba(0,0,0,.09)}
+.topnav a{font:600 12.5px/1 -apple-system,BlinkMacSystemFont,sans-serif;color:var(--nav-ink);padding:7px 12px;border-radius:6px}
+.topnav a.on{color:#0a6cff}
+.counts{display:flex;justify-content:center;gap:14px;padding:9px 0 2px;font:600 12px/1 -apple-system,sans-serif}
+.counts i{font-style:normal}.counts .n{color:#1d7ee6}.counts .l{color:#d1453b}.counts .r{color:#1f9254}
+.stage{flex:1;padding:26px 24px 30px;display:flex;justify-content:center}
+.btm{border-top:1px solid var(--hair);padding:11px;display:flex;justify-content:center;gap:8px;background:var(--btm-bg)}
+.btm button{border:1px solid var(--hair);background:var(--nav-bg);color:var(--ink);
+  font:600 12.5px/1 -apple-system,sans-serif;padding:9px 18px;border-radius:7px;cursor:pointer}
+.btm button.primary{background:#0a6cff;border-color:#0a6cff;color:#fff;padding:9px 34px}
+
+/* ═══ THE CARD — identical markup in all directions ═══ */
+.card{width:100%;max-width:var(--measure);text-align:var(--align)}
+.type{display:flex;align-items:baseline;gap:var(--type-gapx);margin-bottom:var(--type-gap);
+  justify-content:var(--type-just)}
+.verb{font:var(--type-font);letter-spacing:var(--type-track);text-transform:var(--type-case);
+  color:var(--accent);background:var(--type-bg);border-radius:var(--type-radius);padding:var(--type-pad)}
+.verb::before{content:var(--type-marker);margin-right:6px}
+.tname{font:var(--tname-font);letter-spacing:var(--type-track);text-transform:var(--type-case);color:var(--muted)}
+.tname::before{content:var(--tname-sep);margin-right:var(--type-gapx)}
+
+.q{font:var(--q-font);color:var(--ink);letter-spacing:var(--q-track);margin:0}
+.sep{border:0;border-top:1px solid var(--hair);margin:var(--sep-margin)}
+.a{font:var(--a-font);color:var(--a-ink);margin:0;background:var(--a-bg);border-left:var(--a-rule);
+  padding:var(--a-pad);border-radius:var(--a-radius);text-align:var(--a-align)}
+.cloze{color:var(--accent);font-weight:600}
+
+ol.blurt{margin:0;padding-left:0;list-style:none;counter-reset:b;text-align:left}
+ol.blurt li{counter-increment:b;position:relative;padding-left:30px;margin:0 0 11px;font:var(--li-font);color:var(--ink)}
+ol.blurt li:last-child{margin-bottom:0}
+ol.blurt li::before{content:counter(b);position:absolute;left:0;top:var(--li-num-top);
+  width:20px;height:20px;border-radius:var(--li-num-radius);background:var(--li-num-bg);
+  color:var(--li-num-ink);font:600 11px/20px -apple-system,sans-serif;text-align:center}
+ol.blurt li b{font-weight:650;color:var(--ink)}
+.axis{font:var(--x-font);color:var(--muted);margin:12px 0 0;text-align:left}
+.axis b{color:var(--accent);font-weight:600}
+.extra{margin:var(--ex-margin);padding:var(--ex-pad);border-top:var(--ex-top);border-left:var(--ex-left);
+  background:var(--ex-bg);border-radius:var(--ex-radius);text-align:left}
+.extra .k{display:block;font:600 10px/1 -apple-system,sans-serif;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.extra p{margin:0;font:var(--ex-font);color:var(--muted)}
+.extra em{color:var(--accent);font-style:normal;font-weight:600}
+
+/* ═══ DIRECTION 1 · LEDGER ═══ */
+[data-style="ledger"]{
+  --bg:#faf9f6;--nav-bg:#fff;--nav-ink:#3f3d39;--btm-bg:#f4f2ee;
+  --ink:#1c1a17;--muted:#6b6862;--hair:#e0dcd4;--base:#0f766e;
+  --measure:640px;--align:left;--type-just:flex-start;
+  --type-font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --tname-font:400 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+  --type-track:.10em;--type-case:lowercase;--type-bg:none;--type-radius:0;--type-pad:0;
+  --type-gap:15px;--type-gapx:7px;--type-marker:"\25A0";--tname-sep:"/";
+  --q-font:400 23px/1.42 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;--q-track:-.011em;
+  --sep-margin:22px 0;
+  --a-font:600 23px/1.42 -apple-system,BlinkMacSystemFont,sans-serif;
+  --a-ink:#1c1a17;--a-bg:none;--a-rule:0;--a-pad:0;--a-radius:0;--a-align:left;
+  --li-font:400 16px/1.5 -apple-system,BlinkMacSystemFont,sans-serif;
+  --li-num-bg:transparent;--li-num-ink:var(--accent);--li-num-radius:0;--li-num-top:1px;
+  --x-font:400 13.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+  --ex-margin:24px 0 0;--ex-pad:0 0 0 15px;--ex-top:0;--ex-left:2px solid var(--hair);
+  --ex-bg:none;--ex-radius:0;--ex-font:400 14.5px/1.6 -apple-system,sans-serif;
+}
+[data-style="ledger"] ol.blurt li::before{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;text-align:left}
+[data-style="ledger"][data-theme="dark"]{--bg:#1a1918;--nav-bg:#252321;--nav-ink:#b5b0a8;--btm-bg:#211f1d;
+  --ink:#eae7e1;--muted:#9b968e;--hair:#332f2b;--base:#4ecdc4;--a-ink:#eae7e1}
+
+/* ═══ DIRECTION 2 · CONSOLE ═══ */
+[data-style="console"]{
+  --bg:#f4f5f7;--nav-bg:#fff;--nav-ink:#3c4043;--btm-bg:#fff;
+  --ink:#15181c;--muted:#5b6168;--hair:#e2e5e9;--base:#4f46e5;
+  --measure:660px;--align:left;--type-just:flex-start;
+  --type-font:650 10.5px/1 -apple-system,BlinkMacSystemFont,sans-serif;
+  --tname-font:600 10.5px/1 -apple-system,sans-serif;
+  --type-track:.10em;--type-case:uppercase;
+  --type-bg:color-mix(in srgb,var(--accent) 12%,transparent);
+  --type-radius:999px;--type-pad:6px 11px;--type-gap:16px;--type-gapx:9px;
+  --type-marker:none;--tname-sep:"";
+  --q-font:500 21px/1.45 -apple-system,BlinkMacSystemFont,sans-serif;--q-track:-.008em;
+  --sep-margin:20px 0;
+  --a-font:600 21px/1.45 -apple-system,BlinkMacSystemFont,sans-serif;
+  --a-ink:#15181c;--a-bg:color-mix(in srgb,var(--accent) 6%,transparent);
+  --a-rule:3px solid var(--accent);--a-pad:16px 18px;--a-radius:0 10px 10px 0;--a-align:left;
+  --li-font:400 15.5px/1.5 -apple-system,sans-serif;
+  --li-num-bg:color-mix(in srgb,var(--accent) 14%,transparent);--li-num-ink:var(--accent);
+  --li-num-radius:6px;--li-num-top:0;
+  --x-font:400 13px/1.5 -apple-system,sans-serif;
+  --ex-margin:20px 0 0;--ex-pad:15px 17px;--ex-top:0;--ex-left:0;--ex-bg:#eef0f3;--ex-radius:10px;
+  --ex-font:400 14px/1.6 -apple-system,sans-serif;
+}
+[data-style="console"] .stage{padding:22px}
+[data-style="console"] .card{background:#fff;border:1px solid #e2e5e9;border-radius:14px;
+  padding:28px 30px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+[data-style="console"][data-theme="dark"]{--bg:#0f1113;--nav-bg:#1b1e21;--nav-ink:#b4b9be;--btm-bg:#17191c;
+  --ink:#e9ebee;--muted:#98a0a8;--hair:#292d31;--base:#8b85ff;--a-ink:#e9ebee;--ex-bg:#1c1f23}
+[data-style="console"][data-theme="dark"] .card{background:#17191c;border-color:#292d31}
+
+/* ═══ DIRECTION 3 · CHAPTER ═══ */
+[data-style="chapter"]{
+  --bg:#fffefb;--nav-bg:#fff;--nav-ink:#3b3a37;--btm-bg:#f7f5f0;
+  --ink:#191817;--muted:#6a6862;--hair:#e6e2d9;--base:#9a3412;
+  --measure:610px;--align:center;--type-just:center;
+  --type-font:650 10.5px/1 -apple-system,BlinkMacSystemFont,sans-serif;
+  --tname-font:500 10.5px/1 -apple-system,sans-serif;
+  --type-track:.19em;--type-case:uppercase;--type-bg:none;--type-radius:0;--type-pad:0;
+  --type-gap:20px;--type-gapx:8px;--type-marker:none;--tname-sep:"\00B7";
+  --q-font:400 26px/1.38 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;--q-track:-.006em;
+  --sep-margin:24px auto;
+  --a-font:600 26px/1.38 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --a-ink:#191817;--a-bg:none;--a-rule:0;--a-pad:0;--a-radius:0;--a-align:center;
+  --li-font:400 16.5px/1.55 "Iowan Old Style",Palatino,Georgia,serif;
+  --li-num-bg:transparent;--li-num-ink:var(--accent);--li-num-radius:0;--li-num-top:2px;
+  --x-font:italic 400 14px/1.5 "Iowan Old Style",Palatino,Georgia,serif;
+  --ex-margin:28px 0 0;--ex-pad:16px 0 0;--ex-top:1px solid var(--hair);--ex-left:0;
+  --ex-bg:none;--ex-radius:0;--ex-font:400 14.5px/1.62 -apple-system,sans-serif;
+}
+[data-style="chapter"] .sep{width:52px;border-top-width:2px;border-color:#c8c2b4}
+[data-style="chapter"] ol.blurt li::before{font-family:"Iowan Old Style",Georgia,serif;font-size:12.5px}
+[data-style="chapter"][data-theme="dark"]{--bg:#171614;--nav-bg:#221f1c;--nav-ink:#b3aea5;--btm-bg:#1d1b18;
+  --ink:#ece8e0;--muted:#9a958c;--hair:#302d28;--base:#e8956b;--a-ink:#ece8e0}
+[data-style="chapter"][data-theme="dark"] .sep{border-color:#413c34}
+
+/* ═══ COLOR MODE ═══ */
+.card{--accent:var(--base)}                                    /* mode: ink */
+[data-color="type"] .t-basic  {--accent:#475569}
+[data-color="type"] .t-cloze  {--accent:#0a6cff}
+[data-color="type"] .t-concept{--accent:#0f766e}
+[data-color="type"] .t-example{--accent:#b45309}
+[data-color="type"] .t-compare{--accent:#7c3aed}
+[data-color="type"] .t-apply  {--accent:#047857}
+[data-color="type"] .t-free   {--accent:#4f46e5}
+[data-theme="dark"][data-color="type"] .t-basic  {--accent:#94a3b8}
+[data-theme="dark"][data-color="type"] .t-cloze  {--accent:#5aa9ff}
+[data-theme="dark"][data-color="type"] .t-concept{--accent:#2dd4bf}
+[data-theme="dark"][data-color="type"] .t-example{--accent:#f0b429}
+[data-theme="dark"][data-color="type"] .t-compare{--accent:#a78bfa}
+[data-theme="dark"][data-color="type"] .t-apply  {--accent:#34d399}
+[data-theme="dark"][data-color="type"] .t-free   {--accent:#8b85ff}
+
+[data-color="mindset"] .m-say    {--accent:#0a6cff}
+[data-color="mindset"] .m-explain{--accent:#0f766e}
+[data-color="mindset"] .m-connect{--accent:#7c3aed}
+[data-color="mindset"] .m-use    {--accent:#047857}
+[data-color="mindset"] .m-blurt  {--accent:#b45309}
+[data-theme="dark"][data-color="mindset"] .m-say    {--accent:#5aa9ff}
+[data-theme="dark"][data-color="mindset"] .m-explain{--accent:#2dd4bf}
+[data-theme="dark"][data-color="mindset"] .m-connect{--accent:#a78bfa}
+[data-theme="dark"][data-color="mindset"] .m-use    {--accent:#34d399}
+[data-theme="dark"][data-color="mindset"] .m-blurt  {--accent:#f0b429}
+
+[data-color="ink"] .legend{display:none}
+[data-color="ink"] .verb{display:none}
+[data-color="ink"] .tname::before{content:var(--type-marker);color:var(--accent)}
+[data-color="ink"] .tname{color:var(--accent);font:var(--type-font);letter-spacing:var(--type-track)}
+.swatches .card{max-width:none;width:auto}
+.swatches{flex-wrap:wrap;gap:10px 16px}
+</style>
+</head>
+<body>
+<div class="harness">
+
+  <div class="hd">
+    <div>
+      <h1>premedOS · Anki card style directions</h1>
+      <p>Same six cards, same HTML. In Anki only the CSS blob on the note type changes — so picking
+         a direction, or changing your mind later, is a one-field edit.</p>
+    </div>
+    <div class="controls">
+      <div class="ctl"><span>Direction</span><div class="seg" id="styleSeg">
+        <button data-v="ledger" aria-pressed="true">Ledger</button>
+        <button data-v="console">Console</button>
+        <button data-v="chapter">Chapter</button></div></div>
+      <div class="ctl"><span>Color</span><div class="seg" id="colorSeg">
+        <button data-v="ink">One ink</button>
+        <button data-v="type">Per type</button>
+        <button data-v="mindset" aria-pressed="true">By mindset</button></div></div>
+      <div class="ctl"><span>Theme</span><div class="seg" id="themeSeg">
+        <button data-v="light" aria-pressed="true">Light</button>
+        <button data-v="dark">Dark</button></div></div>
+    </div>
+  </div>
+
+  <div class="meta" id="note"></div>
+  <div class="legend" id="legend"></div>
+
+  <div class="lbl">1 · Free recall — question side</div>
+  <div class="win"><div class="win-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i>
+    <span>Intro Psychology :: Lecture 1 — The Evolution of Psychology</span></div>
+    <div class="anki">
+      <div class="topnav"><div class="pill"><a>Decks</a><a>Add</a><a>Browse</a><a>Stats</a><a class="on">Sync</a></div></div>
+      <div class="counts"><i class="n">18</i><i class="l">3</i><i class="r">41</i></div>
+      <div class="stage"><div class="card t-free m-blurt">
+        <div class="type"><span class="verb">Blurt it</span><span class="tname">free recall</span></div>
+        <p class="q">Behaviorism — <b>6 things to hit.</b></p>
+      </div></div>
+      <div class="btm"><button class="primary">Show Answer</button></div>
+    </div></div>
+
+  <div class="lbl">2 · Free recall — answer side</div>
+  <div class="win"><div class="win-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i>
+    <span>Intro Psychology :: Lecture 1 — The Evolution of Psychology</span></div>
+    <div class="anki">
+      <div class="topnav"><div class="pill"><a>Decks</a><a>Add</a><a>Browse</a><a>Stats</a><a class="on">Sync</a></div></div>
+      <div class="counts"><i class="n">18</i><i class="l">3</i><i class="r">41</i></div>
+      <div class="stage"><div class="card t-free m-blurt">
+        <div class="type"><span class="verb">Blurt it</span><span class="tname">free recall</span></div>
+        <p class="q">Behaviorism — <b>6 things to hit.</b></p>
+        <hr class="sep">
+        <ol class="blurt">
+          <li><b>Core claim</b> — psychology should abandon the study of consciousness and study only observable behavior</li>
+          <li><b>Justification</b> — the scientific method rests on verifiability; you cannot see or touch a thought</li>
+          <li><b>John B. Watson</b> — father of behaviorism; hard nurture, behavior is fully governed by the environment</li>
+          <li><b>B.F. Skinner</b> — internal mental states exist but cannot be studied scientifically</li>
+          <li><b>Skinner's principle</b> — repeat what produces positive outcomes, drop what produces negative → reinforcement and punishment</li>
+          <li><b>Free will</b> — an illusion, because behavior is fully governed by external stimuli</li>
+        </ol>
+        <div class="extra"><span class="k">Extra</span>
+          <p><em>John</em> B. Watson, not James — your handwritten notes and the auto-transcript both say
+             James. James Watson is the DNA scientist.</p></div>
+      </div></div>
+      <div class="btm"><button>Again</button><button>Hard</button><button>Good</button><button>Easy</button></div>
+    </div></div>
+
+  <div class="lbl">3 · Definition cloze — answer side</div>
+  <div class="win"><div class="win-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i>
+    <span>Intro Psychology :: Lecture 1 — The Evolution of Psychology</span></div>
+    <div class="anki">
+      <div class="topnav"><div class="pill"><a>Decks</a><a>Add</a><a>Browse</a><a>Stats</a><a class="on">Sync</a></div></div>
+      <div class="counts"><i class="n">17</i><i class="l">3</i><i class="r">41</i></div>
+      <div class="stage"><div class="card t-cloze m-say">
+        <div class="type"><span class="verb">Say it</span><span class="tname">definition</span></div>
+        <p class="q">Introspection is <span class="cloze">the careful, systematic self-observation of
+           one's own conscious experience</span>.</p>
+        <div class="extra"><span class="k">Extra</span>
+          <p>The term is the cue and the definition is the blank — not the reverse. Reading a definition
+             and naming the term is recognition; producing it cold is recall.</p></div>
+      </div></div>
+      <div class="btm"><button>Again</button><button>Hard</button><button>Good</button><button>Easy</button></div>
+    </div></div>
+
+  <div class="lbl">4 · Exemplar — answer side</div>
+  <div class="win"><div class="win-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i>
+    <span>Intro Psychology :: Lecture 1 — The Evolution of Psychology</span></div>
+    <div class="anki">
+      <div class="topnav"><div class="pill"><a>Decks</a><a>Add</a><a>Browse</a><a>Stats</a><a class="on">Sync</a></div></div>
+      <div class="counts"><i class="n">17</i><i class="l">2</i><i class="r">41</i></div>
+      <div class="stage"><div class="card t-example m-connect">
+        <div class="type"><span class="verb">Connect it</span><span class="tname">example → concept</span></div>
+        <p class="q">A patient means to say “I love my mother” and instead says “I hate my mother.”
+           What is this called, and what did Sigmund Freud take it as evidence of?</p>
+        <hr class="sep">
+        <p class="a">A Freudian slip — evidence that the unconscious influences behavior from below
+           the level of awareness.</p>
+        <div class="extra"><span class="k">Extra</span>
+          <p>This is the shape of Freud's whole argument: he could not observe the unconscious, so he
+             argued from the places it leaks out. Dreams were his other route.</p></div>
+      </div></div>
+      <div class="btm"><button>Again</button><button>Hard</button><button>Good</button><button>Easy</button></div>
+    </div></div>
+
+  <div class="lbl">5 · Comparison — answer side, with the axis of contrast</div>
+  <div class="win"><div class="win-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i>
+    <span>Intro Psychology :: Lecture 1 — The Evolution of Psychology</span></div>
+    <div class="anki">
+      <div class="topnav"><div class="pill"><a>Decks</a><a>Add</a><a>Browse</a><a>Stats</a><a class="on">Sync</a></div></div>
+      <div class="counts"><i class="n">16</i><i class="l">2</i><i class="r">42</i></div>
+      <div class="stage"><div class="card t-compare m-connect">
+        <div class="type"><span class="verb">Connect it</span><span class="tname">comparison</span></div>
+        <p class="q">Rank B.F. Skinner, Sigmund Freud, and Carl Rogers on how much freedom they grant
+           a person, and say what each thinks actually drives behavior.</p>
+        <hr class="sep">
+        <p class="a">Skinner — none; external stimuli and reinforcement history.
+           Freud — little; unconscious conflicts below awareness.
+           Rogers — most; the person's own self-concept and drive to grow.</p>
+        <p class="axis"><b>Axis</b> — how much freedom the person is granted</p>
+        <div class="extra"><span class="k">Extra</span>
+          <p>Freud and Skinner both take control away from the conscious person, but from opposite
+             directions — inward for Freud, outward for Skinner.</p></div>
+      </div></div>
+      <div class="btm"><button>Again</button><button>Hard</button><button>Good</button><button>Easy</button></div>
+    </div></div>
+
+  <div class="lbl">6 · Basic — the card from your screenshot, restyled</div>
+  <div class="win"><div class="win-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i>
+    <span>Intro Psychology :: Lecture 1 — The Evolution of Psychology</span></div>
+    <div class="anki">
+      <div class="topnav"><div class="pill"><a>Decks</a><a>Add</a><a>Browse</a><a>Stats</a><a class="on">Sync</a></div></div>
+      <div class="counts"><i class="n">15</i><i class="l">2</i><i class="r">42</i></div>
+      <div class="stage"><div class="card t-basic m-say">
+        <div class="type"><span class="verb">Say it</span><span class="tname">recall</span></div>
+        <p class="q">Which widely held claim about women did Leta Hollingworth's research help debunk?</p>
+        <hr class="sep">
+        <p class="a">That women were intellectually inferior to men.</p>
+        <div class="extra"><span class="k">Extra</span>
+          <p>She tied this to the demographics: today roughly half or more of psychology PhDs go to
+             women, but Calkins, Washburn, and Hollingworth all worked against real institutional barriers.</p></div>
+      </div></div>
+      <div class="btm"><button>Again</button><button>Hard</button><button>Good</button><button>Easy</button></div>
+    </div></div>
+
+  <div class="lbl">Every label, in the current direction and color mode</div>
+  <div class="win"><div class="anki"><div class="stage swatches">
+    <div class="card t-basic m-say"><div class="type"><span class="verb">Say it</span><span class="tname">recall</span></div></div>
+    <div class="card t-cloze m-say"><div class="type"><span class="verb">Say it</span><span class="tname">definition</span></div></div>
+    <div class="card t-cloze m-say"><div class="type"><span class="verb">Say it</span><span class="tname">fill in</span></div></div>
+    <div class="card t-concept m-explain"><div class="type"><span class="verb">Explain it</span><span class="tname">conceptual</span></div></div>
+    <div class="card t-example m-connect"><div class="type"><span class="verb">Connect it</span><span class="tname">example → concept</span></div></div>
+    <div class="card t-example m-connect"><div class="type"><span class="verb">Connect it</span><span class="tname">concept → example</span></div></div>
+    <div class="card t-compare m-connect"><div class="type"><span class="verb">Connect it</span><span class="tname">comparison</span></div></div>
+    <div class="card t-apply m-use"><div class="type"><span class="verb">Use it</span><span class="tname">application</span></div></div>
+    <div class="card t-free m-blurt"><div class="type"><span class="verb">Blurt it</span><span class="tname">free recall</span></div></div>
+  </div></div></div>
+
+</div>
+
+<script>
+const NOTES = {
+  ledger:`<b>Ledger</b> — warm paper, monospace lowercase label with a ■ marker, left-aligned at a 640px measure. No boxes, no fills; separation comes from whitespace and two hairlines. Blurt items use bare mono numerals rather than badges. <b>Fonts:</b> system sans + system mono, nothing to bundle — renders identically on AnkiMobile and AnkiDroid.`,
+  console:`<b>Console</b> — the product-looking one. The card sits on a raised surface with a border and radius; the label is a filled pill, and the accent also tints the answer panel and the blurt numerals. Densest of the three. <b>Fonts:</b> system sans only. <b>Caveat:</b> uses <code>color-mix()</code> for tints — fine on Anki 23.10+ and AnkiMobile; on older builds I'd hard-code them.`,
+  chapter:`<b>Chapter</b> — editorial. Serif question and answer (Iowan Old Style on Apple, Palatino/Georgia elsewhere), centered at a 610px measure, a short 52px rule instead of a full-width one. Holds up best for long definitions; weakest for scanning a checklist. <b>Fonts:</b> all system, no bundling.`
+};
+const LEGEND = {
+  ink:[],
+  type:[["#475569","Recall","basic Q&A"],["#0a6cff","Definition","+ fill-in cloze"],["#0f766e","Conceptual","why / how"],
+       ["#b45309","Exemplar","both directions"],["#7c3aed","Comparison","two things on an axis"],
+       ["#047857","Application","new scenario"],["#4f46e5","Free recall","blurt"]],
+  mindset:[["#0a6cff","Say it","one specific answer — recall, definition, fill-in"],
+           ["#0f766e","Explain it","a reason or mechanism — conceptual"],
+           ["#7c3aed","Connect it","two things held together — comparison, exemplar"],
+           ["#047857","Use it","apply it to a case you haven't seen — application"],
+           ["#b45309","Blurt it","everything you've got — free recall"]]
+};
+const root=document.documentElement;
+function paint(){
+  document.getElementById('note').innerHTML=NOTES[root.dataset.style];
+  document.getElementById('legend').innerHTML=(LEGEND[root.dataset.color]||[])
+    .map(([c,n,d])=>`<div class="lg" style="--c:${c}"><i></i><b>${n}</b><s>${d}</s></div>`).join('');
+}
+function wire(id,attr){document.getElementById(id).addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;root.dataset[attr]=b.dataset.v;
+  [...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed',x===b));paint();});}
+wire('styleSeg','style');wire('colorSeg','color');wire('themeSeg','theme');paint();
+</script>
+</body>
+</html>

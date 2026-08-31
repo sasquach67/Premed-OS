@@ -1,5 +1,11 @@
 # 04 · Flashcard Generator — `flashcards-v1`
 
+> **Scope amendment — Aug. 29, 2026:** Review Session and Anki export remain
+> retired. Academics may call this generator only from **Create study resources**
+> after the student selects class material. The resulting deck is stored as an
+> inspectable Materials resource; it creates no review queue, scheduling state,
+> readiness score, or Anki handoff.
+
 **Deliverable 5.** Layer 2 for the flashcard artifact.
 
 **Authoring standard supplied by Andy, Aug 2026.** This document supersedes the first draft, which
@@ -67,7 +73,7 @@ text that is read *against* something the student already produced is the mechan
 | id | Rule | Kind |
 |---|---|---|
 | `FC-25` | **The stem may not carry the retrieval.** If deleting the surrounding context would make the answer unguessable, the context was doing the work — cut it or move it to Extra | invariant |
-| `FC-26` | **A tested answer longer than ~40 words must be structured for item-by-item self-grading** — a checklist, a list, or a `FREE_RECALL` card — never a paragraph. Prose backs above that length are read, not recalled | invariant |
+| `FC-26` | **A tested answer longer than ~45 words must be structured for item-by-item self-grading** — a checklist, a list, or a `FREE_RECALL` card — never a paragraph. Prose backs above that length are read, not recalled | invariant |
 
 **Source boundary (ruled by Andy, Aug 2026):** the tested target on every card must be supported by
 the student's own slides, notes, course material, or their own missed question. In
@@ -441,6 +447,25 @@ Y? · What distinguishes A from B?**
 These are the cards that separate a premedOS deck from a term list. Presets favouring density must
 not crowd them out — see the conceptual floor in §6.2.
 
+### 4.3a Visual and quantitative understanding — *added Aug 2026, sixth revision*
+
+**A correct label or count is not yet understanding.** When the supplied material includes a diagram,
+table, equation, notation, or numerical representation, the deck must test the representation at two
+levels:
+
+1. **Interpretation:** What does the representation mean? What is being counted, paired, separated,
+   or compared?
+2. **Transfer:** Why does it change at this step, or what follows if one part changes?
+
+For example, a meiosis deck must not stop at *"2n = 6 means 6 chromosomes."* It also asks what the
+`2` and `n` each refer to, why DNA replication changes chromatid number without changing ploidy, and
+why homolog separation changes ploidy whereas sister-chromatid separation does not.
+
+**Visual-first rule.** Where a supplied figure carries a spatial, causal, or temporal relationship, use
+visual retrieval when it materially improves recall. A label/occlusion target is paired with a concise
+`CONCEPTUAL` or `APPLICATION` card that explains the relationship encoded by the visual. Images are
+never decorative, and an occlusion never replaces the explanation card.
+
 ### 4.4 `PROCESS`
 
 **Prefer when:** the material is a sequence and order is load-bearing.
@@ -634,6 +659,7 @@ and if the material yields 20 good cards it produces 20, not 45 padded ones.
 | **Concept breadth before depth** | Cover each retrieval-worthy concept once before a second card for any concept |
 | **Type cap** | No single type > 60% of a deck, unless the preset lifts it (Concise Cloze) |
 | **Conceptual floor** | ≥ 15% `CONCEPTUAL` or `APPLICATION` in every preset except Concise Cloze; 50% in Conceptual Q&A |
+| **Representation pair** | Every load-bearing visual, equation, notation, table, or count has an interpretation card and a transfer card (§4.3a); label-only recall does not satisfy this rule |
 | **Ordering** | Emitted in concept-map order, not source order. Review shuffles anyway; concept order makes the deck editable |
 
 **Added Aug 2026, second revision.**
@@ -675,39 +701,6 @@ What causes X?          How does X affect Y?      Where does X occur?
 Which enzyme catalyzes X?                          Why does X happen?
 ```
 
-### 8.1 Memory-first wording — added Aug 2026
-
-**Write the answer a student should be able to say from memory, not a polished
-textbook paraphrase.** Lead with the core claim in plain language. Preserve a
-technical term only when the course needs that exact term; put mechanisms,
-qualifiers, examples, and historical context in `Extra` unless they are the
-thing being tested.
-
-For an ordinary definition or fact, aim for **3–15 words**. Use a full sentence
-only when the relationship itself would be lost by shortening it. A short
-answer is not a fragment by default: it should still sound natural when said
-aloud.
-
-```
-✗ Humanism emphasizes humans' conscious agency and free will, arguing that
-  people are capable of shaping who they are and pursuing personal growth
-  rather than being controlled solely by environmental or unconscious forces.
-
-✓ Humanism: people have free will and can grow.
-  Extra: It emphasizes conscious choice over purely environmental or
-  unconscious control.
-
-✗ Freud was controversial because he argued that unconscious sexual drives,
-  beginning in childhood and sometimes involving family relationships, could
-  contribute to psychological conflict and later behavior.
-
-✓ Why controversial: he linked disturbance to sexual urges, including toward
-  family members, when this was not discussed publicly.
-```
-
-**The test:** could the student use the answer as a quick cue during a blurt?
-If it feels like something to reread, it belongs in `Extra`.
-
 **Banned stock phrasings** when a shorter, more natural cue exists — these are the tell that a model
 wrote the deck:
 
@@ -739,6 +732,65 @@ like a model padded it out.
 
 ---
 
+## 8.1 Recall-ready phrasing (invariant) - *added Aug 2026, fourth revision*
+
+**A card can be factually perfect and still be unusable, because the student cannot say it back.**
+Andy flagged this on the humanism card, and the diagnosis holds across the deck: the generator was
+writing *glossary entries* where it should have been writing *sentences a person can produce from
+memory.*
+
+```
+X  Core claim: a theoretical orientation emphasizing the unique qualities of
+   humans, especially their freedom and their potential for personal growth
+
+V  Humanism emphasizes human agency and free will, arguing that people can shape
+   who they become and pursue personal growth rather than being controlled by
+   environment or unconscious drives.
+```
+
+The first has no subject and no finite verb. It is a noun phrase lifted from a definition list, and
+it never states what humanism actually *claims*. The second names the subject, uses a working verb,
+states the claim, and closes with the contrast that gives the claim its meaning. Only the second is
+recallable.
+
+```
+X  Why controversial: he rooted disturbance in sexual urges, including urges
+   toward family members, when such things were not discussed publicly
+
+V  Freud said that unconscious sexual desires, even taboo ones involving family,
+   could shape behavior and mental disorders. People at the time found that
+   extremely inappropriate and disturbing to discuss.
+```
+
+Same failure, same repair. "Rooted disturbance in sexual urges" gestures at a claim without stating
+it. The rewrite says what Freud argued, what it could affect, and why people reacted strongly, in
+language a student could actually say back.
+
+| id | Rule | Kind |
+|---|---|---|
+| `FC-27` | **Every tested answer and every `FREE_RECALL` item is a complete sentence** with a named subject and a finite verb. A colon-prefixed label may precede it, but what follows the colon must be a clause, never a bare noun phrase | invariant |
+| `FC-28` | **State the claim, not the topic.** "He rooted disturbance in sexual urges" names a subject area; "he argued that unconscious sexual drives could contribute to psychological conflict" states a claim that can be true or false. Only the second is knowledge | invariant |
+| `FC-29` | **Where a concept is defined against something, the contrast belongs in the answer**, not only in Extra. "rather than being controlled by environment or unconscious drives" is what makes humanism mean anything | invariant |
+| `FC-30` | **Write it as it would be said aloud.** If the sentence cannot be spoken to a study partner without rephrasing, rewrite it. Definitional register ("a theoretical orientation emphasizing...") fails this test | invariant |
+| `FC-31` | **Length follows the claim.** Roughly 15 to 35 words for an explanatory answer. Below that the claim is usually being gestured at rather than stated; above it, two claims are being crammed into one card | tunable |
+| `FC-32` | **Lead with plain meaning.** State the idea in ordinary, direct language first. Use technical vocabulary only when it is the course term the student must know, and immediately make its meaning clear in the same sentence or the next short sentence | invariant |
+| `FC-33` | **Make the answer easy to digest.** Prefer two short, complete sentences over one dense sentence when the second sentence explains why the claim mattered, what it caused, or how people responded | invariant |
+
+**This does not license padding.** A card asking "which subfield studies memory and reasoning?"
+answers "Cognitive psychology." and is finished. `FC-27` binds on answers that *explain*, not on
+answers that *name*.
+
+### 8.1.1 Deterministic checks
+
+| Check | Rule | Severity |
+|---|---|---|
+| Glossary noun phrase | Post-colon remainder, or a whole answer over 8 words, begins with `a`/`an`/`the` followed by no finite verb (`FC-27`) | blocking |
+| Participial opener | An answer or item begins with a present participle (`emphasizing`, `arguing`, `describing`) | blocking |
+| No finite verb | An explanatory answer or item over 8 words contains no verb from the finite-verb lexicon (`FC-27`) | blocking |
+| Under-stated claim | Explanatory answer under 12 words where the concept is graded `load-bearing` (`FC-31`) | advisory |
+
+---
+
 ## 9. The Extra field
 
 **Extra is a core component of the premedOS card system**, not an afterthought. The retrieval surface
@@ -747,48 +799,6 @@ stays clean; understanding lives here.
 **Extra may contain:** concise explanation · mechanism · why the answer is correct · mnemonic ·
 related concept · common confusion · equation · clinical connection · source excerpt or reference ·
 diagram · image · table.
-
-### 9.1 Relate; do not re-explain — *added Aug 2026, Andy*
-
-**A lecture term is usually familiar by the time it becomes a card. What is missing is not more
-vocabulary; it is a bridge from the term to something the student can picture or recognise.** When a
-tested answer names an abstraction, metaphor, framework, or contrast that a student could recite
-without being able to *relate* to, Extra must add one compact concrete bridge rather than a longer
-definition. Format it exactly as `Ex: …` on its own line.
-
-**This is additive, never a simplification mandate.** Keep the card's academic precision, depth, and
-exam-relevant distinctions intact. The `Ex:` line does not make the language chatty, colloquial, or
-less exact; it gives the already-established concept one disciplined point of contact with familiar
-experience. A good bridge is concise and specific enough to be useful, while the tested answer still
-carries the formal claim.
-
-The question is not “how can I explain structuralism in more words?” It is “what ordinary experience
-makes structuralism feel obvious?” A human tutor reaches for the coffee in front of them; a model
-repeats the definition with fancier synonyms. The card must do the former.
-
-```
-Extra: James thought consciousness is continuous, not a set of static pieces.
-Ex: Biology homework → tomorrow → hungry → dinner — each thought runs into the next.
-
-Extra: Structuralists broke experience into basic mental elements.
-Ex: Drinking coffee = warmth + bitterness + smell + cup pressure.
-```
-
-The example is a relation, not a second lecture and not a watered-down rewrite of the answer:
-
-| id | Rule |
-|---|---|
-| `FC-EX-3` | **Bridge term → lived picture.** Use one familiar, concrete instance, compact chain, comparison, or miniature moment that lets the learner recognise what the term is like. Prefer an instructor or student-supplied example. |
-| `FC-EX-3a` | **Relation over paraphrase.** The `Ex:` line must add a different kind of understanding from the answer. It may not merely restate the definition in simpler synonyms or add more abstract prose. |
-| `FC-EX-3b` | **Human test.** Could a careful student say this naturally to a classmate, point to it in ordinary life, or picture it immediately? If it reads like a glossary, textbook aside, or model-generated mini-lecture, rewrite it. |
-| `FC-EX-3c` | **Academic register.** "Human" does not mean slangy or casual. Keep the same precise, course-appropriate register as the answer; an example clarifies a relationship without lowering the level of thought. |
-| `FC-EX-4` | **`Ex:` is subordinate Extra, never a hidden second tested target.** If the example itself needs independent retrieval, make the paired `EXEMPLAR` card required by `FC-20` instead. |
-| `FC-EX-5` | **Do not invent an unmarked source example.** In `SOURCE_ONLY`, omit the line when the supplied material has no appropriate example. In `SOURCE_PLUS_BACKGROUND`, a generated illustration is allowed only when labelled `Ex (background): …`; it remains subordinate and never becomes the tested answer. |
-| `FC-EX-6` | **Do not add `Ex:` mechanically to factual cards.** It is required when the compact answer would otherwise leave the concept unpictured or unrelated, not when a direct fact is already clear. |
-
-This is distinct from an `EXEMPLAR` card. `EXEMPLAR` makes the example itself a deliberate,
-source-supported retrieval relationship in both directions. `Ex:` helps a learner understand the
-answer they have just retrieved without turning the back into a paragraph.
 
 **Two rules on what does *not* belong there:**
 
@@ -799,6 +809,42 @@ answer they have just retrieved without turning the back into a paragraph.
 
 `FC-EX-2` is a model-judged quality check: *does Extra contain a retrieval target that is not tested
 anywhere in this deck?* If yes, generate the card.
+
+---
+
+## 9.1 Worked examples belong in Extra (invariant) - *added Aug 2026, fifth revision*
+
+**Andy's ruling:** where the source supplies a concrete example of a concept, that example rides in
+`extra` on the card. Not sometimes. Every card whose concept has one.
+
+`FC-20` and the `EXEMPLAR` type (S4.7) already make examples *testable*. This section makes them
+*present*. The two do different jobs: an exemplar card asks the student to classify an instance, while
+an example in Extra is what the student reads immediately after a retrieval attempt, when an abstract
+answer is still floating loose and a concrete case is what anchors it.
+
+```
+X  Extra: Reactivity is a common problem in observational research.
+
+V  Extra: She described this as "they know that you're watching, so they behave
+   differently." Your notes call it the Hawthorne effect; the textbook's term is
+   reactivity. Even animals show it when the observation is obvious.
+```
+
+| id | Rule | Kind |
+|---|---|---|
+| `FC-EX-5` | **Every `load-bearing` card whose concept has a worked example anywhere in the supplied sources carries that example in `extra`.** A card whose concept has no example in the source is exempt, and the absence is not padded with an invented one | invariant |
+| `FC-EX-6` | **The instructor's own example outranks the textbook's**, since it carries `instructor-emphasis` and is the version most likely to reappear on an assessment. Where both exist, lead with hers and add the textbook's after | tunable |
+| `FC-EX-7` | **The example is named and concrete.** "A study found this" is a gesture; "researchers tracked 250 low-income families and found frequent Sesame Street viewers scored better on vocabulary tests" is an example | invariant |
+| `FC-EX-8` | **A generated example is background** (`02` S2.3) and is marked as such. Under `SOURCE_ONLY` and `SOURCE_PLUS_CLARIFICATION` it may appear only as an analogy restating a source claim, never as a new fact | invariant |
+
+**Deck-level check:** the share of `load-bearing` cards carrying an example in Extra is reported.
+Where the source is example-rich and the share is low, the generator skipped the easiest available
+gain in memorability.
+
+**Interaction with `FC-EX-2`.** Extra must not hold a retrieval target tested nowhere. A worked
+example is not a retrieval target in that sense, since the card tests the concept and the example
+illustrates it. Where the example *itself* is worth producing from memory, `FC-20` already requires
+an exemplar card in the concept-to-instance direction, and that is the repair.
 
 ---
 
@@ -900,7 +946,6 @@ rewritten**, never shipped with a warning.
 | 11 | **Thematic value** *(added Aug 2026)* | Is the tested target load-bearing or attaching — or is it incidental detail that should be demoted to Extra? (§2.5) | model |
 | 12 | **Relational placement** *(added Aug 2026)* | For a school, framework, or named position: is it placed against a neighbour anywhere in this deck? (§2.6) | model + deterministic |
 | 13 | **Self-sufficiency** *(added Aug 2026)* | With the source stripped away, does the prompt still name its own answer space? (§2.7) | deterministic + model |
-| 14 | **Concrete relation** *(added Aug 2026)* | When the answer is abstract, would one compact `Ex:` make it pictured and relatable rather than merely recited? If yes, is a source-grounded example present in Extra? (§9.1) | model |
 
 Split rationale in `08` §2.3: machines check mechanics, models check meaning.
 
