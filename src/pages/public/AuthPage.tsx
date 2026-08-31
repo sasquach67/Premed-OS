@@ -293,7 +293,7 @@ export function AuthPage() {
 
   // ─────────────────────────────────────────────────────────────────────
   return (
-    <PublicShell title="Sign in — Premed OS">
+    <PublicShell title="Sign in — premedOS">
       <div className="pl-band">
         <PublicNav />
       </div>

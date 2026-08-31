@@ -64,7 +64,7 @@ const TILES = [
     title: 'One weekly plan across classes and MCAT',
     tint: 'var(--cat-volunteer)',
     example:
-      "Two study plans that each look reasonable add up to 34 hours a week. Premed OS builds both against the same calendar and says so before you commit. Miss a week and the plan reflows instead of becoming a backlog.",
+      "Two study plans that each look reasonable add up to 34 hours a week. premedOS builds both against the same calendar and says so before you commit. Miss a week and the plan reflows instead of becoming a backlog.",
   },
   {
     icon: BookOpenText,
@@ -150,7 +150,7 @@ export function Landing() {
   }, [location.state])
 
   return (
-    <PublicShell title="Premed OS — your whole pre-med application, in one place">
+    <PublicShell title="premedOS — your whole pre-med application, in one place">
       {/* ── HERO: five elements, full stop ─────────────────────────────── */}
       <section className="pl-hero">
 
@@ -278,7 +278,7 @@ export function Landing() {
             </div>
             <div className="pl-bd">
               <p className="pl-privtext">
-                <b>Premed OS is local-first.</b> Core tracking stays in your browser when you use it
+                <b>premedOS is local-first.</b> Core tracking stays in your browser when you use it
                 signed out. An account adds sync across devices and access to server-side AI study
                 tools. AI features send only what they need, we name every processor that receives
                 anything, and there's a local-only path for the parts you'd rather keep offline. <b>No third-party analytics. No ad tech.

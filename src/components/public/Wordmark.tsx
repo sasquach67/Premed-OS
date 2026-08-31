@@ -84,14 +84,14 @@ export function Wordmark({ asLink = true, small = false, className }: WordmarkPr
 
   if (!asLink) {
     return (
-      <span className={classes} aria-label="Premed OS">
+      <span className={classes} aria-label="premedOS">
         {inner}
       </span>
     )
   }
 
   return (
-    <Link to="/" className={classes} aria-label="Premed OS home">
+    <Link to="/" className={classes} aria-label="premedOS home">
       {inner}
     </Link>
   )
