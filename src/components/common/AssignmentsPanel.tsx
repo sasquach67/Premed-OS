@@ -533,7 +533,7 @@ export function AssignmentsPanel({
           <ToggleGroupItem value="weekly" aria-label="Weekly view"><ClipboardList className="size-4" /> Weekly</ToggleGroupItem>
           <ToggleGroupItem value="calendar" aria-label="Calendar view"><CalendarDays className="size-4" /> Calendar</ToggleGroupItem>
         </ToggleGroup>
-        {scopedCourseId ? <Badge variant="outline" className="h-9 shrink-0 px-3">{courseLabel(scopedCourseId, courses)} only</Badge> : <Select value={courseFilter} onValueChange={setCourseFilter}>
+        {!scopedCourseId && <Select value={courseFilter} onValueChange={setCourseFilter}>
           <SelectTrigger className="w-full lg:w-44" aria-label="Filter by class"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All classes</SelectItem>

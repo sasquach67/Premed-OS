@@ -93,7 +93,7 @@ describe('Daily Assignments public interaction contract', () => {
     useStore.getState().replaceAll(seeded)
     await render({ scopedCourseId: courseId })
 
-    expect(container.textContent).toContain(`${seeded.courses[0].code} only`)
+    expect(container.textContent).not.toContain(`${seeded.courses[0].code} only`)
     await act(async () => {
       ;([...container.querySelectorAll<HTMLButtonElement>('button')]
         .find((button) => button.textContent?.includes('Add your first assignment'))!).click()
@@ -217,7 +217,7 @@ describe('Daily Assignments public interaction contract', () => {
     await act(async () => root.unmount())
     root = createRoot(container)
     await render({ scopedCourseId: second.id })
-    expect(container.textContent).toContain(`${second.code} only`)
+    expect(container.textContent).not.toContain(`${second.code} only`)
     expect(container.querySelector('button[aria-label="Filter by class"]')).toBeNull()
     expect(container.textContent).toContain('Second course work')
     expect(container.textContent).not.toContain('First course work')

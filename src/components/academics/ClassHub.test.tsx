@@ -495,7 +495,7 @@ describe('ClassHub approved Overview', () => {
     await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())) })
 
     expect(container.textContent).toContain('Coursework execution, fixed to this class.')
-    expect(container.textContent).toContain(`${course.code} only`)
+    expect(container.textContent).not.toContain(`${course.code} only`)
     expect([...container.querySelectorAll('a')].some((link) => link.textContent?.includes('All assignments') && link.getAttribute('href')?.includes('tab=assignments'))).toBe(true)
     expect(container.textContent).toContain('Course grade context · supporting')
     expect(container.textContent).toContain('What if…')
