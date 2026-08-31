@@ -206,6 +206,13 @@ export function normalizeTimedEvents(events: NormalizedScheduleEvent[], now = ne
   return { timedEvents, allDayEvents, current, next, status }
 }
 
+/** Events the overview should still ask the student to act on today.
+ * Finished entries remain in Google Calendar's history rather than taking
+ * over the compact, forward-looking dashboard card. */
+export function upcomingTimedEvents(events: TimedScheduleEvent[], now = new Date()) {
+  return events.filter((event) => event.endDate > now)
+}
+
 export function resolveTimelineRange(events: TimedScheduleEvent[], settings: Pick<CalendarSettings, 'timelineStart' | 'timelineEnd'>): TimelineRange {
   let startMinute = parseClock(settings.timelineStart, 6 * 60)
   let endMinute = parseClock(settings.timelineEnd, 23 * 60)

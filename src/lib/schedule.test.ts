@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classScheduleEvents, parseMeetingDays, parseMeetingTime } from '@/lib/schedule'
+import { classScheduleEvents, normalizeTimedEvents, parseMeetingDays, parseMeetingTime, upcomingTimedEvents } from '@/lib/schedule'
 
 const courses = [
   { id: 'chem', code: 'CHEM 262', title: 'Organic Chemistry II' },
@@ -95,5 +95,20 @@ describe('the derived day never invents a class', () => {
   it('returns an empty day rather than filling it', () => {
     const sunday = new Date(2026, 8, 13, 8, 0, 0)
     expect(classScheduleEvents(workspaces, courses, sunday)).toEqual([])
+  })
+})
+
+describe('overview calendar horizon', () => {
+  it('removes finished events so later commitments remain visible', () => {
+    const now = new Date('2026-08-30T21:42:00')
+    const events = normalizeTimedEvents([
+      { id: 'past', title: 'Earlier meeting', start: '2026-08-30T17:00:00', end: '2026-08-30T18:00:00', status: 'confirmed' },
+      { id: 'next-1', title: 'bruh', start: '2026-08-30T21:45:00', end: '2026-08-30T22:15:00', status: 'confirmed' },
+      { id: 'next-2', title: 'bruh2', start: '2026-08-30T22:45:00', end: '2026-08-30T23:15:00', status: 'confirmed' },
+      { id: 'next-3', title: 'bruh 3', start: '2026-08-30T23:30:00', end: '2026-08-30T23:59:00', status: 'confirmed' },
+    ], now)
+
+    expect(upcomingTimedEvents(events.timedEvents, now).map((event) => event.title))
+      .toEqual(['bruh', 'bruh2', 'bruh 3'])
   })
 })

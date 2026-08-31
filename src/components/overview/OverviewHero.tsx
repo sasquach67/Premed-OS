@@ -6,7 +6,7 @@ import { NumberFlow } from '@/components/motion'
 import { useHeroScheduleSource } from '@/components/common/HeroDailySchedule'
 import { MascotNote } from '@/components/common/MascotNote'
 import { Button } from '@/components/ui/button'
-import { formatClock, formatEventTimeRange, normalizeTimedEvents } from '@/lib/schedule'
+import { formatClock, formatEventTimeRange, normalizeTimedEvents, upcomingTimedEvents } from '@/lib/schedule'
 import { homeBanner, type VisualTheme } from '@/lib/themeAssets'
 import { useStore } from '@/store/store'
 import { cn } from '@/lib/utils'
@@ -149,7 +149,7 @@ function HeroLiveStatus({ schedule, now }: { schedule: ReturnType<typeof useHero
 
 function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof useHeroScheduleSource>; now: Date }) {
   const analysis = useMemo(() => normalizeTimedEvents(schedule.events, now), [schedule.events, now])
-  const visible = analysis.timedEvents.slice(0, 4)
+  const visible = upcomingTimedEvents(analysis.timedEvents, now).slice(0, 4)
   const dayStart = useMemo(() => {
     const date = new Date(now)
     date.setHours(6, 0, 0, 0)
