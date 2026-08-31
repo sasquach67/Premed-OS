@@ -196,6 +196,10 @@ describe('Class Center primary card hierarchy', () => {
     expect(openButton.className).toContain('md:opacity-0')
     expect(openButton.className).toContain('md:group-hover/class:opacity-100')
     expect(openButton.className).toContain('md:group-focus-within/class:opacity-100')
+    const deadline = container.querySelector('[data-testid="class-next-deadline"]') as HTMLElement
+    expect(deadline.textContent).toBe('No deadline scheduled')
+    expect(deadline.className).not.toContain('group-hover/class:hidden')
+    expect(container.textContent).not.toContain('Open class hub →')
     await act(async () => openButton.click())
     expect(onOpen).toHaveBeenCalledTimes(1)
   })

@@ -599,7 +599,7 @@
   .academics-surface .academics-class-card [data-slot='card-content'] {
     padding: 12px;
   }
-  .academics-surface .academics-class-card:not(.action-hovered):hover {
+  .academics-surface .academics-class-card:hover {
     transform: translateY(-3px);
     border-color: var(--class-accent-45, var(--border));
     box-shadow:
@@ -608,7 +608,7 @@
       0 0 22px -6px var(--class-accent-45, transparent);
   }
   /* The bar ignites with the card — glow included. */
-  .academics-surface .academics-class-card:not(.action-hovered):hover .academics-class-bar {
+  .academics-surface .academics-class-card:hover .academics-class-bar {
     box-shadow: 0 0 14px var(--class-accent-75, transparent);
   }
   .academics-surface .academics-class-card:focus-visible {
@@ -685,7 +685,7 @@
     .academics-surface .academics-class-card {
       transition: none;
     }
-    .academics-surface .academics-class-card:not(.action-hovered):hover {
+    .academics-surface .academics-class-card:hover {
       transform: none;
     }
     .academics-surface .academics-class-bar {

@@ -1369,7 +1369,6 @@ export function ClassCard({
   onArchive: () => void
   onDelete: () => void
 }) {
-  const [actionHovered, setActionHovered] = useState(false)
   const stats = classStats(row.id, data)
   const nextText = stats.nextDeadline?.title
     ? `${stats.nextDeadline.title}${stats.nextDeadline.dueDate ? ` · ${assignmentDateLabel(stats.nextDeadline)}` : ''}`
@@ -1404,7 +1403,6 @@ export function ClassCard({
       style={cardAccentVars(row.color)}
       className={cn(
         'academics-class-card group/class relative self-start cursor-pointer overflow-hidden shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
-        actionHovered && 'action-hovered',
         compact ? 'min-h-0' : 'min-h-0',
         dragging && 'scale-[0.98] opacity-55',
         dragOver && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
@@ -1413,7 +1411,7 @@ export function ClassCard({
       <span className={cn(
         'academics-class-bar absolute inset-y-0 left-0 w-1 origin-left scale-x-0 transition-transform duration-150 ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none',
         'bg-[var(--class-accent)]',
-        !actionHovered && 'group-hover/class:scale-x-100',
+        'group-hover/class:scale-x-100',
       )} aria-hidden="true" />
       <CardContent className={cn(
         compact
@@ -1466,22 +1464,15 @@ export function ClassCard({
         </div>
 
         <div className={cn('border-t border-border pt-2', compact && 'md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
-          <p className="min-h-4 text-[10.5px] font-bold text-muted-foreground">
-            <span className={cn(!actionHovered && 'group-hover/class:hidden')}>{nextText}</span>
-            <span className={cn('hidden font-display font-extrabold text-[var(--class-accent)]', !actionHovered && 'group-hover/class:inline')}>Open class hub →</span>
+          <p data-testid="class-next-deadline" className="min-h-4 text-[10.5px] font-bold text-muted-foreground">
+            {nextText}
           </p>
-          <div
-            className="mt-2 flex items-center justify-end gap-2"
-            onPointerEnter={() => setActionHovered(true)}
-            onPointerLeave={() => setActionHovered(false)}
-          >
+          <div className="mt-2 flex items-center justify-end gap-2">
             <Button
               size="sm"
               variant="outline"
               className="h-9 flex-1 border-[var(--class-accent-75)] bg-[color-mix(in_srgb,var(--class-accent)_72%,transparent)] font-display font-extrabold text-white shadow-[0_8px_18px_-14px_var(--class-accent-75)] motion-safe:transition-[opacity,background-color,transform] hover:bg-[color-mix(in_srgb,var(--class-accent)_82%,transparent)] hover:text-white active:translate-y-px md:pointer-events-none md:opacity-0 md:group-hover/class:pointer-events-auto md:group-hover/class:opacity-100 md:group-focus-within/class:pointer-events-auto md:group-focus-within/class:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
               onClick={(event) => { event.stopPropagation(); onOpen() }}
-              onFocus={() => setActionHovered(true)}
-              onBlur={() => setActionHovered(false)}
             >
               <ArrowUpRight className="size-4 text-white" /> Open
             </Button>
