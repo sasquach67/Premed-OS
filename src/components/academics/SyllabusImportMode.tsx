@@ -91,6 +91,7 @@ export function SyllabusImportMode({
   const [applying, setApplying] = useState(false)
   const [reimportRows, setReimportRows] = useState<ReimportRow[]>([])
   const [reimportActions, setReimportActions] = useState<Record<string, ReimportRow['defaultAction']>>({})
+  const [confirmedItemIds, setConfirmedItemIds] = useState<ReadonlySet<string>>(() => new Set())
   const toast = useToast()
 
   /** Wrong document (§4.1-M-d): readable, and still not a syllabus. Always overridable. */
@@ -109,6 +110,7 @@ export function SyllabusImportMode({
         ? parseSyllabusText(pastedText, 'Pasted syllabus')
         : mergeSyllabusProposals(proposals)
       setProposal(next)
+      setConfirmedItemIds(new Set())
       setReviewAnyway(false)
       if (reimport && current) {
         const rows = syllabusReimportDiff(current, next.items)
@@ -126,10 +128,25 @@ export function SyllabusImportMode({
   }
 
   function patchItem(id: string, patch: Partial<SyllabusProposal['items'][number]>) {
+    setConfirmedItemIds((current) => {
+      if (!current.has(id)) return current
+      const next = new Set(current)
+      next.delete(id)
+      return next
+    })
     setProposal((state) => state ? { ...state, items: state.items.map((item) => item.id === id ? { ...item, ...patch } : item) } : state)
   }
   function removeItem(id: string) {
+    setConfirmedItemIds((current) => {
+      if (!current.has(id)) return current
+      const next = new Set(current)
+      next.delete(id)
+      return next
+    })
     setProposal((state) => state ? { ...state, items: state.items.filter((item) => item.id !== id) } : state)
+  }
+  function confirmItem(id: string) {
+    setConfirmedItemIds((current) => new Set(current).add(id))
   }
   function addManual(kind: SyllabusKind) {
     setProposal((state) => state ? {
@@ -145,7 +162,7 @@ export function SyllabusImportMode({
   const gap = proposal ? weightGap(proposal.items) : null
   const decisions: ReimportDecision[] = reimportRows.map((row) => ({ row, action: reimportActions[reimportActionKey(row)] ?? row.defaultAction }))
   const decided = reimportRows.filter((row) => reimportActions[reimportActionKey(row)] !== undefined).length
-  const flaggedCount = proposal ? proposal.items.filter((item) => item.confidence === 'low').length : 0
+  const flaggedCount = proposal ? proposal.items.filter((item) => item.confidence === 'low' && !confirmedItemIds.has(item.id)).length : 0
   const missingCount = proposal ? REVIEW_ORDER.filter((kind) => !proposal.items.some((item) => item.kind === kind)).length : 0
 
   /** Mode tag states what is happening — never a step number (§4.1-M-b: no wizard). */
@@ -163,7 +180,7 @@ export function SyllabusImportMode({
     : 'I read the whole thing — there’s just no syllabus in it. Nothing will be saved until you choose where it belongs.'
     : reimport && proposal ? 'Nothing you’ve already confirmed will be touched unless you accept it here.'
     : proposal ? (flaggedCount
-      ? `${flaggedCount} ${flaggedCount === 1 ? 'item needs' : 'items need'} your review; everything else is collapsed.`
+      ? `${flaggedCount} ${flaggedCount === 1 ? 'item needs' : 'items need'} confirmation; everything else is collapsed.`
       : 'Open any section to verify it against the source.')
     : 'Drop the file and HQ pulls out your units, exam dates, deadlines, and grade weights — then you confirm all of it before anything is saved.'
 
@@ -174,7 +191,7 @@ export function SyllabusImportMode({
     { id: 'untouched', label: 'Untouched', value: String(reimportRows.filter((r) => r.status === 'unchanged').length), cadence: 'variable' as const },
   ] : [
     { id: 'found', label: misfiled ? 'Items found' : 'Items found', value: String(misfiled ? 0 : proposal.items.length), cadence: 'variable' as const },
-    { id: 'look', label: misfiled ? 'File kept' : 'Need a look', value: String(misfiled ? 1 : flaggedCount), cadence: 'variable' as const },
+    { id: 'look', label: misfiled ? 'File kept' : 'To confirm', value: String(misfiled ? 1 : flaggedCount), cadence: 'variable' as const },
     { id: 'missing', label: 'Not found', value: String(misfiled ? REVIEW_ORDER.length : missingCount), cadence: 'variable' as const },
   ]) : []
 
@@ -192,6 +209,13 @@ export function SyllabusImportMode({
   }
 
   async function apply() {
+    if (!misfiled && !reimport && flaggedCount > 0) {
+      toast({
+        title: 'Confirm the flagged details first',
+        description: `${flaggedCount} ${flaggedCount === 1 ? 'item still needs' : 'items still need'} your confirmation or removal.`,
+      })
+      return
+    }
     setApplying(true)
     try {
       if (misfiled) {
@@ -328,7 +352,7 @@ export function SyllabusImportMode({
                           <nav className="flex gap-1 overflow-x-auto border-b border-border bg-background/55 p-2 lg:block lg:overflow-visible lg:border-b-0 lg:border-r lg:p-3" aria-label="Extraction sections">
                             <p className="hidden px-2 pb-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground lg:block">Review sections</p>
                             {grouped.map(([kind, items]) => {
-                              const flagged = items.filter((item) => item.confidence === 'low').length
+                              const flagged = items.filter((item) => item.confidence === 'low' && !confirmedItemIds.has(item.id)).length
                               return (
                                 <button
                                   key={kind}
@@ -351,7 +375,9 @@ export function SyllabusImportMode({
                               <ReviewGroup
                                 key={kind} kind={kind} items={items}
                                 searched={proposal.searched[kind]}
+                                confirmedItemIds={confirmedItemIds}
                                 onPatch={patchItem} onRemove={removeItem} onAddManual={() => addManual(kind)}
+                                onConfirm={confirmItem}
                               />
                             ))}
                           </div>
@@ -379,6 +405,7 @@ export function SyllabusImportMode({
             <ApplyRail
               misfiled={misfiled} reimport={reimport} proposal={proposal}
               rows={reimportRows} decided={decided} applying={applying}
+              unresolvedCount={flaggedCount}
               courseLabel={scopedCourse?.code || courseCode || courseTitle || 'this class'}
               canFileMaterial={Boolean(scopedCourse && onFileMaterial)}
               onApply={apply}
@@ -423,18 +450,21 @@ function UploadState({ files, pastedText, parsing, parsingMessage, error, onFile
 }
 
 /** A group collapses to one factual summary when clean; any low-confidence item expands it. */
-function ReviewGroup({ kind, items, searched, onPatch, onRemove, onAddManual }: {
+function ReviewGroup({ kind, items, searched, confirmedItemIds, onPatch, onRemove, onAddManual, onConfirm }: {
   kind: SyllabusKind; items: SyllabusProposal['items']; searched: string
+  confirmedItemIds: ReadonlySet<string>
   onPatch: (id: string, patch: Partial<SyllabusProposal['items'][number]>) => void
   onRemove: (id: string) => void
   onAddManual: () => void
+  onConfirm: (id: string) => void
 }) {
-  const flagged = items.some((item) => item.confidence === 'low')
+  const needsConfirmation = (item: SyllabusProposal['items'][number]) => item.confidence === 'low' && !confirmedItemIds.has(item.id)
+  const flagged = items.some(needsConfirmation)
   // Keep clean groups compact so the review stays scannable at desktop and
   // narrow widths. Only rows that need a decision claim vertical attention.
   const [open, setOpen] = useState(flagged)
   const needsValue = ['identity', 'exams', 'weights', 'units', 'readings', 'deadlines'].includes(kind)
-  const flaggedCount = items.filter((item) => item.confidence === 'low').length
+  const flaggedCount = items.filter(needsConfirmation).length
   return (
     <section id={`syllabus-group-${kind}`} className={cn('relative scroll-mt-6 border-b border-border last:border-b-0', flagged && 'bg-warning/[0.035]')}>
       <span className={cn('absolute inset-y-0 left-0 w-[3px]', flagged ? 'bg-warning' : items.length ? 'bg-success/65' : 'bg-border')} aria-hidden="true" />
@@ -445,12 +475,12 @@ function ReviewGroup({ kind, items, searched, onPatch, onRemove, onAddManual }: 
             {GROUP_LABEL[kind]}
           </span>
           <span className="mt-0.5 block truncate text-xs font-semibold text-muted-foreground">
-            {items.length ? (flagged ? `${flaggedCount} ${flaggedCount === 1 ? 'item needs' : 'items need'} a look` : collapsedSummary(kind, items, searched)) : searched}
+            {items.length ? (flagged ? `${flaggedCount} ${flaggedCount === 1 ? 'item needs' : 'items need'} confirmation` : collapsedSummary(kind, items, searched)) : searched}
           </span>
         </span>
         <span className="flex shrink-0 items-center gap-2">
           <span className={cn('rounded-full px-2 py-0.5 font-display text-[10px] font-extrabold uppercase tracking-wide', flagged ? 'bg-warning/18 text-warning' : items.length ? 'bg-success/12 text-success' : 'bg-muted text-muted-foreground')}>
-            {flagged ? 'Check' : items.length ? `${items.length} found` : 'Not found'}
+            {flagged ? 'Confirm' : items.length ? `${items.length} found` : 'Not found'}
           </span>
           <ChevronDown className={cn('size-4 text-muted-foreground transition-transform', open && 'rotate-180')} aria-hidden="true" />
         </span>
@@ -462,7 +492,7 @@ function ReviewGroup({ kind, items, searched, onPatch, onRemove, onAddManual }: 
               {item.context && <p className="mb-1.5 text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary">{item.context}</p>}
               <div className={cn('grid items-start gap-2', (needsValue || item.value !== undefined) ? 'sm:grid-cols-[minmax(0,1.35fr)_minmax(160px,.65fr)_32px]' : 'grid-cols-[minmax(0,1fr)_32px]')}>
                 <Input aria-label={`${GROUP_LABEL[kind]} label`} value={item.label} onChange={(event) => onPatch(item.id, { label: event.target.value })}
-                  className={cn('h-8 font-bold', item.confidence === 'low' && 'border-warning')} />
+                  className={cn('h-8 font-bold', needsConfirmation(item) && 'border-warning')} />
                 {(needsValue || item.value !== undefined) && (kind === 'policies' || (kind === 'logistics' && (item.value?.length ?? 0) > 120)
                   ? <Textarea aria-label={`${GROUP_LABEL[kind]} value`} value={item.value ?? ''} onChange={(event) => onPatch(item.id, { value: event.target.value })} className="min-h-20 resize-y text-xs" />
                   : <Input aria-label={`${GROUP_LABEL[kind]} value`} value={item.value ?? ''} onChange={(event) => onPatch(item.id, { value: event.target.value })} className="h-8" />)}
@@ -477,10 +507,28 @@ function ReviewGroup({ kind, items, searched, onPatch, onRemove, onAddManual }: 
                   <X className="size-4" />
                 </Button>
               </div>
-              <details className="mt-2 text-xs font-semibold text-muted-foreground">
-                <summary className="w-fit cursor-pointer text-primary/90">View source</summary>
-                <p className="mt-1 border-l-2 border-primary/30 pl-2">{item.evidence.location} · “{item.evidence.quote}”</p>
-              </details>
+              <div className="mt-2 flex min-h-8 flex-wrap items-start justify-between gap-2">
+                <details className="min-w-0 text-xs font-semibold text-muted-foreground">
+                  <summary className="w-fit cursor-pointer text-primary/90">View source</summary>
+                  <p className="mt-1 border-l-2 border-primary/30 pl-2">{item.evidence.location} · “{item.evidence.quote}”</p>
+                </details>
+                {item.confidence === 'low' && (confirmedItemIds.has(item.id) ? (
+                  <span className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-3 font-display text-xs font-extrabold text-success" role="status">
+                    <CheckCircle2 className="size-3.5" aria-hidden="true" /> Confirmed
+                  </span>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 shrink-0 border-warning/55 bg-warning/10 font-display font-extrabold text-warning hover:bg-warning/18 hover:text-warning"
+                    aria-label={`Confirm ${item.label || GROUP_LABEL[kind]}`}
+                    onClick={() => onConfirm(item.id)}
+                  >
+                    <CheckCircle2 className="size-3.5" aria-hidden="true" /> Confirm
+                  </Button>
+                ))}
+              </div>
             </div>
           ))}
           <button type="button" onClick={onAddManual} className="m-4 ml-5 text-xs font-bold text-primary underline underline-offset-4">Add manually</button>
@@ -600,9 +648,9 @@ function ReimportDiff({ rows, actions, onAction }: {
 }
 
 /** The sticky rail: the exact records that will be written, and nothing softer. */
-function ApplyRail({ misfiled, reimport, proposal, rows, decided, applying, courseLabel, canFileMaterial, onApply, onAcceptAll, onKeepAll }: {
+function ApplyRail({ misfiled, reimport, proposal, rows, decided, applying, unresolvedCount, courseLabel, canFileMaterial, onApply, onAcceptAll, onKeepAll }: {
   misfiled: boolean; reimport: boolean; proposal: SyllabusProposal
-  rows: ReimportRow[]; decided: number; applying: boolean; courseLabel: string; canFileMaterial: boolean
+  rows: ReimportRow[]; decided: number; applying: boolean; unresolvedCount: number; courseLabel: string; canFileMaterial: boolean
   onApply: () => void; onAcceptAll: () => void; onKeepAll: () => void
 }) {
   const differences = rows.filter((row) => row.status !== 'unchanged').length
@@ -643,8 +691,10 @@ function ApplyRail({ misfiled, reimport, proposal, rows, decided, applying, cour
           <>
             <div className="border-b border-border bg-muted/55 px-4 py-3.5">
               <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Final check</p>
-              <h2 className="mt-1 font-display text-lg font-extrabold">Ready to add</h2>
-              <p className="mt-1 text-xs font-semibold text-muted-foreground">One reviewed write to {courseLabel}.</p>
+              <h2 className="mt-1 font-display text-lg font-extrabold">{unresolvedCount ? `Confirm ${unresolvedCount} ${unresolvedCount === 1 ? 'item' : 'items'}` : 'Ready to add'}</h2>
+              <p className="mt-1 text-xs font-semibold text-muted-foreground">
+                {unresolvedCount ? 'Confirm or remove every flagged detail before it is saved.' : `One reviewed write to ${courseLabel}.`}
+              </p>
             </div>
             <dl className="divide-y divide-border">
               {APPLY_GROUPS.map((group) => {
@@ -670,8 +720,8 @@ function ApplyRail({ misfiled, reimport, proposal, rows, decided, applying, cour
                 <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden="true" />
                 <span>Readings become dated before-class tasks. Office hours stay in course context, not the calendar.</span>
               </div>
-              <Button className="w-full font-display font-extrabold" onClick={onApply} disabled={applying}>
-                <CheckCircle2 className="size-4" /> Add reviewed syllabus to {courseLabel}
+              <Button className="w-full font-display font-extrabold" onClick={onApply} disabled={applying || unresolvedCount > 0}>
+                <CheckCircle2 className="size-4" /> {unresolvedCount ? `Confirm ${unresolvedCount} above to continue` : `Add reviewed syllabus to ${courseLabel}`}
               </Button>
             </div>
           </>

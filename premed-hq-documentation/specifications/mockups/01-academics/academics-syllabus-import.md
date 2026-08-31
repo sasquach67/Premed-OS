@@ -124,6 +124,9 @@
   scope differs.
 - A low-confidence extract, an incomplete weight total, and a missing field
   each state the exact reason and preserve manual correction.
+- Every low-confidence row has an explicit `Confirm` action. Apply remains
+  unavailable until each flagged row is confirmed or removed; editing a
+  confirmed row reopens that check.
 - Added, changed, removed, and unchanged re-import rows preserve their distinct
   defaults and keep/accept meaning.
 - The no-parse route retains the file and returns the student to a useful

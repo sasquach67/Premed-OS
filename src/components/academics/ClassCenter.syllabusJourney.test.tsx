@@ -276,6 +276,21 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     await act(async () => button(document.body, 'Review syllabus records').click())
     expect(document.body.textContent).toContain('Policies & boundaries')
     expect(document.body.textContent).toContain('People, meetings & support')
+    const addReviewed = button(document.body, 'above to continue')
+    expect(addReviewed.disabled).toBe(true)
+    const confirmations = [...document.body.querySelectorAll<HTMLButtonElement>('button[aria-label^="Confirm "]')]
+    expect(confirmations.length).toBeGreaterThan(0)
+    for (const confirmation of confirmations) await act(async () => confirmation.click())
+    expect(document.body.textContent).toContain('Confirmed')
+    expect(document.body.textContent).toContain('Ready to add')
+    expect(button(document.body, 'Add reviewed syllabus to').disabled).toBe(false)
+    const meetingTime = document.body.querySelector('input[value="8 AM–9:15 AM"]') as HTMLInputElement
+    await act(async () => setInputValue(meetingTime, '8 AM–9:10 AM'))
+    expect(button(document.body, 'above to continue').disabled).toBe(true)
+    const reconfirmMeetingTime = document.body.querySelector<HTMLButtonElement>('button[aria-label="Confirm Meeting time"]')
+    expect(reconfirmMeetingTime).toBeTruthy()
+    await act(async () => reconfirmMeetingTime!.click())
+    expect(button(document.body, 'Add reviewed syllabus to').disabled).toBe(false)
     await act(async () => button(document.body, 'Add reviewed syllabus to').click())
 
     const saved = snapshotData()
