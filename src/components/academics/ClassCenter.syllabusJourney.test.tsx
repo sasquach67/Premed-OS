@@ -71,6 +71,24 @@ Wk 4: 9/15-9/17
 Exam Week
 Tuesday Exam #1`
 
+const OPERATIONAL_SYLLABUS = `Psychology 101.001 Introduction to Psychology
+Fall 2026
+Objectives and Expectations: In completing this course, you will be able to
+• define both the science and the practice of psychology
+• explain how biological and social contexts shape behavior
+Instructor: Dr. Adrian Rivera · arivera@unc.edu
+Office Hours: Davie Hall 210 on Tuesday 2:00-3:00 PM.
+TR 8am-9:15pm
+Instructional Assistants: Weekly office hours are below.
+• Fatima: Monday, 10:00-11:00 AM on Zoom
+Learning Center: See https://learningcenter.unc.edu for support.
+Course Schedule
+Thursday 8/20 The Evolution of Psychology Chapter 1
+Thursday 9/17 Exam 1
+Research Requirement due December 1, 2026.
+AI Policy: Generated text may be used only when the assignment explicitly permits it.
+Late Work: Contact the teaching team before the deadline when an emergency prevents submission.`
+
 function setTextareaValue(textarea: HTMLTextAreaElement, value: string) {
   const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set
   setter?.call(textarea, value)
@@ -130,7 +148,8 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(textarea).toBeTruthy()
     await act(async () => setTextareaValue(textarea, SYLLABUS))
     await act(async () => button(document.body, 'Read syllabus').click())
-    expect(document.body.textContent).toContain(mode === 'reimport' ? 'things changed' : 'Here’s what I found')
+    if (mode === 'reimport') expect(document.body.textContent).toContain('things changed')
+    else expect(document.body.textContent).toMatch(/Here’s what I found|Review the syllabus extraction|Review syllabus/)
   }
 
   it('creates one class only after review, persists all parsed course records, and retains the source locally', async () => {
@@ -147,9 +166,10 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
 
     expect(snapshotData().courses).toHaveLength(0)
     expect(document.body.textContent).toContain('Import syllabus · review before apply')
-    expect(document.body.textContent).toContain('What this adds')
+    expect(document.body.textContent).toContain('Final check')
     expect(document.body.textContent).toContain('Not found')
-    await act(async () => button(document.body, 'Add all of this to CHEM 262').click())
+    expect(document.body.querySelector('#syllabus-group-standards button')?.getAttribute('aria-expanded')).toBe('false')
+    await act(async () => button(document.body, 'Add reviewed syllabus to CHEM 262').click())
 
     const created = snapshotData()
     expect(created.courses).toHaveLength(1)
@@ -222,7 +242,7 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     await act(async () => setTextareaValue(textarea, ANTH_SCHEDULE))
     await act(async () => button(document.body, 'Read syllabus').click())
     await act(async () => button(document.body, 'Review syllabus records').click())
-    await act(async () => button(document.body, 'Add all of this to ANTH 147').click())
+    await act(async () => button(document.body, 'Add reviewed syllabus to ANTH 147').click())
 
     const center = snapshotData().academics.classCenter
     const course = snapshotData().courses.find((item) => item.code === 'ANTH 147')
@@ -242,6 +262,65 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(center.assignments).toEqual(expect.arrayContaining([
       expect.objectContaining({ courseId, type: 'exam', title: 'Exam 1', dueDate: '2026-09-15' }),
     ]))
+  })
+
+  it('maps reviewed syllabus facts to their operational homes without turning class context into tasks', async () => {
+    await render('/academics?tab=class-center')
+    await act(async () => button(container, 'Import a syllabus').click())
+    const textarea = document.body.querySelector('textarea[placeholder="Paste syllabus text from Canvas…"]') as HTMLTextAreaElement
+    await act(async () => setTextareaValue(textarea, OPERATIONAL_SYLLABUS))
+    await act(async () => button(document.body, 'Read syllabus').click())
+    expect(document.body.textContent).toContain('Meeting time · needs a look')
+    expect(document.body.querySelector('input[value="8 AM–9:15 AM"]')).toBeTruthy()
+    await act(async () => button(document.body, 'General').click())
+    await act(async () => button(document.body, 'Review syllabus records').click())
+    expect(document.body.textContent).toContain('Policies & boundaries')
+    expect(document.body.textContent).toContain('People, meetings & support')
+    await act(async () => button(document.body, 'Add reviewed syllabus to').click())
+
+    const saved = snapshotData()
+    const course = saved.courses.find((item) => item.code === 'PSYC 101')
+    expect(course).toBeTruthy()
+    const courseId = course!.id
+    const center = saved.academics.classCenter
+    const syllabusFile = center.files.find((item) => item.courseId === courseId && item.type === 'syllabus')
+    expect(syllabusFile).toBeTruthy()
+
+    const topics = center.topics.filter((item) => item.courseId === courseId)
+    expect(topics.map((item) => item.title)).toEqual([
+      'define both the science and the practice of psychology',
+      'explain how biological and social contexts shape behavior',
+    ])
+    expect(topics.every((item) => item.basis === 'syllabus-standard' && item.linkedFileIds?.includes(syllabusFile!.id))).toBe(true)
+
+    const workspace = center.workspaces.find((item) => item.courseId === courseId)
+    expect(workspace?.syllabusSchedule).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'The Evolution of Psychology', startDate: '2026-08-20', source: expect.stringContaining('Chapter 1') }),
+    ]))
+
+    const readings = center.assignedReadings.filter((item) => item.courseId === courseId)
+    expect(readings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: expect.stringContaining('Chapter 1'), dueForDiscussion: '2026-08-20', source: expect.stringContaining('Chapter 1') }),
+    ]))
+    const assignments = center.assignments.filter((item) => item.courseId === courseId)
+    expect(assignments).toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: expect.stringContaining('Read Chapter 1'), type: 'reading', dueDate: '2026-08-20', linkedFileIds: [syllabusFile!.id] }),
+      expect.objectContaining({ title: 'Exam 1', type: 'exam', dueDate: '2026-09-17', linkedFileIds: [syllabusFile!.id] }),
+      expect.objectContaining({ title: expect.stringContaining('Research Requirement'), type: 'other', dueDate: '2026-12-01', linkedFileIds: [syllabusFile!.id] }),
+    ]))
+    expect(assignments.some((item) => /office hours|fatima|learning center/i.test(item.title))).toBe(false)
+    expect(assignments.some((item) => item.type !== 'reading' && /evolution of psychology/i.test(item.title))).toBe(false)
+
+    expect(center.contacts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ courseId, role: 'professor', name: 'Dr. Adrian Rivera', email: 'arivera@unc.edu' }),
+      expect.objectContaining({ courseId, role: 'TA', name: 'Fatima' }),
+    ]))
+    expect(center.notes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ courseId, kind: 'about-class', title: 'Learning Center', linkedFileIds: [syllabusFile!.id] }),
+      expect.objectContaining({ courseId, kind: 'about-class', title: 'AI Policy', content: expect.stringContaining('assignment explicitly permits it'), linkedFileIds: [syllabusFile!.id] }),
+      expect.objectContaining({ courseId, kind: 'about-class', title: 'Late Work', content: expect.stringContaining('emergency prevents submission'), linkedFileIds: [syllabusFile!.id] }),
+    ]))
+    expect(center.sourceChunks.filter((item) => item.courseId === courseId && item.fileId === syllabusFile!.id).length).toBeGreaterThanOrEqual(8)
   })
 
   it('moves backward through final review and class details without saving a partial class', async () => {
@@ -291,8 +370,8 @@ Week 1: Aromatic substitution and reaction energy diagrams.`)
     expect(snapshotData().courses).toEqual([])
     await act(async () => button(document.body, 'STEM').click())
     await act(async () => button(document.body, 'Review syllabus records').click())
-    expect(document.body.textContent).toContain('What this adds')
-    await act(async () => button(document.body, 'Add all of this to CHEM 262').click())
+    expect(document.body.textContent).toContain('Final check')
+    await act(async () => button(document.body, 'Add reviewed syllabus to CHEM 262').click())
 
     const saved = snapshotData().academics.classCenter
     const overviewFile = saved.files.find((file) => file.fileName === 'CHEM262-overview.txt')
@@ -310,12 +389,15 @@ Week 1: Aromatic substitution and reaction energy diagrams.`)
     await readPastedSyllabus()
     await act(async () => button(document.body, 'STEM').click())
     await act(async () => button(document.body, 'Review syllabus records').click())
-    await act(async () => button(document.body, 'Learning standards').click())
-
-    const removeButtons = [...document.body.querySelectorAll<HTMLButtonElement>('button[aria-label="Remove Learning standards row"]')]
+    const standardsGroup = document.body.querySelector('#syllabus-group-standards') as HTMLElement
+    expect(standardsGroup).toBeTruthy()
+    if (standardsGroup.querySelector('button[aria-expanded="false"]')) {
+      await act(async () => (standardsGroup.querySelector('button[aria-expanded="false"]') as HTMLButtonElement).click())
+    }
+    const removeButtons = [...standardsGroup.querySelectorAll<HTMLButtonElement>('button[aria-label="Remove Learning standards row"]')]
     expect(removeButtons).toHaveLength(2)
     await act(async () => removeButtons[0].click())
-    await act(async () => button(document.body, 'Add all of this to CHEM 262').click())
+    await act(async () => button(document.body, 'Add reviewed syllabus to CHEM 262').click())
 
     const saved = snapshotData().academics.classCenter.topics.filter((item) => item.courseId === snapshotData().courses[0].id)
     expect(saved).toHaveLength(1)
@@ -342,7 +424,7 @@ Week 1: Aromatic substitution and reaction energy diagrams.`)
     expect(container.textContent).toContain('Add a syllabus to CHEM 262')
 
     await readPastedSyllabus()
-    await act(async () => button(container, 'Add all of this to CHEM 262').click())
+    await act(async () => button(container, 'Add reviewed syllabus to CHEM 262').click())
 
     const applied = snapshotData()
     expect(applied.courses).toHaveLength(1)
@@ -398,7 +480,7 @@ Week 1: Aromatic substitution and reaction energy diagrams.`)
 
     await render('/academics?tab=class-center&importFor=chem-262')
     await readPastedSyllabus()
-    await act(async () => button(container, 'Add all of this to CHEM 262').click())
+    await act(async () => button(container, 'Add reviewed syllabus to CHEM 262').click())
 
     const after = snapshotData()
     expect(after.courses).toHaveLength(1)

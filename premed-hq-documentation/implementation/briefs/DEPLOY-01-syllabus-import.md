@@ -79,7 +79,7 @@ npm run lint        # if configured
 | Gap | Why it's acceptable |
 |---|---|
 | **Fourth entry point** (Add-a-class handoff) | Three work. Importing into an existing class is fully available; this only collapses create-then-import into one step |
-| **No OCR** | Deliberate deferral. Scans are detected and named, with paste and manual paths offered |
+| **Local OCR is bounded** | Image-only PDF pages are rendered and recognized in the browser with self-hosted assets. Nothing is uploaded; unreadable pages remain explicit and paste/manual review paths stay available. |
 | **Policies not structured** | Captured verbatim in `policyNote`. Parsing them is `§6.8`, which is not started — **and shipping a projection you can't stand behind is what §6.8 opens by warning against** |
 | **School List tab is thin** | 63 lines, doesn't read the roster. **Spec is complete; build is not.** Consider hiding or labelling it |
 | **Other stub tabs** — Atlas 24 lines, Timeline 51 | Same. A tab that exists and does nothing reads as broken; "coming soon" reads as honest |

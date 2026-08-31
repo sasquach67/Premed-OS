@@ -87,7 +87,8 @@ export function Academics() {
   // banner around it creates two competing heroes and breaks the approved
   // full-screen-like hierarchy. The route and import state remain unchanged.
   const requestedImportFor = searchParams.get('importFor')
-  const syllabusImportActive = requestedImportFor === 'new'
+  const syllabusImportActive = searchParams.get('reviewImport') === '1'
+    || requestedImportFor === 'new'
     || Boolean(requestedImportFor && courses.some((course) => course.id === requestedImportFor))
   const currentTermCourses = courses.filter((course) => course.term === currentTerm)
   const currentTermGpa = gpaStats(currentTermCourses)
@@ -158,7 +159,7 @@ export function Academics() {
     }, { replace: true })
   }, [requestedImportFor, setSearchParams, syllabusImportActive])
 
-  if (courseId || syllabusImportActive) {
+  if (courseId) {
     return <div className="academics-surface"><ClassCenter /></div>
   }
 
@@ -191,6 +192,7 @@ export function Academics() {
       <Tabs value={activeTab} onValueChange={(tab) => setSearchParams((prev) => { const next = new URLSearchParams(prev); next.delete('mode'); next.set('tab', tab); return next })}>
         <PageHeader
           title={route.label}
+          className={syllabusImportActive ? 'hidden' : undefined}
           actions={(
             <div className="flex items-center gap-2">
               {activeTab === 'assignments' && (
@@ -258,7 +260,7 @@ export function Academics() {
             />
           </div>
         </PageHeader>
-        <AcademicMigrationReview />
+        <div className={syllabusImportActive ? 'hidden' : undefined}><AcademicMigrationReview /></div>
         <AnimatePresence mode="popLayout" initial={false} custom={mode === 'planning' ? 1 : -1}>
           <m.div
             key={mode}

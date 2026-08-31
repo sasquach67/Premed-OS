@@ -972,7 +972,7 @@ function Guide({ courseId, workspace, notes, topics, assignments, contacts, data
     { key: 'exam', title: 'Exam intel', notes: scoped.filter((item) => item.type === 'exam-review') },
     { key: 'questions', title: 'Questions to ask', notes: scoped.filter((item) => item.type === 'question-log') },
     { key: 'priming', title: 'Priming rollup', notes: scoped.filter((item) => item.type === 'reading' && item.title.startsWith('Prime:')) },
-    { key: 'lecture', title: 'Lecture notes by unit', notes: scoped.filter((item) => ['lecture', 'lab', 'other'].includes(item.type)) },
+    { key: 'context', title: 'Course support & requirements', notes: scoped.filter((item) => item.type === 'other') },
   ]
   const topicNotes = topics.map((topic) => ({ topic, notes: guideNotes.filter((note) => note.topicIds.includes(topic.id)) })).filter((item) => item.notes.length)
   return (
@@ -1000,6 +1000,25 @@ function Guide({ courseId, workspace, notes, topics, assignments, contacts, data
         <CourseLensPanel workspace={workspace} data={data} />
         <GuideSuggestions courseId={courseId} data={data} onOpenMaterials={onOpenMaterials} />
         <ProfessorEvidencePanel courseId={courseId} data={data} assignments={assignments} contacts={contacts} />
+        {contacts.length > 0 && (
+          <Card className="class-hub-panel">
+            <CardHeader className="class-hub-panel-header"><CardTitle>People &amp; office hours</CardTitle></CardHeader>
+            <CardContent className="class-hub-panel-content divide-y divide-border p-0">
+              {contacts.map((contact) => (
+                <div key={contact.id} className="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)] sm:gap-4">
+                  <div>
+                    <p className="font-display text-sm font-extrabold">{contact.name}</p>
+                    <p className="text-[10px] font-extrabold uppercase tracking-wide text-primary">{contact.role}</p>
+                  </div>
+                  <div className="text-sm font-semibold text-muted-foreground">
+                    <p>{contact.officeHours || 'Office hours not listed'}</p>
+                    {(contact.location || contact.email) && <p className="mt-0.5 text-xs">{[contact.location, contact.email].filter(Boolean).join(' · ')}</p>}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
         {sections.map((section) => (
           <Card key={section.key} className="class-hub-panel">
             <CardHeader className="class-hub-panel-header"><CardTitle>{section.title}</CardTitle></CardHeader>

@@ -46,12 +46,13 @@ import { GRADE_POINTS, fmtGpa, gpaStats } from '@/lib/selectors'
 import { ClassHub } from '@/components/academics/ClassHub'
 import { SyllabusImportMode } from '@/components/academics/SyllabusImportMode'
 import { SyllabusImportDialog } from '@/components/academics/SyllabusImportDialog'
-import type { SyllabusProposal } from '@/lib/academics/syllabusParser'
+import type { SyllabusItem, SyllabusProposal } from '@/lib/academics/syllabusParser'
 import { retainLocalSyllabus } from '@/lib/academics/localSyllabusFiles'
 import { retainLocalMaterial } from '@/lib/academics/localMaterialFiles'
 import {
   syllabusAssignmentSourceKey,
   syllabusCategorySourceKey,
+  syllabusReadingCalendarSourceKey,
   syllabusReadingSourceKey,
   syllabusScheduleSourceKey,
   syllabusTopicSourceKey,
@@ -61,7 +62,7 @@ import { classTypeDraftDecision } from '@/lib/academics/classTypeDraftDecision'
 import { nextIncompleteReading, readingDebt, READING_LIST_STATE_COPY } from '@/lib/academics/writingEvidence'
 import { inferAcademicTerm } from '@/store/migrations/academicsV4'
 import { persistConfirmedSyllabusEvidence } from '@/lib/academics/guideContract'
-import { extractClassMeetingDays, extractClassMeetingTime, isOfficeHoursLine, normalizeMeetingDays } from '@/lib/academics/meetingSchedule'
+import { extractClassMeetingDays, extractClassMeetingTime, isOfficeHoursLine, isPlausibleClassMeetingTime, normalizeMeetingDays, proposePlausibleMeetingTime } from '@/lib/academics/meetingSchedule'
 import { removeLocalBlob } from '@/lib/localBlobStore'
 import { removeCourseCascade } from '@/lib/academics/removeCourseCascade'
 
@@ -259,22 +260,22 @@ function extractClassLocation(line?: string): string {
   // Prefer the complete named building plus room over the shorter `Room 121`
   // suffix. A labeled fallback still handles forms such as `Location: Kenan B12`.
   const locationText = line.replace(/^.*\b(?:AM|PM)\b\s*/i, '')
-  const namedLocations = [...locationText.matchAll(/\b((?:(?:Room|Rm\.?)\s*)?\d+[A-Za-z]?\s+)?([A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*)*\s+(?:Center|Hall|Building)(?:\s+(?:Room|Rm\.?)?\s*[A-Za-z]?\d+[A-Za-z]?)?)\b/g)]
-    .map((match) => `${match[1] ?? ''}${match[2]}`.trim())
+  const namedLocations = [...locationText.matchAll(/\b((?:[A-Za-z]?\d{3,4}[A-Za-z]?\s+)?[A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*)*\s+(?:Center|Hall|Building)(?:\s+(?:Room|Rm\.?)?\s*[A-Za-z]?\d+[A-Za-z]?)?)\b/g)]
+    .map((match) => match[1].trim())
   // DOCX two-column headers are flattened into one line. When that happens,
   // the instructor office appears first and the class location appears last.
   if (/^\s*office\s*:/i.test(line)) return namedLocations.length > 1 ? namedLocations.at(-1) ?? '' : ''
   return namedLocations[0]
-    ?? line.match(/(?:room|location)\s*[:\-]?\s*([\w -]{3,})/i)?.[1]?.trim()
+    ?? line.match(/(?:room|location)\s*[:-]?\s*([\w -]{3,})/i)?.[1]?.trim()
     ?? ''
 }
 
 function extractInstructor(logistics: string[]): string {
   const line = logistics.find((candidate) => /(?:instructor|prof(?:essor)?)/i.test(candidate)) ?? ''
-  const remainder = line.match(/(?:instructor|prof(?:essor)?)\.?\s*[:\-]?\s*(.+)$/i)?.[1] ?? ''
+  const remainder = line.match(/(?:instructor|prof(?:essor)?)\.?\s*[:-]?\s*(.+)$/i)?.[1] ?? ''
   return remainder
-    .split(/\s+(?=(?:[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|(?:office|student)\s+hours?|MWF|TR|TTH|T\s*(?:[\/&]|and)\s*TH|Mon(?:day)?|Tue(?:sday)?|Wed(?:nesday)?|Thu(?:rsday)?|Fri(?:day)?|\d{1,2}(?::\d{2})?\s*(?:AM|PM)\b))/i)[0]
-    .replace(/[\s,]+$/, '')
+    .split(/\s+(?=(?:[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|(?:office|student)\s+hours?|MWF|TR|TTH|T\s*(?:[/&]|and)\s*TH|Mon(?:day)?|Tue(?:sday)?|Wed(?:nesday)?|Thu(?:rsday)?|Fri(?:day)?|\d{1,2}(?::\d{2})?\s*(?:AM|PM)\b))/i)[0]
+    .replace(/[\s,·;]+$/, '')
     .trim()
 }
 
@@ -294,12 +295,20 @@ function extractCourseTerm(proposal: SyllabusProposal, fallback: string): string
 
 export function classFormFromSyllabus(proposal: SyllabusProposal, semester: string): ClassFormState {
   const identity = proposal.items.find((item) => item.kind === 'identity')
-  const logistics = proposal.items.filter((item) => item.kind === 'logistics').map((item) => item.label || item.evidence.quote)
+  const logisticsItems = proposal.items.filter((item) => item.kind === 'logistics')
+  const logistics = logisticsItems.map((item) => item.label || item.evidence.quote)
   const instructor = extractInstructor(logistics)
   const scheduleLine = logistics.find((line) => Boolean(extractClassMeetingDays(line))) ?? ''
-  const rawScheduleLine = proposal.text.split(/\r?\n/).find((line) => Boolean(extractClassMeetingDays(line)) && Boolean(extractClassMeetingTime(line))) ?? ''
+  const rawScheduleLine = proposal.text.split(/\r?\n/).find((line) => {
+    const time = extractClassMeetingTime(line)
+    return Boolean(extractClassMeetingDays(line)) && Boolean(time) && isPlausibleClassMeetingTime(time)
+      && !/\b(?:due|deadline|submit|quiz|assignment|assessment|office hours?|student hours?)\b/i.test(line)
+      && (/\b(?:section|class|lectures?|meets?|meeting)\b/i.test(line) || /^(?:MWF|TR|TTH|TU\s*(?:\/|&|and)\s*TH|T\s*(?:\/|&|and)\s*TH)\b/i.test(line))
+  }) ?? ''
   const meetingDays = extractClassMeetingDays(scheduleLine) || extractClassMeetingDays(rawScheduleLine)
-  const meetingTime = extractClassMeetingTime(scheduleLine) || extractClassMeetingTime(rawScheduleLine)
+  const reviewedMeetingTime = logisticsItems.find((item) => item.label === 'Meeting time' && item.confidence === 'low')?.value
+  const rawMeetingTime = extractClassMeetingTime(scheduleLine) || extractClassMeetingTime(rawScheduleLine)
+  const meetingTime = reviewedMeetingTime || proposePlausibleMeetingTime(rawMeetingTime) || rawMeetingTime
   const locationLines = logistics.filter((line) => !isOfficeHoursLine(line) && /\b(?:room|location|hall|center|building)\b/i.test(line) && !/same location as class meetings/i.test(line))
   const location = locationLines.map(extractClassLocation).find(Boolean) ?? ''
   return {
@@ -312,6 +321,65 @@ export function classFormFromSyllabus(proposal: SyllabusProposal, semester: stri
     meetingTime,
     location,
   }
+}
+
+function upsertReadingCalendarAssignment(center: ClassCenterData, courseId: string, item: SyllabusItem, linkedFileIds: string[], now: number) {
+  if (!item.value) return
+  const key = syllabusReadingCalendarSourceKey(item.label, item.context, item.value)
+  const title = `Read ${item.label} before class`
+  const notes = `Due for the scheduled class on ${item.value}. Source: ${item.evidence.location} — “${item.evidence.quote}”`
+  const existing = center.assignments.find((assignment) => assignment.courseId === courseId && assignment.syllabusSourceKey === key)
+  if (existing) {
+    Object.assign(existing, { title, type: 'reading' as const, dueDate: item.value, notes, linkedFileIds: [...new Set([...existing.linkedFileIds, ...linkedFileIds])], updatedAt: now })
+    return
+  }
+  center.assignments.push({
+    id: uid(), courseId, title, syllabusSourceKey: key, type: 'reading', dueDate: item.value,
+    status: 'not-started', linkedTopicIds: [], linkedFileIds, notes, createdAt: now, updatedAt: now,
+    order: center.assignments.filter((assignment) => assignment.courseId === courseId).length,
+  })
+}
+
+function applySyllabusOperationalContext(center: ClassCenterData, courseId: string, proposal: SyllabusProposal, sourceFileIdForItem: (item: SyllabusItem) => string | undefined, now: number) {
+  const workspace = center.workspaces.find((item) => item.courseId === courseId)
+  const logistics = proposal.items.filter((item) => item.kind === 'logistics')
+  const professorRecord = logistics.find((item) => item.context === 'Professor')
+    ?? logistics.find((item) => /(?:instructor|prof(?:essor)?)\s*:/i.test(item.label))
+  const emailFrom = (item?: SyllabusItem) => `${item?.label ?? ''} ${item?.value ?? ''}`.match(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/)?.[0]
+  const courseContactEmail = emailFrom(logistics.find((item) => item.context === 'Course contact'))
+  const sharedStaffEmail = emailFrom(logistics.find((item) => item.context === 'Support resource' && /Instructor and IAs/i.test(item.label)))
+  const professorEmail = emailFrom(professorRecord) ?? courseContactEmail ?? sharedStaffEmail
+  const professorName = workspace?.instructor?.trim()
+  if (professorName) {
+    const officeHours = logistics.find((item) => /^Office Hours\s*:/i.test(item.label))?.label.replace(/^Office Hours\s*:\s*/i, '')
+      ?? professorRecord?.value?.replace(professorEmail ?? '', '').replace(/^[\s·;,-]+/, '').trim()
+    const existing = center.contacts.find((contact) => contact.courseId === courseId && contact.role === 'professor' && contact.name.toLowerCase() === professorName.toLowerCase())
+    if (existing) Object.assign(existing, { email: professorEmail || existing.email, officeHours: officeHours || existing.officeHours, updatedAt: now })
+    else center.contacts.push({ id: uid(), courseId, name: professorName, role: 'professor', email: professorEmail, officeHours, createdAt: now, updatedAt: now, order: center.contacts.filter((contact) => contact.courseId === courseId).length })
+  }
+  logistics.filter((item) => item.context === 'Teaching assistant').forEach((item) => {
+    const email = emailFrom(item) ?? courseContactEmail ?? sharedStaffEmail
+    const officeHours = item.value?.replace(email ?? '', '').replace(/^[\s·;,-]+/, '').trim()
+    const location = /\bat\s+(.+)$/i.exec(officeHours ?? '')?.[1]
+    const existing = center.contacts.find((contact) => contact.courseId === courseId && contact.role === 'TA' && contact.name.toLowerCase() === item.label.toLowerCase())
+    if (existing) Object.assign(existing, { officeHours: officeHours || existing.officeHours, location: location || existing.location, email: email || existing.email, updatedAt: now })
+    else center.contacts.push({ id: uid(), courseId, name: item.label, role: 'TA', email, officeHours, location, notes: `Imported from ${item.evidence.location}.`, createdAt: now, updatedAt: now, order: center.contacts.filter((contact) => contact.courseId === courseId).length })
+  })
+
+  const contextItems = proposal.items.filter((item) => item.kind === 'policies' || ['Support resource', 'Course requirement', 'Course context', 'Course material', 'Course operations', 'Course detail'].includes(item.context ?? ''))
+  contextItems.forEach((item) => {
+    const title = item.label
+    const fileId = sourceFileIdForItem(item)
+    const content = [item.value, item.evidence.quote, `Source: ${item.evidence.location}`].filter(Boolean).join('\n\n')
+    const existing = center.notes.find((note) => note.courseId === courseId && note.kind === 'about-class' && note.title === title)
+    if (existing) {
+      existing.content = content
+      existing.linkedFileIds = [...new Set([...existing.linkedFileIds, ...(fileId ? [fileId] : [])])]
+      existing.updatedAt = now
+      return
+    }
+    center.notes.push({ id: uid(), courseId, title, type: 'other', kind: 'about-class', topicIds: [], content, syncStatus: 'local-only', linkedFileIds: fileId ? [fileId] : [], createdAt: now, updatedAt: now, order: center.notes.filter((note) => note.courseId === courseId).length })
+  })
 }
 
 function classToForm(row: ClassWorkspaceView): ClassFormState {
@@ -383,6 +451,10 @@ function applyAcceptedReimport(center: ClassCenterData, courseId: string, propos
   center.assignments = center.assignments.filter((item) => item.courseId !== courseId || !removed.has(`assignment:${item.syllabusSourceKey ?? syllabusAssignmentSourceKey(item.title, item.dueDate)}`))
   center.gradeCategories = center.gradeCategories.filter((item) => item.courseId !== courseId || !removed.has(`category:${item.syllabusSourceKey ?? syllabusCategorySourceKey(item.name)}`))
   center.assignedReadings = center.assignedReadings.filter((item) => item.courseId !== courseId || !removed.has(`reading:${item.syllabusSourceKey ?? syllabusReadingSourceKey(item.title, item.week, item.dueForDiscussion)}`))
+  center.assignments = center.assignments.filter((item) => {
+    if (item.courseId !== courseId || !item.syllabusSourceKey?.startsWith('reading-calendar:')) return true
+    return ![...removed].some((removedKey) => removedKey.startsWith('reading:') && item.syllabusSourceKey === `reading-calendar:${removedKey.slice('reading:'.length)}`)
+  })
   const workspace = center.workspaces.find((item) => item.courseId === courseId)
   if (workspace?.syllabusSchedule) workspace.syllabusSchedule = workspace.syllabusSchedule.filter((item) => !removed.has(`schedule:${syllabusScheduleSourceKey(item.label, item.week, item.startDate)}`))
 
@@ -440,9 +512,11 @@ function applyAcceptedReimport(center: ClassCenterData, courseId: string, propos
       existing.syllabusSourceKey = key
       existing.source = `${item.evidence.location} — “${item.evidence.quote}”`
       existing.updatedAt = now
+      upsertReadingCalendarAssignment(center, courseId, item, sourceFileId ? [sourceFileId] : [], now)
       return
     }
     center.assignedReadings.push({ id: uid(), courseId, week, title: item.label, syllabusSourceKey: key, source: `${item.evidence.location} — “${item.evidence.quote}”`, status: 'not-started', dueForDiscussion: item.value, createdAt: now, updatedAt: now, order: center.assignedReadings.filter((reading) => reading.courseId === courseId).length })
+    upsertReadingCalendarAssignment(center, courseId, item, sourceFileId ? [sourceFileId] : [], now)
   })
   proposal.items.filter((item) => item.kind === 'units').forEach((item) => {
     if (!workspace) return
@@ -701,12 +775,15 @@ function ClassCenterDashboard({
           id: uid(), courseId, name: item.label || 'Untitled category', syllabusSourceKey: syllabusCategorySourceKey(item.label), weight: Number(item.value?.replace('%', '')) || 0,
           source: `${item.evidence.location} — “${item.evidence.quote}”`, createdAt: now, updatedAt: now, order: index,
         }))
-        proposal.items.filter((item) => item.kind === 'readings').forEach((item, index) => center.assignedReadings.push({
-          id: uid(), courseId, week: item.context ?? 'Unscheduled', title: item.label,
-          syllabusSourceKey: syllabusReadingSourceKey(item.label, item.context, item.value),
-          source: `${item.evidence.location} — “${item.evidence.quote}”`, status: 'not-started', dueForDiscussion: item.value,
-          createdAt: now, updatedAt: now, order: index,
-        }))
+        proposal.items.filter((item) => item.kind === 'readings').forEach((item, index) => {
+          center.assignedReadings.push({
+            id: uid(), courseId, week: item.context ?? 'Unscheduled', title: item.label,
+            syllabusSourceKey: syllabusReadingSourceKey(item.label, item.context, item.value),
+            source: `${item.evidence.location} — “${item.evidence.quote}”`, status: 'not-started', dueForDiscussion: item.value,
+            createdAt: now, updatedAt: now, order: index,
+          })
+          upsertReadingCalendarAssignment(center, courseId, item, linkedFileIdsForItem(item), now)
+        })
         const workspace = center.workspaces.find((item) => item.courseId === courseId)
         if (workspace) workspace.syllabusSchedule = proposal.items.filter((item) => item.kind === 'units').map((item, index) => ({
           id: uid(), week: item.context ?? 'Unscheduled', label: item.label, startDate: item.value,
@@ -730,6 +807,7 @@ function ClassCenterDashboard({
             workspace.location = extractClassLocation(locationLine) || workspace.location
           }
         }
+        applySyllabusOperationalContext(center, courseId, proposal, sourceFileIdForItem, now)
       }
     })
     setSyllabusImportOpen(false)
@@ -827,6 +905,9 @@ function ClassCenterDashboard({
     if (!syllabusDraft) return
     setSyllabusReviewForm({ ...editor.form, type })
     setEditor((current) => ({ ...current, open: false }))
+    const next = new URLSearchParams(searchParams)
+    next.set('reviewImport', '1')
+    setSearchParams(next, { replace: true })
   }
 
   async function finishImportedClass(
@@ -839,7 +920,10 @@ function ClassCenterDashboard({
     setSyllabusDraft(null)
     setSyllabusReviewForm(null)
     setEditor({ open: false, form: emptyClassForm(semester) })
-    if (scopedCourseId === 'new') clearImportRoute()
+    const next = new URLSearchParams(searchParams)
+    next.delete('reviewImport')
+    if (scopedCourseId === 'new') next.delete('importFor')
+    setSearchParams(next, { replace: true })
   }
 
   function backToImportedClassDetails(reviewedProposal: SyllabusProposal) {
@@ -848,6 +932,9 @@ function ClassCenterDashboard({
     setSyllabusDraft({ ...syllabusDraft, proposal: reviewedProposal })
     setSyllabusReviewForm(null)
     setEditor({ open: true, source: 'syllabus', form })
+    const next = new URLSearchParams(searchParams)
+    next.delete('reviewImport')
+    setSearchParams(next, { replace: true })
   }
 
   function backToColdImport() {
@@ -873,7 +960,10 @@ function ClassCenterDashboard({
         onExit={() => {
           setSyllabusDraft(null)
           setSyllabusReviewForm(null)
-          if (scopedCourseId === 'new') clearImportRoute()
+          const next = new URLSearchParams(searchParams)
+          next.delete('reviewImport')
+          if (scopedCourseId === 'new') next.delete('importFor')
+          setSearchParams(next, { replace: true })
         }}
         onImport={finishImportedClass}
       />
@@ -2602,13 +2692,15 @@ function ClassEditorDialog({
     [form.semester, syllabusProposal],
   )
   const termWasFound = Boolean(syllabusProposal?.text.match(/\b(?:Fall|Spring|Summer|Winter)\s+20\d{2}\b/i))
-  const sourceFieldLabel = (label: string, found: boolean, optional = false) => syllabusProposal
-    ? `${label} · ${optional ? 'optional' : found ? 'found' : 'not found'}`
+  const sourceFieldLabel = (label: string, found: boolean, optional = false, needsReview = false) => syllabusProposal
+    ? `${label} · ${optional ? 'optional' : needsReview ? 'needs a look' : found ? 'found' : 'not found'}`
     : label
+  const sourceMeetingTime = syllabusProposal?.items.find((item) => item.kind === 'logistics' && item.label === 'Meeting time' && item.confidence === 'low')
+  const meetingTimeNeedsReview = Boolean(sourceMeetingTime) || (Boolean(extractedClass?.meetingTime) && !isPlausibleClassMeetingTime(extractedClass?.meetingTime))
   const missingClassFacts = syllabusProposal ? [
     Boolean(extractedClass?.courseCode), Boolean(extractedClass?.courseTitle), termWasFound,
     Boolean(extractedClass?.instructor), Boolean(extractedClass?.meetingDays),
-    Boolean(extractedClass?.meetingTime), Boolean(extractedClass?.location),
+    Boolean(extractedClass?.meetingTime) && !meetingTimeNeedsReview, Boolean(extractedClass?.location),
   ].filter((found) => !found).length : 0
 
   const chooseType = (type: ClassWorkspaceType) => {
@@ -2632,7 +2724,7 @@ function ClassEditorDialog({
               <div className="min-w-0">
                 <p className="font-display text-sm font-extrabold">Here’s what I found</p>
                 <p className="mt-0.5 text-xs font-semibold text-muted-foreground">
-                  {syllabusProposal.sourceName} · {syllabusProposal.items.length} extracted details · {missingClassFacts} class fields not found. Review and complete anything missing before continuing.
+                  {syllabusProposal.sourceName} · {syllabusProposal.items.length} extracted details · {missingClassFacts} class fields need review. Confirm anything ambiguous before continuing.
                 </p>
               </div>
             </section>
@@ -2687,7 +2779,7 @@ function ClassEditorDialog({
             <div className="grid gap-4 md:grid-cols-2">
               <Field label={sourceFieldLabel('Instructor', Boolean(extractedClass?.instructor))}><Input value={form.instructor ?? ''} onChange={(e) => onChange({ instructor: e.target.value })} /></Field>
               <Field label={sourceFieldLabel('Meeting days', Boolean(extractedClass?.meetingDays))}><Input value={form.meetingDays ?? ''} onChange={(e) => onChange({ meetingDays: e.target.value })} onBlur={(e) => onChange({ meetingDays: normalizeMeetingDays(e.target.value) })} placeholder="Tuesday · Thursday" /></Field>
-              <Field label={sourceFieldLabel('Meeting time', Boolean(extractedClass?.meetingTime))}><Input value={form.meetingTime ?? ''} onChange={(e) => onChange({ meetingTime: e.target.value })} placeholder="10:10 AM-11:00 AM" /></Field>
+              <Field label={sourceFieldLabel('Meeting time', Boolean(extractedClass?.meetingTime), false, meetingTimeNeedsReview)}><Input value={form.meetingTime ?? ''} onChange={(e) => onChange({ meetingTime: e.target.value })} placeholder="10:10 AM-11:00 AM" /></Field>
               <Field label={sourceFieldLabel('Location', Boolean(extractedClass?.location))}><Input value={form.location ?? ''} onChange={(e) => onChange({ location: e.target.value })} /></Field>
               <Field label={sourceFieldLabel('Nickname', false, true)}><Input value={form.nickname ?? ''} onChange={(e) => onChange({ nickname: e.target.value })} placeholder="Optional" /></Field>
             </div>

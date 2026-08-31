@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { AlertTriangle, ArrowLeft, FileText, Upload } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -25,48 +25,65 @@ export function SyllabusImportDialog({ open, semester, onOpenChange, onParsed, o
   const [files, setFiles] = useState<File[]>([])
   const [pastedText, setPastedText] = useState('')
   const [parsing, setParsing] = useState(false)
+  const [parsingMessage, setParsingMessage] = useState('Reading syllabus…')
   const [error, setError] = useState<string | null>(null)
   const [diagnosis, setDiagnosis] = useState<SyllabusProposal | null>(null)
 
-  useEffect(() => {
-    if (!open) {
-      setFiles([])
-      setPastedText('')
-      setParsing(false)
-      setError(null)
-      setDiagnosis(null)
-    }
-  }, [open])
+  function resetDraft() {
+    setFiles([])
+    setPastedText('')
+    setParsing(false)
+    setParsingMessage('Reading syllabus…')
+    setError(null)
+    setDiagnosis(null)
+  }
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen) resetDraft()
+    onOpenChange(nextOpen)
+  }
 
   async function readSyllabus() {
     setError(null)
     setDiagnosis(null)
     setParsing(true)
     try {
+      const proposals: SyllabusProposal[] = []
+      if (!pastedText.trim()) {
+        for (const file of files) {
+          proposals.push(await extractSyllabusFile(file, { onProgress: (progress) => setParsingMessage(progress.message) }))
+        }
+      }
       const proposal = pastedText.trim()
         ? parseSyllabusText(pastedText, 'Pasted syllabus')
-        : mergeSyllabusProposals(await Promise.all(files.map(extractSyllabusFile)))
+        : mergeSyllabusProposals(proposals)
       if (proposal.documentKind === 'unrecognized' || proposal.scanDetected) {
         setDiagnosis(proposal)
         return
       }
-      onParsed(proposal, files)
+      const selectedFiles = files
+      resetDraft()
+      onParsed(proposal, selectedFiles)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'This file could not be read.')
     } finally {
       setParsing(false)
+      setParsingMessage('Reading syllabus…')
     }
   }
 
   function continueWithProposal() {
     if (!diagnosis) return
-    onParsed(diagnosis, files)
+    const selectedFiles = files
+    const reviewedDiagnosis = diagnosis
+    resetDraft()
+    onParsed(reviewedDiagnosis, selectedFiles)
   }
 
   const hasSource = files.length > 0 || pastedText.trim().length > 0
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[88vh] max-w-2xl overflow-y-auto !rounded-2xl !border-border !bg-card !shadow-[0_22px_55px_-27px_rgba(0,0,0,0.8)] ![backdrop-filter:none]">
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
@@ -134,7 +151,7 @@ export function SyllabusImportDialog({ open, semester, onOpenChange, onParsed, o
               <p className="text-xs font-semibold text-muted-foreground">Reading happens on this device. Reviewed records can sync after you save if cloud sync is enabled.</p>
               <Button disabled={!hasSource || parsing} onClick={readSyllabus}>
                 <Upload className={cn('size-4', parsing && 'animate-pulse')} />
-                {parsing ? 'Reading syllabus…' : 'Read syllabus'}
+                {parsing ? parsingMessage : 'Read syllabus'}
               </Button>
             </div>
           </div>
@@ -152,8 +169,8 @@ export function SyllabusImportDialog({ open, semester, onOpenChange, onParsed, o
             neutral control. Outline keeps the size and position the rule asks
             for without inventing a colour. */}
         <DialogFooter className="mt-2 flex-col-reverse gap-2 sm:flex-row sm:justify-between">
-          <Button variant="outline" onClick={onManual}>Enter details manually</Button>
-          <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => { resetDraft(); onManual() }}>Enter details manually</Button>
+          <Button variant="ghost" size="sm" onClick={() => handleOpenChange(false)}>Cancel</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -52,7 +52,39 @@ Final Exam Thursday, Dec 10 8a-11a`)
       expect.objectContaining({ kind: 'deadlines', label: 'Forum 1', value: '2026-08-25' }),
       expect.objectContaining({ kind: 'deadlines', label: 'Response Paper 1', value: '2026-09-03' }),
       expect.objectContaining({ kind: 'exams', label: 'Exam 1', value: '2026-09-17' }),
-      expect.objectContaining({ kind: 'exams', value: '2026-12-10' }),
+      expect.objectContaining({ kind: 'exams', label: 'Final Exam', value: '2026-12-10' }),
+    ]))
+  })
+
+  it('sweeps objectives, dated chapter readings, staff, support, and a last-class requirement', () => {
+    const parsed = parseSyllabusText(`Psychology 101.001 Introduction to Psychology
+Fall 2026
+Objectives and Expectations: In completing this course, you will be able to
+• define both the science and the practice of psychology
+• master terms and theories vital to the understanding of
+psychology as a science
+Instructional Assistants: Weekly office hours are below.
+• Fatima: Monday, 10a-11a on Zoom
+• Chaewoo: Friday, 2p-3p at Davie 320
+Research Requirement: Complete the research requirement by the last day of class.
+Accessibility Resources and Services: See https://ars.unc.edu for accommodations.
+Learning Center: See https://learningcenter.unc.edu for support.
+Writing Center: See https://writingcenter.unc.edu for writing support.
+Course Schedule
+Thurs 8/20 The Evolution of Psychology Chapter 1
+Tues 12/1 Treatment of Psychological Disorders Chapter 15`)
+
+    expect(parsed.items.filter((item) => item.kind === 'standards').map((item) => item.label)).toEqual([
+      'define both the science and the practice of psychology',
+      'master terms and theories vital to the understanding of psychology as a science',
+    ])
+    expect(parsed.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'readings', label: expect.stringContaining('Chapter 1'), value: '2026-08-20' }),
+      expect.objectContaining({ kind: 'readings', label: expect.stringContaining('Chapter 15'), value: '2026-12-01' }),
+      expect.objectContaining({ kind: 'deadlines', label: 'Research requirement', value: '2026-12-01', context: 'Course requirement' }),
+      expect.objectContaining({ kind: 'logistics', label: 'Fatima', context: 'Teaching assistant' }),
+      expect.objectContaining({ kind: 'logistics', label: 'Learning Center', context: 'Support resource' }),
+      expect.objectContaining({ kind: 'logistics', label: 'Writing Center', context: 'Support resource' }),
     ]))
   })
 
@@ -63,7 +95,8 @@ Hanes Art Center Rm 121
 Instructor: Ndidi Adeyanju, PhD
 Final Exam Thursday, Dec 10 8a-11a at the same location as class meetings.`)
     const logistics = parsed.items.filter((item) => item.kind === 'logistics').map((item) => item.label)
-    expect(logistics).toEqual(expect.arrayContaining(['TR 8am-9:15pm', 'Hanes Art Center Rm 121', 'Instructor: Ndidi Adeyanju, PhD']))
+    expect(logistics).toEqual(expect.arrayContaining(['Hanes Art Center Rm 121', 'Instructor: Ndidi Adeyanju, PhD']))
+    expect(logistics).not.toContain('TR 8am-9:15pm')
     expect(logistics).not.toContain(expect.stringContaining('same location as class meetings'))
   })
 
@@ -75,6 +108,10 @@ Problem sets — 15%`, 'Course overview.txt')
     const schedule = parseSyllabusText(`CHEM 262 — Organic Chemistry II
 Midterm Exam — October 14, 2026
 Week 1: Aromatic substitution`, 'Course schedule.txt')
+    overview.unreadablePageCount = 1
+    overview.pageCount = 3
+    schedule.unreadablePageCount = 0
+    schedule.pageCount = 2
 
     const merged = mergeSyllabusProposals([overview, schedule])
 
@@ -85,6 +122,8 @@ Week 1: Aromatic substitution`, 'Course schedule.txt')
       expect.objectContaining({ kind: 'exams', evidence: expect.objectContaining({ sourceName: 'Course schedule.txt' }) }),
     ]))
     expect(merged.searched.exams).toContain('2 files')
+    expect(merged.unreadablePageCount).toBe(1)
+    expect(merged.pageCount).toBe(5)
   })
 
   it('recognizes written registrar schedules as class logistics', () => {
@@ -161,15 +200,12 @@ Review for Final Exam
 FINAL EXAM Fri. 12/11 @ 4:00
 in our classroom`)
 
-    expect(parsed.items.filter((item) => item.kind === 'standards').map((item) => item.label)).toEqual(expect.arrayContaining([
+    expect(parsed.items.filter((item) => item.kind === 'standards').map((item) => item.label)).toEqual([
       'Demonstrate knowledge of the global diversity of cultural understandings about health, illness, the body, and systems of healing.',
       'Explain some of the ways biomedicine is shaped by Western cultural ideas and the specific contexts in which it is practiced.',
       'Explain why practitioners of health development and clinical medicine often encounter clashes between their cultural knowledge and the cultural knowledge of those they seek to help and describe anthropological approaches to addressing such challenges.',
-      'Classify and analyze diverse historical, social, and political exchanges that shape nations, regions, and cultural traditions of the world.',
-      'Recognize and use one or more approach(es) to developing and validating knowledge of the unfamiliar world.',
-      'Apply critical insights to understand patterns of experience and belief.',
-    ]))
-    expect(parsed.items.filter((item) => item.kind === 'standards')).toHaveLength(12)
+    ])
+    expect(parsed.items.filter((item) => item.kind === 'standards')).toHaveLength(3)
     expect(parsed.items.filter((item) => item.kind === 'weights').map((item) => item.value)).toEqual(['3%', '10%', '9%', '24%', '26%', '28%'])
     expect(weightGap(parsed.items)).toBe(0)
     expect(parsed.items).toEqual(expect.arrayContaining([
@@ -208,6 +244,152 @@ Tuesday Exam #1`)
 
     expect(parsed.items).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'exams', label: 'Exam 1', value: '2026-09-15' }),
+    ]))
+  })
+
+  it('recognizes a standalone goals heading and stops before course structure', () => {
+    const parsed = parseSyllabusText(`BIOL 103 — How Cells Function
+Fall 2026
+Course Description & Learning
+Goals
+By the end of this course, you should be able to:
+• What limits should scientists keep in mind?
+• Relate essential functions of cells to their cellular components.
+• Connect molecular mechanisms to cellular functions.
+Course Structure
+• Submit a worksheet before every class.`)
+
+    expect(parsed.items.filter((item) => item.kind === 'standards').map((item) => item.label)).toEqual([
+      'Relate essential functions of cells to their cellular components.',
+      'Connect molecular mechanisms to cellular functions.',
+    ])
+  })
+
+  it('turns a week-range schedule into dated scope and assigned readings', () => {
+    const parsed = parseSyllabusText(`GEOG 121 — Geographies of Globalization
+Fall 2026
+Course Schedule
+Week 1. What Is This Thing We Call the Globe?
+Aug 17-21
+Manfred Steger, “What is globalization?” in Globalization: A Very Short Introduction (2023), 1–11.
+Doreen Massey, “A Global Sense of Place,” in Space, Place, and Gender (1994), 146–156.
+Week 2. Visualizing the Globe: Space, Scale, Scape
+Aug 24-28
+Arjun Appadurai, “Disjuncture and Difference,” in Modernity At Large (1996), 27–47.`)
+
+    expect(parsed.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'units', label: 'What Is This Thing We Call the Globe?', value: '2026-08-17', context: 'Week 1' }),
+      expect.objectContaining({ kind: 'readings', label: expect.stringContaining('Steger'), value: '2026-08-17', context: 'Week 1' }),
+      expect.objectContaining({ kind: 'readings', label: expect.stringContaining('Massey'), value: '2026-08-17', context: 'Week 1' }),
+      expect.objectContaining({ kind: 'units', label: 'Visualizing the Globe: Space, Scale, Scape', value: '2026-08-24', context: 'Week 2' }),
+    ]))
+  })
+
+  it('uses a 100-point grading table as percentages without normalizing other totals', () => {
+    const parsed = parseSyllabusText(`GEOG 121 — Geographies of Globalization
+Fall 2026
+Grade Breakdown and scale
+Assignment Frequency/Timing Total Points
+Commonplace Book Entries 10 entries 40 pts (4 ea.)
+Group Presentations Twice (Weeks 7 & 14) 20 pts (10 ea.)
+Midterm Exam Oct. 5 (In-class) 20 pts
+Final Exam Dec. 4 @ 12:00 PM 20 pts`)
+
+    expect(parsed.items.filter((item) => item.kind === 'weights').map((item) => [item.label, item.value])).toEqual([
+      ['Commonplace Book Entries', '40%'],
+      ['Group Presentations', '20%'],
+      ['Midterm Exam', '20%'],
+      ['Final Exam', '20%'],
+    ])
+    expect(weightGap(parsed.items)).toBe(0)
+  })
+
+  it('keeps only top-level grade weights, not flexibility drops or nested exam shares', () => {
+    const parsed = parseSyllabusText(`BIOL 103 — How Cells Function
+Final course grades are made of 2 components:
+1. Participation (20% of grade).
+Flexibility: 15% of possible points will be dropped.
+2. Unit Exams (80% of course grade).
+The first exam is worth 30% of your exam category and the second is worth 50%.
+You are ultimately 100% responsible for your work.`)
+
+    expect(parsed.items.filter((item) => item.kind === 'weights').map((item) => [item.label, item.value])).toEqual([
+      ['Participation', '20%'],
+      ['Unit Exams', '80%'],
+    ])
+  })
+
+  it('reconstructs a flattened two-column 100-point grading table', () => {
+    const parsed = parseSyllabusText(`ENGL 105 — Introduction to Composition and Rhetoric
+Evaluation and Grading
+Assignment
+Total
+Unit 1 Project (Social Sciences)
+10
+Unit 2 Project (Natural Sciences)
+15
+Unit 3 Project (Humanities)
+20
+Feeder assignments
+30 (5 points each)
+Attendance and Participation
+25
+100 points`)
+
+    expect(parsed.items.filter((item) => item.kind === 'weights').map((item) => [item.label, item.value])).toEqual([
+      ['Unit 1 Project (Social Sciences)', '10%'],
+      ['Unit 2 Project (Natural Sciences)', '15%'],
+      ['Unit 3 Project (Humanities)', '20%'],
+      ['Feeder assignments', '30%'],
+      ['Attendance and Participation', '25%'],
+    ])
+  })
+
+  it('captures every actionable numeric date in prose without treating publication years as deadlines', () => {
+    const parsed = parseSyllabusText(`PSYC 101 — Introduction to Psychology
+Fall 2026
+Response papers are due 9/3 and 10/8.
+Research participation must be completed by 12/1.
+Read Smith. 2018. “A history of psychology.”`)
+
+    expect(parsed.items.filter((item) => item.kind === 'deadlines').map((item) => item.value)).toEqual([
+      '2026-09-03',
+      '2026-10-08',
+      '2026-12-01',
+    ])
+  })
+
+  it('preserves course context, materials, and communication as source-backed class context', () => {
+    const parsed = parseSyllabusText(`ENGL 105 — Introduction to Composition and Rhetoric
+Course Description
+This course introduces academic writing across the natural sciences, social sciences, and humanities.
+Required Materials
+Tar Heel Writing Guide, digital edition.
+Communication
+Check Canvas announcements for schedule changes.`)
+
+    expect(parsed.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'logistics', label: 'Course description', context: 'Course context' }),
+      expect.objectContaining({ kind: 'logistics', label: 'Required materials', context: 'Course material' }),
+      expect.objectContaining({ kind: 'logistics', label: 'Communication', context: 'Course operations' }),
+    ]))
+  })
+
+  it('captures named instructors and teaching assistants with their contact evidence', () => {
+    const parsed = parseSyllabusText(`GEOG 121 — Geographies of Globalization
+Teaching Assistants
+Victoria Ting · vting@unc.edu
+Office Hours: Coates 104 on Mon 10:30–11:30.
+Instructor
+Dr. Adrian Drummond-Cole · adriandc@unc.edu
+Office Hours: Carolina Hall 216 on Tue 11:15–12:15.
+Sophia Alhadeff · sophalh@unc.edu
+Office Hours: Davis Library via Zoom on Wed 10:30–11:30.`)
+
+    expect(parsed.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'logistics', label: 'Victoria Ting', value: expect.stringContaining('vting@unc.edu'), context: 'Teaching assistant' }),
+      expect.objectContaining({ kind: 'logistics', label: 'Instructor: Dr. Adrian Drummond-Cole', value: expect.stringContaining('adriandc@unc.edu'), context: 'Professor' }),
+      expect.objectContaining({ kind: 'logistics', label: 'Sophia Alhadeff', value: expect.stringContaining('sophalh@unc.edu'), context: 'Teaching assistant' }),
     ]))
   })
 })

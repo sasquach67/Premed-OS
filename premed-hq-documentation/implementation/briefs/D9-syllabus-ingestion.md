@@ -55,6 +55,8 @@
 
 ### 4b · Images / scanned PDFs
 
+**Outcome (Aug. 30, 2026):** this original deferral was superseded by Andy's explicit beta-testing request after real scanned schedules proved incomplete. The shipped follow-up uses a self-hosted browser worker and English model, recognizes only image-only PDF pages, keeps page pixels and OCR text on the device, and still preserves paste/manual review paths when recognition is incomplete.
+
 **A scanned syllabus has no text layer**, and a PDF that extracts to near-nothing is almost always a scan.
 
 **Detect it and say so** rather than reporting "nothing parsed": *"This looks like a scan — the text can't be read directly."* Then offer the two paths that work: **paste the text**, or **manual entry with the file open beside it.**

@@ -16,6 +16,30 @@ export interface ExtractedDocument {
   sourceKind: DocumentSourceKind
   /** An image, or a PDF with no text layer — the bytes are a picture, not text. */
   scanDetected: boolean
+  /** PDF pages with no readable text layer. A mixed PDF can otherwise look
+   * complete even when its schedule pages are scans. */
+  unreadablePageCount?: number
+  /** Pages that had no text layer before local OCR recovery. */
+  imageOnlyPageCount?: number
+  /** Image-only pages recovered with the on-device OCR worker. */
+  ocrPageCount?: number
+  pageCount?: number
+}
+
+export interface DocumentExtractionProgress {
+  phase: 'extracting' | 'ocr'
+  page: number
+  pageCount: number
+  progress: number
+  message: string
+}
+
+export interface DocumentExtractionOptions {
+  /** Syllabus import opts in; transcript/material readers keep their existing
+   * fast text-layer-only behavior. */
+  recoverScannedPdfPages?: boolean
+  signal?: AbortSignal
+  onProgress?: (progress: DocumentExtractionProgress) => void
 }
 
 export interface PdfTextItem {
@@ -23,6 +47,21 @@ export interface PdfTextItem {
   hasEOL?: boolean
   /** [a, b, c, d, x, y] — index 5 is the baseline y in PDF user space. */
   transform?: number[]
+}
+
+/** Keep malformed or accidentally enormous course files from monopolizing the
+ * browser. These bounds are intentionally generous for syllabi while still
+ * putting a deterministic ceiling on allocation and page iteration. */
+export const MAX_DOCUMENT_BYTES = 50 * 1024 * 1024
+export const MAX_PDF_PAGES = 250
+
+export function validateDocumentBounds(fileSize: number, pageCount?: number) {
+  if (fileSize > MAX_DOCUMENT_BYTES) {
+    throw new UnsupportedDocumentError('This file is larger than 50 MB. Choose a smaller copy or paste the syllabus text.')
+  }
+  if (pageCount != null && pageCount > MAX_PDF_PAGES) {
+    throw new UnsupportedDocumentError(`This PDF has more than ${MAX_PDF_PAGES} pages. Choose the syllabus pages or paste their text.`)
+  }
 }
 
 /**
@@ -41,22 +80,23 @@ export interface PdfTextItem {
  */
 export function pdfTextToLines(items: PdfTextItem[], tolerance = 2): string {
   const lines: string[] = []
-  let current: string[] = []
+  let current: Array<{ text: string; x: number }> = []
   let currentY: number | undefined
 
   const flush = () => {
-    const text = current.join(' ').replace(/\s+/g, ' ').trim()
+    const text = current.sort((left, right) => left.x - right.x).map((item) => item.text).join(' ').replace(/\s+/g, ' ').trim()
     if (text) lines.push(text)
     current = []
   }
 
   for (const item of items) {
     const str = typeof item.str === 'string' ? item.str : ''
+    const x = Array.isArray(item.transform) ? item.transform[4] : current.length
     const y = Array.isArray(item.transform) ? item.transform[5] : undefined
 
     if (currentY != null && y != null && Math.abs(y - currentY) > tolerance) flush()
     if (y != null) currentY = y
-    if (str) current.push(str)
+    if (str) current.push({ text: str, x: typeof x === 'number' ? x : current.length })
     if (item.hasEOL) { flush(); currentY = undefined }
   }
   flush()
@@ -71,21 +111,49 @@ export class UnsupportedDocumentError extends Error {
   }
 }
 
-export async function extractDocumentText(file: File): Promise<ExtractedDocument> {
+type SniffedDocumentKind = 'pdf' | 'docx' | 'image' | 'text' | 'unsupported'
+
+/** Trust the bytes before the filename. Canvas and browser downloads can carry
+ * Word OOXML bytes under a `.pdf` name; routing those bytes to pdf.js produces
+ * an opaque "Invalid PDF structure" failure even though Mammoth can read them. */
+export async function sniffDocumentKind(file: File): Promise<SniffedDocumentKind> {
   const name = file.name || 'Document'
   const type = (file.type || '').toLowerCase()
+  const signature = new Uint8Array(await file.slice(0, 8).arrayBuffer())
+  const startsWith = (...bytes: number[]) => bytes.every((byte, index) => signature[index] === byte)
+
+  if (startsWith(0x25, 0x50, 0x44, 0x46)) return 'pdf' // %PDF
+  if (startsWith(0x50, 0x4b, 0x03, 0x04) || startsWith(0x50, 0x4b, 0x05, 0x06) || startsWith(0x50, 0x4b, 0x07, 0x08)) return 'docx'
+  if (type.startsWith('image/')) return 'image'
+  if (type.startsWith('text/') || /\.(txt|csv|tsv|md)$/i.test(name)) return 'text'
+  if (/wordprocessingml|\.docx$/i.test(type || name)) return 'docx'
+  if (type === 'application/pdf' || /\.pdf$/i.test(name)) return 'pdf'
+  return 'unsupported'
+}
+
+export async function extractDocumentText(file: File, options: DocumentExtractionOptions = {}): Promise<ExtractedDocument> {
+  validateDocumentBounds(file.size)
+  const kind = await sniffDocumentKind(file)
 
   // An image has no text layer we can read locally; report it rather than
   // returning an empty parse that looks like "nothing was in your transcript".
-  if (type.startsWith('image/')) return { text: '', sourceKind: 'image', scanDetected: true }
+  if (kind === 'image') return { text: '', sourceKind: 'image', scanDetected: true }
 
-  if (/wordprocessingml|\.docx$/i.test(type || name)) {
+  if (kind === 'docx') {
     const mammoth = await import('mammoth')
-    const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })
+    const arrayBuffer = await file.arrayBuffer()
+    // Mammoth's browser build reads `arrayBuffer`; its Node build reads
+    // `buffer`. Supplying the same bytes under both keys keeps local tests,
+    // SSR-like runtimes, and the Vite browser bundle on one extraction path.
+    // The inactive build ignores the key it does not understand.
+    const result = await mammoth.extractRawText({
+      arrayBuffer,
+      buffer: new Uint8Array(arrayBuffer),
+    } as Parameters<typeof mammoth.extractRawText>[0])
     return { text: result.value, sourceKind: 'docx', scanDetected: !result.value.trim() }
   }
 
-  if (type === 'application/pdf' || /\.pdf$/i.test(name)) {
+  if (kind === 'pdf') {
     const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
     // ⚠️ Without this, `getDocument` throws `No "GlobalWorkerOptions.workerSrc"
     // specified` in a real browser — it does NOT fall back to a same-thread
@@ -97,16 +165,63 @@ export async function extractDocumentText(file: File): Promise<ExtractedDocument
       pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
     }
     const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise
+    validateDocumentBounds(file.size, pdf.numPages)
     const pages: string[] = []
+    const pageHandles: Array<Awaited<ReturnType<typeof pdf.getPage>> | undefined> = []
+    let unreadablePageCount = 0
+    let imageOnlyPageCount = 0
+    let ocrPageCount = 0
     for (let number = 1; number <= pdf.numPages; number += 1) {
-      const content = await (await pdf.getPage(number)).getTextContent()
-      pages.push(pdfTextToLines(content.items as PdfTextItem[]))
+      if (options.signal?.aborted) throw new DOMException('Syllabus reading was cancelled.', 'AbortError')
+      const page = await pdf.getPage(number)
+      const content = await page.getTextContent()
+      const pageText = pdfTextToLines(content.items as PdfTextItem[])
+      if (!pageText.replace(/\s/g, '')) {
+        unreadablePageCount += 1
+        imageOnlyPageCount += 1
+        pageHandles[number - 1] = page
+      }
+      pages.push(pageText)
+      options.onProgress?.({ phase: 'extracting', page: number, pageCount: pdf.numPages, progress: number / pdf.numPages, message: `Reading page ${number} of ${pdf.numPages}` })
+    }
+
+    if (options.recoverScannedPdfPages && unreadablePageCount) {
+      const { createLocalOcrSession } = await import('@/lib/academics/documentOcr')
+      let activePage = 0
+      const ocr = await createLocalOcrSession((progress) => {
+        options.onProgress?.({
+          phase: 'ocr', page: activePage, pageCount: pdf.numPages,
+          progress: progress.progress,
+          message: `Reading scanned page ${activePage} of ${pdf.numPages}`,
+        })
+      }, options.signal)
+      try {
+        for (let index = 0; index < pageHandles.length; index += 1) {
+          const page = pageHandles[index]
+          if (!page) continue
+          activePage = index + 1
+          try {
+            const recovered = await ocr.recognizePdfPage(page)
+            if (recovered.replace(/\s/g, '')) {
+              pages[index] = recovered
+              unreadablePageCount -= 1
+              ocrPageCount += 1
+            }
+          } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') throw error
+            // Partial success is intentional. The review UI names any pages
+            // that still could not be read and preserves manual correction.
+          }
+        }
+      } finally {
+        await ocr.terminate()
+      }
     }
     const text = pages.join('\n')
-    return { text, sourceKind: 'pdf', scanDetected: !text.trim() }
+    return { text, sourceKind: 'pdf', scanDetected: !text.trim(), unreadablePageCount, imageOnlyPageCount, ocrPageCount, pageCount: pdf.numPages }
   }
 
-  if (type.startsWith('text/') || /\.(txt|csv|tsv|md)$/i.test(name)) {
+  if (kind === 'text') {
     const text = await file.text()
     return { text, sourceKind: 'text', scanDetected: false }
   }

@@ -10,9 +10,8 @@
  * Pattern: components/academics/ExamPrepMode.tsx, the same temporary mode.
  */
 import { useMemo, useState } from 'react'
-import { ArrowLeft, CheckCircle2, FileText, Upload, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, FileText, Upload, X } from 'lucide-react'
 import { PageHeader } from '@/components/common/PageHeader'
-import { StatStrip } from '@/components/common/StatStrip'
 import { MascotNote } from '@/components/common/MascotNote'
 import { Collapsible } from '@/components/common/Collapsible'
 import { AnimatedFileUpload } from '@/components/motion/AnimatedFileUpload'
@@ -34,14 +33,21 @@ import type { ClassAssignment } from '@/lib/types'
 const REVIEW_ORDER: SyllabusKind[] = ['identity', 'standards', 'exams', 'weights', 'units', 'readings', 'deadlines', 'policies', 'logistics']
 const GROUP_LABEL: Record<SyllabusKind, string> = {
   identity: 'Class identity', standards: 'Learning standards', exams: 'Exam dates', weights: 'Grade weights', units: 'Schedule scope', readings: 'Assigned readings',
-  deadlines: 'Deadlines', policies: 'Policies', logistics: 'Meeting details',
+  deadlines: 'Deadlines', policies: 'Policies & boundaries', logistics: 'People, meetings & support',
 }
 const STRUCTURE_LABEL: Record<StructuralSignal, string> = {
   standards: 'Stated learning standards or objectives', weights: 'Grade weights that sum to 100%', exams: 'Exam or midterm dates',
   units: 'A week-by-week or unit schedule', logistics: 'An instructor and office-hours block',
 }
 const APPLY_ROWS: Array<[SyllabusKind, string]> = [
-  ['standards', 'learning standards'], ['units', 'schedule scope'], ['readings', 'assigned readings'], ['deadlines', 'deadlines'], ['exams', 'exam dates'], ['weights', 'grade categories'],
+  ['identity', 'class identity'], ['standards', 'learning standards'], ['units', 'scheduled class scope'],
+  ['readings', 'dated reading tasks'], ['deadlines', 'deadlines'], ['exams', 'exam dates'],
+  ['weights', 'grade categories'], ['policies', 'policy & boundary records'], ['logistics', 'people, meetings & course context'],
+]
+const APPLY_GROUPS: Array<{ label: string; kinds: SyllabusKind[] }> = [
+  { label: 'Course setup', kinds: ['identity', 'weights', 'policies', 'logistics'] },
+  { label: 'Study map', kinds: ['standards', 'units', 'readings'] },
+  { label: 'Calendar', kinds: ['deadlines', 'exams'] },
 ]
 
 export type ReimportDecision = { row: ReimportRow; action: ReimportRow['defaultAction'] }
@@ -79,6 +85,7 @@ export function SyllabusImportMode({
   const [pastedText, setPastedText] = useState('')
   const [proposal, setProposal] = useState<SyllabusProposal | null>(initialProposal ?? null)
   const [parsing, setParsing] = useState(false)
+  const [parsingMessage, setParsingMessage] = useState('Reading syllabus…')
   const [error, setError] = useState<string | null>(null)
   const [reviewAnyway, setReviewAnyway] = useState(false)
   const [applying, setApplying] = useState(false)
@@ -92,9 +99,15 @@ export function SyllabusImportMode({
   async function parse() {
     setError(null); setParsing(true)
     try {
+      const proposals: SyllabusProposal[] = []
+      if (!pastedText.trim()) {
+        for (const file of files) {
+          proposals.push(await extractSyllabusFile(file, { onProgress: (progress) => setParsingMessage(progress.message) }))
+        }
+      }
       const next = pastedText.trim()
         ? parseSyllabusText(pastedText, 'Pasted syllabus')
-        : mergeSyllabusProposals(await Promise.all(files.map(extractSyllabusFile)))
+        : mergeSyllabusProposals(proposals)
       setProposal(next)
       setReviewAnyway(false)
       if (reimport && current) {
@@ -106,7 +119,10 @@ export function SyllabusImportMode({
       if (identity && !courseCode) { setCourseCode(identity.label); setCourseTitle((title) => identity.value || title) }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'This file could not be read.')
-    } finally { setParsing(false) }
+    } finally {
+      setParsing(false)
+      setParsingMessage('Reading syllabus…')
+    }
   }
 
   function patchItem(id: string, patch: Partial<SyllabusProposal['items'][number]>) {
@@ -139,14 +155,16 @@ export function SyllabusImportMode({
 
   const heading = misfiled ? 'That reads like course material'
     : reimport && proposal ? `${reimportRows.filter((row) => row.status !== 'unchanged').length} things changed`
-    : proposal ? 'Here’s what I found'
+    : proposal ? 'Review syllabus'
     : scopedCourse ? `Add a syllabus to ${scopedCourse.code}` : 'Add a class from its syllabus'
 
   const subline = misfiled ? scopedCourse
     ? 'I read the whole thing — there’s just no syllabus in it. You can file it in this class’s Materials without changing class records.'
     : 'I read the whole thing — there’s just no syllabus in it. Nothing will be saved until you choose where it belongs.'
     : reimport && proposal ? 'Nothing you’ve already confirmed will be touched unless you accept it here.'
-    : proposal ? 'Check it over and fix anything wrong. Nothing is written to your account until you press Add.'
+    : proposal ? (flaggedCount
+      ? `${flaggedCount} ${flaggedCount === 1 ? 'item needs' : 'items need'} your review; everything else is collapsed.`
+      : 'Open any section to verify it against the source.')
     : 'Drop the file and HQ pulls out your units, exam dates, deadlines, and grade weights — then you confirm all of it before anything is saved.'
 
   const bannerMetrics = proposal ? (reimport ? [
@@ -200,7 +218,6 @@ export function SyllabusImportMode({
         scene="academics"
         title={heading}
         subtitle={subline}
-        actions={bannerMetrics.length ? <StatStrip variant="banner" metrics={bannerMetrics} /> : undefined}
       >
         <div className="flex flex-wrap items-center gap-3 p-2">
           <Button variant="ghost" className="text-white/90 hover:bg-white/10 hover:text-white" onClick={back}>
@@ -209,6 +226,16 @@ export function SyllabusImportMode({
           <span className="glass-surface glass-surface--dark rounded-full px-3 py-1 font-display text-[10px] font-extrabold uppercase tracking-[0.1em] text-white/70">
             {modeTag}
           </span>
+          {proposal && bannerMetrics.length > 0 && (
+            <dl className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1 px-2 text-white/75">
+              {bannerMetrics.map((metric) => (
+                <div key={metric.id} className="flex items-baseline gap-1.5">
+                  <dd className="font-display text-sm font-extrabold text-white">{metric.value}</dd>
+                  <dt className="text-[10px] font-extrabold uppercase tracking-[0.08em]">{metric.label}</dt>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
       </PageHeader>
 
@@ -216,12 +243,12 @@ export function SyllabusImportMode({
 
       <div className="mx-auto max-w-6xl px-4 pb-12 sm:px-6 lg:px-8">
         {!proposal ? <UploadState
-          files={files} pastedText={pastedText} parsing={parsing} error={error}
+          files={files} pastedText={pastedText} parsing={parsing} parsingMessage={parsingMessage} error={error}
           onFiles={(next) => { setFiles(next); setError(null) }}
           onPaste={setPastedText} onParse={parse}
         /> : (
-          <div className="grid items-start gap-4 lg:grid-cols-[1fr_372px]">
-            <div className="flex flex-col gap-4">
+          <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_316px]">
+            <div className="min-w-0 flex flex-col gap-4">
               {misfiled ? (
                 <MisfiledCard
                   proposal={proposal}
@@ -242,19 +269,26 @@ export function SyllabusImportMode({
                       </p>
                     </section>
                   )}
+                  {!proposal.scanDetected && Boolean(proposal.ocrPageCount) && (
+                    <section className="rounded-2xl border border-primary/30 bg-primary/8 px-4 py-3" role="status">
+                      <p className="text-sm font-semibold text-foreground">
+                        Read {proposal.ocrPageCount} scanned {proposal.ocrPageCount === 1 ? 'page' : 'pages'} on this device.
+                      </p>
+                    </section>
+                  )}
+                  {!proposal.scanDetected && Boolean(proposal.unreadablePageCount) && (
+                    <section className="rounded-2xl border border-warning/40 bg-warning/8 p-4" role="status">
+                      <h2 className="font-display text-base font-extrabold">Some pages still need a look</h2>
+                      <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                        I read the text on {Math.max(0, (proposal.pageCount ?? 0) - (proposal.unreadablePageCount ?? 0))} of {proposal.pageCount ?? 'the'} pages.
+                        {' '}{proposal.unreadablePageCount} {proposal.unreadablePageCount === 1 ? 'page is' : 'pages are'} image-only, so its schedule or tables may be missing below. Nothing is treated as complete until you review it.
+                      </p>
+                    </section>
+                  )}
                   {reimport ? (
                     <ReimportDiff rows={reimportRows} actions={reimportActions} onAction={(row, action) => setReimportActions((state) => ({ ...state, [reimportActionKey(row)]: action }))} />
                   ) : (
                     <>
-                      {!scopedCourse && initialCourse && (
-                        <section className="rounded-2xl border border-border bg-card p-4 shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]" aria-label="Staged class">
-                          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary">New class · not saved</p>
-                          <h2 className="mt-1 font-display text-base font-extrabold">{courseCode} · {courseTitle}</h2>
-                          <p className="mt-1 text-xs font-semibold text-muted-foreground">
-                            {[initialCourse.semester, initialCourse.type ? initialCourse.type[0].toUpperCase() + initialCourse.type.slice(1) : ''].filter(Boolean).join(' · ')}
-                          </p>
-                        </section>
-                      )}
                       {!scopedCourse && !initialCourse && (
                         <section className="rounded-2xl border border-border bg-card p-4 shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]">
                           <h2 className="font-display text-base font-extrabold">Which class is this?</h2>
@@ -267,24 +301,62 @@ export function SyllabusImportMode({
                           </div>
                         </section>
                       )}
-                      {scopedCourse && (
-                        <p className="syllabus-import-inner rounded-2xl border border-border p-3 text-sm font-bold">
-                          Importing into <span className="text-primary">{scopedCourse.code} · {scopedCourse.title}</span>
-                        </p>
-                      )}
-                      {grouped.map(([kind, items]) => (
-                        <ReviewGroup
-                          key={kind} kind={kind} items={items}
-                          searched={proposal.searched[kind]}
-                          onPatch={patchItem} onRemove={removeItem} onAddManual={() => addManual(kind)}
-                        />
-                      ))}
+                      <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_18px_44px_-28px_rgba(0,0,0,0.72)]" aria-label="Extracted syllabus details">
+                        <div className="border-b border-border bg-muted/55 px-4 py-3.5 sm:px-5">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <p className="font-display text-base font-extrabold">
+                                  {scopedCourse ? `${scopedCourse.code} · ${scopedCourse.title}` : `${courseCode} · ${courseTitle}`}
+                                </p>
+                                {!scopedCourse && <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-primary">New class · not saved</span>}
+                              </div>
+                              <p className="mt-1 truncate text-xs font-semibold text-muted-foreground">
+                                <FileText className="mr-1 inline size-3.5 text-primary" aria-hidden="true" />
+                                {proposal.sourceName}
+                                {!scopedCourse && initialCourse && <span> · {initialCourse.semester} · {initialCourse.type ? initialCourse.type[0].toUpperCase() + initialCourse.type.slice(1) : ''}</span>}
+                              </p>
+                            </div>
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-extrabold text-success">
+                              <CheckCircle2 className="size-3.5" /> Source linked
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="lg:grid lg:grid-cols-[196px_minmax(0,1fr)]">
+                          <nav className="flex gap-1 overflow-x-auto border-b border-border bg-background/55 p-2 lg:block lg:overflow-visible lg:border-b-0 lg:border-r lg:p-3" aria-label="Extraction sections">
+                            <p className="hidden px-2 pb-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground lg:block">Review sections</p>
+                            {grouped.map(([kind, items]) => {
+                              const flagged = items.filter((item) => item.confidence === 'low').length
+                              return (
+                                <a key={kind} href={`#syllabus-group-${kind}`} className="group flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:w-full">
+                                  <span className={cn('size-2 shrink-0 rounded-full', flagged ? 'bg-warning' : items.length ? 'bg-success' : 'border border-border bg-background')} aria-hidden="true" />
+                                  <span className="whitespace-nowrap lg:min-w-0 lg:flex-1 lg:truncate">{GROUP_LABEL[kind]}</span>
+                                  <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] tabular-nums', flagged ? 'bg-warning/15 text-warning' : 'bg-muted text-muted-foreground')}>{items.length}</span>
+                                </a>
+                              )
+                            })}
+                          </nav>
+                          <div className="min-w-0">
+                            <div className="border-b border-border px-4 py-3 sm:px-5">
+                              <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Extracted records</p>
+                            </div>
+                            {grouped.map(([kind, items]) => (
+                              <ReviewGroup
+                                key={kind} kind={kind} items={items}
+                                searched={proposal.searched[kind]}
+                                onPatch={patchItem} onRemove={removeItem} onAddManual={() => addManual(kind)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </section>
                       {gap !== null && gap !== 0 && (
                         <p className="rounded-2xl border border-warning/40 bg-warning/10 p-3 text-sm font-bold">
                           Grade weights are {Math.abs(gap)}% {gap > 0 ? 'short of' : 'over'} 100%. Nothing was normalized.
                         </p>
                       )}
-                      <Collapsible title="Optional shared course structure" badge={<span className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground">Private by default</span>}>
+                      <Collapsible title="Advanced: optional course structure sharing" badge={<span className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground">Private by default</span>}>
                         <SharedSyllabusStructurePanel
                           proposal={proposal}
                           courseCode={scopedCourse?.code || courseCode}
@@ -315,8 +387,8 @@ export function SyllabusImportMode({
 }
 
 /** Upload — dropzone dominant in a narrow reading column. Paste is an equal path. */
-function UploadState({ files, pastedText, parsing, error, onFiles, onPaste, onParse }: {
-  files: File[]; pastedText: string; parsing: boolean; error: string | null
+function UploadState({ files, pastedText, parsing, parsingMessage, error, onFiles, onPaste, onParse }: {
+  files: File[]; pastedText: string; parsing: boolean; parsingMessage: string; error: string | null
   onFiles: (files: File[]) => void; onPaste: (text: string) => void; onParse: () => void
 }) {
   return (
@@ -337,7 +409,7 @@ function UploadState({ files, pastedText, parsing, error, onFiles, onPaste, onPa
           Nothing is saved until you review it. Saved records can sync when cloud sync is enabled.
         </MascotNote>
         <Button size="lg" disabled={(!files.length && !pastedText.trim()) || parsing} onClick={onParse}>
-          <Upload className="size-4" /> {parsing ? 'Reading week structure…' : 'Read syllabus'}
+          <Upload className="size-4" /> {parsing ? parsingMessage : 'Read syllabus'}
         </Button>
       </div>
     </div>
@@ -352,27 +424,42 @@ function ReviewGroup({ kind, items, searched, onPatch, onRemove, onAddManual }: 
   onAddManual: () => void
 }) {
   const flagged = items.some((item) => item.confidence === 'low')
+  // Keep clean groups compact so the review stays scannable at desktop and
+  // narrow widths. Only rows that need a decision claim vertical attention.
   const [open, setOpen] = useState(flagged)
+  const needsValue = ['identity', 'exams', 'weights', 'units', 'readings', 'deadlines'].includes(kind)
+  const flaggedCount = items.filter((item) => item.confidence === 'low').length
   return (
-    <section className={cn('overflow-hidden rounded-2xl border bg-card shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]', flagged ? 'border-warning/45' : 'border-border')}>
+    <section id={`syllabus-group-${kind}`} className={cn('relative scroll-mt-6 border-b border-border last:border-b-0', flagged && 'bg-warning/[0.035]')}>
+      <span className={cn('absolute inset-y-0 left-0 w-[3px]', flagged ? 'bg-warning' : items.length ? 'bg-success/65' : 'bg-border')} aria-hidden="true" />
       <button type="button" onClick={() => setOpen((state) => !state)} aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        <span>
-          <span className="block font-display text-sm font-extrabold">{GROUP_LABEL[kind]}</span>
-          <span className="mt-0.5 block text-xs font-semibold text-muted-foreground">
-            {items.length ? `${items.length} found${flagged ? ` · ${items.filter((i) => i.confidence === 'low').length} need a look` : ' · all confident'}` : searched}
+        className="flex w-full items-center justify-between gap-3 py-3.5 pl-5 pr-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+        <span className="min-w-0">
+          <span className="flex items-center gap-2 font-display text-sm font-extrabold">
+            {GROUP_LABEL[kind]}
+          </span>
+          <span className="mt-0.5 block truncate text-xs font-semibold text-muted-foreground">
+            {items.length ? (flagged ? `${flaggedCount} ${flaggedCount === 1 ? 'item needs' : 'items need'} a look` : collapsedSummary(kind, items, searched)) : searched}
           </span>
         </span>
-        {flagged && <span className="rounded-full bg-warning/18 px-2 py-0.5 font-display text-[10px] font-extrabold uppercase tracking-wide text-warning">Check</span>}
+        <span className="flex shrink-0 items-center gap-2">
+          <span className={cn('rounded-full px-2 py-0.5 font-display text-[10px] font-extrabold uppercase tracking-wide', flagged ? 'bg-warning/18 text-warning' : items.length ? 'bg-success/12 text-success' : 'bg-muted text-muted-foreground')}>
+            {flagged ? 'Check' : items.length ? `${items.length} found` : 'Not found'}
+          </span>
+          <ChevronDown className={cn('size-4 text-muted-foreground transition-transform', open && 'rotate-180')} aria-hidden="true" />
+        </span>
       </button>
       {open && (
-        <div className="space-y-2 px-4 pb-4">
+        <div className="border-t border-border/70">
           {items.map((item) => (
-            <div key={item.id} className="syllabus-import-inner rounded-xl border border-border p-2.5">
-              <div className="flex items-start gap-2">
+            <div key={item.id} className="border-b border-border/60 py-3 pl-5 pr-4 last:border-b-0">
+              {item.context && <p className="mb-1.5 text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary">{item.context}</p>}
+              <div className={cn('grid items-start gap-2', (needsValue || item.value !== undefined) ? 'sm:grid-cols-[minmax(0,1.35fr)_minmax(160px,.65fr)_32px]' : 'grid-cols-[minmax(0,1fr)_32px]')}>
                 <Input aria-label={`${GROUP_LABEL[kind]} label`} value={item.label} onChange={(event) => onPatch(item.id, { label: event.target.value })}
                   className={cn('h-8 font-bold', item.confidence === 'low' && 'border-warning')} />
-                <Input aria-label={`${GROUP_LABEL[kind]} value`} value={item.value ?? ''} onChange={(event) => onPatch(item.id, { value: event.target.value })} className="h-8" />
+                {(needsValue || item.value !== undefined) && (kind === 'policies' || (kind === 'logistics' && (item.value?.length ?? 0) > 120)
+                  ? <Textarea aria-label={`${GROUP_LABEL[kind]} value`} value={item.value ?? ''} onChange={(event) => onPatch(item.id, { value: event.target.value })} className="min-h-20 resize-y text-xs" />
+                  : <Input aria-label={`${GROUP_LABEL[kind]} value`} value={item.value ?? ''} onChange={(event) => onPatch(item.id, { value: event.target.value })} className="h-8" />)}
                 <Button
                   type="button"
                   size="icon"
@@ -384,14 +471,32 @@ function ReviewGroup({ kind, items, searched, onPatch, onRemove, onAddManual }: 
                   <X className="size-4" />
                 </Button>
               </div>
-              <p className="mt-1.5 text-xs font-semibold text-muted-foreground">{item.evidence.location} · “{item.evidence.quote}”</p>
+              <details className="mt-2 text-xs font-semibold text-muted-foreground">
+                <summary className="w-fit cursor-pointer text-primary/90">View source</summary>
+                <p className="mt-1 border-l-2 border-primary/30 pl-2">{item.evidence.location} · “{item.evidence.quote}”</p>
+              </details>
             </div>
           ))}
-          <button type="button" onClick={onAddManual} className="text-xs font-bold text-primary underline underline-offset-4">Add manually</button>
+          <button type="button" onClick={onAddManual} className="m-4 ml-5 text-xs font-bold text-primary underline underline-offset-4">Add manually</button>
+        </div>
+      )}
+      {!open && items.length === 0 && (
+        <div className="flex items-center justify-between gap-3 border-t border-border/60 py-2.5 pl-5 pr-4 text-xs font-semibold text-muted-foreground">
+          <span>No value was inferred.</span>
+          <button type="button" onClick={onAddManual} className="shrink-0 font-bold text-primary underline underline-offset-4">Add manually</button>
         </div>
       )}
     </section>
   )
+}
+
+function collapsedSummary(kind: SyllabusKind, items: SyllabusProposal['items'], searched: string) {
+  const first = items[0]
+  if (!first) return searched
+  const visible = items.slice(0, 2).map((item) => item.value ? `${item.label}: ${item.value}` : item.label).filter(Boolean)
+  const suffix = items.length > 2 ? ` · +${items.length - 2} more` : ''
+  const summary = `${visible.join(' · ')}${suffix}`
+  return kind === 'policies' || kind === 'logistics' ? `${items.length} source-backed records` : summary
 }
 
 /** Wrong document (§4.1-M-d). Academics accent, NOT the warning tone: nothing failed. */
@@ -496,10 +601,10 @@ function ApplyRail({ misfiled, reimport, proposal, rows, decided, applying, cour
 }) {
   const differences = rows.filter((row) => row.status !== 'unchanged').length
   return (
-    <aside className="flex flex-col gap-3 lg:sticky lg:top-6">
-      <section className="rounded-2xl border border-border bg-card p-4 shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]">
+    <aside className="min-w-0 flex flex-col gap-3 lg:sticky lg:top-6">
+      <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_16px_38px_-26px_rgba(0,0,0,0.72)]">
         {misfiled ? (
-          <>
+          <div className="p-4">
             <h2 className="font-display text-base font-extrabold">Nothing to apply</h2>
             <p className="mt-0.5 text-xs font-semibold text-muted-foreground">No class records would change</p>
             <dl className="mt-3 space-y-1">
@@ -516,9 +621,9 @@ function ApplyRail({ misfiled, reimport, proposal, rows, decided, applying, cour
                 ? 'This import would write nothing. Filing the file is a Materials action, not an import.'
                 : 'This import would write nothing. Choose a class first, or explicitly review this as a syllabus.'}
             </p>
-          </>
+          </div>
         ) : reimport ? (
-          <>
+          <div className="p-4">
             <h2 className="font-display text-base font-extrabold">Apply changes</h2>
             <p className="mt-0.5 text-xs font-semibold text-muted-foreground">{differences} differences · {decided} decided</p>
             <Button className="mt-3 w-full" onClick={onApply} disabled={applying}><CheckCircle2 className="size-4" /> Apply accepted changes</Button>
@@ -527,32 +632,49 @@ function ApplyRail({ misfiled, reimport, proposal, rows, decided, applying, cour
             <p className="mt-2 text-center text-[11px] font-semibold text-muted-foreground">
               Either way it’s one write, and it’s reversible.
             </p>
-          </>
+          </div>
         ) : (
           <>
-            <h2 className="font-display text-base font-extrabold">What this adds</h2>
-            <p className="mt-0.5 text-xs font-semibold text-muted-foreground">Nothing is written until you press this.</p>
-            <dl className="mt-3 space-y-1">
-              {APPLY_ROWS.map(([kind, label]) => {
-                const count = proposal.items.filter((item) => item.kind === kind).length
+            <div className="border-b border-border bg-muted/55 px-4 py-3.5">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Final check</p>
+              <h2 className="mt-1 font-display text-lg font-extrabold">Ready to add</h2>
+              <p className="mt-1 text-xs font-semibold text-muted-foreground">One reviewed write to {courseLabel}.</p>
+            </div>
+            <dl className="divide-y divide-border">
+              {APPLY_GROUPS.map((group) => {
+                const details = APPLY_ROWS
+                  .filter(([kind]) => group.kinds.includes(kind))
+                  .map(([kind, label]) => ({ label, count: proposal.items.filter((item) => item.kind === kind).length }))
+                const count = details.reduce((total, detail) => total + detail.count, 0)
                 return (
-                  <div key={kind} className={cn('flex items-center gap-2 text-sm font-bold', count ? 'text-muted-foreground' : 'text-muted-foreground/55')}>
-                    <dt className="sr-only">{label}</dt>
-                    <dd className="w-6 text-right font-display tabular-nums text-foreground">{count}</dd><span>{label}</span>
+                  <div key={group.label} className="px-4 py-3">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <dt className="font-display text-sm font-extrabold">{group.label}</dt>
+                      <dd className="font-display text-lg font-extrabold tabular-nums text-primary">{count}</dd>
+                    </div>
+                    <p className="mt-0.5 text-[11px] font-semibold leading-4 text-muted-foreground">
+                      {details.map((detail) => `${detail.count} ${detail.label}`).join(' · ')}
+                    </p>
                   </div>
                 )
               })}
             </dl>
-            <Button className="mt-3 w-full" onClick={onApply} disabled={applying}>
-              <CheckCircle2 className="size-4" /> Add all of this to {courseLabel}
-            </Button>
+            <div className="border-t border-border bg-background/45 p-3">
+              <div className="mb-3 flex items-start gap-2 rounded-xl border border-warning/25 bg-warning/[0.06] p-2.5 text-[11px] font-semibold leading-4 text-muted-foreground">
+                <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden="true" />
+                <span>Readings become dated before-class tasks. Office hours stay in course context, not the calendar.</span>
+              </div>
+              <Button className="w-full font-display font-extrabold" onClick={onApply} disabled={applying}>
+                <CheckCircle2 className="size-4" /> Add reviewed syllabus to {courseLabel}
+              </Button>
+            </div>
           </>
         )}
       </section>
       {!misfiled && !reimport && (
-        <MascotNote variant="tip">
-          Everything applied stays editable, and the source file is kept and linked so you can re-check any value later.
-        </MascotNote>
+        <p className="px-2 text-[11px] font-semibold leading-4 text-muted-foreground">
+          Everything stays editable. The local source—including text that was not categorized—remains linked in Materials.
+        </p>
       )}
     </aside>
   )
