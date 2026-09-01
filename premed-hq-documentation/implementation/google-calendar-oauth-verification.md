@@ -1,7 +1,8 @@
 # Google Calendar OAuth verification
 
-**Current status:** code prepared; Google Cloud Data Access alignment, a fresh
-end-to-end test, and Google's external verification are still required.
+**Current status:** the narrow runtime scope is deployed and Google Cloud Data
+Access matches it. A fresh end-to-end consent test, a replacement demonstration
+video, and Google's external verification are still required.
 
 ## Production behavior and least privilege
 
@@ -22,7 +23,7 @@ on calendars the user owns. The Events API lists it as an accepted read scope.
 
 ## Google Cloud Console alignment
 
-Before deploying the runtime change:
+The production configuration must remain aligned as follows:
 
 1. Open the production Google Cloud project used by `VITE_GOOGLE_CLIENT_ID`.
 2. Confirm the Google Calendar API is enabled.
@@ -77,8 +78,8 @@ temporary reviewer credentials only through Google's requested reply channel.
 - [x] Runtime scope is `calendar.events.owned.readonly`.
 - [x] No CalendarList request exists in production code.
 - [x] Previously stored broad-scope bearer tokens are not reused.
-- [ ] Google Cloud Data Access matches the runtime scope exactly.
-- [ ] Production origin and client ID are correct.
+- [x] Google Cloud Data Access matches the runtime scope exactly.
+- [x] Production origin and client ID are correct.
 - [ ] Fresh consent round-trip succeeds on production.
 - [ ] A real primary-calendar event appears and refreshes.
 - [ ] Disconnect stops refresh without deleting local records.
