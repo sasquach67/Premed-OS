@@ -393,7 +393,8 @@ export function ActivityAndCapture() {
       try {
         id = await createOverviewFileCapture(selectedFile, { commentary: value.trim(), localOnly })
       } catch {
-        id = null
+        // Leave the initial null sentinel so the shared failure path below can
+        // present one consistent, recoverable message.
       } finally {
         setIsSavingFile(false)
       }

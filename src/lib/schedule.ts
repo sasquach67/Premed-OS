@@ -57,10 +57,10 @@ const DAY_TOKENS: Array<{ match: RegExp; day: number }> = [
 export function parseMeetingDays(value: string | undefined): number[] {
   if (!value?.trim()) return []
   const days = new Set<number>()
-  const separated = /[\/,\s]/.test(value)
+  const separated = /[/,\s]/.test(value)
 
   if (separated) {
-    for (const token of value.split(/[\/,\s]+/).filter(Boolean)) {
+    for (const token of value.split(/[/,\s]+/).filter(Boolean)) {
       const hit = DAY_TOKENS.find((entry) => entry.match.test(token))
       if (hit) days.add(hit.day)
     }
