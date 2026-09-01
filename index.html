@@ -15,6 +15,15 @@
     <link rel="apple-touch-icon" href="%BASE_URL%art/brand/favicon-180.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#233448" />
+    <!-- GitHub Pages cannot attach custom response headers. This document-level
+         policy still constrains scripts, connections, embeds, and local OCR on
+         the current host. The deployment header policy in netlify.toml is the
+         stronger production target because headers can also enforce framing. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.googleapis.com https://accounts.google.com https://zenquotes.io; frame-src https://accounts.google.com https://docs.google.com https://drive.google.com; worker-src 'self' blob:; child-src 'self' blob:; media-src 'self' data: blob:; manifest-src 'self'; upgrade-insecure-requests"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
 
     <!-- ⚠️ The title was "Premed OS — Andy's Command Center". That was right
          when this was one person's tool; it is now the tab title a stranger

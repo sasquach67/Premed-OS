@@ -49,7 +49,7 @@
 >
 > **Two conditions, and they are not optional:**
 > 1. **The design is PROPOSED, not frozen.** If a drawing changes, the code follows it. Accepted cost, same as the Overview/Academics rows.
-> 2. **Cleared to BUILD is not cleared to PUBLISH.** The age floor, governing law, and the `Premed OS` trademark/domain check (`05` §10) are still open. **Build the pages; do not point a public domain at Privacy, Terms, or About until those three close.**
+> 2. **Cleared to BUILD is not automatically cleared to broad public release.** The age floor (**13**) and governing law (**North Carolina**) were resolved in the published Terms on Aug 30, 2026. The `Premed OS` trademark/domain publication check (`05` §10; see `implementation/name-domain-publication-check.md`) remains open, and the live beta remains controlled until the release acceptance gates are recorded as passed.
 
 
 | Mockup | Header status | Build? |

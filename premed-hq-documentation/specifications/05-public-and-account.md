@@ -190,7 +190,7 @@ Two non-malicious things can drain a prepaid balance in a day: **a retry loop in
 - **No ram or Rameses imagery.** If a mascot is used it must be **visibly unrelated to any university mascot**. **CORRECTION (Aug 2026):** this bullet previously said *"Confirmed July 2026: none exists"* — **that was wrong.** `src/components/mascot/Ram.tsx` renders `/art/mascot.gif` via `MascotNote.tsx`. It is **live in the app today** and is the thing to replace. It was kept off the public layer in the P1 build (the guided-tour figure is a doctor). Root `CLAUDE.md` has been corrected to match.
 - **HQ's palette is its own.** `#4b9cd3` is HQ's academics accent. **Do not describe it as "Carolina blue"** or any institutional colour — the `CLAUDE.md` parenthetical saying so has been removed, because that framing is what creates an impression of affiliation.
 - **Institution data is fact, not branding.** Course numbers, credit hours, and requirement names are facts about a curriculum and may be used. **Verbatim catalog prose may not be reproduced wholesale** — same distinction as the syllabus rule (`01` §4.1-M): structure and facts yes, expression no.
-- **`Premed OS` name:** run a trademark and domain check before it's load-bearing. **Flagged, not resolved.**
+- **`Premed OS` name:** run a trademark and domain check before it's load-bearing. **Flagged, not resolved.** The publication boundary and owner checklist are recorded in `../implementation/name-domain-publication-check.md`.
 
 ### 6.2 Other required disclaimers
 
@@ -198,7 +198,7 @@ Two non-malicious things can drain a prepaid balance in a day: **a retry loop in
 - **Not authoritative** — HQ computes GPA, BCPM, grade projections, readiness, and score bands. Every one is an **estimate to verify** against the student's transcript, AMCAS, and their advisor. This is a standing line wherever a derived number appears, not just in Terms.
 - **Community content is opinion** — Atlas's community lore is **Category B**, attributed, dated, and **not official guidance** (`implementation/knowledge-sources.md`). Where it conflicts with AAMC or a university, both are shown.
 - **Not medical, legal, or financial advice.**
-- **Age floor** stated in Terms.
+- **Age floor:** **13**, stated in Terms. **RESOLVED Aug 30, 2026.**
 
 ### 6.3 PHI — the under-specced risk, now specified
 
@@ -224,7 +224,7 @@ Written in plain language, and it must state truthfully:
 
 ### 6.5 Terms of service
 
-Beta status and no uptime guarantee · acceptable use · **user owns their content; HQ gets only the licence needed to operate** · third-party terms are the user's responsibility (Canvas, Anki, prep providers) · **no scraping and no answer-sharing integrations** (`02` §3.10) · liability limits · governing law · how changes are communicated.
+Beta status and no uptime guarantee · acceptable use · **user owns their content; HQ gets only the licence needed to operate** · third-party terms are the user's responsibility (Canvas, Anki, prep providers) · **no scraping and no answer-sharing integrations** (`02` §3.10) · liability limits · **North Carolina governing law** · how changes are communicated.
 
 ### 6.6 Content-provenance rules (restated so they're findable in one place)
 
@@ -291,7 +291,7 @@ Beta status and no uptime guarantee · acceptable use · **user owns their conte
 1. **`Premed OS` trademark + domain check.** Flagged, unresolved.
 2. ~~Password auth~~ — **RESOLVED: build both** (§2.1).
 3. ~~Free-tier boundary~~ — **RESOLVED: free during beta, priced from measured usage after a full term** (§5.1). Still open *later*: the eventual price point and cap size, decided from real data.
-4. **Age floor** in Terms.
-5. **Governing law** in Terms.
+4. ~~Age floor in Terms~~ — **RESOLVED Aug 30, 2026: 13.**
+5. ~~Governing law in Terms~~ — **RESOLVED Aug 30, 2026: North Carolina.**
 6. **Whether HQ ever supports a second institution** — the Requirements dataset is UNC-only by design (`01` §12: do not add multi-institution logic). If that changes, this spec's institution rules generalise.
 7. **Not a lawyer.** Everything in §6 is a list of things to have reviewed, not legal advice.
