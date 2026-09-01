@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { createPersonalInitialData } from '@/data/personalInitialData'
 import {
   ACCOUNT_WORKSPACE_READY_EVENT,
+  applyFirstLoginSetup,
   buildFirstAccountWorkspace,
   decideAccountRoute,
   decideCloudReconcile,
   destinationAfterFirstLogin,
   FIRST_LOGIN_STUDY_ROUTE,
+  hasCompletedAccountSetup,
   notifyAccountWorkspaceReady,
   profileDefaultsFromIdentity,
 } from '@/lib/accountWorkspace'
@@ -54,6 +56,37 @@ describe('account workspace isolation', () => {
     expect(decideAccountRoute({
       pathname: '/', hasRemote: true, hasLocalWork: true, hasSeenMerge: false,
     })).toBe('/auth/merge')
+  })
+
+  it('routes an existing but unpersonalized account through first-login setup', () => {
+    expect(decideAccountRoute({
+      pathname: '/', hasRemote: true, hasCompletedSetup: false,
+      hasLocalWork: false, hasSeenMerge: false,
+    })).toBe('/auth/setup')
+  })
+
+  it('recognizes setup only when the profile belongs to the signed-in identity', () => {
+    const account = createPersonalInitialData()
+    account.profile = { ...account.profile, name: 'Andy', email: 'andy@example.com' }
+    expect(hasCompletedAccountSetup(account, { email: 'andy@example.com' })).toBe(true)
+    expect(hasCompletedAccountSetup(account, { email: 'eric@example.com' })).toBe(false)
+    account.profile.name = ''
+    expect(hasCompletedAccountSetup(account, { email: 'andy@example.com' })).toBe(false)
+  })
+
+  it('personalizes an existing account without deleting its records', () => {
+    const existing = createPersonalInitialData()
+    existing.tasks.push({
+      id: 'keep-me', title: 'Keep this task', type: 'Personal', progress: 'Not started',
+      kanban: 'todo', archived: false, order: 0,
+    })
+    const result = applyFirstLoginSetup({
+      existing,
+      identity: { email: 'elephon08@gmail.com' },
+      setup: { name: 'Andy Quach', school: 'UNC Chapel Hill', major: 'Neuroscience', classYear: '2030' },
+    })
+    expect(result.profile).toMatchObject({ name: 'Andy Quach', email: 'elephon08@gmail.com' })
+    expect(result.tasks).toEqual(existing.tasks)
   })
 
   it('opens How to study after first login, including after a merge review', () => {

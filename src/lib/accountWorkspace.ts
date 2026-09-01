@@ -91,13 +91,55 @@ export function buildFirstAccountWorkspace(input: {
   return data
 }
 
+/**
+ * A dashboard row can exist before its owner has completed first-login setup
+ * (for example after a safe account reset).  The row alone is therefore not a
+ * completion marker.  Requiring both a chosen name and the signed-in email
+ * also prevents a legacy browser profile from being mistaken for this user.
+ */
+export function hasCompletedAccountSetup(data: unknown, identity: AccountIdentity) {
+  if (!data || typeof data !== 'object') return false
+  const profile = (data as { profile?: unknown }).profile
+  if (!profile || typeof profile !== 'object') return false
+  const record = profile as Record<string, unknown>
+  const name = typeof record.name === 'string' ? record.name.trim() : ''
+  const profileEmail = typeof record.email === 'string' ? record.email.trim().toLowerCase() : ''
+  const identityEmail = identity.email?.trim().toLowerCase() ?? ''
+  return Boolean(name && (!identityEmail || profileEmail === identityEmail))
+}
+
+/** Finish setup without discarding records already owned by this account. */
+export function applyFirstLoginSetup(input: {
+  existing?: AppData | null
+  identity: AccountIdentity
+  setup: FirstLoginSetup
+}): AppData {
+  const data = input.existing
+    ? structuredClone(input.existing)
+    : createPersonalInitialData()
+  const identity = profileDefaultsFromIdentity(input.identity)
+  data.profile = {
+    ...data.profile,
+    name: input.setup.name.trim(),
+    email: identity.email,
+    school: input.setup.school.trim(),
+    major: input.setup.major.trim(),
+    classYear: input.setup.classYear.trim(),
+    track: input.setup.track?.trim() || data.profile.track || 'Pre-Med',
+  }
+  return data
+}
+
 export function decideAccountRoute(input: {
   pathname: string
   hasRemote: boolean
+  hasCompletedSetup?: boolean
   hasLocalWork: boolean
   hasSeenMerge: boolean
 }): '/auth/setup' | '/auth/merge' | '/' | null {
-  if (!input.hasRemote) return input.pathname === '/auth/setup' ? null : '/auth/setup'
+  if (!input.hasRemote || input.hasCompletedSetup === false) {
+    return input.pathname === '/auth/setup' ? null : '/auth/setup'
+  }
   if (input.hasLocalWork && !input.hasSeenMerge) {
     return input.pathname === '/auth/merge' ? null : '/auth/merge'
   }

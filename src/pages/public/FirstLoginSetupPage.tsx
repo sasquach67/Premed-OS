@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, ShieldCheck, UserRound } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { User } from '@supabase/supabase-js'
+import type { AppData } from '@/lib/types'
 import { PublicNav } from '@/components/public/PublicNav'
 import { PublicShell } from '@/components/public/PublicShell'
 import {
-  buildFirstAccountWorkspace,
+  applyFirstLoginSetup,
   decideAccountRoute,
   FIRST_LOGIN_STUDY_ROUTE,
+  hasCompletedAccountSetup,
   notifyAccountWorkspaceReady,
   profileDefaultsFromIdentity,
 } from '@/lib/accountWorkspace'
@@ -27,6 +29,7 @@ export function FirstLoginSetupPage() {
   const [school, setSchool] = useState('')
   const [major, setMajor] = useState('')
   const [classYear, setClassYear] = useState('')
+  const [existingAccount, setExistingAccount] = useState<AppData | null>(null)
   const localAtEntry = useMemo(() => snapshotData(), [])
   const hasDeviceWork = useMemo(() => hasLocalWork(localAtEntry), [localAtEntry])
 
@@ -47,7 +50,7 @@ export function FirstLoginSetupPage() {
       const currentUser = authData.user
       const { data: existing, error: dashboardError } = await supabase
         .from('dashboards')
-        .select('user_id')
+        .select('data')
         .eq('user_id', currentUser.id)
         .maybeSingle()
       if (!alive) return
@@ -56,10 +59,14 @@ export function FirstLoginSetupPage() {
         setPhase('error')
         return
       }
-      if (existing) {
+      if (existing && hasCompletedAccountSetup(existing.data, {
+        email: currentUser.email,
+        metadata: currentUser.user_metadata,
+      })) {
         const route = decideAccountRoute({
           pathname: '/auth/setup',
           hasRemote: true,
+          hasCompletedSetup: true,
           hasLocalWork: hasLocalWork(snapshotData()),
           hasSeenMerge: hasSeenMerge(currentUser.id),
         })
@@ -71,8 +78,14 @@ export function FirstLoginSetupPage() {
         email: currentUser.email,
         metadata: currentUser.user_metadata,
       })
+      const existingData = (existing?.data as AppData | undefined) ?? null
+      const existingProfile = existingData?.profile
       setUser(currentUser)
-      setName(defaults.name)
+      setName(existingProfile?.name?.trim() || defaults.name)
+      setSchool(existingProfile?.school ?? '')
+      setMajor(existingProfile?.major ?? '')
+      setClassYear(existingProfile?.classYear ?? '')
+      setExistingAccount(existingData)
       setPhase('ready')
     })()
     return () => { alive = false }
@@ -82,7 +95,8 @@ export function FirstLoginSetupPage() {
     if (!supabase || !user || !name.trim()) return
     setPhase('saving')
     setError('')
-    const account = buildFirstAccountWorkspace({
+    const account = applyFirstLoginSetup({
+      existing: existingAccount,
       identity: { email: user.email, metadata: user.user_metadata },
       setup: { name, school, major, classYear, track: 'Pre-Med' },
     })
@@ -92,16 +106,19 @@ export function FirstLoginSetupPage() {
         data: dataForRemote(account),
         updated_at: new Date().toISOString(),
       }
-      // Insert-only prevents first-login setup from overwriting a row that
-      // appeared after the initial account check.
-      const { error: writeError } = await supabase.from('dashboards').insert(row)
+      // Existing but unpersonalized rows keep their account-owned records;
+      // truly new accounts still use insert-only creation.
+      const write = existingAccount
+        ? supabase.from('dashboards').update(row).eq('user_id', user.id)
+        : supabase.from('dashboards').insert(row)
+      const { error: writeError } = await write
       if (writeError) throw writeError
 
       // Provider metadata is display-only; dashboard RLS still owns access.
       await supabase.auth.updateUser({ data: { ...user.user_metadata, full_name: name.trim() } })
       markEnteredApp()
 
-      if (hasDeviceWork) {
+      if (!existingAccount && hasDeviceWork) {
         navigate('/auth/merge?firstLogin=1', { replace: true })
       } else {
         activateAccountWorkspace(user.id, account)
@@ -166,15 +183,17 @@ export function FirstLoginSetupPage() {
                   <div className="pl-pace" style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                     <ShieldCheck style={{ width: 18, flex: 'none', marginTop: 2 }} aria-hidden="true" />
                     <span>
-                      <b>{hasDeviceWork ? 'Work already exists on this device.' : 'This account starts clean.'}</b>{' '}
-                      {hasDeviceWork
+                      <b>{!existingAccount && hasDeviceWork ? 'Work already exists on this device.' : existingAccount ? 'Your saved account stays intact.' : 'This account starts clean.'}</b>{' '}
+                      {!existingAccount && hasDeviceWork
                         ? 'Nothing here is copied automatically. After setup, you’ll review which parts—if any—belong in this account.'
-                        : 'The first account snapshot contains only the profile details you confirm above.'}
+                        : existingAccount
+                          ? 'Only the profile details you confirm here are updated.'
+                          : 'The first account snapshot contains only the profile details you confirm above.'}
                     </span>
                   </div>
 
                   <button type="button" className="pl-sbtn pl-sbtn-p pl-sbtn-full" disabled={!name.trim() || phase === 'saving'} onClick={() => { void finishSetup() }}>
-                    {phase === 'saving' ? 'Creating your workspace…' : hasDeviceWork ? 'Continue to data review' : 'Create my workspace'}
+                    {phase === 'saving' ? 'Saving your profile…' : !existingAccount && hasDeviceWork ? 'Continue to data review' : existingAccount ? 'Save my profile' : 'Create my workspace'}
                     {phase !== 'saving' ? <ArrowRight aria-hidden="true" /> : null}
                   </button>
                 </>

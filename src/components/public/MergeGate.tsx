@@ -15,7 +15,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { snapshotData } from '@/store/store'
 import { hasLocalWork, hasSeenMerge, markEnteredApp } from '@/lib/publicLayer'
-import { decideAccountRoute } from '@/lib/accountWorkspace'
+import { decideAccountRoute, hasCompletedAccountSetup } from '@/lib/accountWorkspace'
+import type { User } from '@supabase/supabase-js'
 
 export function MergeGate() {
   const navigate = useNavigate()
@@ -30,11 +31,12 @@ export function MergeGate() {
     }
     let alive = true
 
-    const consider = async (userId: string | undefined) => {
-      if (!userId) {
+    const consider = async (user: Pick<User, 'id' | 'email'> | undefined) => {
+      if (!user) {
         handled.current = null
         return
       }
+      const userId = user.id
       // Signing in is entering — `/` must not fall back to the landing page.
       markEnteredApp()
       const handledKey = `${userId}:${pathname}`
@@ -43,7 +45,7 @@ export function MergeGate() {
 
       const { data, error } = await supabase!
         .from('dashboards')
-        .select('user_id')
+        .select('data')
         .eq('user_id', userId)
         .maybeSingle()
       if (!alive || error) return
@@ -51,15 +53,22 @@ export function MergeGate() {
       const route = decideAccountRoute({
         pathname,
         hasRemote: Boolean(data),
+        hasCompletedSetup: data
+          ? hasCompletedAccountSetup(data.data, { email: user.email })
+          : false,
         hasLocalWork: hasLocalWork(snapshotData()),
         hasSeenMerge: hasSeenMerge(userId),
       })
       if (route) navigate(route, { replace: true })
     }
 
-    void supabase.auth.getSession().then(({ data }) => { void consider(data.session?.user?.id) })
+    void supabase.auth.getSession().then(({ data }) => {
+      void consider(data.session?.user)
+    })
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) =>
-      { void consider(session?.user?.id) },
+      {
+        void consider(session?.user)
+      },
     )
     return () => {
       alive = false
