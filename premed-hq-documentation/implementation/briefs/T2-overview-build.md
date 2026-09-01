@@ -87,7 +87,7 @@ treatment. No behaviour-only decision file blocks this stage.
 #### Andy checklist — Google Calendar configuration
 
 1. In Google Cloud, enable **Google Calendar API** for the existing project.
-2. Configure the consent screen with the `calendar.readonly` scope.
+2. Configure the consent screen with only the `calendar.events.owned.readonly` scope.
 3. Create/use a Web OAuth client and authorize:
    `http://127.0.0.1:5173` and `https://sasquach67.github.io`.
 4. Put its client ID in local `VITE_GOOGLE_CLIENT_ID` and the hosted build

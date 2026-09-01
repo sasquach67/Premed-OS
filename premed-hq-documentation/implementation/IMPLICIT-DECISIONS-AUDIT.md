@@ -645,7 +645,7 @@ queue. `attentionSnoozedUntil` is the only related preference.
 
 **2. Current behavior** — Deadlines, overdue tasks, letter follow-ups and stale-experience nudges
 are computed correctly and are visible **only while the app is open**. No email, no push, no
-calendar write-back (`googleCalendar.ts` is `calendar.readonly`), no digest.
+calendar write-back (`googleCalendar.ts` is read-only), no digest.
 
 **3. Assumption** — That premedOS is a place you go, not a thing that reaches you — and, since it
 was never specified, that the absence is a decision.
@@ -993,12 +993,14 @@ Some rules filter `!entry.deletedAt` (`addVerifierRule`, `reflectionToStoryRule`
 so trashed records remain searchable and navigable to a route that no longer renders them.
 **Recommended:** one shared `activeRows()` helper used everywhere. **P3.**
 
-## E4 · Google Calendar takes read access to everything
+## E4 · Google Calendar takes read access to everything — RESOLVED 1 Sep 2026
 
-`calendar.readonly` grants every event on every calendar, including work and personal, to render a
-daily schedule. `drive.appdata` by contrast is correctly minimal — it cannot see the user's other
-files, and the choice is well documented. **Recommended:** narrow to selected calendars if the API
-allows, and state the scope's breadth at the connect step. **P3.**
+The retired `calendar.readonly` grant covered every accessible calendar. The app now requests
+`calendar.events.owned.readonly`, calls only `events.list` for the special `primary` calendar ID,
+does not call CalendarList, and prevents Google Identity Services from folding previously granted
+scopes into the new token. Existing broad-scope session tokens are invalidated and require one
+reconnect. Settings and Privacy state that Premed OS reads upcoming primary-calendar events only
+and cannot list other calendars or edit events.
 
 ---
 

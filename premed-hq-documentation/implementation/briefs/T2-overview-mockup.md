@@ -79,7 +79,7 @@ own companion decision record before a build brief can exist.
 #### Andy checklist — configure live Google Calendar
 
 1. Enable **Google Calendar API** in the Premed OS Google Cloud project.
-2. Configure the consent screen and only the `calendar.readonly` scope.
+2. Configure the consent screen and only the `calendar.events.owned.readonly` scope.
 3. Create/use a Web OAuth client with authorized JavaScript origins for
    `http://127.0.0.1:5173` and `https://sasquach67.github.io` (plus a real
    custom production origin if used).

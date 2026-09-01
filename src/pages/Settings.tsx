@@ -509,7 +509,7 @@ function CalendarIntegrationSection({ onMessage }: { onMessage: (msg: string) =>
         <section className="space-y-3">
           <div className="rounded-xl border border-border bg-muted/25 px-3 py-2 text-sm">
             <p className="font-bold">{sync.connected ? `Connected${calendar.connectedAccount ? ` · ${calendar.connectedAccount}` : ''}` : calendar.enabled ? 'Reconnect needed' : 'Not connected'}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">Premed OS requests read-only Calendar access only. It cannot edit events.</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Premed OS reads upcoming events from your primary calendar only. It cannot list other calendars or edit events.</p>
             {calendar.lastSyncedAt && <p className="mt-1 text-xs text-muted-foreground">Last synced {fmtTimeAgo(calendar.lastSyncedAt)}.</p>}
             {(sync.error || calendar.lastError) && <p className="mt-1 flex items-center gap-1 text-xs text-destructive"><AlertCircle className="size-3" /> {sync.error || calendar.lastError}</p>}
           </div>
@@ -582,7 +582,7 @@ function CalendarIntegrationSection({ onMessage }: { onMessage: (msg: string) =>
           </div>
 
           <div className="rounded-xl border border-border bg-muted/25 px-3 py-2 text-xs text-muted-foreground">
-            Selected calendar: <b className="text-foreground">Primary</b>. Additional visible calendars can be added later without changing the hero renderer.
+            Selected calendar: <b className="text-foreground">Primary</b>. Other calendars are not requested or read.
           </div>
         </section>
       </CardContent>

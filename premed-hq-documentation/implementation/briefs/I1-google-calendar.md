@@ -11,7 +11,7 @@
 | `src/lib/googleCalendar.ts` | Google Identity Services token client · `connectCalendar` · `connectCalendarSilent` · `disconnectCalendar` · `fetchPrimaryDayEvents` |
 | `src/hooks/useCalendarSync.ts` | Wires it to the UI, reads `VITE_GOOGLE_CLIENT_ID` |
 | `src/components/common/HeroDailySchedule.tsx` | Consumes it with cache, staleness, mock preview, and empty states |
-| Scope | **`calendar.readonly`** — correct per `00-product-shell.md` §540 |
+| Scope | **Retired:** `calendar.readonly`. Current runtime uses `calendar.events.owned.readonly`; see `../google-calendar-oauth-verification.md`. |
 
 ## ⚠️ The mistaken requirement — do NOT build this
 
@@ -28,7 +28,7 @@ The superseded brief called for *"a durable connection that survives sessions an
 ## What IS outstanding — configuration only, no code
 
 1. **`VITE_GOOGLE_CLIENT_ID` and `VITE_GOOGLE_API_KEY`** are not set in `.env.local`. Without a client ID, `connectCalendar('')` silently does nothing.
-2. **Google Cloud Console** — the README documents enabling the **Drive** API only. **Enable the Google Calendar API**, and list `calendar.readonly` on the consent screen.
+2. **Google Cloud Console** — superseded. Follow `../google-calendar-oauth-verification.md`; do not restore the retired broad scope from this historical brief.
 3. **Authorized JavaScript origins** — add the local dev origin and `https://sasquach67.github.io`. GIS rejects unlisted origins.
 4. **⚠️ `.github/workflows/deploy.yml` injects only the two Supabase secrets.** The Google vars must be added to its `env:` block, **or the deployed build will not have them even if the repo secrets exist.**
 

@@ -176,7 +176,7 @@ Course catalog, Canvas web, Google Drive files, Anki desktop, journal articles, 
 
 Only these, and each must justify itself against §0.
 
-- **Google Calendar** — read for context; HQ writes only its own deadlines (`01` §6.9)
+- **Google Calendar** — read upcoming events from the student's **primary owned calendar** for context with `calendar.events.owned.readonly`; Premed OS does not list other calendars and does not write events
 - **Google Drive** — file links in Essays/Research/Profile; metadata only
 - **Gmail** — letter follow-ups; future
 - **Canvas REST** — Path B above, grades only, read-only, via the Edge Function proxy
@@ -188,3 +188,6 @@ Only these, and each must justify itself against §0.
 ### Per-integration, still to write
 
 Connect/disconnect UX · permission explanation in plain language · sync status and last-sync · retry and error surfaces · least-privilege scopes · token encryption and revocation · what happens when an integration is removed (**data stays; HQ never deletes user records because a connection ended**).
+
+The current Google Calendar verification and demo checklist is
+[`google-calendar-oauth-verification.md`](google-calendar-oauth-verification.md).

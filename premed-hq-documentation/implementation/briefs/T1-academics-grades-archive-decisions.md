@@ -170,7 +170,7 @@ feed, with no Canvas engineering at all.
    - `https://<the GitHub Pages origin>`
 4. **OAuth consent screen** — while the app is in *Testing*, add your own Google
    account under **Test users**, or consent silently fails.
-5. Scope must include `https://www.googleapis.com/auth/calendar.readonly` and
+5. Scope must include only `https://www.googleapis.com/auth/calendar.events.owned.readonly` and
    nothing wider. **Premed OS reads; it never writes to a calendar.**
 6. Then: connect in-app, and confirm a real event you can see in Google Calendar
    appears in the Calendar review route. **That last step is the verification —

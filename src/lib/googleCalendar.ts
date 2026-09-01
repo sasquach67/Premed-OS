@@ -1,7 +1,7 @@
 import type { NormalizedScheduleEvent } from '@/lib/types'
 
 const GIS_SRC = 'https://accounts.google.com/gsi/client'
-const SCOPE = 'https://www.googleapis.com/auth/calendar.readonly'
+const SCOPE = 'https://www.googleapis.com/auth/calendar.events.owned.readonly'
 
 interface TokenResponse { access_token?: string; error?: string; expires_in?: number }
 interface TokenClient { requestAccessToken: (opts?: { prompt?: string }) => void }
@@ -11,6 +11,7 @@ interface GoogleOAuth {
       initTokenClient: (cfg: {
         client_id: string
         scope: string
+        include_granted_scopes?: boolean
         callback: (resp: TokenResponse) => void
       }) => TokenClient
       revoke: (token: string, done?: () => void) => void
@@ -35,16 +36,11 @@ interface GoogleCalendarEvent {
   organizer?: { email?: string; displayName?: string }
 }
 
-interface CalendarListEntry {
-  id: string
-  summary?: string
-  backgroundColor?: string
-}
-
 let gisPromise: Promise<void> | null = null
 let accessToken: string | null = null
 let tokenExpiry = 0
-const TOKEN_SESSION_KEY = 'premedos.google-calendar-token.v1'
+const TOKEN_SESSION_KEY = 'premedos.google-calendar-token.v2'
+const LEGACY_TOKEN_SESSION_KEYS = ['premedos.google-calendar-token.v1']
 
 interface StoredCalendarToken {
   accessToken: string
@@ -56,6 +52,7 @@ function clearStoredToken() {
   tokenExpiry = 0
   try {
     window.sessionStorage.removeItem(TOKEN_SESSION_KEY)
+    LEGACY_TOKEN_SESSION_KEYS.forEach((key) => window.sessionStorage.removeItem(key))
   } catch {
     // Calendar still works for the active page when storage is unavailable.
   }
@@ -82,6 +79,9 @@ function storeToken(token: string, expiresAt: number) {
 function restoreStoredToken() {
   if (accessToken && Date.now() < tokenExpiry) return true
   try {
+    // Never reuse a bearer token issued for the retired broader Calendar
+    // scope. A one-time reconnect obtains the current least-privilege grant.
+    LEGACY_TOKEN_SESSION_KEYS.forEach((key) => window.sessionStorage.removeItem(key))
     const raw = window.sessionStorage.getItem(TOKEN_SESSION_KEY)
     if (!raw) return false
     const stored = JSON.parse(raw) as Partial<StoredCalendarToken>
@@ -134,6 +134,7 @@ async function getToken(clientId: string, prompt: 'consent' | '') {
     const client = oauth2.initTokenClient({
       client_id: clientId,
       scope: SCOPE,
+      include_granted_scopes: false,
       callback: (resp) => {
         if (resp.error || !resp.access_token) {
           reject(new Error(resp.error || 'Calendar authorization failed.'))
@@ -181,7 +182,7 @@ function findMeetingUrl(event: GoogleCalendarEvent) {
     || event.htmlLink
 }
 
-function normalizeGoogleEvent(event: GoogleCalendarEvent, calendar?: CalendarListEntry): NormalizedScheduleEvent | null {
+function normalizeGoogleEvent(event: GoogleCalendarEvent): NormalizedScheduleEvent | null {
   if (!event.id || !event.start) return null
   const allDay = Boolean(event.start.date && !event.start.dateTime)
   const start = event.start.dateTime ?? event.start.date
@@ -195,15 +196,9 @@ function normalizeGoogleEvent(event: GoogleCalendarEvent, calendar?: CalendarLis
     allDay,
     location: event.location,
     meetingUrl: findMeetingUrl(event),
-    calendarId: calendar?.id ?? 'primary',
-    color: calendar?.backgroundColor,
+    calendarId: 'primary',
     status: event.status === 'cancelled' ? 'cancelled' : event.status === 'tentative' ? 'tentative' : 'confirmed',
   }
-}
-
-export async function fetchPrimaryCalendarLabel() {
-  const calendar = await calendarFetch<CalendarListEntry>('https://www.googleapis.com/calendar/v3/users/me/calendarList/primary')
-  return calendar.summary || calendar.id || 'Primary calendar'
 }
 
 /** Fetch the forward-looking window used by the overview.
@@ -214,7 +209,6 @@ export async function fetchPrimaryCalendarLabel() {
  * bounded with a small page size.
  */
 export async function fetchPrimaryUpcomingEvents(date = new Date()) {
-  const calendar = await calendarFetch<CalendarListEntry>('https://www.googleapis.com/calendar/v3/users/me/calendarList/primary')
   const params = new URLSearchParams({
     calendarId: 'primary',
     timeMin: date.toISOString(),
@@ -226,7 +220,7 @@ export async function fetchPrimaryUpcomingEvents(date = new Date()) {
   const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`
   const json = await calendarFetch<{ items?: GoogleCalendarEvent[] }>(url)
   return (json.items ?? [])
-    .map((event) => normalizeGoogleEvent(event, calendar))
+    .map((event) => normalizeGoogleEvent(event))
     .filter(Boolean) as NormalizedScheduleEvent[]
 }
 

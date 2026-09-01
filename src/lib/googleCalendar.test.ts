@@ -19,12 +19,16 @@ describe('Google Calendar browser-session connection', () => {
 
   it('restores an unexpired connection after a page reload', async () => {
     let callback: ((response: TokenCallbackResponse) => void) | undefined
+    let requestedScope = ''
+    let includedPriorScopes = true
     const revoke = vi.fn()
     ;(window as unknown as { google: unknown }).google = {
       accounts: {
         oauth2: {
-          initTokenClient: (configuration: { callback: (response: TokenCallbackResponse) => void }) => {
+          initTokenClient: (configuration: { callback: (response: TokenCallbackResponse) => void; scope: string; include_granted_scopes?: boolean }) => {
             callback = configuration.callback
+            requestedScope = configuration.scope
+            includedPriorScopes = configuration.include_granted_scopes ?? true
             return {
               requestAccessToken: () => callback?.({ access_token: 'calendar-token', expires_in: 3600 }),
             }
@@ -36,6 +40,8 @@ describe('Google Calendar browser-session connection', () => {
 
     const firstPage = await import('./googleCalendar')
     await firstPage.connectCalendar('client-id')
+    expect(requestedScope).toBe('https://www.googleapis.com/auth/calendar.events.owned.readonly')
+    expect(includedPriorScopes).toBe(false)
     expect(firstPage.isCalendarConnected()).toBe(true)
 
     vi.resetModules()
@@ -48,9 +54,20 @@ describe('Google Calendar browser-session connection', () => {
   })
 
   it('discards an expired token instead of prompting automatically', async () => {
-    window.sessionStorage.setItem('premedos.google-calendar-token.v1', JSON.stringify({
+    window.sessionStorage.setItem('premedos.google-calendar-token.v2', JSON.stringify({
       accessToken: 'expired-token',
       expiresAt: Date.now() - 1,
+    }))
+
+    const calendar = await import('./googleCalendar')
+    expect(calendar.isCalendarConnected()).toBe(false)
+    expect(window.sessionStorage.getItem('premedos.google-calendar-token.v2')).toBeNull()
+  })
+
+  it('does not reuse a token issued for the retired broader scope', async () => {
+    window.sessionStorage.setItem('premedos.google-calendar-token.v1', JSON.stringify({
+      accessToken: 'broad-scope-token',
+      expiresAt: Date.now() + 60_000,
     }))
 
     const calendar = await import('./googleCalendar')
@@ -81,9 +98,6 @@ describe('Google Calendar browser-session connection', () => {
     ]
     const fetchMock = vi.fn(async (input: string) => {
       const url = new URL(input)
-      if (url.pathname.includes('/calendarList/primary')) {
-        return { ok: true, status: 200, json: async () => ({ id: 'primary', summary: 'Primary' }) }
-      }
       const min = Date.parse(url.searchParams.get('timeMin') ?? '')
       const maxParam = url.searchParams.get('timeMax')
       const max = maxParam ? Date.parse(maxParam) : Number.POSITIVE_INFINITY
@@ -107,5 +121,7 @@ describe('Google Calendar browser-session connection', () => {
       .find((url) => url.pathname.includes('/events'))
     expect(eventRequest?.searchParams.get('timeMin')).toBe(now.toISOString())
     expect(eventRequest?.searchParams.get('timeMax')).toBeNull()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock.mock.calls.some(([input]) => String(input).includes('/calendarList/'))).toBe(false)
   })
 })

@@ -5,7 +5,6 @@ import {
   connectCalendar,
   connectCalendarSilent,
   disconnectCalendar,
-  fetchPrimaryCalendarLabel,
   fetchPrimaryUpcomingEvents,
   isCalendarConnected,
 } from '@/lib/googleCalendar'
@@ -29,13 +28,13 @@ export function useCalendarSync() {
   const apiKey = calendar.googleApiKey || envApiKey
   const connected = calendar.enabled && isCalendarConnected()
 
-  const saveEvents = useCallback((events: NormalizedScheduleEvent[], connectedAccount?: string) => {
+  const saveEvents = useCallback((events: NormalizedScheduleEvent[]) => {
     update((d) => {
       d.settings.calendar.enabled = true
       d.settings.calendar.cachedEvents = events
       d.settings.calendar.lastSyncedAt = Date.now()
       d.settings.calendar.lastError = undefined
-      if (connectedAccount) d.settings.calendar.connectedAccount = connectedAccount
+      d.settings.calendar.connectedAccount = 'Google Calendar'
       if (!d.settings.calendar.googleClientId && clientId && clientId !== backupClientId) d.settings.calendar.googleClientId = clientId
       if (!d.settings.calendar.googleApiKey && apiKey) d.settings.calendar.googleApiKey = apiKey
     })
@@ -46,11 +45,8 @@ export function useCalendarSync() {
     setError('')
     try {
       if (!isCalendarConnected()) throw new Error('Reconnect Google Calendar to refresh upcoming events.')
-      const [events, label] = await Promise.all([
-        fetchPrimaryUpcomingEvents(date),
-        fetchPrimaryCalendarLabel().catch(() => undefined),
-      ])
-      saveEvents(events, label)
+      const events = await fetchPrimaryUpcomingEvents(date)
+      saveEvents(events)
       setStatus('connected')
       return events
     } catch (e) {

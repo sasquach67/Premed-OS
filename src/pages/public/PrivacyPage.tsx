@@ -123,7 +123,7 @@ const SECTIONS: DocSection[] = [
                 <b>Google</b>
               </td>
               <td>
-                Your primary-calendar events when you connect Google Calendar, or a backup file when
+                Upcoming events from your primary calendar when you connect Google Calendar, or a backup file when
                 you choose Google Drive backup
               </td>
             </tr>
