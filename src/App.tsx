@@ -18,6 +18,7 @@ const Help = lazy(() => import('@/pages/Help').then((m) => ({ default: m.Help })
 const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.Settings })))
 const Atlas = lazy(() => import('@/pages/Atlas').then((m) => ({ default: m.Atlas })))
 const Upgrade = lazy(() => import('@/pages/Upgrade').then((m) => ({ default: m.Upgrade })))
+const FounderConsole = lazy(() => import('@/pages/FounderConsole').then((m) => ({ default: m.FounderConsole })))
 const ReservedSpace = lazy(() => import('@/pages/ReservedSpace').then((m) => ({ default: m.ReservedSpace })))
 const FounderConsolePrototype = lazy(() => import('@/pages/prototypes/FounderConsolePrototype').then((m) => ({ default: m.FounderConsolePrototype })))
 
@@ -96,6 +97,7 @@ function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="atlas/*" element={<Atlas />} />
             <Route path="upgrade" element={<Upgrade />} />
+            <Route path="founder" element={<FounderConsole />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

@@ -56,6 +56,7 @@
 |---|---|---|
 | `05-public/public-landing-and-auth.html` | PROPOSED (Aug 2026) | **`YES`** |
 | `05-public/public-legal-about-pricing.html` | PROPOSED (Aug 2026) | **`YES`** |
+| `src/pages/prototypes/FounderConsolePrototype.tsx` | APPROVED for private execution (Sep 1, 2026) | **`YES`** — Andy authorized the founder console for `elephon08@gmail.com`; production must replace prototype metrics with server-authorized live aggregates and must not expose student academic content. |
 
 ### Shell
 

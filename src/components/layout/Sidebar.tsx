@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Bell, BookOpenText, Crown, LogOut, PanelLeftClose, PanelLeftOpen, Settings, UserRound } from 'lucide-react'
+import { Bell, BookOpenText, Crown, LogOut, PanelLeftClose, PanelLeftOpen, Settings, ShieldCheck, UserRound } from 'lucide-react'
 import { NAV_GROUPS, type RouteDef } from '@/app/routes'
 import { useStore } from '@/store/store'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -9,6 +9,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { useFounderAccess } from '@/hooks/useFounderAccess'
 
 type SidebarProps = {
   onNavigate?: () => void
@@ -33,6 +34,7 @@ function DesktopSidebar({ onNavigate, onSignOut, signedIn = false, desktopLocked
   const [accountOpen, setAccountOpen] = useState(false)
   const [patchNotesOpen, setPatchNotesOpen] = useState(false)
   const [patchNotesSeen, setPatchNotesSeen] = useState(() => localStorage.getItem('premed_hq_patch_notes_seen') === 'foundation-l5-shell')
+  const { isFounder } = useFounderAccess(signedIn)
 
   return (
     <nav
@@ -67,6 +69,7 @@ function DesktopSidebar({ onNavigate, onSignOut, signedIn = false, desktopLocked
           <DropdownMenuContent side="right" align="end" sideOffset={8} className="w-64">
             <DropdownMenuItem asChild><Link to="/profile" onClick={onNavigate}><UserRound className="size-4" /> Profile & CV</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/settings" onClick={onNavigate}><Settings className="size-4" /> Settings</Link></DropdownMenuItem>
+            {isFounder && <DropdownMenuItem asChild><Link to="/founder" onClick={onNavigate}><ShieldCheck className="size-4" /> Founder control</Link></DropdownMenuItem>}
             <DropdownMenuItem asChild><Link to="/upgrade" onClick={onNavigate}><Crown className="size-4" /> Upgrade plan</Link></DropdownMenuItem>
             <DropdownMenuItem onSelect={() => { setPatchNotesOpen(true); setPatchNotesSeen(true); localStorage.setItem('premed_hq_patch_notes_seen', 'foundation-l5-shell') }}><BookOpenText className="size-4" /> Patch Notes {!patchNotesSeen && <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-extrabold text-primary">New</span>}</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => window.dispatchEvent(new Event('premed:attention'))}><Bell className="size-4" /> Notifications</DropdownMenuItem>
