@@ -9,8 +9,8 @@ import { Label } from '@/components/ui/label'
 import {
   applyFirstLoginSetup,
   decideAccountRoute,
+  FIRST_LOGIN_DESTINATION,
   FIRST_LOGIN_SETUP_ROUTE,
-  FIRST_LOGIN_STUDY_ROUTE,
   hasCompletedAccountSetup,
   notifyAccountWorkspaceReady,
   profileDefaultsFromIdentity,
@@ -126,7 +126,7 @@ export function FirstLoginSetupPage() {
         activateAccountWorkspace(user.id, account)
         markMergeSeen(user.id)
         notifyAccountWorkspaceReady(user.id)
-        navigate(FIRST_LOGIN_STUDY_ROUTE, { replace: true })
+        navigate(FIRST_LOGIN_DESTINATION, { replace: true })
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not create your workspace.')

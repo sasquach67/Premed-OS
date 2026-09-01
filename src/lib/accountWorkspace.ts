@@ -18,11 +18,11 @@ export type CloudReconcileDecision = 'requires-setup' | 'pull-remote' | 'push-lo
 
 export const ACCOUNT_WORKSPACE_READY_EVENT = 'premed-hq:account-workspace-ready'
 export const FIRST_LOGIN_SETUP_ROUTE = '/onboarding'
-export const FIRST_LOGIN_STUDY_ROUTE = '/academics?mode=daily&tab=class-center&studyGuide=open'
+export const FIRST_LOGIN_DESTINATION = '/'
 
-/** First login ends in the practical lecture-capture guide, after any merge review. */
+/** First login ends in the app. Lecture help begins only after the first transcript is saved. */
 export function destinationAfterFirstLogin(isFirstLogin: boolean, fallback: string) {
-  return isFirstLogin ? FIRST_LOGIN_STUDY_ROUTE : fallback
+  return isFirstLogin ? FIRST_LOGIN_DESTINATION : fallback
 }
 
 /** Unlock cloud sync only after setup or a reviewed merge is fully saved. */

@@ -7,8 +7,8 @@ import {
   decideAccountRoute,
   decideCloudReconcile,
   destinationAfterFirstLogin,
+  FIRST_LOGIN_DESTINATION,
   FIRST_LOGIN_SETUP_ROUTE,
-  FIRST_LOGIN_STUDY_ROUTE,
   hasCompletedAccountSetup,
   notifyAccountWorkspaceReady,
   profileDefaultsFromIdentity,
@@ -94,8 +94,8 @@ describe('account workspace isolation', () => {
     expect(result.tasks).toEqual(existing.tasks)
   })
 
-  it('opens How to study after first login, including after a merge review', () => {
-    expect(destinationAfterFirstLogin(true, '/')).toBe(FIRST_LOGIN_STUDY_ROUTE)
+  it('enters the app after first login without opening lecture help', () => {
+    expect(destinationAfterFirstLogin(true, '/academics?studyGuide=open')).toBe(FIRST_LOGIN_DESTINATION)
     expect(destinationAfterFirstLogin(false, '/settings?tab=data')).toBe('/settings?tab=data')
   })
 

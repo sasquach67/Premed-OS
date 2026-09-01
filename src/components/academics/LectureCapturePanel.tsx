@@ -58,6 +58,7 @@ export function LectureCapturePanel({ courseId, course, data, onOpenNotes, initi
   const matchingChunks = useMemo(() => searchLectureSourceChunks(query, transcriptChunks), [query, transcriptChunks])
 
   function addTranscript() {
+    const isFirstSavedTranscript = !useStore.getState().academics.classCenter.files.some((file) => file.type === 'transcript')
     const targetLecture = activeLectureId ? lectures.find((lecture) => lecture.id === activeLectureId && !lecture.transcriptFileId) : undefined
     const defaultTitle = targetLecture?.title ?? `Lecture #${chronologicalLectures.filter((lecture) => String(lecture.occurredOn ?? '') <= occurredOn).length + 1}`
     const built = buildTranscriptImport({
@@ -90,6 +91,7 @@ export function LectureCapturePanel({ courseId, course, data, onOpenNotes, initi
     setOccurredOn(isoToday())
     setPasted('')
     setView('review')
+    if (isFirstSavedTranscript) setCaptureGuideOpen(true)
     toast({ title: 'Lecture saved', description: built.hasTimestamps ? 'Source timestamps were retained. Title and syllabus context can be confirmed later.' : 'The transcript stays readable without time anchors. Title and syllabus context can be confirmed later.' })
   }
 
@@ -102,6 +104,7 @@ export function LectureCapturePanel({ courseId, course, data, onOpenNotes, initi
         return
       }
       const targetLecture = activeLectureId ? lectures.find((lecture) => lecture.id === activeLectureId && !lecture.transcriptFileId) : undefined
+      const isFirstSavedTranscript = !useStore.getState().academics.classCenter.files.some((item) => item.type === 'transcript')
       const defaultTitle = targetLecture?.title ?? `Lecture #${chronologicalLectures.filter((lecture) => String(lecture.occurredOn ?? '') <= occurredOn).length + 1}`
       const built = buildTranscriptImport({ courseId, title: defaultTitle, text: extracted.text, order: data.files.filter((item) => item.courseId === courseId).length })
       if (!built) {
@@ -131,6 +134,7 @@ export function LectureCapturePanel({ courseId, course, data, onOpenNotes, initi
       setActiveLectureId(lectureId)
       setOccurredOn(isoToday())
       setView('review')
+      if (isFirstSavedTranscript) setCaptureGuideOpen(true)
       toast({ title: 'Lecture saved', description: 'The original file and its extracted transcript stay together on this device.' })
     } catch (error) {
       toast({ title: 'Transcript could not be read', description: error instanceof Error ? error.message : 'Paste the transcript text instead.' })

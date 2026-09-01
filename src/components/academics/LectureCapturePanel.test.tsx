@@ -155,6 +155,44 @@ describe('Lecture capture study-work handoff', () => {
     expect(center.lectures.filter((lecture) => lecture.courseId === courseId)).toHaveLength(beforeCount)
     expect(center.lectures.find((lecture) => lecture.id === lectureId)).toEqual(expect.objectContaining({ transcriptFileId: expect.any(String), processingState: 'ready' }))
     expect(center.files.find((file) => file.lectureId === lectureId)?.type).toBe('transcript')
+    expect(document.body.textContent).toContain('Record once. Bring the transcript here.')
+  })
+
+  it('does not reopen the tutorial after the workspace already has a saved lecture transcript', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const courseId = workspace.courseId
+    const lectureId = 'lecture-second-transcript'
+    seed.academics.classCenter.files.push({
+      id: 'existing-transcript', courseId, sourceType: 'paste', title: 'Earlier lecture transcript',
+      type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready',
+      createdAt: 1, updatedAt: 1, order: 1,
+    })
+    seed.academics.classCenter.lectures.push({
+      id: lectureId, courseId, title: 'Lecture #2', inputPath: 'pasted', occurredOn: '2026-08-29', topicIds: [],
+      processingState: 'ready', createdAt: 2, updatedAt: 2, order: 1,
+    })
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <ToastProvider>
+            <LectureCapturePanel courseId={courseId} data={seed.academics.classCenter} initialLectureId={lectureId} initialDestination="transcript" onOpenNotes={() => {}} />
+          </ToastProvider>
+        </MemoryRouter>,
+      )
+    })
+
+    const textarea = container.querySelector<HTMLTextAreaElement>('textarea')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set?.call(textarea, '00:20 A second source-grounded lecture passage with enough text to retain.')
+      textarea.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    const add = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Add pasted transcript'))!
+    await act(async () => add.click())
+
+    expect(document.body.textContent).not.toContain('Record once. Bring the transcript here.')
   })
 
   it('prevents duplicate analysis, clears busy after a thrown failure, and allows a successful retry', async () => {
