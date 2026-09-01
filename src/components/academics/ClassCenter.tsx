@@ -1183,7 +1183,7 @@ function ClassCenterDashboard({
 
   return (
     <div className="space-y-5">
-      <div className="academics-filter-bar flex flex-col gap-3 border border-border bg-card px-4 py-3 lg:flex-row lg:items-center lg:px-6">
+      <div className="academics-filter-bar flex flex-col gap-3 px-0 py-2 lg:flex-row lg:items-center">
         <Select
           value={semester}
           onValueChange={(value) => {
@@ -1215,7 +1215,7 @@ function ClassCenterDashboard({
 
       {!archiveOnly && <SmartActionPanel className="academics-heads-up" title="Heads up" recommendations={recommendations} />}
 
-      <Card>
+      <Card className="academics-class-panel mx-auto w-full max-w-[1100px]">
         <CardHeader className="flex-row items-center justify-between">
           <div>
             <CardTitle>{archiveOnly ? 'Archived classes' : 'Your classes'}</CardTitle>
@@ -1232,7 +1232,7 @@ function ClassCenterDashboard({
         </CardHeader>
         <CardContent>
           <div className={cn(view === 'cards'
-            ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4'
+            ? 'grid items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-4'
             : 'space-y-2')}>
             {filtered.map((row) => (
               <ClassCard
@@ -1433,16 +1433,16 @@ export function ClassCard({
       onDragEnd={onDragEnd}
       style={cardAccentVars(row.color)}
       className={cn(
-        'academics-class-card group/class relative self-start cursor-pointer overflow-hidden shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
+        'academics-class-card group/class relative h-full self-stretch cursor-pointer overflow-hidden shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
         compact ? 'min-h-0' : 'min-h-0',
         dragging && 'scale-[0.98] opacity-55',
         dragOver && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
       )}
     >
       <span className={cn(
-        'academics-class-bar absolute inset-y-0 left-0 w-1 origin-left scale-x-0 transition-transform duration-150 ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none',
+        'academics-class-bar absolute inset-y-0 left-0 w-1 origin-left opacity-70 transition-[opacity,box-shadow] duration-150 ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none',
         'bg-[var(--class-accent)]',
-        'group-hover/class:scale-x-100',
+        'group-hover/class:opacity-100',
       )} aria-hidden="true" />
       <CardContent className={cn(
         compact
@@ -1494,17 +1494,16 @@ export function ClassCard({
             aria-valuemax={stats.courseworkTotal || 1}
             aria-valuenow={stats.courseworkComplete}
           >
-            <div className="min-w-0">
-              <p className="font-display text-[9.5px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground">Coursework progress</p>
-              <p className="mt-0.5 truncate text-[10.5px] font-bold text-foreground">
-                {stats.courseworkTotal > 0
-                  ? `${stats.courseworkComplete} of ${stats.courseworkTotal} complete`
-                  : 'No tracked work yet'}
-              </p>
+            <div className="academics-coursework-head">
+              <p>Coursework progress</p>
+              <strong>{stats.courseworkTotal > 0 ? `${stats.courseworkRemaining} left` : 'No tracked work yet'}</strong>
             </div>
-            <div className="academics-coursework-ring" style={{ '--coursework-progress': `${courseworkPercent * 3.6}deg` } as CSSProperties} aria-hidden="true">
-              <span>{stats.courseworkRemaining}</span>
-              <small>left</small>
+            <div className="academics-coursework-track" aria-hidden="true">
+              <span style={{ width: `${courseworkPercent}%` }} />
+            </div>
+            <div className="academics-coursework-meta">
+              <span>{stats.courseworkComplete} done</span>
+              <span>{stats.courseworkTotal > 0 ? `${stats.courseworkTotal} tracked` : 'Add coursework in Class Hub'}</span>
             </div>
           </div>
         </div>
@@ -1524,7 +1523,13 @@ export function ClassCard({
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Class actions" onClick={(event) => event.stopPropagation()}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Class actions"
+                  className="md:pointer-events-none md:translate-y-0.5 md:opacity-0 md:transition-[opacity,transform] md:group-hover/class:pointer-events-auto md:group-hover/class:translate-y-0 md:group-hover/class:opacity-100 md:group-focus-within/class:pointer-events-auto md:group-focus-within/class:translate-y-0 md:group-focus-within/class:opacity-100 focus-visible:pointer-events-auto focus-visible:translate-y-0 focus-visible:opacity-100"
+                  onClick={(event) => event.stopPropagation()}
+                >
                   <MoreHorizontal className="size-4" />
                 </Button>
               </DropdownMenuTrigger>

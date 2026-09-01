@@ -2,6 +2,8 @@
 
 > **Aug. 29, 2026 authority amendment — approved by Andy:** class cards have one direct **Open** action and no preview layer, Review action, or Quiz me path. The Daily bento uses Recent study work, Class materials, assignment planning, Topic coverage, and Lecture journal activity. Any conflicting historical note below is superseded.
 
+> **Aug. 31, 2026 progress amendment — approved by Andy:** coursework progress uses a horizontal class-colour bar, never a circle or ring. The bar is paired with the amount left and the amount already done so the student can quickly decide whether to move to another class.
+
 > Extracted from the mockup header. **Read this instead of the HTML** — the markup is ~90% CSS you must not copy.
 
 > **Visual audit (Aug. 26, 2026):** Variant A is APPROVED as the mockup
@@ -28,7 +30,7 @@
      Dismiss animates out; last dismissal unmounts the whole widget.
   4. CLASS CARDS: a compact, equal-height record collection. Each card leads
      with course title + subtitle, a compact status row, one labelled
-     coursework-progress visual (completed and remaining tracked work), one real next
+     horizontal coursework-progress bar (completed and remaining tracked work), one real next
      dated item, and a direct Open action. Class colour is
      visible at rest as a restrained left rail and top aura, never a full-card
      wash; hover/focus strengthens the rail, border, glow, and lift, and reveals
@@ -95,8 +97,9 @@ no-Review experiment below.
   in-progress state, and the exact computed grade percent only when grade
   evidence exists. Compact chips may name factual record state; one latest
   class record may identify a linked lecture, note, material, or returned-work
-  event. A labelled coursework-progress visual shows completed tracked work and
-  the remaining count for that class; this is a prioritization signal, not a
+  event. A labelled horizontal coursework-progress bar shows completed tracked
+  work and the remaining count for that class; it is paired with plain `done`
+  and `left` counts and never uses a circular meter. This is a prioritization signal, not a
   topic count, grade, or claim that the whole course is complete. Its denominator
   is the class's current tracked assignments and reading tasks: submitted or
   graded records count as complete, while dropped records are excluded. The next item appears only when it is a

@@ -107,6 +107,18 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     expect(container.querySelector('.academics-class-card')?.className).toContain('min-h-0')
   })
 
+  it('shows coursework completion as a horizontal done-versus-left bar', async () => {
+    useStore.getState().replaceAll(structuredClone(createSeedData()))
+    await render()
+
+    const progress = container.querySelector<HTMLElement>('.academics-coursework-progress')
+    expect(progress).toBeTruthy()
+    expect(progress?.querySelector('.academics-coursework-track')).toBeTruthy()
+    expect(progress?.querySelector('.academics-coursework-ring')).toBeNull()
+    expect(progress?.textContent).toContain('done')
+    expect(progress?.textContent).toMatch(/left|Not tracked/)
+  })
+
   it('opens a new syllabus import from the shared importFor=new route and clears it on cancel', async () => {
     useStore.getState().replaceAll(structuredClone(createSeedData()))
     await render('/academics?tab=class-center&importFor=new')
