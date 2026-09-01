@@ -682,6 +682,7 @@ export function createSeedData(): AppData {
       email: '',
       school: 'UNC–Chapel Hill',
       major: 'Neuroscience B.S.',
+      minors: [],
       track: 'Pre-Med',
       classYear: 'Class of 2030',
       startTerm: 'Fall 2026',

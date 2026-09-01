@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { IdCard, FileText, Target, GraduationCap, Camera, Trash2 } from 'lucide-react'
+import { IdCard, FileText, Target, GraduationCap, Camera, Plus, Trash2, X } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { ROUTE_MAP } from '@/app/routes'
 import { gpaStats, fmtGpa, hourTotals, bestMcat } from '@/lib/selectors'
@@ -11,7 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { normalizeMinors } from '@/lib/accountWorkspace'
 
 const CATEGORY_LABEL: Record<ExperienceCategory, string> = {
   clinical: 'Clinical Experience', volunteering: 'Volunteering & Service',
@@ -49,6 +51,7 @@ function IdentityHeader() {
   const hours = hourTotals(experiences)
   const best = bestMcat(mcat)
   const totalHours = Math.round(hours.clinical + hours.volunteering + hours.shadowing + hours.research + hours.leadership)
+  const academicLine = [profile.major, ...(profile.minors ?? []).map((minor) => `${minor} minor`), profile.track, profile.school].filter(Boolean)
 
   return (
     <Card className="mb-6">
@@ -56,7 +59,7 @@ function IdentityHeader() {
         <AvatarUpload value={profile.avatarDataUrl} name={profile.name} onChange={(v) => update((d) => { d.profile.avatarDataUrl = v })} />
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-2xl font-bold">{profile.name}</h2>
-          <p className="text-sm text-muted-foreground">{profile.major} · {profile.track} · {profile.school}</p>
+          <p className="text-sm text-muted-foreground">{academicLine.join(' · ') || 'Add your academic direction'}</p>
           <p className="text-xs text-muted-foreground">{profile.classYear} · matriculate {profile.matriculationTarget} · {profile.applicationCycle}</p>
         </div>
         <div className="grid grid-cols-3 gap-5">
@@ -142,13 +145,16 @@ function AutoCv() {
               <Input value={String(profile[key] ?? '')} onChange={(e) => update((d) => { (d.profile[key] as string) = e.target.value })} />
             </div>
           ))}
+          <div className="sm:col-span-2 lg:col-span-4">
+            <ProfileMinorsEditor />
+          </div>
         </CardContent>
       </Card>
       <Card>
         <CardContent className="prose-sm mx-auto max-w-3xl space-y-6 py-8">
           <header className="border-b border-border pb-4 text-center">
             <h2 className="font-display text-3xl font-bold">{profile.name}</h2>
-            <p className="text-sm text-muted-foreground">{profile.major} · {profile.track} · {profile.school} · {profile.classYear}</p>
+            <p className="text-sm text-muted-foreground">{[profile.major, ...(profile.minors ?? []).map((minor) => `${minor} minor`), profile.track, profile.school, profile.classYear].filter(Boolean).join(' · ')}</p>
           </header>
 
           <section>
@@ -270,8 +276,57 @@ function GoalsEditor() {
               <Input defaultValue={String(profile[f.key] ?? '')} onBlur={(e) => update((d) => { (d.profile[f.key] as string) = e.target.value })} />
             </div>
           ))}
+          <div className="col-span-2">
+            <ProfileMinorsEditor />
+          </div>
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+function ProfileMinorsEditor() {
+  const minors = useStore((s) => s.profile.minors ?? [])
+  const update = useStore((s) => s.update)
+  const [draft, setDraft] = useState('')
+
+  function add() {
+    const next = normalizeMinors([...minors, draft])
+    update((data) => { data.profile.minors = next })
+    setDraft('')
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="profile-minor">Minors</Label>
+      <div className="flex gap-2">
+        <Input
+          id="profile-minor"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' && event.key !== ',') return
+            event.preventDefault()
+            add()
+          }}
+          placeholder="Add a minor"
+        />
+        <Button type="button" variant="outline" className="shrink-0 font-bold" onClick={add} disabled={!draft.trim()}>
+          <Plus className="size-4" aria-hidden="true" /> Add
+        </Button>
+      </div>
+      {minors.length ? (
+        <div className="flex flex-wrap gap-2">
+          {minors.map((minor) => (
+            <span key={minor} className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 py-1 pl-3 pr-1.5 text-xs font-bold">
+              {minor}
+              <Button type="button" variant="ghost" size="icon" className="size-5 rounded-full text-muted-foreground hover:bg-background hover:text-foreground" onClick={() => update((data) => { data.profile.minors = minors.filter((item) => item !== minor) })} aria-label={`Remove ${minor}`}>
+                <X className="size-3" aria-hidden="true" />
+              </Button>
+            </span>
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }

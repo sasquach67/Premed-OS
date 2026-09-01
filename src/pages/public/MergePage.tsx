@@ -14,7 +14,10 @@
        is the choice that cannot lose server-side work. Nothing is
        auto-resolved.
      • **Shown once.** `markMergeSeen` runs on every exit path, including
-       `Decide later`, so this cannot reappear on the next sign-in.
+       the deferral, so this cannot reappear on the next sign-in.
+     • **Every control is named for what it actually does.** The deferral
+       opens the account's workspace; it does not leave the app untouched,
+       so it is not called "decide later".
      • Counts are plain — "4 classes, 61 logged hours" — never bytes,
        never a JSON blob.
    ============================================================ */
@@ -181,11 +184,20 @@ export function MergePage() {
     }
   }, [userId, cloud, local, useLocal, finish])
 
-  const decideLater = useCallback(() => {
+  /** Open the account's own workspace and leave the merge unresolved.
+   *
+   *  This is NOT an inert "decide later" — it changes which workspace the app
+   *  has open, and the label must say so. It was previously presented as a
+   *  path that "changes nothing" while it switched workspaces and adopted the
+   *  account's cloud copy. On the one screen whose whole job is to let a
+   *  student decide what happens to three weeks of logged hours, a control
+   *  that under-reports what it does is the worst possible bug.
+   *
+   *  What it does do is safe, which is why the behaviour is kept: Guest and
+   *  legacy work stay untouched in their own namespace, nothing uploads, and
+   *  the merge can still be completed later from Settings → Data. */
+  const useAccountWorkspaceForNow = useCallback(() => {
     if (!userId || !cloud) return
-    // Leave Guest or legacy work untouched in its own namespace. The live app
-    // now opens the account's existing workspace rather than showing the
-    // signed-out browser tree under the signed-in identity.
     activateAccountWorkspace(userId, cloud)
     notifyAccountWorkspaceReady(userId)
     finish('/settings?tab=data')
@@ -316,9 +328,9 @@ export function MergePage() {
                 {phase === 'working' ? 'Applying…' : 'Apply and continue'}
               </button>
 
-              {/* `Decide later` is a real path that changes nothing. */}
-              <button type="button" className="pl-lk" onClick={decideLater}>
-                or decide later — Settings → Data
+              {/* Names the workspace switch it performs. See the handler. */}
+              <button type="button" className="pl-lk" onClick={useAccountWorkspaceForNow}>
+                Use my account workspace and review this later
               </button>
             </div>
 

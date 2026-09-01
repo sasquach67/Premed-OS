@@ -70,6 +70,7 @@ export function createPersonalInitialData(): AppData {
       email: '',
       school: '',
       major: '',
+      minors: [],
       track: '',
       classYear: '',
       startTerm: '',

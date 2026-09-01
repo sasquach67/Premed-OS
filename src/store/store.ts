@@ -19,6 +19,7 @@ import {
   LEGACY_STORAGE_KEY, REAL_STORAGE_KEY, stampDemoNamespace,
   setActiveWorkspaceOwner, workspaceStorageKey, type WorkspaceOwner,
 } from '@/lib/demoMode'
+import { migrateLegacyWorkspaceKeys } from '@/lib/workspaceKeyMigration'
 import { uid } from '@/lib/id'
 import { guardedStorage } from '@/store/storageHealth'
 import { isMutableSeverity } from '@/lib/intelligence/recommendations'
@@ -62,6 +63,7 @@ import { migratePlanningLibraryV36 } from '@/store/migrations/planningLibraryV36
 import { migrateGuideProposalsV37 } from '@/store/migrations/guideProposalsV37'
 import { migrateReadingTaskScheduleV38 } from '@/store/migrations/readingTaskScheduleV38'
 import { migrateGeneratedUnitResourcesV39 } from '@/store/migrations/generatedUnitResourcesV39'
+import { migrateProfileMinorsV40 } from '@/store/migrations/profileMinorsV40'
 import { removeStoryAttachment, retainThenPersistStoryAttachment } from '@/lib/overviewFileCapture'
 
 const DEMO_MODE = isDemoMode()
@@ -80,8 +82,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateGeneratedUnitResourcesV39`. */
-export const CURRENT_STORE_VERSION = 39
+/** Matches the newest migration in `migrateAll`: `migrateProfileMinorsV40`. */
+export const CURRENT_STORE_VERSION = 40
 
 function createInitialData() {
   const initial = createInitialDataForMode(DEMO_MODE)
@@ -135,6 +137,8 @@ interface Actions {
   dismissRecommendation: (rec: { id: string; ruleId: string; severity: Severity }, reason?: string) => void
 
   replaceAll: (data: AppData) => void
+  /** Install a tree that is already at the current schema version. */
+  adoptPreparedWorkspace: (data: AppData) => void
   resetToSeed: () => void
 }
 
@@ -586,7 +590,8 @@ export function migrateAll(data: AppData): AppData {
   migrated = migratePlanningLibraryV36(migrated)
   migrated = migrateGuideProposalsV37(migrated)
   migrated = migrateReadingTaskScheduleV38(migrated)
-  return migrateGeneratedUnitResourcesV39(migrated)
+  migrated = migrateGeneratedUnitResourcesV39(migrated)
+  return migrateProfileMinorsV40(migrated)
 }
 
 /**
@@ -883,6 +888,13 @@ export const useStore = create<Store>()(
         ...migrateAll({ ...createInitialData(), ...data } as AppData),
       })),
 
+      // `replaceAll` migrates because it accepts arbitrary outside data: an
+      // imported backup, or a cloud row written by an older client. A workspace
+      // read from this browser has already been through the version gate in
+      // `readWorkspaceData`, so re-migrating it here would put the whole chain
+      // back on every account switch and undo that gate.
+      adoptPreparedWorkspace: (data) => set(() => ({ ...data })),
+
       resetToSeed: () => set(() => ({ ...createResetData() })),
     })),
     {
@@ -947,9 +959,22 @@ function readWorkspaceData(storageKey: string): AppData | null {
   try {
     const raw = localStorage.getItem(storageKey)
     if (!raw) return null
-    const parsed = JSON.parse(raw) as { state?: Partial<AppData> }
+    const parsed = JSON.parse(raw) as { state?: Partial<AppData>; version?: number }
     if (!parsed?.state || typeof parsed.state !== 'object') return null
-    return migrateAll({ ...createPersonalInitialData(), ...parsed.state } as AppData)
+    const seeded = { ...createPersonalInitialData(), ...parsed.state } as AppData
+    // Respect the version zustand persisted alongside the state, exactly as
+    // its own `migrate` option does. This path used to run all of `migrateAll`
+    // on every workspace read, including data already at the current version:
+    // the entire migration chain over the tree on each account switch. The migrations
+    // are written to be idempotent, so this was cost and risk rather than a
+    // known corruption — but re-running a migration on data it has already
+    // transformed is the failure mode versioning exists to prevent.
+    //
+    // A version ahead of this build cannot be migrated backwards, so it is
+    // read as-is; `merge` still layers in any fields this build expects.
+    const version = typeof parsed.version === 'number' ? parsed.version : undefined
+    if (version !== undefined && version >= CURRENT_STORE_VERSION) return seeded
+    return migrateAll(seeded)
   } catch {
     return null
   }
@@ -967,12 +992,21 @@ function activateWorkspace(owner: WorkspaceOwner, supplied?: AppData) {
     || (previous.kind === 'account' && owner.kind === 'account' && previous.userId !== owner.userId)
   if (ownerChanged) clearCalendarSession()
   const key = workspaceStorageKey(owner)
-  const next = supplied ?? readWorkspaceData(key) ?? createPersonalInitialData()
+  // Anything already on this device has passed the version gate in
+  // `readWorkspaceData`, and a fresh root is current by construction. Only
+  // `supplied` (a cloud row, possibly written by an older client) still needs
+  // the migration chain.
+  const prepared = supplied ? undefined : readWorkspaceData(key) ?? createPersonalInitialData()
   setActiveWorkspaceOwner(owner)
+  // Owner is set, so scoped keys now resolve to the destination. A legacy
+  // unscoped cache that the previously-open workspace never adopted is
+  // adopted here instead; once adopted, this is a no-op.
+  migrateLegacyWorkspaceKeys()
   useStore.persist.setOptions({ name: key })
-  // `replaceAll` persists only after the destination namespace is selected,
-  // so Account A can never be written into Account B or Guest by a switch.
-  useStore.getState().replaceAll(next)
+  // The write happens only after the destination namespace is selected, so
+  // Account A can never be written into Account B or Guest by a switch.
+  if (prepared) useStore.getState().adoptPreparedWorkspace(prepared)
+  else useStore.getState().replaceAll(supplied as AppData)
 }
 
 export function activateAccountWorkspace(userId: string, supplied?: AppData) {

@@ -94,13 +94,14 @@ Sign in · Sign up · Check your email (magic link sent) · Link expired/invalid
 
 ## 3. First run (group B)
 
-**The 30-second setup, and nothing more** (`architecture/06`: only information that changes defaults, timelines, or recommended setup).
+**Resolved account-personalization flow (September 2026).** This is an ownership safeguard inside the signed-in app shell, not the product tutorial.
 
-- **Ask only:** school (or "other"), year/expected graduation, target MCAT window (or "not sure"), and roughly how many hours a week (feeds `WeeklyCapacity`, `00` §11b).
-- **Everything else is discovered later.** Do not ask for GPA, hours, or a school list up front.
-- **Skippable.** Skipping produces a working workspace with defaults.
-- Then: **one call to action — import a syllabus** (`01` §4.1-M, the keystone). Not a tour of forty features.
-- **The guided walkthrough** (`00` §11a) is offered, not forced, and is replayable.
+- **Ask only:** display name (required), major, zero or more minors, and class year. Email is shown read-only from the authenticated identity. Do not ask for School during account setup.
+- **Identity confirmation is not skippable.** A signed-in account must choose its own display name before its workspace can be activated; this prevents a new account from inheriting the previous browser user's identity.
+- **Account isolation comes first.** A new account begins with a clean account-scoped workspace. Existing device work is never silently assigned to it; the student reviews the merge separately before anything is copied.
+- **Everything stays editable later in Profile.** Do not ask for GPA, logged hours, a school list, MCAT timing, or weekly capacity here.
+- After setup, enter the working app. Syllabus import remains the first useful Academics action, but it is not a forced continuation of identity setup.
+- **The guided walkthrough** (`00` §11a) is offered later, not forced, and is replayable. Lecture-capture help appears after the first transcript rather than on login.
 - **Demo data** (`implementation/demo-data.md`) is offered as *"see it populated"* — clearly labelled, separate namespace, reversible.
 - **Cold-start discipline applies** (`01` §6.10-A): dormant features say what they need; nothing renders a hollow zero.
 
@@ -265,7 +266,7 @@ Beta status and no uptime guarantee · acceptable use · **user owns their conte
 - [ ] **Local → account merge:** existing local data is detected and described in plain terms; upload is the default; **merge is a reviewable diff, never an overwrite in either direction**; local data is not destroyed before the server acknowledges; conflicts are user-resolved; **signing out never deletes local data** and says so.
 - [ ] **Auth screens** all exist with plain-language errors, enumeration-safe responses, rate limiting, single-use short-lived links, `sign out everywhere`, and deep-link preservation. **No sensitive data in any email.**
 - [ ] **Google OAuth requests sign-in scopes only**; Calendar/Drive scopes are requested **separately at point of use**.
-- [ ] **First run asks four things at most**, is skippable, and ends on **one** call to action (import a syllabus).
+- [ ] **First account personalization asks four things at most**: required display name plus optional major, minors, and class year. It is shown inside the authenticated app shell, never asks for School, keeps email read-only, and does not activate the account workspace until device-data ownership has been reviewed.
 - [ ] **Delete account** is self-serve, two-step, offers export in the same flow, states the grace period, revokes all third-party tokens, and distinguishes account data from local data.
 - [ ] **Export is complete, visible, and machine-readable**, and does not require support.
 - [ ] **Both auth methods ship** — magic link (default on screen) and email+password (secondary), with breach-list check, **no forced rotation, no composition rules**.

@@ -8,8 +8,8 @@ export interface AccountIdentity {
 
 export interface FirstLoginSetup {
   name: string
-  school: string
   major: string
+  minors: string[]
   classYear: string
   track?: string
 }
@@ -55,6 +55,24 @@ function nameFromEmail(email: string) {
     .join(' ')
 }
 
+/** Keep account profile labels compact, stable, and safe to render as chips. */
+export function normalizeMinors(values: readonly string[]) {
+  const seen = new Set<string>()
+  return values
+    .map((value) => value.trim().replace(/\s+/g, ' '))
+    .filter((value) => {
+      const key = value.toLocaleLowerCase()
+      if (!value || seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+}
+
+/** Device work is never silently claimed by a signed-in account. */
+export function shouldReviewLocalWorkspace(hasDeviceWork: boolean, hasSeenMerge: boolean) {
+  return hasDeviceWork && !hasSeenMerge
+}
+
 /** OAuth metadata is a display hint only; it is never an authorization input. */
 export function profileDefaultsFromIdentity(identity: AccountIdentity) {
   const email = identity.email?.trim() ?? ''
@@ -84,8 +102,8 @@ export function buildFirstAccountWorkspace(input: {
     ...data.profile,
     name: input.setup.name.trim(),
     email: identity.email,
-    school: input.setup.school.trim(),
     major: input.setup.major.trim(),
+    minors: normalizeMinors(input.setup.minors),
     classYear: input.setup.classYear.trim(),
     track: input.setup.track?.trim() || 'Pre-Med',
   }
@@ -123,8 +141,8 @@ export function applyFirstLoginSetup(input: {
     ...data.profile,
     name: input.setup.name.trim(),
     email: identity.email,
-    school: input.setup.school.trim(),
     major: input.setup.major.trim(),
+    minors: normalizeMinors(input.setup.minors),
     classYear: input.setup.classYear.trim(),
     track: input.setup.track?.trim() || data.profile.track || 'Pre-Med',
   }
@@ -141,7 +159,7 @@ export function decideAccountRoute(input: {
   if (!input.hasRemote || input.hasCompletedSetup === false) {
     return input.pathname === FIRST_LOGIN_SETUP_ROUTE ? null : FIRST_LOGIN_SETUP_ROUTE
   }
-  if (input.hasLocalWork && !input.hasSeenMerge) {
+  if (shouldReviewLocalWorkspace(input.hasLocalWork, input.hasSeenMerge)) {
     return input.pathname === '/auth/merge' ? null : '/auth/merge'
   }
   if (input.pathname === FIRST_LOGIN_SETUP_ROUTE || input.pathname === '/auth/setup' || input.pathname === '/auth/merge') return '/'

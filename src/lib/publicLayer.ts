@@ -149,6 +149,7 @@ export function localCounts(data: AppData): LocalCount[] {
     data.profile.email,
     data.profile.school,
     data.profile.major,
+    ...(data.profile.minors ?? []),
     data.profile.track,
     data.profile.classYear,
     data.profile.startTerm,

@@ -65,6 +65,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
     email: 'andy.quach@example.edu',
     school: 'UNC–Chapel Hill',
     major: 'Neuroscience B.S.',
+    minors: [],
     track: 'Pre-Med',
     classYear: 'Class of 2028',
     startTerm: 'Fall 2026',

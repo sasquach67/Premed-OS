@@ -1818,6 +1818,9 @@ export interface Profile {
   email?: string
   school: string
   major: string
+  /** Optional academic minors. An array keeps multiple programs distinct
+   *  instead of storing an ambiguous comma-delimited display string. */
+  minors?: string[]
   track: string           // "Pre-Med"
   classYear: string       // "Class of 2030"
   startTerm: string       // "Fall 2026"

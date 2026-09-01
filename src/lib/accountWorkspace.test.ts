@@ -12,6 +12,7 @@ import {
   hasCompletedAccountSetup,
   notifyAccountWorkspaceReady,
   profileDefaultsFromIdentity,
+  shouldReviewLocalWorkspace,
 } from '@/lib/accountWorkspace'
 import { hasLocalWork } from '@/lib/publicLayer'
 
@@ -31,12 +32,12 @@ describe('account workspace isolation', () => {
 
     const account = buildFirstAccountWorkspace({
       identity: { email: 'eric@example.com', metadata: { full_name: 'Eric Quach' } },
-      setup: { name: 'Eric Quach', school: 'UNC Chapel Hill', major: 'Neuroscience', classYear: '2030' },
+      setup: { name: 'Eric Quach', major: 'Neuroscience', minors: ['Data Science', '  Chemistry  ', 'data science'], classYear: '2030' },
     })
 
     expect(account.profile).toMatchObject({
-      name: 'Eric Quach', email: 'eric@example.com', school: 'UNC Chapel Hill',
-      major: 'Neuroscience', classYear: '2030',
+      name: 'Eric Quach', email: 'eric@example.com', school: '',
+      major: 'Neuroscience', minors: ['Data Science', 'Chemistry'], classYear: '2030',
     })
     expect(account.courses).toEqual([])
     expect(account.tasks).toEqual([])
@@ -70,6 +71,12 @@ describe('account workspace isolation', () => {
     })).toBeNull()
   })
 
+  it('requires device-data review even when an incomplete account row already exists', () => {
+    expect(shouldReviewLocalWorkspace(true, false)).toBe(true)
+    expect(shouldReviewLocalWorkspace(true, true)).toBe(false)
+    expect(shouldReviewLocalWorkspace(false, false)).toBe(false)
+  })
+
   it('recognizes setup only when the profile belongs to the signed-in identity', () => {
     const account = createPersonalInitialData()
     account.profile = { ...account.profile, name: 'Andy', email: 'andy@example.com' }
@@ -88,9 +95,9 @@ describe('account workspace isolation', () => {
     const result = applyFirstLoginSetup({
       existing,
       identity: { email: 'elephon08@gmail.com' },
-      setup: { name: 'Andy Quach', school: 'UNC Chapel Hill', major: 'Neuroscience', classYear: '2030' },
+      setup: { name: 'Andy Quach', major: 'Neuroscience', minors: ['Chemistry'], classYear: '2030' },
     })
-    expect(result.profile).toMatchObject({ name: 'Andy Quach', email: 'elephon08@gmail.com' })
+    expect(result.profile).toMatchObject({ name: 'Andy Quach', email: 'elephon08@gmail.com', minors: ['Chemistry'] })
     expect(result.tasks).toEqual(existing.tasks)
   })
 

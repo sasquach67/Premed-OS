@@ -6,7 +6,7 @@ describe('personal first-run data', () => {
   it('creates a complete, record-free personal workspace', () => {
     const data = createInitialDataForMode(false)
 
-    expect(data.profile).toMatchObject({ name: '', school: '', major: '' })
+    expect(data.profile).toMatchObject({ name: '', school: '', major: '', minors: [] })
     expect(data.academics.migrationJournal).toEqual([])
     expect(data.courses).toEqual([])
     expect(data.tasks).toEqual([])
@@ -44,7 +44,7 @@ describe('personal first-run data', () => {
     useStore.getState().resetToSeed()
 
     const reset = snapshotData()
-    expect(reset.profile).toMatchObject({ name: '', school: '', major: '' })
+    expect(reset.profile).toMatchObject({ name: '', school: '', major: '', minors: [] })
     expect(reset.courses).toEqual([])
     expect(reset.tasks).toEqual([])
     expect(reset.requirements).toEqual([])
