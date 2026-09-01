@@ -23,7 +23,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { PublicShell } from '@/components/public/PublicShell'
 import { PublicNav } from '@/components/public/PublicNav'
 import { supabase } from '@/lib/supabase'
-import { snapshotData, useStore } from '@/store/store'
+import { activateAccountWorkspace, snapshotData } from '@/store/store'
 import { localCounts, localWorkSince, markMergeSeen } from '@/lib/publicLayer'
 import type { AppData } from '@/lib/types'
 import type { DashboardRow } from '@/lib/supabase'
@@ -68,7 +68,6 @@ function areaSize(data: AppData | null, fields: readonly (keyof AppData)[]): num
 export function MergePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const replaceAll = useStore((s) => s.replaceAll)
 
   const [phase, setPhase] = useState<Phase>('loading')
   const [error, setError] = useState('')
@@ -173,14 +172,24 @@ export function MergePage() {
       const { error: e } = await supabase.from('dashboards').upsert(row, { onConflict: 'user_id' })
       if (e) throw e
       // Server confirmed — only now does the device's copy change.
-      replaceAll(mergeRemotePreservingLocal(remoteResult, local))
+      activateAccountWorkspace(userId, mergeRemotePreservingLocal(result, local))
       notifyAccountWorkspaceReady(userId)
       finish('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'The merge did not finish. Nothing was changed.')
       setPhase('review')
     }
-  }, [userId, cloud, local, useLocal, replaceAll, finish])
+  }, [userId, cloud, local, useLocal, finish])
+
+  const decideLater = useCallback(() => {
+    if (!userId || !cloud) return
+    // Leave Guest or legacy work untouched in its own namespace. The live app
+    // now opens the account's existing workspace rather than showing the
+    // signed-out browser tree under the signed-in identity.
+    activateAccountWorkspace(userId, cloud)
+    notifyAccountWorkspaceReady(userId)
+    finish('/settings?tab=data')
+  }, [userId, cloud, finish])
 
   return (
     <PublicShell title="Your data — Premed OS">
@@ -308,7 +317,7 @@ export function MergePage() {
               </button>
 
               {/* `Decide later` is a real path that changes nothing. */}
-              <button type="button" className="pl-lk" onClick={() => finish('/settings?tab=data')}>
+              <button type="button" className="pl-lk" onClick={decideLater}>
                 or decide later — Settings → Data
               </button>
             </div>

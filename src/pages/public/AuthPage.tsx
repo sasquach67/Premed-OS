@@ -29,6 +29,7 @@ import { supabase, isSupabaseConfigured, authRedirectTo } from '@/lib/supabase'
 import { useEnterApp } from '@/components/public/useEnterApp'
 import { markEnteredApp } from '@/lib/publicLayer'
 import type { User } from '@supabase/supabase-js'
+import { activateGuestWorkspace } from '@/store/store'
 
 type Screen = 'form' | 'sent' | 'recovery' | 'signed-in'
 type Method = 'link' | 'password'
@@ -331,7 +332,9 @@ export function AuthPage() {
                 navigate(next)
               }}
               onSignOut={async () => {
+                if (!window.confirm('Sign out of Premed OS? Your account data will stay saved.')) return
                 await supabase?.auth.signOut()
+                activateGuestWorkspace()
                 setUser(null)
                 setScreen('form')
               }}

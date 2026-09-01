@@ -16,11 +16,12 @@ import { useTheme } from '@/store/useTheme'
 import type { QuickAddKind } from './shellActions'
 import { rankCommandHits, type CommandHit } from './commandSearchCore'
 import { isTypingTarget } from '@/lib/keyboard'
+import { workspaceScopedKey } from '@/lib/demoMode'
 
 const RECENT_KEY = 'premed_hq_command_recents'
 
 function readRecents(): string[] {
-  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]') } catch { return [] }
+  try { return JSON.parse(localStorage.getItem(workspaceScopedKey(RECENT_KEY)) || '[]') } catch { return [] }
 }
 
 export function CommandSearch() {
@@ -89,7 +90,7 @@ export function CommandSearch() {
     if (!hit) return
     const next = [hit.id, ...recentIds.filter((id) => id !== hit.id)].slice(0, 12)
     setRecentIds(next)
-    localStorage.setItem(RECENT_KEY, JSON.stringify(next))
+    localStorage.setItem(workspaceScopedKey(RECENT_KEY), JSON.stringify(next))
     setOpen(false); setQuery('')
     if (hit.action) hit.action()
     else if (hit.url) window.open(hit.url, '_blank', 'noopener,noreferrer')

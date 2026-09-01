@@ -61,6 +61,13 @@ function clearStoredToken() {
   }
 }
 
+/** Forget this tab's bearer token without revoking the user's Google grant.
+ * Account/workspace switches call this so another Premed OS identity can
+ * never reuse the previous identity's in-memory Calendar access. */
+export function clearCalendarSession() {
+  clearStoredToken()
+}
+
 function storeToken(token: string, expiresAt: number) {
   accessToken = token
   tokenExpiry = expiresAt

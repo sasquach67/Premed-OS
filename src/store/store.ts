@@ -15,13 +15,16 @@ import type {
 import { createDemoData } from '@/data/demoSeed'
 import { createEmptyClassCenterData, createPersonalInitialData } from '@/data/personalInitialData'
 import {
-  activeStorageKey, clearUnstampedDemoNamespace, isDemoMode,
+  activeStorageKey, activeWorkspaceOwner, clearUnstampedDemoNamespace, isDemoMode,
   LEGACY_STORAGE_KEY, REAL_STORAGE_KEY, stampDemoNamespace,
+  setActiveWorkspaceOwner, workspaceStorageKey, type WorkspaceOwner,
 } from '@/lib/demoMode'
 import { uid } from '@/lib/id'
 import { guardedStorage } from '@/store/storageHealth'
 import { isMutableSeverity } from '@/lib/intelligence/recommendations'
 import { INTELLIGENCE_THRESHOLDS, type Severity } from '@/lib/intelligence/types'
+import { mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
+import { clearCalendarSession } from '@/lib/googleCalendar'
 import { migrateAcademicsV4, syncCurrentTermWorkspaces } from '@/store/migrations/academicsV4'
 import { migrateAcademicsV5 } from '@/store/migrations/academicsV5'
 import { migrateAcademicsV6 } from '@/store/migrations/academicsV6'
@@ -932,6 +935,55 @@ export const useStore = create<Store>()(
     }
   )
 )
+
+/**
+ * Change the browser cache that backs the live Zustand store.
+ *
+ * The account id is part of the local namespace, just as it is part of the
+ * Supabase row key. Switching never copies the currently-open tree into the
+ * destination. It loads that owner's existing cache, or a record-free root.
+ */
+function readWorkspaceData(storageKey: string): AppData | null {
+  try {
+    const raw = localStorage.getItem(storageKey)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { state?: Partial<AppData> }
+    if (!parsed?.state || typeof parsed.state !== 'object') return null
+    return migrateAll({ ...createPersonalInitialData(), ...parsed.state } as AppData)
+  } catch {
+    return null
+  }
+}
+
+export function activeAccountWorkspaceId(): string | null {
+  const owner = activeWorkspaceOwner()
+  return owner.kind === 'account' ? owner.userId : null
+}
+
+function activateWorkspace(owner: WorkspaceOwner, supplied?: AppData) {
+  if (DEMO_MODE) return
+  const previous = activeWorkspaceOwner()
+  const ownerChanged = previous.kind !== owner.kind
+    || (previous.kind === 'account' && owner.kind === 'account' && previous.userId !== owner.userId)
+  if (ownerChanged) clearCalendarSession()
+  const key = workspaceStorageKey(owner)
+  const next = supplied ?? readWorkspaceData(key) ?? createPersonalInitialData()
+  setActiveWorkspaceOwner(owner)
+  useStore.persist.setOptions({ name: key })
+  // `replaceAll` persists only after the destination namespace is selected,
+  // so Account A can never be written into Account B or Guest by a switch.
+  useStore.getState().replaceAll(next)
+}
+
+export function activateAccountWorkspace(userId: string, supplied?: AppData) {
+  const owner = { kind: 'account', userId } as const
+  const cached = supplied ? readWorkspaceData(workspaceStorageKey(owner)) : null
+  activateWorkspace(owner, supplied && cached ? mergeRemotePreservingLocal(supplied, cached) : supplied)
+}
+
+export function activateGuestWorkspace() {
+  activateWorkspace({ kind: 'guest' })
+}
 
 /** Non-reactive snapshot of just the data (for export / backup). */
 export function snapshotData(): AppData {

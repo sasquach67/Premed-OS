@@ -32,6 +32,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import { Wordmark } from '@/components/public/Wordmark'
 import { supabase } from '@/lib/supabase'
+import { activateGuestWorkspace } from '@/store/store'
 
 interface NavLink {
   label: string
@@ -113,7 +114,8 @@ export function PublicNav() {
               type="button"
               className="pl-navlk"
               onClick={() => {
-                void supabase?.auth.signOut()
+                if (!window.confirm('Sign out of Premed OS? Your account data will stay saved.')) return
+                void supabase?.auth.signOut().then(() => activateGuestWorkspace())
               }}
             >
               Sign out

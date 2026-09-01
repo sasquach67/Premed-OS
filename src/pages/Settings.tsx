@@ -4,7 +4,7 @@ import {
   Archive as ArchiveIcon, Cloud, CloudOff, Download, Upload, RotateCcw, Check, AlertCircle,
   Palette, ExternalLink, CheckCircle2, Trash2, CalendarClock, RefreshCw, Unplug, Wifi, ShieldCheck,
 } from 'lucide-react'
-import { useStore } from '@/store/store'
+import { activateGuestWorkspace, useStore } from '@/store/store'
 import { useBackup } from '@/store/useBackup'
 import { useCloudSync } from '@/store/useCloudSync'
 import { useCalendarSync } from '@/hooks/useCalendarSync'
@@ -421,6 +421,7 @@ function AccountSecuritySection({ onMessage }: { onMessage: (msg: string) => voi
   }
 
   async function signOutEverywhere() {
+    if (!window.confirm('Sign out of Premed OS on every device? Your account data will stay saved.')) return
     setBusy('signout')
     const { error } = await client.auth.signOut({ scope: 'global' })
     setBusy(null)
@@ -428,7 +429,8 @@ function AccountSecuritySection({ onMessage }: { onMessage: (msg: string) => voi
       onMessage('Could not sign out every device. Try again in a moment.')
       return
     }
-    onMessage('Signed out on every device. This browser’s local workspace is still here.')
+    activateGuestWorkspace()
+    navigate('/landing', { replace: true })
   }
 
   async function deleteAccount() {
@@ -445,15 +447,15 @@ function AccountSecuritySection({ onMessage }: { onMessage: (msg: string) => voi
       return
     }
     await client.auth.signOut({ scope: 'local' })
-    onMessage('Your cloud account was deleted. Your local workspace remains on this device.')
-    navigate('/auth')
+    activateGuestWorkspace()
+    navigate('/auth', { replace: true })
   }
 
   return (
     <Card className="border-primary/20">
       <CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /> Account &amp; security</CardTitle></CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">Signed in as <b className="text-foreground">{cloud.user.email}</b>. Your local workspace is separate from this account.</p>
+        <p className="text-sm text-muted-foreground">Signed in as <b className="text-foreground">{cloud.user.email}</b>. This browser cache is isolated to this account.</p>
         <div className="space-y-2 rounded-xl border border-border bg-card p-3">
           <Label htmlFor="account-email">Change email</Label>
           <div className="flex flex-wrap gap-2">
@@ -467,7 +469,7 @@ function AccountSecuritySection({ onMessage }: { onMessage: (msg: string) => voi
         </div>
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3">
           <p className="text-sm font-bold text-destructive">Delete cloud account</p>
-          <p className="mt-1 text-xs text-muted-foreground">We download your local export first. This deletes cloud data and signs out every device, but never clears this browser’s local workspace.</p>
+          <p className="mt-1 text-xs text-muted-foreground">We download this account’s local export first. This deletes its cloud data and signs out every device; Guest and other account workspaces stay separate.</p>
           <Button className="mt-3" variant="destructive" size="sm" onClick={() => void deleteAccount()} disabled={busy !== null}>{busy === 'delete' ? 'Deleting…' : 'Export and delete account'}</Button>
         </div>
       </CardContent>

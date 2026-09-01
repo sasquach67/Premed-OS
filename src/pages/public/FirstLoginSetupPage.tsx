@@ -14,13 +14,12 @@ import {
 import { markEnteredApp, markMergeSeen, hasLocalWork, hasSeenMerge } from '@/lib/publicLayer'
 import { supabase, type DashboardRow } from '@/lib/supabase'
 import { dataForRemote } from '@/lib/storyPrivacy'
-import { snapshotData, useStore } from '@/store/store'
+import { activateAccountWorkspace, snapshotData } from '@/store/store'
 
 type Phase = 'loading' | 'ready' | 'saving' | 'error'
 
 export function FirstLoginSetupPage() {
   const navigate = useNavigate()
-  const replaceAll = useStore((state) => state.replaceAll)
   const [phase, setPhase] = useState<Phase>('loading')
   const [error, setError] = useState('')
   const [user, setUser] = useState<User | null>(null)
@@ -105,7 +104,7 @@ export function FirstLoginSetupPage() {
       if (hasDeviceWork) {
         navigate('/auth/merge?firstLogin=1', { replace: true })
       } else {
-        replaceAll(account)
+        activateAccountWorkspace(user.id, account)
         markMergeSeen(user.id)
         notifyAccountWorkspaceReady(user.id)
         navigate(FIRST_LOGIN_STUDY_ROUTE, { replace: true })

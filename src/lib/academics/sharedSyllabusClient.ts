@@ -4,20 +4,21 @@ import {
   type SharedSyllabusScope,
 } from '@/lib/academics/sharedSyllabusStructure'
 import type { SyllabusProposal } from '@/lib/academics/syllabusParser'
+import { workspaceScopedKey } from '@/lib/demoMode'
 
 const CAPABILITY_STORAGE_KEY = 'premedos.shared-syllabus.capabilities.v1'
 type CapabilityRecord = { candidateId: string; capability: string }
 
 function loadCapabilities(): CapabilityRecord[] {
   try {
-    const parsed = JSON.parse(localStorage.getItem(CAPABILITY_STORAGE_KEY) ?? '{"version":1,"records":[]}')
+    const parsed = JSON.parse(localStorage.getItem(workspaceScopedKey(CAPABILITY_STORAGE_KEY)) ?? '{"version":1,"records":[]}')
     return parsed?.version === 1 && Array.isArray(parsed.records) ? parsed.records.filter((item: unknown): item is CapabilityRecord => (
       Boolean(item) && typeof (item as CapabilityRecord).candidateId === 'string' && typeof (item as CapabilityRecord).capability === 'string'
     )) : []
   } catch { return [] }
 }
 function saveCapabilities(records: CapabilityRecord[]) {
-  localStorage.setItem(CAPABILITY_STORAGE_KEY, JSON.stringify({ version: 1, records }))
+  localStorage.setItem(workspaceScopedKey(CAPABILITY_STORAGE_KEY), JSON.stringify({ version: 1, records }))
 }
 async function invoke<T>(body: Record<string, unknown>): Promise<T> {
   if (!supabase) throw new Error('Cloud sharing is not configured. Your private import is still available.')

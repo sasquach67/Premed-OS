@@ -17,7 +17,7 @@
    costs a visitor one extra click and nothing else.
    ============================================================ */
 import type { AppData } from '@/lib/types'
-import { LEGACY_STORAGE_KEY, REAL_STORAGE_KEY } from '@/lib/demoMode'
+import { LEGACY_STORAGE_KEY, REAL_STORAGE_KEY, activeStorageKey } from '@/lib/demoMode'
 
 const KEY = 'premed_hq_public'
 
@@ -34,7 +34,8 @@ const HAD_EXISTING_DATA = (() => {
   try {
     return (
       localStorage.getItem(REAL_STORAGE_KEY) !== null ||
-      localStorage.getItem(LEGACY_STORAGE_KEY) !== null
+      localStorage.getItem(LEGACY_STORAGE_KEY) !== null ||
+      localStorage.getItem(activeStorageKey()) !== null
     )
   } catch {
     return false

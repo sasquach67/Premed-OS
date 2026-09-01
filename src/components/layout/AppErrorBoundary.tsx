@@ -10,16 +10,17 @@
    router — so it still renders when any of those are the problem.
    ============================================================ */
 import { Component, type CSSProperties, type ErrorInfo, type ReactNode } from 'react'
+import { activeStorageKey } from '@/lib/demoMode'
 
-/** Mirrors STORAGE_KEY in src/store/store.ts — kept literal so this
- *  file never has to import (and potentially crash with) the store. */
-const RAW_STORAGE_KEY = 'premed_hq_v1'
+function rawStorageKey() {
+  return activeStorageKey()
+}
 
 interface Props { children: ReactNode }
 interface State { error: Error | null }
 
 function downloadRawData(): void {
-  const raw = localStorage.getItem(RAW_STORAGE_KEY)
+  const raw = localStorage.getItem(rawStorageKey())
   if (!raw) {
     window.alert('No saved data found in this browser.')
     return
@@ -52,7 +53,7 @@ export class AppErrorBoundary extends Component<Props, State> {
       'Export your data first if you have not already. Continue?'
     )
     if (!sure) return
-    localStorage.removeItem(RAW_STORAGE_KEY)
+    localStorage.removeItem(rawStorageKey())
     window.location.reload()
   }
 

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { workspaceScopedKey } from '@/lib/demoMode'
 
 export type StudyCitation =
   | {
@@ -252,15 +253,15 @@ const DISCLOSURE_KEY = 'premed-os:ai-study-source-disclosure:v1'
 const SOURCE_SYNC_PREFIX = 'premed-os:ai-study-source-sync:v1:'
 
 export function hasAcceptedStudySourceDisclosure() {
-  return typeof localStorage !== 'undefined' && localStorage.getItem(DISCLOSURE_KEY) === 'accepted'
+  return typeof localStorage !== 'undefined' && localStorage.getItem(workspaceScopedKey(DISCLOSURE_KEY)) === 'accepted'
 }
 
 export function acceptStudySourceDisclosure() {
-  if (typeof localStorage !== 'undefined') localStorage.setItem(DISCLOSURE_KEY, 'accepted')
+  if (typeof localStorage !== 'undefined') localStorage.setItem(workspaceScopedKey(DISCLOSURE_KEY), 'accepted')
 }
 
 export function studySourceSyncKey(courseId: string, topicId: string) {
-  return `${SOURCE_SYNC_PREFIX}${encodeURIComponent(courseId)}:${encodeURIComponent(topicId)}`
+  return `${workspaceScopedKey(SOURCE_SYNC_PREFIX)}:${encodeURIComponent(courseId)}:${encodeURIComponent(topicId)}`
 }
 
 export function studySourceFingerprint(sources: StudySourceInput[]) {
@@ -277,9 +278,10 @@ export function studySourceFingerprint(sources: StudySourceInput[]) {
 
 export function clearStudySourceSyncCache() {
   if (typeof localStorage === 'undefined') return
+  const prefix = workspaceScopedKey(SOURCE_SYNC_PREFIX)
   for (let index = localStorage.length - 1; index >= 0; index -= 1) {
     const key = localStorage.key(index)
-    if (key?.startsWith(SOURCE_SYNC_PREFIX)) localStorage.removeItem(key)
+    if (key?.startsWith(prefix)) localStorage.removeItem(key)
   }
 }
 

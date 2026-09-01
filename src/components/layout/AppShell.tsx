@@ -165,7 +165,7 @@ export function AppShell() {
               </AlertDialogMedia>
               <AlertDialogTitle>Sign out of Premed OS?</AlertDialogTitle>
               <AlertDialogDescription>
-                You’ll return to the public home. Work saved on this device stays here, and cloud sync pauses until you sign in again.
+                You’ll return to the public home and a separate Guest workspace. This account’s browser cache stays isolated and returns when you sign in again.
               </AlertDialogDescription>
             </AlertDialogHeader>
             {signOutError && (
