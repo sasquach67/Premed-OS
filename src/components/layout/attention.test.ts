@@ -143,6 +143,7 @@ describe('review queue selector', () => {
     // Duplicates are the one uncertain check, so they carry confidence...
     expect(duplicate?.confidence).toBe('high')
     expect(duplicate?.differingFields).toContain('Category')
+    expect(duplicate?.route).toMatch(/^\/review\?item=duplicate-/)
     // ...while deterministic attention rows never do.
     expect(queue.filter((item) => item.kind === 'attention').every((item) => item.confidence === undefined)).toBe(true)
   })

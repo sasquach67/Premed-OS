@@ -10,6 +10,7 @@ import { MergeGate } from '@/components/public/MergeGate'
 const Home = lazy(() => import('@/pages/Home').then((m) => ({ default: m.Home })))
 const OverviewTasksPage = lazy(() => import('@/pages/OverviewTasksPage').then((m) => ({ default: m.OverviewTasksPage })))
 const OverviewQuarterlyGoalsPage = lazy(() => import('@/pages/OverviewQuarterlyGoalsPage').then((m) => ({ default: m.OverviewQuarterlyGoalsPage })))
+const ReviewItemPage = lazy(() => import('@/pages/ReviewItemPage').then((m) => ({ default: m.ReviewItemPage })))
 const Academics = lazy(() => import('@/pages/Academics').then((m) => ({ default: m.Academics })))
 const McatFocusSession = lazy(() => import('@/pages/McatFocusSession').then((m) => ({ default: m.McatFocusSession })))
 const Profile = lazy(() => import('@/pages/Profile').then((m) => ({ default: m.Profile })))
@@ -75,6 +76,7 @@ function App() {
             <Route path="northstar" element={<Navigate to="/?guide=open" replace />} />
             <Route path="overview/tasks" element={<OverviewTasksPage />} />
             <Route path="overview/goals/:goalId" element={<OverviewQuarterlyGoalsPage />} />
+            <Route path="review" element={<ReviewItemPage />} />
             <Route path="academics" element={<Academics />} />
             <Route path="academics/classes/:courseId" element={<Academics />} />
             <Route path="mcat" element={<ReservedSpace routeId="mcat" />} />

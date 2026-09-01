@@ -39,6 +39,7 @@ export const ROUTES: RouteDef[] = [
   // of Overview rather than a sidebar entry — the URL states the ownership.
   // Precedent: /academics/classes/:courseId.
   { id: 'overview/tasks', label: 'Tasks', group: 'Home', icon: ListChecks, tagline: 'Everything on your plate.', nav: false },
+  { id: 'review', label: 'Review', group: 'Home', icon: ListChecks, tagline: 'Resolve the exact item that needs your decision.', nav: false },
   { id: 'atlas', label: 'Atlas', group: 'Atlas', icon: Orbit, tagline: 'Your connected admissions knowledge space.' },
   { id: 'archive', label: 'Archive', group: 'Application', icon: Archive, tagline: 'Finished tasks & focus targets — restorable.', nav: false },
   { id: 'profile', label: 'Profile / CV', group: 'Account', icon: IdCard, tagline: 'Auto-CV from your logged roles + editable resume.', nav: false },

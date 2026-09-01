@@ -38,6 +38,10 @@ function pairId(kind: DedupKind, a: string, b: string): string {
   return `duplicate-${kind}:${first}:${second}`
 }
 
+function reviewRoute(id: string): string {
+  return `/review?item=${encodeURIComponent(id)}`
+}
+
 function differing(fields: { label: string; a?: string | number; b?: string | number }[]): string[] {
   return fields
     .filter(({ a, b }) => {
@@ -75,8 +79,9 @@ function personCandidates(persons: CollectionRecord<Person>[]): DedupCandidate[]
       const byName = nameConfidence(a.name, b.name)
       if (!sameEmail && !byName) continue
       const confidence: ConfidenceLevel = sameEmail ? 'high' : byName ?? 'low'
+      const id = pairId('person', a.id, b.id)
       out.push({
-        id: pairId('person', a.id, b.id),
+        id,
         kind: 'person',
         confidence,
         why: sameEmail
@@ -90,7 +95,7 @@ function personCandidates(persons: CollectionRecord<Person>[]): DedupCandidate[]
           { label: 'Role', a: a.role, b: b.role },
           { label: 'Title', a: a.title, b: b.title },
         ]),
-        route: '/settings',
+        route: reviewRoute(id),
       })
     }
   }
@@ -107,8 +112,9 @@ function organizationCandidates(organizations: CollectionRecord<Organization>[])
       const sameSite = Boolean(a.website && b.website && normalizeEntityName(a.website) === normalizeEntityName(b.website))
       const byName = nameConfidence(a.name, b.name)
       if (!sameSite && !byName) continue
+      const id = pairId('organization', a.id, b.id)
       out.push({
-        id: pairId('organization', a.id, b.id),
+        id,
         kind: 'organization',
         confidence: sameSite ? 'high' : byName ?? 'low',
         why: sameSite
@@ -121,7 +127,7 @@ function organizationCandidates(organizations: CollectionRecord<Organization>[])
           { label: 'Location', a: a.location, b: b.location },
           { label: 'Website', a: a.website, b: b.website },
         ]),
-        route: '/settings',
+        route: reviewRoute(id),
       })
     }
   }
@@ -139,8 +145,9 @@ function courseCandidates(courses: CollectionRecord<Course>[]): DedupCandidate[]
       // Same code in a DIFFERENT term is a legitimate retake — AMCAS averages
       // repeats rather than replacing them, so both rows must survive.
       if (normalizeEntityName(a.term) !== normalizeEntityName(b.term)) continue
+      const id = pairId('course', a.id, b.id)
       out.push({
-        id: pairId('course', a.id, b.id),
+        id,
         kind: 'course',
         confidence: 'high',
         why: `${a.code} is listed twice in ${a.term}. (A retake in a different term is not a duplicate.)`,
@@ -152,7 +159,7 @@ function courseCandidates(courses: CollectionRecord<Course>[]): DedupCandidate[]
           { label: 'Grade', a: a.grade, b: b.grade },
           { label: 'Status', a: a.status, b: b.status },
         ]),
-        route: '/academics?mode=planning&tab=planner',
+        route: reviewRoute(id),
       })
     }
   }
@@ -168,8 +175,9 @@ function schoolCandidates(schools: CollectionRecord<SchoolEntry>[]): DedupCandid
       const b = rows[j]
       const byName = nameConfidence(a.name, b.name)
       if (!byName) continue
+      const id = pairId('school', a.id, b.id)
       out.push({
-        id: pairId('school', a.id, b.id),
+        id,
         kind: 'school',
         confidence: byName,
         why: `${a.name} and ${b.name} look like the same school on your list.`,
@@ -181,7 +189,7 @@ function schoolCandidates(schools: CollectionRecord<SchoolEntry>[]): DedupCandid
           { label: 'Status', a: a.status, b: b.status },
           { label: 'State', a: a.state, b: b.state },
         ]),
-        route: '/schools',
+        route: reviewRoute(id),
       })
     }
   }

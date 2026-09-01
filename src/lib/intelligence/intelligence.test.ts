@@ -198,6 +198,18 @@ describe('dedup detection', () => {
     expect(JSON.stringify(data.persons)).toBe(before)
   })
 
+  it('routes a shared-email person match to that exact review item', () => {
+    const data = quietSeed()
+    data.persons = [
+      { id: 'dr-a', name: 'Dr. A', email: 'course@example.edu', createdAt: 1, updatedAt: 1, archived: false, order: 0 },
+      { id: 'fatima', name: 'Fatima', email: 'course@example.edu', createdAt: 1, updatedAt: 1, archived: false, order: 1 },
+    ]
+
+    const [candidate] = dedupCandidates(data)
+    expect(candidate.id).toBe('duplicate-person:dr-a:fatima')
+    expect(candidate.route).toBe('/review?item=duplicate-person%3Adr-a%3Afatima')
+  })
+
   it('rates a containment match lower than an exact match', () => {
     const data = quietSeed()
     data.organizations = [
