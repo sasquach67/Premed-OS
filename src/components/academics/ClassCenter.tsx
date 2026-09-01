@@ -1403,8 +1403,8 @@ export function ClassCard({
     : 'No deadline scheduled'
   const percent = coursePercent(row.id, data)
   const signal = classSignal(row, data, stats, nextText)
-  const courseworkPercent = stats.courseworkTotal > 0
-    ? Math.round((stats.courseworkComplete / stats.courseworkTotal) * 100)
+  const courseworkPercent = stats.weeklyCourseworkTotal > 0
+    ? Math.round((stats.weeklyCourseworkComplete / stats.weeklyCourseworkTotal) * 100)
     : 0
 
   function openFromCard(event: MouseEvent<HTMLElement>) {
@@ -1487,23 +1487,23 @@ export function ClassCard({
           <div
             className="academics-coursework-progress"
             role="progressbar"
-            aria-label={stats.courseworkTotal > 0
-              ? `${stats.courseworkComplete} of ${stats.courseworkTotal} tracked coursework items complete; ${stats.courseworkRemaining} left`
-              : 'No tracked coursework yet'}
+            aria-label={stats.weeklyCourseworkTotal > 0
+              ? `${stats.weeklyCourseworkComplete} of ${stats.weeklyCourseworkTotal} coursework items complete this week; ${stats.weeklyCourseworkRemaining} left`
+              : 'No coursework due this week'}
             aria-valuemin={0}
-            aria-valuemax={stats.courseworkTotal || 1}
-            aria-valuenow={stats.courseworkComplete}
+            aria-valuemax={stats.weeklyCourseworkTotal || 1}
+            aria-valuenow={stats.weeklyCourseworkComplete}
           >
             <div className="academics-coursework-head">
-              <p>Coursework progress</p>
-              <strong>{stats.courseworkTotal > 0 ? `${stats.courseworkRemaining} left` : 'No tracked work yet'}</strong>
+              <p>Weekly progress</p>
+              <strong>{stats.weeklyCourseworkTotal > 0 ? `${stats.weeklyCourseworkRemaining} left` : 'Clear this week'}</strong>
             </div>
             <div className="academics-coursework-track" aria-hidden="true">
               <span style={{ width: `${courseworkPercent}%` }} />
             </div>
             <div className="academics-coursework-meta">
-              <span>{stats.courseworkComplete} done</span>
-              <span>{stats.courseworkTotal > 0 ? `${stats.courseworkTotal} tracked` : 'Add coursework in Class Hub'}</span>
+              <span>{stats.weeklyCourseworkComplete} done</span>
+              <span>{stats.weeklyCourseworkTotal > 0 ? `${stats.weeklyCourseworkTotal} this week` : 'No dated work'}</span>
             </div>
           </div>
         </div>
@@ -3137,16 +3137,17 @@ function classStats(courseId: string, data: ClassCenterViewData) {
   const topics = data.topics.filter((item) => item.courseId === courseId)
   const coveredCount = topics.filter((topic) => (topic.linkedFileIds?.length ?? 0) || topic.sourceNoteIds.length).length
   const coursework = data.assignments.filter((item) => item.courseId === courseId && item.status !== 'dropped')
-  const courseworkComplete = coursework.filter((item) => item.status === 'submitted' || item.status === 'graded').length
+  const weeklyCoursework = coursework.filter((item) => isDueThisWeek(item.dueDate))
+  const weeklyCourseworkComplete = weeklyCoursework.filter((item) => item.status === 'submitted' || item.status === 'graded').length
   const upcoming = data.assignments
     .filter((item) => item.courseId === courseId && item.status !== 'submitted' && item.status !== 'graded' && item.dueDate)
     .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
   return {
     topicCount: topics.length,
     coveredCount,
-    courseworkTotal: coursework.length,
-    courseworkComplete,
-    courseworkRemaining: coursework.length - courseworkComplete,
+    weeklyCourseworkTotal: weeklyCoursework.length,
+    weeklyCourseworkComplete,
+    weeklyCourseworkRemaining: weeklyCoursework.length - weeklyCourseworkComplete,
     materialCount: data.files.filter((item) => item.courseId === courseId).length,
     notesCount: data.notes.filter((item) => item.courseId === courseId).length,
     filesCount: data.files.filter((item) => item.courseId === courseId).length,
@@ -3156,6 +3157,17 @@ function classStats(courseId: string, data: ClassCenterViewData) {
     failedCount: data.files.filter((item) => item.courseId === courseId && item.processingStatus === 'failed').length,
     nextDeadline: upcoming[0],
   }
+}
+
+function isDueThisWeek(iso?: string, today = new Date()) {
+  if (!iso) return false
+  const due = new Date(`${iso.slice(0, 10)}T12:00:00`)
+  if (Number.isNaN(due.getTime())) return false
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  start.setDate(start.getDate() - start.getDay())
+  const end = new Date(start)
+  end.setDate(end.getDate() + 7)
+  return due >= start && due < end
 }
 
 type ClassDailyVerb = 'Study' | 'Draft' | 'Read' | 'Log'

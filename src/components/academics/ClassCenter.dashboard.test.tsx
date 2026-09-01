@@ -107,16 +107,46 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     expect(container.querySelector('.academics-class-card')?.className).toContain('min-h-0')
   })
 
-  it('shows coursework completion as a horizontal done-versus-left bar', async () => {
-    useStore.getState().replaceAll(structuredClone(createSeedData()))
+  it('shows this week coursework completion as a horizontal done-versus-left bar', async () => {
+    const seeded = structuredClone(createSeedData())
+    const courseId = seeded.academics.classCenter.workspaces[0]?.courseId
+    const courseCode = seeded.courses.find((course) => course.id === courseId)?.code
+    if (!courseId || !courseCode) throw new Error('Expected a visible seeded course for the weekly-progress test')
+    const today = new Date()
+    const sunday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay())
+    const thisWeek = (offset: number) => {
+      const due = new Date(sunday)
+      due.setDate(due.getDate() + offset)
+      return `${due.getFullYear()}-${String(due.getMonth() + 1).padStart(2, '0')}-${String(due.getDate()).padStart(2, '0')}`
+    }
+    seeded.academics.classCenter.assignments = [
+      {
+        id: 'weekly-done', courseId, title: 'Completed this week', type: 'homework', dueDate: thisWeek(1), status: 'submitted',
+        linkedTopicIds: [], linkedFileIds: [], createdAt: 1, updatedAt: 1, order: 0,
+      },
+      {
+        id: 'weekly-left', courseId, title: 'Still due this week', type: 'reading', dueDate: thisWeek(5), status: 'not-started',
+        linkedTopicIds: [], linkedFileIds: [], createdAt: 1, updatedAt: 1, order: 1,
+      },
+      {
+        id: 'later-work', courseId, title: 'Not part of this week', type: 'exam', dueDate: thisWeek(9), status: 'not-started',
+        linkedTopicIds: [], linkedFileIds: [], createdAt: 1, updatedAt: 1, order: 2,
+      },
+    ]
+    useStore.getState().replaceAll(seeded)
     await render()
 
-    const progress = container.querySelector<HTMLElement>('.academics-coursework-progress')
+    const card = [...container.querySelectorAll<HTMLElement>('.academics-class-card')]
+      .find((item) => item.textContent?.includes(courseCode))
+    const progress = card?.querySelector<HTMLElement>('.academics-coursework-progress')
     expect(progress).toBeTruthy()
     expect(progress?.querySelector('.academics-coursework-track')).toBeTruthy()
     expect(progress?.querySelector('.academics-coursework-ring')).toBeNull()
-    expect(progress?.textContent).toContain('done')
-    expect(progress?.textContent).toMatch(/left|Not tracked/)
+    expect(progress?.textContent).toContain('Weekly progress')
+    expect(progress?.textContent).toContain('1 done')
+    expect(progress?.textContent).toContain('1 left')
+    expect(progress?.textContent).toContain('2 this week')
+    expect(progress?.getAttribute('aria-label')).toBe('1 of 2 coursework items complete this week; 1 left')
   })
 
   it('opens a new syllabus import from the shared importFor=new route and clears it on cancel', async () => {

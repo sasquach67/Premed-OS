@@ -2,7 +2,7 @@
 
 > **Aug. 29, 2026 authority amendment — approved by Andy:** class cards have one direct **Open** action and no preview layer, Review action, or Quiz me path. The Daily bento uses Recent study work, Class materials, assignment planning, Topic coverage, and Lecture journal activity. Any conflicting historical note below is superseded.
 
-> **Aug. 31, 2026 progress amendment — approved by Andy:** coursework progress uses a horizontal class-colour bar, never a circle or ring. The bar is paired with the amount left and the amount already done so the student can quickly decide whether to move to another class.
+> **Sept. 1, 2026 progress amendment — approved by Andy:** class cards use a horizontal class-colour **weekly progress** bar, never a circle or ring. Its denominator is dated coursework in the current calendar week; it pairs the amount left with the amount already done so the student can quickly decide whether to move to another class. Desktop cards return to a square footprint; tablet and mobile stay content-sized to prevent clipping.
 
 > Extracted from the mockup header. **Read this instead of the HTML** — the markup is ~90% CSS you must not copy.
 
@@ -30,7 +30,7 @@
      Dismiss animates out; last dismissal unmounts the whole widget.
   4. CLASS CARDS: a compact, equal-height record collection. Each card leads
      with course title + subtitle, a compact status row, one labelled
-     horizontal coursework-progress bar (completed and remaining tracked work), one real next
+     horizontal weekly-progress bar (completed and remaining work due this week), one real next
      dated item, and a direct Open action. Class colour is
      visible at rest as a restrained left rail and top aura, never a full-card
      wash; hover/focus strengthens the rail, border, glow, and lift, and reveals
@@ -86,8 +86,9 @@ promotion pass. They supersede the Aug. 23 compact/no-percent/no-progress/
 no-Review experiment below.
 
 - **Footprint:** the class collection sits in a sensible max-width rail instead
-  of floating across an empty canvas. Cards remain compact, equal-height, and
-  responsive: four wider records lead at the desktop reference width and wrap
+  of floating across an empty canvas. Desktop cards use a compact square
+  footprint and remain equal-height; tablet and mobile cards are content-sized
+  so text and controls do not clip. Four records lead at the desktop reference width and wrap
   to two, then one. Add class belongs in the section header rather than taking
   a record slot. Do not manufacture a blank middle zone.
 - **Colour:** the course dot is paired with a restrained class-colour left rail
@@ -97,12 +98,14 @@ no-Review experiment below.
   in-progress state, and the exact computed grade percent only when grade
   evidence exists. Compact chips may name factual record state; one latest
   class record may identify a linked lecture, note, material, or returned-work
-  event. A labelled horizontal coursework-progress bar shows completed tracked
-  work and the remaining count for that class; it is paired with plain `done`
+  event. A labelled horizontal weekly-progress bar shows completed work due in
+  the current calendar week and the remaining count for that week; it is paired with plain `done`
   and `left` counts and never uses a circular meter. This is a prioritization signal, not a
   topic count, grade, or claim that the whole course is complete. Its denominator
-  is the class's current tracked assignments and reading tasks: submitted or
-  graded records count as complete, while dropped records are excluded. The next item appears only when it is a
+  is the class's dated assignments and reading tasks from the current Sunday–Saturday
+  calendar week: submitted or graded records count as complete, while dropped
+  records and work outside the week are excluded. When nothing is due this week,
+  say `Clear this week` rather than inventing completion. The next item appears only when it is a
   real dated class record. Missing grade, completion, or date evidence is
   named. These are facts about the record, never a score, rank, readiness
   judgement, or composite.
@@ -183,8 +186,8 @@ combine them with A's layout, depth, and interaction treatment.
 
 - The hierarchy is banner and three navigation forms, then a light inline filter
   row, then a breathable 12-column bento. “Heads up” sits before the class grid;
-  the class collection is a centered, max-width panel with equal-height cards
-  rather than a full-width wall. Cards use title, status, coursework progress,
+  the class collection is a centered, max-width panel with equal-height square desktop cards
+  rather than a full-width wall. Cards use title, status, weekly progress,
   one next item, and Open as the scan path.
 - Use the signed-in warm-dark ladder from `_shared/_visual-recipes.md`:
   page field → solid card → muted nested object → border. Panel corners follow
@@ -206,8 +209,8 @@ now an inline control line; the class panel is constrained to a centered rail;
 cards are shorter and equal-height; class colour appears as a restrained rail
 and top aura; Add class carries the strongest action weight; and the ellipsis is
 hidden until hover/focus. The visible card content is intentionally condensed
-  to title, status, coursework progress, one next item, and Open. The progress
-  ring communicates tracked work completed versus remaining so the student can
+  to title, status, weekly progress, one next item, and Open. The horizontal bar
+  communicates this week's work completed versus remaining so the student can
 choose which class needs attention next; it does not claim topic mastery.
 Approval status remains
 separate from any later app implementation evidence.

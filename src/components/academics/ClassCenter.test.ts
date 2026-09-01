@@ -210,9 +210,9 @@ describe('Class Center primary card hierarchy', () => {
     expect(container.textContent).toContain('A-')
     expect(container.textContent).not.toContain('BCPM')
     expect(container.querySelector('[role="progressbar"]')).toBeTruthy()
-    expect(container.textContent).toContain('Coursework progress')
-    expect(container.textContent).toContain('No tracked work yet')
-    expect(container.querySelector('[role="progressbar"]')?.getAttribute('aria-label')).toBe('No tracked coursework yet')
+    expect(container.textContent).toContain('Weekly progress')
+    expect(container.textContent).toContain('Clear this week')
+    expect(container.querySelector('[role="progressbar"]')?.getAttribute('aria-label')).toBe('No coursework due this week')
 
     const openButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'Open') as HTMLButtonElement
     expect(openButton.className).toContain('md:opacity-0')

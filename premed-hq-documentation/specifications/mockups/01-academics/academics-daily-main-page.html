@@ -25,7 +25,7 @@
   3. HEADS UP = the same component as Overview's Smart next actions.
      Dismiss animates out; last dismissal unmounts the whole widget.
   4. CLASS CARDS: compact, equal-height records lead the class area. Each card
-     keeps the course title/subtitle, compact status chips, a coursework
+     keeps the course title/subtitle, compact status chips, a weekly coursework
      completion bar, one real next dated item, and a direct Open action. Class
      identity is visible at rest through a restrained accent rail + top aura;
      hover/focus strengthens that rail and reveals the ellipsis menu. Four
@@ -157,6 +157,7 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
 .ccards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .cc{background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 10%,var(--muted)),var(--muted) 52%);border:1px solid color-mix(in srgb,var(--accent) 17%,var(--bd));border-radius:13px;padding:12px;display:flex;flex-direction:column;
   gap:8px;position:relative;overflow:hidden;min-width:0;min-height:222px;align-self:stretch;transition:transform .15s cubic-bezier(.16,1,.3,1),border-color .15s,box-shadow .15s;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--accent) 18%,transparent)}
+@media (min-width:1081px){.cc{aspect-ratio:1/1}}
 .cc::before{content:"";position:absolute;inset:0 0 auto 0;height:48px;background:radial-gradient(170px 60px at 0% 0%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 72%);pointer-events:none}
 .cc>*{position:relative;z-index:1}
 .ccbar{position:absolute;left:0;top:0;bottom:0;width:3px;background:color-mix(in srgb,var(--accent) 60%,transparent);opacity:.72;transition:.15s}
@@ -368,7 +369,7 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
           <div class="ccbar"></div>
           <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--cat)"></span>CHEM 262</div><div class="ccname">Organic Chemistry II</div></div><div><div class="ccgrade" style="color:var(--warning)">B+</div><div class="ccpct">88.4%</div></div></div>
           <div class="ccmeta"><span class="ccchip">18 topics</span><span class="ccchip muted">BCPM</span></div>
-          <div class="ccprogress" role="progressbar" aria-label="18 of 24 tracked coursework items complete; 6 left"><div class="ccprogress-head"><span>Coursework progress</span><b>6 left</b></div><div class="ccmeter"><i class="ccfill" style="width:75%"></i></div><div class="ccprogress-meta"><span>18 done</span><span>24 tracked</span></div></div>
+          <div class="ccprogress" role="progressbar" aria-label="3 of 5 coursework items complete this week; 2 left"><div class="ccprogress-head"><span>Weekly progress</span><b>2 left</b></div><div class="ccmeter"><i class="ccfill" style="width:60%"></i></div><div class="ccprogress-meta"><span>3 done</span><span>5 this week</span></div></div>
           <div class="ccnext"><span class="ccnext-label">Next up</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18"/></svg>Midterm 2 · Friday</div>
           <div class="ccacts"><div class="cca">Open</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
         </div>
@@ -376,7 +377,7 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
           <div class="ccbar"></div>
           <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--research)"></span>BIOL 252</div><div class="ccname">Neurobiology</div></div><div class="ccgrade" style="color:var(--success)">A−</div></div>
           <div class="ccmeta"><span class="ccchip">6 topics</span><span class="ccchip muted">BCPM</span></div>
-          <div class="ccprogress" role="progressbar" aria-label="6 of 10 tracked coursework items complete; 4 left"><div class="ccprogress-head"><span>Coursework progress</span><b>4 left</b></div><div class="ccmeter"><i class="ccfill" style="width:60%"></i></div><div class="ccprogress-meta"><span>6 done</span><span>10 tracked</span></div></div>
+          <div class="ccprogress" role="progressbar" aria-label="2 of 4 coursework items complete this week; 2 left"><div class="ccprogress-head"><span>Weekly progress</span><b>2 left</b></div><div class="ccmeter"><i class="ccfill" style="width:50%"></i></div><div class="ccprogress-meta"><span>2 done</span><span>4 this week</span></div></div>
           <div class="ccnext"><span class="ccnext-label">Next up</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H5.2L4 17.5Z"/></svg>Lab report · Mon</div>
           <div class="ccacts"><div class="cca">Open</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
         </div>
@@ -384,7 +385,7 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
           <div class="ccbar"></div>
           <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--shadow)"></span>PHYS 118</div><div class="ccname">Mechanics</div></div><div class="ccgrade" style="color:var(--success)">A</div></div>
           <div class="ccmeta"><span class="ccchip">1 ungraded</span><span class="ccchip muted">BCPM</span></div>
-          <div class="ccprogress" role="progressbar" aria-label="10 of 12 tracked coursework items complete; 2 left"><div class="ccprogress-head"><span>Coursework progress</span><b>2 left</b></div><div class="ccmeter"><i class="ccfill" style="width:83.333%"></i></div><div class="ccprogress-meta"><span>10 done</span><span>12 tracked</span></div></div>
+          <div class="ccprogress" role="progressbar" aria-label="4 of 5 coursework items complete this week; 1 left"><div class="ccprogress-head"><span>Weekly progress</span><b>1 left</b></div><div class="ccmeter"><i class="ccfill" style="width:80%"></i></div><div class="ccprogress-meta"><span>4 done</span><span>5 this week</span></div></div>
           <div class="ccnext"><span class="ccnext-label">Next up</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H5.2L4 17.5Z"/></svg>Problem set 7 · Wed</div>
           <div class="ccacts"><div class="cca">Open</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
         </div>
@@ -392,7 +393,7 @@ body{margin:0;background:#1a1714;color:var(--fg);font-family:'Nunito',system-ui,
           <div class="ccbar"></div>
           <div class="cctop"><div><div class="cccode"><span class="cdot" style="background:var(--clinical)"></span>PSYC 210</div><div class="ccname">Statistics</div></div></div>
           <div class="ccmeta"><span class="ccchip">Notes added</span><span class="ccchip muted">No grade yet</span></div>
-          <div class="ccprogress" role="progressbar" aria-label="8 of 8 tracked coursework items complete; 0 left"><div class="ccprogress-head"><span>Coursework progress</span><b>0 left</b></div><div class="ccmeter"><i class="ccfill" style="width:100%"></i></div><div class="ccprogress-meta"><span>8 done</span><span>8 tracked</span></div></div>
+          <div class="ccprogress" role="progressbar" aria-label="2 of 2 coursework items complete this week; 0 left"><div class="ccprogress-head"><span>Weekly progress</span><b>0 left</b></div><div class="ccmeter"><i class="ccfill" style="width:100%"></i></div><div class="ccprogress-meta"><span>2 done</span><span>2 this week</span></div></div>
           <div class="ccnext"><span class="ccnext-label">Next up</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>No dated item yet · add one in Class Hub</div>
           <div class="ccacts"><div class="cca">Open</div><div class="ccdots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div></div>
         </div>
