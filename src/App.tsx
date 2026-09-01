@@ -58,7 +58,7 @@ function App() {
               clearing storage. `/` stays the smart route. */}
           <Route path="landing" element={<LandingRoute />} />
           <Route path="auth" element={<AuthPage />} />
-          <Route path="auth/setup" element={<FirstLoginSetupPage />} />
+          <Route path="auth/setup" element={<Navigate to="/onboarding" replace />} />
           <Route path="auth/merge" element={<MergePage />} />
           <Route path="about" element={<AboutPage />} />
           <Route path="privacy" element={<PrivacyPage />} />
@@ -74,6 +74,7 @@ function App() {
           </Route>
 
           <Route element={<AppShell />}>
+            <Route path="onboarding" element={<FirstLoginSetupPage />} />
             <Route path="northstar" element={<Navigate to="/?guide=open" replace />} />
             <Route path="overview/tasks" element={<OverviewTasksPage />} />
             <Route path="overview/goals/:goalId" element={<OverviewQuarterlyGoalsPage />} />

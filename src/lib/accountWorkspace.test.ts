@@ -7,6 +7,7 @@ import {
   decideAccountRoute,
   decideCloudReconcile,
   destinationAfterFirstLogin,
+  FIRST_LOGIN_SETUP_ROUTE,
   FIRST_LOGIN_STUDY_ROUTE,
   hasCompletedAccountSetup,
   notifyAccountWorkspaceReady,
@@ -52,7 +53,7 @@ describe('account workspace isolation', () => {
   it('routes a new account through setup before any local merge decision', () => {
     expect(decideAccountRoute({
       pathname: '/', hasRemote: false, hasLocalWork: true, hasSeenMerge: false,
-    })).toBe('/auth/setup')
+    })).toBe(FIRST_LOGIN_SETUP_ROUTE)
     expect(decideAccountRoute({
       pathname: '/', hasRemote: true, hasLocalWork: true, hasSeenMerge: false,
     })).toBe('/auth/merge')
@@ -62,7 +63,11 @@ describe('account workspace isolation', () => {
     expect(decideAccountRoute({
       pathname: '/', hasRemote: true, hasCompletedSetup: false,
       hasLocalWork: false, hasSeenMerge: false,
-    })).toBe('/auth/setup')
+    })).toBe(FIRST_LOGIN_SETUP_ROUTE)
+    expect(decideAccountRoute({
+      pathname: FIRST_LOGIN_SETUP_ROUTE, hasRemote: true, hasCompletedSetup: false,
+      hasLocalWork: false, hasSeenMerge: false,
+    })).toBeNull()
   })
 
   it('recognizes setup only when the profile belongs to the signed-in identity', () => {

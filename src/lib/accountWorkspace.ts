@@ -17,6 +17,7 @@ export interface FirstLoginSetup {
 export type CloudReconcileDecision = 'requires-setup' | 'pull-remote' | 'push-local'
 
 export const ACCOUNT_WORKSPACE_READY_EVENT = 'premed-hq:account-workspace-ready'
+export const FIRST_LOGIN_SETUP_ROUTE = '/onboarding'
 export const FIRST_LOGIN_STUDY_ROUTE = '/academics?mode=daily&tab=class-center&studyGuide=open'
 
 /** First login ends in the practical lecture-capture guide, after any merge review. */
@@ -136,13 +137,13 @@ export function decideAccountRoute(input: {
   hasCompletedSetup?: boolean
   hasLocalWork: boolean
   hasSeenMerge: boolean
-}): '/auth/setup' | '/auth/merge' | '/' | null {
+}): '/onboarding' | '/auth/merge' | '/' | null {
   if (!input.hasRemote || input.hasCompletedSetup === false) {
-    return input.pathname === '/auth/setup' ? null : '/auth/setup'
+    return input.pathname === FIRST_LOGIN_SETUP_ROUTE ? null : FIRST_LOGIN_SETUP_ROUTE
   }
   if (input.hasLocalWork && !input.hasSeenMerge) {
     return input.pathname === '/auth/merge' ? null : '/auth/merge'
   }
-  if (input.pathname === '/auth/setup' || input.pathname === '/auth/merge') return '/'
+  if (input.pathname === FIRST_LOGIN_SETUP_ROUTE || input.pathname === '/auth/setup' || input.pathname === '/auth/merge') return '/'
   return null
 }

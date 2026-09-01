@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowRight, ShieldCheck, UserRound } from 'lucide-react'
+import { ArrowRight, CheckCircle2, ShieldCheck, UserRound } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { User } from '@supabase/supabase-js'
 import type { AppData } from '@/lib/types'
-import { PublicNav } from '@/components/public/PublicNav'
-import { PublicShell } from '@/components/public/PublicShell'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   applyFirstLoginSetup,
   decideAccountRoute,
+  FIRST_LOGIN_SETUP_ROUTE,
   FIRST_LOGIN_STUDY_ROUTE,
   hasCompletedAccountSetup,
   notifyAccountWorkspaceReady,
@@ -64,7 +66,7 @@ export function FirstLoginSetupPage() {
         metadata: currentUser.user_metadata,
       })) {
         const route = decideAccountRoute({
-          pathname: '/auth/setup',
+          pathname: FIRST_LOGIN_SETUP_ROUTE,
           hasRemote: true,
           hasCompletedSetup: true,
           hasLocalWork: hasLocalWork(snapshotData()),
@@ -133,75 +135,108 @@ export function FirstLoginSetupPage() {
   }
 
   return (
-    <PublicShell title="Set up your account — Premed OS">
-      <div className="pl-band"><PublicNav /></div>
-      <main className="pl-authwrap">
-        <div className="pl-authstack" style={{ maxWidth: 680 }}>
-          <div className="pl-card pl-authcard">
-            <div className="pl-hd">
-              <div>
-                <span className="pl-lbl">First login</span>
-                <h1 className="pl-ti" style={{ marginTop: 6 }}>Make this workspace yours</h1>
-                <p className="pl-sub" style={{ marginTop: 6 }}>
-                  Confirm your identity before Premed OS creates anything for this account.
-                </p>
-              </div>
-              <div className="pl-mailbadge"><UserRound aria-hidden="true" /></div>
+    <div className="mx-auto max-w-4xl py-2 sm:py-6">
+      <section className="overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-sm">
+        <header
+          className="relative overflow-hidden border-b border-border px-6 py-7 sm:px-8 sm:py-8"
+          style={{
+            background: 'radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 34%), linear-gradient(135deg, var(--card), color-mix(in srgb, var(--muted) 58%, var(--card)))',
+          }}
+        >
+          <div className="relative flex items-start justify-between gap-5">
+            <div className="max-w-2xl">
+              <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Account setup</p>
+              <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">Your account is ready.</h1>
+              <p className="mt-2 max-w-xl text-sm font-medium leading-6 text-muted-foreground sm:text-base">
+                Add the details Premed OS should use inside your workspace. You can change them later in Profile.
+              </p>
             </div>
-
-            <div className="pl-bd" style={{ gap: 16 }}>
-              {error ? <p className="pl-alert pl-alert-bad" role="alert">{error}</p> : null}
-              {phase === 'loading' ? <p className="pl-fine">Checking your account…</p> : null}
-
-              {phase !== 'loading' ? (
-                <>
-                  <div className="pl-field">
-                    <label className="pl-lbl" htmlFor="setup-name">Your name</label>
-                    <input id="setup-name" className="pl-inp" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="What should Premed OS call you?" autoFocus />
-                  </div>
-
-                  <div className="pl-field">
-                    <label className="pl-lbl" htmlFor="setup-email">Account email</label>
-                    <input id="setup-email" className="pl-inp" value={user?.email ?? ''} readOnly aria-readonly="true" />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12, width: '100%' }}>
-                    <div className="pl-field">
-                      <label className="pl-lbl" htmlFor="setup-school">School <span style={{ textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
-                      <input id="setup-school" className="pl-inp" value={school} onChange={(event) => setSchool(event.target.value)} placeholder="UNC Chapel Hill" />
-                    </div>
-                    <div className="pl-field">
-                      <label className="pl-lbl" htmlFor="setup-major">Major <span style={{ textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
-                      <input id="setup-major" className="pl-inp" value={major} onChange={(event) => setMajor(event.target.value)} placeholder="Neuroscience" />
-                    </div>
-                    <div className="pl-field">
-                      <label className="pl-lbl" htmlFor="setup-year">Class year <span style={{ textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
-                      <input id="setup-year" className="pl-inp" value={classYear} onChange={(event) => setClassYear(event.target.value)} placeholder="2030" />
-                    </div>
-                  </div>
-
-                  <div className="pl-pace" style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                    <ShieldCheck style={{ width: 18, flex: 'none', marginTop: 2 }} aria-hidden="true" />
-                    <span>
-                      <b>{!existingAccount && hasDeviceWork ? 'Work already exists on this device.' : existingAccount ? 'Your saved account stays intact.' : 'This account starts clean.'}</b>{' '}
-                      {!existingAccount && hasDeviceWork
-                        ? 'Nothing here is copied automatically. After setup, you’ll review which parts—if any—belong in this account.'
-                        : existingAccount
-                          ? 'Only the profile details you confirm here are updated.'
-                          : 'The first account snapshot contains only the profile details you confirm above.'}
-                    </span>
-                  </div>
-
-                  <button type="button" className="pl-sbtn pl-sbtn-p pl-sbtn-full" disabled={!name.trim() || phase === 'saving'} onClick={() => { void finishSetup() }}>
-                    {phase === 'saving' ? 'Saving your profile…' : !existingAccount && hasDeviceWork ? 'Continue to data review' : existingAccount ? 'Save my profile' : 'Create my workspace'}
-                    {phase !== 'saving' ? <ArrowRight aria-hidden="true" /> : null}
-                  </button>
-                </>
-              ) : null}
+            <div className="grid size-12 shrink-0 place-items-center rounded-2xl border border-primary/20 bg-primary/10 text-primary sm:size-14">
+              <UserRound className="size-6" aria-hidden="true" />
             </div>
           </div>
+        </header>
+
+        <div className="p-6 sm:p-8">
+          {error ? (
+            <p className="mb-5 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm font-semibold text-destructive" role="alert">
+              {error}
+            </p>
+          ) : null}
+
+          {phase === 'loading' ? (
+            <div className="flex min-h-44 items-center justify-center gap-3 text-sm font-semibold text-muted-foreground">
+              <span className="size-5 animate-spin rounded-full border-2 border-border border-t-primary" aria-hidden="true" />
+              Loading your account…
+            </div>
+          ) : (
+            <form
+              className="space-y-6"
+              onSubmit={(event) => {
+                event.preventDefault()
+                void finishSetup()
+              }}
+            >
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border pb-5 text-sm">
+                <span className="inline-flex items-center gap-2 font-bold text-foreground">
+                  <CheckCircle2 className="size-4 text-success" aria-hidden="true" />
+                  Signed in
+                </span>
+                <span className="text-muted-foreground">{user?.email}</span>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="setup-name">Your name</Label>
+                <Input
+                  id="setup-name"
+                  className="h-12 rounded-xl px-4 text-base"
+                  autoComplete="name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="What should Premed OS call you?"
+                  autoFocus
+                  required
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="setup-school">School <span className="normal-case tracking-normal">(optional)</span></Label>
+                  <Input id="setup-school" className="h-11 rounded-xl" value={school} onChange={(event) => setSchool(event.target.value)} placeholder="UNC Chapel Hill" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="setup-major">Major <span className="normal-case tracking-normal">(optional)</span></Label>
+                  <Input id="setup-major" className="h-11 rounded-xl" value={major} onChange={(event) => setMajor(event.target.value)} placeholder="Neuroscience" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="setup-year">Class year <span className="normal-case tracking-normal">(optional)</span></Label>
+                  <Input id="setup-year" className="h-11 rounded-xl" value={classYear} onChange={(event) => setClassYear(event.target.value)} placeholder="2030" inputMode="numeric" />
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm leading-6 text-muted-foreground">
+                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                <p>
+                  <b className="text-foreground">{!existingAccount && hasDeviceWork ? 'Work already exists on this device.' : existingAccount ? 'Your saved account stays intact.' : 'This account starts clean.'}</b>{' '}
+                  {!existingAccount && hasDeviceWork
+                    ? 'After setup, you’ll choose whether any of it belongs in this account.'
+                    : existingAccount
+                      ? 'Finishing setup updates these profile details only.'
+                      : 'Only the profile details you enter here are added.'}
+                </p>
+              </div>
+
+              <div className="flex flex-col-reverse items-stretch justify-between gap-3 border-t border-border pt-5 sm:flex-row sm:items-center">
+                <p className="text-xs font-semibold text-muted-foreground">You are already signed in. This step personalizes the app.</p>
+                <Button type="submit" size="lg" className="font-display font-extrabold" disabled={!name.trim() || phase === 'saving'}>
+                  {phase === 'saving' ? 'Saving…' : !existingAccount && hasDeviceWork ? 'Continue to data review' : 'Finish setup'}
+                  {phase !== 'saving' ? <ArrowRight aria-hidden="true" /> : null}
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
-      </main>
-    </PublicShell>
+      </section>
+    </div>
   )
 }
