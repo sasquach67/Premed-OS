@@ -93,6 +93,25 @@ function meetsNewPasswordRule(value: string) {
   )
 }
 
+/** Google's four-colour G is a brand mark, not a generic application icon.
+ * Keep it isolated from the button text so the auth intent can change without
+ * redrawing or recolouring the mark. */
+function GoogleGIcon() {
+  return (
+    <svg
+      className="pl-google-g"
+      viewBox="0 0 18 18"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path fill="#4285F4" d="M17.64 9.205c0-.638-.057-1.252-.164-1.841H9v3.482h4.844a4.14 4.14 0 0 1-1.797 2.715v2.258h2.909c1.702-1.567 2.684-3.875 2.684-6.614Z" />
+      <path fill="#34A853" d="M9 18c2.43 0 4.468-.806 5.956-2.181l-2.909-2.258c-.806.54-1.835.859-3.047.859-2.344 0-4.328-1.585-5.037-3.714H.956v2.332A9 9 0 0 0 9 18Z" />
+      <path fill="#FBBC05" d="M3.963 10.706A5.41 5.41 0 0 1 3.682 9c0-.592.102-1.168.281-1.706V4.962H.956A9 9 0 0 0 0 9c0 1.452.347 2.827.956 4.038l3.007-2.332Z" />
+      <path fill="#EA4335" d="M9 3.58c1.321 0 2.507.454 3.441 1.346l2.581-2.581C13.464.892 11.426 0 9 0A9 9 0 0 0 .956 4.962l3.007 2.332C4.672 5.165 6.656 3.58 9 3.58Z" />
+    </svg>
+  )
+}
+
 export function AuthPage() {
   const navigate = useNavigate()
   const enterApp = useEnterApp()
@@ -292,6 +311,14 @@ export function AuthPage() {
     }
   }, [])
 
+  const choosePasswordIntent = useCallback((intent: PasswordIntent) => {
+    setPasswordIntent(intent)
+    setMethod('password')
+    setPassword('')
+    setError('')
+    setNotice('')
+  }, [])
+
   // ─────────────────────────────────────────────────────────────────────
   return (
     <PublicShell title="Sign in — premedOS">
@@ -347,16 +374,48 @@ export function AuthPage() {
             />
           ) : (
             <>
-              <div className="pl-hd">
-                <div>
-                  <h1 className="pl-ti">Sign in</h1>
-                  <div className="pl-sub" style={{ marginTop: 4, fontWeight: 600 }}>
-                    Or create an account — same form either way.
+              <div className="pl-hd pl-authhead">
+                <div className="pl-auth-titleblock">
+                  <span className="pl-auth-eyebrow">Your Premed OS workspace</span>
+                  <h1 className="pl-ti">
+                    {passwordIntent === 'create' ? 'Create your account' : 'Welcome back'}
+                  </h1>
+                  <div className="pl-sub pl-auth-subcopy">
+                    {passwordIntent === 'create'
+                      ? 'Start a new private workspace linked only to this account.'
+                      : 'Sign in to reopen the workspace linked to your account.'}
                   </div>
                 </div>
               </div>
 
               <div className="pl-bd" style={{ gap: 13 }}>
+                <div className="pl-auth-intent" role="tablist" aria-label="Choose account action">
+                  <button
+                    id="auth-sign-in-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected={passwordIntent === 'sign-in'}
+                    aria-controls="auth-method-panel"
+                    tabIndex={passwordIntent === 'sign-in' ? 0 : -1}
+                    onClick={() => choosePasswordIntent('sign-in')}
+                  >
+                    Sign in
+                    <span>I already have an account</span>
+                  </button>
+                  <button
+                    id="auth-create-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected={passwordIntent === 'create'}
+                    aria-controls="auth-method-panel"
+                    tabIndex={passwordIntent === 'create' ? 0 : -1}
+                    onClick={() => choosePasswordIntent('create')}
+                  >
+                    Create account
+                    <span>I'm new to Premed OS</span>
+                  </button>
+                </div>
+
                 {!isSupabaseConfigured ? (
                   <p className="pl-alert">{MESSAGES.notConfigured}</p>
                 ) : null}
@@ -373,19 +432,32 @@ export function AuthPage() {
 
                 <button
                   type="button"
-                  className="pl-sbtn pl-sbtn-p pl-sbtn-full"
+                  className="pl-sbtn pl-sbtn-full pl-google-btn"
                   disabled={busy}
                   onClick={continueWithGoogle}
                 >
-                  Continue with Google
+                  <GoogleGIcon />
+                  {passwordIntent === 'create' ? 'Sign up with Google' : 'Sign in with Google'}
                 </button>
+
+                <p className="pl-auth-method-note">
+                  {passwordIntent === 'create'
+                    ? 'This creates a clean Premed OS workspace for the Google account you choose.'
+                    : 'Choose the same Google account you used before to restore its workspace.'}
+                </p>
 
                 <div className="pl-orbar">
                   <i />
-                  <span>OR</span>
+                  <span>OR USE EMAIL</span>
                   <i />
                 </div>
 
+                <div
+                  id="auth-method-panel"
+                  className="pl-auth-method-panel"
+                  role="tabpanel"
+                  aria-labelledby={passwordIntent === 'create' ? 'auth-create-tab' : 'auth-sign-in-tab'}
+                >
                 <div className="pl-field">
                   <label className="pl-lbl" htmlFor="auth-email">
                     Email
@@ -409,7 +481,7 @@ export function AuthPage() {
                       disabled={busy || !emailValid}
                       onClick={sendLink}
                     >
-                      Send me a sign-in link
+                      {passwordIntent === 'create' ? 'Create account with an email link' : 'Send me a sign-in link'}
                     </button>
                     <button
                       type="button"
@@ -454,11 +526,7 @@ export function AuthPage() {
                       type="button"
                       className="pl-lk"
                       disabled={busy}
-                      onClick={() => {
-                        setPasswordIntent(passwordIntent === 'create' ? 'sign-in' : 'create')
-                        setError('')
-                        setNotice('')
-                      }}
+                      onClick={() => choosePasswordIntent(passwordIntent === 'create' ? 'sign-in' : 'create')}
                     >
                       {passwordIntent === 'create' ? 'Already have an account? Sign in' : 'New here? Create an account'}
                     </button>
@@ -482,6 +550,7 @@ export function AuthPage() {
                     </button>
                   </>
                 )}
+                </div>
 
                 <p className="pl-fine">
                   By continuing, you confirm that you are at least 13 and agree to the{' '}

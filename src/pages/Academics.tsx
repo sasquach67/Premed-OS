@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useState, type ComponentType } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useState, type ComponentType } from 'react'
 import { AnimatePresence, m, useReducedMotion } from 'motion/react'
 import { useLocation, useParams, useSearchParams } from 'react-router-dom'
 import {
@@ -14,7 +14,7 @@ import { AssignmentCreateDialog, AssignmentsPanel } from '@/components/common/As
 import { ClassCenter } from '@/components/academics/ClassCenter'
 import { PlanningDecisions } from '@/components/academics/PlanningDecisions'
 import { coldStartPlanningTerms, PlanningColdStart } from '@/components/academics/PlanningColdStart'
-import { PlannerBoard, PlannerCourseDiscoveryDialog, type PlannerCatalogRequest } from '@/components/academics/PlannerBoard'
+import type { PlannerCatalogRequest } from '@/components/academics/PlannerBoard'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -25,6 +25,19 @@ import { StatStrip } from '@/components/common/StatStrip'
 import { GradesArchive } from '@/components/academics/GradesArchive'
 import { daysUntil } from '@/lib/date'
 import { LectureCaptureGuide } from '@/components/academics/LectureCaptureGuide'
+
+const ACADEMICS_TABS_BY_MODE = {
+  daily: ['class-center', 'assignments'],
+  planning: ['planner', 'archive'],
+} as const
+
+// The UNC catalog snapshot is intentionally comprehensive and several MB.
+// Keep it out of the Daily/Class Center path; loading Academics must not also
+// download the complete Planning catalog before the student opens Planning.
+const PlannerBoard = lazy(() => import('@/components/academics/PlannerBoard')
+  .then((module) => ({ default: module.PlannerBoard })))
+const PlannerCourseDiscoveryDialog = lazy(() => import('@/components/academics/PlannerBoard')
+  .then((module) => ({ default: module.PlannerCourseDiscoveryDialog })))
 
 export function Academics() {
   const reduceMotion = useReducedMotion()
@@ -76,10 +89,7 @@ export function Academics() {
   // Store is the single source of truth for the mode — synchronous and always
   // re-renders, so the Daily/Planning toggle can't desync under rapid clicks.
   const mode: 'daily' | 'planning' = storedMode === 'planning' ? 'planning' : 'daily'
-  const tabsByMode = {
-    daily: ['class-center', 'assignments'],
-    planning: ['planner', 'archive'],
-  } as const
+  const tabsByMode = ACADEMICS_TABS_BY_MODE
   const requestedTab = searchParams.get('tab')
   const activeTab = tabsByMode[mode].includes(requestedTab as never) ? requestedTab! : tabsByMode[mode][0]
   // §4.1-M is intentionally a temporary import composition. ClassCenter
@@ -134,17 +144,31 @@ export function Academics() {
   useEffect(() => {
     if (courseId) return
     const urlMode = searchParams.get('mode')
-    const linkedMode = urlMode === 'daily' || urlMode === 'planning' ? urlMode : mode
+    const tab = searchParams.get('tab')
+    const tabMode = tabsByMode.daily.includes(tab as never)
+      ? 'daily'
+      : tabsByMode.planning.includes(tab as never)
+        ? 'planning'
+        : null
+    // A valid tab is a complete deep link even when `mode` is omitted. This
+    // prevents a saved Planning preference from hijacking `?tab=class-center`
+    // (and the inverse for Planner/Grades & archive). An explicit valid mode
+    // still wins so authored cross-mode links remain deterministic.
+    const linkedMode = urlMode === 'daily' || urlMode === 'planning'
+      ? urlMode
+      : urlMode == null && tabMode
+        ? tabMode
+        : mode
     const linkedTabs = tabsByMode[linkedMode]
-    const linkedTab = linkedTabs.includes(searchParams.get('tab') as never)
-      ? searchParams.get('tab')!
+    const linkedTab = linkedTabs.includes(tab as never)
+      ? tab!
       : linkedTabs[0]
     if (linkedMode !== storedMode) update((draft) => { draft.settings.academicsMode = linkedMode })
     const next = new URLSearchParams(searchParams)
     next.delete('mode')
     next.set('tab', linkedTab)
     if (next.toString() !== searchParams.toString()) setSearchParams(next, { replace: true })
-  }, [searchParams, storedMode, mode, courseId, update, setSearchParams])
+  }, [searchParams, storedMode, mode, courseId, update, setSearchParams, tabsByMode])
 
   // A stale or hand-edited import target must not suppress the entire
   // Academics shell. Keep valid new/scoped imports untouched; recover invalid
@@ -298,16 +322,18 @@ export function Academics() {
           {/* §4.1 cold start: with no course recorded the Planner's metric
               surfaces would render zeros implying data exists. Suppress all of
               them and ask for the one durable fact instead. */}
-          {!courses.length ? <div className="space-y-4">
-            <PlanningColdStart currentTerm={currentTerm} onAddCourse={(destination) => setColdCatalogRequest((current) => ({ id: (current?.id ?? 0) + 1, destination }))} />
-            <PlannerCourseDiscoveryDialog
-              destinations={coldStartDestinations}
-              selectedProgramId={classCenter.planningProgramContext?.selectedProgramId}
-              request={coldCatalogRequest}
-              onOpenChange={(open) => { if (!open) setColdCatalogRequest(undefined) }}
-              onAdded={() => setColdCatalogRequest(undefined)}
-            />
-          </div> : <PlannerBoard onComparePlans={() => setPlanCompareOpen(true)} openRequirements={searchParams.get('plannerView') === 'requirements'} />}
+          <Suspense fallback={<AcademicsPanelFallback label="Loading your planning tools…" />}>
+            {!courses.length ? <div className="space-y-4">
+              <PlanningColdStart currentTerm={currentTerm} onAddCourse={(destination) => setColdCatalogRequest((current) => ({ id: (current?.id ?? 0) + 1, destination }))} />
+              <PlannerCourseDiscoveryDialog
+                destinations={coldStartDestinations}
+                selectedProgramId={classCenter.planningProgramContext?.selectedProgramId}
+                request={coldCatalogRequest}
+                onOpenChange={(open) => { if (!open) setColdCatalogRequest(undefined) }}
+                onAdded={() => setColdCatalogRequest(undefined)}
+              />
+            </div> : <PlannerBoard onComparePlans={() => setPlanCompareOpen(true)} openRequirements={searchParams.get('plannerView') === 'requirements'} />}
+          </Suspense>
         </TabsContent>
 
         {/* ---- Archive ---- */}
@@ -327,6 +353,14 @@ export function Academics() {
       </Dialog>
 
       <LectureCaptureGuide open={studyGuideOpen || studyGuideRequested} onOpenChange={changeStudyGuideOpen} />
+    </div>
+  )
+}
+
+function AcademicsPanelFallback({ label }: { label: string }) {
+  return (
+    <div className="rounded-2xl border border-border bg-card px-5 py-10 text-center shadow-sm" role="status">
+      <p className="font-display text-sm font-extrabold">{label}</p>
     </div>
   )
 }

@@ -149,6 +149,38 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     expect(progress?.getAttribute('aria-label')).toBe('1 of 2 coursework items complete this week; 1 left')
   })
 
+  it('sizes the card grid to the visible class count instead of reserving four empty columns', async () => {
+    const seeded = structuredClone(createSeedData())
+    const visibleWorkspaces = seeded.academics.classCenter.workspaces.slice(0, 2)
+    const visibleCourseIds = new Set(visibleWorkspaces.map((workspace) => workspace.courseId))
+    seeded.academics.classCenter.workspaces = visibleWorkspaces
+    seeded.courses = seeded.courses.filter((course) => visibleCourseIds.has(course.id))
+    useStore.getState().replaceAll(seeded)
+
+    await render()
+
+    const grid = container.querySelector('[data-testid="class-card-grid"]')
+    const panel = container.querySelector('.academics-class-panel')
+    expect(grid).toBeTruthy()
+    expect(panel?.className).toContain('max-w-[720px]')
+    expect(grid?.className).toContain('lg:grid-cols-2')
+    expect(grid?.className).not.toContain('lg:grid-cols-4')
+  })
+
+  it('centers the final two cards when five classes are visible', async () => {
+    const seeded = structuredClone(createSeedData())
+    const visibleWorkspaces = seeded.academics.classCenter.workspaces.slice(0, 5)
+      .map((workspace) => ({ ...workspace, semester: seeded.profile.startTerm }))
+    const visibleCourseIds = new Set(visibleWorkspaces.map((workspace) => workspace.courseId))
+    seeded.academics.classCenter.workspaces = visibleWorkspaces
+    seeded.courses = seeded.courses.filter((course) => visibleCourseIds.has(course.id))
+    useStore.getState().replaceAll(seeded)
+    await render()
+
+    const grid = container.querySelector('[data-testid="class-card-grid"]')
+    expect(grid?.className).toContain('academics-class-grid--five')
+  })
+
   it('opens a new syllabus import from the shared importFor=new route and clears it on cancel', async () => {
     useStore.getState().replaceAll(structuredClone(createSeedData()))
     await render('/academics?tab=class-center&importFor=new')

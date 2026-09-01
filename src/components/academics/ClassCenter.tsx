@@ -761,6 +761,20 @@ function ClassCenterDashboard({
     .sort((a, b) => a.order - b.order)
   const activeClasses = data.classes.filter((row) => row.status === 'active')
   const hasSearch = Boolean(query.trim())
+  const classPanelWidth = filtered.length <= 1
+    ? 'max-w-[380px]'
+    : filtered.length === 2
+      ? 'max-w-[720px]'
+      : filtered.length === 3
+        ? 'max-w-[1000px]'
+        : 'max-w-[1100px]'
+  const classGridColumns = filtered.length <= 1
+    ? 'grid-cols-1'
+    : filtered.length === 2
+      ? 'sm:grid-cols-2 lg:grid-cols-2'
+      : filtered.length === 3 || filtered.length === 5 || filtered.length === 6
+        ? 'sm:grid-cols-2 lg:grid-cols-3'
+        : 'sm:grid-cols-2 lg:grid-cols-4'
 
   async function importSyllabus(form: ClassFormState, selectedFiles: File[], proposal?: SyllabusProposal, existingCourseId?: string, reimportDecisions?: ReimportDecision[], replaceSyllabusFileId?: string, pastDueDecisions?: PastDueImportDecision[]) {
     const now = Date.now()
@@ -1215,7 +1229,7 @@ function ClassCenterDashboard({
 
       {!archiveOnly && <SmartActionPanel className="academics-heads-up" title="Heads up" recommendations={recommendations} />}
 
-      <Card className="academics-class-panel mx-auto w-full max-w-[1100px]">
+      <Card className={cn('academics-class-panel mx-auto w-full', classPanelWidth)}>
         <CardHeader className="flex-row items-center justify-between">
           <div>
             <CardTitle>{archiveOnly ? 'Archived classes' : 'Your classes'}</CardTitle>
@@ -1231,9 +1245,13 @@ function ClassCenterDashboard({
           )}
         </CardHeader>
         <CardContent>
-          <div className={cn(view === 'cards'
-            ? 'grid items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-4'
-            : 'space-y-2')}>
+          <div
+            data-testid="class-card-grid"
+            className={cn(view === 'cards'
+              ? 'grid items-stretch gap-3'
+              : 'space-y-2', view === 'cards' && classGridColumns,
+            view === 'cards' && filtered.length === 5 && 'academics-class-grid--five')}
+          >
             {filtered.map((row) => (
               <ClassCard
                 key={row.id}

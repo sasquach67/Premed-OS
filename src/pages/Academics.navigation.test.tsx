@@ -87,6 +87,24 @@ describe('Academics navigation', () => {
     expect(control(container, 'tab', 'Planner')?.getAttribute('data-state')).toBe('active')
   })
 
+  it('infers Daily from a bare Daily tab instead of inheriting the saved Planning mode', async () => {
+    useStore.getState().update((draft) => { draft.settings.academicsMode = 'planning' })
+    await render('/academics?tab=class-center')
+
+    expect(useStore.getState().settings.academicsMode).toBe('daily')
+    expect(container.querySelector('[data-testid="location"]')?.textContent).toBe('/academics?tab=class-center')
+    expect(control(container, 'tab', 'Class center')?.getAttribute('data-state')).toBe('active')
+  })
+
+  it('infers Planning from a bare Planning tab instead of inheriting the saved Daily mode', async () => {
+    useStore.getState().update((draft) => { draft.settings.academicsMode = 'daily' })
+    await render('/academics?tab=archive&gradeView=gpa')
+
+    expect(useStore.getState().settings.academicsMode).toBe('planning')
+    expect(container.querySelector('[data-testid="location"]')?.textContent).toBe('/academics?tab=archive&gradeView=gpa')
+    expect(control(container, 'tab', 'Grades & archive')?.getAttribute('data-state')).toBe('active')
+  })
+
   it('moves between modes with arrow keys and persists the selected mode', async () => {
     await render('/academics?tab=class-center')
     const daily = control(container, 'radio', 'Daily')!
