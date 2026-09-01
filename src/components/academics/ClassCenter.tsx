@@ -1523,7 +1523,8 @@ export function ClassCard({
                 <DropdownMenuLabel>{row.courseCode || 'Class'}</DropdownMenuLabel>
                 <DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><ArrowUpRight className="size-4" /> Open class hub</Link></DropdownMenuItem>
                 <DropdownMenuItem onClick={onImport}><Upload className="size-4" /> Import syllabus</DropdownMenuItem>
-                {row.type === 'stem' && <><DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=overview&captureLecture=1`}><CheckCircle2 className="size-4" /> Add lecture transcript</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=materials`}><NotebookText className="size-4" /> Create study resources</Link></DropdownMenuItem></>}
+                {row.type === 'stem' && <DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=overview&captureLecture=1`}><CheckCircle2 className="size-4" /> Add lecture transcript</Link></DropdownMenuItem>}
+                <DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=materials`}><NotebookText className="size-4" /> Create study resources</Link></DropdownMenuItem>
                 <DropdownMenuItem onClick={onEdit}><Edit3 className="size-4" /> Class settings</DropdownMenuItem>
                 <DropdownMenuItem onClick={onArchive}><Archive className="size-4" /> {row.status === 'archived' ? 'Restore' : 'Archive'}</DropdownMenuItem>
                 <DropdownMenuItem onClick={onDelete} className="text-destructive"><Trash2 className="size-4" /> Delete</DropdownMenuItem>
@@ -1541,7 +1542,8 @@ export function ClassCard({
       <ContextMenuContent>
         <ContextMenuItem onSelect={onOpen}><ArrowUpRight className="size-4" /> Open class hub</ContextMenuItem>
         <ContextMenuItem onSelect={onImport}><Upload className="size-4" /> Import syllabus</ContextMenuItem>
-        {row.type === 'stem' && <><ContextMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=overview&captureLecture=1`}><CheckCircle2 className="size-4" /> Add lecture transcript</Link></ContextMenuItem><ContextMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=materials`}><NotebookText className="size-4" /> Create study resources</Link></ContextMenuItem></>}
+        {row.type === 'stem' && <ContextMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=overview&captureLecture=1`}><CheckCircle2 className="size-4" /> Add lecture transcript</Link></ContextMenuItem>}
+        <ContextMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=materials`}><NotebookText className="size-4" /> Create study resources</Link></ContextMenuItem>
         <ContextMenuItem onSelect={onEdit}><Edit3 className="size-4" /> Class settings</ContextMenuItem>
         <ContextMenuItem onSelect={onArchive}><Archive className="size-4" /> {row.status === 'archived' ? 'Restore' : 'Archive'}</ContextMenuItem>
         <ContextMenuItem onSelect={onDelete} className="text-destructive"><Trash2 className="size-4" /> Delete</ContextMenuItem>

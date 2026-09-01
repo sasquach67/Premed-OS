@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { Check, FileText, Sparkles, X } from 'lucide-react'
-import type { AcademicFile } from '@/lib/types'
+import type { AcademicFile, ClassWorkspaceType } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { uid } from '@/lib/id'
 import { generateStudyGuide } from '@/lib/academics/generateStudyGuide'
@@ -37,6 +37,25 @@ const ARTIFACT: Record<MaterialArtifact, { title: string; detail: string; action
   'unit-question-bank': { title: 'Unit question bank', detail: 'Build source-grounded practice questions with course-specific moves and answer checks.', action: 'Create question bank' },
 }
 
+function artifactCopy(artifact: MaterialArtifact, classType: ClassWorkspaceType) {
+  if (artifact === 'unit-mastery-outline' && classType !== 'stem') return {
+    title: 'Learning objectives & mastery map',
+    detail: 'Organize syllabus objectives and selected evidence into understand, do, and watch-for checkpoints.',
+    action: 'Create objectives map',
+  }
+  if (artifact === 'study-outline' && classType === 'writing') return {
+    title: 'Argument & source outline',
+    detail: 'Organize the selected readings, claims, evidence, and tensions without inventing an argument.',
+    action: 'Create source outline',
+  }
+  if (artifact === 'unit-question-bank' && classType === 'general') return {
+    title: 'Practice questions',
+    detail: 'Build source-grounded recall and application questions in the language of this course.',
+    action: 'Create practice questions',
+  }
+  return ARTIFACT[artifact]
+}
+
 function isoToday() {
   return new Date().toISOString().slice(0, 10)
 }
@@ -62,6 +81,8 @@ export function MaterialGenerationIntake({
   const toast = useToast()
   const allChunks = useStore((state) => state.academics.classCenter.sourceChunks)
   const workspace = useStore((state) => state.academics.classCenter.workspaces.find((item) => item.courseId === courseId))
+  const classType: ClassWorkspaceType = workspace?.type ?? (course?.type === 'stem' || course?.type === 'writing' || course?.type === 'general' ? course.type : 'general')
+  const presentation = artifactCopy(artifact, classType)
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([])
   const [baselineFileId, setBaselineFileId] = useState('')
   const [busy, setBusy] = useState(false)
@@ -208,7 +229,7 @@ export function MaterialGenerationIntake({
     <Card className="border-border bg-card shadow-[0_16px_36px_-20px_rgba(0,0,0,0.62)]">
       <CardContent className="p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Create from selected material</p><h3 className="mt-1 font-display text-xl font-extrabold">{ARTIFACT[artifact].title}</h3><p className="mt-1 max-w-2xl text-sm font-semibold text-muted-foreground">{ARTIFACT[artifact].detail} Nothing outside this selection is used.</p></div>
+          <div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Create from selected material</p><h3 className="mt-1 font-display text-xl font-extrabold">{presentation.title}</h3><p className="mt-1 max-w-2xl text-sm font-semibold text-muted-foreground">{presentation.detail} Nothing outside this selection is used.</p></div>
           <Button size="icon" variant="ghost" aria-label="Close material selection" disabled={busy} onClick={onClose}><X className="size-4" /></Button>
         </div>
 
@@ -218,8 +239,8 @@ export function MaterialGenerationIntake({
           {useCourseLens && lensAvailable && <p className="mt-2 text-xs font-semibold text-muted-foreground">Its named evidence sources were added to this selected output and the saved guide will disclose the lens.</p>}
         </section>}
 
-        {(artifact === 'unit-question-bank' || artifact === 'unit-mastery-outline') && <section className="mt-4 rounded-2xl border border-border bg-muted/30 p-3.5" aria-label="Unit resource settings">
-          <div className="flex flex-wrap items-end justify-between gap-3"><div className="min-w-[14rem] flex-1"><p className="font-display text-sm font-extrabold">Unit scope</p><p className="mt-1 text-xs font-semibold text-muted-foreground">Name the unit or exam scope. The outline is the standard map; the bank uses it to vary practice without copying an assessment.</p><label className="mt-3 block text-xs font-extrabold"><span className="sr-only">Unit or scope label</span><input className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold" value={unitLabel} onChange={(event) => setUnitLabel(event.target.value)} placeholder="Unit 2 · Transcription and translation" /></label>{artifact === 'unit-question-bank' && masteryOutlines.length > 0 && <p className="mt-2 text-xs font-semibold text-muted-foreground">{matchingMasteryOutline ? `Mastery map linked · ${matchingMasteryOutline.standards.length} syllabus standards covered.` : 'Create or select a matching mastery outline first for a closed standard-coverage check.'}</p>}</div>{artifact === 'unit-question-bank' && <label className="flex items-center gap-2 text-xs font-extrabold"><span>Current unit</span><select className="rounded-lg border border-border bg-card px-2 py-1.5" value={currentUnitPercent} onChange={(event) => setCurrentUnitPercent(Number(event.target.value))}><option value={100}>100%</option><option value={70}>70% · 30% prior</option><option value={50}>50% · 50% prior</option></select></label>}</div>
+        {(artifact === 'unit-question-bank' || artifact === 'unit-mastery-outline') && <section className="mt-4 rounded-2xl border border-border bg-muted/30 p-3.5" aria-label="Resource scope settings">
+          <div className="flex flex-wrap items-end justify-between gap-3"><div className="min-w-[14rem] flex-1"><p className="font-display text-sm font-extrabold">{classType === 'writing' ? 'Assignment or reading scope' : classType === 'general' ? 'Week, unit, or exam scope' : 'Unit scope'}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{classType === 'stem' ? 'Name the unit or exam scope. The outline is the standard map; the bank uses it to vary practice without copying an assessment.' : 'Name the part of the course this resource should cover. Syllabus objectives stay primary; selected readings and class material provide the evidence.'}</p><label className="mt-3 block text-xs font-extrabold"><span className="sr-only">Resource scope label</span><input className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold" value={unitLabel} onChange={(event) => setUnitLabel(event.target.value)} placeholder={classType === 'writing' ? 'Essay 1 · Sources and evidence' : classType === 'general' ? 'Week 4 · Global institutions' : 'Unit 2 · Transcription and translation'} /></label>{artifact === 'unit-question-bank' && masteryOutlines.length > 0 && <p className="mt-2 text-xs font-semibold text-muted-foreground">{matchingMasteryOutline ? `Mastery map linked · ${matchingMasteryOutline.standards.length} syllabus standards covered.` : 'Create or select a matching mastery outline first for a closed standard-coverage check.'}</p>}</div>{artifact === 'unit-question-bank' && <label className="flex items-center gap-2 text-xs font-extrabold"><span>Current scope</span><select className="rounded-lg border border-border bg-card px-2 py-1.5" value={currentUnitPercent} onChange={(event) => setCurrentUnitPercent(Number(event.target.value))}><option value={100}>100%</option><option value={70}>70% · 30% prior</option><option value={50}>50% · 50% prior</option></select></label>}</div>
         </section>}
         <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_15rem]">
           <section className="rounded-2xl border border-border bg-muted/30 p-3.5">
@@ -234,8 +255,8 @@ export function MaterialGenerationIntake({
           </section>
           <aside className="rounded-2xl border border-border bg-card p-3.5"><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-muted-foreground">Add a source</p><p className="mt-1 font-display text-sm font-extrabold">Stay in this output</p><p className="mt-1 text-xs font-semibold text-muted-foreground">New material returns here; it is never silently selected.</p><div className="mt-4 grid gap-2"><MaterialIntakeDialog courseId={courseId} lectureId={lectureId} trigger={<Button size="sm" variant="outline" className="w-full">Add material</Button>} />{!lectureId && <TranscriptImport courseId={courseId} triggerClassName="w-full" />}</div><p className="mt-4 border-t border-border pt-3 text-xs font-semibold text-muted-foreground">Every saved output keeps its selected-source trace.</p></aside>
         </div>
-        {generationPhase !== 'idle' && <div className="mt-4"><GenerationProgress phase={generationPhase} outputLabel={ARTIFACT[artifact].title} errorMessage={generationError} /></div>}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3"><p className={cn('text-sm font-semibold', sourceLimitMessage ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground')}>{sourceLimitMessage ?? (unitScopeRequired && !selectedUnit ? 'Name the unit or exam scope to keep this resource organized.' : artifact === 'revised-notes' && !baseline ? 'Choose your notes baseline to continue.' : selectedChunks.length ? `${selected.length} selected ${selected.length === 1 ? 'source' : 'sources'} will ground this output.${courseLens ? ' Course lens included with its cited source trace.' : ''}` : 'Choose at least one ready source.')}</p><Button onClick={() => void generate()} disabled={busy || !canGenerate}><Sparkles className="size-4" /> {busy ? 'Creating…' : ARTIFACT[artifact].action}</Button></div>
+        {generationPhase !== 'idle' && <div className="mt-4"><GenerationProgress phase={generationPhase} outputLabel={presentation.title} errorMessage={generationError} /></div>}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3"><p className={cn('text-sm font-semibold', sourceLimitMessage ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground')}>{sourceLimitMessage ?? (unitScopeRequired && !selectedUnit ? 'Name the course scope to keep this resource organized.' : artifact === 'revised-notes' && !baseline ? 'Choose your notes baseline to continue.' : selectedChunks.length ? `${selected.length} selected ${selected.length === 1 ? 'source' : 'sources'} will ground this output.${courseLens ? ' Course lens included with its cited source trace.' : ''}` : 'Choose at least one ready source.')}</p><Button onClick={() => void generate()} disabled={busy || !canGenerate}><Sparkles className="size-4" /> {busy ? 'Creating…' : presentation.action}</Button></div>
       </CardContent>
     </Card>
   )

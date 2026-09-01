@@ -191,9 +191,7 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
   }
 
   function primaryAction() {
-    if (classType === 'stem') return <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" className="class-hub-primary-action" aria-label="Create study resources"><FileStack className="size-4" /> Create <span className="class-hub-primary-action-optional">study </span>resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems onChoose={(artifact) => { changeTab('materials'); const next = new URLSearchParams(params); next.set('classTab', 'materials'); next.set('createMaterial', artifact); setParams(next) }} /></DropdownMenuContent></DropdownMenu>
-    if (classType === 'writing') return <Button onClick={() => changeTab('materials')}><NotebookText className="size-4" /> Open current draft</Button>
-    return <Button onClick={() => changeTab('assignments')}><Plus className="size-4" /> Add a grade</Button>
+    return <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" className="class-hub-primary-action" aria-label="Create study resources"><FileStack className="size-4" /> Create <span className="class-hub-primary-action-optional">study </span>resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems classType={classType} onChoose={(artifact) => { changeTab('materials'); const next = new URLSearchParams(params); next.set('classTab', 'materials'); next.set('createMaterial', artifact); setParams(next) }} /></DropdownMenuContent></DropdownMenu>
   }
 
   const counts = {
@@ -258,8 +256,8 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="Class actions" className="class-hub-more"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>{classType === 'stem' ? 'Study tools' : 'Class actions'}</DropdownMenuLabel>
-                  {classType === 'stem' && <><DropdownMenuItem onClick={() => changeTab('materials')}><FileStack className="size-4" /> Create study resources</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${course.id}`)}><FileText className="size-4" /> Import / refresh syllabus</DropdownMenuItem></>}
+                  <DropdownMenuLabel>Class actions</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${course.id}`)}><FileText className="size-4" /> Import / refresh syllabus</DropdownMenuItem>
                   {classType === 'writing' && <DropdownMenuItem onClick={() => changeTab('materials')}><NotebookText className="size-4" /> Manage drafts and readings</DropdownMenuItem>}
                   {classType === 'general' && <DropdownMenuItem onClick={() => changeTab('assignments')}><Plus className="size-4" /> Add coursework</DropdownMenuItem>}
                 </DropdownMenuContent>
@@ -276,7 +274,7 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
         </section>
 
         <TabsContent value="overview" className="class-hub-tab"><Overview course={course} workspace={workspace} data={data} topics={courseTopics} assignments={courseAssignments} notes={courseNotes} onTab={changeTab} onOpenExamPrep={openExamPrep} /></TabsContent>
-        <TabsContent value="materials" className="class-hub-tab"><Materials course={course} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} writingTools={classType === 'writing' ? <WritingTools courseId={course.id} readingListState={readingListState} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /> : undefined} /></TabsContent>
+        <TabsContent value="materials" className="class-hub-tab"><Materials course={course} classType={classType} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} writingTools={classType === 'writing' ? <WritingTools courseId={course.id} readingListState={readingListState} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /> : undefined} /></TabsContent>
         <TabsContent value="topics" className="class-hub-tab"><Topics
           courseId={course.id} data={data} topics={courseTopics} assignments={courseAssignments}
           onOpenNotes={(topicId) => {
@@ -726,8 +724,8 @@ function CoverageMetric({ label, value, tone }: { label: string; value: number; 
 }
 
 function Materials({
-  course, data, files, topics, notes, writingTools,
-}: { course: Course; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; writingTools?: React.ReactNode }) {
+  course, classType, data, files, topics, notes, writingTools,
+}: { course: Course; classType: ClassWorkspaceType; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; writingTools?: React.ReactNode }) {
   const courseId = course.id
   const navigate = useNavigate()
   const [materialParams, setMaterialParams] = useSearchParams()
@@ -813,7 +811,7 @@ function Materials({
       </div>
       {artifact === 'revised-notes'
         ? <div className="space-y-2"><div className="flex justify-end"><Button size="sm" variant="ghost" onClick={closeArtifact}>Close revised notes</Button></div><RevisedNotesPanel courseId={courseId} files={files} data={data} /></div>
-        : artifact && <MaterialGenerationIntake artifact={artifact} courseId={courseId} courseLabel={course.code} course={{ code: course.code, title: course.title }} files={files} onClose={closeArtifact} />}
+        : artifact && <MaterialGenerationIntake artifact={artifact} courseId={courseId} courseLabel={course.code} course={{ code: course.code, title: course.title, type: classType }} files={files} onClose={closeArtifact} />}
       {writingTools}
       {visible.map((group) => (
         <Card key={group.key} className="class-hub-material-group">
@@ -837,7 +835,7 @@ function Materials({
       <Collapsible title="Material tools" badge={<span className="class-hub-material-tools-badge">Import · generate · prepare</span>}>
         <div className="class-hub-material-tools-actions">
           <Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import syllabus</Button>
-          <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline"><FileStack className="size-4" /> Create study resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems onChoose={openArtifact} /><DropdownMenuSeparator /><DropdownMenuItem onClick={openFolderIntake}><FolderOpen className="size-4" /> Connect a notes folder</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+          <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline"><FileStack className="size-4" /> Create study resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems classType={classType} onChoose={openArtifact} /><DropdownMenuSeparator /><DropdownMenuItem onClick={openFolderIntake}><FolderOpen className="size-4" /> Connect a notes folder</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
         </div>
         <div className="mt-3 space-y-3">
           <MaterialCatalog files={files} topics={topics} />
@@ -854,14 +852,14 @@ function Materials({
   )
 }
 
-function ResourceMenuItems({ onChoose }: { onChoose: (artifact: MaterialArtifact) => void }) {
+function ResourceMenuItems({ classType, onChoose }: { classType: ClassWorkspaceType; onChoose: (artifact: MaterialArtifact) => void }) {
   return <>
-    <DropdownMenuLabel>Choose a format</DropdownMenuLabel>
-    <DropdownMenuItem onClick={() => onChoose('flashcards')}><Brain className="size-4" /> Flashcards</DropdownMenuItem>
+    <DropdownMenuLabel>{classType === 'stem' ? 'Choose a format' : 'Formats for this class'}</DropdownMenuLabel>
+    {classType === 'stem' && <DropdownMenuItem onClick={() => onChoose('flashcards')}><Brain className="size-4" /> Flashcards</DropdownMenuItem>}
     <DropdownMenuItem onClick={() => onChoose('study-guide')}><BookOpen className="size-4" /> Study guide</DropdownMenuItem>
-    <DropdownMenuItem onClick={() => onChoose('study-outline')}><Sparkles className="size-4" /> Study outline</DropdownMenuItem>
-    <DropdownMenuItem onClick={() => onChoose('unit-mastery-outline')}><ListChecks className="size-4" /> Unit mastery outline</DropdownMenuItem>
-    <DropdownMenuItem onClick={() => onChoose('unit-question-bank')}><FileText className="size-4" /> Unit question bank</DropdownMenuItem>
+    <DropdownMenuItem onClick={() => onChoose('unit-mastery-outline')}><ListChecks className="size-4" /> {classType === 'stem' ? 'Unit mastery outline' : 'Learning objectives & mastery map'}</DropdownMenuItem>
+    <DropdownMenuItem onClick={() => onChoose('study-outline')}><Sparkles className="size-4" /> {classType === 'writing' ? 'Argument & source outline' : 'Study outline'}</DropdownMenuItem>
+    {classType !== 'writing' && <DropdownMenuItem onClick={() => onChoose('unit-question-bank')}><FileText className="size-4" /> {classType === 'stem' ? 'Unit question bank' : 'Practice questions'}</DropdownMenuItem>}
     <DropdownMenuItem onClick={() => onChoose('revised-notes')}><NotebookText className="size-4" /> Revised notes</DropdownMenuItem>
   </>
 }

@@ -210,6 +210,44 @@ describe('ClassHub approved Overview', () => {
     expect(container.querySelector('button.class-hub-primary-action')?.textContent).toContain('Create study resources')
   })
 
+  it('gives Writing classes a source-backed resource menu instead of replacing it with the draft action', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'writing')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+
+    await act(async () => {
+      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>)
+    })
+
+    const trigger = container.querySelector('button.class-hub-primary-action') as HTMLButtonElement
+    expect(trigger.textContent).toContain('Create study resources')
+    await act(async () => trigger.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 })))
+
+    expect(document.body.textContent).toContain('Study guide')
+    expect(document.body.textContent).toContain('Learning objectives & mastery map')
+    expect(document.body.textContent).toContain('Argument & source outline')
+    expect(document.body.textContent).not.toContain('Unit question bank')
+  })
+
+  it('gives General classes study resources suited to objective-led and applied coursework', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'general')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+
+    await act(async () => {
+      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>)
+    })
+
+    const trigger = container.querySelector('button.class-hub-primary-action') as HTMLButtonElement
+    expect(trigger.textContent).toContain('Create study resources')
+    await act(async () => trigger.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 })))
+
+    expect(document.body.textContent).toContain('Study guide')
+    expect(document.body.textContent).toContain('Learning objectives & mastery map')
+    expect(document.body.textContent).toContain('Practice questions')
+    expect(document.body.textContent).not.toContain('Flashcards')
+  })
+
   it('keeps transcript capture as the default while the bounded journal opens saved lecture evidence on demand', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
