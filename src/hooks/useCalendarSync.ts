@@ -6,7 +6,7 @@ import {
   connectCalendarSilent,
   disconnectCalendar,
   fetchPrimaryCalendarLabel,
-  fetchPrimaryDayEvents,
+  fetchPrimaryUpcomingEvents,
   isCalendarConnected,
 } from '@/lib/googleCalendar'
 
@@ -45,9 +45,9 @@ export function useCalendarSync() {
     setStatus('syncing')
     setError('')
     try {
-      if (!isCalendarConnected()) throw new Error('Reconnect Google Calendar to refresh today’s events.')
+      if (!isCalendarConnected()) throw new Error('Reconnect Google Calendar to refresh upcoming events.')
       const [events, label] = await Promise.all([
-        fetchPrimaryDayEvents(date),
+        fetchPrimaryUpcomingEvents(date),
         fetchPrimaryCalendarLabel().catch(() => undefined),
       ])
       saveEvents(events, label)

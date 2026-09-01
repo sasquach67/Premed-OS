@@ -22,6 +22,8 @@ import { generateFullMock } from '@/lib/academics/generateFullMock'
 import { useToast } from '@/components/common/useToast'
 import { WeeklyCapacityCard } from '@/components/common/WeeklyCapacityCard'
 import { isCapacityCaptured, weeklyCapacityTotal } from '@/store/migrations/shellV9'
+import { GenerationProgress } from '@/components/academics/GenerationProgress'
+import { startGenerationProgress, type GenerationPhase } from '@/lib/generation/progress'
 
 interface ExamPrepModeProps {
   course: Course
@@ -56,6 +58,9 @@ export function ExamPrepMode({ course, data, exam, onExit, onOpenTab }: ExamPrep
   const [returnedGrade, setReturnedGrade] = useState(existing?.returnedGrade ?? '')
   const [feedback, setFeedback] = useState(existing?.feedback ?? '')
   const [mockBusy, setMockBusy] = useState(false)
+  const [mockGenerationPhase, setMockGenerationPhase] = useState<GenerationPhase>('idle')
+  const [mockGenerationError, setMockGenerationError] = useState('')
+  const [openingMock, setOpeningMock] = useState(false)
   const mockRequestInFlight = useRef(false)
   const [capacityOpen, setCapacityOpen] = useState(false)
   const [continueWithoutCapacity, setContinueWithoutCapacity] = useState(false)
@@ -145,22 +150,46 @@ export function ExamPrepMode({ course, data, exam, onExit, onOpenTab }: ExamPrep
     if (mockDormant.length || mockRequestInFlight.current) return
     mockRequestInFlight.current = true
     setMockBusy(true)
+    setMockGenerationError('')
+    startGenerationProgress(setMockGenerationPhase)
     try {
       const outcome = await generateFullMock({ courseId: course.id, chunks: mockChunks, label: exam.title })
-      if (!outcome.ok || !outcome.questions || !outcome.specHash) { toast({ title: 'Mock not started', description: outcome.message ?? 'Nothing was saved.' }); return }
+      if (!outcome.ok || !outcome.questions || !outcome.specHash) {
+        const description = outcome.message ?? 'Nothing was saved.'
+        setMockGenerationPhase('error')
+        setMockGenerationError(description)
+        toast({ title: 'Mock not started', description })
+        return
+      }
+      setMockGenerationPhase('saving')
       update((draft) => {
         const attempts = draft.academics.classCenter.generatedMockAttempts
         attempts.unshift(startGeneratedMock({ id: uid(), courseId: course.id, examAssignmentId: exam.id, topicIds: exam.coveredTopicIds ?? [], sourceChunkIds: mockChunks.map((chunk) => chunk.id), specId: 'class-full-mock-v1', specHash: outcome.specHash!, questions: outcome.questions!, startedAt: Date.now() }))
       })
+      setOpeningMock(true)
+      window.setTimeout(() => {
+        setMockGenerationPhase('complete')
+        window.setTimeout(() => setOpeningMock(false), 420)
+      }, 520)
     } catch (error) {
-      toast({ title: 'Mock not started', description: error instanceof Error && error.message ? error.message : 'Nothing was saved.' })
+      const description = error instanceof Error && error.message ? error.message : 'Nothing was saved.'
+      setMockGenerationPhase('error')
+      setMockGenerationError(description)
+      toast({ title: 'Mock not started', description })
     } finally {
       mockRequestInFlight.current = false
       setMockBusy(false)
     }
   }
 
-  if (activeMock) return <FullMockRunner attempt={activeMock} course={course} exam={exam} data={data} onExit={onExit} />
+  if (activeMock && !openingMock) return <FullMockRunner attempt={activeMock} course={course} exam={exam} data={data} onExit={onExit} />
+
+  if (activeMock && openingMock) return <main className="mx-auto max-w-2xl space-y-4 px-4 py-10 sm:px-6" aria-labelledby="mock-opening-title">
+    <Card className="border-primary/20 shadow-md">
+      <CardHeader><CardTitle id="mock-opening-title" className="font-display text-2xl">Practice set ready</CardTitle><p className="text-sm text-muted-foreground">Opening your source-grounded mock now.</p></CardHeader>
+      <CardContent><GenerationProgress phase={mockGenerationPhase} outputLabel="Full practice mock" steps={[{ label: 'Prepare scope', detail: 'Checking this exam’s linked material' }, { label: 'Write practice set', detail: 'Keeping every question source-grounded' }, { label: 'Save attempt', detail: 'Opening your new practice set' }]} /></CardContent>
+    </Card>
+  </main>
 
   if (!exam.dueDate) {
     return <main className="mx-auto max-w-4xl space-y-5 px-4 py-6 sm:px-6" aria-labelledby="exam-prep-title">
@@ -205,7 +234,7 @@ export function ExamPrepMode({ course, data, exam, onExit, onOpenTab }: ExamPrep
           {capacityCaptured ? <><p><strong className="text-foreground">{capacityTotal}h a week</strong> is shared by Academics and MCAT.</p><Button size="sm" variant="outline" onClick={() => setCapacityOpen((open) => !open)}>{capacityOpen ? 'Hide availability' : 'Edit availability'}</Button></> : <><p>No weekly availability is recorded. Set it before building the plan, or continue with an un-timed plan.</p><div className="flex flex-wrap gap-2"><Button size="sm" onClick={() => setCapacityOpen(true)}>Set study hours</Button><Button size="sm" variant="ghost" onClick={() => setContinueWithoutCapacity(true)}>Continue without it</Button></div>{continueWithoutCapacity && <Badge variant="outline">Un-timed plan</Badge>}</>}
         </CardContent></Card>
         <Card><CardHeader><CardTitle className="text-lg">Exam scope</CardTitle></CardHeader><CardContent className="space-y-2 text-sm text-muted-foreground"><p>{exam.coveredTopicIds?.length ? `${exam.coveredTopicIds.length} linked topic${exam.coveredTopicIds.length === 1 ? '' : 's'} recorded for this exam.` : 'No linked topics recorded yet.'}</p><Button size="sm" variant="outline" onClick={() => onOpenTab('topics')}><Target className="size-4" /> Open topics</Button></CardContent></Card>
-        <Card><CardHeader><CardTitle className="text-lg">Full mock</CardTitle></CardHeader><CardContent className="space-y-3 text-sm text-muted-foreground">{mockDormant.length ? <><p>Not ready yet: {mockDormant.join(', ')}.</p><Button size="sm" variant="outline" onClick={() => onOpenTab(mockDormant.includes('study-material') ? 'materials' : 'topics')}>Resolve missing evidence</Button></> : <><p>Generated only from this exam’s linked student material. It is not a professor or past exam.</p><Button size="sm" onClick={startMock} disabled={mockBusy}>{mockBusy ? 'Building…' : 'Start full mock'}</Button></>}{completedMock && <p className="border-t border-border pt-3 text-xs">A completed attempt is available below for source-based review.</p>}</CardContent></Card>
+        <Card><CardHeader><CardTitle className="text-lg">Full mock</CardTitle></CardHeader><CardContent className="space-y-3 text-sm text-muted-foreground">{mockDormant.length ? <><p>Not ready yet: {mockDormant.join(', ')}.</p><Button size="sm" variant="outline" onClick={() => onOpenTab(mockDormant.includes('study-material') ? 'materials' : 'topics')}>Resolve missing evidence</Button></> : <><p>Generated only from this exam’s linked student material. It is not a professor or past exam.</p>{mockGenerationPhase !== 'idle' && <GenerationProgress phase={mockGenerationPhase} outputLabel="Full practice mock" errorMessage={mockGenerationError} steps={[{ label: 'Prepare scope', detail: 'Checking this exam’s linked material' }, { label: 'Write practice set', detail: 'Keeping every question source-grounded' }, { label: 'Save attempt', detail: 'Opening your new practice set' }]} />}<Button size="sm" onClick={startMock} disabled={mockBusy}>{mockBusy ? 'Building…' : 'Start full mock'}</Button></>}{completedMock && <p className="border-t border-border pt-3 text-xs">A completed attempt is available below for source-based review.</p>}</CardContent></Card>
       </aside>
     </div>
   </main>

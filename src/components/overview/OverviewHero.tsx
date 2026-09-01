@@ -6,7 +6,7 @@ import { NumberFlow } from '@/components/motion'
 import { useHeroScheduleSource } from '@/components/common/HeroDailySchedule'
 import { MascotNote } from '@/components/common/MascotNote'
 import { Button } from '@/components/ui/button'
-import { formatClock, formatEventTimeRange, normalizeTimedEvents, upcomingTimedEvents } from '@/lib/schedule'
+import { formatClock, formatEventTimeRange, isSameLocalDay, normalizeTimedEvents, normalizeUpcomingTimedEvents } from '@/lib/schedule'
 import { homeBanner, type VisualTheme } from '@/lib/themeAssets'
 import { useStore } from '@/store/store'
 import { cn } from '@/lib/utils'
@@ -149,7 +149,11 @@ function HeroLiveStatus({ schedule, now }: { schedule: ReturnType<typeof useHero
 
 function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof useHeroScheduleSource>; now: Date }) {
   const analysis = useMemo(() => normalizeTimedEvents(schedule.events, now), [schedule.events, now])
-  const visible = upcomingTimedEvents(analysis.timedEvents, now).slice(0, 4)
+  const upcoming = useMemo(() => normalizeUpcomingTimedEvents(schedule.events, now), [schedule.events, now])
+  const visible = upcoming.timedEvents.slice(0, 4)
+  const visibleToday = visible.filter((event) => isSameLocalDay(event.startDate, now))
+  const hasLaterEvents = visible.some((event) => !isSameLocalDay(event.startDate, now))
+  const scheduleLabel = hasLaterEvents ? (visibleToday.length ? 'Today + next' : 'Next up') : 'Today'
   const refreshCalendar = () => {
     // Keep the dashboard action stable after the first connection. If the
     // short-lived browser token has expired, this user click becomes the
@@ -172,7 +176,7 @@ function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof use
   return (
     <div className="relative rounded-3xl border border-white/65 bg-card/78 p-4 shadow-xl shadow-stone-900/10 backdrop-blur-md dark:border-white/14 dark:bg-slate-950/58 dark:shadow-black/15">
       <div className="mb-3 flex items-center justify-between gap-3 px-1">
-        <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground dark:text-white/62">Today</p>
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground dark:text-white/62">{scheduleLabel}</p>
         {schedule.calendar.enabled ? (
           <button
             type="button"
@@ -199,7 +203,7 @@ function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof use
           <MascotNote
             variant="empty-state"
             priority={10}
-            title="No timed events today"
+            title="No upcoming events"
             actions={schedule.calendar.enabled ? (
               <Button
                 type="button"
@@ -223,45 +227,48 @@ function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof use
             className="border-border text-foreground dark:border-white/20 dark:text-white"
           >
             <span className="text-muted-foreground dark:text-white/75">
-              {schedule.calendar.enabled ? 'Your calendar is clear—use this window for the next important task.' : 'Connect your calendar to place today’s real schedule here.'}
+              {schedule.calendar.enabled ? 'Nothing timed is coming up yet.' : 'Connect your calendar to place your real schedule here.'}
             </span>
           </MascotNote>
         )}
         {!!visible.length && (
           <>
-            <div className="relative h-8" role="img" aria-label="Today’s schedule timeline">
-              <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-foreground/22 dark:bg-white/55" />
-              <div
-                className="absolute top-1/2 z-20 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-primary"
-                style={{ left: `${timelinePercent(now)}%` }}
-              />
-              {visible.map((event) => {
-                const active = analysis.current?.id === event.id
-                const past = event.endDate <= now
-                const start = timelinePercent(event.startDate)
-                const end = timelinePercent(event.endDate)
-                return (
-                  <div key={event.id}>
-                    <div
-                      className={cn('absolute top-1/2 z-10 h-1.5 -translate-y-1/2 rounded-full', active ? 'bg-primary' : past ? 'bg-foreground/18 dark:bg-white/20' : 'bg-leaf/70')}
-                      style={{ left: `${start}%`, width: `${Math.max(2.5, end - start)}%` }}
-                    />
-                    <div
-                      className="absolute top-1/2 z-20 h-4 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/75 dark:bg-white/90"
-                      style={{ left: `${start}%` }}
-                    />
-                  </div>
-                )
-              })}
-            </div>
+            {visibleToday.length > 0 && (
+              <div className="relative h-8" role="img" aria-label="Today’s schedule timeline">
+                <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-foreground/22 dark:bg-white/55" />
+                <div
+                  className="absolute top-1/2 z-20 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-primary"
+                  style={{ left: `${timelinePercent(now)}%` }}
+                />
+                {visibleToday.map((event) => {
+                  const active = analysis.current?.id === event.id
+                  const start = timelinePercent(event.startDate)
+                  const end = timelinePercent(event.endDate)
+                  return (
+                    <div key={event.id}>
+                      <div
+                        className={cn('absolute top-1/2 z-10 h-1.5 -translate-y-1/2 rounded-full', active ? 'bg-primary' : 'bg-leaf/70')}
+                        style={{ left: `${start}%`, width: `${Math.max(2.5, end - start)}%` }}
+                      />
+                      <div
+                        className="absolute top-1/2 z-20 h-4 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/75 dark:bg-white/90"
+                        style={{ left: `${start}%` }}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            )}
             <div className="mt-2 space-y-1.5">
               {visible.slice(0, 3).map((event) => {
                 const active = analysis.current?.id === event.id
-                const past = event.endDate <= now
+                const dateLabel = isSameLocalDay(event.startDate, now)
+                  ? formatClock(event.startDate, schedule.calendar.timeFormat).replace(/:00/g, '')
+                  : event.startDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
                 return (
-                  <div key={event.id} className="grid grid-cols-[3.5rem_minmax(0,1fr)_4.5rem] items-center gap-2 text-xs">
-                    <span className="tabular-nums font-bold text-muted-foreground dark:text-white/55">{formatClock(event.startDate, schedule.calendar.timeFormat).replace(/:00/g, '')}</span>
-                    <span className={cn('truncate font-extrabold', active ? 'text-primary' : past ? 'text-muted-foreground/65 line-through dark:text-white/45' : 'text-foreground/88 dark:text-white/86')}>{event.title}</span>
+                  <div key={event.id} className="grid grid-cols-[5rem_minmax(0,1fr)_4.5rem] items-center gap-2 text-xs">
+                    <span className="truncate tabular-nums font-bold text-muted-foreground dark:text-white/55">{dateLabel}</span>
+                    <span className={cn('truncate font-extrabold', active ? 'text-primary' : 'text-foreground/88 dark:text-white/86')}>{event.title}</span>
                     <span className={cn('truncate text-right text-[11px] font-bold tabular-nums', active ? 'text-primary' : 'text-muted-foreground dark:text-white/55')}>
                       {active
                         ? hms(secondsLeft(event.endDate.getTime() - now.getTime())).replace(/^0:/, '')

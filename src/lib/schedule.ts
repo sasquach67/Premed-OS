@@ -175,6 +175,28 @@ export function parseClock(value: string | undefined, fallback: number) {
   return Math.max(0, Math.min(24 * 60, hour * 60 + minute))
 }
 
+function normalizeTimedEvent(event: NormalizedScheduleEvent): TimedScheduleEvent | null {
+  if (!event || event.status === 'cancelled' || event.allDay) return null
+
+  const startDate = new Date(event.start)
+  if (Number.isNaN(startDate.valueOf())) return null
+  let endDate = event.end ? new Date(event.end) : new Date(startDate.getTime() + DEFAULT_DURATION_MS)
+  if (Number.isNaN(endDate.valueOf())) endDate = new Date(startDate.getTime() + DEFAULT_DURATION_MS)
+  if (endDate <= startDate) endDate = new Date(endDate.getTime() + 24 * 60 * 60 * 1000)
+
+  return { ...event, startDate, endDate }
+}
+
+function analyzeTimedEvents(timedEvents: TimedScheduleEvent[], allDayEvents: NormalizedScheduleEvent[], now: Date): ScheduleAnalysis {
+  timedEvents.sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
+
+  const current = timedEvents.find((event) => event.startDate <= now && now < event.endDate) ?? null
+  const next = timedEvents.find((event) => event.startDate > now) ?? null
+  const status = current ? 'current' : next ? (next.startDate.getTime() - now.getTime() > 5 * 60 * 1000 ? 'free' : 'upcoming') : timedEvents.length ? 'done' : 'empty'
+
+  return { timedEvents, allDayEvents, current, next, status }
+}
+
 export function normalizeTimedEvents(events: NormalizedScheduleEvent[], now = new Date()): ScheduleAnalysis {
   const timedEvents: TimedScheduleEvent[] = []
   const allDayEvents: NormalizedScheduleEvent[] = []
@@ -187,23 +209,27 @@ export function normalizeTimedEvents(events: NormalizedScheduleEvent[], now = ne
       continue
     }
 
-    const startDate = new Date(event.start)
-    if (Number.isNaN(startDate.valueOf())) continue
-    let endDate = event.end ? new Date(event.end) : new Date(startDate.getTime() + DEFAULT_DURATION_MS)
-    if (Number.isNaN(endDate.valueOf())) endDate = new Date(startDate.getTime() + DEFAULT_DURATION_MS)
-    if (endDate <= startDate) endDate = new Date(endDate.getTime() + 24 * 60 * 60 * 1000)
+    const timed = normalizeTimedEvent(event)
+    if (!timed) continue
 
-    const touchesToday = isSameLocalDay(startDate, now) || isSameLocalDay(endDate, now) || (startDate < startOfLocalDay(now) && endDate > endOfLocalDay(now))
-    if (touchesToday) timedEvents.push({ ...event, startDate, endDate })
+    const touchesToday = isSameLocalDay(timed.startDate, now) || isSameLocalDay(timed.endDate, now) || (timed.startDate < startOfLocalDay(now) && timed.endDate > endOfLocalDay(now))
+    if (touchesToday) timedEvents.push(timed)
   }
 
-  timedEvents.sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
+  return analyzeTimedEvents(timedEvents, allDayEvents, now)
+}
 
-  const current = timedEvents.find((event) => event.startDate <= now && now < event.endDate) ?? null
-  const next = timedEvents.find((event) => event.startDate > now) ?? null
-  const status = current ? 'current' : next ? (next.startDate.getTime() - now.getTime() > 5 * 60 * 1000 ? 'free' : 'upcoming') : timedEvents.length ? 'done' : 'empty'
+/**
+ * Timed commitments still ahead of the student, regardless of which local day
+ * they fall on. The overview uses this alongside the day-scoped timeline so a
+ * calendar that is quiet today can still surface the next few real events.
+ */
+export function normalizeUpcomingTimedEvents(events: NormalizedScheduleEvent[], now = new Date()): ScheduleAnalysis {
+  const timedEvents = events
+    .map(normalizeTimedEvent)
+    .filter((event): event is TimedScheduleEvent => Boolean(event && event.endDate > now))
 
-  return { timedEvents, allDayEvents, current, next, status }
+  return analyzeTimedEvents(timedEvents, [], now)
 }
 
 /** Events the overview should still ask the student to act on today.

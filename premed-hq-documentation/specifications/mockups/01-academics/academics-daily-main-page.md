@@ -26,16 +26,16 @@
      do NOT earn the space.
   3. HEADS UP = the same component as Overview's Smart next actions.
      Dismiss animates out; last dismissal unmounts the whole widget.
-  4. CLASS CARDS: the restored original record hierarchy. At REST no left bar
-     + neutral border (class identity = small colored dot). On HOVER the left
-     bar ignites + full border and glow turn the class accent + card lifts.
-     Four wider records lead at the desktop reference width; Add class sits in
-     the section header instead of consuming a course slot. Each record may
-     show entered standing, exact grade percent when evidence exists, compact
-     status chips, one real latest class record, a labelled topic/study state,
-     and a real next dated item. No instructor/meeting clutter or invented
-     facts. Missing grade, readiness, or date evidence is named and routes to
-     the class-owned add path.
+  4. CLASS CARDS: a compact, equal-height record collection. Each card leads
+     with course title + subtitle, a compact status row, one labelled
+     coursework-progress visual (completed and remaining tracked work), one real next
+     dated item, and a direct Open action. Class colour is
+     visible at rest as a restrained left rail and top aura, never a full-card
+     wash; hover/focus strengthens the rail, border, glow, and lift, and reveals
+     the secondary ellipsis menu. Four wider records lead at the desktop
+     reference width; Add class is the single strong blue action in the section
+     header instead of consuming a course slot. Missing grade, completion, or
+     date evidence is named and routes to the class-owned add path.
   5. STUDY TOOLS LIVE ON/IN THE CLASS, never floating on the page —
      a tool with no class selected has no subject.
   6. WHERE YOU'RE WEAK is EXAM-SCOPED by default (topics filtered to the
@@ -83,21 +83,26 @@ Andy restored the original Class Center card hierarchy in app commit
 promotion pass. They supersede the Aug. 23 compact/no-percent/no-progress/
 no-Review experiment below.
 
-- **Footprint:** primary course cards remain compact and responsive, with the
-  original content-led vertical rhythm. Four wider records lead at the desktop
-  reference width and wrap to two, then one; Add class belongs in the section
-  header rather than taking a record slot. Do not manufacture a blank middle zone.
-- **Colour:** the course dot and restrained edge/hover accent carry class
-  identity. Keep the solid warm-dark card surface; no permanent full-card
-  colour wash or generic global-blue action.
+- **Footprint:** the class collection sits in a sensible max-width rail instead
+  of floating across an empty canvas. Cards remain compact, equal-height, and
+  responsive: four wider records lead at the desktop reference width and wrap
+  to two, then one. Add class belongs in the section header rather than taking
+  a record slot. Do not manufacture a blank middle zone.
+- **Colour:** the course dot is paired with a restrained class-colour left rail
+  and top aura at rest; hover/focus can add the stronger edge and glow. Keep the
+  surface layered and readable, with the global blue reserved for Add class.
 - **Information:** show course code/name, an entered letter standing or factual
   in-progress state, and the exact computed grade percent only when grade
   evidence exists. Compact chips may name factual record state; one latest
   class record may identify a linked lecture, note, material, or returned-work
-  event. A labelled topic-ready line and its progress meter are allowed when
-  topics exist; the next item appears only when it is a real dated class record.
-  Missing grade, readiness, or date evidence is named. These are facts about
-  the record, never a score, rank, readiness judgement, or composite.
+  event. A labelled coursework-progress visual shows completed tracked work and
+  the remaining count for that class; this is a prioritization signal, not a
+  topic count, grade, or claim that the whole course is complete. Its denominator
+  is the class's current tracked assignments and reading tasks: submitted or
+  graded records count as complete, while dropped records are excluded. The next item appears only when it is a
+  real dated class record. Missing grade, completion, or date evidence is
+  named. These are facts about the record, never a score, rank, readiness
+  judgement, or composite.
 - **Actions:** clicking the record still opens the Center Peek. The restored
   `Review` action appears in the card's hover/focus action rail and remains in
   overflow/context paths; its play triangle is solid white. Hovering Review
@@ -162,7 +167,8 @@ combine them with A's layout, depth, and interaction treatment.
 
 - The filter bar is controls, not a fourth navigation level: term is a Select,
   search narrows the current term, and Cards/List changes only the collection
-  presentation. The mode pill and underline tab flow remain unchanged.
+  presentation. It is a light inline row with breathing room, not a heavy
+  enclosing rectangle. The mode pill and underline tab flow remain unchanged.
 - Class cards are shared record-open surfaces. Their primary action previews or
   opens the class hub; `Review` is offered only after that record interaction
   or from overflow. Overflow holds other secondary class-scoped actions.
@@ -172,21 +178,36 @@ combine them with A's layout, depth, and interaction treatment.
 
 ## Appearance
 
-- The hierarchy is banner and three navigation forms, then a solid filter bar,
-  then a breathable 12-column bento. “Heads up” sits before the class grid;
-  cards remain a distinct, compact responsive collection rather than a stack
-  of full-width rows.
+- The hierarchy is banner and three navigation forms, then a light inline filter
+  row, then a breathable 12-column bento. “Heads up” sits before the class grid;
+  the class collection is a centered, max-width panel with equal-height cards
+  rather than a full-width wall. Cards use title, status, coursework progress,
+  one next item, and Open as the scan path.
 - Use the signed-in warm-dark ladder from `_shared/_visual-recipes.md`:
   page field → solid card → muted nested object → border. Panel corners follow
   the shared card recipe; class cards use the shared 13px record-card recipe.
 - Only the mode pill and banner stat strip answer **yes** to the glass test.
   Class cards, filters, bento panels, rows, and fields are solid with depth.
 - Hover/selection follows the shared `.15s cubic-bezier(.16,1,.3,1)` recipe:
-  the card lifts and its left accent ignites only when the card itself is the
-  target. Focus is `:focus-visible`; reduced motion removes the lift/glow
-  movement while preserving the state change. At narrow widths the equal card
-  columns step down without clipping the filter controls or growing into
-  full-width dashboard rows.
+  the card lifts, its left accent ignites, and the ellipsis menu appears only
+  when the card itself is hovered or focused. Focus is `:focus-visible`;
+  reduced motion removes the lift/glow movement while preserving the state
+  change. At narrow widths the filter row stacks first, then cards stack cleanly
+  without clipping controls or growing into full-width dashboard rows.
+
+## Composition refinement — Aug. 31, 2026
+
+This mockup-only revision follows Andy’s visual direction while keeping the
+approved Daily behavior and information architecture intact. The filter row is
+now an inline control line; the class panel is constrained to a centered rail;
+cards are shorter and equal-height; class colour appears as a restrained rail
+and top aura; Add class carries the strongest action weight; and the ellipsis is
+hidden until hover/focus. The visible card content is intentionally condensed
+  to title, status, coursework progress, one next item, and Open. The progress
+  ring communicates tracked work completed versus remaining so the student can
+choose which class needs attention next; it does not claim topic mastery.
+Approval status remains
+separate from any later app implementation evidence.
 
 ## Stage-A proposed product views — 2026-08-29
 

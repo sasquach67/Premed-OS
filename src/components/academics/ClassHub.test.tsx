@@ -326,6 +326,8 @@ describe('ClassHub approved Overview', () => {
       .find((button) => button.textContent?.trim() === 'Create study resources')
     expect(createResources).toBeTruthy()
     await act(async () => createResources!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 })))
+    expect(document.body.textContent).toContain('Unit mastery outline')
+    expect(document.body.textContent).toContain('Unit question bank')
     const studyGuide = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
       .find((item) => item.textContent?.trim() === 'Study guide')
     expect(studyGuide).toBeTruthy()

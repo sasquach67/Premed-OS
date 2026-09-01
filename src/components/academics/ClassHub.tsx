@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, BookOpen, Brain, Check, ChevronDown,
   FileStack, FileText, Filter, FolderOpen, HelpCircle,
-  Mail, MoreHorizontal, NotebookText, Plus,
+  ListChecks, Mail, MoreHorizontal, NotebookText, Plus,
   Sparkles, Target,
 } from 'lucide-react'
 import type {
@@ -53,6 +53,8 @@ import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { MaterialGenerationIntake, type MaterialArtifact } from '@/components/academics/MaterialGenerationIntake'
 import { MaterialFolderIntake } from '@/components/academics/MaterialFolderIntake'
+import { GenerationProgress } from '@/components/academics/GenerationProgress'
+import { startGenerationProgress, waitForGenerationProgress, type GenerationPhase } from '@/lib/generation/progress'
 import { AssessmentCatalog } from '@/components/academics/AssessmentCatalog'
 import { readLocalBlob } from '@/lib/localBlobStore'
 import { readingDebt, READING_LIST_STATE_COPY, recurringFeedbackThemes } from '@/lib/academics/writingEvidence'
@@ -65,7 +67,7 @@ import './classHubVariantA.css'
 type HubTab = 'overview' | 'materials' | 'topics' | 'assignments' | 'guide'
 
 function isMaterialArtifact(value: string | null): value is MaterialArtifact {
-  return value === 'flashcards' || value === 'study-guide' || value === 'study-outline' || value === 'revised-notes'
+  return value === 'flashcards' || value === 'study-guide' || value === 'study-outline' || value === 'revised-notes' || value === 'unit-mastery-outline' || value === 'unit-question-bank'
 }
 
 export interface ClassHubProps {
@@ -417,7 +419,7 @@ function Overview({
 
       <Dialog open={lectureDialogOpen} onOpenChange={setLectureDialogOpen}>
         <DialogContent className="max-h-[88vh] max-w-6xl overflow-y-auto !rounded-2xl !border-border !bg-card !p-0 !shadow-[0_22px_55px_-27px_rgba(0,0,0,0.8)] ![backdrop-filter:none]">
-          <LectureCapturePanel key={`${selectedLectureId ?? 'new'}:${lectureDestination}`} courseId={course.id} data={data} initialLectureId={selectedLectureId} initialDestination={lectureDestination} onOpenNotes={() => { setLectureDialogOpen(false); onTab('guide') }} />
+          <LectureCapturePanel key={`${selectedLectureId ?? 'new'}:${lectureDestination}`} courseId={course.id} course={course} data={data} initialLectureId={selectedLectureId} initialDestination={lectureDestination} onOpenNotes={() => { setLectureDialogOpen(false); onTab('guide') }} />
         </DialogContent>
       </Dialog>
 
@@ -727,7 +729,6 @@ function Materials({
   course, data, files, topics, notes, writingTools,
 }: { course: Course; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; writingTools?: React.ReactNode }) {
   const courseId = course.id
-  const courseCode = course.code
   const navigate = useNavigate()
   const [materialParams, setMaterialParams] = useSearchParams()
   const [filter, setFilter] = useState<'all' | 'course' | 'mine' | 'generated' | 'unassigned'>('all')
@@ -812,7 +813,7 @@ function Materials({
       </div>
       {artifact === 'revised-notes'
         ? <div className="space-y-2"><div className="flex justify-end"><Button size="sm" variant="ghost" onClick={closeArtifact}>Close revised notes</Button></div><RevisedNotesPanel courseId={courseId} files={files} data={data} /></div>
-        : artifact && <MaterialGenerationIntake artifact={artifact} courseId={courseId} courseLabel={courseCode} files={files} onClose={closeArtifact} />}
+        : artifact && <MaterialGenerationIntake artifact={artifact} courseId={courseId} courseLabel={course.code} course={{ code: course.code, title: course.title }} files={files} onClose={closeArtifact} />}
       {writingTools}
       {visible.map((group) => (
         <Card key={group.key} className="class-hub-material-group">
@@ -842,6 +843,8 @@ function Materials({
           <MaterialCatalog files={files} topics={topics} />
           <AssessmentCatalog courseId={courseId} data={data} files={files} />
           <GeneratedFlashcardDecks courseId={courseId} data={data} />
+          <GeneratedMasteryOutlines courseId={courseId} data={data} />
+          <GeneratedUnitQuestionBanks courseId={courseId} data={data} />
           <CalendarReview assignments={data.assignments.filter((item) => item.courseId === courseId)} />
           {!!categories.length && <Card className="class-hub-panel"><CardHeader className="class-hub-panel-header"><CardTitle>Grade categories</CardTitle><p className="mt-1 text-sm text-muted-foreground">Saved from your syllabus. Editable records only.</p></CardHeader><CardContent className="class-hub-panel-content space-y-2">{categories.map((category) => <div key={category.id} className="class-hub-record-row grid gap-2 rounded-xl p-3 sm:grid-cols-[1fr_7rem]"><Input aria-label="Grade category" value={category.name} onChange={(event) => patchCategory(category.id, { name: event.target.value })} /><Input aria-label="Grade category weight" type="number" min="0" max="100" value={category.weight} onChange={(event) => patchCategory(category.id, { weight: Number(event.target.value) || 0 })} />{category.policyNote && <p className="text-xs font-semibold text-muted-foreground sm:col-span-2">Policy (verbatim): {category.policyNote}</p>}{category.source && <p className="text-xs text-muted-foreground sm:col-span-2">{category.source}</p>}</div>)}</CardContent></Card>}
         </div>
@@ -857,6 +860,8 @@ function ResourceMenuItems({ onChoose }: { onChoose: (artifact: MaterialArtifact
     <DropdownMenuItem onClick={() => onChoose('flashcards')}><Brain className="size-4" /> Flashcards</DropdownMenuItem>
     <DropdownMenuItem onClick={() => onChoose('study-guide')}><BookOpen className="size-4" /> Study guide</DropdownMenuItem>
     <DropdownMenuItem onClick={() => onChoose('study-outline')}><Sparkles className="size-4" /> Study outline</DropdownMenuItem>
+    <DropdownMenuItem onClick={() => onChoose('unit-mastery-outline')}><ListChecks className="size-4" /> Unit mastery outline</DropdownMenuItem>
+    <DropdownMenuItem onClick={() => onChoose('unit-question-bank')}><FileText className="size-4" /> Unit question bank</DropdownMenuItem>
     <DropdownMenuItem onClick={() => onChoose('revised-notes')}><NotebookText className="size-4" /> Revised notes</DropdownMenuItem>
   </>
 }
@@ -868,6 +873,26 @@ function GeneratedFlashcardDecks({ courseId, data }: { courseId: string; data: C
     <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border pb-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Generated resource</p><h3 className="mt-1 font-display text-lg font-extrabold">Flashcards</h3></div><Badge variant="outline">{decks.reduce((total, deck) => total + deck.cards.length, 0)} cards</Badge></div>
     <div className="mt-3 space-y-2">{decks.map((deck) => <details key={deck.id} className="class-hub-record-row rounded-[13px] p-3"><summary className="cursor-pointer list-none font-display text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{deck.title}<span className="ml-2 font-sans text-xs font-bold text-muted-foreground">{deck.cards.length} cards · {deck.sourceChunkIds.length} source passages</span></summary><div className="mt-3 divide-y divide-border border-t border-border">{deck.cards.map((card, index) => <div key={card.id} className="grid gap-1 py-3 text-sm sm:grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)] sm:gap-3"><span className="text-xs font-extrabold text-primary">{index + 1}</span><p className="font-bold">{card.cloze ?? card.front}</p><p className="text-muted-foreground">{card.back ?? card.extra ?? 'Cloze answer is retained in the card.'}</p></div>)}</div></details>)}</div>
     <p className="mt-3 text-xs font-semibold text-muted-foreground">Source-backed class resource only. Review scheduling and Anki export are not part of Academics.</p>
+  </section>
+}
+
+function GeneratedMasteryOutlines({ courseId, data }: { courseId: string; data: ClassCenterData }) {
+  const outlines = data.generatedMasteryOutlines.filter((outline) => outline.courseId === courseId)
+  if (!outlines.length) return null
+  return <section className="rounded-2xl border border-border bg-card p-4" aria-label="Generated unit mastery outlines">
+    <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border pb-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Generated resource</p><h3 className="mt-1 font-display text-lg font-extrabold">Unit mastery outlines</h3></div><Badge variant="outline">{outlines.length} {outlines.length === 1 ? 'unit' : 'units'}</Badge></div>
+    <div className="mt-3 space-y-2">{outlines.map((outline) => <details key={outline.id} className="class-hub-record-row rounded-[13px] p-3"><summary className="cursor-pointer list-none font-display text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{outline.title}<span className="ml-2 font-sans text-xs font-bold text-muted-foreground">{outline.unit} · {outline.standards.length} standards</span></summary><div className="mt-3 space-y-3 border-t border-border pt-3">{outline.standards.map((standard) => <div key={standard.id} className="grid gap-2 text-sm sm:grid-cols-3"><div><p className="font-display font-extrabold">{standard.title}</p><p className="mt-1 text-xs font-bold uppercase tracking-wide text-primary">Understand</p><p className="text-muted-foreground">{standard.understand.join(' ') || 'Not stated'}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Be able to do</p><p className="text-muted-foreground">{standard.beAbleToDo.join(' ') || 'Not stated'}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Watch for</p><p className="text-muted-foreground">{standard.watchFor.join(' ') || 'Not stated'}</p></div></div>)}</div></details>)}</div>
+    <p className="mt-3 text-xs font-semibold text-muted-foreground">Syllabus standards remain the Topic contract; lecture concepts only provide supporting evidence.</p>
+  </section>
+}
+
+function GeneratedUnitQuestionBanks({ courseId, data }: { courseId: string; data: ClassCenterData }) {
+  const banks = data.generatedUnitQuestionBanks.filter((bank) => bank.courseId === courseId)
+  if (!banks.length) return null
+  return <section className="rounded-2xl border border-border bg-card p-4" aria-label="Generated unit question banks">
+    <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border pb-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Generated resource</p><h3 className="mt-1 font-display text-lg font-extrabold">Unit question banks</h3></div><Badge variant="outline">{banks.reduce((total, bank) => total + bank.questions.length, 0)} questions</Badge></div>
+    <div className="mt-3 space-y-2">{banks.map((bank) => <details key={bank.id} className="class-hub-record-row rounded-[13px] p-3"><summary className="cursor-pointer list-none font-display text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{bank.title}<span className="ml-2 font-sans text-xs font-bold text-muted-foreground">{bank.unit} · {bank.questions.length} questions · {bank.integrationPercent}% prior-unit</span></summary><div className="mt-3 divide-y divide-border border-t border-border">{bank.questions.map((question, index) => <div key={question.id} className="grid gap-1 py-3 text-sm sm:grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)] sm:gap-3"><span className="text-xs font-extrabold text-primary">{index + 1}</span><div><p className="font-bold">{question.prompt}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{question.scope === 'prior-unit-integration' ? 'Prior-unit integration' : 'Current unit'} · {question.move}</p></div><div><p className="font-semibold">Answer: {question.answer}</p><p className="mt-1 text-muted-foreground">{question.rationale}</p></div></div>)}</div></details>)}</div>
+    <p className="mt-3 text-xs font-semibold text-muted-foreground">Practice questions are source-grounded and never copied from private or official assessments.</p>
   </section>
 }
 
@@ -1264,6 +1289,8 @@ function FileRow({ file, ownership, unassigned, onReimport }: { file: AcademicFi
   const toast = useToast()
   const chunks = useStore((s) => s.academics.classCenter.sourceChunks)
   const [summarising, setSummarising] = useState(false)
+  const [generationPhase, setGenerationPhase] = useState<GenerationPhase>('idle')
+  const [generationError, setGenerationError] = useState('')
   const [opening, setOpening] = useState(false)
   const label = ownership === 'course' ? 'Course' : ownership === 'mine' ? 'Mine' : 'Generated'
   async function openFile() {
@@ -1284,9 +1311,10 @@ function FileRow({ file, ownership, unassigned, onReimport }: { file: AcademicFi
     window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
   }
   const content = (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted p-3 transition hover:-translate-y-0.5 hover:border-primary/45 motion-reduce:transform-none">
-      <div className="flex min-w-0 items-center gap-3"><FileText className="size-4 shrink-0 text-primary" /><div className="min-w-0"><p className="truncate font-extrabold">{file.title}</p><p className="text-xs text-muted-foreground">{titleCase(file.type)} · {file.sourceType}</p></div></div>
-      <div className="flex items-center gap-2">
+    <div className="rounded-xl border border-border bg-muted p-3 transition hover:-translate-y-0.5 hover:border-primary/45 motion-reduce:transform-none">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3"><FileText className="size-4 shrink-0 text-primary" /><div className="min-w-0"><p className="truncate font-extrabold">{file.title}</p><p className="text-xs text-muted-foreground">{titleCase(file.type)} · {file.sourceType}</p></div></div>
+        <div className="flex items-center gap-2">
         {unassigned && <Badge variant="warning">Unassigned</Badge>}
         <Badge variant={ownership === 'generated' ? 'secondary' : 'outline'}>{label}</Badge>
         {(file.url || file.blobRef) && <Button type="button" size="sm" variant="outline" disabled={opening} onClick={() => void openFile()}>{opening ? 'Opening…' : 'Open'}</Button>}
@@ -1307,37 +1335,55 @@ function FileRow({ file, ownership, unassigned, onReimport }: { file: AcademicFi
             // chunks. A file with none says so rather than generating from the
             // rest of the class behind the student's back.
             setSummarising(true)
-            const sources = sourcesFor(chunks, courseId, file.id)
-            const outcome = await generateStudyGuide({ courseId, chunks: sources, label: file.title })
-            setSummarising(false)
-            if (!outcome.ok) {
-              toast({ title: 'Nothing was saved', description: outcome.message ?? 'This material could not be summarized.' })
-              return
-            }
-            useStore.getState().update((draft) => {
-              draft.academics.classCenter.notes.push({
-                id: uid(),
-                courseId,
-                title: outcome.title!,
-                type: 'study-guide',
-                kind: 'on-material',
-                date: isoToday(),
-                unit: '',
-                topicIds: [],
-                content: `${outcome.content}\n\n---\nGenerated from ${file.title} · spec ${outcome.specHash}`,
-                syncStatus: 'local-only',
-                linkedFileIds: [file.id],
-                createdAt: Date.now(),
-                updatedAt: Date.now(),
-                order: draft.academics.classCenter.notes.length,
+            setGenerationError('')
+            startGenerationProgress(setGenerationPhase)
+            try {
+              const sources = sourcesFor(chunks, courseId, file.id)
+              const outcome = await generateStudyGuide({ courseId, chunks: sources, label: file.title })
+              if (!outcome.ok) {
+                const description = outcome.message ?? 'This material could not be summarized.'
+                setGenerationPhase('error')
+                setGenerationError(description)
+                toast({ title: 'Nothing was saved', description })
+                return
+              }
+              setGenerationPhase('saving')
+              await waitForGenerationProgress()
+              useStore.getState().update((draft) => {
+                draft.academics.classCenter.notes.push({
+                  id: uid(),
+                  courseId,
+                  title: outcome.title!,
+                  type: 'study-guide',
+                  kind: 'on-material',
+                  date: isoToday(),
+                  unit: '',
+                  topicIds: [],
+                  content: `${outcome.content}\n\n---\nGenerated from ${file.title} · spec ${outcome.specHash}`,
+                  syncStatus: 'local-only',
+                  linkedFileIds: [file.id],
+                  createdAt: Date.now(),
+                  updatedAt: Date.now(),
+                  order: draft.academics.classCenter.notes.length,
+                })
               })
-            })
-            toast({ title: 'Summary generated', description: `Saved in Materials as “${outcome.title}”.` })
+              setGenerationPhase('complete')
+              toast({ title: 'Summary generated', description: `Saved in Materials as “${outcome.title}”.` })
+            } catch (error) {
+              const description = error instanceof Error && error.message ? error.message : 'Generation stopped unexpectedly. Nothing was saved.'
+              setGenerationPhase('error')
+              setGenerationError(description)
+              toast({ title: 'Nothing was saved', description })
+            } finally {
+              setSummarising(false)
+            }
           }}
         >
           {summarising ? 'Summarizing…' : 'Summarize'}
         </Button>
+        </div>
       </div>
+      {generationPhase !== 'idle' && <div className="mt-3"><GenerationProgress phase={generationPhase} outputLabel="Study guide summary" errorMessage={generationError} /></div>}
     </div>
   )
   return content

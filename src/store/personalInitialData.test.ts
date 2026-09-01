@@ -18,6 +18,7 @@ describe('personal first-run data', () => {
       assignedReadings: [], feedbackNotes: [], gradeCategories: [], mistakes: [], topicLinks: [], topicPredictions: [],
       savedPlans: [], plannerTerms: [], examPrepPlans: [], generatedFlashcardDecks: [], generatedMockAttempts: [],
       generatedRevisedNotes: [], professorEvidence: [], conceptCanvases: [], assessmentMaterials: [], assessmentAttempts: [],
+      generatedMasteryOutlines: [], generatedUnitQuestionBanks: [],
       transcriptRecords: [], acknowledgedCatalogWarnings: [], planningProgramContext: {}, lectures: [], lectureFindings: [], lectureMaterialProposals: [],
       lectureNoteProposals: [], guideProposals: [], watchedNoteSources: [], watchedNoteProposals: [], termReports: [], focusSessions: [],
       reviewSessionPreferences: {

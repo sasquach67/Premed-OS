@@ -302,6 +302,8 @@ function createClassCenterSeed(): AcademicTagSettings['classCenter'] {
     generatedFlashcardDecks: [],
     generatedMockAttempts: [],
     generatedRevisedNotes: [],
+    generatedMasteryOutlines: [],
+    generatedUnitQuestionBanks: [],
     professorEvidence: [],
     conceptCanvases: [],
     assessmentMaterials: [],

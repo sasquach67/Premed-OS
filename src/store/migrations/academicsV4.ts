@@ -237,6 +237,8 @@ function migrateRelatedRows(
     generatedFlashcardDecks: [],
     generatedMockAttempts: [],
     generatedRevisedNotes: [],
+    generatedMasteryOutlines: [],
+    generatedUnitQuestionBanks: [],
     professorEvidence: [],
     conceptCanvases: [],
     assessmentMaterials: [],

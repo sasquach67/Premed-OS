@@ -957,6 +957,67 @@ export interface GeneratedRevisedNotes {
   order: number
 }
 
+/** A durable unit map used as the source contract for generated study work. */
+export interface GeneratedMasteryOutlineStandard {
+  id: string
+  title: string
+  understand: string[]
+  beAbleToDo: string[]
+  watchFor: string[]
+  sourceChunkIds: ID[]
+}
+
+export interface GeneratedMasteryOutline {
+  id: ID
+  courseId: ID
+  title: string
+  unit: string
+  specId: 'unit-mastery-outline-v1'
+  specHash: string
+  standards: GeneratedMasteryOutlineStandard[]
+  sourceChunkIds: ID[]
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
+export type GeneratedQuestionBankStyle = 'biology' | 'psychology' | 'general'
+export type GeneratedQuestionBankScope = 'current-unit' | 'prior-unit-integration'
+export type GeneratedQuestionBankMove = 'application' | 'integration' | 'situational' | 'recall' | 'interpretation' | 'method-and-controls'
+
+export interface GeneratedUnitQuestion {
+  id: ID
+  prompt: string
+  options?: string[]
+  answer: string
+  rationale: string
+  unit: string
+  scope: GeneratedQuestionBankScope
+  move: GeneratedQuestionBankMove
+  primaryStandardId: string
+  secondaryStandardIds?: string[]
+  sourceChunkIds: ID[]
+  difficulty: 'foundational' | 'standard' | 'challenging'
+}
+
+/** Generated questions are practice material, never a private/official exam. */
+export interface GeneratedUnitQuestionBank {
+  id: ID
+  courseId: ID
+  title: string
+  unit: string
+  specId: 'unit-question-bank-v1'
+  specHash: string
+  courseStyle: GeneratedQuestionBankStyle
+  currentUnitPercent: number
+  integrationPercent: number
+  questions: GeneratedUnitQuestion[]
+  sourceChunkIds: ID[]
+  createdAt: number
+  updatedAt: number
+  order: number
+}
+
 export interface GeneratedMockQuestion {
   id: ID
   prompt: string
@@ -1137,6 +1198,8 @@ export interface ClassCenterData {
   generatedFlashcardDecks: GeneratedFlashcardDeck[]
   generatedMockAttempts: GeneratedMockAttempt[]
   generatedRevisedNotes: GeneratedRevisedNotes[]
+  generatedMasteryOutlines: GeneratedMasteryOutline[]
+  generatedUnitQuestionBanks: GeneratedUnitQuestionBank[]
   professorEvidence: ProfessorEvidenceObservation[]
   conceptCanvases: ConceptCanvasResponse[]
   assessmentMaterials: AssessmentMaterialRecord[]

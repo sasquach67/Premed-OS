@@ -1,6 +1,6 @@
 # premedOS Generation Engine — specification set
 
-**Status: APPROVED FOR BUILD, Aug 2026 — documents `00`–`09`. No code has been written yet.**
+**Status: APPROVED FOR BUILD, Aug 2026 — documents `00`–`09`, plus the shipped unit-resource extensions `11`–`13`.**
 **`10-reading-summary-v1.md` is PROPOSED and is NOT part of that approval**; it carries its own
 open decisions and does not gate anything in `09`. Andy reviewed the
 educational philosophy and generation behavior, supplied the flashcard authoring standard (`04`),
@@ -29,6 +29,9 @@ The governing principle, in one line:
 | 8 | [`08-regeneration-and-quality.md`](./08-regeneration-and-quality.md) | Regeneration semantics, edit protection, the quality pass |
 | 9 | [`09-migration-plan.md`](./09-migration-plan.md) | Sequenced plan against the real dependency graph |
 | 10 | [`10-reading-summary-v1.md`](./10-reading-summary-v1.md) | **PROPOSED, not approved.** The third Layer-2 generator — reading summaries. Three decisions open in its §8 |
+| 11 | [`11-unit-mastery-outline-v1.md`](./11-unit-mastery-outline-v1.md) | Unit mastery map: syllabus standards split into understand, do, and watch-for checkpoints |
+| 12 | [`12-unit-question-bank-v1.md`](./12-unit-question-bank-v1.md) | Source-grounded practice questions with course-specific moves and adjustable integration |
+| 13 | [`13-course-question-blueprints.md`](./13-course-question-blueprints.md) | Biology, psychology, and general question-style defaults |
 
 ## Your 12 deliverables → where they landed
 

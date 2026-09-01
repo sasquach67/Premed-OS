@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { Collapsible } from '@/components/common/Collapsible'
+import { GenerationProgress } from '@/components/academics/GenerationProgress'
+import { startGenerationProgress, type GenerationPhase } from '@/lib/generation/progress'
 
 const CARD = 'rounded-2xl border border-border bg-card shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]'
 const EYEBROW = 'font-display text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground'
@@ -41,6 +43,8 @@ export function TermReportPanel({
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([])
   const [acceptedDisclosure, setAcceptedDisclosure] = useState(() => hasAcceptedStudySourceDisclosure())
   const [generating, setGenerating] = useState(false)
+  const [generationPhase, setGenerationPhase] = useState<GenerationPhase>('idle')
+  const [generationError, setGenerationError] = useState('')
   const reportRequestInFlight = useRef(false)
   const report = reports.find((item) => item.id === (focusReportId ?? selectedId)) ?? reports.at(-1)
   const courseNames = useMemo(() => new Map(courses.map((course) => [course.id, `${course.code} · ${course.title}`])), [courses])
@@ -160,7 +164,8 @@ export function TermReportPanel({
             </div>
             <label className="flex gap-2 rounded-xl border border-border bg-card p-3 text-xs font-semibold text-muted-foreground"><input type="checkbox" checked={acceptedDisclosure} onChange={(event) => { setAcceptedDisclosure(event.target.checked); if (event.target.checked) acceptStudySourceDisclosure() }} /><span>I understand that the compact facts above and any selected excerpts will be sent to the configured AI provider only to generate this report.</span></label>
           </div>
-          <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setSourceReviewOpen(false)}>Cancel</Button><Button disabled={!acceptedDisclosure || generating} onClick={() => void generateReport()}><Sparkles className="size-4" /> {generating ? 'Generating…' : 'Generate report'}</Button></div>
+          {generationPhase !== 'idle' && <GenerationProgress phase={generationPhase} outputLabel="Term report observations" errorMessage={generationError} steps={[{ label: 'Prepare record', detail: 'Freezing the saved term facts' }, { label: 'Write observations', detail: 'Keeping claims tied to your evidence' }, { label: 'Save report', detail: 'Adding the report to Grades & Archive' }]} />}
+          <div className="flex justify-end gap-2"><Button variant="outline" disabled={generating || generationPhase === 'saving'} onClick={() => setSourceReviewOpen(false)}>Cancel</Button><Button disabled={!acceptedDisclosure || generating || generationPhase === 'saving'} onClick={() => void generateReport()}><Sparkles className="size-4" /> {generating ? 'Generating…' : 'Generate report'}</Button></div>
         </DialogContent>
       </Dialog>
       </article>
@@ -181,6 +186,8 @@ export function TermReportPanel({
     }
     reportRequestInFlight.current = true
     setGenerating(true)
+    setGenerationError('')
+    startGenerationProgress(setGenerationPhase)
     try {
       const request = assembleGenerationRequest({
         specId: 'term-report-v1',
@@ -194,6 +201,8 @@ export function TermReportPanel({
       })
       if (!response.ok || !validateTermReportArtifact(response.data.artifact, new Set(compilation.snapshot.facts.map((item) => item.id)))) {
         const message = response.ok ? 'The generated report did not pass its evidence checks. Nothing new was saved.' : response.message
+        setGenerationPhase('error')
+        setGenerationError(message)
         update((draft) => {
           const existing = draft.academics.classCenter.termReports.find((item) => item.id === report.id)
           if (existing) { existing.status = 'unavailable'; existing.providerMessage = message; existing.updatedAt = now }
@@ -204,14 +213,20 @@ export function TermReportPanel({
       revision.status = 'ready'
       revision.blocks = [...compilation.localBlocks.filter((block) => block.kind !== 'limit'), ...aiBlocks(response.data.artifact)]
       revision.supersedesReportId = report.id
+      setGenerationPhase('saving')
       update((draft) => { draft.academics.classCenter.termReports.push(revision) })
       setSelectedId(revision.id)
       onSelectReport?.(revision.id)
-      setSourceReviewOpen(false)
+      window.setTimeout(() => {
+        setGenerationPhase('complete')
+        window.setTimeout(() => setSourceReviewOpen(false), 420)
+      }, 520)
     } catch (error) {
       const message = error instanceof Error && error.message
         ? error.message
         : 'AI observations are unavailable right now. Your local facts remain saved.'
+      setGenerationPhase('error')
+      setGenerationError(message)
       update((draft) => {
         const existing = draft.academics.classCenter.termReports.find((item) => item.id === report.id)
         if (existing) { existing.status = 'unavailable'; existing.providerMessage = message; existing.updatedAt = now }

@@ -622,6 +622,59 @@
     transform: scaleX(1);
     box-shadow: 0 0 14px var(--class-accent-75, transparent);
   }
+  .academics-surface .academics-coursework-progress {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 38px;
+    align-items: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 6px 7px 6px 9px;
+    border: 1px solid color-mix(in srgb, var(--class-accent) 20%, var(--border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--class-accent) 5%, var(--card));
+  }
+  .academics-surface .academics-coursework-ring {
+    --coursework-progress: 0deg;
+    position: relative;
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-content: center;
+    border-radius: 999px;
+    background: conic-gradient(
+      var(--class-accent) 0 var(--coursework-progress),
+      color-mix(in srgb, var(--class-accent) 12%, var(--border)) var(--coursework-progress) 360deg
+    );
+    color: var(--foreground);
+    text-align: center;
+    box-shadow: 0 6px 16px -12px var(--class-accent-75, transparent);
+  }
+  .academics-surface .academics-coursework-ring::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border-radius: inherit;
+    background: color-mix(in srgb, var(--card) 92%, var(--class-accent));
+  }
+  .academics-surface .academics-coursework-ring > * {
+    position: relative;
+    z-index: 1;
+  }
+  .academics-surface .academics-coursework-ring span {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 800;
+    line-height: .9;
+  }
+  .academics-surface .academics-coursework-ring small {
+    margin-top: 1px;
+    color: var(--muted-foreground);
+    font-size: 7px;
+    font-weight: 800;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
   /* The Daily reference uses a single compact, slightly violet-tinted Heads
      up panel. Its contained suggestions are nested records, not a second row
      of equal dashboard cards. */

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { AlertTriangle, Check, Clipboard, Download, FileText, NotebookPen } from 'lucide-react'
 import type { AcademicFile, ClassCenterData, SourceChunk } from '@/lib/types'
 import { generateRevisedNotes } from '@/lib/academics/generateRevisedNotes'
@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { GenerationProgress } from '@/components/academics/GenerationProgress'
+import { startGenerationProgress, waitForGenerationProgress, type GenerationPhase } from '@/lib/generation/progress'
 
 type MaterialChoice = { file: AcademicFile; chunks: SourceChunk[] }
 
@@ -58,6 +60,9 @@ export function RevisedNotesPanel({ courseId, files, data }: {
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([])
   const [baselineFileId, setBaselineFileId] = useState<string>('')
   const [busy, setBusy] = useState(false)
+  const generationLock = useRef(false)
+  const [generationPhase, setGenerationPhase] = useState<GenerationPhase>('idle')
+  const [generationError, setGenerationError] = useState('')
   const choices = useMemo<MaterialChoice[]>(() => files.map((file) => ({
     file,
     chunks: allChunks.filter((chunk) => chunk.courseId === courseId && chunk.fileId === file.id && Boolean(chunk.content.trim())),
@@ -82,25 +87,43 @@ export function RevisedNotesPanel({ courseId, files, data }: {
   }
 
   async function generate() {
-    if (!baselineChoice) return
+    if (!baselineChoice || busy || generationLock.current) return
+    generationLock.current = true
     setBusy(true)
-    const outcome = await generateRevisedNotes({
-      courseId,
-      chunks: selectedChunks,
-      baselineFileId: baselineChoice.file.id,
-      baselineChunks: baselineChoice.chunks,
-      label: selectedChoices.map((choice) => choice.file.title).join(', ') || 'Selected lecture material',
-    })
-    setBusy(false)
-    if (!outcome.ok || !outcome.artifact) {
-      toast({ title: 'Revised notes were not saved', description: outcome.message ?? 'The selected material could not be turned into a source-linked note.', tone: 'error' })
-      return
+    setGenerationError('')
+    startGenerationProgress(setGenerationPhase)
+    try {
+      const outcome = await generateRevisedNotes({
+        courseId,
+        chunks: selectedChunks,
+        baselineFileId: baselineChoice.file.id,
+        baselineChunks: baselineChoice.chunks,
+        label: selectedChoices.map((choice) => choice.file.title).join(', ') || 'Selected lecture material',
+      })
+      if (!outcome.ok || !outcome.artifact) {
+        const description = outcome.message ?? 'The selected material could not be turned into a source-linked note.'
+        setGenerationPhase('error')
+        setGenerationError(description)
+        toast({ title: 'Revised notes were not saved', description, tone: 'error' })
+        return
+      }
+      setGenerationPhase('saving')
+      await waitForGenerationProgress()
+      useStore.getState().update((draft) => {
+        const records = draft.academics.classCenter.generatedRevisedNotes
+        records.unshift({ ...outcome.artifact!, id: uid(), createdAt: Date.now(), updatedAt: Date.now(), order: records.length })
+      })
+      setGenerationPhase('complete')
+      toast({ title: 'Revised notes created', description: 'Saved as a separate material with its baseline and selected-source trace.' })
+    } catch (error) {
+      const description = error instanceof Error && error.message ? error.message : 'Generation stopped unexpectedly. Nothing was saved.'
+      setGenerationPhase('error')
+      setGenerationError(description)
+      toast({ title: 'Revised notes were not saved', description, tone: 'error' })
+    } finally {
+      generationLock.current = false
+      setBusy(false)
     }
-    useStore.getState().update((draft) => {
-      const records = draft.academics.classCenter.generatedRevisedNotes
-      records.unshift({ ...outcome.artifact!, id: uid(), createdAt: Date.now(), updatedAt: Date.now(), order: records.length })
-    })
-    toast({ title: 'Revised notes created', description: 'Saved as a separate material with its baseline and selected-source trace.' })
   }
 
   return (
@@ -150,6 +173,7 @@ export function RevisedNotesPanel({ courseId, files, data }: {
             </div>
           </div>
 
+          {generationPhase !== 'idle' && <GenerationProgress phase={generationPhase} outputLabel="Revised notes" errorMessage={generationError} />}
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[13px] border border-border bg-muted/25 p-3.5">
             <p className="text-sm font-semibold text-muted-foreground">{baselineChoice ? <><b className="text-foreground">{baselineChoice.file.title}</b> stays the starting record. {selectedChoices.length} selected {selectedChoices.length === 1 ? 'source' : 'sources'} may support it.</> : 'Choose your notes baseline to begin.'}</p>
             <Button size="sm" onClick={() => void generate()} disabled={busy || !baselineChoice || !selectedChunks.length}><NotebookPen className="size-4" /> {busy ? 'Creating…' : 'Create revised notes'}</Button>

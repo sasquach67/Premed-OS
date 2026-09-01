@@ -57,4 +57,55 @@ describe('Google Calendar browser-session connection', () => {
     expect(calendar.isCalendarConnected()).toBe(false)
     expect(window.sessionStorage.getItem('premedos.google-calendar-token.v1')).toBeNull()
   })
+
+  it('fetches the next timed events from now instead of stopping at today', async () => {
+    let callback: ((response: TokenCallbackResponse) => void) | undefined
+    ;(window as unknown as { google: unknown }).google = {
+      accounts: {
+        oauth2: {
+          initTokenClient: (configuration: { callback: (response: TokenCallbackResponse) => void }) => {
+            callback = configuration.callback
+            return {
+              requestAccessToken: () => callback?.({ access_token: 'calendar-token', expires_in: 3600 }),
+            }
+          },
+          revoke: vi.fn(),
+        },
+      },
+    }
+
+    const sourceEvents = [
+      { id: 'soon', summary: 'In a few hours', start: { dateTime: '2026-08-31T14:00:00-04:00' }, end: { dateTime: '2026-08-31T15:00:00-04:00' } },
+      { id: 'later', summary: 'Next week', start: { dateTime: '2026-09-07T10:00:00-04:00' }, end: { dateTime: '2026-09-07T11:00:00-04:00' } },
+      { id: 'past', summary: 'Already finished', start: { dateTime: '2026-08-31T09:00:00-04:00' }, end: { dateTime: '2026-08-31T09:30:00-04:00' } },
+    ]
+    const fetchMock = vi.fn(async (input: string) => {
+      const url = new URL(input)
+      if (url.pathname.includes('/calendarList/primary')) {
+        return { ok: true, status: 200, json: async () => ({ id: 'primary', summary: 'Primary' }) }
+      }
+      const min = Date.parse(url.searchParams.get('timeMin') ?? '')
+      const maxParam = url.searchParams.get('timeMax')
+      const max = maxParam ? Date.parse(maxParam) : Number.POSITIVE_INFINITY
+      const items = sourceEvents.filter((event) => {
+        const start = Date.parse(event.start.dateTime)
+        const end = Date.parse(event.end.dateTime)
+        return end > min && start < max
+      })
+      return { ok: true, status: 200, json: async () => ({ items }) }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const calendar = await import('./googleCalendar')
+    await calendar.connectCalendar('client-id')
+    const now = new Date('2026-08-31T10:00:00-04:00')
+    const events = await calendar.fetchPrimaryDayEvents(now)
+
+    expect(events.map((event) => event.title)).toEqual(['In a few hours', 'Next week'])
+    const eventRequest = fetchMock.mock.calls
+      .map(([input]) => new URL(String(input)))
+      .find((url) => url.pathname.includes('/events'))
+    expect(eventRequest?.searchParams.get('timeMin')).toBe(now.toISOString())
+    expect(eventRequest?.searchParams.get('timeMax')).toBeNull()
+  })
 })

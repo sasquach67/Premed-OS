@@ -13,6 +13,8 @@ import { FLASHCARDS_V1 } from '@/lib/generation/artifacts/flashcards.v1'
 import { CLASS_FULL_MOCK_V1 } from '@/lib/generation/artifacts/classFullMock.v1'
 import { REVISED_NOTES_V1 } from '@/lib/generation/artifacts/revisedNotes.v1'
 import { TERM_REPORT_V1 } from '@/lib/generation/artifacts/termReport.v1'
+import { UNIT_MASTERY_OUTLINE_V1 } from '@/lib/generation/artifacts/unitMasteryOutline.v1'
+import { UNIT_QUESTION_BANK_V1 } from '@/lib/generation/artifacts/unitQuestionBank.v1'
 import type { ArtifactSpec } from '@/lib/generation/types'
 
 export const ARTIFACT_REGISTRY: Record<string, ArtifactSpec> = {
@@ -22,6 +24,8 @@ export const ARTIFACT_REGISTRY: Record<string, ArtifactSpec> = {
   [CLASS_FULL_MOCK_V1.specId]: CLASS_FULL_MOCK_V1,
   [REVISED_NOTES_V1.specId]: REVISED_NOTES_V1,
   [TERM_REPORT_V1.specId]: TERM_REPORT_V1,
+  [UNIT_MASTERY_OUTLINE_V1.specId]: UNIT_MASTERY_OUTLINE_V1,
+  [UNIT_QUESTION_BANK_V1.specId]: UNIT_QUESTION_BANK_V1,
 }
 
 export function artifactSpec(specId: string): ArtifactSpec {

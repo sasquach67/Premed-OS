@@ -1394,6 +1394,9 @@ export function ClassCard({
     : 'No deadline scheduled'
   const percent = coursePercent(row.id, data)
   const signal = classSignal(row, data, stats, nextText)
+  const courseworkPercent = stats.courseworkTotal > 0
+    ? Math.round((stats.courseworkComplete / stats.courseworkTotal) * 100)
+    : 0
 
   function openFromCard(event: MouseEvent<HTMLElement>) {
     if ((event.target as HTMLElement).closest('button,a,[role="menuitem"]')) return
@@ -1472,14 +1475,29 @@ export function ClassCard({
             {signal.verb && <span className="rounded-md bg-[color-mix(in_srgb,var(--class-accent)_18%,transparent)] px-1.5 py-0.5 font-display text-[9.5px] font-extrabold tracking-wide text-[var(--class-accent)]">{signal.verb}</span>}
             {signal.text && <span>{signal.text}</span>}
           </p>
-          {stats.topicCount > 0 && (
-            <Progress
-              value={(stats.coveredCount / stats.topicCount) * 100}
-              className="h-[5px] border-0 bg-background/80"
-              indicatorClassName="bg-[var(--class-accent)]"
-              aria-label={`${stats.coveredCount} of ${stats.topicCount} topics have linked material`}
-            />
-          )}
+          <div
+            className="academics-coursework-progress"
+            role="progressbar"
+            aria-label={stats.courseworkTotal > 0
+              ? `${stats.courseworkComplete} of ${stats.courseworkTotal} tracked coursework items complete; ${stats.courseworkRemaining} left`
+              : 'No tracked coursework yet'}
+            aria-valuemin={0}
+            aria-valuemax={stats.courseworkTotal || 1}
+            aria-valuenow={stats.courseworkComplete}
+          >
+            <div className="min-w-0">
+              <p className="font-display text-[9.5px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground">Coursework progress</p>
+              <p className="mt-0.5 truncate text-[10.5px] font-bold text-foreground">
+                {stats.courseworkTotal > 0
+                  ? `${stats.courseworkComplete} of ${stats.courseworkTotal} complete`
+                  : 'No tracked work yet'}
+              </p>
+            </div>
+            <div className="academics-coursework-ring" style={{ '--coursework-progress': `${courseworkPercent * 3.6}deg` } as CSSProperties} aria-hidden="true">
+              <span>{stats.courseworkRemaining}</span>
+              <small>left</small>
+            </div>
+          </div>
         </div>
 
         <div className={cn('border-t border-border pt-2', compact && 'md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
@@ -3102,12 +3120,17 @@ function TopicRow({ topic, current, data, mutate }: { topic: Topic; current: boo
 function classStats(courseId: string, data: ClassCenterViewData) {
   const topics = data.topics.filter((item) => item.courseId === courseId)
   const coveredCount = topics.filter((topic) => (topic.linkedFileIds?.length ?? 0) || topic.sourceNoteIds.length).length
+  const coursework = data.assignments.filter((item) => item.courseId === courseId && item.status !== 'dropped')
+  const courseworkComplete = coursework.filter((item) => item.status === 'submitted' || item.status === 'graded').length
   const upcoming = data.assignments
     .filter((item) => item.courseId === courseId && item.status !== 'submitted' && item.status !== 'graded' && item.dueDate)
     .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
   return {
     topicCount: topics.length,
     coveredCount,
+    courseworkTotal: coursework.length,
+    courseworkComplete,
+    courseworkRemaining: coursework.length - courseworkComplete,
     materialCount: data.files.filter((item) => item.courseId === courseId).length,
     notesCount: data.notes.filter((item) => item.courseId === courseId).length,
     filesCount: data.files.filter((item) => item.courseId === courseId).length,

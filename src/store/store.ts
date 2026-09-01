@@ -58,6 +58,7 @@ import { migrateWatchedNotesV35 } from '@/store/migrations/watchedNotesV35'
 import { migratePlanningLibraryV36 } from '@/store/migrations/planningLibraryV36'
 import { migrateGuideProposalsV37 } from '@/store/migrations/guideProposalsV37'
 import { migrateReadingTaskScheduleV38 } from '@/store/migrations/readingTaskScheduleV38'
+import { migrateGeneratedUnitResourcesV39 } from '@/store/migrations/generatedUnitResourcesV39'
 import { removeStoryAttachment, retainThenPersistStoryAttachment } from '@/lib/overviewFileCapture'
 
 const DEMO_MODE = isDemoMode()
@@ -76,8 +77,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateReadingTaskScheduleV38`. */
-export const CURRENT_STORE_VERSION = 38
+/** Matches the newest migration in `migrateAll`: `migrateGeneratedUnitResourcesV39`. */
+export const CURRENT_STORE_VERSION = 39
 
 function createInitialData() {
   const initial = createInitialDataForMode(DEMO_MODE)
@@ -581,7 +582,8 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateWatchedNotesV35(migrated)
   migrated = migratePlanningLibraryV36(migrated)
   migrated = migrateGuideProposalsV37(migrated)
-  return migrateReadingTaskScheduleV38(migrated)
+  migrated = migrateReadingTaskScheduleV38(migrated)
+  return migrateGeneratedUnitResourcesV39(migrated)
 }
 
 /**

@@ -37,6 +37,10 @@ export function useHeroScheduleSource() {
   const date = new Date()
   const key = todayKey(date)
   const freshCalendarCache = sync.calendar.enabled && hasFreshCalendarCache(sync.calendar.lastSyncedAt, date)
+  // A successful empty fetch is still authoritative. Keep that snapshot (and
+  // stale snapshots across midnight) visible until the next refresh instead of
+  // silently replacing it with class-derived events.
+  const hasCalendarSnapshot = sync.calendar.enabled && typeof sync.calendar.lastSyncedAt === 'number'
 
   // Google Calendar does not push browser updates to us. Keep the displayed
   // day current while an in-memory token is still valid. Never request or
@@ -77,15 +81,15 @@ export function useHeroScheduleSource() {
     () => classScheduleEvents(workspaces, courses, date),
     [workspaces, courses, key],
   )
-  const events = freshCalendarCache ? sync.calendar.cachedEvents : derived
+  const events = hasCalendarSnapshot ? sync.calendar.cachedEvents : derived
 
   return {
     ...sync,
     events,
-    source: freshCalendarCache ? 'google' : derived.length ? 'class-records' : 'empty',
+    source: hasCalendarSnapshot ? 'google' : derived.length ? 'class-records' : 'empty',
     // Never "your calendar" for a derived day — the label says which it is.
-    sourceLabel: freshCalendarCache ? 'Google Calendar' : derived.length ? 'From your class records' : 'Calendar',
-    stale: sync.calendar.enabled && !freshCalendarCache && sync.calendar.cachedEvents.length > 0,
+    sourceLabel: hasCalendarSnapshot ? 'Google Calendar' : derived.length ? 'From your class records' : 'Calendar',
+    stale: sync.calendar.enabled && !freshCalendarCache && hasCalendarSnapshot,
   }
 }
 

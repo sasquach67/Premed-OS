@@ -1,5 +1,4 @@
 import type { NormalizedScheduleEvent } from '@/lib/types'
-import { endOfLocalDay, startOfLocalDay } from '@/lib/schedule'
 
 const GIS_SRC = 'https://accounts.google.com/gsi/client'
 const SCOPE = 'https://www.googleapis.com/auth/calendar.readonly'
@@ -200,14 +199,21 @@ export async function fetchPrimaryCalendarLabel() {
   return calendar.summary || calendar.id || 'Primary calendar'
 }
 
-export async function fetchPrimaryDayEvents(date = new Date()) {
+/** Fetch the forward-looking window used by the overview.
+ *
+ * There is intentionally no `timeMax`: the dashboard should show the next
+ * few real timed events even when today is empty or the next class is several
+ * days away. The UI caps the rendered list, while Google keeps the response
+ * bounded with a small page size.
+ */
+export async function fetchPrimaryUpcomingEvents(date = new Date()) {
   const calendar = await calendarFetch<CalendarListEntry>('https://www.googleapis.com/calendar/v3/users/me/calendarList/primary')
   const params = new URLSearchParams({
     calendarId: 'primary',
-    timeMin: startOfLocalDay(date).toISOString(),
-    timeMax: endOfLocalDay(date).toISOString(),
+    timeMin: date.toISOString(),
     singleEvents: 'true',
     orderBy: 'startTime',
+    maxResults: '50',
     showDeleted: 'false',
   })
   const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`
@@ -216,3 +222,7 @@ export async function fetchPrimaryDayEvents(date = new Date()) {
     .map((event) => normalizeGoogleEvent(event, calendar))
     .filter(Boolean) as NormalizedScheduleEvent[]
 }
+
+/** @deprecated Kept as a source-compatible alias for callers that still use
+ * the old day-scoped name. The returned window is now forward-looking. */
+export const fetchPrimaryDayEvents = fetchPrimaryUpcomingEvents

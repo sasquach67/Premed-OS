@@ -3,13 +3,14 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useHeroScheduleSource } from './HeroDailySchedule'
+import type { NormalizedScheduleEvent } from '@/lib/types'
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const calendarSync = vi.hoisted(() => ({
   calendar: {
     enabled: true,
-    cachedEvents: [],
+    cachedEvents: [] as NormalizedScheduleEvent[],
     lastSyncedAt: undefined as number | undefined,
     lastError: undefined as string | undefined,
     timeFormat: '12h' as const,
@@ -47,6 +48,8 @@ describe('useHeroScheduleSource calendar authorization boundary', () => {
   let root: Root
 
   beforeEach(() => {
+    calendarSync.calendar.cachedEvents = []
+    calendarSync.calendar.lastSyncedAt = undefined
     calendarSync.connectSilent.mockReset()
     container = document.createElement('div')
     document.body.appendChild(container)
@@ -63,5 +66,20 @@ describe('useHeroScheduleSource calendar authorization boundary', () => {
 
     expect(container.textContent).toBe('empty')
     expect(calendarSync.connectSilent).not.toHaveBeenCalled()
+  })
+
+  it('keeps a previously fetched calendar snapshot visible across a day boundary', async () => {
+    calendarSync.calendar.cachedEvents = [{
+      id: 'future',
+      title: 'Next week',
+      start: '2026-09-07T10:00:00-04:00',
+      end: '2026-09-07T11:00:00-04:00',
+      status: 'confirmed',
+    }]
+    calendarSync.calendar.lastSyncedAt = Date.now() - 2 * 24 * 60 * 60 * 1000
+
+    await act(async () => root.render(<Probe />))
+
+    expect(container.textContent).toBe('google')
   })
 })

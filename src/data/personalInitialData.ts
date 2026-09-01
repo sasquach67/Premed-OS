@@ -42,6 +42,8 @@ export function createEmptyClassCenterData(): ClassCenterData {
     generatedFlashcardDecks: [],
     generatedMockAttempts: [],
     generatedRevisedNotes: [],
+    generatedMasteryOutlines: [],
+    generatedUnitQuestionBanks: [],
     professorEvidence: [],
     conceptCanvases: [],
     assessmentMaterials: [],

@@ -403,6 +403,8 @@ export function createDemoData(seedTime = Date.now()): AppData {
     generatedFlashcardDecks: [],
     generatedMockAttempts: [],
     generatedRevisedNotes: [],
+    generatedMasteryOutlines: [],
+    generatedUnitQuestionBanks: [],
     professorEvidence: [
       { id: 'demo-prof-evidence-chem-exam', courseId: courses[4].id, assignmentId: 'demo-a-chem-exam1', observation: 'Mechanism comparisons were graded on rate and stereochemical evidence.', observedAt: stamp(-14), createdAt: stamp(-14), updatedAt: stamp(-14), order: 0 },
       { id: 'demo-prof-evidence-chem-lab', courseId: courses[4].id, assignmentId: 'demo-a-chem-lab', observation: 'Lab feedback rewarded explaining why each procedural choice changed purity.', observedAt: stamp(-3), createdAt: stamp(-3), updatedAt: stamp(-3), order: 1 },

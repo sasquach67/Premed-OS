@@ -38,6 +38,8 @@ export function removeCourseCascade(center: ClassCenterData, courseId: ID): Remo
   center.generatedFlashcardDecks = center.generatedFlashcardDecks.filter((item) => item.courseId !== courseId)
   center.generatedMockAttempts = center.generatedMockAttempts.filter((item) => item.courseId !== courseId)
   center.generatedRevisedNotes = center.generatedRevisedNotes.filter((item) => item.courseId !== courseId)
+  center.generatedMasteryOutlines = center.generatedMasteryOutlines.filter((item) => item.courseId !== courseId)
+  center.generatedUnitQuestionBanks = center.generatedUnitQuestionBanks.filter((item) => item.courseId !== courseId)
   center.professorEvidence = center.professorEvidence.filter((item) => item.courseId !== courseId)
   center.conceptCanvases = center.conceptCanvases.filter((item) => item.courseId !== courseId)
   center.assessmentMaterials = center.assessmentMaterials.filter((item) => item.courseId !== courseId)

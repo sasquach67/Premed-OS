@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classScheduleEvents, normalizeTimedEvents, parseMeetingDays, parseMeetingTime, upcomingTimedEvents } from '@/lib/schedule'
+import { classScheduleEvents, normalizeTimedEvents, normalizeUpcomingTimedEvents, parseMeetingDays, parseMeetingTime, upcomingTimedEvents } from '@/lib/schedule'
 
 const courses = [
   { id: 'chem', code: 'CHEM 262', title: 'Organic Chemistry II' },
@@ -110,5 +110,18 @@ describe('overview calendar horizon', () => {
 
     expect(upcomingTimedEvents(events.timedEvents, now).map((event) => event.title))
       .toEqual(['bruh', 'bruh2', 'bruh 3'])
+  })
+
+  it('keeps the first upcoming timed events even when they are not today', () => {
+    const now = new Date('2026-08-31T10:00:00-04:00')
+    const analysis = normalizeUpcomingTimedEvents([
+      { id: 'soon', title: 'In a few hours', start: '2026-08-31T14:00:00-04:00', end: '2026-08-31T15:00:00-04:00', status: 'confirmed' },
+      { id: 'later', title: 'Next week', start: '2026-09-07T10:00:00-04:00', end: '2026-09-07T11:00:00-04:00', status: 'confirmed' },
+      { id: 'past', title: 'Already finished', start: '2026-08-31T09:00:00-04:00', end: '2026-08-31T09:30:00-04:00', status: 'confirmed' },
+    ], now)
+
+    expect(analysis.timedEvents.map((event) => event.title)).toEqual(['In a few hours', 'Next week'])
+    expect(analysis.current).toBeNull()
+    expect(analysis.next?.title).toBe('In a few hours')
   })
 })
