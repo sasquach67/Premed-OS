@@ -467,7 +467,7 @@ export function AuthPage() {
                     className="pl-inp"
                     type="email"
                     autoComplete="email"
-                    placeholder="you@unc.edu"
+                    placeholder="Personal or school email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />

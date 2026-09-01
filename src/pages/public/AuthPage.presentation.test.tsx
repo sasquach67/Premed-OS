@@ -49,6 +49,7 @@ describe('AuthPage account intent', () => {
     expect(button(container, 'Sign in')?.getAttribute('aria-selected')).toBe('true')
     expect(button(container, 'Sign in with Google')).toBeTruthy()
     expect(container.querySelector('.pl-google-g path')).toBeTruthy()
+    expect(container.querySelector<HTMLInputElement>('#auth-email')?.placeholder).toBe('Personal or school email')
     expect(container.querySelector<HTMLInputElement>('#auth-password')?.autocomplete).toBe('current-password')
   })
 
