@@ -22,13 +22,32 @@ describe('Class Center card compatibility', () => {
 })
 
 describe('Class Center add-class type selection', () => {
+  it('extracts the real GEOG 121 header instead of using a support center as the classroom', () => {
+    const proposal = parseSyllabusText(`Geographies of Globalization
+UNC Chapel Hill Instructor
+GEOG 121-002 · Fall 2026 Dr. Adrian Drummond-Cole · adriandc@unc.edu
+Peabody Hall · Rm 1040 Office Hours: By appt. in Carolina Hall 216
+M/W/F: 9:05–9:55 AM Monday 10:30–11:30 and Tue 11:15–12:15
+Undergraduate Testing Center
+The College of Arts and Sciences provides a secure, proctored environment for make-up exams.`)
+
+    expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
+      courseCode: 'GEOG 121',
+      courseTitle: 'Geographies of Globalization',
+      instructor: 'Dr. Adrian Drummond-Cole',
+      meetingDays: 'Mon · Wed · Fri',
+      meetingTime: '9:05–9:55 AM',
+      location: 'Peabody Hall Rm 1040',
+    })
+  })
+
   it('prefills attributable meeting facts from a syllabus proposal', () => {
     const proposal = parseSyllabusText('CHEM 262 — Organic Chemistry II\nInstructor: Dr. Adaeze Elamin\nMWF 10:10 AM-11:00 AM Room Kenan B12\nWeek 1: Aromatic substitution\nMidterm Exam — October 14, 2026')
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
       courseCode: 'CHEM 262',
       courseTitle: 'Organic Chemistry II',
       instructor: 'Dr. Adaeze Elamin',
-      meetingDays: 'Monday · Wednesday · Friday',
+      meetingDays: 'Mon · Wed · Fri',
       meetingTime: '10:10 AM–11:00 AM',
       location: 'Kenan B12',
     })
@@ -37,7 +56,7 @@ describe('Class Center add-class type selection', () => {
   it('expands registrar day codes into readable meeting days', () => {
     const proposal = parseSyllabusText('PSYC 101 — Introduction to Psychology\nInstructor: Ndidi Adeyanju, PhD\nTR 8:00 AM-9:15 AM Hanes Art Center Room 121')
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
-      meetingDays: 'Tuesday · Thursday',
+      meetingDays: 'Tue · Thurs',
       location: 'Hanes Art Center Room 121',
     })
   })
@@ -45,7 +64,7 @@ describe('Class Center add-class type selection', () => {
   it('prefills natural full-weekday meeting prose from pasted syllabus text', () => {
     const proposal = parseSyllabusText('PSYC 101 — Introduction to Psychology\nMeets Tuesdays and Thursdays 10:00 AM to 11:15 AM')
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
-      meetingDays: 'Tuesday · Thursday',
+      meetingDays: 'Tue · Thurs',
       meetingTime: '10:00 AM–11:15 AM',
     })
   })
@@ -55,7 +74,7 @@ describe('Class Center add-class type selection', () => {
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
       courseTitle: 'Neurobiology',
       instructor: 'Dr. Nadia Elamin',
-      meetingDays: 'Monday · Wednesday · Friday',
+      meetingDays: 'Mon · Wed · Fri',
       meetingTime: '10:00 AM–10:50 AM',
     })
   })
@@ -88,7 +107,7 @@ Office Hours: Wed. 2:00-3:30 pm & by appt`)
       courseCode: 'ANTH 147',
       courseTitle: 'Comparative Healing Systems',
       instructor: 'M. Rivkin-Fish',
-      meetingDays: 'Tuesday · Thursday',
+      meetingDays: 'Tue · Thurs',
       meetingTime: '5:00–6:15',
       location: '0121 Hanes Art Center',
     })

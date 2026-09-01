@@ -34,7 +34,7 @@ Final Exam Thursday, Dec 10 8a-11a at the same location as class meetings.`)
     const logistics = parsed.items.filter((item) => item.kind === 'logistics').map((item) => item.label)
 
     expect(logistics).toEqual(expect.arrayContaining(['Arts Center Rm 121', 'Instructor: Dr. Sample']))
-    expect(logistics).toContain('Tuesday · Thursday')
+    expect(logistics).toContain('Tue · Thurs')
     expect(logistics).not.toContain('TR 8am-9:15pm')
     expect(parsed.items).toEqual(expect.arrayContaining([
       expect.objectContaining({

@@ -259,8 +259,8 @@ function extractClassLocation(line?: string): string {
   // Prefer the complete named building plus room over the shorter `Room 121`
   // suffix. A labeled fallback still handles forms such as `Location: Kenan B12`.
   const locationText = line.replace(/^.*\b(?:AM|PM)\b\s*/i, '')
-  const namedLocations = [...locationText.matchAll(/\b((?:[A-Za-z]?\d{3,4}[A-Za-z]?\s+)?[A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*)*\s+(?:Center|Hall|Building)(?:\s+(?:Room|Rm\.?)?\s*[A-Za-z]?\d+[A-Za-z]?)?)\b/g)]
-    .map((match) => match[1].trim())
+  const namedLocations = [...locationText.matchAll(/\b((?:[A-Za-z]?\d{3,4}[A-Za-z]?\s+)?[A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*)*\s+(?:Center|Hall|Building)(?:\s*[·∙|,;-]?\s*(?:Room|Rm\.?)?\s*[A-Za-z]?\d+[A-Za-z]?)?)\b/g)]
+    .map((match) => match[1].replace(/\s*[·∙|,;-]\s*/g, ' ').replace(/\s+/g, ' ').trim())
   // DOCX two-column headers are flattened into one line. When that happens,
   // the instructor office appears first and the class location appears last.
   if (/^\s*office\s*:/i.test(line)) return namedLocations.length > 1 ? namedLocations.at(-1) ?? '' : ''
@@ -302,13 +302,22 @@ export function classFormFromSyllabus(proposal: SyllabusProposal, semester: stri
     const time = extractClassMeetingTime(line)
     return Boolean(extractClassMeetingDays(line)) && Boolean(time) && isPlausibleClassMeetingTime(time)
       && !/\b(?:due|deadline|submit|quiz|assignment|assessment|office hours?|student hours?)\b/i.test(line)
-      && (/\b(?:section|class|lectures?|meets?|meeting)\b/i.test(line) || /^(?:MWF|TR|TTH|TU\s*(?:\/|&|and)\s*TH|T\s*(?:\/|&|and)\s*TH)\b/i.test(line))
+      && (/\b(?:section|class|lectures?|meets?|meeting)\b/i.test(line) || /^(?:MWF|M\s*\/\s*W\s*\/\s*F|TR|TTH|TU\s*(?:\/|&|and)\s*TH|T\s*(?:\/|&|and)\s*TH)\b/i.test(line))
   }) ?? ''
   const meetingDays = extractClassMeetingDays(scheduleLine) || extractClassMeetingDays(rawScheduleLine)
   const reviewedMeetingTime = logisticsItems.find((item) => item.label === 'Meeting time' && item.confidence === 'low')?.value
   const rawMeetingTime = extractClassMeetingTime(scheduleLine) || extractClassMeetingTime(rawScheduleLine)
   const meetingTime = reviewedMeetingTime || proposePlausibleMeetingTime(rawMeetingTime) || rawMeetingTime
-  const locationLines = logistics.filter((line) => !isOfficeHoursLine(line) && /\b(?:room|location|hall|center|building)\b/i.test(line) && !/same location as class meetings/i.test(line))
+  const locationLines = logisticsItems
+    .filter((item) => item.context !== 'Support resource')
+    .map((item) => item.label || item.evidence.quote)
+    .filter((line) => {
+      const locationAt = line.search(/\b(?:room|location|hall|center|building)\b/i)
+      const officeHoursAt = line.search(/\b(?:office|student)\s+hours?\b/i)
+      return locationAt >= 0
+        && (officeHoursAt < 0 || locationAt < officeHoursAt)
+        && !/same location as class meetings/i.test(line)
+    })
   const location = locationLines.map(extractClassLocation).find(Boolean) ?? ''
   return {
     ...emptyClassForm(semester),
@@ -429,7 +438,7 @@ function classToForm(row: ClassWorkspaceView): ClassFormState {
     nickname: row.nickname ?? '',
     semester: row.semester,
     instructor: row.instructor ?? '',
-    meetingDays: row.meetingDays ?? '',
+    meetingDays: normalizeMeetingDays(row.meetingDays ?? ''),
     meetingTime: row.meetingTime ?? '',
     location: row.location ?? '',
     color: row.color,
@@ -2836,7 +2845,7 @@ function ClassEditorDialog({
             </Field>
             <div className="grid gap-4 md:grid-cols-2">
               <Field label={sourceFieldLabel('Instructor', Boolean(extractedClass?.instructor))}><Input value={form.instructor ?? ''} onChange={(e) => onChange({ instructor: e.target.value })} /></Field>
-              <Field label={sourceFieldLabel('Meeting days', Boolean(extractedClass?.meetingDays))}><Input value={form.meetingDays ?? ''} onChange={(e) => onChange({ meetingDays: e.target.value })} onBlur={(e) => onChange({ meetingDays: normalizeMeetingDays(e.target.value) })} placeholder="Tuesday · Thursday" /></Field>
+              <Field label={sourceFieldLabel('Meeting days', Boolean(extractedClass?.meetingDays))}><Input value={form.meetingDays ?? ''} onChange={(e) => onChange({ meetingDays: e.target.value })} onBlur={(e) => onChange({ meetingDays: normalizeMeetingDays(e.target.value) })} placeholder="Tue · Thurs" /></Field>
               <Field label={sourceFieldLabel('Meeting time', Boolean(extractedClass?.meetingTime), false, meetingTimeNeedsReview)}><Input value={form.meetingTime ?? ''} onChange={(e) => onChange({ meetingTime: e.target.value })} placeholder="10:10 AM-11:00 AM" /></Field>
               <Field label={sourceFieldLabel('Location', Boolean(extractedClass?.location))}><Input value={form.location ?? ''} onChange={(e) => onChange({ location: e.target.value })} /></Field>
               <Field label={sourceFieldLabel('Nickname', false, true)}><Input value={form.nickname ?? ''} onChange={(e) => onChange({ nickname: e.target.value })} placeholder="Optional" /></Field>
@@ -3243,7 +3252,7 @@ function classLabel(courseId: string, data: ClassCenterViewData) {
 }
 
 function compactMeeting(row: ClassWorkspaceView) {
-  return [row.meetingDays, row.meetingTime, row.location].filter(Boolean).join(' · ')
+  return [normalizeMeetingDays(row.meetingDays ?? ''), row.meetingTime, row.location].filter(Boolean).join(' · ')
 }
 
 function assignmentDateLabel(item: Pick<ClassAssignment, 'dueDate' | 'type'>) {

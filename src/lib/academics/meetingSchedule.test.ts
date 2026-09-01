@@ -3,32 +3,33 @@ import { extractClassMeetingDays, extractClassMeetingTime, extractMeetingDays, i
 
 describe('meeting-day normalization', () => {
   it.each([
-    ['TR', 'Tuesday · Thursday'],
-    ['TTh', 'Tuesday · Thursday'],
-    ['T/Th', 'Tuesday · Thursday'],
-    ['Tues Thurs', 'Tuesday · Thursday'],
-    ['Tuesdays and Thursdays', 'Tuesday · Thursday'],
-    ['MWF', 'Monday · Wednesday · Friday'],
-    ['Mon / Wed / Fri', 'Monday · Wednesday · Friday'],
+    ['TR', 'Tue · Thurs'],
+    ['TTh', 'Tue · Thurs'],
+    ['T/Th', 'Tue · Thurs'],
+    ['Tues Thurs', 'Tue · Thurs'],
+    ['Tuesdays and Thursdays', 'Tue · Thurs'],
+    ['MWF', 'Mon · Wed · Fri'],
+    ['M/W/F', 'Mon · Wed · Fri'],
+    ['Mon / Wed / Fri', 'Mon · Wed · Fri'],
   ])('normalizes %s', (source, expected) => {
     expect(normalizeMeetingDays(source)).toBe(expected)
   })
 
   it('extracts a registrar code from a full logistics line', () => {
-    expect(extractMeetingDays('TR 8:00 AM-9:15 AM Hanes Art Center Rm 121')).toBe('Tuesday · Thursday')
-    expect(extractMeetingDays('Tu/Th 8:00 AM-9:15 AM')).toBe('Tuesday · Thursday')
+    expect(extractMeetingDays('TR 8:00 AM-9:15 AM Hanes Art Center Rm 121')).toBe('Tue · Thurs')
+    expect(extractMeetingDays('Tu/Th 8:00 AM-9:15 AM')).toBe('Tue · Thurs')
     expect(extractClassMeetingTime('TR 8am-9:15am Hanes Art Center Rm 121')).toBe('8 AM–9:15 AM')
   })
 
   it('extracts a natural full-name meeting sentence and normalizes its time range', () => {
     const line = 'Meets Tuesdays and Thursdays 10:00 AM to 11:15 AM'
-    expect(extractClassMeetingDays(line)).toBe('Tuesday · Thursday')
+    expect(extractClassMeetingDays(line)).toBe('Tue · Thurs')
     expect(extractClassMeetingTime(line)).toBe('10:00 AM–11:15 AM')
   })
 
   it('normalizes compact 24-hour registrar times', () => {
     const line = 'Section 63, MWF 1745–1835, Wilson Hall 139'
-    expect(extractClassMeetingDays(line)).toBe('Monday · Wednesday · Friday')
+    expect(extractClassMeetingDays(line)).toBe('Mon · Wed · Fri')
     expect(extractClassMeetingTime(line)).toBe('5:45 PM–6:35 PM')
     expect(isPlausibleClassMeetingTime(extractClassMeetingTime(line))).toBe(true)
   })

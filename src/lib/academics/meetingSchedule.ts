@@ -1,34 +1,34 @@
 const DAY_NAMES: Record<string, string> = {
-  mon: 'Monday',
-  monday: 'Monday',
-  tue: 'Tuesday',
-  tues: 'Tuesday',
-  tuesday: 'Tuesday',
-  wed: 'Wednesday',
-  wednesday: 'Wednesday',
-  thu: 'Thursday',
-  thur: 'Thursday',
-  thurs: 'Thursday',
-  thursday: 'Thursday',
-  fri: 'Friday',
-  friday: 'Friday',
+  mon: 'Mon',
+  monday: 'Mon',
+  tue: 'Tue',
+  tues: 'Tue',
+  tuesday: 'Tue',
+  wed: 'Wed',
+  wednesday: 'Wed',
+  thu: 'Thurs',
+  thur: 'Thurs',
+  thurs: 'Thurs',
+  thursday: 'Thurs',
+  fri: 'Fri',
+  friday: 'Fri',
 }
 
 const COMPACT_DAY_SETS: Record<string, string[]> = {
-  M: ['Monday'],
-  T: ['Tuesday'],
-  TU: ['Tuesday'],
-  W: ['Wednesday'],
-  R: ['Thursday'],
-  TH: ['Thursday'],
-  F: ['Friday'],
-  MW: ['Monday', 'Wednesday'],
-  MF: ['Monday', 'Friday'],
-  WF: ['Wednesday', 'Friday'],
-  MWF: ['Monday', 'Wednesday', 'Friday'],
-  TR: ['Tuesday', 'Thursday'],
-  TTH: ['Tuesday', 'Thursday'],
-  TUTH: ['Tuesday', 'Thursday'],
+  M: ['Mon'],
+  T: ['Tue'],
+  TU: ['Tue'],
+  W: ['Wed'],
+  R: ['Thurs'],
+  TH: ['Thurs'],
+  F: ['Fri'],
+  MW: ['Mon', 'Wed'],
+  MF: ['Mon', 'Fri'],
+  WF: ['Wed', 'Fri'],
+  MWF: ['Mon', 'Wed', 'Fri'],
+  TR: ['Tue', 'Thurs'],
+  TTH: ['Tue', 'Thurs'],
+  TUTH: ['Tue', 'Thurs'],
 }
 
 const WRITTEN_DAY_PATTERN = /\b(?:Mon(?:day)?s?|Tue(?:s(?:day)?)?s?|Wed(?:nesday)?s?|Thu(?:r(?:s(?:day)?)?)?s?|Fri(?:day)?s?)\b/gi
@@ -38,7 +38,7 @@ const MEETING_TIME_PATTERN = /\b(?:\d{3,4}\s*[-–]\s*\d{3,4}|\d{1,2}(?::\d{2})?
 const OFFICE_HOURS_PATTERN = /\b(?:office|student)\s+hours?\b|\bby\s+appointment\b/i
 
 function uniqueInWeekOrder(days: string[]): string[] {
-  const order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+  const order = ['Mon', 'Tue', 'Wed', 'Thurs', 'Fri']
   return order.filter((day) => days.includes(day))
 }
 
@@ -68,10 +68,15 @@ export function normalizeMeetingDays(value: string): string {
 
 /** Find a meeting-day expression inside a syllabus logistics line. */
 export function extractMeetingDays(value: string): string {
+  const compact = value.match(COMPACT_DAY_PATTERN)
   const written = value.match(WRITTEN_DAY_PATTERN)
+  // PDF columns can flatten the class schedule and an instructor's later
+  // office-hour day onto one line. Prefer whichever day expression appears
+  // first so `M/W/F: 9:05... Monday 10:30...` remains the class schedule.
+  if (compact && (!written?.length || compact.index! <= value.search(WRITTEN_DAY_PATTERN))) return normalizeMeetingDays(compact[0])
   if (written?.length) return normalizeMeetingDays(written.join(' '))
-  const compact = value.match(COMPACT_DAY_PATTERN)?.[0] ?? value.match(SINGLE_DAY_WITH_TIME_PATTERN)?.[0]
-  return compact ? normalizeMeetingDays(compact) : ''
+  const single = value.match(SINGLE_DAY_WITH_TIME_PATTERN)?.[0]
+  return single ? normalizeMeetingDays(single) : ''
 }
 
 export function isOfficeHoursLine(value: string): boolean {

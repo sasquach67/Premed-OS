@@ -58,6 +58,7 @@ import { startGenerationProgress, waitForGenerationProgress, type GenerationPhas
 import { AssessmentCatalog } from '@/components/academics/AssessmentCatalog'
 import { readLocalBlob } from '@/lib/localBlobStore'
 import { readingDebt, READING_LIST_STATE_COPY, recurringFeedbackThemes } from '@/lib/academics/writingEvidence'
+import { normalizeMeetingDays } from '@/lib/academics/meetingSchedule'
 import {
   acceptGuideProposal, buildSyllabusGuideProposals, dismissGuideProposal, editGuideProposal,
   ensureSyllabusGuideProposals, guideProposalsForCourse, isGuideSourceValid,
@@ -1765,7 +1766,7 @@ function isComplete(item: ClassAssignment) {
 }
 
 function meetingText(workspace: ClassWorkspace) {
-  const value = [workspace.meetingDays, workspace.meetingTime].filter(Boolean).join(' · ')
+  const value = [normalizeMeetingDays(workspace.meetingDays ?? ''), workspace.meetingTime].filter(Boolean).join(' · ')
   return value || 'Meeting time not set'
 }
 

@@ -45,7 +45,7 @@ const month = '(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?
 const datePattern = new RegExp(`\\b${month}\\.?\\s+\\d{1,2}(?:,?\\s+20\\d{2})?\\b`, 'gi')
 const headers: Array<[SyllabusKind, RegExp]> = [
   ['units', /^(?:week|unit|module|chapter)\s*\d+/i],
-  ['logistics', /^(?:office hours|meets?|meeting|instructor|prof(?:essor)?\.?|office|room|location)\s*:|^(?=.{3,100}$).+\b(?:Hall|Center|Building)\b(?:\s+(?:Room|Rm\.?)?\s*[A-Za-z]?\d+[A-Za-z]?)?$|^(?:MWF|TR|TTH)\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/i],
+  ['logistics', /^(?:office hours|meets?|meeting|instructor|prof(?:essor)?\.?|office|room|location)\s*:|^(?=.{3,180}$).+\b(?:Hall|Center|Building)\b(?:\s*[·∙|,;-]?\s*(?:Room|Rm\.?)?\s*[A-Za-z]?\d+[A-Za-z]?)?|^(?:MWF|M\s*\/\s*W\s*\/\s*F|TR|TTH)\s*:?\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/i],
 ]
 
 const NAMED_SUBJECT_CODES: Record<string, string> = {
@@ -62,7 +62,7 @@ function isLikelyClassMeetingLine(line: string): boolean {
   if (!extractClassMeetingDays(line) || !time || !isPlausibleClassMeetingTime(time)) return false
   if (/\b(?:due|deadline|submit|quiz|assignment|assessment|office hours?|student hours?)\b/i.test(line)) return false
   return /\b(?:section|class|lectures?|meets?|meeting)\b/i.test(line)
-    || /^(?:MWF|TR|TTH|TU\s*(?:\/|&|and)\s*TH|T\s*(?:\/|&|and)\s*TH)\b/i.test(line)
+    || /^(?:MWF|M\s*\/\s*W\s*\/\s*F|TR|TTH|TU\s*(?:\/|&|and)\s*TH|T\s*(?:\/|&|and)\s*TH)\b/i.test(line)
 }
 
 const MONTH_INDEX: Record<string, number> = {
@@ -643,10 +643,11 @@ function parseStaffContacts(lines: string[], items: SyllabusItem[], searched: Re
   lines.forEach((line, index) => {
     const email = line.match(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/)?.[0]
     if (!email) return
-    const rawName = line.slice(0, line.indexOf(email)).replace(/(?:Instructor|Professor|Prof\.?|Teaching Assistant|TA)\s*:?/ig, '').replace(/[·∙|(<\s]+$/, '').trim()
+    let rawName = line.slice(0, line.indexOf(email)).replace(/(?:Instructor|Professor|Prof\.?|Teaching Assistant|TA)\s*:?/ig, '').replace(/[·∙|(<\s]+$/, '').trim()
     if (!rawName || /^(?:class email(?: account)?|email|course email(?: account)?)\s*:?$/i.test(rawName)) return
     const professor = /\b(?:Dr\.?|Professor|Prof\.?)(?=\s)/i.test(line)
       || lines.slice(Math.max(0, index - 2), index).some((candidate) => /^Instructor\s*:?$/i.test(candidate))
+    if (professor) rawName = rawName.match(/\b(?:Dr\.?|Professor|Prof\.?)\s+.+$/i)?.[0]?.trim() ?? rawName
     if (!professor && !inAssistantSection(index)) return
     const details: string[] = [email]
     for (let next = index + 1; next < Math.min(lines.length, index + 5); next += 1) {
@@ -743,7 +744,7 @@ function parseAssistantCountConflict(lines: string[], items: SyllabusItem[]) {
 
 function parseCourseDetails(lines: string[], items: SyllabusItem[], searched: Record<SyllabusKind, string>) {
   const identity = items.find((item) => item.kind === 'identity')
-  if (identity && /^\d{2,3}\s*(?:[·∙|,;-]\s*)?(?:(?:Fall|Spring|Summer|Winter)\s+20\d{2})?$/i.test(identity.value ?? '')) {
+  if (identity && /^\d{2,4}[A-Za-z]?\s*(?:[·∙|,;-]\s*)?(?:(?:Fall|Spring|Summer|Winter)\s+20\d{2})?\b/i.test(identity.value ?? '')) {
     const identityLine = Number(identity.evidence.location.match(/\d+/)?.[0]) - 1
     const title = lines.slice(Math.max(0, identityLine - 3), identityLine).reverse().find((candidate) => (
       candidate.length >= 5
@@ -932,6 +933,11 @@ function pruneRedundantLogistics(items: SyllabusItem[]): SyllabusItem[] {
    *  rows that add no room and no meeting schedule of their own. */
   const carriesOwnFact = (label: string) => ROOM.test(label)
     || Boolean(extractMeetingDays(label) && extractClassMeetingTime(label))
+  const carriesLocationBeforeHours = (label: string) => {
+    const roomAt = label.search(ROOM)
+    const hoursAt = label.search(/\b(?:office|student)\s+hours?\b/i)
+    return roomAt >= 0 && hoursAt >= 0 && roomAt < hoursAt
+  }
 
   const instructors = items.filter((item) => item.kind === 'logistics' && item.context === 'Professor')
   const assistants = items.filter((item) => item.kind === 'logistics' && item.context === 'Teaching assistant')
@@ -944,6 +950,7 @@ function pruneRedundantLogistics(items: SyllabusItem[]): SyllabusItem[] {
    *  the second one marked unattributed even though the source says "visit me". */
   const restatesScopedHours = (label: string) => isOfficeHoursLine(label)
     && hoursAlreadyScoped
+    && !carriesLocationBeforeHours(label)
     && !(extractMeetingDays(label) && /\d/.test(label))
 
   return items.filter((item) => {
