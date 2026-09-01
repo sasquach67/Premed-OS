@@ -174,6 +174,13 @@ export function SyllabusImportMode({
   function confirmItem(id: string) {
     setConfirmedItemIds((current) => new Set(current).add(id))
   }
+  function confirmItems(ids: readonly string[]) {
+    setConfirmedItemIds((current) => {
+      const next = new Set(current)
+      ids.forEach((id) => next.add(id))
+      return next
+    })
+  }
   function addManual(kind: SyllabusKind) {
     setProposal((state) => state ? {
       ...state,
@@ -409,7 +416,7 @@ export function SyllabusImportMode({
                                 searched={proposal.searched[kind]}
                                 confirmedItemIds={confirmedItemIds}
                                 onPatch={patchItem} onRemove={removeItem} onAddManual={() => addManual(kind)}
-                                onConfirm={confirmItem}
+                                onConfirm={confirmItem} onConfirmAll={confirmItems}
                               />
                             ))}
                           </div>
@@ -545,13 +552,14 @@ function UploadState({ files, pastedText, parsing, parsingMessage, error, onFile
 }
 
 /** A group collapses to one factual summary when clean; any low-confidence item expands it. */
-function ReviewGroup({ kind, items, searched, confirmedItemIds, onPatch, onRemove, onAddManual, onConfirm }: {
+function ReviewGroup({ kind, items, searched, confirmedItemIds, onPatch, onRemove, onAddManual, onConfirm, onConfirmAll }: {
   kind: SyllabusKind; items: SyllabusProposal['items']; searched: string
   confirmedItemIds: ReadonlySet<string>
   onPatch: (id: string, patch: Partial<SyllabusProposal['items'][number]>) => void
   onRemove: (id: string) => void
   onAddManual: () => void
   onConfirm: (id: string) => void
+  onConfirmAll: (ids: readonly string[]) => void
 }) {
   const needsConfirmation = (item: SyllabusProposal['items'][number]) => item.confidence === 'low' && !confirmedItemIds.has(item.id)
   const flagged = items.some(needsConfirmation)
@@ -560,32 +568,54 @@ function ReviewGroup({ kind, items, searched, confirmedItemIds, onPatch, onRemov
   const [open, setOpen] = useState(flagged)
   const needsValue = ['identity', 'exams', 'weights', 'units', 'readings', 'deadlines'].includes(kind)
   const flaggedCount = items.filter(needsConfirmation).length
+  const flaggedIds = items.filter(needsConfirmation).map((item) => item.id)
   return (
     <section id={`syllabus-group-${kind}`} className={cn('relative scroll-mt-6 border-b border-border last:border-b-0', flagged && 'bg-warning/[0.035]')}>
       <span className={cn('absolute inset-y-0 left-0 w-[3px]', flagged ? 'bg-warning' : items.length ? 'bg-success/65' : 'bg-border')} aria-hidden="true" />
-      <button type="button" onClick={() => setOpen((state) => !state)} aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 py-3.5 pl-5 pr-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
-        <span className="min-w-0">
-          <span className="flex items-center gap-2 font-display text-sm font-extrabold">
+      <div className="flex items-center gap-2 py-3.5 pl-5 pr-4">
+        <button type="button" onClick={() => setOpen((state) => !state)} aria-expanded={open}
+          className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <span className="block font-display text-sm font-extrabold">
             {GROUP_LABEL[kind]}
           </span>
           <span className="mt-0.5 block truncate text-xs font-semibold text-muted-foreground">
             {items.length ? (flagged ? `${flaggedCount} ${flaggedCount === 1 ? 'item needs' : 'items need'} confirmation` : collapsedSummary(kind, items, searched)) : searched}
           </span>
-        </span>
-        <span className="flex shrink-0 items-center gap-2">
-          <span className={cn('rounded-full px-2 py-0.5 font-display text-[10px] font-extrabold uppercase tracking-wide', flagged ? 'bg-warning/18 text-warning' : items.length ? 'bg-success/12 text-success' : 'bg-muted text-muted-foreground')}>
-            {flagged ? 'Confirm' : items.length ? `${items.length} found` : 'Not found'}
-          </span>
-          <ChevronDown className={cn('size-4 text-muted-foreground transition-transform', open && 'rotate-180')} aria-hidden="true" />
-        </span>
-      </button>
+        </button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {flagged ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 border-warning/55 bg-warning/10 px-3 font-display text-xs font-extrabold text-warning hover:bg-warning/18 hover:text-warning"
+              aria-label={`Confirm all ${GROUP_LABEL[kind]}`}
+              onClick={() => onConfirmAll(flaggedIds)}
+            >
+              <CheckCircle2 className="size-3.5" aria-hidden="true" /> Confirm all
+            </Button>
+          ) : (
+            <span className={cn('rounded-full px-2 py-0.5 font-display text-[10px] font-extrabold uppercase tracking-wide', items.length ? 'bg-success/12 text-success' : 'bg-muted text-muted-foreground')}>
+              {items.length ? `${items.length} found` : 'Not found'}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setOpen((state) => !state)}
+            aria-expanded={open}
+            aria-label={`${open ? 'Collapse' : 'Expand'} ${GROUP_LABEL[kind]}`}
+            className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <ChevronDown className={cn('size-4 text-muted-foreground transition-transform', open && 'rotate-180')} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
       {open && (
         <div className="border-t border-border/70">
           {items.map((item) => (
             <div key={item.id} className="border-b border-border/60 py-3 pl-5 pr-4 last:border-b-0">
               {item.context && <p className="mb-1.5 text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary">{item.context}</p>}
-              <div className={cn('grid items-start gap-2', (needsValue || item.value !== undefined) ? 'sm:grid-cols-[minmax(0,1.35fr)_minmax(160px,.65fr)_32px]' : 'grid-cols-[minmax(0,1fr)_32px]')}>
+              <div className={cn('grid min-w-0 items-start gap-2', (needsValue || item.value !== undefined) ? 'sm:grid-cols-[minmax(0,1.35fr)_minmax(160px,.65fr)_32px]' : 'grid-cols-[minmax(0,1fr)_32px]')}>
                 <Input aria-label={`${GROUP_LABEL[kind]} label`} value={item.label} onChange={(event) => onPatch(item.id, { label: event.target.value })}
                   className={cn('h-8 font-bold', needsConfirmation(item) && 'border-warning')} />
                 {(needsValue || item.value !== undefined) && (kind === 'policies' || (kind === 'logistics' && (item.value?.length ?? 0) > 120)

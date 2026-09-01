@@ -342,11 +342,17 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(document.body.textContent).toContain('People, meetings & support')
     const addReviewed = button(document.body, 'above to continue')
     expect(addReviewed.disabled).toBe(true)
+    const initialConfirmations = [...document.body.querySelectorAll<HTMLButtonElement>('button[aria-label^="Confirm "]')]
+    expect(initialConfirmations.some((confirmation) => confirmation.getAttribute('aria-label') === 'Confirm Meeting time')).toBe(true)
+    const confirmAllButtons = [...document.body.querySelectorAll<HTMLButtonElement>('button[aria-label^="Confirm all "]')]
+    expect(confirmAllButtons.length).toBeGreaterThan(0)
+    for (const confirmAll of confirmAllButtons) await act(async () => confirmAll.click())
+    expect(document.body.querySelector('button[aria-label^="Confirm all "]')).toBeNull()
+    expect(button(document.body, 'Add reviewed syllabus to').disabled).toBe(false)
     const confirmations = [...document.body.querySelectorAll<HTMLButtonElement>('button[aria-label^="Confirm "]')]
     // Every extracted row can be affirmed, not only the low-confidence row
     // that blocks Apply. This keeps the review interaction consistent.
     expect(confirmations.length).toBeGreaterThan(1)
-    expect(confirmations.some((confirmation) => confirmation.getAttribute('aria-label') === 'Confirm Meeting time')).toBe(true)
     for (const confirmation of confirmations) await act(async () => confirmation.click())
     expect(document.body.textContent).toContain('Confirmed')
     expect(document.body.textContent).toContain('Ready to add')
