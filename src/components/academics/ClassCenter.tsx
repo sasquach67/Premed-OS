@@ -66,6 +66,7 @@ import { extractClassMeetingDays, extractClassMeetingTime, isOfficeHoursLine, is
 import { removeLocalBlob } from '@/lib/localBlobStore'
 import { removeCourseCascade } from '@/lib/academics/removeCourseCascade'
 import { readingTaskDueDate } from '@/lib/academics/readingSchedule'
+import { classCardTaskSummary } from '@/lib/academics/classCardSummary'
 
 const COLORS: AcademicTagColor[] = [
   'blue', 'sky', 'cyan', 'teal', 'mint', 'green',
@@ -761,21 +762,6 @@ function ClassCenterDashboard({
     .sort((a, b) => a.order - b.order)
   const activeClasses = data.classes.filter((row) => row.status === 'active')
   const hasSearch = Boolean(query.trim())
-  const classPanelWidth = filtered.length <= 1
-    ? 'max-w-[380px]'
-    : filtered.length === 2
-      ? 'max-w-[720px]'
-      : filtered.length === 3
-        ? 'max-w-[1000px]'
-        : 'max-w-[1100px]'
-  const classGridColumns = filtered.length <= 1
-    ? 'grid-cols-1'
-    : filtered.length === 2
-      ? 'sm:grid-cols-2 lg:grid-cols-2'
-      : filtered.length === 3 || filtered.length === 5 || filtered.length === 6
-        ? 'sm:grid-cols-2 lg:grid-cols-3'
-        : 'sm:grid-cols-2 lg:grid-cols-4'
-
   async function importSyllabus(form: ClassFormState, selectedFiles: File[], proposal?: SyllabusProposal, existingCourseId?: string, reimportDecisions?: ReimportDecision[], replaceSyllabusFileId?: string, pastDueDecisions?: PastDueImportDecision[]) {
     const now = Date.now()
     const courseId = existingCourseId ?? uid()
@@ -1229,7 +1215,7 @@ function ClassCenterDashboard({
 
       {!archiveOnly && <SmartActionPanel className="academics-heads-up" title="Heads up" recommendations={recommendations} />}
 
-      <Card className={cn('academics-class-panel mx-auto w-full', classPanelWidth)}>
+      <Card className="academics-class-panel w-full max-w-[1100px]">
         <CardHeader className="flex-row items-center justify-between">
           <div>
             <CardTitle>{archiveOnly ? 'Archived classes' : 'Your classes'}</CardTitle>
@@ -1247,10 +1233,9 @@ function ClassCenterDashboard({
         <CardContent>
           <div
             data-testid="class-card-grid"
-            className={cn(view === 'cards'
-              ? 'grid items-stretch gap-3'
-              : 'space-y-2', view === 'cards' && classGridColumns,
-            view === 'cards' && filtered.length === 5 && 'academics-class-grid--five')}
+            className={view === 'cards'
+              ? 'grid items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-4'
+              : 'space-y-2'}
           >
             {filtered.map((row) => (
               <ClassCard
@@ -1416,9 +1401,12 @@ export function ClassCard({
   onDelete: () => void
 }) {
   const stats = classStats(row.id, data)
-  const nextText = stats.nextDeadline?.title
-    ? `${stats.nextDeadline.title}${stats.nextDeadline.dueDate ? ` · ${assignmentDateLabel(stats.nextDeadline)}` : ''}`
+  const nextTaskSummary = stats.nextDeadline?.title
+    ? classCardTaskSummary(stats.nextDeadline.title)
     : 'No deadline scheduled'
+  const nextText = stats.nextDeadline?.title
+    ? `${nextTaskSummary}${stats.nextDeadline.dueDate ? ` · ${assignmentDateLabel(stats.nextDeadline)}` : ''}`
+    : nextTaskSummary
   const percent = coursePercent(row.id, data)
   const signal = classSignal(row, data, stats, nextText)
   const courseworkPercent = stats.weeklyCourseworkTotal > 0
@@ -1500,7 +1488,7 @@ export function ClassCard({
         <div className="space-y-1.5">
           <p className="flex min-h-4 items-center gap-1.5 text-[10.5px] font-bold text-muted-foreground">
             {signal.verb && <span className="rounded-md bg-[color-mix(in_srgb,var(--class-accent)_18%,transparent)] px-1.5 py-0.5 font-display text-[9.5px] font-extrabold tracking-wide text-[var(--class-accent)]">{signal.verb}</span>}
-            {signal.text && <span>{signal.text}</span>}
+            {signal.text && <span className="line-clamp-1">{signal.text}</span>}
           </p>
           <div
             className="academics-coursework-progress"
@@ -1526,15 +1514,34 @@ export function ClassCard({
           </div>
         </div>
 
-        <div className={cn('border-t border-border pt-2', compact && 'md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
-          <p data-testid="class-next-deadline" className="min-h-4 text-[10.5px] font-bold text-muted-foreground">
-            {nextText}
-          </p>
-          <div className="mt-2 flex items-center justify-end gap-2">
+        <div className={cn('mt-auto border-t border-border pt-2', compact && 'md:mt-0 md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
+          {stats.nextDeadline ? (
+            <Link
+              data-testid="class-next-deadline"
+              to={`/academics/classes/${row.id}?classTab=assignments&view=agenda&assignment=${encodeURIComponent(stats.nextDeadline.id)}`}
+              title={stats.nextDeadline.title}
+              aria-label={`Open assignment: ${stats.nextDeadline.title}`}
+              className="group/next flex min-h-12 items-center gap-2 rounded-lg px-2 py-1.5 text-[10.5px] font-bold text-muted-foreground transition-colors hover:bg-[color-mix(in_srgb,var(--class-accent)_9%,transparent)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--class-accent)]"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <span className="min-w-0 flex-1">
+                <span className="line-clamp-2 text-foreground">{nextTaskSummary}</span>
+                {stats.nextDeadline.dueDate && (
+                  <span className="mt-0.5 block text-[9.5px] text-muted-foreground">{assignmentDateLabel(stats.nextDeadline)}</span>
+                )}
+              </span>
+              <ArrowUpRight className="size-3.5 shrink-0 opacity-55 transition-opacity group-hover/next:opacity-100" aria-hidden="true" />
+            </Link>
+          ) : (
+            <p data-testid="class-next-deadline" className="flex min-h-12 items-center px-2 text-[10.5px] font-bold text-muted-foreground">
+              {nextText}
+            </p>
+          )}
+          <div className="mt-2 flex items-center justify-end gap-2 md:pointer-events-none md:absolute md:inset-x-3 md:bottom-3 md:z-10 md:mt-0 md:rounded-xl md:border md:border-[var(--class-accent-45)] md:bg-card md:p-1 md:opacity-0 md:shadow-lg md:transition-[opacity,transform] md:translate-y-1 md:group-hover/class:pointer-events-auto md:group-hover/class:translate-y-0 md:group-hover/class:opacity-100 md:group-focus-within/class:pointer-events-auto md:group-focus-within/class:translate-y-0 md:group-focus-within/class:opacity-100 motion-reduce:transition-none">
             <Button
               size="sm"
               variant="outline"
-              className="h-9 flex-1 border-[var(--class-accent-75)] bg-[color-mix(in_srgb,var(--class-accent)_72%,transparent)] font-display font-extrabold text-white shadow-[0_8px_18px_-14px_var(--class-accent-75)] motion-safe:transition-[opacity,background-color,transform] hover:bg-[color-mix(in_srgb,var(--class-accent)_82%,transparent)] hover:text-white active:translate-y-px md:pointer-events-none md:opacity-0 md:group-hover/class:pointer-events-auto md:group-hover/class:opacity-100 md:group-focus-within/class:pointer-events-auto md:group-focus-within/class:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
+              className="h-9 flex-1 border-[var(--class-accent-75)] bg-[color-mix(in_srgb,var(--class-accent)_72%,transparent)] font-display font-extrabold text-white shadow-[0_8px_18px_-14px_var(--class-accent-75)] motion-safe:transition-[background-color,transform] hover:bg-[color-mix(in_srgb,var(--class-accent)_82%,transparent)] hover:text-white active:translate-y-px"
               onClick={(event) => { event.stopPropagation(); onOpen() }}
             >
               <ArrowUpRight className="size-4 text-white" /> Open
@@ -1545,7 +1552,6 @@ export function ClassCard({
                   variant="ghost"
                   size="icon"
                   aria-label="Class actions"
-                  className="md:pointer-events-none md:translate-y-0.5 md:opacity-0 md:transition-[opacity,transform] md:group-hover/class:pointer-events-auto md:group-hover/class:translate-y-0 md:group-hover/class:opacity-100 md:group-focus-within/class:pointer-events-auto md:group-focus-within/class:translate-y-0 md:group-focus-within/class:opacity-100 focus-visible:pointer-events-auto focus-visible:translate-y-0 focus-visible:opacity-100"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <MoreHorizontal className="size-4" />

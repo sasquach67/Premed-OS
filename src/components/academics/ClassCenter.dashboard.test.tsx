@@ -149,7 +149,7 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     expect(progress?.getAttribute('aria-label')).toBe('1 of 2 coursework items complete this week; 1 left')
   })
 
-  it('sizes the card grid to the visible class count instead of reserving four empty columns', async () => {
+  it('keeps the class frame and grid stable when only two classes are visible', async () => {
     const seeded = structuredClone(createSeedData())
     const visibleWorkspaces = seeded.academics.classCenter.workspaces.slice(0, 2)
     const visibleCourseIds = new Set(visibleWorkspaces.map((workspace) => workspace.courseId))
@@ -162,12 +162,13 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     const grid = container.querySelector('[data-testid="class-card-grid"]')
     const panel = container.querySelector('.academics-class-panel')
     expect(grid).toBeTruthy()
-    expect(panel?.className).toContain('max-w-[720px]')
-    expect(grid?.className).toContain('lg:grid-cols-2')
-    expect(grid?.className).not.toContain('lg:grid-cols-4')
+    expect(panel?.className).toContain('max-w-[1100px]')
+    expect(panel?.className).not.toContain('mx-auto')
+    expect(grid?.className).toContain('sm:grid-cols-2')
+    expect(grid?.className).toContain('xl:grid-cols-4')
   })
 
-  it('centers the final two cards when five classes are visible', async () => {
+  it('uses the same fixed grid when five classes are visible', async () => {
     const seeded = structuredClone(createSeedData())
     const visibleWorkspaces = seeded.academics.classCenter.workspaces.slice(0, 5)
       .map((workspace) => ({ ...workspace, semester: seeded.profile.startTerm }))
@@ -178,7 +179,8 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     await render()
 
     const grid = container.querySelector('[data-testid="class-card-grid"]')
-    expect(grid?.className).toContain('academics-class-grid--five')
+    expect(grid?.className).toContain('xl:grid-cols-4')
+    expect(grid?.className).not.toContain('academics-class-grid--five')
   })
 
   it('opens a new syllabus import from the shared importFor=new route and clears it on cancel', async () => {
@@ -272,7 +274,11 @@ describe('Daily Class Center persisted dashboard boundary', () => {
 
     expect(card).toBeTruthy()
     expect(open).toBeTruthy()
-    expect(open!.className).toContain('md:opacity-0')
+    const hoverActions = open!.parentElement as HTMLElement
+    expect(hoverActions.className).toContain('md:absolute')
+    expect(hoverActions.className).toContain('md:opacity-0')
+    expect(hoverActions.className).toContain('md:group-hover/class:opacity-100')
+    expect(hoverActions.className).toContain('md:group-focus-within/class:opacity-100')
     expect(open!.querySelector('.lucide-arrow-up-right')).toBeTruthy()
     await act(async () => card!.click())
     expect(document.body.textContent).toContain(`${course.code} preview`)

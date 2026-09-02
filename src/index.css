@@ -602,15 +602,6 @@
     .academics-surface .academics-class-card {
       aspect-ratio: 1 / 1;
     }
-    .academics-surface .academics-class-grid--five {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-    }
-    .academics-surface .academics-class-grid--five > .academics-class-card {
-      grid-column: span 2 / span 2;
-    }
-    .academics-surface .academics-class-grid--five > .academics-class-card:nth-child(4) {
-      grid-column-start: 2;
-    }
   }
   .academics-surface .academics-class-card [data-slot='card-content'] {
     padding: 12px;

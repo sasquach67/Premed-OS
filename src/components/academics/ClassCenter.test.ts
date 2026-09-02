@@ -215,9 +215,11 @@ describe('Class Center primary card hierarchy', () => {
     expect(container.querySelector('[role="progressbar"]')?.getAttribute('aria-label')).toBe('No coursework due this week')
 
     const openButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'Open') as HTMLButtonElement
-    expect(openButton.className).toContain('md:opacity-0')
-    expect(openButton.className).toContain('md:group-hover/class:opacity-100')
-    expect(openButton.className).toContain('md:group-focus-within/class:opacity-100')
+    const hoverActions = openButton.parentElement as HTMLElement
+    expect(hoverActions.className).toContain('md:absolute')
+    expect(hoverActions.className).toContain('md:opacity-0')
+    expect(hoverActions.className).toContain('md:group-hover/class:opacity-100')
+    expect(hoverActions.className).toContain('md:group-focus-within/class:opacity-100')
     const deadline = container.querySelector('[data-testid="class-next-deadline"]') as HTMLElement
     expect(deadline.textContent).toBe('No deadline scheduled')
     expect(deadline.className).not.toContain('group-hover/class:hidden')
@@ -253,6 +255,45 @@ describe('Class Center primary card hierarchy', () => {
     })
 
     expect(container.textContent).toContain('IP')
+  })
+
+  it('shows a concise up-next label that opens the exact assignment', async () => {
+    const seed = structuredClone(createSeedData())
+    const course = seed.courses.find((item) => item.code === 'BIOL 103')!
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.courseId === course.id)!
+    const row: ClassWorkspaceView = {
+      ...workspace,
+      id: course.id,
+      workspaceId: workspace.id,
+      courseCode: course.code,
+      courseTitle: course.title,
+      semester: course.term,
+      grade: 'A-',
+      bcpm: true,
+      credits: course.credits,
+    }
+    const assignment = {
+      id: 'reading-with-long-url', courseId: course.id,
+      title: 'Read Listen to Podcast, “What You Don’t Know” from This American Life https://example.com/episode before class',
+      type: 'reading' as const, dueDate: '2099-09-05', status: 'not-started' as const,
+      linkedTopicIds: [], linkedFileIds: [], createdAt: 1, updatedAt: 1, order: 0,
+    }
+    const data: ClassCenterViewData = { ...seed.academics.classCenter, assignments: [assignment], classes: [row] }
+
+    await act(async () => {
+      root.render(createElement(MemoryRouter, null, createElement(ClassCard, {
+        row, data, compact: false, dragging: false, dragOver: false,
+        onPreview: () => {}, onOpen: () => {}, onDragStart: () => {}, onDragOver: () => {}, onDragLeave: () => {},
+        onDrop: () => {}, onDragEnd: () => {}, onEdit: () => {}, onImport: () => {}, onArchive: () => {}, onDelete: () => {},
+      })))
+    })
+
+    const next = container.querySelector('[data-testid="class-next-deadline"]') as HTMLAnchorElement
+    expect(next.tagName).toBe('A')
+    expect(next.textContent).toContain('Listen to “What You Don’t Know”')
+    expect(next.textContent).not.toContain('https://')
+    expect(next.getAttribute('title')).toBe(assignment.title)
+    expect(next.getAttribute('href')).toBe(`/academics/classes/${course.id}?classTab=assignments&view=agenda&assignment=${assignment.id}`)
   })
 
   it('keeps every non-link card action attributable to its callback', async () => {
