@@ -63,6 +63,7 @@ import { nextIncompleteReading, readingDebt, READING_LIST_STATE_COPY } from '@/l
 import { inferAcademicTerm } from '@/store/migrations/academicsV4'
 import { persistConfirmedSyllabusEvidence } from '@/lib/academics/guideContract'
 import { extractClassMeetingDays, extractClassMeetingTime, isOfficeHoursLine, isPlausibleClassMeetingTime, normalizeMeetingDays, proposePlausibleMeetingTime } from '@/lib/academics/meetingSchedule'
+import { normalizeClassLocation, normalizeClassMeetingTime, normalizeClassTerm, normalizeClassWorkspaceIdentity, normalizeCourseCode, normalizeCourseTitle, normalizeInstructorName } from '@/lib/academics/classIdentity'
 import { removeLocalBlob } from '@/lib/localBlobStore'
 import { removeCourseCascade } from '@/lib/academics/removeCourseCascade'
 import { readingTaskDueDate } from '@/lib/academics/readingSchedule'
@@ -428,7 +429,10 @@ function applySyllabusOperationalContext(center: ClassCenterData, courseId: stri
     else center.contacts.push({ id: uid(), courseId, name: professorName, role: 'professor', email: professorEmail, officeHours, createdAt: now, updatedAt: now, order: center.contacts.filter((contact) => contact.courseId === courseId).length })
   }
   logistics.filter((item) => item.context === 'Teaching assistant').forEach((item) => {
-    const email = emailFrom(item) ?? courseContactEmail ?? sharedStaffEmail
+    // A course or teaching-team address is not evidence that it belongs to
+    // each individual assistant. Only attach an address that the source scoped
+    // directly to this TA; shared contacts remain course-level information.
+    const email = emailFrom(item)
     const officeHours = item.value?.replace(email ?? '', '').replace(/^[\s·;,-]+/, '').trim()
     const location = /\bat\s+(.+)$/i.exec(officeHours ?? '')?.[1]
     const existing = center.contacts.find((contact) => contact.courseId === courseId && contact.role === 'TA' && contact.name.toLowerCase() === item.label.toLowerCase())
@@ -505,7 +509,15 @@ function workspaceFields(form: ClassFormState): Omit<ClassWorkspace, 'id' | 'cou
     semester: _semester,
     ...workspace
   } = form
-  return { ...workspace, type: form.type, readingListState: form.readingListState ?? 'unknown' }
+  return normalizeClassWorkspaceIdentity({ ...workspace, type: form.type, readingListState: form.readingListState ?? 'unknown' })
+}
+
+function canonicalCourseFields(form: Pick<ClassFormState, 'courseCode' | 'courseTitle' | 'semester'>) {
+  return {
+    code: normalizeCourseCode(form.courseCode),
+    title: normalizeCourseTitle(form.courseTitle),
+    term: normalizeClassTerm(form.semester),
+  }
 }
 
 /** Applies only a student's explicit review choices. The diff itself stays in
@@ -809,8 +821,8 @@ function ClassCenterDashboard({
     }
     updateAll((draft) => {
       if (!existingCourseId) draft.courses.push({
-        id: courseId, code: form.courseCode.trim() || 'NEW 101', title: form.courseTitle.trim() || 'Untitled class',
-        term: form.semester, credits: 3, grade: '', bcpm: false, status: 'in-progress', inResidence: true,
+        id: courseId, ...canonicalCourseFields(form), code: normalizeCourseCode(form.courseCode) || 'NEW 101', title: normalizeCourseTitle(form.courseTitle) || 'Untitled class',
+        credits: 3, grade: '', bcpm: false, status: 'in-progress', inResidence: true,
         satisfies: [], order: draft.courses.length,
       })
       const center = draft.academics.classCenter
@@ -1152,20 +1164,16 @@ function ClassCenterDashboard({
       if (editor.courseId) {
         const course = draft.courses.find((item) => item.id === editor.courseId)
         const workspace = draft.academics.classCenter.workspaces.find((item) => item.courseId === editor.courseId)
-        if (course) Object.assign(course, {
-          code: form.courseCode.trim(),
-          title: form.courseTitle.trim(),
-          term: form.semester,
-        })
+        if (course) Object.assign(course, canonicalCourseFields(form))
         if (workspace) Object.assign(workspace, workspaceFields(form), { updatedAt: now })
       } else {
         const courseId = uid()
         createdCourseId = courseId
         draft.courses.push({
           id: courseId,
-          code: form.courseCode.trim() || 'NEW 101',
-          title: form.courseTitle.trim() || 'Untitled class',
-          term: form.semester,
+          ...canonicalCourseFields(form),
+          code: normalizeCourseCode(form.courseCode) || 'NEW 101',
+          title: normalizeCourseTitle(form.courseTitle) || 'Untitled class',
           credits: 3,
           grade: '',
           bcpm: false,
@@ -1495,7 +1503,7 @@ export function ClassCard({
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          {stats.materialCount > 0 && <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="secondary">{stats.materialCount} materials</Badge>}
+          {stats.materialCount > 0 && <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="secondary">{stats.materialCount} {stats.materialCount === 1 ? 'material' : 'materials'}</Badge>}
           {stats.processingCount > 0 && (
             <Badge className="px-2 py-0 text-[9.5px] font-extrabold" variant="muted" aria-live="polite">
               <Loader2 className="size-3 animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -2169,7 +2177,7 @@ function ClassWorkspace({
     useStore.getState().update((draft) => {
       const course = draft.courses.find((item) => item.id === row.id)
       const workspace = draft.academics.classCenter.workspaces.find((item) => item.courseId === row.id)
-      if (course) Object.assign(course, { code: nextForm.courseCode, title: nextForm.courseTitle, term: nextForm.semester })
+      if (course) Object.assign(course, canonicalCourseFields(nextForm))
       if (workspace) Object.assign(workspace, workspaceFields(nextForm), { updatedAt: Date.now() })
     })
     setClassEditorOpen(false)
@@ -2890,9 +2898,9 @@ function ClassEditorDialog({
           <section className="space-y-3">
             <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Basics</h3>
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label={sourceFieldLabel('Course code', Boolean(extractedClass?.courseCode))}><Input value={form.courseCode} onChange={(e) => onChange({ courseCode: e.target.value })} placeholder="BIOL 103" /></Field>
-              <Field label={sourceFieldLabel('Course title', Boolean(extractedClass?.courseTitle))}><Input value={form.courseTitle} onChange={(e) => onChange({ courseTitle: e.target.value })} placeholder="How Cells Function" /></Field>
-              <Field label={sourceFieldLabel('Semester', termWasFound)}><Input value={form.semester} onChange={(e) => onChange({ semester: e.target.value })} placeholder="Fall 2026" /></Field>
+              <Field label={sourceFieldLabel('Course code', Boolean(extractedClass?.courseCode))}><Input value={form.courseCode} onChange={(e) => onChange({ courseCode: e.target.value })} onBlur={(e) => onChange({ courseCode: normalizeCourseCode(e.target.value) })} placeholder="BIOL 103" /></Field>
+              <Field label={sourceFieldLabel('Course title', Boolean(extractedClass?.courseTitle))}><Input value={form.courseTitle} onChange={(e) => onChange({ courseTitle: e.target.value })} onBlur={(e) => onChange({ courseTitle: normalizeCourseTitle(e.target.value) })} placeholder="How Cells Function" /></Field>
+              <Field label={sourceFieldLabel('Semester', termWasFound)}><Input value={form.semester} onChange={(e) => onChange({ semester: e.target.value })} onBlur={(e) => onChange({ semester: normalizeClassTerm(e.target.value) })} placeholder="Fall 2026" /></Field>
             </div>
             <Field label="Class type">
               <div className="grid gap-2 sm:grid-cols-3">
@@ -2935,10 +2943,10 @@ function ClassEditorDialog({
               <p className="mt-2 text-xs font-semibold text-muted-foreground">You can change this later. Grades, credits, and requirements stay the same.</p>
             </Field>
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label={sourceFieldLabel('Instructor', Boolean(extractedClass?.instructor))}><Input value={form.instructor ?? ''} onChange={(e) => onChange({ instructor: e.target.value })} /></Field>
+              <Field label={sourceFieldLabel('Instructor', Boolean(extractedClass?.instructor))}><Input value={form.instructor ?? ''} onChange={(e) => onChange({ instructor: e.target.value })} onBlur={(e) => onChange({ instructor: normalizeInstructorName(e.target.value) })} /></Field>
               <Field label={sourceFieldLabel('Meeting days', Boolean(extractedClass?.meetingDays))}><Input value={form.meetingDays ?? ''} onChange={(e) => onChange({ meetingDays: e.target.value })} onBlur={(e) => onChange({ meetingDays: normalizeMeetingDays(e.target.value) })} placeholder="Tue · Thurs" /></Field>
-              <Field label={sourceFieldLabel('Meeting time', Boolean(extractedClass?.meetingTime), false, meetingTimeNeedsReview)}><Input value={form.meetingTime ?? ''} onChange={(e) => onChange({ meetingTime: e.target.value })} placeholder="10:10 AM-11:00 AM" /></Field>
-              <Field label={sourceFieldLabel('Location', Boolean(extractedClass?.location))}><Input value={form.location ?? ''} onChange={(e) => onChange({ location: e.target.value })} /></Field>
+              <Field label={sourceFieldLabel('Meeting time', Boolean(extractedClass?.meetingTime), false, meetingTimeNeedsReview)}><Input value={form.meetingTime ?? ''} onChange={(e) => onChange({ meetingTime: e.target.value })} onBlur={(e) => onChange({ meetingTime: normalizeClassMeetingTime(e.target.value) })} placeholder="10:10 AM–11:00 AM" /></Field>
+              <Field label={sourceFieldLabel('Location', Boolean(extractedClass?.location))}><Input value={form.location ?? ''} onChange={(e) => onChange({ location: e.target.value })} onBlur={(e) => onChange({ location: normalizeClassLocation(e.target.value) })} /></Field>
               <Field label={sourceFieldLabel('Nickname', false, true)}><Input value={form.nickname ?? ''} onChange={(e) => onChange({ nickname: e.target.value })} placeholder="Optional" /></Field>
             </div>
           </section>

@@ -229,6 +229,8 @@ describe('Class Center primary card hierarchy', () => {
     })
 
     expect(container.textContent).toContain('No deadline scheduled')
+    expect(container.textContent).toContain('1 material')
+    expect(container.textContent).not.toContain('1 materials')
     expect(container.textContent).toContain('Open')
     expect(container.textContent).toContain('A-')
     expect(container.textContent).not.toContain('BCPM')

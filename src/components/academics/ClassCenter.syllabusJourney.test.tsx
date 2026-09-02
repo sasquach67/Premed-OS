@@ -81,6 +81,8 @@ Office Hours: Davie Hall 210 on Tuesday 2:00-3:00 PM.
 TR 8am-9:15pm
 Instructional Assistants: Weekly office hours are below.
 • Fatima: Monday, 10:00-11:00 AM on Zoom
+Communicating with Your Instructor and IAs
+Email Dr. Adrian Rivera at arivera@unc.edu.
 Learning Center: See https://learningcenter.unc.edu for support.
 Course Schedule
 Thursday 8/20 The Evolution of Psychology Chapter 1
@@ -413,6 +415,7 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
       expect.objectContaining({ courseId, role: 'professor', name: 'Dr. Adrian Rivera', email: 'arivera@unc.edu' }),
       expect.objectContaining({ courseId, role: 'TA', name: 'Fatima' }),
     ]))
+    expect(center.contacts.find((item) => item.courseId === courseId && item.role === 'TA' && item.name === 'Fatima')?.email).toBeUndefined()
     expect(center.notes).toEqual(expect.arrayContaining([
       expect.objectContaining({ courseId, kind: 'about-class', title: 'Learning Center', linkedFileIds: [syllabusFile!.id] }),
       expect.objectContaining({ courseId, kind: 'about-class', title: 'AI Policy', content: expect.stringContaining('assignment explicitly permits it'), linkedFileIds: [syllabusFile!.id] }),
