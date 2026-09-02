@@ -8,11 +8,13 @@ import {
   fetchPrimaryUpcomingEvents,
   isCalendarConnected,
 } from '@/lib/googleCalendar'
+import { calendarAvailability, calendarUnavailableMessage } from '@/lib/calendarAccess'
 
 export type CalendarSyncStatus = 'idle' | 'connecting' | 'syncing' | 'connected' | 'error'
 
 export function useCalendarSync() {
   const calendar = useStore((s) => s.settings.calendar)
+  const signedInEmail = useStore((s) => s.profile.email)
   const backupClientId = useStore((s) => s.settings.backup.googleClientId)
   const update = useStore((s) => s.update)
   const [status, setStatus] = useState<CalendarSyncStatus>('idle')
@@ -27,6 +29,11 @@ export function useCalendarSync() {
   )
   const apiKey = calendar.googleApiKey || envApiKey
   const connected = calendar.enabled && isCalendarConnected()
+  const availability = useMemo(
+    () => calendarAvailability(signedInEmail, Boolean(clientId)),
+    [signedInEmail, clientId],
+  )
+  const unavailableMessage = availability.available ? '' : calendarUnavailableMessage(availability.reason)
 
   const saveEvents = useCallback((events: NormalizedScheduleEvent[]) => {
     update((d) => {
@@ -59,6 +66,11 @@ export function useCalendarSync() {
   }, [saveEvents, update])
 
   const connect = useCallback(async (date = new Date()) => {
+    if (!availability.available) {
+      setStatus('error')
+      setError(unavailableMessage)
+      throw new Error(unavailableMessage)
+    }
     setStatus('connecting')
     setError('')
     try {
@@ -72,10 +84,10 @@ export function useCalendarSync() {
       update((d) => { d.settings.calendar.lastError = msg })
       throw e
     }
-  }, [clientId, refresh, update])
+  }, [availability, clientId, refresh, unavailableMessage, update])
 
   const connectSilent = useCallback(async (date = new Date()) => {
-    if (!clientId) return null
+    if (!clientId || !availability.available) return null
     try {
       await connectCalendarSilent(clientId)
       return refresh(date)
@@ -84,7 +96,7 @@ export function useCalendarSync() {
       update((d) => { d.settings.calendar.lastError = msg })
       return null
     }
-  }, [clientId, refresh, update])
+  }, [availability, clientId, refresh, update])
 
   const disconnect = useCallback(() => {
     disconnectCalendar()
@@ -103,6 +115,9 @@ export function useCalendarSync() {
     apiKey,
     connected,
     configured: Boolean(clientId),
+    canConnect: availability.available,
+    availability,
+    unavailableMessage,
     status,
     error: error || calendar.lastError || '',
     connect,

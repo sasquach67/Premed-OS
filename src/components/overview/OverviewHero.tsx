@@ -181,7 +181,8 @@ function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof use
           <button
             type="button"
             onClick={refreshCalendar}
-            disabled={!schedule.configured || schedule.status === 'syncing' || schedule.status === 'connecting'}
+            disabled={!schedule.canConnect || schedule.status === 'syncing' || schedule.status === 'connecting'}
+            title={!schedule.canConnect ? schedule.unavailableMessage : undefined}
             className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-card/88 px-3 py-1 text-[11px] font-extrabold text-primary shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-45 dark:border-white/10 dark:bg-slate-950/62 dark:hover:bg-white/8"
           >
             <RefreshCw className={cn('size-3.5', (schedule.status === 'syncing' || schedule.status === 'connecting') && 'animate-spin')} />
@@ -191,7 +192,8 @@ function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof use
           <button
             type="button"
             onClick={() => { void schedule.connect(new Date()) }}
-            disabled={!schedule.configured || schedule.status === 'connecting'}
+            disabled={!schedule.canConnect || schedule.status === 'connecting'}
+            title={!schedule.canConnect ? schedule.unavailableMessage : undefined}
             className="rounded-full border border-border/70 bg-card/88 px-3 py-1 text-[11px] font-extrabold text-primary shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-45 dark:border-white/10 dark:bg-slate-950/62 dark:hover:bg-white/8"
           >
             Connect calendar
@@ -209,12 +211,13 @@ function TodaySchedulePanel({ schedule, now }: { schedule: ReturnType<typeof use
                 type="button"
                 size="sm"
                 onClick={refreshCalendar}
-                disabled={!schedule.configured || schedule.status === 'syncing' || schedule.status === 'connecting'}
+                disabled={!schedule.canConnect || schedule.status === 'syncing' || schedule.status === 'connecting'}
+                title={!schedule.canConnect ? schedule.unavailableMessage : undefined}
               >
                 <RefreshCw className={cn('size-4', (schedule.status === 'syncing' || schedule.status === 'connecting') && 'animate-spin')} />
                 Refresh calendar
               </Button>
-            ) : schedule.configured ? (
+            ) : schedule.canConnect ? (
               <Button
                 type="button"
                 size="sm"

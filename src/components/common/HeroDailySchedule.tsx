@@ -249,7 +249,8 @@ export function HeroSchedulePanel({ schedule }: { schedule: ReturnType<typeof us
         ) : (
           <button
             onClick={() => { void schedule.connect(new Date()) }}
-            disabled={!schedule.configured || schedule.status === 'connecting'}
+            disabled={!schedule.canConnect || schedule.status === 'connecting'}
+            title={!schedule.canConnect ? schedule.unavailableMessage : undefined}
             className="inline-flex items-center gap-1 rounded-full border border-slate-700/25 bg-white/25 px-2 py-0.5 text-[10px] font-bold hover:bg-white/45 disabled:opacity-50 dark:border-white/30 dark:bg-transparent dark:hover:bg-white/10"
           >
             <Wifi className="size-3" /> Connect

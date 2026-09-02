@@ -512,6 +512,11 @@ function CalendarIntegrationSection({ onMessage }: { onMessage: (msg: string) =>
             <p className="mt-0.5 text-xs text-muted-foreground">Premed OS reads upcoming events from your primary calendar only. It cannot list other calendars or edit events.</p>
             {calendar.lastSyncedAt && <p className="mt-1 text-xs text-muted-foreground">Last synced {fmtTimeAgo(calendar.lastSyncedAt)}.</p>}
             {(sync.error || calendar.lastError) && <p className="mt-1 flex items-center gap-1 text-xs text-destructive"><AlertCircle className="size-3" /> {sync.error || calendar.lastError}</p>}
+            {!sync.availability.available && sync.availability.reason === 'awaiting-verification' && (
+              <p className="mt-1 flex items-start gap-1 text-xs font-semibold text-muted-foreground">
+                <AlertCircle className="mt-0.5 size-3 shrink-0" /> {sync.unavailableMessage}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -536,7 +541,7 @@ function CalendarIntegrationSection({ onMessage }: { onMessage: (msg: string) =>
           <div className="flex flex-wrap gap-2">
             {sync.connected
               ? <Button variant="outline" onClick={sync.disconnect}><Unplug className="size-4" /> Disconnect</Button>
-              : <Button onClick={connect} disabled={!sync.configured || sync.status === 'connecting'}><Wifi className="size-4" /> Connect Google Calendar</Button>}
+              : <Button onClick={connect} disabled={!sync.canConnect || sync.status === 'connecting'}><Wifi className="size-4" /> Connect Google Calendar</Button>}
             <Button variant="outline" onClick={refresh} disabled={!sync.connected || sync.status === 'syncing'}>
               <RefreshCw className={cn('size-4', sync.status === 'syncing' && 'animate-spin')} /> Refresh
             </Button>
