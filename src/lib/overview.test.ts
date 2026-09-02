@@ -56,6 +56,26 @@ describe('Overview selectors', () => {
     expect(overviewTasks(tasks, 'now').map((item) => item.id)).toEqual(['important', 'normal'])
   })
 
+  it('sorts each priority group by nearest due date and leaves undated work last', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-02T12:00:00'))
+    const tasks = [
+      task({ id: 'undated', order: 0, horizon: 'now', important: false }),
+      task({ id: 'later', order: 1, deadline: '2026-09-06', horizon: 'now', important: false }),
+      task({ id: 'earlier', order: 2, deadline: '2026-09-04', horizon: 'now', important: false }),
+      task({ id: 'important-later', order: 3, deadline: '2026-09-08', horizon: 'now', important: true }),
+      task({ id: 'important-earlier', order: 4, deadline: '2026-09-03', horizon: 'now', important: true }),
+    ]
+
+    expect(overviewTasks(tasks, 'now').map((item) => item.id)).toEqual([
+      'important-earlier',
+      'important-later',
+      'earlier',
+      'later',
+      'undated',
+    ])
+  })
+
   it('returns an empty roadmap when Timeline has no milestone records', () => {
     expect(roadmapMilestones([])).toEqual([])
   })

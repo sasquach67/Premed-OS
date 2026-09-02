@@ -84,7 +84,16 @@ export function overviewTasks(tasks: CollectionRecord<TaskItem>[], tab: Overview
     .filter((task) => !task.deletedAt && !task.timelineMilestoneId)
     .filter((task) => tab === 'done' ? task.progress === 'Finished' : !task.archived && task.progress !== 'Finished')
     .filter((task) => overviewTaskTab(task) === tab)
-    .sort((a, b) => Number(Boolean(b.important)) - Number(Boolean(a.important)) || a.order - b.order)
+    .sort((a, b) => {
+      const importance = Number(Boolean(b.important)) - Number(Boolean(a.important))
+      if (importance) return importance
+      if (a.deadline && b.deadline) {
+        const deadline = a.deadline.localeCompare(b.deadline)
+        if (deadline) return deadline
+      } else if (a.deadline) return -1
+      else if (b.deadline) return 1
+      return a.order - b.order
+    })
 }
 
 export interface RoadmapMilestone {
