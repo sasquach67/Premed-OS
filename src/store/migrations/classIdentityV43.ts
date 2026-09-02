@@ -13,10 +13,11 @@ export function migrateClassIdentityV43(data: AppData): AppData {
   if (!center) return data
   let changed = false
   const courses = data.courses.map((course) => {
+    const code = normalizeCourseCode(course.code)
     const next = {
       ...course,
-      code: normalizeCourseCode(course.code),
-      title: normalizeCourseTitle(course.title),
+      code,
+      title: normalizeCourseTitle(course.title, code),
       term: normalizeClassTerm(course.term),
     }
     if (next.code === course.code && next.title === course.title && next.term === course.term) return course

@@ -4,6 +4,7 @@ import {
   normalizeClassMeetingTime,
   normalizeClassTerm,
   normalizeCourseCode,
+  normalizeCourseTitle,
   normalizeInstructorName,
 } from './classIdentity'
 
@@ -14,6 +15,12 @@ describe('canonical class identity formatting', () => {
     expect(normalizeInstructorName('Instructor:  Ndidi Adeyanju, Ph.D.')).toBe('Ndidi Adeyanju, PhD')
     expect(normalizeClassMeetingTime('8am - 9:15am')).toBe('8:00 AM–9:15 AM')
     expect(normalizeClassLocation('Hanes Art Center,  Rm. 121')).toBe('Hanes Art Center, Room 121')
+  })
+
+  it('uses stable course titles instead of registrar-style shorthand', () => {
+    expect(normalizeCourseTitle('ENG COMP & RHETORIC', 'engl105')).toBe('English Composition & Rhetoric')
+    expect(normalizeCourseTitle('GENERAL PSYCHOLOGY', 'PSYC 101')).toBe('Introduction to Psychology')
+    expect(normalizeCourseTitle('  Molecular   Genetics ', 'BIOL 202')).toBe('Molecular Genetics')
   })
 
   it('formats instructors as name plus sourced credential without contact prose or honorifics', () => {

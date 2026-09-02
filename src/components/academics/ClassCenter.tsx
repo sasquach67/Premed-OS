@@ -513,9 +513,10 @@ function workspaceFields(form: ClassFormState): Omit<ClassWorkspace, 'id' | 'cou
 }
 
 function canonicalCourseFields(form: Pick<ClassFormState, 'courseCode' | 'courseTitle' | 'semester'>) {
+  const code = normalizeCourseCode(form.courseCode)
   return {
-    code: normalizeCourseCode(form.courseCode),
-    title: normalizeCourseTitle(form.courseTitle),
+    code,
+    title: normalizeCourseTitle(form.courseTitle, code),
     term: normalizeClassTerm(form.semester),
   }
 }
@@ -821,7 +822,7 @@ function ClassCenterDashboard({
     }
     updateAll((draft) => {
       if (!existingCourseId) draft.courses.push({
-        id: courseId, ...canonicalCourseFields(form), code: normalizeCourseCode(form.courseCode) || 'NEW 101', title: normalizeCourseTitle(form.courseTitle) || 'Untitled class',
+        id: courseId, ...canonicalCourseFields(form), code: normalizeCourseCode(form.courseCode) || 'NEW 101', title: normalizeCourseTitle(form.courseTitle, form.courseCode) || 'Untitled class',
         credits: 3, grade: '', bcpm: false, status: 'in-progress', inResidence: true,
         satisfies: [], order: draft.courses.length,
       })
@@ -1173,7 +1174,7 @@ function ClassCenterDashboard({
           id: courseId,
           ...canonicalCourseFields(form),
           code: normalizeCourseCode(form.courseCode) || 'NEW 101',
-          title: normalizeCourseTitle(form.courseTitle) || 'Untitled class',
+          title: normalizeCourseTitle(form.courseTitle, form.courseCode) || 'Untitled class',
           credits: 3,
           grade: '',
           bcpm: false,
@@ -2899,7 +2900,7 @@ function ClassEditorDialog({
             <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Basics</h3>
             <div className="grid gap-4 md:grid-cols-2">
               <Field label={sourceFieldLabel('Course code', Boolean(extractedClass?.courseCode))}><Input value={form.courseCode} onChange={(e) => onChange({ courseCode: e.target.value })} onBlur={(e) => onChange({ courseCode: normalizeCourseCode(e.target.value) })} placeholder="BIOL 103" /></Field>
-              <Field label={sourceFieldLabel('Course title', Boolean(extractedClass?.courseTitle))}><Input value={form.courseTitle} onChange={(e) => onChange({ courseTitle: e.target.value })} onBlur={(e) => onChange({ courseTitle: normalizeCourseTitle(e.target.value) })} placeholder="How Cells Function" /></Field>
+              <Field label={sourceFieldLabel('Course title', Boolean(extractedClass?.courseTitle))}><Input value={form.courseTitle} onChange={(e) => onChange({ courseTitle: e.target.value })} onBlur={(e) => onChange({ courseTitle: normalizeCourseTitle(e.target.value, form.courseCode) })} placeholder="How Cells Function" /></Field>
               <Field label={sourceFieldLabel('Semester', termWasFound)}><Input value={form.semester} onChange={(e) => onChange({ semester: e.target.value })} onBlur={(e) => onChange({ semester: normalizeClassTerm(e.target.value) })} placeholder="Fall 2026" /></Field>
             </div>
             <Field label="Class type">

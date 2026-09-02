@@ -11,8 +11,17 @@ export function normalizeCourseCode(value: string): string {
   return standard ? `${standard[1]} ${standard[2]}` : trimmed
 }
 
-export function normalizeCourseTitle(value: string): string {
-  return compact(value)
+/** Stable student-facing titles for courses whose syllabus headers commonly
+ * use department shorthand. Unknown courses keep their sourced title rather
+ * than borrowing a similarly named catalog course. */
+const PREFERRED_COURSE_TITLES: Readonly<Record<string, string>> = {
+  'PSYC 101': 'Introduction to Psychology',
+  'ENGL 105': 'English Composition & Rhetoric',
+}
+
+export function normalizeCourseTitle(value: string, courseCode = ''): string {
+  const preferred = PREFERRED_COURSE_TITLES[normalizeCourseCode(courseCode)]
+  return preferred ?? compact(value)
 }
 
 export function normalizeClassTerm(value: string): string {
