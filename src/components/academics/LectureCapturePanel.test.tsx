@@ -155,7 +155,7 @@ describe('Lecture capture study-work handoff', () => {
     expect(center.lectures.filter((lecture) => lecture.courseId === courseId)).toHaveLength(beforeCount)
     expect(center.lectures.find((lecture) => lecture.id === lectureId)).toEqual(expect.objectContaining({ transcriptFileId: expect.any(String), processingState: 'ready' }))
     expect(center.files.find((file) => file.lectureId === lectureId)?.type).toBe('transcript')
-    expect(document.body.textContent).toContain('Record once. Bring the transcript here.')
+    expect(document.body.textContent).not.toContain('Record once. Bring the transcript here.')
   })
 
   it('does not reopen the tutorial after the workspace already has a saved lecture transcript', async () => {

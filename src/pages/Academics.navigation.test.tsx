@@ -168,7 +168,7 @@ describe('Academics navigation', () => {
     expect(scrollTo).not.toHaveBeenCalled()
   })
 
-  it('opens How to study from the first-login handoff and consumes the one-time query', async () => {
+  it('opens How to study from the first-syllabus-class handoff and consumes the one-time query', async () => {
     await render('/academics?mode=daily&tab=class-center&studyGuide=open')
 
     expect(document.body.textContent).toContain('Record once. Bring the transcript here.')

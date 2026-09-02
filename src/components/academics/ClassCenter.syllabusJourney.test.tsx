@@ -137,9 +137,9 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     useStore.getState().replaceAll(createInitialDataForMode(false))
   })
 
-  async function render(entry: string) {
+  async function render(entry: string, onFirstSyllabusClassCreated?: () => void) {
     await act(async () => {
-      root.render(<MemoryRouter initialEntries={[entry]}><ToastProvider><ClassCenter /></ToastProvider></MemoryRouter>)
+      root.render(<MemoryRouter initialEntries={[entry]}><ToastProvider><ClassCenter onFirstSyllabusClassCreated={onFirstSyllabusClassCreated} /></ToastProvider></MemoryRouter>)
     })
   }
 
@@ -153,7 +153,8 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
   }
 
   it('creates one class only after review, persists all parsed course records, and retains the source locally', async () => {
-    await render('/academics?tab=class-center')
+    const onFirstSyllabusClassCreated = vi.fn()
+    await render('/academics?tab=class-center', onFirstSyllabusClassCreated)
     await act(async () => button(container, 'Import a syllabus').click())
     expect(snapshotData().courses).toHaveLength(0)
 
@@ -170,6 +171,8 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(document.body.textContent).toContain('Not found')
     expect(document.body.querySelector('#syllabus-group-standards button')?.getAttribute('aria-expanded')).toBe('false')
     await act(async () => button(document.body, 'Add reviewed syllabus to CHEM 262').click())
+
+    expect(onFirstSyllabusClassCreated).toHaveBeenCalledTimes(1)
 
     const created = snapshotData()
     expect(created.courses).toHaveLength(1)
