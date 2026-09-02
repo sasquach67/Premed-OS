@@ -1,4 +1,4 @@
-import { useRef, useState, type ClipboardEvent, type KeyboardEvent, type ReactElement } from 'react'
+import { useRef, useState, type ClipboardEvent, type ReactElement } from 'react'
 import { ClipboardPaste, FileUp, ImagePlus, X } from 'lucide-react'
 import { buildPastedExcerpt, MIN_PASTED_EXCERPT_CHARACTERS } from '@/lib/academics/pastedExcerpt'
 import { retainLocalMaterial } from '@/lib/academics/localMaterialFiles'
@@ -41,17 +41,11 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
     })
   }
 
-  function pasteImage(event: ClipboardEvent<HTMLDivElement>) {
+  function pasteImage(event: ClipboardEvent<HTMLButtonElement>) {
     const images = [...event.clipboardData.files].filter((file) => file.type.startsWith('image/'))
     if (!images.length) return
     event.preventDefault()
     addFiles(images)
-  }
-
-  function activateScreenshotPicker(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key !== 'Enter' && event.key !== ' ') return
-    event.preventDefault()
-    inputRef.current?.click()
   }
 
   async function save() {
@@ -115,7 +109,7 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
         <input ref={inputRef} type="file" multiple className="sr-only" onChange={(event) => { addFiles(event.target.files ?? []); event.currentTarget.value = '' }} />
         <div className="grid gap-2 sm:grid-cols-2">
           <button type="button" className="rounded-xl border border-dashed border-border bg-muted/25 p-4 text-left hover:border-primary/55" onClick={() => inputRef.current?.click()}><FileUp className="size-5 text-primary" /><p className="mt-2 font-bold">Attach files</p><p className="mt-1 text-xs text-muted-foreground">PDFs, slides, notes, or images</p></button>
-          <div role="button" tabIndex={0} onPaste={pasteImage} onClick={() => inputRef.current?.click()} onKeyDown={activateScreenshotPicker} className="rounded-xl border border-dashed border-border bg-muted/25 p-4 text-left outline-none hover:border-primary/55 focus-visible:ring-2 focus-visible:ring-ring"><ImagePlus className="size-5 text-primary" /><p className="mt-2 font-bold">Paste a screenshot</p><p className="mt-1 text-xs text-muted-foreground">Click here, then press ⌘/Ctrl + V</p></div>
+          <button type="button" onPaste={pasteImage} onClick={(event) => event.currentTarget.focus()} className="rounded-xl border border-dashed border-border bg-muted/25 p-4 text-left outline-none hover:border-primary/55 focus-visible:border-primary/55 focus-visible:ring-2 focus-visible:ring-ring"><ImagePlus className="size-5 text-primary" /><p className="mt-2 font-bold">Paste a screenshot</p><p className="mt-1 text-xs text-muted-foreground">Click here, then press ⌘/Ctrl + V</p></button>
         </div>
         {files.length > 0 && <div className="flex flex-wrap gap-2">{files.map((file, index) => <span key={`${file.name}-${index}`} className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted/30 px-2 py-1 text-xs font-semibold">{file.name}<button type="button" aria-label={`Remove ${file.name}`} onClick={() => setFiles((current) => current.filter((_, candidate) => candidate !== index))}><X className="size-3" /></button></span>)}</div>}
         <div className="border-t border-border pt-4"><p className="font-semibold">Or paste textbook text</p><p className="mt-1 text-xs text-muted-foreground">Only the excerpt you paste becomes a study source.</p><div className="mt-3 grid gap-3 sm:grid-cols-2"><div className="grid gap-1"><Label htmlFor="material-title">Material title <span className="text-muted-foreground">(optional)</span></Label><Input id="material-title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Chapter 4 reading" /></div><div className="grid gap-1"><Label htmlFor="material-section">Section <span className="text-muted-foreground">(optional)</span></Label><Input id="material-section" value={sectionLabel} onChange={(event) => setSectionLabel(event.target.value)} placeholder="4.2 Synaptic signaling" /></div></div><Textarea className="mt-3 min-h-36" value={text} onChange={(event) => setText(event.target.value)} placeholder="Paste the specific textbook passage, notes, or reading excerpt…" /><p className="mt-1 text-xs font-semibold text-muted-foreground">{text.trim().length} / {MIN_PASTED_EXCERPT_CHARACTERS} characters for a text source</p></div>
