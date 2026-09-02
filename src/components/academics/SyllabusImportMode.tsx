@@ -562,7 +562,7 @@ function ReviewGroup({ kind, items, searched, confirmedItemIds, onPatch, onRemov
   const [open, setOpen] = useState(flagged)
   const needsValue = ['identity', 'exams', 'weights', 'units', 'readings', 'deadlines'].includes(kind)
   const flaggedCount = items.filter(needsConfirmation).length
-  const flaggedIds = items.filter(needsConfirmation).map((item) => item.id)
+  const itemIds = items.map((item) => item.id)
   return (
     <section id={`syllabus-group-${kind}`} className={cn('relative scroll-mt-6 border-b border-border last:border-b-0', flagged && 'bg-warning/[0.035]')}>
       <span className={cn('absolute inset-y-0 left-0 w-[3px]', flagged ? 'bg-warning' : items.length ? 'bg-success/65' : 'bg-border')} aria-hidden="true" />
@@ -584,7 +584,7 @@ function ReviewGroup({ kind, items, searched, confirmedItemIds, onPatch, onRemov
               variant="outline"
               className="h-8 border-warning/55 bg-warning/10 px-3 font-display text-xs font-extrabold text-warning hover:bg-warning/18 hover:text-warning"
               aria-label={`Confirm all ${GROUP_LABEL[kind]}`}
-              onClick={() => onConfirmAll(flaggedIds)}
+              onClick={() => onConfirmAll(itemIds)}
             >
               <CheckCircle2 className="size-3.5" aria-hidden="true" /> Confirm all
             </Button>

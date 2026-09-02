@@ -350,10 +350,10 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(document.body.querySelector('button[aria-label^="Confirm all "]')).toBeNull()
     expect(button(document.body, 'Add reviewed syllabus to').disabled).toBe(false)
     const confirmations = [...document.body.querySelectorAll<HTMLButtonElement>('button[aria-label^="Confirm "]')]
-    // Every extracted row can be affirmed, not only the low-confidence row
-    // that blocks Apply. This keeps the review interaction consistent.
-    expect(confirmations.length).toBeGreaterThan(1)
-    for (const confirmation of confirmations) await act(async () => confirmation.click())
+    // Confirm all affirms every extracted row in the group, not only the
+    // low-confidence rows that block Apply. No blue row-level Confirm action
+    // should remain after the bulk action completes.
+    expect(confirmations).toHaveLength(0)
     expect(document.body.textContent).toContain('Confirmed')
     expect(document.body.textContent).toContain('Ready to add')
     expect(button(document.body, 'Add reviewed syllabus to').disabled).toBe(false)
