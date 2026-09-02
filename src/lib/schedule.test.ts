@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classScheduleEvents, normalizeTimedEvents, normalizeUpcomingTimedEvents, parseMeetingDays, parseMeetingTime, upcomingTimedEvents } from '@/lib/schedule'
+import { classScheduleEvents, classScheduleEventsForWindow, mergeCalendarAndClassEvents, normalizeTimedEvents, normalizeUpcomingTimedEvents, parseMeetingDays, parseMeetingTime, upcomingTimedEvents } from '@/lib/schedule'
 
 const courses = [
   { id: 'chem', code: 'CHEM 262', title: 'Organic Chemistry II' },
@@ -96,9 +96,46 @@ describe('the derived day never invents a class', () => {
     const sunday = new Date(2026, 8, 13, 8, 0, 0)
     expect(classScheduleEvents(workspaces, courses, sunday)).toEqual([])
   })
+
+  it('finds the next recurring classes beyond the current day', () => {
+    const events = classScheduleEventsForWindow(workspaces, courses, monday, 3)
+
+    expect(events.map((event) => event.title)).toEqual([
+      'BIOL 252 Neurobiology',
+      'CHEM 262 Organic Chemistry II',
+      'BIOL 252 Neurobiology',
+    ])
+  })
 })
 
 describe('overview calendar horizon', () => {
+  it('keeps imported class blocks alongside Google events', () => {
+    const merged = mergeCalendarAndClassEvents(
+      [{ id: 'google-research', title: 'Research workshop', start: '2026-09-02T17:15:00-04:00', end: '2026-09-02T18:30:00-04:00', status: 'confirmed' }],
+      [{ id: 'class-geog', title: 'GEOG 121 Geographies of Globalization', start: '2026-09-02T09:05:00-04:00', end: '2026-09-02T09:55:00-04:00', status: 'confirmed' }],
+    )
+
+    expect(merged.map((event) => event.id)).toEqual(['class-geog', 'google-research'])
+  })
+
+  it('does not duplicate a class already represented in Google Calendar', () => {
+    const merged = mergeCalendarAndClassEvents(
+      [{ id: 'google-geog', title: 'GEOG 121', start: '2026-09-02T09:05:00-04:00', end: '2026-09-02T09:55:00-04:00', status: 'confirmed' }],
+      [{ id: 'class-geog', title: 'GEOG 121 Geographies of Globalization', start: '2026-09-02T09:05:00-04:00', end: '2026-09-02T09:55:00-04:00', status: 'confirmed' }],
+    )
+
+    expect(merged.map((event) => event.id)).toEqual(['google-geog'])
+  })
+
+  it('keeps unrelated commitments that start at the same time', () => {
+    const merged = mergeCalendarAndClassEvents(
+      [{ id: 'google-advising', title: 'Advising appointment', start: '2026-09-02T09:05:00-04:00', end: '2026-09-02T09:30:00-04:00', status: 'confirmed' }],
+      [{ id: 'class-geog', title: 'GEOG 121 Geographies of Globalization', start: '2026-09-02T09:05:00-04:00', end: '2026-09-02T09:55:00-04:00', status: 'confirmed' }],
+    )
+
+    expect(merged.map((event) => event.id)).toEqual(['google-advising', 'class-geog'])
+  })
+
   it('removes finished events so later commitments remain visible', () => {
     const now = new Date('2026-08-30T21:42:00')
     const events = normalizeTimedEvents([

@@ -4,7 +4,8 @@ import { useStore } from '@/store/store'
 import { useCalendarSync } from '@/hooks/useCalendarSync'
 import type { NormalizedScheduleEvent } from '@/lib/types'
 import {
-  classScheduleEvents, eventState, formatClock, formatEventTimeRange, isSameLocalDay,
+  classScheduleEventsForWindow, eventState, formatClock, formatEventTimeRange, isSameLocalDay,
+  mergeCalendarAndClassEvents,
   minuteOfDay, normalizeTimedEvents, resolveTimelineRange, timelinePercent,
   type TimedScheduleEvent, type TimelineEventState,
 } from '@/lib/schedule'
@@ -72,23 +73,26 @@ export function useHeroScheduleSource() {
     }
   }, [sync.calendar.enabled, sync.connected, sync.refresh])
 
-  // Precedence, most trustworthy first: a live calendar, then the student's own
-  // class records, then nothing. There is deliberately no fourth option — the
-  // hero previously invented a day when it had neither.
+  // Google provides the student's external commitments; reviewed course
+  // records provide recurring class blocks. Keep both, suppressing a class
+  // only when Google already contains that course at the same start time.
   const workspaces = useStore((state) => state.academics.classCenter.workspaces)
   const courses = useStore((state) => state.courses)
   const derived = useMemo(
-    () => classScheduleEvents(workspaces, courses, date),
+    () => classScheduleEventsForWindow(workspaces, courses, date),
     [workspaces, courses, key],
   )
-  const events = hasCalendarSnapshot ? sync.calendar.cachedEvents : derived
+  const events = hasCalendarSnapshot
+    ? mergeCalendarAndClassEvents(sync.calendar.cachedEvents, derived)
+    : derived
+  const hasCombinedSources = hasCalendarSnapshot && derived.length > 0
 
   return {
     ...sync,
     events,
     source: hasCalendarSnapshot ? 'google' : derived.length ? 'class-records' : 'empty',
     // Never "your calendar" for a derived day — the label says which it is.
-    sourceLabel: hasCalendarSnapshot ? 'Google Calendar' : derived.length ? 'From your class records' : 'Calendar',
+    sourceLabel: hasCombinedSources ? 'Google Calendar + class records' : hasCalendarSnapshot ? 'Google Calendar' : derived.length ? 'From your class records' : 'Calendar',
     stale: sync.calendar.enabled && !freshCalendarCache && hasCalendarSnapshot,
   }
 }

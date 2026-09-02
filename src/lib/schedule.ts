@@ -148,6 +148,58 @@ export function classScheduleEvents(
   return events.sort((a, b) => a.start.localeCompare(b.start))
 }
 
+/** Recurring class occurrences for the compact forward-looking dashboard.
+ * Two weeks is enough to find the next meeting for every normal weekly class
+ * without pretending that an active course repeats indefinitely. */
+export function classScheduleEventsForWindow(
+  workspaces: Parameters<typeof classScheduleEvents>[0],
+  courses: Parameters<typeof classScheduleEvents>[1],
+  startDate = new Date(),
+  dayCount = 14,
+) {
+  const events: NormalizedScheduleEvent[] = []
+  const safeDayCount = Math.max(1, Math.min(31, Math.floor(dayCount)))
+  for (let offset = 0; offset < safeDayCount; offset += 1) {
+    const date = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + offset, 12)
+    events.push(...classScheduleEvents(workspaces, courses, date))
+  }
+  return events.sort((a, b) => a.start.localeCompare(b.start))
+}
+
+function normalizedCourseCode(title: string) {
+  const match = /^([a-z]{2,8})\s*-?\s*(\d{2,4}[a-z]?)/i.exec(title.trim())
+  return match ? `${match[1]}${match[2]}`.toLowerCase() : ''
+}
+
+function normalizedTitle(title: string) {
+  return title.toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
+/** Combine fetched Google events with classes derived from reviewed course
+ * records. A class already represented in Google Calendar is kept only once,
+ * while unrelated events at the same time remain visible. */
+export function mergeCalendarAndClassEvents(
+  calendarEvents: NormalizedScheduleEvent[],
+  classEvents: NormalizedScheduleEvent[],
+) {
+  const merged = [...calendarEvents]
+
+  for (const classEvent of classEvents) {
+    const classStart = new Date(classEvent.start).getTime()
+    const classCode = normalizedCourseCode(classEvent.title)
+    const classTitle = normalizedTitle(classEvent.title)
+    const duplicate = calendarEvents.some((calendarEvent) => {
+      const calendarStart = new Date(calendarEvent.start).getTime()
+      if (!Number.isFinite(classStart) || !Number.isFinite(calendarStart) || Math.abs(calendarStart - classStart) > 60_000) return false
+      const calendarTitle = normalizedTitle(calendarEvent.title)
+      return calendarTitle === classTitle || Boolean(classCode && calendarTitle.includes(classCode))
+    })
+    if (!duplicate) merged.push(classEvent)
+  }
+
+  return merged.sort((a, b) => a.start.localeCompare(b.start))
+}
+
 export function isSameLocalDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear()
     && a.getMonth() === b.getMonth()
