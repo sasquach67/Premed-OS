@@ -41,6 +41,29 @@ The College of Arts and Sciences provides a secure, proctored environment for ma
     })
   })
 
+  it('prefers the source-attributed professor when generic support prose is emitted first', () => {
+    const proposal = parseSyllabusText(`Geographies of Globalization
+GEOG 121-002 · Fall 2026
+Dr. Adrian Drummond-Cole · adriandc@unc.edu
+Peabody Hall · Rm 1040
+M/W/F: 9:05–9:55 AM`)
+    proposal.items.unshift({
+      id: 'support-prose',
+      kind: 'logistics',
+      label: 'Instructor testing accommodations). For more information, visit the testing center website.',
+      confidence: 'high',
+      evidence: { quote: 'For more information, visit the testing center website.', location: 'page 6' },
+      context: 'Support resource',
+    })
+
+    expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
+      instructor: 'Dr. Adrian Drummond-Cole',
+      meetingDays: 'Mon · Wed · Fri',
+      meetingTime: '9:05–9:55 AM',
+      location: 'Peabody Hall Rm 1040',
+    })
+  })
+
   it('prefills attributable meeting facts from a syllabus proposal', () => {
     const proposal = parseSyllabusText('CHEM 262 — Organic Chemistry II\nInstructor: Dr. Adaeze Elamin\nMWF 10:10 AM-11:00 AM Room Kenan B12\nWeek 1: Aromatic substitution\nMidterm Exam — October 14, 2026')
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({

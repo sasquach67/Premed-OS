@@ -279,6 +279,26 @@ function extractInstructor(logistics: string[]): string {
     .trim()
 }
 
+function extractAttributedInstructor(items: SyllabusItem[]): string {
+  const professor = items.find((item) => item.kind === 'logistics' && item.context === 'Professor')
+  if (professor) {
+    const fromLabel = professor.label
+      .replace(/^(?:instructor|professor|prof\.?)\s*:\s*/i, '')
+      .replace(/[\s,·;]+$/, '')
+      .trim()
+    if (fromLabel) return fromLabel
+  }
+
+  // Older imported proposals may not carry a typed Professor context. Only
+  // accept an explicit field label as the compatibility fallback; prose such
+  // as "instructor testing accommodations" is a support record, not a name.
+  const explicitlyLabeled = items
+    .filter((item) => item.kind === 'logistics' && item.context !== 'Support resource')
+    .map((item) => item.label || item.evidence.quote)
+    .find((candidate) => /^(?:instructor|professor|prof\.?)\s*:/i.test(candidate))
+  return explicitlyLabeled ? extractInstructor([explicitlyLabeled]) : ''
+}
+
 function cleanCourseTitle(value?: string): string {
   return (value ?? '')
     .replace(/\s*[-–—|·]\s*(?:Fall|Spring|Summer|Winter)\s+20\d{2}\b.*$/i, '')
@@ -297,7 +317,7 @@ export function classFormFromSyllabus(proposal: SyllabusProposal, semester: stri
   const identity = proposal.items.find((item) => item.kind === 'identity')
   const logisticsItems = proposal.items.filter((item) => item.kind === 'logistics')
   const logistics = logisticsItems.map((item) => item.label || item.evidence.quote)
-  const instructor = extractInstructor(logistics)
+  const instructor = extractAttributedInstructor(logisticsItems)
   const scheduleLine = logistics.find((line) => Boolean(extractClassMeetingDays(line))) ?? ''
   const rawScheduleLine = proposal.text.split(/\r?\n/).find((line) => {
     const time = extractClassMeetingTime(line)
