@@ -1548,14 +1548,20 @@ export function ClassCard({
           </div>
         </div>
 
-        <div className={cn('mt-auto border-t border-border pt-2', compact && 'md:mt-0 md:border-l md:border-t-0 md:pl-4 md:pt-0')}>
+        <div
+          data-testid="class-card-action-slot"
+          className={cn(
+            'relative mt-auto flex min-h-20 items-center border-t border-border',
+            compact && 'md:mt-0 md:min-h-12 md:border-l md:border-t-0 md:pl-4',
+          )}
+        >
           {stats.nextDeadline ? (
             <Link
               data-testid="class-next-deadline"
               to={`/academics/classes/${row.id}?classTab=assignments&view=agenda&assignment=${encodeURIComponent(stats.nextDeadline.id)}`}
               title={stats.nextDeadline.title}
               aria-label={`Open assignment: ${stats.nextDeadline.title}`}
-              className="group/next flex min-h-12 items-center gap-2 rounded-lg px-2 py-1.5 text-[10.5px] font-bold text-muted-foreground transition-colors hover:bg-[color-mix(in_srgb,var(--class-accent)_9%,transparent)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--class-accent)]"
+              className="group/next flex min-h-12 w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[10.5px] font-bold text-muted-foreground transition-[background-color,color,opacity] duration-150 hover:bg-[color-mix(in_srgb,var(--class-accent)_9%,transparent)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--class-accent)] md:group-focus/class:pointer-events-none md:group-focus/class:opacity-0 md:group-hover/class:pointer-events-none md:group-hover/class:opacity-0 motion-reduce:transition-none"
               onClick={(event) => event.stopPropagation()}
             >
               <span className="min-w-0 flex-1">
@@ -1567,11 +1573,13 @@ export function ClassCard({
               <ArrowUpRight className="size-3.5 shrink-0 opacity-55 transition-opacity group-hover/next:opacity-100" aria-hidden="true" />
             </Link>
           ) : (
-            <p data-testid="class-next-deadline" className="flex min-h-12 items-center px-2 text-[10.5px] font-bold text-muted-foreground">
+            <p data-testid="class-next-deadline" className="flex min-h-12 w-full items-center px-2 text-[10.5px] font-bold text-muted-foreground transition-opacity duration-150 md:group-focus/class:opacity-0 md:group-hover/class:opacity-0 motion-reduce:transition-none">
               {nextText}
             </p>
           )}
-          <div className="mt-2 flex items-center justify-end gap-2 md:pointer-events-none md:absolute md:inset-x-3 md:bottom-3 md:z-10 md:mt-0 md:rounded-xl md:border md:border-[var(--class-accent-45)] md:bg-card md:p-1 md:opacity-0 md:shadow-lg md:transition-[opacity,transform] md:translate-y-1 md:group-hover/class:pointer-events-auto md:group-hover/class:translate-y-0 md:group-hover/class:opacity-100 md:group-focus-within/class:pointer-events-auto md:group-focus-within/class:translate-y-0 md:group-focus-within/class:opacity-100 motion-reduce:transition-none">
+          <div
+            data-testid="class-card-open-actions"
+            className="mt-2 flex items-center justify-end gap-2 md:pointer-events-none md:absolute md:inset-0 md:z-10 md:mt-0 md:rounded-xl md:border md:border-[var(--class-accent-45)] md:bg-card md:p-1 md:opacity-0 md:shadow-lg md:transition-opacity md:duration-150 md:group-focus/class:pointer-events-auto md:group-focus/class:opacity-100 md:group-hover/class:pointer-events-auto md:group-hover/class:opacity-100 md:focus-within:pointer-events-auto md:focus-within:opacity-100 motion-reduce:transition-none">
             <Button
               size="sm"
               variant="outline"

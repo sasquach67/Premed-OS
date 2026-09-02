@@ -259,13 +259,18 @@ describe('Class Center primary card hierarchy', () => {
 
     const openButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'Open') as HTMLButtonElement
     const hoverActions = openButton.parentElement as HTMLElement
+    const actionSlot = container.querySelector('[data-testid="class-card-action-slot"]') as HTMLElement
+    expect(actionSlot.className).toContain('items-center')
+    expect(actionSlot.className).toContain('relative')
     expect(hoverActions.className).toContain('md:absolute')
+    expect(hoverActions.className).toContain('md:inset-0')
     expect(hoverActions.className).toContain('md:opacity-0')
     expect(hoverActions.className).toContain('md:group-hover/class:opacity-100')
-    expect(hoverActions.className).toContain('md:group-focus-within/class:opacity-100')
+    expect(hoverActions.className).toContain('md:group-focus/class:opacity-100')
     const deadline = container.querySelector('[data-testid="class-next-deadline"]') as HTMLElement
     expect(deadline.textContent).toBe('No deadline scheduled')
-    expect(deadline.className).not.toContain('group-hover/class:hidden')
+    expect(deadline.className).toContain('md:group-hover/class:opacity-0')
+    expect(deadline.className).toContain('md:group-focus/class:opacity-0')
     expect(container.textContent).not.toContain('Open class hub →')
     await act(async () => openButton.click())
     expect(onOpen).toHaveBeenCalledTimes(1)
