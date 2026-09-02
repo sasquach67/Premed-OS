@@ -14,7 +14,7 @@
    ============================================================ */
 import { DocLayout, Changelog, type DocSection } from '@/pages/public/DocLayout'
 
-const LAST_UPDATED = '30 August 2026'
+const LAST_UPDATED = '1 September 2026'
 
 const SECTIONS: DocSection[] = [
   {
@@ -75,7 +75,11 @@ const SECTIONS: DocSection[] = [
                 <td>
                   <b>Google Calendar events</b>
                 </td>
-                <td>Only if you connect your Google Calendar</td>
+                <td>
+                  Only if you connect Google Calendar. Premed OS reads the title, time, location,
+                  status, and meeting link needed to show your upcoming schedule and review possible
+                  coursework dates.
+                </td>
                 <td>Yes — don't connect it; add your schedule manually</td>
               </tr>
               <tr>
@@ -142,6 +146,88 @@ const SECTIONS: DocSection[] = [
     ),
   },
   {
+    id: 'data-protection',
+    heading: 'How sensitive data is protected',
+    summary:
+      'Premed OS limits access by account, encrypts network traffic, minimizes OAuth access, and keeps integration credentials out of your synced workspace.',
+    body: (
+      <ul>
+        <li>
+          <b>Secure transport.</b> Premed OS and its service providers use HTTPS to encrypt data in
+          transit between your browser and their servers.
+        </li>
+        <li>
+          <b>Account isolation.</b> Supabase Authentication identifies the signed-in user, and
+          database row-level security restricts synced workspaces and course-source records to their
+          owning account. Anonymous users cannot read those tables.
+        </li>
+        <li>
+          <b>Calendar credentials stay short-lived.</b> The Google Calendar bearer token is kept only
+          in the current browser tab's session storage, expires automatically, is not included in
+          cloud workspace sync, and is cleared when you sign out, switch workspaces, or disconnect.
+        </li>
+        <li>
+          <b>Drive credentials are encrypted.</b> If you connect a Google Drive folder, the reusable
+          refresh token is encrypted with AES-GCM before it is stored server-side. It is not exposed
+          to the browser after the connection is completed.
+        </li>
+        <li>
+          <b>Least-privilege access.</b> Calendar access is read-only and limited to events owned by
+          you. Drive access, when offered, is requested separately and limited to the folder-reading
+          feature you choose to connect.
+        </li>
+        <li>
+          <b>Limited human access.</b> Premed OS does not routinely have people read private user
+          content. Access is limited to what is necessary to operate or secure the service, comply
+          with law, investigate abuse, or provide support you explicitly request.
+        </li>
+      </ul>
+    ),
+  },
+  {
+    id: 'google-limited-use',
+    heading: 'Google Workspace API Limited Use',
+    summary:
+      'Google Workspace data is used only for the connected feature you request, never for advertising or generalized AI training.',
+    body: (
+      <>
+        <p>
+          <b>
+            Premed OS's use and transfer of information received from Google Workspace APIs adheres
+            to the{' '}
+            <a
+              href="https://developers.google.com/terms/api-services-user-data-policy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Google API Services User Data Policy
+            </a>
+            , including the Limited Use requirements.
+          </b>
+        </p>
+        <ul>
+          <li>
+            Raw or derived Google Workspace API data is <b>not used to develop, improve, or train
+            generalized or non-personalized AI or machine-learning models</b>.
+          </li>
+          <li>
+            Google Calendar data is used only for the visible schedule and review-before-apply
+            features in Premed OS. Calendar event data is not sent to OpenAI or Anthropic.
+          </li>
+          <li>
+            A file selected from Google Drive is sent to an AI provider only if you deliberately
+            select that imported material for a user-visible study action. That use is limited to
+            producing the output you requested and is not authorized for generalized model training.
+          </li>
+          <li>
+            Google user data is not sold, used for advertising, used to determine creditworthiness,
+            or transferred to data brokers or information resellers.
+          </li>
+        </ul>
+      </>
+    ),
+  },
+  {
     id: 'what-we-dont-do',
     heading: "What we don't do",
     summary:
@@ -158,7 +244,10 @@ const SECTIONS: DocSection[] = [
         <li>
           <b>Your data is never sold or shared for marketing.</b>
         </li>
-        <li>Premed OS does not use your content to train its own models.</li>
+        <li>
+          Premed OS does not use your content, including raw or derived Google Workspace data, to
+          train its own models or generalized third-party models.
+        </li>
       </ul>
     ),
   },
@@ -220,6 +309,10 @@ const SECTIONS: DocSection[] = [
     body: (
       <Changelog
         entries={[
+          {
+            date: '1 Sep 26',
+            what: 'Added the sensitive-data protection mechanisms and Google Workspace API Limited Use and AI-training disclosures required for OAuth verification.',
+          },
           {
             date: '30 Aug 26',
             what: 'Clarified the account requirement for sync and AI tools, plus Google, Canvas, Drive, and transcription handling.',

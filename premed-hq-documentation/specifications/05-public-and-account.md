@@ -219,6 +219,8 @@ Written in plain language, and it must state truthfully:
 - **What leaves the device and when** — coursework embeddings (`01` §22/§6.3), lecture audio and transcripts (§4.1-Q), Canvas data (§4.1-O), transcription. Each with its **local-only alternative** where one exists.
 - **Who the processors are** (Supabase, the LLM provider, the transcription provider) and what each receives.
 - **No third-party analytics, no ad tech, no data sale.** Usage instrumentation is local and user-owned (`01` §6 #60) — say that, it's unusual and worth saying.
+- **Sensitive-data protection mechanisms are explicit and checkable** — HTTPS in transit; Supabase Auth plus per-user row-level security for synced records; short-lived Calendar tokens kept only in tab session storage and cleared on account/workspace exit; encrypted server-side Google Drive refresh tokens; least-privilege scopes; limited human access.
+- **Google Workspace API Limited Use is explicit.** The policy carries an affirmative statement that use and transfer of Google Workspace API data adheres to the Google API Services User Data Policy, including Limited Use. Raw or derived Workspace data is never used to develop, improve, or train generalized or non-personalized AI/ML models. Calendar event data is not sent to an AI provider; a Drive-derived source reaches AI only when the student deliberately selects it for the visible study action they requested.
 - **Shared syllabus parses carry no personal data** and cannot, structurally (`01` §4.1-M).
 - Retention, export, and deletion, with the grace period stated.
 - **A "last updated" date and a changelog** of material changes.
