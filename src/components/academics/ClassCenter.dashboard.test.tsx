@@ -78,7 +78,7 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     // supplied rather than attaching to a seeded course.
     expect(document.body.textContent).toContain('Import a syllabus')
     expect(document.body.textContent).toContain('Drop a syllabus or course schedule here')
-    expect(document.body.textContent).toContain('Nothing saved')
+    expect(document.body.textContent).not.toContain('Nothing saved')
     expect(document.body.textContent).not.toMatch(/BIOL 252|CHEM 262|Andy Quach/i)
 
     await act(async () => root.unmount())

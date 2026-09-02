@@ -30,6 +30,7 @@ export interface LocalOcrSession {
 
 const MAX_OCR_PIXELS = 16_000_000
 const TARGET_SCALE = 4
+export const OCR_STARTUP_TIMEOUT_MS = 20_000
 
 function assetPath(file: string): string {
   const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`
@@ -45,15 +46,44 @@ export async function createLocalOcrSession(
   signal?: AbortSignal,
 ): Promise<LocalOcrSession> {
   throwIfAborted(signal)
-  const { createWorker, OEM, PSM } = await import('tesseract.js')
-  const worker = await createWorker('eng', OEM.LSTM_ONLY, {
-    workerPath: assetPath('worker.min.js'),
-    corePath: assetPath('tesseract-core-lstm.wasm.js'),
-    langPath: assetPath('lang'),
-    gzip: true,
-    logger: (message) => {
-      onProgress?.({ status: message.status, progress: message.progress })
-    },
+  const startup = import('tesseract.js').then(async ({ createWorker, OEM, PSM }) => ({
+    PSM,
+    worker: await createWorker('eng', OEM.LSTM_ONLY, {
+      workerPath: assetPath('worker.min.js'),
+      // Loading the same-origin worker directly avoids a second blob-worker
+      // bootstrap layer, which can stall without surfacing an error in some
+      // locked-down browser sessions.
+      workerBlobURL: false,
+      corePath: assetPath('tesseract-core-lstm.wasm.js'),
+      langPath: assetPath('lang'),
+      gzip: true,
+      logger: (message) => {
+        onProgress?.({ status: message.status, progress: message.progress })
+      },
+    }),
+  }))
+  const { worker, PSM } = await new Promise<Awaited<typeof startup>>((resolve, reject) => {
+    let settled = false
+    const finish = (callback: () => void) => {
+      if (settled) return
+      settled = true
+      window.clearTimeout(timeout)
+      signal?.removeEventListener('abort', onAbort)
+      callback()
+    }
+    const onAbort = () => finish(() => reject(new DOMException('Syllabus reading was cancelled.', 'AbortError')))
+    const timeout = window.setTimeout(() => finish(() => reject(new Error('The on-device scanned-page reader could not start. Readable pages were kept; try the scanned pages again or paste their text.'))), OCR_STARTUP_TIMEOUT_MS)
+    signal?.addEventListener('abort', onAbort, { once: true })
+    startup.then(
+      (value) => {
+        if (settled) {
+          void value.worker.terminate()
+          return
+        }
+        finish(() => resolve(value))
+      },
+      (error) => finish(() => reject(error)),
+    )
   })
   await worker.setParameters({
     tessedit_pageseg_mode: PSM.AUTO,

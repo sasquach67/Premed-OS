@@ -1,16 +1,18 @@
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('mammoth', () => ({
-  extractRawText: vi.fn(async () => ({ value: 'PSYC 101 — Introduction to Psychology' })),
-}))
-
-vi.mock('./documentOcr', () => ({
+const ocrMocks = vi.hoisted(() => ({
   createLocalOcrSession: vi.fn(async () => ({
     recognizeImage: vi.fn(async () => 'Recovered screenshot text on this device.'),
     recognizePdfPage: vi.fn(async () => 'Recovered scanned page.'),
     terminate: vi.fn(async () => {}),
   })),
 }))
+
+vi.mock('mammoth', () => ({
+  extractRawText: vi.fn(async () => ({ value: 'PSYC 101 — Introduction to Psychology' })),
+}))
+
+vi.mock('./documentOcr', () => ocrMocks)
 
 import { extractDocumentText, MAX_DOCUMENT_BYTES, MAX_PDF_PAGES, sniffDocumentKind, validateDocumentBounds } from './documentText'
 
@@ -38,6 +40,17 @@ describe('document type sniffing', () => {
       sourceKind: 'image', text: 'Recovered screenshot text on this device.', scanDetected: true,
       pageCount: 1, unreadablePageCount: 0, imageOnlyPageCount: 1, ocrPageCount: 1,
       pages: [{ pageNumber: 1, readable: true, ocrRecovered: true }],
+    })
+  })
+
+  it('keeps an unreadable image in the batch when local OCR cannot start', async () => {
+    ocrMocks.createLocalOcrSession.mockRejectedValueOnce(new Error('OCR worker did not start'))
+    const file = new File([new Uint8Array([1, 2, 3])], 'lecture-note.png', { type: 'image/png' })
+
+    await expect(extractDocumentText(file, { recoverScannedPdfPages: true })).resolves.toMatchObject({
+      sourceKind: 'image', text: '', scanDetected: true,
+      pageCount: 1, unreadablePageCount: 1, imageOnlyPageCount: 1, ocrPageCount: 0,
+      pages: [{ pageNumber: 1, readable: false, ocrRecovered: false }],
     })
   })
 })

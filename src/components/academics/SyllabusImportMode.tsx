@@ -15,6 +15,7 @@ import { PageHeader } from '@/components/common/PageHeader'
 import { MascotNote } from '@/components/common/MascotNote'
 import { Collapsible } from '@/components/common/Collapsible'
 import { AnimatedFileUpload } from '@/components/motion/AnimatedFileUpload'
+import { SyllabusReadingProgress, SyllabusSelectedFiles } from '@/components/academics/SyllabusReadingProgress'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -27,7 +28,7 @@ import { useToast } from '@/components/common/useToast'
 import { SharedSyllabusStructurePanel } from '@/components/academics/SharedSyllabusStructurePanel'
 import {
   extractSyllabusFiles, parseSyllabusText, weightGap,
-  type SyllabusProposal, type SyllabusKind, type StructuralSignal,
+  type SyllabusExtractionProgress, type SyllabusProposal, type SyllabusKind, type StructuralSignal,
 } from '@/lib/academics/syllabusParser'
 import { syllabusReimportDiff, type ReimportRow } from '@/lib/academics/syllabusReimport'
 import type { AssignedReading, Course, GradeCategory, SyllabusScheduleEntry, Topic } from '@/lib/types'
@@ -108,7 +109,7 @@ export function SyllabusImportMode({
   const [pastedText, setPastedText] = useState('')
   const [proposal, setProposal] = useState<SyllabusProposal | null>(initialProposal ?? null)
   const [parsing, setParsing] = useState(false)
-  const [parsingMessage, setParsingMessage] = useState('Reading syllabus…')
+  const [parsingProgress, setParsingProgress] = useState<SyllabusExtractionProgress | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [reviewAnyway, setReviewAnyway] = useState(false)
   const [applying, setApplying] = useState(false)
@@ -123,11 +124,11 @@ export function SyllabusImportMode({
   const misfiled = Boolean(proposal && proposal.documentKind === 'unrecognized' && !reviewAnyway)
 
   async function parse() {
-    setError(null); setParsing(true)
+    setError(null); setParsing(true); setParsingProgress(null)
     try {
       const next = pastedText.trim()
         ? parseSyllabusText(pastedText, 'Pasted syllabus')
-        : await extractSyllabusFiles(files, { onProgress: (progress) => setParsingMessage(progress.message) })
+        : await extractSyllabusFiles(files, { onProgress: setParsingProgress })
       setProposal(next)
       setConfirmedItemIds(new Set())
       setPastDueActions({})
@@ -143,7 +144,7 @@ export function SyllabusImportMode({
       setError(cause instanceof Error ? cause.message : 'This file could not be read.')
     } finally {
       setParsing(false)
-      setParsingMessage('Reading syllabus…')
+      setParsingProgress(null)
     }
   }
 
@@ -196,7 +197,7 @@ export function SyllabusImportMode({
   /** Mode tag states what is happening — never a step number (§4.1-M-b: no wizard). */
   const modeTag = reimport
     ? `Re-import · ${scopedCourse?.code ?? 'this class'}`
-    : proposal ? 'Import syllabus · review before apply' : 'Import syllabus · nothing saved yet'
+    : proposal ? 'Import syllabus · review before apply' : 'Import syllabus'
 
   const heading = misfiled ? 'That reads like course material'
     : reimport && proposal ? `${reimportRows.filter((row) => row.status !== 'unchanged').length} things changed`
@@ -301,7 +302,7 @@ export function SyllabusImportMode({
 
       <div className="mx-auto max-w-6xl px-4 pb-12 sm:px-6 lg:px-8">
         {!proposal ? <UploadState
-          files={files} pastedText={pastedText} parsing={parsing} parsingMessage={parsingMessage} error={error}
+          files={files} pastedText={pastedText} parsing={parsing} parsingProgress={parsingProgress} error={error}
           onFiles={(next) => { setFiles(next); setError(null) }}
           onPaste={setPastedText} onParse={parse}
         /> : (
@@ -516,8 +517,8 @@ export function SyllabusImportMode({
 }
 
 /** Upload — dropzone dominant in a narrow reading column. Paste is an equal path. */
-function UploadState({ files, pastedText, parsing, parsingMessage, error, onFiles, onPaste, onParse }: {
-  files: File[]; pastedText: string; parsing: boolean; parsingMessage: string; error: string | null
+function UploadState({ files, pastedText, parsing, parsingProgress, error, onFiles, onPaste, onParse }: {
+  files: File[]; pastedText: string; parsing: boolean; parsingProgress: SyllabusExtractionProgress | null; error: string | null
   onFiles: (files: File[]) => void; onPaste: (text: string) => void; onParse: () => void
 }) {
   return (
@@ -527,18 +528,22 @@ function UploadState({ files, pastedText, parsing, parsingMessage, error, onFile
         label="Drop a syllabus or course schedule here"
         description="Text-based PDF, DOCX, or TXT. The source file stays on this device."
       />
+      <div className="mt-2">
+        <SyllabusSelectedFiles files={files} disabled={parsing} onRemove={(index) => onFiles(files.filter((_, itemIndex) => itemIndex !== index))} />
+      </div>
       <div className="mt-4 rounded-2xl border border-border bg-card p-4">
         <p className="font-display text-sm font-extrabold">Or paste the text instead</p>
         <p className="mt-0.5 text-xs font-semibold text-muted-foreground">Copying out of Canvas is common and shouldn’t need a file first.</p>
         <Textarea className="mt-2 min-h-28" value={pastedText} onChange={(event) => onPaste(event.target.value)} placeholder="Paste syllabus text from Canvas…" />
       </div>
       {error && <p className="mt-3 rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm font-bold">{error} Paste the text or continue with manual entry; importing never blocks you.</p>}
+      {parsing && parsingProgress && <div className="mt-3"><SyllabusReadingProgress progress={parsingProgress} /></div>}
       <div className="mt-4 flex items-center justify-between gap-3">
         <MascotNote variant="tip" className="flex-1">
           Nothing is saved until you review it. Saved records can sync when cloud sync is enabled.
         </MascotNote>
         <Button size="lg" disabled={(!files.length && !pastedText.trim()) || parsing} onClick={onParse}>
-          <Upload className="size-4" /> {parsing ? parsingMessage : 'Read syllabus'}
+          <Upload className="size-4" /> {parsing ? 'Reading files…' : 'Read syllabus'}
         </Button>
       </div>
     </div>

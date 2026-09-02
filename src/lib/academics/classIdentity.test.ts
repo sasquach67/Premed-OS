@@ -16,6 +16,12 @@ describe('canonical class identity formatting', () => {
     expect(normalizeClassLocation('Hanes Art Center,  Rm. 121')).toBe('Hanes Art Center, Room 121')
   })
 
+  it('formats instructors as name plus sourced credential without contact prose or honorifics', () => {
+    expect(normalizeInstructorName("Instructor: Erik Maloney (erikglen@live.unc.edu) (If I don't respond within 48 hours, email again.)")).toBe('Erik Maloney')
+    expect(normalizeInstructorName('Dr. Emily Weber, Ph.D.')).toBe('Emily Weber, PhD')
+    expect(normalizeInstructorName('Prof. Adrian Drummond-Cole')).toBe('Adrian Drummond-Cole')
+  })
+
   it('preserves nonstandard sourced values instead of guessing', () => {
     expect(normalizeClassMeetingTime('Asynchronous online')).toBe('Asynchronous online')
     expect(normalizeInstructorName('A. Rivera')).toBe('A. Rivera')

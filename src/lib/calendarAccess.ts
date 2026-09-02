@@ -18,6 +18,11 @@ export type CalendarAvailability =
   | { available: true }
   | { available: false; reason: 'unconfigured' | 'awaiting-verification' }
 
+/** Keep the connection surface out of sight for everyone until OAuth is approved. */
+export function calendarIntegrationVisible(): boolean {
+  return CALENDAR_OAUTH_VERIFIED
+}
+
 export function calendarAvailability(email: string | undefined, configured: boolean): CalendarAvailability {
   if (!configured) return { available: false, reason: 'unconfigured' }
   if (CALENDAR_OAUTH_VERIFIED) return { available: true }

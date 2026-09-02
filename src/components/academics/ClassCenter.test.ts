@@ -34,7 +34,7 @@ The College of Arts and Sciences provides a secure, proctored environment for ma
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
       courseCode: 'GEOG 121',
       courseTitle: 'Geographies of Globalization',
-      instructor: 'Dr. Adrian Drummond-Cole',
+      instructor: 'Adrian Drummond-Cole',
       meetingDays: 'Mon · Wed · Fri',
       meetingTime: '9:05–9:55 AM',
       location: 'Peabody Hall Rm 1040',
@@ -57,7 +57,7 @@ M/W/F: 9:05–9:55 AM`)
     })
 
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
-      instructor: 'Dr. Adrian Drummond-Cole',
+      instructor: 'Adrian Drummond-Cole',
       meetingDays: 'Mon · Wed · Fri',
       meetingTime: '9:05–9:55 AM',
       location: 'Peabody Hall Rm 1040',
@@ -69,7 +69,7 @@ M/W/F: 9:05–9:55 AM`)
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
       courseCode: 'CHEM 262',
       courseTitle: 'Organic Chemistry II',
-      instructor: 'Dr. Adaeze Elamin',
+      instructor: 'Adaeze Elamin',
       meetingDays: 'Mon · Wed · Fri',
       meetingTime: '10:10 AM–11:00 AM',
       location: 'Kenan B12',
@@ -96,9 +96,27 @@ M/W/F: 9:05–9:55 AM`)
     const proposal = parseSyllabusText('NEUR 101 — Neurobiology - Fall 2026\nInstructor: Dr. Nadia Elamin Office hours: Monday 1-3 PM\nMWF 10:00 AM-10:50 AM')
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
       courseTitle: 'Neurobiology',
-      instructor: 'Dr. Nadia Elamin',
+      instructor: 'Nadia Elamin',
       meetingDays: 'Mon · Wed · Fri',
       meetingTime: '10:00 AM–10:50 AM',
+    })
+  })
+
+  it('keeps instructor email and adjacent contact guidance out of the instructor name', () => {
+    const proposal = parseSyllabusText(`BIOL 103 — How Cells Work
+Instructor: Erik Maloney (erikglen@live.unc.edu) (If I don't respond within 48 hours, please email me again.)
+TR 2:00 PM-3:15 PM Genome Sciences 100`)
+
+    expect(proposal.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'logistics',
+        label: 'Instructor: Erik Maloney',
+        value: 'erikglen@live.unc.edu',
+        context: 'Professor',
+      }),
+    ]))
+    expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
+      instructor: 'Erik Maloney',
     })
   })
 

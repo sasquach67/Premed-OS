@@ -10,10 +10,11 @@ describe('Calendar access before OAuth verification', () => {
   afterEach(() => { vi.unstubAllEnvs(); vi.resetModules() })
 
   it('offers Calendar only to configured OAuth testers', async () => {
-    const { calendarAvailability } = await loadWith({
+    const { calendarAvailability, calendarIntegrationVisible } = await loadWith({
       VITE_CALENDAR_TESTERS: 'tester@unc.edu, second@unc.edu',
       VITE_CALENDAR_OAUTH_VERIFIED: 'false',
     })
+    expect(calendarIntegrationVisible()).toBe(false)
     expect(calendarAvailability('tester@unc.edu', true)).toEqual({ available: true })
     expect(calendarAvailability('SECOND@UNC.EDU', true)).toEqual({ available: true })
     expect(calendarAvailability('someone-else@unc.edu', true)).toEqual({
@@ -31,19 +32,21 @@ describe('Calendar access before OAuth verification', () => {
   })
 
   it('opens Calendar to everyone after verification is recorded', async () => {
-    const { calendarAvailability } = await loadWith({
+    const { calendarAvailability, calendarIntegrationVisible } = await loadWith({
       VITE_CALENDAR_TESTERS: '',
       VITE_CALENDAR_OAUTH_VERIFIED: 'true',
     })
+    expect(calendarIntegrationVisible()).toBe(true)
     expect(calendarAvailability('anyone@example.com', true)).toEqual({ available: true })
   })
 
   it('fails closed when no allowlist or approval is configured', async () => {
-    const { calendarAvailability, calendarTesterCount } = await loadWith({
+    const { calendarAvailability, calendarIntegrationVisible, calendarTesterCount } = await loadWith({
       VITE_CALENDAR_TESTERS: undefined,
       VITE_CALENDAR_OAUTH_VERIFIED: undefined,
     })
     expect(calendarTesterCount()).toBe(0)
+    expect(calendarIntegrationVisible()).toBe(false)
     expect(calendarAvailability('anyone@example.com', true)).toEqual({
       available: false, reason: 'awaiting-verification',
     })

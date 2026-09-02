@@ -1065,6 +1065,64 @@
   text-align: center;
 }
 .pl-auth-method-panel { display: flex; flex-direction: column; align-items: flex-start; gap: 13px; width: 100%; }
+.pl-password-control { position: relative; width: 100%; }
+.pl-password-control .pl-inp { padding-right: 3.25rem; }
+.pl-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--pl-mut);
+  cursor: pointer;
+}
+.pl-password-toggle:hover { background: rgba(var(--pl-pri-rgb), 0.12); color: var(--pl-pri); }
+.pl-password-toggle svg { width: 18px; height: 18px; }
+.pl-password-requirements {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem 0.9rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--pl-bd);
+  border-radius: var(--r-field);
+  background: rgba(9, 20, 31, 0.22);
+  list-style: none;
+}
+.pl-password-requirements li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  color: var(--pl-dim);
+  font-size: var(--t-fine);
+  font-weight: 700;
+  line-height: 1.3;
+  transition: color 0.16s ease;
+}
+.pl-password-requirements li[data-met='true'] { color: var(--pl-success); }
+.pl-password-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  flex: none;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+.pl-password-check svg { width: 12px; height: 12px; stroke-width: 3; }
+@media (max-width: 420px) {
+  .pl-password-requirements { grid-template-columns: 1fr; }
+}
 .pl-orbar { display: flex; align-items: center; gap: 0.8em; width: 100%; }
 .pl-orbar i { flex: 1; height: 1px; background: var(--pl-bd); }
 .pl-orbar span { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; font-size: var(--t-eyebrow); letter-spacing: 0.06em; color: var(--pl-dim); }

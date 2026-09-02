@@ -318,7 +318,7 @@ export function classFormFromSyllabus(proposal: SyllabusProposal, semester: stri
   const identity = proposal.items.find((item) => item.kind === 'identity')
   const logisticsItems = proposal.items.filter((item) => item.kind === 'logistics')
   const logistics = logisticsItems.map((item) => item.label || item.evidence.quote)
-  const instructor = extractAttributedInstructor(logisticsItems)
+  const instructor = normalizeInstructorName(extractAttributedInstructor(logisticsItems))
   const scheduleLine = logistics.find((line) => Boolean(extractClassMeetingDays(line))) ?? ''
   const rawScheduleLine = proposal.text.split(/\r?\n/).find((line) => {
     const time = extractClassMeetingTime(line)

@@ -21,13 +21,16 @@ export function normalizeClassTerm(value: string): string {
   return standard ? `${standard[1][0].toUpperCase()}${standard[1].slice(1).toLowerCase()} ${standard[2]}` : trimmed
 }
 
-/** Normalize labels and whitespace while preserving the person's sourced name
- * and credentials. This never invents an honorific or expands initials. */
+/** Keep class identity fields person-shaped: name first, then any explicitly
+ * sourced credential. Contact details and role labels belong elsewhere. This
+ * never invents a credential or expands initials. */
 export function normalizeInstructorName(value: string): string {
   return compact(value)
-    .replace(/^(?:instructor|professor)\s*:\s*/i, '')
-    .replace(/^Dr\s+(?=\S)/i, 'Dr. ')
-    .replace(/^Prof\s+(?=\S)/i, 'Prof. ')
+    .replace(/^(?:instructor|professor)\s*:?\s*/i, '')
+    .replace(/^Prof\.?\s+(?=\S)/i, '')
+    .replace(/^Dr\.?\s+(?=\S)/i, '')
+    .replace(/\s*(?:[<(]\s*)?[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}(?:\s*[>)]\s*)?.*$/i, '')
+    .replace(/(?:\s*\([^)]*\))+\s*$/g, '')
     .replace(/\s*,\s*/g, ', ')
     .replace(/,?\s+Ph\.?\s*D\.?$/i, ', PhD')
     .replace(/,?\s+M\.?\s*D\.?$/i, ', MD')

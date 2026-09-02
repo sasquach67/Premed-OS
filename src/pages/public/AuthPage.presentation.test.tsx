@@ -6,9 +6,20 @@ import { AuthPage } from './AuthPage'
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
+const authMocks = vi.hoisted(() => ({
+  getSession: vi.fn(async () => ({ data: { session: null } })),
+  onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+  signUp: vi.fn(async () => ({ data: { user: { id: 'new-user' }, session: null }, error: null })),
+  resend: vi.fn(async () => ({ error: null })),
+  signInWithPassword: vi.fn(async () => ({ error: null })),
+  signInWithOtp: vi.fn(async () => ({ error: null })),
+  resetPasswordForEmail: vi.fn(async () => ({ error: null })),
+  signInWithOAuth: vi.fn(async () => ({ error: null })),
+}))
+
 vi.mock('@/lib/supabase', () => ({
-  supabase: null,
-  isSupabaseConfigured: false,
+  supabase: { auth: authMocks },
+  isSupabaseConfigured: true,
   authRedirectTo: 'http://localhost/#/auth',
 }))
 
@@ -21,11 +32,18 @@ function button(root: ParentNode, name: string) {
     .find((item) => item.textContent?.trim().startsWith(name))
 }
 
+function enter(input: HTMLInputElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set
+  setter?.call(input, value)
+  input.dispatchEvent(new Event('input', { bubbles: true }))
+}
+
 describe('AuthPage account intent', () => {
   let container: HTMLDivElement
   let root: Root
 
   beforeEach(() => {
+    vi.clearAllMocks()
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
@@ -64,5 +82,46 @@ describe('AuthPage account intent', () => {
     expect(container.textContent).toContain('Start a new private workspace linked only to this account.')
     expect(container.querySelector<HTMLInputElement>('#auth-password')?.autocomplete).toBe('new-password')
     expect(button(container, 'Forgot your password?')).toBeFalsy()
+  })
+
+  it('makes account creation password requirements visible, live, and confirmable', async () => {
+    await render()
+    await act(async () => button(container, 'Create account')?.click())
+
+    const password = container.querySelector<HTMLInputElement>('#auth-password')
+    const confirmation = container.querySelector<HTMLInputElement>('#auth-confirm-password')
+    const email = container.querySelector<HTMLInputElement>('#auth-email')
+    expect(container.querySelector('button[aria-label="Show password"]')).toBeTruthy()
+    expect(confirmation?.autocomplete).toBe('new-password')
+    expect(container.querySelector('[aria-label="At least 8 characters: not met"]')).toBeTruthy()
+
+    await act(async () => {
+      if (!password || !confirmation || !email) return
+      enter(email, 'student@example.edu')
+      enter(password, 'Strong1!')
+      enter(confirmation, 'Strong1!')
+    })
+
+    expect(container.querySelector('[aria-label="At least 8 characters: met"]')).toBeTruthy()
+    expect(container.querySelector('[aria-label="Passwords match: met"]')).toBeTruthy()
+
+    const reveal = container.querySelector<HTMLButtonElement>('button[aria-label="Show password"]')
+    await act(async () => reveal?.click())
+    expect(password?.type).toBe('text')
+
+    const create = container.querySelector<HTMLButtonElement>('.pl-auth-method-panel .pl-sbtn-p')
+    expect(create?.disabled).toBe(false)
+    await act(async () => {
+      create?.click()
+      await Promise.resolve()
+    })
+
+    expect(authMocks.signUp).toHaveBeenCalledWith({
+      email: 'student@example.edu',
+      password: 'Strong1!',
+      options: { emailRedirectTo: 'http://localhost/#/auth' },
+    })
+    expect(container.querySelector('h1')?.textContent).toBe('Check your email')
+    expect(container.textContent).toContain('account confirmation link')
   })
 })

@@ -645,7 +645,8 @@ function parseStaffContacts(lines: string[], items: SyllabusItem[], searched: Re
     if (!email) return
     let rawName = line.slice(0, line.indexOf(email)).replace(/(?:Instructor|Professor|Prof\.?|Teaching Assistant|TA)\s*:?/ig, '').replace(/[·∙|(<\s]+$/, '').trim()
     if (!rawName || /^(?:class email(?: account)?|email|course email(?: account)?)\s*:?$/i.test(rawName)) return
-    const professor = /\b(?:Dr\.?|Professor|Prof\.?)(?=\s)/i.test(line)
+    const professor = /^\s*Instructor\s*:/i.test(line)
+      || /\b(?:Dr\.?|Professor|Prof\.?)(?=\s)/i.test(line)
       || lines.slice(Math.max(0, index - 2), index).some((candidate) => /^Instructor\s*:?$/i.test(candidate))
     if (professor) rawName = rawName.match(/\b(?:Dr\.?|Professor|Prof\.?)\s+.+$/i)?.[0]?.trim() ?? rawName
     if (!professor && !inAssistantSection(index)) return
@@ -1202,6 +1203,14 @@ export async function extractSyllabusFile(file: File, options: Omit<DocumentExtr
   return { ...parseSyllabusText(text, name, sourceKind), unreadablePageCount, imageOnlyPageCount, ocrPageCount, pageCount }
 }
 
+export interface SyllabusExtractionProgress extends DocumentExtractionProgress {
+  fileIndex: number
+  fileCount: number
+  fileName: string
+  /** Monotonic, batch-wide progress from 0 to 1. */
+  overallProgress: number
+}
+
 /** Read a related syllabus packet sequentially. OCR is intentionally not run
  * concurrently: two browser-local workers compete for memory and make large
  * scanned PDFs less reliable. The progress message keeps the active position
@@ -1209,7 +1218,7 @@ export async function extractSyllabusFile(file: File, options: Omit<DocumentExtr
 export async function extractSyllabusFiles(
   files: readonly File[],
   options: Omit<DocumentExtractionOptions, 'recoverScannedPdfPages' | 'onProgress'> & {
-    onProgress?: (progress: DocumentExtractionProgress) => void
+    onProgress?: (progress: SyllabusExtractionProgress) => void
   } = {},
 ): Promise<SyllabusProposal> {
   if (!files.length) throw new Error('Choose at least one syllabus file to read.')
@@ -1217,12 +1226,32 @@ export async function extractSyllabusFiles(
   for (let index = 0; index < files.length; index += 1) {
     const file = files[index]
     const prefix = `File ${index + 1} of ${files.length}`
-    options.onProgress?.({ phase: 'extracting', page: 0, pageCount: 0, progress: 0, message: `${prefix} · Preparing…` })
+    let lastOverallProgress = index / files.length
+    const report = (progress: DocumentExtractionProgress) => {
+      const bounded = Math.max(0, Math.min(1, progress.progress))
+      const fileProgress = progress.phase === 'ocr' ? 0.8 + bounded * 0.2 : bounded * 0.8
+      lastOverallProgress = Math.max(lastOverallProgress, (index + fileProgress) / files.length)
+      options.onProgress?.({
+        ...progress,
+        fileIndex: index + 1,
+        fileCount: files.length,
+        fileName: file.name || `File ${index + 1}`,
+        overallProgress: lastOverallProgress,
+        message: `${prefix} · ${progress.message}`,
+      })
+    }
+    report({ phase: 'extracting', page: 0, pageCount: 0, progress: 0, message: 'Preparing…' })
     try {
       proposals.push(await extractSyllabusFile(file, {
         signal: options.signal,
-        onProgress: (progress) => options.onProgress?.({ ...progress, message: `${prefix} · ${progress.message}` }),
+        onProgress: report,
       }))
+      options.onProgress?.({
+        phase: 'extracting', page: 0, pageCount: 0, progress: 1,
+        fileIndex: index + 1, fileCount: files.length, fileName: file.name || `File ${index + 1}`,
+        overallProgress: (index + 1) / files.length,
+        message: `${prefix} · Finished ${file.name || `file ${index + 1}`}`,
+      })
     } catch (cause) {
       const detail = cause instanceof Error ? cause.message : 'This file could not be read.'
       throw new Error(`Could not read ${file.name || `file ${index + 1}`} (${index + 1} of ${files.length}). ${detail}`, { cause })

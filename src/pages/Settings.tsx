@@ -8,6 +8,7 @@ import { activateGuestWorkspace, useStore } from '@/store/store'
 import { useBackup } from '@/store/useBackup'
 import { useCloudSync } from '@/store/useCloudSync'
 import { useCalendarSync } from '@/hooks/useCalendarSync'
+import { calendarIntegrationVisible } from '@/lib/calendarAccess'
 import { ROUTE_MAP } from '@/app/routes'
 import { exportJson, readJsonFile, looksLikeAppData } from '@/lib/dataIo'
 import { resetPublicMeta, hasPreExistingData } from '@/lib/publicLayer'
@@ -481,6 +482,8 @@ function CalendarIntegrationSection({ onMessage }: { onMessage: (msg: string) =>
   const sync = useCalendarSync()
   const update = useStore((s) => s.update)
   const calendar = sync.calendar
+
+  if (!calendarIntegrationVisible()) return null
 
   async function connect() {
     try {

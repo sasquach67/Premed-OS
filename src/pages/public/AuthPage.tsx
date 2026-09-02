@@ -21,7 +21,7 @@
    ============================================================ */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Check, Mail } from 'lucide-react'
+import { ArrowLeft, Check, Eye, EyeOff, Mail } from 'lucide-react'
 import { PublicShell } from '@/components/public/PublicShell'
 import { PublicNav } from '@/components/public/PublicNav'
 import { Wordmark } from '@/components/public/Wordmark'
@@ -34,6 +34,7 @@ import { activateGuestWorkspace } from '@/store/store'
 type Screen = 'form' | 'sent' | 'recovery' | 'signed-in'
 type Method = 'link' | 'password'
 type PasswordIntent = 'sign-in' | 'create'
+type SentPurpose = 'sign-in-link' | 'signup-confirmation'
 
 /** Client-side cooldown between magic-link requests. The server rate-limits
  *  too; this exists so the limit is stated plainly before it is hit (§2.3). */
@@ -84,13 +85,17 @@ function readLinkError(): string | null {
 }
 
 function meetsNewPasswordRule(value: string) {
-  return (
-    value.length >= 8 &&
-    /[a-z]/.test(value) &&
-    /[A-Z]/.test(value) &&
-    /\d/.test(value) &&
-    /[^A-Za-z0-9\s]/.test(value)
-  )
+  return newPasswordRequirements(value).every((requirement) => requirement.met)
+}
+
+function newPasswordRequirements(value: string) {
+  return [
+    { label: 'At least 8 characters', met: value.length >= 8 },
+    { label: 'One uppercase letter', met: /[A-Z]/.test(value) },
+    { label: 'One lowercase letter', met: /[a-z]/.test(value) },
+    { label: 'One number', met: /\d/.test(value) },
+    { label: 'One symbol', met: /[^A-Za-z0-9\s]/.test(value) },
+  ]
 }
 
 /** Google's four-colour G is a brand mark, not a generic application icon.
@@ -112,6 +117,73 @@ function GoogleGIcon() {
   )
 }
 
+function PasswordInput({
+  id,
+  label,
+  value,
+  visible,
+  autoComplete,
+  onChange,
+  onToggle,
+}: {
+  id: string
+  label: string
+  value: string
+  visible: boolean
+  autoComplete: 'current-password' | 'new-password'
+  onChange: (value: string) => void
+  onToggle: () => void
+}) {
+  const toggleLabel = `${visible ? 'Hide' : 'Show'}${id === 'auth-confirm-password' ? ' confirmed' : ''} password`
+  return (
+    <div className="pl-field">
+      <label className="pl-lbl" htmlFor={id}>{label}</label>
+      <div className="pl-password-control">
+        <input
+          id={id}
+          className="pl-inp"
+          type={visible ? 'text' : 'password'}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+        <button
+          type="button"
+          className="pl-password-toggle"
+          aria-label={toggleLabel}
+          aria-pressed={visible}
+          onClick={onToggle}
+        >
+          {visible ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function PasswordRequirements({ password, confirmation }: { password: string; confirmation: string }) {
+  const requirements = [
+    ...newPasswordRequirements(password),
+    { label: 'Passwords match', met: confirmation.length > 0 && password === confirmation },
+  ]
+  return (
+    <ul className="pl-password-requirements" aria-label="Password requirements" aria-live="polite">
+      {requirements.map((requirement) => (
+        <li
+          key={requirement.label}
+          data-met={requirement.met}
+          aria-label={`${requirement.label}: ${requirement.met ? 'met' : 'not met'}`}
+        >
+          <span className="pl-password-check" aria-hidden="true">
+            {requirement.met ? <Check /> : null}
+          </span>
+          {requirement.label}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 export function AuthPage() {
   const navigate = useNavigate()
   const enterApp = useEnterApp()
@@ -122,6 +194,10 @@ export function AuthPage() {
   const [passwordIntent, setPasswordIntent] = useState<PasswordIntent>('sign-in')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [sentPurpose, setSentPurpose] = useState<SentPurpose>('sign-in-link')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(() => (readLinkError() ? MESSAGES.expired : ''))
   const [notice, setNotice] = useState('')
@@ -182,7 +258,30 @@ export function AuthPage() {
       })
       if (e) throw e
       // Identical outcome whether or not the address has an account.
+      setSentPurpose('sign-in-link')
       setScreen('sent')
+      setCooldown(RESEND_COOLDOWN_S)
+    } catch (e) {
+      setError(classifyError(e))
+    } finally {
+      setBusy(false)
+    }
+  }, [email])
+
+  const resendSignupConfirmation = useCallback(async () => {
+    if (!supabase) {
+      setError(MESSAGES.notConfigured)
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      const { error: e } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim(),
+        options: { emailRedirectTo: authRedirectTo },
+      })
+      if (e) throw e
       setCooldown(RESEND_COOLDOWN_S)
     } catch (e) {
       setError(classifyError(e))
@@ -221,24 +320,36 @@ export function AuthPage() {
       setError(MESSAGES.weakPassword)
       return
     }
+    if (password !== confirmPassword) {
+      setError('Those passwords do not match.')
+      return
+    }
     setBusy(true)
     setError('')
     setNotice('')
     try {
-      const { error: e } = await supabase.auth.signUp({
+      const { data, error: e } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: { emailRedirectTo: authRedirectTo },
       })
       if (e) throw e
-      // Same wording for a new address and one that already exists.
-      setNotice('Check your email to confirm the address, then come back and sign in.')
+      if (data.session?.user) {
+        markEnteredApp()
+        setUser(data.session.user)
+        setScreen('signed-in')
+        return
+      }
+      // Supabase deliberately obscures whether this address already exists.
+      setSentPurpose('signup-confirmation')
+      setScreen('sent')
+      setCooldown(RESEND_COOLDOWN_S)
     } catch (e) {
       setError(classifyError(e))
     } finally {
       setBusy(false)
     }
-  }, [email, password])
+  }, [confirmPassword, email, password])
 
   const sendPasswordReset = useCallback(async () => {
     if (!supabase) {
@@ -315,6 +426,9 @@ export function AuthPage() {
     setPasswordIntent(intent)
     setMethod('password')
     setPassword('')
+    setConfirmPassword('')
+    setShowPassword(false)
+    setShowConfirmPassword(false)
     setError('')
     setNotice('')
   }, [])
@@ -337,10 +451,11 @@ export function AuthPage() {
           {screen === 'sent' ? (
             <CheckYourEmail
               email={email.trim()}
+              purpose={sentPurpose}
               cooldown={cooldown}
               busy={busy}
               error={error}
-              onResend={sendLink}
+              onResend={sentPurpose === 'signup-confirmation' ? resendSignupConfirmation : sendLink}
               onChange={() => {
                 setScreen('form')
                 setError('')
@@ -348,6 +463,7 @@ export function AuthPage() {
               onUsePassword={() => {
                 setScreen('form')
                 setMethod('password')
+                setPasswordIntent(sentPurpose === 'signup-confirmation' ? 'create' : 'sign-in')
                 setError('')
               }}
             />
@@ -497,27 +613,33 @@ export function AuthPage() {
                   </>
                 ) : (
                   <>
-                    <div className="pl-field">
-                      <label className="pl-lbl" htmlFor="auth-password">
-                        Password
-                      </label>
-                      <input
-                        id="auth-password"
-                        className="pl-inp"
-                        type="password"
-                        autoComplete={passwordIntent === 'create' ? 'new-password' : 'current-password'}
-                        placeholder={passwordIntent === 'create' ? '8+ characters, upper/lowercase, number, symbol' : 'Your password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
-                    </div>
+                    <PasswordInput
+                      id="auth-password"
+                      label="Password"
+                      autoComplete={passwordIntent === 'create' ? 'new-password' : 'current-password'}
+                      value={password}
+                      visible={showPassword}
+                      onChange={setPassword}
+                      onToggle={() => setShowPassword((visible) => !visible)}
+                    />
                     {passwordIntent === 'create' ? (
-                      <p className="pl-fine">Use 8+ characters with uppercase, lowercase, a number, and a symbol.</p>
+                      <>
+                        <PasswordInput
+                          id="auth-confirm-password"
+                          label="Repeat password"
+                          autoComplete="new-password"
+                          value={confirmPassword}
+                          visible={showConfirmPassword}
+                          onChange={setConfirmPassword}
+                          onToggle={() => setShowConfirmPassword((visible) => !visible)}
+                        />
+                        <PasswordRequirements password={password} confirmation={confirmPassword} />
+                      </>
                     ) : null}
                     <button
                       type="button"
                       className="pl-sbtn pl-sbtn-p pl-sbtn-full"
-                      disabled={busy || !emailValid || password.length === 0}
+                      disabled={busy || !emailValid || password.length === 0 || (passwordIntent === 'create' && (!meetsNewPasswordRule(password) || password !== confirmPassword))}
                       onClick={passwordIntent === 'create' ? createWithPassword : signInWithPassword}
                     >
                       {passwordIntent === 'create' ? 'Create account' : 'Sign in with email'}
@@ -578,6 +700,7 @@ export function AuthPage() {
    by reassuring that local data is untouched. */
 function CheckYourEmail({
   email,
+  purpose,
   cooldown,
   busy,
   error,
@@ -586,6 +709,7 @@ function CheckYourEmail({
   onUsePassword,
 }: {
   email: string
+  purpose: SentPurpose
   cooldown: number
   busy: boolean
   error: string
@@ -593,6 +717,7 @@ function CheckYourEmail({
   onChange: () => void
   onUsePassword: () => void
 }) {
+  const confirmingAccount = purpose === 'signup-confirmation'
   return (
     <>
       <div className="pl-hd">
@@ -604,7 +729,7 @@ function CheckYourEmail({
         <div>
           <h1 className="pl-ti">Check your email</h1>
           <div className="pl-sub" style={{ marginTop: 5, fontWeight: 600 }}>
-            We sent a sign-in link to:
+            {confirmingAccount ? 'We sent an account confirmation link to:' : 'We sent a sign-in link to:'}
           </div>
         </div>
 
@@ -622,8 +747,8 @@ function CheckYourEmail({
         ) : null}
 
         <p className="pl-fine">
-          <b>The link works once and expires in 15 minutes.</b> If it hasn't arrived in a couple of
-          minutes, check spam — or use a password instead.
+          <b>{confirmingAccount ? 'Open the link to finish creating your account.' : 'The link works once and expires in 15 minutes.'}</b>{' '}
+          If it hasn't arrived in a couple of minutes, check spam.
         </p>
 
         <button
@@ -632,10 +757,12 @@ function CheckYourEmail({
           disabled={busy || cooldown > 0}
           onClick={onResend}
         >
-          {cooldown > 0 ? `Resend link in ${cooldown}s` : 'Resend link'}
+          {cooldown > 0
+            ? `Resend ${confirmingAccount ? 'confirmation' : 'link'} in ${cooldown}s`
+            : `Resend ${confirmingAccount ? 'confirmation' : 'link'}`}
         </button>
         <button type="button" className="pl-sbtn pl-sbtn-g pl-sbtn-full" onClick={onUsePassword}>
-          Use a password instead
+          {confirmingAccount ? 'Back to account creation' : 'Use a password instead'}
         </button>
 
         <p className="pl-fine">
