@@ -31,6 +31,7 @@ describe('Overview task creation', () => {
   })
 
   afterEach(async () => {
+    vi.useRealTimers()
     await act(async () => root.unmount())
     container.remove()
     useStore.getState().replaceAll(createInitialDataForMode(false))
@@ -118,5 +119,34 @@ describe('Overview task creation', () => {
         'https://docs.google.com/document/d/legacy-notes',
       ],
     })
+  })
+
+  it('holds a quiet checked state before moving a completed task to Done', async () => {
+    vi.useFakeTimers()
+    await act(async () => useStore.getState().addItem('tasks', {
+      id: 'quiet-completion-task',
+      title: 'Finish the quiet task',
+      type: 'Personal',
+      progress: 'Not started',
+      kanban: 'todo',
+      archived: false,
+      horizon: 'now',
+      important: false,
+      order: 0,
+    }))
+
+    const checkbox = container.querySelector<HTMLButtonElement>('[aria-label="Complete Finish the quiet task"]')!
+    await act(async () => checkbox.click())
+
+    expect(useStore.getState().tasks[0]).toMatchObject({ progress: 'Not started', kanban: 'todo' })
+    const acknowledgingRow = container.querySelector<HTMLElement>('[data-completion-state="acknowledging"]')
+    expect(acknowledgingRow).not.toBeNull()
+    expect(acknowledgingRow?.querySelector<HTMLButtonElement>('[aria-label="Finish the quiet task completed"]')?.getAttribute('data-state')).toBe('checked')
+    expect(checkbox.className).toContain('transition-none')
+    expect(acknowledgingRow?.querySelector('.bg-gradient-to-r')).toBeNull()
+
+    await act(async () => vi.advanceTimersByTime(900))
+    expect(useStore.getState().tasks[0]).toMatchObject({ progress: 'Finished', kanban: 'done' })
+    vi.useRealTimers()
   })
 })

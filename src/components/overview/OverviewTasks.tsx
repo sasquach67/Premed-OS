@@ -18,7 +18,6 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { flushSync } from 'react-dom'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useToast } from '@/components/common/useToast'
 import { MascotNote } from '@/components/common/MascotNote'
@@ -76,6 +75,7 @@ const TABS: Array<{ value: OverviewTaskTab; label: string }> = [
   { value: 'done', label: 'Done' },
 ]
 const CATEGORIES = ['Personal', 'Application', 'Advising', 'MCAT', 'Academics', 'Clinical', 'Letters', 'Essays']
+const TASK_COMPLETION_HOLD_SECONDS = 0.9
 
 function normalizeTaskLinks(links: string[]) {
   return [...new Set(links.map((link) => link.trim()).filter(Boolean))]
@@ -490,18 +490,20 @@ function TaskRow({
 
   function complete() {
     const previous = { progress: task.progress, kanban: task.kanban, archived: task.archived }
-    // Paint the acknowledgement before the store mutation moves this record
-    // into Done. AnimatePresence can then retain that exact visual state for
-    // the sweep-and-collapse exit while persistence still happens immediately.
-    flushSync(() => setIsCompleting(true))
-    patchItem('tasks', task.id, { progress: 'Finished', kanban: 'done', archived: false })
-    logActivity('overview', `Finished: ${task.title}`)
-    toast({
-      title: 'Task completed',
-      description: task.title,
-      tone: 'success',
-      onUndo: () => patchItem('tasks', task.id, previous),
-    })
+    // Hold a quiet, static check long enough to register before moving the row.
+    // The timer is intentionally not cancelled on navigation so a confirmed
+    // click still reaches the store even if the student changes pages quickly.
+    setIsCompleting(true)
+    window.setTimeout(() => {
+      patchItem('tasks', task.id, { progress: 'Finished', kanban: 'done', archived: false })
+      logActivity('overview', `Finished: ${task.title}`)
+      toast({
+        title: 'Task completed',
+        description: task.title,
+        tone: 'success',
+        onUndo: () => patchItem('tasks', task.id, previous),
+      })
+    }, TASK_COMPLETION_HOLD_SECONDS * 1000)
   }
 
   function reopen() {
@@ -546,51 +548,24 @@ function TaskRow({
     <Reorder.Item
       ref={rowRef}
       value={task}
-      layout={reduceMotion ? undefined : 'position'}
+      layout={reduceMotion || isCompleting ? undefined : 'position'}
       transition={reduceMotion ? MOTION_TRANSITION.instant : MOTION_TRANSITION.standard}
       exit={isCompleting
-        ? reduceMotion
-          ? { opacity: 0, transition: MOTION_TRANSITION.instant }
-          : {
-              opacity: 0,
-              x: 52,
-              height: 0,
-              marginBottom: 0,
-              paddingTop: 0,
-              paddingBottom: 0,
-              transition: { duration: 0.28, delay: 0.22, ease: [0.16, 1, 0.3, 1] },
-            }
+        ? { opacity: 0, transition: MOTION_TRANSITION.instant }
         : { opacity: 0, transition: reduceMotion ? MOTION_TRANSITION.instant : MOTION_TRANSITION.micro }}
       data-completion-state={isCompleting ? 'acknowledging' : 'idle'}
       className={cn(
         'group relative mb-1 flex min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-transparent px-2 py-2 transition-colors hover:border-border hover:bg-muted/45',
         task.important && 'border-l-warning bg-warning/5 border-l-2',
-        isCompleting && 'border-success/40 bg-success/10',
+        isCompleting && 'border-success/40 bg-success/10 transition-none',
       )}
     >
-      {isCompleting && !reduceMotion && (
-        <m.span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-0 origin-left bg-gradient-to-r from-success/25 via-success/12 to-transparent"
-          initial={{ scaleX: 0, opacity: 0.9 }}
-          animate={{ scaleX: 1, opacity: [0.9, 0.6, 0] }}
-          transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
-        />
-      )}
       <button type="button" className="cursor-grab touch-none rounded-md p-1 text-muted-foreground active:cursor-grabbing" aria-label={`Reorder ${task.title}`}>
         <GripVertical className="size-4" />
       </button>
       <span className="relative z-10 shrink-0">
-        {isCompleting && !reduceMotion && (
-          <m.span
-            aria-hidden="true"
-            className="pointer-events-none absolute -inset-1.5 rounded-full border-2 border-success"
-            initial={{ scale: 0.55, opacity: 0 }}
-            animate={{ scale: [0.55, 1.45, 1.7], opacity: [0, 0.8, 0] }}
-            transition={{ duration: 0.44, ease: 'easeOut' }}
-          />
-        )}
         <Checkbox
+          animated={false}
           checked={isCompleting || task.progress === 'Finished'}
           disabled={isCompleting}
           onCheckedChange={(checked) => checked ? complete() : reopen()}
