@@ -70,7 +70,7 @@ describe('Planning backend hydration boundary', () => {
       id: 'lecture-1', courseId: 'course-1', title: 'Lecture 1', inputPath: 'pasted',
       processingState: 'ready', occurredOn: '2026-08-27', createdAt: 1, updatedAt: 1, order: 0,
     })
-    const expected = JSON.parse(JSON.stringify(legacy.academics.classCenter.lectures))
+    const expected = JSON.parse(JSON.stringify(legacy.academics.classCenter.lectures)).map((lecture: object) => ({ ...lecture, workspaceState: 'draft', selectedSourceFileIds: [] }))
     delete (legacy.academics.classCenter as { planningProgramContext?: unknown }).planningProgramContext
     expect(migrateAll(legacy).academics.classCenter.lectures).toEqual(expected)
   })

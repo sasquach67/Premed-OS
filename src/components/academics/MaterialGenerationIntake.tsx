@@ -67,9 +67,7 @@ function roleFor(file: AcademicFile) {
   return file.owner === 'course' ? 'Course material' : 'My material'
 }
 
-export function MaterialGenerationIntake({
-  artifact, courseId, courseLabel, files, lectureId, course, onClose,
-}: {
+type MaterialGenerationIntakeProps = {
   artifact: MaterialArtifact
   courseId: string
   courseLabel: string
@@ -77,7 +75,15 @@ export function MaterialGenerationIntake({
   lectureId?: string
   course?: { code?: string; title?: string; type?: string }
   onClose: () => void
-}) {
+}
+
+export function MaterialGenerationIntake(props: MaterialGenerationIntakeProps) {
+  // Legacy deep links remain valid, but Study Outline is no longer a separate
+  // user-facing resource. Route the old request into the unified Mastery Map.
+  return <MaterialGenerationIntakeCore {...props} artifact={props.artifact === 'study-outline' ? 'unit-mastery-outline' : props.artifact} />
+}
+
+function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, lectureId, course, onClose }: MaterialGenerationIntakeProps) {
   const toast = useToast()
   const allChunks = useStore((state) => state.academics.classCenter.sourceChunks)
   const workspace = useStore((state) => state.academics.classCenter.workspaces.find((item) => item.courseId === courseId))
@@ -92,6 +98,7 @@ export function MaterialGenerationIntake({
   const [useCourseLens, setUseCourseLens] = useState(false)
   const [currentUnitPercent, setCurrentUnitPercent] = useState(() => blueprintForCourse(course ?? { code: courseLabel, title: courseLabel }).defaultCurrentUnitPercent)
   const [unitLabel, setUnitLabel] = useState('')
+  const [masteryScope, setMasteryScope] = useState<'lecture' | 'unit' | 'exam'>('unit')
   const choices = useMemo(() => materialGenerationChoices({ courseId, files, chunks: allChunks }), [allChunks, courseId, files])
   const ready = choices.filter((choice) => choice.chunks.length)
   const notReady = choices.filter((choice) => !choice.chunks.length)
@@ -178,15 +185,15 @@ export function MaterialGenerationIntake({
         })
         toast({ title: artifact === 'study-outline' ? 'Study outline created' : 'Study guide generated', description: outcome.courseLens ? 'Saved with its selected-source and Course lens traces.' : 'Saved with its selected-source trace.' })
       } else if (artifact === 'unit-mastery-outline') {
-        const outcome = await generateUnitMasteryOutline({ courseId, chunks: selectedChunks, unit: selectedUnit, label: courseLabel })
-        if (!outcome.ok || !outcome.artifact) return failGeneration(outcome.message ?? 'The mastery outline could not be generated.')
+        const outcome = await generateUnitMasteryOutline({ courseId, chunks: selectedChunks, unit: selectedUnit, label: courseLabel, scope: masteryScope })
+        if (!outcome.ok || !outcome.artifact) return failGeneration(outcome.message ?? 'The Mastery Map could not be generated.')
         setGenerationPhase('saving')
         await waitForGenerationProgress()
         useStore.getState().update((draft) => {
           const records = draft.academics.classCenter.generatedMasteryOutlines
           records.unshift({ ...outcome.artifact!, id: uid(), createdAt: Date.now(), updatedAt: Date.now(), order: records.length })
         })
-        toast({ title: 'Mastery outline created', description: 'Saved in Materials with its selected-source trace.' })
+        toast({ title: 'Mastery Map created', description: 'Saved in Materials with its selected-source trace.' })
       } else if (artifact === 'unit-question-bank') {
         const outcome = await generateUnitQuestionBank({ courseId, chunks: selectedChunks, unit: selectedUnit, label: courseLabel, course: course ?? { code: courseLabel, title: courseLabel }, currentUnitPercent, masteryStandardIds: matchingMasteryOutline?.standards.map((standard) => standard.id) })
         if (!outcome.ok || !outcome.artifact) return failGeneration(outcome.message ?? 'The question bank could not be generated.')
@@ -240,7 +247,7 @@ export function MaterialGenerationIntake({
         </section>}
 
         {(artifact === 'unit-question-bank' || artifact === 'unit-mastery-outline') && <section className="mt-4 rounded-2xl border border-border bg-muted/30 p-3.5" aria-label="Resource scope settings">
-          <div className="flex flex-wrap items-end justify-between gap-3"><div className="min-w-[14rem] flex-1"><p className="font-display text-sm font-extrabold">{classType === 'writing' ? 'Assignment or reading scope' : classType === 'general' ? 'Week, unit, or exam scope' : 'Unit scope'}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{classType === 'stem' ? 'Name the unit or exam scope. The outline is the standard map; the bank uses it to vary practice without copying an assessment.' : 'Name the part of the course this resource should cover. Syllabus objectives stay primary; selected readings and class material provide the evidence.'}</p><label className="mt-3 block text-xs font-extrabold"><span className="sr-only">Resource scope label</span><input className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold" value={unitLabel} onChange={(event) => setUnitLabel(event.target.value)} placeholder={classType === 'writing' ? 'Essay 1 · Sources and evidence' : classType === 'general' ? 'Week 4 · Global institutions' : 'Unit 2 · Transcription and translation'} /></label>{artifact === 'unit-question-bank' && masteryOutlines.length > 0 && <p className="mt-2 text-xs font-semibold text-muted-foreground">{matchingMasteryOutline ? `Mastery map linked · ${matchingMasteryOutline.standards.length} syllabus standards covered.` : 'Create or select a matching mastery outline first for a closed standard-coverage check.'}</p>}</div>{artifact === 'unit-question-bank' && <label className="flex items-center gap-2 text-xs font-extrabold"><span>Current scope</span><select className="rounded-lg border border-border bg-card px-2 py-1.5" value={currentUnitPercent} onChange={(event) => setCurrentUnitPercent(Number(event.target.value))}><option value={100}>100%</option><option value={70}>70% · 30% prior</option><option value={50}>50% · 50% prior</option></select></label>}</div>
+          <div className="flex flex-wrap items-end justify-between gap-3"><div className="min-w-[14rem] flex-1"><p className="font-display text-sm font-extrabold">{classType === 'writing' ? 'Assignment or reading scope' : 'Lecture, unit, or exam scope'}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{classType === 'stem' ? 'Name the lecture, unit, or exam scope. The Mastery Map is the standard map; the question bank uses it without duplicating the resource.' : 'Name the part of the course this resource should cover. Syllabus objectives stay primary; selected readings and class material provide the evidence.'}</p><div className="mt-3 flex gap-2">{artifact === 'unit-mastery-outline' && <label className="text-xs font-extrabold"><span className="sr-only">Mastery Map scope type</span><select aria-label="Mastery Map scope type" className="h-full rounded-lg border border-border bg-card px-2 py-2 text-sm" value={masteryScope} onChange={(event) => setMasteryScope(event.target.value as 'lecture' | 'unit' | 'exam')}><option value="lecture">Lecture</option><option value="unit">Unit</option><option value="exam">Exam</option></select></label>}<label className="block min-w-0 flex-1 text-xs font-extrabold"><span className="sr-only">Resource scope label</span><input className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold" value={unitLabel} onChange={(event) => setUnitLabel(event.target.value)} placeholder={classType === 'writing' ? 'Essay 1 · Sources and evidence' : classType === 'general' ? 'Week 4 · Global institutions' : 'Unit 2 · Transcription and translation'} /></label></div>{artifact === 'unit-question-bank' && masteryOutlines.length > 0 && <p className="mt-2 text-xs font-semibold text-muted-foreground">{matchingMasteryOutline ? `Mastery Map linked · ${matchingMasteryOutline.standards.length} syllabus standards covered.` : 'Create or select a matching Mastery Map first for a closed standard-coverage check.'}</p>}</div>{artifact === 'unit-question-bank' && <label className="flex items-center gap-2 text-xs font-extrabold"><span>Current scope</span><select className="rounded-lg border border-border bg-card px-2 py-1.5" value={currentUnitPercent} onChange={(event) => setCurrentUnitPercent(Number(event.target.value))}><option value={100}>100%</option><option value={70}>70% · 30% prior</option><option value={50}>50% · 50% prior</option></select></label>}</div>
         </section>}
         <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_15rem]">
           <section className="rounded-2xl border border-border bg-muted/30 p-3.5">

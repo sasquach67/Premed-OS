@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ClassHub, WritingTools } from '@/components/academics/ClassHub'
 import { ToastProvider } from '@/components/common/ToastProvider'
 import { createSeedData } from '@/data/seed'
+import { createDemoData } from '@/data/demoSeed'
 import { recurringFeedbackThemes, readingDebt } from '@/lib/academics/writingEvidence'
 import { createInitialDataForMode, CURRENT_STORE_VERSION, snapshotData, STORAGE_KEY, useStore } from '@/store/store'
 
@@ -224,8 +225,8 @@ describe('ClassHub approved Overview', () => {
     await act(async () => trigger.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 })))
 
     expect(document.body.textContent).toContain('Study guide')
-    expect(document.body.textContent).toContain('Learning objectives & mastery map')
-    expect(document.body.textContent).toContain('Argument & source outline')
+    expect(document.body.textContent).toContain('Mastery Map')
+    expect(document.body.textContent).not.toContain('Study outline')
     expect(document.body.textContent).not.toContain('Unit question bank')
   })
 
@@ -243,7 +244,7 @@ describe('ClassHub approved Overview', () => {
     await act(async () => trigger.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 })))
 
     expect(document.body.textContent).toContain('Study guide')
-    expect(document.body.textContent).toContain('Learning objectives & mastery map')
+    expect(document.body.textContent).toContain('Mastery Map')
     expect(document.body.textContent).toContain('Practice questions')
     expect(document.body.textContent).not.toContain('Flashcards')
   })
@@ -280,8 +281,8 @@ describe('ClassHub approved Overview', () => {
     })
 
     expect(container.textContent).toContain('Class journal')
-    expect(container.textContent).toContain('Add transcript')
-    expect(container.textContent).toContain('Drop a transcript file')
+    expect(container.textContent).toContain('Build a lecture page')
+    expect(container.textContent).toContain('Paste or upload a lecture source')
     expect(container.querySelector('.lecture-rail-list')).toBeTruthy()
     expect(container.textContent).toContain('Recent study work')
     expect(container.textContent).not.toContain('Class Plan')
@@ -289,17 +290,52 @@ describe('ClassHub approved Overview', () => {
 
     const savedLecture = container.querySelector('button.lecture-rail-entry') as HTMLButtonElement
     await act(async () => savedLecture.click())
-    expect(container.textContent).toContain('Not added yet')
-    expect(container.textContent).toContain('Supporting evidence')
-    expect(container.textContent).toContain('Study work')
-    expect(container.textContent).toContain('Topics stay syllabus-led')
+    expect(container.textContent).toContain('Lecture Brief')
+    expect(container.textContent).toContain('Mastery Map')
+    expect(container.textContent).toContain('0 selected sources')
 
     const addToday = [...container.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.trim() === 'Add today’s lecture')
     expect(addToday).toBeTruthy()
     await act(async () => addToday!.click())
-    expect(document.body.textContent).toContain('Add a lecture')
-    expect(document.body.textContent).toContain('Add transcript')
+    expect(document.body.textContent).toContain('Build one study-ready lecture page')
+    expect(document.body.textContent).toContain('Add lecture source')
+  })
+
+  it('makes the completed lecture workspace usable from the Class Hub with full screen still available', async () => {
+    const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
+    const course = seed.courses.find((item) => item.id === 'demo-course-biol103-current')!
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.courseId === course.id)!
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>)
+    })
+
+    const lectureTwo = [...container.querySelectorAll<HTMLButtonElement>('button.lecture-rail-entry')]
+      .find((button) => button.textContent?.includes('Central Dogma'))!
+    await act(async () => lectureTwo.click())
+
+    const workspaceSurface = container.querySelector('[aria-label="Embedded lecture workspace"]')!
+    expect(workspaceSurface.textContent).toContain('A gene is expressed through linked but distinct synthesis steps')
+    expect(workspaceSurface.textContent).toContain('DNA gene')
+    expect(workspaceSurface.textContent).toContain('Primary RNA transcript')
+    expect(container.textContent).toContain('Open full screen')
+    expect(workspaceSurface.textContent).not.toContain('Source-led draft available')
+
+    const mastery = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Mastery Map')!
+    await act(async () => mastery.click())
+    expect(workspaceSurface.textContent).toContain('Trace gene expression from DNA to a mature transcript')
+    expect(workspaceSurface.querySelectorAll('select[aria-label^="Mastery state for"]').length).toBe(5)
+
+    const materials = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Materials')!
+    await act(async () => materials.click())
+    expect(workspaceSurface.textContent).toContain('Full Study Guide')
+    expect(workspaceSurface.textContent).toContain('Flashcards / APKG')
+
+    const sources = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Sources')!
+    await act(async () => sources.click())
+    expect(workspaceSurface.querySelector('input[placeholder="Search exact words across transcript and sources"]')).toBeTruthy()
   })
 
   it('keeps the transcript-first journal on writing and general class overviews', async () => {
@@ -319,12 +355,12 @@ describe('ClassHub approved Overview', () => {
     })
 
     expect(container.textContent).toContain('Class journal')
-    expect(container.textContent).toContain('Add transcript')
-    expect(container.textContent).toContain('Evidence')
-    expect(container.textContent).toContain('Study work')
+    expect(container.textContent).toContain('Add source')
+    expect(container.textContent).toContain('Add materials')
+    expect(container.textContent).toContain('Brief + Mastery')
   })
 
-  it('opens Create study work inside the selected lecture instead of the generic Materials tab', async () => {
+  it('retires the legacy Create study work action in favor of the lecture workspace', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -355,26 +391,12 @@ describe('ClassHub approved Overview', () => {
     })
 
     await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
-    const create = [...container.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Create study work')
-    expect(create).toBeTruthy()
-    await act(async () => create!.click())
-
-    const createResources = [...container.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Create study resources')
-    expect(createResources).toBeTruthy()
-    await act(async () => createResources!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 })))
-    expect(document.body.textContent).toContain('Unit mastery outline')
-    expect(document.body.textContent).toContain('Unit question bank')
-    const studyGuide = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
-      .find((item) => item.textContent?.trim() === 'Study guide')
-    expect(studyGuide).toBeTruthy()
-    await act(async () => studyGuide!.click())
-    expect(document.body.textContent).toContain('Lecture transcript source')
-    expect(container.textContent).not.toContain('Materials ·')
+    expect(container.textContent).toContain('Lecture Brief')
+    expect(container.textContent).toContain('Mastery Map')
+    expect(container.textContent).not.toContain('Create study work')
   })
 
-  it('routes Read transcript to the selected lecture transcript instead of a generic review state', async () => {
+  it('moves the legacy Read transcript action under Sources', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -396,14 +418,11 @@ describe('ClassHub approved Overview', () => {
       root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>)
     })
     await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
-    const read = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Read transcript')!
-    await act(async () => read.click())
-
-    expect(document.body.textContent).toContain('Exact transcript passage for the selected lecture.')
-    expect(document.body.textContent).toContain('Hide transcript')
+    expect(container.textContent).not.toContain('Read transcript')
+    expect(container.textContent).toContain('Transcript and supporting files stay under Sources')
   })
 
-  it('routes Add evidence to the selected lecture material intake', async () => {
+  it('retires the legacy Add evidence summary action', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -421,14 +440,11 @@ describe('ClassHub approved Overview', () => {
       root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>)
     })
     await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
-    const add = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Add evidence')!
-    await act(async () => add.click())
-
-    expect(document.body.textContent).toContain('Add material')
-    expect(document.body.textContent).toContain('Choose files, paste a screenshot, or paste textbook text')
+    expect(container.textContent).not.toContain('Add evidence')
+    expect(container.textContent).toContain('Lecture Brief')
   })
 
-  it('routes Open materials to the selected lecture evidence section', async () => {
+  it('moves lecture materials behind Sources and Materials', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -446,14 +462,11 @@ describe('ClassHub approved Overview', () => {
       root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>)
     })
     await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
-    const openMaterials = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Open materials')!
-    await act(async () => openMaterials.click())
-
-    expect(document.body.textContent).toContain('Lecture slides')
-    expect(document.activeElement?.textContent).toContain('Supporting evidence')
+    expect(container.textContent).not.toContain('Supporting evidence')
+    expect(container.textContent).toContain('Transcript and supporting files stay under Sources')
   })
 
-  it('routes Open study work to the selected lecture generated artifacts', async () => {
+  it('moves generated lecture work behind the Materials view', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -471,11 +484,8 @@ describe('ClassHub approved Overview', () => {
       root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>)
     })
     await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
-    const openStudy = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Open study work')!
-    await act(async () => openStudy.click())
-
-    expect(document.body.textContent).toContain('Lecture 1 study guide')
-    expect(document.activeElement?.textContent).toContain('Study work')
+    expect(container.textContent).not.toContain('Open study work')
+    expect(container.textContent).toContain('Lecture Brief')
   })
 
   it('keeps Topics syllabus-led and groups scheduled standards by week before unit', async () => {
@@ -581,9 +591,9 @@ describe('ClassHub approved Overview', () => {
       )
     })
 
-    expect(document.body.textContent).toContain('One home for each day of class')
-    expect(document.body.textContent).toContain('Add a lecture')
-    expect(document.body.textContent).toContain('Add transcript')
+    expect(document.body.textContent).toContain('Build one study-ready lecture page')
+    expect(document.body.textContent).toContain('Add lecture source')
+    expect(document.body.textContent).toContain('Add related materials')
   })
 
   it('keeps the topic-focused Guide notice outside the New Guide item action', async () => {

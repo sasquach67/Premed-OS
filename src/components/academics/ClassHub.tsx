@@ -3,8 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, BookOpen, Brain, Check, ChevronDown,
   FileStack, FileText, Filter, FolderOpen, HelpCircle,
-  ListChecks, Mail, MoreHorizontal, NotebookText, Plus,
-  Sparkles, Target,
+  ListChecks, Mail, MoreHorizontal, NotebookText, Plus, Target,
 } from 'lucide-react'
 import type {
   AcademicFile, ClassAssignment, ClassCenterData, ClassContact, ClassNote,
@@ -49,6 +48,7 @@ import { RevisedNotesPanel } from '@/components/academics/RevisedNotesPanel'
 import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
 import { generateStudyGuide, sourcesFor } from '@/lib/academics/generateStudyGuide'
 import { LectureCapturePanel, type LectureDestination } from '@/components/academics/LectureCapturePanel'
+import { buildLectureBrief, buildLectureMasteryMap, sourceChunksForLecture } from '@/lib/academics/lectureWorkspace'
 import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { MaterialGenerationIntake, type MaterialArtifact } from '@/components/academics/MaterialGenerationIntake'
@@ -319,11 +319,11 @@ function Overview({
   const chronologicalLectures = [...lectures].sort((a, b) => String(a.occurredOn ?? '').localeCompare(String(b.occurredOn ?? '')) || a.createdAt - b.createdAt)
   const lectureNumber = (lectureId: string) => chronologicalLectures.findIndex((lecture) => lecture.id === lectureId) + 1
   const activeLecture = selectedLectureId ? lectures.find((lecture) => lecture.id === selectedLectureId) : undefined
-  // The transcript is stage one. Do not let it masquerade as the optional
-  // supporting evidence required by stage two.
-  const activeLectureFiles = activeLecture ? data.files.filter((file) => file.lectureId === activeLecture.id && file.id !== activeLecture.transcriptFileId) : []
-  const activeLectureMaterials = activeLectureFiles.filter((file) => file.owner !== 'generated')
-  const activeGeneratedMaterialCount = activeLectureFiles.filter((file) => file.owner === 'generated').length
+  const activeLectureSources = activeLecture ? data.files.filter((file) => activeLecture.selectedSourceFileIds?.includes(file.id) || file.id === activeLecture.transcriptFileId) : []
+  const activeLectureChunks = activeLecture ? sourceChunksForLecture(data, activeLecture) : []
+  const activeLecturePreviewRecord = activeLecture ? { ...activeLecture, selectedSourceFileIds: activeLectureSources.map((file) => file.id) } : undefined
+  const activeLectureBrief = activeLecturePreviewRecord ? activeLecturePreviewRecord.lectureBrief ?? buildLectureBrief(activeLectureChunks, activeLecturePreviewRecord.selectedSourceFileIds, data.files) : undefined
+  const activeMasteryMap = activeLecturePreviewRecord ? data.generatedMasteryOutlines.find((outline) => outline.id === activeLecturePreviewRecord.masteryMapId || outline.lectureId === activeLecturePreviewRecord.id) ?? buildLectureMasteryMap({ lecture: activeLecturePreviewRecord, topics, chunks: activeLectureChunks, files: activeLectureSources }) : undefined
   const courseFiles = data.files.filter((file) => file.courseId === course.id)
   const unfiledCount = courseFiles.filter((file) => !file.topicId && file.linkedTopicIds.length === 0).length
   const guideSuggestionCount = data.lectureNoteProposals.filter((proposal) => proposal.courseId === course.id && proposal.status === 'pending').length
@@ -386,21 +386,18 @@ function Overview({
         <article className={cn('lecture-active-context', !activeLecture && 'lecture-capture-default')}>
           {activeLecture ? <>
             <div className="lecture-active-header">
-              <div><p className="lecture-ledger-kicker">Saved lecture</p><h2>Lecture {lectureNumber(activeLecture.id)}{activeLecture.aiTitle ?? (activeLecture.title.startsWith('Lecture #') ? '' : ` · ${activeLecture.title}`)}</h2><p>{activeLecture.occurredOn ? fmtEventDate(activeLecture.occurredOn) : 'Date not set'}</p></div>
-              <div className="lecture-saved-actions"><Button size="sm" variant="outline" onClick={() => setSelectedLectureId(undefined)}>Close lecture</Button><Button size="sm" variant="outline" onClick={() => openLecture(activeLecture.id, 'overview')}>Open lecture</Button></div>
+              <div><p className="lecture-ledger-kicker">Saved lecture</p><h2>Lecture {lectureNumber(activeLecture.id)}{activeLecture.aiTitle ? ` · ${activeLecture.aiTitle}` : activeLecture.title.startsWith('Lecture #') ? '' : ` · ${activeLecture.title}`}</h2><p>{activeLecture.occurredOn ? fmtEventDate(activeLecture.occurredOn) : 'Date not set'}</p></div>
+              <div className="lecture-saved-actions"><Button size="sm" variant="ghost" onClick={() => setSelectedLectureId(undefined)}>Close</Button><Button size="sm" onClick={() => openLecture(activeLecture.id, 'overview')}>Open full screen</Button></div>
             </div>
-            <div className="lecture-evidence-summary">
-              <div><p>Transcript</p><b>{activeLecture.transcriptFileId ? 'Saved with this lecture' : 'Not added yet'}</b><Button size="sm" variant="outline" onClick={() => openLecture(activeLecture.id, 'transcript')}>{activeLecture.transcriptFileId ? 'Read transcript' : 'Add transcript'}</Button></div>
-              <div><p>Supporting evidence</p><b>{activeLectureMaterials.length ? `${activeLectureMaterials.length} ${activeLectureMaterials.length === 1 ? 'item' : 'items'} attached` : 'No material attached'}</b><Button size="sm" variant="outline" onClick={() => openLecture(activeLecture.id, 'evidence')}>{activeLectureMaterials.length ? 'Open materials' : 'Add evidence'}</Button></div>
-              <div><p>Study work</p><b>{activeGeneratedMaterialCount ? `${activeGeneratedMaterialCount} generated ${activeGeneratedMaterialCount === 1 ? 'item' : 'items'}` : 'Nothing generated yet'}</b><Button size="sm" variant="outline" disabled={!activeLecture.transcriptFileId} onClick={() => openLecture(activeLecture.id, 'study-work')}>{activeGeneratedMaterialCount ? 'Open study work' : 'Create study work'}</Button></div>
-            </div>
-            <p className="lecture-journal-next"><b>Topics stay syllabus-led.</b> This lecture remains evidence and study context.</p>
+            {activeLecture.workspaceState === 'complete'
+              ? <div className="lecture-inline-workspace"><LectureCapturePanel key={`embedded:${activeLecture.id}`} courseId={course.id} course={course} data={data} initialLectureId={activeLecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={() => onTab('guide')} /></div>
+              : activeLectureBrief && <SavedLecturePreview brief={activeLectureBrief} mastery={activeMasteryMap} sourceCount={activeLectureSources.length} />}
           </> : <>
-            <div className="lecture-active-header"><div><p className="lecture-ledger-kicker">{scheduleContext ? `Today · ${scheduleContext}` : 'Today'}</p><h2>Add transcript</h2></div><span className="lecture-number-pill">Lecture {nextLectureNumber}</span></div>
-            <div className="lecture-capture-steps" aria-label="Lecture capture workflow"><div className="is-current"><b>1 · Transcript</b><span>Required</span></div><div><b>2 · Evidence</b><span>Optional</span></div><div><b>3 · Study work</b><span>After capture</span></div></div>
-            <button type="button" className="lecture-transcript-drop" onClick={() => openLecture(undefined, 'transcript')}><b>Drop a transcript file</b><span>PDF, DOCX, TXT, or clipboard text</span></button>
-            <div className="lecture-capture-actions"><Button size="sm" onClick={() => openLecture(undefined, 'transcript')}>Import transcript</Button><Button size="sm" variant="outline" onClick={() => openLecture(undefined, 'transcript')}>Paste transcript</Button></div>
-            <p className="lecture-journal-next"><b>Next:</b> optional file, screenshot, or textbook excerpt → study work</p>
+            <div className="lecture-active-header"><div><p className="lecture-ledger-kicker">{scheduleContext ? `Today · ${scheduleContext}` : 'Today'}</p><h2>Build a lecture page</h2></div><span className="lecture-number-pill">Lecture {nextLectureNumber}</span></div>
+            <div className="lecture-capture-steps" aria-label="Lecture import workflow"><div className="is-current"><b>1 · Add source</b><span>Transcript</span></div><div><b>2 · Add materials</b><span>Optional</span></div><div><b>3 · Build page</b><span>Brief + Mastery</span></div></div>
+            <button type="button" className="lecture-transcript-drop" onClick={() => openLecture(undefined, 'transcript')}><b>Paste or upload a lecture source</b><span>PDF, DOCX, TXT, image, or clipboard text</span></button>
+            <div className="lecture-capture-actions"><Button size="sm" onClick={() => openLecture(undefined, 'transcript')}>Import lecture</Button></div>
+            <p className="lecture-journal-next"><b>Result:</b> a Lecture Brief and Mastery Map, with transcript and materials kept under Sources.</p>
           </>}
         </article>
       </section>
@@ -425,13 +422,36 @@ function Overview({
       <Card className="class-hub-panel col-span-12">
         <CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">From selected class material</p><CardTitle>Recent study work</CardTitle></div><Button size="sm" variant="outline" onClick={() => onTab('materials')}>Open Materials</Button></CardHeader>
         <CardContent className="class-hub-panel-content grid gap-2 md:grid-cols-3">
-          {recentStudyWork.map((note) => <button key={note.id} type="button" className="class-hub-record-row rounded-[13px] p-3 text-left" onClick={() => openMaterialNote(note.id)}><b>{note.title}</b><span className="mt-1 block text-xs font-semibold text-muted-foreground">{note.type === 'study-guide' ? 'Study outline or guide' : 'Lecture note'} · source links retained</span></button>)}
-          {!recentStudyWork.length && <p className="rounded-[13px] border border-dashed border-border p-4 text-sm font-semibold text-muted-foreground md:col-span-3">Create a study outline, guide, or revised note from the transcript and materials you select.</p>}
+          {recentStudyWork.map((note) => <button key={note.id} type="button" className="class-hub-record-row rounded-[13px] p-3 text-left" onClick={() => openMaterialNote(note.id)}><b>{note.title}</b><span className="mt-1 block text-xs font-semibold text-muted-foreground">{note.type === 'study-guide' ? 'Study guide' : 'Lecture note'} · source links retained</span></button>)}
+          {!recentStudyWork.length && <p className="rounded-[13px] border border-dashed border-border p-4 text-sm font-semibold text-muted-foreground md:col-span-3">Create a Study Guide, Mastery Map, or Revised Notes from the sources you select.</p>}
         </CardContent>
       </Card>
 
     </div>
   )
+}
+
+function SavedLecturePreview({ brief, mastery, sourceCount }: {
+  brief: ReturnType<typeof buildLectureBrief>
+  mastery?: ReturnType<typeof buildLectureMasteryMap>
+  sourceCount: number
+}) {
+  const flow = brief.conceptMap?.nodes.filter((node) => node.lane === 'flow').slice(0, 4) ?? []
+  const connection = brief.connections[0]
+  const vocabulary = brief.vocabulary.slice(0, 3)
+  return <div className="lecture-saved-preview">
+    <section className="lecture-saved-brief" aria-label="Lecture Brief preview">
+      <p className="lecture-saved-label">Lecture Brief · Start here</p>
+      {brief.summary.length ? <div className="lecture-saved-summary">{brief.summary.slice(0, 2).map((item) => <p key={item.id}>{item.text}</p>)}</div> : <div className="lecture-saved-empty"><b>No readable lecture content yet</b><span>Add a transcript or another processed source to build the study front.</span></div>}
+      {flow.length > 1 ? <ol className="lecture-saved-flow" aria-label="Concept flow preview">{flow.map((node, index) => <li key={node.id} className="contents"><span>{node.label}</span>{index < flow.length - 1 && <i aria-hidden="true">→</i>}</li>)}</ol> : connection ? <p className="lecture-saved-connection"><b>Connection:</b> {connection.text}</p> : null}
+      {vocabulary.length > 0 && <div className="lecture-saved-vocabulary"><b>Key language</b>{vocabulary.map((item) => <span key={item.id}>{item.term}</span>)}</div>}
+    </section>
+    <aside className="lecture-saved-mastery" aria-label="Mastery Map preview">
+      <div className="lecture-saved-mastery-heading"><ListChecks aria-hidden="true" /><p className="lecture-saved-label">Mastery Map</p>{mastery && <span>{mastery.standards.length} objectives</span>}</div>
+      {mastery ? <ol>{mastery.standards.slice(0, 3).map((standard, index) => <li key={standard.id}><span>{index + 1}</span><b>{standard.title}</b></li>)}</ol> : <div className="lecture-saved-empty"><b>Objectives need a course source</b><span>Add learning objectives or syllabus material; transcript topics are not treated as official objectives.</span></div>}
+    </aside>
+    <footer><span><b>{sourceCount} selected {sourceCount === 1 ? 'source' : 'sources'}</b> · {brief.usedSourceFileIds.length} used here</span><span>Transcript and supporting files stay under Sources; figures are not interpreted</span></footer>
+  </div>
 }
 
 export function WritingTools({ courseId, readingListState, drafts, readings, feedback, assignments }: {
@@ -858,8 +878,7 @@ function ResourceMenuItems({ classType, onChoose }: { classType: ClassWorkspaceT
     <DropdownMenuLabel>{classType === 'stem' ? 'Choose a format' : 'Formats for this class'}</DropdownMenuLabel>
     {classType === 'stem' && <DropdownMenuItem onClick={() => onChoose('flashcards')}><Brain className="size-4" /> Flashcards</DropdownMenuItem>}
     <DropdownMenuItem onClick={() => onChoose('study-guide')}><BookOpen className="size-4" /> Study guide</DropdownMenuItem>
-    <DropdownMenuItem onClick={() => onChoose('unit-mastery-outline')}><ListChecks className="size-4" /> {classType === 'stem' ? 'Unit mastery outline' : 'Learning objectives & mastery map'}</DropdownMenuItem>
-    <DropdownMenuItem onClick={() => onChoose('study-outline')}><Sparkles className="size-4" /> {classType === 'writing' ? 'Argument & source outline' : 'Study outline'}</DropdownMenuItem>
+    <DropdownMenuItem onClick={() => onChoose('unit-mastery-outline')}><ListChecks className="size-4" /> Mastery Map</DropdownMenuItem>
     {classType !== 'writing' && <DropdownMenuItem onClick={() => onChoose('unit-question-bank')}><FileText className="size-4" /> {classType === 'stem' ? 'Unit question bank' : 'Practice questions'}</DropdownMenuItem>}
     <DropdownMenuItem onClick={() => onChoose('revised-notes')}><NotebookText className="size-4" /> Revised notes</DropdownMenuItem>
   </>
@@ -878,8 +897,8 @@ function GeneratedFlashcardDecks({ courseId, data }: { courseId: string; data: C
 function GeneratedMasteryOutlines({ courseId, data }: { courseId: string; data: ClassCenterData }) {
   const outlines = data.generatedMasteryOutlines.filter((outline) => outline.courseId === courseId)
   if (!outlines.length) return null
-  return <section className="rounded-2xl border border-border bg-card p-4" aria-label="Generated unit mastery outlines">
-    <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border pb-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Generated resource</p><h3 className="mt-1 font-display text-lg font-extrabold">Unit mastery outlines</h3></div><Badge variant="outline">{outlines.length} {outlines.length === 1 ? 'unit' : 'units'}</Badge></div>
+  return <section className="rounded-2xl border border-border bg-card p-4" aria-label="Generated Mastery Maps">
+    <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border pb-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Generated resource</p><h3 className="mt-1 font-display text-lg font-extrabold">Mastery Maps</h3></div><Badge variant="outline">{outlines.length} {outlines.length === 1 ? 'scope' : 'scopes'}</Badge></div>
     <div className="mt-3 space-y-2">{outlines.map((outline) => <details key={outline.id} className="class-hub-record-row rounded-[13px] p-3"><summary className="cursor-pointer list-none font-display text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{outline.title}<span className="ml-2 font-sans text-xs font-bold text-muted-foreground">{outline.unit} · {outline.standards.length} standards</span></summary><div className="mt-3 space-y-3 border-t border-border pt-3">{outline.standards.map((standard) => <div key={standard.id} className="grid gap-2 text-sm sm:grid-cols-3"><div><p className="font-display font-extrabold">{standard.title}</p><p className="mt-1 text-xs font-bold uppercase tracking-wide text-primary">Understand</p><p className="text-muted-foreground">{standard.understand.join(' ') || 'Not stated'}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Be able to do</p><p className="text-muted-foreground">{standard.beAbleToDo.join(' ') || 'Not stated'}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Watch for</p><p className="text-muted-foreground">{standard.watchFor.join(' ') || 'Not stated'}</p></div></div>)}</div></details>)}</div>
     <p className="mt-3 text-xs font-semibold text-muted-foreground">Syllabus standards remain the Topic contract; lecture concepts only provide supporting evidence.</p>
   </section>

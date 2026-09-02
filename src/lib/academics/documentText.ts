@@ -24,6 +24,8 @@ export interface ExtractedDocument {
   /** Image-only pages recovered with the on-device OCR worker. */
   ocrPageCount?: number
   pageCount?: number
+  /** Exact page boundary retained for source coverage and trace display. */
+  pages?: Array<{ pageNumber: number; text: string; readable: boolean; ocrRecovered: boolean }>
 }
 
 export interface DocumentExtractionProgress {
@@ -137,7 +139,21 @@ export async function extractDocumentText(file: File, options: DocumentExtractio
 
   // An image has no text layer we can read locally; report it rather than
   // returning an empty parse that looks like "nothing was in your transcript".
-  if (kind === 'image') return { text: '', sourceKind: 'image', scanDetected: true }
+  if (kind === 'image') {
+    if (!options.recoverScannedPdfPages) return { text: '', sourceKind: 'image', scanDetected: true, pageCount: 1, unreadablePageCount: 1, imageOnlyPageCount: 1, ocrPageCount: 0, pages: [{ pageNumber: 1, text: '', readable: false, ocrRecovered: false }] }
+    const { createLocalOcrSession } = await import('@/lib/academics/documentOcr')
+    const ocr = await createLocalOcrSession((progress) => options.onProgress?.({ phase: 'ocr', page: 1, pageCount: 1, progress: progress.progress, message: 'Reading image on this device' }), options.signal)
+    try {
+      const text = await ocr.recognizeImage(file)
+      return {
+        text, sourceKind: 'image', scanDetected: true, pageCount: 1,
+        unreadablePageCount: text ? 0 : 1, imageOnlyPageCount: 1, ocrPageCount: text ? 1 : 0,
+        pages: [{ pageNumber: 1, text, readable: Boolean(text), ocrRecovered: Boolean(text) }],
+      }
+    } finally {
+      await ocr.terminate()
+    }
+  }
 
   if (kind === 'docx') {
     const mammoth = await import('mammoth')
@@ -225,7 +241,10 @@ export async function extractDocumentText(file: File, options: DocumentExtractio
       }
     }
     const text = pages.join('\n')
-    return { text, sourceKind: 'pdf', scanDetected: !text.trim(), unreadablePageCount, imageOnlyPageCount, ocrPageCount, pageCount: pdf.numPages }
+    return {
+      text, sourceKind: 'pdf', scanDetected: imageOnlyPageCount > 0, unreadablePageCount, imageOnlyPageCount, ocrPageCount, pageCount: pdf.numPages,
+      pages: pages.map((pageText, index) => ({ pageNumber: index + 1, text: pageText, readable: Boolean(pageText.trim()), ocrRecovered: Boolean(pageHandles[index] && pageText.trim()) })),
+    }
   }
 
   if (kind === 'text') {

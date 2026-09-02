@@ -143,7 +143,7 @@ export function RevisedNotesPanel({ courseId, files, data }: {
           </div>
         ) : !baselineChoices.length ? (
           <div className="rounded-[13px] border border-dashed border-border bg-muted p-4 text-sm text-muted-foreground">
-            Add your own notes first, then return here to select them as the revision baseline. The other material remains available for a Study Guide or Study Outline.
+            Add your own notes first, then return here to select them as the revision baseline. Other material remains available for a Study Guide or Mastery Map.
           </div>
         ) : <>
           <div className="rounded-[13px] border border-border bg-muted/45 p-3.5">
@@ -178,7 +178,7 @@ export function RevisedNotesPanel({ courseId, files, data }: {
             <p className="text-sm font-semibold text-muted-foreground">{baselineChoice ? <><b className="text-foreground">{baselineChoice.file.title}</b> stays the starting record. {selectedChoices.length} selected {selectedChoices.length === 1 ? 'source' : 'sources'} may support it.</> : 'Choose your notes baseline to begin.'}</p>
             <Button size="sm" onClick={() => void generate()} disabled={busy || !baselineChoice || !selectedChunks.length}><NotebookPen className="size-4" /> {busy ? 'Creating…' : 'Create revised notes'}</Button>
           </div>
-          <p className="text-xs font-semibold text-muted-foreground">Study Guide and Study Outline remain separate source-backed outputs in Materials.</p>
+          <p className="text-xs font-semibold text-muted-foreground">Study Guide and Mastery Map remain separate source-backed outputs in Materials.</p>
         </>}
 
         {latest && <RevisedNotesResult note={latest} files={files} onToast={(title, description) => toast({ title, description })} />}

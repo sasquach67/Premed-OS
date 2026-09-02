@@ -27,7 +27,7 @@ export const ACTIVE_WORKSPACE_OWNER_KEY = 'hq:workspace-owner'
 /** Marks the demo namespace as genuinely demo-seeded. Bump when the demo
  *  persona changes so stale blobs are re-seeded instead of being trusted. */
 export const DEMO_STAMP_KEY = 'hq-demo:seed-stamp'
-export const DEMO_STAMP_VALUE = 'andy-quach-v4'
+export const DEMO_STAMP_VALUE = 'andy-quach-v5'
 
 export function isDemoMode(): boolean {
   return typeof localStorage !== 'undefined' && localStorage.getItem(DEMO_MODE_FLAG) === 'on'

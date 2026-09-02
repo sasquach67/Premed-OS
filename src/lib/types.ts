@@ -550,6 +550,17 @@ export interface AcademicFile {
   owner: AcademicFileOwner
   processingStatus?: 'pending' | 'ready' | 'failed'
   processingError?: string
+  /** Honest, page-aware text coverage. Attachment alone never means a source
+   * was understood or used. Figures remain explicitly uninterpreted unless a
+   * separate, consented vision path records otherwise. */
+  sourceCoverage?: {
+    pageCount?: number
+    readablePages?: number[]
+    ocrRecoveredPages?: number[]
+    unreadablePages?: number[]
+    readableCharacterCount: number
+    figureStatus: 'not-interpreted' | 'not-present-or-unknown'
+  }
   /**
    * A reviewed selected-folder proposal can create a material record before
    * its bytes are attached. This carries only user-visible logical placement
@@ -705,10 +716,67 @@ export interface LectureRecord {
   topicIds?: ID[]
   processingState: LectureProcessingState
   processingError?: string
+  /** A lecture becomes complete only after the student has reviewed the
+   * source selection and built its front page. */
+  workspaceState?: 'draft' | 'complete'
+  selectedSourceFileIds?: ID[]
+  lectureBrief?: LectureBrief
+  masteryMapId?: ID
   createdAt: number
   processedAt?: number
   updatedAt: number
   order: number
+}
+
+export interface LectureBriefTrace {
+  id: ID
+  text: string
+  sourceChunkId: ID
+}
+
+export interface LectureBriefVocabulary extends LectureBriefTrace {
+  term: string
+}
+
+export interface LectureConceptMapNode {
+  id: ID
+  label: string
+  detail: string
+  lane: 'flow' | 'evidence'
+  sourceChunkIds: ID[]
+}
+
+export interface LectureConceptMapEdge {
+  id: ID
+  fromNodeId: ID
+  toNodeId: ID
+  label: string
+  sourceChunkIds: ID[]
+}
+
+/** A student-facing relationship model, not a source directory. Sources stay
+ * folded behind the claims so the map remains useful before it is inspected. */
+export interface LectureConceptMap {
+  title: string
+  nodes: LectureConceptMapNode[]
+  edges: LectureConceptMapEdge[]
+}
+
+/** The lecture-front synthesis is intentionally trace-first. Every displayed
+ * claim points to a stored chunk from the student's selected, processed set. */
+export interface LectureBrief {
+  summary: LectureBriefTrace[]
+  connections: LectureBriefTrace[]
+  /** Optional for legacy lecture fronts created before v41. */
+  conceptMap?: LectureConceptMap
+  vocabulary: LectureBriefVocabulary[]
+  professorEmphasis: LectureBriefTrace[]
+  processesAndComparisons: LectureBriefTrace[]
+  misconceptions: LectureBriefTrace[]
+  selectedSourceFileIds: ID[]
+  usedSourceFileIds: ID[]
+  unusedSourceFileIds: ID[]
+  createdAt: number
 }
 
 /** A source-backed lecture moment. It remains descriptive, never predictive. */
@@ -965,6 +1033,7 @@ export interface GeneratedMasteryOutlineStandard {
   beAbleToDo: string[]
   watchFor: string[]
   sourceChunkIds: ID[]
+  masteryState?: 'not-started' | 'can-explain' | 'can-apply-without-notes'
 }
 
 export interface GeneratedMasteryOutline {
@@ -972,6 +1041,11 @@ export interface GeneratedMasteryOutline {
   courseId: ID
   title: string
   unit: string
+  /** v41 unifies lecture, unit, and exam maps under one resource. Legacy
+   * records omit these fields and are read as unit-scoped. */
+  scope?: 'lecture' | 'unit' | 'exam'
+  scopeId?: ID
+  lectureId?: ID
   specId: 'unit-mastery-outline-v1'
   specHash: string
   standards: GeneratedMasteryOutlineStandard[]

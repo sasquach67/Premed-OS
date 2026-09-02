@@ -1776,7 +1776,7 @@ function RecentStudyWorkPanel({
 
   return (
     <BentoPanel span={7} title="Recent study work" icon={NotebookText}>
-      {!studyWork.length ? <BentoEmpty>Create a study outline, guide, or revised note from selected class material.</BentoEmpty> : (
+      {!studyWork.length ? <BentoEmpty>Create a Study Guide, Mastery Map, or Revised Notes from selected class material.</BentoEmpty> : (
         <div className="space-y-2">
           {studyWork.map((note) => (
             <button key={note.id} type="button" className="grid w-full gap-2 rounded-xl border border-border bg-muted p-3 text-left transition hover:border-primary/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_minmax(0,1fr)_auto]" onClick={() => onOpenClass(note.courseId)}>

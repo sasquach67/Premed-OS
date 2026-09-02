@@ -3,7 +3,7 @@ import { createTopicFsrsState } from '@/lib/academics/fsrs'
 import { createTermReport } from '@/lib/academics/termReport'
 import type {
   AcademicFile, AppData, AssignedReading, ClassAssignment, ClassNote, Course, ExperienceEntry, ExperienceHourEntry, FeedbackNote, KeyPoint, PaperDraft,
-  LetterEntry, LectureEvidenceFinding, LectureRecord, McatAttempt, McatErrorLog, PlannerTerm, SourceChunk, Topic,
+  GeneratedMasteryOutline, LetterEntry, LectureBrief, LectureEvidenceFinding, LectureRecord, McatAttempt, McatErrorLog, PlannerTerm, SourceChunk, Topic,
 } from '@/lib/types'
 
 const DAY = 86_400_000
@@ -41,6 +41,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
       notes: 'Spring-only offering — this Fall placement needs correction.',
     },
     course('demo-course-unplaced', 'Unscheduled', 'CHEM 430', 'Biochemistry', 3, '', true, 'planned', 11),
+    course('demo-course-biol103-current', 'Fall 2026', 'BIOL 103', 'How Cells Function', 3, 'IP', true, 'in-progress', 12),
   ]
   courses[0].satisfies = ['Natural Scientific Investigation', 'Neuroscience B.S.']
   courses[1].satisfies = ['Neuroscience B.S. — Additional Requirements']
@@ -126,6 +127,11 @@ export function createDemoData(seedTime = Date.now()): AppData {
     topic('demo-topic-enzyme-kinetics', courses[0].id, 'Enzyme kinetics', 'Unit 4 · Metabolism', 'ready', fsrs(24, 4), 1, at),
     topic('demo-topic-biochemistry-intro', courses[0].id, 'Biochemistry of respiration', 'Unit 5 · Energy', 'ready', fsrs(21, 3), 2, at),
     topic('demo-topic-microscopy', courses[0].id, 'Microscopy technique', 'Unit 1 · Methods', 'seen', fsrs(0, 0), 3, at),
+    topic('demo-topic-biol103-expression', courses[12].id, 'Trace gene expression from DNA to a mature transcript', 'Lesson 2 · Central Dogma', 'not-started', fsrs(0, 0), 0, at),
+    topic('demo-topic-biol103-codons', courses[12].id, 'Decode genetic information with codons and tRNAs', 'Lesson 2 · Central Dogma', 'not-started', fsrs(0, 0), 1, at),
+    topic('demo-topic-biol103-ribosome', courses[12].id, 'Explain how a ribosome builds and releases a polypeptide', 'Lesson 2 · Central Dogma', 'not-started', fsrs(0, 0), 2, at),
+    topic('demo-topic-biol103-targeting', courses[12].id, 'Predict protein folding, modification, and cellular destination', 'Lesson 2 · Central Dogma', 'not-started', fsrs(0, 0), 3, at),
+    topic('demo-topic-biol103-methods', courses[12].id, 'Choose and interpret methods that reveal gene expression', 'Lesson 2 · Central Dogma', 'not-started', fsrs(0, 0), 4, at),
   ]
   // Stagger when each topic was last touched. Without this every topic carries
   // the seed timestamp, so the study-cycle panel reads the whole term as
@@ -188,7 +194,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
     },
     {
       id: 'demo-file-chem-transcript-3', courseId: courses[4].id, lectureId: 'demo-lecture-chem-3', sourceType: 'paste',
-      title: 'Lecture 3 transcript', type: 'transcript', owner: 'mine', linkedTopicIds: [], processingStatus: 'ready',
+      title: 'Lecture 3 transcript', type: 'transcript', owner: 'mine', linkedTopicIds: ['demo-topic-sn2'], processingStatus: 'ready',
       url: 'data:text/plain;charset=utf-8,Lecture%203%20compared%20SN1%20and%20SN2%20mechanisms%20using%20rate%20and%20stereochemistry%20evidence.',
       fileName: 'lecture-03.txt', mimeType: 'text/plain', createdAt: stamp(-4), updatedAt: stamp(-4), order: 6,
     },
@@ -197,6 +203,30 @@ export function createDemoData(seedTime = Date.now()): AppData {
       title: 'Lecture 1 transcript', type: 'transcript', owner: 'mine', linkedTopicIds: [], processingStatus: 'ready',
       url: 'data:text/plain;charset=utf-8,Lecture%201%20connected%20audience%2C%20evidence%2C%20and%20the%20stakes%20of%20a%20claim.',
       fileName: 'lecture-01.txt', mimeType: 'text/plain', createdAt: stamp(-3), updatedAt: stamp(-3), order: 7,
+    },
+    {
+      id: 'demo-file-biol103-transcript-l2', courseId: courses[12].id, lectureId: 'demo-lecture-biol103-2', sourceType: 'upload',
+      title: 'BIOL 103 Lecture 2 captions', type: 'transcript', owner: 'mine', fileName: 'Biol 103 Lecture 2 Captions.txt', mimeType: 'text/plain',
+      linkedTopicIds: ['demo-topic-biol103-expression', 'demo-topic-biol103-codons', 'demo-topic-biol103-ribosome', 'demo-topic-biol103-targeting', 'demo-topic-biol103-methods'], processingStatus: 'ready',
+      sourceCoverage: { readableCharacterCount: 38_977, figureStatus: 'not-present-or-unknown' }, createdAt: stamp(-220), updatedAt: stamp(-220), order: 8,
+    },
+    {
+      id: 'demo-file-biol103-slides-l2', courseId: courses[12].id, lectureId: 'demo-lecture-biol103-2', sourceType: 'upload',
+      title: 'Lecture 2 Central Dogma slides', type: 'lecture-slides', owner: 'course', fileName: 'Lecture 2 Central Dogma BIOL103.pdf', mimeType: 'application/pdf',
+      linkedTopicIds: ['demo-topic-biol103-expression', 'demo-topic-biol103-codons', 'demo-topic-biol103-ribosome', 'demo-topic-biol103-targeting', 'demo-topic-biol103-methods'], processingStatus: 'ready',
+      sourceCoverage: { pageCount: 66, readablePages: [...Array.from({ length: 4 }, (_, index) => index + 1), ...Array.from({ length: 61 }, (_, index) => index + 6)], unreadablePages: [5], readableCharacterCount: 24_131, figureStatus: 'not-interpreted' }, createdAt: stamp(-221), updatedAt: stamp(-220), order: 9,
+    },
+    {
+      id: 'demo-file-biol103-grq-l2', courseId: courses[12].id, lectureId: 'demo-lecture-biol103-2', sourceType: 'upload',
+      title: 'Lesson 2 Guided Reading Questions', type: 'reading', owner: 'course', fileName: 'Lesson 2 GRQ.pdf', mimeType: 'application/pdf',
+      linkedTopicIds: ['demo-topic-biol103-expression', 'demo-topic-biol103-codons', 'demo-topic-biol103-ribosome', 'demo-topic-biol103-targeting', 'demo-topic-biol103-methods'], processingStatus: 'ready',
+      sourceCoverage: { pageCount: 8, readablePages: Array.from({ length: 8 }, (_, index) => index + 1), readableCharacterCount: 10_360, figureStatus: 'not-interpreted' }, createdAt: stamp(-223), updatedAt: stamp(-220), order: 10,
+    },
+    {
+      id: 'demo-file-biol103-mastery-l2', courseId: courses[12].id, lectureId: 'demo-lecture-biol103-2', sourceType: 'upload',
+      title: 'Lessons 2 and 3 Unit Mastery Outline', type: 'syllabus', owner: 'course', fileName: 'BIOL103-Lessons-2-and-3-Unit-Mastery-Outline.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      linkedTopicIds: ['demo-topic-biol103-expression', 'demo-topic-biol103-codons', 'demo-topic-biol103-ribosome', 'demo-topic-biol103-targeting', 'demo-topic-biol103-methods'], processingStatus: 'ready',
+      sourceCoverage: { pageCount: 6, readablePages: Array.from({ length: 6 }, (_, index) => index + 1), readableCharacterCount: 13_207, figureStatus: 'not-present-or-unknown' }, createdAt: stamp(-219), updatedAt: stamp(-219), order: 11,
     },
   ]
   const chunks: SourceChunk[] = [
@@ -207,13 +237,137 @@ export function createDemoData(seedTime = Date.now()): AppData {
     chunk('demo-chunk-sn2', files[3].id, courses[4].id, topics[3].id, 'SN2 reactions proceed through concerted backside attack with inversion of stereochemistry.', 4, at),
     chunk('demo-chunk-chem-transcript-1', 'demo-file-chem-transcript-1', courses[4].id, undefined, 'Conformational drawings show how the same connectivity can produce different spatial arrangements.', 5, at),
     chunk('demo-chunk-chem-transcript-2', 'demo-file-chem-transcript-2', courses[4].id, undefined, 'A useful acid-base comparison starts by locating the charge and then comparing conjugate-base stability.', 6, at),
-    chunk('demo-chunk-chem-transcript-3', 'demo-file-chem-transcript-3', courses[4].id, undefined, 'SN1 and SN2 differ in their rate laws, substrate preferences, and stereochemical outcomes.', 7, at),
+    chunk('demo-chunk-chem-transcript-3', 'demo-file-chem-transcript-3', courses[4].id, topics[3].id, 'SN1 and SN2 differ in their rate laws, substrate preferences, and stereochemical outcomes. Both mechanisms replace a leaving group, but they reach the product through different molecular events. SN2 happens in one concerted step because nucleophile attack and leaving-group departure occur together. Its rate depends on both the substrate and the nucleophile, and backside attack produces inversion at the reacting carbon. SN1 happens in steps: the leaving group departs first, a carbocation intermediate forms, and the nucleophile attacks afterward. The professor emphasized comparing rate law, substrate structure, nucleophile strength, solvent, and stereochemical outcome on the exam. A tertiary substrate often favors SN1 because it can stabilize a carbocation, while steric crowding makes SN2 attack difficult. Watch for the misconception that a strong nucleophile automatically means SN2; substrate structure and solvent still control which pathway is reasonable.', 7, at),
     chunk('demo-chunk-engl-transcript-1', 'demo-file-engl-transcript-1', courses[7].id, undefined, 'A claim becomes meaningful when the writer makes its stakes clear to a specific audience.', 8, at),
+    { ...chunk('demo-chunk-biol103-transcript-flow', 'demo-file-biol103-transcript-l2', courses[12].id, 'demo-topic-biol103-expression', 'We have information stored in the DNA that gets transformed into RNA that gets transformed into protein. RNA polymerase locks onto one strand of our DNA, the template strand, and uses complementary nucleotides to make RNA. The spliceosome removes introns, leaving mature mRNA with processed ends that help keep it stable. Translation happens in the cytoplasm, where a ribosome reads mRNA codons and tRNA anticodons deliver the corresponding amino acids.', 9, at), sourcePosition: { index: 0, label: 'Transcript excerpt · central information flow' } },
+    { ...chunk('demo-chunk-biol103-transcript-folding', 'demo-file-biol103-transcript-l2', courses[12].id, 'demo-topic-biol103-ribosome', 'A polypeptide is just a strand of amino acids; it has not quite folded yet. Amino acids go through different levels of folding to make a unique shape that is often vital to protein function. Mature proteins can also have amino acids added or removed, chemical groups added, or multiple polypeptides joined together.', 10, at), sourcePosition: { index: 1, label: 'Transcript excerpt · folding and mature protein' } },
+    { ...chunk('demo-chunk-biol103-transcript-targeting', 'demo-file-biol103-transcript-l2', courses[12].id, 'demo-topic-biol103-targeting', 'Proteins made on free ribosomes can remain in the cytosol or go to the nucleus, mitochondria, chloroplast, or peroxisome. Proteins translated at the rough ER can be secreted, sent to a lysosome, or embedded in the plasma membrane. An N-terminal signal sequence tells the translation complex to go to the rough ER and places the growing polypeptide into the ER lumen.', 11, at), sourcePosition: { index: 2, label: 'Transcript excerpt · protein destinations' } },
+    { ...chunk('demo-chunk-biol103-transcript-methods', 'demo-file-biol103-transcript-l2', courses[12].id, 'demo-topic-biol103-methods', 'In situ hybridization uses a complementary DNA or RNA probe with a fluorescent tag to detect where a specific mRNA is present. Immunohistochemistry uses antibodies to detect a specific protein. Positive controls show that the probe or antibody can produce the expected signal; negative controls help rule out nonspecific binding or background.', 12, at), sourcePosition: { index: 3, label: 'Transcript excerpt · Ebola detection activity' } },
+    { ...chunk('demo-chunk-biol103-slides-objectives', 'demo-file-biol103-slides-l2', courses[12].id, 'demo-topic-biol103-expression', 'Organize the steps of eukaryotic gene expression and identify the primary molecules involved in each step. Outline the major pathways newly synthesized proteins move through or out of a cell. Design a study with controls to examine mRNA and protein expression within tissues.', 13, at), sourcePosition: { index: 13, label: 'Page 14 · Learning Objectives' } },
+    { ...chunk('demo-chunk-biol103-slides-direction', 'demo-file-biol103-slides-l2', courses[12].id, 'demo-topic-biol103-codons', 'RNA polymerase reads the DNA template strand 3′ to 5′ and produces RNA 5′ to 3′. Each three-nucleotide mRNA codon corresponds to one amino acid, while a tRNA anticodon pairs with that codon and carries the amino acid.', 14, at), sourcePosition: { index: 20, label: 'Pages 21 and 28 · directionality and codons' } },
+    { ...chunk('demo-chunk-biol103-slides-targeting', 'demo-file-biol103-slides-l2', courses[12].id, 'demo-topic-biol103-targeting', 'Proteins made by free ribosomes can remain in the cytosol or move to the nucleus, peroxisome, mitochondria, or chloroplast. Proteins made by ribosomes attached to the rough ER can move to a secretory vesicle, lysosome, or plasma membrane. A signal sequence on the growing polypeptide directs entry into the rough ER.', 15, at), sourcePosition: { index: 41, label: 'Pages 42 and 46 · protein destinations and signal sequence' } },
+    { ...chunk('demo-chunk-biol103-slides-methods', 'demo-file-biol103-slides-l2', courses[12].id, 'demo-topic-biol103-methods', 'In situ hybridization detects and localizes mRNA using a complementary nucleic-acid probe. Immunohistochemistry or immunofluorescence detects protein with antibodies. A positive control uses cells or tissue confirmed to contain the target; a negative control can omit the primary antibody or use tissue confirmed not to contain the target.', 16, at), sourcePosition: { index: 55, label: 'Pages 56–62 · gene-expression methods and controls' } },
+    { ...chunk('demo-chunk-biol103-grq-flow', 'demo-file-biol103-grq-l2', courses[12].id, 'demo-topic-biol103-expression', 'Lesson 2 guided reading asks students to connect DNA, transcription, RNA processing, mature mRNA, translation, polypeptide folding, and protein modification in one concept map, then compare how those steps differ between bacterial and eukaryotic cells.', 17, at), sourcePosition: { index: 0, label: 'Pages 1–4 · central dogma guided questions' } },
+    { ...chunk('demo-chunk-biol103-grq-methods', 'demo-file-biol103-grq-l2', courses[12].id, 'demo-topic-biol103-methods', 'The guided reading asks when to use nucleic-acid hybridization, in situ hybridization, immunohistochemistry, and immunofluorescence, and how each method distinguishes evidence about mRNA from evidence about protein.', 18, at), sourcePosition: { index: 6, label: 'Pages 7–8 · methods guided questions' } },
+    { ...chunk('demo-chunk-biol103-mastery-lo1', 'demo-file-biol103-mastery-l2', courses[12].id, 'demo-topic-biol103-expression', 'LO 1. Trace gene expression from DNA to a mature transcript. Explain why RNA is complementary and antiparallel to the template but matches the coding strand except U replaces T. Given one DNA strand and its direction, identify whether it is template or coding and write the corresponding mRNA 5′ → 3′. Watch for: Do not treat “DNA → RNA → protein” as a direct physical conversion.', 19, at), sourcePosition: { index: 0, label: 'Page 1 · Lesson 2 LO 1' } },
+    { ...chunk('demo-chunk-biol103-mastery-lo2', 'demo-file-biol103-mastery-l2', courses[12].id, 'demo-topic-biol103-codons', 'LO 2. Decode genetic information with codons and tRNAs. Know AUG’s two roles: start signal and methionine codon; recognize UAA, UAG, and UGA as stop codons. Translate a short mRNA sequence from the correct start codon to a stop codon. Watch for: The ribosome checks codon–anticodon pairing; the synthetase ensures the tRNA carries the correct amino acid.', 20, at), sourcePosition: { index: 1, label: 'Page 1 · Lesson 2 LO 2' } },
+    { ...chunk('demo-chunk-biol103-mastery-lo3', 'demo-file-biol103-mastery-l2', courses[12].id, 'demo-topic-biol103-ribosome', 'LO 3. Explain how a ribosome builds and releases a polypeptide. Track tRNA movement through A → P → E and explain that the chain grows at its C terminus. Use a ribosome diagram to place incoming, peptide-bearing, and exiting tRNAs. Watch for: A stop codon does not code for an amino acid and no tRNA carries a “stop” amino acid.', 21, at), sourcePosition: { index: 1, label: 'Page 2 · Lesson 2 LO 3' } },
+    { ...chunk('demo-chunk-biol103-mastery-lo4', 'demo-file-biol103-mastery-l2', courses[12].id, 'demo-topic-biol103-targeting', 'LO 4. Predict protein folding, modification, and cellular destination. Explain how an N-terminal signal peptide and signal-recognition particle direct a growing polypeptide to the ER. Infer a protein’s destination from a signal sequence or from what happens when a targeting region is deleted. Watch for: “Bound ribosome” is a temporary state.', 22, at), sourcePosition: { index: 2, label: 'Pages 2–3 · Lesson 2 LO 4' } },
+    { ...chunk('demo-chunk-biol103-mastery-lo5', 'demo-file-biol103-mastery-l2', courses[12].id, 'demo-topic-biol103-methods', 'LO 5. Choose and interpret methods that reveal gene expression. Choose in situ hybridization when asked where a specific mRNA is present; choose immunostaining when asked where a specific protein is present. Watch for: A fluorescent signal supports the claim only if controls rule out nonspecific binding or background fluorescence.', 23, at), sourcePosition: { index: 2, label: 'Page 3 · Lesson 2 LO 5' } },
   ]
+  // Concrete sample built from the four supplied BIOL 103 files and the
+  // repository's current Lecture Brief / Mastery Map generation contracts.
+  // It remains deterministic demo data: no external provider call is implied.
+  const biolLectureBrief: LectureBrief = {
+    summary: [
+      { id: 'demo-biol103-brief-summary-1', text: 'A gene is expressed through linked but distinct synthesis steps: RNA polymerase transcribes a DNA template into a primary RNA transcript, RNA processing produces mature mRNA, and a ribosome translates mRNA codons into a polypeptide.', sourceChunkId: 'demo-chunk-biol103-transcript-flow' },
+      { id: 'demo-biol103-brief-summary-2', text: 'The amino-acid sequence then constrains folding and modification. Signal sequences route the growing or finished protein toward the cytosol, organelles, or the ER–Golgi pathway, where it may be secreted, inserted into a membrane, or delivered to a lysosome.', sourceChunkId: 'demo-chunk-biol103-transcript-targeting' },
+      { id: 'demo-biol103-brief-summary-3', text: 'Gene expression can be tested at two different levels: in situ hybridization localizes a specific mRNA, while immunostaining localizes a specific protein. Both require positive and negative controls before fluorescence can support a biological claim.', sourceChunkId: 'demo-chunk-biol103-transcript-methods' },
+    ],
+    connections: [
+      { id: 'demo-biol103-brief-connect-1', text: 'Directionality connects the first three stages: RNA polymerase reads the DNA template 3′→5′ so RNA is built 5′→3′; the coding strand therefore matches the RNA sequence except that RNA uses U instead of T.', sourceChunkId: 'demo-chunk-biol103-mastery-lo1' },
+      { id: 'demo-biol103-brief-connect-2', text: 'Sequence links information to function: mRNA codons set amino-acid order, amino-acid chemistry drives folding, and a protein’s folded regions and targeting signals shape what it can do and where it can go.', sourceChunkId: 'demo-chunk-biol103-transcript-folding' },
+      { id: 'demo-biol103-brief-connect-3', text: 'The methods branch asks what molecule your claim is about. Evidence for mRNA expression is not automatically evidence that the corresponding protein exists in the same tissue.', sourceChunkId: 'demo-chunk-biol103-mastery-lo5' },
+    ],
+    conceptMap: {
+      title: 'From stored gene to working protein',
+      nodes: [
+        { id: 'bio-map-dna', label: 'DNA gene', detail: 'Two antiparallel strands store the sequence. RNA polymerase uses one strand as the template.', lane: 'flow', sourceChunkIds: ['demo-chunk-biol103-transcript-flow', 'demo-chunk-biol103-mastery-lo1'] },
+        { id: 'bio-map-primary', label: 'Primary RNA transcript', detail: 'A complementary RNA copy is synthesized in the nucleus, 5′→3′.', lane: 'flow', sourceChunkIds: ['demo-chunk-biol103-slides-direction', 'demo-chunk-biol103-mastery-lo1'] },
+        { id: 'bio-map-mrna', label: 'Mature mRNA', detail: 'Introns are removed, exons are joined, and the ends are processed before export.', lane: 'flow', sourceChunkIds: ['demo-chunk-biol103-transcript-flow', 'demo-chunk-biol103-grq-flow'] },
+        { id: 'bio-map-polypeptide', label: 'Polypeptide', detail: 'The ribosome reads codons; tRNA anticodons deliver amino acids and the chain grows at its C terminus.', lane: 'flow', sourceChunkIds: ['demo-chunk-biol103-slides-direction', 'demo-chunk-biol103-mastery-lo3'] },
+        { id: 'bio-map-protein', label: 'Functional, localized protein', detail: 'Folding, modification, subunit assembly, and targeting turn the chain into a working protein in the right place.', lane: 'flow', sourceChunkIds: ['demo-chunk-biol103-transcript-folding', 'demo-chunk-biol103-transcript-targeting', 'demo-chunk-biol103-slides-targeting'] },
+        { id: 'bio-map-ish', label: 'In situ hybridization', detail: 'A complementary fluorescent probe shows where a particular mRNA is present in intact tissue.', lane: 'evidence', sourceChunkIds: ['demo-chunk-biol103-transcript-methods', 'demo-chunk-biol103-slides-methods'] },
+        { id: 'bio-map-ihc', label: 'Immunostaining', detail: 'A specific antibody shows where a particular protein is present. Controls test specificity and background.', lane: 'evidence', sourceChunkIds: ['demo-chunk-biol103-transcript-methods', 'demo-chunk-biol103-slides-methods'] },
+      ],
+      edges: [
+        { id: 'bio-map-edge-transcription', fromNodeId: 'bio-map-dna', toNodeId: 'bio-map-primary', label: 'Transcription · complementary RNA synthesis', sourceChunkIds: ['demo-chunk-biol103-transcript-flow'] },
+        { id: 'bio-map-edge-processing', fromNodeId: 'bio-map-primary', toNodeId: 'bio-map-mrna', label: 'RNA processing · splice and stabilize', sourceChunkIds: ['demo-chunk-biol103-transcript-flow'] },
+        { id: 'bio-map-edge-translation', fromNodeId: 'bio-map-mrna', toNodeId: 'bio-map-polypeptide', label: 'Translation · codons become amino-acid order', sourceChunkIds: ['demo-chunk-biol103-slides-direction'] },
+        { id: 'bio-map-edge-folding', fromNodeId: 'bio-map-polypeptide', toNodeId: 'bio-map-protein', label: 'Fold, modify, assemble, and route', sourceChunkIds: ['demo-chunk-biol103-transcript-folding', 'demo-chunk-biol103-transcript-targeting'] },
+        { id: 'bio-map-edge-ish', fromNodeId: 'bio-map-mrna', toNodeId: 'bio-map-ish', label: 'To ask “where is this mRNA?”', sourceChunkIds: ['demo-chunk-biol103-mastery-lo5'] },
+        { id: 'bio-map-edge-ihc', fromNodeId: 'bio-map-protein', toNodeId: 'bio-map-ihc', label: 'To ask “where is this protein?”', sourceChunkIds: ['demo-chunk-biol103-mastery-lo5'] },
+      ],
+    },
+    vocabulary: [
+      { id: 'demo-biol103-vocab-template', term: 'template strand', text: 'The DNA strand RNA polymerase reads 3′→5′ to synthesize a complementary RNA strand 5′→3′.', sourceChunkId: 'demo-chunk-biol103-slides-direction' },
+      { id: 'demo-biol103-vocab-codon', term: 'codon', text: 'A three-nucleotide sequence in mRNA that specifies an amino acid or a stop signal within a reading frame.', sourceChunkId: 'demo-chunk-biol103-mastery-lo2' },
+      { id: 'demo-biol103-vocab-anticodon', term: 'anticodon', text: 'The three-nucleotide tRNA sequence that pairs antiparallel with an mRNA codon.', sourceChunkId: 'demo-chunk-biol103-mastery-lo2' },
+      { id: 'demo-biol103-vocab-polypeptide', term: 'polypeptide', text: 'The amino-acid chain released by the ribosome before all folding, modification, and assembly are complete.', sourceChunkId: 'demo-chunk-biol103-transcript-folding' },
+      { id: 'demo-biol103-vocab-signal', term: 'signal sequence', text: 'A short amino-acid sequence that can direct a growing polypeptide and ribosome to the rough ER.', sourceChunkId: 'demo-chunk-biol103-transcript-targeting' },
+      { id: 'demo-biol103-vocab-hybridization', term: 'in situ hybridization', text: 'A method that uses a complementary labeled nucleic-acid probe to localize a specific mRNA in tissue.', sourceChunkId: 'demo-chunk-biol103-slides-methods' },
+    ],
+    professorEmphasis: [
+      { id: 'demo-biol103-emphasis-flow', text: 'The professor framed central dogma as a biology-wide example of information flow, then repeatedly asked students to put the stages in order and name where each happens.', sourceChunkId: 'demo-chunk-biol103-transcript-flow' },
+      { id: 'demo-biol103-emphasis-direction', text: 'When converting a sequence, check the 5′ and 3′ labels before doing anything else. The template may be shown in either orientation.', sourceChunkId: 'demo-chunk-biol103-mastery-lo1' },
+      { id: 'demo-biol103-emphasis-controls', text: 'In the Ebola activity, the professor checked the positive and negative controls before interpreting which species showed viral mRNA or protein.', sourceChunkId: 'demo-chunk-biol103-transcript-methods' },
+    ],
+    processesAndComparisons: [
+      { id: 'demo-biol103-process-1', text: 'Transcription copies nucleotide information into RNA; translation changes information systems by converting mRNA codons into amino-acid order.', sourceChunkId: 'demo-chunk-biol103-transcript-flow' },
+      { id: 'demo-biol103-process-2', text: 'Free and rough-ER-bound ribosomes are not different kinds of ribosome. Their current location reflects the targeting information in the protein being translated.', sourceChunkId: 'demo-chunk-biol103-mastery-lo4' },
+      { id: 'demo-biol103-process-3', text: 'Cytosolic-route proteins can remain in the cytosol or enter organelles; ER-route proteins move through the endomembrane system toward secretion, membranes, or lysosomes.', sourceChunkId: 'demo-chunk-biol103-slides-targeting' },
+      { id: 'demo-biol103-process-4', text: 'In situ hybridization answers an mRNA-location question; immunostaining answers a protein-location question. The target molecule determines the method.', sourceChunkId: 'demo-chunk-biol103-slides-methods' },
+    ],
+    misconceptions: [
+      { id: 'demo-biol103-caution-1', text: 'DNA does not physically turn into RNA or protein. Each arrow represents a separate synthesis process with a different template and product.', sourceChunkId: 'demo-chunk-biol103-mastery-lo1' },
+      { id: 'demo-biol103-caution-2', text: 'A stop codon does not encode a “stop amino acid,” and there is no tRNA that carries one; a release factor ends translation.', sourceChunkId: 'demo-chunk-biol103-mastery-lo3' },
+      { id: 'demo-biol103-caution-3', text: '“Bound ribosome” is temporary. The same ribosome may translate in the cytosol for one protein and dock at the ER for another.', sourceChunkId: 'demo-chunk-biol103-mastery-lo4' },
+      { id: 'demo-biol103-caution-4', text: 'Fluorescence alone is not proof of the intended target. The controls must first rule out failed reagents, nonspecific binding, and background signal.', sourceChunkId: 'demo-chunk-biol103-mastery-lo5' },
+    ],
+    selectedSourceFileIds: ['demo-file-biol103-transcript-l2', 'demo-file-biol103-slides-l2', 'demo-file-biol103-grq-l2', 'demo-file-biol103-mastery-l2'],
+    usedSourceFileIds: ['demo-file-biol103-transcript-l2', 'demo-file-biol103-slides-l2', 'demo-file-biol103-grq-l2', 'demo-file-biol103-mastery-l2'],
+    unusedSourceFileIds: [],
+    createdAt: stamp(-219),
+  }
+  const biolMasteryMap: GeneratedMasteryOutline = {
+    id: 'demo-mastery-biol103-l2', courseId: courses[12].id, lectureId: 'demo-lecture-biol103-2', scope: 'lecture', scopeId: 'demo-lecture-biol103-2',
+    title: 'Lecture 2 · Central Dogma Mastery Map', unit: 'Lesson 2 · Central Dogma', specId: 'unit-mastery-outline-v1', specHash: 'biol103-supplied-sources-v1',
+    standards: [
+      {
+        id: 'demo-topic-biol103-expression', title: 'Trace gene expression from DNA to a mature transcript', masteryState: 'not-started',
+        understand: ['Gene expression links DNA, RNA, and protein through distinct synthesis steps.', 'RNA is complementary and antiparallel to the template strand; it matches the coding strand except U replaces T.', 'In eukaryotes, transcription and RNA processing occur in the nucleus before mature mRNA is exported.'],
+        beAbleToDo: ['Given either DNA strand with 5′/3′ labels, identify template versus coding and write the mRNA 5′→3′.', 'Move among template DNA, coding DNA, mature mRNA, and polypeptide without reversing strand orientation.', 'Predict whether transcription and translation can be simultaneous in a stated cell type and justify the answer.'],
+        watchFor: ['Do not treat DNA → RNA → protein as a physical conversion of one molecule into the next.', 'Do not ignore strand labels; textbook questions may flip which end is shown first.'],
+        sourceChunkIds: ['demo-chunk-biol103-mastery-lo1', 'demo-chunk-biol103-transcript-flow', 'demo-chunk-biol103-grq-flow'],
+      },
+      {
+        id: 'demo-topic-biol103-codons', title: 'Decode genetic information with codons and tRNAs', masteryState: 'not-started',
+        understand: ['A codon is read on mRNA; a tRNA anticodon pairs antiparallel with it while the opposite end carries an amino acid.', 'AUG is both the start signal and a methionine codon; UAA, UAG, and UGA are stop codons.', 'The genetic code is redundant but unambiguous: several codons may specify one amino acid, but each codon specifies only one meaning.'],
+        beAbleToDo: ['Translate a short mRNA from the correct AUG through the first in-frame stop codon.', 'Write the antiparallel tRNA anticodon for a stated mRNA codon.', 'Explain why one known polypeptide usually cannot be reverse-translated to one unique DNA sequence.'],
+        watchFor: ['Use the codon table with mRNA, not the DNA template or the tRNA anticodon.', 'The ribosome checks codon–anticodon pairing; aminoacyl-tRNA synthetase is what loads the correct amino acid.'],
+        sourceChunkIds: ['demo-chunk-biol103-mastery-lo2', 'demo-chunk-biol103-slides-direction'],
+      },
+      {
+        id: 'demo-topic-biol103-ribosome', title: 'Explain how a ribosome builds and releases a polypeptide', masteryState: 'not-started',
+        understand: ['The ribosome is an rRNA-and-protein machine with A, P, and E tRNA sites.', 'Elongation repeats codon recognition, peptide-bond formation, and translocation; tRNAs move A → P → E.', 'A release factor recognizes a stop codon and releases the polypeptide, which is not yet necessarily a mature protein.'],
+        beAbleToDo: ['Place incoming, peptide-bearing, and exiting tRNAs in the correct A, P, and E sites on an unfamiliar diagram.', 'Predict which site is occupied after a stated initiation or elongation step.', 'Track the N and C termini and identify where the next amino acid is added.'],
+        watchFor: ['No tRNA carries a “stop” amino acid.', 'Do not call an unfolded amino-acid chain a fully functional mature protein.'],
+        sourceChunkIds: ['demo-chunk-biol103-mastery-lo3', 'demo-chunk-biol103-transcript-flow', 'demo-chunk-biol103-transcript-folding'],
+      },
+      {
+        id: 'demo-topic-biol103-targeting', title: 'Predict protein folding, modification, and cellular destination', masteryState: 'not-started',
+        understand: ['Amino-acid sequence shapes folding; chemical modifications or subunit assembly can further change the mature protein.', 'An N-terminal signal sequence can recruit the targeting machinery that docks translation at the rough ER.', 'Cytosolic-route and ER-route proteins reach different sets of destinations.'],
+        beAbleToDo: ['Infer the likely destination of a protein from a targeting sequence or from a deletion of its targeting region.', 'Trace a soluble cytosolic, nuclear, mitochondrial, secreted, lysosomal, or membrane protein from translation to destination.', 'Predict how deleting a receptor’s ligand-binding, membrane-spanning, or intracellular signaling region changes function.'],
+        watchFor: ['“Free” and “bound” describe a ribosome’s temporary location, not two permanent ribosome types.', 'A signal sequence directs localization; it does not become a destination by itself.'],
+        sourceChunkIds: ['demo-chunk-biol103-mastery-lo4', 'demo-chunk-biol103-transcript-targeting', 'demo-chunk-biol103-slides-targeting'],
+      },
+      {
+        id: 'demo-topic-biol103-methods', title: 'Choose and interpret methods that reveal gene expression', masteryState: 'not-started',
+        understand: ['In situ hybridization uses sequence complementarity to localize a specific mRNA in tissue.', 'Immunohistochemistry or immunofluorescence uses antibodies to localize a specific protein.', 'Positive and negative controls establish whether a fluorescent signal is interpretable.'],
+        beAbleToDo: ['Choose in situ hybridization for an mRNA-location question and immunostaining for a protein-location question.', 'Design a complementary probe with correct base pairing and orientation for a stated mRNA.', 'Use the Ebola activity data and controls to distinguish evidence of viral mRNA from evidence of viral protein.'],
+        watchFor: ['A fluorescent signal does not prove target identity unless controls rule out background and nonspecific binding.', 'Evidence that mRNA is present is not automatically evidence that its protein is present.'],
+        sourceChunkIds: ['demo-chunk-biol103-mastery-lo5', 'demo-chunk-biol103-transcript-methods', 'demo-chunk-biol103-slides-methods', 'demo-chunk-biol103-grq-methods'],
+      },
+    ],
+    sourceChunkIds: ['demo-chunk-biol103-mastery-lo1', 'demo-chunk-biol103-mastery-lo2', 'demo-chunk-biol103-mastery-lo3', 'demo-chunk-biol103-mastery-lo4', 'demo-chunk-biol103-mastery-lo5', 'demo-chunk-biol103-transcript-flow', 'demo-chunk-biol103-transcript-folding', 'demo-chunk-biol103-transcript-targeting', 'demo-chunk-biol103-transcript-methods', 'demo-chunk-biol103-slides-direction', 'demo-chunk-biol103-slides-targeting', 'demo-chunk-biol103-slides-methods', 'demo-chunk-biol103-grq-flow', 'demo-chunk-biol103-grq-methods'],
+    createdAt: stamp(-219), updatedAt: stamp(-219), order: 0,
+  }
   const lectures: LectureRecord[] = [
+    { id: 'demo-lecture-biol103-1', courseId: courses[12].id, title: 'Lecture 1 · Experimental thinking in cell biology', aiTitle: 'Experimental thinking', inputPath: 'pasted', occurredOn: date(-223), processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds: [], createdAt: stamp(-223), processedAt: stamp(-223), updatedAt: stamp(-223), order: 0 },
+    { id: 'demo-lecture-biol103-2', courseId: courses[12].id, title: 'Lecture 2 · Central Dogma: Gene to Functional Protein', aiTitle: 'Central Dogma: Gene to Functional Protein', inputPath: 'uploaded', transcriptFileId: 'demo-file-biol103-transcript-l2', occurredOn: date(-220), topicIds: ['demo-topic-biol103-expression', 'demo-topic-biol103-codons', 'demo-topic-biol103-ribosome', 'demo-topic-biol103-targeting', 'demo-topic-biol103-methods'], processingState: 'ready', workspaceState: 'complete', selectedSourceFileIds: ['demo-file-biol103-transcript-l2', 'demo-file-biol103-slides-l2', 'demo-file-biol103-grq-l2', 'demo-file-biol103-mastery-l2'], lectureBrief: biolLectureBrief, masteryMapId: biolMasteryMap.id, createdAt: stamp(-220), processedAt: stamp(-219), updatedAt: stamp(-219), order: 1 },
     { id: 'demo-lecture-chem-1', courseId: courses[4].id, title: 'Lecture #1', aiTitle: 'Conformations', inputPath: 'pasted', transcriptFileId: 'demo-file-chem-transcript-1', occurredOn: date(-12), processingState: 'ready', createdAt: stamp(-12), processedAt: stamp(-12), updatedAt: stamp(-12), order: 0 },
     { id: 'demo-lecture-chem-2', courseId: courses[4].id, title: 'Lecture #2', aiTitle: 'Acid-base reasoning', inputPath: 'pasted', transcriptFileId: 'demo-file-chem-transcript-2', occurredOn: date(-8), processingState: 'ready', createdAt: stamp(-8), processedAt: stamp(-8), updatedAt: stamp(-8), order: 1 },
-    { id: 'demo-lecture-chem-3', courseId: courses[4].id, title: 'Lecture #3', aiTitle: 'SN1 vs SN2', inputPath: 'pasted', transcriptFileId: 'demo-file-chem-transcript-3', occurredOn: date(-4), processingState: 'ready', createdAt: stamp(-4), processedAt: stamp(-4), updatedAt: stamp(-4), order: 2 },
+    { id: 'demo-lecture-chem-3', courseId: courses[4].id, title: 'Lecture 3 · SN1 vs SN2', aiTitle: 'SN1 vs SN2', inputPath: 'pasted', transcriptFileId: 'demo-file-chem-transcript-3', occurredOn: date(-4), processingState: 'ready', workspaceState: 'complete', selectedSourceFileIds: ['demo-file-chem-transcript-3', 'demo-file-chem-reading'], createdAt: stamp(-4), processedAt: stamp(-4), updatedAt: stamp(-4), order: 2 },
     { id: 'demo-lecture-engl-1', courseId: courses[7].id, title: 'Lecture #1', aiTitle: 'Audience and stakes', inputPath: 'pasted', transcriptFileId: 'demo-file-engl-transcript-1', occurredOn: date(-3), processingState: 'ready', createdAt: stamp(-3), processedAt: stamp(-3), updatedAt: stamp(-3), order: 0 },
   ]
   const lectureFindings: LectureEvidenceFinding[] = [
@@ -292,7 +446,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
 
   data.academics.classCenter = {
     workspaces: courses.filter((item) => item.term === data.profile.startTerm).map((item, order) => ({
-      id: `demo-workspace-${item.id}`, courseId: item.id, color: ['green', 'orange', 'blue', 'purple'][order] as 'green' | 'orange' | 'blue' | 'purple',
+      id: `demo-workspace-${item.id}`, courseId: item.id, color: ['green', 'orange', 'blue', 'purple'][order % 4] as 'green' | 'orange' | 'blue' | 'purple',
       type: item.code === 'ENGL 105' ? 'writing' : item.bcpm ? 'stem' : 'general',
       icon: item.code === 'ENGL 105' ? 'pen' : item.bcpm ? 'brain' : 'book', status: 'active', instructor: item.code === 'ENGL 105' ? 'Prof. Maya Bell' : order === 0 ? 'Dr. Elena Ruiz' : undefined,
       // Distinct slots per class. The old rule gave every MWF class the same
@@ -404,7 +558,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
     generatedFlashcardDecks: [],
     generatedMockAttempts: [],
     generatedRevisedNotes: [],
-    generatedMasteryOutlines: [],
+    generatedMasteryOutlines: [biolMasteryMap],
     generatedUnitQuestionBanks: [],
     professorEvidence: [
       { id: 'demo-prof-evidence-chem-exam', courseId: courses[4].id, assignmentId: 'demo-a-chem-exam1', observation: 'Mechanism comparisons were graded on rate and stereochemical evidence.', observedAt: stamp(-14), createdAt: stamp(-14), updatedAt: stamp(-14), order: 0 },

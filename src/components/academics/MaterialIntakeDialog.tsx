@@ -55,7 +55,7 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
       const id = uid()
       const blobRef = await retainLocalMaterial(file, id)
       try {
-        const extracted = await extractDocumentText(file)
+        const extracted = await extractDocumentText(file, { recoverScannedPdfPages: true })
         return { file, id, blobRef, extracted, extractionError: '' }
       } catch (error) {
         return { file, id, blobRef, extracted: undefined, extractionError: error instanceof Error ? error.message : 'This file could not be read as text.' }
@@ -70,18 +70,35 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
       const records = draft.academics.classCenter.files
       retained.forEach(({ file, id, blobRef, extracted, extractionError }) => {
         const parsed = extracted?.text.trim() ? parseTranscript(extracted.text) : undefined
+        const pageSegments = extracted?.pages?.flatMap((page) => page.text.trim()
+          ? parseTranscript(page.text).segments.map((segment) => ({ ...segment, pageNumber: page.pageNumber }))
+          : []) ?? []
+        const segments = pageSegments.length ? pageSegments : parsed?.segments ?? []
+        const lowerName = file.name.toLocaleLowerCase()
+        const materialType = /slide|deck/.test(lowerName) ? 'lecture-slides' as const
+          : /lab/.test(lowerName) ? 'lab-handout' as const
+            : /read|chapter|textbook/.test(lowerName) ? 'reading' as const
+              : 'other' as const
         records.unshift({
         id, courseId, lectureId, title: file.name.replace(/\.[^.]+$/, '') || file.name,
-        type: 'other', sourceType: 'upload', owner: 'mine', url: '', blobRef, fileName: file.name, mimeType: file.type,
+        type: materialType, sourceType: 'upload', owner: 'mine', url: '', blobRef, fileName: file.name, mimeType: file.type,
         notes: '', linkedTopicIds,
-        processingStatus: parsed?.segments.length ? 'ready' : 'failed',
-        processingError: parsed?.segments.length ? undefined : extractionError || (extracted?.scanDetected ? 'This file has no readable text layer. It remains available to open.' : 'No readable text was found. The file remains available to open.'),
+        processingStatus: segments.length ? 'ready' : 'failed',
+        processingError: segments.length ? undefined : extractionError || (extracted?.scanDetected ? 'On-device OCR could not recover readable text. Try a clearer scan or paste the relevant passage.' : 'No readable text was found. Try another file or paste the relevant passage.'),
+        sourceCoverage: {
+          pageCount: extracted?.pageCount,
+          readablePages: extracted?.pages?.filter((page) => page.readable).map((page) => page.pageNumber),
+          ocrRecoveredPages: extracted?.pages?.filter((page) => page.ocrRecovered).map((page) => page.pageNumber),
+          unreadablePages: extracted?.pages?.filter((page) => !page.readable).map((page) => page.pageNumber),
+          readableCharacterCount: extracted?.text.trim().length ?? 0,
+          figureStatus: 'not-interpreted' as const,
+        },
         createdAt: now, updatedAt: now, order: records.length,
         })
-        if (parsed?.segments.length) draft.academics.classCenter.sourceChunks.push(...parsed.segments.map((segment, index) => ({
+        if (segments.length) draft.academics.classCenter.sourceChunks.push(...segments.map((segment, index) => ({
           id: uid(), fileId: id, courseId, content: segment.text,
           characterStart: segment.start, characterEnd: segment.end,
-          sourcePosition: { index, label: segment.label },
+          sourcePosition: { index, label: 'pageNumber' in segment ? `Page ${segment.pageNumber}${segment.label ? ` · ${segment.label}` : ''}` : segment.label },
           assignmentMethod: linkedTopicIds.length === 1 ? 'manual' as const : 'pending' as const,
           assignmentConfirmed: linkedTopicIds.length === 1,
           topicId: linkedTopicIds.length === 1 ? linkedTopicIds[0] : undefined,
@@ -95,16 +112,17 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
     })
     const count = retained.length + (excerpt ? 1 : 0)
     const unreadable = retained.filter((item) => !item.extracted?.text.trim()).length
+    const recovered = retained.reduce((total, item) => total + (item.extracted?.ocrPageCount ?? 0), 0)
     toast({ title: count === 1 ? 'Material added' : `${count} materials added`, description: unreadable
-      ? `${unreadable} ${unreadable === 1 ? 'file remains' : 'files remain'} available to open but cannot be used as a text study source yet.`
-      : lectureId ? 'Saved with this lecture and indexed on this device.' : 'Saved and indexed in Materials on this device.' })
+      ? `${unreadable} ${unreadable === 1 ? 'file needs' : 'files need'} a clearer copy or pasted text.${recovered ? ` ${recovered} scanned ${recovered === 1 ? 'page was' : 'pages were'} recovered on this device.` : ''}`
+      : `${lectureId ? 'Saved with this lecture' : 'Saved in Materials'} and indexed on this device.${recovered ? ` ${recovered} scanned ${recovered === 1 ? 'page was' : 'pages were'} recovered with on-device OCR.` : ''} Figures were not interpreted.` })
     setOpen(false); setFiles([]); setTitle(''); setSourceLabel(''); setSectionLabel(''); setText('')
   }
 
   return <Dialog open={open} onOpenChange={setOpen}>
     <DialogTrigger asChild>{trigger}</DialogTrigger>
     <DialogContent className="max-w-xl bg-card">
-      <DialogHeader><DialogTitle>Add material</DialogTitle><DialogDescription>Choose files, paste a screenshot, or paste textbook text. File bytes stay on this device; reviewed records can sync when cloud sync or backup is enabled.</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle>Add material</DialogTitle><DialogDescription>Choose files, paste a screenshot, or paste textbook text. Text and scanned pages are read on this device. File bytes stay local; only sources you later select for an AI output are copied to your private server workspace after disclosure.</DialogDescription></DialogHeader>
       <div className="grid gap-4">
         <input ref={inputRef} type="file" multiple className="sr-only" onChange={(event) => { addFiles(event.target.files ?? []); event.currentTarget.value = '' }} />
         <div className="grid gap-2 sm:grid-cols-2">

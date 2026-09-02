@@ -21,7 +21,7 @@ function failureFor(code: string): GenerateFailure {
   return 'provider-unavailable'
 }
 
-export async function generateUnitMasteryOutline({ courseId, chunks, unit, label }: { courseId: string; chunks: SourceChunk[]; unit: string; label: string }): Promise<UnitMasteryOutlineOutcome> {
+export async function generateUnitMasteryOutline({ courseId, chunks, unit, label, scope = 'unit' }: { courseId: string; chunks: SourceChunk[]; unit: string; label: string; scope?: 'lecture' | 'unit' | 'exam' }): Promise<UnitMasteryOutlineOutcome> {
   if (!chunks.length) return { ok: false, failure: 'no-sources', message: 'Select processed course material first. The mastery map stays empty rather than guessing.' }
   try {
     assertGenerationAllowed({ scope: 'academics', artifact: 'unit-mastery-outline', courseId, groundedIn: chunks.map((chunk) => chunk.id) })
@@ -41,8 +41,8 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
   return {
     ok: true,
     artifact: {
-      courseId, title: generatedTitle(artifact.title), unit: artifact.unit, specId: 'unit-mastery-outline-v1', specHash: assembled.specHash,
-      standards: artifact.standards, sourceChunkIds: [...new Set(artifact.standards.flatMap((standard) => standard.sourceChunkIds))],
+      courseId, title: generatedTitle(artifact.title), unit: artifact.unit, scope, specId: 'unit-mastery-outline-v1', specHash: assembled.specHash,
+      standards: artifact.standards.map((standard) => ({ ...standard, masteryState: 'not-started' as const })), sourceChunkIds: [...new Set(artifact.standards.flatMap((standard) => standard.sourceChunkIds))],
     },
   }
 }

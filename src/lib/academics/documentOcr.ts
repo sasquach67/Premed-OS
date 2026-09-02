@@ -24,6 +24,7 @@ interface RenderablePdfPage {
 
 export interface LocalOcrSession {
   recognizePdfPage(page: unknown): Promise<string>
+  recognizeImage(image: Blob): Promise<string>
   terminate(): Promise<void>
 }
 
@@ -60,6 +61,12 @@ export async function createLocalOcrSession(
   })
 
   return {
+    async recognizeImage(image) {
+      throwIfAborted(signal)
+      const result = await worker.recognize(image as Parameters<typeof worker.recognize>[0])
+      throwIfAborted(signal)
+      return result.data.text.replace(/\r/g, '').trim()
+    },
     async recognizePdfPage(sourcePage) {
       throwIfAborted(signal)
       const page = sourcePage as RenderablePdfPage

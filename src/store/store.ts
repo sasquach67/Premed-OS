@@ -64,6 +64,7 @@ import { migrateGuideProposalsV37 } from '@/store/migrations/guideProposalsV37'
 import { migrateReadingTaskScheduleV38 } from '@/store/migrations/readingTaskScheduleV38'
 import { migrateGeneratedUnitResourcesV39 } from '@/store/migrations/generatedUnitResourcesV39'
 import { migrateProfileMinorsV40 } from '@/store/migrations/profileMinorsV40'
+import { migrateLectureWorkspaceV41 } from '@/store/migrations/lectureWorkspaceV41'
 import { removeStoryAttachment, retainThenPersistStoryAttachment } from '@/lib/overviewFileCapture'
 
 const DEMO_MODE = isDemoMode()
@@ -82,8 +83,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateProfileMinorsV40`. */
-export const CURRENT_STORE_VERSION = 40
+/** Matches the newest migration in `migrateAll`: `migrateLectureWorkspaceV41`. */
+export const CURRENT_STORE_VERSION = 41
 
 function createInitialData() {
   const initial = createInitialDataForMode(DEMO_MODE)
@@ -591,7 +592,8 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateGuideProposalsV37(migrated)
   migrated = migrateReadingTaskScheduleV38(migrated)
   migrated = migrateGeneratedUnitResourcesV39(migrated)
-  return migrateProfileMinorsV40(migrated)
+  migrated = migrateProfileMinorsV40(migrated)
+  return migrateLectureWorkspaceV41(migrated)
 }
 
 /**
