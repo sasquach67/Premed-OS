@@ -1328,6 +1328,7 @@ function ClassCenterDashboard({
           persons={persons}
           courses={courses}
           onOpenClass={(courseId) => navigate(`/academics/classes/${courseId}`)}
+          onOpenAssignment={(courseId, assignmentId) => navigate(`/academics/classes/${courseId}?classTab=assignments&view=agenda&assignment=${encodeURIComponent(assignmentId)}`)}
           onOpenExamPlan={(courseId, assignmentId) => navigate(`/academics/classes/${courseId}?classTab=overview&examPrep=${assignmentId}`)}
         />
       )}
@@ -1665,6 +1666,7 @@ function AcademicsBento({
   persons,
   courses,
   onOpenClass,
+  onOpenAssignment,
   onOpenExamPlan,
 }: {
   data: ClassCenterViewData
@@ -1672,6 +1674,7 @@ function AcademicsBento({
   persons: Person[]
   courses: Course[]
   onOpenClass: (courseId: string) => void
+  onOpenAssignment: (courseId: string, assignmentId: string) => void
   onOpenExamPlan: (courseId: string, assignmentId: string) => void
 }) {
   const [renderNow] = useState(() => Date.now())
@@ -1688,7 +1691,7 @@ function AcademicsBento({
     <div className="academics-bento grid grid-cols-1 gap-[15px] lg:grid-cols-12">
       <RecentStudyWorkPanel data={data} classes={classes} onOpenClass={onOpenClass} />
       <ClassMaterialsPanel data={data} classes={classes} onOpenClass={onOpenClass} />
-      <UpNextPanel data={data} assignments={pending} now={renderNow} onOpenClass={onOpenClass} onOpenExamPlan={onOpenExamPlan} />
+      <UpNextPanel data={data} assignments={pending} now={renderNow} onOpenAssignment={onOpenAssignment} onOpenExamPlan={onOpenExamPlan} />
       <GpaPanel courses={courses} currentTerm={classes[0]?.semester ?? ''} />
       <ContactsPanel data={data} classes={classes} persons={persons} />
       <UpcomingPanel data={data} assignments={pending} />
@@ -1720,17 +1723,19 @@ function BentoPanel({
   title,
   icon: Icon,
   actions,
+  className,
   children,
 }: {
   span: 4 | 5 | 7
   title: string
   icon: LucideIcon
   actions?: React.ReactNode
+  className?: string
   children: React.ReactNode
 }) {
   const spanClass = span === 7 ? 'lg:col-span-7' : span === 5 ? 'lg:col-span-5' : 'lg:col-span-4'
   return (
-    <Card className={cn(spanClass, 'academics-bento-panel min-w-0')}>
+    <Card className={cn(spanClass, 'academics-bento-panel min-w-0', className)}>
       <CardHeader className="flex-row items-start justify-between gap-3">
         <div>
           <CardTitle className="flex items-center gap-2"><Icon className="size-5 text-primary" /> {title}</CardTitle>
@@ -1817,13 +1822,13 @@ function UpNextPanel({
   data,
   assignments,
   now,
-  onOpenClass,
+  onOpenAssignment,
   onOpenExamPlan,
 }: {
   data: ClassCenterViewData
   assignments: ClassAssignment[]
   now: number
-  onOpenClass: (courseId: string) => void
+  onOpenAssignment: (courseId: string, assignmentId: string) => void
   onOpenExamPlan: (courseId: string, assignmentId: string) => void
 }) {
   const ranked = rankUpNextAssignments(assignments, now)
@@ -1836,30 +1841,63 @@ function UpNextPanel({
   const topicIds = [...new Set([...(item.coveredTopicIds ?? []), ...item.linkedTopicIds])]
   const topics = data.topics.filter((topic) => topicIds.includes(topic.id))
   const withMaterial = topics.filter((topic) => (topic.linkedFileIds?.length ?? 0) || topic.sourceNoteIds.length).length
+  const openItem = (assignment: ClassAssignment) => assignment.type === 'exam'
+    ? onOpenExamPlan(assignment.courseId, assignment.id)
+    : onOpenAssignment(assignment.courseId, assignment.id)
+  const displayTitle = classCardTaskSummary(item.title)
   return (
     <BentoPanel
       span={7}
       title="Up next"
       icon={TrendingUp}
-      actions={<Button size="sm" onClick={() => item.type === 'exam' ? onOpenExamPlan(item.courseId, item.id) : onOpenClass(item.courseId)}>Build {item.type === 'exam' ? 'exam ' : ''}plan</Button>}
+      className="self-start"
+      actions={(
+        <Button size="sm" className="font-display font-extrabold" onClick={() => openItem(item)}>
+          {item.type === 'exam' ? 'Build exam plan' : 'Open assignment'} <ArrowUpRight className="size-4" />
+        </Button>
+      )}
     >
-      <div className="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)]">
-        <div>
-          <p className="font-display text-4xl font-bold tabular-nums">{assignmentDateLabel(item)}</p>
-          <Badge className="mt-2" variant="outline">{classLabel(item.courseId, data)}</Badge>
+      <button
+        type="button"
+        onClick={() => openItem(item)}
+        className="group/up-next grid w-full gap-4 rounded-xl border border-border bg-muted/55 p-4 text-left transition-colors hover:border-primary/45 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[8.5rem_minmax(0,1fr)]"
+        title={item.title}
+        aria-label={`Open assignment: ${item.title}`}
+      >
+        <div className="flex items-center gap-2 sm:block">
+          <Badge variant={assignmentDateLabel(item).startsWith('Overdue') ? 'danger' : 'outline'}>{assignmentDateLabel(item)}</Badge>
+          <p className="mt-0 text-xs font-extrabold text-muted-foreground sm:mt-2">{classLabel(item.courseId, data)}</p>
         </div>
-        <div>
-          <h3 className="font-display text-xl font-bold">{item.title}</h3>
-          <p className="mt-1 text-sm font-semibold text-muted-foreground">
-            {item.weight != null ? `Worth ${item.weight}% of the course grade` : 'Grade weight not available'}
-          </p>
-          {!!topics.length && <p className="mt-4 text-xs font-bold text-muted-foreground">{topics.length} syllabus {topics.length === 1 ? 'topic' : 'topics'} in scope · {withMaterial} with linked material.</p>}
+        <div className="min-w-0">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-primary">{item.type === 'reading' ? 'Reading before class' : item.type}</p>
+          <h3 className="mt-1 line-clamp-2 font-display text-2xl font-extrabold leading-tight">{displayTitle}</h3>
+          {(item.weight != null || topics.length > 0) && (
+            <p className="mt-2 text-xs font-bold text-muted-foreground">
+              {[
+                item.weight != null ? `${item.weight}% of course grade` : null,
+                topics.length ? `${topics.length} syllabus ${topics.length === 1 ? 'topic' : 'topics'} · ${withMaterial} with material` : null,
+              ].filter(Boolean).join(' · ')}
+            </p>
+          )}
         </div>
-      </div>
+      </button>
       {!!ranked.slice(1, 4).length && (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-3 divide-y divide-border overflow-hidden rounded-xl border border-border">
           {ranked.slice(1, 4).map((next) => (
-            <Badge key={next.id} variant="secondary">{next.title} · {assignmentDateLabel(next)}</Badge>
+            <button
+              key={next.id}
+              type="button"
+              onClick={() => openItem(next)}
+              title={next.title}
+              aria-label={`Open assignment: ${next.title}`}
+              className="group/queued grid w-full min-w-0 gap-1 bg-card px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-4"
+            >
+              <span className="line-clamp-1 text-sm font-bold">{classCardTaskSummary(next.title, 96)}</span>
+              <span className="flex shrink-0 items-center gap-2 text-xs font-extrabold text-muted-foreground">
+                {classLabel(next.courseId, data)} · {assignmentDateLabel(next)}
+                <ArrowUpRight className="size-3.5 text-primary opacity-55 transition-opacity group-hover/queued:opacity-100" aria-hidden="true" />
+              </span>
+            </button>
           ))}
         </div>
       )}

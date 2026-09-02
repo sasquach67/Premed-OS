@@ -318,6 +318,33 @@ describe('Daily Class Center persisted dashboard boundary', () => {
       .toBe(`/academics/classes/${exam.courseId}?classTab=overview&examPrep=${exam.id}`)
   })
 
+  it('presents long imported readings as a compact actionable Up next item', async () => {
+    const seeded = structuredClone(createSeedData())
+    const item = seeded.academics.classCenter.assignments.find((assignment) => assignment.dueDate)!
+    seeded.academics.classCenter.assignments.forEach((assignment) => {
+      if (assignment.id !== item.id) assignment.status = 'submitted'
+    })
+    item.type = 'reading'
+    item.weight = undefined
+    item.title = 'Read Listen to Podcast, “What You Don’t Know” from This American Life, Act One, by Lulu Wang (27 min) https://www.thisamericanlife.org/radio-archives/episode/585/in-defense-of-ignorance?act=1#play before class'
+    useStore.getState().replaceAll(seeded)
+    await render()
+
+    const upNext = [...container.querySelectorAll<HTMLElement>('.academics-bento-panel')]
+      .find((panel) => [...panel.querySelectorAll('*')].some((node) => node.textContent?.trim() === 'Up next'))!
+    expect(upNext.className).toContain('self-start')
+    expect(upNext.querySelector('h3')?.textContent).toBe('Listen to “What You Don’t Know”')
+    expect(upNext.textContent).not.toContain('https://')
+    expect(upNext.textContent).not.toContain('Grade weight not available')
+
+    const openAssignment = [...upNext.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Open assignment')
+    expect(openAssignment).toBeTruthy()
+    await act(async () => openAssignment!.click())
+    expect(container.querySelector('[data-testid="location"]')?.textContent)
+      .toBe(`/academics/classes/${item.courseId}?classTab=assignments&view=agenda&assignment=${item.id}`)
+  })
+
   it('routes the GPA What-if action to Grades & Archive scenario mode', async () => {
     useStore.getState().replaceAll(structuredClone(createSeedData()))
     await render()
