@@ -1570,6 +1570,8 @@ export interface TaskItem {
   kanban: KanbanColumn
   notes?: string
   fileUrl?: string
+  /** Ordered task resources. `fileUrl` mirrors the first entry for legacy readers. */
+  links?: string[]
   /** finished items auto-leave the active assignment table */
   archived: boolean
   /** @deprecated Legacy migration marker. Timeline milestones live in

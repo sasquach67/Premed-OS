@@ -77,6 +77,36 @@ const TABS: Array<{ value: OverviewTaskTab; label: string }> = [
 ]
 const CATEGORIES = ['Personal', 'Application', 'Advising', 'MCAT', 'Academics', 'Clinical', 'Letters', 'Essays']
 
+function normalizeTaskLinks(links: string[]) {
+  return [...new Set(links.map((link) => link.trim()).filter(Boolean))]
+}
+
+function taskLinkValues(task: Pick<TaskItem, 'fileUrl' | 'links'>) {
+  return normalizeTaskLinks([...(task.links ?? []), task.fileUrl ?? ''])
+}
+
+function TaskLinkFields({ links, onChange, idPrefix }: { links: string[]; onChange: (links: string[]) => void; idPrefix: string }) {
+  const rows = links.length ? links : ['']
+  return <div className="space-y-2">
+    {rows.map((link, index) => {
+      const id = index === 0 ? idPrefix : `${idPrefix}-${index}`
+      return <div key={index} className="flex items-center gap-2">
+        <Input
+          id={id}
+          type="text"
+          inputMode="url"
+          aria-label={`Link ${index + 1}`}
+          value={link}
+          onChange={(event) => onChange(rows.map((value, rowIndex) => rowIndex === index ? event.target.value : value))}
+          placeholder="https://"
+        />
+        {rows.length > 1 && <Button type="button" size="icon" variant="ghost" aria-label={`Remove link ${index + 1}`} onClick={() => onChange(rows.filter((_, rowIndex) => rowIndex !== index))}><X className="size-4" /></Button>}
+      </div>
+    })}
+    <Button type="button" size="sm" variant="outline" onClick={() => onChange([...rows, ''])}><Plus className="size-4" /> Add another link</Button>
+  </div>
+}
+
 export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {}) {
   const tasks = useStore((state) => state.tasks)
   const update = useStore((state) => state.update)
@@ -234,7 +264,7 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
   const [deadline, setDeadline] = useState('')
   const [horizon, setHorizon] = useState<'now' | 'soon'>('now')
   const [notes, setNotes] = useState('')
-  const [fileUrl, setFileUrl] = useState('')
+  const [linkUrls, setLinkUrls] = useState<string[]>([''])
   const [important, setImportant] = useState(false)
 
   function reset() {
@@ -243,7 +273,7 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
     setDeadline('')
     setHorizon('now')
     setNotes('')
-    setFileUrl('')
+    setLinkUrls([''])
     setImportant(false)
   }
 
@@ -257,6 +287,7 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
     const trimmedTitle = title.trim()
     if (!trimmedTitle) return
     const beforeRecovery = useStore.getState().meta.recoveryStack[0]?.id
+    const links = normalizeTaskLinks(linkUrls)
     addItem('tasks', {
       id: uid(),
       title: trimmedTitle,
@@ -265,7 +296,8 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
       progress: 'Not started',
       kanban: 'todo',
       notes: notes.trim() || undefined,
-      fileUrl: fileUrl.trim() || undefined,
+      fileUrl: links[0],
+      links: links.length ? links : undefined,
       archived: false,
       horizon,
       important,
@@ -297,14 +329,13 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
         </DialogHeader>
         <form onSubmit={createTask} className="space-y-5">
           <div className="space-y-1.5">
-            <Label htmlFor="new-task-title">What needs to happen?</Label>
+            <Label htmlFor="new-task-title">Task</Label>
             <Input
               id="new-task-title"
               autoFocus
               required
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="Email Dr. A about office hours"
               className="h-12 text-base font-bold"
             />
           </div>
@@ -364,16 +395,9 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="new-task-link" className="flex items-center gap-1.5"><Link2 className="size-3.5 text-primary" /> Link or resource</Label>
-            <Input
-              id="new-task-link"
-              type="text"
-              inputMode="url"
-              value={fileUrl}
-              onChange={(event) => setFileUrl(event.target.value)}
-              placeholder="https://canvas.unc.edu/..."
-            />
-            <p className="text-xs text-muted-foreground">Add the page, document, folder, or directory you need to finish it.</p>
+            <Label htmlFor="new-task-link" className="flex items-center gap-1.5"><Link2 className="size-3.5 text-primary" /> Links or resources</Label>
+            <TaskLinkFields links={linkUrls} onChange={setLinkUrls} idPrefix="new-task-link" />
+            <p className="text-xs text-muted-foreground">Add any pages, documents, folders, or directories you need to finish it.</p>
           </div>
 
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-muted/35 px-3 py-2.5">
@@ -658,7 +682,7 @@ function TaskRow({
         <ContextMenuItem variant="destructive" onSelect={remove}><Trash2 />Delete</ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
-    {/* notes and fileUrl cannot fit a row at either size, so they open in the
+    {/* Notes and links cannot fit a row at either size, so they open in the
      *  shared one-record peek (01 §2.1) — reachable identically from the
      *  widget and from /overview/tasks, so neither size has a capability the
      *  other lacks (03-overview §6.4). */}
@@ -729,7 +753,27 @@ function TaskTitle({ task, completing, onRename, onOpen }: { task: CollectionRec
   )
 }
 
-/** The only surface in the app for a task's notes and attachment. */
+function TaskDetailLinks({ task, onPatch }: { task: CollectionRecord<TaskItem>; onPatch: (patch: Partial<TaskItem>) => void }) {
+  const [links, setLinks] = useState<string[]>(() => {
+    const existing = taskLinkValues(task)
+    return existing.length ? existing : ['']
+  })
+
+  function updateLinks(next: string[]) {
+    const rows = next.length ? next : ['']
+    const normalized = normalizeTaskLinks(rows)
+    setLinks(rows)
+    onPatch({ links: normalized.length ? normalized : undefined, fileUrl: normalized[0] })
+  }
+
+  return <div>
+    <Label htmlFor={`task-file-${task.id}`} className="mb-1 flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-muted-foreground"><Link2 className="size-3.5 text-primary" /> Links</Label>
+    <TaskLinkFields links={links} onChange={updateLinks} idPrefix={`task-file-${task.id}`} />
+    {normalizeTaskLinks(links).length > 0 && <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">{normalizeTaskLinks(links).map((link, index) => <a key={link} href={link} target="_blank" rel="noreferrer" className="text-xs font-bold text-primary">Open link {index + 1} →</a>)}</div>}
+  </div>
+}
+
+/** The only surface in the app for a task's notes and links. */
 function TaskDetail({ task, onPatch }: { task: CollectionRecord<TaskItem>; onPatch: (patch: Partial<TaskItem>) => void }) {
   return (
     <div className="space-y-4 p-5 md:p-7">
@@ -762,11 +806,7 @@ function TaskDetail({ task, onPatch }: { task: CollectionRecord<TaskItem>; onPat
         <Label htmlFor={`task-notes-${task.id}`} className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Notes</Label>
         <Textarea id={`task-notes-${task.id}`} value={task.notes ?? ''} onChange={(event) => onPatch({ notes: event.target.value })} placeholder="Anything that does not fit the title…" className="min-h-28" />
       </div>
-      <div>
-        <Label htmlFor={`task-file-${task.id}`} className="mb-1 block text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Attachment</Label>
-        <Input id={`task-file-${task.id}`} value={task.fileUrl ?? ''} onChange={(event) => onPatch({ fileUrl: event.target.value })} placeholder="Paste a link" />
-        {task.fileUrl && <a href={task.fileUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs font-bold text-primary">Open attachment →</a>}
-      </div>
+      <TaskDetailLinks task={task} onPatch={onPatch} />
     </div>
   )
 }
