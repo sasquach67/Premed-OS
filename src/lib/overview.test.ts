@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { goalProgress, latestExperienceLabel, observedWeeklyHours, overviewTasks, roadmapMilestones, termGpaSeries } from '@/lib/overview'
 import type { Course, ExperienceEntry, TaskItem, TimelineMilestone } from '@/lib/types'
 
@@ -17,6 +17,8 @@ function task(partial: Partial<TaskItem>): TaskItem {
 }
 
 describe('Overview selectors', () => {
+  afterEach(() => vi.useRealTimers())
+
   it('derives Done from completion while keeping Now and Soon explicit', () => {
     const tasks = [
       task({ id: 'now', horizon: 'now', important: false }),
@@ -32,6 +34,18 @@ describe('Overview selectors', () => {
     const undated = task({ id: 'undated', important: false })
     expect(overviewTasks([undated], 'now').map((item) => item.id)).toEqual(['undated'])
     expect(overviewTasks([undated], 'soon')).toEqual([])
+  })
+
+  it('derives dated task horizons from urgency so distant work moves to Soon', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-02T12:00:00'))
+    const tasks = [
+      task({ id: 'within-week', deadline: '2026-09-09', horizon: 'soon', important: false }),
+      task({ id: 'distant', deadline: '2026-12-01', horizon: 'now', important: false }),
+    ]
+
+    expect(overviewTasks(tasks, 'now').map((item) => item.id)).toEqual(['within-week'])
+    expect(overviewTasks(tasks, 'soon').map((item) => item.id)).toEqual(['distant'])
   })
 
   it('pins important tasks before everything else without a second focus concept', () => {

@@ -1,4 +1,5 @@
 import { GRADE_POINTS } from '@/lib/selectors'
+import { daysUntil } from '@/lib/date'
 import type {
   Course,
   CollectionRecord,
@@ -64,10 +65,17 @@ export function goalProgress(current: number, goal?: number): number | undefined
 
 export type OverviewTaskTab = TaskHorizon | 'done'
 
+/** Dated work becomes actionable during its final week. The stored horizon is
+ * still meaningful for undated tasks, but it must not leave a months-away
+ * deadline in Now or hide an approaching deadline in Soon. */
+export const OVERVIEW_NOW_WINDOW_DAYS = 7
+
 export function overviewTaskTab(task: TaskItem): OverviewTaskTab {
   if (task.progress === 'Finished') return 'done'
-  // A missing date is still a present commitment. Send unsorted tasks to Now
-  // by default; Soon remains an intentional user choice via the task controls.
+  const days = daysUntil(task.deadline)
+  if (days != null) return days <= OVERVIEW_NOW_WINDOW_DAYS ? 'now' : 'soon'
+  // A missing date is still a present commitment. Keep its chosen horizon,
+  // defaulting unsorted work to Now.
   return task.horizon ?? 'now'
 }
 
