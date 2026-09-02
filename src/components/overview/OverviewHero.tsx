@@ -87,7 +87,7 @@ export function OverviewHero() {
   )
 }
 
-function HeroLiveStatus({ schedule, now }: { schedule: ReturnType<typeof useHeroScheduleSource>; now: Date }) {
+export function HeroLiveStatus({ schedule, now }: { schedule: ReturnType<typeof useHeroScheduleSource>; now: Date }) {
   const analysis = useMemo(() => normalizeTimedEvents(schedule.events, now), [schedule.events, now])
   const previous = analysis.timedEvents.filter((event) => event.endDate <= now).at(-1)
   const dayEnd = useMemo(() => {
@@ -128,7 +128,7 @@ function HeroLiveStatus({ schedule, now }: { schedule: ReturnType<typeof useHero
           <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-primary/90">{eyebrow}</p>
           <p className="mt-1 truncate text-sm font-extrabold text-foreground dark:text-white">{title}</p>
         </div>
-        <Badge className="border-border/70 bg-muted text-muted-foreground dark:border-white/10 dark:bg-white/8 dark:text-white/72">{detail}</Badge>
+        <Badge className="shrink-0 self-start whitespace-nowrap border-border/70 bg-muted text-muted-foreground dark:border-white/10 dark:bg-white/8 dark:text-white/72">{detail}</Badge>
       </div>
       <NumberFlow
         value={remaining}
