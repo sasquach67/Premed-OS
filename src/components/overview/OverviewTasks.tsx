@@ -5,7 +5,10 @@ import {
   Check,
   Copy,
   Ellipsis,
+  Flag,
   GripVertical,
+  Link2,
+  ListPlus,
   NotebookPen,
   Plus,
   Search,
@@ -14,7 +17,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useToast } from '@/components/common/useToast'
@@ -46,6 +49,14 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { DateField } from '@/components/common/DateField'
 import { CenterPeek, type RecordOpenMode } from '@/components/common/CenterPeek'
 import { BoundedRegion } from '@/components/common/BoundedLayout'
@@ -58,7 +69,6 @@ import { overviewTaskTab, overviewTasks, type OverviewTaskTab } from '@/lib/over
 import type { CollectionRecord, TaskItem } from '@/lib/types'
 import { useStore } from '@/store/store'
 import { cn } from '@/lib/utils'
-import { useShellActions } from '@/components/layout/shellActions'
 
 const TABS: Array<{ value: OverviewTaskTab; label: string }> = [
   { value: 'now', label: 'Now' },
@@ -70,7 +80,7 @@ const CATEGORIES = ['Personal', 'Application', 'Advising', 'MCAT', 'Academics', 
 export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {}) {
   const tasks = useStore((state) => state.tasks)
   const update = useStore((state) => state.update)
-  const { openQuickAdd } = useShellActions()
+  const [createOpen, setCreateOpen] = useState(false)
   const [tab, setTab] = useState<OverviewTaskTab>('now')
   /* The expansion adds room to filter and search and NOTHING else — any
    * behaviour here that the widget lacks is a defect (03-overview §6.4). */
@@ -135,7 +145,7 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <Button type="button" size="sm" onClick={() => openQuickAdd('task')}>
+          <Button type="button" size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="size-4" />
             Add task
           </Button>
@@ -210,7 +220,177 @@ export function OverviewTasks({ expanded = false }: { expanded?: boolean } = {})
           </AnimatePresence>
         </BoundedRegion>
       </CardContent>
+      <CreateTaskDialog open={createOpen} onOpenChange={setCreateOpen} />
     </Card>
+  )
+}
+
+function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const addItem = useStore((state) => state.addItem)
+  const tasks = useStore((state) => state.tasks)
+  const toast = useToast()
+  const [title, setTitle] = useState('')
+  const [category, setCategory] = useState('Personal')
+  const [deadline, setDeadline] = useState('')
+  const [horizon, setHorizon] = useState<'now' | 'soon'>('now')
+  const [notes, setNotes] = useState('')
+  const [fileUrl, setFileUrl] = useState('')
+  const [important, setImportant] = useState(false)
+
+  function reset() {
+    setTitle('')
+    setCategory('Personal')
+    setDeadline('')
+    setHorizon('now')
+    setNotes('')
+    setFileUrl('')
+    setImportant(false)
+  }
+
+  function close() {
+    onOpenChange(false)
+    reset()
+  }
+
+  function createTask(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const trimmedTitle = title.trim()
+    if (!trimmedTitle) return
+    const beforeRecovery = useStore.getState().meta.recoveryStack[0]?.id
+    addItem('tasks', {
+      id: uid(),
+      title: trimmedTitle,
+      type: category,
+      deadline: deadline || undefined,
+      progress: 'Not started',
+      kanban: 'todo',
+      notes: notes.trim() || undefined,
+      fileUrl: fileUrl.trim() || undefined,
+      archived: false,
+      horizon,
+      important,
+      order: tasks.length,
+    })
+    const recoveryId = useStore.getState().meta.recoveryStack[0]?.id
+    toast({
+      title: 'Task created',
+      description: trimmedTitle,
+      tone: 'success',
+      onUndo: recoveryId && recoveryId !== beforeRecovery ? () => useStore.getState().undoRecovery(recoveryId) : undefined,
+    })
+    close()
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(next) => next ? onOpenChange(true) : close()}>
+      <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader className="border-b border-border pb-4">
+          <div className="flex items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary">
+              <ListPlus className="size-5" />
+            </span>
+            <div>
+              <DialogTitle>New task</DialogTitle>
+              <DialogDescription>Capture the action and keep its context with it.</DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+        <form onSubmit={createTask} className="space-y-5">
+          <div className="space-y-1.5">
+            <Label htmlFor="new-task-title">What needs to happen?</Label>
+            <Input
+              id="new-task-title"
+              autoFocus
+              required
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="Email Dr. A about office hours"
+              className="h-12 text-base font-bold"
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-bold">When</legend>
+              <DateField value={deadline} onChange={setDeadline} ariaLabel="Task due date" />
+              <div className="grid grid-cols-2 gap-2" aria-label="Task timing">
+                {(['now', 'soon'] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={horizon === value}
+                    onClick={() => setHorizon(value)}
+                    className={cn(
+                      'rounded-xl border px-3 py-2 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      horizon === value ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:bg-muted',
+                    )}
+                  >
+                    {value === 'now' ? 'Now' : 'Soon'}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-bold">Tag</legend>
+              <div className="flex flex-wrap gap-1.5" aria-label="Task tag">
+                {CATEGORIES.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={category === value}
+                    onClick={() => setCategory(value)}
+                    className={cn(
+                      'rounded-full border px-2.5 py-1.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      category === value ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:bg-muted',
+                    )}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="new-task-notes">Details</Label>
+            <Textarea
+              id="new-task-notes"
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              placeholder="People, instructions, or anything you will need when you come back to this task."
+              className="min-h-24"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="new-task-link" className="flex items-center gap-1.5"><Link2 className="size-3.5 text-primary" /> Link or resource</Label>
+            <Input
+              id="new-task-link"
+              type="text"
+              inputMode="url"
+              value={fileUrl}
+              onChange={(event) => setFileUrl(event.target.value)}
+              placeholder="https://canvas.unc.edu/..."
+            />
+            <p className="text-xs text-muted-foreground">Add the page, document, folder, or directory you need to finish it.</p>
+          </div>
+
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-muted/35 px-3 py-2.5">
+            <Checkbox checked={important} onCheckedChange={(checked) => setImportant(checked === true)} aria-label="Mark task important" />
+            <Flag className="size-4 text-warning" />
+            <span className="text-sm font-bold">Mark as important</span>
+          </label>
+
+          <DialogFooter className="border-t border-border pt-4">
+            <Button type="button" variant="outline" onClick={close}>Cancel</Button>
+            <Button type="submit" className="font-display font-extrabold" disabled={!title.trim()}>
+              <Plus className="size-4" /> Create task
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
