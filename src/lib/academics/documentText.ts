@@ -192,7 +192,9 @@ export async function extractDocumentText(file: File, options: DocumentExtractio
         options.onProgress?.({
           phase: 'ocr', page: activePage, pageCount: pdf.numPages,
           progress: progress.progress,
-          message: `Reading scanned page ${activePage} of ${pdf.numPages}`,
+          message: activePage
+            ? `Reading scanned page ${activePage} of ${pdf.numPages}`
+            : 'Preparing scanned-page reader…',
         })
       }, options.signal)
       try {
@@ -200,6 +202,11 @@ export async function extractDocumentText(file: File, options: DocumentExtractio
           const page = pageHandles[index]
           if (!page) continue
           activePage = index + 1
+          options.onProgress?.({
+            phase: 'ocr', page: activePage, pageCount: pdf.numPages,
+            progress: 0,
+            message: `Reading scanned page ${activePage} of ${pdf.numPages}`,
+          })
           try {
             const recovered = await ocr.recognizePdfPage(page)
             if (recovered.replace(/\s/g, '')) {

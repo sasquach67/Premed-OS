@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/components/common/useToast'
 import { SharedSyllabusStructurePanel } from '@/components/academics/SharedSyllabusStructurePanel'
 import {
-  extractSyllabusFile, mergeSyllabusProposals, parseSyllabusText, weightGap,
+  extractSyllabusFiles, parseSyllabusText, weightGap,
   type SyllabusProposal, type SyllabusKind, type StructuralSignal,
 } from '@/lib/academics/syllabusParser'
 import { syllabusReimportDiff, type ReimportRow } from '@/lib/academics/syllabusReimport'
@@ -125,15 +125,9 @@ export function SyllabusImportMode({
   async function parse() {
     setError(null); setParsing(true)
     try {
-      const proposals: SyllabusProposal[] = []
-      if (!pastedText.trim()) {
-        for (const file of files) {
-          proposals.push(await extractSyllabusFile(file, { onProgress: (progress) => setParsingMessage(progress.message) }))
-        }
-      }
       const next = pastedText.trim()
         ? parseSyllabusText(pastedText, 'Pasted syllabus')
-        : mergeSyllabusProposals(proposals)
+        : await extractSyllabusFiles(files, { onProgress: (progress) => setParsingMessage(progress.message) })
       setProposal(next)
       setConfirmedItemIds(new Set())
       setPastDueActions({})

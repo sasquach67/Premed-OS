@@ -1,4 +1,4 @@
-import { extractDocumentText, pdfTextToLines, type DocumentExtractionOptions } from '@/lib/academics/documentText'
+import { extractDocumentText, pdfTextToLines, type DocumentExtractionOptions, type DocumentExtractionProgress } from '@/lib/academics/documentText'
 import { extractClassMeetingDays, extractClassMeetingTime, extractMeetingDays, isOfficeHoursLine, isPlausibleClassMeetingTime, proposePlausibleMeetingTime } from '@/lib/academics/meetingSchedule'
 
 // One implementation, shared with transcript intake. Re-exported because the
@@ -1200,6 +1200,35 @@ export async function extractSyllabusFile(file: File, options: Omit<DocumentExtr
   const name = file.name || 'Syllabus'
   const { text, sourceKind, unreadablePageCount, imageOnlyPageCount, ocrPageCount, pageCount } = await extractDocumentText(file, { ...options, recoverScannedPdfPages: true })
   return { ...parseSyllabusText(text, name, sourceKind), unreadablePageCount, imageOnlyPageCount, ocrPageCount, pageCount }
+}
+
+/** Read a related syllabus packet sequentially. OCR is intentionally not run
+ * concurrently: two browser-local workers compete for memory and make large
+ * scanned PDFs less reliable. The progress message keeps the active position
+ * visible so moving to the next file never resembles a reset. */
+export async function extractSyllabusFiles(
+  files: readonly File[],
+  options: Omit<DocumentExtractionOptions, 'recoverScannedPdfPages' | 'onProgress'> & {
+    onProgress?: (progress: DocumentExtractionProgress) => void
+  } = {},
+): Promise<SyllabusProposal> {
+  if (!files.length) throw new Error('Choose at least one syllabus file to read.')
+  const proposals: SyllabusProposal[] = []
+  for (let index = 0; index < files.length; index += 1) {
+    const file = files[index]
+    const prefix = `File ${index + 1} of ${files.length}`
+    options.onProgress?.({ phase: 'extracting', page: 0, pageCount: 0, progress: 0, message: `${prefix} · Preparing…` })
+    try {
+      proposals.push(await extractSyllabusFile(file, {
+        signal: options.signal,
+        onProgress: (progress) => options.onProgress?.({ ...progress, message: `${prefix} · ${progress.message}` }),
+      }))
+    } catch (cause) {
+      const detail = cause instanceof Error ? cause.message : 'This file could not be read.'
+      throw new Error(`Could not read ${file.name || `file ${index + 1}`} (${index + 1} of ${files.length}). ${detail}`, { cause })
+    }
+  }
+  return mergeSyllabusProposals(proposals)
 }
 
 export function weightGap(items: SyllabusItem[]) {
