@@ -211,6 +211,50 @@ describe('ClassHub approved Overview', () => {
     expect(container.querySelector('button.class-hub-primary-action')?.textContent).toContain('Create study resources')
   })
 
+  it('shows every professor and teaching assistant with structured contact details in the banner menu', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'general')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    seed.academics.classCenter.contacts = seed.academics.classCenter.contacts
+      .filter((item) => item.courseId !== course.id)
+      .concat([
+        {
+          id: 'contact-professor', courseId: course.id, name: 'Dr. Adrian Drummond-Cole', role: 'professor',
+          email: 'adrian@example.edu', officeHours: 'Mon 1:00–2:00 PM', location: 'Saunders 214',
+          createdAt: now, updatedAt: now, order: 0,
+        },
+        {
+          id: 'contact-ta-fatima', courseId: course.id, name: 'Fatima Noor', role: 'TA',
+          email: 'fatima@example.edu', officeHours: 'Tues 3:00–4:00 PM', location: 'Zoom',
+          createdAt: now, updatedAt: now, order: 1,
+        },
+        {
+          id: 'contact-ta-marco', courseId: course.id, name: 'Marco Ruiz', role: 'TA',
+          email: 'marco@example.edu', officeHours: 'Thurs 11:00 AM–12:00 PM', location: 'Peabody 1040',
+          createdAt: now, updatedAt: now, order: 2,
+        },
+      ])
+
+    await act(async () => {
+      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>)
+    })
+
+    const trigger = [...container.querySelectorAll('button')].find((item) => item.textContent?.includes('Office hours & links')) as HTMLButtonElement
+    await act(async () => trigger.click())
+
+    const contacts = document.body.querySelector('[aria-label="Course contacts"]')
+    expect(contacts).toBeTruthy()
+    expect(contacts?.textContent).toContain('Dr. Adrian Drummond-Cole')
+    expect(contacts?.textContent).toContain('Professor')
+    expect(contacts?.textContent).toContain('Fatima Noor')
+    expect(contacts?.textContent).toContain('Marco Ruiz')
+    expect(contacts?.textContent).toContain('Teaching assistant')
+    expect(contacts?.textContent).toContain('Tues 3:00–4:00 PM')
+    expect(contacts?.textContent).toContain('Peabody 1040')
+    expect(document.body.querySelector('a[href="mailto:fatima@example.edu"]')).toBeTruthy()
+    expect(document.body.querySelector('a[href="mailto:marco@example.edu"]')).toBeTruthy()
+  })
+
   it('gives Writing classes a source-backed resource menu instead of replacing it with the draft action', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'writing')!

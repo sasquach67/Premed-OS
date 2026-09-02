@@ -29,6 +29,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
@@ -1530,25 +1531,68 @@ function NoteRow({ note }: { note: ClassNote }) {
 }
 
 function LinksMenu({ workspace, contacts }: { workspace: ClassWorkspace; contacts: ClassContact[] }) {
-  const contact = contacts[0]
   const links = [
     ['Syllabus', workspace.syllabusUrl], ['Canvas', workspace.canvasUrl],
     ['Drive', workspace.driveFolderUrl], ['GoodNotes', workspace.goodNotesUrl],
   ].filter(([, value]) => Boolean(value))
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="inline-flex items-center gap-1 rounded-md font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        Office hours & links <ChevronDown className="size-3.5" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        <DropdownMenuLabel>{contact?.officeHours || 'Office hours not set'}</DropdownMenuLabel>
-        {contact?.email && <DropdownMenuItem asChild><a href={`mailto:${contact.email}`}><Mail className="size-4" /> Email</a></DropdownMenuItem>}
-        <DropdownMenuSeparator />
-        {links.map(([label, value]) => <DropdownMenuItem key={label} asChild><a href={value} target="_blank" rel="noreferrer">{label}</a></DropdownMenuItem>)}
-        {!links.length && <DropdownMenuItem disabled>No class links yet</DropdownMenuItem>}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" className="inline-flex items-center gap-1 rounded-md font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          Office hours &amp; links <ChevronDown className="size-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        aria-label="Office hours and class links"
+        className="w-[min(27rem,calc(100vw-2rem))] overflow-hidden p-0"
+      >
+        <section aria-label="Course contacts" className="p-3.5">
+          <div className="mb-2.5 flex items-center justify-between gap-3">
+            <h2 className="font-display text-sm font-extrabold">Course contacts</h2>
+            {contacts.length > 0 && <span className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground">{contacts.length} {contacts.length === 1 ? 'person' : 'people'}</span>}
+          </div>
+          {contacts.length > 0 ? (
+            <div className="space-y-2">
+              {contacts.map((contact) => (
+                <article key={contact.id} className="rounded-lg border border-border/80 bg-muted/45 p-3">
+                  <div className="flex min-w-0 items-baseline justify-between gap-3">
+                    <h3 className="truncate font-display text-sm font-extrabold text-foreground">{contact.name}</h3>
+                    <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary">{contactRoleLabel(contact.role)}</span>
+                  </div>
+                  <dl className="mt-2 grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-2 gap-y-1 text-xs leading-5">
+                    <dt className="font-bold text-muted-foreground">Office hours</dt>
+                    <dd className="min-w-0 font-semibold text-foreground">{contact.officeHours || 'Not listed'}</dd>
+                    {contact.location && <><dt className="font-bold text-muted-foreground">Location</dt><dd className="min-w-0 font-semibold text-foreground">{contact.location}</dd></>}
+                    {contact.email && <><dt className="font-bold text-muted-foreground">Email</dt><dd className="min-w-0"><a className="inline-flex max-w-full items-center gap-1 font-bold text-primary hover:underline" href={`mailto:${contact.email}`}><Mail className="size-3.5 shrink-0" /><span className="truncate">{contact.email}</span></a></dd></>}
+                  </dl>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-lg border border-dashed border-border px-3 py-2.5 text-xs font-semibold text-muted-foreground">No professor or teaching-assistant contact details are saved yet.</p>
+          )}
+        </section>
+        <section aria-label="Class links" className="border-t border-border p-3.5">
+          <h2 className="mb-1.5 font-display text-xs font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Class links</h2>
+          {links.length > 0 ? (
+            <div className="grid grid-cols-2 gap-1.5">
+              {links.map(([label, value]) => <a className="rounded-lg border border-border/80 px-2.5 py-2 text-xs font-bold text-foreground transition-colors hover:border-primary/45 hover:bg-muted" key={label} href={value} target="_blank" rel="noreferrer">{label} ↗</a>)}
+            </div>
+          ) : (
+            <p className="text-xs font-semibold text-muted-foreground">No class links saved yet.</p>
+          )}
+        </section>
+      </PopoverContent>
+    </Popover>
   )
+}
+
+function contactRoleLabel(role: ClassContact['role']) {
+  if (role === 'professor') return 'Professor'
+  if (role === 'TA') return 'Teaching assistant'
+  if (role === 'study-partner') return 'Study partner'
+  return role.charAt(0).toUpperCase() + role.slice(1)
 }
 
 /** Level 2 of the three-level nav (01 §4b-i): underline tabs on the banner's
