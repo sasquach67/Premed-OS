@@ -340,12 +340,18 @@ export function classFormFromSyllabus(proposal: SyllabusProposal, semester: stri
         && (officeHoursAt < 0 || locationAt < officeHoursAt)
         && !/same location as class meetings/i.test(line)
     })
-  const location = locationLines.map(extractClassLocation).find(Boolean) ?? ''
+  // A room on the selected section schedule outranks every unrelated named
+  // place elsewhere in the syllabus (testing centers, offices, and support
+  // buildings are common false positives).
+  const location = extractClassLocation(scheduleLine)
+    || extractClassLocation(rawScheduleLine)
+    || locationLines.map(extractClassLocation).find(Boolean)
+    || ''
   return {
     ...emptyClassForm(semester),
     semester: extractCourseTerm(proposal, semester),
     courseCode: identity?.label ?? '',
-    courseTitle: cleanCourseTitle(identity?.value),
+    courseTitle: normalizeCourseTitle(cleanCourseTitle(identity?.value), identity?.label),
     instructor,
     meetingDays,
     meetingTime,

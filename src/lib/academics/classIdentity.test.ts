@@ -21,10 +21,13 @@ describe('canonical class identity formatting', () => {
     expect(normalizeCourseTitle('ENG COMP & RHETORIC', 'engl105')).toBe('English Composition & Rhetoric')
     expect(normalizeCourseTitle('GENERAL PSYCHOLOGY', 'PSYC 101')).toBe('Introduction to Psychology')
     expect(normalizeCourseTitle('  Molecular   Genetics ', 'BIOL 202')).toBe('Molecular Genetics')
+    expect(normalizeCourseTitle('HOW CELLS FUNCTION', 'BIOL 103')).toBe('How Cells Function')
+    expect(normalizeCourseTitle('DNA REPLICATION AND RNA PROCESSING', 'BIOL 202')).toBe('DNA Replication and RNA Processing')
   })
 
-  it('formats instructors as name plus sourced credential without contact prose or honorifics', () => {
+  it('keeps sourced doctorate markers while removing role and contact prose', () => {
     expect(normalizeInstructorName("Instructor: Erik Maloney (erikglen@live.unc.edu) (If I don't respond within 48 hours, email again.)")).toBe('Erik Maloney')
+    expect(normalizeInstructorName('Professor: Dr. Emily Weber (she/her)')).toBe('Dr. Emily Weber')
     expect(normalizeInstructorName('Dr. Emily Weber, Ph.D.')).toBe('Emily Weber, PhD')
     expect(normalizeInstructorName('Prof. Adrian Drummond-Cole')).toBe('Adrian Drummond-Cole')
   })

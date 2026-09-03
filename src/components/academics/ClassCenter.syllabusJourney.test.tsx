@@ -412,7 +412,7 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(assignments.some((item) => item.type !== 'reading' && /evolution of psychology/i.test(item.title))).toBe(false)
 
     expect(center.contacts).toEqual(expect.arrayContaining([
-      expect.objectContaining({ courseId, role: 'professor', name: 'Adrian Rivera', email: 'arivera@unc.edu' }),
+      expect.objectContaining({ courseId, role: 'professor', name: 'Dr. Adrian Rivera', email: 'arivera@unc.edu' }),
       expect.objectContaining({ courseId, role: 'TA', name: 'Fatima' }),
     ]))
     expect(center.contacts.find((item) => item.courseId === courseId && item.role === 'TA' && item.name === 'Fatima')?.email).toBeUndefined()
@@ -587,7 +587,7 @@ Week 1: Aromatic substitution and reaction energy diagrams.`)
     expect(after.courses).toHaveLength(1)
     expect(after.academics.classCenter.workspaces).toHaveLength(1)
     const workspace = after.academics.classCenter.workspaces[0]
-    expect(workspace).toMatchObject({ courseId: 'chem-262', instructor: 'Student-entered' })
+    expect(workspace).toMatchObject({ courseId: 'chem-262', instructor: 'Dr. Student-entered' })
     expect(workspace.meetingDays || workspace.meetingTime || workspace.location).toBeTruthy()
     const categories = after.academics.classCenter.gradeCategories.filter((item) => item.courseId === 'chem-262')
     expect(categories).toHaveLength(3)

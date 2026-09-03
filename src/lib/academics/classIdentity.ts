@@ -19,9 +19,29 @@ const PREFERRED_COURSE_TITLES: Readonly<Record<string, string>> = {
   'ENGL 105': 'English Composition & Rhetoric',
 }
 
+const LOWERCASE_TITLE_WORDS = new Set(['a', 'an', 'and', 'as', 'at', 'by', 'for', 'in', 'of', 'on', 'or', 'the', 'to'])
+const COURSE_TITLE_ACRONYMS = new Set(['AI', 'DNA', 'EMS', 'EMT', 'HIV', 'MCAT', 'NMR', 'RNA', 'UNC'])
+
+/** Registrar headings are often exported in all caps. Convert only those
+ * headings, leaving already authored capitalization untouched. */
+function normalizeRegistrarTitleCase(value: string): string {
+  if (!/[A-Z]/.test(value) || /[a-z]/.test(value)) return value
+  const words = value.toLocaleLowerCase().split(' ')
+  return words.map((word, index) => {
+    const bare = word.replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '')
+    if (!bare) return word
+    const uppercase = bare.toUpperCase()
+    if (COURSE_TITLE_ACRONYMS.has(uppercase) || /^(?:I|II|III|IV|V|VI)$/.test(uppercase)) {
+      return word.replace(bare, uppercase)
+    }
+    if (index > 0 && index < words.length - 1 && LOWERCASE_TITLE_WORDS.has(bare)) return word
+    return word.replace(/[a-z]/, (letter) => letter.toUpperCase())
+  }).join(' ')
+}
+
 export function normalizeCourseTitle(value: string, courseCode = ''): string {
   const preferred = PREFERRED_COURSE_TITLES[normalizeCourseCode(courseCode)]
-  return preferred ?? compact(value)
+  return preferred ?? normalizeRegistrarTitleCase(compact(value))
 }
 
 export function normalizeClassTerm(value: string): string {
@@ -30,20 +50,23 @@ export function normalizeClassTerm(value: string): string {
   return standard ? `${standard[1][0].toUpperCase()}${standard[1].slice(1).toLowerCase()} ${standard[2]}` : trimmed
 }
 
-/** Keep class identity fields person-shaped: name first, then any explicitly
- * sourced credential. Contact details and role labels belong elsewhere. This
- * never invents a credential or expands initials. */
+/** Keep class identity fields person-shaped. Prefer an explicit sourced
+ * credential suffix; otherwise retain a sourced `Dr.` without guessing which
+ * doctorate it represents. Contact details and role labels belong elsewhere. */
 export function normalizeInstructorName(value: string): string {
-  return compact(value)
+  const normalized = compact(value)
     .replace(/^(?:instructor|professor)\s*:?\s*/i, '')
     .replace(/^Prof\.?\s+(?=\S)/i, '')
-    .replace(/^Dr\.?\s+(?=\S)/i, '')
     .replace(/\s*(?:[<(]\s*)?[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}(?:\s*[>)]\s*)?.*$/i, '')
     .replace(/(?:\s*\([^)]*\))+\s*$/g, '')
     .replace(/\s*,\s*/g, ', ')
     .replace(/,?\s+Ph\.?\s*D\.?$/i, ', PhD')
     .replace(/,?\s+M\.?\s*D\.?$/i, ', MD')
     .trim()
+  // An explicit suffix is more precise than the generic `Dr.` honorific.
+  return /,\s*(?:PhD|MD)$/i.test(normalized)
+    ? normalized.replace(/^Dr\.?\s+(?=\S)/i, '')
+    : normalized.replace(/^Dr\s+(?=\S)/i, 'Dr. ')
 }
 
 /** Use the same clock punctuation for imported and manually entered classes.

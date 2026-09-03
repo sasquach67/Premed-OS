@@ -22,6 +22,23 @@ describe('Class Center card compatibility', () => {
 })
 
 describe('Class Center add-class type selection', () => {
+  it('standardizes BIOL 103 identity and keeps the classroom tied to its section schedule', () => {
+    const proposal = parseSyllabusText(`BIOL 103: HOW CELLS FUNCTION
+2026 Fall
+Please schedule accommodated exams in the UCO Testing Center.
+004 section: TR 12:30-1:45 Wilson Hall 107
+Professor: Dr. Emily Weber (she/her)`)
+
+    expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
+      courseCode: 'BIOL 103',
+      courseTitle: 'How Cells Function',
+      instructor: 'Dr. Emily Weber',
+      meetingDays: 'Tue · Thurs',
+      meetingTime: '12:30–1:45',
+      location: 'Wilson Hall 107',
+    })
+  })
+
   it('extracts the real GEOG 121 header instead of using a support center as the classroom', () => {
     const proposal = parseSyllabusText(`Geographies of Globalization
 UNC Chapel Hill Instructor
@@ -34,7 +51,7 @@ The College of Arts and Sciences provides a secure, proctored environment for ma
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
       courseCode: 'GEOG 121',
       courseTitle: 'Geographies of Globalization',
-      instructor: 'Adrian Drummond-Cole',
+      instructor: 'Dr. Adrian Drummond-Cole',
       meetingDays: 'Mon · Wed · Fri',
       meetingTime: '9:05–9:55 AM',
       location: 'Peabody Hall Rm 1040',
@@ -57,7 +74,7 @@ M/W/F: 9:05–9:55 AM`)
     })
 
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
-      instructor: 'Adrian Drummond-Cole',
+      instructor: 'Dr. Adrian Drummond-Cole',
       meetingDays: 'Mon · Wed · Fri',
       meetingTime: '9:05–9:55 AM',
       location: 'Peabody Hall Rm 1040',
@@ -69,7 +86,7 @@ M/W/F: 9:05–9:55 AM`)
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
       courseCode: 'CHEM 262',
       courseTitle: 'Organic Chemistry II',
-      instructor: 'Adaeze Elamin',
+      instructor: 'Dr. Adaeze Elamin',
       meetingDays: 'Mon · Wed · Fri',
       meetingTime: '10:10 AM–11:00 AM',
       location: 'Kenan B12',
@@ -96,7 +113,7 @@ M/W/F: 9:05–9:55 AM`)
     const proposal = parseSyllabusText('NEUR 101 — Neurobiology - Fall 2026\nInstructor: Dr. Nadia Elamin Office hours: Monday 1-3 PM\nMWF 10:00 AM-10:50 AM')
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
       courseTitle: 'Neurobiology',
-      instructor: 'Nadia Elamin',
+      instructor: 'Dr. Nadia Elamin',
       meetingDays: 'Mon · Wed · Fri',
       meetingTime: '10:00 AM–10:50 AM',
     })

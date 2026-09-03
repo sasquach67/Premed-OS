@@ -19,7 +19,7 @@ describe('migrateInstructorIdentityV44', () => {
     expect(out.academics.classCenter.workspaces.find((item) => item.id === workspace.id)).toMatchObject({
       id: workspace.id,
       courseId: course.id,
-      instructor: 'Erik Maloney',
+      instructor: 'Dr. Erik Maloney',
     })
     expect(out.courses.find((item) => item.id === course.id)).toBe(course)
     expect(out.academics.classCenter.contacts.find((item) => item.id === contact.id)).toMatchObject({
