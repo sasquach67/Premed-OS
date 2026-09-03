@@ -85,12 +85,19 @@ export function validateMasteryOutline(value: unknown, closedChunkIds: readonly 
   if (!text(artifact.title) || !text(artifact.unit) || !Array.isArray(artifact.standards) || !artifact.standards.length) return null
   const closed = new Set(closedChunkIds)
   const seen = new Set<string>()
+  const seenApplications = new Set<string>()
   for (const raw of artifact.standards) {
     if (!raw || typeof raw !== 'object') return null
     const standard = raw as Partial<MasteryStandard>
     if (!text(standard.id) || !text(standard.title) || seen.has(standard.id)) return null
     if (!validStringList(standard.understand) || !validStringList(standard.beAbleToDo) || !validStringList(standard.watchFor)) return null
-    if (!standard.understand.length && !standard.beAbleToDo.length && !standard.watchFor.length) return null
+    if (standard.understand.length < 5 || standard.beAbleToDo.length < 2 || standard.watchFor.length < 1) return null
+    if (!unique(standard.understand) || !unique(standard.beAbleToDo) || !unique(standard.watchFor)) return null
+    for (const application of standard.beAbleToDo) {
+      const normalized = clean(application)
+      if (seenApplications.has(normalized)) return null
+      seenApplications.add(normalized)
+    }
     if (!allClosed(standard.sourceChunkIds, closed) || !unique(standard.sourceChunkIds!)) return null
     seen.add(standard.id)
   }

@@ -32,9 +32,9 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
   if (!prepared.ok || !prepared.scopeId || !prepared.chunkIds) return { ok: false, failure: 'provider-unavailable', message: prepared.message ?? 'Selected material could not be prepared.' }
   const assembled = assembleGenerationRequest({
     specId: 'unit-mastery-outline-v1', chunkIds: prepared.chunkIds, controls: { source_mode: 'SOURCE_ONLY' },
-    request: `Unit: ${unit}. Topic label: ${label}. Build the mastery map from syllabus standards/objectives in the selected sources.`,
+    request: `Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Build the detailed mastery map from the selected sources. Preserve every explicit objective relevant to this scope and all distinct supported Understand, Be able to do, and Watch for points.`,
   })
-  const result = await studyTools.generate({ action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `Unit: ${unit}. Build a source-grounded mastery outline.` })
+  const result = await studyTools.generate({ action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline.` })
   if (!result.ok) return { ok: false, failure: failureFor(result.code), message: result.message }
   const artifact = validateMasteryOutline(result.data.artifact, assembled.chunkIds)
   if (!artifact) return { ok: false, failure: 'invalid-response', message: 'The mastery outline did not pass its source-trace and section checks. Nothing was saved.' }

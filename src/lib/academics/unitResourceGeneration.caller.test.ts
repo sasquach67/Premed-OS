@@ -28,8 +28,8 @@ describe('unit resource generation callers', () => {
     mocks.generate.mockResolvedValue({ ok: true, data: {
       artifact: {
         title: 'Unit 2 mastery', unit: 'Unit 2', standards: [{
-          id: 'std-1', title: 'Gene expression', understand: ['The transcript is processed.'],
-          beAbleToDo: ['Predict the result of a processing disruption.'], watchFor: ['Do not confuse transcription and translation.'], sourceChunkIds: ['chunk-1'],
+          id: 'std-1', title: 'Gene expression', understand: ['DNA is transcribed into RNA.', 'The primary transcript is processed.', 'Mature mRNA is translated into a polypeptide.', 'Template and coding strands relate differently to RNA.', 'Bacterial and eukaryotic cells organize gene expression differently.'],
+          beAbleToDo: ['Predict the result of a processing disruption.', 'Trace an unfamiliar sequence from template DNA to mature mRNA.'], watchFor: ['Do not confuse transcription and translation.'], sourceChunkIds: ['chunk-1'],
         }],
       }, citations: [],
     } })
@@ -42,6 +42,9 @@ describe('unit resource generation callers', () => {
     expect(request).toMatchObject({ action: 'generate', specId: 'unit-mastery-outline-v1', chunkIds: ['chunk-1', 'chunk-2'] })
     expect(JSON.stringify(request)).not.toContain(sources[0].content)
     expect(request.systemPrompt).toContain('UMO-STANDARDS')
+    expect(request.systemPrompt).toContain('UMO-DEPTH')
+    expect(request.systemPrompt).toContain('at least five distinct Understand bullets')
+    expect(request.request).toContain('do not summarize a detailed outline')
   })
 
   it('passes the biology 70/30 control and closed mastery coverage contract', async () => {

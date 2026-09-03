@@ -5,8 +5,8 @@ const chunks = ['chunk-unit', 'chunk-prior']
 const outline = {
   title: 'Generated · Unit 2 mastery', unit: 'Unit 2', standards: [{
     id: 'standard-1', title: 'Gene expression',
-    understand: ['DNA information is transcribed into a mature transcript.'],
-    beAbleToDo: ['Predict what changes when a processing step is disrupted.'],
+    understand: ['DNA information is transcribed into a primary RNA transcript.', 'RNA processing removes introns and retains exons.', 'Translation reads mature mRNA to build a polypeptide.', 'The template and coding DNA strands have different relationships to the RNA product.', 'Bacterial and eukaryotic cells separate these steps differently.'],
+    beAbleToDo: ['Predict what changes when a processing step is disrupted.', 'Distinguish template DNA, coding DNA, and mature mRNA for an unfamiliar sequence.'],
     watchFor: ['Do not confuse mRNA processing with translation.'], sourceChunkIds: ['chunk-unit'],
   }],
 }
@@ -24,6 +24,14 @@ describe('unit question bank contracts', () => {
   it('validates a source-grounded mastery outline', () => {
     expect(validateMasteryOutline(outline, chunks)).toEqual(outline)
     expect(validateMasteryOutline({ ...outline, standards: [{ ...outline.standards[0], sourceChunkIds: ['not-closed'] }] }, chunks)).toBeNull()
+  })
+
+  it('rejects a shallow outline or a generic application repeated across objectives', () => {
+    expect(validateMasteryOutline({ ...outline, standards: [{ ...outline.standards[0], understand: ['Only one detail.'] }] }, chunks)).toBeNull()
+    expect(validateMasteryOutline({ ...outline, standards: [
+      outline.standards[0],
+      { ...outline.standards[0], id: 'standard-2', title: 'Protein targeting' },
+    ] }, chunks)).toBeNull()
   })
 
   it('rejects ambiguous or duplicated multiple-choice answers', () => {
