@@ -76,6 +76,30 @@ describe('MaterialIntakeDialog clipboard intake', () => {
     expect(document.body.textContent).toContain('textbook-page.png')
   })
 
+  it('accepts supported files from a chosen folder and preserves their relative paths', async () => {
+    await openDialog()
+    const folderInput = document.body.querySelector<HTMLInputElement>('input[aria-label="Choose a material folder"]')!
+    expect(folderInput).not.toBeNull()
+    expect(folderInput.multiple).toBe(true)
+    expect(folderInput.webkitdirectory).toBe(true)
+
+    const page = new File(['page image'], 'Page 01.png', { type: 'image/png', lastModified: 1 })
+    const chapter = new File(['chapter text'], 'Chapter 4.txt', { type: 'text/plain', lastModified: 2 })
+    const archive = new File(['archive'], 'answer-key.zip', { type: 'application/zip', lastModified: 3 })
+    Object.defineProperty(page, 'webkitRelativePath', { value: 'BIOL 103/Textbook excerpts/Page 01.png' })
+    Object.defineProperty(chapter, 'webkitRelativePath', { value: 'BIOL 103/Textbook excerpts/Chapter 4.txt' })
+    Object.defineProperty(archive, 'webkitRelativePath', { value: 'BIOL 103/answer-key.zip' })
+    Object.defineProperty(folderInput, 'files', { configurable: true, value: [page, chapter, archive] })
+
+    await act(async () => folderInput.dispatchEvent(new Event('change', { bubbles: true })))
+
+    expect(document.body.textContent).toContain('2 files from BIOL 103')
+    expect(document.body.textContent).toContain('1 unsupported file skipped')
+    expect(document.body.textContent).toContain('Textbook excerpts/Page 01.png')
+    expect(document.body.textContent).toContain('Textbook excerpts/Chapter 4.txt')
+    expect(document.body.textContent).not.toContain('answer-key.zip')
+  })
+
   it('gives pasted screenshots distinct Mac-style names and visible previews', async () => {
     const createObjectUrl = vi.spyOn(URL, 'createObjectURL')
       .mockReturnValueOnce('blob:preview-one')
