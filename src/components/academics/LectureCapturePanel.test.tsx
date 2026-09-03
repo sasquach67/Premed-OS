@@ -109,6 +109,8 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).toContain('Mastery Map')
     expect(container.textContent).not.toContain('Add related materials (optional)')
     expect(container.querySelector('blockquote')).toBeNull()
+    const more = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'More')!
+    expect(more.className).toContain('mr-8')
     const sourcePassages = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.startsWith('Show source passages'))!
     await act(async () => sourcePassages.click())
     expect(container.querySelector('blockquote')).toBeTruthy()
