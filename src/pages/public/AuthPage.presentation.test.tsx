@@ -124,4 +124,30 @@ describe('AuthPage account intent', () => {
     expect(container.querySelector('h1')?.textContent).toBe('Check your email')
     expect(container.textContent).toContain('account confirmation link')
   })
+
+  it('identifies a stricter server password policy as a configuration problem', async () => {
+    authMocks.signUp.mockRejectedValueOnce(new Error('Password should be at least 88 characters.'))
+    await render()
+    await act(async () => button(container, 'Create account')?.click())
+
+    const email = container.querySelector<HTMLInputElement>('#auth-email')
+    const password = container.querySelector<HTMLInputElement>('#auth-password')
+    const confirmation = container.querySelector<HTMLInputElement>('#auth-confirm-password')
+
+    await act(async () => {
+      if (!email || !password || !confirmation) return
+      enter(email, 'student@example.edu')
+      enter(password, 'Strong1!')
+      enter(confirmation, 'Strong1!')
+      container.querySelector<HTMLButtonElement>('.pl-auth-method-panel .pl-sbtn-p')?.click()
+      await Promise.resolve()
+    })
+
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      'Password account creation is temporarily misconfigured',
+    )
+    expect(container.querySelector('[role="alert"]')?.textContent).not.toBe(
+      'Use at least 8 characters with uppercase, lowercase, a number, and a symbol.',
+    )
+  })
 })

@@ -59,6 +59,8 @@ const MESSAGES = {
   notConfigured:
     'Accounts are not switched on in this build. Everything still works signed out — your data is on this device.',
   weakPassword: 'Use at least 8 characters with uppercase, lowercase, a number, and a symbol.',
+  passwordPolicyMismatch:
+    'Password account creation is temporarily misconfigured. Use Google sign-up or try again shortly.',
 } as const
 
 function classifyError(error: unknown): string {
@@ -68,6 +70,8 @@ function classifyError(error: unknown): string {
     return MESSAGES.rateLimited
   }
   if (message.includes('invalid login') || message.includes('credentials')) return MESSAGES.credentials
+  const serverMinimum = message.match(/password should be at least (\d+) characters/)
+  if (serverMinimum && Number(serverMinimum[1]) > 8) return MESSAGES.passwordPolicyMismatch
   if (message.includes('password')) return MESSAGES.weakPassword
   if (message.includes('fetch') || message.includes('network')) return MESSAGES.network
   return MESSAGES.generic
@@ -585,7 +589,10 @@ export function AuthPage() {
                     autoComplete="email"
                     placeholder="Personal or school email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      setError('')
+                    }}
                   />
                 </div>
 
@@ -619,7 +626,10 @@ export function AuthPage() {
                       autoComplete={passwordIntent === 'create' ? 'new-password' : 'current-password'}
                       value={password}
                       visible={showPassword}
-                      onChange={setPassword}
+                      onChange={(value) => {
+                        setPassword(value)
+                        setError('')
+                      }}
                       onToggle={() => setShowPassword((visible) => !visible)}
                     />
                     {passwordIntent === 'create' ? (
@@ -630,7 +640,10 @@ export function AuthPage() {
                           autoComplete="new-password"
                           value={confirmPassword}
                           visible={showConfirmPassword}
-                          onChange={setConfirmPassword}
+                          onChange={(value) => {
+                            setConfirmPassword(value)
+                            setError('')
+                          }}
                           onToggle={() => setShowConfirmPassword((visible) => !visible)}
                         />
                         <PasswordRequirements password={password} confirmation={confirmPassword} />

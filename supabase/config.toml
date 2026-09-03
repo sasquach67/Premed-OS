@@ -1,5 +1,33 @@
 project_id = "poichxqptuupzrkyewrq"
 
+# The hosted project does not include paid vector buckets. Keeping this
+# explicit prevents `config push` from trying to enable a local-only default.
+[storage.vector]
+enabled = false
+
+# Keep deployed Auth URLs and policy in version control so a config push cannot
+# silently replace production values with local defaults.
+[auth]
+site_url = "https://premedos.app/"
+additional_redirect_urls = [
+  "http://localhost:5173/**",
+  "http://localhost:5180/**",
+  "https://sasquach67.github.io/Premed-OS/**",
+  "http://localhost:5173/Premed-OS/**",
+  "https://premedos.app/",
+]
+minimum_password_length = 8
+password_requirements = "lower_upper_letters_digits_symbols"
+
+[auth.email]
+enable_confirmations = true
+secure_password_change = true
+max_frequency = "1m"
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
 [functions.study-tools]
 verify_jwt = true
 
