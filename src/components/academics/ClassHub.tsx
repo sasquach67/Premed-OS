@@ -395,7 +395,7 @@ function Overview({
               : activeLectureBrief && <SavedLecturePreview brief={activeLectureBrief} mastery={activeMasteryMap} sourceCount={activeLectureSources.length} />}
           </> : <>
             <div className="lecture-active-header"><div><p className="lecture-ledger-kicker">{scheduleContext ? `Today · ${scheduleContext}` : 'Today'}</p><h2>Build a lecture page</h2></div><span className="lecture-number-pill">Lecture {nextLectureNumber}</span></div>
-            <div className="lecture-capture-steps" aria-label="Lecture import workflow"><div className="is-current"><b>1 · Add source</b><span>Transcript</span></div><div><b>2 · Add materials</b><span>Optional</span></div><div><b>3 · Build page</b><span>Brief + Mastery</span></div></div>
+            <div className="lecture-capture-steps" aria-label="Lecture import workflow"><div className="is-current"><b>1 · Add source</b><span>Transcript</span></div><div><b>2 · Add materials</b><span>Required</span></div><div><b>3 · Build page</b><span>Brief + Mastery</span></div></div>
             <button type="button" className="lecture-transcript-drop" onClick={() => openLecture(undefined, 'transcript')}><b>Paste or upload a lecture source</b><span>PDF, DOCX, TXT, image, or clipboard text</span></button>
             <div className="lecture-capture-actions"><Button size="sm" onClick={() => openLecture(undefined, 'transcript')}>Import lecture</Button></div>
             <p className="lecture-journal-next"><b>Result:</b> a Lecture Brief and Mastery Map, with transcript and materials kept under Sources.</p>

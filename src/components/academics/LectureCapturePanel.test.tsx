@@ -41,7 +41,7 @@ describe('lecture import and workspace', () => {
     useStore.getState().replaceAll(seed)
     await render(courseId)
     expect(container.textContent).toContain('Add lecture source')
-    expect(container.textContent).toContain('Add related materials')
+    expect(container.textContent).toContain('Add lecture materials')
     expect(container.textContent).toContain('Build lecture page')
     expect(container.textContent).toContain('The transcript is source evidence')
     expect(container.textContent).toContain('Ways to get a transcript')
@@ -57,14 +57,15 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).not.toContain('CaptureReviewIndex')
   })
 
-  it('offers contextual material types, exact known files, selection, privacy disclosure, and builds from only selected sources', async () => {
+  it('uses only materials added to this lecture, without a class-wide source picker', async () => {
     const seed = structuredClone(createSeedData())
     const courseId = seed.academics.classCenter.workspaces[0].courseId
     const now = 10
     seed.academics.classCenter.lectures.push({ id: 'lecture', courseId, title: 'Lecture 1 · Conditioning', inputPath: 'pasted', transcriptFileId: 'transcript', occurredOn: '2026-09-02', processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds: ['transcript'], createdAt: now, updatedAt: now, order: 0 })
     seed.academics.classCenter.files.push(
       { id: 'transcript', courseId, lectureId: 'lecture', sourceType: 'paste', title: 'Lecture transcript', type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready', sourceCoverage: { readableCharacterCount: 80, figureStatus: 'not-present-or-unknown' }, createdAt: now, updatedAt: now, order: 0 },
-      { id: 'slides', courseId, sourceType: 'upload', title: 'Professor deck', fileName: 'PSYC101-week3-slides.pdf', mimeType: 'application/pdf', type: 'lecture-slides', linkedTopicIds: [], owner: 'course', processingStatus: 'ready', sourceCoverage: { pageCount: 10, readablePages: [1,2,3,4,5,6,7,8], ocrRecoveredPages: [8], unreadablePages: [9,10], readableCharacterCount: 1200, figureStatus: 'not-interpreted' }, createdAt: now, updatedAt: now, order: 1 },
+      { id: 'slides', courseId, lectureId: 'lecture', sourceType: 'upload', title: 'Professor deck', fileName: 'PSYC101-week3-slides.pdf', mimeType: 'application/pdf', type: 'lecture-slides', linkedTopicIds: [], owner: 'course', processingStatus: 'ready', sourceCoverage: { pageCount: 10, readablePages: [1,2,3,4,5,6,7,8], ocrRecoveredPages: [8], unreadablePages: [9,10], readableCharacterCount: 1200, figureStatus: 'not-interpreted' }, createdAt: now, updatedAt: now, order: 1 },
+      { id: 'class-library-file', courseId, sourceType: 'upload', title: 'Class library file', fileName: 'Entire-course-reference.pdf', mimeType: 'application/pdf', type: 'reading', linkedTopicIds: [], owner: 'course', processingStatus: 'ready', sourceCoverage: { pageCount: 2, readablePages: [1,2], readableCharacterCount: 400, figureStatus: 'not-interpreted' }, createdAt: now, updatedAt: now, order: 2 },
     )
     seed.academics.classCenter.sourceChunks.push(
       { id: 'transcript-chunk', fileId: 'transcript', courseId, content: 'Classical conditioning connects a neutral cue with a meaningful outcome. Remember that acquisition depends on repeated pairing.', coveredByKeyPoint: false, createdAt: now, updatedAt: now, order: 0 },
@@ -93,8 +94,10 @@ describe('lecture import and workspace', () => {
       },
     })
     await render(courseId, 'lecture', 'transcript')
-    expect(container.textContent).toContain('Choose sources')
-    expect(container.textContent).toContain('Your transcript is already selected.')
+    expect(container.textContent).not.toContain('Choose sources')
+    expect(container.textContent).not.toContain('selected')
+    expect(container.textContent).toContain('Added to this lecture')
+    expect(container.textContent).toContain('Automatically included when readable')
     expect([...container.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Add material')).toBe(true)
     const suggestionGuide = container.querySelector<HTMLDetailsElement>('[data-testid="material-suggestion-guide"]')!
     expect(suggestionGuide.open).toBe(false)
@@ -109,11 +112,11 @@ describe('lecture import and workspace', () => {
     expect(container.querySelector('[data-testid="material-suggestion"] .lucide-book-open')).toBeTruthy()
     expect(container.querySelector('[data-testid="material-suggestion"] .lucide-presentation')).toBeTruthy()
     expect(container.textContent).toContain('PSYC101-week3-slides.pdf')
+    expect(container.textContent).not.toContain('Entire-course-reference.pdf')
     expect(container.textContent).toContain('8/10 pages readable')
     expect(container.textContent).toContain('2 unreadable')
-    const slides = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('PSYC101-week3-slides.pdf'))!
-    await act(async () => slides.click())
     const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Continue to build preview'))!
+    expect(continueButton.disabled).toBe(false)
     await act(async () => continueButton.click())
     expect(container.querySelector('[aria-label="Lecture page preview"]')).toBeTruthy()
     expect(container.textContent).toContain('Your lecture, before you build')
@@ -143,8 +146,14 @@ describe('lecture import and workspace', () => {
     const seed = structuredClone(createSeedData())
     const courseId = seed.academics.classCenter.workspaces[0].courseId
     seed.academics.classCenter.lectures.push({ id: 'lecture', courseId, title: 'Lecture 1 · Scientific Thinking', inputPath: 'pasted', transcriptFileId: 'transcript', occurredOn: '2026-09-02', processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds: ['transcript'], createdAt: 1, updatedAt: 1, order: 0 })
-    seed.academics.classCenter.files.push({ id: 'transcript', courseId, lectureId: 'lecture', sourceType: 'paste', title: 'Lecture transcript', type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready', createdAt: 1, updatedAt: 1, order: 0 })
-    seed.academics.classCenter.sourceChunks.push({ id: 'chunk', fileId: 'transcript', courseId, content: 'Scientific thinking compares claims with evidence and uses controls to rule out alternatives.', coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: 0 })
+    seed.academics.classCenter.files.push(
+      { id: 'transcript', courseId, lectureId: 'lecture', sourceType: 'paste', title: 'Lecture transcript', type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready', createdAt: 1, updatedAt: 1, order: 0 },
+      { id: 'notes', courseId, lectureId: 'lecture', sourceType: 'paste', title: 'Scientific thinking notes', type: 'other', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready', createdAt: 1, updatedAt: 1, order: 1 },
+    )
+    seed.academics.classCenter.sourceChunks.push(
+      { id: 'chunk', fileId: 'transcript', courseId, content: 'Scientific thinking compares claims with evidence and uses controls to rule out alternatives.', coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: 0 },
+      { id: 'notes-chunk', fileId: 'notes', courseId, content: 'A useful control changes one factor while keeping the comparison conditions stable.', coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: 1 },
+    )
     generationMocks.generateStudyGuide.mockResolvedValue({ ok: true, artifact: { specId: 'study-guide-v1', specHash: 'guide-hash', courseId, topicId: '__class_material__', sections: [] }, content: 'guide', specHash: 'guide-hash' })
     generationMocks.generateUnitMasteryOutline.mockResolvedValue({ ok: false, failure: 'invalid-response', message: 'The mastery outline was invalid. Nothing was saved.' })
     useStore.getState().replaceAll(seed)
@@ -157,6 +166,24 @@ describe('lecture import and workspace', () => {
     expect(saved.workspaceState).toBe('draft')
     expect(saved.studyGuide).toBeUndefined()
     expect(container.textContent).toContain('Nothing was saved')
+  })
+
+  it('requires one supporting material before continuing to the build preview', async () => {
+    const seed = structuredClone(createSeedData())
+    const courseId = seed.academics.classCenter.workspaces[0].courseId
+    const now = 10
+    seed.academics.classCenter.lectures.push({ id: 'lecture', courseId, title: 'Lecture 1 · Conditioning', inputPath: 'pasted', transcriptFileId: 'transcript', occurredOn: '2026-09-02', processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds: ['transcript'], createdAt: now, updatedAt: now, order: 0 })
+    seed.academics.classCenter.files.push({ id: 'transcript', courseId, lectureId: 'lecture', sourceType: 'paste', title: 'Lecture transcript', type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready', sourceCoverage: { readableCharacterCount: 80, figureStatus: 'not-present-or-unknown' }, createdAt: now, updatedAt: now, order: 0 })
+    seed.academics.classCenter.sourceChunks.push({ id: 'transcript-chunk', fileId: 'transcript', courseId, content: 'Classical conditioning connects a neutral cue with a meaningful outcome.', coveredByKeyPoint: false, createdAt: now, updatedAt: now, order: 0 })
+    useStore.getState().replaceAll(seed)
+
+    await render(courseId, 'lecture', 'transcript')
+
+    expect(container.textContent).toContain('Add at least one lecture material to continue.')
+    expect(container.textContent).not.toContain('Skip for now')
+    expect(container.textContent).not.toContain('Choose sources')
+    const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Continue to build preview'))!
+    expect(continueButton.disabled).toBe(true)
   })
 
   it('opens a completed lecture to Brief and Mastery with transcript under Sources', async () => {

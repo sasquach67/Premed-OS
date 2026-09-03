@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MaterialIntakeDialog } from './MaterialIntakeDialog'
 import { ToastProvider } from '@/components/common/ToastProvider'
 import { Button } from '@/components/ui/button'
+import { createInitialDataForMode, useStore } from '@/store/store'
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -22,12 +23,13 @@ describe('MaterialIntakeDialog clipboard intake', () => {
   afterEach(async () => {
     await act(async () => root.unmount())
     container.remove()
+    useStore.getState().replaceAll(createInitialDataForMode(false))
     vi.useRealTimers()
   })
 
-  async function openDialog() {
+  async function openDialog(lectureId?: string) {
     await act(async () => {
-      root.render(<ToastProvider><MaterialIntakeDialog courseId="course-1" trigger={<Button>Add material</Button>} /></ToastProvider>)
+      root.render(<ToastProvider><MaterialIntakeDialog courseId="course-1" lectureId={lectureId} trigger={<Button>Add material</Button>} /></ToastProvider>)
     })
     await act(async () => (container.querySelector('button') as HTMLButtonElement).click())
   }
@@ -98,6 +100,27 @@ describe('MaterialIntakeDialog clipboard intake', () => {
     expect(document.body.textContent).toContain('Textbook excerpts/Page 01.png')
     expect(document.body.textContent).toContain('Textbook excerpts/Chapter 4.txt')
     expect(document.body.textContent).not.toContain('answer-key.zip')
+  })
+
+  it('automatically attaches a newly added material to its lecture', async () => {
+    useStore.getState().update((draft) => {
+      draft.academics.classCenter.lectures.push({ id: 'lecture-1', courseId: 'course-1', title: 'Lecture 1', inputPath: 'pasted', transcriptFileId: 'transcript-1', processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds: ['transcript-1'], createdAt: 1, updatedAt: 1, order: 0 })
+    })
+    await openDialog('lecture-1')
+    const textarea = document.body.querySelector<HTMLTextAreaElement>('textarea[placeholder^="Paste the specific textbook passage"]')!
+    const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set
+    await act(async () => {
+      setValue?.call(textarea, 'This textbook excerpt explains how a conditioned stimulus predicts a biologically meaningful outcome through repeated pairings.')
+      textarea.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    const add = [...document.body.querySelectorAll<HTMLButtonElement>('button')].findLast((button) => button.textContent?.trim() === 'Add material')!
+
+    await act(async () => add.click())
+
+    const savedLecture = useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.id === 'lecture-1')!
+    const attached = useStore.getState().academics.classCenter.files.find((file) => file.lectureId === 'lecture-1')!
+    expect(attached).toBeTruthy()
+    expect(savedLecture.selectedSourceFileIds).toEqual(expect.arrayContaining(['transcript-1', attached.id]))
   })
 
   it('gives pasted screenshots distinct Mac-style names and visible previews', async () => {

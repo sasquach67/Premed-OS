@@ -637,7 +637,7 @@ describe('ClassHub approved Overview', () => {
 
     expect(document.body.textContent).toContain('Build one study-ready lecture page')
     expect(document.body.textContent).toContain('Add lecture source')
-    expect(document.body.textContent).toContain('Add related materials')
+    expect(document.body.textContent).toContain('Add lecture materials')
   })
 
   it('keeps the topic-focused Guide notice outside the New Guide item action', async () => {

@@ -254,6 +254,18 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
         records.unshift(excerpt.file)
         draft.academics.classCenter.sourceChunks.push(...excerpt.chunks)
       }
+      if (lectureId) {
+        const lecture = draft.academics.classCenter.lectures.find((item) => item.id === lectureId)
+        if (lecture) {
+          const addedIds = [...retained.map((item) => item.id), ...(excerpt ? [excerpt.file.id] : [])]
+          lecture.selectedSourceFileIds = [...new Set([
+            ...(lecture.transcriptFileId ? [lecture.transcriptFileId] : []),
+            ...(lecture.selectedSourceFileIds ?? []),
+            ...addedIds,
+          ])]
+          lecture.updatedAt = now
+        }
+      }
     })
     const count = retained.length + (excerpt ? 1 : 0)
     const unreadable = retained.filter((item) => !item.extracted?.text.trim()).length
@@ -271,7 +283,7 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
   return <Dialog open={open} onOpenChange={(next) => { if (!saving) setOpen(next) }}>
     <DialogTrigger asChild>{trigger}</DialogTrigger>
     <DialogContent className="max-w-xl bg-card">
-      <DialogHeader><DialogTitle>Add material</DialogTitle><DialogDescription>Choose files or a folder, paste a screenshot, or paste textbook text. Text and scanned pages are read on this device. File bytes stay local; only sources you later select for an AI output are copied to your private server workspace after disclosure.</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle>Add material</DialogTitle><DialogDescription>{lectureId ? 'Anything added here becomes a source for this lecture. ' : ''}Choose files or a folder, paste a screenshot, or paste textbook text. Text and scanned pages are read on this device. File bytes stay local; only readable source text is copied to your private server workspace after disclosure when you request an AI output.</DialogDescription></DialogHeader>
       <div className="grid gap-4">
         <input ref={inputRef} type="file" multiple accept={MATERIAL_FILE_ACCEPT} aria-label="Choose material files" className="sr-only" onChange={(event) => { addFiles(event.target.files ?? [], 'upload'); event.currentTarget.value = '' }} />
         <input ref={(node) => { folderInputRef.current = node; if (node) { node.webkitdirectory = true; node.setAttribute('directory', '') } }} type="file" multiple accept={MATERIAL_FILE_ACCEPT} aria-label="Choose a material folder" className="sr-only" onChange={(event) => { addFolderFiles(event.currentTarget.files ?? []); event.currentTarget.value = '' }} />
