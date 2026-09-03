@@ -13,7 +13,7 @@ describe('MaterialIntakeDialog clipboard intake', () => {
 
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-09-02T20:20:24-04:00'))
+    vi.setSystemTime(new Date(2026, 8, 2, 20, 20, 24))
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
