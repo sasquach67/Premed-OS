@@ -14,7 +14,7 @@ describe('classCardTaskSummary', () => {
 
   it('keeps chapter assignments recognizable and bounded', () => {
     expect(classCardTaskSummary('Read Chapter 4 · Sensation and Perception before class'))
-      .toBe('Read Chapter 4 · Sensation and Perception')
+      .toBe('Read Ch. 4: Sensation & perception')
     expect(classCardTaskSummary('Complete a very long assignment title that continues with several extra clauses and details the student can review later').length)
       .toBeLessThanOrEqual(83)
   })

@@ -183,6 +183,25 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     expect(grid?.className).not.toContain('academics-class-grid--five')
   })
 
+  it('centers a shortened next-assignment label without changing its full accessible title', async () => {
+    const seeded = structuredClone(createSeedData())
+    const workspace = seeded.academics.classCenter.workspaces[0]
+    if (!workspace) throw new Error('Expected a visible course')
+    const title = 'Read Chapter 4 · Sensation and Perception before class'
+    seeded.academics.classCenter.assignments = [{
+      id: 'chapter-reading', courseId: workspace.courseId, title, type: 'reading', dueDate: '2099-09-03', status: 'not-started',
+      linkedTopicIds: [], linkedFileIds: [], createdAt: 1, updatedAt: 1, order: 0,
+    }]
+    useStore.getState().replaceAll(seeded)
+    await render()
+
+    const next = container.querySelector<HTMLAnchorElement>('[data-testid="class-next-deadline"]')
+    expect(next?.textContent).toContain('Read Ch. 4: Sensation & perception')
+    expect(next?.getAttribute('title')).toBe(title)
+    expect(next?.className).toContain('grid-cols-[1rem_minmax(0,1fr)_1rem]')
+    expect(next?.className).toContain('text-center')
+  })
+
   it('opens a new syllabus import from the shared importFor=new route and clears it on cancel', async () => {
     useStore.getState().replaceAll(structuredClone(createSeedData()))
     await render('/academics?tab=class-center&importFor=new')

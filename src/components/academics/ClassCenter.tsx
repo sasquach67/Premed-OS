@@ -1567,10 +1567,11 @@ export function ClassCard({
               to={`/academics/classes/${row.id}?classTab=assignments&view=agenda&assignment=${encodeURIComponent(stats.nextDeadline.id)}`}
               title={stats.nextDeadline.title}
               aria-label={`Open assignment: ${stats.nextDeadline.title}`}
-              className="group/next flex min-h-12 w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[10.5px] font-bold text-muted-foreground transition-[background-color,color,opacity] duration-150 hover:bg-[color-mix(in_srgb,var(--class-accent)_9%,transparent)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--class-accent)] md:group-focus/class:pointer-events-none md:group-focus/class:opacity-0 md:group-hover/class:pointer-events-none md:group-hover/class:opacity-0 motion-reduce:transition-none"
+              className="group/next grid min-h-12 w-full grid-cols-[1rem_minmax(0,1fr)_1rem] items-center gap-2 rounded-lg px-2 py-1.5 text-center text-[10.5px] font-bold text-muted-foreground transition-[background-color,color,opacity] duration-150 hover:bg-[color-mix(in_srgb,var(--class-accent)_9%,transparent)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--class-accent)] md:group-focus/class:pointer-events-none md:group-focus/class:opacity-0 md:group-hover/class:pointer-events-none md:group-hover/class:opacity-0 motion-reduce:transition-none"
               onClick={(event) => event.stopPropagation()}
             >
-              <span className="min-w-0 flex-1">
+              <span className="size-3.5" aria-hidden="true" />
+              <span className="min-w-0">
                 <span className="line-clamp-2 text-foreground">{nextTaskSummary}</span>
                 {stats.nextDeadline.dueDate && (
                   <span className="mt-0.5 block text-[9.5px] text-muted-foreground">{assignmentDateLabel(stats.nextDeadline)}</span>
