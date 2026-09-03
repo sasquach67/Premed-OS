@@ -259,4 +259,28 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).toContain('Use the Ebola activity data and controls')
     expect(container.querySelectorAll('select[aria-label^="Mastery state for"]').length).toBe(5)
   })
+
+  it('lets a generated lecture be rebuilt without discarding the saved result first', async () => {
+    const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
+    const generatedLecture = seed.academics.classCenter.lectures.find((lecture) => lecture.id === 'demo-lecture-biol103-2')!
+    generatedLecture.studyGuide = {
+      specId: 'study-guide-v1', specHash: 'saved-guide', courseId: 'demo-course-biol103-current', topicId: '__class_material__',
+      sections: [{ id: 'overview', title: 'Overview', blocks: [{ id: 'saved-block', type: 'prose', text: { content: 'Previously verified lecture content.' }, provenance: 'source', sourceRef: { fileId: 'demo-file-biol103-transcript-l2', chunkId: 'demo-chunk-biol103-flow', start: 0, end: 20 } }] }],
+    }
+    useStore.getState().replaceAll(seed)
+    await render('demo-course-biol103-current', 'demo-lecture-biol103-2')
+
+    const before = useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.id === 'demo-lecture-biol103-2')!
+    expect(before.studyGuide).toBeDefined()
+    const rebuild = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Rebuild with AI'))!
+    expect(rebuild).toBeTruthy()
+
+    await act(async () => rebuild.click())
+
+    expect(container.textContent).toContain('2. Add lecture materials')
+    expect(container.textContent).toContain('Continue to build preview')
+    const preserved = useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.id === 'demo-lecture-biol103-2')!
+    expect(preserved.workspaceState).toBe('complete')
+    expect(preserved.studyGuide).toBeDefined()
+  })
 })
