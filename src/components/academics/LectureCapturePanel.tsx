@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
-import { BookOpen, Brain, Captions, Check, ChevronDown, CircleHelp, FileCheck2, FilePlus2, FileSearch, FileStack, FileText, FileUp, ListChecks, Mic2, MoreHorizontal, NotebookText, Search, ShieldCheck, Sparkles } from 'lucide-react'
+import { BookOpen, Brain, Captions, Check, ChevronDown, CircleHelp, FileCheck2, FilePlus2, FileSearch, FileStack, FileText, FileUp, FlaskConical, Image as ImageIcon, ListChecks, Mic2, MoreHorizontal, NotebookText, Presentation, Search, ShieldCheck, Sparkles } from 'lucide-react'
 import type { AcademicFile, ClassCenterData, Course, LectureBriefTrace, LectureRecord, SourceChunk } from '@/lib/types'
 import { uid } from '@/lib/id'
 import { cn } from '@/lib/utils'
@@ -26,25 +26,16 @@ type WizardStep = 1 | 2 | 3
 type WorkspaceView = 'brief' | 'mastery' | 'materials' | 'sources'
 
 const MATERIAL_SUGGESTIONS = [
-  { group: 'Course backbone', title: 'Textbook pages', detail: 'Adds definitions, mechanisms, and surrounding context the lecture may assume.' },
-  { group: 'Course backbone', title: 'Professor slides', detail: 'Preserves the instructor’s sequence, examples, and visible emphasis.' },
-  { group: 'Course backbone', title: 'Learning objectives or syllabus material', detail: 'Gives the Mastery Map stable, course-authored objectives.' },
-  { group: 'Course backbone', title: 'Assigned readings or review sheets', detail: 'Adds course terminology and the boundaries your instructor expects.' },
-  { group: 'Practice signals', title: 'Pearson / publisher practice questions', detail: 'Shows the moves and distractors you are expected to handle. Questions guide new practice; they are never copied.' },
-  { group: 'Practice signals', title: 'Quizzes, practice exams, and answer keys', detail: 'Reveals question style, common traps, and the level of explanation that earns credit.' },
-  { group: 'Practice signals', title: 'Worksheets or problem sets', detail: 'Adds the kinds of tasks you are expected to perform, not only facts to recall.' },
-  { group: 'Practice signals', title: 'Recitation or TA problem sheets', detail: 'Adds worked applications and the intermediate reasoning lecture may skip.' },
-  { group: 'Your context', title: 'Personal notes', detail: 'Captures what you wrote down and unlocks Revised Notes as a separate resource.' },
-  { group: 'Your context', title: 'Study-group questions or muddy points', detail: 'Tells the Brief which connections still need a clearer explanation.' },
-  { group: 'Your context', title: 'Returned work and instructor feedback', detail: 'Grounds misconceptions and practice priorities in feedback you actually received.' },
-  { group: 'Your context', title: 'Office-hours or class discussion notes', detail: 'Adds professor explanations and examples that may not appear in the slides.' },
-  { group: 'Labs & visuals', title: 'Lab handouts, methods, or data', detail: 'Connects lecture ideas to procedures, controls, results, and interpretation.' },
-  { group: 'Labs & visuals', title: 'Diagrams, screenshots, or annotated figures', detail: 'Readable labels and captions can be used. The figure itself stays marked not interpreted.' },
-  { group: 'Labs & visuals', title: 'Reference tables or formula sheets', detail: 'Adds the exact lookup tools you are allowed or expected to use.' },
-  { group: 'Labs & visuals', title: 'Other relevant course documents', detail: 'Keeps useful evidence available without guessing what the document contains.' },
+  { title: 'Textbook', detail: 'Definitions, mechanisms & context', Icon: BookOpen },
+  { title: 'Slides', detail: 'Instructor sequence & emphasis', Icon: Presentation },
+  { title: 'Objectives & syllabus', detail: 'Course goals for the Mastery Map', Icon: ListChecks },
+  { title: 'Assigned readings', detail: 'Terminology & course context', Icon: FileText },
+  { title: 'Practice questions', detail: 'Quizzes, exams, problem sets & keys', Icon: CircleHelp },
+  { title: 'Notes & feedback', detail: 'Personal notes, discussions & feedback', Icon: NotebookText },
+  { title: 'Lab & reference', detail: 'Methods, data, tables & formulas', Icon: FlaskConical },
+  { title: 'Diagrams & screenshots', detail: 'Captions used; figures not interpreted', Icon: ImageIcon },
+  { title: 'Other course files', detail: 'Anything else relevant', Icon: FileStack },
 ] as const
-
-const MATERIAL_SUGGESTION_GROUPS = [...new Set(MATERIAL_SUGGESTIONS.map((item) => item.group))]
 
 function isoToday() { return new Date().toISOString().slice(0, 10) }
 function fileKind(file: AcademicFile) {
@@ -242,11 +233,55 @@ function BuildLecturePreview({ lecture, brief, mastery, files }: {
 }
 
 function MaterialsStep({ courseId, data, lecture, available, selectedIds, selectedFiles, selectedChunks, onToggle, onContinue }: { courseId: string; data: ClassCenterData; lecture: LectureRecord; available: AcademicFile[]; selectedIds: string[]; selectedFiles: AcademicFile[]; selectedChunks: SourceChunk[]; onToggle: (id: string) => void; onContinue: () => void }) {
-  return <section aria-labelledby="lecture-materials-heading"><h3 id="lecture-materials-heading" className="font-display text-lg font-extrabold">2. Add related materials <span className="font-sans text-sm font-bold text-muted-foreground">(optional)</span></h3><p className="mt-1 max-w-3xl text-sm font-semibold text-muted-foreground">A file is not treated as understood merely because it is attached. Only readable, selected sources can support the Brief or Mastery Map.</p><div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_19rem]"><div><div className="space-y-4">{MATERIAL_SUGGESTION_GROUPS.map((group) => <section key={group}><p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">{group}</p><div className="grid gap-2 md:grid-cols-2">{MATERIAL_SUGGESTIONS.filter((item) => item.group === group).map(({ title, detail }) => <div key={title} className="rounded-xl border border-border bg-muted/25 p-3"><p className="font-display text-sm font-extrabold">{title}</p><p className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground">{detail}</p></div>)}</div></section>)}</div>{available.length > 0 && <div className="mt-5"><p className="text-xs font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Ready sources from this class</p><div className="mt-2 space-y-2">{available.map((file) => <SourceChoice key={file.id} file={file} chunks={data.sourceChunks.filter((chunk) => chunk.fileId === file.id && Boolean(chunk.content.trim()))} selected={file.id === lecture.transcriptFileId || selectedIds.includes(file.id)} locked={file.id === lecture.transcriptFileId} onToggle={() => onToggle(file.id)} />)}</div></div>}</div><aside className="h-fit rounded-2xl border border-border bg-card p-4"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Add something else</p><p className="mt-1 font-display text-sm font-extrabold">Keep it with this lecture</p><p className="mt-1 text-xs font-semibold text-muted-foreground">New files are processed locally and return here unselected so you can review coverage first.</p><MaterialIntakeDialog courseId={courseId} lectureId={lecture.id} trigger={<Button className="mt-4 w-full" variant="outline"><FilePlus2 className="size-4" /> Add lecture material</Button>} /><p className="mt-4 border-t border-border pt-3 text-xs font-semibold text-muted-foreground">Selected now: {selectedFiles.length} {selectedFiles.length === 1 ? 'source' : 'sources'} · {selectedChunks.length} readable {selectedChunks.length === 1 ? 'passage' : 'passages'}</p></aside></div><div className="mt-5 flex flex-wrap items-center justify-between gap-3"><Button variant="ghost" onClick={onContinue}>Skip for now</Button><Button onClick={onContinue}>Continue to build preview <ChevronDown className="size-4 -rotate-90" /></Button></div></section>
+  return (
+    <section aria-labelledby="lecture-materials-heading">
+      <h3 id="lecture-materials-heading" className="font-display text-lg font-extrabold">
+        2. Add related materials <span className="font-sans text-sm font-bold text-muted-foreground">(optional)</span>
+      </h3>
+      <p className="mt-1 text-sm font-semibold text-muted-foreground">Only readable, selected sources are used.</p>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_19rem]">
+        <div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" aria-label="Suggested material types">
+            {MATERIAL_SUGGESTIONS.map(({ title, detail, Icon }) => (
+              <div key={title} data-testid="material-suggestion" className="grid min-h-16 grid-cols-[2rem_minmax(0,1fr)] items-center gap-2.5 rounded-xl border border-border bg-muted/25 p-2.5">
+                <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary" aria-hidden="true"><Icon className="size-4" /></span>
+                <span className="min-w-0">
+                  <b className="block font-display text-xs leading-4">{title}</b>
+                  <span className="mt-0.5 block text-[11px] font-semibold leading-4 text-muted-foreground">{detail}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {available.length > 0 && (
+            <div className="mt-5">
+              <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Ready sources from this class</p>
+              <div className="mt-2 space-y-2">
+                {available.map((file) => <SourceChoice key={file.id} file={file} chunks={data.sourceChunks.filter((chunk) => chunk.fileId === file.id && Boolean(chunk.content.trim()))} selected={file.id === lecture.transcriptFileId || selectedIds.includes(file.id)} locked={file.id === lecture.transcriptFileId} onToggle={() => onToggle(file.id)} />)}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <aside className="h-fit rounded-2xl border border-border bg-card p-4">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Add a file</p>
+          <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">Processed on this device. Review coverage before selecting.</p>
+          <MaterialIntakeDialog courseId={courseId} lectureId={lecture.id} trigger={<Button className="mt-4 w-full" variant="outline"><FilePlus2 className="size-4" /> Add lecture material</Button>} />
+          <p className="mt-4 border-t border-border pt-3 text-xs font-semibold text-muted-foreground">{selectedFiles.length} selected · {selectedChunks.length} readable {selectedChunks.length === 1 ? 'passage' : 'passages'}</p>
+        </aside>
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+        <Button variant="ghost" onClick={onContinue}>Skip for now</Button>
+        <Button onClick={onContinue}>Continue to build preview <ChevronDown className="size-4 -rotate-90" /></Button>
+      </div>
+    </section>
+  )
 }
 
 function SourceChoice({ file, chunks, selected, locked, onToggle }: { file: AcademicFile; chunks: SourceChunk[]; selected: boolean; locked: boolean; onToggle: () => void }) {
-  return <button type="button" aria-pressed={selected} disabled={locked || file.processingStatus !== 'ready'} onClick={onToggle} className={cn('flex w-full items-start gap-3 rounded-xl border p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', selected ? 'border-primary bg-primary/7' : 'border-border bg-card hover:border-primary/45', file.processingStatus !== 'ready' && 'opacity-75')}><span className={cn('mt-0.5 grid size-5 shrink-0 place-items-center rounded border', selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border')}>{selected && <Check className="size-3.5" />}</span><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><b className="truncate">{file.fileName ?? file.title}</b><Badge variant="outline">{fileExtension(file)}</Badge></span><span className="mt-1 block text-xs font-bold text-muted-foreground">{fileKind(file)} · {fileCoverageLabel(file, chunks.length)}</span>{file.sourceCoverage?.figureStatus === 'not-interpreted' && <span className="mt-1 block text-xs font-semibold text-muted-foreground">Readable text/captions only · figures not interpreted</span>}{file.processingStatus !== 'ready' && <span className="mt-1 block text-xs font-semibold text-amber-700 dark:text-amber-300">Fix: {file.processingError ?? 'Add readable text or a clearer scan.'}</span>}</span></button>
+  return <button type="button" aria-pressed={selected} disabled={locked || file.processingStatus !== 'ready'} onClick={onToggle} className={cn('flex w-full items-start gap-3 rounded-xl border p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', selected ? 'border-primary bg-primary/7' : 'border-border bg-card hover:border-primary/45', file.processingStatus !== 'ready' && 'opacity-75')}><span className={cn('mt-0.5 grid size-5 shrink-0 place-items-center rounded border', selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border')}>{selected && <Check className="size-3.5" />}</span><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><b className="truncate">{file.fileName ?? file.title}</b><Badge variant="outline">{fileExtension(file)}</Badge></span><span className="mt-1 block text-xs font-bold text-muted-foreground">{fileKind(file)} · {fileCoverageLabel(file, chunks.length)}{file.sourceCoverage?.figureStatus === 'not-interpreted' ? ' · figures not interpreted' : ''}</span>{file.processingStatus !== 'ready' && <span className="mt-1 block text-xs font-semibold text-amber-700 dark:text-amber-300">Fix: {file.processingError ?? 'Add readable text or a clearer scan.'}</span>}</span></button>
 }
 
 function LectureWorkspace({ course, courseId, data, lectures, activeLecture, view, onView, onSelect, artifact, onArtifact, onOpenNotes, onHelp, help, embedded = false }: { course?: Pick<Course, 'code' | 'title'>; courseId: string; data: ClassCenterData; lectures: LectureRecord[]; activeLecture: LectureRecord; view: WorkspaceView; onView: (view: WorkspaceView) => void; onSelect: (lecture: LectureRecord) => void; artifact: MaterialArtifact | null; onArtifact: (artifact: MaterialArtifact | null) => void; onOpenNotes: () => void; onHelp: () => void; help: ReactNode; embedded?: boolean }) {
