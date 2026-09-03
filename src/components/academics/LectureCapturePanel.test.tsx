@@ -186,6 +186,28 @@ describe('lecture import and workspace', () => {
     expect(continueButton.disabled).toBe(true)
   })
 
+  it('treats legacy selected lecture sources as attached materials', async () => {
+    const seed = structuredClone(createSeedData())
+    const courseId = seed.academics.classCenter.workspaces[0].courseId
+    const now = 10
+    seed.academics.classCenter.lectures.push({ id: 'lecture', courseId, title: 'Lecture 1 · Conditioning', inputPath: 'pasted', transcriptFileId: 'transcript', occurredOn: '2026-09-02', processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds: ['transcript', 'legacy-slides'], createdAt: now, updatedAt: now, order: 0 })
+    seed.academics.classCenter.files.push(
+      { id: 'transcript', courseId, lectureId: 'lecture', sourceType: 'paste', title: 'Lecture transcript', type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready', sourceCoverage: { readableCharacterCount: 80, figureStatus: 'not-present-or-unknown' }, createdAt: now, updatedAt: now, order: 0 },
+      { id: 'legacy-slides', courseId, sourceType: 'upload', title: 'Previously selected slides', fileName: 'BIOL103-lecture-1-slides.pdf', mimeType: 'application/pdf', type: 'lecture-slides', linkedTopicIds: [], owner: 'course', processingStatus: 'ready', sourceCoverage: { pageCount: 12, readablePages: [1,2,3,4,5,6,7,8,9,10,11,12], readableCharacterCount: 1200, figureStatus: 'not-interpreted' }, createdAt: now, updatedAt: now, order: 1 },
+    )
+    seed.academics.classCenter.sourceChunks.push(
+      { id: 'transcript-chunk', fileId: 'transcript', courseId, content: 'Classical conditioning connects a neutral cue with a meaningful outcome.', coveredByKeyPoint: false, createdAt: now, updatedAt: now, order: 0 },
+      { id: 'slides-chunk', fileId: 'legacy-slides', courseId, content: 'Compare acquisition with extinction and do not treat extinction as erasure.', coveredByKeyPoint: false, createdAt: now, updatedAt: now, order: 1 },
+    )
+    useStore.getState().replaceAll(seed)
+
+    await render(courseId, 'lecture', 'transcript')
+
+    expect(container.textContent).toContain('BIOL103-lecture-1-slides.pdf')
+    const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Continue to build preview'))!
+    expect(continueButton.disabled).toBe(false)
+  })
+
   it('opens a completed lecture to Brief and Mastery with transcript under Sources', async () => {
     const seed = structuredClone(createSeedData())
     const courseId = seed.academics.classCenter.workspaces[0].courseId

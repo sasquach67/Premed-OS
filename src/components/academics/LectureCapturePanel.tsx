@@ -114,13 +114,13 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
   const [buildPhase, setBuildPhase] = useState<'idle' | 'guide' | 'mastery' | 'saving'>('idle')
   const input = useRef<HTMLInputElement>(null)
   const lectureFiles = data.files.filter((file) => file.lectureId === lecture?.id)
-  const supportingMaterials = lectureFiles.filter((file) => file.id !== lecture?.transcriptFileId)
   const lectureSourceIds = [...new Set([
     ...(lecture?.transcriptFileId ? [lecture.transcriptFileId] : []),
     ...(lecture?.selectedSourceFileIds ?? []),
     ...lectureFiles.map((file) => file.id),
   ])]
   const lectureSources = data.files.filter((file) => lectureSourceIds.includes(file.id))
+  const supportingMaterials = lectureSources.filter((file) => file.id !== lecture?.transcriptFileId)
   const readableChunks = data.sourceChunks.filter((chunk) => lectureSourceIds.includes(chunk.fileId) && Boolean(chunk.content.trim()))
   const previewLecture = lecture ? { ...lecture, selectedSourceFileIds: lectureSourceIds } : undefined
   const previewBrief = previewLecture ? buildLectureBrief(readableChunks, lectureSourceIds, data.files) : undefined
