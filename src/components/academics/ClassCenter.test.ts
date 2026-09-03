@@ -22,6 +22,24 @@ describe('Class Center card compatibility', () => {
 })
 
 describe('Class Center add-class type selection', () => {
+  it('canonicalizes every parsed class identity field before the review form is shown', () => {
+    const proposal = parseSyllabusText(`BIOL103: HOW CELLS FUNCTION
+FALL 2026
+Professor: Dr. Emily Weber, Ph.D. (she/her)
+TTH 12:30pm - 1:45pm
+Location: Wilson Hall, Rm. 107`)
+
+    expect(classFormFromSyllabus(proposal, 'spring   2027')).toMatchObject({
+      courseCode: 'BIOL 103',
+      courseTitle: 'How Cells Function',
+      semester: 'Fall 2026',
+      instructor: 'Emily Weber, PhD',
+      meetingDays: 'Tue · Thurs',
+      meetingTime: '12:30 PM–1:45 PM',
+      location: 'Wilson Hall, Room 107',
+    })
+  })
+
   it('standardizes BIOL 103 identity and keeps the classroom tied to its section schedule', () => {
     const proposal = parseSyllabusText(`BIOL 103: HOW CELLS FUNCTION
 2026 Fall
@@ -32,7 +50,7 @@ Professor: Dr. Emily Weber (she/her)`)
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
       courseCode: 'BIOL 103',
       courseTitle: 'How Cells Function',
-      instructor: 'Dr. Emily Weber',
+      instructor: 'Emily Weber',
       meetingDays: 'Tue · Thurs',
       meetingTime: '12:30–1:45',
       location: 'Wilson Hall 107',
@@ -51,10 +69,10 @@ The College of Arts and Sciences provides a secure, proctored environment for ma
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
       courseCode: 'GEOG 121',
       courseTitle: 'Geographies of Globalization',
-      instructor: 'Dr. Adrian Drummond-Cole',
+      instructor: 'Adrian Drummond-Cole',
       meetingDays: 'Mon · Wed · Fri',
       meetingTime: '9:05–9:55 AM',
-      location: 'Peabody Hall Rm 1040',
+      location: 'Peabody Hall, Room 1040',
     })
   })
 
@@ -74,10 +92,10 @@ M/W/F: 9:05–9:55 AM`)
     })
 
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
-      instructor: 'Dr. Adrian Drummond-Cole',
+      instructor: 'Adrian Drummond-Cole',
       meetingDays: 'Mon · Wed · Fri',
       meetingTime: '9:05–9:55 AM',
-      location: 'Peabody Hall Rm 1040',
+      location: 'Peabody Hall, Room 1040',
     })
   })
 
@@ -86,7 +104,7 @@ M/W/F: 9:05–9:55 AM`)
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
       courseCode: 'CHEM 262',
       courseTitle: 'Organic Chemistry II',
-      instructor: 'Dr. Adaeze Elamin',
+      instructor: 'Adaeze Elamin',
       meetingDays: 'Mon · Wed · Fri',
       meetingTime: '10:10 AM–11:00 AM',
       location: 'Kenan B12',
@@ -97,7 +115,7 @@ M/W/F: 9:05–9:55 AM`)
     const proposal = parseSyllabusText('PSYC 101 — Introduction to Psychology\nInstructor: Ndidi Adeyanju, PhD\nTR 8:00 AM-9:15 AM Hanes Art Center Room 121')
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
       meetingDays: 'Tue · Thurs',
-      location: 'Hanes Art Center Room 121',
+      location: 'Hanes Art Center, Room 121',
     })
   })
 
@@ -113,7 +131,7 @@ M/W/F: 9:05–9:55 AM`)
     const proposal = parseSyllabusText('NEUR 101 — Neurobiology - Fall 2026\nInstructor: Dr. Nadia Elamin Office hours: Monday 1-3 PM\nMWF 10:00 AM-10:50 AM')
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
       courseTitle: 'Neurobiology',
-      instructor: 'Dr. Nadia Elamin',
+      instructor: 'Nadia Elamin',
       meetingDays: 'Mon · Wed · Fri',
       meetingTime: '10:00 AM–10:50 AM',
     })
@@ -142,6 +160,15 @@ TR 2:00 PM-3:15 PM Genome Sciences 100`)
     expect(classFormFromSyllabus(proposal, 'Fall 2026')).toMatchObject({
       courseTitle: 'Art History',
       semester: 'Spring 2027',
+    })
+  })
+
+  it('recognizes registrar-style year-first terms from syllabus headers', () => {
+    const proposal = parseSyllabusText('BIOL 103 — HOW CELLS FUNCTION\n2026 Fall\nInstructor: Dr. Laura Ott')
+    expect(classFormFromSyllabus(proposal, 'Spring 2027')).toMatchObject({
+      courseTitle: 'How Cells Function',
+      semester: 'Fall 2026',
+      instructor: 'Laura Ott',
     })
   })
 

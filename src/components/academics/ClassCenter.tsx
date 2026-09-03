@@ -262,7 +262,7 @@ function extractClassLocation(line?: string): string {
   // suffix. A labeled fallback still handles forms such as `Location: Kenan B12`.
   const locationText = line.replace(/^.*\b(?:AM|PM)\b\s*/i, '')
   const namedLocations = [...locationText.matchAll(/\b((?:[A-Za-z]?\d{3,4}[A-Za-z]?\s+)?[A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*)*\s+(?:Center|Hall|Building)(?:\s*[·∙|,;-]?\s*(?:Room|Rm\.?)?\s*[A-Za-z]?\d+[A-Za-z]?)?)\b/g)]
-    .map((match) => match[1].replace(/\s*[·∙|,;-]\s*/g, ' ').replace(/\s+/g, ' ').trim())
+    .map((match) => match[1].replace(/\s*[·∙|;-]\s*/g, ' ').replace(/\s+/g, ' ').trim())
   // DOCX two-column headers are flattened into one line. When that happens,
   // the instructor office appears first and the class location appears last.
   if (/^\s*office\s*:/i.test(line)) return namedLocations.length > 1 ? namedLocations.at(-1) ?? '' : ''
@@ -308,10 +308,12 @@ function cleanCourseTitle(value?: string): string {
 }
 
 function extractCourseTerm(proposal: SyllabusProposal, fallback: string): string {
-  const match = `${proposal.items.find((item) => item.kind === 'identity')?.value ?? ''}\n${proposal.text}`
-    .match(/\b(Fall|Spring|Summer|Winter)\s+(20\d{2})\b/i)
-  if (!match) return fallback
-  return `${match[1][0].toUpperCase()}${match[1].slice(1).toLowerCase()} ${match[2]}`
+  const source = `${proposal.items.find((item) => item.kind === 'identity')?.value ?? ''}\n${proposal.text}`
+  const termFirst = source.match(/\b(Fall|Spring|Summer|Winter)\s+(20\d{2})\b/i)
+  const yearFirst = source.match(/\b(20\d{2})\s+(Fall|Spring|Summer|Winter)\b/i)
+  if (termFirst) return `${termFirst[1]} ${termFirst[2]}`
+  if (yearFirst) return `${yearFirst[2]} ${yearFirst[1]}`
+  return fallback
 }
 
 export function classFormFromSyllabus(proposal: SyllabusProposal, semester: string): ClassFormState {
@@ -349,13 +351,13 @@ export function classFormFromSyllabus(proposal: SyllabusProposal, semester: stri
     || ''
   return {
     ...emptyClassForm(semester),
-    semester: extractCourseTerm(proposal, semester),
-    courseCode: identity?.label ?? '',
-    courseTitle: normalizeCourseTitle(cleanCourseTitle(identity?.value), identity?.label),
+    semester: normalizeClassTerm(extractCourseTerm(proposal, semester)),
+    courseCode: normalizeCourseCode(identity?.label ?? ''),
+    courseTitle: normalizeCourseTitle(cleanCourseTitle(identity?.value), normalizeCourseCode(identity?.label ?? '')),
     instructor,
-    meetingDays,
-    meetingTime,
-    location,
+    meetingDays: normalizeMeetingDays(meetingDays),
+    meetingTime: normalizeClassMeetingTime(meetingTime),
+    location: normalizeClassLocation(location),
   }
 }
 

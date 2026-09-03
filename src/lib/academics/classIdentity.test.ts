@@ -15,6 +15,7 @@ describe('canonical class identity formatting', () => {
     expect(normalizeInstructorName('Instructor:  Ndidi Adeyanju, Ph.D.')).toBe('Ndidi Adeyanju, PhD')
     expect(normalizeClassMeetingTime('8am - 9:15am')).toBe('8:00 AM–9:15 AM')
     expect(normalizeClassLocation('Hanes Art Center,  Rm. 121')).toBe('Hanes Art Center, Room 121')
+    expect(normalizeClassLocation('Peabody Hall Rm 1040')).toBe('Peabody Hall, Room 1040')
   })
 
   it('uses stable course titles instead of registrar-style shorthand', () => {
@@ -25,9 +26,9 @@ describe('canonical class identity formatting', () => {
     expect(normalizeCourseTitle('DNA REPLICATION AND RNA PROCESSING', 'BIOL 202')).toBe('DNA Replication and RNA Processing')
   })
 
-  it('keeps sourced doctorate markers while removing role and contact prose', () => {
+  it('keeps exact sourced credentials while removing generic honorifics and contact prose', () => {
     expect(normalizeInstructorName("Instructor: Erik Maloney (erikglen@live.unc.edu) (If I don't respond within 48 hours, email again.)")).toBe('Erik Maloney')
-    expect(normalizeInstructorName('Professor: Dr. Emily Weber (she/her)')).toBe('Dr. Emily Weber')
+    expect(normalizeInstructorName('Professor: Dr. Emily Weber (she/her)')).toBe('Emily Weber')
     expect(normalizeInstructorName('Dr. Emily Weber, Ph.D.')).toBe('Emily Weber, PhD')
     expect(normalizeInstructorName('Prof. Adrian Drummond-Cole')).toBe('Adrian Drummond-Cole')
   })

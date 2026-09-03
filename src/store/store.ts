@@ -69,6 +69,7 @@ import { migrateStaffEmailV42 } from '@/store/migrations/staffEmailV42'
 import { migrateClassIdentityV43 } from '@/store/migrations/classIdentityV43'
 import { migrateInstructorIdentityV44 } from '@/store/migrations/instructorIdentityV44'
 import { migrateCourseTitleV45 } from '@/store/migrations/courseTitleV45'
+import { migrateClassIdentityV46 } from '@/store/migrations/classIdentityV46'
 import { removeStoryAttachment, retainThenPersistStoryAttachment } from '@/lib/overviewFileCapture'
 
 const DEMO_MODE = isDemoMode()
@@ -87,8 +88,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateCourseTitleV45`. */
-export const CURRENT_STORE_VERSION = 45
+/** Matches the newest migration in `migrateAll`: `migrateClassIdentityV46`. */
+export const CURRENT_STORE_VERSION = 46
 
 function createInitialData() {
   const initial = createInitialDataForMode(DEMO_MODE)
@@ -601,7 +602,8 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateStaffEmailV42(migrated)
   migrated = migrateClassIdentityV43(migrated)
   migrated = migrateInstructorIdentityV44(migrated)
-  return migrateCourseTitleV45(migrated)
+  migrated = migrateCourseTitleV45(migrated)
+  return migrateClassIdentityV46(migrated)
 }
 
 /**

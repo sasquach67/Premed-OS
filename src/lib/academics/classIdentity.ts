@@ -50,9 +50,9 @@ export function normalizeClassTerm(value: string): string {
   return standard ? `${standard[1][0].toUpperCase()}${standard[1].slice(1).toLowerCase()} ${standard[2]}` : trimmed
 }
 
-/** Keep class identity fields person-shaped. Prefer an explicit sourced
- * credential suffix; otherwise retain a sourced `Dr.` without guessing which
- * doctorate it represents. Contact details and role labels belong elsewhere. */
+/** Keep class identity fields person-shaped. Preserve only an explicit sourced
+ * credential suffix; a generic `Dr.` does not tell us whether the credential
+ * is a PhD, MD, EdD, or something else. Contact details and roles live elsewhere. */
 export function normalizeInstructorName(value: string): string {
   const normalized = compact(value)
     .replace(/^(?:instructor|professor)\s*:?\s*/i, '')
@@ -63,10 +63,7 @@ export function normalizeInstructorName(value: string): string {
     .replace(/,?\s+Ph\.?\s*D\.?$/i, ', PhD')
     .replace(/,?\s+M\.?\s*D\.?$/i, ', MD')
     .trim()
-  // An explicit suffix is more precise than the generic `Dr.` honorific.
-  return /,\s*(?:PhD|MD)$/i.test(normalized)
-    ? normalized.replace(/^Dr\.?\s+(?=\S)/i, '')
-    : normalized.replace(/^Dr\s+(?=\S)/i, 'Dr. ')
+  return normalized.replace(/^Dr\.?\s+(?=\S)/i, '')
 }
 
 /** Use the same clock punctuation for imported and manually entered classes.
@@ -84,6 +81,7 @@ export function normalizeClassMeetingTime(value: string): string {
 export function normalizeClassLocation(value: string): string {
   return compact(value)
     .replace(/\bRm\.?\s+/gi, 'Room ')
+    .replace(/\b(Center|Hall|Building)\s*,?\s+Room\b/gi, '$1, Room')
     .replace(/\s*,\s*/g, ', ')
 }
 
