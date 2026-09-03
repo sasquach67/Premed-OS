@@ -670,12 +670,13 @@ describe('ClassHub approved Overview', () => {
     expect(container.textContent).toContain(`Showing Guide items linked to ${topic.title}`)
   })
 
-  it('groups Materials by week first and lets the student switch to category without hiding generated work', async () => {
+  it('groups Materials by explicit course week and lets the student place uncertain work without hiding generated resources', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
     const topic = seed.academics.classCenter.topics.find((item) => item.courseId === course.id)!
     topic.scheduledFor = '2026-09-09'
+    workspace.syllabusSchedule = [{ id: 'schedule-week-3', week: 'Week 3', label: 'Membrane transport', startDate: '2026-09-07', order: 0 }]
     const slides = {
       id: 'materials-week-slides', courseId: course.id, sourceType: 'upload' as const, title: 'Membrane transport slides', type: 'lecture-slides' as const,
       topicId: topic.id, linkedTopicIds: [topic.id], owner: 'course' as const, createdAt: now, updatedAt: now, order: 800,
@@ -701,24 +702,67 @@ describe('ClassHub approved Overview', () => {
       )
     })
 
-    expect(container.textContent).toContain('week first')
-    expect(container.textContent).toContain('Week of Sep 7')
+    expect(container.textContent).toContain('Course weeks')
+    expect(container.textContent).toContain('Week 3')
+    expect(container.textContent).toContain('Not placed yet')
+    expect(container.textContent).toContain('No week assumed')
     expect(container.textContent).toContain('Study outline · Membrane transport')
+
+    const placeHomework = container.querySelector<HTMLButtonElement>('button[aria-label="Place Homework 4 in a course week"]')!
+    await act(async () => {
+      placeHomework.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }))
+      placeHomework.click()
+    })
+    const weekTwo = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((item) => item.textContent?.trim() === 'Week 2')!
+    await act(async () => weekTwo.click())
+    expect(useStore.getState().academics.classCenter.files.find((file) => file.id === 'materials-unassigned-homework')?.courseWeek).toBe(2)
+    await act(async () => useStore.getState().update((draft) => {
+      const homework = draft.academics.classCenter.files.find((file) => file.id === 'materials-unassigned-homework')
+      if (homework) homework.courseWeek = undefined
+    }))
+
     const grouping = container.querySelector<HTMLButtonElement>('button[aria-label="Group materials"]')!
     await act(async () => {
       grouping.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }))
       grouping.click()
     })
-    const category = [...document.body.querySelectorAll<HTMLElement>('[role="option"]')].find((option) => option.textContent?.trim() === 'By category')!
+    const category = [...document.body.querySelectorAll<HTMLElement>('[role="option"]')].find((option) => option.textContent?.trim() === 'Material type')!
     await act(async () => category.click())
 
     expect(container.textContent).toContain('Slides')
     expect(container.textContent).toContain('Learning objectives')
     expect(container.textContent).toContain('Generated resources')
-    const unassigned = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Unassigned')!
+    const unassigned = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Not placed')!
     await act(async () => unassigned.click())
     expect(container.textContent).toContain('Homework 4')
-    expect(container.textContent).toContain('Unassigned')
+    expect(container.textContent).not.toContain('Unassigned')
+  })
+
+  it('does not invent a course week from a topic date without an explicit numbered syllabus week', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    const topic = seed.academics.classCenter.topics.find((item) => item.courseId === course.id)!
+    topic.scheduledFor = '2026-09-09'
+    workspace.syllabusSchedule = [{ id: 'schedule-undated-label', week: 'September 7', label: 'Membrane transport', startDate: '2026-09-07', order: 0 }]
+    seed.academics.classCenter.files.push({
+      id: 'materials-date-only', courseId: course.id, sourceType: 'upload', title: 'Dated lecture slides', type: 'lecture-slides',
+      topicId: topic.id, linkedTopicIds: [topic.id], owner: 'course', createdAt: now, updatedAt: now, order: 900,
+    })
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=materials`]}>
+          <ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider>
+        </MemoryRouter>,
+      )
+    })
+
+    const inbox = [...container.querySelectorAll<HTMLElement>('.class-hub-material-group')].find((group) => group.textContent?.includes('Not placed yet'))!
+    expect(inbox.textContent).toContain('Dated lecture slides')
+    expect(inbox.textContent).toContain('No week assumed')
+    expect(container.textContent).not.toMatch(/Week of Sep/)
   })
 
   it('keeps generated study work in Materials and operational course context in Guide', async () => {

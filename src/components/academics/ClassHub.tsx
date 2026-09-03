@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import type {
   AcademicFile, ClassAssignment, ClassCenterData, ClassContact, ClassNote,
-  AcademicTagColor, AssignedReading, ClassWorkspace, ClassWorkspaceType, Course, FeedbackNote, GradeCategory, PaperDraft, Person, Topic,
+  AcademicTagColor, AssignedReading, ClassWorkspace, ClassWorkspaceType, Course, FeedbackNote, GradeCategory, PaperDraft, Person, SyllabusScheduleEntry, Topic,
 } from '@/lib/types'
 import { useStore } from '@/store/store'
 import { uid } from '@/lib/id'
@@ -277,7 +277,7 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
         </section>
 
         <TabsContent value="overview" className="class-hub-tab"><Overview course={course} workspace={workspace} data={data} topics={courseTopics} assignments={courseAssignments} notes={courseNotes} onTab={changeTab} onOpenExamPrep={openExamPrep} /></TabsContent>
-        <TabsContent value="materials" className="class-hub-tab"><Materials course={course} classType={classType} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} writingTools={classType === 'writing' ? <WritingTools courseId={course.id} readingListState={readingListState} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /> : undefined} /></TabsContent>
+        <TabsContent value="materials" className="class-hub-tab"><Materials course={course} workspace={workspace} classType={classType} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} writingTools={classType === 'writing' ? <WritingTools courseId={course.id} readingListState={readingListState} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /> : undefined} /></TabsContent>
         <TabsContent value="topics" className="class-hub-tab"><Topics
           courseId={course.id} data={data} topics={courseTopics} assignments={courseAssignments}
           onOpenNotes={(topicId) => {
@@ -747,23 +747,24 @@ function CoverageMetric({ label, value, tone }: { label: string; value: number; 
 }
 
 function Materials({
-  course, classType, data, files, topics, notes, writingTools,
-}: { course: Course; classType: ClassWorkspaceType; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; writingTools?: React.ReactNode }) {
+  course, workspace, classType, data, files, topics, notes, writingTools,
+}: { course: Course; workspace: ClassWorkspace; classType: ClassWorkspaceType; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; writingTools?: React.ReactNode }) {
   const courseId = course.id
   const navigate = useNavigate()
   const [materialParams, setMaterialParams] = useSearchParams()
   const [filter, setFilter] = useState<'all' | 'course' | 'mine' | 'generated' | 'unassigned'>('all')
   const [groupBy, setGroupBy] = useState<MaterialGroupBy>('week')
+  const [sortBy, setSortBy] = useState<MaterialSort>('course')
   const requestedArtifact = isMaterialArtifact(materialParams.get('createMaterial')) ? materialParams.get('createMaterial') as MaterialArtifact : null
   const requestedNoteId = materialParams.get('materialNote')
   const [artifact, setArtifact] = useState<MaterialArtifact | null>(requestedArtifact)
   const folderIntakeOpen = materialParams.get('folderIntake') === '1'
   const materialNotes = useMemo(() => notes.filter(isMaterialNote), [notes])
-  const groups = useMemo(() => groupMaterials(files, materialNotes, topics, groupBy), [files, groupBy, materialNotes, topics])
+  const groups = useMemo(() => groupMaterials(files, materialNotes, topics, workspace.syllabusSchedule ?? [], groupBy), [files, groupBy, materialNotes, topics, workspace.syllabusSchedule])
   const visible = groups.map((group) => ({
     ...group,
-    files: group.files.filter((file) => materialFilterMatches(filter, file.owner, materialIsUnassigned(file, topics))),
-    notes: group.notes.filter((note) => materialFilterMatches(filter, materialNoteOwner(note), materialNoteIsUnassigned(note, topics, files))),
+    files: sortMaterialItems(group.files.filter((file) => materialFilterMatches(filter, file.owner, materialIsUnassigned(file, topics, workspace.syllabusSchedule ?? []))), sortBy),
+    notes: sortMaterialItems(group.notes.filter((note) => materialFilterMatches(filter, materialNoteOwner(note), materialNoteIsUnassigned(note, topics, files, workspace.syllabusSchedule ?? []))), sortBy),
   })).filter((group) => group.files.length || group.notes.length)
   const categories = data.gradeCategories.filter((item) => item.courseId === courseId).sort((a, b) => a.order - b.order)
   useEffect(() => setArtifact(requestedArtifact), [requestedArtifact])
@@ -811,46 +812,68 @@ function Materials({
     <div className="class-hub-materials space-y-3">
       <SectionToolbar
         title="Materials"
-        detail={`${files.length + materialNotes.length} ${(files.length + materialNotes.length) === 1 ? 'course item' : 'course items'} · week first`}
+        detail={`${files.length + materialNotes.length} ${(files.length + materialNotes.length) === 1 ? 'item' : 'items'} in this course library`}
         action={<div className="class-hub-material-add"><MaterialIntakeDialog courseId={courseId} trigger={<Button size="sm"><Plus className="size-4" /> Add material</Button>} /></div>}
       />
-      <div className="class-hub-material-filters" aria-label="Material filters">
-        {(['all', 'course', 'mine', 'generated', 'unassigned'] as const).map((value) => (
-          <button key={value} type="button" aria-pressed={filter === value} className={cn('class-hub-material-filter', filter === value && 'is-active')} onClick={() => setFilter(value)}>
-            {value === 'all' ? `All ${files.length + materialNotes.length}` : value === 'course' ? 'From the course' : value === 'mine' ? 'My notes' : titleCase(value)}
-          </button>
-        ))}
-        <label className="class-hub-material-sort">
-          <span className="sr-only">Group materials</span>
+      <div className="class-hub-material-controls">
+        <div className="class-hub-material-filter-set" aria-label="Material filters">
+          <span className="class-hub-material-control-label">Show</span>
+          <div className="class-hub-material-filters">
+            {(['all', 'course', 'mine', 'generated', 'unassigned'] as const).map((value) => (
+              <button key={value} type="button" aria-pressed={filter === value} className={cn('class-hub-material-filter', filter === value && 'is-active')} onClick={() => setFilter(value)}>
+                {value === 'all' ? `All ${files.length + materialNotes.length}` : value === 'course' ? 'Course' : value === 'mine' ? 'Mine' : value === 'unassigned' ? 'Not placed' : 'Generated'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="class-hub-material-arrange">
+          <label className="class-hub-material-sort">
+            <span className="class-hub-material-control-label">Group</span>
           <Select value={groupBy} onValueChange={(value) => setGroupBy(value as MaterialGroupBy)}>
             <SelectTrigger aria-label="Group materials"><SelectValue /></SelectTrigger>
             <SelectContent align="end">
-              <SelectItem value="week">By week</SelectItem>
-              <SelectItem value="unit">By unit</SelectItem>
-              <SelectItem value="category">By category</SelectItem>
+                <SelectItem value="week">Course weeks</SelectItem>
+                <SelectItem value="unit">Syllabus units</SelectItem>
+                <SelectItem value="category">Material type</SelectItem>
             </SelectContent>
           </Select>
-        </label>
+          </label>
+          <label className="class-hub-material-sort">
+            <span className="class-hub-material-control-label">Order</span>
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value as MaterialSort)}>
+              <SelectTrigger aria-label="Sort materials"><SelectValue /></SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value="course">Course order</SelectItem>
+                <SelectItem value="newest">Newest added</SelectItem>
+                <SelectItem value="title">Title A–Z</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+        </div>
       </div>
       {artifact === 'revised-notes'
         ? <div className="space-y-2"><div className="flex justify-end"><Button size="sm" variant="ghost" onClick={closeArtifact}>Close revised notes</Button></div><RevisedNotesPanel courseId={courseId} files={files} data={data} /></div>
         : artifact && <MaterialGenerationIntake artifact={artifact} courseId={courseId} courseLabel={course.code} course={{ code: course.code, title: course.title, type: classType }} files={files} onClose={closeArtifact} />}
       {writingTools}
       {visible.map((group) => (
-        <Card key={group.key} className="class-hub-material-group">
-          <CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3">
-            <div><p className="class-hub-material-eyebrow">{group.eyebrow}</p><CardTitle>{group.label}</CardTitle><p className="mt-1 text-xs font-bold text-muted-foreground">{group.topicCount ? `${group.topicCount} linked syllabus ${group.topicCount === 1 ? 'objective' : 'objectives'}` : group.unassigned ? 'No syllabus placement yet' : `${group.files.length + group.notes.length} ${(group.files.length + group.notes.length) === 1 ? 'item' : 'items'}`}</p></div>
-            <Badge variant={group.unassigned ? 'warning' : 'outline'}>{group.files.length + group.notes.length} {group.files.length + group.notes.length === 1 ? 'item' : 'items'}</Badge>
-          </CardHeader>
-          <CardContent className="class-hub-material-group-content">
-            {group.unassigned && <div className="rounded-xl border border-dashed border-amber-500/45 bg-amber-500/8 p-3 text-sm font-semibold">Unassigned items stay available here until a syllabus objective gives them a week or unit.</div>}
-            {group.files.map((file) => <FileRow key={file.id} file={file} ownership={file.owner} unassigned={materialIsUnassigned(file, topics)} onReimport={file.type === 'syllabus' ? () => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}&reimport=1&reimportFile=${file.id}`) : undefined} />)}
-            {group.notes.map((note) => <MaterialNoteRow key={note.id} note={note} open={note.id === requestedNoteId} unassigned={materialNoteIsUnassigned(note, topics, files)} />)}
-            {groupBy !== 'category' && !group.unassigned && <div className="class-hub-material-prime">
-              <div><p>Prime yourself</p><span>Hold one question in mind before this module&apos;s next lecture.</span></div>
-              <Button size="sm" variant="outline" onClick={() => addQuestionNote(courseId, group.unitLabel ?? group.label)}>Add to Guide</Button>
-            </div>}
-          </CardContent>
+        <Card key={group.key} className={cn('class-hub-material-group', groupBy === 'week' && 'is-sequence', group.unassigned && 'is-unplaced')}>
+          {groupBy === 'week' && <div className="class-hub-material-week-marker" aria-hidden="true"><span>{group.weekNumber ?? '—'}</span><small>{group.unassigned ? 'Inbox' : group.weekNumber ? 'Week' : 'Span'}</small></div>}
+          <div className="class-hub-material-group-main">
+            <CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3">
+              <div><p className="class-hub-material-eyebrow">{group.unassigned ? 'Placement inbox' : group.eyebrow}</p><CardTitle>{group.unassigned ? 'Not placed yet' : group.label}</CardTitle><p className="mt-1 text-xs font-bold text-muted-foreground">{materialGroupDetail(group, groupBy)}</p></div>
+              <Badge variant="outline">{group.files.length + group.notes.length} {group.files.length + group.notes.length === 1 ? 'item' : 'items'}</Badge>
+            </CardHeader>
+            <CardContent className="class-hub-material-group-content">
+              {group.unassigned && <div className="class-hub-material-placement-note">These materials are still usable. Place one in a course week only when you know where it belongs.</div>}
+              {mergedMaterialItems(group.files, group.notes, sortBy).map((entry) => entry.kind === 'file'
+                ? <FileRow key={entry.item.id} file={entry.item} ownership={entry.item.owner} courseWeek={materialCourseWeekForFile(entry.item, topics, workspace.syllabusSchedule ?? [])} onWeekChange={(courseWeek) => setMaterialFileWeek(entry.item.id, courseWeek)} onReimport={entry.item.type === 'syllabus' ? () => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}&reimport=1&reimportFile=${entry.item.id}`) : undefined} />
+                : <MaterialNoteRow key={entry.item.id} note={entry.item} open={entry.item.id === requestedNoteId} courseWeek={materialCourseWeekForNote(entry.item, topics, files, workspace.syllabusSchedule ?? [])} onWeekChange={(courseWeek) => setMaterialNoteWeek(entry.item.id, courseWeek)} />)}
+              {groupBy !== 'category' && !group.unassigned && <div className="class-hub-material-prime">
+                <div><p>Prime yourself</p><span>Hold one question in mind before this module&apos;s next lecture.</span></div>
+                <Button size="sm" variant="outline" onClick={() => addQuestionNote(courseId, group.unitLabel ?? group.label)}>Add to Guide</Button>
+              </div>}
+            </CardContent>
+          </div>
         </Card>
       ))}
       {!visible.length && <EmptyState icon={FolderOpen} title="No materials in this view" detail={files.length ? 'Try another filter.' : 'Add course files from the class actions menu.'} />}
@@ -1305,7 +1328,7 @@ function TopicRow({ topic, data, onOpenNotes }: {
   )
 }
 
-function FileRow({ file, ownership, unassigned, onReimport }: { file: AcademicFile; ownership: 'course' | 'mine' | 'generated'; unassigned?: boolean; onReimport?: () => void }) {
+function FileRow({ file, ownership, courseWeek, onWeekChange, onReimport }: { file: AcademicFile; ownership: 'course' | 'mine' | 'generated'; courseWeek?: number; onWeekChange: (week?: number) => void; onReimport?: () => void }) {
   const toast = useToast()
   const chunks = useStore((s) => s.academics.classCenter.sourceChunks)
   const [summarising, setSummarising] = useState(false)
@@ -1335,7 +1358,7 @@ function FileRow({ file, ownership, unassigned, onReimport }: { file: AcademicFi
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3"><FileText className="size-4 shrink-0 text-primary" /><div className="min-w-0"><p className="truncate font-extrabold">{file.title}</p><p className="text-xs text-muted-foreground">{titleCase(file.type)} · {file.sourceType}</p></div></div>
         <div className="flex items-center gap-2">
-        {unassigned && <Badge variant="warning">Unassigned</Badge>}
+        <WeekPlacementControl title={file.title} courseWeek={courseWeek} onChange={onWeekChange} />
         <Badge variant={ownership === 'generated' ? 'secondary' : 'outline'}>{label}</Badge>
         {(file.url || file.blobRef) && <Button type="button" size="sm" variant="outline" disabled={opening} onClick={() => void openFile()}>{opening ? 'Opening…' : 'Open'}</Button>}
         {onReimport && <Button type="button" size="sm" variant="outline" onClick={(event) => { event.preventDefault(); onReimport() }}>Re-import</Button>}
@@ -1409,7 +1432,7 @@ function FileRow({ file, ownership, unassigned, onReimport }: { file: AcademicFi
   return content
 }
 
-function MaterialNoteRow({ note, open, unassigned }: { note: ClassNote; open: boolean; unassigned?: boolean }) {
+function MaterialNoteRow({ note, open, courseWeek, onWeekChange }: { note: ClassNote; open: boolean; courseWeek?: number; onWeekChange: (week?: number) => void }) {
   const label = materialCategoryForNote(note)
   const owner = materialNoteOwner(note)
   return (
@@ -1417,7 +1440,7 @@ function MaterialNoteRow({ note, open, unassigned }: { note: ClassNote; open: bo
       <summary className="flex cursor-pointer list-none items-center gap-3 rounded-lg py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <NotebookText className="size-4 shrink-0 text-primary" />
         <span className="min-w-0 flex-1"><b className="block truncate">{note.title}</b><span className="block text-xs font-semibold text-muted-foreground">{label} · selected-source trace retained</span></span>
-        {unassigned && <Badge variant="warning">Unassigned</Badge>}
+        <WeekPlacementControl title={note.title} courseWeek={courseWeek} onChange={onWeekChange} />
         <Badge variant={owner === 'generated' ? 'secondary' : 'outline'}>{owner === 'generated' ? 'Generated' : 'Mine'}</Badge>
         <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       </summary>
@@ -1426,6 +1449,34 @@ function MaterialNoteRow({ note, open, unassigned }: { note: ClassNote; open: bo
         {note.externalDocUrl && <Button size="sm" variant="outline" className="mt-3" asChild><a href={note.externalDocUrl} target="_blank" rel="noreferrer">Open document</a></Button>}
       </div>
     </details>
+  )
+}
+
+function WeekPlacementControl({ title, courseWeek, onChange }: { title: string; courseWeek?: number; onChange: (week?: number) => void }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="class-hub-material-place"
+          aria-label={`${courseWeek ? 'Move' : 'Place'} ${title} ${courseWeek ? 'to another' : 'in a'} course week`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          {courseWeek ? `Week ${courseWeek}` : 'Place in week'} <ChevronDown className="size-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="max-h-72 overflow-y-auto" align="end" onClick={(event) => event.stopPropagation()}>
+        <DropdownMenuLabel>Course sequence</DropdownMenuLabel>
+        {Array.from({ length: 16 }, (_, index) => index + 1).map((week) => (
+          <DropdownMenuItem key={week} onClick={() => onChange(week)}>
+            <Check className={cn('size-4', courseWeek === week ? 'opacity-100' : 'opacity-0')} /> Week {week}
+          </DropdownMenuItem>
+        ))}
+        {courseWeek != null && <><DropdownMenuSeparator /><DropdownMenuItem onClick={() => onChange(undefined)}>Remove week placement</DropdownMenuItem></>}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
@@ -1708,6 +1759,7 @@ function scheduledWeek(scheduledFor?: string) {
 }
 
 type MaterialGroupBy = 'week' | 'unit' | 'category'
+type MaterialSort = 'course' | 'newest' | 'title'
 
 type MaterialPlacement = {
   key: string
@@ -1716,6 +1768,8 @@ type MaterialPlacement = {
   sort: string
   topicIds: string[]
   unitLabel?: string
+  weekNumber?: number
+  placementSource?: 'manual' | 'syllabus' | 'mixed' | 'span'
   unassigned: boolean
 }
 
@@ -1751,12 +1805,60 @@ function linkedTopicsForNote(note: ClassNote, topics: Topic[], files: AcademicFi
   return topics.filter((topic) => linkedIds.has(topic.id))
 }
 
-function materialIsUnassigned(file: AcademicFile, topics: Topic[]) {
-  return linkedTopicsForFile(file, topics).length === 0
+function explicitWeekNumber(entry: SyllabusScheduleEntry) {
+  const match = `${entry.week} ${entry.label}`.match(/\bweek\s*([0-9]{1,2})\b/i)
+  return match ? Number(match[1]) : undefined
 }
 
-function materialNoteIsUnassigned(note: ClassNote, topics: Topic[], files: AcademicFile[]) {
-  return linkedTopicsForNote(note, topics, files).length === 0 && !note.unit?.trim()
+function syllabusWeekForTopic(topic: Topic, schedule: SyllabusScheduleEntry[]) {
+  if (!topic.scheduledFor) return undefined
+  const topicDate = new Date(`${topic.scheduledFor}T00:00:00Z`)
+  if (Number.isNaN(topicDate.getTime())) return undefined
+  for (const entry of schedule) {
+    const weekNumber = explicitWeekNumber(entry)
+    if (weekNumber == null || !entry.startDate) continue
+    const start = new Date(`${entry.startDate}T00:00:00Z`)
+    if (Number.isNaN(start.getTime())) continue
+    const elapsedDays = Math.floor((topicDate.getTime() - start.getTime()) / 86_400_000)
+    if (elapsedDays >= 0 && elapsedDays < 7) return weekNumber
+  }
+  return undefined
+}
+
+function topicWeekNumbers(linkedTopics: Topic[], schedule: SyllabusScheduleEntry[]) {
+  return [...new Set(linkedTopics.map((topic) => syllabusWeekForTopic(topic, schedule)).filter((week): week is number => week != null))].sort((a, b) => a - b)
+}
+
+function materialCourseWeekForFile(file: AcademicFile, topics: Topic[], schedule: SyllabusScheduleEntry[]) {
+  if (file.courseWeek != null) return file.courseWeek
+  const weeks = topicWeekNumbers(linkedTopicsForFile(file, topics), schedule)
+  return weeks.length === 1 ? weeks[0] : undefined
+}
+
+function materialCourseWeekForNote(note: ClassNote, topics: Topic[], files: AcademicFile[], schedule: SyllabusScheduleEntry[]) {
+  if (note.courseWeek != null) return note.courseWeek
+  const sourceWeeks = files.filter((file) => note.linkedFileIds.includes(file.id)).map((file) => materialCourseWeekForFile(file, topics, schedule))
+  const weeks = [...new Set([...sourceWeeks, ...topicWeekNumbers(linkedTopicsForNote(note, topics, files), schedule)].filter((week): week is number => week != null))]
+  return weeks.length === 1 ? weeks[0] : undefined
+}
+
+function fileWeekNumbers(file: AcademicFile, topics: Topic[], schedule: SyllabusScheduleEntry[]) {
+  if (file.courseWeek != null) return [file.courseWeek]
+  return topicWeekNumbers(linkedTopicsForFile(file, topics), schedule)
+}
+
+function noteWeekNumbers(note: ClassNote, topics: Topic[], files: AcademicFile[], schedule: SyllabusScheduleEntry[]) {
+  if (note.courseWeek != null) return [note.courseWeek]
+  const sourceWeeks = files.filter((file) => note.linkedFileIds.includes(file.id)).flatMap((file) => fileWeekNumbers(file, topics, schedule))
+  return [...new Set([...sourceWeeks, ...topicWeekNumbers(linkedTopicsForNote(note, topics, files), schedule)])].sort((a, b) => a - b)
+}
+
+function materialIsUnassigned(file: AcademicFile, topics: Topic[], schedule: SyllabusScheduleEntry[]) {
+  return fileWeekNumbers(file, topics, schedule).length === 0
+}
+
+function materialNoteIsUnassigned(note: ClassNote, topics: Topic[], files: AcademicFile[], schedule: SyllabusScheduleEntry[]) {
+  return noteWeekNumbers(note, topics, files, schedule).length === 0
 }
 
 function materialCategoryForFile(file: AcademicFile) {
@@ -1783,16 +1885,19 @@ function materialCategoryForNote(note: ClassNote) {
 
 const MATERIAL_CATEGORY_ORDER = ['Slides', 'Learning objectives', 'Questions', 'Homework', 'Notes', 'Generated resources', 'Readings', 'Course documents', 'Other']
 
-function placementForTopics(linkedTopics: Topic[], groupBy: Exclude<MaterialGroupBy, 'category'>, fallbackUnit?: string): MaterialPlacement {
+function placementForTopics(linkedTopics: Topic[], groupBy: Exclude<MaterialGroupBy, 'category'>, explicitWeeks: number[], weekSource: 'manual' | 'syllabus', fallbackUnit?: string): MaterialPlacement {
   if (groupBy === 'week') {
-    const weeks = linkedTopics.map((topic) => scheduledWeek(topic.scheduledFor)).filter((week) => week.key !== 'unmapped').sort((a, b) => a.sort.localeCompare(b.sort))
-    const week = weeks[0]
-    if (week) return { key: `week:${week.key}`, label: week.label, eyebrow: 'Scheduled week', sort: week.sort, topicIds: linkedTopics.map((topic) => topic.id), unitLabel: linkedTopics.find((topic) => topic.unit?.trim())?.unit?.trim(), unassigned: false }
+    const weeks = [...new Set(explicitWeeks)].sort((a, b) => a - b)
+    if (weeks.length === 1) {
+      const weekNumber = weeks[0]
+      return { key: `week:${weekNumber}`, label: `Week ${weekNumber}`, eyebrow: 'Course sequence', sort: String(weekNumber).padStart(3, '0'), topicIds: linkedTopics.map((topic) => topic.id), unitLabel: linkedTopics.find((topic) => topic.unit?.trim())?.unit?.trim(), weekNumber, placementSource: weekSource, unassigned: false }
+    }
+    if (weeks.length > 1) return { key: 'week:span', label: 'Across weeks', eyebrow: 'Multiple syllabus weeks', sort: '998', topicIds: linkedTopics.map((topic) => topic.id), unitLabel: linkedTopics.find((topic) => topic.unit?.trim())?.unit?.trim(), placementSource: 'span', unassigned: false }
   } else {
     const units = [...new Set([...linkedTopics.map((topic) => topic.unit?.trim()), fallbackUnit?.trim()].filter((unit): unit is string => Boolean(unit)))]
     if (units.length) return { key: `unit:${units.join('|')}`, label: units.join(' · '), eyebrow: 'Syllabus unit', sort: units.join('|').toLowerCase(), topicIds: linkedTopics.map((topic) => topic.id), unitLabel: units[0], unassigned: false }
   }
-  return { key: 'unassigned', label: 'Unassigned', eyebrow: 'Placement needed', sort: 'zzzz', topicIds: linkedTopics.map((topic) => topic.id), unitLabel: fallbackUnit?.trim() || undefined, unassigned: true }
+  return { key: 'unassigned', label: 'Not placed yet', eyebrow: 'Placement inbox', sort: '999', topicIds: linkedTopics.map((topic) => topic.id), unitLabel: fallbackUnit?.trim() || undefined, unassigned: true }
 }
 
 function categoryPlacement(label: string, topicIds: string[]): MaterialPlacement {
@@ -1800,7 +1905,7 @@ function categoryPlacement(label: string, topicIds: string[]): MaterialPlacement
   return { key: `category:${label}`, label, eyebrow: 'Material category', sort: String(order < 0 ? 999 : order).padStart(3, '0'), topicIds, unassigned: false }
 }
 
-function groupMaterials(files: AcademicFile[], notes: ClassNote[], topics: Topic[], groupBy: MaterialGroupBy): MaterialGroup[] {
+function groupMaterials(files: AcademicFile[], notes: ClassNote[], topics: Topic[], schedule: SyllabusScheduleEntry[], groupBy: MaterialGroupBy): MaterialGroup[] {
   const map = new Map<string, MaterialGroup>()
   const insert = (placement: MaterialPlacement, kind: 'file' | 'note', item: AcademicFile | ClassNote) => {
     const current = map.get(placement.key) ?? { ...placement, files: [], notes: [], topicCount: 0 }
@@ -1808,17 +1913,64 @@ function groupMaterials(files: AcademicFile[], notes: ClassNote[], topics: Topic
     else current.notes.push(item as ClassNote)
     current.topicIds = [...new Set([...current.topicIds, ...placement.topicIds])]
     current.topicCount = current.topicIds.length
+    if (current.placementSource && placement.placementSource && current.placementSource !== placement.placementSource) current.placementSource = 'mixed'
     map.set(placement.key, current)
   }
   for (const file of files) {
     const linked = linkedTopicsForFile(file, topics)
-    insert(groupBy === 'category' ? categoryPlacement(materialCategoryForFile(file), linked.map((topic) => topic.id)) : placementForTopics(linked, groupBy), 'file', file)
+    insert(groupBy === 'category' ? categoryPlacement(materialCategoryForFile(file), linked.map((topic) => topic.id)) : placementForTopics(linked, groupBy, fileWeekNumbers(file, topics, schedule), file.courseWeek != null ? 'manual' : 'syllabus'), 'file', file)
   }
   for (const note of notes) {
     const linked = linkedTopicsForNote(note, topics, files)
-    insert(groupBy === 'category' ? categoryPlacement(materialCategoryForNote(note), linked.map((topic) => topic.id)) : placementForTopics(linked, groupBy, note.unit), 'note', note)
+    const hasManualWeek = note.courseWeek != null || files.some((file) => note.linkedFileIds.includes(file.id) && file.courseWeek != null)
+    insert(groupBy === 'category' ? categoryPlacement(materialCategoryForNote(note), linked.map((topic) => topic.id)) : placementForTopics(linked, groupBy, noteWeekNumbers(note, topics, files, schedule), hasManualWeek ? 'manual' : 'syllabus', note.unit), 'note', note)
   }
   return [...map.values()].sort((a, b) => a.sort.localeCompare(b.sort) || a.label.localeCompare(b.label))
+}
+
+function compareMaterialItems(a: AcademicFile | ClassNote, b: AcademicFile | ClassNote, sortBy: MaterialSort) {
+  if (sortBy === 'newest') return (b.createdAt ?? 0) - (a.createdAt ?? 0) || a.title.localeCompare(b.title)
+  if (sortBy === 'title') return a.title.localeCompare(b.title)
+  return a.order - b.order || a.title.localeCompare(b.title)
+}
+
+function sortMaterialItems<T extends AcademicFile | ClassNote>(items: T[], sortBy: MaterialSort) {
+  return [...items].sort((a, b) => compareMaterialItems(a, b, sortBy))
+}
+
+function mergedMaterialItems(files: AcademicFile[], notes: ClassNote[], sortBy: MaterialSort) {
+  return [
+    ...files.map((item) => ({ kind: 'file' as const, item })),
+    ...notes.map((item) => ({ kind: 'note' as const, item })),
+  ].sort((a, b) => compareMaterialItems(a.item, b.item, sortBy))
+}
+
+function materialGroupDetail(group: MaterialGroup, groupBy: MaterialGroupBy) {
+  if (group.unassigned) return 'No week assumed'
+  if (groupBy === 'category') return `${group.files.length + group.notes.length} ${group.files.length + group.notes.length === 1 ? 'material' : 'materials'}`
+  if (groupBy === 'unit') return group.topicCount ? `${group.topicCount} linked syllabus ${group.topicCount === 1 ? 'objective' : 'objectives'}` : 'Placed by you'
+  if (group.placementSource === 'span') return 'Linked across more than one explicit syllabus week'
+  if (group.placementSource === 'manual') return 'Placed by you'
+  if (group.placementSource === 'mixed') return 'Placed by you and the syllabus'
+  return `Placed from ${group.topicCount} linked syllabus ${group.topicCount === 1 ? 'objective' : 'objectives'}`
+}
+
+function setMaterialFileWeek(fileId: string, courseWeek?: number) {
+  useStore.getState().update((draft) => {
+    const file = draft.academics.classCenter.files.find((item) => item.id === fileId)
+    if (!file) return
+    file.courseWeek = courseWeek
+    file.updatedAt = Date.now()
+  })
+}
+
+function setMaterialNoteWeek(noteId: string, courseWeek?: number) {
+  useStore.getState().update((draft) => {
+    const note = draft.academics.classCenter.notes.find((item) => item.id === noteId)
+    if (!note) return
+    note.courseWeek = courseWeek
+    note.updatedAt = Date.now()
+  })
 }
 
 function hasGrade(item: ClassAssignment) {

@@ -475,6 +475,8 @@ export interface ClassNote {
   /** Structural surface discriminator — see ClassNoteKind. */
   kind: ClassNoteKind
   date?: string
+  /** Student-chosen course sequence placement. This is never inferred from today's date. */
+  courseWeek?: number
   unit?: string
   topicIds: ID[]
   content: string
@@ -537,6 +539,8 @@ export interface AcademicFile {
   topicId?: ID
   /** Explicit lecture home; absent means class-level material. */
   lectureId?: ID
+  /** Student-chosen course sequence placement. Syllabus topic links may supply an explicit week separately. */
+  courseWeek?: number
   sourceType: AcademicFileSourceType
   title: string
   type: ClassFileType

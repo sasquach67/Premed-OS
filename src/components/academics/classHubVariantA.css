@@ -783,6 +783,25 @@
 
 /* Materials: mockup-lab/01-academics/academics-class-hub.html,
    approved Variant A, view=materials. */
+.class-hub-material-controls {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+}
+.class-hub-material-filter-set { min-width: 0; }
+.class-hub-material-control-label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted-foreground);
+  font: 800 9px 'Baloo 2', var(--font-display);
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
 .class-hub-materials .class-hub-material-filters {
   display: flex;
   align-items: center;
@@ -806,7 +825,8 @@
   color: var(--primary-foreground);
 }
 .class-hub-material-filter:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.class-hub-material-sort { flex: 0 0 8.25rem; margin-left: auto; }
+.class-hub-material-arrange { display: flex; align-items: flex-end; gap: 8px; margin-left: auto; }
+.class-hub-material-sort { flex: 0 0 8.75rem; }
 .class-hub-material-sort button { height: 31px; border-radius: 9px; background: var(--card); font: 800 11px 'Baloo 2', var(--font-display); }
 .class-hub-material-add { align-self: flex-start; }
 .class-hub-material-add button { border-radius: 9px; font: 800 11px/1 'Baloo 2', var(--font-display); }
@@ -817,6 +837,32 @@
   background: var(--card);
   box-shadow: none;
 }
+.class-hub-material-group.is-sequence {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+}
+.class-hub-material-group-main { min-width: 0; }
+.class-hub-material-week-marker {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 19px 8px;
+  border-right: 1px solid var(--border);
+  background: color-mix(in srgb, var(--class-hub-accent) 9%, var(--muted));
+  color: color-mix(in srgb, var(--class-hub-accent) 76%, var(--foreground));
+}
+.class-hub-material-week-marker span { font: 800 28px/1 'Baloo 2', var(--font-display); }
+.class-hub-material-week-marker small {
+  margin-top: 4px;
+  font: 800 8px/1 'Baloo 2', var(--font-display);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.class-hub-material-group.is-unplaced .class-hub-material-week-marker {
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
 .class-hub-material-eyebrow {
   color: var(--primary);
   font: 800 9px 'Baloo 2', var(--font-display);
@@ -825,7 +871,21 @@
 }
 .class-hub-material-group-content { padding: 0 16px 14px; }
 .class-hub-material-group-content > * + * { margin-top: 0; border-top: 1px solid var(--border); }
+.class-hub-material-placement-note {
+  padding: 9px 0 12px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 700;
+}
 .class-hub-material-group-content .class-hub-record-row { border-radius: 0; background: transparent; }
+.class-hub-material-place {
+  height: 29px;
+  border-color: color-mix(in srgb, var(--primary) 34%, var(--border));
+  border-radius: 8px;
+  color: color-mix(in srgb, var(--primary) 68%, var(--foreground));
+  font: 800 10.5px 'Baloo 2', var(--font-display);
+  white-space: nowrap;
+}
 .class-hub-material-note > summary::-webkit-details-marker { display: none; }
 .class-hub-material-note[open] > summary > svg:last-child { transform: rotate(180deg); }
 .class-hub-material-note > summary > svg:last-child { transition: transform 150ms ease; }
@@ -1056,7 +1116,11 @@
   .class-hub .class-plan-head { flex-direction: column; }
   .class-hub .class-plan-timing { max-width: 100%; text-align: left; }
   .class-hub .class-plan-groups { grid-template-columns: 1fr; }
-  .class-hub-material-sort { margin-left: 0; }
+  .class-hub-material-controls { align-items: stretch; flex-direction: column; }
+  .class-hub-material-arrange { margin-left: 0; }
+  .class-hub-material-sort { flex: 1; }
+  .class-hub-material-group.is-sequence { grid-template-columns: 3.5rem minmax(0, 1fr); }
+  .class-hub-material-week-marker { padding-inline: 5px; }
   .class-hub-material-prime { align-items: flex-start; flex-direction: column; }
   .class-hub-topics > div:first-child > button { align-self: flex-start; }
   .class-hub-what-if-grid { grid-template-columns: 1fr; }
