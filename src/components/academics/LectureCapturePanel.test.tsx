@@ -8,7 +8,14 @@ import { createSeedData } from '@/data/seed'
 import { createDemoData } from '@/data/demoSeed'
 import { createInitialDataForMode, useStore } from '@/store/store'
 
+const generationMocks = vi.hoisted(() => ({
+  generateStudyGuide: vi.fn(),
+  generateUnitMasteryOutline: vi.fn(),
+}))
+
 vi.mock('@/lib/academics/lectureAnalysis', () => ({ analyzeLectureTranscript: vi.fn() }))
+vi.mock('@/lib/academics/generateStudyGuide', () => ({ generateStudyGuide: generationMocks.generateStudyGuide }))
+vi.mock('@/lib/academics/generateUnitMasteryOutline', () => ({ generateUnitMasteryOutline: generationMocks.generateUnitMasteryOutline }))
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
 vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })))
@@ -16,7 +23,11 @@ vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false, addEventListener: vi.
 describe('lecture import and workspace', () => {
   let container: HTMLDivElement
   let root: Root
-  beforeEach(() => { container = document.createElement('div'); document.body.appendChild(container); root = createRoot(container) })
+  beforeEach(() => {
+    container = document.createElement('div'); document.body.appendChild(container); root = createRoot(container)
+    generationMocks.generateStudyGuide.mockReset()
+    generationMocks.generateUnitMasteryOutline.mockReset()
+  })
   afterEach(async () => { await act(async () => root.unmount()); container.remove(); useStore.getState().replaceAll(createInitialDataForMode(false)) })
 
   function render(courseId: string, initialLectureId?: string, initialDestination?: 'transcript' | 'evidence' | 'study-work') {
@@ -60,6 +71,27 @@ describe('lecture import and workspace', () => {
       { id: 'slides-chunk', fileId: 'slides', courseId, content: 'Compare acquisition with extinction and do not treat extinction as erasure.', sourcePosition: { index: 0, label: 'Page 8' }, coveredByKeyPoint: false, createdAt: now, updatedAt: now, order: 1 },
     )
     useStore.getState().replaceAll(seed)
+    generationMocks.generateStudyGuide.mockResolvedValue({
+      ok: true,
+      title: 'Generated · Lecture 1 study guide',
+      content: '## Big picture\nConditioning links cues with outcomes.',
+      specHash: 'guide-hash',
+      fileIds: ['transcript', 'slides'],
+      auditStatus: 'approved',
+      artifact: {
+        specId: 'study-guide-v1', specHash: 'guide-hash', courseId, topicId: '__class_material__',
+        sections: [
+          { id: 'big-picture', title: 'BIG PICTURE', blocks: [{ id: 'g1', type: 'prose', text: { content: 'Conditioning links cues with outcomes.' }, provenance: 'source', conceptLabel: 'Conditioning', sourceRef: { fileId: 'transcript', chunkId: 'transcript-chunk', start: 0, end: 76 } }] },
+        ],
+      },
+    })
+    generationMocks.generateUnitMasteryOutline.mockResolvedValue({
+      ok: true,
+      artifact: {
+        courseId, lectureId: 'lecture', scope: 'lecture', scopeId: 'lecture', title: 'Generated · Lecture 1 mastery map', unit: 'Lecture 1 · Conditioning', specId: 'unit-mastery-outline-v1', specHash: 'mastery-hash', sourceChunkIds: ['transcript-chunk'],
+        standards: [{ id: 'objective-1', title: 'Explain conditioning', understand: ['Explain how cues connect to outcomes.'], beAbleToDo: ['Apply the relationship to a new example.'], watchFor: ['Do not confuse extinction with erasure.'], sourceChunkIds: ['transcript-chunk'], masteryState: 'not-started' }],
+      },
+    })
     await render(courseId, 'lecture', 'transcript')
     expect(container.textContent).toContain('Choose sources')
     expect(container.textContent).toContain('Your transcript is already selected.')
@@ -91,16 +123,40 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).not.toContain('Summary, connections, vocabulary in context')
     expect(container.textContent).toContain('Privacy and processing')
     expect(container.textContent).toContain('private server workspace')
-    expect(container.textContent).toContain('Figures are not sent or interpreted')
-    const build = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Build lecture page'))!
-    await act(async () => build.click())
+    expect(container.textContent).toContain('Original file bytes stay local')
+    const build = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Build Guide + Mastery'))!
+    await act(async () => { build.click(); await Promise.resolve() })
     const saved = useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.id === 'lecture')!
+    expect(generationMocks.generateStudyGuide).toHaveBeenCalledWith(expect.objectContaining({ courseId, chunks: expect.arrayContaining([expect.objectContaining({ id: 'transcript-chunk' }), expect.objectContaining({ id: 'slides-chunk' })]) }))
+    expect(generationMocks.generateUnitMasteryOutline).toHaveBeenCalledWith(expect.objectContaining({ courseId, scope: 'lecture', chunks: expect.arrayContaining([expect.objectContaining({ id: 'transcript-chunk' }), expect.objectContaining({ id: 'slides-chunk' })]) }))
     expect(saved.workspaceState).toBe('complete')
+    expect(saved.studyGuide?.specId).toBe('study-guide-v1')
     expect(saved.selectedSourceFileIds).toEqual(expect.arrayContaining(['transcript', 'slides']))
     expect(saved.lectureBrief?.selectedSourceFileIds).toEqual(expect.arrayContaining(['transcript', 'slides']))
     await render(courseId, 'lecture', 'transcript')
-    expect(container.textContent).toContain('Concept map & connections')
+    expect(container.textContent).toContain('Lecture Study Guide')
+    expect(container.textContent).toContain('Concept map')
     expect(container.querySelector('input[placeholder="Search exact words across transcript and sources"]')).toBeNull()
+  })
+
+  it('does not mark a lecture complete or save a partial guide when generation fails', async () => {
+    const seed = structuredClone(createSeedData())
+    const courseId = seed.academics.classCenter.workspaces[0].courseId
+    seed.academics.classCenter.lectures.push({ id: 'lecture', courseId, title: 'Lecture 1 · Scientific Thinking', inputPath: 'pasted', transcriptFileId: 'transcript', occurredOn: '2026-09-02', processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds: ['transcript'], createdAt: 1, updatedAt: 1, order: 0 })
+    seed.academics.classCenter.files.push({ id: 'transcript', courseId, lectureId: 'lecture', sourceType: 'paste', title: 'Lecture transcript', type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready', createdAt: 1, updatedAt: 1, order: 0 })
+    seed.academics.classCenter.sourceChunks.push({ id: 'chunk', fileId: 'transcript', courseId, content: 'Scientific thinking compares claims with evidence and uses controls to rule out alternatives.', coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: 0 })
+    generationMocks.generateStudyGuide.mockResolvedValue({ ok: true, artifact: { specId: 'study-guide-v1', specHash: 'guide-hash', courseId, topicId: '__class_material__', sections: [] }, content: 'guide', specHash: 'guide-hash' })
+    generationMocks.generateUnitMasteryOutline.mockResolvedValue({ ok: false, failure: 'invalid-response', message: 'The mastery outline was invalid. Nothing was saved.' })
+    useStore.getState().replaceAll(seed)
+    await render(courseId, 'lecture', 'transcript')
+    const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Continue to build preview'))!
+    await act(async () => continueButton.click())
+    const build = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Build Guide + Mastery'))!
+    await act(async () => { build.click(); await Promise.resolve() })
+    const saved = useStore.getState().academics.classCenter.lectures.find((item) => item.id === 'lecture')!
+    expect(saved.workspaceState).toBe('draft')
+    expect(saved.studyGuide).toBeUndefined()
+    expect(container.textContent).toContain('Nothing was saved')
   })
 
   it('opens a completed lecture to Brief and Mastery with transcript under Sources', async () => {

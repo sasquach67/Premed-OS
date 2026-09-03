@@ -1,3 +1,5 @@
+import type { StudyGuideArtifact } from '@/lib/generation/schemas/studyGuide.v1'
+
 /* ============================================================
    types.ts — the full Premed OS data model.
    One root AppData object is persisted to localStorage and
@@ -721,6 +723,11 @@ export interface LectureRecord {
   workspaceState?: 'draft' | 'complete'
   selectedSourceFileIds?: ID[]
   lectureBrief?: LectureBrief
+  /** The verified AI-generated study front. Legacy/local previews never fill
+   * this field, so the UI can distinguish a real generated guide from a
+   * sentence-picker fallback. */
+  studyGuide?: StudyGuideArtifact
+  generationAuditStatus?: 'approved' | 'skipped' | 'unavailable'
   masteryMapId?: ID
   createdAt: number
   processedAt?: number

@@ -25,6 +25,8 @@ import { prepareGenerationSources } from '@/lib/academics/syncGenerationSources'
 import { studyTools } from '@/lib/intelligence/studyTools'
 import type { SourceChunk } from '@/lib/types'
 import { courseLensInstruction, type CourseLensGenerationContext } from '@/lib/academics/courseLens'
+import type { StudyGuideArtifact } from '@/lib/generation/schemas/studyGuide.v1'
+import type { GenerationAuditStatus } from '@/lib/intelligence/studyTools'
 
 export type GenerateFailure =
   | 'not-allowed' | 'no-sources' | 'sign-in-required' | 'provider-unavailable'
@@ -36,6 +38,8 @@ export interface GenerateOutcome {
   message?: string
   title?: string
   content?: string
+  artifact?: StudyGuideArtifact
+  auditStatus?: GenerationAuditStatus
   specHash?: string
   fileIds?: string[]
   courseLens?: CourseLensGenerationContext
@@ -66,6 +70,17 @@ export function renderGuide(artifact: unknown): string {
     lines.push('')
   }
   return lines.join('\n').trim()
+}
+
+function isStudyGuideContent(value: unknown): value is Pick<StudyGuideArtifact, 'sections'> {
+  if (!value || typeof value !== 'object') return false
+  const artifact = value as Partial<StudyGuideArtifact>
+  return Array.isArray(artifact.sections)
+    && artifact.sections.length > 0
+    && artifact.sections.every((section) => Boolean(
+      section && typeof section.id === 'string' && typeof section.title === 'string'
+      && Array.isArray(section.blocks) && section.blocks.length > 0,
+    ))
 }
 
 export async function generateStudyGuide({ courseId, chunks, label, courseLens }: {
@@ -146,19 +161,31 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens }
     return { ok: false, failure: BY_CODE[result.code] ?? 'unknown', message: result.message }
   }
 
-  const content = renderGuide(result.data.artifact)
-  if (!content) {
+  if (!isStudyGuideContent(result.data.artifact)) {
     return {
       ok: false,
       failure: 'invalid-response',
-      message: 'The generator returned nothing renderable. Nothing was saved.',
+      message: 'The generator returned an incomplete study guide. Nothing was saved.',
     }
   }
+  // Stable identity belongs to the runtime, not the model. Stamp the exact
+  // assembled values after the server has closed the artifact's citations.
+  const artifact: StudyGuideArtifact = {
+    specId: 'study-guide-v1',
+    specHash: syncedAssembly.specHash,
+    courseId,
+    topicId: prepared.scopeId,
+    sections: result.data.artifact.sections,
+  }
+  const content = renderGuide(artifact)
+  if (!content) return { ok: false, failure: 'invalid-response', message: 'The generator returned nothing renderable. Nothing was saved.' }
 
   return {
     ok: true,
     title: generatedTitle(`${label} study guide`),
     content,
+    artifact,
+    auditStatus: result.data.auditStatus,
     specHash: syncedAssembly.specHash,
     fileIds: [...new Set(sources.map((chunk) => chunk.fileId))],
     courseLens,

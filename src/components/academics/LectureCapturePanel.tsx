@@ -8,6 +8,8 @@ import { buildTranscriptImport, parseTranscript } from '@/lib/academics/transcri
 import { extractDocumentText, type ExtractedDocument } from '@/lib/academics/documentText'
 import { retainLocalMaterial } from '@/lib/academics/localMaterialFiles'
 import { analyzeLectureTranscript } from '@/lib/academics/lectureAnalysis'
+import { generateStudyGuide } from '@/lib/academics/generateStudyGuide'
+import { generateUnitMasteryOutline } from '@/lib/academics/generateUnitMasteryOutline'
 import { buildLectureGuideProposal } from '@/lib/academics/guideContract'
 import { approximateLectureTitle, buildLectureBrief, buildLectureMasteryMap, fileCoverageLabel, sourceChunksForLecture } from '@/lib/academics/lectureWorkspace'
 import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialog'
@@ -21,6 +23,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import type { ContentBlock, StudyGuideArtifact } from '@/lib/generation/schemas/studyGuide.v1'
 
 export type LectureDestination = 'overview' | 'transcript' | 'evidence' | 'study-work'
 type WizardStep = 1 | 2 | 3
@@ -107,6 +110,8 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [pendingExtraction, setPendingExtraction] = useState<ExtractedDocument | null>(null)
   const [reading, setReading] = useState(false)
+  const [building, setBuilding] = useState(false)
+  const [buildPhase, setBuildPhase] = useState<'idle' | 'guide' | 'mastery' | 'saving'>('idle')
   const [selectedIds, setSelectedIds] = useState<string[]>(lecture?.selectedSourceFileIds ?? (lecture?.transcriptFileId ? [lecture.transcriptFileId] : []))
   const input = useRef<HTMLInputElement>(null)
   const lectureFiles = data.files.filter((file) => file.lectureId === lecture?.id)
@@ -160,25 +165,66 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
     useStore.getState().update((draft) => { const record = draft.academics.classCenter.lectures.find((item) => item.id === lecture.id); if (record) Object.assign(record, { selectedSourceFileIds: ids, updatedAt: Date.now() }) })
     setSelectedIds(ids); onStep(3)
   }
-  function buildWorkspace() {
-    if (!lecture) return
-    const now = Date.now()
-    useStore.getState().update((draft) => {
-      const center = draft.academics.classCenter; const record = center.lectures.find((item) => item.id === lecture.id); if (!record) return
-      const ids = [...new Set([record.transcriptFileId, ...(record.selectedSourceFileIds ?? selectedIds)].filter((id): id is string => Boolean(id)))]
-      record.selectedSourceFileIds = ids
-      const files = center.files.filter((file) => ids.includes(file.id)); const chunks = center.sourceChunks.filter((chunk) => ids.includes(chunk.fileId) && Boolean(chunk.content.trim()))
-      record.lectureBrief = buildLectureBrief(chunks, ids, center.files, now)
-      const mastery = buildLectureMasteryMap({ lecture: record, topics: center.topics.filter((topic) => topic.courseId === courseId), chunks, files, now })
-      if (mastery) {
-        const existing = center.generatedMasteryOutlines.find((outline) => outline.lectureId === record.id)
-        if (existing) { Object.assign(existing, mastery, { updatedAt: now }); record.masteryMapId = existing.id }
-        else { const id = uid(); center.generatedMasteryOutlines.unshift({ ...mastery, id, order: center.generatedMasteryOutlines.length }); record.masteryMapId = id }
+  async function buildWorkspace() {
+    if (!lecture || building) return
+    const ids = [...new Set([lecture.transcriptFileId, ...selectedIds].filter((id): id is string => Boolean(id)))]
+    const chunks = data.sourceChunks.filter((chunk) => ids.includes(chunk.fileId) && Boolean(chunk.content.trim()))
+    setBuilding(true)
+    setBuildPhase('guide')
+    try {
+      const guide = await generateStudyGuide({ courseId, chunks, label: lecture.title })
+      if (!guide.ok || !guide.artifact) {
+        toast({ title: 'Nothing was saved', description: guide.message ?? 'The lecture guide could not be generated.', tone: 'error' })
+        return
       }
-      record.workspaceState = 'complete'; record.updatedAt = now
-    })
-    onBuilt()
-    toast({ title: 'Lecture page built', description: 'The Brief and Mastery Map use only the selected readable sources. Source traces stay attached.' })
+      setBuildPhase('mastery')
+      const mastery = await generateUnitMasteryOutline({ courseId, chunks, unit: lecture.title, label: lecture.title, scope: 'lecture' })
+      if (!mastery.ok || !mastery.artifact) {
+        toast({ title: 'Nothing was saved', description: mastery.message ?? 'The lecture Mastery Map could not be generated.', tone: 'error' })
+        return
+      }
+      const generatedGuide = guide.artifact
+      const generatedMastery = mastery.artifact
+      setBuildPhase('saving')
+      const now = Date.now()
+      useStore.getState().update((draft) => {
+        const center = draft.academics.classCenter
+        const record = center.lectures.find((item) => item.id === lecture.id)
+        if (!record) return
+        record.selectedSourceFileIds = ids
+        const brief = buildLectureBrief(chunks, ids, center.files, now)
+        const usedChunkIds = new Set([
+          ...generatedGuide.sections.flatMap((section) => section.blocks.map((block) => block.sourceRef?.chunkId).filter((id): id is string => Boolean(id))),
+          ...generatedMastery.sourceChunkIds,
+        ])
+        const usedSourceFileIds = [...new Set(chunks.filter((chunk) => usedChunkIds.has(chunk.id)).map((chunk) => chunk.fileId))]
+        record.lectureBrief = {
+          ...brief,
+          usedSourceFileIds,
+          unusedSourceFileIds: ids.filter((id) => !usedSourceFileIds.includes(id)),
+        }
+        record.studyGuide = generatedGuide
+        record.generationAuditStatus = guide.auditStatus
+        const existing = center.generatedMasteryOutlines.find((outline) => outline.lectureId === record.id)
+        if (existing) {
+          Object.assign(existing, generatedMastery, { lectureId: record.id, scopeId: record.id, updatedAt: now })
+          record.masteryMapId = existing.id
+        } else {
+          const id = uid()
+          center.generatedMasteryOutlines.unshift({ ...generatedMastery, id, lectureId: record.id, scopeId: record.id, createdAt: now, updatedAt: now, order: center.generatedMasteryOutlines.length })
+          record.masteryMapId = id
+        }
+        record.workspaceState = 'complete'
+        record.updatedAt = now
+      })
+      onBuilt()
+      toast({ title: 'Lecture study page built', description: 'The generated Guide and Mastery Map passed the source-trace checks before either one was saved.' })
+    } catch {
+      toast({ title: 'Nothing was saved', description: 'Lecture generation stopped unexpectedly. Your transcript and selected sources are still here.', tone: 'error' })
+    } finally {
+      setBuilding(false)
+      setBuildPhase('idle')
+    }
   }
 
   return <Card className="overflow-hidden border-border bg-card shadow-[0_18px_48px_-28px_rgba(0,0,0,.72)]"><CardContent className="p-0">
@@ -186,7 +232,7 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
     <div className="p-4 sm:p-6">
       {step === 1 && <section aria-labelledby="lecture-source-heading"><h3 id="lecture-source-heading" className="font-display text-lg font-extrabold">1. Add lecture source</h3><p className="mt-1 text-sm font-semibold text-muted-foreground">Paste a transcript or upload a text, PDF, DOCX, or image. Scanned pages are read on this device when possible.</p><div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]"><div className="space-y-4"><label className="block text-sm font-extrabold">Approximate title<Input className="mt-1.5" value={title} onChange={(event) => { setTitle(event.target.value); setTitleEdited(true) }} placeholder="Lecture 1 · Origins of Psychology" /></label><div className="block max-w-56 text-sm font-extrabold"><span>Lecture date</span><DateField ariaLabel="Lecture date" className="mt-1.5 min-h-9 rounded-md border-input bg-background px-3 py-1 font-extrabold" value={occurredOn} onChange={setOccurredOn} /></div><label className="block text-sm font-extrabold">Transcript text<Textarea className="mt-1.5 min-h-52" value={sourceText} onChange={(event) => { setSourceText(event.target.value); setPendingFile(null); setPendingExtraction(null) }} placeholder={'Paste the transcript here…\n\nTimestamps are welcome but not required.'} /></label></div><aside className="rounded-2xl border border-border bg-muted/25 p-4"><FileUp className="size-5 text-primary" /><p className="mt-2 font-display text-sm font-extrabold">Or upload the source</p><p className="mt-1 text-xs font-semibold text-muted-foreground">The original file stays on this device. OCR retains page coverage; diagrams and embedded figures are not interpreted.</p><Button className="mt-4 w-full" variant="outline" disabled={reading} onClick={() => input.current?.click()}>{reading ? 'Reading on device…' : 'Choose transcript file'}</Button><input ref={input} type="file" className="sr-only" accept=".pdf,.docx,.txt,.md,image/*,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void chooseTranscript(file); event.currentTarget.value = '' }} />{pendingFile && <div className="mt-3 rounded-xl border border-border bg-card p-3"><p className="truncate text-sm font-extrabold">{pendingFile.name}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{fileExtension({ fileName: pendingFile.name, title: pendingFile.name, mimeType: pendingFile.type, sourceType: 'upload' })} · {pendingExtraction?.pageCount ? `${pendingExtraction.pageCount} pages` : `${sourceText.length.toLocaleString()} characters`}{pendingExtraction?.ocrPageCount ? ` · ${pendingExtraction.ocrPageCount} OCR recovered` : ''}</p></div>}<TranscriptSourceHelp /></aside></div><div className="mt-5 flex justify-end"><Button onClick={() => void saveSource()} disabled={!sourceText.trim() || !title.trim() || !occurredOn}><FileCheck2 className="size-4" /> Continue to materials</Button></div></section>}
       {step === 2 && lecture && <MaterialsStep courseId={courseId} data={data} lecture={lecture} available={available} selectedIds={selectedIds} selectedFiles={selectedFiles} selectedChunks={selectedChunks} onToggle={toggleSource} onContinue={goToPreview} />}
-      {step === 3 && lecture && previewBrief && <section aria-labelledby="lecture-build-heading"><h3 id="lecture-build-heading" className="font-display text-lg font-extrabold">3. Build lecture page</h3><p className="mt-1 max-w-3xl text-sm font-semibold text-muted-foreground">Here is the study front your selected sources can support right now. Build it to open the full, interactive version.</p><BuildLecturePreview lecture={lecture} brief={previewBrief} mastery={previewMastery} files={selectedFiles} /><div className="mt-4 border-t border-border pt-4"><p className="font-display text-sm font-extrabold">Privacy and processing</p><p className="mt-1 max-w-4xl text-xs font-semibold leading-relaxed text-muted-foreground">This preview is assembled on this device from exact selected passages. Original file bytes stay local. If you later request an AI-enhanced Study Guide, Flashcards, Question Bank, or class-remark analysis, Premed OS first copies only the selected source chunks to your private server workspace and then invokes the configured external AI provider. Figures are not sent or interpreted by this lecture flow.</p></div><div className="mt-5 flex items-center justify-between gap-3"><Button variant="outline" onClick={() => onStep(2)}>Back to materials</Button><Button onClick={buildWorkspace}><Sparkles className="size-4" /> Build lecture page</Button></div></section>}
+      {step === 3 && lecture && previewBrief && <section aria-labelledby="lecture-build-heading"><h3 id="lecture-build-heading" className="font-display text-lg font-extrabold">3. Build lecture page</h3><p className="mt-1 max-w-3xl text-sm font-semibold text-muted-foreground">This preview shows the available source coverage. Build runs the documented Study Guide and Mastery Map generators before anything is marked complete.</p><BuildLecturePreview lecture={lecture} brief={previewBrief} mastery={previewMastery} files={selectedFiles} />{building && <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/7 p-4" role="status"><p className="font-display text-sm font-extrabold">Building your lecture workspace</p><ol className="mt-3 grid gap-2 sm:grid-cols-3">{([['guide', 'Generate study guide'], ['mastery', 'Build mastery objectives'], ['saving', 'Verify and save']] as const).map(([phase, label]) => { const phases = ['guide', 'mastery', 'saving']; const active = phases.indexOf(buildPhase) === phases.indexOf(phase); const complete = phases.indexOf(buildPhase) > phases.indexOf(phase); return <li key={phase} className={cn('flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-extrabold', active ? 'border-primary bg-card' : 'border-border bg-muted/25')}><span className={cn('grid size-5 place-items-center rounded-full border', complete && 'border-primary bg-primary text-primary-foreground', active && 'border-primary text-primary')}>{complete ? <Check className="size-3" /> : phases.indexOf(phase) + 1}</span>{label}</li> })}</ol></div>}<div className="mt-4 border-t border-border pt-4"><p className="font-display text-sm font-extrabold">Privacy and processing</p><p className="mt-1 max-w-4xl text-xs font-semibold leading-relaxed text-muted-foreground">Only the selected readable source chunks are copied to your private server workspace for this generation. Original file bytes stay local. The app refuses unsupported citations and does not save a partial lecture page if either required artifact fails.</p></div><div className="mt-5 flex items-center justify-between gap-3"><Button variant="outline" onClick={() => onStep(2)} disabled={building}>Back to materials</Button><Button onClick={() => void buildWorkspace()} disabled={building}><Sparkles className="size-4" /> {building ? 'Building…' : 'Build Guide + Mastery'}</Button></div></section>}
     </div>
   </CardContent></Card>
 }
@@ -305,11 +351,47 @@ function LectureWorkspace({ course, courseId, data, lectures, activeLecture, vie
   const lectureNumber = (id: string) => chronological.findIndex((lecture) => lecture.id === id) + 1
   const moreMenu = <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" aria-label={embedded ? 'More lecture tools' : undefined} className={cn(!embedded && 'mr-8')}><MoreHorizontal className="size-4" /><span className={cn(embedded && 'hidden sm:inline')}>More</span></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Lecture tools</DropdownMenuLabel><DropdownMenuItem onClick={() => onView('sources')}><Search className="size-4" /> Search sources</DropdownMenuItem><DropdownMenuItem onClick={onOpenNotes}><NotebookText className="size-4" /> Open class Guide</DropdownMenuItem><DropdownMenuItem onClick={onHelp}><CircleHelp className="size-4" /> Transcript help</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
   const tabs = <nav className={cn('flex min-w-0 gap-1 overflow-x-auto', !embedded && 'mt-4')} aria-label="Lecture workspace views">{([['brief', 'Lecture Brief'], ['mastery', 'Mastery Map'], ['materials', 'Materials'], ['sources', 'Sources']] as const).map(([value, label]) => <button key={value} type="button" aria-current={view === value ? 'page' : undefined} onClick={() => { onView(value); onArtifact(null) }} className={cn('whitespace-nowrap border-b-2 py-2 font-extrabold', embedded ? 'px-2 text-xs sm:px-3 sm:text-sm' : 'px-3 text-sm', view === value ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')}>{label}</button>)}</nav>
-  const content = <>{view === 'brief' && <LectureBriefView brief={brief} chunks={chunks} files={files} mastery={mastery} onOpenMastery={() => onView('mastery')} />}{view === 'mastery' && <MasteryMapView outline={mastery} chunks={chunks} lecture={activeLecture} />}{view === 'materials' && <LectureMaterialsView course={course} courseId={courseId} lecture={activeLecture} files={data.files.filter((file) => file.lectureId === activeLecture.id || selectedIds.includes(file.id))} artifact={artifact} onArtifact={onArtifact} />}{view === 'sources' && <LectureSourcesView courseId={courseId} lecture={activeLecture} files={files} chunks={chunks} data={data} />}</>
+  const content = <>{view === 'brief' && (activeLecture.studyGuide
+    ? <GeneratedLectureGuideView lecture={activeLecture} guide={activeLecture.studyGuide} brief={brief} chunks={chunks} files={files} mastery={mastery} onOpenMastery={() => onView('mastery')} />
+    : <LectureBriefView brief={brief} chunks={chunks} files={files} mastery={mastery} onOpenMastery={() => onView('mastery')} />)}{view === 'mastery' && <MasteryMapView outline={mastery} chunks={chunks} lecture={activeLecture} />}{view === 'materials' && <LectureMaterialsView course={course} courseId={courseId} lecture={activeLecture} files={data.files.filter((file) => file.lectureId === activeLecture.id || selectedIds.includes(file.id))} artifact={artifact} onArtifact={onArtifact} />}{view === 'sources' && <LectureSourcesView courseId={courseId} lecture={activeLecture} files={files} chunks={chunks} data={data} />}</>
 
   if (embedded) return <section className="min-w-0 overflow-hidden border-t border-border bg-card" aria-label="Embedded lecture workspace"><div className="flex min-w-0 items-center justify-between gap-2 border-b border-border px-1 sm:px-2"><div className="min-w-0 flex-1">{tabs}</div><div className="shrink-0">{moreMenu}</div></div><div className="max-h-[38rem] min-w-0 overflow-y-auto p-4 sm:p-5">{content}</div>{help}</section>
 
-  return <div className="grid min-h-[38rem] w-full min-w-0 max-w-full overflow-x-hidden lg:grid-cols-[15rem_minmax(0,1fr)]"><aside className="min-w-0 border-b border-border bg-muted/25 p-3 lg:border-b-0 lg:border-r" aria-label="Lecture catalog"><div className="flex items-center justify-between gap-2 px-1"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">{course?.code ?? 'Class'}</p><h2 className="font-display text-base font-extrabold">Lectures</h2></div><Badge variant="outline">{lectures.length}</Badge></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1.5 lg:overflow-visible">{lectures.map((lecture) => <button key={lecture.id} type="button" aria-current={lecture.id === activeLecture.id ? 'page' : undefined} onClick={() => onSelect(lecture)} className={cn('min-w-56 rounded-xl border p-3 text-left lg:min-w-0 lg:w-full', lecture.id === activeLecture.id ? 'border-primary bg-card shadow-sm' : 'border-transparent hover:border-border hover:bg-card/70')}><span className="block text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Lecture {lectureNumber(lecture.id)} · {lecture.occurredOn ?? 'Date not set'}</span><b className="mt-1 block line-clamp-2 font-display text-sm">{lecture.title}</b><span className="mt-1 block text-[11px] font-bold text-muted-foreground">{lecture.workspaceState === 'complete' ? 'Brief + Mastery' : 'Import in progress'}</span></button>)}</div></aside><main className="min-w-0 bg-card"><header className="border-b border-border px-4 py-4 sm:px-6"><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Lecture {lectureNumber(activeLecture.id)} · {activeLecture.occurredOn ?? 'Date not set'}</p><h1 className="mt-1 break-words font-display text-2xl font-extrabold">{activeLecture.title}</h1><p className="mt-1 text-sm font-semibold text-muted-foreground">{files.length} selected {files.length === 1 ? 'source' : 'sources'} · {chunks.length} readable {chunks.length === 1 ? 'passage' : 'passages'}</p></div>{moreMenu}</div>{tabs}</header><div className="min-w-0 p-4 sm:p-6">{content}</div>{help}</main></div>
+  return <div className="grid min-h-[38rem] w-full min-w-0 max-w-full overflow-x-hidden lg:grid-cols-[15rem_minmax(0,1fr)]"><aside className="min-w-0 border-b border-border bg-muted/25 p-3 lg:border-b-0 lg:border-r" aria-label="Lecture catalog"><div className="flex items-center justify-between gap-2 px-1"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">{course?.code ?? 'Class'}</p><h2 className="font-display text-base font-extrabold">Lectures</h2></div><Badge variant="outline">{lectures.length}</Badge></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1.5 lg:overflow-visible">{lectures.map((lecture) => <button key={lecture.id} type="button" aria-current={lecture.id === activeLecture.id ? 'page' : undefined} onClick={() => onSelect(lecture)} className={cn('min-w-56 rounded-xl border p-3 text-left lg:min-w-0 lg:w-full', lecture.id === activeLecture.id ? 'border-primary bg-card shadow-sm' : 'border-transparent hover:border-border hover:bg-card/70')}><span className="block text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Lecture {lectureNumber(lecture.id)} · {lecture.occurredOn ?? 'Date not set'}</span><b className="mt-1 block line-clamp-2 font-display text-sm">{lecture.title}</b><span className="mt-1 block text-[11px] font-bold text-muted-foreground">{lecture.studyGuide && lecture.masteryMapId ? 'Generated Guide + Mastery' : lecture.workspaceState === 'complete' ? 'Local preview · rebuild available' : 'Import in progress'}</span></button>)}</div></aside><main className="min-w-0 bg-card"><header className="border-b border-border px-4 py-4 sm:px-6"><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Lecture {lectureNumber(activeLecture.id)} · {activeLecture.occurredOn ?? 'Date not set'}</p><h1 className="mt-1 break-words font-display text-2xl font-extrabold">{activeLecture.title}</h1><p className="mt-1 text-sm font-semibold text-muted-foreground">{files.length} selected {files.length === 1 ? 'source' : 'sources'} · {chunks.length} readable {chunks.length === 1 ? 'passage' : 'passages'}</p></div><div className="flex flex-wrap items-center gap-2">{!activeLecture.studyGuide && <Button size="sm" onClick={() => useStore.getState().update((draft) => { const record = draft.academics.classCenter.lectures.find((item) => item.id === activeLecture.id); if (record) { record.workspaceState = 'draft'; record.updatedAt = Date.now() } })}><Sparkles className="size-4" /> Rebuild with AI</Button>}{moreMenu}</div></div>{tabs}</header><div className="min-w-0 p-4 sm:p-6">{content}</div>{help}</main></div>
+}
+
+function sourceForBlock(block: ContentBlock, chunks: SourceChunk[], files: AcademicFile[]) {
+  if (!block.sourceRef) return undefined
+  const chunk = chunks.find((item) => item.id === block.sourceRef?.chunkId)
+  if (!chunk) return undefined
+  const file = files.find((item) => item.id === chunk.fileId)
+  return { chunk, label: `${file?.fileName ?? file?.title ?? 'Source'} · ${chunk.sourcePosition?.label ?? 'passage'}` }
+}
+
+function GeneratedGuideBlock({ block, chunks, files }: { block: ContentBlock; chunks: SourceChunk[]; files: AcademicFile[] }) {
+  const [open, setOpen] = useState(false)
+  const source = sourceForBlock(block, chunks, files)
+  const items = block.items?.map((item) => item.content).filter(Boolean) ?? []
+  return <div className={cn('rounded-xl border border-border bg-muted/20 p-4', block.type === 'must_understand' && 'border-primary/25 bg-primary/6', block.type === 'must_memorize' && 'border-amber-500/25 bg-amber-500/6')}>
+    {block.conceptLabel && <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary">{block.conceptLabel}</p>}
+    {block.text?.content && <p className="mt-1 text-sm font-semibold leading-7">{block.text.content}</p>}
+    {items.length > 0 && <ul className="mt-2 space-y-2">{items.map((item, index) => <li key={`${block.id}-${index}`} className="flex gap-2 text-sm font-semibold leading-6"><span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-primary" />{item}</li>)}</ul>}
+    {source && <div className="mt-2"><Button className="h-auto px-0 text-[11px]" variant="link" onClick={() => setOpen((value) => !value)}>{open ? 'Hide source' : `Verify · ${source.label}`}</Button>{open && <blockquote className="mt-1 rounded-lg border border-border bg-card p-3 text-xs font-semibold leading-relaxed text-muted-foreground">{source.chunk.content}</blockquote>}</div>}
+  </div>
+}
+
+function GeneratedGuideConceptMap({ lecture, guide }: { lecture: LectureRecord; guide: StudyGuideArtifact }) {
+  const concepts = guide.sections
+    .flatMap((section) => section.blocks)
+    .filter((block) => block.conceptLabel && block.sourceRef)
+    .filter((block, index, all) => all.findIndex((item) => item.conceptLabel?.toLocaleLowerCase() === block.conceptLabel?.toLocaleLowerCase()) === index)
+    .slice(0, 8)
+  if (!concepts.length) return null
+  return <section className="mt-6 rounded-2xl border border-primary/25 bg-primary/5 p-5" aria-label="Generated concept map"><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">How the ideas fit</p><h3 className="mt-1 font-display text-lg font-extrabold">Concept map</h3><div className="mt-4 grid gap-3 md:grid-cols-[minmax(10rem,0.7fr)_minmax(0,2fr)]"><div className="grid place-items-center rounded-2xl border border-primary/35 bg-card p-5 text-center"><Brain className="size-5 text-primary" /><b className="mt-2 font-display text-sm">{lecture.aiTitle ?? lecture.title}</b></div><div className="grid gap-2 sm:grid-cols-2">{concepts.map((block) => <div key={block.id} className="relative rounded-xl border border-border bg-card p-3 before:absolute before:-left-3 before:top-1/2 before:h-px before:w-3 before:bg-primary/40"><p className="text-xs font-extrabold text-primary">{block.conceptLabel}</p>{block.text?.content && <p className="mt-1 line-clamp-3 text-[11px] font-semibold leading-5 text-muted-foreground">{block.text.content}</p>}</div>)}</div></div><p className="mt-3 text-[11px] font-semibold text-muted-foreground">Each branch comes from a cited core-concept, mechanism, or relationship block. It does not infer unsupported links.</p></section>
+}
+
+function GeneratedLectureGuideView({ lecture, guide, brief, chunks, files, mastery, onOpenMastery }: { lecture: LectureRecord; guide: StudyGuideArtifact; brief: NonNullable<LectureRecord['lectureBrief']>; chunks: SourceChunk[]; files: AcademicFile[]; mastery?: ClassCenterData['generatedMasteryOutlines'][number]; onOpenMastery: () => void }) {
+  return <div className="mx-auto max-w-5xl"><section className="border-b border-border pb-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Generated from your selected lecture sources</p><h2 className="mt-1 font-display text-2xl font-extrabold">Lecture Study Guide</h2><p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-muted-foreground">Organized for understanding, not copied from transcript order. Open any source trace to verify the underlying passage.</p></div><div className="flex flex-wrap gap-2"><Badge variant="outline">spec {guide.specHash}</Badge>{lecture.generationAuditStatus && <Badge variant="outline">Audit {lecture.generationAuditStatus}</Badge>}</div></div></section><GeneratedGuideConceptMap lecture={lecture} guide={guide} /><div className="mt-6 space-y-5">{guide.sections.map((section) => <section key={section.id} className="rounded-2xl border border-border bg-card p-5 sm:p-6"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">{section.id.replace(/-/g, ' ')}</p><h3 className="mt-1 font-display text-lg font-extrabold">{section.title}</h3><div className="mt-4 grid gap-3">{section.blocks.map((block) => <GeneratedGuideBlock key={block.id} block={block} chunks={chunks} files={files} />)}</div></section>)}</div><section className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]"><div className="rounded-2xl border border-border bg-card p-5"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Check yourself next</p><h3 className="mt-1 font-display text-lg font-extrabold">Mastery Map preview</h3></div><Button size="sm" variant="outline" onClick={onOpenMastery}>Open full map</Button></div>{mastery ? <div className="mt-4 space-y-2">{mastery.standards.slice(0, 3).map((standard) => <div key={standard.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/25 p-3"><b className="text-sm">{standard.title}</b><Badge variant="outline">Not started</Badge></div>)}</div> : <p className="mt-3 text-sm font-semibold text-muted-foreground">The Mastery Map is unavailable. This lecture should be rebuilt rather than treated as complete.</p>}</div><SourceCoverage files={files} chunks={chunks} brief={brief} /></section></div>
 }
 
 function BriefSection({ eyebrow, title, items, chunks, empty, tone = 'plain' }: {

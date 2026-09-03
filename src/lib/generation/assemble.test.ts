@@ -132,6 +132,11 @@ describe('the assembled request', () => {
     expect(guide.systemPrompt).toContain('Reorganize the supplied source material')
     // Its own L2 rules ride alongside the global ones.
     expect(guide.systemPrompt).toContain('SG-SPLIT')
+    // The Markdown contract must reach the runtime prompt; otherwise the
+    // provider is told to follow a shape it was never given.
+    expect(guide.systemPrompt).toContain('# Required JSON response schema')
+    expect(guide.systemPrompt).toContain('conceptLabel')
+    expect(guide.systemPrompt).toContain('sourceRef')
   })
 
   it('exposes the revised-notes response shape to the provider and hashes it', () => {

@@ -79,6 +79,49 @@ export const STUDY_GUIDE_V1: ArtifactSpec = {
         + 'An empty section rendered as a heading with nothing under it is worse than no section.',
     },
   ],
+  outputSchema: {
+    type: 'object',
+    required: ['sections'],
+    properties: {
+      sections: {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: ['id', 'title', 'blocks'],
+          properties: {
+            id: { type: 'string' },
+            title: { type: 'string' },
+            blocks: {
+              type: 'array',
+              items: {
+                type: 'object',
+                required: ['id', 'type', 'provenance'],
+                properties: {
+                  id: { type: 'string' },
+                  type: { type: 'string', enum: ['prose', 'bullets', 'numbered', 'table', 'callout', 'gap', 'contradiction', 'must_memorize', 'must_understand', 'recall'] },
+                  text: {
+                    type: 'object',
+                    properties: {
+                      content: { type: 'string' },
+                      emphasis: { type: 'array', items: { type: 'object', required: ['text', 'emphasis'], properties: { text: { type: 'string' }, emphasis: { type: 'string' } } } },
+                    },
+                  },
+                  items: { type: 'array', items: { type: 'object', required: ['content'], properties: { content: { type: 'string' } } } },
+                  provenance: { type: 'string', enum: ['source', 'clarification', 'background'] },
+                  sourceRef: { type: 'object', required: ['fileId', 'chunkId', 'start', 'end'], properties: { fileId: { type: 'string' }, chunkId: { type: 'string' }, start: { type: 'number' }, end: { type: 'number' } } },
+                  highYield: { type: 'boolean' },
+                  basis: { type: 'string' },
+                  conceptLabel: { type: 'string' },
+                  conceptKind: { type: 'string' },
+                  depth: { type: 'number' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
 }
 
 /** `03` §7 — target block counts per coverage depth. */
