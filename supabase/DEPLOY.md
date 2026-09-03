@@ -48,11 +48,12 @@ configuration error.
 
 | Name | Required? | What it does |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | **Yes** | Generates the gap report, with verified citations |
+| `OPENAI_API_KEY` | **Yes** | Primary generation for study resources, Term Reports, and gap checks |
+| `ANTHROPIC_API_KEY` | Optional | Independent secondary audit of generated study resources and Term Reports |
 | `OPENAI_EMBEDDING_API_KEY` | Optional | Semantic retrieval. Without it, retrieval falls back to the 24 oldest chunks for the topic |
+| `OPENAI_MODEL` | Optional | Overrides the OpenAI generation model default (`gpt-5.4-mini`) |
 | `ANTHROPIC_MODEL` | Optional | Overrides the code default (`claude-opus-5`) |
-| `AI_PROVIDER` | **Leave unset** | Setting it to `openai` swaps the generator to a path with no verified citations — see the warning below |
-| `OPENAI_API_KEY` | No | Only read when `AI_PROVIDER=openai`. Unused otherwise |
+| `AI_PROVIDER` | **Leave unset** | Legacy gap-check override. The default is OpenAI; generated resources always use OpenAI primary routing |
 
 Paste values raw — no surrounding quotes, no trailing whitespace.
 
@@ -130,21 +131,16 @@ gated on `isSupabaseConfigured`, so it stays disabled until the client has
 
 ## Two things worth knowing about the function
 
-**Citations, not structured outputs.** The Anthropic call enables document
-citations and does *not* set `output_config.format` — the two are mutually
-exclusive and return a 400 together. Citations are the load-bearing half:
-`validateResult` cross-checks every claimed citation against the Citations API's
-real character offsets and rejects the whole response if one doesn't match. That
-check is what makes the blue "from your materials" chip in the gap report a
-verified claim rather than an assertion. The JSON shape is enforced by
-`validateResult` instead of by the API.
+**OpenAI generates; the server verifies.** Generated artifacts must emit exact
+source references or source chunk IDs. The function closes those references
+against its server-owned chunks and rejects unsupported or invented references
+before anything can be saved.
 
-**The OpenAI generation path is weaker, and the UI doesn't say so.**
-`callOpenAI` returns no `trustedCitations`, which makes that verification step
-skip entirely — a citation then only has to point at a real chunk with in-bounds
-offsets, never verified as actually supporting the claim. The gap report renders
-identically either way. This is why `AI_PROVIDER` should stay unset until the
-OpenAI path either produces verified citations or marks its items as unverified.
+**Anthropic audits without rewriting.** When `ANTHROPIC_API_KEY` is configured,
+Anthropic checks the verified OpenAI artifact against the same source material
+and may reject it, but never edits or replaces it. If the auditor is missing or
+temporarily unavailable, deterministic server validation still gates the result
+and the response reports `auditStatus: skipped` or `unavailable`.
 
 ## Rate limits
 
