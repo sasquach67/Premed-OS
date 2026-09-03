@@ -374,8 +374,11 @@ describe('ClassHub approved Overview', () => {
 
     const materials = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Materials')!
     await act(async () => materials.click())
-    expect(workspaceSurface.textContent).toContain('Full Study Guide')
-    expect(workspaceSurface.textContent).toContain('Flashcards / APKG')
+    expect(workspaceSurface.textContent).toContain('Generated resources')
+    expect(workspaceSurface.textContent).toContain('Your sources')
+    expect(workspaceSurface.textContent).toContain('Mastery Map')
+    expect(workspaceSurface.textContent).toContain('Lecture 2 Central Dogma BIOL103.pdf')
+    expect([...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].some((button) => button.textContent?.trim() === 'Add source')).toBe(false)
 
     const sources = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Sources')!
     await act(async () => sources.click())

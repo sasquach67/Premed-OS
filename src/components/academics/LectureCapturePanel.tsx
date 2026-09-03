@@ -13,7 +13,6 @@ import { generateUnitMasteryOutline } from '@/lib/academics/generateUnitMasteryO
 import { buildLectureGuideProposal } from '@/lib/academics/guideContract'
 import { approximateLectureTitle, buildLectureBrief, buildLectureMasteryMap, fileCoverageLabel, sourceChunksForLecture } from '@/lib/academics/lectureWorkspace'
 import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialog'
-import { MaterialGenerationIntake, type MaterialArtifact } from '@/components/academics/MaterialGenerationIntake'
 import { LectureCaptureGuide } from '@/components/academics/LectureCaptureGuide'
 import { DateField } from '@/components/common/DateField'
 import { useToast } from '@/components/common/useToast'
@@ -93,9 +92,8 @@ export function LectureCapturePanel({ courseId, course, data, onOpenNotes, initi
   const [rebuildingLectureId, setRebuildingLectureId] = useState<string>()
   const [view, setView] = useState<WorkspaceView>(initialDestination === 'transcript' || initialDestination === 'evidence' ? 'sources' : initialDestination === 'study-work' ? 'materials' : 'brief')
   const [captureGuideOpen, setCaptureGuideOpen] = useState(false)
-  const [artifact, setArtifact] = useState<MaterialArtifact | null>(null)
-  if (activeLecture?.workspaceState === 'complete' && rebuildingLectureId !== activeLecture.id) return <LectureWorkspace course={course} courseId={courseId} data={data} lectures={lectures} activeLecture={activeLecture} view={view} onView={setView} onSelect={(lecture) => { setActiveLectureId(lecture.id); setRebuildingLectureId(undefined); setArtifact(null); setView('brief') }} onRebuild={() => { setStep(activeLecture.transcriptFileId ? 2 : 1); setRebuildingLectureId(activeLecture.id) }} artifact={artifact} onArtifact={setArtifact} onOpenNotes={onOpenNotes} onHelp={() => setCaptureGuideOpen(true)} help={<LectureCaptureGuide open={captureGuideOpen} onOpenChange={setCaptureGuideOpen} />} embedded={displayMode === 'embedded'} />
-  return <LectureImportWizard courseId={courseId} course={course} data={data} lectures={lectures} lecture={activeLecture} step={step} onStep={setStep} onLecture={setActiveLectureId} onBuilt={() => { setRebuildingLectureId(undefined); setView('brief'); setArtifact(null) }} />
+  if (activeLecture?.workspaceState === 'complete' && rebuildingLectureId !== activeLecture.id) return <LectureWorkspace course={course} courseId={courseId} data={data} lectures={lectures} activeLecture={activeLecture} view={view} onView={setView} onSelect={(lecture) => { setActiveLectureId(lecture.id); setRebuildingLectureId(undefined); setView('brief') }} onRebuild={() => { setStep(activeLecture.transcriptFileId ? 2 : 1); setRebuildingLectureId(activeLecture.id) }} onOpenNotes={onOpenNotes} onHelp={() => setCaptureGuideOpen(true)} help={<LectureCaptureGuide open={captureGuideOpen} onOpenChange={setCaptureGuideOpen} />} embedded={displayMode === 'embedded'} />
+  return <LectureImportWizard courseId={courseId} course={course} data={data} lectures={lectures} lecture={activeLecture} step={step} onStep={setStep} onLecture={setActiveLectureId} onBuilt={() => { setRebuildingLectureId(undefined); setView('brief') }} />
 }
 
 function LectureImportWizard({ courseId, course, data, lectures, lecture, step, onStep, onLecture, onBuilt }: {
@@ -343,7 +341,7 @@ function LectureMaterialStatus({ file, chunks }: { file: AcademicFile; chunks: S
   return <div className="flex w-full items-start gap-3 rounded-xl border border-border bg-card p-3"><span className={cn('mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg', ready ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-700 dark:text-amber-300')}><FileText className="size-4" /></span><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><b className="truncate">{file.fileName ?? file.title}</b><Badge variant="outline">{fileExtension(file)}</Badge><Badge variant={ready ? 'default' : 'outline'}>{ready ? 'Ready' : 'Needs attention'}</Badge></span><span className="mt-1 block text-xs font-bold text-muted-foreground">{fileKind(file)} · {fileCoverageLabel(file, chunks.length)}{file.sourceCoverage?.figureStatus === 'not-interpreted' ? ' · figures not interpreted' : ''}</span>{!ready && <span className="mt-1 block text-xs font-semibold text-amber-700 dark:text-amber-300">Fix: {file.processingError ?? 'Add readable text or a clearer scan.'}</span>}</span></div>
 }
 
-function LectureWorkspace({ course, courseId, data, lectures, activeLecture, view, onView, onSelect, onRebuild, artifact, onArtifact, onOpenNotes, onHelp, help, embedded = false }: { course?: Pick<Course, 'code' | 'title'>; courseId: string; data: ClassCenterData; lectures: LectureRecord[]; activeLecture: LectureRecord; view: WorkspaceView; onView: (view: WorkspaceView) => void; onSelect: (lecture: LectureRecord) => void; onRebuild: () => void; artifact: MaterialArtifact | null; onArtifact: (artifact: MaterialArtifact | null) => void; onOpenNotes: () => void; onHelp: () => void; help: ReactNode; embedded?: boolean }) {
+function LectureWorkspace({ course, courseId, data, lectures, activeLecture, view, onView, onSelect, onRebuild, onOpenNotes, onHelp, help, embedded = false }: { course?: Pick<Course, 'code' | 'title'>; courseId: string; data: ClassCenterData; lectures: LectureRecord[]; activeLecture: LectureRecord; view: WorkspaceView; onView: (view: WorkspaceView) => void; onSelect: (lecture: LectureRecord) => void; onRebuild: () => void; onOpenNotes: () => void; onHelp: () => void; help: ReactNode; embedded?: boolean }) {
   const selectedIds = activeLecture.selectedSourceFileIds ?? (activeLecture.transcriptFileId ? [activeLecture.transcriptFileId] : [])
   const files = data.files.filter((file) => selectedIds.includes(file.id)); const chunks = sourceChunksForLecture(data, activeLecture)
   const brief = activeLecture.lectureBrief ?? buildLectureBrief(chunks, selectedIds, data.files)
@@ -351,10 +349,10 @@ function LectureWorkspace({ course, courseId, data, lectures, activeLecture, vie
   const chronological = [...lectures].sort((a, b) => String(a.occurredOn ?? '').localeCompare(String(b.occurredOn ?? '')) || a.createdAt - b.createdAt)
   const lectureNumber = (id: string) => chronological.findIndex((lecture) => lecture.id === id) + 1
   const moreMenu = <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" aria-label={embedded ? 'More lecture tools' : undefined} className={cn(!embedded && 'mr-8')}><MoreHorizontal className="size-4" /><span className={cn(embedded && 'hidden sm:inline')}>More</span></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Lecture tools</DropdownMenuLabel><DropdownMenuItem onClick={() => onView('sources')}><Search className="size-4" /> Search sources</DropdownMenuItem><DropdownMenuItem onClick={onOpenNotes}><NotebookText className="size-4" /> Open class Guide</DropdownMenuItem><DropdownMenuItem onClick={onHelp}><CircleHelp className="size-4" /> Transcript help</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
-  const tabs = <nav className={cn('flex min-w-0 gap-1 overflow-x-auto', !embedded && 'mt-4')} aria-label="Lecture workspace views">{([['brief', 'Lecture Brief'], ['mastery', 'Mastery Map'], ['materials', 'Materials'], ['sources', 'Sources']] as const).map(([value, label]) => <button key={value} type="button" aria-current={view === value ? 'page' : undefined} onClick={() => { onView(value); onArtifact(null) }} className={cn('whitespace-nowrap border-b-2 py-2 font-extrabold', embedded ? 'px-2 text-xs sm:px-3 sm:text-sm' : 'px-3 text-sm', view === value ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')}>{label}</button>)}</nav>
+  const tabs = <nav className={cn('flex min-w-0 gap-1 overflow-x-auto', !embedded && 'mt-4')} aria-label="Lecture workspace views">{([['brief', 'Lecture Brief'], ['mastery', 'Mastery Map'], ['materials', 'Materials'], ['sources', 'Sources']] as const).map(([value, label]) => <button key={value} type="button" aria-current={view === value ? 'page' : undefined} onClick={() => onView(value)} className={cn('whitespace-nowrap border-b-2 py-2 font-extrabold', embedded ? 'px-2 text-xs sm:px-3 sm:text-sm' : 'px-3 text-sm', view === value ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')}>{label}</button>)}</nav>
   const content = <>{view === 'brief' && (activeLecture.studyGuide
     ? <GeneratedLectureGuideView lecture={activeLecture} guide={activeLecture.studyGuide} brief={brief} chunks={chunks} files={files} mastery={mastery} onOpenMastery={() => onView('mastery')} />
-    : <LectureBriefView brief={brief} chunks={chunks} files={files} mastery={mastery} onOpenMastery={() => onView('mastery')} />)}{view === 'mastery' && <MasteryMapView outline={mastery} chunks={chunks} lecture={activeLecture} />}{view === 'materials' && <LectureMaterialsView course={course} courseId={courseId} lecture={activeLecture} files={data.files.filter((file) => file.lectureId === activeLecture.id || selectedIds.includes(file.id))} artifact={artifact} onArtifact={onArtifact} />}{view === 'sources' && <LectureSourcesView courseId={courseId} lecture={activeLecture} files={files} chunks={chunks} data={data} />}</>
+    : <LectureBriefView brief={brief} chunks={chunks} files={files} mastery={mastery} onOpenMastery={() => onView('mastery')} />)}{view === 'mastery' && <MasteryMapView outline={mastery} chunks={chunks} lecture={activeLecture} />}{view === 'materials' && <LectureMaterialsView data={data} lecture={activeLecture} files={data.files.filter((file) => file.lectureId === activeLecture.id || selectedIds.includes(file.id))} onOpenBrief={() => onView('brief')} onOpenMastery={() => onView('mastery')} />}{view === 'sources' && <LectureSourcesView courseId={courseId} lecture={activeLecture} files={files} chunks={chunks} data={data} />}</>
 
   if (embedded) return <section className="min-w-0 overflow-hidden border-t border-border bg-card" aria-label="Embedded lecture workspace"><div className="flex min-w-0 items-center justify-between gap-2 border-b border-border px-1 sm:px-2"><div className="min-w-0 flex-1">{tabs}</div><div className="shrink-0">{moreMenu}</div></div><div className="max-h-[38rem] min-w-0 overflow-y-auto p-4 sm:p-5">{content}</div>{help}</section>
 
@@ -490,11 +488,61 @@ function MasteryMapView({ outline, chunks, lecture }: { outline?: ClassCenterDat
 }
 function MasterySection({ label, items }: { label: string; items: string[] }) { return <section className="rounded-xl border border-border bg-muted/25 p-3"><p className="text-xs font-extrabold uppercase tracking-[0.08em] text-primary">{label}</p><ul className="mt-2 space-y-2">{items.map((item, index) => <li key={`${item}-${index}`} className="flex gap-2 text-sm font-semibold leading-relaxed"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />{item}</li>)}</ul></section> }
 
-function LectureMaterialsView({ course, courseId, lecture, files, artifact, onArtifact }: { course?: Pick<Course, 'code' | 'title'>; courseId: string; lecture: LectureRecord; files: AcademicFile[]; artifact: MaterialArtifact | null; onArtifact: (artifact: MaterialArtifact | null) => void }) {
-  const hasStudentNotes = files.some((file) => file.owner === 'mine' && file.type !== 'transcript')
-  if (artifact) return <MaterialGenerationIntake artifact={artifact} courseId={courseId} courseLabel={lecture.title} course={course} files={files} lectureId={lecture.id} onClose={() => onArtifact(null)} />
-  const resources: Array<{ artifact: MaterialArtifact; title: string; detail: string; icon: typeof BookOpen; disabled?: boolean }> = [{ artifact: 'study-guide', title: 'Full Study Guide', detail: 'A comprehensive source-grounded guide for this lecture.', icon: BookOpen }, { artifact: 'revised-notes', title: 'Revised Notes', detail: hasStudentNotes ? 'Improve selected notes while preserving the original baseline.' : 'Available only after you add your own notes as an explicit baseline.', icon: NotebookText, disabled: !hasStudentNotes }, { artifact: 'flashcards', title: 'Flashcards / APKG', detail: 'Inspectable cards with source-chunk trace and export.', icon: Brain }, { artifact: 'unit-question-bank', title: 'Question Bank', detail: 'Source-grounded practice tied to the same Mastery Map.', icon: FileStack }]
-  return <div><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Supporting resources</p><h2 className="mt-1 font-display text-xl font-extrabold">Materials</h2><p className="mt-1 text-sm font-semibold text-muted-foreground">The lecture front stays Brief + Mastery. Build deeper resources here when useful.</p></div><MaterialIntakeDialog courseId={courseId} lectureId={lecture.id} trigger={<Button variant="outline"><FilePlus2 className="size-4" /> Add source</Button>} /></div><div className="mt-5 grid gap-3 sm:grid-cols-2">{resources.map(({ artifact: value, title, detail, icon: Icon, disabled }) => <button key={value} type="button" disabled={disabled} onClick={() => onArtifact(value)} className="rounded-2xl border border-border bg-card p-4 text-left hover:border-primary/45 disabled:cursor-not-allowed disabled:opacity-60"><Icon className="size-5 text-primary" /><h3 className="mt-3 font-display text-base font-extrabold">{title}</h3><p className="mt-1 text-sm font-semibold text-muted-foreground">{detail}</p></button>)}</div></div>
+function GeneratedMaterialRow({ icon: Icon, title, detail, onOpen, children }: {
+  icon: typeof BookOpen
+  title: string
+  detail: string
+  onOpen?: () => void
+  children?: ReactNode
+}) {
+  const heading = <><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary" aria-hidden="true"><Icon className="size-4.5" /></span><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><b className="font-display text-sm">{title}</b><Badge variant="outline">Generated</Badge></span><span className="mt-0.5 block text-xs font-semibold text-muted-foreground">{detail}</span></span></>
+  if (onOpen) return <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">{heading}<Button size="sm" variant="outline" className="shrink-0" onClick={onOpen}>Open</Button></div>
+  return <details className="group rounded-xl border border-border bg-card"><summary className="flex cursor-pointer list-none items-center gap-3 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{heading}<ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none" /></summary><div className="border-t border-border px-4 py-3">{children}</div></details>
+}
+
+function LectureMaterialsView({ data, lecture, files, onOpenBrief, onOpenMastery }: {
+  data: ClassCenterData
+  lecture: LectureRecord
+  files: AcademicFile[]
+  onOpenBrief: () => void
+  onOpenMastery: () => void
+}) {
+  const explicitLectureFileIds = new Set(files.filter((file) => file.lectureId === lecture.id || file.id === lecture.transcriptFileId).map((file) => file.id))
+  const fileIds = explicitLectureFileIds.size > 0 ? explicitLectureFileIds : new Set(files.map((file) => file.id))
+  const chunkFile = new Map(data.sourceChunks.map((chunk) => [chunk.id, chunk.fileId]))
+  const usesLectureSource = (chunkIds: string[]) => chunkIds.some((id) => fileIds.has(chunkFile.get(id) ?? ''))
+  const mastery = data.generatedMasteryOutlines.find((outline) => outline.id === lecture.masteryMapId || outline.lectureId === lecture.id)
+  const decks = data.generatedFlashcardDecks.filter((deck) => deck.courseId === lecture.courseId && usesLectureSource(deck.sourceChunkIds))
+  const revisedNotes = data.generatedRevisedNotes.filter((notes) => notes.courseId === lecture.courseId && notes.selectedFileIds.some((id) => fileIds.has(id)))
+  const banks = data.generatedUnitQuestionBanks.filter((bank) => bank.courseId === lecture.courseId && usesLectureSource(bank.sourceChunkIds))
+  const guideNotes = data.notes.filter((note) => note.courseId === lecture.courseId && note.type === 'study-guide' && note.linkedFileIds?.some((id) => fileIds.has(id)))
+  const generatedCount = Number(Boolean(lecture.studyGuide)) + Number(Boolean(mastery)) + decks.length + revisedNotes.length + banks.length + guideNotes.length
+
+  return <div className="mx-auto max-w-5xl space-y-6">
+    <header className="border-b border-border pb-4">
+      <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Lecture library</p>
+      <div className="mt-1 flex flex-wrap items-end justify-between gap-3"><div><h2 className="font-display text-xl font-extrabold">Materials</h2><p className="mt-1 text-sm font-semibold text-muted-foreground">Everything attached to this lecture, separated by origin.</p></div><p className="text-xs font-extrabold text-muted-foreground">{generatedCount} generated · {files.length} {files.length === 1 ? 'source' : 'sources'}</p></div>
+    </header>
+
+    <section aria-labelledby="generated-lecture-materials">
+      <div className="flex flex-wrap items-end justify-between gap-2"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Made from this lecture</p><h3 id="generated-lecture-materials" className="mt-1 font-display text-lg font-extrabold">Generated resources</h3></div><p className="text-xs font-semibold text-muted-foreground">Create new resources from Class Materials.</p></div>
+      <div className="mt-3 space-y-2">
+        {lecture.studyGuide && <GeneratedMaterialRow icon={BookOpen} title="Full Study Guide" detail={`${lecture.studyGuide.sections.length} sections · source traced`} onOpen={onOpenBrief} />}
+        {mastery && <GeneratedMaterialRow icon={ListChecks} title="Mastery Map" detail={`${mastery.standards.length} learning ${mastery.standards.length === 1 ? 'objective' : 'objectives'} · ${mastery.scope ?? 'unit'} scope`} onOpen={onOpenMastery} />}
+        {guideNotes.map((note) => <GeneratedMaterialRow key={note.id} icon={BookOpen} title={note.title} detail={`${note.linkedFileIds?.length ?? 0} linked sources`}><p className="whitespace-pre-wrap text-sm font-semibold leading-6">{note.content}</p></GeneratedMaterialRow>)}
+        {decks.map((deck) => <GeneratedMaterialRow key={deck.id} icon={Brain} title={deck.title} detail={`${deck.cards.length} cards · ${deck.sourceChunkIds.length} source passages`}><div className="divide-y divide-border">{deck.cards.map((card, index) => <div key={card.id} className="grid gap-1 py-3 first:pt-0 last:pb-0 sm:grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)] sm:gap-3"><span className="text-xs font-extrabold text-primary">{index + 1}</span><p className="text-sm font-bold">{card.cloze ?? card.front}</p><p className="text-sm font-semibold text-muted-foreground">{card.back ?? card.extra ?? 'Cloze answer retained in the card.'}</p></div>)}</div></GeneratedMaterialRow>)}
+        {revisedNotes.map((notes) => <GeneratedMaterialRow key={notes.id} icon={NotebookText} title={notes.title} detail={`${notes.sections.length} sections · ${notes.usedFileIds.length}/${notes.selectedFileIds.length} sources used`}><div className="space-y-4">{notes.sections.map((section) => <section key={section.id}><h4 className="font-display text-sm font-extrabold">{section.title}</h4><div className="mt-2 space-y-2">{section.passages.map((passage) => <p key={passage.id} className="text-sm font-semibold leading-6 text-muted-foreground">{passage.content}</p>)}</div></section>)}</div></GeneratedMaterialRow>)}
+        {banks.map((bank) => <GeneratedMaterialRow key={bank.id} icon={FileStack} title={bank.title} detail={`${bank.questions.length} questions · ${bank.integrationPercent}% prior-unit integration`}><div className="divide-y divide-border">{bank.questions.map((question, index) => <div key={question.id} className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[2rem_minmax(0,1fr)]"><span className="text-xs font-extrabold text-primary">{index + 1}</span><div><p className="text-sm font-bold">{question.prompt}</p><p className="mt-1 text-sm font-semibold text-muted-foreground"><b className="text-foreground">Answer:</b> {question.answer}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{question.rationale}</p></div></div>)}</div></GeneratedMaterialRow>)}
+        {!generatedCount && <p className="rounded-xl border border-dashed border-border bg-muted/25 p-4 text-sm font-semibold text-muted-foreground">No generated resources for this lecture yet. Use Create study resources in Class Materials when your sources are ready.</p>}
+      </div>
+    </section>
+
+    <section aria-labelledby="source-lecture-materials">
+      <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Imported for this lecture</p>
+      <h3 id="source-lecture-materials" className="mt-1 font-display text-lg font-extrabold">Your sources</h3>
+      <div className="mt-3 space-y-2">{files.map((file) => <LectureMaterialStatus key={file.id} file={file} chunks={data.sourceChunks.filter((chunk) => chunk.fileId === file.id)} />)}{!files.length && <p className="rounded-xl border border-dashed border-border bg-muted/25 p-4 text-sm font-semibold text-muted-foreground">No sources are attached to this lecture.</p>}</div>
+    </section>
+  </div>
 }
 
 function LectureSourcesView({ courseId, lecture, files, chunks, data }: { courseId: string; lecture: LectureRecord; files: AcademicFile[]; chunks: SourceChunk[]; data: ClassCenterData }) {

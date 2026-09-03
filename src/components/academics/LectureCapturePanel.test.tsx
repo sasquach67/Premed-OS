@@ -260,6 +260,39 @@ describe('lecture import and workspace', () => {
     expect(container.querySelectorAll('select[aria-label^="Mastery state for"]').length).toBe(5)
   })
 
+  it('uses Materials as a lecture-scoped library for generated work and uploaded sources', async () => {
+    const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
+    const center = seed.academics.classCenter
+    const courseId = 'demo-course-biol103-current'
+    center.generatedFlashcardDecks.push(
+      {
+        id: 'lecture-2-cards', courseId, title: 'Central Dogma Recall', sourceChunkIds: ['demo-chunk-biol103-transcript-flow'], specId: 'flashcards-v1', specHash: 'lecture-2', createdAt: 1, updatedAt: 1, order: 0,
+        cards: [{ id: 'card-1', type: 'process', front: 'What follows transcription?', back: 'RNA processing, then translation.', tags: ['central-dogma'], conceptId: 'gene-expression', sourceChunkId: 'demo-chunk-biol103-transcript-flow' }],
+      },
+      {
+        id: 'unrelated-cards', courseId, title: 'Unrelated Syllabus Cards', sourceChunkIds: ['unrelated-syllabus-chunk'], specId: 'flashcards-v1', specHash: 'unrelated', createdAt: 2, updatedAt: 2, order: 1,
+        cards: [{ id: 'card-2', type: 'basic', front: 'When is the final?', back: 'See the syllabus.', tags: ['schedule'], conceptId: 'schedule', sourceChunkId: 'unrelated-syllabus-chunk' }],
+      },
+    )
+    center.files.push({ id: 'unrelated-syllabus', courseId, sourceType: 'upload', title: 'Course syllabus', type: 'syllabus', linkedTopicIds: [], owner: 'course', processingStatus: 'ready', createdAt: 1, updatedAt: 1, order: 99 })
+    center.sourceChunks.push({ id: 'unrelated-syllabus-chunk', fileId: 'unrelated-syllabus', courseId, content: 'The final exam is cumulative.', coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: 99 })
+    useStore.getState().replaceAll(seed)
+
+    await render(courseId, 'demo-lecture-biol103-2', 'study-work')
+
+    expect(container.textContent).toContain('Generated resources')
+    expect(container.textContent).toContain('Your sources')
+    expect(container.textContent).toContain('Central Dogma Recall')
+    expect(container.textContent).not.toContain('Unrelated Syllabus Cards')
+    expect(container.textContent).toContain('Biol 103 Lecture 2 Captions.txt')
+    expect(container.textContent).toContain('Lecture 2 Central Dogma BIOL103.pdf')
+    expect(container.textContent).toContain('Lesson 2 GRQ.pdf')
+    expect(container.textContent).toContain('BIOL103-Lessons-2-and-3-Unit-Mastery-Outline.docx')
+    expect(container.textContent).toContain('Create new resources from Class Materials.')
+    expect(container.textContent).not.toContain('A comprehensive source-grounded guide for this lecture.')
+    expect([...container.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Add source')).toBe(false)
+  })
+
   it('lets a generated lecture be rebuilt without discarding the saved result first', async () => {
     const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
     const generatedLecture = seed.academics.classCenter.lectures.find((lecture) => lecture.id === 'demo-lecture-biol103-2')!
