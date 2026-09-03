@@ -285,6 +285,7 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     expect(hoverActions.className).toContain('md:top-1/2')
     expect(hoverActions.className).toContain('md:h-14')
     expect(hoverActions.className).toContain('md:grid-cols-[minmax(0,1fr)_2.75rem]')
+    expect(hoverActions.className).not.toContain('md:border')
     expect(hoverActions.className).toContain('md:-translate-y-1/2')
     expect(hoverActions.className).toContain('md:opacity-0')
     expect(hoverActions.className).toContain('md:group-hover/class:opacity-100')

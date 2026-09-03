@@ -1585,7 +1585,7 @@ export function ClassCard({
           )}
           <div
             data-testid="class-card-open-actions"
-            className="mt-2 flex items-center justify-end gap-2 md:pointer-events-none md:absolute md:inset-x-3 md:top-1/2 md:z-10 md:mt-0 md:grid md:h-14 md:-translate-y-1/2 md:grid-cols-[minmax(0,1fr)_2.75rem] md:items-center md:rounded-xl md:border md:border-[var(--class-accent-45)] md:bg-card md:p-1 md:opacity-0 md:shadow-lg md:transition-opacity md:duration-150 md:group-focus/class:pointer-events-auto md:group-focus/class:opacity-100 md:group-hover/class:pointer-events-auto md:group-hover/class:opacity-100 md:focus-within:pointer-events-auto md:focus-within:opacity-100 motion-reduce:transition-none">
+            className="mt-2 flex items-center justify-end gap-2 md:pointer-events-none md:absolute md:inset-x-3 md:top-1/2 md:z-10 md:mt-0 md:grid md:h-14 md:-translate-y-1/2 md:grid-cols-[minmax(0,1fr)_2.75rem] md:items-center md:rounded-xl md:bg-card md:p-1 md:opacity-0 md:shadow-lg md:transition-opacity md:duration-150 md:group-focus/class:pointer-events-auto md:group-focus/class:opacity-100 md:group-hover/class:pointer-events-auto md:group-hover/class:opacity-100 md:focus-within:pointer-events-auto md:focus-within:opacity-100 motion-reduce:transition-none">
             <Button
               size="sm"
               variant="outline"
