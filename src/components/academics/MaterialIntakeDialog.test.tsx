@@ -12,6 +12,8 @@ describe('MaterialIntakeDialog clipboard intake', () => {
   let root: Root
 
   beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-02T20:20:24-04:00'))
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
@@ -20,6 +22,7 @@ describe('MaterialIntakeDialog clipboard intake', () => {
   afterEach(async () => {
     await act(async () => root.unmount())
     container.remove()
+    vi.useRealTimers()
   })
 
   async function openDialog() {
@@ -71,5 +74,30 @@ describe('MaterialIntakeDialog clipboard intake', () => {
     })
 
     expect(document.body.textContent).toContain('textbook-page.png')
+  })
+
+  it('gives pasted screenshots distinct Mac-style names and visible previews', async () => {
+    const createObjectUrl = vi.spyOn(URL, 'createObjectURL')
+      .mockReturnValueOnce('blob:preview-one')
+      .mockReturnValueOnce('blob:preview-two')
+    const revokeObjectUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+    await openDialog()
+    const screenshots = [
+      new File(['first image'], 'image.png', { type: 'image/png', lastModified: 1 }),
+      new File(['second image'], 'image.png', { type: 'image/png', lastModified: 2 }),
+    ]
+    const pasteEvent = new Event('paste', { bubbles: true, cancelable: true })
+    Object.defineProperty(pasteEvent, 'clipboardData', { value: { files: screenshots } })
+
+    await act(async () => screenshotTile().dispatchEvent(pasteEvent))
+
+    expect(document.body.textContent).toContain('Screenshot 2026-09-02 at 8.20.24 PM.png')
+    expect(document.body.textContent).toContain('Screenshot 2026-09-02 at 8.20.24 PM 2.png')
+    expect(document.body.querySelector<HTMLImageElement>('img[src="blob:preview-one"]')).not.toBeNull()
+    expect(document.body.querySelector<HTMLImageElement>('img[src="blob:preview-two"]')).not.toBeNull()
+    expect(createObjectUrl).toHaveBeenCalledTimes(2)
+
+    createObjectUrl.mockRestore()
+    revokeObjectUrl.mockRestore()
   })
 })
