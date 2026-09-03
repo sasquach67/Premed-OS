@@ -869,13 +869,18 @@
   letter-spacing: .09em;
   text-transform: uppercase;
 }
-.class-hub-material-group-content { padding: 0 16px 14px; }
+.class-hub-material-group-content { padding: 0; }
 .class-hub-material-group-content > * + * { margin-top: 0; border-top: 1px solid var(--border); }
 .class-hub-material-placement-note {
-  padding: 9px 0 12px;
+  padding: 9px 16px 12px;
   color: var(--muted-foreground);
   font-size: 11px;
   font-weight: 700;
+}
+.class-hub-material-group-content .class-hub-material-file {
+  border-right: 0;
+  border-left: 0;
+  border-radius: 0;
 }
 .class-hub-material-group-content .class-hub-record-row { border-radius: 0; background: transparent; }
 .class-hub-material-place {
@@ -899,6 +904,12 @@
   border: 1px solid color-mix(in srgb, var(--cat-mcat) 26%, var(--border));
   border-radius: 11px;
   background: color-mix(in srgb, var(--cat-mcat) 9%, transparent);
+}
+.class-hub-material-group-content > .class-hub-material-prime {
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  border-radius: 0;
 }
 .class-hub-material-prime p { color: color-mix(in srgb, var(--cat-mcat) 65%, var(--foreground)); font: 800 12px 'Baloo 2', var(--font-display); }
 .class-hub-material-prime span { display: block; margin-top: 2px; color: var(--muted-foreground); font-size: 10.5px; font-weight: 700; }

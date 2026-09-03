@@ -1354,7 +1354,7 @@ function FileRow({ file, ownership, courseWeek, onWeekChange, onReimport }: { fi
     window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
   }
   const content = (
-    <div className="rounded-xl border border-border bg-muted p-3 transition hover:-translate-y-0.5 hover:border-primary/45 motion-reduce:transform-none">
+    <div className="class-hub-material-file rounded-xl border border-border bg-muted p-3 transition hover:-translate-y-0.5 hover:border-primary/45 motion-reduce:transform-none">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3"><FileText className="size-4 shrink-0 text-primary" /><div className="min-w-0"><p className="truncate font-extrabold">{file.title}</p><p className="text-xs text-muted-foreground">{titleCase(file.type)} · {file.sourceType}</p></div></div>
         <div className="flex items-center gap-2">
