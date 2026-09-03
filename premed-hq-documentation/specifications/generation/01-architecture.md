@@ -190,23 +190,26 @@ the block to be **rejected by the validator before the student sees it**. See `0
 
 ## 5. The pass model — and its cost
 
-The central constraint from `00` §2: **Anthropic cannot combine structured output with document
-citations.** You chose two-pass. Here is the full picture including the quality pass.
+The runtime keeps generation, verification, and review as separate roles. OpenAI currently performs
+primary generation, the server closes every source reference against its own chunk store, and
+Anthropic performs an independent audit without rewriting the artifact.
 
 ### 5.1 The passes
 
-| Pass | Input | Output | Citations | Purpose |
+| Stage | Input | Output | Citations | Purpose |
 |---|---|---|---|---|
-| **1 · Draft** | L1–L6 + chunks as `document` blocks with `citations: enabled` | Prose/loose-structure draft | **Attested by provider** | The pedagogy happens here |
-| **2 · Structure** | Pass-1 output + its verified citation set + the output schema | Typed content blocks / cards | **Carried, never minted** | Mechanical transform to schema |
-| **3 · Quality** | Structured artifact + chunks | Findings list | n/a | Model-judged checks only |
+| **1 · Generate — OpenAI** | L1–L6 + server-retrieved chunks | Typed content blocks / cards | Artifact emits exact source refs or source chunk IDs | Primary pedagogical work |
+| **2 · Verify — server** | Generated artifact + server-owned chunks | Closed citation set or rejection | **Mechanically closed; never repaired** | Trust boundary |
+| **3 · Review — Anthropic** | Verified artifact + same chunks + specification | Approve/reject verdict | Reviewer checks grounding and invariants | Independent quality assurance |
 
-**Between passes 1 and 2, server-side:** verify every attested citation against real chunk offsets
-(the existing `validateResult` logic) and pass forward **only the survivors** as a closed set. Pass 2
-is told: *you may reference these citations and no others.*
+**After generation, server-side:** collect only references the artifact itself emitted, verify every
+file, chunk, and offset against the real chunk text, and retain **only the survivors** as a closed
+set. Any artifact reference outside that set is rejected, not repaired.
 
-**After pass 2, server-side:** re-verify. Any citation in the structured output not in the closed set
-→ the artifact is rejected, not repaired. This is the invariant in §4 made mechanical.
+**During review:** Anthropic checks the already-closed artifact against the same source material and
+the original specification. It may reject the result but never silently edit it. If the reviewer is
+unconfigured or temporarily unavailable, the deterministic server checks still gate the OpenAI
+result and the response records that the audit was skipped or unavailable.
 
 ### 5.2 The cost problem — **decision D-2**
 
@@ -223,24 +226,21 @@ generating guides for a full lecture set will hit the wall.
 **Recommended: D, with A's weighted rate limit.** Deterministic checks (`08` §2.1) are free and catch
 most mechanical defects; escalate to a model pass only when they fire or when the artifact is large.
 
-### 5.3 Model tier per pass — **decision D-7**
+### 5.3 Provider roles — **decision D-7**
 
-Pass 1 is the pedagogy and needs the strong model. Pass 2 is a mechanical transform to a schema.
-
-Running Opus-tier on pass 2 is probably waste — **but a weaker model dropping or mangling citations
-is a correctness failure, not a quality one.** Recommendation: **start with the same model on both**,
-instrument citation-survival rate through pass 2, and only then try downgrading. Do not optimise cost
-before you can measure the thing that would break.
+OpenAI is the current primary **Generator**. Anthropic is the current independent **Reviewer**.
+Provider assignment remains configuration behind those roles; it is not part of the artifact
+contract. The server-owned citation validator is deliberately provider-independent.
 
 ### 5.4 Failure behavior
 
 | Failure | Behavior |
 |---|---|
-| Pass 1 fails | No artifact. Surface the provider error. Nothing persisted |
-| Pass 1 returns zero verified citations | **Reject.** Under any source mode, an artifact with no traceable claim is not a premedOS artifact |
-| Pass 2 fails to validate against schema | **One** retry with the validation errors appended. Then reject |
-| Pass 2 mints an unattested citation | **Reject, do not repair.** A repair path is a fabrication path |
-| Pass 3 finds `blocking` issues | Do not return silently. Either auto-regenerate the affected section once, or surface the findings with the artifact — see `08` §2.4 |
+| OpenAI generation fails | No artifact. Surface the provider error. Nothing persisted |
+| Generation returns zero verified citations | **Reject.** Under any source mode, an artifact with no traceable claim is not a premedOS artifact |
+| Server validation fails | **Reject, do not repair.** A repair path is a fabrication path |
+| Anthropic finds a blocking issue | **Reject.** Nothing persisted; return the distinct audit failure |
+| Anthropic is missing or unavailable | Return only if deterministic checks pass, with `auditStatus: skipped` or `unavailable` |
 
 **No partial artifact is ever persisted.** A half-generated study guide in the store is worse than
 none, and the audit already found placeholder content persisted as real records once.

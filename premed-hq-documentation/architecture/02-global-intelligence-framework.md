@@ -459,6 +459,12 @@ Product features should depend upon intelligence roles rather than specific prov
 
 This separation allows orchestration strategies to evolve independently from individual models.
 
+### Current provider assignment — September 2026
+
+For generated study resources, **OpenAI currently fulfills the Generator role** and **Anthropic fulfills the Reviewer role**. The server-owned validator remains responsible for closing source IDs and citation ranges. The reviewer may reject a result but must not silently author or rewrite the primary artifact.
+
+This is an operational default, not an architectural promise. Routing remains role-based so either provider can be replaced without changing the product contract.
+
 ---
 
 ## Capability Registry
@@ -6059,4 +6065,3 @@ These architectural principles are intended to remain stable.
 By separating enduring intelligence architecture from transient implementation, Premed OS can continuously adopt new capabilities while preserving one consistent model of how the platform thinks.
 
 The Global Intelligence Framework therefore serves as the canonical foundation for every present and future intelligence capability developed within Premed OS.
-

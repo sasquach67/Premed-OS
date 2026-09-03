@@ -77,9 +77,10 @@ export interface StudySourceInput {
 }
 
 /**
- * Generation Phase 2 — the two-pass request. The client assembles the spec; the
- * function runs pass 1, verifies citations against the chunks it owns, closes
- * the set, runs pass 2 against that set, and re-verifies.
+ * Generation Phase 2 — the primary-plus-audit request. The client assembles
+ * the spec; OpenAI generates the artifact, the function verifies its cited
+ * chunks and ranges against the source mirror it owns, and Anthropic audits
+ * the closed result without rewriting it.
  *
  * ⚠️ There is no `sources` field. The function retrieves chunk text itself, so
  * source content is never uploaded on a generation call.
@@ -125,12 +126,21 @@ export type StudyToolFailureCode =
   | 'request-too-large'
   | 'no-sources'
   | 'invalid-response'
-  /** The structuring pass introduced a citation that was never verified, so the
-   *  server refused the artifact. This is a real outcome, not an outage, and it
+  /** The generated artifact introduced a citation that was never verified, so
+   *  the server refused it. This is a real outcome, not an outage, and it
    *  is kept distinct so the student is not told to try again later when
-   *  trying again is exactly right. */
+  *  trying again is exactly right. */
   | 'citation-not-carried'
+  | 'audit-rejected'
   | 'unavailable'
+
+export type GenerationAuditStatus = 'approved' | 'skipped' | 'unavailable'
+
+export interface GeneratedStudyToolArtifact {
+  artifact: unknown
+  citations: unknown[]
+  auditStatus: GenerationAuditStatus
+}
 
 export type StudyToolResponse<T> =
   | { ok: true; data: T }
@@ -160,7 +170,8 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
     }
     const { data, error } = await client.functions.invoke('study-tools', { body: request })
     if (error) {
-      const status = (error as { context?: { status?: number } }).context?.status
+      const context = (error as { context?: Response & { body?: unknown } }).context
+      const status = context?.status
       if (status === 429) return { ok: false, code: 'rate-limited', message: 'AI usage limit reached. Try again later.' }
       if (status === 413) return { ok: false, code: 'request-too-large', message: 'This request is too large for one study-tool action.' }
       if (status === 422) return { ok: false, code: 'no-sources', message: 'No synced source material is available for this topic.' }
@@ -168,13 +179,26 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
       // would tell the student the service is down when in fact it refused a
       // specific artifact and would accept another attempt immediately.
       if (status === 502) {
-        const serverCode = (error as { context?: { body?: { code?: string } } }).context?.body?.code
+        let responseBody = context?.body
+        if (typeof context?.clone === 'function') {
+          try { responseBody = await context.clone().json() } catch { /* keep the client fallback */ }
+        }
+        const serverCode = isRecord(responseBody)
+          ? (isRecord(responseBody.error) ? responseBody.error.code : responseBody.code)
+          : undefined
         if (serverCode === 'citation-not-carried') {
           return {
             ok: false,
             code: 'citation-not-carried',
             message: 'The generated guide cited something that could not be traced back to your material, '
               + 'so it was refused rather than corrected. Nothing was saved — generating again usually works.',
+          }
+        }
+        if (serverCode === 'audit-rejected') {
+          return {
+            ok: false,
+            code: 'audit-rejected',
+            message: 'OpenAI created the resource, but Anthropic found a source or format problem during review. Nothing was saved.',
           }
         }
         return { ok: false, code: 'invalid-response', message: 'The generator returned an invalid result. Nothing was saved.' }
@@ -215,25 +239,29 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
     /**
      * Returns the structured artifact and the citation set it was allowed to
      * use. A rejection here is a real outcome, not a transport error: the
-     * function refuses an artifact whose structuring pass minted a citation,
+     * function refuses an artifact that minted a citation,
      * and nothing is saved.
      */
-    async generate(request: GenerateRequest): Promise<StudyToolResponse<{ artifact: unknown; citations: unknown[] }>> {
-      const result = await invoke<{ artifact: unknown; citations: unknown[] }>(request)
+    async generate(request: GenerateRequest): Promise<StudyToolResponse<GeneratedStudyToolArtifact>> {
+      const result = await invoke<GeneratedStudyToolArtifact>(request)
       if (!result.ok) return result
-      if (!isRecord(result.data) || !('artifact' in result.data)) {
+      if (!isRecord(result.data) || !('artifact' in result.data)
+        || !Array.isArray(result.data.citations)
+        || !['approved', 'skipped', 'unavailable'].includes(String(result.data.auditStatus))) {
         return { ok: false, code: 'invalid-response', message: 'The generator returned an invalid result. Nothing was saved.' }
       }
-      return result
+      return { ok: true, data: result.data as unknown as GeneratedStudyToolArtifact }
     },
 
-    async termReport(request: TermReportRequest): Promise<StudyToolResponse<{ artifact: unknown; citations: unknown[] }>> {
-      const result = await invoke<{ artifact: unknown; citations: unknown[] }>(request)
+    async termReport(request: TermReportRequest): Promise<StudyToolResponse<GeneratedStudyToolArtifact>> {
+      const result = await invoke<GeneratedStudyToolArtifact>(request)
       if (!result.ok) return result
-      if (!isRecord(result.data) || !('artifact' in result.data)) {
+      if (!isRecord(result.data) || !('artifact' in result.data)
+        || !Array.isArray(result.data.citations)
+        || !['approved', 'skipped', 'unavailable'].includes(String(result.data.auditStatus))) {
         return { ok: false, code: 'invalid-response', message: 'The Term Report generator returned an invalid result. Nothing was saved.' }
       }
-      return result
+      return { ok: true, data: result.data as unknown as GeneratedStudyToolArtifact }
     },
 
     async deleteSources(): Promise<StudyToolResponse<{ deleted: true }>> {

@@ -17,6 +17,9 @@ type Chunk = {
   character_end: number
 }
 
+type ProviderCitation = { fileId: string; chunkId: string; start: number; end: number }
+type GenerationAuditStatus = 'approved' | 'skipped' | 'unavailable'
+
 /**
  * `08` §2.5 / decision D-2 — the limit counts ARTIFACTS, not calls, so a
  * two-pass generation costs what it is worth rather than double.
@@ -170,30 +173,32 @@ Deno.serve(async (request) => {
     if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
     if (!allowed) return failure(429, 'rate-limited', 'The weekly AI beta budget or your usage limit has been reached.')
     try {
-      const draft = await callAnthropic('Create the Term Report from this reviewed evidence snapshot.', chunks, body.systemPrompt)
-      const closed = closeCitationSet(draft.trustedCitations, chunks)
-      if (!closed.length) return failure(422, 'no-verified-citations', 'No report claim could be traced to the reviewed evidence.')
-      const structured = await callAnthropic(
-        [
-          'Convert the draft below into the required Term Report JSON structure.',
-          'Use only evidenceIds from this closed set:',
-          closed.map((ref) => ref.chunkId).join(', '),
-          'Every takeaway and experiment needs one or more exact evidenceIds.',
-          'Do not introduce any other evidence ID or a causal claim.',
-          '',
-          `Draft:\n${JSON.stringify(draft.value)}`,
-        ].join('\n'),
+      const primary = await callOpenAIGeneration(
+        'Create the Term Report from this reviewed evidence snapshot.',
         chunks,
         body.systemPrompt,
       )
+      const closed = closeCitationSet(primary.trustedCitations, chunks)
+      if (!closed.length) return failure(422, 'no-verified-citations', 'No report claim could be traced to the reviewed evidence.')
       const allowedCitationIds = new Set(closed.map((ref) => ref.chunkId))
-      if (structured.trustedCitations.some((ref) => !allowedCitationIds.has(ref.chunkId))) {
-        return failure(502, 'citation-not-carried', 'The structuring pass introduced evidence that was not verified. Nothing was saved.')
-      }
-      if (!validateTermReportArtifact(structured.value, allowedCitationIds)) {
+      if (!validateTermReportArtifact(primary.value, allowedCitationIds)) {
         return failure(502, 'invalid-response', 'The report included unsupported or invalid wording. Nothing was saved.')
       }
-      return json({ artifact: structured.value, citations: closed })
+
+      let auditStatus: GenerationAuditStatus = 'skipped'
+      if (Deno.env.get('ANTHROPIC_API_KEY')) {
+        try {
+          const audit = await callAnthropicAudit(primary.value, chunks, body.systemPrompt)
+          if (!audit.approved) {
+            return failure(502, 'audit-rejected', 'The secondary review found a source or specification problem. Nothing was saved.')
+          }
+          auditStatus = 'approved'
+        } catch (error) {
+          console.error('term report audit unavailable', error instanceof Error ? error.message : 'unknown')
+          auditStatus = 'unavailable'
+        }
+      }
+      return json({ artifact: primary.value, citations: closed, auditStatus })
     } catch (error) {
       console.error('term report generation failure', error instanceof Error ? error.message : 'unknown')
       return failure(503, 'provider-unavailable', 'The AI provider is unavailable.')
@@ -230,10 +235,11 @@ Deno.serve(async (request) => {
   /**
    * `generate` — the two-pass pipeline (`01` §5.1), Phase 2.
    *
-   * Pass 1 drafts with provider-attested citations. Between the passes THIS
-   * SERVER verifies every attested citation against the chunk text it owns and
-   * forwards only the survivors as a closed set. Pass 2 is told it may
-   * reference those and no others, and is re-verified after.
+   * OpenAI is the primary generator. THIS SERVER extracts the source references
+   * the generated artifact actually uses, verifies each one against the chunk
+   * text it owns, and closes that set before anything can be saved. Anthropic
+   * is a secondary auditor: it can reject an artifact, but it never authors or
+   * silently rewrites the primary output.
    *
    * ⚠️ A citation outside the closed set REJECTS the artifact. It is never
    * repaired — repairing would mean choosing a citation on the model's behalf,
@@ -250,40 +256,33 @@ Deno.serve(async (request) => {
       return failure(400, 'invalid-request', 'An assembled spec prompt is required.')
     }
     try {
-      const draft = await callAnthropic(
+      const primary = await callOpenAIGeneration(
         typeof body.request === 'string' ? body.request : 'Generate the artifact.',
         chunks,
         specPrompt,
       )
-      // Between the passes: verify, then close the set.
-      const closed = closeCitationSet(draft.trustedCitations, chunks)
+      const closed = closeCitationSet(primary.trustedCitations, chunks)
       if (!closed.length) {
-        return failure(422, 'no-verified-citations', 'No citation from the draft could be verified against your material.')
+        return failure(422, 'no-verified-citations', 'No citation from the generated artifact could be verified against your material.')
       }
-      const structured = await callAnthropic(
-        [
-          'Convert the draft below into the required structure.',
-          'You may reference ONLY these citations, identified as chunkId:start:end —',
-          closed.map((ref) => `${ref.chunkId}:${ref.start}:${ref.end}`).join(', '),
-          'Introducing any other citation is invalid. Do not invent, widen, or shift a range.',
-          '',
-          `Draft:\n${JSON.stringify(draft.value)}`,
-        ].join('\n'),
-        chunks,
-        specPrompt,
-      )
-      // After pass 2: re-verify. Anything minted rejects the artifact.
-      const allowed = new Set(closed.map((ref) => `${ref.chunkId}:${ref.start}:${ref.end}`))
-      const minted = structured.trustedCitations.filter(
-        (ref) => !allowed.has(`${ref.chunkId}:${ref.start}:${ref.end}`),
-      )
-      if (minted.length) {
-        return failure(502, 'citation-not-carried', 'The structuring pass introduced a citation that was not verified. Nothing was saved.')
+      if (!validateArtifactReferences(primary.value, closed)) {
+        return failure(502, 'citation-not-carried', 'The generated artifact referenced material outside the verified citation set. Nothing was saved.')
       }
-      if (!validateArtifactReferences(structured.value, closed)) {
-        return failure(502, 'citation-not-carried', 'The structured artifact referenced material outside the verified citation set. Nothing was saved.')
+
+      let auditStatus: GenerationAuditStatus = 'skipped'
+      if (Deno.env.get('ANTHROPIC_API_KEY')) {
+        try {
+          const audit = await callAnthropicAudit(primary.value, chunks, specPrompt)
+          if (!audit.approved) {
+            return failure(502, 'audit-rejected', 'The secondary review found a source or specification problem. Nothing was saved.')
+          }
+          auditStatus = 'approved'
+        } catch (error) {
+          console.error('study-tools audit unavailable', error instanceof Error ? error.message : 'unknown')
+          auditStatus = 'unavailable'
+        }
       }
-      return json({ artifact: structured.value, citations: closed })
+      return json({ artifact: primary.value, citations: closed, auditStatus })
     } catch (error) {
       console.error('study-tools generate failure', error instanceof Error ? error.message : 'unknown')
       return failure(503, 'provider-unavailable', 'The AI provider is unavailable.')
@@ -291,7 +290,7 @@ Deno.serve(async (request) => {
   }
 
   try {
-    const provider = (Deno.env.get('AI_PROVIDER') || 'anthropic').toLowerCase()
+    const provider = (Deno.env.get('AI_PROVIDER') || 'openai').toLowerCase()
     const response = responseForGapEvidence(evidence!)
     const output = provider === 'openai'
       ? await callOpenAI(response, chunks, evidence!.image)
@@ -313,7 +312,7 @@ Deno.serve(async (request) => {
  * quotation the source does not contain, which is worse than losing a citation.
  */
 function closeCitationSet(
-  attested: Array<{ fileId: string; chunkId: string; start: number; end: number }>,
+  attested: ProviderCitation[],
   chunks: Chunk[],
 ) {
   const byId = new Map(chunks.map((chunk) => [chunk.chunk_id, chunk]))
@@ -332,7 +331,7 @@ function closeCitationSet(
  */
 function validateArtifactReferences(
   value: unknown,
-  closed: Array<{ fileId: string; chunkId: string; start: number; end: number }>,
+  closed: ProviderCitation[],
 ) {
   const exact = new Set(closed.map((ref) => `${ref.fileId}:${ref.chunkId}:${ref.start}:${ref.end}`))
   const chunks = new Set(closed.map((ref) => ref.chunkId))
@@ -371,6 +370,55 @@ function validateArtifactReferences(
 
   visit(value)
   return valid
+}
+
+/**
+ * OpenAI returns the artifact itself as the attestation. Collect only source
+ * references the artifact explicitly wrote, then let `closeCitationSet` check
+ * them against the server-owned chunks. Chunk-only artifact formats (cards,
+ * banks, mastery outlines, and term reports) intentionally close to the full
+ * cited chunk; the model still chooses the chunk ID, while the server derives
+ * the only safe range without inventing a narrower quotation.
+ */
+function collectArtifactCitations(value: unknown, chunks: Chunk[]): ProviderCitation[] {
+  const byId = new Map(chunks.map((chunk) => [chunk.chunk_id, chunk]))
+  const collected = new Map<string, ProviderCitation>()
+
+  function addExact(candidate: unknown) {
+    if (!candidate || typeof candidate !== 'object') return
+    const ref = candidate as Record<string, unknown>
+    if (!isText(ref.fileId) || !isText(ref.chunkId) || !Number.isInteger(ref.start) || !Number.isInteger(ref.end)) return
+    const citation = { fileId: ref.fileId, chunkId: ref.chunkId, start: Number(ref.start), end: Number(ref.end) }
+    collected.set(`${citation.fileId}:${citation.chunkId}:${citation.start}:${citation.end}`, citation)
+  }
+
+  function addChunkId(candidate: unknown) {
+    if (!isText(candidate)) return
+    const chunk = byId.get(candidate)
+    if (!chunk || !chunk.content.length) return
+    const citation = { fileId: chunk.file_id, chunkId: chunk.chunk_id, start: 0, end: chunk.content.length }
+    collected.set(`${citation.fileId}:${citation.chunkId}:${citation.start}:${citation.end}`, citation)
+  }
+
+  function visit(candidate: unknown) {
+    if (candidate == null) return
+    if (Array.isArray(candidate)) {
+      candidate.forEach(visit)
+      return
+    }
+    if (typeof candidate !== 'object') return
+    const record = candidate as Record<string, unknown>
+    if (record.sourceRef != null) addExact(record.sourceRef)
+    if (Array.isArray(record.sourceRefs)) record.sourceRefs.forEach(addExact)
+    if (record.sourceChunkId != null) addChunkId(record.sourceChunkId)
+    if (Array.isArray(record.sourceChunkIds)) record.sourceChunkIds.forEach(addChunkId)
+    if (record.evidenceId != null) addChunkId(record.evidenceId)
+    if (Array.isArray(record.evidenceIds)) record.evidenceIds.forEach(addChunkId)
+    Object.values(record).forEach(visit)
+  }
+
+  visit(value)
+  return [...collected.values()]
 }
 
 async function claimAIRequest(
@@ -557,6 +605,132 @@ function parseJsonObject(text: string): unknown {
   }
 }
 
+function openAIOutputText(payload: Record<string, unknown>): string {
+  if (isText(payload.output_text)) return payload.output_text
+  if (!Array.isArray(payload.output)) throw new Error('No OpenAI output returned')
+  const text = payload.output.flatMap((item) => {
+    if (!item || typeof item !== 'object' || !Array.isArray((item as Record<string, unknown>).content)) return []
+    return ((item as Record<string, unknown>).content as unknown[]).flatMap((block) => {
+      if (!block || typeof block !== 'object') return []
+      const record = block as Record<string, unknown>
+      return (record.type === 'output_text' || record.type === 'text') && typeof record.text === 'string'
+        ? [record.text]
+        : []
+    })
+  }).join('')
+  if (!text.trim()) throw new Error('No OpenAI output text returned')
+  return text
+}
+
+async function callOpenAIGeneration(response: string, chunks: Chunk[], specPrompt: string) {
+  const key = Deno.env.get('OPENAI_API_KEY')
+  if (!key) throw new Error('OpenAI is not configured')
+  const sources = chunks.map((chunk) => ({
+    fileId: chunk.file_id,
+    chunkId: chunk.chunk_id,
+    content: chunk.content,
+  }))
+  const result = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: Deno.env.get('OPENAI_MODEL') || 'gpt-5.4-mini',
+      store: false,
+      max_output_tokens: 10_000,
+      input: [
+        {
+          role: 'system',
+          content: [{
+            type: 'input_text',
+            text: [
+              specPrompt,
+              'Reply with one JSON object only. Follow the required artifact shape in the specification.',
+              'Use only the supplied source IDs. For sourceRef/sourceRefs, use zero-based offsets within that chunk content.',
+              'For sourceChunkId/sourceChunkIds/evidenceIds, copy the exact supplied chunkId. Never invent an ID or range.',
+            ].join('\n'),
+          }],
+        },
+        {
+          role: 'user',
+          content: [{
+            type: 'input_text',
+            text: `Request:\n${response}\n\nSource documents:\n${JSON.stringify(sources)}`,
+          }],
+        },
+      ],
+      text: { format: { type: 'json_object' } },
+    }),
+  })
+  if (!result.ok) throw new Error(`OpenAI generation ${result.status}`)
+  const payload = await result.json() as Record<string, unknown>
+  const value = parseJsonObject(openAIOutputText(payload))
+  return { value, trustedCitations: collectArtifactCitations(value, chunks) }
+}
+
+const generationAuditSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['approved', 'issues'],
+  properties: {
+    approved: { type: 'boolean' },
+    issues: { type: 'array', items: { type: 'string' } },
+  },
+}
+
+async function callAnthropicAudit(value: unknown, chunks: Chunk[], specPrompt: string) {
+  const key = Deno.env.get('ANTHROPIC_API_KEY')
+  if (!key) throw new Error('Anthropic is not configured')
+  const result = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: Deno.env.get('ANTHROPIC_MODEL') || 'claude-opus-5',
+      max_tokens: 2500,
+      output_config: { effort: 'medium' },
+      system: [
+        'You are the independent secondary reviewer. OpenAI already authored the artifact.',
+        'Check every grounded claim and source reference against the supplied documents and the quoted specification.',
+        'Set approved=false for any unsupported claim, invented or shifted citation, invalid structure, or violated invariant.',
+        'Do not rewrite the artifact. Reply with one JSON object only, with no markdown.',
+        `The audit result must match this JSON Schema: ${JSON.stringify(generationAuditSchema)}`,
+      ].join('\n'),
+      messages: [{
+        role: 'user',
+        content: [
+          ...chunks.map((chunk) => ({
+            type: 'document',
+            source: { type: 'text', media_type: 'text/plain', data: chunk.content },
+            title: `${chunk.file_id}:${chunk.chunk_id}`,
+            citations: { enabled: true },
+          })),
+          {
+            type: 'text',
+            text: `Original generation specification:\n${specPrompt}\n\nArtifact to audit:\n${JSON.stringify(value)}`,
+          },
+        ],
+      }],
+    }),
+  })
+  if (!result.ok) throw new Error(`Anthropic audit ${result.status}`)
+  const payload = await result.json()
+  const text = Array.isArray(payload?.content)
+    ? payload.content.filter((block: { type?: string }) => block.type === 'text')
+      .map((block: { text?: string }) => block.text || '').join('')
+    : ''
+  const parsed = parseJsonObject(text)
+  if (!parsed || typeof parsed !== 'object') throw new Error('Anthropic returned an invalid audit')
+  const audit = parsed as Record<string, unknown>
+  if (typeof audit.approved !== 'boolean' || !Array.isArray(audit.issues) || audit.issues.some((issue) => !isText(issue))) {
+    throw new Error('Anthropic returned an invalid audit')
+  }
+  if (!audit.approved && audit.issues.length === 0) throw new Error('Anthropic rejected without an audit reason')
+  return { approved: audit.approved, issues: audit.issues as string[] }
+}
+
 async function callOpenAI(response: string, chunks: Chunk[], image?: ImageEvidence) {
   const key = Deno.env.get('OPENAI_API_KEY')
   if (!key) throw new Error('OpenAI is not configured')
@@ -571,7 +745,8 @@ async function callOpenAI(response: string, chunks: Chunk[], image?: ImageEviden
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: Deno.env.get('OPENAI_MODEL') || 'gpt-4.1-mini',
+      model: Deno.env.get('OPENAI_MODEL') || 'gpt-5.4-mini',
+      store: false,
       input: [{
         role: 'user',
         content: [
@@ -583,8 +758,8 @@ async function callOpenAI(response: string, chunks: Chunk[], image?: ImageEviden
     }),
   })
   if (!result.ok) throw new Error(`OpenAI ${result.status}`)
-  const payload = await result.json()
-  return { value: JSON.parse(payload.output_text), trustedCitations: undefined }
+  const payload = await result.json() as Record<string, unknown>
+  return { value: JSON.parse(openAIOutputText(payload)), trustedCitations: undefined }
 }
 
 const citationSchema = {

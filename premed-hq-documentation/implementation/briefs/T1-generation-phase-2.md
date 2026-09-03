@@ -1,5 +1,7 @@
 # Generation · Phase 2 — structured output and the two-pass pipeline
 
+> **Superseded September 2, 2026:** the runtime now assigns OpenAI to primary generation and Anthropic to independent secondary review. The server still owns citation closure. Anthropic no longer performs both draft and structuring passes; this brief remains as the history of the original closed-citation implementation.
+
 **Stage:** C · **EXECUTED Aug 19, 2026 — the pure half**
 **Spec:** `09` §3 Phase 2, `01` §5.1, `07`, `08` §2.1
 
