@@ -1567,16 +1567,16 @@ export function ClassCard({
               to={`/academics/classes/${row.id}?classTab=assignments&view=agenda&assignment=${encodeURIComponent(stats.nextDeadline.id)}`}
               title={stats.nextDeadline.title}
               aria-label={`Open assignment: ${stats.nextDeadline.title}`}
-              className="group/next grid min-h-12 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-2 py-1.5 text-left text-[10.5px] font-bold text-muted-foreground transition-[background-color,color,opacity] duration-150 hover:bg-[color-mix(in_srgb,var(--class-accent)_9%,transparent)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--class-accent)] md:group-focus/class:pointer-events-none md:group-focus/class:opacity-0 md:group-hover/class:pointer-events-none md:group-hover/class:opacity-0 motion-reduce:transition-none"
+              className="group/next mx-auto grid min-h-14 w-[90%] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-lg px-2 py-2 text-left font-bold text-muted-foreground transition-[background-color,color,opacity] duration-150 hover:bg-[color-mix(in_srgb,var(--class-accent)_9%,transparent)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--class-accent)] md:group-focus/class:pointer-events-none md:group-focus/class:opacity-0 md:group-hover/class:pointer-events-none md:group-hover/class:opacity-0 motion-reduce:transition-none"
               onClick={(event) => event.stopPropagation()}
             >
               <span className="min-w-0">
-                <span className="line-clamp-2 text-foreground">{nextTaskSummary}</span>
+                <span className="line-clamp-2 font-display text-[11.5px] font-extrabold leading-[1.35] text-foreground">{nextTaskSummary}</span>
                 {stats.nextDeadline.dueDate && (
-                  <span className="mt-0.5 block text-[9.5px] text-muted-foreground">{assignmentDateLabel(stats.nextDeadline)}</span>
+                  <span className="mt-1 block text-[10px] leading-tight text-muted-foreground">{assignmentDateLabel(stats.nextDeadline)}</span>
                 )}
               </span>
-              <ArrowUpRight className="size-3.5 shrink-0 opacity-55 transition-opacity group-hover/next:opacity-100" aria-hidden="true" />
+              <ArrowUpRight className="size-4 shrink-0 opacity-55 transition-opacity group-hover/next:opacity-100" aria-hidden="true" />
             </Link>
           ) : (
             <p data-testid="class-next-deadline" className="flex min-h-12 w-full items-center px-2 text-[10.5px] font-bold text-muted-foreground transition-opacity duration-150 md:group-focus/class:opacity-0 md:group-hover/class:opacity-0 motion-reduce:transition-none">

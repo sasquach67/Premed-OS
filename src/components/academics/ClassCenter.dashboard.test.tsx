@@ -199,8 +199,11 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     expect(next?.textContent).toContain('Read Ch. 4: Sensation & perception')
     expect(next?.getAttribute('title')).toBe(title)
     expect(next?.className).toContain('grid-cols-[minmax(0,1fr)_auto]')
+    expect(next?.className).toContain('mx-auto')
+    expect(next?.className).toContain('w-[90%]')
     expect(next?.className).toContain('text-left')
     expect(next?.className).not.toContain('text-center')
+    expect(next?.querySelector('.font-display')?.className).toContain('text-[11.5px]')
   })
 
   it('opens a new syllabus import from the shared importFor=new route and clears it on cancel', async () => {
