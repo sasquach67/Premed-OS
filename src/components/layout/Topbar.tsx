@@ -93,15 +93,22 @@ export function Topbar({ onMenu, onShowDesktopSidebar, desktopSidebarHidden = fa
 }
 
 function LiveStatusChip({ label, tone }: { label: string; tone: 'alert' | 'due' | 'system' | 'clear' }) {
-  return (
-    <Link to={tone === 'system' || tone === 'clear' ? '/settings' : '/overview/tasks'} className={cn(
-      'hidden h-8 max-w-[10rem] items-center gap-1.5 truncate rounded-full border px-3 font-display text-xs font-extrabold tracking-[-0.01em] shadow-sm transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex',
-      tone === 'alert' && 'border-destructive/35 bg-destructive/10 text-destructive',
-      tone === 'due' && 'border-primary/30 bg-primary/10 text-primary',
-      tone === 'system' && 'border-warning/35 bg-warning/10 text-warning',
-      tone === 'clear' && 'border-primary/20 bg-card text-primary'
-    )}>
-      <span className="size-1.5 rounded-full bg-current" /><span className="truncate">{label}</span>
-    </Link>
+  const className = cn(
+    'hidden h-8 max-w-[10rem] items-center gap-1.5 truncate rounded-full border px-3 font-display text-xs font-extrabold tracking-[-0.01em] shadow-sm transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex',
+    tone === 'alert' && 'border-destructive/35 bg-destructive/10 text-destructive',
+    tone === 'due' && 'border-primary/30 bg-primary/10 text-primary',
+    tone === 'system' && 'border-warning/35 bg-warning/10 text-warning',
+    tone === 'clear' && 'border-primary/20 bg-card text-primary'
   )
+  const content = <><span className="size-1.5 rounded-full bg-current" /><span className="truncate">{label}</span></>
+
+  if (tone === 'alert' || tone === 'due') {
+    return (
+      <button type="button" className={className} onClick={() => window.dispatchEvent(new Event('premed:attention'))}>
+        {content}
+      </button>
+    )
+  }
+
+  return <Link to="/settings" className={className}>{content}</Link>
 }
