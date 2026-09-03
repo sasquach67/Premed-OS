@@ -58,6 +58,12 @@ describe('lecture import and workspace', () => {
     )
     useStore.getState().replaceAll(seed)
     await render(courseId, 'lecture', 'transcript')
+    expect(container.textContent).toContain('Choose sources')
+    expect(container.textContent).toContain('Your transcript is already selected.')
+    expect([...container.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Add material')).toBe(true)
+    const suggestionGuide = container.querySelector<HTMLDetailsElement>('[data-testid="material-suggestion-guide"]')!
+    expect(suggestionGuide.open).toBe(false)
+    expect(suggestionGuide.querySelector('summary')?.textContent).toContain('Not sure what to add?')
     expect(container.textContent).toContain('Textbook')
     expect(container.textContent).toContain('Slides')
     expect(container.textContent).toContain('Practice questions')

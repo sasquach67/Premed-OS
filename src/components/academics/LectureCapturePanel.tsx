@@ -240,37 +240,48 @@ function MaterialsStep({ courseId, data, lecture, available, selectedIds, select
       </h3>
       <p className="mt-1 text-sm font-semibold text-muted-foreground">Only readable, selected sources are used.</p>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_19rem]">
-        <div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" aria-label="Suggested material types">
-            {MATERIAL_SUGGESTIONS.map(({ title, detail, Icon }) => (
-              <div key={title} data-testid="material-suggestion" className="grid min-h-16 grid-cols-[2rem_minmax(0,1fr)] items-center gap-2.5 rounded-xl border border-border bg-muted/25 p-2.5">
-                <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary" aria-hidden="true"><Icon className="size-4" /></span>
-                <span className="min-w-0">
-                  <b className="block font-display text-xs leading-4">{title}</b>
-                  <span className="mt-0.5 block text-[11px] font-semibold leading-4 text-muted-foreground">{detail}</span>
-                </span>
-              </div>
-            ))}
+      <div data-testid="add-material-strip" className="mt-4 flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary" aria-hidden="true"><FilePlus2 className="size-5" /></span>
+          <div className="min-w-0">
+            <p className="font-display text-sm font-extrabold">Add a file</p>
+            <p className="mt-0.5 text-xs font-semibold text-muted-foreground">Textbook, slides, notes, or practice.</p>
           </div>
-
-          {available.length > 0 && (
-            <div className="mt-5">
-              <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Ready sources from this class</p>
-              <div className="mt-2 space-y-2">
-                {available.map((file) => <SourceChoice key={file.id} file={file} chunks={data.sourceChunks.filter((chunk) => chunk.fileId === file.id && Boolean(chunk.content.trim()))} selected={file.id === lecture.transcriptFileId || selectedIds.includes(file.id)} locked={file.id === lecture.transcriptFileId} onToggle={() => onToggle(file.id)} />)}
-              </div>
-            </div>
-          )}
         </div>
-
-        <aside className="h-fit rounded-2xl border border-border bg-card p-4">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Add a file</p>
-          <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">Processed on this device. Review coverage before selecting.</p>
-          <MaterialIntakeDialog courseId={courseId} lectureId={lecture.id} trigger={<Button className="mt-4 w-full" variant="outline"><FilePlus2 className="size-4" /> Add lecture material</Button>} />
-          <p className="mt-4 border-t border-border pt-3 text-xs font-semibold text-muted-foreground">{selectedFiles.length} selected · {selectedChunks.length} readable {selectedChunks.length === 1 ? 'passage' : 'passages'}</p>
-        </aside>
+        <MaterialIntakeDialog courseId={courseId} lectureId={lecture.id} trigger={<Button className="min-h-11 w-full sm:w-auto" variant="outline"><FilePlus2 className="size-4" /> Add material</Button>} />
       </div>
+
+      <section data-testid="lecture-source-picker" className="mt-5" aria-labelledby="lecture-source-picker-heading">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p id="lecture-source-picker-heading" className="font-display text-sm font-extrabold">Choose sources</p>
+            <p className="mt-0.5 text-xs font-semibold text-muted-foreground">Your transcript is already selected.</p>
+          </div>
+          <Badge variant="outline">{selectedFiles.length} selected</Badge>
+        </div>
+        <div className="mt-2 space-y-2">
+          {available.map((file) => <SourceChoice key={file.id} file={file} chunks={data.sourceChunks.filter((chunk) => chunk.fileId === file.id && Boolean(chunk.content.trim()))} selected={file.id === lecture.transcriptFileId || selectedIds.includes(file.id)} locked={file.id === lecture.transcriptFileId} onToggle={() => onToggle(file.id)} />)}
+        </div>
+        <p className="mt-2 text-xs font-semibold text-muted-foreground">{selectedChunks.length} readable {selectedChunks.length === 1 ? 'passage' : 'passages'} available from selected sources.</p>
+      </section>
+
+      <details data-testid="material-suggestion-guide" className="group/details mt-4 rounded-2xl border border-border bg-muted/20">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center gap-2"><CircleHelp className="size-4 text-primary" aria-hidden="true" /><span className="font-display text-sm font-extrabold">Not sure what to add?</span></span>
+          <span className="flex items-center gap-2 text-xs font-bold text-muted-foreground">9 examples <ChevronDown className="size-4 group-open/details:rotate-180" aria-hidden="true" /></span>
+        </summary>
+        <div className="grid gap-2 border-t border-border p-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Suggested material types">
+          {MATERIAL_SUGGESTIONS.map(({ title, detail, Icon }) => (
+            <div key={title} data-testid="material-suggestion" className="grid min-h-16 grid-cols-[2rem_minmax(0,1fr)] items-center gap-2.5 rounded-xl border border-border bg-card p-2.5">
+              <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary" aria-hidden="true"><Icon className="size-4" /></span>
+              <span className="min-w-0">
+                <b className="block font-display text-xs leading-4">{title}</b>
+                <span className="mt-0.5 block text-[11px] font-semibold leading-4 text-muted-foreground">{detail}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </details>
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <Button variant="ghost" onClick={onContinue}>Skip for now</Button>
