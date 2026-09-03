@@ -14,6 +14,7 @@ import type { ArtifactSpec } from '@/lib/generation/types'
 
 export const GAP_CHECK_V1: ArtifactSpec = {
   specId: 'gap-check-v1',
+  authorityDocument: 'premed-hq-documentation/specifications/generation/14-gap-check-v1.md',
   objective:
     'Compare a student’s free-recall attempt against the supplied source chunks and report what '
     + 'they covered, what they missed, and what they stated incorrectly — so the next study action '

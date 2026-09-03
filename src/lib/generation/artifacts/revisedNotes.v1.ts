@@ -6,6 +6,7 @@ import type { ArtifactSpec } from '@/lib/generation/types'
  */
 export const REVISED_NOTES_V1: ArtifactSpec = {
   specId: 'revised-notes-v1',
+  authorityDocument: 'premed-hq-documentation/specifications/generation/15-revised-notes-v1.md',
   objective: 'Create one accurate, readable revised-notes document from only the selected student-supplied sources. The explicitly named student-notes baseline owns the organization, language, and emphasis; selected transcript, instructor material, and bounded excerpts may only add or clarify details they directly support. Preserve meaningful instructor terms and distinctions. When sources conflict or do not settle a detail, label the uncertainty. Do not add outside course knowledge. Keep a source trace beside every merged passage.',
   rules: [
     { id: 'RN-SOURCE-ONLY', kind: 'invariant', text: 'Every factual passage has source provenance and one or more verified source references. Do not use clarification or background knowledge.' },

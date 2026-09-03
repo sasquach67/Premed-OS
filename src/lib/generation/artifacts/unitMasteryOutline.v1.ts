@@ -18,6 +18,7 @@ export interface UnitMasteryOutlineArtifact {
 
 export const UNIT_MASTERY_OUTLINE_V1: ArtifactSpec = {
   specId: 'unit-mastery-outline-v1',
+  authorityDocument: 'premed-hq-documentation/specifications/generation/11-unit-mastery-outline-v1.md',
   objective: 'Turn the supplied course evidence into a detailed mastery map. Preserve every explicit objective relevant to the requested scope and organize its distinct source-supported subpoints into Understand, Be able to do, and Watch for. This map is the source contract for later study resources, not a transcript summary.',
   rules: [
     { id: 'UMO-SOURCE', kind: 'invariant', text: 'Every standard and every bullet must be traceable to at least one supplied source chunk.' },

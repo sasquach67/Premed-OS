@@ -20,6 +20,25 @@ beyond "is something being retrieved." §2.5–§2.7, §4.2c, §4.7, §4.8, `FC-
 criterion 11 are the correction. **They are the highest-priority section of this document** — where a
 card satisfies §2.3 but fails §2.5, §2.5 wins.
 
+## Runtime briefing mirror
+
+The API receives the following compact Layer-2 contract, compiled from this
+document by `src/lib/generation/artifacts/flashcards.v1.ts`.
+
+**Runtime objective:** Build a concept map before writing cards. Create concise, recall-ready retrieval cards only from the supplied student material. Prefer load-bearing and attaching concepts; move incidental facts to Extra. Every card must carry one material citation.
+
+| id | Runtime rule | Kind |
+| --- | --- | --- |
+| `FC-SOURCE` | Every card must cite one supplied material chunk. Never use bundled or general course knowledge. | invariant |
+| `FC-EXTRA` | Extra is never tested. Use an own-line Ex: bridge only when it makes an abstract source-supported concept concrete without adding an independent tested fact. | invariant |
+| `FC-19` | A comparison names its axis. A framework has exactly one FREE_RECALL blurt card with 3–7 independently gradeable, complete-sentence items. | invariant |
+| `FC-20` | When the source supplies an abstract concept and a concrete example, create paired EXEMPLAR cards in both directions. | invariant |
+| `FC-21` | Cloze the definition rather than merely hiding the term. Declare the cloze pattern; only term-deletion clozes carry a justification. | invariant |
+| `FC-22` | Each prompt is self-sufficient when shuffled: name the answer space, do not use lecture deixis or an unanchored change/comparison. | invariant |
+| `FC-27` | Use concise memory wording: explanatory backs and blurt items are complete sentences with a named subject and finite verb. Avoid em and en dashes. | invariant |
+| `FC-28` | For every load-bearing notation, count, table, or diagram relationship, generate an interpretation card that asks what it means and a transfer card that asks why it changes or what follows. A label-only card may support the visual, but never substitutes for understanding it. | invariant |
+| `FC-29` | When a supplied figure encodes spatial, causal, or temporal structure, use visual retrieval where the figure materially improves recall. Pair each visual target with a concise conceptual card explaining the relationship represented; do not use images as decoration. | invariant |
+
 ---
 
 ## 1. Objective

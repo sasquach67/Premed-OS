@@ -45,6 +45,8 @@ export type ControlProvenance = Record<keyof GenerationControls, ControlSource>
 /** L2 — one artifact generator's contribution. */
 export interface ArtifactSpec {
   specId: string
+  /** Reviewable Markdown authority mirrored by this runtime instruction set. */
+  authorityDocument: string
   /** The artifact's objective, stated as the generator's own instruction. */
   objective: string
   rules: LayerRule[]

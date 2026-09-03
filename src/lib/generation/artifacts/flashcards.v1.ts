@@ -3,6 +3,7 @@ import type { ArtifactSpec } from '@/lib/generation/types'
 /** Flashcards V1: generated only from the student's closed material set. */
 export const FLASHCARDS_V1: ArtifactSpec = {
   specId: 'flashcards-v1',
+  authorityDocument: 'premed-hq-documentation/specifications/generation/04-flashcards-v1.md',
   objective: 'Build a concept map before writing cards. Create concise, recall-ready retrieval cards only from the supplied student material. Prefer load-bearing and attaching concepts; move incidental facts to Extra. Every card must carry one material citation.',
   rules: [
     { id: 'FC-SOURCE', kind: 'invariant', text: 'Every card must cite one supplied material chunk. Never use bundled or general course knowledge.' },

@@ -30,6 +30,7 @@ export interface UnitQuestionBankArtifact {
 
 export const UNIT_QUESTION_BANK_V1: ArtifactSpec = {
   specId: 'unit-question-bank-v1',
+  authorityDocument: 'premed-hq-documentation/specifications/generation/12-unit-question-bank-v1.md',
   objective: 'Build a source-grounded question bank for one course unit. Questions must test the supplied mastery standards, vary by course style, and include deliberate cross-standard reasoning where the source supports it. This is practice material, never a reproduction of a private or official assessment.',
   rules: [
     { id: 'UQB-SOURCE', kind: 'invariant', text: 'Every question, answer, and rationale must be grounded in one or more supplied source chunks.' },

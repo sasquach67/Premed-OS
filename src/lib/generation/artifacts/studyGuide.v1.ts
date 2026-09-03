@@ -47,6 +47,7 @@ export const REQUIRED_SECTION_IDS = STUDY_GUIDE_SECTIONS
 
 export const STUDY_GUIDE_V1: ArtifactSpec = {
   specId: 'study-guide-v1',
+  authorityDocument: 'premed-hq-documentation/specifications/generation/03-study-guide-v1.md',
   objective:
     'Reorganize the supplied source material into a structure that improves understanding. '
     + 'This is not a rewrite of the lecture notes and not a compression of them. A student who '

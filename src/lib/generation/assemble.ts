@@ -96,6 +96,7 @@ export function assembleGenerationRequest(input: AssembleInput): AssembledReques
     renderGlobalRules(GLOBAL_RULES),
     '',
     `# Artifact: ${artifact.specId}`,
+    `Versioned briefing: ${artifact.authorityDocument}`,
     artifact.objective,
     artifactRules,
     '',
@@ -118,6 +119,7 @@ export function assembleGenerationRequest(input: AssembleInput): AssembledReques
     specHash: specHashOf([
       renderGlobalRules(GLOBAL_RULES),
       artifact.specId,
+      artifact.authorityDocument,
       artifact.objective,
       artifact.rules.map((rule) => `${rule.id}=${rule.text}`).join('|'),
       artifact.outputSchema ? JSON.stringify(artifact.outputSchema) : '',

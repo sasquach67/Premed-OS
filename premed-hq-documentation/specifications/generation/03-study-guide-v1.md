@@ -2,6 +2,29 @@
 
 **Deliverable 4.** Layer 2 for the study-guide artifact.
 
+## Runtime briefing mirror
+
+The API receives the following compact Layer-2 contract, compiled from this
+document by `src/lib/generation/artifacts/studyGuide.v1.ts`.
+
+**Runtime objective:** Reorganize the supplied source material into a structure that improves understanding. This is not a rewrite of the lecture notes and not a compression of them. A student who reads this guide and then re-reads the lecture should find the lecture easier to follow than they did the first time.
+
+| id | Runtime rule | Kind |
+| --- | --- | --- |
+| `SG-1` | Do not preserve bad source organization merely because it appeared in that order. | tunable |
+| `SG-2` | Do preserve sequencing when the sequence is pedagogically important. | invariant |
+| `SG-3` | Avoid paragraph walls. | tunable |
+| `SG-4` | Use hierarchy deliberately; every level must carry meaning. | tunable |
+| `SG-5` | Tables only when tabular comparison actually improves comprehension. | tunable |
+| `SG-6` | Avoid excessive bullet nesting — maximum depth 2. | tunable |
+| `SG-7` | Do not restate a concept across sections unless the repetition serves a distinct learning purpose. | tunable |
+| `SG-8` | Do not inflate output to appear comprehensive. | invariant |
+| `SG-9` | If material is incomplete, mark the gap explicitly; never invent. | invariant |
+| `SG-10` | Every major concept gets an explicit representation decision. Bullets are not the default and must be justified by structure — a process in bullets, a comparison in bullets, and a hierarchy in bullets are all defects. | tunable |
+| `SG-11` | Visual grammar is consistent across the whole artifact. | invariant |
+| `SG-SPLIT` | MUST UNDERSTAND and MUST MEMORIZE must not collapse into two lists of the same items. Test each item: could a student who has memorized this still fail to use it? Then understand. Could a student who understands it still not produce it from memory? Then memorize. Items may legitimately appear in both, but if more than about a quarter do, the split is not being made. | invariant |
+| `SG-SECTIONS` | Conditional sections are omitted entirely when the source does not support them. An empty section rendered as a heading with nothing under it is worse than no section. | invariant |
+
 ---
 
 ## 1. Objective

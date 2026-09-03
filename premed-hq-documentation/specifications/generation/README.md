@@ -1,6 +1,6 @@
 # premedOS Generation Engine — specification set
 
-**Status: APPROVED FOR BUILD, Aug 2026 — documents `00`–`09`, plus the shipped unit-resource extensions `11`–`13`.**
+**Status: APPROVED FOR BUILD, Aug 2026 — documents `00`–`09`, plus the shipped resource briefings `11`–`18`.**
 **`10-reading-summary-v1.md` is PROPOSED and is NOT part of that approval**; it carries its own
 open decisions and does not gate anything in `09`. Andy reviewed the
 educational philosophy and generation behavior, supplied the flashcard authoring standard (`04`),
@@ -32,6 +32,37 @@ The governing principle, in one line:
 | 11 | [`11-unit-mastery-outline-v1.md`](./11-unit-mastery-outline-v1.md) | Unit mastery map: syllabus standards split into understand, do, and watch-for checkpoints |
 | 12 | [`12-unit-question-bank-v1.md`](./12-unit-question-bank-v1.md) | Source-grounded practice questions with course-specific moves and adjustable integration |
 | 13 | [`13-course-question-blueprints.md`](./13-course-question-blueprints.md) | Biology, psychology, and general question-style defaults |
+| 14 | [`14-gap-check-v1.md`](./14-gap-check-v1.md) | Recall gap-check contract and attempt-only interpretation boundary |
+| 15 | [`15-revised-notes-v1.md`](./15-revised-notes-v1.md) | Student-notes-baseline revision with exact source traces |
+| 16 | [`16-class-full-mock-v1.md`](./16-class-full-mock-v1.md) | Timed class practice mock; never an official or predictive exam |
+| 17 | [`17-term-report-v1.md`](./17-term-report-v1.md) | Evidence-bounded end-of-term observations and optional experiments |
+| 18 | [`18-lecture-brief-derived-v1.md`](./18-lecture-brief-derived-v1.md) | Derived Lecture Brief front-page contract; not a separate API call |
+
+## Runtime briefing coverage
+
+Every artifact in `src/lib/generation/artifacts/registry.ts` names one Markdown
+authority through `authorityDocument`. The assembler includes that versioned
+briefing path beside the compiled objective and rules sent to the API. A
+registry-wide drift test rejects a generator when its document is missing or
+when the runtime objective or rule text no longer appears in that document.
+
+The browser does not fetch repository Markdown and ask a provider to interpret
+it at generation time. The reviewed briefing is compiled into the runtime
+artifact spec so the exact prompt remains deterministic, hashable, testable,
+and available in production without shipping the entire documentation corpus.
+
+| Student-facing result | Briefing | Runtime status |
+| --- | --- | --- |
+| Lecture Brief | `18-lecture-brief-derived-v1.md` | Derived locally from selected readable chunks; not a separate API call |
+| Full Study Guide | `03-study-guide-v1.md` | Registered API artifact |
+| Mastery Map | `11-unit-mastery-outline-v1.md` | Registered API artifact |
+| Revised Notes | `15-revised-notes-v1.md` | Registered API artifact; requires explicit student-notes baseline |
+| Flashcards | `04-flashcards-v1.md` | Registered API artifact |
+| Question Bank | `12-unit-question-bank-v1.md` plus `13-course-question-blueprints.md` | Registered API artifact |
+| Class Practice Mock | `16-class-full-mock-v1.md` | Registered API artifact |
+| Term Report | `17-term-report-v1.md` | Registered API artifact |
+| Recall Gap Check | `14-gap-check-v1.md` | Registered API artifact |
+| Reading Summary | `10-reading-summary-v1.md` | Proposed only; deliberately not registered or exposed |
 
 ## Your 12 deliverables → where they landed
 

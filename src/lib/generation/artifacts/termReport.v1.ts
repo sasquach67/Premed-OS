@@ -3,6 +3,7 @@ import type { ArtifactSpec } from '@/lib/generation/types'
 /** A bounded synthesis over the student-reviewed end-of-term evidence snapshot. */
 export const TERM_REPORT_V1: ArtifactSpec = {
   specId: 'term-report-v1',
+  authorityDocument: 'premed-hq-documentation/specifications/generation/17-term-report-v1.md',
   objective: 'Turn only the supplied end-of-term evidence snapshot into a short, plain-language Term Report.',
   rules: [
     { id: 'TR-SOURCE', kind: 'invariant', text: 'Use only evidence IDs supplied in the snapshot. Every takeaway and experiment needs one or more exact evidenceIds.' },
