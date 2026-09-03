@@ -11,6 +11,7 @@ import { generateUnitQuestionBank } from '@/lib/academics/generateUnitQuestionBa
 import { blueprintForCourse } from '@/lib/academics/unitQuestionBank'
 import {
   materialGenerationChoices,
+  practiceQuestionChunkIds,
   selectedMaterialChunks,
   selectedNotesBaseline,
 } from '@/lib/academics/materialGenerationIntake'
@@ -117,6 +118,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
     : selectedFileIds, [artifact, lensAvailable, lensSourceFileIds, selectedFileIds, useCourseLens])
   const selectedChunks = selectedMaterialChunks(choices, effectiveSelectedFileIds)
   const selected = ready.filter((choice) => effectiveSelectedFileIds.includes(choice.file.id))
+  const questionReferenceChunkIds = practiceQuestionChunkIds(selected.map((choice) => choice.file), selectedChunks)
   const baseline = selectedNotesBaseline(choices, baselineFileId, effectiveSelectedFileIds)
   const courseLens = artifact === 'study-guide' || artifact === 'study-outline'
     ? applicableCourseLens(lens, selectedChunks, Object.fromEntries(choices.map((choice) => [choice.file.id, choice.file.title])))
@@ -171,7 +173,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
         })
         toast({ title: 'Flashcards created', description: 'Saved in Materials with the selected-source trace.' })
       } else if (artifact === 'study-guide' || artifact === 'study-outline') {
-        const outcome = await generateStudyGuide({ courseId, chunks: selectedChunks, label: courseLabel, courseLens })
+        const outcome = await generateStudyGuide({ courseId, chunks: selectedChunks, label: courseLabel, courseLens, practiceQuestionChunkIds: questionReferenceChunkIds })
         if (!outcome.ok) return failGeneration(outcome.message ?? 'The study material could not be generated.')
         setGenerationPhase('saving')
         await waitForGenerationProgress()
@@ -185,7 +187,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
         })
         toast({ title: artifact === 'study-outline' ? 'Study outline created' : 'Study guide generated', description: outcome.courseLens ? 'Saved with its selected-source and Course lens traces.' : 'Saved with its selected-source trace.' })
       } else if (artifact === 'unit-mastery-outline') {
-        const outcome = await generateUnitMasteryOutline({ courseId, chunks: selectedChunks, unit: selectedUnit, label: courseLabel, scope: masteryScope })
+        const outcome = await generateUnitMasteryOutline({ courseId, chunks: selectedChunks, unit: selectedUnit, label: courseLabel, scope: masteryScope, practiceQuestionChunkIds: questionReferenceChunkIds })
         if (!outcome.ok || !outcome.artifact) return failGeneration(outcome.message ?? 'The Mastery Map could not be generated.')
         setGenerationPhase('saving')
         await waitForGenerationProgress()
@@ -195,7 +197,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
         })
         toast({ title: 'Mastery Map created', description: 'Saved in Materials with its selected-source trace.' })
       } else if (artifact === 'unit-question-bank') {
-        const outcome = await generateUnitQuestionBank({ courseId, chunks: selectedChunks, unit: selectedUnit, label: courseLabel, course: course ?? { code: courseLabel, title: courseLabel }, currentUnitPercent, masteryStandardIds: matchingMasteryOutline?.standards.map((standard) => standard.id) })
+        const outcome = await generateUnitQuestionBank({ courseId, chunks: selectedChunks, unit: selectedUnit, label: courseLabel, course: course ?? { code: courseLabel, title: courseLabel }, currentUnitPercent, practiceQuestionChunkIds: questionReferenceChunkIds, masteryStandardIds: matchingMasteryOutline?.standards.map((standard) => standard.id) })
         if (!outcome.ok || !outcome.artifact) return failGeneration(outcome.message ?? 'The question bank could not be generated.')
         setGenerationPhase('saving')
         await waitForGenerationProgress()

@@ -24,6 +24,11 @@ verified references carried by those generated artifacts.
 - Misconceptions or cautions only when supported.
 - A Mastery Map preview and selected/used/unused source coverage.
 
+Readable practice-question scenarios may appear as source-backed explanatory
+examples when they clarify a concept. Copied stems or answer choices and
+standalone question generation stay out of the Lecture Brief. Distractors are
+never treated as factual evidence.
+
 Every displayed claim keeps its exact source chunk id and exposes a Show source
 interaction. Empty conditional sections stay absent. Figures remain labeled
 not interpreted unless a separate consented vision path is implemented and
@@ -35,4 +40,3 @@ If Lecture Brief becomes its own model-generated artifact, it must receive a
 new registered `lecture-brief-v1` runtime spec, structured schema, server-side
 citation closure, validator, drift test, persistence migration, and disclosure.
 This document alone must never be treated as permission to add that model call.
-

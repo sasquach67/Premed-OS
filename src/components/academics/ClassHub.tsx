@@ -48,6 +48,7 @@ import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialo
 import { RevisedNotesPanel } from '@/components/academics/RevisedNotesPanel'
 import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
 import { generateStudyGuide, sourcesFor } from '@/lib/academics/generateStudyGuide'
+import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationIntake'
 import { LectureCapturePanel, type LectureDestination } from '@/components/academics/LectureCapturePanel'
 import { buildLectureBrief, buildLectureMasteryMap, sourceChunksForLecture } from '@/lib/academics/lectureWorkspace'
 import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
@@ -1358,7 +1359,7 @@ function FileRow({ file, ownership, unassigned, onReimport }: { file: AcademicFi
             startGenerationProgress(setGenerationPhase)
             try {
               const sources = sourcesFor(chunks, courseId, file.id)
-              const outcome = await generateStudyGuide({ courseId, chunks: sources, label: file.title })
+              const outcome = await generateStudyGuide({ courseId, chunks: sources, label: file.title, practiceQuestionChunkIds: practiceQuestionChunkIds([file], sources) })
               if (!outcome.ok) {
                 const description = outcome.message ?? 'This material could not be summarized.'
                 setGenerationPhase('error')

@@ -12,6 +12,7 @@ import { generateStudyGuide } from '@/lib/academics/generateStudyGuide'
 import { generateUnitMasteryOutline } from '@/lib/academics/generateUnitMasteryOutline'
 import { buildLectureGuideProposal } from '@/lib/academics/guideContract'
 import { approximateLectureTitle, buildLectureBrief, buildLectureMasteryMap, fileCoverageLabel, sourceChunksForLecture } from '@/lib/academics/lectureWorkspace'
+import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationIntake'
 import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialog'
 import { LectureCaptureGuide } from '@/components/academics/LectureCaptureGuide'
 import { DateField } from '@/components/common/DateField'
@@ -169,16 +170,17 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
     if (!lecture || building) return
     const ids = lectureSourceIds
     const chunks = readableChunks
+    const questionReferenceChunkIds = practiceQuestionChunkIds(lectureSources, chunks)
     setBuilding(true)
     setBuildPhase('guide')
     try {
-      const guide = await generateStudyGuide({ courseId, chunks, label: lecture.title })
+      const guide = await generateStudyGuide({ courseId, chunks, label: lecture.title, practiceQuestionChunkIds: questionReferenceChunkIds })
       if (!guide.ok || !guide.artifact) {
         toast({ title: 'Nothing was saved', description: guide.message ?? 'The lecture guide could not be generated.', tone: 'error' })
         return
       }
       setBuildPhase('mastery')
-      const mastery = await generateUnitMasteryOutline({ courseId, chunks, unit: lecture.title, label: lecture.title, scope: 'lecture' })
+      const mastery = await generateUnitMasteryOutline({ courseId, chunks, unit: lecture.title, label: lecture.title, scope: 'lecture', practiceQuestionChunkIds: questionReferenceChunkIds })
       if (!mastery.ok || !mastery.artifact) {
         toast({ title: 'Nothing was saved', description: mastery.message ?? 'The lecture Mastery Map could not be generated.', tone: 'error' })
         return

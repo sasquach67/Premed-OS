@@ -15,6 +15,7 @@ The Unit Mastery Outline is a source-grounded map for one unit. It preserves syl
 | `UMO-DEPTH` | Every saved objective must contain at least five distinct Understand bullets, two objective-specific Be able to do bullets, and one concrete Watch for bullet. If selected sources cannot support that depth, fail instead of padding or inventing. | invariant |
 | `UMO-GAPS` | If the source does not support the required sections or depth, do not invent content and do not save a partial objective. | invariant |
 | `UMO-CONCISE` | Keep each bullet concise enough to scan before studying; preserve source wording when it carries an official objective, and never reuse a generic application sentence across objectives. | tunable |
+| `UMO-PRACTICE-EVIDENCE` | Use supplied questions as evidence of observable tasks, representations, distinctions, and likely traps. Translate those patterns into concrete Be able to do and Watch for bullets without copying stems or treating distractors as facts. | invariant |
 
 The runtime artifact spec is `src/lib/generation/artifacts/unitMasteryOutline.v1.ts`. Its structured response has `title`, `unit`, and `standards[]`; each standard has `id`, `title`, `understand`, `beAbleToDo`, `watchFor`, and `sourceChunkIds`.
 

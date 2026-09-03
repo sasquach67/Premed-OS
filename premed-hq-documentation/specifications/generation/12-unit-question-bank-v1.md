@@ -13,6 +13,7 @@ The Unit Question Bank is source-grounded practice for one class and one unit. I
 | `UQB-STYLE` | Biology favors applied examples, methods and controls, and cross-standard integration. Psychology and interpretive courses favor situational application and careful concept identification. Use the course blueprint supplied in the request. | invariant |
 | `UQB-BALANCE` | Honor the requested current-unit and prior-unit integration mix. Biology defaults to 70% current-unit and 30% prior-unit integration; the student may adjust it. | tunable |
 | `UQB-UNIQUE` | Multiple-choice options must be distinct and exactly one answer must be correct. Short-answer questions still need a specific, gradeable answer. | invariant |
+| `UQB-REFERENCE-MODEL` | Treat every supplied question source—publisher practice, lecture-slide questions, worksheets, quizzes, exams, problem sets, or other course material—as assessment-pattern evidence regardless of brand. Model its cognitive move, difficulty, scenario type, representations, terminology, and distractor logic across the selected set; recombine those patterns with source-grounded concepts rather than copying the item. | invariant |
 | `UQB-NO-COPY` | Use assessment moves and source concepts, not copied wording, stems, or answer choices from supplied private assessment material. | invariant |
 | `UQB-GAPS` | Do not manufacture a question for a standard the source does not support. Return fewer questions rather than fill with general knowledge. | invariant |
 

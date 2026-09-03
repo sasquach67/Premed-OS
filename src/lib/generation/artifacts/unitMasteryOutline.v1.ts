@@ -28,6 +28,7 @@ export const UNIT_MASTERY_OUTLINE_V1: ArtifactSpec = {
     { id: 'UMO-DEPTH', kind: 'invariant', text: 'Every saved objective must contain at least five distinct Understand bullets, two objective-specific Be able to do bullets, and one concrete Watch for bullet. If selected sources cannot support that depth, fail instead of padding or inventing.' },
     { id: 'UMO-GAPS', kind: 'invariant', text: 'If the source does not support the required sections or depth, do not invent content and do not save a partial objective.' },
     { id: 'UMO-CONCISE', kind: 'tunable', text: 'Keep each bullet concise enough to scan before studying; preserve source wording when it carries an official objective, and never reuse a generic application sentence across objectives.' },
+    { id: 'UMO-PRACTICE-EVIDENCE', kind: 'invariant', text: 'Use supplied questions as evidence of observable tasks, representations, distinctions, and likely traps. Translate those patterns into concrete Be able to do and Watch for bullets without copying stems or treating distractors as facts.' },
   ],
   outputSchema: {
     type: 'object', required: ['title', 'unit', 'standards'], properties: {

@@ -83,7 +83,7 @@ function isStudyGuideContent(value: unknown): value is Pick<StudyGuideArtifact, 
     ))
 }
 
-export async function generateStudyGuide({ courseId, chunks, label, courseLens }: {
+export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [] }: {
   courseId: string
   topicId?: string
   chunks: SourceChunk[]
@@ -91,6 +91,8 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens }
   label: string
   /** Optional, reviewed course context; its sources must already be selected. */
   courseLens?: CourseLensGenerationContext
+  /** Selected passages containing supplied question examples. */
+  practiceQuestionChunkIds?: readonly string[]
 }): Promise<GenerateOutcome> {
   const sources = chunks
   if (!sources.length) {
@@ -121,6 +123,8 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens }
   if (!prepared.ok || !prepared.scopeId || !prepared.chunkIds) {
     return { ok: false, failure: 'provider-unavailable', message: prepared.message ?? 'Source material could not be prepared.' }
   }
+  const preparedIds = new Set(prepared.chunkIds)
+  const questionReferenceIds = [...new Set(practiceQuestionChunkIds.filter((id) => preparedIds.has(id)))]
 
   const syncedAssembly = assembleGenerationRequest({
     specId: 'study-guide-v1',
@@ -128,6 +132,9 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens }
     request: [
       `Topic: ${label}. Action: generate a study guide from the attached sources.`,
       courseLensInstruction(courseLens),
+      questionReferenceIds.length
+        ? `Reference-question chunk IDs: ${questionReferenceIds.join(', ')}. Use their source-supported scenarios, representations, and reasoning moves as teaching examples where they clarify a concept. Explain the lesson without copying stems or answer choices, and never treat a distractor as fact.`
+        : '',
     ].filter(Boolean).join('\n\n'),
   })
 
@@ -142,6 +149,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens }
     request: [
       `Topic: ${label}.`,
       courseLens ? 'Apply the supplied Course lens only within its selected evidence trace.' : '',
+      questionReferenceIds.length ? 'Use the marked question passages as source-backed explanatory examples, without copying their assessment wording.' : '',
     ].filter(Boolean).join(' '),
   })
 

@@ -41,6 +41,32 @@ export function selectedMaterialChunks(
     .flatMap((choice) => choice.chunks)
 }
 
+const QUESTION_SOURCE_LABEL = /\b(?:assessment|exam|grq|guided\s+reading|homework|practice|problem(?:s|\s+set)?|question(?:s|\s+bank)?|quiz|review\s+questions?|worksheet)\b/i
+const QUESTION_PASSAGE = /\?|(?:^|\n)\s*(?:(?:q(?:uestion)?\s*)?\d+[.):]|[a-e][.)])\s+|(?:^|\n)\s*(?:calculate|compare|determine|evaluate|explain|how|identify|interpret|predict|select|what|which|why)\b/im
+
+/**
+ * Identify selected passages that contain question examples. The signal is
+ * deliberately provider- and file-type-agnostic: a Pearson set, a GRQ, a
+ * lecture-slide checkpoint, and a pasted worksheet all receive the same role.
+ */
+export function practiceQuestionChunkIds(
+  files: readonly AcademicFile[],
+  chunks: readonly SourceChunk[],
+): string[] {
+  const byId = new Map(files.map((file) => [file.id, file]))
+  return [...new Set(chunks.filter((chunk) => {
+    const file = byId.get(chunk.fileId)
+    if (!file) return false
+    const sourceLabel = [file.title, file.fileName, file.notes, file.folderIntake?.category]
+      .filter(Boolean)
+      .join(' ')
+    return file.type === 'past-exam'
+      || file.folderIntake?.category === 'practice-problems'
+      || QUESTION_SOURCE_LABEL.test(sourceLabel)
+      || QUESTION_PASSAGE.test(chunk.content)
+  }).map((chunk) => chunk.id))]
+}
+
 /** A revised-notes baseline may only be an explicitly selected student record. */
 export function selectedNotesBaseline(
   choices: readonly MaterialGenerationChoice[],

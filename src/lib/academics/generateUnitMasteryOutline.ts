@@ -21,7 +21,7 @@ function failureFor(code: string): GenerateFailure {
   return 'provider-unavailable'
 }
 
-export async function generateUnitMasteryOutline({ courseId, chunks, unit, label, scope = 'unit' }: { courseId: string; chunks: SourceChunk[]; unit: string; label: string; scope?: 'lecture' | 'unit' | 'exam' }): Promise<UnitMasteryOutlineOutcome> {
+export async function generateUnitMasteryOutline({ courseId, chunks, unit, label, scope = 'unit', practiceQuestionChunkIds = [] }: { courseId: string; chunks: SourceChunk[]; unit: string; label: string; scope?: 'lecture' | 'unit' | 'exam'; practiceQuestionChunkIds?: readonly string[] }): Promise<UnitMasteryOutlineOutcome> {
   if (!chunks.length) return { ok: false, failure: 'no-sources', message: 'Select processed course material first. The mastery map stays empty rather than guessing.' }
   try {
     assertGenerationAllowed({ scope: 'academics', artifact: 'unit-mastery-outline', courseId, groundedIn: chunks.map((chunk) => chunk.id) })
@@ -30,11 +30,16 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
   }
   const prepared = await prepareGenerationSources(courseId, chunks)
   if (!prepared.ok || !prepared.scopeId || !prepared.chunkIds) return { ok: false, failure: 'provider-unavailable', message: prepared.message ?? 'Selected material could not be prepared.' }
+  const preparedIds = new Set(prepared.chunkIds)
+  const questionReferenceIds = [...new Set(practiceQuestionChunkIds.filter((id) => preparedIds.has(id)))]
   const assembled = assembleGenerationRequest({
     specId: 'unit-mastery-outline-v1', chunkIds: prepared.chunkIds, controls: { source_mode: 'SOURCE_ONLY' },
-    request: `Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Build the detailed mastery map from the selected sources. Preserve every explicit objective relevant to this scope and all distinct supported Understand, Be able to do, and Watch for points.`,
+    request: [
+      `Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Build the detailed mastery map from the selected sources. Preserve every explicit objective relevant to this scope and all distinct supported Understand, Be able to do, and Watch for points.`,
+      questionReferenceIds.length ? `Reference-question chunk IDs: ${questionReferenceIds.join(', ')}. Use their task patterns, representations, distinctions, and traps to make Be able to do and Watch for concrete. Do not copy stems, and never treat distractors as facts.` : '',
+    ].filter(Boolean).join('\n'),
   })
-  const result = await studyTools.generate({ action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline.` })
+  const result = await studyTools.generate({ action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline.${questionReferenceIds.length ? ' Use the marked question passages as task-pattern evidence without copying them.' : ''}` })
   if (!result.ok) return { ok: false, failure: failureFor(result.code), message: result.message }
   const artifact = validateMasteryOutline(result.data.artifact, assembled.chunkIds)
   if (!artifact) return { ok: false, failure: 'invalid-response', message: 'The mastery outline did not pass its source-trace and section checks. Nothing was saved.' }

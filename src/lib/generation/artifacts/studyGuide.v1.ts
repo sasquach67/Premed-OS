@@ -79,6 +79,11 @@ export const STUDY_GUIDE_V1: ArtifactSpec = {
       text: 'Conditional sections are omitted entirely when the source does not support them. '
         + 'An empty section rendered as a heading with nothing under it is worse than no section.',
     },
+    {
+      id: 'SG-PRACTICE-EXAMPLES',
+      kind: 'invariant',
+      text: 'When supplied questions instantiate a concept, use their source-supported scenario, representation, or reasoning move as an explanatory example in the relevant concept, process, or relationship section. Explain what the example teaches without copying its stem or answer choices and without turning the guide into a question bank.',
+    },
   ],
   outputSchema: {
     type: 'object',

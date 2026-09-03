@@ -24,6 +24,7 @@ document by `src/lib/generation/artifacts/studyGuide.v1.ts`.
 | `SG-11` | Visual grammar is consistent across the whole artifact. | invariant |
 | `SG-SPLIT` | MUST UNDERSTAND and MUST MEMORIZE must not collapse into two lists of the same items. Test each item: could a student who has memorized this still fail to use it? Then understand. Could a student who understands it still not produce it from memory? Then memorize. Items may legitimately appear in both, but if more than about a quarter do, the split is not being made. | invariant |
 | `SG-SECTIONS` | Conditional sections are omitted entirely when the source does not support them. An empty section rendered as a heading with nothing under it is worse than no section. | invariant |
+| `SG-PRACTICE-EXAMPLES` | When supplied questions instantiate a concept, use their source-supported scenario, representation, or reasoning move as an explanatory example in the relevant concept, process, or relationship section. Explain what the example teaches without copying its stem or answer choices and without turning the guide into a question bank. | invariant |
 
 ---
 
@@ -109,6 +110,7 @@ Final Synthesis integrates *after* it, and should connect concepts that were int
 | `SG-9` | If material is incomplete, mark the gap explicitly; never invent | invariant |
 | `SG-10` | Every major concept gets a **representation decision** (`06` §2) — bullets are not the default | tunable |
 | `SG-11` | Visual grammar is consistent across the whole artifact (`06` §8) | invariant |
+| `SG-PRACTICE-EXAMPLES` | When supplied questions instantiate a concept, use their source-supported scenario, representation, or reasoning move as an explanatory example in the relevant concept, process, or relationship section. Explain what the example teaches without copying its stem or answer choices and without turning the guide into a question bank. | invariant |
 
 ---
 
@@ -181,5 +183,7 @@ Recorded so a later version does not treat these as oversights:
   course. Whole-course synthesis is a different artifact with a different grounding problem.
 - **No spaced-repetition scheduling.** The guide does not create FSRS state. Flashcards generated
   *from* a guide do (`04` §6).
-- **No practice questions.** ACTIVE RECALL prompts are self-test, not assessment items. Practice
-  exams remain a separate artifact and remain restricted in MCAT scope.
+- **No standalone practice-question set.** ACTIVE RECALL prompts are self-test, not assessment
+  items. Supplied question scenarios and reasoning moves may still serve as source-grounded teaching
+  examples under `SG-PRACTICE-EXAMPLES`; generated practice exams remain a separate artifact and
+  remain restricted in MCAT scope.

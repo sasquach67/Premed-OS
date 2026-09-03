@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { AcademicFile, SourceChunk } from '@/lib/types'
 import {
   materialGenerationChoices,
+  practiceQuestionChunkIds,
   selectedMaterialChunks,
   selectedNotesBaseline,
 } from './materialGenerationIntake'
@@ -63,5 +64,39 @@ describe('material-generation intake selection', () => {
     expect(selectedNotesBaseline(choices, 'course-notes', ['course-notes'])).toBeUndefined()
     expect(selectedNotesBaseline(choices, 'my-notes', [])).toBeUndefined()
     expect(selectedNotesBaseline(choices, 'my-notes', ['my-notes'])?.file.id).toBe('my-notes')
+  })
+
+  it('recognizes question examples across publishers, slides, and generic files', () => {
+    const files = [
+      file('publisher', { title: 'Pearson practice questions' }),
+      file('slides', { title: 'Lecture 4 slides', type: 'lecture-slides' }),
+      file('grq', { title: 'Lesson 2 GRQ' }),
+      file('reading', { title: 'Chapter excerpt', type: 'reading' }),
+    ]
+    const chunks = [
+      chunk('publisher-q', 'publisher', 'Choose the best explanation for the experimental result.'),
+      chunk('slide-q', 'slides', 'Checkpoint: Which control rules out the alternative explanation?'),
+      chunk('grq-q', 'grq', 'Describe how the genotype changes the phenotype.'),
+      chunk('reading-text', 'reading', 'Gene expression connects transcription, RNA processing, and translation.'),
+    ]
+
+    expect(practiceQuestionChunkIds(files, chunks)).toEqual(['publisher-q', 'slide-q', 'grq-q'])
+  })
+
+  it('recognizes folder practice problems without relying on a branded title', () => {
+    const practice = file('folder-item', {
+      title: 'Week 3',
+      sourceType: 'folder-intake',
+      folderIntake: {
+        sourceId: 'folder',
+        proposalId: 'proposal',
+        displayPath: 'Unit 2/Week 3.pdf',
+        category: 'practice-problems',
+        placementState: 'confirmed',
+      },
+    })
+
+    expect(practiceQuestionChunkIds([practice], [chunk('folder-q', practice.id, 'Apply the course model to this case.')]))
+      .toEqual(['folder-q'])
   })
 })

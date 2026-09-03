@@ -10,7 +10,8 @@ vi.mock('@/lib/academics/syncGenerationSources', () => ({ prepareGenerationSourc
 vi.mock('@/lib/intelligence/studyTools', () => ({ studyTools: { generate: mocks.generate } }))
 
 import { generateUnitMasteryOutline } from './generateUnitMasteryOutline'
-import { generateUnitQuestionBank } from './generateUnitQuestionBank'
+import { generateStudyGuide } from './generateStudyGuide'
+import { generateUnitQuestionBank, referenceQuestionPhrases } from './generateUnitQuestionBank'
 
 const sources: SourceChunk[] = [
   { id: 'chunk-1', fileId: 'file-1', courseId: 'course-1', content: 'Current unit syllabus standard and evidence.', coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: 0 },
@@ -34,7 +35,7 @@ describe('unit resource generation callers', () => {
       }, citations: [],
     } })
 
-    const outcome = await generateUnitMasteryOutline({ courseId: 'course-1', chunks: sources, unit: 'Unit 2', label: 'BIOL 103' })
+    const outcome = await generateUnitMasteryOutline({ courseId: 'course-1', chunks: sources, unit: 'Unit 2', label: 'BIOL 103', practiceQuestionChunkIds: ['chunk-1'] })
 
     expect(outcome.ok).toBe(true)
     expect(outcome.artifact).toMatchObject({ courseId: 'course-1', unit: 'Unit 2', specId: 'unit-mastery-outline-v1', sourceChunkIds: ['chunk-1'] })
@@ -43,8 +44,28 @@ describe('unit resource generation callers', () => {
     expect(JSON.stringify(request)).not.toContain(sources[0].content)
     expect(request.systemPrompt).toContain('UMO-STANDARDS')
     expect(request.systemPrompt).toContain('UMO-DEPTH')
+    expect(request.systemPrompt).toContain('UMO-PRACTICE-EVIDENCE')
     expect(request.systemPrompt).toContain('at least five distinct Understand bullets')
+    expect(request.systemPrompt).toContain('Reference-question chunk IDs: chunk-1')
     expect(request.request).toContain('do not summarize a detailed outline')
+    expect(request.request).toContain('marked question passages as task-pattern evidence')
+  })
+
+  it('marks supplied question passages as teaching examples in a study guide', async () => {
+    mocks.generate.mockResolvedValue({ ok: true, data: {
+      artifact: { sections: [{ id: 'core-concepts', title: 'CORE CONCEPTS', blocks: [{ id: 'block-1', type: 'prose', text: { content: 'A control isolates the variable whose effect is being tested.' }, provenance: 'source', sourceRef: { fileId: 'file-1', chunkId: 'chunk-1', start: 0, end: 40 } }] }] },
+      citations: [], auditStatus: 'approved',
+    } })
+
+    const outcome = await generateStudyGuide({ courseId: 'course-1', chunks: sources, label: 'BIOL 103 · Unit 2', practiceQuestionChunkIds: ['chunk-1'] })
+
+    expect(outcome.ok).toBe(true)
+    const request = mocks.generate.mock.calls[0][0]
+    expect(request.systemPrompt).toContain('SG-PRACTICE-EXAMPLES')
+    expect(request.systemPrompt).toContain('Reference-question chunk IDs: chunk-1')
+    expect(request.systemPrompt).toContain('never treat a distractor as fact')
+    expect(request.request).toContain('marked question passages as source-backed explanatory examples')
+    expect(JSON.stringify(request)).not.toContain(sources[0].content)
   })
 
   it('passes the biology 70/30 control and closed mastery coverage contract', async () => {
@@ -58,15 +79,26 @@ describe('unit resource generation callers', () => {
       }, citations: [],
     } })
 
-    const outcome = await generateUnitQuestionBank({ courseId: 'course-1', chunks: sources, unit: 'Unit 2', label: 'BIOL 103', course: { code: 'BIOL 103', title: 'How Cells Function' }, currentUnitPercent: 50, masteryStandardIds: ['std-1', 'std-2'] })
+    const outcome = await generateUnitQuestionBank({ courseId: 'course-1', chunks: sources, unit: 'Unit 2', label: 'BIOL 103', course: { code: 'BIOL 103', title: 'How Cells Function' }, currentUnitPercent: 50, practiceQuestionChunkIds: ['chunk-1'], masteryStandardIds: ['std-1', 'std-2'] })
 
     expect(outcome.ok).toBe(true)
     expect(outcome.artifact).toMatchObject({ courseId: 'course-1', unit: 'Unit 2', currentUnitPercent: 50, integrationPercent: 50, specId: 'unit-question-bank-v1' })
     const request = mocks.generate.mock.calls[0][0]
     expect(request.systemPrompt).toContain('UQB-BALANCE')
+    expect(request.systemPrompt).toContain('UQB-REFERENCE-MODEL')
     expect(request.systemPrompt).toContain('UQB-NO-COPY')
     expect(request.systemPrompt).toContain('Mastery standard IDs to cover exactly: std-1, std-2')
+    expect(request.systemPrompt).toContain('Reference-question chunk IDs: chunk-1')
+    expect(request.request).toContain('marked question passages as assessment-pattern evidence')
     expect(JSON.stringify(request)).not.toContain(sources[1].content)
+  })
+
+  it('extracts recognizable supplied stems for the deterministic copy guard', () => {
+    const phrases = referenceQuestionPhrases([
+      { ...sources[0], content: 'Question 1: Which control would best isolate the effect of temperature?\nBackground context only.' },
+    ], ['chunk-1'])
+
+    expect(phrases).toContain('Question 1: Which control would best isolate the effect of temperature?')
   })
 
   it('returns an invalid-response outcome instead of saving a weak provider artifact', async () => {

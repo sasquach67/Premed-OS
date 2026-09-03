@@ -130,8 +130,8 @@ describe('lecture import and workspace', () => {
     const build = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Build Guide + Mastery'))!
     await act(async () => { build.click(); await Promise.resolve() })
     const saved = useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.id === 'lecture')!
-    expect(generationMocks.generateStudyGuide).toHaveBeenCalledWith(expect.objectContaining({ courseId, chunks: expect.arrayContaining([expect.objectContaining({ id: 'transcript-chunk' }), expect.objectContaining({ id: 'slides-chunk' })]) }))
-    expect(generationMocks.generateUnitMasteryOutline).toHaveBeenCalledWith(expect.objectContaining({ courseId, scope: 'lecture', chunks: expect.arrayContaining([expect.objectContaining({ id: 'transcript-chunk' }), expect.objectContaining({ id: 'slides-chunk' })]) }))
+    expect(generationMocks.generateStudyGuide).toHaveBeenCalledWith(expect.objectContaining({ courseId, chunks: expect.arrayContaining([expect.objectContaining({ id: 'transcript-chunk' }), expect.objectContaining({ id: 'slides-chunk' })]), practiceQuestionChunkIds: ['slides-chunk'] }))
+    expect(generationMocks.generateUnitMasteryOutline).toHaveBeenCalledWith(expect.objectContaining({ courseId, scope: 'lecture', chunks: expect.arrayContaining([expect.objectContaining({ id: 'transcript-chunk' }), expect.objectContaining({ id: 'slides-chunk' })]), practiceQuestionChunkIds: ['slides-chunk'] }))
     expect(saved.workspaceState).toBe('complete')
     expect(saved.studyGuide?.specId).toBe('study-guide-v1')
     expect(saved.selectedSourceFileIds).toEqual(expect.arrayContaining(['transcript', 'slides']))
