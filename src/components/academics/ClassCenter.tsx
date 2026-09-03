@@ -1557,7 +1557,7 @@ export function ClassCard({
         <div
           data-testid="class-card-action-slot"
           className={cn(
-            'relative mt-auto flex min-h-20 items-center border-t border-border',
+            'relative mt-auto flex min-h-18 items-center border-t border-border',
             compact && 'md:mt-0 md:min-h-12 md:border-l md:border-t-0 md:pl-4',
           )}
         >
@@ -1585,11 +1585,11 @@ export function ClassCard({
           )}
           <div
             data-testid="class-card-open-actions"
-            className="mt-2 flex items-center justify-end gap-2 md:pointer-events-none md:absolute md:inset-x-1 md:top-1/2 md:z-10 md:mt-0 md:h-16 md:-translate-y-1/2 md:rounded-xl md:border md:border-[var(--class-accent-45)] md:bg-card md:p-1 md:opacity-0 md:shadow-lg md:transition-opacity md:duration-150 md:group-focus/class:pointer-events-auto md:group-focus/class:opacity-100 md:group-hover/class:pointer-events-auto md:group-hover/class:opacity-100 md:focus-within:pointer-events-auto md:focus-within:opacity-100 motion-reduce:transition-none">
+            className="mt-2 flex items-center justify-end gap-2 md:pointer-events-none md:absolute md:inset-x-3 md:top-1/2 md:z-10 md:mt-0 md:grid md:h-14 md:-translate-y-1/2 md:grid-cols-[minmax(0,1fr)_2.75rem] md:items-center md:rounded-xl md:border md:border-[var(--class-accent-45)] md:bg-card md:p-1 md:opacity-0 md:shadow-lg md:transition-opacity md:duration-150 md:group-focus/class:pointer-events-auto md:group-focus/class:opacity-100 md:group-hover/class:pointer-events-auto md:group-hover/class:opacity-100 md:focus-within:pointer-events-auto md:focus-within:opacity-100 motion-reduce:transition-none">
             <Button
               size="sm"
               variant="outline"
-              className="h-9 flex-1 border-[var(--class-accent-75)] bg-[color-mix(in_srgb,var(--class-accent)_72%,transparent)] font-display font-extrabold text-white shadow-[0_8px_18px_-14px_var(--class-accent-75)] motion-safe:transition-[background-color,transform] hover:bg-[color-mix(in_srgb,var(--class-accent)_82%,transparent)] hover:text-white active:translate-y-px"
+              className="h-10 flex-1 border-[var(--class-accent-75)] bg-[color-mix(in_srgb,var(--class-accent)_72%,transparent)] font-display font-extrabold text-white shadow-[0_8px_18px_-14px_var(--class-accent-75)] motion-safe:transition-[background-color,transform] hover:bg-[color-mix(in_srgb,var(--class-accent)_82%,transparent)] hover:text-white active:translate-y-px"
               onClick={(event) => { event.stopPropagation(); onOpen() }}
             >
               <ArrowUpRight className="size-4 text-white" /> Open
@@ -1599,6 +1599,7 @@ export function ClassCard({
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="size-11"
                   aria-label="Class actions"
                   onClick={(event) => event.stopPropagation()}
                 >
