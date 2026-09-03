@@ -183,7 +183,7 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     expect(grid?.className).not.toContain('academics-class-grid--five')
   })
 
-  it('centers a shortened next-assignment label without changing its full accessible title', async () => {
+  it('gives a shortened next-assignment label the full left side without changing its accessible title', async () => {
     const seeded = structuredClone(createSeedData())
     const workspace = seeded.academics.classCenter.workspaces[0]
     if (!workspace) throw new Error('Expected a visible course')
@@ -198,8 +198,9 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     const next = container.querySelector<HTMLAnchorElement>('[data-testid="class-next-deadline"]')
     expect(next?.textContent).toContain('Read Ch. 4: Sensation & perception')
     expect(next?.getAttribute('title')).toBe(title)
-    expect(next?.className).toContain('grid-cols-[1rem_minmax(0,1fr)_1rem]')
-    expect(next?.className).toContain('text-center')
+    expect(next?.className).toContain('grid-cols-[minmax(0,1fr)_auto]')
+    expect(next?.className).toContain('text-left')
+    expect(next?.className).not.toContain('text-center')
   })
 
   it('opens a new syllabus import from the shared importFor=new route and clears it on cancel', async () => {
