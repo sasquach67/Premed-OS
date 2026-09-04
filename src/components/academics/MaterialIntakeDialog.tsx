@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ClipboardEvent, type ReactElement, type SyntheticEvent } from 'react'
-import { ClipboardPaste, FileText, FileUp, FolderOpen, ImagePlus, Maximize2, X } from 'lucide-react'
+import { ChevronDown, ClipboardPaste, FileText, FileUp, FolderOpen, Images, ImagePlus, Maximize2, X } from 'lucide-react'
 import { buildPastedExcerpt, MIN_PASTED_EXCERPT_CHARACTERS } from '@/lib/academics/pastedExcerpt'
 import { retainLocalMaterial } from '@/lib/academics/localMaterialFiles'
 import { extractDocumentText } from '@/lib/academics/documentText'
@@ -76,7 +76,7 @@ function PendingFilePreview({ file, previewUrl, onRemove }: PendingFile & { onRe
     if (image.naturalWidth && image.naturalHeight) setDimensions(`${image.naturalWidth} × ${image.naturalHeight}`)
   }
 
-  return <div className="overflow-hidden rounded-xl border border-border bg-muted/20">
+  return <div data-testid="pending-file-card" className="overflow-hidden rounded-xl border border-border bg-muted/20">
     <div className="flex min-w-0 items-center gap-3 p-2.5">
       {isImage && previewUrl
         ? <button type="button" aria-label={`Preview ${file.name}`} aria-expanded={expanded} onClick={() => setExpanded((value) => !value)} className="group relative size-16 shrink-0 overflow-hidden rounded-lg border border-border bg-background outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -94,6 +94,51 @@ function PendingFilePreview({ file, previewUrl, onRemove }: PendingFile & { onRe
     </div>
     {isImage && expanded && previewUrl && <div className="border-t border-border bg-background/60 p-3"><img src={previewUrl} alt={`Preview of ${file.name}`} onLoad={captureDimensions} className="mx-auto max-h-72 max-w-full rounded-lg object-contain" /></div>}
   </div>
+}
+
+function PendingFileBatch({ items, folderName, onRemove }: {
+  items: PendingFile[]
+  folderName?: string
+  onRemove: (index: number) => void
+}) {
+  const images = items.filter(({ file }) => file.type.startsWith('image/'))
+  const allScreenshots = images.length === items.length
+  const totalSize = items.reduce((sum, { file }) => sum + file.size, 0)
+
+  return <section aria-label="Files ready to add" className="overflow-hidden rounded-xl border border-border bg-muted/15">
+    <div className="p-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Images className="size-5" /></span>
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-sm font-extrabold">{items.length} {allScreenshots ? 'screenshots' : 'files'} selected</p>
+          <p className="mt-0.5 truncate text-xs font-semibold text-muted-foreground">{folderName ? `${folderName} · ` : ''}{formatFileSize(totalSize)} total</p>
+        </div>
+      </div>
+      {images.length > 0 && <div className="mt-3 flex items-center gap-1.5" aria-hidden="true">
+        {images.slice(0, 4).map(({ file, previewUrl }, index) => previewUrl
+          ? <img key={`${file.name}-${index}`} src={previewUrl} alt="" className="size-11 rounded-lg border border-border bg-background object-cover" />
+          : <span key={`${file.name}-${index}`} className="grid size-11 place-items-center rounded-lg border border-border bg-background text-primary"><ImagePlus className="size-4" /></span>)}
+        {images.length > 4 && <span className="grid size-11 place-items-center rounded-lg border border-border bg-background text-xs font-extrabold text-muted-foreground">+{images.length - 4}</span>}
+      </div>}
+    </div>
+    <details className="group border-t border-border">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 text-xs font-extrabold text-primary outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+        Review {items.length} files
+        <ChevronDown className="size-4 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+      </summary>
+      <div className="max-h-56 overflow-y-auto overscroll-contain border-t border-border bg-background/45">
+        {items.map(({ file }, index) => <div key={`${file.name}-${file.size}-${file.lastModified}-${index}`} className="flex min-w-0 items-center gap-2 border-b border-border/70 px-3 py-2 last:border-b-0">
+          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">{file.type.startsWith('image/') ? <ImagePlus className="size-3.5" /> : <FileText className="size-3.5" />}</span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-bold" title={file.name}>{file.name}</p>
+            <p className="truncate text-[11px] font-semibold text-muted-foreground" title={relativeMaterialPath(file)}>{pathBelowFolder(file) || formatFileSize(file.size)}</p>
+          </div>
+          <span className="shrink-0 text-[11px] font-semibold tabular-nums text-muted-foreground">{formatFileSize(file.size)}</span>
+          <button type="button" aria-label={`Remove ${file.name}`} onClick={() => onRemove(index)} className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><X className="size-3.5" /></button>
+        </div>)}
+      </div>
+    </details>
+  </section>
 }
 
 /** One local intake surface for files, clipboard screenshots, and exact pasted text. */
@@ -120,6 +165,7 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
   const canSaveText = text.trim().length >= MIN_PASTED_EXCERPT_CHARACTERS
   const files = pendingFiles.map((item) => item.file)
   const canSave = pendingFiles.length > 0 || canSaveText
+  const condensePendingFiles = Boolean(folderSummary) || pendingFiles.length > 4
 
   useEffect(() => {
     pendingFilesRef.current = pendingFiles
@@ -138,7 +184,15 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
     setPendingFiles([])
   }
 
-  function addFiles(next: Iterable<File>, source: 'upload' | 'paste' = 'upload') {
+  function removePendingFile(index: number) {
+    setPendingFiles((current) => {
+      const removed = current[index]
+      if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl)
+      return current.filter((_, candidate) => candidate !== index)
+    })
+  }
+
+  function addFiles(next: Iterable<File>, source: 'upload' | 'paste' = 'upload', previewLimit = Number.POSITIVE_INFINITY) {
     const additions = [...next]
     if (!additions.length) return
     setPendingFiles((current) => {
@@ -157,11 +211,11 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
         usedNames.add(name)
         return new File([file], name, { type: file.type, lastModified: capturedAt.getTime() + copy - 1 })
       })
-      const unique = prepared.flatMap((file) => {
+      const unique = prepared.flatMap((file, index) => {
         const identity = `${relativeMaterialPath(file)}:${file.size}:${file.lastModified}`
         if (known.has(identity)) return []
         known.add(identity)
-        return [{ file, previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : '' }]
+        return [{ file, previewUrl: file.type.startsWith('image/') && index < previewLimit ? URL.createObjectURL(file) : '' }]
       })
       return [...current, ...unique]
     })
@@ -176,7 +230,7 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
     const overLimit = Math.max(0, supported.length - accepted.length)
     const folderName = relativeMaterialPath(selected[0]).split('/').filter(Boolean)[0] || 'selected folder'
     setFolderSummary({ name: folderName, accepted: accepted.length, unsupported, overLimit })
-    addFiles(accepted)
+    addFiles(accepted, 'upload', 4)
   }
 
   function pasteImage(event: ClipboardEvent<HTMLButtonElement>) {
@@ -282,8 +336,9 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
 
   return <Dialog open={open} onOpenChange={(next) => { if (!saving) setOpen(next) }}>
     <DialogTrigger asChild>{trigger}</DialogTrigger>
-    <DialogContent className="max-w-xl bg-card">
-      <DialogHeader><DialogTitle>Add material</DialogTitle><DialogDescription>{lectureId ? 'Anything added here becomes a source for this lecture. ' : ''}Choose files or a folder, paste a screenshot, or paste textbook text. Text and scanned pages are read on this device. File bytes stay local; only readable source text is copied to your private server workspace after disclosure when you request an AI output.</DialogDescription></DialogHeader>
+    <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-xl grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden bg-card p-0">
+      <DialogHeader className="px-6 pb-4 pr-12 pt-6"><DialogTitle>Add material</DialogTitle><DialogDescription>{lectureId ? 'Anything added here becomes a source for this lecture. ' : ''}Choose files or a folder, paste a screenshot, or paste textbook text. Text and scanned pages are read on this device. File bytes stay local; only readable source text is copied to your private server workspace after disclosure when you request an AI output.</DialogDescription></DialogHeader>
+      <div data-testid="material-intake-scroll-region" className="min-h-0 overflow-y-auto overscroll-contain px-6 pb-5">
       <div className="grid gap-4">
         <input ref={inputRef} type="file" multiple accept={MATERIAL_FILE_ACCEPT} aria-label="Choose material files" className="sr-only" onChange={(event) => { addFiles(event.target.files ?? [], 'upload'); event.currentTarget.value = '' }} />
         <input ref={(node) => { folderInputRef.current = node; if (node) { node.webkitdirectory = true; node.setAttribute('directory', '') } }} type="file" multiple accept={MATERIAL_FILE_ACCEPT} aria-label="Choose a material folder" className="sr-only" onChange={(event) => { addFolderFiles(event.currentTarget.files ?? []); event.currentTarget.value = '' }} />
@@ -292,16 +347,17 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
           <button type="button" className="rounded-xl border border-dashed border-border bg-muted/25 p-4 text-left outline-none hover:border-primary/55 focus-visible:border-primary/55 focus-visible:ring-2 focus-visible:ring-ring" onClick={() => folderInputRef.current?.click()}><FolderOpen className="size-5 text-primary" /><p className="mt-2 font-bold">Folder</p><p className="mt-1 text-xs text-muted-foreground">Supported files inside</p></button>
           <button type="button" onPaste={pasteImage} onClick={(event) => event.currentTarget.focus()} className="rounded-xl border border-dashed border-border bg-muted/25 p-4 text-left outline-none hover:border-primary/55 focus-visible:border-primary/55 focus-visible:ring-2 focus-visible:ring-ring"><ImagePlus className="size-5 text-primary" /><p className="mt-2 font-bold">Paste a screenshot</p><p className="mt-1 text-xs text-muted-foreground">Focus, then ⌘/Ctrl + V</p></button>
         </div>
-        {folderSummary && <div role="status" className="rounded-xl border border-primary/25 bg-primary/5 px-3 py-2 text-xs font-semibold"><span className="text-foreground">{folderSummary.accepted} {folderSummary.accepted === 1 ? 'file' : 'files'} from {folderSummary.name}</span>{folderSummary.unsupported > 0 && <span className="ml-2 text-muted-foreground">· {folderSummary.unsupported} unsupported {folderSummary.unsupported === 1 ? 'file' : 'files'} skipped</span>}{folderSummary.overLimit > 0 && <span className="ml-2 text-muted-foreground">· {folderSummary.overLimit} over the 100-file limit skipped</span>}<span className="mt-1 block text-muted-foreground">Imported once. Choose the folder again when its files change.</span></div>}
-        {pendingFiles.length > 0 && <div className="grid gap-2" aria-label="Files ready to add">{pendingFiles.map(({ file, previewUrl }, index) => <PendingFilePreview key={`${file.name}-${file.size}-${file.lastModified}-${index}`} file={file} previewUrl={previewUrl} onRemove={() => setPendingFiles((current) => {
-          const removed = current[index]
-          if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl)
-          return current.filter((_, candidate) => candidate !== index)
-        })} />)}</div>}
+        {folderSummary && (folderSummary.unsupported > 0 || folderSummary.overLimit > 0) && <div role="status" className="rounded-xl border border-primary/25 bg-primary/5 px-3 py-2 text-xs font-semibold"><span className="text-foreground">{folderSummary.accepted} {folderSummary.accepted === 1 ? 'file' : 'files'} from {folderSummary.name}</span>{folderSummary.unsupported > 0 && <span className="ml-2 text-muted-foreground">· {folderSummary.unsupported} unsupported {folderSummary.unsupported === 1 ? 'file' : 'files'} skipped</span>}{folderSummary.overLimit > 0 && <span className="ml-2 text-muted-foreground">· {folderSummary.overLimit} over the 100-file limit skipped</span>}</div>}
+        {pendingFiles.length > 0 && (condensePendingFiles
+          ? <PendingFileBatch items={pendingFiles} folderName={folderSummary?.name} onRemove={removePendingFile} />
+          : <div className="grid gap-2" aria-label="Files ready to add">{pendingFiles.map(({ file, previewUrl }, index) => <PendingFilePreview key={`${file.name}-${file.size}-${file.lastModified}-${index}`} file={file} previewUrl={previewUrl} onRemove={() => removePendingFile(index)} />)}</div>)}
         <div className="border-t border-border pt-4"><p className="font-semibold">Or paste textbook text</p><p className="mt-1 text-xs text-muted-foreground">Only the excerpt you paste becomes a study source.</p><div className="mt-3 grid gap-3 sm:grid-cols-2"><div className="grid gap-1"><Label htmlFor="material-title">Material title <span className="text-muted-foreground">(optional)</span></Label><Input id="material-title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Chapter 4 reading" /></div><div className="grid gap-1"><Label htmlFor="material-section">Section <span className="text-muted-foreground">(optional)</span></Label><Input id="material-section" value={sectionLabel} onChange={(event) => setSectionLabel(event.target.value)} placeholder="4.2 Synaptic signaling" /></div></div><Textarea className="mt-3 min-h-36" value={text} onChange={(event) => setText(event.target.value)} placeholder="Paste the specific textbook passage, notes, or reading excerpt…" /><p className="mt-1 text-xs font-semibold text-muted-foreground">{text.trim().length} / {MIN_PASTED_EXCERPT_CHARACTERS} characters for a text source</p></div>
       </div>
-      {readingProgress && <div role="status" aria-live="polite" className="rounded-xl border border-border bg-muted/25 p-3"><div className="flex items-center justify-between gap-3 text-xs font-bold"><span className="truncate">{readingProgress.message}</span><span className="shrink-0 tabular-nums">{readingProgress.current}/{readingProgress.total}</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(4, Math.round(readingProgress.progress * 100))}%` }} /></div></div>}
-      <DialogFooter><Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button><Button onClick={() => void save()} disabled={!canSave || saving}><ClipboardPaste className="size-4" /> {saving ? `Reading ${readingProgress?.current ?? 1} of ${readingProgress?.total ?? (files.length || 1)}…` : 'Add material'}</Button></DialogFooter>
+      </div>
+      <div className="border-t border-border bg-card px-6 py-4">
+        {readingProgress && <div role="status" aria-live="polite" className="mb-3 rounded-xl border border-border bg-muted/25 p-3"><div className="flex items-center justify-between gap-3 text-xs font-bold"><span className="truncate">{readingProgress.message}</span><span className="shrink-0 tabular-nums">{readingProgress.current}/{readingProgress.total}</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(4, Math.round(readingProgress.progress * 100))}%` }} /></div></div>}
+        <DialogFooter><Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button><Button onClick={() => void save()} disabled={!canSave || saving}><ClipboardPaste className="size-4" /> {saving ? `Reading ${readingProgress?.current ?? 1} of ${readingProgress?.total ?? (files.length || 1)}…` : 'Add material'}</Button></DialogFooter>
+      </div>
     </DialogContent>
   </Dialog>
 }

@@ -102,6 +102,27 @@ describe('MaterialIntakeDialog clipboard intake', () => {
     expect(document.body.textContent).not.toContain('answer-key.zip')
   })
 
+  it('keeps a screenshot-heavy folder condensed inside a bounded scroll region', async () => {
+    await openDialog()
+    const folderInput = document.body.querySelector<HTMLInputElement>('input[aria-label="Choose a material folder"]')!
+    const screenshots = Array.from({ length: 8 }, (_, index) => {
+      const file = new File([`page ${index + 1}`], `Screenshot ${index + 1}.png`, { type: 'image/png', lastModified: index + 1 })
+      Object.defineProperty(file, 'webkitRelativePath', { value: `BIOL 103/Textbook/Screenshot ${index + 1}.png` })
+      return file
+    })
+    Object.defineProperty(folderInput, 'files', { configurable: true, value: screenshots })
+
+    await act(async () => folderInput.dispatchEvent(new Event('change', { bubbles: true })))
+
+    const dialog = document.body.querySelector<HTMLElement>('[role="dialog"]')!
+    const scrollRegion = document.body.querySelector<HTMLElement>('[data-testid="material-intake-scroll-region"]')!
+    expect(dialog.className).toContain('max-h-[calc(100dvh-2rem)]')
+    expect(scrollRegion.className).toContain('overflow-y-auto')
+    expect(document.body.textContent).toContain('8 screenshots selected')
+    expect(document.body.textContent).toContain('Review 8 files')
+    expect(document.body.querySelectorAll('[data-testid="pending-file-card"]')).toHaveLength(0)
+  })
+
   it('automatically attaches a newly added material to its lecture', async () => {
     useStore.getState().update((draft) => {
       draft.academics.classCenter.lectures.push({ id: 'lecture-1', courseId: 'course-1', title: 'Lecture 1', inputPath: 'pasted', transcriptFileId: 'transcript-1', processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds: ['transcript-1'], createdAt: 1, updatedAt: 1, order: 0 })
