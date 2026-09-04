@@ -4,6 +4,7 @@ import {
   AlertTriangle, Archive, ArrowLeft, ArrowUpRight, Atom, BarChart3, BookOpen, Brain, BriefcaseBusiness, Building2, Calculator, CalendarClock, CalendarDays,
   CheckCircle2, Circle, Code2, Coins, Dna, Dumbbell, Earth, Edit3, FlaskConical, FolderOpen, Gavel, GraduationCap, HeartPulse, Landmark, Languages, Leaf, Lightbulb, Mail, Microscope,
   MoreHorizontal, Music2, NotebookText, Palette, PenLine, Plus, Scale, Search, Speech, Stethoscope, Target, Telescope, Theater, Trees, UsersRound, Wrench, FileText,
+  ChevronDown, ChevronUp, GripVertical,
   Grid2X2, List, ListChecks, Loader2, TrendingUp,
   Trash2, Upload, Users, type LucideIcon,
 } from 'lucide-react'
@@ -659,10 +660,16 @@ function reorderClasses(draft: ClassCenterData, orderedVisibleIds: string[]) {
   if (firstVisibleIndex < 0) return
   const before = current.slice(0, firstVisibleIndex).filter((row) => !visible.has(row.courseId))
   const after = current.slice(firstVisibleIndex).filter((row) => !visible.has(row.courseId))
-  ;[...before, ...orderedVisible, ...after].forEach((row, index) => {
+  const reordered = [...before, ...orderedVisible, ...after]
+  reordered.forEach((row, index) => {
     row.order = index
     row.updatedAt = Date.now()
   })
+  // Store reconciliation normalizes workspace order from array position after
+  // every update. Updating only the numeric field therefore looks successful
+  // for one render, then snaps back. Keep the source array and its order fields
+  // in the same sequence so drag, buttons, hydration, and future sync agree.
+  draft.workspaces = reordered
 }
 
 export function ClassCenter({ archiveOnly = false, onFirstSyllabusClassCreated }: { archiveOnly?: boolean; onFirstSyllabusClassCreated?: () => void }) {
@@ -749,6 +756,7 @@ function ClassCenterDashboard({
   const [syllabusDraft, setSyllabusDraft] = useState<{ proposal: SyllabusProposal; files: File[] } | null>(null)
   const [syllabusReviewForm, setSyllabusReviewForm] = useState<(ClassFormState & { type: ClassWorkspaceType }) | null>(null)
   const [syllabusImportOpen, setSyllabusImportOpen] = useState(false)
+  const [reorderOpen, setReorderOpen] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   const view = searchParams.get('classView') === 'list' ? 'list' : 'cards'
   const setView = (nextView: 'cards' | 'list') => {
@@ -1222,6 +1230,16 @@ function ClassCenterDashboard({
     mutate((draft) => reorderClasses(draft, nextVisibleIds))
   }
 
+  function moveClassBy(courseId: string, offset: -1 | 1) {
+    const visibleIds = filtered.map((row) => row.id)
+    const from = visibleIds.indexOf(courseId)
+    const to = from + offset
+    if (from < 0 || to < 0 || to >= visibleIds.length) return
+    const nextVisibleIds = [...visibleIds]
+    ;[nextVisibleIds[from], nextVisibleIds[to]] = [nextVisibleIds[to], nextVisibleIds[from]]
+    mutate((draft) => reorderClasses(draft, nextVisibleIds))
+  }
+
   return (
     <div className="space-y-5">
       <div className="academics-filter-bar flex flex-col gap-3 px-0 py-2 lg:flex-row lg:items-center">
@@ -1265,6 +1283,11 @@ function ClassCenterDashboard({
           {!archiveOnly && (
             <div className="flex items-center gap-2">
               <Badge variant="outline">{filtered.length} active</Badge>
+              {filtered.length > 1 && (
+                <Button size="sm" variant="outline" onClick={() => setReorderOpen(true)}>
+                  <GripVertical className="size-4" /> Reorder
+                </Button>
+              )}
               <Button size="sm" onClick={openColdSyllabusImport}>
                 <Plus className="size-4" /> Add class
               </Button>
@@ -1272,18 +1295,17 @@ function ClassCenterDashboard({
           )}
         </CardHeader>
         <CardContent>
-          <div
-            data-testid="class-card-grid"
-            className={view === 'cards'
-              ? 'grid items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-4'
-              : 'space-y-2'}
-          >
-            {filtered.map((row) => (
+          {view === 'cards' ? (
+            <div
+              data-testid="class-card-grid"
+              className="grid items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-4"
+            >
+              {filtered.map((row) => (
               <ClassCard
                 key={row.id}
                 row={row}
                 data={data}
-                compact={view === 'list'}
+                compact={false}
                 dragging={draggedClassId === row.id}
                 dragOver={dragOverClassId === row.id && draggedClassId !== row.id}
                 onPreview={() => setPreviewCourseId(row.id)}
@@ -1329,8 +1351,63 @@ function ClassCenterDashboard({
                   }
                 })}
               />
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div data-testid="class-list" role="list" className="space-y-2">
+              {filtered.map((row) => (
+                <ClassListRow
+                  key={row.id}
+                  row={row}
+                  data={data}
+                  dragging={draggedClassId === row.id}
+                  dragOver={dragOverClassId === row.id && draggedClassId !== row.id}
+                  onPreview={() => setPreviewCourseId(row.id)}
+                  onOpen={() => navigate(`/academics/classes/${row.id}`)}
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = 'move'
+                    event.dataTransfer.setData('text/plain', row.id)
+                    setDraggedClassId(row.id)
+                  }}
+                  onDragOver={(event) => {
+                    if (!draggedClassId || draggedClassId === row.id) return
+                    event.preventDefault()
+                    event.dataTransfer.dropEffect = 'move'
+                    setDragOverClassId(row.id)
+                  }}
+                  onDragLeave={() => setDragOverClassId((current) => current === row.id ? null : current)}
+                  onDrop={(event) => {
+                    event.preventDefault()
+                    moveClass(row.id)
+                    setDraggedClassId(null)
+                    setDragOverClassId(null)
+                  }}
+                  onDragEnd={() => {
+                    setDraggedClassId(null)
+                    setDragOverClassId(null)
+                  }}
+                  onEdit={() => setEditor({ open: true, courseId: row.id, form: classToForm(row) })}
+                  onImport={() => { const next = new URLSearchParams(searchParams); next.set('importFor', row.id); setSearchParams(next) }}
+                  onDelete={() => {
+                    if (!window.confirm(`Delete ${row.courseCode || row.courseTitle}?`)) return
+                    let blobRefs: string[] = []
+                    updateAll((draft) => {
+                      draft.courses = draft.courses.filter((item) => item.id !== row.id)
+                      blobRefs = removeCourseCascade(draft.academics.classCenter, row.id).blobRefs
+                    })
+                    void Promise.allSettled(blobRefs.map((blobRef) => removeLocalBlob(blobRef)))
+                  }}
+                  onArchive={() => mutate((draft) => {
+                    const item = draft.workspaces.find((course) => course.courseId === row.id)
+                    if (item) {
+                      item.status = item.status === 'archived' ? 'active' : 'archived'
+                      item.updatedAt = Date.now()
+                    }
+                  })}
+                />
+              ))}
+            </div>
+          )}
           {!filtered.length && (
             <div className="py-10 text-center">
               <BookOpen className="mx-auto size-8 text-muted-foreground" />
@@ -1381,6 +1458,60 @@ function ClassCenterDashboard({
         onManual={() => { setSyllabusImportOpen(false); setSyllabusDraft(null); setEditor({ open: true, source: 'manual', form: emptyClassForm(semester) }) }}
       />
 
+      <Dialog open={reorderOpen} onOpenChange={setReorderOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Reorder classes</DialogTitle>
+            <p className="text-sm font-semibold text-muted-foreground">Set the order used in both Cards and List views for {semester}.</p>
+          </DialogHeader>
+          <div className="space-y-2" role="list" aria-label="Classes in display order">
+            {filtered.map((row, index) => (
+              <div
+                key={row.id}
+                role="listitem"
+                className="flex min-w-0 items-center gap-3 rounded-xl border border-border bg-muted/45 p-2.5"
+                style={cardAccentVars(row.color)}
+              >
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[color-mix(in_srgb,var(--class-accent)_14%,var(--card))] text-[var(--class-accent)]">
+                  <GripVertical className="size-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-display text-sm font-extrabold">{row.courseCode || row.nickname || 'Untitled class'}</p>
+                  <p className="truncate text-xs font-semibold text-muted-foreground">{row.courseTitle || 'Add class details'}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="size-9"
+                    aria-label={`Move ${row.courseCode || row.courseTitle} up`}
+                    disabled={index === 0}
+                    onClick={() => moveClassBy(row.id, -1)}
+                  >
+                    <ChevronUp className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="size-9"
+                    aria-label={`Move ${row.courseCode || row.courseTitle} down`}
+                    disabled={index === filtered.length - 1}
+                    onClick={() => moveClassBy(row.id, 1)}
+                  >
+                    <ChevronDown className="size-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setReorderOpen(false)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <CenterPeek
         open={Boolean(previewCourseId)}
         mode={previewMode}
@@ -1417,6 +1548,147 @@ function ClassCenterDashboard({
         })()}
       </CenterPeek>
 
+    </div>
+  )
+}
+
+function ClassListRow({
+  row, data, dragging, dragOver, onPreview, onOpen,
+  onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd, onEdit, onImport, onArchive, onDelete,
+}: {
+  row: ClassWorkspaceView
+  data: ClassCenterViewData
+  dragging: boolean
+  dragOver: boolean
+  onPreview: () => void
+  onOpen: () => void
+  onDragStart: (event: DragEvent<HTMLElement>) => void
+  onDragOver: (event: DragEvent<HTMLElement>) => void
+  onDragLeave: () => void
+  onDrop: (event: DragEvent<HTMLElement>) => void
+  onDragEnd: () => void
+  onEdit: () => void
+  onImport: () => void
+  onArchive: () => void
+  onDelete: () => void
+}) {
+  const stats = classStats(row.id, data)
+  const percent = coursePercent(row.id, data)
+  const nextTaskSummary = stats.nextDeadline?.title
+    ? classCardTaskSummary(stats.nextDeadline.title)
+    : 'No deadline scheduled'
+  const weeklySummary = stats.weeklyCourseworkTotal > 0
+    ? `${stats.weeklyCourseworkComplete}/${stats.weeklyCourseworkTotal} done this week`
+    : 'Week clear'
+
+  function openFromRow(event: MouseEvent<HTMLElement>) {
+    if ((event.target as HTMLElement).closest('button,a,[role="menuitem"]')) return
+    onPreview()
+  }
+
+  const rowContent = (
+    <div
+      data-testid="class-list-row"
+      draggable
+      onClick={openFromRow}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+      style={cardAccentVars(row.color)}
+      className={cn(
+        'group/class relative grid min-h-[76px] cursor-pointer items-center gap-3 overflow-hidden rounded-[13px] border border-[color-mix(in_srgb,var(--class-accent)_17%,var(--border))] bg-[linear-gradient(110deg,color-mix(in_srgb,var(--class-accent)_8%,var(--muted)),var(--card)_42%)] px-3 py-2.5 shadow-none transition-[border-color,background-color,box-shadow] hover:border-[var(--class-accent-45)] sm:grid-cols-[minmax(0,1.2fr)_5.5rem_minmax(150px,.8fr)_auto]',
+        dragging && 'scale-[0.99] opacity-55',
+        dragOver && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
+      )}
+    >
+      <span className="absolute inset-y-0 left-0 w-1 bg-[var(--class-accent)] opacity-80" aria-hidden="true" />
+
+      <button
+        type="button"
+        className="flex min-w-0 items-center gap-3 rounded-lg pl-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label={`Preview ${row.courseCode || row.nickname || 'Untitled class'} ${row.courseTitle}`}
+        onClick={(event) => { event.stopPropagation(); onPreview() }}
+      >
+        <ClassIcon
+          icon={row.icon}
+          className="size-9 rounded-xl bg-[color-mix(in_srgb,var(--class-accent)_14%,var(--card))] text-[var(--class-accent)]"
+        />
+        <div className="min-w-0">
+          <p className="truncate font-display text-sm font-extrabold">{row.courseCode || row.nickname || 'Untitled class'}</p>
+          <p className="truncate text-xs font-semibold text-muted-foreground">{row.courseTitle || row.nickname || 'Add class details'}</p>
+        </div>
+      </button>
+
+      <div className="flex items-center justify-between gap-3 pl-12 sm:block sm:pl-0 sm:text-center">
+        <span className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground sm:hidden">Grade</span>
+        <div>
+          <p className={cn('font-display text-base font-extrabold leading-none', gradeTone(row.grade))}>{row.grade || '—'}</p>
+          {percent != null && <p className="mt-1 text-[10px] font-bold tabular-nums text-muted-foreground">{percent}%</p>}
+        </div>
+      </div>
+
+      <div className="min-w-0 border-t border-border/70 pt-2 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+        {stats.nextDeadline ? (
+          <Link
+            to={`/academics/classes/${row.id}?classTab=assignments&view=agenda&assignment=${encodeURIComponent(stats.nextDeadline.id)}`}
+            title={stats.nextDeadline.title}
+            className="block min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <span className="block truncate text-xs font-extrabold text-foreground">{nextTaskSummary}</span>
+            <span className="mt-1 block truncate text-[10px] font-bold text-muted-foreground">
+              {stats.nextDeadline.dueDate ? assignmentDateLabel(stats.nextDeadline) : weeklySummary}
+            </span>
+          </Link>
+        ) : (
+          <div>
+            <p className="truncate text-xs font-extrabold text-foreground">{nextTaskSummary}</p>
+            <p className="mt-1 truncate text-[10px] font-bold text-muted-foreground">{weeklySummary}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-end gap-1 border-t border-border/70 pt-2 sm:border-0 sm:pt-0">
+        <Button size="sm" variant="outline" className="h-9" onClick={(event) => { event.stopPropagation(); onOpen() }}>
+          Open <ArrowUpRight className="size-3.5" />
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="size-9" aria-label="Class actions" onClick={(event) => event.stopPropagation()}>
+              <MoreHorizontal className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>{row.courseCode || 'Class'}</DropdownMenuLabel>
+            <DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}`}><ArrowUpRight className="size-4" /> Open class hub</Link></DropdownMenuItem>
+            <DropdownMenuItem onClick={onImport}><Upload className="size-4" /> Import syllabus</DropdownMenuItem>
+            {row.type === 'stem' && <DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=overview&captureLecture=1`}><CheckCircle2 className="size-4" /> Add lecture transcript</Link></DropdownMenuItem>}
+            <DropdownMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=materials`}><NotebookText className="size-4" /> Create study resources</Link></DropdownMenuItem>
+            <DropdownMenuItem onClick={onEdit}><Edit3 className="size-4" /> Class settings</DropdownMenuItem>
+            <DropdownMenuItem onClick={onArchive}><Archive className="size-4" /> {row.status === 'archived' ? 'Restore' : 'Archive'}</DropdownMenuItem>
+            <DropdownMenuItem onClick={onDelete} className="text-destructive"><Trash2 className="size-4" /> Delete</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  )
+
+  return (
+    <div role="listitem">
+      <ContextMenu>
+        <ContextMenuTrigger asChild>{rowContent}</ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onSelect={onOpen}><ArrowUpRight className="size-4" /> Open class hub</ContextMenuItem>
+          <ContextMenuItem onSelect={onImport}><Upload className="size-4" /> Import syllabus</ContextMenuItem>
+          {row.type === 'stem' && <ContextMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=overview&captureLecture=1`}><CheckCircle2 className="size-4" /> Add lecture transcript</Link></ContextMenuItem>}
+          <ContextMenuItem asChild><Link to={`/academics/classes/${row.id}?classTab=materials`}><NotebookText className="size-4" /> Create study resources</Link></ContextMenuItem>
+          <ContextMenuItem onSelect={onEdit}><Edit3 className="size-4" /> Class settings</ContextMenuItem>
+          <ContextMenuItem onSelect={onArchive}><Archive className="size-4" /> {row.status === 'archived' ? 'Restore' : 'Archive'}</ContextMenuItem>
+          <ContextMenuItem onSelect={onDelete} className="text-destructive"><Trash2 className="size-4" /> Delete</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     </div>
   )
 }

@@ -104,7 +104,61 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     await render('/academics?tab=class-center&classView=list')
 
     expect((container.querySelector('button[aria-label="List view"]') as HTMLButtonElement).getAttribute('data-state')).toBe('on')
-    expect(container.querySelector('.academics-class-card')?.className).toContain('min-h-0')
+    const list = container.querySelector('[data-testid="class-list"]')
+    expect(list).toBeTruthy()
+    expect(list?.getAttribute('role')).toBe('list')
+    expect(list?.querySelectorAll('[data-testid="class-list-row"]').length).toBeGreaterThan(0)
+    expect(list?.querySelector('.academics-class-card')).toBeNull()
+    expect(list?.textContent).not.toContain('Class materials')
+  })
+
+  it('lets students rearrange class cards and persists the chosen order', async () => {
+    const seeded = structuredClone(createSeedData())
+    const visibleWorkspaces = seeded.academics.classCenter.workspaces.slice(0, 3)
+      .map((workspace, index) => ({ ...workspace, semester: seeded.profile.startTerm, order: index }))
+    const visibleCourseIds = new Set(visibleWorkspaces.map((workspace) => workspace.courseId))
+    seeded.academics.classCenter.workspaces = visibleWorkspaces
+    seeded.courses = seeded.courses.filter((course) => visibleCourseIds.has(course.id))
+    useStore.getState().replaceAll(seeded)
+    await render()
+
+    const reorder = [...container.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Reorder')
+    expect(reorder).toBeTruthy()
+    await act(async () => reorder!.click())
+
+    const moveUpButtons = [...document.body.querySelectorAll<HTMLButtonElement>('button[aria-label^="Move "][aria-label$=" up"]')]
+    const beforeVisibleIds = moveUpButtons.map((button) => {
+      const code = button.getAttribute('aria-label')!.replace(/^Move /, '').replace(/ up$/, '')
+      return seeded.courses.find((course) => course.code === code)!.id
+    })
+    const moveUp = moveUpButtons.find((button) => !button.disabled)
+    expect(moveUp).toBeTruthy()
+    const movedCode = moveUp!.getAttribute('aria-label')!.replace(/^Move /, '').replace(/ up$/, '')
+    const movedCourseId = seeded.courses.find((course) => course.code === movedCode)!.id
+    const movedFrom = beforeVisibleIds.indexOf(movedCourseId)
+    expect(movedFrom).toBeGreaterThan(0)
+    await act(async () => moveUp!.click())
+
+    const visibleSet = new Set(beforeVisibleIds)
+    const orderedIds = [...useStore.getState().academics.classCenter.workspaces]
+      .sort((a, b) => a.order - b.order)
+      .map((workspace) => workspace.courseId)
+      .filter((id) => visibleSet.has(id))
+    expect(orderedIds[movedFrom - 1]).toBe(movedCourseId)
+    expect(orderedIds[movedFrom]).toBe(beforeVisibleIds[movedFrom - 1])
+
+    const partialize = useStore.persist.getOptions().partialize!
+    const persisted = partialize(useStore.getState())
+    useStore.getState().replaceAll(createInitialDataForMode(false))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: persisted, version: CURRENT_STORE_VERSION }))
+    await useStore.persist.rehydrate()
+
+    const hydratedIds = [...useStore.getState().academics.classCenter.workspaces]
+      .sort((a, b) => a.order - b.order)
+      .map((workspace) => workspace.courseId)
+      .filter((id) => visibleSet.has(id))
+    expect(hydratedIds).toEqual(orderedIds)
   })
 
   it('shows this week coursework completion as a horizontal done-versus-left bar', async () => {
