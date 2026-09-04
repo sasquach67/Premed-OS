@@ -161,6 +161,49 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     expect(hydratedIds).toEqual(orderedIds)
   })
 
+  it('makes the card grip the direct drag surface without turning the whole card into one', async () => {
+    const seeded = structuredClone(createSeedData())
+    const visibleWorkspaces = seeded.academics.classCenter.workspaces.slice(0, 3)
+      .map((workspace, index) => ({ ...workspace, semester: seeded.profile.startTerm, order: index }))
+    const visibleCourseIds = new Set(visibleWorkspaces.map((workspace) => workspace.courseId))
+    seeded.academics.classCenter.workspaces = visibleWorkspaces
+    seeded.courses = seeded.courses.filter((course) => visibleCourseIds.has(course.id))
+    useStore.getState().replaceAll(seeded)
+    await render()
+
+    const cards = [...container.querySelectorAll<HTMLElement>('.academics-class-card')]
+    const handles = [...container.querySelectorAll<HTMLElement>('[data-testid="class-card-drag-handle"]')]
+    expect(handles).toHaveLength(cards.length)
+    expect(handles.every((handle) => handle.draggable)).toBe(true)
+    expect(cards.every((card) => !card.draggable)).toBe(true)
+    expect(handles[0].getAttribute('title')).toBe('Drag to reorder')
+
+    const movedCourseId = visibleWorkspaces[2].courseId
+    const transfer = {
+      effectAllowed: 'none',
+      dropEffect: 'none',
+      setData: vi.fn(),
+      setDragImage: vi.fn(),
+    }
+    const dragStart = new Event('dragstart', { bubbles: true, cancelable: true })
+    Object.defineProperty(dragStart, 'dataTransfer', { value: transfer })
+    await act(async () => handles[2].dispatchEvent(dragStart))
+
+    const dragOver = new Event('dragover', { bubbles: true, cancelable: true })
+    Object.defineProperty(dragOver, 'dataTransfer', { value: transfer })
+    await act(async () => cards[0].dispatchEvent(dragOver))
+
+    const drop = new Event('drop', { bubbles: true, cancelable: true })
+    Object.defineProperty(drop, 'dataTransfer', { value: transfer })
+    await act(async () => cards[0].dispatchEvent(drop))
+
+    const orderedIds = [...useStore.getState().academics.classCenter.workspaces]
+      .sort((a, b) => a.order - b.order)
+      .map((workspace) => workspace.courseId)
+      .filter((id) => visibleCourseIds.has(id))
+    expect(orderedIds[0]).toBe(movedCourseId)
+  })
+
   it('shows this week coursework completion as a horizontal done-versus-left bar', async () => {
     const seeded = structuredClone(createSeedData())
     const courseId = seeded.academics.classCenter.workspaces[0]?.courseId

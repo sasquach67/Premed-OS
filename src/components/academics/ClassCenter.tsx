@@ -1734,7 +1734,6 @@ export function ClassCard({
 
   const card = (
     <Card
-      draggable
       role="button"
       tabIndex={0}
       aria-label={`Preview ${row.courseCode || row.nickname || 'Untitled class'} ${row.courseTitle}`}
@@ -1746,11 +1745,9 @@ export function ClassCard({
           onPreview()
         }
       }}
-      onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
-      onDragEnd={onDragEnd}
       style={cardAccentVars(row.color)}
       className={cn(
         'academics-class-card group/class relative h-full self-stretch cursor-pointer overflow-hidden shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none',
@@ -1770,12 +1767,30 @@ export function ClassCard({
           : 'flex min-h-0 flex-col gap-3 p-3',
       )}>
         <div className="flex min-w-0 items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="flex items-center gap-2 font-display text-[15.5px] font-bold leading-tight">
-              <span className="size-2 shrink-0 rounded-[3px] bg-[var(--class-accent)]" aria-hidden="true" />
-              <span>{row.courseCode || row.nickname || 'Untitled class'}</span>
-            </p>
-            <p className="mt-0.5 line-clamp-1 text-[10.5px] font-semibold text-muted-foreground">{row.courseTitle || row.nickname || 'Add class details'}</p>
+          <div className="flex min-w-0 items-start gap-1.5">
+            <span
+              draggable
+              data-testid="class-card-drag-handle"
+              title="Drag to reorder"
+              aria-hidden="true"
+              className="-ml-1 grid size-7 shrink-0 cursor-grab place-items-center rounded-md text-muted-foreground/70 transition-[background-color,color,opacity] hover:bg-[color-mix(in_srgb,var(--class-accent)_12%,transparent)] hover:text-[var(--class-accent)] active:cursor-grabbing motion-reduce:transition-none"
+              onClick={(event) => event.stopPropagation()}
+              onDragStart={(event) => {
+                const cardElement = event.currentTarget.closest<HTMLElement>('.academics-class-card')
+                if (cardElement) event.dataTransfer.setDragImage(cardElement, cardElement.clientWidth / 2, 24)
+                onDragStart(event)
+              }}
+              onDragEnd={onDragEnd}
+            >
+              <GripVertical className="size-4" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="flex items-center gap-2 font-display text-[15.5px] font-bold leading-tight">
+                <span className="size-2 shrink-0 rounded-[3px] bg-[var(--class-accent)]" aria-hidden="true" />
+                <span>{row.courseCode || row.nickname || 'Untitled class'}</span>
+              </p>
+              <p className="mt-0.5 line-clamp-1 text-[10.5px] font-semibold text-muted-foreground">{row.courseTitle || row.nickname || 'Add class details'}</p>
+            </div>
           </div>
           <div className="shrink-0 text-right">
             <p className={cn('font-display text-lg font-extrabold leading-none', gradeTone(row.grade))}>{row.grade || '—'}</p>
