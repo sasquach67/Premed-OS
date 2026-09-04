@@ -21,8 +21,7 @@
  */
 import { assembleGenerationRequest } from '@/lib/generation'
 import { assertGenerationAllowed, GenerationNotAllowedError, generatedTitle } from '@/lib/academics/generationPolicy'
-import { prepareGenerationSources } from '@/lib/academics/syncGenerationSources'
-import { studyTools } from '@/lib/intelligence/studyTools'
+import { generateWithSourceRecovery, prepareGenerationSources } from '@/lib/academics/syncGenerationSources'
 import type { SourceChunk } from '@/lib/types'
 import { courseLensInstruction, type CourseLensGenerationContext } from '@/lib/academics/courseLens'
 import type { StudyGuideArtifact } from '@/lib/generation/schemas/studyGuide.v1'
@@ -138,7 +137,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
     ].filter(Boolean).join('\n\n'),
   })
 
-  const result = await studyTools.generate({
+  const result = await generateWithSourceRecovery(courseId, sources, {
     action: 'generate',
     courseId,
     topicId: prepared.scopeId,

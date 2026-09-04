@@ -7,7 +7,10 @@ const mocks = vi.hoisted(() => ({
   prepareVisuals: vi.fn(),
 }))
 
-vi.mock('@/lib/academics/syncGenerationSources', () => ({ prepareGenerationSources: mocks.prepare }))
+vi.mock('@/lib/academics/syncGenerationSources', () => ({
+  prepareGenerationSources: mocks.prepare,
+  generateWithSourceRecovery: (_courseId: string, _chunks: unknown[], request: unknown) => mocks.generate(request),
+}))
 vi.mock('@/lib/intelligence/studyTools', () => ({ studyTools: { generate: mocks.generate } }))
 vi.mock('@/lib/academics/questionBankVisualSources', () => ({ prepareQuestionBankVisualSources: mocks.prepareVisuals }))
 

@@ -4,6 +4,9 @@ import {
   studySourceFingerprint,
   studySourceSyncKey,
   studyTools,
+  type GeneratedStudyToolArtifact,
+  type GenerateRequest,
+  type StudyToolResponse,
   type StudySourceInput,
 } from '@/lib/intelligence/studyTools'
 import type { SourceChunk } from '@/lib/types'
@@ -138,6 +141,16 @@ export interface GenerationSourcePreparation {
   message?: string
 }
 
+export interface GenerationSourceOptions {
+  artifact?: string
+  forceSync?: boolean
+}
+
+interface GenerationSourceTools {
+  syncSources(request: Parameters<typeof studyTools.syncSources>[0]): ReturnType<typeof studyTools.syncSources>
+  generate(request: GenerateRequest): Promise<StudyToolResponse<GeneratedStudyToolArtifact>>
+}
+
 export function sourceScopeForGeneration(chunks: readonly SourceChunk[]): string {
   const topicIds = [...new Set(chunks.map((chunk) => chunk.topicId).filter((id): id is string => Boolean(id)))]
   return topicIds.length === 1 && chunks.every((chunk) => chunk.topicId === topicIds[0])
@@ -173,7 +186,8 @@ export function generationSourceLimitMessage(chunkCount: number, artifact?: stri
 export async function prepareGenerationSources(
   courseId: string,
   chunks: readonly SourceChunk[],
-  options: { artifact?: string } = {},
+  options: GenerationSourceOptions = {},
+  tools: GenerationSourceTools = studyTools,
 ): Promise<GenerationSourcePreparation> {
   const sources = generationSourceInputs(chunks)
   if (!sources.length) return { ok: false, message: 'Select processed course material first.' }
@@ -196,8 +210,8 @@ export async function prepareGenerationSources(
   const scopeId = sourceScopeForGeneration(chunks)
   const key = studySourceSyncKey(courseId, scopeId)
   const fingerprint = studySourceFingerprint(sources)
-  if (typeof localStorage === 'undefined' || localStorage.getItem(key) !== fingerprint) {
-    const result = await studyTools.syncSources({
+  if (options.forceSync || typeof localStorage === 'undefined' || localStorage.getItem(key) !== fingerprint) {
+    const result = await tools.syncSources({
       action: 'sync-sources',
       courseId,
       topicId: scopeId,
@@ -209,4 +223,32 @@ export async function prepareGenerationSources(
   }
 
   return { ok: true, scopeId, chunkIds: sources.map((source) => source.chunkId) }
+}
+
+/**
+ * A browser receipt can outlive its private server mirror (for example after
+ * source deletion, a database reset, or expiry). If generation proves the
+ * mirror is missing, rebuild it once from the still-canonical local passages
+ * and replay the exact request. Other failures are never retried here.
+ */
+export async function generateWithSourceRecovery(
+  courseId: string,
+  chunks: readonly SourceChunk[],
+  request: GenerateRequest,
+  options: GenerationSourceOptions = {},
+  tools: GenerationSourceTools = studyTools,
+): Promise<StudyToolResponse<GeneratedStudyToolArtifact>> {
+  const first = await tools.generate(request)
+  if (first.ok || first.code !== 'no-sources') return first
+
+  const refreshed = await prepareGenerationSources(courseId, chunks, { ...options, forceSync: true }, tools)
+  if (!refreshed.ok || !refreshed.scopeId || !refreshed.chunkIds) {
+    return { ok: false, code: 'unavailable', message: refreshed.message ?? 'Source material could not be restored.' }
+  }
+
+  return tools.generate({
+    ...request,
+    topicId: refreshed.scopeId,
+    chunkIds: refreshed.chunkIds,
+  })
 }

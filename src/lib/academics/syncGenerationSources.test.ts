@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   CLASS_MATERIAL_SCOPE,
+  generateWithSourceRecovery,
   generationSourceInputs,
   generationSourceLimitMessage,
   selectGenerationSourceChunks,
@@ -40,6 +41,39 @@ describe('generation source preparation', () => {
 
   it('allows a question bank to review a full selected corpus', () => {
     expect(generationSourceLimitMessage(549, 'unit-question-bank')).toBeUndefined()
+  })
+
+  it('repairs a missing server mirror and retries generation once', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const source = chunk()
+    const request = {
+      action: 'generate' as const,
+      courseId: 'course-1',
+      topicId: CLASS_MATERIAL_SCOPE,
+      chunkIds: ['chunk-1'],
+      specId: 'study-guide-v1',
+      specHash: 'spec-hash',
+      systemPrompt: 'Use only the supplied source.',
+      request: 'Build the lecture guide.',
+    }
+    const tools = {
+      syncSources: vi.fn().mockResolvedValue({ ok: true, data: { synced: 1 } }),
+      generate: vi.fn()
+        .mockResolvedValueOnce({ ok: false, code: 'no-sources', message: 'No synced source material is available for this topic.' })
+        .mockResolvedValueOnce({ ok: true, data: { artifact: {}, citations: [], auditStatus: 'approved' } }),
+    }
+
+    localStorage.setItem('unrelated', 'keep')
+    const outcome = await generateWithSourceRecovery('course-1', [source], request, {}, tools)
+
+    expect(outcome.ok).toBe(true)
+    expect(tools.syncSources).toHaveBeenCalledTimes(1)
+    expect(tools.generate).toHaveBeenCalledTimes(2)
+    expect(tools.generate.mock.calls[1][0]).toMatchObject({
+      topicId: CLASS_MATERIAL_SCOPE,
+      chunkIds: ['chunk-1'],
+    })
+    expect(localStorage.getItem('unrelated')).toBe('keep')
   })
 
   it('selects a context-safe, source-balanced pass while leaving the full packet untouched', () => {
