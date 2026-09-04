@@ -240,6 +240,11 @@ describe('lecture import and workspace', () => {
     expect(container.querySelector('input[placeholder="Search exact words across transcript and sources"]')).toBeTruthy()
     expect(container.textContent).toContain('Find class remarks')
     expect(container.textContent).toContain('configured external AI provider')
+    const catalogRecord = container.querySelector<HTMLElement>('[data-lecture-actions="complete"]')!
+    expect(catalogRecord.querySelector('button[aria-label="Actions for Lecture 1 · Origins of Psychology"]')).toBeTruthy()
+    await act(async () => catalogRecord.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 12, clientY: 12 })))
+    const actions = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].map((item) => item.textContent?.trim())
+    expect(actions).toEqual(expect.arrayContaining(['Open lecture', 'Edit lecture', 'Delete lecture']))
   })
 
   it('shows the BIOL 103 concept map itself with source-backed stages and method branches', async () => {

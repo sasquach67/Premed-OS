@@ -50,6 +50,7 @@ import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidence
 import { generateStudyGuide, sourcesFor } from '@/lib/academics/generateStudyGuide'
 import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationIntake'
 import { LectureCapturePanel, type LectureDestination } from '@/components/academics/LectureCapturePanel'
+import { LectureRecordMenu } from '@/components/academics/LectureRecordMenu'
 import { buildLectureBrief, buildLectureMasteryMap, sourceChunksForLecture } from '@/lib/academics/lectureWorkspace'
 import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
@@ -376,11 +377,19 @@ function Overview({
               const generatedCount = data.files.filter((file) => file.lectureId === lecture.id && file.owner === 'generated').length
               const generatedTitle = lecture.aiTitle ?? (lecture.title.startsWith('Lecture #') ? undefined : lecture.title)
               const isActive = activeLecture?.id === lecture.id
-              return <button key={lecture.id} type="button" onClick={() => setSelectedLectureId(lecture.id)} className={cn('lecture-rail-entry', isActive && 'is-active')} aria-current={isActive ? 'true' : undefined}>
-                <b>Lecture {lectureNumber(lecture.id)}{generatedTitle ? ` · ${generatedTitle}` : ''}</b>
-                <span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'} · {lecture.transcriptFileId ? 'transcript saved' : 'no transcript'}{materialCount ? ` + ${materialCount} ${materialCount === 1 ? 'material' : 'materials'}` : ''}</span>
-                <i className="lecture-journal-status">{generatedCount ? 'study work' : lecture.transcriptFileId ? 'captured' : 'new'}</i>
-              </button>
+              return <LectureRecordMenu
+                key={lecture.id}
+                lecture={lecture}
+                onOpen={() => setSelectedLectureId(lecture.id)}
+                onOpenFullScreen={() => openLecture(lecture.id, 'overview')}
+                onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }}
+              >
+                <button type="button" onClick={() => setSelectedLectureId(lecture.id)} className={cn('lecture-rail-entry', isActive && 'is-active')} aria-current={isActive ? 'true' : undefined}>
+                  <b>Lecture {lectureNumber(lecture.id)}{generatedTitle ? ` · ${generatedTitle}` : ''}</b>
+                  <span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'} · {lecture.transcriptFileId ? 'transcript saved' : 'no transcript'}{materialCount ? ` + ${materialCount} ${materialCount === 1 ? 'material' : 'materials'}` : ''}</span>
+                  <i className="lecture-journal-status">{generatedCount ? 'study work' : lecture.transcriptFileId ? 'captured' : 'new'}</i>
+                </button>
+              </LectureRecordMenu>
             }) : <div className="lecture-ledger-empty"><span aria-hidden="true" /><p>Your first transcript starts the journal.</p></div>}
           </div>
           <button type="button" className="lecture-rail-add" onClick={() => openLecture(undefined, 'transcript')}><Plus aria-hidden="true" /> Add today’s lecture</button>

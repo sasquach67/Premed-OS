@@ -347,6 +347,84 @@ describe('ClassHub approved Overview', () => {
     expect(document.body.textContent).toContain('Add lecture source')
   })
 
+  it('gives every saved lecture matching right-click and overflow actions for edit and recoverable delete', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    const center = seed.academics.classCenter
+    center.lectures.push({
+      id: 'lecture-actions', courseId: course.id, title: 'Lecture 1 · Cell signaling', inputPath: 'pasted',
+      transcriptFileId: 'lecture-actions-source', occurredOn: '2026-09-03', processingState: 'ready',
+      workspaceState: 'complete', selectedSourceFileIds: ['lecture-actions-source'], masteryMapId: 'lecture-actions-mastery',
+      createdAt: now, updatedAt: now, order: 0,
+    })
+    center.files.push({
+      id: 'lecture-actions-source', courseId: course.id, lectureId: 'lecture-actions', sourceType: 'paste',
+      title: 'Cell signaling transcript', type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready',
+      createdAt: now, updatedAt: now, order: 0,
+    })
+    center.generatedMasteryOutlines.push({
+      id: 'lecture-actions-mastery', courseId: course.id, lectureId: 'lecture-actions', scope: 'lecture', scopeId: 'lecture-actions',
+      title: 'Cell signaling mastery', unit: 'Lecture 1', specId: 'unit-mastery-outline-v1', specHash: 'actions', standards: [],
+      sourceChunkIds: [], createdAt: now, updatedAt: now, order: 0,
+    })
+    center.lectureFindings.push({
+      id: 'lecture-actions-finding', courseId: course.id, lectureId: 'lecture-actions', sourceChunkId: 'source-chunk',
+      quote: 'Cell signaling', timestamp: '01:00', label: 'Emphasis', detail: 'Know this pathway.',
+      createdAt: now, updatedAt: now, order: 0,
+    })
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={center} persons={seed.persons} /></ToastProvider></MemoryRouter>)
+    })
+
+    const card = container.querySelector<HTMLButtonElement>('button.lecture-rail-entry')!
+    await act(async () => card.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 12, clientY: 12 })))
+    const contextItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
+    for (const label of ['Open lecture', 'Open full screen', 'Edit lecture', 'Delete lecture']) {
+      expect(contextItems.some((item) => item.textContent?.trim() === label)).toBe(true)
+    }
+
+    const edit = contextItems.find((item) => item.textContent?.trim() === 'Edit lecture')!
+    await act(async () => edit.click())
+    const title = document.body.querySelector<HTMLInputElement>('input[aria-label="Lecture title"]')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(title, 'Lecture 1 · Receptor signaling')
+      title.dispatchEvent(new Event('input', { bubbles: true }))
+      title.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    const save = [...document.body.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Save changes')!
+    await act(async () => save.click())
+    expect(useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.id === 'lecture-actions')?.title).toBe('Lecture 1 · Receptor signaling')
+
+    const overflow = container.querySelector<HTMLButtonElement>('button[aria-label="Actions for Lecture 1 · Cell signaling"]')!
+    expect(overflow).toBeTruthy()
+    await act(async () => {
+      overflow.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }))
+      overflow.click()
+    })
+    const remove = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((item) => item.textContent?.trim() === 'Delete lecture')!
+    await act(async () => remove.click())
+    expect(document.body.textContent).toContain('Attached files will stay in Class Materials')
+    const confirm = [...document.body.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Delete lecture')!
+    await act(async () => confirm.click())
+
+    const deleted = useStore.getState().academics.classCenter
+    expect(deleted.lectures.some((lecture) => lecture.id === 'lecture-actions')).toBe(false)
+    expect(deleted.files.find((file) => file.id === 'lecture-actions-source')).toMatchObject({ lectureId: undefined })
+    expect(deleted.generatedMasteryOutlines.some((outline) => outline.id === 'lecture-actions-mastery')).toBe(false)
+    expect(deleted.lectureFindings.some((finding) => finding.id === 'lecture-actions-finding')).toBe(false)
+
+    const undo = [...document.body.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Undo')!
+    await act(async () => undo.click())
+    const restored = useStore.getState().academics.classCenter
+    expect(restored.lectures.some((lecture) => lecture.id === 'lecture-actions')).toBe(true)
+    expect(restored.files.find((file) => file.id === 'lecture-actions-source')?.lectureId).toBe('lecture-actions')
+    expect(restored.generatedMasteryOutlines.some((outline) => outline.id === 'lecture-actions-mastery')).toBe(true)
+    expect(restored.lectureFindings.some((finding) => finding.id === 'lecture-actions-finding')).toBe(true)
+  })
+
   it('makes the completed lecture workspace usable from the Class Hub with full screen still available', async () => {
     const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
     const course = seed.courses.find((item) => item.id === 'demo-course-biol103-current')!
