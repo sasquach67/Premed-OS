@@ -1,9 +1,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.110.2'
 
 const MAX_REQUEST_BYTES = 8 * 1024 * 1024
-const MAX_CHUNKS = 24
-const MAX_QUESTION_BANK_CHUNKS = 1_000
+const MAX_CHUNKS = 2_000
+const MAX_QUESTION_BANK_CHUNKS = 2_000
 const CHUNK_RETRIEVAL_BATCH_SIZE = 100
+const SOURCE_SYNC_BATCH_SIZE = 100
 const MAX_QUESTION_BANK_VISUALS = 24
 const MAX_QUESTION_BANK_VISUAL_BYTES = 4_500_000
 const MAX_AUDIO_BYTES = 4 * 1024 * 1024
@@ -46,7 +47,7 @@ const AI_BETA_RESERVATION_CENTS = {
   generate: 300,
   'term-report': 350,
 } as const
-const MAX_PROVIDER_SOURCE_CHARS = 48_000
+const MAX_PROVIDER_SOURCE_CHARS = 700_000
 // Opus receives the complete selected Question Bank corpus in one grounded
 // pass. This keeps the request inside its context window without silently
 // dropping passages or weakening source traceability.
@@ -106,10 +107,7 @@ Deno.serve(async (request) => {
       return failure(400, 'invalid-request', 'An unsupported source-sync purpose was supplied.')
     }
     const isQuestionBankSync = body.purpose === 'unit-question-bank'
-    const suppliedSources = validateSources(
-      body.sources,
-      isQuestionBankSync ? MAX_QUESTION_BANK_CHUNKS : MAX_CHUNKS,
-    )
+    const suppliedSources = validateSources(body.sources, isQuestionBankSync ? MAX_QUESTION_BANK_CHUNKS : MAX_CHUNKS)
     if (!suppliedSources) {
       return failure(400, 'invalid-request', 'Sources must use the typed source-scope contract.')
     }
@@ -134,7 +132,7 @@ Deno.serve(async (request) => {
         body.courseId,
         body.topicId,
         suppliedSources,
-        { embed: !isQuestionBankSync },
+        { embed: !isQuestionBankSync && suppliedSources.length <= 24 },
       )
       return json({ synced: suppliedSources.length })
     } catch (error) {
@@ -523,8 +521,10 @@ async function mirrorLocalSources(
     embedding: embeddings?.[index] ?? null,
     updated_at: new Date().toISOString(),
   }))
-  const { error } = await client.from('academic_source_chunks').upsert(rows, { onConflict: 'user_id,chunk_id' })
-  if (error) throw error
+  for (let index = 0; index < rows.length; index += SOURCE_SYNC_BATCH_SIZE) {
+    const { error } = await client.from('academic_source_chunks').upsert(rows.slice(index, index + SOURCE_SYNC_BATCH_SIZE), { onConflict: 'user_id,chunk_id' })
+    if (error) throw error
+  }
 }
 
 async function embedTexts(texts: string[]): Promise<number[][] | null> {

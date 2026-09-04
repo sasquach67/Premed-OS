@@ -147,6 +147,73 @@ describe('lecture import and workspace', () => {
     expect(container.querySelector('input[placeholder="Search exact words across transcript and sources"]')).toBeNull()
   })
 
+  it('builds a lecture from a large uploaded packet without making the student reduce it by hand', async () => {
+    const seed = structuredClone(createSeedData())
+    const courseId = seed.academics.classCenter.workspaces[0].courseId
+    const now = 10
+    seed.academics.classCenter.lectures.push({ id: 'large-lecture', courseId, title: 'Lecture 2 · Gene expression', inputPath: 'pasted', transcriptFileId: 'large-transcript', occurredOn: '2026-09-04', processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds: ['large-transcript', 'large-textbook'], createdAt: now, updatedAt: now, order: 0 })
+    seed.academics.classCenter.files.push(
+      { id: 'large-transcript', courseId, lectureId: 'large-lecture', sourceType: 'paste', title: 'Lecture transcript', type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready', createdAt: now, updatedAt: now, order: 0 },
+      { id: 'large-textbook', courseId, lectureId: 'large-lecture', sourceType: 'upload', title: 'Gene expression textbook pages', type: 'reading', linkedTopicIds: [], owner: 'course', processingStatus: 'ready', createdAt: now, updatedAt: now, order: 1 },
+    )
+    seed.academics.classCenter.sourceChunks.push(...Array.from({ length: 1123 }, (_, index) => ({
+      id: `large-chunk-${index}`,
+      fileId: index < 120 ? 'large-transcript' : 'large-textbook',
+      courseId,
+      content: index < 120
+        ? `Lecture passage ${index}: transcription connects DNA, RNA processing, and translation.`
+        : `Textbook passage ${index}: gene expression evidence and an illustrative cellular example.`,
+      coveredByKeyPoint: false,
+      createdAt: now,
+      updatedAt: now,
+      order: index,
+    })))
+    useStore.getState().replaceAll(seed)
+
+    generationMocks.generateStudyGuide.mockImplementation(async ({ chunks }: { chunks: Array<{ id: string; fileId: string; content: string }> }) => {
+      if (chunks.length > 2000) return { ok: false, message: `This selection contains ${chunks.length} passages, above the safe full-corpus ceiling.` }
+      const source = chunks[0]
+      return {
+        ok: true,
+        title: 'Generated · Gene expression study guide',
+        content: '## AT A GLANCE\nGene expression moves information from DNA through RNA to protein.',
+        specHash: 'large-guide-hash',
+        fileIds: [...new Set(chunks.map((chunk) => chunk.fileId))],
+        artifact: {
+          specId: 'study-guide-v1', specHash: 'large-guide-hash', courseId, topicId: '__class_material__',
+          sections: [{ id: 'at-a-glance', title: 'AT A GLANCE', blocks: [{ id: 'large-guide-block', type: 'prose', text: { content: 'Gene expression moves information from DNA through RNA to protein.' }, provenance: 'source', sourceRef: { fileId: source.fileId, chunkId: source.id, start: 0, end: source.content.length } }] }],
+        },
+      }
+    })
+    generationMocks.generateUnitMasteryOutline.mockImplementation(async ({ chunks }: { chunks: Array<{ id: string }> }) => {
+      if (chunks.length > 2000) return { ok: false, message: `This selection contains ${chunks.length} passages, above the safe full-corpus ceiling.` }
+      return {
+        ok: true,
+        artifact: {
+          courseId, lectureId: 'large-lecture', scope: 'lecture', scopeId: 'large-lecture', title: 'Generated · Gene expression mastery map', unit: 'Lecture 2 · Gene expression', specId: 'unit-mastery-outline-v1', specHash: 'large-mastery-hash', sourceChunkIds: [chunks[0].id],
+          standards: [{ id: 'large-objective', title: 'Explain gene expression', freeRecallCues: ['Without notes, explain gene expression from DNA to protein.'], understand: ['Explain the connected process.'], beAbleToDo: ['Predict the effect of a disruption.'], watchFor: ['Do not confuse transcription with translation.'], sourceChunkIds: [chunks[0].id], masteryState: 'not-started' }],
+        },
+      }
+    })
+
+    await render(courseId, 'large-lecture', 'transcript')
+    const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Continue to build preview'))!
+    await act(async () => continueButton.click())
+    expect(container.textContent).toContain('All 1,123 readable passages will be reviewed for this build')
+    const build = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Build Guide + Mastery'))!
+    await act(async () => { build.click(); await Promise.resolve() })
+
+    const guideCall = generationMocks.generateStudyGuide.mock.calls[0]?.[0]
+    const masteryCall = generationMocks.generateUnitMasteryOutline.mock.calls[0]?.[0]
+    expect(guideCall.chunks).toHaveLength(1123)
+    expect(masteryCall.chunks).toHaveLength(1123)
+    expect(guideCall.chunks.some((chunk: { fileId: string }) => chunk.fileId === 'large-transcript')).toBe(true)
+    expect(guideCall.chunks.some((chunk: { fileId: string }) => chunk.fileId === 'large-textbook')).toBe(true)
+    const saved = useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.id === 'large-lecture')!
+    expect(saved.workspaceState).toBe('complete')
+    expect(saved.selectedSourceFileIds).toEqual(['large-transcript', 'large-textbook'])
+  })
+
   it('does not mark a lecture complete or save a partial guide when generation fails', async () => {
     const seed = structuredClone(createSeedData())
     const courseId = seed.academics.classCenter.workspaces[0].courseId

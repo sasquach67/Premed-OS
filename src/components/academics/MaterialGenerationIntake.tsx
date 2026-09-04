@@ -23,7 +23,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialog'
 import { TranscriptImport } from '@/components/academics/TranscriptImport'
 import { applicableCourseLens } from '@/lib/academics/courseLens'
-import { generationSourceLimitMessage } from '@/lib/academics/syncGenerationSources'
+import { selectGenerationSourceChunks } from '@/lib/academics/syncGenerationSources'
 import { MAX_QUESTION_BANK_VISUAL_SOURCES, isQuestionBankVisualFile } from '@/lib/academics/questionBankVisualSources'
 import { GenerationProgress } from '@/components/academics/GenerationProgress'
 import { startGenerationProgress, waitForGenerationProgress, type GenerationPhase } from '@/lib/generation/progress'
@@ -123,20 +123,38 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
     MAX_QUESTION_BANK_VISUAL_SOURCES,
     selected.filter((choice) => isQuestionBankVisualFile(choice.file)).length,
   )
-  const questionReferenceChunkIds = practiceQuestionChunkIds(selected.map((choice) => choice.file), selectedChunks)
   const baseline = selectedNotesBaseline(choices, baselineFileId, effectiveSelectedFileIds)
+  const allQuestionReferenceChunkIds = practiceQuestionChunkIds(selected.map((choice) => choice.file), selectedChunks)
+  const preferredGenerationFileIds = [
+    ...(baselineFileId ? [baselineFileId] : []),
+    ...selected.filter((choice) => choice.file.type === 'transcript').map((choice) => choice.file.id),
+    ...lensSourceFileIds,
+  ]
+  const generationChunks = artifact === 'unit-question-bank'
+    ? selectedChunks
+    : selectGenerationSourceChunks(selectedChunks, {
+        preferredFileIds: preferredGenerationFileIds,
+        priorityChunkIds: allQuestionReferenceChunkIds,
+      })
+  const questionReferenceChunkIds = practiceQuestionChunkIds(selected.map((choice) => choice.file), generationChunks)
+  const generationChunkIds = new Set(generationChunks.map((chunk) => chunk.id))
+  const generationBaselineChunks = baseline?.chunks.filter((chunk) => generationChunkIds.has(chunk.id))
   const courseLens = artifact === 'study-guide' || artifact === 'study-outline'
-    ? applicableCourseLens(lens, selectedChunks, Object.fromEntries(choices.map((choice) => [choice.file.id, choice.file.title])))
+    ? applicableCourseLens(lens, generationChunks, Object.fromEntries(choices.map((choice) => [choice.file.id, choice.file.title])))
     : undefined
-  const sourceLimitMessage = generationSourceLimitMessage(selectedChunks.length, artifact)
   const fullCorpusMessage = artifact === 'unit-question-bank' && selectedChunks.length > 0
     ? `${selectedChunks.length} passages will be reviewed. Claude receives the full selected text corpus; the saved bank will cite only the passages it actually uses.${selectedVisualFileCount ? ` ${selectedVisualFileCount} selected image ${selectedVisualFileCount === 1 ? 'page' : 'pages'} will also receive a Claude visual pass.` : ''} Claude also checks official public assessment patterns on the web without copying them.`
     : undefined
+  const representativePassMessage = artifact !== 'unit-question-bank' && selectedChunks.length > generationChunks.length
+    ? `All ${selectedChunks.length.toLocaleString()} selected passages stay in Materials. This output will automatically use ${generationChunks.length} representative passages across the selected sources.`
+    : undefined
+  const fullPacketMessage = artifact !== 'unit-question-bank' && selectedChunks.length > 24
+    ? `All ${selectedChunks.length.toLocaleString()} selected passages will be reviewed for this output.`
+    : undefined
   const unitScopeRequired = artifact === 'unit-question-bank' || artifact === 'unit-mastery-outline'
-  const canGenerate = selectedChunks.length > 0
-    && !sourceLimitMessage
+  const canGenerate = generationChunks.length > 0
     && (!unitScopeRequired || Boolean(selectedUnit))
-    && (artifact !== 'revised-notes' || Boolean(baseline))
+    && (artifact !== 'revised-notes' || Boolean(baseline && generationBaselineChunks?.length))
 
   function toggle(fileId: string) {
     // A Revised Notes baseline is itself evidence. Keep it selected so the
@@ -153,10 +171,6 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
   }
 
   async function generate() {
-    if (sourceLimitMessage) {
-      toast({ title: 'Choose fewer sources', description: sourceLimitMessage, tone: 'error' })
-      return
-    }
     if (!canGenerate || busy || generationLock.current) return
     generationLock.current = true
     setBusy(true)
@@ -171,17 +185,17 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
 
     try {
       if (artifact === 'flashcards') {
-        const outcome = await generateFlashcards({ courseId, chunks: selectedChunks, label: courseLabel })
+        const outcome = await generateFlashcards({ courseId, chunks: generationChunks, label: courseLabel })
         if (!outcome.ok || !outcome.cards || !outcome.specHash) return failGeneration(outcome.message ?? 'Flashcards could not be generated.')
         setGenerationPhase('saving')
         await waitForGenerationProgress()
         useStore.getState().update((draft) => {
           const decks = draft.academics.classCenter.generatedFlashcardDecks
-          decks.unshift({ id: uid(), courseId, title: `${courseLabel} flashcards`, sourceChunkIds: selectedChunks.map((chunk) => chunk.id), specId: 'flashcards-v1', specHash: outcome.specHash!, cards: outcome.cards!, createdAt: Date.now(), updatedAt: Date.now(), order: decks.length })
+          decks.unshift({ id: uid(), courseId, title: `${courseLabel} flashcards`, sourceChunkIds: generationChunks.map((chunk) => chunk.id), specId: 'flashcards-v1', specHash: outcome.specHash!, cards: outcome.cards!, createdAt: Date.now(), updatedAt: Date.now(), order: decks.length })
         })
         toast({ title: 'Flashcards created', description: 'Saved in Materials with the selected-source trace.' })
       } else if (artifact === 'study-guide' || artifact === 'study-outline') {
-        const outcome = await generateStudyGuide({ courseId, chunks: selectedChunks, label: courseLabel, courseLens, practiceQuestionChunkIds: questionReferenceChunkIds })
+        const outcome = await generateStudyGuide({ courseId, chunks: generationChunks, label: courseLabel, courseLens, practiceQuestionChunkIds: questionReferenceChunkIds })
         if (!outcome.ok) return failGeneration(outcome.message ?? 'The study material could not be generated.')
         setGenerationPhase('saving')
         await waitForGenerationProgress()
@@ -195,7 +209,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
         })
         toast({ title: artifact === 'study-outline' ? 'Study outline created' : 'Study guide generated', description: outcome.courseLens ? 'Saved with its selected-source and Course lens traces.' : 'Saved with its selected-source trace.' })
       } else if (artifact === 'unit-mastery-outline') {
-        const outcome = await generateUnitMasteryOutline({ courseId, chunks: selectedChunks, unit: selectedUnit, label: courseLabel, scope: masteryScope, practiceQuestionChunkIds: questionReferenceChunkIds })
+        const outcome = await generateUnitMasteryOutline({ courseId, chunks: generationChunks, unit: selectedUnit, label: courseLabel, scope: masteryScope, practiceQuestionChunkIds: questionReferenceChunkIds })
         if (!outcome.ok || !outcome.artifact) return failGeneration(outcome.message ?? 'The Mastery Map could not be generated.')
         setGenerationPhase('saving')
         await waitForGenerationProgress()
@@ -205,7 +219,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
         })
         toast({ title: 'Mastery Map created', description: 'Saved in Materials with its selected-source trace.' })
       } else if (artifact === 'unit-question-bank') {
-        const outcome = await generateUnitQuestionBank({ courseId, chunks: selectedChunks, unit: selectedUnit, label: courseLabel, course: course ?? { code: courseLabel, title: courseLabel }, currentUnitPercent, practiceQuestionChunkIds: questionReferenceChunkIds, masteryStandardIds: matchingMasteryOutline?.standards.map((standard) => standard.id), visualFiles: selected.map((choice) => choice.file) })
+        const outcome = await generateUnitQuestionBank({ courseId, chunks: generationChunks, unit: selectedUnit, label: courseLabel, course: course ?? { code: courseLabel, title: courseLabel }, currentUnitPercent, practiceQuestionChunkIds: questionReferenceChunkIds, masteryStandardIds: matchingMasteryOutline?.standards.map((standard) => standard.id), visualFiles: selected.map((choice) => choice.file) })
         if (!outcome.ok || !outcome.artifact) return failGeneration(outcome.message ?? 'The question bank could not be generated.')
         setGenerationPhase('saving')
         await waitForGenerationProgress()
@@ -222,7 +236,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
         })
         toast({ title: 'Question bank created', description: 'Saved in Materials with source, course-style, and integration traces.' })
       } else if (baseline) {
-        const outcome = await generateRevisedNotes({ courseId, chunks: selectedChunks, baselineFileId: baseline.file.id, baselineChunks: baseline.chunks, label: courseLabel })
+        const outcome = await generateRevisedNotes({ courseId, chunks: generationChunks, baselineFileId: baseline.file.id, baselineChunks: generationBaselineChunks, label: courseLabel })
         if (!outcome.ok || !outcome.artifact) {
           const description = outcome.message ?? 'The selected material could not be turned into source-linked notes.'
           setGenerationPhase('error')
@@ -280,7 +294,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
           <aside className="rounded-2xl border border-border bg-card p-3.5"><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-muted-foreground">Add sources</p><p className="mt-1 font-display text-sm font-extrabold">Stay in this output</p><p className="mt-1 text-xs font-semibold text-muted-foreground">Add individual files or a whole folder, then select exactly what this output may use.</p><div className="mt-4 grid gap-2"><MaterialIntakeDialog courseId={courseId} lectureId={lectureId} trigger={<Button size="sm" variant="outline" className="w-full"><FolderOpen className="size-4" /> Add files or folder</Button>} />{!lectureId && <TranscriptImport courseId={courseId} triggerClassName="w-full" />}</div><p className="mt-4 border-t border-border pt-3 text-xs font-semibold text-muted-foreground">Every saved output keeps its selected-source trace.</p></aside>
         </div>
         {generationPhase !== 'idle' && <div className="mt-4"><GenerationProgress phase={generationPhase} outputLabel={presentation.title} errorMessage={generationError} /></div>}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3"><p className={cn('text-sm font-semibold', sourceLimitMessage ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground')}>{sourceLimitMessage ?? (unitScopeRequired && !selectedUnit ? 'Name the course scope to keep this resource organized.' : artifact === 'revised-notes' && !baseline ? 'Choose your notes baseline to continue.' : fullCorpusMessage ?? (selectedChunks.length ? `${selected.length} selected ${selected.length === 1 ? 'source' : 'sources'} will ground this output.${courseLens ? ' Course lens included with its cited source trace.' : ''}` : 'Choose at least one ready source.'))}</p><Button onClick={() => void generate()} disabled={busy || !canGenerate}><Sparkles className="size-4" /> {busy ? 'Creating…' : presentation.action}</Button></div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3"><p className="text-sm font-semibold text-muted-foreground">{unitScopeRequired && !selectedUnit ? 'Name the course scope to keep this resource organized.' : artifact === 'revised-notes' && !baseline ? 'Choose your notes baseline to continue.' : fullCorpusMessage ?? representativePassMessage ?? fullPacketMessage ?? (selectedChunks.length ? `${selected.length} selected ${selected.length === 1 ? 'source' : 'sources'} will ground this output.${courseLens ? ' Course lens included with its cited source trace.' : ''}` : 'Choose at least one ready source.')}</p><Button onClick={() => void generate()} disabled={busy || !canGenerate}><Sparkles className="size-4" /> {busy ? 'Creating…' : presentation.action}</Button></div>
       </CardContent>
     </Card>
   )

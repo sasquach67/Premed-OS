@@ -30,10 +30,10 @@ describe('study-tools provider routing', () => {
   })
 
   it('keeps the larger question-bank corpus on the Anthropic-only path', () => {
-    expect(source).toContain('const MAX_QUESTION_BANK_CHUNKS = 1_000')
+    expect(source).toContain('const MAX_QUESTION_BANK_CHUNKS = 2_000')
     expect(source).toContain('const MAX_QUESTION_BANK_SOURCE_CHARS = 700_000')
     expect(source).toContain("const isQuestionBankSync = body.purpose === 'unit-question-bank'")
-    expect(source).toContain('{ embed: !isQuestionBankSync }')
+    expect(source).toContain('{ embed: !isQuestionBankSync && suppliedSources.length <= 24 }')
     expect(source).toContain('isQuestionBankGeneration ? MAX_QUESTION_BANK_CHUNKS : MAX_CHUNKS')
     expect(source).toContain('CHUNK_RETRIEVAL_BATCH_SIZE')
     expect(source).toContain('isQuestionBankGeneration && chunks.length !== chunkIds.length')
