@@ -139,6 +139,9 @@ export type StudyToolFailureCode =
   | 'unconfigured'
   | 'sign-in-required'
   | 'rate-limited'
+  | 'hourly-limit'
+  | 'daily-limit'
+  | 'weekly-budget-limit'
   | 'request-too-large'
   | 'anthropic-credit-exhausted'
   | 'no-sources'
@@ -179,6 +182,21 @@ export function isGapCheckResult(value: unknown): value is GapCheckResult {
   })
 }
 
+async function readFunctionErrorBody(context: (Response & { body?: unknown }) | undefined) {
+  let responseBody = context?.body
+  if (typeof context?.clone === 'function') {
+    try { responseBody = await context.clone().json() } catch { /* keep the client fallback */ }
+  }
+  return responseBody
+}
+
+function formatQuotaReset(resetAt: unknown) {
+  if (typeof resetAt !== 'string') return ''
+  const date = new Date(resetAt)
+  if (Number.isNaN(date.getTime())) return ''
+  return ` It resets ${date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}.`
+}
+
 export function createStudyToolsClient(client: FunctionClient | null = supabase) {
   async function invoke<T>(request: GapCheckRequest | TranscribeResponseRequest | GenerateRequest | TermReportRequest | SyncStudySourcesRequest | DeleteStudySourcesRequest): Promise<StudyToolResponse<T>> {
     if (!client) {
@@ -192,7 +210,22 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
     if (error) {
       const context = (error as { context?: Response & { body?: unknown } }).context
       const status = context?.status
-      if (status === 429) return { ok: false, code: 'rate-limited', message: 'AI usage limit reached. Try again later.' }
+      if (status === 429) {
+        const responseBody = await readFunctionErrorBody(context)
+        const serverError = isRecord(responseBody) && isRecord(responseBody.error) ? responseBody.error : undefined
+        const serverCode = serverError?.code
+        const reset = formatQuotaReset(serverError?.resetAt)
+        if (serverCode === 'hourly-limit') {
+          return { ok: false, code: 'hourly-limit', message: `Your hourly AI limit has been reached.${reset}` }
+        }
+        if (serverCode === 'daily-limit') {
+          return { ok: false, code: 'daily-limit', message: `Your daily AI limit has been reached.${reset}` }
+        }
+        if (serverCode === 'weekly-budget-limit') {
+          return { ok: false, code: 'weekly-budget-limit', message: `The shared beta AI budget has been used for this week.${reset}` }
+        }
+        return { ok: false, code: 'rate-limited', message: 'AI usage limit reached. Try again later.' }
+      }
       if (status === 402) return { ok: false, code: 'anthropic-credit-exhausted', message: 'Anthropic credits are exhausted. Add credits before generating another question bank.' }
       if (status === 413) return { ok: false, code: 'request-too-large', message: 'This request is too large for one study-tool action.' }
       if (status === 422) return { ok: false, code: 'no-sources', message: 'No synced source material is available for this topic.' }
@@ -200,10 +233,7 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
       // would tell the student the service is down when in fact it refused a
       // specific artifact and would accept another attempt immediately.
       if (status === 502) {
-        let responseBody = context?.body
-        if (typeof context?.clone === 'function') {
-          try { responseBody = await context.clone().json() } catch { /* keep the client fallback */ }
-        }
+        const responseBody = await readFunctionErrorBody(context)
         const serverCode = isRecord(responseBody)
           ? (isRecord(responseBody.error) ? responseBody.error.code : responseBody.code)
           : undefined

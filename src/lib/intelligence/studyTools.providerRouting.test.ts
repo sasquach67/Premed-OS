@@ -5,6 +5,7 @@ const source = readFileSync('supabase/functions/study-tools/index.ts', 'utf8')
 const generationStart = source.indexOf("if (body.action === 'generate')")
 const generationEnd = source.indexOf('\n  try {', generationStart)
 const generationBlock = source.slice(generationStart, generationEnd)
+const generationQuotaStart = source.lastIndexOf('const quota = await claimAIRequest(', generationStart)
 
 describe('study-tools provider routing', () => {
   it('routes Question Bank V1 to Anthropic only and fails closed', () => {
@@ -16,7 +17,8 @@ describe('study-tools provider routing', () => {
     expect(generationBlock).toContain('callAnthropicGeneration(')
     expect(generationBlock).not.toContain('callOpenAIAudit(')
     expect(generationBlock).not.toContain('using OpenAI fallback')
-    expect(generationBlock).toContain('anthropic-unconfigured')
+    expect(source).toContain('anthropic-unconfigured')
+    expect(source.indexOf('anthropic-unconfigured')).toBeLessThan(generationQuotaStart)
     expect(generationBlock).toContain('anthropic-credit-exhausted')
     expect(generationBlock).toContain('callOpenAIGeneration(')
     expect(generationBlock).toContain('callAnthropicAudit(')
@@ -33,7 +35,9 @@ describe('study-tools provider routing', () => {
     expect(source).toContain('const MAX_QUESTION_BANK_CHUNKS = 2_000')
     expect(source).toContain('const MAX_QUESTION_BANK_SOURCE_CHARS = 700_000')
     expect(source).toContain("const isQuestionBankSync = body.purpose === 'unit-question-bank'")
-    expect(source).toContain('{ embed: !isQuestionBankSync && suppliedSources.length <= 24 }')
+    expect(source).toContain('const shouldEmbed = !isQuestionBankSync && suppliedSources.length <= 24')
+    expect(source).toContain("shouldEmbed ? AI_BETA_RESERVATION_CENTS['sync-sources'] : 0")
+    expect(source).toContain('{ embed: shouldEmbed }')
     expect(source).toContain('isQuestionBankGeneration ? MAX_QUESTION_BANK_CHUNKS : MAX_CHUNKS')
     expect(source).toContain('CHUNK_RETRIEVAL_BATCH_SIZE')
     expect(source).toContain('isQuestionBankGeneration && chunks.length !== chunkIds.length')

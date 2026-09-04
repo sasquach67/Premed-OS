@@ -25,6 +25,14 @@ type Chunk = {
 type ProviderCitation = { fileId: string; chunkId: string; start: number; end: number }
 type QuestionBankVisualSource = { fileId: string; title: string; mimeType: string; size: number; dataBase64: string }
 type GenerationAuditStatus = 'approved' | 'skipped' | 'unavailable'
+type AIQuotaReason = 'allowed' | 'founder' | 'hourly-limit' | 'daily-limit' | 'weekly-budget-limit' | 'invalid-request'
+type AIQuotaClaim = {
+  allowed: boolean
+  reason: AIQuotaReason
+  resetAt: string | null
+  reservationCents: number
+  error: unknown
+}
 
 /**
  * `08` §2.5 / decision D-2 — the limit counts ARTIFACTS, not calls, so a
@@ -117,14 +125,15 @@ Deno.serve(async (request) => {
     if (totalSourceChars(suppliedSources) > sourceCharacterLimit) {
       return failure(413, 'request-too-large', 'Selected source material exceeds the safe full-corpus limit for one AI action.')
     }
-    const { allowed, error: limitError } = await claimAIRequest(
+    const shouldEmbed = !isQuestionBankSync && suppliedSources.length <= 24 && Boolean(Deno.env.get('OPENAI_EMBEDDING_API_KEY'))
+    const quota = await claimAIRequest(
       serviceClient,
       userData.user.id,
       1,
-      AI_BETA_RESERVATION_CENTS['sync-sources'],
+      shouldEmbed ? AI_BETA_RESERVATION_CENTS['sync-sources'] : 0,
     )
-    if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
-    if (!allowed) return failure(429, 'rate-limited', 'The weekly AI beta budget or your usage limit has been reached.')
+    if (quota.error) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
+    if (!quota.allowed) return quotaFailure(quota)
     try {
       await mirrorLocalSources(
         client,
@@ -132,7 +141,7 @@ Deno.serve(async (request) => {
         body.courseId,
         body.topicId,
         suppliedSources,
-        { embed: !isQuestionBankSync && suppliedSources.length <= 24 },
+        { embed: shouldEmbed },
       )
       return json({ synced: suppliedSources.length })
     } catch (error) {
@@ -147,19 +156,23 @@ Deno.serve(async (request) => {
     }
     const audio = validateAudioEvidence(body.audio)
     if (!audio) return failure(400, 'invalid-request', 'Use one supported audio recording no larger than 4 MB.')
-    const { allowed, error: limitError } = await claimAIRequest(
+    if (!Deno.env.get('OPENAI_API_KEY')) {
+      return failure(503, 'server-unconfigured', 'Audio transcription is not configured. You can still type your recall.')
+    }
+    const quota = await claimAIRequest(
       serviceClient,
       userData.user.id,
       AI_REQUEST_WEIGHT['transcribe-response'],
       AI_BETA_RESERVATION_CENTS['transcribe-response'],
     )
-    if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
-    if (!allowed) return failure(429, 'rate-limited', 'Hourly or daily AI usage limit reached.')
+    if (quota.error) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
+    if (!quota.allowed) return quotaFailure(quota)
     try {
       const transcript = await transcribeAudio(audio)
       return json({ transcript })
     } catch (error) {
       console.error('study-tools transcription failure', error instanceof Error ? error.message : 'unknown')
+      if (error instanceof ProviderRejectedError) await releaseAIReservation(serviceClient, userData.user.id, quota.reservationCents)
       return failure(503, 'provider-unavailable', 'Audio transcription is unavailable. You can still type your recall.')
     }
   }
@@ -188,14 +201,17 @@ Deno.serve(async (request) => {
     if (totalChunkChars(chunks) > MAX_PROVIDER_SOURCE_CHARS) {
       return failure(413, 'request-too-large', 'Selected term evidence is too large for one AI action.')
     }
-    const { allowed, error: limitError } = await claimAIRequest(
+    if (!Deno.env.get('OPENAI_API_KEY')) {
+      return failure(503, 'server-unconfigured', 'Term Report generation is not configured. Nothing was saved.')
+    }
+    const quota = await claimAIRequest(
       serviceClient,
       userData.user.id,
       AI_REQUEST_WEIGHT['term-report'],
       AI_BETA_RESERVATION_CENTS['term-report'],
     )
-    if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
-    if (!allowed) return failure(429, 'rate-limited', 'The weekly AI beta budget or your usage limit has been reached.')
+    if (quota.error) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
+    if (!quota.allowed) return quotaFailure(quota)
     try {
       const primary = await callOpenAIGeneration(
         'Create the Term Report from this reviewed evidence snapshot.',
@@ -225,6 +241,7 @@ Deno.serve(async (request) => {
       return json({ artifact: primary.value, citations: closed, auditStatus })
     } catch (error) {
       console.error('term report generation failure', error instanceof Error ? error.message : 'unknown')
+      if (error instanceof ProviderRejectedError) await releaseAIReservation(serviceClient, userData.user.id, quota.reservationCents)
       return failure(503, 'provider-unavailable', 'The AI provider is unavailable.')
     }
   }
@@ -256,7 +273,17 @@ Deno.serve(async (request) => {
   if (totalChunkChars(chunks) > sourceCharacterLimit) {
     return failure(413, 'request-too-large', 'Selected source material exceeds the safe full-corpus limit for one AI action.')
   }
-  const { allowed, error: limitError } = await claimAIRequest(
+  if (isGeneration && isQuestionBankGeneration && !Deno.env.get('ANTHROPIC_API_KEY')) {
+    return failure(503, 'anthropic-unconfigured', 'Claude question generation is not configured. Nothing was saved.')
+  }
+  if (isGeneration && !isQuestionBankGeneration && !Deno.env.get('OPENAI_API_KEY')) {
+    return failure(503, 'server-unconfigured', 'OpenAI generation is not configured. Nothing was saved.')
+  }
+  const gapProvider = (Deno.env.get('AI_PROVIDER') || 'openai').toLowerCase()
+  if (isGapCheck && !Deno.env.get(gapProvider === 'openai' ? 'OPENAI_API_KEY' : 'ANTHROPIC_API_KEY')) {
+    return failure(503, 'server-unconfigured', 'Gap Check generation is not configured. Nothing was saved.')
+  }
+  const quota = await claimAIRequest(
     serviceClient,
     userData.user.id,
     body.action === 'generate'
@@ -266,8 +293,8 @@ Deno.serve(async (request) => {
       ? AI_BETA_RESERVATION_CENTS.generate
       : AI_BETA_RESERVATION_CENTS['gap-check'],
   )
-  if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
-  if (!allowed) return failure(429, 'rate-limited', 'The weekly AI beta budget or your usage limit has been reached.')
+  if (quota.error) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
+  if (!quota.allowed) return quotaFailure(quota)
 
   /**
    * `generate` — the two-pass pipeline (`01` §5.1), Phase 2.
@@ -296,9 +323,6 @@ Deno.serve(async (request) => {
     try {
       const requestText = typeof body.request === 'string' ? body.request : 'Generate the artifact.'
       const isQuestionBank = isQuestionBankGeneration
-      if (isQuestionBank && !Deno.env.get('ANTHROPIC_API_KEY')) {
-        return failure(503, 'anthropic-unconfigured', 'Claude question generation is not configured. Nothing was saved.')
-      }
       const primaryProvider: 'anthropic' | 'openai' = isQuestionBank ? 'anthropic' : 'openai'
       const primary = isQuestionBank
         ? await callAnthropicGeneration(requestText, chunks, specPrompt, visualSources ?? [])
@@ -338,8 +362,10 @@ Deno.serve(async (request) => {
     } catch (error) {
       console.error('study-tools generate failure', error instanceof Error ? error.message : 'unknown')
       if (error instanceof AnthropicGenerationError && error.reason === 'credit-exhausted') {
+        await releaseAIReservation(serviceClient, userData.user.id, quota.reservationCents)
         return failure(402, 'anthropic-credit-exhausted', 'Anthropic credits are exhausted. Add credits before generating another question bank. Nothing was saved.')
       }
+      if (error instanceof ProviderRejectedError) await releaseAIReservation(serviceClient, userData.user.id, quota.reservationCents)
       return failure(503, 'provider-unavailable', 'The AI provider is unavailable.')
     }
   }
@@ -355,6 +381,7 @@ Deno.serve(async (request) => {
     return json(validated)
   } catch (error) {
     console.error('study-tools provider failure', error instanceof Error ? error.message : 'unknown')
+    if (error instanceof ProviderRejectedError) await releaseAIReservation(serviceClient, userData.user.id, quota.reservationCents)
     return failure(503, 'provider-unavailable', 'The AI provider is unavailable.')
   }
 })
@@ -477,17 +504,62 @@ function collectArtifactCitations(value: unknown, chunks: Chunk[]): ProviderCita
 }
 
 async function claimAIRequest(
-  serviceClient: ReturnType<typeof createClient>,
+  serviceClient: unknown,
   userId: string,
   weight: number,
   reservedCents: number,
-) {
-  const { data, error } = await serviceClient.rpc('claim_ai_request', {
+): Promise<AIQuotaClaim> {
+  const rpcClient = serviceClient as {
+    rpc: (name: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }>
+  }
+  const { data, error } = await rpcClient.rpc('claim_ai_request_v2', {
     p_user_id: userId,
     p_weight: weight,
     p_reserved_cents: reservedCents,
   })
-  return { allowed: data === true, error }
+  if (error || !isRecord(data)) {
+    return { allowed: false, reason: 'invalid-request', resetAt: null, reservationCents: 0, error: error ?? new Error('Invalid quota response') }
+  }
+  const reason = isAIQuotaReason(data.reason) ? data.reason : 'invalid-request'
+  return {
+    allowed: data.allowed === true,
+    reason,
+    resetAt: typeof data.reset_at === 'string' ? data.reset_at : null,
+    reservationCents: Number.isInteger(data.reservation_cents) ? Number(data.reservation_cents) : 0,
+    error: null,
+  }
+}
+
+async function releaseAIReservation(
+  serviceClient: unknown,
+  userId: string,
+  reservedCents: number,
+) {
+  if (reservedCents < 1) return
+  const rpcClient = serviceClient as {
+    rpc: (name: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }>
+  }
+  const { error } = await rpcClient.rpc('release_ai_reservation', {
+    p_user_id: userId,
+    p_reserved_cents: reservedCents,
+  })
+  if (error) console.error('study-tools quota release failure', error.message)
+}
+
+function isAIQuotaReason(value: unknown): value is AIQuotaReason {
+  return value === 'allowed' || value === 'founder' || value === 'hourly-limit'
+    || value === 'daily-limit' || value === 'weekly-budget-limit' || value === 'invalid-request'
+}
+
+function quotaFailure(quota: AIQuotaClaim) {
+  const message = quota.reason === 'hourly-limit'
+    ? 'Your hourly AI limit has been reached.'
+    : quota.reason === 'daily-limit'
+      ? 'Your daily AI limit has been reached.'
+      : quota.reason === 'weekly-budget-limit'
+        ? 'The shared beta AI budget has been used for this week.'
+        : 'AI usage could not be allowed for this request.'
+  return failure(429, quota.reason, message, { resetAt: quota.resetAt })
 }
 
 function totalSourceChars(sources: Array<{ content: string }>) {
@@ -635,7 +707,7 @@ async function callAnthropic(
       }],
     }),
   })
-  if (!result.ok) throw new Error(`Anthropic ${result.status}`)
+  if (!result.ok) throw new ProviderRejectedError(`Anthropic ${result.status}`)
   const payload = await result.json()
   const textBlocks = Array.isArray(payload?.content)
     ? payload.content.filter((block: { type?: string }) => block.type === 'text')
@@ -729,7 +801,7 @@ async function callOpenAIGeneration(response: string, chunks: Chunk[], specPromp
       text: { format: { type: 'json_object' } },
     }),
   })
-  if (!result.ok) throw new Error(`OpenAI generation ${result.status}`)
+  if (!result.ok) throw new ProviderRejectedError(`OpenAI generation ${result.status}`)
   const payload = await result.json() as Record<string, unknown>
   const value = parseJsonObject(openAIOutputText(payload))
   return { value, trustedCitations: collectArtifactCitations(value, chunks), webSearchRequests: 0 }
@@ -817,7 +889,14 @@ async function callAnthropicGeneration(
   return { value, trustedCitations: collectArtifactCitations(value, chunks), webSearchRequests }
 }
 
-class AnthropicGenerationError extends Error {
+class ProviderRejectedError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ProviderRejectedError'
+  }
+}
+
+class AnthropicGenerationError extends ProviderRejectedError {
   constructor(public readonly reason: 'credit-exhausted' | 'unavailable', status: number) {
     super(`Anthropic generation failed (${status}): ${reason}`)
     this.name = 'AnthropicGenerationError'
@@ -914,7 +993,7 @@ async function callOpenAI(response: string, chunks: Chunk[], image?: ImageEviden
       text: { format: { type: 'json_schema', name: 'gap_check', strict: true, schema: resultSchema } },
     }),
   })
-  if (!result.ok) throw new Error(`OpenAI ${result.status}`)
+  if (!result.ok) throw new ProviderRejectedError(`OpenAI ${result.status}`)
   const payload = await result.json() as Record<string, unknown>
   return { value: JSON.parse(openAIOutputText(payload)), trustedCitations: undefined }
 }
@@ -995,6 +1074,10 @@ function isText(value: unknown): value is string {
   return typeof value === 'string' && Boolean(value.trim())
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value))
+}
+
 type AudioEvidence = { name: string; mimeType: string; size: number; dataBase64: string }
 type ImageEvidence = { name: string; mimeType: string; size: number; dataBase64: string }
 type GapEvidence = { text?: string; audioTranscript?: string; image?: ImageEvidence }
@@ -1058,7 +1141,7 @@ async function transcribeAudio(audio: AudioEvidence) {
   const result = await fetch('https://api.openai.com/v1/audio/transcriptions', {
     method: 'POST', headers: { Authorization: `Bearer ${key}` }, body: form,
   })
-  if (!result.ok) throw new Error(`OpenAI transcription ${result.status}`)
+  if (!result.ok) throw new ProviderRejectedError(`OpenAI transcription ${result.status}`)
   const payload = await result.json()
   if (!isText(payload?.text)) throw new Error('No transcript returned')
   return payload.text.trim()
@@ -1153,6 +1236,6 @@ function json(body: unknown, status = 200) {
   })
 }
 
-function failure(status: number, code: string, message: string) {
-  return json({ error: { code, message } }, status)
+function failure(status: number, code: string, message: string, details: Record<string, unknown> = {}) {
+  return json({ error: { code, message, ...details } }, status)
 }

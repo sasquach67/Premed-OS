@@ -144,8 +144,11 @@ and the response reports `auditStatus: skipped` or `unavailable`.
 
 ## Rate limits
 
-`claim_ai_request` caps usage at **20/hour and 100/day per user**. Fine for one
-person; revisit before anyone else uses it.
+`claim_ai_request_v2` caps public-beta usage at **20/hour and 100/day per
+user**, plus the shared weekly reservation ceiling. It returns the exact limit
+and reset time to the app. The server-controlled founder identity bypasses
+those public limits without consuming the shared bucket; browser metadata or an
+email string cannot grant that access.
 
 ## Optional Google Drive materials folder
 
