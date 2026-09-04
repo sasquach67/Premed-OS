@@ -282,16 +282,22 @@ describe('Daily Assignments public interaction contract', () => {
 
     await act(async () => container.querySelector<HTMLButtonElement>('button[aria-label="Calendar view"]')!.click())
     const monthGrid = container.querySelector<HTMLElement>('[role="grid"]')
-    expect(monthGrid?.className).toContain('table-fixed')
+    expect(monthGrid?.className).toContain('grid')
     expect(monthGrid?.closest('section')?.className).toContain('overflow-hidden')
-    const beforeMonth = container.querySelector('.rdp-month_caption')?.textContent
-    const nextMonth = container.querySelector<HTMLButtonElement>('button[aria-label*="next month" i]')!
-    await act(async () => nextMonth.click())
-    expect(container.querySelector('.rdp-month_caption')?.textContent).not.toBe(beforeMonth)
+    const visibleWeeks = monthGrid?.querySelectorAll('[data-calendar-week]') ?? []
+    expect(visibleWeeks).toHaveLength(4)
+    expect([...visibleWeeks].every((week) => week.className.includes('h-'))).toBe(true)
+    expect(monthGrid?.querySelectorAll('[data-calendar-cell-surface="clear"]')).toHaveLength(28)
+    const dayCards = monthGrid?.querySelectorAll<HTMLButtonElement>('button[role="gridcell"]') ?? []
+    expect(dayCards).toHaveLength(28)
+    expect([...dayCards].every((card) => card.className.includes('focus-visible:ring-inset'))).toBe(true)
+    const beforeWindow = container.querySelector('.calendar-window-caption')?.textContent
+    const nextWindow = container.querySelector<HTMLButtonElement>('button[aria-label="Next four weeks"]')!
+    await act(async () => nextWindow.click())
+    expect(container.querySelector('.calendar-window-caption')?.textContent).not.toBe(beforeWindow)
 
     const inMonthDay = [...container.querySelectorAll<HTMLButtonElement>('button[data-day]')]
-      .find((button) => button.closest('[data-outside="true"]') == null
-        && button.querySelector('span')?.textContent?.trim() === '15')!
+      .find((button) => button.querySelector('span')?.textContent?.trim() === '15')!
     expect(inMonthDay).toBeTruthy()
     await act(async () => inMonthDay.click())
     expect(container.querySelector('aside')?.textContent).toContain('15')

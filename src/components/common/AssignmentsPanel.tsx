@@ -3,7 +3,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type ComponentProps,
   type FormEvent,
 } from 'react'
 import { flushSync } from 'react-dom'
@@ -41,7 +40,6 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Calendar, CalendarDayButton } from '@/components/ui/calendar'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
@@ -338,7 +336,7 @@ export function AssignmentsPanel({
   const [courseFilter, setCourseFilter] = useState(scopedCourseId ?? 'all')
   const [expandedBuckets, setExpandedBuckets] = useState<Set<BucketId>>(() => new Set())
   const [weekCursor, setWeekCursor] = useState(() => startOfWeek(new Date()))
-  const [calendarCursor, setCalendarCursor] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1))
+  const [calendarCursor, setCalendarCursor] = useState(() => startOfWeek(new Date()))
   const [selectedDay, setSelectedDay] = useState(() => startOfDay())
 
   const linked = useMemo(
@@ -1109,55 +1107,80 @@ function AssignmentCalendar({
   onEdit: (assignment: ClassAssignment) => void
   onAdd: () => void
 }) {
+  const windowStart = startOfWeek(cursor)
+  const days = Array.from({ length: 28 }, (_, index) => addDays(windowStart, index))
+  const weeks = Array.from({ length: 4 }, (_, week) => days.slice(week * 7, (week + 1) * 7))
+  const windowEnd = days[days.length - 1]
   const selected = assignments.filter((item) => item.dueDate?.slice(0, 10) === isoDate(selectedDay))
-  function AssignmentDayButton(props: ComponentProps<typeof CalendarDayButton>) {
-    const items = assignments.filter((item) => item.dueDate?.slice(0, 10) === isoDate(props.day.date))
-    const total = items.reduce((sum, item) => sum + (item.weight ?? 0), 0)
-    return (
-      <CalendarDayButton
-        {...props}
-        className={cn(
-          // aspect-auto: the base button is aspect-square, which ties row
-          // height to column width — cells grow taller as the viewport widens
-          // and refuse to shrink as it narrows. Height comes from min-h-24.
-          // min-w-0 lets the seven columns actually share the row.
-          'aspect-auto min-h-24 min-w-0 items-stretch justify-start gap-1 overflow-hidden rounded-lg border border-border bg-muted p-1.5 text-left',
-          total > 30 && 'bg-destructive/10',
-        )}
-      >
-        <span className="self-start text-xs font-bold tabular-nums">{props.day.date.getDate()}</span>
-        {items.slice(0, 3).map((item) => (
-          <span
-            key={item.id}
-            className="block w-full truncate rounded bg-muted px-1 py-0.5 text-[10px] font-semibold"
-            style={{ borderLeft: `3px solid ${courseColor(item.courseId, courses)}` }}
-          >
-            {item.title}
-          </span>
-        ))}
-        {items.length > 3 && <span className="block text-[10px] text-muted-foreground">+{items.length - 3} more</span>}
-      </CalendarDayButton>
-    )
+  const rangeLabel = windowStart.getFullYear() === windowEnd.getFullYear()
+    ? `${windowStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${windowEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+    : `${windowStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} – ${windowEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+  function shiftWindow(daysToMove: number) {
+    onCursor(addDays(windowStart, daysToMove))
+    onSelectDay(addDays(selectedDay, daysToMove))
   }
 
   return (
     <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
       <section className="card-soft min-w-0 overflow-hidden rounded-2xl border border-border bg-card p-3">
-        <Calendar
-          mode="single"
-          fixedWeeks
-          month={cursor}
-          onMonthChange={onCursor}
-          selected={selectedDay}
-          onSelect={(date) => date && onSelectDay(date)}
-          // --cell-size is a *minimum* on every day button, so raising it to
-          // 6rem floored the grid at 7x96px and pushed it off the page on any
-          // narrow column. Row height is set by min-h-24 on the button below;
-          // the default cell size keeps the nav arrows a sane size too.
-          className="w-full max-w-full bg-transparent p-0"
-          classNames={{ month: 'w-full min-w-0', month_grid: 'w-full max-w-full table-fixed', day: 'min-w-0 flex-1 p-0' }}
-          components={{ DayButton: AssignmentDayButton }}
-        />
+        <div className="mb-3 flex items-center justify-between gap-3 px-1">
+          <Button variant="ghost" size="icon" onClick={() => shiftWindow(-28)} aria-label="Previous four weeks">
+            <ChevronLeft className="size-4" />
+          </Button>
+          <p className="calendar-window-caption text-center text-sm font-semibold" aria-live="polite">{rangeLabel}</p>
+          <Button variant="ghost" size="icon" onClick={() => shiftWindow(28)} aria-label="Next four weeks">
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+        <div role="grid" aria-label={`Assignments from ${rangeLabel}`} className="grid w-full max-w-full gap-1">
+          <div role="row" className="grid h-8 grid-cols-7">
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+              <span key={day} role="columnheader" className="text-center text-xs font-medium text-muted-foreground">{day}</span>
+            ))}
+          </div>
+          {weeks.map((week) => (
+            <div key={isoDate(week[0])} role="row" data-calendar-week className="grid h-36 grid-cols-7 gap-1 sm:h-40">
+                {week.map((day) => {
+                  const items = assignments.filter((item) => item.dueDate?.slice(0, 10) === isoDate(day))
+                  const total = items.reduce((sum, item) => sum + (item.weight ?? 0), 0)
+                  const isSelected = isoDate(day) === isoDate(selectedDay)
+                  const isToday = isoDate(day) === isoDate(new Date())
+                  return (
+                    <button
+                      key={isoDate(day)}
+                      type="button"
+                      role="gridcell"
+                      aria-selected={isSelected}
+                      aria-label={day.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                      aria-current={isToday ? 'date' : undefined}
+                      data-calendar-cell-surface="clear"
+                      data-day={day.toLocaleDateString()}
+                      onClick={() => onSelectDay(day)}
+                      className={cn(
+                        'flex h-full min-w-0 flex-col items-stretch justify-start gap-1 overflow-hidden rounded-lg border border-border bg-muted p-1.5 text-left transition-colors',
+                        'hover:border-primary/45 hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                        isToday && !isSelected && 'border-primary/55',
+                        isSelected && 'border-primary bg-primary text-primary-foreground hover:bg-primary/90',
+                        total > 30 && !isSelected && 'bg-destructive/10',
+                      )}
+                    >
+                      <span className="self-start text-xs font-bold tabular-nums">{day.getDate()}</span>
+                      {items.slice(0, 3).map((item) => (
+                        <span
+                          key={item.id}
+                          className={cn('block w-full truncate rounded bg-background/55 px-1 py-0.5 text-[10px] font-semibold', isSelected && 'bg-primary-foreground/15')}
+                          style={{ borderLeft: `3px solid ${courseColor(item.courseId, courses)}` }}
+                        >
+                          {item.title}
+                        </span>
+                      ))}
+                      {items.length > 3 && <span className={cn('block text-[10px] text-muted-foreground', isSelected && 'text-primary-foreground/80')}>+{items.length - 3} more</span>}
+                    </button>
+                  )
+                })}
+            </div>
+          ))}
+        </div>
       </section>
       <aside className="rounded-2xl border border-border bg-muted p-4">
         <p className="font-display text-lg font-extrabold">{selectedDay.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
