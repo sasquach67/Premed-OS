@@ -78,12 +78,14 @@ export function LectureRecordMenu({
   onOpen,
   onOpenFullScreen,
   onDeleted,
+  railStatus,
   children,
 }: {
   lecture: LectureRecord
   onOpen: () => void
   onOpenFullScreen?: () => void
   onDeleted?: (lectureId: string) => void
+  railStatus?: string
   children: ReactElement
 }) {
   const update = useStore((state) => state.update)
@@ -141,11 +143,21 @@ export function LectureRecordMenu({
     <>
       <RecordActionMenu actions={actions} label={`Actions for ${lecture.title}`}>
         {(overflow) => (
-          <div data-lecture-actions={lecture.id} className="group/lecture-record relative w-full min-w-0 [&>.lecture-rail-entry]:pr-9">
+          <div
+            data-lecture-actions={lecture.id}
+            className={railStatus
+              ? 'group/lecture-record lecture-record--rail relative w-full min-w-0 [&>.lecture-rail-entry]:pr-[6.75rem]'
+              : 'group/lecture-record relative w-full min-w-0 [&>.lecture-rail-entry]:pr-9'}
+          >
             {children}
-            <div className="absolute right-1 top-1 z-10 opacity-65 transition-opacity hover:opacity-100 focus-within:opacity-100 group-hover/lecture-record:opacity-100 [&_button]:size-7 [&_button]:bg-card/85 [&_button]:shadow-sm">
-              {overflow}
-            </div>
+            {railStatus
+              ? <div data-lecture-rail-controls className="lecture-rail-controls absolute right-1 top-1 z-10 grid grid-cols-[minmax(0,auto)_2rem] items-center gap-1">
+                  <i className="lecture-journal-status">{railStatus}</i>
+                  <span className="opacity-65 transition-opacity hover:opacity-100 focus-within:opacity-100 group-hover/lecture-record:opacity-100 [&_button]:size-7 [&_button]:bg-card/85 [&_button]:shadow-sm">{overflow}</span>
+                </div>
+              : <div className="absolute right-1 top-1 z-10 opacity-65 transition-opacity hover:opacity-100 focus-within:opacity-100 group-hover/lecture-record:opacity-100 [&_button]:size-7 [&_button]:bg-card/85 [&_button]:shadow-sm">
+                  {overflow}
+                </div>}
           </div>
         )}
       </RecordActionMenu>

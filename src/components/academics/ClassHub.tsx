@@ -383,11 +383,11 @@ function Overview({
                 onOpen={() => setSelectedLectureId(lecture.id)}
                 onOpenFullScreen={() => openLecture(lecture.id, 'overview')}
                 onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }}
+                railStatus={generatedCount ? 'study work' : lecture.transcriptFileId ? 'captured' : 'new'}
               >
                 <button type="button" onClick={() => setSelectedLectureId(lecture.id)} className={cn('lecture-rail-entry', isActive && 'is-active')} aria-current={isActive ? 'true' : undefined}>
                   <b>Lecture {lectureNumber(lecture.id)}{generatedTitle ? ` · ${generatedTitle}` : ''}</b>
                   <span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'} · {lecture.transcriptFileId ? 'transcript saved' : 'no transcript'}{materialCount ? ` + ${materialCount} ${materialCount === 1 ? 'material' : 'materials'}` : ''}</span>
-                  <i className="lecture-journal-status">{generatedCount ? 'study work' : lecture.transcriptFileId ? 'captured' : 'new'}</i>
                 </button>
               </LectureRecordMenu>
             }) : <div className="lecture-ledger-empty"><span aria-hidden="true" /><p>Your first transcript starts the journal.</p></div>}

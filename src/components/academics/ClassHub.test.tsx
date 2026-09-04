@@ -380,6 +380,11 @@ describe('ClassHub approved Overview', () => {
     })
 
     const card = container.querySelector<HTMLButtonElement>('button.lecture-rail-entry')!
+    const overflow = container.querySelector<HTMLButtonElement>('button[aria-label="Actions for Lecture 1 · Cell signaling"]')!
+    const controls = overflow.closest<HTMLElement>('[data-lecture-rail-controls]')
+    expect(controls).toBeTruthy()
+    expect(controls?.textContent).toContain('captured')
+    expect(controls?.className).toContain('grid-cols-[minmax(0,auto)_2rem]')
     await act(async () => card.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 12, clientY: 12 })))
     const contextItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
     for (const label of ['Open lecture', 'Open full screen', 'Edit lecture', 'Delete lecture']) {
@@ -398,7 +403,6 @@ describe('ClassHub approved Overview', () => {
     await act(async () => save.click())
     expect(useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.id === 'lecture-actions')?.title).toBe('Lecture 1 · Receptor signaling')
 
-    const overflow = container.querySelector<HTMLButtonElement>('button[aria-label="Actions for Lecture 1 · Cell signaling"]')!
     expect(overflow).toBeTruthy()
     await act(async () => {
       overflow.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }))

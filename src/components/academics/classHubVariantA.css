@@ -316,6 +316,16 @@
   font-style: normal;
 }
 
+.class-hub .lecture-record--rail .lecture-rail-entry b,
+.class-hub .lecture-record--rail .lecture-rail-entry > span {
+  max-width: 100%;
+}
+
+.class-hub .lecture-rail-controls .lecture-journal-status {
+  position: static;
+  white-space: nowrap;
+}
+
 .class-hub .lecture-ledger-empty {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr);
