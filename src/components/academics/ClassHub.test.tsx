@@ -352,12 +352,25 @@ describe('ClassHub approved Overview', () => {
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
     const center = seed.academics.classCenter
-    center.lectures.push({
-      id: 'lecture-actions', courseId: course.id, title: 'Lecture 1 · Cell signaling', inputPath: 'pasted',
-      transcriptFileId: 'lecture-actions-source', occurredOn: '2026-09-03', processingState: 'ready',
-      workspaceState: 'complete', selectedSourceFileIds: ['lecture-actions-source'], masteryMapId: 'lecture-actions-mastery',
-      createdAt: now, updatedAt: now, order: 0,
-    })
+    center.lectures = center.lectures.filter((lecture) => lecture.courseId !== course.id)
+    center.lectures.push(
+      {
+        id: 'lecture-actions', courseId: course.id, title: 'Lecture 1 · Cell signaling', inputPath: 'pasted',
+        transcriptFileId: 'lecture-actions-source', occurredOn: '2026-09-01', processingState: 'ready',
+        workspaceState: 'complete', selectedSourceFileIds: ['lecture-actions-source'], masteryMapId: 'lecture-actions-mastery',
+        createdAt: now, updatedAt: now, order: 0,
+      },
+      {
+        id: 'lecture-actions-2', courseId: course.id, title: 'Lecture 2 · Autophagy generation', inputPath: 'pasted',
+        transcriptFileId: 'lecture-actions-source-2', occurredOn: '2026-09-02', processingState: 'ready',
+        createdAt: now + 1, updatedAt: now + 1, order: 1,
+      },
+      {
+        id: 'lecture-actions-3', courseId: course.id, title: 'Lecture 2', inputPath: 'pasted',
+        transcriptFileId: 'lecture-actions-source-3', occurredOn: '2026-09-03', processingState: 'ready',
+        createdAt: now + 2, updatedAt: now + 2, order: 2,
+      },
+    )
     center.files.push({
       id: 'lecture-actions-source', courseId: course.id, lectureId: 'lecture-actions', sourceType: 'paste',
       title: 'Cell signaling transcript', type: 'transcript', linkedTopicIds: [], owner: 'mine', processingStatus: 'ready',
@@ -379,12 +392,25 @@ describe('ClassHub approved Overview', () => {
       root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={center} persons={seed.persons} /></ToastProvider></MemoryRouter>)
     })
 
-    const card = container.querySelector<HTMLButtonElement>('button.lecture-rail-entry')!
+    const lectureRecord = container.querySelector<HTMLElement>('[data-lecture-actions="lecture-actions"]')!
+    const card = lectureRecord.querySelector<HTMLButtonElement>('button.lecture-rail-entry')!
     const overflow = container.querySelector<HTMLButtonElement>('button[aria-label="Actions for Lecture 1 · Cell signaling"]')!
     const controls = overflow.closest<HTMLElement>('[data-lecture-rail-controls]')
     expect(controls).toBeTruthy()
     expect(controls?.textContent).toContain('captured')
-    expect(controls?.className).toContain('grid-cols-[minmax(0,auto)_2rem]')
+    expect(lectureRecord.className).toContain('grid-cols-[minmax(0,1fr)_auto]')
+    expect(controls?.className).not.toContain('absolute')
+    expect(card.textContent).not.toMatch(/Lecture \d+\s*·\s*Lecture \d+/)
+    for (const [lectureId, expectedTitle] of [
+      ['lecture-actions', 'Lecture 1 · Cell signaling'],
+      ['lecture-actions-2', 'Lecture 2 · Autophagy generation'],
+      ['lecture-actions-3', 'Lecture 3'],
+    ]) {
+      const record = container.querySelector<HTMLElement>(`[data-lecture-actions="${lectureId}"]`)!
+      expect(record.className).toContain('grid-cols-[minmax(0,1fr)_auto]')
+      expect(record.querySelector('.lecture-rail-controls')?.className).not.toContain('absolute')
+      expect(record.querySelector('b')?.textContent).toBe(expectedTitle)
+    }
     await act(async () => card.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 12, clientY: 12 })))
     const contextItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
     for (const label of ['Open lecture', 'Open full screen', 'Edit lecture', 'Delete lecture']) {

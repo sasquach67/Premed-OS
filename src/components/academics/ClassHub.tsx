@@ -75,6 +75,14 @@ function isMaterialArtifact(value: string | null): value is MaterialArtifact {
   return value === 'flashcards' || value === 'study-guide' || value === 'study-outline' || value === 'revised-notes' || value === 'unit-mastery-outline' || value === 'unit-question-bank'
 }
 
+function lectureDisplayTitle(position: number, title: string, aiTitle?: string) {
+  const base = `Lecture ${position}`
+  const savedTitle = (aiTitle?.trim() || title.trim())
+    .replace(/^(?:lecture\s+#?\d+\s*(?:[·:—–-]\s*)?)+/i, '')
+    .trim()
+  return savedTitle ? `${base} · ${savedTitle}` : base
+}
+
 export interface ClassHubProps {
   course: Course
   workspace: ClassWorkspace
@@ -375,7 +383,6 @@ function Overview({
             {lectures.length ? [...chronologicalLectures].reverse().map((lecture) => {
               const materialCount = data.files.filter((file) => file.lectureId === lecture.id && file.id !== lecture.transcriptFileId).length
               const generatedCount = data.files.filter((file) => file.lectureId === lecture.id && file.owner === 'generated').length
-              const generatedTitle = lecture.aiTitle ?? (lecture.title.startsWith('Lecture #') ? undefined : lecture.title)
               const isActive = activeLecture?.id === lecture.id
               return <LectureRecordMenu
                 key={lecture.id}
@@ -386,7 +393,7 @@ function Overview({
                 railStatus={generatedCount ? 'study work' : lecture.transcriptFileId ? 'captured' : 'new'}
               >
                 <button type="button" onClick={() => setSelectedLectureId(lecture.id)} className={cn('lecture-rail-entry', isActive && 'is-active')} aria-current={isActive ? 'true' : undefined}>
-                  <b>Lecture {lectureNumber(lecture.id)}{generatedTitle ? ` · ${generatedTitle}` : ''}</b>
+                  <b>{lectureDisplayTitle(lectureNumber(lecture.id), lecture.title, lecture.aiTitle)}</b>
                   <span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'} · {lecture.transcriptFileId ? 'transcript saved' : 'no transcript'}{materialCount ? ` + ${materialCount} ${materialCount === 1 ? 'material' : 'materials'}` : ''}</span>
                 </button>
               </LectureRecordMenu>
@@ -398,7 +405,7 @@ function Overview({
         <article className={cn('lecture-active-context', !activeLecture && 'lecture-capture-default')}>
           {activeLecture ? <>
             <div className="lecture-active-header">
-              <div><p className="lecture-ledger-kicker">Saved lecture</p><h2>Lecture {lectureNumber(activeLecture.id)}{activeLecture.aiTitle ? ` · ${activeLecture.aiTitle}` : activeLecture.title.startsWith('Lecture #') ? '' : ` · ${activeLecture.title}`}</h2><p>{activeLecture.occurredOn ? fmtEventDate(activeLecture.occurredOn) : 'Date not set'}</p></div>
+              <div><p className="lecture-ledger-kicker">Saved lecture</p><h2>{lectureDisplayTitle(lectureNumber(activeLecture.id), activeLecture.title, activeLecture.aiTitle)}</h2><p>{activeLecture.occurredOn ? fmtEventDate(activeLecture.occurredOn) : 'Date not set'}</p></div>
               <div className="lecture-saved-actions"><Button size="sm" variant="ghost" onClick={() => setSelectedLectureId(undefined)}>Close</Button><Button size="sm" onClick={() => openLecture(activeLecture.id, 'overview')}>Open full screen</Button></div>
             </div>
             {activeLecture.workspaceState === 'complete'

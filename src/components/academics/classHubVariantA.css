@@ -277,6 +277,29 @@
   text-align: left;
 }
 
+.class-hub .lecture-record--rail {
+  border: 1px solid transparent;
+  border-radius: 11px;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+.class-hub .lecture-record--rail + .lecture-record--rail { margin-top: 4px; }
+.class-hub .lecture-record--rail:hover { background: var(--muted); }
+.class-hub .lecture-record--rail:has(.lecture-rail-entry.is-active) {
+  border-color: var(--border);
+  background: var(--muted);
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+.class-hub .lecture-record--rail .lecture-rail-entry {
+  min-width: 0;
+  padding-right: 2px;
+  border: 0;
+  background: transparent;
+}
+.class-hub .lecture-record--rail .lecture-rail-entry:hover,
+.class-hub .lecture-record--rail .lecture-rail-entry.is-active {
+  background: transparent;
+  box-shadow: none;
+}
 .class-hub .lecture-rail-entry + .lecture-rail-entry { margin-top: 4px; }
 .class-hub .lecture-rail-entry:hover { background: var(--muted); }
 .class-hub .lecture-rail-entry.is-active {
@@ -324,6 +347,11 @@
 .class-hub .lecture-rail-controls .lecture-journal-status {
   position: static;
   white-space: nowrap;
+}
+
+.class-hub .lecture-rail-controls {
+  min-width: 0;
+  padding-right: 3px;
 }
 
 .class-hub .lecture-ledger-empty {
