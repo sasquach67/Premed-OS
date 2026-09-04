@@ -235,11 +235,12 @@ Deno.serve(async (request) => {
   /**
    * `generate` — the two-pass pipeline (`01` §5.1), Phase 2.
    *
-   * OpenAI is the primary generator. THIS SERVER extracts the source references
-   * the generated artifact actually uses, verifies each one against the chunk
-   * text it owns, and closes that set before anything can be saved. Anthropic
-   * is a secondary auditor: it can reject an artifact, but it never authors or
-   * silently rewrites the primary output.
+   * OpenAI is the default primary generator. Unit Question Bank V1 is a narrow
+   * Anthropic-primary carve-out: Claude authors the structured stimulus sets,
+   * and OpenAI independently audits them. THIS SERVER still extracts and
+   * closes every source reference before anything can be saved. If Anthropic is
+   * unavailable, the normal OpenAI-primary/Anthropic-review path remains the
+   * availability fallback; provider choice never weakens the same validators.
    *
    * ⚠️ A citation outside the closed set REJECTS the artifact. It is never
    * repaired — repairing would mean choosing a citation on the model's behalf,
@@ -256,11 +257,21 @@ Deno.serve(async (request) => {
       return failure(400, 'invalid-request', 'An assembled spec prompt is required.')
     }
     try {
-      const primary = await callOpenAIGeneration(
-        typeof body.request === 'string' ? body.request : 'Generate the artifact.',
-        chunks,
-        specPrompt,
-      )
+      const requestText = typeof body.request === 'string' ? body.request : 'Generate the artifact.'
+      const prefersAnthropic = body.specId === 'unit-question-bank-v1' && Boolean(Deno.env.get('ANTHROPIC_API_KEY'))
+      let primaryProvider: 'anthropic' | 'openai' = 'openai'
+      let primary: Awaited<ReturnType<typeof callOpenAIGeneration>>
+      if (prefersAnthropic) {
+        try {
+          primary = await callAnthropicGeneration(requestText, chunks, specPrompt)
+          primaryProvider = 'anthropic'
+        } catch (error) {
+          console.error('question bank Anthropic generation unavailable; using OpenAI fallback', error instanceof Error ? error.message : 'unknown')
+          primary = await callOpenAIGeneration(requestText, chunks, specPrompt)
+        }
+      } else {
+        primary = await callOpenAIGeneration(requestText, chunks, specPrompt)
+      }
       const closed = closeCitationSet(primary.trustedCitations, chunks)
       if (!closed.length) {
         return failure(422, 'no-verified-citations', 'No citation from the generated artifact could be verified against your material.')
@@ -270,7 +281,18 @@ Deno.serve(async (request) => {
       }
 
       let auditStatus: GenerationAuditStatus = 'skipped'
-      if (Deno.env.get('ANTHROPIC_API_KEY')) {
+      if (primaryProvider === 'anthropic') {
+        try {
+          const audit = await callOpenAIAudit(primary.value, chunks, specPrompt)
+          if (!audit.approved) {
+            return failure(502, 'audit-rejected', 'The secondary review found a source or specification problem. Nothing was saved.')
+          }
+          auditStatus = 'approved'
+        } catch (error) {
+          console.error('question bank OpenAI audit unavailable', error instanceof Error ? error.message : 'unknown')
+          auditStatus = 'unavailable'
+        }
+      } else if (Deno.env.get('ANTHROPIC_API_KEY')) {
         try {
           const audit = await callAnthropicAudit(primary.value, chunks, specPrompt)
           if (!audit.approved) {
@@ -282,7 +304,7 @@ Deno.serve(async (request) => {
           auditStatus = 'unavailable'
         }
       }
-      return json({ artifact: primary.value, citations: closed, auditStatus })
+      return json({ artifact: primary.value, citations: closed, auditStatus, primaryProvider })
     } catch (error) {
       console.error('study-tools generate failure', error instanceof Error ? error.message : 'unknown')
       return failure(503, 'provider-unavailable', 'The AI provider is unavailable.')
@@ -667,6 +689,56 @@ async function callOpenAIGeneration(response: string, chunks: Chunk[], specPromp
   return { value, trustedCitations: collectArtifactCitations(value, chunks) }
 }
 
+/**
+ * Question Bank V1's Anthropic author returns semantic stimulus structures,
+ * never unverified image bytes. Premed OS renders the validated tables, graphs,
+ * and diagrams itself. Official exam-pattern research is versioned in the
+ * specification, so a routine bank does not pay for or drift with live search.
+ */
+async function callAnthropicGeneration(response: string, chunks: Chunk[], specPrompt: string) {
+  const key = Deno.env.get('ANTHROPIC_API_KEY')
+  if (!key) throw new Error('Anthropic is not configured')
+  const result = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: Deno.env.get('ANTHROPIC_MODEL') || 'claude-opus-5',
+      max_tokens: 10_000,
+      output_config: { effort: 'medium' },
+      system: [
+        specPrompt,
+        'Reply with one JSON object only, with no prose or markdown fences.',
+        'Use only the supplied source IDs. For sourceChunkIds, copy exact chunk IDs; never invent an ID.',
+        'Do not claim to create or retrieve bitmap images. Author only the structured stimuli allowed by the specification.',
+      ].join('\n'),
+      messages: [{
+        role: 'user',
+        content: [
+          ...chunks.map((chunk) => ({
+            type: 'document',
+            source: { type: 'text', media_type: 'text/plain', data: chunk.content },
+            title: `${chunk.file_id}:${chunk.chunk_id}`,
+            citations: { enabled: true },
+          })),
+          { type: 'text', text: `Generation request:\n${response}` },
+        ],
+      }],
+    }),
+  })
+  if (!result.ok) throw new Error(`Anthropic generation ${result.status}`)
+  const payload = await result.json()
+  const text = Array.isArray(payload?.content)
+    ? payload.content.filter((block: { type?: string }) => block.type === 'text')
+      .map((block: { text?: string }) => block.text || '').join('')
+    : ''
+  const value = parseJsonObject(text)
+  return { value, trustedCitations: collectArtifactCitations(value, chunks) }
+}
+
 const generationAuditSchema = {
   type: 'object',
   additionalProperties: false,
@@ -728,6 +800,53 @@ async function callAnthropicAudit(value: unknown, chunks: Chunk[], specPrompt: s
     throw new Error('Anthropic returned an invalid audit')
   }
   if (!audit.approved && audit.issues.length === 0) throw new Error('Anthropic rejected without an audit reason')
+  return { approved: audit.approved, issues: audit.issues as string[] }
+}
+
+async function callOpenAIAudit(value: unknown, chunks: Chunk[], specPrompt: string) {
+  const key = Deno.env.get('OPENAI_API_KEY')
+  if (!key) throw new Error('OpenAI is not configured')
+  const sources = chunks.map((chunk) => ({ fileId: chunk.file_id, chunkId: chunk.chunk_id, content: chunk.content }))
+  const result = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: Deno.env.get('OPENAI_MODEL') || 'gpt-5.4-mini',
+      store: false,
+      max_output_tokens: 2500,
+      input: [
+        {
+          role: 'system',
+          content: [{
+            type: 'input_text',
+            text: [
+              'You are the independent secondary reviewer. Anthropic already authored the artifact.',
+              'Check every grounded claim and source ID against the supplied documents and specification.',
+              'Reject unsupported or mislabeled data, decorative or answer-irrelevant visuals, direct recall, invalid structure, inaccessible visuals, or violated invariants.',
+              'Do not rewrite the artifact.',
+            ].join('\n'),
+          }],
+        },
+        {
+          role: 'user',
+          content: [{
+            type: 'input_text',
+            text: `Specification:\n${specPrompt}\n\nSources:\n${JSON.stringify(sources)}\n\nArtifact:\n${JSON.stringify(value)}`,
+          }],
+        },
+      ],
+      text: { format: { type: 'json_schema', name: 'generation_audit', strict: true, schema: generationAuditSchema } },
+    }),
+  })
+  if (!result.ok) throw new Error(`OpenAI audit ${result.status}`)
+  const payload = await result.json() as Record<string, unknown>
+  const parsed = parseJsonObject(openAIOutputText(payload))
+  if (!parsed || typeof parsed !== 'object') throw new Error('OpenAI returned an invalid audit')
+  const audit = parsed as Record<string, unknown>
+  if (typeof audit.approved !== 'boolean' || !Array.isArray(audit.issues) || audit.issues.some((issue) => !isText(issue))) {
+    throw new Error('OpenAI returned an invalid audit')
+  }
+  if (!audit.approved && audit.issues.length === 0) throw new Error('OpenAI rejected without an audit reason')
   return { approved: audit.approved, issues: audit.issues as string[] }
 }
 

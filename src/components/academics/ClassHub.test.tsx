@@ -334,7 +334,8 @@ describe('ClassHub approved Overview', () => {
 
     const savedLecture = container.querySelector('button.lecture-rail-entry') as HTMLButtonElement
     await act(async () => savedLecture.click())
-    expect(container.textContent).toContain('Lecture Brief')
+    expect(container.textContent).toContain('Study Guide')
+    expect(container.textContent).not.toContain('Lecture Brief')
     expect(container.textContent).toContain('Mastery Map')
     expect(container.textContent).toContain('0 selected sources')
 
@@ -404,7 +405,7 @@ describe('ClassHub approved Overview', () => {
     expect(container.textContent).toContain('Class journal')
     expect(container.textContent).toContain('Add source')
     expect(container.textContent).toContain('Add materials')
-    expect(container.textContent).toContain('Brief + Mastery')
+    expect(container.textContent).toContain('Guide + Mastery')
   })
 
   it('retires the legacy Create study work action in favor of the lecture workspace', async () => {
@@ -438,7 +439,7 @@ describe('ClassHub approved Overview', () => {
     })
 
     await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
-    expect(container.textContent).toContain('Lecture Brief')
+    expect(container.textContent).toContain('Study Guide')
     expect(container.textContent).toContain('Mastery Map')
     expect(container.textContent).not.toContain('Create study work')
   })
@@ -488,7 +489,7 @@ describe('ClassHub approved Overview', () => {
     })
     await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
     expect(container.textContent).not.toContain('Add evidence')
-    expect(container.textContent).toContain('Lecture Brief')
+    expect(container.textContent).toContain('Study Guide')
   })
 
   it('moves lecture materials behind Sources and Materials', async () => {
@@ -532,7 +533,7 @@ describe('ClassHub approved Overview', () => {
     })
     await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
     expect(container.textContent).not.toContain('Open study work')
-    expect(container.textContent).toContain('Lecture Brief')
+    expect(container.textContent).toContain('Study Guide')
   })
 
   it('keeps Topics syllabus-led and groups scheduled standards by week before unit', async () => {

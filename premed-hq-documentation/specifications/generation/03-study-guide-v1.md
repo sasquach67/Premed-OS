@@ -22,6 +22,9 @@ document by `src/lib/generation/artifacts/studyGuide.v1.ts`.
 | `SG-9` | If material is incomplete, mark the gap explicitly; never invent. | invariant |
 | `SG-10` | Every major concept gets an explicit representation decision. Bullets are not the default and must be justified by structure — a process in bullets, a comparison in bullets, and a hierarchy in bullets are all defects. | tunable |
 | `SG-11` | Visual grammar is consistent across the whole artifact. | invariant |
+| `SG-AT-A-GLANCE` | The Study Guide is the one canonical lecture-learning document. Begin with an AT A GLANCE section that performs the former Lecture Brief job: give a concise connected orientation, surface the strongest source-supported instructor emphasis, anchor essential vocabulary in context, and name the highest-risk distinction or misconception. This opening is a map into the full guide, not a second summary artifact. | invariant |
+| `SG-FULL-DEPTH` | Combining the overview and guide must not reduce coverage or explanatory depth. After AT A GLANCE, teach every supported major concept, process, relationship, comparison, and application at the depth warranted by the selected sources. | invariant |
+| `SG-NO-DUPLICATE-LAYERS` | AT A GLANCE names and connects what matters; later sections expand it with mechanism, evidence, examples, and application. Do not repeat the same stand-alone explanation, list, table, or wording in both layers. | invariant |
 | `SG-SPLIT` | MUST UNDERSTAND and MUST MEMORIZE must not collapse into two lists of the same items. Test each item: could a student who has memorized this still fail to use it? Then understand. Could a student who understands it still not produce it from memory? Then memorize. Items may legitimately appear in both, but if more than about a quarter do, the split is not being made. | invariant |
 | `SG-SECTIONS` | Conditional sections are omitted entirely when the source does not support them. An empty section rendered as a heading with nothing under it is worse than no section. | invariant |
 | `SG-PRACTICE-EXAMPLES` | When supplied questions instantiate a concept, use their source-supported scenario, representation, or reasoning move as an explanatory example in the relevant concept, process, or relationship section. Explain what the example teaches without copying its stem or answer choices and without turning the guide into a question bank. | invariant |
@@ -49,7 +52,7 @@ than no section.
 | # | Section | Required? | Purpose |
 |---|---|---|---|
 | 1 | **TITLE** | always | The topic, in the instructor's terms |
-| 2 | **BIG PICTURE** | always | What this topic is and how its pieces fit. Concise but genuinely explanatory |
+| 2 | **AT A GLANCE** | always | The former Lecture Brief role inside this same document: a concise connected orientation, strongest instructor emphasis, essential vocabulary in context, and highest-risk distinction. It points into the detailed guide without replacing or duplicating it. |
 | 3 | **LEARNING OBJECTIVES** | conditional | Preserved verbatim when the professor supplied them; inferred only when clearly supported |
 | 4 | **CORE CONCEPTS** | always | Organized by concept, not slide order |
 | 5 | **MECHANISMS / PROCESSES** | conditional | Causal or sequential processes, step by step, with *why* |
@@ -65,9 +68,11 @@ than no section.
 
 ### 2.1 Notes on specific sections
 
-**BIG PICTURE** — the hardest section and the most valuable. It is not a summary of what follows; it
-is the frame that makes what follows make sense. Target 3–6 sentences. It should answer: *what
-problem does this topic solve, what are its major parts, and how do they relate?*
+**AT A GLANCE** — the first reading depth of the same Study Guide, not a separate Lecture Brief.
+It should orient a student before the detail by answering: *what problem does this topic solve, what
+are its major parts, how do they relate, what did the instructor emphasize, which terms anchor the
+map, and what distinction is most likely to cause an error?* Keep it compact and connected. Later
+sections may expand an idea named here, but must not repeat the same explanation or list.
 
 **LEARNING OBJECTIVES** — when the professor supplied objectives, they are **preserved verbatim** and
 marked `provenance: 'source'`. Inferred objectives are permitted only when the source structure makes
@@ -90,7 +95,7 @@ more than ~25% do, the split is not being made.
 about something the guide did not treat as significant is a defect. Target 5–12 depending on
 `coverage_depth`. Every question's answer must exist in the guide.
 
-**FINAL SYNTHESIS** — not a repeat of BIG PICTURE. Big Picture frames the topic before the detail;
+**FINAL SYNTHESIS** — not a repeat of AT A GLANCE. At a Glance frames the topic before the detail;
 Final Synthesis integrates *after* it, and should connect concepts that were introduced separately.
 
 ---
@@ -110,6 +115,9 @@ Final Synthesis integrates *after* it, and should connect concepts that were int
 | `SG-9` | If material is incomplete, mark the gap explicitly; never invent | invariant |
 | `SG-10` | Every major concept gets a **representation decision** (`06` §2) — bullets are not the default | tunable |
 | `SG-11` | Visual grammar is consistent across the whole artifact (`06` §8) | invariant |
+| `SG-AT-A-GLANCE` | The Study Guide is the one canonical lecture-learning document. Begin with an AT A GLANCE section that performs the former Lecture Brief job: give a concise connected orientation, surface the strongest source-supported instructor emphasis, anchor essential vocabulary in context, and name the highest-risk distinction or misconception. This opening is a map into the full guide, not a second summary artifact. | invariant |
+| `SG-FULL-DEPTH` | Combining the overview and guide must not reduce coverage or explanatory depth. After AT A GLANCE, teach every supported major concept, process, relationship, comparison, and application at the depth warranted by the selected sources. | invariant |
+| `SG-NO-DUPLICATE-LAYERS` | AT A GLANCE names and connects what matters; later sections expand it with mechanism, evidence, examples, and application. Do not repeat the same stand-alone explanation, list, table, or wording in both layers. | invariant |
 | `SG-PRACTICE-EXAMPLES` | When supplied questions instantiate a concept, use their source-supported scenario, representation, or reasoning move as an explanatory example in the relevant concept, process, or relationship section. Explain what the example teaches without copying its stem or answer choices and without turning the guide into a question bank. | invariant |
 
 ---

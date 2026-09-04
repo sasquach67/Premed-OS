@@ -88,14 +88,18 @@ export async function generateUnitQuestionBank({
   })
   const result = await studyTools.generate({ action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `Unit: ${unit}. Build the source-grounded unit question bank.${questionReferenceIds.length ? ' Use the marked question passages as assessment-pattern evidence without copying them.' : ''}` })
   if (!result.ok) return { ok: false, failure: failureFor(result.code), message: result.message }
-  const artifact = validateUnitQuestionBank(result.data.artifact, assembled.chunkIds, protectedQuestionPhrases, masteryStandardIds)
-  if (!artifact) return { ok: false, failure: 'invalid-response', message: 'The question bank did not pass source, answer-uniqueness, coverage, integration, or private-assessment similarity checks. Nothing was saved.' }
+  const artifact = validateUnitQuestionBank(result.data.artifact, assembled.chunkIds, protectedQuestionPhrases, masteryStandardIds, new Map(chunks.map((chunk) => [chunk.id, chunk.content])))
+  if (!artifact) return { ok: false, failure: 'invalid-response', message: 'The question bank did not pass its stimulus, source, application, visual, answer-uniqueness, coverage, integration, or private-assessment similarity checks. Nothing was saved.' }
   return {
     ok: true,
     artifact: {
       courseId, title: generatedTitle(artifact.title), unit: artifact.unit, specId: 'unit-question-bank-v1', specHash: assembled.specHash,
       courseStyle: artifact.courseStyle, currentUnitPercent: artifact.currentUnitPercent, integrationPercent: artifact.integrationPercent,
-      questions: artifact.questions, sourceChunkIds: [...new Set(artifact.questions.flatMap((question) => question.sourceChunkIds))],
+      stimuli: artifact.stimuli, questions: artifact.questions, generationProvider: result.data.primaryProvider,
+      sourceChunkIds: [...new Set([
+        ...artifact.stimuli.flatMap((stimulus) => stimulus.sourceChunkIds),
+        ...artifact.questions.flatMap((question) => question.sourceChunkIds),
+      ])],
     },
   }
 }

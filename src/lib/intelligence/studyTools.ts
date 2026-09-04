@@ -78,9 +78,9 @@ export interface StudySourceInput {
 
 /**
  * Generation Phase 2 — the primary-plus-audit request. The client assembles
- * the spec; OpenAI generates the artifact, the function verifies its cited
- * chunks and ranges against the source mirror it owns, and Anthropic audits
- * the closed result without rewriting it.
+ * the spec; the function routes the named artifact to its configured author,
+ * verifies cited chunks and ranges against the source mirror it owns, and has
+ * the other provider audit the closed result without rewriting it.
  *
  * ⚠️ There is no `sources` field. The function retrieves chunk text itself, so
  * source content is never uploaded on a generation call.
@@ -140,6 +140,7 @@ export interface GeneratedStudyToolArtifact {
   artifact: unknown
   citations: unknown[]
   auditStatus: GenerationAuditStatus
+  primaryProvider?: 'anthropic' | 'openai'
 }
 
 export type StudyToolResponse<T> =
@@ -198,7 +199,7 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
           return {
             ok: false,
             code: 'audit-rejected',
-            message: 'OpenAI created the resource, but Anthropic found a source or format problem during review. Nothing was saved.',
+            message: 'The independent provider review found a source or format problem. Nothing was saved.',
           }
         }
         return { ok: false, code: 'invalid-response', message: 'The generator returned an invalid result. Nothing was saved.' }
@@ -247,7 +248,8 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
       if (!result.ok) return result
       if (!isRecord(result.data) || !('artifact' in result.data)
         || !Array.isArray(result.data.citations)
-        || !['approved', 'skipped', 'unavailable'].includes(String(result.data.auditStatus))) {
+        || !['approved', 'skipped', 'unavailable'].includes(String(result.data.auditStatus))
+        || (result.data.primaryProvider != null && !['anthropic', 'openai'].includes(String(result.data.primaryProvider)))) {
         return { ok: false, code: 'invalid-response', message: 'The generator returned an invalid result. Nothing was saved.' }
       }
       return { ok: true, data: result.data as unknown as GeneratedStudyToolArtifact }

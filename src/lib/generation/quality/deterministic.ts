@@ -174,6 +174,35 @@ function requiredSections(artifact: StudyGuideArtifact): QualityFinding[] {
     }))
 }
 
+function normalizeStatement(value: string) {
+  return value.toLocaleLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
+function sectionStatements(section: GuideSection) {
+  return section.blocks.flatMap((block) => [
+    block.text?.content,
+    ...(block.items?.map((item) => item.content) ?? []),
+  ]).filter((value): value is string => Boolean(value && value.trim().length >= 20))
+}
+
+/** `SG-NO-DUPLICATE-LAYERS` — the overview may name an idea, but it may not
+ * repeat the same explanation or list item in the teaching sections. */
+function duplicatedGuideLayers(artifact: StudyGuideArtifact): QualityFinding[] {
+  const glance = artifact.sections.filter((section) => section.id === 'at-a-glance' || section.id === 'big-picture')
+  if (!glance.length) return []
+  const opening = new Set(glance.flatMap(sectionStatements).map(normalizeStatement))
+  const duplicate = artifact.sections
+    .filter((section) => !glance.includes(section))
+    .flatMap((section) => sectionStatements(section).map((statement) => ({ section, statement })))
+    .find(({ statement }) => opening.has(normalizeStatement(statement)))
+  return duplicate ? [{
+    check: 'Duplicate overview detail',
+    severity: 'blocking',
+    sectionId: duplicate.section.id,
+    detail: `${duplicate.section.title} repeats a complete statement already used in AT A GLANCE.`,
+  }] : []
+}
+
 export function runDeterministicChecks(
   artifact: StudyGuideArtifact,
   { mode, closedCitationKeys, checkRequiredSections = false }: {
@@ -185,6 +214,7 @@ export function runDeterministicChecks(
 ): QualityFinding[] {
   const findings: QualityFinding[] = [
     ...(checkRequiredSections ? requiredSections(artifact) : []),
+    ...duplicatedGuideLayers(artifact),
     ...artifact.sections
       .filter((section) => section.blocks.length === 0)
       .map((section) => ({

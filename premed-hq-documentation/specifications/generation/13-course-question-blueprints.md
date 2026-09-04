@@ -11,11 +11,13 @@ it never changes the source boundary or the syllabus-led Topic contract.
 | `courseStyle` | `biology` |
 | `defaultCurrentUnitPercent` | `70` |
 | `defaultIntegrationPercent` | `30` |
-| question moves | application, integration, method-and-controls, interpretation, recall |
+| question moves | application, integration, method-and-controls, interpretation |
 
-Use biological scenarios, data or diagrams, methods and controls, and deliberate
-links between current and prior standards. Ask what follows, not only for a
-definition. The student can change the current/prior mix for a particular bank.
+Build linked stimulus sets around biological scenarios, experiments, data, or
+diagrams. Every question requires application, and at least half depend on a
+visual or quantitative representation. Across a set, progress through moves such
+as interpretation, comparison or calculation, prediction, justification, and
+experimental design. The student can change the current/prior mix for a bank.
 
 ## Psychology
 
@@ -24,10 +26,11 @@ definition. The student can change the current/prior mix for a particular bank.
 | `courseStyle` | `psychology` |
 | `defaultCurrentUnitPercent` | `100` |
 | `defaultIntegrationPercent` | `0` |
-| question moves | situational, application, interpretation, recall |
+| question moves | situational, application, interpretation |
 
-Use short situations and careful concept identification. Keep the answer tied to
-the supplied course language; do not turn a vignette into generic advice.
+Use evidence-rich situations and careful concept application. Every question
+must depend on the supplied scenario. Keep the answer tied to the supplied course
+language; do not turn a vignette into generic advice.
 
 ## General and interpretive courses
 
@@ -36,11 +39,12 @@ the supplied course language; do not turn a vignette into generic advice.
 | `courseStyle` | `general` |
 | `defaultCurrentUnitPercent` | `100` |
 | `defaultIntegrationPercent` | `0` |
-| question moves | application, interpretation, recall |
+| question moves | application, interpretation |
 
 Anthropology, writing, and other interpretive classes may add a reviewed Course
 lens when one exists. Questions still need to identify the supplied standard and
 evidence; the lens must not invent cultural context or replace the syllabus.
+Direct recall belongs in flashcards and the Mastery Map, not the question bank.
 
 ## Classification contract
 

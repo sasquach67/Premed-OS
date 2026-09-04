@@ -35,11 +35,11 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
   const assembled = assembleGenerationRequest({
     specId: 'unit-mastery-outline-v1', chunkIds: prepared.chunkIds, controls: { source_mode: 'SOURCE_ONLY' },
     request: [
-      `Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Build the detailed mastery map from the selected sources. Preserve every explicit objective relevant to this scope and all distinct supported Understand, Be able to do, and Watch for points.`,
+      `Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Build the detailed mastery map from the selected sources. Preserve every explicit objective relevant to this scope and all distinct supported Free-recall cues, Understand, Be able to do, and Watch for points. Each objective needs a concrete blank-page retrieval cue; process or mechanism objectives must ask the student to explain or reconstruct the full process without notes.`,
       questionReferenceIds.length ? `Reference-question chunk IDs: ${questionReferenceIds.join(', ')}. Use their task patterns, representations, distinctions, and traps to make Be able to do and Watch for concrete. Do not copy stems, and never treat distractors as facts.` : '',
     ].filter(Boolean).join('\n'),
   })
-  const result = await studyTools.generate({ action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline.${questionReferenceIds.length ? ' Use the marked question passages as task-pattern evidence without copying them.' : ''}` })
+  const result = await studyTools.generate({ action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map with objective-specific free-recall cues. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline.${questionReferenceIds.length ? ' Use the marked question passages as task-pattern evidence without copying them.' : ''}` })
   if (!result.ok) return { ok: false, failure: failureFor(result.code), message: result.message }
   const artifact = validateMasteryOutline(result.data.artifact, assembled.chunkIds)
   if (!artifact) return { ok: false, failure: 'invalid-response', message: 'The mastery outline did not pass its source-trace and section checks. Nothing was saved.' }

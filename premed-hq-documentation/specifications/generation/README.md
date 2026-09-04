@@ -36,7 +36,7 @@ The governing principle, in one line:
 | 15 | [`15-revised-notes-v1.md`](./15-revised-notes-v1.md) | Student-notes-baseline revision with exact source traces |
 | 16 | [`16-class-full-mock-v1.md`](./16-class-full-mock-v1.md) | Timed class practice mock; never an official or predictive exam |
 | 17 | [`17-term-report-v1.md`](./17-term-report-v1.md) | Evidence-bounded end-of-term observations and optional experiments |
-| 18 | [`18-lecture-brief-derived-v1.md`](./18-lecture-brief-derived-v1.md) | Derived Lecture Brief front-page contract; not a separate API call |
+| 18 | [`18-lecture-brief-derived-v1.md`](./18-lecture-brief-derived-v1.md) | Derived At a glance preview and legacy compatibility contract; not a separate output or API call |
 
 ## Runtime briefing coverage
 
@@ -53,8 +53,7 @@ and available in production without shipping the entire documentation corpus.
 
 | Student-facing result | Briefing | Runtime status |
 | --- | --- | --- |
-| Lecture Brief | `18-lecture-brief-derived-v1.md` | Derived locally from selected readable chunks; not a separate API call |
-| Full Study Guide | `03-study-guide-v1.md` | Registered API artifact |
+| Study Guide with At a glance | `03-study-guide-v1.md` plus preview compatibility in `18-lecture-brief-derived-v1.md` | One registered API artifact; the opening absorbs the former Lecture Brief role without reducing full-guide depth |
 | Mastery Map | `11-unit-mastery-outline-v1.md` | Registered API artifact |
 | Revised Notes | `15-revised-notes-v1.md` | Registered API artifact; requires explicit student-notes baseline |
 | Flashcards | `04-flashcards-v1.md` | Registered API artifact |
@@ -116,7 +115,7 @@ the failure mode the audit was about.
 | **D-4** | APPLICATION cards in MCAT scope | **Permitted, tightly bounded.** No answer choices, one concept, ≤2 sentences of scenario. Anything larger is refused by the gate | `04` §4.6 |
 | **D-5** | Regeneration over edited blocks | **Never silently.** Edited blocks locked by default; *Keep my edits* is the default. Orphaned edits are moved, never deleted | `08` §1.4 |
 | **D-6** | Anki export | **Yes — one-way `.apkg`, schema designed for it now.** A premedOS note type carries hidden `concept_id`, `source`, and `spec` fields so provenance remains inspectable after export. Premed OS never imports or reads the package back, and scheduling state never exists here | `04` §14 |
-| **D-7** | Provider assignment | **OpenAI is the primary Generator; Anthropic is the independent Reviewer.** The server, not either model, closes citations. Anthropic may reject but never silently rewrite OpenAI's artifact. These are current role assignments, not permanent architectural dependencies | `01` §5.3; global intelligence framework, Reviewer Architecture |
+| **D-7** | Provider assignment | **OpenAI is the default Generator; Anthropic is the default Reviewer. Unit Question Bank V1 reverses those roles for structured stimulus-set authoring, with OpenAI fallback if Anthropic is unavailable.** The server, not either model, closes citations; reviewers reject rather than rewrite. These are routing assignments, not artifact dependencies | `01` §5.3; global intelligence framework, Reviewer Architecture |
 | **D-8** | Source coverage disclosure | **Required.** Artifacts record which files they drew from, state coverage plainly, name files that contributed nothing, and flag degraded retrieval | `02` §2.8 |
 | **D-9** | Raise figure extraction? | **No.** Occlusion cards authored manually; extraction stays in Phase 6. v1 discloses the limitation and exempts manual cards from generator checks | `04` §10.1 |
 

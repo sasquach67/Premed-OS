@@ -43,9 +43,9 @@ source contains.**
 | Value | Effect on section order |
 |---|---|
 | `standard` | The `03` §2 order |
-| `concept_first` | CORE CONCEPTS immediately after BIG PICTURE; mechanisms folded into concepts |
+| `concept_first` | CORE CONCEPTS immediately after AT A GLANCE; mechanisms folded into concepts |
 | `mechanism_first` | MECHANISMS before CORE CONCEPTS. Suits pathway-heavy topics |
-| `exam_focused` | HIGH-YIELD and MUST MEMORIZE hoisted directly after BIG PICTURE |
+| `exam_focused` | HIGH-YIELD and MUST MEMORIZE hoisted directly after AT A GLANCE |
 
 **No value of `guide_structure` may drop a required section** (`03` §2). It reorders; it does not
 delete.

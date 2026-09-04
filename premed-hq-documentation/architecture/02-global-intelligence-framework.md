@@ -461,7 +461,7 @@ This separation allows orchestration strategies to evolve independently from ind
 
 ### Current provider assignment — September 2026
 
-For generated study resources, **OpenAI currently fulfills the Generator role** and **Anthropic fulfills the Reviewer role**. The server-owned validator remains responsible for closing source IDs and citation ranges. The reviewer may reject a result but must not silently author or rewrite the primary artifact.
+For generated study resources, **OpenAI fulfills the default Generator role** and **Anthropic fulfills the default Reviewer role**. Unit Question Bank V1 is a narrow exception: Anthropic authors its structured application-and-stimulus artifact and OpenAI reviews it, with the default route as an availability fallback. The server-owned validator remains responsible for closing source IDs and citation ranges. A reviewer may reject a result but must not silently author or rewrite it.
 
 This is an operational default, not an architectural promise. Routing remains role-based so either provider can be replaced without changing the product contract.
 

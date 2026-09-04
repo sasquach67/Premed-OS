@@ -1040,6 +1040,9 @@ export interface GeneratedRevisedNotes {
 export interface GeneratedMasteryOutlineStandard {
   id: string
   title: string
+  /** Added after v41. Older saved maps omit this and render their objective
+   * title as a compatibility recall cue. */
+  freeRecallCues?: string[]
   understand: string[]
   beAbleToDo: string[]
   watchFor: string[]
@@ -1068,7 +1071,22 @@ export interface GeneratedMasteryOutline {
 
 export type GeneratedQuestionBankStyle = 'biology' | 'psychology' | 'general'
 export type GeneratedQuestionBankScope = 'current-unit' | 'prior-unit-integration'
-export type GeneratedQuestionBankMove = 'application' | 'integration' | 'situational' | 'recall' | 'interpretation' | 'method-and-controls'
+export type GeneratedQuestionBankMove = 'application' | 'integration' | 'situational' | 'interpretation' | 'method-and-controls'
+export type GeneratedQuestionStimulusKind = 'passage' | 'data-table' | 'line-graph' | 'bar-graph' | 'diagram'
+
+export interface GeneratedQuestionStimulus {
+  id: ID
+  title: string
+  kind: GeneratedQuestionStimulusKind
+  context: string
+  caption: string
+  altText: string
+  basis: 'source-derived' | 'generated-schematic' | 'simulated-data'
+  sourceChunkIds: ID[]
+  table?: { columns: string[]; rows: string[][] }
+  graph?: { xLabel: string; yLabel: string; series: Array<{ label: string; points: Array<{ x: string; y: number }> }> }
+  diagram?: { nodes: Array<{ id: ID; label: string; x: number; y: number; shape?: 'box' | 'circle' }>; edges: Array<{ from: ID; to: ID; label?: string }> }
+}
 
 export interface GeneratedUnitQuestion {
   id: ID
@@ -1083,6 +1101,7 @@ export interface GeneratedUnitQuestion {
   secondaryStandardIds?: string[]
   sourceChunkIds: ID[]
   difficulty: 'foundational' | 'standard' | 'challenging'
+  stimulusIds: ID[]
 }
 
 /** Generated questions are practice material, never a private/official exam. */
@@ -1096,7 +1115,10 @@ export interface GeneratedUnitQuestionBank {
   courseStyle: GeneratedQuestionBankStyle
   currentUnitPercent: number
   integrationPercent: number
+  stimuli?: GeneratedQuestionStimulus[]
   questions: GeneratedUnitQuestion[]
+  /** Optional for records created before provider tracing was added. */
+  generationProvider?: 'anthropic' | 'openai'
   sourceChunkIds: ID[]
   createdAt: number
   updatedAt: number

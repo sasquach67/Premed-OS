@@ -91,6 +91,16 @@ function objectiveAction(title: string) {
   return `Explain ${title} in your own words and use it to answer a source-aligned question without notes.`
 }
 
+function objectiveRecallCue(title: string) {
+  const objective = title.replace(/[.!?]+$/, '').trim()
+  if (/^(explain|reconstruct|draw|trace|compare|predict|describe|organize|outline|design|interpret|derive|label|map)\b/i.test(objective)) {
+    return `Without notes, ${objective.charAt(0).toLocaleLowerCase()}${objective.slice(1)}.`
+  }
+  if (/\b(and|versus|vs\.?)\b/i.test(objective)) return `Without notes, compare ${objective.replace(/\s+(?:and|versus|vs\.?)\s+/i, ' with ')} and explain the source-supported distinction.`
+  if (/\b(mechanism|process|pathway|cycle|sequence|transcription|translation)\b/i.test(objective)) return `Without notes, reconstruct ${objective} from start to finish and explain what happens at each step.`
+  return `Without notes, explain ${objective} as a connected response using the relationships supported by the selected sources.`
+}
+
 export function buildLectureMasteryMap({ lecture, topics, chunks, files, now = Date.now() }: {
   lecture: LectureRecord
   topics: Topic[]
@@ -115,6 +125,7 @@ export function buildLectureMasteryMap({ lecture, topics, chunks, files, now = D
     return [{
       id: topic.id,
       title: topic.title,
+      freeRecallCues: [objectiveRecallCue(topic.title)],
       understand: firstDistinct(evidenceSentences, 4).map((item) => item.text),
       beAbleToDo: performance.length ? performance : [objectiveAction(topic.title)],
       watchFor: cautions.length ? cautions : ['No source-supported caution was found yet. Add notes or objectives that name the common trap.'],

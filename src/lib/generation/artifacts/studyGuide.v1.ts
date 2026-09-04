@@ -26,7 +26,7 @@ export interface GuideSectionSpec {
 /** `03` §2 — the default skeleton, in order. */
 export const STUDY_GUIDE_SECTIONS: GuideSectionSpec[] = [
   { id: 'title', title: 'TITLE', required: 'always', purpose: "The topic, in the instructor's terms." },
-  { id: 'big-picture', title: 'BIG PICTURE', required: 'always', purpose: 'What this topic is and how its pieces fit. 3–6 sentences. Not a summary of what follows — the frame that makes what follows make sense.' },
+  { id: 'at-a-glance', title: 'AT A GLANCE', required: 'always', purpose: 'The former Lecture Brief role inside this same document: a concise connected orientation, strongest source-supported instructor emphasis, essential vocabulary in context, and highest-risk distinction. It points into the detailed guide without replacing or duplicating it.' },
   { id: 'objectives', title: 'LEARNING OBJECTIVES', required: 'conditional', purpose: 'Preserved verbatim when the professor supplied them; inferred only when clearly supported, capped at 5 and marked as inferred. Omit when neither applies — a guessed objective list is actively misleading.' },
   { id: 'core-concepts', title: 'CORE CONCEPTS', required: 'always', purpose: 'Organized by concept, not slide order.' },
   { id: 'mechanisms', title: 'MECHANISMS / PROCESSES', required: 'conditional', purpose: 'Causal or sequential processes, step by step, with why.' },
@@ -38,7 +38,7 @@ export const STUDY_GUIDE_SECTIONS: GuideSectionSpec[] = [
   { id: 'must-understand', title: 'MUST UNDERSTAND', required: 'always', purpose: 'Concepts requiring comprehension.' },
   { id: 'must-memorize', title: 'MUST MEMORIZE', required: 'always', purpose: 'Facts, terms, formulas, pathways, values requiring direct recall.' },
   { id: 'active-recall', title: 'ACTIVE RECALL', required: 'always', purpose: 'Concise self-test prompts on the concepts the guide itself marked important. Every answer must exist in the guide.' },
-  { id: 'synthesis', title: 'FINAL SYNTHESIS', required: 'always', purpose: 'Compact integrated overview. Not a repeat of BIG PICTURE — it integrates after the detail rather than framing before it.' },
+  { id: 'synthesis', title: 'FINAL SYNTHESIS', required: 'always', purpose: 'Compact integrated overview. Not a repeat of AT A GLANCE — it integrates after the detail rather than framing before it.' },
 ]
 
 export const REQUIRED_SECTION_IDS = STUDY_GUIDE_SECTIONS
@@ -65,6 +65,9 @@ export const STUDY_GUIDE_V1: ArtifactSpec = {
     { id: 'SG-9', kind: 'invariant', text: 'If material is incomplete, mark the gap explicitly; never invent.' },
     { id: 'SG-10', kind: 'tunable', text: 'Every major concept gets an explicit representation decision. Bullets are not the default and must be justified by structure — a process in bullets, a comparison in bullets, and a hierarchy in bullets are all defects.' },
     { id: 'SG-11', kind: 'invariant', text: 'Visual grammar is consistent across the whole artifact.' },
+    { id: 'SG-AT-A-GLANCE', kind: 'invariant', text: 'The Study Guide is the one canonical lecture-learning document. Begin with an AT A GLANCE section that performs the former Lecture Brief job: give a concise connected orientation, surface the strongest source-supported instructor emphasis, anchor essential vocabulary in context, and name the highest-risk distinction or misconception. This opening is a map into the full guide, not a second summary artifact.' },
+    { id: 'SG-FULL-DEPTH', kind: 'invariant', text: 'Combining the overview and guide must not reduce coverage or explanatory depth. After AT A GLANCE, teach every supported major concept, process, relationship, comparison, and application at the depth warranted by the selected sources.' },
+    { id: 'SG-NO-DUPLICATE-LAYERS', kind: 'invariant', text: 'AT A GLANCE names and connects what matters; later sections expand it with mechanism, evidence, examples, and application. Do not repeat the same stand-alone explanation, list, table, or wording in both layers.' },
     {
       id: 'SG-SPLIT',
       kind: 'invariant',

@@ -92,6 +92,10 @@ describe('MaterialGenerationIntake generation reliability', () => {
   it('blocks a request above the backend 24-passage limit before generation', async () => {
     await renderIntake(25)
 
+    expect(container.textContent).toContain('Add files or folder')
+    expect(container.textContent).toContain('Add individual files or a whole folder')
+    expect(container.textContent).toContain('Select all ready')
+
     expect(container.textContent).toContain(
       'Choose fewer source files or add a shorter excerpt. This selection contains 25 passages, and AI study tools can use up to 24 at a time.',
     )

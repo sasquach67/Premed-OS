@@ -1,20 +1,23 @@
-# 18 · Lecture Brief — derived front-page contract
+# 18 · At a glance — derived preview and compatibility contract
 
-**Status: SHIPPED, DERIVED — not a separate API artifact.** The Lecture Brief
-is the concise front of a completed lecture. Its current builder is
-`src/lib/academics/lectureWorkspace.ts`; the API-generated Full Study Guide and
-Mastery Map remain separate stored resources.
+**Status: INCORPORATED — not a separate student-facing artifact or API call.**
+The former Lecture Brief is now the **AT A GLANCE** opening of the canonical
+Study Guide. Its deterministic builder in `src/lib/academics/lectureWorkspace.ts`
+remains only for pre-generation previews, source-coverage metadata, and older
+saved lectures. The API-generated Study Guide and Mastery Map remain separate
+stored resources because the Mastery Map carries objective state rather than
+teaching prose.
 
 ## Why this distinction matters
 
-The Lecture Brief is not allowed to imply that a second model read more source
+The preview is not allowed to imply that a second model read more source
 material than the generation pipeline processed. It is assembled
 deterministically from the selected readable lecture chunks, while the same
 build operation asks the API for `study-guide-v1` and
 `unit-mastery-outline-v1`. Source-use coverage is then reconciled against the
 verified references carried by those generated artifacts.
 
-## Required front-page sections
+## Required preview information
 
 - A concise lecture-in-one-page summary.
 - Concept connections when connective source language exists.
@@ -24,9 +27,14 @@ verified references carried by those generated artifacts.
 - Misconceptions or cautions only when supported.
 - A Mastery Map preview and selected/used/unused source coverage.
 
+Once generation succeeds, these are represented inside the Study Guide's
+AT A GLANCE opening and its source controls. They must not be rendered as a
+second Lecture Brief beside the full guide, and the detailed guide must expand
+rather than repeat the opening.
+
 Readable practice-question scenarios may appear as source-backed explanatory
 examples when they clarify a concept. Copied stems or answer choices and
-standalone question generation stay out of the Lecture Brief. Distractors are
+standalone question generation stay out of the preview. Distractors are
 never treated as factual evidence.
 
 Every displayed claim keeps its exact source chunk id and exposes a Show source
@@ -36,7 +44,6 @@ verified.
 
 ## Future version boundary
 
-If Lecture Brief becomes its own model-generated artifact, it must receive a
-new registered `lecture-brief-v1` runtime spec, structured schema, server-side
-citation closure, validator, drift test, persistence migration, and disclosure.
-This document alone must never be treated as permission to add that model call.
+Do not reintroduce Lecture Brief as a second generated artifact. A future split
+would require a new explicit product decision plus its own registered runtime
+spec, structured schema, citation closure, validator, migration, and disclosure.

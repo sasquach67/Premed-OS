@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import type {
   AcademicFile, ClassAssignment, ClassCenterData, ClassContact, ClassNote,
-  AcademicTagColor, AssignedReading, ClassWorkspace, ClassWorkspaceType, Course, FeedbackNote, GradeCategory, PaperDraft, Person, SyllabusScheduleEntry, Topic,
+  AcademicTagColor, AssignedReading, ClassWorkspace, ClassWorkspaceType, Course, FeedbackNote, GeneratedQuestionStimulus, GeneratedUnitQuestion, GradeCategory, PaperDraft, Person, SyllabusScheduleEntry, Topic,
 } from '@/lib/types'
 import { useStore } from '@/store/store'
 import { uid } from '@/lib/id'
@@ -396,10 +396,10 @@ function Overview({
               : activeLectureBrief && <SavedLecturePreview brief={activeLectureBrief} mastery={activeMasteryMap} sourceCount={activeLectureSources.length} />}
           </> : <>
             <div className="lecture-active-header"><div><p className="lecture-ledger-kicker">{scheduleContext ? `Today · ${scheduleContext}` : 'Today'}</p><h2>Build a lecture page</h2></div><span className="lecture-number-pill">Lecture {nextLectureNumber}</span></div>
-            <div className="lecture-capture-steps" aria-label="Lecture import workflow"><div className="is-current"><b>1 · Add source</b><span>Transcript</span></div><div><b>2 · Add materials</b><span>Required</span></div><div><b>3 · Build page</b><span>Brief + Mastery</span></div></div>
+            <div className="lecture-capture-steps" aria-label="Lecture import workflow"><div className="is-current"><b>1 · Add source</b><span>Transcript</span></div><div><b>2 · Add materials</b><span>Required</span></div><div><b>3 · Build page</b><span>Guide + Mastery</span></div></div>
             <button type="button" className="lecture-transcript-drop" onClick={() => openLecture(undefined, 'transcript')}><b>Paste or upload a lecture source</b><span>PDF, DOCX, TXT, image, or clipboard text</span></button>
             <div className="lecture-capture-actions"><Button size="sm" onClick={() => openLecture(undefined, 'transcript')}>Import lecture</Button></div>
-            <p className="lecture-journal-next"><b>Result:</b> a Lecture Brief and Mastery Map, with transcript and materials kept under Sources.</p>
+            <p className="lecture-journal-next"><b>Result:</b> one Study Guide from At a glance through full depth, plus a Mastery Map. Transcript and materials stay under Sources.</p>
           </>}
         </article>
       </section>
@@ -442,8 +442,8 @@ function SavedLecturePreview({ brief, mastery, sourceCount }: {
   const connection = brief.connections[0]
   const vocabulary = brief.vocabulary.slice(0, 3)
   return <div className="lecture-saved-preview">
-    <section className="lecture-saved-brief" aria-label="Lecture Brief preview">
-      <p className="lecture-saved-label">Lecture Brief · Start here</p>
+    <section className="lecture-saved-brief" aria-label="Study Guide preview">
+      <p className="lecture-saved-label">Study Guide · At a glance</p>
       {brief.summary.length ? <div className="lecture-saved-summary">{brief.summary.slice(0, 2).map((item) => <p key={item.id}>{item.text}</p>)}</div> : <div className="lecture-saved-empty"><b>No readable lecture content yet</b><span>Add a transcript or another processed source to build the study front.</span></div>}
       {flow.length > 1 ? <ol className="lecture-saved-flow" aria-label="Concept flow preview">{flow.map((node, index) => <li key={node.id} className="contents"><span>{node.label}</span>{index < flow.length - 1 && <i aria-hidden="true">→</i>}</li>)}</ol> : connection ? <p className="lecture-saved-connection"><b>Connection:</b> {connection.text}</p> : null}
       {vocabulary.length > 0 && <div className="lecture-saved-vocabulary"><b>Key language</b>{vocabulary.map((item) => <span key={item.id}>{item.term}</span>)}</div>}
@@ -924,7 +924,7 @@ function GeneratedMasteryOutlines({ courseId, data }: { courseId: string; data: 
   if (!outlines.length) return null
   return <section className="rounded-2xl border border-border bg-card p-4" aria-label="Generated Mastery Maps">
     <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border pb-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Generated resource</p><h3 className="mt-1 font-display text-lg font-extrabold">Mastery Maps</h3></div><Badge variant="outline">{outlines.length} {outlines.length === 1 ? 'scope' : 'scopes'}</Badge></div>
-    <div className="mt-3 space-y-2">{outlines.map((outline) => <details key={outline.id} className="class-hub-record-row rounded-[13px] p-3"><summary className="cursor-pointer list-none font-display text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{outline.title}<span className="ml-2 font-sans text-xs font-bold text-muted-foreground">{outline.unit} · {outline.standards.length} standards</span></summary><div className="mt-3 space-y-3 border-t border-border pt-3">{outline.standards.map((standard) => <div key={standard.id} className="grid gap-2 text-sm sm:grid-cols-3"><div><p className="font-display font-extrabold">{standard.title}</p><p className="mt-1 text-xs font-bold uppercase tracking-wide text-primary">Understand</p><p className="text-muted-foreground">{standard.understand.join(' ') || 'Not stated'}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Be able to do</p><p className="text-muted-foreground">{standard.beAbleToDo.join(' ') || 'Not stated'}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Watch for</p><p className="text-muted-foreground">{standard.watchFor.join(' ') || 'Not stated'}</p></div></div>)}</div></details>)}</div>
+    <div className="mt-3 space-y-2">{outlines.map((outline) => <details key={outline.id} className="class-hub-record-row rounded-[13px] p-3"><summary className="cursor-pointer list-none font-display text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{outline.title}<span className="ml-2 font-sans text-xs font-bold text-muted-foreground">{outline.unit} · {outline.standards.length} standards</span></summary><div className="mt-3 space-y-3 border-t border-border pt-3">{outline.standards.map((standard) => <div key={standard.id} className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4"><div><p className="font-display font-extrabold">{standard.title}</p><p className="mt-1 text-xs font-bold uppercase tracking-wide text-primary">Free recall</p><p className="text-muted-foreground">{(standard.freeRecallCues?.length ? standard.freeRecallCues : [standard.title]).join(' ')}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Understand</p><p className="text-muted-foreground">{standard.understand.join(' ') || 'Not stated'}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Be able to do</p><p className="text-muted-foreground">{standard.beAbleToDo.join(' ') || 'Not stated'}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Watch for</p><p className="text-muted-foreground">{standard.watchFor.join(' ') || 'Not stated'}</p></div></div>)}</div></details>)}</div>
     <p className="mt-3 text-xs font-semibold text-muted-foreground">Syllabus standards remain the Topic contract; lecture concepts only provide supporting evidence.</p>
   </section>
 }
@@ -934,9 +934,43 @@ function GeneratedUnitQuestionBanks({ courseId, data }: { courseId: string; data
   if (!banks.length) return null
   return <section className="rounded-2xl border border-border bg-card p-4" aria-label="Generated unit question banks">
     <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border pb-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Generated resource</p><h3 className="mt-1 font-display text-lg font-extrabold">Unit question banks</h3></div><Badge variant="outline">{banks.reduce((total, bank) => total + bank.questions.length, 0)} questions</Badge></div>
-    <div className="mt-3 space-y-2">{banks.map((bank) => <details key={bank.id} className="class-hub-record-row rounded-[13px] p-3"><summary className="cursor-pointer list-none font-display text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{bank.title}<span className="ml-2 font-sans text-xs font-bold text-muted-foreground">{bank.unit} · {bank.questions.length} questions · {bank.integrationPercent}% prior-unit</span></summary><div className="mt-3 divide-y divide-border border-t border-border">{bank.questions.map((question, index) => <div key={question.id} className="grid gap-1 py-3 text-sm sm:grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)] sm:gap-3"><span className="text-xs font-extrabold text-primary">{index + 1}</span><div><p className="font-bold">{question.prompt}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{question.scope === 'prior-unit-integration' ? 'Prior-unit integration' : 'Current unit'} · {question.move}</p></div><div><p className="font-semibold">Answer: {question.answer}</p><p className="mt-1 text-muted-foreground">{question.rationale}</p></div></div>)}</div></details>)}</div>
-    <p className="mt-3 text-xs font-semibold text-muted-foreground">Practice questions are source-grounded and never copied from private or official assessments.</p>
+    <div className="mt-3 space-y-2">{banks.map((bank) => <details key={bank.id} className="class-hub-record-row rounded-[13px] p-3"><summary className="cursor-pointer list-none font-display text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{bank.title}<span className="ml-2 font-sans text-xs font-bold text-muted-foreground">{bank.unit} · {bank.questions.length} questions · {bank.integrationPercent}% prior-unit{bank.generationProvider ? ` · ${bank.generationProvider === 'anthropic' ? 'Claude-authored' : 'OpenAI-authored'}` : ''}</span></summary><div className="mt-3 space-y-4 border-t border-border pt-3">{bank.stimuli?.length ? bank.stimuli.map((stimulus) => {
+      const linked = bank.questions.filter((question) => question.stimulusIds?.[0] === stimulus.id)
+      return <QuestionStimulusSet key={stimulus.id} stimulus={stimulus} questions={linked} questionNumbers={linked.map((question) => bank.questions.indexOf(question) + 1)} />
+    }) : <QuestionList questions={bank.questions} numbers={bank.questions.map((_, index) => index + 1)} />}</div></details>)}</div>
+    <p className="mt-3 text-xs font-semibold text-muted-foreground">Every new bank is application-first and stimulus-based. Structured visuals are source-grounded or clearly labeled as simulated; private and official assessment wording is never copied.</p>
   </section>
+}
+
+function QuestionList({ questions, numbers }: { questions: GeneratedUnitQuestion[]; numbers: number[] }) {
+  return <div className="divide-y divide-border">{questions.map((question, index) => <div key={question.id} className="grid gap-1 py-3 text-sm sm:grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)] sm:gap-3"><span className="text-xs font-extrabold text-primary">{numbers[index]}</span><div><p className="font-bold">{question.prompt}</p>{question.options?.length ? <ol className="mt-2 list-[upper-alpha] space-y-1 pl-5 text-muted-foreground">{question.options.map((option) => <li key={option}>{option}</li>)}</ol> : null}<p className="mt-2 text-xs font-semibold text-muted-foreground">{question.scope === 'prior-unit-integration' ? 'Prior-unit integration' : 'Current unit'} · {question.move}</p></div><div><p className="font-semibold">Answer: {question.answer}</p><p className="mt-1 text-muted-foreground">{question.rationale}</p></div></div>)}</div>
+}
+
+function QuestionStimulusSet({ stimulus, questions, questionNumbers }: { stimulus: GeneratedQuestionStimulus; questions: GeneratedUnitQuestion[]; questionNumbers: number[] }) {
+  return <section className="overflow-hidden rounded-xl border border-border bg-background/45" aria-labelledby={`stimulus-${stimulus.id}`}>
+    <header className="border-b border-border px-4 py-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Stimulus set</p><h4 id={`stimulus-${stimulus.id}`} className="font-display text-sm font-extrabold">{stimulus.title}</h4></div><Badge variant="outline">{stimulus.kind.replace('-', ' ')}</Badge></div><p className="mt-2 text-sm text-muted-foreground">{stimulus.context}</p></header>
+    <div className="p-4"><QuestionStimulusVisual stimulus={stimulus} /><p className="mt-2 text-xs font-semibold text-muted-foreground">{stimulus.caption}</p></div>
+    <div className="border-t border-border px-4"><QuestionList questions={questions} numbers={questionNumbers} /></div>
+  </section>
+}
+
+function QuestionStimulusVisual({ stimulus }: { stimulus: GeneratedQuestionStimulus }) {
+  if (stimulus.kind === 'data-table' && stimulus.table) return <div className="overflow-x-auto"><table className="w-full border-collapse text-left text-sm"><thead><tr>{stimulus.table.columns.map((column) => <th key={column} className="border border-border bg-muted/50 px-3 py-2 font-extrabold">{column}</th>)}</tr></thead><tbody>{stimulus.table.rows.map((row, rowIndex) => <tr key={`${stimulus.id}-row-${rowIndex}`}>{row.map((cell, cellIndex) => <td key={`${stimulus.id}-${rowIndex}-${cellIndex}`} className="border border-border px-3 py-2">{cell}</td>)}</tr>)}</tbody></table></div>
+  if ((stimulus.kind === 'line-graph' || stimulus.kind === 'bar-graph') && stimulus.graph) {
+    const values = stimulus.graph.series.flatMap((series) => series.points.map((point) => point.y))
+    const min = Math.min(0, ...values)
+    const max = Math.max(...values, min + 1)
+    const scaleY = (value: number) => 90 - ((value - min) / (max - min)) * 75
+    const labels = stimulus.graph.series[0]?.points.map((point) => point.x) ?? []
+    const scaleX = (index: number) => labels.length <= 1 ? 50 : 15 + (index / (labels.length - 1)) * 80
+    const colors = ['hsl(var(--primary))', '#d97706', '#7c3aed']
+    return <svg viewBox="0 0 110 110" className="h-auto max-h-80 w-full" role="img" aria-label={stimulus.altText}><line x1="12" y1="8" x2="12" y2="92" stroke="currentColor" strokeWidth="0.8" /><line x1="12" y1="92" x2="102" y2="92" stroke="currentColor" strokeWidth="0.8" />{labels.map((label, index) => <text key={label} x={scaleX(index)} y="101" textAnchor="middle" fontSize="3.5" fill="currentColor">{label}</text>)}{stimulus.graph.series.map((series, seriesIndex) => stimulus.kind === 'line-graph' ? <g key={series.label}><polyline fill="none" stroke={colors[seriesIndex % colors.length]} strokeWidth="1.5" points={series.points.map((point, index) => `${scaleX(index)},${scaleY(point.y)}`).join(' ')} />{series.points.map((point, index) => <circle key={`${series.label}-${point.x}`} cx={scaleX(index)} cy={scaleY(point.y)} r="1.8" fill={colors[seriesIndex % colors.length]} />)}</g> : <g key={series.label}>{series.points.map((point, index) => <rect key={`${series.label}-${point.x}`} x={scaleX(index) - 3 + seriesIndex * 2} y={scaleY(point.y)} width="3" height={92 - scaleY(point.y)} fill={colors[seriesIndex % colors.length]} />)}</g>)}<text x="57" y="108" textAnchor="middle" fontSize="4" fill="currentColor">{stimulus.graph.xLabel}</text><text x="4" y="50" textAnchor="middle" fontSize="4" fill="currentColor" transform="rotate(-90 4 50)">{stimulus.graph.yLabel}</text></svg>
+  }
+  if (stimulus.kind === 'diagram' && stimulus.diagram) {
+    const nodes = new Map(stimulus.diagram.nodes.map((node) => [node.id, node]))
+    return <svg viewBox="0 0 100 100" className="h-auto max-h-80 w-full" role="img" aria-label={stimulus.altText}><defs><marker id={`arrow-${stimulus.id}`} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="currentColor" /></marker></defs>{stimulus.diagram.edges.map((edge, index) => { const from = nodes.get(edge.from); const to = nodes.get(edge.to); return from && to ? <g key={`${edge.from}-${edge.to}-${index}`}><line x1={from.x} y1={from.y} x2={to.x} y2={to.y} stroke="currentColor" strokeWidth="1" markerEnd={`url(#arrow-${stimulus.id})`} />{edge.label ? <text x={(from.x + to.x) / 2} y={(from.y + to.y) / 2 - 2} textAnchor="middle" fontSize="3.5" fill="currentColor">{edge.label}</text> : null}</g> : null })}{stimulus.diagram.nodes.map((node) => <g key={node.id}>{node.shape === 'circle' ? <circle cx={node.x} cy={node.y} r="8" fill="hsl(var(--background))" stroke="currentColor" /> : <rect x={node.x - 11} y={node.y - 6} width="22" height="12" rx="2" fill="hsl(var(--background))" stroke="currentColor" />}<text x={node.x} y={node.y + 1} textAnchor="middle" fontSize="3.8" fill="currentColor">{node.label}</text></g>)}</svg>
+  }
+  return <p className="rounded-lg bg-muted/45 p-3 text-sm">{stimulus.context}</p>
 }
 
 function Topics({

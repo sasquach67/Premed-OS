@@ -82,7 +82,8 @@ describe('lecture import and workspace', () => {
       artifact: {
         specId: 'study-guide-v1', specHash: 'guide-hash', courseId, topicId: '__class_material__',
         sections: [
-          { id: 'big-picture', title: 'BIG PICTURE', blocks: [{ id: 'g1', type: 'prose', text: { content: 'Conditioning links cues with outcomes.' }, provenance: 'source', conceptLabel: 'Conditioning', sourceRef: { fileId: 'transcript', chunkId: 'transcript-chunk', start: 0, end: 76 } }] },
+          { id: 'at-a-glance', title: 'AT A GLANCE', blocks: [{ id: 'g1', type: 'prose', text: { content: 'Conditioning links cues with outcomes.' }, provenance: 'source', conceptLabel: 'Conditioning', sourceRef: { fileId: 'transcript', chunkId: 'transcript-chunk', start: 0, end: 76 } }] },
+          { id: 'core-concepts', title: 'CORE CONCEPTS', blocks: [{ id: 'g2', type: 'prose', text: { content: 'Acquisition develops as repeated pairings make the cue informative about the outcome.' }, provenance: 'source', conceptLabel: 'Acquisition', sourceRef: { fileId: 'transcript', chunkId: 'transcript-chunk', start: 0, end: 76 } }] },
         ],
       },
     })
@@ -90,7 +91,7 @@ describe('lecture import and workspace', () => {
       ok: true,
       artifact: {
         courseId, lectureId: 'lecture', scope: 'lecture', scopeId: 'lecture', title: 'Generated · Lecture 1 mastery map', unit: 'Lecture 1 · Conditioning', specId: 'unit-mastery-outline-v1', specHash: 'mastery-hash', sourceChunkIds: ['transcript-chunk'],
-        standards: [{ id: 'objective-1', title: 'Explain conditioning', understand: ['Explain how cues connect to outcomes.'], beAbleToDo: ['Apply the relationship to a new example.'], watchFor: ['Do not confuse extinction with erasure.'], sourceChunkIds: ['transcript-chunk'], masteryState: 'not-started' }],
+        standards: [{ id: 'objective-1', title: 'Explain conditioning', freeRecallCues: ['Without notes, explain how cues connect to outcomes.'], understand: ['Explain how cues connect to outcomes.'], beAbleToDo: ['Apply the relationship to a new example.'], watchFor: ['Do not confuse extinction with erasure.'], sourceChunkIds: ['transcript-chunk'], masteryState: 'not-started' }],
       },
     })
     await render(courseId, 'lecture', 'transcript')
@@ -138,6 +139,10 @@ describe('lecture import and workspace', () => {
     expect(saved.lectureBrief?.selectedSourceFileIds).toEqual(expect.arrayContaining(['transcript', 'slides']))
     await render(courseId, 'lecture', 'transcript')
     expect(container.textContent).toContain('Lecture Study Guide')
+    expect(container.textContent).toContain('At a glance')
+    expect(container.textContent).toContain('One connected document')
+    expect(container.textContent).toContain('Acquisition develops as repeated pairings')
+    expect(container.textContent).not.toContain('Lecture Brief')
     expect(container.textContent).toContain('Concept map')
     expect(container.querySelector('input[placeholder="Search exact words across transcript and sources"]')).toBeNull()
   })
@@ -208,7 +213,7 @@ describe('lecture import and workspace', () => {
     expect(continueButton.disabled).toBe(false)
   })
 
-  it('opens a completed lecture to Brief and Mastery with transcript under Sources', async () => {
+  it('opens a completed lecture to the Study Guide preview and Mastery Map with transcript under Sources', async () => {
     const seed = structuredClone(createSeedData())
     const courseId = seed.academics.classCenter.workspaces[0].courseId
     seed.academics.classCenter.lectures.push({ id: 'complete', courseId, title: 'Lecture 1 · Origins of Psychology', inputPath: 'pasted', transcriptFileId: 'transcript', occurredOn: '2026-09-02', processingState: 'ready', workspaceState: 'complete', selectedSourceFileIds: ['transcript'], createdAt: 1, updatedAt: 1, order: 0 })
@@ -216,8 +221,10 @@ describe('lecture import and workspace', () => {
     seed.academics.classCenter.sourceChunks.push({ id: 'chunk', fileId: 'transcript', courseId, content: 'Psychology connects observable behavior with mental processes because both require evidence.', sourcePosition: { index: 0, label: '00:10' }, coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: 0 })
     useStore.getState().replaceAll(seed)
     await render(courseId, 'complete')
-    expect(container.textContent).toContain('Lecture Brief')
-    expect(container.textContent).toContain('Study the explanation here')
+    expect(container.textContent).toContain('Study Guide')
+    expect(container.textContent).toContain('At a glance')
+    expect(container.textContent).not.toContain('Lecture Brief')
+    expect(container.textContent).toContain('becomes the opening of the full Study Guide')
     expect(container.textContent).toContain('Lecture in one page')
     expect(container.textContent).toContain('Concept map & connections')
     expect(container.textContent).toContain('Mastery Map')
@@ -253,6 +260,8 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).toContain('Biol 103 Lecture 2 Captions.txt · Transcript excerpt · central information flow')
     const mastery = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Mastery Map')!
     await act(async () => mastery.click())
+    expect(container.textContent).toContain('Free recall')
+    expect(container.textContent).toContain('Without notes, explain the complete process of transcription and RNA processing')
     expect(container.textContent).toContain('Trace gene expression from DNA to a mature transcript')
     expect(container.textContent).toContain('Use the codon table with mRNA')
     expect(container.textContent).toContain('Infer the likely destination of a protein')

@@ -256,7 +256,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
     { ...chunk('demo-chunk-biol103-mastery-lo5', 'demo-file-biol103-mastery-l2', courses[12].id, 'demo-topic-biol103-methods', 'LO 5. Choose and interpret methods that reveal gene expression. Choose in situ hybridization when asked where a specific mRNA is present; choose immunostaining when asked where a specific protein is present. Watch for: A fluorescent signal supports the claim only if controls rule out nonspecific binding or background fluorescence.', 23, at), sourcePosition: { index: 2, label: 'Page 3 · Lesson 2 LO 5' } },
   ]
   // Concrete sample built from the four supplied BIOL 103 files and the
-  // repository's current Lecture Brief / Mastery Map generation contracts.
+  // repository's current Study Guide preview / Mastery Map contracts.
   // It remains deterministic demo data: no external provider call is implied.
   const biolLectureBrief: LectureBrief = {
     summary: [
@@ -325,6 +325,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
     standards: [
       {
         id: 'demo-topic-biol103-expression', title: 'Trace gene expression from DNA to a mature transcript', masteryState: 'not-started',
+        freeRecallCues: ['Without notes, explain the complete process of transcription and RNA processing from template DNA to mature mRNA, including molecule direction and cellular location.', 'Draw the eukaryotic flow from DNA to mature protein and label where transcription, processing, export, and translation occur.'],
         understand: ['Gene expression links DNA, RNA, and protein through distinct synthesis steps.', 'RNA is complementary and antiparallel to the template strand; it matches the coding strand except U replaces T.', 'In eukaryotes, transcription and RNA processing occur in the nucleus before mature mRNA is exported.', 'Bacterial transcription and translation can be coupled because no nucleus separates the processes.', 'Classic gene-function evidence moved from one gene–one enzyme to the more precise one gene–one polypeptide model.'],
         beAbleToDo: ['Given either DNA strand with 5′/3′ labels, identify template versus coding and write the mRNA 5′→3′.', 'Move among template DNA, coding DNA, mature mRNA, and polypeptide without reversing strand orientation.', 'Predict whether transcription and translation can be simultaneous in a stated cell type and justify the answer.'],
         watchFor: ['Do not treat DNA → RNA → protein as a physical conversion of one molecule into the next.', 'Do not ignore strand labels; textbook questions may flip which end is shown first.'],
@@ -332,6 +333,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
       },
       {
         id: 'demo-topic-biol103-codons', title: 'Decode genetic information with codons and tRNAs', masteryState: 'not-started',
+        freeRecallCues: ['Without notes, explain how codons, anticodons, tRNAs, and aminoacyl-tRNA synthetases convert an mRNA sequence into the correct amino-acid sequence.', 'Trace one example from template DNA to coding DNA, mRNA, tRNA anticodon, and polypeptide with every 5′/3′ or N/C direction labeled.'],
         understand: ['A codon is read on mRNA; a tRNA anticodon pairs antiparallel with it while the opposite end carries an amino acid.', 'AUG is both the start signal and a methionine codon; UAA, UAG, and UGA are stop codons.', 'The genetic code is redundant but unambiguous: several codons may specify one amino acid, but each codon specifies only one meaning.', 'Aminoacyl-tRNA synthetases load each tRNA with the correct amino acid and are essential for translation accuracy.', 'Wobble is flexible pairing at the third codon position, allowing one tRNA to recognize more than one codon.'],
         beAbleToDo: ['Translate a short mRNA from the correct AUG through the first in-frame stop codon.', 'Write the antiparallel tRNA anticodon for a stated mRNA codon.', 'Explain why one known polypeptide usually cannot be reverse-translated to one unique DNA sequence.'],
         watchFor: ['Use the codon table with mRNA, not the DNA template or the tRNA anticodon.', 'The ribosome checks codon–anticodon pairing; aminoacyl-tRNA synthetase is what loads the correct amino acid.'],
@@ -339,6 +341,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
       },
       {
         id: 'demo-topic-biol103-ribosome', title: 'Explain how a ribosome builds and releases a polypeptide', masteryState: 'not-started',
+        freeRecallCues: ['Without notes, reconstruct translation from initiation through elongation and termination, tracking the mRNA, A/P/E sites, tRNAs, and growing polypeptide.', 'Draw one elongation cycle and explain what changes before and after translocation.'],
         understand: ['The ribosome is an rRNA-and-protein machine with A, P, and E tRNA sites.', 'Elongation repeats codon recognition, peptide-bond formation, and translocation; tRNAs move A → P → E.', 'A release factor recognizes a stop codon and releases the polypeptide, which is not yet necessarily a mature protein.', 'Initiation aligns the small subunit, mRNA, start codon, and initiator tRNA before the full ribosome assembles.', 'Each peptide bond extends the growing chain at its C terminus while the tRNAs advance through the ribosome.'],
         beAbleToDo: ['Place incoming, peptide-bearing, and exiting tRNAs in the correct A, P, and E sites on an unfamiliar diagram.', 'Predict which site is occupied after a stated initiation or elongation step.', 'Track the N and C termini and identify where the next amino acid is added.'],
         watchFor: ['No tRNA carries a “stop” amino acid.', 'Do not call an unfolded amino-acid chain a fully functional mature protein.'],
@@ -346,6 +349,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
       },
       {
         id: 'demo-topic-biol103-targeting', title: 'Predict protein folding, modification, and cellular destination', masteryState: 'not-started',
+        freeRecallCues: ['Without notes, explain how a newly translated polypeptide folds, is modified, and reaches the correct cellular destination.', 'Reconstruct the complete route of a secreted protein from translation on a free ribosome through ER targeting, Golgi transport, and release.'],
         understand: ['Amino-acid sequence shapes folding; chemical modifications or subunit assembly can further change the mature protein.', 'An N-terminal signal sequence can recruit the targeting machinery that docks translation at the rough ER.', 'Cytosolic-route and ER-route proteins reach different sets of destinations.', 'A secreted protein moves from the cytosol into the ER and through processing and transport compartments before release.', 'Nuclear and mitochondrial proteins use localization signals and timing that differ from the ER-targeting pathway.'],
         beAbleToDo: ['Infer the likely destination of a protein from a targeting sequence or from a deletion of its targeting region.', 'Trace a soluble cytosolic, nuclear, mitochondrial, secreted, lysosomal, or membrane protein from translation to destination.', 'Predict how deleting a receptor’s ligand-binding, membrane-spanning, or intracellular signaling region changes function.'],
         watchFor: ['“Free” and “bound” describe a ribosome’s temporary location, not two permanent ribosome types.', 'A signal sequence directs localization; it does not become a destination by itself.'],
@@ -353,6 +357,7 @@ export function createDemoData(seedTime = Date.now()): AppData {
       },
       {
         id: 'demo-topic-biol103-methods', title: 'Choose and interpret methods that reveal gene expression', masteryState: 'not-started',
+        freeRecallCues: ['Without notes, compare in situ hybridization with immunostaining by target molecule, recognition reagent, signal, and conclusion.', 'Design a tissue-expression study that separately detects one mRNA and its protein, including a defensible positive and negative control for each method.'],
         understand: ['In situ hybridization uses sequence complementarity to localize a specific mRNA in tissue.', 'Immunohistochemistry or immunofluorescence uses antibodies to localize a specific protein.', 'Positive and negative controls establish whether a fluorescent signal is interpretable.', 'A nucleic-acid probe must be complementary and antiparallel to the target sequence it is meant to detect.', 'Primary antibodies bind the target protein while labeled secondary antibodies make that binding visible.'],
         beAbleToDo: ['Choose in situ hybridization for an mRNA-location question and immunostaining for a protein-location question.', 'Design a complementary probe with correct base pairing and orientation for a stated mRNA.', 'Use the Ebola activity data and controls to distinguish evidence of viral mRNA from evidence of viral protein.'],
         watchFor: ['A fluorescent signal does not prove target identity unless controls rule out background and nonspecific binding.', 'Evidence that mRNA is present is not automatically evidence that its protein is present.'],

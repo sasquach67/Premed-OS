@@ -170,7 +170,7 @@ describe('study-guide-v1 structure', () => {
     const missing = findings.filter((f) => f.check === 'Required sections present')
     expect(missing.length).toBeGreaterThan(0)
     expect(missing.every((f) => f.severity === 'blocking')).toBe(true)
-    expect(missing.some((f) => f.detail.includes('BIG PICTURE'))).toBe(true)
+    expect(missing.some((f) => f.detail.includes('AT A GLANCE'))).toBe(true)
   })
 
   it('does not demand them mid-pipeline, where a partial artifact is normal', () => {
@@ -183,8 +183,21 @@ describe('study-guide-v1 structure', () => {
     // than no section" — so conditional ones must never be demanded.
     expect(REQUIRED_SECTION_IDS).not.toContain('clinical')
     expect(REQUIRED_SECTION_IDS).not.toContain('objectives')
-    expect(REQUIRED_SECTION_IDS).toContain('big-picture')
+    expect(REQUIRED_SECTION_IDS).toContain('at-a-glance')
     expect(REQUIRED_SECTION_IDS).toContain('active-recall')
+  })
+
+  it('blocks a detailed section that repeats an At a glance statement verbatim', () => {
+    const repeated = 'PFK-1 commits glucose to glycolysis and responds to the energy state.'
+    const artifact: StudyGuideArtifact = {
+      ...guide([]),
+      sections: [
+        { id: 'at-a-glance', title: 'AT A GLANCE', blocks: [block({ id: 'opening', text: { content: repeated } })] },
+        { id: 'core-concepts', title: 'CORE CONCEPTS', blocks: [block({ id: 'detail', text: { content: repeated } })] },
+      ],
+    }
+    const findings = runDeterministicChecks(artifact, { mode: 'SOURCE_PLUS_CLARIFICATION' })
+    expect(findings.some((f) => f.check === 'Duplicate overview detail' && f.severity === 'blocking')).toBe(true)
   })
 })
 

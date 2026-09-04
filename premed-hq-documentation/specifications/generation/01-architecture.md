@@ -48,7 +48,7 @@ That is a unit test, not a code review.
 | Layer | Contributes | Example |
 |---|---|---|
 | L1 | Shared pedagogy + fidelity rules | "Explain relationships, not isolated facts" |
-| L2 | Artifact objective, required structure, output schema, artifact-specific rules | Study guide: BIG PICTURE → … → FINAL SYNTHESIS |
+| L2 | Artifact objective, required structure, output schema, artifact-specific rules | Study guide: AT A GLANCE → full-detail sections → FINAL SYNTHESIS |
 | L3 | Weighting of tunables | Exam Cram: explanation depth low, high-yield weight high |
 | L4 | Per-student overrides of tunables | "I prefer cloze"; "no analogies" |
 | L5 | Retrieved chunks with `chunkId`, `fileId`, offsets, `sourcePosition` | The actual lecture text |
@@ -228,19 +228,22 @@ most mechanical defects; escalate to a model pass only when they fire or when th
 
 ### 5.3 Provider roles — **decision D-7**
 
-OpenAI is the current primary **Generator**. Anthropic is the current independent **Reviewer**.
-Provider assignment remains configuration behind those roles; it is not part of the artifact
-contract. The server-owned citation validator is deliberately provider-independent.
+OpenAI is the default primary **Generator** and Anthropic is the default independent
+**Reviewer**. `unit-question-bank-v1` is a narrow routing exception: Anthropic authors its
+structured stimulus sets and OpenAI reviews them. If Anthropic is unavailable, the normal
+OpenAI-primary path is the availability fallback. Provider assignment remains behind these
+roles; it is not part of the artifact contract, and the server-owned citation and artifact
+validators are deliberately provider-independent.
 
 ### 5.4 Failure behavior
 
 | Failure | Behavior |
 |---|---|
-| OpenAI generation fails | No artifact. Surface the provider error. Nothing persisted |
+| Primary generation and its allowed fallback fail | No artifact. Surface the provider error. Nothing persisted |
 | Generation returns zero verified citations | **Reject.** Under any source mode, an artifact with no traceable claim is not a premedOS artifact |
 | Server validation fails | **Reject, do not repair.** A repair path is a fabrication path |
-| Anthropic finds a blocking issue | **Reject.** Nothing persisted; return the distinct audit failure |
-| Anthropic is missing or unavailable | Return only if deterministic checks pass, with `auditStatus: skipped` or `unavailable` |
+| Independent reviewer finds a blocking issue | **Reject.** Nothing persisted; return the distinct audit failure |
+| Independent reviewer is missing or unavailable | Return only if deterministic checks pass, with `auditStatus: skipped` or `unavailable` |
 
 **No partial artifact is ever persisted.** A half-generated study guide in the store is worse than
 none, and the audit already found placeholder content persisted as real records once.

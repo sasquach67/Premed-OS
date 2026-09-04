@@ -26,6 +26,7 @@ describe('lecture workspace source contract', () => {
     const map = buildLectureMasteryMap({ lecture, topics, chunks, files, now: 2 })!
     expect(map.scope).toBe('lecture')
     expect(map.standards[0]).toMatchObject({ title: topics[0].title, masteryState: 'not-started', sourceChunkIds: ['o1'] })
+    expect(map.standards[0].freeRecallCues?.[0]).toMatch(/^Without notes, trace gene expression/)
     expect(map.standards[0].beAbleToDo[0]).toMatch(/^For this objective, trace gene expression/)
     expect(map.standards[0].watchFor[0]).toMatch(/Do not treat/)
   })
@@ -34,6 +35,7 @@ describe('lecture workspace source contract', () => {
     const evidenceOnly = [{ ...chunks[1], content: 'SN2 reactions proceed through concerted backside attack with inversion of stereochemistry.' }]
     const map = buildLectureMasteryMap({ lecture, topics: [comparisonTopic], chunks: evidenceOnly, files, now: 2 })!
     expect(map.standards[0].beAbleToDo[0]).toBe('Compare SN1 with SN2 mechanisms using the distinctions supported by the selected sources.')
+    expect(map.standards[0].freeRecallCues?.[0]).toMatch(/^Without notes, compare/)
   })
   it('reports partial PDF and OCR coverage honestly', () => expect(fileCoverageLabel(files[1], 1)).toBe('3/4 pages readable · 1 recovered with on-device OCR · 1 unreadable'))
 })

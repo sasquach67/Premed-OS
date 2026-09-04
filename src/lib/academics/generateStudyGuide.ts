@@ -130,7 +130,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
     specId: 'study-guide-v1',
     chunkIds: prepared.chunkIds,
     request: [
-      `Topic: ${label}. Action: generate a study guide from the attached sources.`,
+      `Topic: ${label}. Action: generate one canonical study guide from the attached sources. Begin with AT A GLANCE, then preserve the full source-supported teaching depth in the detailed sections without repeating the opening.`,
       courseLensInstruction(courseLens),
       questionReferenceIds.length
         ? `Reference-question chunk IDs: ${questionReferenceIds.join(', ')}. Use their source-supported scenarios, representations, and reasoning moves as teaching examples where they clarify a concept. Explain the lesson without copying stems or answer choices, and never treat a distractor as fact.`
@@ -148,6 +148,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
     systemPrompt: syncedAssembly.systemPrompt,
     request: [
       `Topic: ${label}.`,
+      'Return one complete Study Guide: AT A GLANCE is its opening layer, not a separate brief and not a substitute for the full explanation.',
       courseLens ? 'Apply the supplied Course lens only within its selected evidence trace.' : '',
       questionReferenceIds.length ? 'Use the marked question passages as source-backed explanatory examples, without copying their assessment wording.' : '',
     ].filter(Boolean).join(' '),
