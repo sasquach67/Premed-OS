@@ -124,6 +124,7 @@ export type StudyToolFailureCode =
   | 'sign-in-required'
   | 'rate-limited'
   | 'request-too-large'
+  | 'anthropic-credit-exhausted'
   | 'no-sources'
   | 'invalid-response'
   /** The generated artifact introduced a citation that was never verified, so
@@ -174,6 +175,7 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
       const context = (error as { context?: Response & { body?: unknown } }).context
       const status = context?.status
       if (status === 429) return { ok: false, code: 'rate-limited', message: 'AI usage limit reached. Try again later.' }
+      if (status === 402) return { ok: false, code: 'anthropic-credit-exhausted', message: 'Anthropic credits are exhausted. Add credits before generating another question bank.' }
       if (status === 413) return { ok: false, code: 'request-too-large', message: 'This request is too large for one study-tool action.' }
       if (status === 422) return { ok: false, code: 'no-sources', message: 'No synced source material is available for this topic.' }
       // A 502 carries the server's own reason. Collapsing it into "unavailable"

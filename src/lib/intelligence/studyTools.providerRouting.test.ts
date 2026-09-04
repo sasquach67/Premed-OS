@@ -7,14 +7,16 @@ const generationEnd = source.indexOf('\n  try {', generationStart)
 const generationBlock = source.slice(generationStart, generationEnd)
 
 describe('study-tools provider routing', () => {
-  it('routes Question Bank V1 to Anthropic primary with an OpenAI audit and safe fallback', () => {
+  it('routes Question Bank V1 to Anthropic only and fails closed', () => {
     expect(generationStart).toBeGreaterThan(-1)
     expect(generationEnd).toBeGreaterThan(generationStart)
 
     expect(generationBlock).toContain("body.specId === 'unit-question-bank-v1'")
     expect(generationBlock).toContain('callAnthropicGeneration(')
-    expect(generationBlock).toContain('callOpenAIAudit(')
-    expect(generationBlock).toContain('using OpenAI fallback')
+    expect(generationBlock).not.toContain('callOpenAIAudit(')
+    expect(generationBlock).not.toContain('using OpenAI fallback')
+    expect(generationBlock).toContain('anthropic-unconfigured')
+    expect(generationBlock).toContain('anthropic-credit-exhausted')
     expect(generationBlock).toContain('callOpenAIGeneration(')
     expect(generationBlock).toContain('callAnthropicAudit(')
     expect(generationBlock).toContain("Deno.env.get('ANTHROPIC_API_KEY')")

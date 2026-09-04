@@ -72,6 +72,22 @@ describe('study tools boundary', () => {
     expect(isGapCheckResult({ covered: [], missed: [], wrong: [], suggestedGrade: 'great' })).toBe(false)
   })
 
+  it('surfaces exhausted Anthropic credits without falling back', async () => {
+    const client = {
+      auth: { getSession: async () => ({ data: { session: { access_token: 'test' } } }) },
+      functions: { invoke: async () => ({ data: null, error: { context: { status: 402 } } }) },
+    }
+    const result = await createStudyToolsClient(client as never).generate({
+      action: 'generate', courseId: 'course-1', topicId: 'topic-1', chunkIds: ['chunk-1'],
+      specId: 'unit-question-bank-v1', specHash: 'hash', systemPrompt: 'spec', request: 'Generate a bank.',
+    })
+    expect(result).toEqual({
+      ok: false,
+      code: 'anthropic-credit-exhausted',
+      message: 'Anthropic credits are exhausted. Add credits before generating another question bank.',
+    })
+  })
+
   it('accepts only typed results with valid material ranges', () => {
     expect(isGapCheckResult({
       covered: [{ text: 'ATP is used', citation: { kind: 'material', fileId: 'f', chunkId: 'c', start: 4, end: 12 } }],

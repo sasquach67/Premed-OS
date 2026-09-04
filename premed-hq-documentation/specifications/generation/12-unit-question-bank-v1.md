@@ -13,7 +13,9 @@ The Unit Question Bank is source-grounded, application-first practice for one cl
 | `UQB-APPLICATION` | Question banks are not flashcards in test form. Do not write direct-recall questions. Every question must require the student to apply, integrate, interpret, predict, calculate, evaluate, or reason about methods and controls in a concrete scenario. | invariant |
 | `UQB-STIMULUS` | Every question must reference at least one bank-level stimulus. Use passages, experiments, data tables, graphs, or diagrams; reuse a stimulus across linked questions when that enables multiple reasoning moves. | invariant |
 | `UQB-VISUAL` | In Biology, at least half of questions must use a data table, graph, or diagram. Visuals must carry information needed to answer the question, include accessible alt text, and never be decorative. | invariant |
+| `UQB-TEXTBOOK-VISION` | When visually readable textbook evidence is supplied, use the lecture objectives, transcript, and assigned questions to select only textbook figures that directly clarify the closed lesson scope. Ignore decorative, tangential, and redundant figures. Never claim a figure was interpreted when only OCR or caption text was available. | invariant |
 | `UQB-FACTUAL` | Source-derived facts and schematics must cite supplied chunks. Invented quantitative results must be labeled simulated data in both basis and caption; never present model-invented measurements as empirical findings. | invariant |
+| `UQB-PDF-READY` | Keep visual labels, captions, tables, and answer explanations concise enough to render legibly in a printable PDF. The answer key must remain separable from the student question section. | invariant |
 | `UQB-STYLE` | Biology favors experimental scenarios, representations, methods and controls, and cross-standard integration. Psychology and interpretive courses favor evidence-rich situations and careful concept application. Use the course blueprint supplied in the request. | invariant |
 | `UQB-BALANCE` | Honor the requested current-unit and prior-unit integration mix. Biology defaults to 70% current-unit and 30% prior-unit integration; the student may adjust it. | tunable |
 | `UQB-UNIQUE` | Multiple-choice options must be distinct and exactly one answer must be correct. Short-answer questions still need a specific, gradeable answer. | invariant |
@@ -21,7 +23,9 @@ The Unit Question Bank is source-grounded, application-first practice for one cl
 | `UQB-NO-COPY` | Use assessment moves and source concepts, not copied wording, stems, or answer choices from supplied private assessment material. | invariant |
 | `UQB-GAPS` | Do not manufacture a question for a standard the source does not support. Return fewer questions rather than fill with general knowledge. | invariant |
 
-The runtime artifact spec is `src/lib/generation/artifacts/unitQuestionBank.v1.ts`. The generated response records reusable bank-level `stimuli`, every question's `stimulusIds`, course style, current/prior mix, standards, answer, rationale, and source chunk IDs. Premed OS renders structured tables, graphs, and diagrams itself; the model does not supply image pixels.
+The runtime artifact spec is `src/lib/generation/artifacts/unitQuestionBank.v1.ts`. The generated response records reusable bank-level `stimuli`, every question's `stimulusIds`, course style, current/prior mix, standards, answer, rationale, and source chunk IDs. Premed OS renders structured tables, graphs, and diagrams itself; the model does not supply image pixels. Saved banks can be exported as a student-ready PDF with the complete answer key after the question section.
+
+Question-bank authorship is Anthropic-only. Claude authors the artifact or the request fails closed; the server does not silently fall back to OpenAI and does not send the bank to OpenAI for review. Server and client validators remain provider-independent.
 
 Before persistence, `validateUnitQuestionBank()` checks source closure, standard
 coverage (when a saved mastery map is supplied), required stimulus links, visual

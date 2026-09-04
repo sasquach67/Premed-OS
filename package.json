@@ -50,6 +50,7 @@
     "idb-keyval": "^6.2.5",
     "immer": "^11.1.8",
     "input-otp": "^1.4.2",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.21.0",
     "mammoth": "^1.12.1",
     "motion": "^12.42.2",

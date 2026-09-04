@@ -35,7 +35,7 @@ const ARTIFACT: Record<MaterialArtifact, { title: string; detail: string; action
   'study-outline': { title: 'Study outline', detail: 'Turn selected evidence into a concise objective-led outline.', action: 'Create study outline' },
   'revised-notes': { title: 'Revised Notes', detail: 'Repair your chosen notes without replacing the original.', action: 'Create revised notes' },
   'unit-mastery-outline': { title: 'Unit mastery outline', detail: 'Map each syllabus standard to understand, do, and watch-for checkpoints.', action: 'Create mastery outline' },
-  'unit-question-bank': { title: 'Unit question bank', detail: 'Build source-grounded practice questions with course-specific moves and answer checks.', action: 'Create question bank' },
+  'unit-question-bank': { title: 'Unit question bank', detail: 'Build Claude-authored, application-first practice with source-scoped visuals and a printable PDF.', action: 'Create question bank' },
 }
 
 function artifactCopy(artifact: MaterialArtifact, classType: ClassWorkspaceType) {
