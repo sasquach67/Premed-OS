@@ -9,10 +9,12 @@ import { MaterialGenerationIntake } from './MaterialGenerationIntake'
 
 const mocks = vi.hoisted(() => ({
   generateStudyGuide: vi.fn(),
+  generateUnitQuestionBank: vi.fn(),
   toast: vi.fn(),
 }))
 
 vi.mock('@/lib/academics/generateStudyGuide', () => ({ generateStudyGuide: mocks.generateStudyGuide }))
+vi.mock('@/lib/academics/generateUnitQuestionBank', () => ({ generateUnitQuestionBank: mocks.generateUnitQuestionBank }))
 vi.mock('@/components/common/useToast', () => ({ useToast: () => mocks.toast }))
 
 function material(chunkCount: number): { file: AcademicFile; chunks: SourceChunk[] } {
@@ -51,6 +53,7 @@ describe('MaterialGenerationIntake generation reliability', () => {
     document.body.appendChild(container)
     root = createRoot(container)
     mocks.generateStudyGuide.mockReset()
+    mocks.generateUnitQuestionBank.mockReset()
     mocks.toast.mockReset()
   })
 
@@ -101,6 +104,30 @@ describe('MaterialGenerationIntake generation reliability', () => {
     )
     expect(generateButton().disabled).toBe(true)
     expect(mocks.generateStudyGuide).not.toHaveBeenCalled()
+  })
+
+  it('keeps a full-corpus question bank available above 24 passages', async () => {
+    const { file, chunks } = material(549)
+    const data = createInitialDataForMode(false)
+    data.academics.classCenter.files = [file]
+    data.academics.classCenter.sourceChunks = chunks
+    useStore.getState().replaceAll(data)
+    await act(async () => {
+      root.render(<MaterialGenerationIntake artifact="unit-question-bank" courseId="course-1" courseLabel="BIOL 103" files={[file]} lectureId="lecture-1" course={{ code: 'BIOL 103', title: 'How Cells Function', type: 'stem' }} onClose={vi.fn()} />)
+    })
+    const source = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Lecture source'))!
+    await act(async () => source.click())
+    const scope = container.querySelector<HTMLInputElement>('section[aria-label="Resource scope settings"] input')!
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+    await act(async () => {
+      setValue?.call(scope, 'Lesson 2 · Central Dogma')
+      scope.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find((candidate) => candidate.textContent?.includes('Create question bank'))!
+
+    expect(container.textContent).not.toContain('AI study tools can use up to 24 at a time')
+    expect(container.textContent).toContain('549 passages will be reviewed')
+    expect(button.disabled).toBe(false)
   })
 
   it('ignores a same-tick double submission while generation is pending', async () => {

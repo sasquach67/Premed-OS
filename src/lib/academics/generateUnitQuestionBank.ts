@@ -67,7 +67,7 @@ export async function generateUnitQuestionBank({
   } catch (error) {
     return { ok: false, failure: 'not-allowed', message: error instanceof GenerationNotAllowedError ? error.message : 'Generation is not permitted here.' }
   }
-  const prepared = await prepareGenerationSources(courseId, chunks)
+  const prepared = await prepareGenerationSources(courseId, chunks, { artifact: 'unit-question-bank' })
   if (!prepared.ok || !prepared.scopeId || !prepared.chunkIds) return { ok: false, failure: 'provider-unavailable', message: prepared.message ?? 'Selected material could not be prepared.' }
   const preparedIds = new Set(prepared.chunkIds)
   const questionReferenceIds = [...new Set(practiceQuestionChunkIds.filter((id) => preparedIds.has(id)))]

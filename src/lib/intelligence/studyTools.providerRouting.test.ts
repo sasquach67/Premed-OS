@@ -11,7 +11,8 @@ describe('study-tools provider routing', () => {
     expect(generationStart).toBeGreaterThan(-1)
     expect(generationEnd).toBeGreaterThan(generationStart)
 
-    expect(generationBlock).toContain("body.specId === 'unit-question-bank-v1'")
+    expect(source).toContain("const isQuestionBankGeneration = isGeneration && body.specId === 'unit-question-bank-v1'")
+    expect(generationBlock).toContain('const isQuestionBank = isQuestionBankGeneration')
     expect(generationBlock).toContain('callAnthropicGeneration(')
     expect(generationBlock).not.toContain('callOpenAIAudit(')
     expect(generationBlock).not.toContain('using OpenAI fallback')
@@ -26,5 +27,15 @@ describe('study-tools provider routing', () => {
 
   it('defaults the single-provider gap check to OpenAI', () => {
     expect(source).toContain("Deno.env.get('AI_PROVIDER') || 'openai'")
+  })
+
+  it('keeps the larger question-bank corpus on the Anthropic-only path', () => {
+    expect(source).toContain('const MAX_QUESTION_BANK_CHUNKS = 1_000')
+    expect(source).toContain('const MAX_QUESTION_BANK_SOURCE_CHARS = 700_000')
+    expect(source).toContain("const isQuestionBankSync = body.purpose === 'unit-question-bank'")
+    expect(source).toContain('{ embed: !isQuestionBankSync }')
+    expect(source).toContain('isQuestionBankGeneration ? MAX_QUESTION_BANK_CHUNKS : MAX_CHUNKS')
+    expect(source).toContain('CHUNK_RETRIEVAL_BATCH_SIZE')
+    expect(source).toContain('isQuestionBankGeneration && chunks.length !== chunkIds.length')
   })
 })

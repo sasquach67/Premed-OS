@@ -42,7 +42,10 @@ export function generationSourceInputs(chunks: readonly SourceChunk[]): StudySou
   }))
 }
 
-export function generationSourceLimitMessage(chunkCount: number): string | undefined {
+export function generationSourceLimitMessage(chunkCount: number, artifact?: string): string | undefined {
+  // A Question Bank deliberately reviews the complete selected corpus. Its
+  // larger, Anthropic-only server path enforces its own context-safe ceiling.
+  if (artifact === 'unit-question-bank') return undefined
   if (chunkCount <= MAX_GENERATION_SOURCE_CHUNKS) return undefined
   return `Choose fewer source files or add a shorter excerpt. This selection contains ${chunkCount} passages, and AI study tools can use up to ${MAX_GENERATION_SOURCE_CHUNKS} at a time.`
 }
@@ -52,10 +55,14 @@ export function generationSourceLimitMessage(chunkCount: number): string | undef
  * selected material's private server mirror, after the same disclosure used
  * by recall gap-checks. No model call receives client text directly.
  */
-export async function prepareGenerationSources(courseId: string, chunks: readonly SourceChunk[]): Promise<GenerationSourcePreparation> {
+export async function prepareGenerationSources(
+  courseId: string,
+  chunks: readonly SourceChunk[],
+  options: { artifact?: string } = {},
+): Promise<GenerationSourcePreparation> {
   const sources = generationSourceInputs(chunks)
   if (!sources.length) return { ok: false, message: 'Select processed course material first.' }
-  const limitMessage = generationSourceLimitMessage(sources.length)
+  const limitMessage = generationSourceLimitMessage(sources.length, options.artifact)
   if (limitMessage) return { ok: false, message: limitMessage }
 
   if (!hasAcceptedStudySourceDisclosure()) {
@@ -77,6 +84,7 @@ export async function prepareGenerationSources(courseId: string, chunks: readonl
       courseId,
       topicId: scopeId,
       sources,
+      ...(options.artifact === 'unit-question-bank' ? { purpose: 'unit-question-bank' as const } : {}),
     })
     if (!result.ok) return { ok: false, message: result.message }
     if (typeof localStorage !== 'undefined') localStorage.setItem(key, fingerprint)

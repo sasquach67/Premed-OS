@@ -123,7 +123,10 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
   const courseLens = artifact === 'study-guide' || artifact === 'study-outline'
     ? applicableCourseLens(lens, selectedChunks, Object.fromEntries(choices.map((choice) => [choice.file.id, choice.file.title])))
     : undefined
-  const sourceLimitMessage = generationSourceLimitMessage(selectedChunks.length)
+  const sourceLimitMessage = generationSourceLimitMessage(selectedChunks.length, artifact)
+  const fullCorpusMessage = artifact === 'unit-question-bank' && selectedChunks.length > 0
+    ? `${selectedChunks.length} passages will be reviewed. Claude receives the full selected text corpus; the saved bank will cite only the passages it actually uses.`
+    : undefined
   const unitScopeRequired = artifact === 'unit-question-bank' || artifact === 'unit-mastery-outline'
   const canGenerate = selectedChunks.length > 0
     && !sourceLimitMessage
@@ -265,7 +268,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
           <aside className="rounded-2xl border border-border bg-card p-3.5"><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-muted-foreground">Add sources</p><p className="mt-1 font-display text-sm font-extrabold">Stay in this output</p><p className="mt-1 text-xs font-semibold text-muted-foreground">Add individual files or a whole folder, then select exactly what this output may use.</p><div className="mt-4 grid gap-2"><MaterialIntakeDialog courseId={courseId} lectureId={lectureId} trigger={<Button size="sm" variant="outline" className="w-full"><FolderOpen className="size-4" /> Add files or folder</Button>} />{!lectureId && <TranscriptImport courseId={courseId} triggerClassName="w-full" />}</div><p className="mt-4 border-t border-border pt-3 text-xs font-semibold text-muted-foreground">Every saved output keeps its selected-source trace.</p></aside>
         </div>
         {generationPhase !== 'idle' && <div className="mt-4"><GenerationProgress phase={generationPhase} outputLabel={presentation.title} errorMessage={generationError} /></div>}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3"><p className={cn('text-sm font-semibold', sourceLimitMessage ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground')}>{sourceLimitMessage ?? (unitScopeRequired && !selectedUnit ? 'Name the course scope to keep this resource organized.' : artifact === 'revised-notes' && !baseline ? 'Choose your notes baseline to continue.' : selectedChunks.length ? `${selected.length} selected ${selected.length === 1 ? 'source' : 'sources'} will ground this output.${courseLens ? ' Course lens included with its cited source trace.' : ''}` : 'Choose at least one ready source.')}</p><Button onClick={() => void generate()} disabled={busy || !canGenerate}><Sparkles className="size-4" /> {busy ? 'Creating…' : presentation.action}</Button></div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3"><p className={cn('text-sm font-semibold', sourceLimitMessage ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground')}>{sourceLimitMessage ?? (unitScopeRequired && !selectedUnit ? 'Name the course scope to keep this resource organized.' : artifact === 'revised-notes' && !baseline ? 'Choose your notes baseline to continue.' : fullCorpusMessage ?? (selectedChunks.length ? `${selected.length} selected ${selected.length === 1 ? 'source' : 'sources'} will ground this output.${courseLens ? ' Course lens included with its cited source trace.' : ''}` : 'Choose at least one ready source.'))}</p><Button onClick={() => void generate()} disabled={busy || !canGenerate}><Sparkles className="size-4" /> {busy ? 'Creating…' : presentation.action}</Button></div>
       </CardContent>
     </Card>
   )

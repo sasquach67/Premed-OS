@@ -113,6 +113,8 @@ export interface SyncStudySourcesRequest {
   courseId: string
   topicId: string
   sources: StudySourceInput[]
+  /** Question banks use a larger exact-ID corpus and skip OpenAI embeddings. */
+  purpose?: 'unit-question-bank'
 }
 
 export interface DeleteStudySourcesRequest {

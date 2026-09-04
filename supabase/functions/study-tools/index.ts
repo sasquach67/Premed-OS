@@ -2,6 +2,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2.110.2'
 
 const MAX_REQUEST_BYTES = 8 * 1024 * 1024
 const MAX_CHUNKS = 24
+const MAX_QUESTION_BANK_CHUNKS = 1_000
+const CHUNK_RETRIEVAL_BATCH_SIZE = 100
 const MAX_AUDIO_BYTES = 4 * 1024 * 1024
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024
 const cors = {
@@ -42,6 +44,10 @@ const AI_BETA_RESERVATION_CENTS = {
   'term-report': 350,
 } as const
 const MAX_PROVIDER_SOURCE_CHARS = 48_000
+// Opus receives the complete selected Question Bank corpus in one grounded
+// pass. This keeps the request inside its context window without silently
+// dropping passages or weakening source traceability.
+const MAX_QUESTION_BANK_SOURCE_CHARS = 700_000
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -93,12 +99,22 @@ Deno.serve(async (request) => {
     if (!isText(body.courseId) || !isText(body.topicId)) {
       return failure(400, 'invalid-request', 'A typed source-scope sync is required.')
     }
-    const suppliedSources = validateSources(body.sources)
+    if (body.purpose != null && body.purpose !== 'unit-question-bank') {
+      return failure(400, 'invalid-request', 'An unsupported source-sync purpose was supplied.')
+    }
+    const isQuestionBankSync = body.purpose === 'unit-question-bank'
+    const suppliedSources = validateSources(
+      body.sources,
+      isQuestionBankSync ? MAX_QUESTION_BANK_CHUNKS : MAX_CHUNKS,
+    )
     if (!suppliedSources) {
       return failure(400, 'invalid-request', 'Sources must use the typed source-scope contract.')
     }
-    if (totalSourceChars(suppliedSources) > MAX_PROVIDER_SOURCE_CHARS) {
-      return failure(413, 'request-too-large', 'Selected source material is too large for one AI action.')
+    const sourceCharacterLimit = isQuestionBankSync
+      ? MAX_QUESTION_BANK_SOURCE_CHARS
+      : MAX_PROVIDER_SOURCE_CHARS
+    if (totalSourceChars(suppliedSources) > sourceCharacterLimit) {
+      return failure(413, 'request-too-large', 'Selected source material exceeds the safe full-corpus limit for one AI action.')
     }
     const { allowed, error: limitError } = await claimAIRequest(
       serviceClient,
@@ -109,7 +125,14 @@ Deno.serve(async (request) => {
     if (limitError) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
     if (!allowed) return failure(429, 'rate-limited', 'The weekly AI beta budget or your usage limit has been reached.')
     try {
-      await mirrorLocalSources(client, userData.user.id, body.courseId, body.topicId, suppliedSources)
+      await mirrorLocalSources(
+        client,
+        userData.user.id,
+        body.courseId,
+        body.topicId,
+        suppliedSources,
+        { embed: !isQuestionBankSync },
+      )
       return json({ synced: suppliedSources.length })
     } catch (error) {
       console.error('study-tools source sync failure', error instanceof Error ? error.message : 'unknown')
@@ -207,17 +230,27 @@ Deno.serve(async (request) => {
 
   const isGapCheck = body.action === 'gap-check'
   const isGeneration = body.action === 'generate'
+  const isQuestionBankGeneration = isGeneration && body.specId === 'unit-question-bank-v1'
   const evidence = isGapCheck ? validateGapEvidence(body.evidence) : null
   if ((!isGapCheck && !isGeneration) || !isText(body.courseId) || !isText(body.topicId) || (isGapCheck && !evidence)) {
     return failure(400, 'invalid-request', 'A typed study-tool request is required.')
   }
-  const chunkIds = validateChunkIds(body.chunkIds)
+  const chunkIds = validateChunkIds(
+    body.chunkIds,
+    isQuestionBankGeneration ? MAX_QUESTION_BANK_CHUNKS : MAX_CHUNKS,
+  )
   if (!chunkIds?.length) return failure(400, 'invalid-request', 'At least one trusted chunk ID is required.')
 
   const chunks = await retrieveChunks(client, userData.user.id, body.courseId, body.topicId, chunkIds)
   if (!chunks.length) return failure(422, 'no-sources', 'No selected source material is available.')
-  if (totalChunkChars(chunks) > MAX_PROVIDER_SOURCE_CHARS) {
-    return failure(413, 'request-too-large', 'Selected source material is too large for one AI action.')
+  if (isQuestionBankGeneration && chunks.length !== chunkIds.length) {
+    return failure(422, 'source-sync-incomplete', 'The complete selected corpus could not be verified. Nothing was generated.')
+  }
+  const sourceCharacterLimit = isQuestionBankGeneration
+    ? MAX_QUESTION_BANK_SOURCE_CHARS
+    : MAX_PROVIDER_SOURCE_CHARS
+  if (totalChunkChars(chunks) > sourceCharacterLimit) {
+    return failure(413, 'request-too-large', 'Selected source material exceeds the safe full-corpus limit for one AI action.')
   }
   const { allowed, error: limitError } = await claimAIRequest(
     serviceClient,
@@ -258,7 +291,7 @@ Deno.serve(async (request) => {
     }
     try {
       const requestText = typeof body.request === 'string' ? body.request : 'Generate the artifact.'
-      const isQuestionBank = body.specId === 'unit-question-bank-v1'
+      const isQuestionBank = isQuestionBankGeneration
       if (isQuestionBank && !Deno.env.get('ANTHROPIC_API_KEY')) {
         return failure(503, 'anthropic-unconfigured', 'Claude question generation is not configured. Nothing was saved.')
       }
@@ -457,8 +490,11 @@ async function mirrorLocalSources(
   courseId: string,
   topicId: string,
   sources: Array<{ chunkId: string; fileId: string; content: string; start: number; end: number }>,
+  options: { embed?: boolean } = {},
 ) {
-  const embeddings = await embedTexts(sources.map((source) => source.content))
+  const embeddings = options.embed === false
+    ? null
+    : await embedTexts(sources.map((source) => source.content))
   const rows = sources.map((source, index) => ({
     user_id: userId,
     chunk_id: source.chunkId,
@@ -495,16 +531,24 @@ async function retrieveChunks(
   topicId: string,
   chunkIds: string[],
 ): Promise<Chunk[]> {
-  const { data, error } = await client
+  const batches = Array.from(
+    { length: Math.ceil(chunkIds.length / CHUNK_RETRIEVAL_BATCH_SIZE) },
+    (_, index) => chunkIds.slice(index * CHUNK_RETRIEVAL_BATCH_SIZE, (index + 1) * CHUNK_RETRIEVAL_BATCH_SIZE),
+  )
+  const results = await Promise.all(batches.map((batch) => client
     .from('academic_source_chunks')
     .select('chunk_id,file_id,content,character_start,character_end')
     .eq('user_id', userId)
     .eq('course_id', courseId)
     .eq('topic_id', topicId)
-    .in('chunk_id', chunkIds)
-    .limit(MAX_CHUNKS)
-  if (error) throw error
-  const byId = new Map(((data || []) as Chunk[]).map((chunk) => [chunk.chunk_id, chunk]))
+    .in('chunk_id', batch)
+    .limit(batch.length)))
+  const rows: Chunk[] = []
+  for (const { data, error } of results) {
+    if (error) throw error
+    rows.push(...((data || []) as Chunk[]))
+  }
+  const byId = new Map(rows.map((chunk) => [chunk.chunk_id, chunk]))
   return chunkIds.flatMap((chunkId) => {
     const chunk = byId.get(chunkId)
     return chunk ? [chunk] : []
@@ -978,8 +1022,8 @@ async function transcribeAudio(audio: AudioEvidence) {
   return payload.text.trim()
 }
 
-function validateSources(value: unknown) {
-  if (!Array.isArray(value) || value.length > MAX_CHUNKS) return null
+function validateSources(value: unknown, maxChunks = MAX_CHUNKS) {
+  if (!Array.isArray(value) || value.length > maxChunks) return null
   const sources: Array<{ chunkId: string; fileId: string; content: string; start: number; end: number }> = []
   for (const raw of value) {
     if (!raw || typeof raw !== 'object') return null
@@ -997,8 +1041,8 @@ function validateSources(value: unknown) {
   return sources
 }
 
-function validateChunkIds(value: unknown) {
-  if (!Array.isArray(value) || value.length > MAX_CHUNKS) return null
+function validateChunkIds(value: unknown, maxChunks = MAX_CHUNKS) {
+  if (!Array.isArray(value) || value.length > maxChunks) return null
   const ids = value.filter(isText)
   if (ids.length !== value.length || new Set(ids).size !== ids.length) return null
   return ids

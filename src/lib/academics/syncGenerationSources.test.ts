@@ -36,4 +36,8 @@ describe('generation source preparation', () => {
       'Choose fewer source files or add a shorter excerpt. This selection contains 25 passages, and AI study tools can use up to 24 at a time.',
     )
   })
+
+  it('allows a question bank to review a full selected corpus', () => {
+    expect(generationSourceLimitMessage(549, 'unit-question-bank')).toBeUndefined()
+  })
 })
