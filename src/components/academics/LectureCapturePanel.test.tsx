@@ -35,20 +35,22 @@ describe('lecture import and workspace', () => {
     return act(async () => root.render(<MemoryRouter><ToastProvider><LectureCapturePanel courseId={courseId} data={center} initialLectureId={initialLectureId} initialDestination={initialDestination} onOpenNotes={() => {}} /></ToastProvider></MemoryRouter>))
   }
 
-  it('starts with the three-step lecture-first wizard and one primary continuation', async () => {
+  it('starts with a compact three-step lecture import and one primary continuation', async () => {
     const seed = structuredClone(createSeedData())
     const courseId = seed.academics.classCenter.workspaces[0].courseId
     useStore.getState().replaceAll(seed)
     await render(courseId)
-    expect(container.textContent).toContain('Add lecture source')
-    expect(container.textContent).toContain('Add lecture materials')
-    expect(container.textContent).toContain('Build lecture page')
-    expect(container.textContent).toContain('The transcript is source evidence')
+    expect(container.textContent).toContain('Build a lecture')
+    expect(container.textContent).toContain('Transcript')
+    expect(container.textContent).toContain('Materials')
+    expect(container.textContent).toContain('Build')
+    expect(container.textContent).not.toContain('The transcript is source evidence')
     expect(container.textContent).toContain('Ways to get a transcript')
     expect(container.textContent).toContain('Panopto or your course site')
     expect(container.textContent).toContain('Voice Memos or Word Transcribe')
     expect(container.textContent).toContain('Ask before recording')
     expect(container.textContent).toContain('Premed OS does not record audio here')
+    expect(container.querySelector<HTMLDetailsElement>('[data-testid="transcript-help"]')?.open).toBe(false)
     expect(container.querySelector('[aria-label="Lecture identity"]')?.className).toContain('mr-8')
     expect(container.querySelector('input[type="date"]')).toBeNull()
     const lectureDate = container.querySelector<HTMLButtonElement>('button[aria-label="Lecture date"]')
@@ -116,16 +118,19 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).not.toContain('Entire-course-reference.pdf')
     expect(container.textContent).toContain('8/10 pages readable')
     expect(container.textContent).toContain('2 unreadable')
-    const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Continue to build preview'))!
+    const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Review and build'))!
     expect(continueButton.disabled).toBe(false)
     await act(async () => continueButton.click())
-    expect(container.querySelector('[aria-label="Lecture page preview"]')).toBeTruthy()
-    expect(container.textContent).toContain('Your lecture, before you build')
-    expect(container.textContent).toContain('Classical conditioning connects a neutral cue with a meaningful outcome.')
-    expect(container.textContent).toContain('How the ideas connect')
-    expect(container.textContent).toContain('What you should be able to do')
-    expect(container.textContent).not.toContain('Summary, connections, vocabulary in context')
-    expect(container.textContent).toContain('Privacy and processing')
+    expect(container.querySelector('[aria-label="Lecture build summary"]')).toBeTruthy()
+    expect(container.textContent).toContain('Ready to build')
+    expect(container.querySelector('[aria-label="Lecture build summary"] h4')?.textContent).toBe('Lecture 1 · Conditioning')
+    expect(container.textContent).toContain('2 sources')
+    expect(container.textContent).toContain('2 readable passages')
+    expect(container.textContent).toContain('Study Guide')
+    expect(container.textContent).toContain('Mastery Map')
+    expect(container.textContent).not.toContain('The lecture in a few clear moves')
+    expect(container.textContent).not.toContain('How the ideas connect')
+    expect(container.querySelector<HTMLDetailsElement>('[data-testid="lecture-ai-details"]')?.open).toBe(false)
     expect(container.textContent).toContain('private server workspace')
     expect(container.textContent).toContain('Original file bytes stay local')
     const build = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Build Guide + Mastery'))!
@@ -197,7 +202,7 @@ describe('lecture import and workspace', () => {
     })
 
     await render(courseId, 'large-lecture', 'transcript')
-    const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Continue to build preview'))!
+    const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Review and build'))!
     await act(async () => continueButton.click())
     expect(container.textContent).toContain('All 1,123 readable passages will be reviewed for this build')
     const build = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Build Guide + Mastery'))!
@@ -230,7 +235,7 @@ describe('lecture import and workspace', () => {
     generationMocks.generateUnitMasteryOutline.mockResolvedValue({ ok: false, failure: 'invalid-response', message: 'The mastery outline was invalid. Nothing was saved.' })
     useStore.getState().replaceAll(seed)
     await render(courseId, 'lecture', 'transcript')
-    const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Continue to build preview'))!
+    const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Review and build'))!
     await act(async () => continueButton.click())
     const build = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Build Guide + Mastery'))!
     await act(async () => { build.click(); await Promise.resolve() })
@@ -254,7 +259,7 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).toContain('Add at least one lecture material to continue.')
     expect(container.textContent).not.toContain('Skip for now')
     expect(container.textContent).not.toContain('Choose sources')
-    const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Continue to build preview'))!
+    const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Review and build'))!
     expect(continueButton.disabled).toBe(true)
   })
 
@@ -276,7 +281,7 @@ describe('lecture import and workspace', () => {
     await render(courseId, 'lecture', 'transcript')
 
     expect(container.textContent).toContain('BIOL103-lecture-1-slides.pdf')
-    const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Continue to build preview'))!
+    const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Review and build'))!
     expect(continueButton.disabled).toBe(false)
   })
 
@@ -391,8 +396,8 @@ describe('lecture import and workspace', () => {
 
     await act(async () => rebuild.click())
 
-    expect(container.textContent).toContain('2. Add lecture materials')
-    expect(container.textContent).toContain('Continue to build preview')
+    expect(container.textContent).toContain('Add materials')
+    expect(container.textContent).toContain('Review and build')
     const preserved = useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.id === 'demo-lecture-biol103-2')!
     expect(preserved.workspaceState).toBe('complete')
     expect(preserved.studyGuide).toBeDefined()

@@ -343,8 +343,8 @@ describe('ClassHub approved Overview', () => {
       .find((button) => button.textContent?.trim() === 'Add today’s lecture')
     expect(addToday).toBeTruthy()
     await act(async () => addToday!.click())
-    expect(document.body.textContent).toContain('Build one study-ready lecture page')
-    expect(document.body.textContent).toContain('Add lecture source')
+    expect(document.body.textContent).toContain('Build a lecture')
+    expect(document.body.textContent).toContain('Add the transcript')
   })
 
   it('gives every saved lecture matching right-click and overflow actions for edit and recoverable delete', async () => {
@@ -747,9 +747,9 @@ describe('ClassHub approved Overview', () => {
       )
     })
 
-    expect(document.body.textContent).toContain('Build one study-ready lecture page')
-    expect(document.body.textContent).toContain('Add lecture source')
-    expect(document.body.textContent).toContain('Add lecture materials')
+    expect(document.body.textContent).toContain('Build a lecture')
+    expect(document.body.textContent).toContain('Transcript')
+    expect(document.body.textContent).toContain('Materials')
   })
 
   it('keeps the topic-focused Guide notice outside the New Guide item action', async () => {

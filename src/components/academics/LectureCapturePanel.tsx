@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
-import { BookOpen, Brain, Captions, Check, ChevronDown, CircleHelp, FileCheck2, FilePlus2, FileSearch, FileStack, FileText, FileUp, FlaskConical, Image as ImageIcon, ListChecks, Mic2, MoreHorizontal, NotebookText, Presentation, Search, ShieldCheck, Sparkles } from 'lucide-react'
+import { BookOpen, Brain, Check, ChevronDown, CircleHelp, FileCheck2, FilePlus2, FileSearch, FileStack, FileText, FileUp, FlaskConical, Image as ImageIcon, ListChecks, MoreHorizontal, NotebookText, Presentation, Search, Sparkles } from 'lucide-react'
 import type { AcademicFile, ClassCenterData, Course, LectureBriefTrace, LectureRecord, SourceChunk } from '@/lib/types'
 import { uid } from '@/lib/id'
 import { cn } from '@/lib/utils'
@@ -11,9 +11,10 @@ import { analyzeLectureTranscript } from '@/lib/academics/lectureAnalysis'
 import { generateStudyGuide } from '@/lib/academics/generateStudyGuide'
 import { generateUnitMasteryOutline } from '@/lib/academics/generateUnitMasteryOutline'
 import { buildLectureGuideProposal } from '@/lib/academics/guideContract'
-import { approximateLectureTitle, buildLectureBrief, buildLectureMasteryMap, fileCoverageLabel, sourceChunksForLecture } from '@/lib/academics/lectureWorkspace'
+import { approximateLectureTitle, buildLectureBrief, fileCoverageLabel, sourceChunksForLecture } from '@/lib/academics/lectureWorkspace'
 import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationIntake'
 import { selectGenerationSourceChunks } from '@/lib/academics/syncGenerationSources'
+import { lectureDisplayTitle } from '@/lib/academics/lectureLabels'
 import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialog'
 import { LectureCaptureGuide } from '@/components/academics/LectureCaptureGuide'
 import { LectureRecordMenu } from '@/components/academics/LectureRecordMenu'
@@ -25,6 +26,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { Progress } from '@/components/ui/progress'
 import { Textarea } from '@/components/ui/textarea'
 import type { ContentBlock, StudyGuideArtifact } from '@/lib/generation/schemas/studyGuide.v1'
 
@@ -65,24 +67,17 @@ function fileExtension(file: Pick<AcademicFile, 'fileName' | 'title' | 'mimeType
 
 function TranscriptSourceHelp() {
   return (
-    <section aria-labelledby="transcript-source-help" className="mt-5 border-t border-border pt-4">
-      <p id="transcript-source-help" className="font-display text-sm font-extrabold">Ways to get a transcript</p>
-      <div className="mt-3 space-y-3">
-        <div className="grid grid-cols-[1.75rem_minmax(0,1fr)] gap-2.5">
-          <span className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary" aria-hidden="true"><Captions className="size-4" /></span>
-          <div><p className="text-xs font-extrabold">Panopto or your course site</p><p className="mt-0.5 text-[11px] font-semibold leading-relaxed text-muted-foreground">Open Captions or Transcript on the lecture recording. Download or copy the text when your school enables it.</p></div>
-        </div>
-        <div className="grid grid-cols-[1.75rem_minmax(0,1fr)] gap-2.5">
-          <span className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary" aria-hidden="true"><Mic2 className="size-4" /></span>
-          <div><p className="text-xs font-extrabold">Voice Memos or Word Transcribe</p><p className="mt-0.5 text-[11px] font-semibold leading-relaxed text-muted-foreground">Record or import audio, review the automatic text, then copy or export it here. Some apps store audio in their cloud.</p></div>
-        </div>
-        <div className="grid grid-cols-[1.75rem_minmax(0,1fr)] gap-2.5">
-          <span className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary" aria-hidden="true"><ShieldCheck className="size-4" /></span>
-          <div><p className="text-xs font-extrabold">Ask before recording</p><p className="mt-0.5 text-[11px] font-semibold leading-relaxed text-muted-foreground">Get instructor permission and follow class or school rules before recording a live lecture.</p></div>
-        </div>
+    <details data-testid="transcript-help" className="group/details mt-4 rounded-xl border border-border bg-muted/20">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+        <span className="flex items-center gap-2"><CircleHelp className="size-4 text-primary" aria-hidden="true" /><span className="font-display text-sm font-extrabold">Ways to get a transcript</span></span>
+        <ChevronDown className="size-4 text-muted-foreground transition-transform group-open/details:rotate-180" aria-hidden="true" />
+      </summary>
+      <div className="space-y-2 border-t border-border px-4 py-3 text-xs font-semibold leading-5 text-muted-foreground">
+        <p><b className="text-foreground">Panopto or your course site:</b> download or copy the captions or transcript.</p>
+        <p><b className="text-foreground">Voice Memos or Word Transcribe:</b> review the transcript, then paste or upload it here.</p>
+        <p><b className="text-foreground">Ask before recording.</b> Premed OS does not record audio here; it only keeps the text or file you add.</p>
       </div>
-      <p className="mt-4 rounded-xl border border-border bg-muted/45 p-3 text-[11px] font-semibold leading-relaxed text-muted-foreground"><b className="text-foreground">Premed OS does not record audio here.</b> Only the text or file you choose is added.</p>
-    </section>
+    </details>
   )
 }
 
@@ -131,9 +126,6 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
     priorityChunkIds: allQuestionReferenceChunkIds,
   })
   const generationQuestionReferenceChunkIds = practiceQuestionChunkIds(lectureSources, generationChunks)
-  const previewLecture = lecture ? { ...lecture, selectedSourceFileIds: lectureSourceIds } : undefined
-  const previewBrief = previewLecture ? buildLectureBrief(readableChunks, lectureSourceIds, data.files) : undefined
-  const previewMastery = previewLecture ? buildLectureMasteryMap({ lecture: previewLecture, topics: data.topics.filter((topic) => topic.courseId === courseId), chunks: readableChunks, files: lectureSources }) : undefined
 
   async function chooseTranscript(file: File) {
     setReading(true)
@@ -239,65 +231,58 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
     }
   }
 
+  const progressPercent = Math.round((step / 3) * 100)
+  const stepLabels = ['Transcript', 'Materials', 'Build'] as const
+
   return <Card className="overflow-hidden border-border bg-card shadow-[0_18px_48px_-28px_rgba(0,0,0,.72)]"><CardContent className="p-0">
-    <header className="border-b border-border px-4 py-4 sm:px-6"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">New lecture</p><h2 className="mt-1 font-display text-xl font-extrabold">Build one study-ready lecture page</h2><p className="mt-1 max-w-2xl text-sm font-semibold text-muted-foreground">The transcript is source evidence. Your finished lecture opens to one combined Study Guide and a separate Mastery Map.</p></div><Badge aria-label="Lecture identity" className="mr-8 shrink-0" variant="outline">{course?.code ?? 'Class'} · Lecture {lectureNumber}</Badge></div><ol className="mt-4 grid gap-2 sm:grid-cols-3" aria-label="Lecture import progress">{(['Add lecture source', 'Add lecture materials', 'Build lecture page'] as const).map((label, index) => { const number = (index + 1) as WizardStep; return <li key={label} className={cn('rounded-xl border px-3 py-2', step === number ? 'border-primary bg-primary/8' : step > number ? 'border-border bg-muted/35' : 'border-border bg-card')}><div className="flex items-center gap-2"><span className={cn('grid size-6 place-items-center rounded-full text-xs font-extrabold', step > number ? 'bg-primary text-primary-foreground' : step === number ? 'border border-primary text-primary' : 'border border-border text-muted-foreground')}>{step > number ? <Check className="size-3.5" /> : number}</span><span className="text-xs font-extrabold">{label}</span></div></li> })}</ol></header>
-    <div className="p-4 sm:p-6">
-      {step === 1 && <section aria-labelledby="lecture-source-heading"><h3 id="lecture-source-heading" className="font-display text-lg font-extrabold">1. Add lecture source</h3><p className="mt-1 text-sm font-semibold text-muted-foreground">Paste a transcript or upload a text, PDF, DOCX, or image. Scanned pages are read on this device when possible.</p><div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]"><div className="space-y-4"><label className="block text-sm font-extrabold">Approximate title<Input className="mt-1.5" value={title} onChange={(event) => { setTitle(event.target.value); setTitleEdited(true) }} placeholder="Lecture 1 · Origins of Psychology" /></label><div className="block max-w-56 text-sm font-extrabold"><span>Lecture date</span><DateField ariaLabel="Lecture date" className="mt-1.5 min-h-9 rounded-md border-input bg-background px-3 py-1 font-extrabold" value={occurredOn} onChange={setOccurredOn} /></div><label className="block text-sm font-extrabold">Transcript text<Textarea className="mt-1.5 min-h-52" value={sourceText} onChange={(event) => { setSourceText(event.target.value); setPendingFile(null); setPendingExtraction(null) }} placeholder={'Paste the transcript here…\n\nTimestamps are welcome but not required.'} /></label></div><aside className="rounded-2xl border border-border bg-muted/25 p-4"><FileUp className="size-5 text-primary" /><p className="mt-2 font-display text-sm font-extrabold">Or upload the source</p><p className="mt-1 text-xs font-semibold text-muted-foreground">The original file stays on this device. OCR retains page coverage; diagrams and embedded figures are not interpreted.</p><Button className="mt-4 w-full" variant="outline" disabled={reading} onClick={() => input.current?.click()}>{reading ? 'Reading on device…' : 'Choose transcript file'}</Button><input ref={input} type="file" className="sr-only" accept=".pdf,.docx,.txt,.md,image/*,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void chooseTranscript(file); event.currentTarget.value = '' }} />{pendingFile && <div className="mt-3 rounded-xl border border-border bg-card p-3"><p className="truncate text-sm font-extrabold">{pendingFile.name}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{fileExtension({ fileName: pendingFile.name, title: pendingFile.name, mimeType: pendingFile.type, sourceType: 'upload' })} · {pendingExtraction?.pageCount ? `${pendingExtraction.pageCount} pages` : `${sourceText.length.toLocaleString()} characters`}{pendingExtraction?.ocrPageCount ? ` · ${pendingExtraction.ocrPageCount} OCR recovered` : ''}</p></div>}<TranscriptSourceHelp /></aside></div><div className="mt-5 flex justify-end"><Button onClick={() => void saveSource()} disabled={!sourceText.trim() || !title.trim() || !occurredOn}><FileCheck2 className="size-4" /> Continue to materials</Button></div></section>}
+    <header className="border-b border-border px-4 py-4 sm:px-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">New lecture</p><h2 className="mt-1 font-display text-xl font-extrabold">Build a lecture</h2></div>
+        <Badge aria-label="Lecture identity" className="mr-8 shrink-0" variant="outline">{course?.code ?? 'Class'} · Lecture {lectureNumber}</Badge>
+      </div>
+      <div className="mt-3" aria-label="Lecture import progress">
+        <div className="flex items-center justify-between gap-3 text-xs font-extrabold"><span>Step {step} of 3 · {stepLabels[step - 1]}</span><span className="tabular-nums text-primary">{progressPercent}%</span></div>
+        <Progress className="mt-2 h-1.5" value={progressPercent} aria-label={`Lecture import ${progressPercent}% complete`} />
+        <ol className="mt-2 grid grid-cols-3 gap-2 text-[11px] font-bold">
+          {stepLabels.map((label, index) => <li key={label} className={cn('flex items-center gap-1.5', step === index + 1 ? 'text-foreground' : step > index + 1 ? 'text-primary' : 'text-muted-foreground')}>{step > index + 1 && <Check className="size-3" aria-hidden="true" />}{label}</li>)}
+        </ol>
+      </div>
+    </header>
+    <div className="mx-auto max-w-5xl p-4 sm:p-6">
+      {step === 1 && <section aria-labelledby="lecture-source-heading"><h3 id="lecture-source-heading" className="font-display text-lg font-extrabold">Add the transcript</h3><p className="mt-1 text-sm font-semibold text-muted-foreground">Paste it below or upload a text, PDF, DOCX, or image.</p><div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]"><div className="space-y-4"><label className="block text-sm font-extrabold">Lecture title<Input className="mt-1.5" value={title} onChange={(event) => { setTitle(event.target.value); setTitleEdited(true) }} placeholder="Lecture 1 · Origins of Psychology" /></label><div className="block max-w-56 text-sm font-extrabold"><span>Lecture date</span><DateField ariaLabel="Lecture date" className="mt-1.5 min-h-9 rounded-md border-input bg-background px-3 py-1 font-extrabold" value={occurredOn} onChange={setOccurredOn} /></div><label className="block text-sm font-extrabold">Transcript<Textarea className="mt-1.5 min-h-52" value={sourceText} onChange={(event) => { setSourceText(event.target.value); setPendingFile(null); setPendingExtraction(null) }} placeholder={'Paste the transcript here…\n\nTimestamps are welcome but not required.'} /></label></div><aside className="rounded-2xl border border-border bg-muted/25 p-4"><FileUp className="size-5 text-primary" /><p className="mt-2 font-display text-sm font-extrabold">Upload transcript</p><p className="mt-1 text-xs font-semibold text-muted-foreground">Files stay on this device while text is read.</p><Button className="mt-4 w-full" variant="outline" disabled={reading} onClick={() => input.current?.click()}>{reading ? 'Reading on device…' : 'Choose file'}</Button><input ref={input} type="file" className="sr-only" accept=".pdf,.docx,.txt,.md,image/*,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void chooseTranscript(file); event.currentTarget.value = '' }} />{pendingFile && <div className="mt-3 rounded-xl border border-border bg-card p-3"><p className="truncate text-sm font-extrabold">{pendingFile.name}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{fileExtension({ fileName: pendingFile.name, title: pendingFile.name, mimeType: pendingFile.type, sourceType: 'upload' })} · {pendingExtraction?.pageCount ? `${pendingExtraction.pageCount} pages` : `${sourceText.length.toLocaleString()} characters`}{pendingExtraction?.ocrPageCount ? ` · ${pendingExtraction.ocrPageCount} OCR recovered` : ''}</p></div>}<TranscriptSourceHelp /></aside></div><div className="mt-5 flex justify-end"><Button onClick={() => void saveSource()} disabled={!sourceText.trim() || !title.trim() || !occurredOn}><FileCheck2 className="size-4" /> Continue to materials</Button></div></section>}
       {step === 2 && lecture && <MaterialsStep courseId={courseId} data={data} lecture={lecture} materials={supportingMaterials} readableChunks={readableChunks} onContinue={goToPreview} />}
-      {step === 3 && lecture && previewBrief && <section aria-labelledby="lecture-build-heading"><h3 id="lecture-build-heading" className="font-display text-lg font-extrabold">3. Build lecture page</h3><p className="mt-1 max-w-3xl text-sm font-semibold text-muted-foreground">This preview shows what the readable sources attached to this lecture can support. Build runs the documented Study Guide and Mastery Map generators before anything is marked complete.</p><BuildLecturePreview lecture={lecture} brief={previewBrief} mastery={previewMastery} files={lectureSources} />{readableChunks.length > 24 && <div className="mt-4 rounded-xl border border-primary/30 bg-primary/7 p-3 text-sm font-semibold text-foreground"><b className="font-extrabold">Large lecture packet ready.</b> {readableChunks.length === generationChunks.length ? `All ${readableChunks.length.toLocaleString()} readable passages will be reviewed for this build.` : `All ${readableChunks.length.toLocaleString()} readable passages stay attached to this lecture. This build will automatically use ${generationChunks.length.toLocaleString()} representative, lecture-relevant passages across the transcript and supporting materials.`}</div>}{building && <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/7 p-4" role="status"><p className="font-display text-sm font-extrabold">Building your lecture workspace</p><ol className="mt-3 grid gap-2 sm:grid-cols-3">{([['guide', 'Generate study guide'], ['mastery', 'Build mastery objectives'], ['saving', 'Verify and save']] as const).map(([phase, label]) => { const phases = ['guide', 'mastery', 'saving']; const active = phases.indexOf(buildPhase) === phases.indexOf(phase); const complete = phases.indexOf(buildPhase) > phases.indexOf(phase); return <li key={phase} className={cn('flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-extrabold', active ? 'border-primary bg-card' : 'border-border bg-muted/25')}><span className={cn('grid size-5 place-items-center rounded-full border', complete && 'border-primary bg-primary text-primary-foreground', active && 'border-primary text-primary')}>{complete ? <Check className="size-3" /> : phases.indexOf(phase) + 1}</span>{label}</li> })}</ol></div>}<div className="mt-4 border-t border-border pt-4"><p className="font-display text-sm font-extrabold">Privacy and processing</p><p className="mt-1 max-w-4xl text-xs font-semibold leading-relaxed text-muted-foreground">Only the readable passages prepared for this build are copied to your private server workspace. Every attached file and passage remains available locally in the lecture. Original file bytes stay local. The app refuses unsupported citations and does not save a partial lecture page if either required artifact fails. Figures are not sent or interpreted by this lecture flow.</p></div><div className="mt-5 flex items-center justify-between gap-3"><Button variant="outline" onClick={() => onStep(2)} disabled={building}>Back to materials</Button><Button onClick={() => void buildWorkspace()} disabled={building}><Sparkles className="size-4" /> {building ? 'Building…' : 'Build Guide + Mastery'}</Button></div></section>}
+      {step === 3 && lecture && <section aria-labelledby="lecture-build-heading"><h3 id="lecture-build-heading" className="font-display text-lg font-extrabold">Ready to build</h3><p className="mt-1 text-sm font-semibold text-muted-foreground">Check the source receipt, then create both study tools.</p><LectureBuildSummary title={lectureDisplayTitle(lectureNumber, lecture.title, lecture.aiTitle)} sourceCount={lectureSources.length} materialCount={supportingMaterials.length} readableCount={readableChunks.length} generationCount={generationChunks.length} />{building && buildPhase !== 'idle' && <LectureBuildProgress phase={buildPhase} />}<details data-testid="lecture-ai-details" className="group/details mt-4 rounded-xl border border-border bg-muted/20"><summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-details-marker]:hidden"><span>What gets sent to AI</span><ChevronDown className="size-4 text-muted-foreground transition-transform group-open/details:rotate-180" aria-hidden="true" /></summary><p className="border-t border-border px-4 py-3 text-xs font-semibold leading-5 text-muted-foreground">Only the readable passages prepared for this build are copied to your private server workspace. Original file bytes stay local, figures are not sent, and nothing partial is saved if either study tool fails.</p></details><div className="mt-5 flex items-center justify-between gap-3"><Button variant="outline" onClick={() => onStep(2)} disabled={building}>Back to materials</Button><Button onClick={() => void buildWorkspace()} disabled={building}><Sparkles className="size-4" /> {building ? 'Building…' : 'Build Guide + Mastery'}</Button></div></section>}
     </div>
   </CardContent></Card>
 }
 
-function BuildLecturePreview({ lecture, brief, mastery, files }: {
-  lecture: LectureRecord
-  brief: NonNullable<LectureRecord['lectureBrief']>
-  mastery?: ReturnType<typeof buildLectureMasteryMap>
-  files: AcademicFile[]
-}) {
-  const flow = brief.conceptMap?.nodes.filter((node) => node.lane === 'flow').slice(0, 5) ?? []
-  const vocabulary = brief.vocabulary.slice(0, 4)
-  const sourceNames = files.map((file) => file.fileName ?? file.title)
-  return <section aria-label="Lecture page preview" className="mt-5 overflow-hidden rounded-[1.4rem] border border-border bg-card shadow-[0_20px_55px_-38px_rgba(0,0,0,.75)]">
-    <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border bg-muted/20 px-5 py-4 sm:px-6">
-      <div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-primary">Your lecture, before you build</p><h4 className="mt-1 break-words font-display text-xl font-extrabold">{lecture.title}</h4><p className="mt-1 text-xs font-semibold text-muted-foreground">Study Guide with At a glance and a connected Mastery Map</p></div>
-      <Badge variant="outline">{files.length} lecture {files.length === 1 ? 'source' : 'sources'}</Badge>
-    </header>
-    <div className="grid min-w-0 lg:grid-cols-[minmax(0,1fr)_19rem]">
-      <article className="min-w-0 px-5 py-6 sm:px-7">
-        <p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Study Guide preview · At a glance</p>
-        <h5 className="mt-1 font-display text-lg font-extrabold">The lecture in a few clear moves</h5>
-        {brief.summary.length ? <div className="mt-4 space-y-3">{brief.summary.slice(0, 2).map((item) => <p key={item.id} className="text-sm font-semibold leading-6 text-foreground/90">{item.text}</p>)}</div> : <p className="mt-4 text-sm font-semibold leading-relaxed text-muted-foreground">No readable summary is available yet. Add a clearer transcript or another processed source.</p>}
-
-        <section className="mt-6 border-y border-border py-5">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">How the ideas connect</p>
-          {flow.length > 1 ? <ol className="mt-3 flex min-w-0 flex-wrap items-center gap-2" aria-label="Concept flow preview">{flow.map((node, index) => <li key={node.id} className="contents"><span className="max-w-40 rounded-full border border-primary/25 bg-primary/7 px-3 py-1.5 text-xs font-extrabold">{node.label}</span>{index < flow.length - 1 && <span className="text-sm font-black text-primary" aria-hidden="true">→</span>}</li>)}</ol> : brief.connections.length ? <p className="mt-3 text-sm font-semibold leading-6">{brief.connections[0].text}</p> : <p className="mt-3 text-sm font-semibold leading-6 text-muted-foreground">The completed Brief will place supported relationships here without inventing missing links.</p>}
-        </section>
-
-        <section className="mt-5">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Language worth knowing</p>
-          {vocabulary.length ? <dl className="mt-3 grid gap-x-5 gap-y-3 sm:grid-cols-2">{vocabulary.map((item) => <div key={item.id} className="min-w-0"><dt className="text-xs font-extrabold capitalize text-foreground">{item.term}</dt><dd className="mt-0.5 line-clamp-2 text-[11px] font-semibold leading-5 text-muted-foreground">{item.text}</dd></div>)}</dl> : <p className="mt-3 text-xs font-semibold text-muted-foreground">Key vocabulary will appear when the lecture sources repeat a term strongly enough to support it.</p>}
-        </section>
-      </article>
-
-      <aside className="border-t border-border bg-muted/25 px-5 py-6 lg:border-l lg:border-t-0" aria-label="Mastery Map preview">
-        <div className="flex items-center gap-2"><ListChecks className="size-4 text-primary" /><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Mastery Map</p></div>
-        <h5 className="mt-2 font-display text-base font-extrabold">What you should be able to do</h5>
-        {mastery ? <ol className="mt-4 space-y-4">{mastery.standards.slice(0, 3).map((standard, index) => <li key={standard.id} className="border-l-2 border-primary/35 pl-3"><p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Objective {index + 1} · Not started</p><p className="mt-1 text-sm font-extrabold leading-5">{standard.title}</p></li>)}</ol> : <div className="mt-4 border-l-2 border-border pl-3"><p className="text-sm font-extrabold">Objectives need a course source</p><p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">Add learning objectives or syllabus material. Transcript topics are not silently promoted into official objectives.</p></div>}
-        <p className="mt-5 border-t border-border pt-4 text-[11px] font-semibold leading-5 text-muted-foreground">Every full objective includes Understand, Be able to do, Watch for, and a mastery state.</p>
-      </aside>
-    </div>
-    <footer className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border bg-muted/15 px-5 py-3 text-[11px] font-semibold text-muted-foreground sm:px-6"><span className="font-extrabold text-foreground">Source foundation</span>{sourceNames.length ? <><span className="max-w-64 truncate">{sourceNames[0]}</span>{sourceNames[1] && <span className="max-w-64 truncate">{sourceNames[1]}</span>}{sourceNames.length > 2 && <span>+{sourceNames.length - 2} more</span>}</> : <span>No sources attached</span>}<span className="ml-auto text-primary">{brief.usedSourceFileIds.length} used in this preview</span></footer>
+function LectureBuildSummary({ title, sourceCount, materialCount, readableCount, generationCount }: { title: string; sourceCount: number; materialCount: number; readableCount: number; generationCount: number }) {
+  return <section aria-label="Lecture build summary" className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
+    <header className="flex items-start gap-3 bg-muted/25 px-4 py-4"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary" aria-hidden="true"><FileCheck2 className="size-4" /></span><div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Source receipt</p><h4 className="mt-0.5 truncate font-display text-base font-extrabold">{title}</h4></div></header>
+    <dl className="grid border-t border-border sm:grid-cols-3 sm:divide-x sm:divide-border"><div className="px-4 py-3"><dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Transcript</dt><dd className="mt-1 text-sm font-extrabold text-success">Ready</dd></div><div className="border-t border-border px-4 py-3 sm:border-t-0"><dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Sources</dt><dd className="mt-1 text-sm font-extrabold">{sourceCount} {sourceCount === 1 ? 'source' : 'sources'} · {materialCount} {materialCount === 1 ? 'material' : 'materials'}</dd></div><div className="border-t border-border px-4 py-3 sm:border-t-0"><dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Readable text</dt><dd className="mt-1 text-sm font-extrabold">{readableCount.toLocaleString()} readable {readableCount === 1 ? 'passage' : 'passages'}</dd></div></dl>
+    <div className="grid border-t border-border bg-muted/15 sm:grid-cols-2 sm:divide-x sm:divide-border"><div className="flex gap-3 px-4 py-3"><BookOpen className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" /><div><b className="text-sm">Study Guide</b><span className="mt-0.5 block text-xs font-semibold text-muted-foreground">At a glance plus the full lecture</span></div></div><div className="flex gap-3 border-t border-border px-4 py-3 sm:border-t-0"><ListChecks className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" /><div><b className="text-sm">Mastery Map</b><span className="mt-0.5 block text-xs font-semibold text-muted-foreground">Free-recall cues and application goals</span></div></div></div>
+    {readableCount > 24 && <p className="border-t border-border px-4 py-3 text-xs font-semibold leading-5 text-muted-foreground">{readableCount === generationCount ? `All ${readableCount.toLocaleString()} readable passages will be reviewed for this build.` : `All ${readableCount.toLocaleString()} readable passages stay attached. The build will automatically use ${generationCount.toLocaleString()} representative, lecture-relevant passages.`}</p>}
   </section>
+}
+
+function LectureBuildProgress({ phase }: { phase: 'guide' | 'mastery' | 'saving' }) {
+  const phases = [
+    { id: 'guide', label: 'Generating the Study Guide', percent: 34 },
+    { id: 'mastery', label: 'Creating the Mastery Map', percent: 67 },
+    { id: 'saving', label: 'Checking sources and saving', percent: 92 },
+  ] as const
+  const current = phases.find((item) => item.id === phase) ?? phases[0]
+  const stepNumber = phases.findIndex((item) => item.id === phase) + 1
+  return <section className="mt-4 rounded-xl border border-primary/25 bg-primary/[0.06] p-3.5" role="status" aria-live="polite" aria-busy="true"><div className="flex items-start gap-3"><span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary" aria-hidden="true"><Sparkles className="size-4" /></span><div className="min-w-0 flex-1"><div className="flex items-baseline justify-between gap-3"><p className="font-display text-sm font-extrabold">Building lecture</p><span className="shrink-0 text-xs font-extrabold tabular-nums text-primary">{current.percent}%</span></div><p className="mt-1 text-xs font-semibold text-muted-foreground">Step {stepNumber} of 3 · {current.label}</p><Progress className="mt-2 h-2" value={current.percent} aria-label={`Lecture generation ${current.percent}% complete`} /></div></div></section>
 }
 
 function MaterialsStep({ courseId, data, lecture, materials, readableChunks, onContinue }: { courseId: string; data: ClassCenterData; lecture: LectureRecord; materials: AcademicFile[]; readableChunks: SourceChunk[]; onContinue: () => void }) {
   return (
     <section aria-labelledby="lecture-materials-heading">
       <h3 id="lecture-materials-heading" className="font-display text-lg font-extrabold">
-        2. Add lecture materials
+        Add materials
       </h3>
-      <p className="mt-1 text-sm font-semibold text-muted-foreground">Add the slides, textbook pages, notes, or practice that belong to this lecture. Anything added here is automatically included when readable.</p>
+      <p className="mt-1 text-sm font-semibold text-muted-foreground">Add the textbook pages, slides, notes, or practice for this lecture.</p>
 
       <div data-testid="add-material-strip" className="mt-4 flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
@@ -342,7 +327,7 @@ function MaterialsStep({ courseId, data, lecture, materials, readableChunks, onC
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs font-semibold text-muted-foreground">Your transcript is included automatically.</p>
-        <Button onClick={onContinue} disabled={!materials.length}>Continue to build preview <ChevronDown className="size-4 -rotate-90" /></Button>
+        <Button onClick={onContinue} disabled={!materials.length}>Review and build <ChevronDown className="size-4 -rotate-90" /></Button>
       </div>
     </section>
   )

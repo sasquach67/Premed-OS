@@ -63,6 +63,7 @@ import { readLocalBlob } from '@/lib/localBlobStore'
 import { readingDebt, READING_LIST_STATE_COPY, recurringFeedbackThemes } from '@/lib/academics/writingEvidence'
 import { normalizeMeetingDays } from '@/lib/academics/meetingSchedule'
 import { QuestionBankPdfButton } from '@/components/academics/QuestionBankPdfButton'
+import { lectureDisplayTitle } from '@/lib/academics/lectureLabels'
 import {
   acceptGuideProposal, buildSyllabusGuideProposals, dismissGuideProposal, editGuideProposal,
   ensureSyllabusGuideProposals, guideProposalsForCourse, isGuideSourceValid,
@@ -73,14 +74,6 @@ type HubTab = 'overview' | 'materials' | 'topics' | 'assignments' | 'guide'
 
 function isMaterialArtifact(value: string | null): value is MaterialArtifact {
   return value === 'flashcards' || value === 'study-guide' || value === 'study-outline' || value === 'revised-notes' || value === 'unit-mastery-outline' || value === 'unit-question-bank'
-}
-
-function lectureDisplayTitle(position: number, title: string, aiTitle?: string) {
-  const base = `Lecture ${position}`
-  const savedTitle = (aiTitle?.trim() || title.trim())
-    .replace(/^(?:lecture\s+#?\d+\s*(?:[·:—–-]\s*)?)+/i, '')
-    .trim()
-  return savedTitle ? `${base} · ${savedTitle}` : base
 }
 
 export interface ClassHubProps {
