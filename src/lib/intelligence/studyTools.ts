@@ -76,6 +76,16 @@ export interface StudySourceInput {
   end: number
 }
 
+/** A temporary, student-selected image derivative sent only to Claude during
+ * Question Bank generation. It is not persisted in the server source mirror. */
+export interface StudySourceImageInput {
+  fileId: string
+  title: string
+  mimeType: string
+  size: number
+  dataBase64: string
+}
+
 /**
  * Generation Phase 2 — the primary-plus-audit request. The client assembles
  * the spec; the function routes the named artifact to its configured author,
@@ -95,6 +105,10 @@ export interface GenerateRequest {
   systemPrompt: string
   /** L6 — this topic, this scope, this action. */
   request: string
+  /** Question Bank only: bounded selected image pages for Claude vision. */
+  visualSources?: StudySourceImageInput[]
+  /** Question Bank only: require official public assessment-pattern research. */
+  webPatternResearch?: boolean
 }
 
 /** A compact, student-reviewed term snapshot. Unlike material generation, its
@@ -144,6 +158,8 @@ export interface GeneratedStudyToolArtifact {
   citations: unknown[]
   auditStatus: GenerationAuditStatus
   primaryProvider?: 'anthropic' | 'openai'
+  visualSourceFileIds?: string[]
+  webSearchRequests?: number
 }
 
 export type StudyToolResponse<T> =
@@ -206,6 +222,13 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
             message: 'The independent provider review found a source or format problem. Nothing was saved.',
           }
         }
+        if (serverCode === 'web-search-not-used') {
+          return {
+            ok: false,
+            code: 'invalid-response',
+            message: 'Claude did not complete the required official assessment-pattern search. Nothing was saved.',
+          }
+        }
         return { ok: false, code: 'invalid-response', message: 'The generator returned an invalid result. Nothing was saved.' }
       }
       return { ok: false, code: 'unavailable', message: 'AI study tools are unavailable. Your local data was not changed.' }
@@ -253,7 +276,9 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
       if (!isRecord(result.data) || !('artifact' in result.data)
         || !Array.isArray(result.data.citations)
         || !['approved', 'skipped', 'unavailable'].includes(String(result.data.auditStatus))
-        || (result.data.primaryProvider != null && !['anthropic', 'openai'].includes(String(result.data.primaryProvider)))) {
+        || (result.data.primaryProvider != null && !['anthropic', 'openai'].includes(String(result.data.primaryProvider)))
+        || (result.data.visualSourceFileIds != null && (!Array.isArray(result.data.visualSourceFileIds) || !result.data.visualSourceFileIds.every((id) => typeof id === 'string')))
+        || (result.data.webSearchRequests != null && (!Number.isInteger(result.data.webSearchRequests) || Number(result.data.webSearchRequests) < 0))) {
         return { ok: false, code: 'invalid-response', message: 'The generator returned an invalid result. Nothing was saved.' }
       }
       return { ok: true, data: result.data as unknown as GeneratedStudyToolArtifact }

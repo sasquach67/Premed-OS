@@ -108,6 +108,9 @@ describe('MaterialGenerationIntake generation reliability', () => {
 
   it('keeps a full-corpus question bank available above 24 passages', async () => {
     const { file, chunks } = material(549)
+    file.mimeType = 'image/png'
+    file.blobRef = 'idb://source-file'
+    file.fileName = 'Lesson 2 Textbook/Page 14.png'
     const data = createInitialDataForMode(false)
     data.academics.classCenter.files = [file]
     data.academics.classCenter.sourceChunks = chunks
@@ -127,6 +130,8 @@ describe('MaterialGenerationIntake generation reliability', () => {
 
     expect(container.textContent).not.toContain('AI study tools can use up to 24 at a time')
     expect(container.textContent).toContain('549 passages will be reviewed')
+    expect(container.textContent).toContain('1 selected image page will also receive a Claude visual pass')
+    expect(container.textContent).toContain('checks official public assessment patterns on the web without copying them')
     expect(button.disabled).toBe(false)
   })
 

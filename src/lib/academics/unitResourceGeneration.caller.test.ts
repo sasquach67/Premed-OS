@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { SourceChunk } from '@/lib/types'
+import type { AcademicFile, SourceChunk } from '@/lib/types'
 
 const mocks = vi.hoisted(() => ({
   prepare: vi.fn(),
   generate: vi.fn(),
+  prepareVisuals: vi.fn(),
 }))
 
 vi.mock('@/lib/academics/syncGenerationSources', () => ({ prepareGenerationSources: mocks.prepare }))
 vi.mock('@/lib/intelligence/studyTools', () => ({ studyTools: { generate: mocks.generate } }))
+vi.mock('@/lib/academics/questionBankVisualSources', () => ({ prepareQuestionBankVisualSources: mocks.prepareVisuals }))
 
 import { generateUnitMasteryOutline } from './generateUnitMasteryOutline'
 import { generateStudyGuide } from './generateStudyGuide'
@@ -17,11 +19,18 @@ const sources: SourceChunk[] = [
   { id: 'chunk-1', fileId: 'file-1', courseId: 'course-1', content: 'Current unit syllabus standard and evidence.', coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: 0 },
   { id: 'chunk-2', fileId: 'file-1', courseId: 'course-1', content: 'Prior unit control evidence.', coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: 1 },
 ]
+const textbookImage: AcademicFile = {
+  id: 'textbook-page', courseId: 'course-1', sourceType: 'upload', title: 'Textbook page',
+  type: 'reading', blobRef: 'idb://textbook-page', mimeType: 'image/png', linkedTopicIds: [],
+  owner: 'mine', processingStatus: 'ready', createdAt: 1, updatedAt: 1, order: 0,
+}
 
 describe('unit resource generation callers', () => {
   beforeEach(() => {
     mocks.prepare.mockReset()
     mocks.generate.mockReset()
+    mocks.prepareVisuals.mockReset()
+    mocks.prepareVisuals.mockResolvedValue({ sources: [], skippedFileIds: [] })
     mocks.prepare.mockResolvedValue({ ok: true, scopeId: 'class-material', chunkIds: ['chunk-1', 'chunk-2'] })
   })
 
@@ -84,13 +93,14 @@ describe('unit resource generation callers', () => {
           { id: 'q-1', prompt: 'Which result follows from the current-unit evidence in the diagram?', options: ['A', 'B'], answer: 'A', rationale: 'The supplied standard supports A.', unit: 'Unit 2', scope: 'current-unit', move: 'application', primaryStandardId: 'std-1', sourceChunkIds: ['chunk-1'], difficulty: 'standard', stimulusIds: ['stimulus-1'] },
           { id: 'q-2', prompt: 'How does the prior control change the interpretation of the diagram?', options: ['C', 'D'], answer: 'C', rationale: 'The supplied control evidence supports C.', unit: 'Unit 2', scope: 'prior-unit-integration', move: 'integration', primaryStandardId: 'std-2', secondaryStandardIds: ['std-1'], sourceChunkIds: ['chunk-1', 'chunk-2'], difficulty: 'challenging', stimulusIds: ['stimulus-1'] },
         ],
-      }, citations: [],
+      }, citations: [], visualSourceFileIds: ['textbook-page'], webSearchRequests: 1,
     } })
 
-    const outcome = await generateUnitQuestionBank({ courseId: 'course-1', chunks: sources, unit: 'Unit 2', label: 'BIOL 103', course: { code: 'BIOL 103', title: 'How Cells Function' }, currentUnitPercent: 50, practiceQuestionChunkIds: ['chunk-1'], masteryStandardIds: ['std-1', 'std-2'] })
+    mocks.prepareVisuals.mockResolvedValue({ sources: [{ fileId: 'textbook-page', title: 'Textbook page', mimeType: 'image/png', size: 4, dataBase64: 'cGFnZQ==' }], skippedFileIds: [] })
+    const outcome = await generateUnitQuestionBank({ courseId: 'course-1', chunks: sources, unit: 'Unit 2', label: 'BIOL 103', course: { code: 'BIOL 103', title: 'How Cells Function' }, currentUnitPercent: 50, practiceQuestionChunkIds: ['chunk-1'], masteryStandardIds: ['std-1', 'std-2'], visualFiles: [textbookImage] })
 
     expect(outcome.ok).toBe(true)
-    expect(outcome.artifact).toMatchObject({ courseId: 'course-1', unit: 'Unit 2', currentUnitPercent: 50, integrationPercent: 50, specId: 'unit-question-bank-v1' })
+    expect(outcome.artifact).toMatchObject({ courseId: 'course-1', unit: 'Unit 2', currentUnitPercent: 50, integrationPercent: 50, specId: 'unit-question-bank-v1', visualSourceFileIds: ['textbook-page'], webPatternSearchCount: 1 })
     const request = mocks.generate.mock.calls[0][0]
     expect(request.systemPrompt).toContain('UQB-BALANCE')
     expect(request.systemPrompt).toContain('UQB-REFERENCE-MODEL')
@@ -99,9 +109,14 @@ describe('unit resource generation callers', () => {
     expect(request.systemPrompt).toContain('UQB-STIMULUS')
     expect(request.systemPrompt).toContain('UQB-VISUAL')
     expect(request.systemPrompt).toContain('UQB-FACTUAL')
+    expect(request.systemPrompt).toContain('UQB-TEXTBOOK-VISION')
+    expect(request.systemPrompt).toContain('UQB-WEB-PATTERN')
     expect(request.systemPrompt).toContain('Mastery standard IDs to cover exactly: std-1, std-2')
     expect(request.systemPrompt).toContain('Reference-question chunk IDs: chunk-1')
     expect(request.request).toContain('marked question passages as assessment-pattern evidence')
+    expect(request.request).toContain('Inspect all 1 selected image pages')
+    expect(request.visualSources).toEqual([expect.objectContaining({ fileId: 'textbook-page' })])
+    expect(request.webPatternResearch).toBe(true)
     expect(JSON.stringify(request)).not.toContain(sources[1].content)
   })
 
@@ -111,6 +126,19 @@ describe('unit resource generation callers', () => {
     ], ['chunk-1'])
 
     expect(phrases).toContain('Question 1: Which control would best isolate the effect of temperature?')
+  })
+
+  it('fails closed when a selected image cannot complete the visual pass', async () => {
+    mocks.prepareVisuals.mockResolvedValue({ sources: [], skippedFileIds: ['textbook-page'] })
+
+    const outcome = await generateUnitQuestionBank({
+      courseId: 'course-1', chunks: sources, unit: 'Unit 2', label: 'BIOL 103',
+      course: { code: 'BIOL 103', title: 'How Cells Function' }, visualFiles: [textbookImage],
+    })
+
+    expect(outcome).toMatchObject({ ok: false, failure: 'provider-unavailable' })
+    expect(outcome.message).toContain("could not be prepared for Claude's visual pass")
+    expect(mocks.generate).not.toHaveBeenCalled()
   })
 
   it('returns an invalid-response outcome instead of saving a weak provider artifact', async () => {

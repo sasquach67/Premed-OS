@@ -24,6 +24,7 @@ import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialo
 import { TranscriptImport } from '@/components/academics/TranscriptImport'
 import { applicableCourseLens } from '@/lib/academics/courseLens'
 import { generationSourceLimitMessage } from '@/lib/academics/syncGenerationSources'
+import { MAX_QUESTION_BANK_VISUAL_SOURCES, isQuestionBankVisualFile } from '@/lib/academics/questionBankVisualSources'
 import { GenerationProgress } from '@/components/academics/GenerationProgress'
 import { startGenerationProgress, waitForGenerationProgress, type GenerationPhase } from '@/lib/generation/progress'
 
@@ -118,6 +119,10 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
     : selectedFileIds, [artifact, lensAvailable, lensSourceFileIds, selectedFileIds, useCourseLens])
   const selectedChunks = selectedMaterialChunks(choices, effectiveSelectedFileIds)
   const selected = ready.filter((choice) => effectiveSelectedFileIds.includes(choice.file.id))
+  const selectedVisualFileCount = Math.min(
+    MAX_QUESTION_BANK_VISUAL_SOURCES,
+    selected.filter((choice) => isQuestionBankVisualFile(choice.file)).length,
+  )
   const questionReferenceChunkIds = practiceQuestionChunkIds(selected.map((choice) => choice.file), selectedChunks)
   const baseline = selectedNotesBaseline(choices, baselineFileId, effectiveSelectedFileIds)
   const courseLens = artifact === 'study-guide' || artifact === 'study-outline'
@@ -125,7 +130,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
     : undefined
   const sourceLimitMessage = generationSourceLimitMessage(selectedChunks.length, artifact)
   const fullCorpusMessage = artifact === 'unit-question-bank' && selectedChunks.length > 0
-    ? `${selectedChunks.length} passages will be reviewed. Claude receives the full selected text corpus; the saved bank will cite only the passages it actually uses.`
+    ? `${selectedChunks.length} passages will be reviewed. Claude receives the full selected text corpus; the saved bank will cite only the passages it actually uses.${selectedVisualFileCount ? ` ${selectedVisualFileCount} selected image ${selectedVisualFileCount === 1 ? 'page' : 'pages'} will also receive a Claude visual pass.` : ''} Claude also checks official public assessment patterns on the web without copying them.`
     : undefined
   const unitScopeRequired = artifact === 'unit-question-bank' || artifact === 'unit-mastery-outline'
   const canGenerate = selectedChunks.length > 0
@@ -200,13 +205,20 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
         })
         toast({ title: 'Mastery Map created', description: 'Saved in Materials with its selected-source trace.' })
       } else if (artifact === 'unit-question-bank') {
-        const outcome = await generateUnitQuestionBank({ courseId, chunks: selectedChunks, unit: selectedUnit, label: courseLabel, course: course ?? { code: courseLabel, title: courseLabel }, currentUnitPercent, practiceQuestionChunkIds: questionReferenceChunkIds, masteryStandardIds: matchingMasteryOutline?.standards.map((standard) => standard.id) })
+        const outcome = await generateUnitQuestionBank({ courseId, chunks: selectedChunks, unit: selectedUnit, label: courseLabel, course: course ?? { code: courseLabel, title: courseLabel }, currentUnitPercent, practiceQuestionChunkIds: questionReferenceChunkIds, masteryStandardIds: matchingMasteryOutline?.standards.map((standard) => standard.id), visualFiles: selected.map((choice) => choice.file) })
         if (!outcome.ok || !outcome.artifact) return failGeneration(outcome.message ?? 'The question bank could not be generated.')
         setGenerationPhase('saving')
         await waitForGenerationProgress()
         useStore.getState().update((draft) => {
           const records = draft.academics.classCenter.generatedUnitQuestionBanks
           records.unshift({ ...outcome.artifact!, id: uid(), createdAt: Date.now(), updatedAt: Date.now(), order: records.length })
+          for (const fileId of outcome.artifact!.visualSourceFileIds ?? []) {
+            const file = draft.academics.classCenter.files.find((item) => item.id === fileId)
+            if (file?.sourceCoverage) {
+              file.sourceCoverage.figureStatus = 'question-bank-reviewed'
+              file.updatedAt = Date.now()
+            }
+          }
         })
         toast({ title: 'Question bank created', description: 'Saved in Materials with source, course-style, and integration traces.' })
       } else if (baseline) {

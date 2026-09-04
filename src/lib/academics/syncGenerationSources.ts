@@ -69,6 +69,9 @@ export async function prepareGenerationSources(
     if (typeof window === 'undefined') return { ok: false, message: 'AI study tools must be opened in the app.' }
     const accepted = window.confirm(
       'AI study tools copy only the material selected for this request to your private Premed OS server workspace. '
+      + (options.artifact === 'unit-question-bank'
+        ? 'For a question bank, temporary compressed copies of selected image pages are also sent directly to Claude for visual inspection; they are not stored in the server source mirror. '
+        : '')
       + 'Your local data remains canonical, and you can delete the server copy at any time in Settings. Continue?',
     )
     if (!accepted) return { ok: false, message: 'No material was copied, so nothing was generated.' }

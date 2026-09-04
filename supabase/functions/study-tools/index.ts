@@ -4,6 +4,8 @@ const MAX_REQUEST_BYTES = 8 * 1024 * 1024
 const MAX_CHUNKS = 24
 const MAX_QUESTION_BANK_CHUNKS = 1_000
 const CHUNK_RETRIEVAL_BATCH_SIZE = 100
+const MAX_QUESTION_BANK_VISUALS = 24
+const MAX_QUESTION_BANK_VISUAL_BYTES = 4_500_000
 const MAX_AUDIO_BYTES = 4 * 1024 * 1024
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024
 const cors = {
@@ -20,6 +22,7 @@ type Chunk = {
 }
 
 type ProviderCitation = { fileId: string; chunkId: string; start: number; end: number }
+type QuestionBankVisualSource = { fileId: string; title: string; mimeType: string; size: number; dataBase64: string }
 type GenerationAuditStatus = 'approved' | 'skipped' | 'unavailable'
 
 /**
@@ -231,8 +234,11 @@ Deno.serve(async (request) => {
   const isGapCheck = body.action === 'gap-check'
   const isGeneration = body.action === 'generate'
   const isQuestionBankGeneration = isGeneration && body.specId === 'unit-question-bank-v1'
+  const visualSources = isQuestionBankGeneration ? validateQuestionBankVisualSources(body.visualSources) : []
   const evidence = isGapCheck ? validateGapEvidence(body.evidence) : null
-  if ((!isGapCheck && !isGeneration) || !isText(body.courseId) || !isText(body.topicId) || (isGapCheck && !evidence)) {
+  if ((!isGapCheck && !isGeneration) || !isText(body.courseId) || !isText(body.topicId) || (isGapCheck && !evidence)
+    || (isQuestionBankGeneration && (!visualSources || body.webPatternResearch !== true))
+    || (!isQuestionBankGeneration && (body.visualSources != null || body.webPatternResearch != null))) {
     return failure(400, 'invalid-request', 'A typed study-tool request is required.')
   }
   const chunkIds = validateChunkIds(
@@ -297,8 +303,11 @@ Deno.serve(async (request) => {
       }
       const primaryProvider: 'anthropic' | 'openai' = isQuestionBank ? 'anthropic' : 'openai'
       const primary = isQuestionBank
-        ? await callAnthropicGeneration(requestText, chunks, specPrompt)
+        ? await callAnthropicGeneration(requestText, chunks, specPrompt, visualSources ?? [])
         : await callOpenAIGeneration(requestText, chunks, specPrompt)
+      if (isQuestionBank && primary.webSearchRequests < 1) {
+        return failure(502, 'web-search-not-used', 'Claude did not complete the required official assessment-pattern search. Nothing was saved.')
+      }
       const closed = closeCitationSet(primary.trustedCitations, chunks)
       if (!closed.length) {
         return failure(422, 'no-verified-citations', 'No citation from the generated artifact could be verified against your material.')
@@ -320,7 +329,14 @@ Deno.serve(async (request) => {
           auditStatus = 'unavailable'
         }
       }
-      return json({ artifact: primary.value, citations: closed, auditStatus, primaryProvider })
+      return json({
+        artifact: primary.value,
+        citations: closed,
+        auditStatus,
+        primaryProvider,
+        visualSourceFileIds: isQuestionBank ? (visualSources ?? []).map((source) => source.fileId) : [],
+        webSearchRequests: primary.webSearchRequests,
+      })
     } catch (error) {
       console.error('study-tools generate failure', error instanceof Error ? error.message : 'unknown')
       if (error instanceof AnthropicGenerationError && error.reason === 'credit-exhausted') {
@@ -716,16 +732,22 @@ async function callOpenAIGeneration(response: string, chunks: Chunk[], specPromp
   if (!result.ok) throw new Error(`OpenAI generation ${result.status}`)
   const payload = await result.json() as Record<string, unknown>
   const value = parseJsonObject(openAIOutputText(payload))
-  return { value, trustedCitations: collectArtifactCitations(value, chunks) }
+  return { value, trustedCitations: collectArtifactCitations(value, chunks), webSearchRequests: 0 }
 }
 
 /**
  * Question Bank V1's Anthropic author returns semantic stimulus structures,
  * never unverified image bytes. Premed OS renders the validated tables, graphs,
- * and diagrams itself. Official exam-pattern research is versioned in the
- * specification, so a routine bank does not pay for or drift with live search.
+ * and diagrams itself. Each run can inspect selected local image derivatives
+ * and current official assessment patterns; neither becomes an unchecked fact
+ * source for the saved artifact.
  */
-async function callAnthropicGeneration(response: string, chunks: Chunk[], specPrompt: string) {
+async function callAnthropicGeneration(
+  response: string,
+  chunks: Chunk[],
+  specPrompt: string,
+  visualSources: QuestionBankVisualSource[],
+) {
   const key = Deno.env.get('ANTHROPIC_API_KEY')
   if (!key) throw new Error('Anthropic is not configured')
   const result = await fetch('https://api.anthropic.com/v1/messages', {
@@ -739,15 +761,34 @@ async function callAnthropicGeneration(response: string, chunks: Chunk[], specPr
       model: Deno.env.get('ANTHROPIC_MODEL') || 'claude-opus-5',
       max_tokens: 24_000,
       output_config: { effort: 'medium' },
+      tools: [{
+        type: 'web_search_20250305',
+        name: 'web_search',
+        max_uses: 3,
+        allowed_domains: ['apcentral.collegeboard.org', 'ocw.mit.edu'],
+      }],
       system: [
         specPrompt,
         'Reply with one JSON object only, with no prose or markdown fences.',
         'Use only the supplied source IDs. For sourceChunkIds, copy exact chunk IDs; never invent an ID.',
-        'Do not claim to create or retrieve bitmap images. Author only the structured stimuli allowed by the specification.',
+        'Inspect every supplied image page. Use the lesson objectives, transcript, and assigned questions to decide which textbook or course figures actually clarify the requested scope; ignore decorative, tangential, and redundant figures.',
+        'Use web search at least once before authoring, limited to official public assessment sources, to inspect cognitive patterns, experiment structures, graph use, and distractor logic. Never copy a web question, image, wording, numeric value, or biological claim into the bank.',
+        'All question facts, answers, rationales, and source-derived visuals must remain grounded in the supplied course chunks. Web results are assessment-pattern evidence only.',
+        'Do not claim to retrieve bitmap images for the output. Author only the structured stimuli allowed by the specification.',
       ].join('\n'),
       messages: [{
         role: 'user',
         content: [
+          ...visualSources.flatMap((source, index) => ([
+            {
+              type: 'text',
+              text: `Selected visual source ${index + 1}: ${source.title} (fileId ${source.fileId}). Inspect the visible page, then use it only if it directly clarifies the closed lesson scope.`,
+            },
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: source.mimeType, data: source.dataBase64 },
+            },
+          ])),
           ...chunks.map((chunk) => ({
             type: 'document',
             source: { type: 'text', media_type: 'text/plain', data: chunk.content },
@@ -772,7 +813,8 @@ async function callAnthropicGeneration(response: string, chunks: Chunk[], specPr
       .map((block: { text?: string }) => block.text || '').join('')
     : ''
   const value = parseJsonObject(text)
-  return { value, trustedCitations: collectArtifactCitations(value, chunks) }
+  const webSearchRequests = Number(payload?.usage?.server_tool_use?.web_search_requests ?? 0)
+  return { value, trustedCitations: collectArtifactCitations(value, chunks), webSearchRequests }
 }
 
 class AnthropicGenerationError extends Error {
@@ -1039,6 +1081,31 @@ function validateSources(value: unknown, maxChunks = MAX_CHUNKS) {
     })
   }
   return sources
+}
+
+function validateQuestionBankVisualSources(value: unknown): QuestionBankVisualSource[] | null {
+  if (value == null) return []
+  if (!Array.isArray(value) || value.length > MAX_QUESTION_BANK_VISUALS) return null
+  const sources: QuestionBankVisualSource[] = []
+  let totalBytes = 0
+  for (const raw of value) {
+    if (!raw || typeof raw !== 'object') return null
+    const source = raw as Record<string, unknown>
+    if (!isText(source.fileId) || !isText(source.title) || !isText(source.mimeType) || !isText(source.dataBase64)
+      || !Number.isInteger(source.size) || Number(source.size) < 1
+      || !/^image\/(png|jpe?g|webp)$/i.test(source.mimeType)
+      || source.title.length > 500 || !base64MatchesSize(source.dataBase64, Number(source.size))) return null
+    totalBytes += Number(source.size)
+    if (totalBytes > MAX_QUESTION_BANK_VISUAL_BYTES) return null
+    sources.push({
+      fileId: source.fileId,
+      title: source.title,
+      mimeType: source.mimeType,
+      size: Number(source.size),
+      dataBase64: source.dataBase64,
+    })
+  }
+  return new Set(sources.map((source) => source.fileId)).size === sources.length ? sources : null
 }
 
 function validateChunkIds(value: unknown, maxChunks = MAX_CHUNKS) {

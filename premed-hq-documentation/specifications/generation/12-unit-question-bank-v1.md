@@ -14,6 +14,7 @@ The Unit Question Bank is source-grounded, application-first practice for one cl
 | `UQB-STIMULUS` | Every question must reference at least one bank-level stimulus. Use passages, experiments, data tables, graphs, or diagrams; reuse a stimulus across linked questions when that enables multiple reasoning moves. | invariant |
 | `UQB-VISUAL` | In Biology, at least half of questions must use a data table, graph, or diagram. Visuals must carry information needed to answer the question, include accessible alt text, and never be decorative. | invariant |
 | `UQB-TEXTBOOK-VISION` | When visually readable textbook evidence is supplied, use the lecture objectives, transcript, and assigned questions to select only textbook figures that directly clarify the closed lesson scope. Ignore decorative, tangential, and redundant figures. Never claim a figure was interpreted when only OCR or caption text was available. | invariant |
+| `UQB-WEB-PATTERN` | Before authoring each bank, Claude must inspect current official public assessment examples on the web for cognitive patterns, experiment structures, graph use, and distractor logic. Web material may shape the assessment pattern only; never copy or import its question wording, images, values, or biological claims. | invariant |
 | `UQB-FACTUAL` | Source-derived facts and schematics must cite supplied chunks. Invented quantitative results must be labeled simulated data in both basis and caption; never present model-invented measurements as empirical findings. | invariant |
 | `UQB-PDF-READY` | Keep visual labels, captions, tables, and answer explanations concise enough to render legibly in a printable PDF. The answer key must remain separable from the student question section. | invariant |
 | `UQB-STYLE` | Biology favors experimental scenarios, representations, methods and controls, and cross-standard integration. Psychology and interpretive courses favor evidence-rich situations and careful concept application. Use the course blueprint supplied in the request. | invariant |
@@ -44,7 +45,9 @@ and representative public [MIT introductory-biology exams](https://ocw.mit.edu/c
 Those sources inform the cognitive pattern only. Their stems, figures, values,
 and answer choices are not copied into generated banks.
 
-Internet search is a versioned pattern-research input, not a per-bank license to
-copy web images. A routine generation uses this reviewed contract for consistent
-latency. External microscopy or photographic assets require a separate retrieval,
-rights, attribution, and factual-verification gate before they may be displayed.
+Every bank requests Anthropic's web-search tool and records the provider-reported
+number of official assessment-pattern searches. The search is not a license to
+copy web images or facts: all substantive question content remains closed to the
+student's selected course evidence. External microscopy or photographic assets
+still require a separate retrieval, rights, attribution, and factual-verification
+gate before they may be displayed.

@@ -5,7 +5,8 @@ import { buildQuestionBankPdf, questionBankPdfFilename } from './questionBankPdf
 const bank: GeneratedUnitQuestionBank = {
   id: 'bank-1', courseId: 'course-1', title: 'Lesson 2: Gene Expression', unit: 'Lesson 2',
   specId: 'unit-question-bank-v1', specHash: 'hash', courseStyle: 'biology', currentUnitPercent: 100, integrationPercent: 0,
-  generationProvider: 'anthropic', sourceChunkIds: ['chunk-1'], createdAt: 1, updatedAt: 1, order: 0,
+  generationProvider: 'anthropic', visualSourceFileIds: ['textbook-page'], webPatternSearchCount: 1,
+  sourceChunkIds: ['chunk-1'], createdAt: 1, updatedAt: 1, order: 0,
   stimuli: [{
     id: 'stimulus-1', title: 'Expression pathway', kind: 'diagram', context: 'A processing factor is blocked.',
     caption: 'Original generated schematic.', altText: 'DNA connects to RNA and then protein.', basis: 'generated-schematic', sourceChunkIds: ['chunk-1'],

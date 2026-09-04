@@ -3,7 +3,8 @@ import { assertGenerationAllowed, GenerationNotAllowedError, generatedTitle } fr
 import { prepareGenerationSources } from '@/lib/academics/syncGenerationSources'
 import { studyTools } from '@/lib/intelligence/studyTools'
 import { blueprintForCourse, validateUnitQuestionBank } from '@/lib/academics/unitQuestionBank'
-import type { GeneratedUnitQuestionBank, SourceChunk } from '@/lib/types'
+import { prepareQuestionBankVisualSources } from '@/lib/academics/questionBankVisualSources'
+import type { AcademicFile, GeneratedUnitQuestionBank, SourceChunk } from '@/lib/types'
 import type { GenerateFailure } from './generateStudyGuide'
 
 export interface UnitQuestionBankOutcome {
@@ -44,6 +45,7 @@ export async function generateUnitQuestionBank({
   privateAssessmentPhrases = [],
   practiceQuestionChunkIds = [],
   masteryStandardIds = [],
+  visualFiles = [],
 }: {
   courseId: string
   chunks: SourceChunk[]
@@ -57,6 +59,8 @@ export async function generateUnitQuestionBank({
   /** When a saved mastery outline exists, its standard IDs become a closed
    *  coverage contract instead of a suggestion in the prompt. */
   masteryStandardIds?: readonly string[]
+  /** Selected device-local image pages eligible for Claude's visual pass. */
+  visualFiles?: readonly AcademicFile[]
 }): Promise<UnitQuestionBankOutcome> {
   if (!chunks.length) return { ok: false, failure: 'no-sources', message: 'Select processed course material first. The question bank stays empty rather than guessing.' }
   const blueprint = blueprintForCourse(course)
@@ -75,6 +79,14 @@ export async function generateUnitQuestionBank({
     ...privateAssessmentPhrases,
     ...referenceQuestionPhrases(chunks, questionReferenceIds),
   ])]
+  const visualPreparation = await prepareQuestionBankVisualSources(visualFiles)
+  if (visualPreparation.skippedFileIds.length) {
+    return {
+      ok: false,
+      failure: 'provider-unavailable',
+      message: `${visualPreparation.skippedFileIds.length} selected image ${visualPreparation.skippedFileIds.length === 1 ? 'page could' : 'pages could'} not be prepared for Claude's visual pass. Nothing was generated; re-add a clearer PNG, JPG, or WebP and try again.`,
+    }
+  }
   const assembled = assembleGenerationRequest({
     specId: 'unit-question-bank-v1', chunkIds: prepared.chunkIds, controls: { source_mode: 'SOURCE_ONLY' },
     request: [
@@ -86,7 +98,20 @@ export async function generateUnitQuestionBank({
       protectedQuestionPhrases.length ? 'Use assessment moves only; do not reproduce supplied assessment wording.' : '',
     ].filter(Boolean).join('\n'),
   })
-  const result = await studyTools.generate({ action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `Unit: ${unit}. Build the source-grounded unit question bank.${questionReferenceIds.length ? ' Use the marked question passages as assessment-pattern evidence without copying them.' : ''}` })
+  const result = await studyTools.generate({
+    action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds,
+    specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt,
+    request: [
+      `Unit: ${unit}. Build the source-grounded unit question bank.`,
+      questionReferenceIds.length ? 'Use the marked question passages as assessment-pattern evidence without copying them.' : '',
+      visualPreparation.sources.length
+        ? `Inspect all ${visualPreparation.sources.length} selected image pages. Use the lesson objectives, transcript, and assigned questions to select only figures that clarify this scope; ignore irrelevant or redundant figures.`
+        : 'No selected image page was available for visual inspection; use only readable source text and validated structured stimuli.',
+      'Before authoring, use official public web sources to inspect assessment patterns only. Never import a web fact, value, image, or question into the bank.',
+    ].filter(Boolean).join(' '),
+    visualSources: visualPreparation.sources,
+    webPatternResearch: true,
+  })
   if (!result.ok) return { ok: false, failure: failureFor(result.code), message: result.message }
   const artifact = validateUnitQuestionBank(result.data.artifact, assembled.chunkIds, protectedQuestionPhrases, masteryStandardIds, new Map(chunks.map((chunk) => [chunk.id, chunk.content])))
   if (!artifact) return { ok: false, failure: 'invalid-response', message: 'The question bank did not pass its stimulus, source, application, visual, answer-uniqueness, coverage, integration, or private-assessment similarity checks. Nothing was saved.' }
@@ -96,6 +121,8 @@ export async function generateUnitQuestionBank({
       courseId, title: generatedTitle(artifact.title), unit: artifact.unit, specId: 'unit-question-bank-v1', specHash: assembled.specHash,
       courseStyle: artifact.courseStyle, currentUnitPercent: artifact.currentUnitPercent, integrationPercent: artifact.integrationPercent,
       stimuli: artifact.stimuli, questions: artifact.questions, generationProvider: result.data.primaryProvider,
+      visualSourceFileIds: result.data.visualSourceFileIds ?? [],
+      webPatternSearchCount: result.data.webSearchRequests ?? 0,
       sourceChunkIds: [...new Set([
         ...artifact.stimuli.flatMap((stimulus) => stimulus.sourceChunkIds),
         ...artifact.questions.flatMap((question) => question.sourceChunkIds),

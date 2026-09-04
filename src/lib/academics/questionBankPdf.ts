@@ -268,6 +268,9 @@ export async function buildQuestionBankPdf(bank: GeneratedUnitQuestionBank) {
   y = writeKicker(doc, `${bank.generationProvider === 'anthropic' ? 'Claude-authored' : 'Generated'} practice / ${bank.unit}`, y)
   y = writeText(doc, bank.title, y, { size: 23, bold: true, leading: 10 })
   y = writeText(doc, `${bank.questions.length} application-first questions / ${bank.stimuli?.length ?? 0} linked stimulus sets / ${bank.currentUnitPercent}% current scope / ${bank.integrationPercent}% prior integration`, y, { size: 10, color: MUTED, leading: 4.5 })
+  if (bank.visualSourceFileIds?.length || bank.webPatternSearchCount) {
+    y = writeText(doc, `Generation trace: ${bank.visualSourceFileIds?.length ?? 0} selected image pages visually inspected / ${bank.webPatternSearchCount ?? 0} official assessment-pattern web searches`, y, { size: 7.5, color: MUTED, leading: 3.4 })
+  }
   y += 4
   doc.setFillColor(...PALE)
   const instructions = 'Original practice only. Read each shared stimulus before answering. Any data labeled simulated or hypothetical were invented for practice. The answer key begins after the question section.'

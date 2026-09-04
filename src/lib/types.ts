@@ -565,7 +565,7 @@ export interface AcademicFile {
     ocrRecoveredPages?: number[]
     unreadablePages?: number[]
     readableCharacterCount: number
-    figureStatus: 'not-interpreted' | 'not-present-or-unknown'
+    figureStatus: 'not-interpreted' | 'not-present-or-unknown' | 'question-bank-reviewed'
   }
   /**
    * A reviewed selected-folder proposal can create a material record before
@@ -1119,6 +1119,10 @@ export interface GeneratedUnitQuestionBank {
   questions: GeneratedUnitQuestion[]
   /** Optional for records created before provider tracing was added. */
   generationProvider?: 'anthropic' | 'openai'
+  /** Selected local image pages actually supplied to Claude for this bank. */
+  visualSourceFileIds?: ID[]
+  /** Anthropic-reported official assessment-pattern searches for this run. */
+  webPatternSearchCount?: number
   sourceChunkIds: ID[]
   createdAt: number
   updatedAt: number
