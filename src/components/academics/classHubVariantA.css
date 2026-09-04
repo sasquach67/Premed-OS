@@ -966,6 +966,15 @@
   border-radius: 9px;
   background: var(--muted);
 }
+.class-hub-assignments .daily-assignments-filter > .daily-assignments-add {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.class-hub-assignments .daily-assignments-filter > .daily-assignments-add:hover {
+  background: color-mix(in srgb, var(--primary) 88%, var(--foreground));
+  color: var(--primary-foreground);
+}
 .class-hub-assignments .daily-assignments-handoff {
   justify-content: flex-end;
   padding-bottom: 0;

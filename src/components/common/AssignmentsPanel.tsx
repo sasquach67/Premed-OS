@@ -543,6 +543,15 @@ export function AssignmentsPanel({
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={query} onChange={(event) => setQuery(event.target.value)} className="pl-9" placeholder="Search assignments…" />
         </div>
+        <Button
+          data-testid="assignment-add-primary"
+          className="daily-assignments-add w-full shrink-0 font-display font-extrabold lg:w-auto"
+          onClick={requestAdd}
+        >
+          <Plus className="size-4" />
+          Add assignment
+          <kbd className="ml-1 hidden rounded border border-primary-foreground/25 bg-primary-foreground/10 px-1.5 py-0.5 text-[10px] font-bold xl:inline">⌘N</kbd>
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="Assignment options"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end">

@@ -3,7 +3,7 @@ import { AnimatePresence, m, useReducedMotion } from 'motion/react'
 import { useLocation, useParams, useSearchParams } from 'react-router-dom'
 import {
   Archive,
-  Calculator, CalendarDays, GraduationCap, Library, Plus,
+  Calculator, CalendarDays, GraduationCap, Library,
 } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { inferAcademicTerm } from '@/store/migrations/academicsV4'
@@ -229,13 +229,6 @@ export function Academics() {
           className={syllabusImportActive ? 'hidden' : undefined}
           actions={(
             <div className="flex items-center gap-2">
-              {activeTab === 'assignments' && (
-                <Button size="lg" className="font-display font-extrabold" onClick={requestAssignmentCreation}>
-                  <Plus className="size-4" />
-                  Add assignment
-                  <kbd className="ml-1 rounded border border-primary-foreground/25 bg-primary-foreground/10 px-1.5 py-0.5 text-[10px] font-bold">⌘N</kbd>
-                </Button>
-              )}
               <Button
                 variant="ghost"
                 aria-label="How to study"

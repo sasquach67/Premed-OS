@@ -94,9 +94,11 @@ describe('Daily Assignments public interaction contract', () => {
     await render({ scopedCourseId: courseId })
 
     expect(container.textContent).not.toContain(`${seeded.courses[0].code} only`)
+    const topAdd = container.querySelector<HTMLButtonElement>('[data-testid="assignment-add-primary"]')
+    expect(topAdd).toBeTruthy()
+    expect(topAdd?.closest('.daily-assignments-filter')).toBeTruthy()
     await act(async () => {
-      ;([...container.querySelectorAll<HTMLButtonElement>('button')]
-        .find((button) => button.textContent?.includes('Add your first assignment'))!).click()
+      topAdd!.click()
     })
     expect(document.body.textContent).toContain('Add assignment')
     expect(document.body.querySelector('button[aria-label="Class"]')).toBeNull()
@@ -122,6 +124,22 @@ describe('Daily Assignments public interaction contract', () => {
     await act(async () => cancel.click())
     expect(useStore.getState().academics.classCenter.assignments).toHaveLength(beforeCancel)
     expect(document.body.textContent).not.toContain('Keep the first entry lightweight')
+  })
+
+  it('keeps Add assignment in the top command bar on the all-classes page', async () => {
+    useStore.getState().replaceAll(createDemoData())
+    await render()
+
+    const toolbar = container.querySelector('.daily-assignments-filter')
+    const topAdd = toolbar?.querySelector<HTMLButtonElement>('[data-testid="assignment-add-primary"]')
+    const agenda = container.querySelector('.daily-assignment-agenda')
+    expect(topAdd).toBeTruthy()
+    expect(agenda).toBeTruthy()
+    expect(topAdd!.compareDocumentPosition(agenda!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+
+    await act(async () => topAdd!.click())
+    expect(document.body.textContent).toContain('Keep the first entry lightweight')
+    expect(document.body.querySelector('button[aria-label="Class"]')).toBeTruthy()
   })
 
   it('completes with undo and toggles important through visible row controls', async () => {
