@@ -76,6 +76,57 @@ describe('generation source preparation', () => {
     expect(localStorage.getItem('unrelated')).toBe('keep')
   })
 
+  it('retries a transient citation mismatch once without resyncing sources', async () => {
+    const source = chunk()
+    const request = {
+      action: 'generate' as const,
+      courseId: 'course-1',
+      topicId: CLASS_MATERIAL_SCOPE,
+      chunkIds: ['chunk-1'],
+      specId: 'study-guide-v1',
+      specHash: 'spec-hash',
+      systemPrompt: 'Use only the supplied source.',
+      request: 'Build the lecture guide.',
+    }
+    const tools = {
+      syncSources: vi.fn(),
+      generate: vi.fn()
+        .mockResolvedValueOnce({ ok: false, code: 'citation-not-carried', message: 'A citation could not be traced.' })
+        .mockResolvedValueOnce({ ok: true, data: { artifact: {}, citations: [], auditStatus: 'approved' } }),
+    }
+
+    const outcome = await generateWithSourceRecovery('course-1', [source], request, {}, tools)
+
+    expect(outcome.ok).toBe(true)
+    expect(tools.generate).toHaveBeenCalledTimes(2)
+    expect(tools.generate).toHaveBeenNthCalledWith(2, request)
+    expect(tools.syncSources).not.toHaveBeenCalled()
+  })
+
+  it('does not retry unrelated generation failures', async () => {
+    const source = chunk()
+    const request = {
+      action: 'generate' as const,
+      courseId: 'course-1',
+      topicId: CLASS_MATERIAL_SCOPE,
+      chunkIds: ['chunk-1'],
+      specId: 'study-guide-v1',
+      specHash: 'spec-hash',
+      systemPrompt: 'Use only the supplied source.',
+      request: 'Build the lecture guide.',
+    }
+    const tools = {
+      syncSources: vi.fn(),
+      generate: vi.fn().mockResolvedValue({ ok: false, code: 'audit-rejected', message: 'The audit rejected the output.' }),
+    }
+
+    const outcome = await generateWithSourceRecovery('course-1', [source], request, {}, tools)
+
+    expect(outcome).toMatchObject({ ok: false, code: 'audit-rejected' })
+    expect(tools.generate).toHaveBeenCalledTimes(1)
+    expect(tools.syncSources).not.toHaveBeenCalled()
+  })
+
   it('selects a context-safe, source-balanced pass while leaving the full packet untouched', () => {
     const chunks = [
       ...Array.from({ length: 120 }, (_, index) => chunk({ id: `transcript-${index}`, fileId: 'transcript', order: index, content: `Transcription passage ${index} connects DNA RNA and translation.` })),

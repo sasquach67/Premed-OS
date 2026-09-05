@@ -229,7 +229,9 @@ export async function prepareGenerationSources(
  * A browser receipt can outlive its private server mirror (for example after
  * source deletion, a database reset, or expiry). If generation proves the
  * mirror is missing, rebuild it once from the still-canonical local passages
- * and replay the exact request. Other failures are never retried here.
+ * and replay the exact request. A provider response that loses one of its
+ * verified citation identifiers is also replayed once without touching the
+ * source mirror. All other failures are returned immediately.
  */
 export async function generateWithSourceRecovery(
   courseId: string,
@@ -239,7 +241,13 @@ export async function generateWithSourceRecovery(
   tools: GenerationSourceTools = studyTools,
 ): Promise<StudyToolResponse<GeneratedStudyToolArtifact>> {
   const first = await tools.generate(request)
-  if (first.ok || first.code !== 'no-sources') return first
+  if (first.ok) return first
+
+  if (first.code === 'citation-not-carried') {
+    return tools.generate(request)
+  }
+
+  if (first.code !== 'no-sources') return first
 
   const refreshed = await prepareGenerationSources(courseId, chunks, { ...options, forceSync: true }, tools)
   if (!refreshed.ok || !refreshed.scopeId || !refreshed.chunkIds) {
