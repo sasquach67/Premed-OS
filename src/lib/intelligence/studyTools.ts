@@ -238,11 +238,15 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
           ? (isRecord(responseBody.error) ? responseBody.error.code : responseBody.code)
           : undefined
         if (serverCode === 'citation-not-carried') {
+          const issues = isRecord(responseBody) && isRecord(responseBody.error) && Array.isArray(responseBody.error.issues)
+            ? responseBody.error.issues.filter((issue): issue is string => typeof issue === 'string').slice(0, 5)
+            : []
           return {
             ok: false,
             code: 'citation-not-carried',
             message: 'The generated guide cited something that could not be traced back to your material, '
-              + 'so it was refused rather than corrected. Nothing was saved — generating again usually works.',
+              + 'so it was refused rather than corrected. Nothing was saved.'
+              + (issues.length ? ` Reference check: ${issues.join('; ')}` : ''),
           }
         }
         if (serverCode === 'audit-rejected') {

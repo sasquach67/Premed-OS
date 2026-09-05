@@ -348,8 +348,9 @@ Deno.serve(async (request) => {
       if (!closed.length) {
         return failure(422, 'no-verified-citations', 'No citation from the generated artifact could be verified against your material.')
       }
-      if (!validateArtifactReferences(primary.value, closed)) {
-        return failure(502, 'citation-not-carried', 'The generated artifact referenced material outside the verified citation set. Nothing was saved.')
+      const citationIssues: string[] = []
+      if (!validateArtifactReferences(primary.value, closed, citationIssues)) {
+        return failure(502, 'citation-not-carried', 'The generated artifact referenced material outside the verified citation set. Nothing was saved.', { issues: citationIssues.slice(0, 5) })
       }
 
       let auditStatus: GenerationAuditStatus = 'skipped'
@@ -437,6 +438,7 @@ function closeCitationSet(
 function validateArtifactReferences(
   value: unknown,
   closed: ProviderCitation[],
+  issues: string[] = [],
 ) {
   const exact = new Set(closed.map((ref) => `${ref.fileId}:${ref.chunkId}:${ref.start}:${ref.end}`))
   const chunks = new Set(closed.map((ref) => ref.chunkId))
@@ -452,25 +454,26 @@ function validateArtifactReferences(
       && exact.has(`${ref.fileId}:${ref.chunkId}:${ref.start}:${ref.end}`)
   }
 
-  function visit(candidate: unknown) {
-    if (!valid || candidate == null) return
+  function visit(candidate: unknown, path = 'artifact') {
+    if (issues.length >= 5 || candidate == null) return
     if (Array.isArray(candidate)) {
-      candidate.forEach(visit)
+      candidate.forEach((item, index) => visit(item, `${path}[${index}]`))
       return
     }
     if (typeof candidate !== 'object') return
     const record = candidate as Record<string, unknown>
-    if (openAIGenerationSourceRefRequired(record) && !exactRef(record.sourceRef)) valid = false
-    if (record.sourceRef != null && !exactRef(record.sourceRef)) valid = false
+    const fail = (reason: string) => { valid = false; issues.push(`${path}: ${reason}`) }
+    if (openAIGenerationSourceRefRequired(record) && !exactRef(record.sourceRef)) fail(record.sourceRef == null ? 'required sourceRef missing' : 'required sourceRef unverified')
+    else if (record.sourceRef != null && !exactRef(record.sourceRef)) fail('sourceRef unverified')
     if (record.sourceRefs != null) {
-      if (!Array.isArray(record.sourceRefs) || !record.sourceRefs.length || !record.sourceRefs.every(exactRef)) valid = false
+      if (!Array.isArray(record.sourceRefs) || !record.sourceRefs.length || !record.sourceRefs.every(exactRef)) fail('sourceRefs empty or unverified')
     }
-    if (record.sourceChunkId != null && (typeof record.sourceChunkId !== 'string' || !chunks.has(record.sourceChunkId))) valid = false
+    if (record.sourceChunkId != null && (typeof record.sourceChunkId !== 'string' || !chunks.has(record.sourceChunkId))) fail('sourceChunkId unverified')
     if (record.sourceChunkIds != null && (
       !Array.isArray(record.sourceChunkIds)
       || record.sourceChunkIds.some((id) => typeof id !== 'string' || !chunks.has(id))
-    )) valid = false
-    Object.values(record).forEach(visit)
+    )) fail('sourceChunkIds unverified')
+    Object.entries(record).forEach(([key, item]) => visit(item, `${path}.${/^[a-zA-Z][a-zA-Z0-9_]{0,40}$/.test(key) ? key : 'field'}`))
   }
 
   visit(value)
