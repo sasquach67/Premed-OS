@@ -112,6 +112,54 @@
   scrollbar-gutter: stable;
 }
 
+/* The guide reads like a marked-up course reader, not another dashboard. */
+.lecture-guide-heading {
+  font-family: var(--font-sans);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.18;
+  text-wrap: balance;
+}
+
+.lecture-guide-concept-heading {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+
+.lecture-guide-section-number {
+  display: inline-grid;
+  min-width: 2rem;
+  min-height: 2rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  border-radius: 0.35rem 0.35rem 0.7rem 0.7rem;
+  background: color-mix(in srgb, var(--primary) 9%, var(--card));
+}
+
+.lecture-guide-nav-link {
+  border-left: 2px solid transparent;
+  border-radius: 0.4rem;
+}
+
+.lecture-guide-nav-link:hover,
+.lecture-guide-nav-link:focus-visible {
+  border-left-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+.lecture-guide-exam-application {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+  background: color-mix(in srgb, var(--primary) 7%, var(--card));
+}
+
+.lecture-guide-worked-answer {
+  border-left: 2px solid color-mix(in srgb, var(--success) 70%, var(--border));
+  padding-left: 1rem;
+}
+
 /* The section navigator remains useful inside the reading scroll owner. */
 .lecture-study-guide nav {
   max-height: none;
@@ -215,6 +263,11 @@
   .lecture-workspace-reading {
     padding: 14px;
     scrollbar-gutter: auto;
+  }
+
+  .lecture-guide-section-number {
+    min-width: 1.75rem;
+    min-height: 1.75rem;
   }
 }
 
