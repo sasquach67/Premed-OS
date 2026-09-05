@@ -522,3 +522,9 @@
 @media (max-width: 760px) {
   .grades-review-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* Academics quality contract: controls retain a usable touch target. */
+.grades-ledger-status button,
+.grades-whatif-grade-picks button,
+.grades-workspace .grades-whatif-grade-select,
+.grades-workspace .grades-whatif-term { min-height: 44px; }

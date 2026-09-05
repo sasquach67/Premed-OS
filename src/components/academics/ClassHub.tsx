@@ -34,7 +34,7 @@ import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -52,7 +52,7 @@ import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationInta
 import { LectureCapturePanel, type LectureDestination } from '@/components/academics/LectureCapturePanel'
 import { LectureRecordMenu } from '@/components/academics/LectureRecordMenu'
 import { buildLectureBrief, buildLectureMasteryMap, sourceChunksForLecture } from '@/lib/academics/lectureWorkspace'
-import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
+import { AssignmentCreateDialog, AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { MaterialGenerationIntake, type MaterialArtifact } from '@/components/academics/MaterialGenerationIntake'
 import { MaterialFolderIntake } from '@/components/academics/MaterialFolderIntake'
@@ -221,7 +221,7 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
           data-course-color={courseColor}
           style={classHubAccentStyle(courseColor)}
         >
-          <button type="button" className="class-hub-crumb" onClick={() => navigate('/academics?mode=daily&tab=class-center')}>
+          <button type="button" className="class-hub-crumb min-h-11" onClick={() => navigate('/academics?mode=daily&tab=class-center')}>
             <ArrowLeft aria-hidden="true" /> Class Center
           </button>
           <div className="class-hub-banner-main">
@@ -315,6 +315,7 @@ function Overview({
   onOpenExamPrep: (examId: string) => void
 }) {
   const [overviewParams, setOverviewParams] = useSearchParams()
+  const [examCreateOpen, setExamCreateOpen] = useState(false)
   const [lectureDialogOpen, setLectureDialogOpen] = useState(false)
   const [selectedLectureId, setSelectedLectureId] = useState<string | undefined>()
   const [lectureDestination, setLectureDestination] = useState<LectureDestination>('overview')
@@ -402,7 +403,7 @@ function Overview({
             </div>
             {activeLecture.workspaceState === 'complete'
               ? <div className="lecture-inline-workspace"><LectureCapturePanel key={`embedded:${activeLecture.id}`} courseId={course.id} course={course} data={data} initialLectureId={activeLecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={() => onTab('guide')} /></div>
-              : activeLectureBrief && <SavedLecturePreview brief={activeLectureBrief} mastery={activeMasteryMap} sourceCount={activeLectureSources.length} />}
+              : activeLecture.lectureBrief && activeLectureBrief ? <SavedLecturePreview brief={activeLectureBrief} mastery={activeMasteryMap} sourceCount={activeLectureSources.length} /> : <div className="lecture-saved-empty"><b>Sources captured</b><span>No Study Guide has been generated yet. Open this lecture to review its sources and build study resources.</span><span>{activeLectureSources.length} selected sources · Transcript and supporting files stay under Sources.</span></div>}
           </> : <>
             <div className="lecture-active-header"><div><p className="lecture-ledger-kicker">{scheduleContext ? `Today · ${scheduleContext}` : 'Today'}</p><h2>Build a lecture page</h2></div><span className="lecture-number-pill">Lecture {nextLectureNumber}</span></div>
             <div className="lecture-capture-steps" aria-label="Lecture import workflow"><div className="is-current"><b>1 · Add source</b><span>Transcript</span></div><div><b>2 · Add materials</b><span>Required</span></div><div><b>3 · Build page</b><span>Guide + Mastery</span></div></div>
@@ -419,7 +420,7 @@ function Overview({
       <section className="class-hub-course-pulse col-span-12" aria-label="Course pulse">
         <div className="course-pulse-heading"><p>Course pulse</p><b>What needs attention</b></div>
         <button type="button" className={cn('course-pulse-item', open[0] && 'is-urgent')} onClick={() => onTab('assignments')}><span>Assignments</span><b>{open[0]?.title ?? 'No dated work'}</b><i>{open[0] ? `${assignmentDateLabel(open[0])} · Open →` : 'Open assignments →'}</i></button>
-        <button type="button" className="course-pulse-item" onClick={() => exam ? onOpenExamPrep(exam.id) : onTab('assignments')}><span>{exam?.title ?? 'Next exam'}</span><b>{exam ? `${examCovered} of ${examTopics.length} topics have material` : 'No exam dated'}</b><i>{exam ? 'Open exam plan →' : 'Add exam →'}</i></button>
+        <button type="button" className="course-pulse-item" onClick={() => exam ? onOpenExamPrep(exam.id) : setExamCreateOpen(true)}><span>{exam?.title ?? 'Next exam'}</span><b>{exam ? (exam.coveredTopicIds?.length ? `${examCovered} of ${examTopics.length} topics have material` : 'Exam scope not recorded') : 'No exam dated'}</b><i>{exam ? 'Open exam plan →' : 'Add exam →'}</i></button>
         <button type="button" className="course-pulse-item" onClick={() => onTab('materials')}><span>Materials</span><b>{courseFiles.length ? `${courseFiles.length} course ${courseFiles.length === 1 ? 'item' : 'items'}` : 'No materials yet'}</b><i>{unfiledCount ? `${unfiledCount} need filing · Open →` : 'Open materials →'}</i></button>
         <button type="button" className="course-pulse-item" onClick={() => onTab('guide')}><span>Guide</span><b>{guideSuggestionCount ? `${guideSuggestionCount} ${guideSuggestionCount === 1 ? 'suggestion' : 'suggestions'}` : `${notes.filter(isGuideNote).length} saved ${notes.filter(isGuideNote).length === 1 ? 'item' : 'items'}`}</b><i>Review class context →</i></button>
       </section>
@@ -430,6 +431,7 @@ function Overview({
         </DialogContent>
       </Dialog>
 
+      <AssignmentCreateDialog open={examCreateOpen} onOpenChange={setExamCreateOpen} fixedCourseId={course.id} initialType="exam" />
       <Card className="class-hub-panel col-span-12">
         <CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">From selected class material</p><CardTitle>Recent study work</CardTitle></div><Button size="sm" variant="outline" onClick={() => onTab('materials')}>Open Materials</Button></CardHeader>
         <CardContent className="class-hub-panel-content grid gap-2 md:grid-cols-3">
@@ -474,6 +476,30 @@ export function WritingTools({ courseId, readingListState, drafts, readings, fee
   assignments: ClassAssignment[]
 }) {
   const update = useStore((state) => state.update)
+  const [confirmRemove, setConfirmRemove] = useState(false)
+  const [recordEditor, setRecordEditor] = useState<{ kind: 'paper' | 'reading'; id?: string; title: string; week: string; assignmentId: string }>()
+  function saveWritingRecord() {
+    if (!recordEditor?.title.trim()) return
+    const editor = recordEditor
+    const now = Date.now()
+    update((draft) => {
+      const center = draft.academics.classCenter
+      if (editor.kind === 'paper') {
+        const existing = center.paperDrafts.find((row) => row.id === editor.id)
+        const patch = { title: editor.title.trim(), assignmentId: editor.assignmentId || undefined, updatedAt: now }
+        if (existing) Object.assign(existing, patch)
+        else center.paperDrafts.push({ ...patch, id: uid(), courseId, stage: 'outline', createdAt: now, order: center.paperDrafts.length })
+      } else {
+        const existing = center.assignedReadings.find((row) => row.id === editor.id)
+        const patch = { title: editor.title.trim(), week: editor.week.trim() || 'Unscheduled', updatedAt: now }
+        if (existing) Object.assign(existing, patch)
+        else center.assignedReadings.push({ ...patch, id: uid(), courseId, status: 'not-started', createdAt: now, order: center.assignedReadings.length })
+        const workspace = center.workspaces.find((row) => row.courseId === courseId)
+        if (workspace && workspace.readingListState !== 'complete') workspace.readingListState = 'partial'
+      }
+    })
+    setRecordEditor(undefined)
+  }
   const current = drafts.find((item) => item.stage !== 'submitted')
   const feedbackThemes = recurringFeedbackThemes(feedback)
   const [pastedReadings, setPastedReadings] = useState('')
@@ -503,13 +529,7 @@ export function WritingTools({ courseId, readingListState, drafts, readings, fee
     })
   }
   function addReading(week: string) {
-    const now = Date.now()
-    update((draft) => {
-      const center = draft.academics.classCenter
-      center.assignedReadings.push({ id: uid(), courseId, week, title: 'Untitled reading', status: 'not-started', createdAt: now, updatedAt: now, order: center.assignedReadings.filter((item) => item.courseId === courseId).length })
-      const workspace = center.workspaces.find((item) => item.courseId === courseId)
-      if (workspace && workspace.readingListState !== 'complete') Object.assign(workspace, { readingListState: 'partial', updatedAt: now })
-    })
+    setRecordEditor({ kind: 'reading', title: '', week, assignmentId: '' })
   }
   function addPastedReadings() {
     const rows = pastedReadings.split('\n').map((item) => item.trim()).filter(Boolean)
@@ -537,20 +557,14 @@ export function WritingTools({ courseId, readingListState, drafts, readings, fee
   }
   return (
     <div className="writing-type-tools space-y-4">
-      <Panel title="Current draft" action={<Button size="sm" variant="outline" onClick={() => {
-        const now = Date.now()
-        update((draft) => draft.academics.classCenter.paperDrafts.push({
-          id: uid(), courseId, title: 'Untitled paper', stage: 'outline', createdAt: now, updatedAt: now,
-          order: draft.academics.classCenter.paperDrafts.filter((item) => item.courseId === courseId).length,
-        }))
-      }}><Plus className="size-4" /> Add paper</Button>}>
+      <Panel title="Current draft" action={<Button size="sm" variant="outline" onClick={() => setRecordEditor({ kind: 'paper', title: '', week: '', assignmentId: '' })}><Plus className="size-4" /> Add paper</Button>}>
         <div className="space-y-2">
           {drafts.map((draft) => {
             const assignment = assignments.find((item) => item.id === draft.assignmentId)
-            return <WritingDraftRow key={draft.id} draft={draft} assignment={assignment} onStage={patchDraft} onTarget={(selfDeadline) => update((state) => {
+            return <div key={draft.id}><Button size="sm" variant="ghost" aria-label={`Edit ${draft.title}`} onClick={() => setRecordEditor({ kind: 'paper', id: draft.id, title: draft.title, week: '', assignmentId: draft.assignmentId ?? '' })}>Edit paper</Button><WritingDraftRow draft={draft} assignment={assignment} onStage={patchDraft} onTarget={(selfDeadline) => update((state) => {
               const item = state.academics.classCenter.paperDrafts.find((row) => row.id === draft.id)
               if (item) Object.assign(item, { selfDeadline: selfDeadline || undefined, updatedAt: Date.now() })
-            })} />
+            })} /></div>
           })}
           {!drafts.length && <WritingEmptyState icon={FileText} title="No papers assigned yet" detail="Add a paper when it appears in the syllabus or course site." />}
         </div>
@@ -567,7 +581,7 @@ export function WritingTools({ courseId, readingListState, drafts, readings, fee
           </div>
         </div>
         <div className="mt-3 space-y-2">
-          {readings.map((reading) => <WritingReadingRow key={reading.id} reading={reading} onStatus={patchReading} />)}
+          {readings.map((reading) => <div key={reading.id}><WritingReadingRow reading={reading} onStatus={patchReading} /><Button size="sm" variant="ghost" aria-label={`Edit ${reading.title}`} onClick={() => setRecordEditor({ kind: 'reading', id: reading.id, title: reading.title, week: reading.week, assignmentId: '' })}>Edit reading</Button></div>)}
           {!readings.length && <WritingEmptyState icon={BookOpen} title="No readings listed yet" detail="Add one, paste a list, or add this week's reading." />}
         </div>
         {!!readings.length && <ReadingTermDots readings={readings} />}
@@ -583,6 +597,29 @@ export function WritingTools({ courseId, readingListState, drafts, readings, fee
         <Textarea value={feedbackQuote} onChange={(event) => setFeedbackQuote(event.target.value)} className="mt-2 min-h-20" placeholder="Professor quote (optional)" aria-label="Professor quote" />
         <div className="mt-3 space-y-2">{feedbackThemes.map((theme) => <WritingFeedbackTheme key={theme.key} theme={theme} assignments={assignments} />)}{!feedbackThemes.length && <p className="writing-empty-copy">No recurring feedback theme yet. Individual notes are saved, but one comment is not a pattern.</p>}</div>
       </Panel>
+      <Panel title="Feedback notes">
+        {feedback.map((note) => <article key={note.id} className="border-b border-border py-3 last:border-0"><p className="font-bold">{note.theme}</p>{note.quote && <p className="mt-1 text-sm text-muted-foreground">{note.quote}</p>}<p className="mt-1 text-xs text-muted-foreground">{assignments.find((item) => item.id === note.assignmentId)?.title ?? 'General class feedback'}</p></article>)}
+        {!feedback.length && <p className="text-sm text-muted-foreground">Your saved feedback will appear here, including one-time comments.</p>}
+      </Panel>
+      <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Remove {recordEditor?.title}?</AlertDialogTitle><AlertDialogDescription>This removes the writing entry. Linked assignments and feedback are kept.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => {
+        if (!recordEditor?.id) return
+        const id = recordEditor.id
+        update((draft) => {
+          const center = draft.academics.classCenter
+          if (recordEditor.kind === 'paper') center.paperDrafts = center.paperDrafts.filter((item) => item.id !== id)
+          else center.assignedReadings = center.assignedReadings.filter((item) => item.id !== id)
+        })
+        setRecordEditor(undefined)
+      }}>Remove entry</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+      <Dialog open={Boolean(recordEditor)} onOpenChange={(open) => { if (!open) setRecordEditor(undefined) }}>
+        <DialogContent><DialogHeader><DialogTitle>{recordEditor?.id ? 'Edit' : 'Add'} {recordEditor?.kind === 'paper' ? 'paper' : 'reading'}</DialogTitle><DialogDescription>Name this item before saving it to your class.</DialogDescription></DialogHeader>
+          {recordEditor && <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); saveWritingRecord() }}>
+            <label className="block text-sm font-bold">Title<Input autoFocus required value={recordEditor.title} onChange={(event) => setRecordEditor({ ...recordEditor, title: event.target.value })} /></label>
+            {recordEditor.kind === 'reading' ? <label className="block text-sm font-bold">Week<Input value={recordEditor.week} onChange={(event) => setRecordEditor({ ...recordEditor, week: event.target.value })} /></label> : <label className="block text-sm font-bold">Assignment<select className="mt-1 min-h-11 w-full rounded-lg border border-border bg-background px-3" value={recordEditor.assignmentId} onChange={(event) => setRecordEditor({ ...recordEditor, assignmentId: event.target.value })}><option value="">No assignment linked</option>{assignments.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>}
+            <div className="flex justify-end gap-2">{recordEditor.id && <Button type="button" variant="ghost" className="mr-auto text-destructive" onClick={() => setConfirmRemove(true)}>Remove</Button>}<Button type="button" variant="ghost" onClick={() => setRecordEditor(undefined)}>Cancel</Button><Button type="submit" disabled={!recordEditor.title.trim()}>Save</Button></div>
+          </form>}
+        </DialogContent>
+      </Dialog>
       {current && <p className="sr-only">Current draft: {current.title}</p>}
     </div>
   )
@@ -604,7 +641,7 @@ function WritingDraftRow({ draft, assignment, onStage, onTarget }: {
         <p className="mt-1 text-xs font-semibold text-muted-foreground">Professor deadline · {assignment?.dueDate ? fmtDeadline(assignment.dueDate) : 'Not recorded'}</p>
       </div>
       <label className="min-w-[10rem] text-xs font-bold text-muted-foreground">Your target
-        <Input type="date" value={draft.selfDeadline ?? ''} onChange={(event) => onTarget(event.target.value)} className="mt-1 h-8 rounded-[11px] bg-card text-xs" aria-label={`Your target for ${draft.title}`} />
+        <Input type="date" value={draft.selfDeadline ?? ''} onChange={(event) => onTarget(event.target.value)} className="mt-1 min-h-11 rounded-[11px] bg-card text-xs" aria-label={`Your target for ${draft.title}`} />
       </label>
     </div>
     <div className="writing-draft-rail" aria-label={`Draft stage for ${draft.title}`}>
@@ -1074,6 +1111,19 @@ function Guide({ courseId, workspace, notes, topics, assignments, contacts, data
   /** Set when arriving from a topic's menu, so the tab lands on that topic. */
   topicFilter?: string
 }) {
+  const [createOpen, setCreateOpen] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
+  const [newContent, setNewContent] = useState('')
+  const [newKind, setNewKind] = useState<ClassNote['type']>('other')
+  function saveItem() {
+    if (!newTitle.trim()) return
+    const now = Date.now()
+    useStore.getState().update((draft) => {
+      const notes = draft.academics.classCenter.notes
+      notes.unshift({ id: uid(), courseId, title: newTitle.trim(), content: newContent.trim(), type: newKind, kind: 'about-class', date: isoToday(), unit: '', topicIds: topicFilter ? [topicFilter] : [], syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: notes.length })
+    })
+    setCreateOpen(false)
+  }
   const guideNotes = notes.filter(isGuideNote)
   const scoped = topicFilter ? guideNotes.filter((item) => item.topicIds.includes(topicFilter)) : guideNotes
   const focus = topicFilter ? topics.find((item) => item.id === topicFilter) : undefined
@@ -1087,13 +1137,23 @@ function Guide({ courseId, workspace, notes, topics, assignments, contacts, data
     { key: 'exam', title: 'Exam intel', notes: scoped.filter((item) => item.type === 'exam-review') },
     { key: 'questions', title: 'Questions to ask', notes: scoped.filter((item) => item.type === 'question-log') },
     { key: 'priming', title: 'Priming rollup', notes: scoped.filter((item) => item.type === 'reading' && item.title.startsWith('Prime:')) },
-    { key: 'context', title: 'Course support & requirements', notes: scoped.filter((item) => item.type === 'other') },
+    { key: 'context', title: 'Course support & requirements', notes: scoped.filter((item) => !['exam-review', 'question-log'].includes(item.type) && !(item.type === 'reading' && item.title.startsWith('Prime:'))) },
   ]
   const topicNotes = topics.map((topic) => ({ topic, notes: guideNotes.filter((note) => note.topicIds.includes(topic.id)) })).filter((item) => item.notes.length)
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+    <div className={cn('grid gap-4', topicNotes.length > 0 && 'xl:grid-cols-[minmax(0,1fr)_300px]')}>
       <div className="space-y-4">
-        <SectionToolbar title="Guide" detail="Exam intel, questions, priming, and class context. Material notes remain in Materials." action={<Button onClick={() => addBlankNote(courseId)}><Plus className="size-4" /> New Guide item</Button>} />
+        <SectionToolbar title="Guide" detail="Exam intel, questions, priming, and class context. Material notes remain in Materials." action={<Button onClick={() => { setNewTitle(''); setNewContent(''); setNewKind('other'); setCreateOpen(true) }}><Plus className="size-4" /> New Guide item</Button>} />
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogContent><DialogHeader><DialogTitle>New Guide item</DialogTitle><DialogDescription>Save class advice, exam guidance, or a question to ask.</DialogDescription></DialogHeader>
+            <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); saveItem() }}>
+              <label className="block text-sm font-bold">Title<Input autoFocus value={newTitle} onChange={(event) => setNewTitle(event.target.value)} required /></label>
+              <label className="block text-sm font-bold">Kind<select className="mt-1 min-h-11 w-full rounded-lg border border-border bg-background px-3" value={newKind} onChange={(event) => setNewKind(event.target.value as ClassNote['type'])}><option value="other">Class context</option><option value="exam-review">Exam intel</option><option value="question-log">Question to ask</option></select></label>
+              <label className="block text-sm font-bold">Details<Textarea value={newContent} onChange={(event) => setNewContent(event.target.value)} /></label>
+              <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setCreateOpen(false)}>Cancel</Button><Button type="submit" disabled={!newTitle.trim()}>Save item</Button></div>
+            </form>
+          </DialogContent>
+        </Dialog>
         {focus && (
           <div className="flex items-center gap-2 rounded-xl border border-border bg-muted px-3 py-2">
             <p className="text-xs font-bold">
@@ -1112,9 +1172,7 @@ function Guide({ courseId, workspace, notes, topics, assignments, contacts, data
             </Button>
           </div>
         )}
-        <CourseLensPanel workspace={workspace} data={data} />
-        <GuideSuggestions courseId={courseId} data={data} onOpenMaterials={onOpenMaterials} />
-        <ProfessorEvidencePanel courseId={courseId} data={data} assignments={assignments} contacts={contacts} />
+
         {contacts.length > 0 && (
           <Card className="class-hub-panel">
             <CardHeader className="class-hub-panel-header"><CardTitle>People &amp; office hours</CardTitle></CardHeader>
@@ -1134,7 +1192,7 @@ function Guide({ courseId, workspace, notes, topics, assignments, contacts, data
             </CardContent>
           </Card>
         )}
-        {sections.map((section) => (
+        {sections.filter((section) => section.notes.length > 0).map((section) => (
           <Card key={section.key} className="class-hub-panel">
             <CardHeader className="class-hub-panel-header"><CardTitle>{section.title}</CardTitle></CardHeader>
             <CardContent className="class-hub-panel-content space-y-2">
@@ -1143,14 +1201,20 @@ function Guide({ courseId, workspace, notes, topics, assignments, contacts, data
             </CardContent>
           </Card>
         ))}
+        {!scoped.length && <p className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">No Guide items yet. Add class advice or a question above.</p>}
+        <GuideSuggestions courseId={courseId} data={data} onOpenMaterials={onOpenMaterials} />
+        <Collapsible title="Course lens and professor evidence">
+          <CourseLensPanel workspace={workspace} data={data} />
+          <ProfessorEvidencePanel courseId={courseId} data={data} assignments={assignments} contacts={contacts} />
+        </Collapsible>
       </div>
-      <aside className="space-y-3 xl:sticky xl:top-20 xl:self-start">
+      {topicNotes.length > 0 && <aside className="space-y-3 xl:sticky xl:top-20 xl:self-start">
         <h2 className="font-display text-xl font-extrabold">Linked class context</h2>
         {topicNotes.map(({ topic, notes: linked }) => (
           <Card key={topic.id} className="class-hub-panel"><CardContent className="class-hub-panel-content p-4"><p className="font-extrabold">{topic.title}</p><p className="mt-1 text-sm text-muted-foreground">{linked.map((note) => note.title).join(' · ')}</p></CardContent></Card>
         ))}
         {!topicNotes.length && <EmptyState icon={NotebookText} title="No linked Guide items" detail="Link a class-context item to a syllabus topic to build this rail." />}
-      </aside>
+      </aside>}
     </div>
   )
 }
@@ -1633,7 +1697,7 @@ function LinksMenu({ workspace, contacts }: { workspace: ClassWorkspace; contact
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" className="inline-flex items-center gap-1 rounded-md font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <button type="button" className="inline-flex min-h-11 items-center gap-1 rounded-md font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           Office hours &amp; links <ChevronDown className="size-3.5" />
         </button>
       </PopoverTrigger>
@@ -1726,13 +1790,6 @@ function addQuestionNote(courseId: string, unit: string) {
   })
 }
 
-function addBlankNote(courseId: string) {
-  const now = Date.now()
-  useStore.getState().update((draft) => {
-    const notes = draft.academics.classCenter.notes
-    notes.unshift({ id: uid(), courseId, title: 'Untitled Guide item', type: 'lecture', kind: 'about-class', date: isoToday(), unit: '', topicIds: [], content: '', syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: notes.length })
-  })
-}
 
 function hubStats(course: Course, assignments: ClassAssignment[]) {
   const exam = assignments.filter((item) => item.type === 'exam' && !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))[0]

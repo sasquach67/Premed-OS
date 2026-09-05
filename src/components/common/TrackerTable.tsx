@@ -141,7 +141,9 @@ export function TrackerTable({
   const visibleColumns = views.state.visibleColumns.length
     ? columns.filter((column) => views.state.visibleColumns.includes(column.key))
     : columns
-  const activeRows = rows.filter((row) => !field(row, 'deletedAt') && !field(row, 'archived'))
+  // TanStack resets pagination when data changes. Keep unchanged rows stable
+  // so that the reset cannot itself trigger another data change and reset.
+  const activeRows = useMemo(() => rows.filter((row) => !field(row, 'deletedAt') && !field(row, 'archived')), [rows])
   const tableColumns = useMemo<TanStackColumnDef<Row>[]>(
     () => columns.map((column) => ({
       id: column.key,

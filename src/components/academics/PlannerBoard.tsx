@@ -25,7 +25,7 @@ import { uid } from '@/lib/id'
 import { fmtGpa } from '@/lib/selectors'
 import {
   courseEffects, mcatDividerAfter, outcomeProjection,
-  plannerTerms, prereqVsMcat, unplacedRequirements, UNSCHEDULED,
+  plannerTerms, placedCourseCodes, prereqVsMcat, unplacedRequirements, UNSCHEDULED,
 } from '@/lib/academics/planner'
 import { termToMonths } from '@/lib/academics/mcatTiming'
 import { isProtected } from '@/lib/academics/savedPlans'
@@ -159,7 +159,7 @@ export function PlannerBoard({ onComparePlans, openRequirements = false }: {
   const columns = plannerTerms(displayPlan.courses, displayPlan.slots)
   const divider = mcatDividerAfter(columns, mcatDate)
   const selectedProgram = selectedProgramId ? planningRequirementSet(selectedProgramId) : undefined
-  const localCoverage = selectedProgram ? candidatePlanCoverage(selectedProgram, courses.map((course) => course.code)) : undefined
+  const localCoverage = selectedProgram ? candidatePlanCoverage(selectedProgram, placedCourseCodes(displayPlan.courses, displayPlan.slots)) : undefined
   const unplaced = localCoverage
     ? localCoverage.filter((item) => item.state !== 'scheduled').map((item) => ({ id: item.node.id, label: item.node.label, verificationStatus: item.state === 'manual-review' ? 'needs-verification' as const : 'verified' as const }))
     : unplacedRequirements(requirements, courses)
@@ -298,7 +298,7 @@ export function PlannerBoard({ onComparePlans, openRequirements = false }: {
                         <article className="planning-term" data-current={column.registered || undefined}>
                           <header className="planning-term-header">
                             <div><div className="planning-term-name">{column.term}</div><div className="planning-term-meta">{column.registered ? 'Registered' : column.lockedAt ? 'Locked' : 'Planned'} · {column.credits} credits</div></div>
-                            {column.id ? <div className="planning-term-actions"><button type="button" className="planning-term-lock" data-locked={Boolean(column.lockedAt) || undefined} onClick={() => setEditingSlot(slots.find((slot) => slot.id === column.id))} aria-label={`Edit ${column.term}`}>{column.lockedAt ? 'Locked' : 'Edit'} <Pencil className="inline size-2.5" /></button><button type="button" className="planning-term-remove" disabled={Boolean(column.lockedAt || column.courses.some(isProtected))} onClick={() => setDeletingSlot(slots.find((slot) => slot.id === column.id))} aria-label={`Delete ${column.term}`} title={column.courses.length ? `Delete ${column.term} and its planned courses` : `Delete ${column.term}`}><Trash2 className="size-3" /></button></div> : <span className="planning-term-lock" data-locked={column.registered || undefined}>{column.registered ? 'Registered' : 'Recorded'}</span>}
+                            {column.id ? <div className="planning-term-actions"><button type="button" className="planning-term-lock" data-locked={Boolean(column.lockedAt) || undefined} onClick={() => setEditingSlot(slots.find((slot) => slot.id === column.id))} aria-label={`Edit ${column.term}`}>{column.lockedAt ? 'Locked' : 'Edit'} <Pencil className="inline size-2.5" /></button><button type="button" className="planning-term-remove" disabled={Boolean(column.lockedAt || column.courses.some(isProtected))} onClick={() => setDeletingSlot(slots.find((slot) => slot.id === column.id))} aria-label={`Delete ${column.term}`} title={column.courses.length ? `Delete ${column.term} and its planned courses` : `Delete ${column.term}`}><Trash2 className="size-3" /></button></div> : <span className="planning-term-lock" data-locked={column.registered || undefined}>{column.registered ? 'Registered' : column.months == null ? 'Unplaced' : 'Planned'}</span>}
                           </header>
                           {column.note && <p className="planning-term-meta">{column.note}</p>}
                           {column.courses.map((course) => {
@@ -763,7 +763,7 @@ function OutcomeRail({ mcatDate, selectedProgramId, hasCourseDestination, onAddC
   const projection = outcomeProjection(courses)
   const late = prereqVsMcat(courses, mcatDate)
   const selectedProgram = selectedProgramId ? planningRequirementSet(selectedProgramId) : undefined
-  const coverage = selectedProgram ? candidatePlanCoverage(selectedProgram, courses.map((course) => course.code)) : undefined
+  const coverage = selectedProgram ? candidatePlanCoverage(selectedProgram, placedCourseCodes(courses)) : undefined
   const open = coverage
     ? coverage.filter((item) => item.state !== 'scheduled').map((item) => ({ id: item.node.id, label: item.node.label }))
     : unplacedRequirements(requirements, courses)

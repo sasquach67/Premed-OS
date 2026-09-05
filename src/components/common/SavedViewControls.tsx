@@ -63,12 +63,13 @@ export function SavedViewControls({
                   <label key={column.key} className="flex min-h-9 items-center gap-2 rounded-md px-2 text-sm hover:bg-muted">
                     <Checkbox
                       checked={visible}
+                      disabled={visible && (state.visibleColumns.length ? state.visibleColumns.length : columns.length) === 1}
                       onCheckedChange={(checked) => {
                         const current = state.visibleColumns.length ? state.visibleColumns : columns.map((item) => item.key)
                         const next = checked
                           ? [...new Set([...current, column.key])]
                           : current.filter((key) => key !== column.key)
-                        onChange({ ...state, visibleColumns: next })
+                        if (next.length) onChange({ ...state, visibleColumns: next })
                       }}
                     />
                     {column.label}

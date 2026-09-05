@@ -3269,7 +3269,7 @@ function ClassEditorDialog({
                       aria-pressed={normalizeClassIcon(form.icon) === id}
                       onClick={() => onChange({ icon: id })}
                       className={cn(
-                        'grid size-9 place-items-center rounded-xl border text-muted-foreground transition hover:bg-muted hover:text-foreground',
+                        'grid size-11 place-items-center rounded-xl border text-muted-foreground transition hover:bg-muted hover:text-foreground',
                         normalizeClassIcon(form.icon) === id ? 'border-primary bg-primary/12 text-primary' : 'border-border bg-card'
                       )}
                     >
@@ -3279,7 +3279,7 @@ function ClassEditorDialog({
                 </div>
               </Field>
               <Field label="Color">
-                <div className="grid grid-cols-6 gap-1">
+                <div className="grid grid-cols-3 gap-1 sm:grid-cols-6">
                   {COLORS.map((color) => (
                     <button
                       type="button"
@@ -3287,7 +3287,7 @@ function ClassEditorDialog({
                       aria-pressed={form.color === color}
                       title={`${color[0].toUpperCase()}${color.slice(1)}`}
                       onClick={() => onChange({ color })}
-                      className={cn('min-w-0 rounded-full px-1.5 py-1 text-center text-xs font-bold capitalize', PILL_STYLES[color], form.color === color && 'ring-2 ring-primary')}
+                      className={cn('min-h-11 min-w-0 rounded-full px-1.5 py-1 text-center text-xs font-bold capitalize', PILL_STYLES[color], form.color === color && 'ring-2 ring-primary')}
                     >
                       {color}
                     </button>
@@ -3680,6 +3680,7 @@ function statusLabel(value: string) {
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  if (['Class type', 'Icon', 'Color'].includes(label)) return <fieldset className="min-w-0 space-y-1.5 text-sm font-bold"><legend>{label}</legend>{children}</fieldset>
   return (
     <label className="space-y-1.5 text-sm font-bold">
       <span>{label}</span>

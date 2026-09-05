@@ -60,6 +60,7 @@ export function Academics() {
   const route = ROUTE_MAP.academics
   const [studyGuideOpen, setStudyGuideOpen] = useState(false)
   const studyGuideRequested = searchParams.get('studyGuide') === 'open'
+  const [assignmentCreateDate, setAssignmentCreateDate] = useState<string | undefined>()
   const [assignmentCreateOpen, setAssignmentCreateOpen] = useState(false)
   const [planCompareOpen, setPlanCompareOpen] = useState(false)
   const [coldCatalogRequest, setColdCatalogRequest] = useState<PlannerCatalogRequest>()
@@ -207,7 +208,8 @@ export function Academics() {
     }, { replace: true })
   }
 
-  function requestAssignmentCreation() {
+  function requestAssignmentCreation(dueDate?: string) {
+    setAssignmentCreateDate(dueDate)
     if (!courses.length) {
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev)
@@ -303,7 +305,7 @@ export function Academics() {
         {/* ---- Assignments + Calendar (main dashboard) ---- */}
         <TabsContent value="assignments">
           <AssignmentsPanel onRequestAdd={requestAssignmentCreation} />
-          <AssignmentCreateDialog open={assignmentCreateOpen} onOpenChange={setAssignmentCreateOpen} />
+          <AssignmentCreateDialog initialDueDate={assignmentCreateDate} open={assignmentCreateOpen} onOpenChange={setAssignmentCreateOpen} />
         </TabsContent>
 
         {/*

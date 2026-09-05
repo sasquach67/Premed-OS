@@ -86,6 +86,31 @@ describe('Daily Assignments public interaction contract', () => {
     })
   }
 
+  it('moves calendar focus with arrow keys and prefills the selected date', async () => {
+    const seeded = createDemoData()
+    seeded.academics.classCenter.assignments = []
+    useStore.getState().replaceAll(seeded)
+    await render({ entry: '/academics?tab=assignments&view=calendar' })
+    const cells = [...container.querySelectorAll<HTMLButtonElement>('[role="gridcell"]')]
+    expect(cells.filter((cell) => cell.tabIndex === 0)).toHaveLength(1)
+    const selected = cells.find((cell) => cell.tabIndex === 0)!
+    selected.focus()
+    await act(async () => selected.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })))
+    const next = container.querySelector<HTMLButtonElement>('[role="gridcell"][aria-selected="true"]')!
+    expect(next).not.toBe(selected)
+    expect(document.activeElement).toBe(next)
+    await act(async () => container.querySelector<HTMLButtonElement>('aside button:last-child')!.click())
+    const title = document.body.querySelector<HTMLInputElement>('#assignment-title')!
+    await act(async () => setInput(title, 'Calendar date check'))
+    const classButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Class"]')
+    if (classButton) {
+      await openMenu(classButton)
+      await act(async () => document.body.querySelector<HTMLElement>('[role="option"]')!.click())
+    }
+    await act(async () => document.body.querySelector<HTMLFormElement>('[role="dialog"] form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    expect(useStore.getState().academics.classCenter.assignments.find((item) => item.title === 'Calendar date check')?.dueDate).toBe(dateOffset(1))
+  })
+
   it('creates and cancels inside a fixed class scope without exposing another class choice', async () => {
     const seeded = createDemoData()
     const courseId = seeded.courses[0].id
@@ -331,13 +356,13 @@ describe('Daily Assignments public interaction contract', () => {
     useStore.getState().replaceAll(seeded)
     await render({ entry: '/academics?mode=daily&tab=assignments&view=weekly' })
 
-    const weekLayout = container.querySelector<HTMLElement>('[data-week-layout="weekday-emphasis"]')
+    const weekLayout = container.querySelector<HTMLElement>('[data-week-layout="equal-days"]')
     expect(weekLayout).toBeTruthy()
-    expect(weekLayout?.className).toContain('minmax(6.25rem,.62fr)')
+    expect(weekLayout?.className).toContain('grid-cols-7')
     expect(container.querySelectorAll('[data-week-scope="weekday"]')).toHaveLength(5)
     expect(container.querySelectorAll('[data-week-scope="weekend"]')).toHaveLength(2)
     expect([...container.querySelectorAll('[data-week-scope="weekend"]')]
-      .some((column) => column.textContent?.includes('Nothing due'))).toBe(false)
+      .some((column) => column.textContent?.includes('Nothing due'))).toBe(true)
 
     const globalCard = [...container.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.includes('Global weekly task'))

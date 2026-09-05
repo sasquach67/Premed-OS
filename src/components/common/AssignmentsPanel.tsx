@@ -81,8 +81,9 @@ import type {
   Topic,
 } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { classCardTaskSummary } from '@/lib/academics/classCardSummary'
 import { useStore } from '@/store/store'
-import { assignmentBucket, workloadLabel, type AssignmentBucketId } from '@/components/common/assignmentsLogic'
+import { assignmentBucket, assignmentWorkload, workloadLabel, type AssignmentBucketId } from '@/components/common/assignmentsLogic'
 
 type AssignmentView = 'agenda' | 'weekly' | 'calendar'
 type BucketId = AssignmentBucketId
@@ -165,12 +166,16 @@ export function AssignmentCreateDialog({
   onOpenChange,
   assignment,
   fixedCourseId,
+  initialDueDate,
+  initialType,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   assignment?: ClassAssignment | null
   /** Used by a Class Hub so new work cannot accidentally be filed elsewhere. */
   fixedCourseId?: string
+  initialDueDate?: string
+  initialType?: ClassAssignmentType
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -179,7 +184,7 @@ export function AssignmentCreateDialog({
           <DialogTitle>{assignment ? 'Edit assignment' : 'Add assignment'}</DialogTitle>
           <DialogDescription>Keep the first entry lightweight. A class and title are required.</DialogDescription>
         </DialogHeader>
-        {open && <AssignmentForm key={assignment?.id ?? 'new'} assignment={assignment} fixedCourseId={fixedCourseId} onDone={() => onOpenChange(false)} />}
+        {open && <AssignmentForm key={assignment?.id ?? 'new'} assignment={assignment} fixedCourseId={fixedCourseId} initialDueDate={initialDueDate} initialType={initialType} onDone={() => onOpenChange(false)} />}
       </DialogContent>
     </Dialog>
   )
@@ -188,10 +193,14 @@ export function AssignmentCreateDialog({
 function AssignmentForm({
   assignment,
   fixedCourseId,
+  initialDueDate,
+  initialType,
   onDone,
 }: {
   assignment?: ClassAssignment | null
   fixedCourseId?: string
+  initialDueDate?: string
+  initialType?: ClassAssignmentType
   onDone: () => void
 }) {
   const courses = useStore((state) => state.courses)
@@ -200,8 +209,8 @@ function AssignmentForm({
   const toast = useToast()
   const [title, setTitle] = useState(assignment?.title ?? '')
   const [courseId, setCourseId] = useState(assignment?.courseId ?? fixedCourseId ?? '')
-  const [type, setType] = useState<ClassAssignmentType>(assignment?.type ?? 'homework')
-  const [dueDate, setDueDate] = useState(assignment?.dueDate?.slice(0, 10) ?? '')
+  const [type, setType] = useState<ClassAssignmentType>(assignment?.type ?? initialType ?? 'homework')
+  const [dueDate, setDueDate] = useState(assignment?.dueDate?.slice(0, 10) ?? initialDueDate ?? '')
   const [weight, setWeight] = useState(assignment?.weight == null ? '' : String(assignment.weight))
   const [pointsPossible, setPointsPossible] = useState(assignment?.pointsPossible == null ? '' : String(assignment.pointsPossible))
 
@@ -313,7 +322,7 @@ export function AssignmentsPanel({
   onRetry,
   courseId: scopedCourseId,
 }: {
-  onRequestAdd?: () => void
+  onRequestAdd?: (dueDate?: string) => void
   state?: CollectionLoadState
   errorMessage?: string
   onRetry?: () => void
@@ -330,6 +339,7 @@ export function AssignmentsPanel({
   const [searchParams, setSearchParams] = useSearchParams()
   const reduceMotion = useReducedMotion()
   const [createOpen, setCreateOpen] = useState(false)
+  const [createDate, setCreateDate] = useState<string | undefined>()
   const [editing, setEditing] = useState<ClassAssignment | null>(null)
   const [tableOpen, setTableOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -401,12 +411,13 @@ export function AssignmentsPanel({
     })
   }
 
-  function requestAdd() {
+  function requestAdd(dueDate?: string) {
+    setCreateDate(dueDate)
     if (!scopedCourseId && !courses.length) {
       navigate('/academics?mode=daily&tab=class-center&importFor=new')
       return
     }
-    if (onRequestAdd) onRequestAdd()
+    if (onRequestAdd) onRequestAdd(dueDate)
     else setCreateOpen(true)
   }
 
@@ -546,12 +557,13 @@ export function AssignmentsPanel({
         <Button
           data-testid="assignment-add-primary"
           className="daily-assignments-add w-full shrink-0 font-display font-extrabold lg:w-auto"
-          onClick={requestAdd}
+          onClick={() => requestAdd()}
         >
           <Plus className="size-4" />
           Add assignment
           <kbd className="ml-1 hidden rounded border border-primary-foreground/25 bg-primary-foreground/10 px-1.5 py-0.5 text-[10px] font-bold xl:inline">⌘N</kbd>
         </Button>
+        {(query.trim() || (!scopedCourseId && courseFilter !== 'all')) && <Button variant="ghost" onClick={() => { setQuery(''); setCourseFilter(scopedCourseId ?? 'all') }}>Clear filters</Button>}
         <DropdownMenu>
           <DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="Assignment options"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -605,7 +617,7 @@ export function AssignmentsPanel({
               onDuplicate={duplicate}
               onImportant={(assignment) => patchAssignment(assignment.id, { important: !assignment.important })}
               onDelete={remove}
-              onAdd={requestAdd}
+              onAdd={() => requestAdd()}
             />
           )}
           {view === 'weekly' && (
@@ -613,11 +625,12 @@ export function AssignmentsPanel({
               assignments={filtered.filter((item) => !COMPLETED.has(item.status))}
               courses={courses}
               showCourseLabel={!scopedCourseId}
+              filteredView={Boolean(query.trim() || (!scopedCourseId && courseFilter !== 'all'))}
               cursor={weekCursor}
               onCursor={setWeekCursor}
               onReschedule={reschedule}
               onEdit={setEditing}
-              onAdd={requestAdd}
+              onAdd={() => requestAdd()}
             />
           )}
           {view === 'calendar' && (
@@ -625,12 +638,13 @@ export function AssignmentsPanel({
               assignments={filtered.filter((item) => !COMPLETED.has(item.status))}
               courses={courses}
               showCourseLabel={!scopedCourseId}
+              filteredView={Boolean(query.trim() || (!scopedCourseId && courseFilter !== 'all'))}
               cursor={calendarCursor}
               selectedDay={selectedDay}
               onCursor={setCalendarCursor}
               onSelectDay={setSelectedDay}
               onEdit={setEditing}
-              onAdd={requestAdd}
+              onAdd={() => requestAdd(isoDate(selectedDay))}
             />
           )}
         </m.div>
@@ -643,7 +657,7 @@ export function AssignmentsPanel({
         onToggle={() => setPreference((next) => { next.filters.workloadCollapsed = !workloadCollapsed })}
       />
 
-      <AssignmentCreateDialog open={createOpen} onOpenChange={setCreateOpen} fixedCourseId={scopedCourseId} />
+      <AssignmentCreateDialog open={createOpen} onOpenChange={setCreateOpen} fixedCourseId={scopedCourseId} initialDueDate={createDate} />
       <AssignmentCreateDialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)} assignment={editing} fixedCourseId={scopedCourseId} />
       <Dialog open={tableOpen} onOpenChange={setTableOpen}>
         <DialogContent className="max-h-[92svh] max-w-[min(96vw,86rem)] overflow-y-auto">
@@ -948,7 +962,7 @@ function AssignmentRow({
                 </Badge>
               )}
               <Badge variant="muted" className="capitalize">{assignment.type}</Badge>
-              {assignment.type === 'exam' && <Badge variant="outline">{ready} of {covered.length} topics ready</Badge>}
+              {assignment.type === 'exam' && <Badge variant="outline">{covered.length ? `${ready} of ${covered.length} topics ready` : 'Exam scope not recorded'}</Badge>}
               {assignment.weight != null && <Badge variant="outline">{assignment.weight}%</Badge>}
               {assignment.pointsPossible != null && <Badge variant="outline">{assignment.pointsPossible} pts</Badge>}
             </div>
@@ -966,6 +980,7 @@ function AssignmentRow({
 
 function WeeklyView({
   assignments,
+  filteredView,
   courses,
   showCourseLabel,
   cursor,
@@ -974,6 +989,7 @@ function WeeklyView({
   onEdit,
   onAdd,
 }: {
+  filteredView: boolean
   assignments: ClassAssignment[]
   courses: Course[]
   showCourseLabel: boolean
@@ -1007,10 +1023,10 @@ function WeeklyView({
       <DndContext sensors={sensors} onDragEnd={dragEnd}>
         <div className="mt-3 overflow-x-auto pb-1" tabIndex={0} aria-label="Weekly assignments, horizontally scrollable">
           <div
-            data-week-layout="weekday-emphasis"
-            className="grid min-w-[62rem] grid-cols-[minmax(6.25rem,.62fr)_repeat(5,minmax(9rem,1fr))_minmax(6.25rem,.62fr)] gap-2"
+            data-week-layout="equal-days"
+            className="grid min-w-[70rem] grid-cols-7 items-start gap-3"
           >
-            {days.map((day) => <WeekDay key={isoDate(day)} day={day} assignments={byDay.get(isoDate(day)) ?? []} courses={courses} showCourseLabel={showCourseLabel} onEdit={onEdit} />)}
+            {days.map((day) => <WeekDay filteredView={filteredView} key={isoDate(day)} day={day} assignments={byDay.get(isoDate(day)) ?? []} courses={courses} showCourseLabel={showCourseLabel} onEdit={onEdit} />)}
           </div>
         </div>
       </DndContext>
@@ -1022,28 +1038,27 @@ function WeeklyView({
   )
 }
 
-function WeekDay({ day, assignments, courses, showCourseLabel, onEdit }: { day: Date; assignments: ClassAssignment[]; courses: Course[]; showCourseLabel: boolean; onEdit: (assignment: ClassAssignment) => void }) {
+function WeekDay({ filteredView, day, assignments, courses, showCourseLabel, onEdit }: { filteredView: boolean; day: Date; assignments: ClassAssignment[]; courses: Course[]; showCourseLabel: boolean; onEdit: (assignment: ClassAssignment) => void }) {
   const id = isoDate(day)
   const { setNodeRef, isOver } = useDroppable({ id })
-  const total = assignments.reduce((sum, item) => sum + (item.weight ?? 0), 0)
+  const load = assignmentWorkload(assignments)
   const weekend = day.getDay() === 0 || day.getDay() === 6
   return (
     <section
       ref={setNodeRef}
       data-week-scope={weekend ? 'weekend' : 'weekday'}
       className={cn(
-        'min-h-48 rounded-xl border border-border bg-muted p-2.5 transition-colors',
-        weekend && 'bg-muted/45 px-2 opacity-70',
+        'min-h-48 min-w-0 rounded-xl border border-border bg-muted p-2.5 transition-colors',
         isOver && 'border-primary bg-primary/10 opacity-100',
       )}
     >
       <div className="mb-2 flex items-start justify-between gap-1">
         <div><p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">{day.toLocaleDateString(undefined, { weekday: 'short' })}</p><p className="font-display text-xl font-extrabold tabular-nums">{day.getDate()}</p></div>
-        <Badge variant={workloadLabel(total) === 'Heavy' ? 'danger' : workloadLabel(total) === 'Busy' ? 'warning' : workloadLabel(total) === 'Light' ? 'success' : 'muted'}>{workloadLabel(total)}</Badge>
+        <Badge variant={load.total > 30 ? 'danger' : 'muted'}>{filteredView && !assignments.length ? '—' : load.label}</Badge>
       </div>
-      <div className="space-y-2">
+      <div className="max-h-[28rem] space-y-2 overflow-y-auto overscroll-contain pr-1" tabIndex={assignments.length > 3 ? 0 : undefined} aria-label={`${day.toLocaleDateString(undefined, { weekday: 'long' })} assignments`}>
         {assignments.map((assignment) => <WeekCard key={assignment.id} assignment={assignment} courses={courses} showCourseLabel={showCourseLabel} onEdit={onEdit} />)}
-        {!assignments.length && <p className="py-8 text-center text-xs text-muted-foreground">{weekend ? '—' : 'Nothing due'}</p>}
+        {!assignments.length && <p className="py-8 text-center text-xs text-muted-foreground">{filteredView ? 'No matching assignments' : 'Nothing due'}</p>}
       </div>
     </section>
   )
@@ -1083,9 +1098,10 @@ function WeekCard({ assignment, courses, showCourseLabel, onEdit }: { assignment
         event.stopPropagation()
         onEdit(assignment)
       }}
-      className={cn('w-full rounded-lg border border-border border-l-4 bg-card p-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', isDragging && 'z-20 opacity-70 shadow-xl')}
+      aria-label={assignment.title}
+      className={cn('min-h-11 w-full min-w-0 rounded-lg border border-border border-l-4 bg-card p-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', isDragging && 'z-20 opacity-70 shadow-xl')}
     >
-      <span className="block text-xs font-bold">{assignment.title}</span>
+      <span className="line-clamp-3 break-words text-sm font-bold leading-snug [overflow-wrap:anywhere]">{classCardTaskSummary(assignment.title, 120)}</span>
       {(showCourseLabel || assignment.weight != null) && (
         <span className="mt-1 block text-[11px] text-muted-foreground" data-assignment-course={showCourseLabel ? '' : undefined}>
           {showCourseLabel ? courseLabel(assignment.courseId, courses) : ''}{showCourseLabel && assignment.weight != null ? ' · ' : ''}{assignment.weight != null ? `${assignment.weight}%` : ''}
@@ -1097,6 +1113,7 @@ function WeekCard({ assignment, courses, showCourseLabel, onEdit }: { assignment
 
 function AssignmentCalendar({
   assignments,
+  filteredView,
   courses,
   showCourseLabel,
   cursor,
@@ -1106,6 +1123,7 @@ function AssignmentCalendar({
   onEdit,
   onAdd,
 }: {
+  filteredView: boolean
   assignments: ClassAssignment[]
   courses: Course[]
   showCourseLabel: boolean
@@ -1127,6 +1145,24 @@ function AssignmentCalendar({
   function shiftWindow(daysToMove: number) {
     onCursor(addDays(windowStart, daysToMove))
     onSelectDay(addDays(selectedDay, daysToMove))
+  }
+
+  const dayButtons = useRef(new Map<string, HTMLButtonElement>())
+  const focusRequested = useRef(false)
+  useEffect(() => {
+    if (focusRequested.current) {
+      dayButtons.current.get(isoDate(selectedDay))?.focus()
+      focusRequested.current = false
+    }
+  }, [selectedDay, cursor])
+  function moveDay(day: Date, key: string) {
+    const offsets: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7, Home: -day.getDay(), End: 6 - day.getDay() }
+    if (!(key in offsets)) return false
+    const next = addDays(day, offsets[key])
+    focusRequested.current = true
+    if (next < windowStart || next > windowEnd) onCursor(startOfWeek(next))
+    onSelectDay(next)
+    return true
   }
 
   return (
@@ -1159,6 +1195,9 @@ function AssignmentCalendar({
                       key={isoDate(day)}
                       type="button"
                       role="gridcell"
+                      ref={(node) => { if (node) dayButtons.current.set(isoDate(day), node); else dayButtons.current.delete(isoDate(day)) }}
+                      tabIndex={isSelected || ((selectedDay < windowStart || selectedDay > windowEnd) && isoDate(day) === isoDate(windowStart)) ? 0 : -1}
+                      onKeyDown={(event) => { if (moveDay(day, event.key)) event.preventDefault() }}
                       aria-selected={isSelected}
                       aria-label={day.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                       aria-current={isToday ? 'date' : undefined}
@@ -1196,13 +1235,13 @@ function AssignmentCalendar({
         <div className="mt-3 space-y-2">
           {selected.map((assignment) => (
             <button key={assignment.id} type="button" onClick={() => onEdit(assignment)} className="w-full rounded-xl border border-border bg-card p-3 text-left hover:border-primary/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <span className="block font-bold">{assignment.title}</span>
+              <span className="block break-words font-bold [overflow-wrap:anywhere]">{assignment.title}</span>
               <span className="mt-1 block text-xs text-muted-foreground">
                 {showCourseLabel && <span data-assignment-course>{courseLabel(assignment.courseId, courses)} · </span>}{assignment.type}
               </span>
             </button>
           ))}
-          {!selected.length && <p className="py-8 text-center text-sm text-muted-foreground">Nothing due this day.</p>}
+          {!selected.length && <p className="py-8 text-center text-sm text-muted-foreground">{filteredView ? 'No matching assignments this day.' : 'Nothing due this day.'}</p>}
         </div>
         <Button variant="outline" className="mt-3 w-full" onClick={onAdd}><Plus className="size-4" /> Add assignment</Button>
       </aside>
@@ -1230,20 +1269,20 @@ function ProjectedWorkload({
     const weekEnd = addDays(weekStart, 7)
     const items = assignments.filter((item) => {
       const due = localDate(item.dueDate)
-      return due && !COMPLETED.has(item.status) && due >= weekStart && due < weekEnd && item.weight != null
+      return due && !COMPLETED.has(item.status) && due >= weekStart && due < weekEnd
     })
     const byCourse = courses.map((course) => ({
       course,
       total: items.filter((item) => item.courseId === course.id).reduce((sum, item) => sum + (item.weight ?? 0), 0),
     })).filter((item) => item.total > 0)
-    return { weekStart, byCourse, total: byCourse.reduce((sum, item) => sum + item.total, 0) }
+    return { weekStart, byCourse, ...assignmentWorkload(items) }
   })
   const weighted = assignments.filter((item) => item.weight != null && !COMPLETED.has(item.status))
   const relevantCourseIds = new Set(assignments.map((item) => item.courseId))
   const relevantCourses = courses.filter((course) => relevantCourseIds.has(course.id))
   const heavy = weeks.filter((week) => week.total > 30)
   const recommendation = weighted.length === 0
-    ? 'Not enough graded work yet.'
+    ? 'Grade weights are not recorded. Task counts still show scheduled work.'
     : heavy.length >= 2
       ? `${heavy.length} heavy weeks are ahead. Start the largest later assignment during the lightest week.`
       : heavy.length === 1
@@ -1260,9 +1299,9 @@ function ProjectedWorkload({
       {!collapsed && (
         <div className="space-y-4 border-t border-border p-4">
           {weeks.map((week) => (
-            <div key={isoDate(week.weekStart)} className="grid items-center gap-2 sm:grid-cols-[7rem_4rem_1fr_3rem]">
+            <div key={isoDate(week.weekStart)} className="grid items-center gap-2 sm:grid-cols-[7rem_5rem_1fr_5rem]">
               <span className="text-sm font-bold tabular-nums">{week.weekStart === start ? 'This week' : week.weekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-              <Badge variant={workloadLabel(week.total) === 'Heavy' ? 'danger' : workloadLabel(week.total) === 'Busy' ? 'warning' : workloadLabel(week.total) === 'Light' ? 'success' : 'muted'}>{workloadLabel(week.total)}</Badge>
+              <Badge variant={workloadLabel(week.total) === 'Heavy' ? 'danger' : workloadLabel(week.total) === 'Busy' ? 'warning' : workloadLabel(week.total) === 'Light' ? 'success' : 'muted'}>{week.label}</Badge>
               <div className="relative h-7 overflow-hidden rounded-full border border-border bg-muted">
                 <div className="flex h-full">
                   {week.byCourse.map(({ course, total }) => (
@@ -1277,7 +1316,8 @@ function ProjectedWorkload({
                 </div>
                 <Progress value={Math.min(100, week.total)} className="sr-only" aria-label={`${week.total}% of course grade due`} />
               </div>
-              <span className="text-right text-sm font-extrabold tabular-nums">{week.total}%</span>
+              <span className="text-right text-sm font-extrabold tabular-nums">{week.unknown ? `${week.total}% known` : `${week.total}%`}</span>
+              {week.unknown > 0 && <p className="text-xs text-muted-foreground sm:col-span-4">{week.unknown} {week.unknown === 1 ? 'task has' : 'tasks have'} no grade weight recorded.</p>}
             </div>
           ))}
           <div className="flex flex-wrap gap-3 border-t border-border pt-3 text-xs font-semibold text-muted-foreground">
@@ -1303,7 +1343,7 @@ function AssignmentTable({
   onEdit: (assignment: ClassAssignment) => void
   onDelete: (id: string) => void
 }) {
-  const columns: ColumnDef[] = [
+  const columns = useMemo<ColumnDef[]>(() => [
     { key: 'title', header: 'Assignment', type: 'text', width: '240px', validate: (value) => String(value ?? '').trim() ? undefined : 'Title is required.' },
     {
       key: 'courseId',
@@ -1323,7 +1363,7 @@ function AssignmentTable({
     { key: 'weight', header: 'Weight %', type: 'number', width: '100px', align: 'right' },
     { key: 'pointsPossible', header: 'Points', type: 'number', width: '90px', align: 'right' },
     { key: 'important', header: 'Important', type: 'toggle', width: '100px', toggleLabels: ['No', 'Starred'] },
-  ]
+  ], [courses])
   return (
     <TrackerTable
       rows={assignments}

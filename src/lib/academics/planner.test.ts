@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   UNSCHEDULED, courseEffects, mcatDividerAfter, outcomeProjection,
-  plannerTerms, prereqVsMcat, unplacedRequirements,
+  plannerTerms, placedCourseCodes, prereqVsMcat, unplacedRequirements,
 } from '@/lib/academics/planner'
 import type { Course, PlannerTerm, RequirementItem } from '@/lib/types'
 
@@ -183,4 +183,10 @@ describe('prerequisites against the MCAT', () => {
   it('never flags a course already completed', () => {
     expect(prereqVsMcat(courses, '2026-01-15').map((item) => item.code)).not.toContain('BIOL 103')
   })
+})
+
+it('excludes unscheduled candidates from placed coverage while keeping records and actual term slots', () => {
+  const rows = [course('BIOL 103', 'Unscheduled'), course('CHEM 101', ''), course('NSCI 175', 'Spring 2027'), course('PSYC 101', '', { status: 'completed' }), course('MATH 231', '', { plannerTermId: 'spring' })]
+  const slots: PlannerTerm[] = [{ id: 'spring', label: 'Spring 2027', kind: 'standard', origin: 'student-created', createdAt: 1, updatedAt: 1, order: 0 }]
+  expect(placedCourseCodes(rows, slots)).toEqual(['NSCI 175', 'PSYC 101', 'MATH 231'])
 })
