@@ -112,12 +112,11 @@ function SelfAssessment({ standard, onChange }: { standard: Standard; onChange: 
   )
 }
 
-function ModeChoice({ mode, value, title, purpose, noteState, onChoose }: {
+function ModeChoice({ mode, value, title, purpose, onChoose }: {
   mode: LearningMode
   value: LearningMode
   title: string
   purpose: string
-  noteState: string
   onChoose: (value: LearningMode) => void
 }) {
   const active = mode === value
@@ -137,7 +136,7 @@ function ModeChoice({ mode, value, title, purpose, noteState, onChoose }: {
     >
       <Icon className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
       <span className="min-w-0">
-        <span className="block font-bold text-foreground">{title} <span className="font-normal text-muted-foreground">· {noteState}</span></span>
+        <span className="block font-bold text-foreground">{title}</span>
         <span className="mt-1 block text-xs leading-5 text-muted-foreground">{purpose}</span>
       </span>
     </Button>
@@ -186,8 +185,8 @@ export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline
             : 'Close your notes. Answer first, reveal the teaching checklist afterward, then record what you can do.'}
         </p>
         <section aria-label="Choose how to study" className="mt-5 grid gap-3 sm:grid-cols-2">
-          <ModeChoice mode={mode} value="outline" title="Mastery outline" purpose="Learn and check every concept, application, and exam trap." noteState="Notes open" onChoose={setMode} />
-          <ModeChoice mode={mode} value="recall" title="Active recall" purpose="Attempt an objective from memory before seeing the checklist." noteState="Notes closed" onChoose={setMode} />
+          <ModeChoice mode={mode} value="outline" title="Open note" purpose="Learn and check every concept, application, and exam trap." onChoose={setMode} />
+          <ModeChoice mode={mode} value="recall" title="Closed note" purpose="Attempt an objective from memory before seeing the checklist." onChoose={setMode} />
         </section>
         <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs font-semibold">
           <span>{applied} of {outline.standards.length} can apply without notes · {explained} can explain</span>

@@ -109,7 +109,7 @@ describe('lecture mastery study view', () => {
 
   it('keeps blank-page recall separate and opens a chosen objective without revealing its checklist', async () => {
     await render()
-    const recallMode = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Active recall'))!
+    const recallMode = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Closed note'))!
     await act(async () => recallMode.click())
 
     expect(container.textContent).toContain('Close your notes. Answer first')

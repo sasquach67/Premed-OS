@@ -526,7 +526,7 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).toContain('Biol 103 Lecture 2 Captions.txt · Transcript excerpt · central information flow')
     const mastery = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Mastery Map')!
     await act(async () => mastery.click())
-    const recall = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Active recall'))!
+    const recall = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Closed note'))!
     await act(async () => recall.click())
     expect(container.textContent).toContain('Try before you reveal')
     expect(container.textContent).toContain('Keep the actual teaching sentence.')

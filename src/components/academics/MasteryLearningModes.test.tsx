@@ -59,9 +59,8 @@ describe('mastery learning modes', () => {
 
     expect(container.textContent).toContain('Learn the map')
     expect(container.textContent).toContain('Keep your notes open')
-    expect(container.textContent).toContain('Notes open')
-    expect(container.textContent).toContain('Mastery outline')
-    expect(container.textContent).toContain('Active recall')
+    expect(container.textContent).toContain('Open note')
+    expect(container.textContent).toContain('Closed note')
     expect(container.textContent).toContain('RNA is complementary and antiparallel')
     expect(container.textContent).toContain('Write the RNA product 5′ to 3′')
     expect(container.textContent).toContain('Do not copy the coding strand unchanged')
@@ -72,7 +71,7 @@ describe('mastery learning modes', () => {
 
   it('keeps teaching content, sources, and self-assessment inside the recall reveal', async () => {
     await render()
-    const recall = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Active recall'))!
+    const recall = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Closed note'))!
     await act(async () => recall.click())
 
     expect(container.textContent).toContain('Practice from memory')
