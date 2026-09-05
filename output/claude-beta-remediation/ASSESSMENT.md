@@ -47,7 +47,7 @@ Optional polish accepted: the status chip consistently opens Attention; notifica
 
 - Shared changes: 1,128 tests passed before Academics integration.
 - Combined changes: 178 test files / 1,135 tests passed. Production TypeScript/Vite build passed; existing large-bundle warnings remain.
-- Changed shared files: scoped ESLint completed with zero errors and four warnings (one existing component-export warning; three compiler-purity warnings for event-handler timestamps). No whole-repository clean-lint claim.
+- Changed shared files: scoped ESLint completed with zero errors and four warnings (one existing component-export warning; three compiler-purity warnings for event-handler timestamps). The final integration-file lint also completed with zero errors and 12 hook/compiler warnings. No whole-repository clean-lint claim.
 - Browser checks used an isolated guest workspace on localhost:5197 with synthetic task data. No real account deletion, external message, source deletion, or paid generation was performed.
 - Verified auth tab focus, label-based record search, actual sidebar toggle, Quick Add type availability and class requirement, date keyboard selection, persistent Undo, Help overlay dismissal, notification focus, safe reset cancellation, dark-mode reset appearance, scroll reset and responsive geometry.
 - Viewports observed: 1422, 1152, 810 and 375 CSS pixels. Screenshots from viewport overrides have a provider raster-scale discrepancy; DOM viewport and element rectangles are the geometry evidence.
