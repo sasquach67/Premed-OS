@@ -815,7 +815,9 @@ async function callOpenAIGeneration(response: string, chunks: Chunk[], specPromp
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: Deno.env.get('OPENAI_MODEL') || 'gpt-5.4-mini',
+      // Keep artifact generation independent of the cheaper recall-check model.
+      model: 'gpt-6-astra',
+      reasoning: { effort: 'low' },
       store: false,
       max_output_tokens: 10_000,
       input: [
