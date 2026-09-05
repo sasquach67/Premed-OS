@@ -3,7 +3,7 @@ import { preferredScrollBehavior } from '@/lib/scroll'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  ArrowLeft, BookOpen, Brain, Check, ChevronDown,
+  ArrowLeft, ArrowRight, CalendarDays, MessageSquare, Maximize2, BookOpen, Brain, Check, ChevronDown,
   FileStack, FileText, Filter, FolderOpen, HelpCircle,
   ListChecks, Mail, MoreHorizontal, NotebookText, Plus, Target,
 } from 'lucide-react'
@@ -55,7 +55,7 @@ import { LectureCapturePanel, type LectureDestination } from '@/components/acade
 import { LectureRecordMenu } from '@/components/academics/LectureRecordMenu'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { LecturePreview } from '@/components/academics/LecturePreview'
-import { AssignmentCreateDialog, AssignmentsPanel } from '@/components/common/AssignmentsPanel'
+import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { MaterialGenerationIntake, type MaterialArtifact } from '@/components/academics/MaterialGenerationIntake'
 import { MaterialFolderIntake } from '@/components/academics/MaterialFolderIntake'
@@ -306,115 +306,83 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
   )
 }
 
-function Overview({
-  course, data, topics, assignments, notes, onTab, onOpenExamPrep,
-}: {
-  course: Course
-  workspace: ClassWorkspace
-  data: ClassCenterData
-  topics: Topic[]
-  assignments: ClassAssignment[]
-  notes: ClassNote[]
-  onTab: (tab: string) => void
-  onOpenExamPrep: (examId: string) => void
+function Overview({ course, workspace, data, assignments, onTab }: {
+  course: Course; workspace: ClassWorkspace; data: ClassCenterData; topics: Topic[]; assignments: ClassAssignment[]; notes: ClassNote[]; onTab: (tab: string) => void; onOpenExamPrep: (examId: string) => void
 }) {
-  const [overviewParams, setOverviewParams] = useSearchParams()
-  const [examCreateOpen, setExamCreateOpen] = useState(false)
+  const [overviewParams] = useSearchParams()
+  const navigate = useNavigate()
+  const update = useStore(state => state.update)
   const [lectureDialogOpen, setLectureDialogOpen] = useState(false)
-  const [selectedLectureId, setSelectedLectureId] = useState<string | undefined>()
-  const [lectureDestination, setLectureDestination] = useState<LectureDestination>('overview')
-  const open = assignments.filter((item) => !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
-  const exam = open.find((item) => item.type === 'exam')
-  const lectures = data.lectures.filter((item) => item.courseId === course.id).sort((a, b) => b.createdAt - a.createdAt)
-  const chronologicalLectures = [...lectures].sort((a, b) => String(a.occurredOn ?? '').localeCompare(String(b.occurredOn ?? '')) || a.createdAt - b.createdAt)
-  const lectureNumber = (lectureId: string) => chronologicalLectures.findIndex((lecture) => lecture.id === lectureId) + 1
-  const activeLecture = selectedLectureId ? lectures.find((lecture) => lecture.id === selectedLectureId) : undefined
-  const activeLectureSources = activeLecture ? data.files.filter((file) => activeLecture.selectedSourceFileIds?.includes(file.id) || file.id === activeLecture.transcriptFileId) : []
-  const courseFiles = data.files.filter((file) => file.courseId === course.id && isPrimaryMaterial(file))
-  const unfiledCount = courseFiles.filter((file) => !file.topicId && file.linkedTopicIds.length === 0).length
-  const guideSuggestionCount = data.lectureNoteProposals.filter((proposal) => proposal.courseId === course.id && proposal.status === 'pending').length
-  const examTopics = exam?.coveredTopicIds?.length ? topics.filter((topic) => exam.coveredTopicIds?.includes(topic.id)) : topics
-  const examCovered = examTopics.filter((topic) => (topic.linkedFileIds?.length ?? 0) || topic.sourceNoteIds.length).length
-  const recentStudyWork = notes.filter(isMaterialNote).filter((note) => note.type === 'study-guide' || note.type === 'lecture').slice(0, 3)
-
+  const [focusOpen, setFocusOpen] = useState(false)
+  const [focusDraft, setFocusDraft] = useState('')
+  const [selectedLectureId, setSelectedLectureId] = useState<string>()
+  const today = new Date(); today.setHours(0,0,0,0)
+  const weekEnd = new Date(today); weekEnd.setDate(weekEnd.getDate() + 7)
+  const dated = assignments.filter(item => !isComplete(item) && item.dueDate).sort((a,b) => String(a.dueDate).localeCompare(String(b.dueDate)))
+  const upcoming = dated.filter(item => new Date(`${item.dueDate!.slice(0,10)}T23:59:59`) >= today)
+  const nextAssignment = upcoming.find(item => item.type !== 'exam')
+  const exam = upcoming.find(item => item.type === 'exam')
+  const weekItems = upcoming.filter(item => new Date(`${item.dueDate!.slice(0,10)}T00:00:00`) < weekEnd).slice(0,3)
+  const lectures = data.lectures.filter(item => item.courseId === course.id).sort((a,b) => b.createdAt-a.createdAt)
+  const chronologicalLectures = [...lectures].sort((a,b) => String(a.occurredOn ?? '').localeCompare(String(b.occurredOn ?? '')) || a.createdAt-b.createdAt)
+  const lectureNumber = (id: string) => chronologicalLectures.findIndex(item => item.id === id)+1
+  const activeLecture = lectures.find(item => item.id === selectedLectureId)
+  const activeLectureSources = activeLecture ? data.files.filter(file => activeLecture.selectedSourceFileIds?.includes(file.id) || file.id === activeLecture.transcriptFileId) : []
+  const resumeLecture = lectures.find(item => item.id === workspace.lastOpenedLectureId) ?? lectures.find(item => item.workspaceState === 'complete')
+  const feedback = data.feedbackNotes.filter(item => item.courseId === course.id).sort((a,b) => b.updatedAt-a.updatedAt)[0]
+  const feedbackAssignment = assignments.find(item => item.id === feedback?.assignmentId)
+  const startEntry = () => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new`)
   useEffect(() => {
-    if (overviewParams.get('captureLecture') !== '1') return
-    setSelectedLectureId(undefined)
-    setLectureDestination('transcript')
-    setLectureDialogOpen(true)
-    const next = new URLSearchParams(overviewParams)
-    next.delete('captureLecture')
-    setOverviewParams(next, { replace: true })
-  }, [overviewParams, setOverviewParams])
-
-  function openLecture(lectureId?: string, destination: LectureDestination = 'overview') {
-    setSelectedLectureId(lectureId)
-    setLectureDestination(destination)
-    setLectureDialogOpen(true)
+    if (overviewParams.get('captureLecture') === '1') navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/new`, {replace:true})
+  }, [overviewParams, navigate, course.id])
+  function selectLecture(id?: string) {
+    setSelectedLectureId(id)
+    if (id) update(draft => { const item = draft.academics.classCenter.workspaces.find(row => row.courseId === course.id); if(item) item.lastOpenedLectureId=id })
   }
-
-  function openMaterialNote(noteId: string) {
-    const next = new URLSearchParams(overviewParams)
-    next.set('classTab', 'materials')
-    next.set('materialNote', noteId)
-    setOverviewParams(next)
+  function openLecture(id?: string, _destination?: LectureDestination) {
+    if (!id) { startEntry(); return }
+    const lecture = lectures.find(item => item.id === id)
+    if (lecture?.workspaceState !== 'complete') { navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/${encodeURIComponent(id)}`); return }
+    selectLecture(id); setLectureDialogOpen(true)
   }
-
-  return (
-    <div className="class-hub-overview grid grid-cols-12 gap-4">
-      {/* Journal rows expand in place so sparse histories do not leave a vacant column. */}
-      <section className="lecture-journal col-span-12" aria-labelledby="lecture-ledger-title">
-        <div className="lecture-journal-heading">
-          <div><h2 id="lecture-ledger-title">Class journal</h2><p className="lecture-rail-caption">{lectures.length ? `${lectures.length} ${lectures.length === 1 ? 'entry' : 'entries'} · newest first` : 'Your readings, lectures, and exam preparation in one place.'}</p></div>
-          <Button size="sm" onClick={() => openLecture(undefined, 'transcript')}><Plus aria-hidden="true" /> Add to journal</Button>
-        </div>
-        {lectures.length ? <Accordion type="single" collapsible value={selectedLectureId ?? ''} onValueChange={(value) => setSelectedLectureId(value || undefined)} className="lecture-journal-list" aria-label="Lecture history">
+  return <div className="class-hub-overview overview-approved">
+    <section className="class-hub-course-pulse" aria-label="Your class at a glance">
+      <div className="course-pulse-heading"><p>Today</p><b>Your class at a glance</b></div>
+      <button type="button" className="course-pulse-item is-urgent" onClick={() => onTab('assignments')}><span>Next Assignment</span><b>{nextAssignment?.title ?? 'No upcoming assignment'}</b><i>{nextAssignment ? assignmentDateLabel(nextAssignment) : 'View class work'} →</i></button>
+      <button type="button" className="course-pulse-item" onClick={() => onTab('assignments')}><span>Next Exam</span><b>{exam?.title ?? 'No exam scheduled'}</b><i>{exam ? assignmentDateLabel(exam) : 'View assignments'} →</i></button>
+      <button type="button" className="course-pulse-item overview-focus" onClick={() => {setFocusDraft(workspace.studyFocus ?? '');setFocusOpen(true)}}><span>Your focus</span><b>{workspace.studyFocus || 'Choose a focus for this class'}</b><i>{workspace.studyFocus ? 'Set by you · Edit focus' : 'What would you like to work on?'} →</i></button>
+    </section>
+    <div className="overview-approved-columns">
+      <section className="lecture-journal" aria-labelledby="lecture-ledger-title">
+        <div className="lecture-journal-heading"><div><h2 id="lecture-ledger-title">Class journal</h2><p className="lecture-rail-caption">{lectures.length ? `${lectures.length} ${lectures.length===1?'entry':'entries'} · newest first` : 'Your learning starts here'}</p></div></div>
+        <Button variant="outline" className="overview-entry-tile" onClick={startEntry}><Plus aria-hidden="true"/><span><strong>Add to journal</strong><small>Capture a lecture, study your materials, or prepare for an exam.</small></span><ArrowRight aria-hidden="true"/></Button>
+        {lectures.length ? <Accordion type="single" collapsible value={selectedLectureId ?? ''} onValueChange={(value) => selectLecture(value || undefined)} className="lecture-journal-list" aria-label="Lecture history">
           {[...chronologicalLectures].reverse().map((lecture) => {
             const materialCount = data.files.filter((file) => (file.lectureId === lecture.id || lecture.selectedSourceFileIds?.includes(file.id)) && file.id !== lecture.transcriptFileId).length
             const isActive = activeLecture?.id === lecture.id
             return <AccordionItem key={lecture.id} value={lecture.id} className="lecture-journal-item">
               <LectureRecordMenu lecture={lecture} onOpen={() => setSelectedLectureId(lecture.id)} onOpenFullScreen={() => openLecture(lecture.id, 'overview')} onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail>
                 <AccordionTrigger className={cn('lecture-rail-entry', isActive && 'is-active')}>
-                  <span className="lecture-journal-row-text"><b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'} · {lecture.studyIntent?.purpose === 'exam-prep' ? 'exam prep' : lecture.transcriptFileId ? 'transcript saved' : 'study materials'}{materialCount ? ` + ${materialCount} ${materialCount === 1 ? 'material' : 'materials'}` : ''}</span></span>
+                  <span className="overview-date-stamp" aria-hidden="true">{lecture.occurredOn ? new Date(`${lecture.occurredOn.slice(0,10)}T12:00:00`).toLocaleDateString(undefined, { month: 'short' }) : 'Entry'}<strong>{lecture.occurredOn?.slice(8,10) ?? '—'}</strong></span><span className="lecture-journal-row-text"><b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'} · {lecture.studyIntent?.purpose === 'exam-prep' ? 'exam prep' : lecture.transcriptFileId ? 'transcript saved' : 'study materials'}{materialCount ? ` + ${materialCount} ${materialCount === 1 ? 'material' : 'materials'}` : ''}</span></span>
                 </AccordionTrigger>
               </LectureRecordMenu>
               <AccordionContent className="lecture-journal-detail">
-                <div className="lecture-saved-actions"><Button size="sm" variant="outline" onClick={() => openLecture(lecture.id, 'overview')}>{lecture.workspaceState === 'complete' ? 'Open full screen' : 'Continue entry'}</Button></div>
+                <div className="lecture-saved-actions"><Button size="sm" variant="outline" onClick={() => openLecture(lecture.id, 'overview')}>{lecture.workspaceState === 'complete' ? <><Maximize2 className="size-4" /> Full Screen</> : 'Continue entry'}</Button></div>
                 {lecture.workspaceState === 'complete' ? <div className="lecture-journal-workspace"><LectureCapturePanel key={lecture.id} courseId={course.id} course={course} data={data} initialLectureId={lecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={() => onTab('guide')} /></div> : <LecturePreview lecture={lecture} sourceCount={isActive ? activeLectureSources.length : 0} />}
               </AccordionContent>
             </AccordionItem>
           })}
         </Accordion> : <p className="lecture-journal-empty">Create a study guide or prepare for an exam with your class materials. A transcript is optional.</p>}
       </section>
-
-      {/* Visual provenance: mockup-lab/01-academics/academics-class-hub.html,
-          Variant A, view=overview, class-pulse. This replaces duplicate metric
-          cards; every row is a real route or action. */}
-      <section className="class-hub-course-pulse col-span-12" aria-label="Course pulse">
-        <div className="course-pulse-heading"><p>Course pulse</p><b>What needs attention</b></div>
-        <button type="button" className={cn('course-pulse-item', open[0] && 'is-urgent')} onClick={() => onTab('assignments')}><span>Assignments</span><b>{open[0]?.title ?? 'No dated work'}</b><i>{open[0] ? `${assignmentDateLabel(open[0])} · Open →` : 'Open assignments →'}</i></button>
-        <button type="button" className="course-pulse-item" onClick={() => exam ? onOpenExamPrep(exam.id) : setExamCreateOpen(true)}><span>{exam?.title ?? 'Next exam'}</span><b>{exam ? (exam.coveredTopicIds?.length ? `${examCovered} of ${examTopics.length} topics have material` : 'Exam scope not recorded') : 'No exam dated'}</b><i>{exam ? 'Open exam plan →' : 'Add exam →'}</i></button>
-        <button type="button" className="course-pulse-item" onClick={() => onTab('materials')}><span>Materials</span><b>{courseFiles.length ? `${courseFiles.length} course ${courseFiles.length === 1 ? 'item' : 'items'}` : 'No materials yet'}</b><i>{unfiledCount ? `${unfiledCount} need filing · Open →` : 'Open materials →'}</i></button>
-        <button type="button" className="course-pulse-item" onClick={() => onTab('guide')}><span>Guide</span><b>{guideSuggestionCount ? `${guideSuggestionCount} ${guideSuggestionCount === 1 ? 'suggestion' : 'suggestions'}` : `${notes.filter(isGuideNote).length} saved ${notes.filter(isGuideNote).length === 1 ? 'item' : 'items'}`}</b><i>Review class context →</i></button>
-      </section>
-
-      <Dialog open={lectureDialogOpen} onOpenChange={setLectureDialogOpen}>
-        <DialogContent className="max-h-[88vh] max-w-6xl overflow-y-auto !rounded-2xl !border-border !bg-card !p-0 !shadow-[0_22px_55px_-27px_rgba(0,0,0,0.8)] ![backdrop-filter:none]">
-          <LectureCapturePanel key={`${selectedLectureId ?? 'new'}:${lectureDestination}`} courseId={course.id} course={course} data={data} initialLectureId={selectedLectureId} initialDestination={lectureDestination} onOpenNotes={() => { setLectureDialogOpen(false); onTab('guide') }} />
-        </DialogContent>
-      </Dialog>
-
-      <AssignmentCreateDialog open={examCreateOpen} onOpenChange={setExamCreateOpen} fixedCourseId={course.id} initialType="exam" />
-      <Card className="class-hub-panel col-span-12">
-        <CardHeader className="class-hub-panel-header flex-row items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">From selected class material</p><CardTitle>Recent study work</CardTitle></div><Button size="sm" variant="outline" onClick={() => onTab('materials')}>Open Materials</Button></CardHeader>
-        <CardContent className="class-hub-panel-content grid gap-2 md:grid-cols-3">
-          {recentStudyWork.map((note) => <button key={note.id} type="button" className="class-hub-record-row rounded-[13px] p-3 text-left" onClick={() => openMaterialNote(note.id)}><b>{note.title}</b><span className="mt-1 block text-xs font-semibold text-muted-foreground">{note.type === 'study-guide' ? 'Study guide' : 'Lecture note'} · source links retained</span></button>)}
-          {!recentStudyWork.length && <p className="rounded-[13px] border border-dashed border-border p-4 text-sm font-semibold text-muted-foreground md:col-span-3">Create a Study Guide, Mastery Map, or Revised Notes from the sources you select.</p>}
-        </CardContent>
-      </Card>
-
+      <aside className="overview-side" aria-label="Class overview highlights">
+        <Card className="overview-side-card overview-reading"><CardHeader><CardTitle><BookOpen aria-hidden="true"/>Continue studying</CardTitle></CardHeader><CardContent>{resumeLecture ? <><h3>{completedLectureTitle(lectureNumber(resumeLecture.id), resumeLecture)}</h3><p>{resumeLecture.studyIntent?.purpose === 'exam-prep' ? 'Exam preparation' : 'Study guide'}</p><Button variant="outline" onClick={() => { selectLecture(resumeLecture.id); requestAnimationFrame(() => document.getElementById('lecture-ledger-title')?.scrollIntoView({behavior:preferredScrollBehavior(), block:'start'})) }}>Continue reading <ArrowRight aria-hidden="true"/></Button></> : <p>Your first study guide will appear here once it is ready.</p>}</CardContent></Card>
+        <Card className="overview-side-card"><CardHeader><CardTitle><CalendarDays aria-hidden="true"/>This week</CardTitle></CardHeader><CardContent>{weekItems.length ? <ul className="overview-week">{weekItems.map(item => <li key={item.id}><time dateTime={item.dueDate}>{new Date(`${item.dueDate!.slice(0,10)}T12:00:00`).toLocaleDateString(undefined,{weekday:'short'})}</time><div><b>{item.title}</b><small>{assignmentDateLabel(item)}</small></div></li>)}</ul> : <p>No dated work due in the next seven days.</p>}<Button variant="link" onClick={() => onTab('assignments')}>View class work <ArrowRight aria-hidden="true"/></Button></CardContent></Card>
+        <Card className="overview-side-card overview-feedback"><CardHeader><CardTitle><MessageSquare aria-hidden="true"/>Recent feedback</CardTitle></CardHeader><CardContent>{feedback ? <><b>{feedbackAssignment?.title ?? feedback.theme}</b><p>Saved feedback · {fmtEventDate(new Date(feedback.updatedAt).toISOString().slice(0,10))}</p><blockquote>{feedback.quote || feedback.theme}</blockquote><>{feedbackAssignment && <Button variant="link" onClick={() => navigate(`/academics/classes/${encodeURIComponent(course.id)}?classTab=assignments&assignment=${encodeURIComponent(feedbackAssignment.id)}`)}>Open returned work <ArrowRight aria-hidden="true"/></Button>}</></> : <p>No feedback saved yet. Returned-work notes will appear here.</p>}</CardContent></Card>
+      </aside>
     </div>
-  )
+    <Dialog open={focusOpen} onOpenChange={setFocusOpen}><DialogContent><DialogHeader><DialogTitle>Your focus</DialogTitle><DialogDescription>Choose what you want to work on in this class.</DialogDescription></DialogHeader><label htmlFor="class-study-focus">Class focus</label><Input id="class-study-focus" maxLength={120} value={focusDraft} onChange={event=>setFocusDraft(event.target.value)} placeholder="What would you like to understand?"/><Button onClick={()=>{update(draft=>{const item=draft.academics.classCenter.workspaces.find(row=>row.courseId===course.id);if(item)item.studyFocus=focusDraft.trim()||undefined});setFocusOpen(false)}}>Save focus</Button></DialogContent></Dialog>
+    <Dialog open={lectureDialogOpen} onOpenChange={setLectureDialogOpen}><DialogContent className="overview-fullscreen"><DialogHeader className="sr-only"><DialogTitle>{activeLecture?.title || 'Study guide'}</DialogTitle><DialogDescription>Full screen journal reader</DialogDescription></DialogHeader>{activeLecture && <LectureCapturePanel key={activeLecture.id} courseId={course.id} course={course} data={data} initialLectureId={activeLecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={()=>{setLectureDialogOpen(false);onTab('guide')}}/>}</DialogContent></Dialog>
+  </div>
 }
 
 export function WritingTools({ courseId, readingListState, drafts, readings, feedback, assignments }: {

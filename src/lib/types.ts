@@ -279,6 +279,9 @@ export interface SyllabusScheduleEntry {
 /** Operational extension for one canonical Course. It exists only for the
  * profile's current term and never repeats course code/title/term. */
 export interface ClassWorkspace {
+  /** Student-owned Overview focus and reading shortcut; absent for older workspaces. */
+  studyFocus?: string
+  lastOpenedLectureId?: ID
   id: ID
   courseId: ID
   nickname?: string
