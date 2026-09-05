@@ -364,9 +364,9 @@ describe('ClassHub approved Overview', () => {
     })
 
     expect(container.textContent).toContain('Class journal')
-    expect(container.textContent).toContain('Build a lecture page')
-    expect(container.textContent).toContain('Paste or upload a lecture source')
-    expect(container.querySelector('.lecture-rail-list')).toBeTruthy()
+    expect(container.textContent).not.toContain('Build a lecture page')
+    expect(container.querySelector('.lecture-journal-list')).toBeTruthy()
+    expect(container.querySelector('.lecture-overview-composition')).toBeNull()
     expect(container.textContent).toContain('Recent study work')
     expect(container.textContent).not.toContain('Class Plan')
     expect([...container.querySelectorAll<HTMLButtonElement>('button')].some((button) => button.textContent?.trim().startsWith('Topics'))).toBe(true)
@@ -377,6 +377,11 @@ describe('ClassHub approved Overview', () => {
     expect(container.textContent).not.toContain('Lecture Brief')
     expect(container.textContent).toContain('Mastery Map')
     expect(container.textContent).toContain('0 selected sources')
+    expect(savedLecture.getAttribute('aria-expanded')).toBe('true')
+    expect(savedLecture.closest('.lecture-journal-item')?.querySelector('[aria-label="Lecture preview"]')).toBeTruthy()
+    await act(async () => savedLecture.click())
+    expect(savedLecture.getAttribute('aria-expanded')).toBe('false')
+    expect(container.querySelector('[aria-label="Lecture preview"]')).toBeNull()
 
     const addToday = [...container.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.trim() === 'Add today’s lecture')
@@ -499,7 +504,7 @@ describe('ClassHub approved Overview', () => {
     expect(restored.lectureFindings.some((finding) => finding.id === 'lecture-actions-finding')).toBe(true)
   })
 
-  it('keeps the journal compact and opens the complete lecture workspace on demand', async () => {
+  it('keeps the full inline workspace inside its lecture row and supports full-screen expansion', async () => {
     const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
     const course = seed.courses.find((item) => item.id === 'demo-course-biol103-current')!
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.courseId === course.id)!
@@ -513,16 +518,12 @@ describe('ClassHub approved Overview', () => {
       .find((button) => button.textContent?.includes('Central Dogma'))!
     await act(async () => lectureTwo.click())
 
-    const preview = container.querySelector('[aria-label="Lecture preview"]')!
-    expect(preview.textContent).toContain('A gene is expressed through linked but distinct synthesis steps')
-    expect(preview.querySelectorAll('.lecture-preview-summary p')).toHaveLength(2)
-    expect(container.querySelector('[aria-label="Embedded lecture workspace"]')).toBeNull()
-    expect(container.querySelector('[aria-label="Lecture workspace views"]')).toBeNull()
-    expect(preview.textContent).not.toContain('Trace gene expression from DNA to a mature transcript')
-    const openLecture = [...container.querySelectorAll<HTMLButtonElement>('.lecture-saved-actions button')].find((button) => button.textContent === 'Open lecture')!
-    await act(async () => openLecture.click())
-    const workspaceSurface = document.body.querySelector('[role="dialog"]')!
+    const workspaceSurface = container.querySelector('[aria-label="Embedded lecture workspace"]')!
+    expect(lectureTwo.closest('.lecture-journal-item')?.contains(workspaceSurface)).toBe(true)
+    expect(workspaceSurface.textContent).toContain('A gene is expressed through linked but distinct synthesis steps')
+    expect(workspaceSurface.textContent).toContain('Gene expression can be tested at two different levels')
     expect(workspaceSurface.querySelector('[aria-label="Lecture workspace views"]')).toBeTruthy()
+    expect(workspaceSurface.querySelector('[aria-label="Lecture reading area"]')?.getAttribute('tabindex')).toBe('0')
     expect(workspaceSurface.textContent).not.toContain('Source-led draft available')
 
     const mastery = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Mastery Map')!
@@ -541,6 +542,10 @@ describe('ClassHub approved Overview', () => {
     const sources = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Sources')!
     await act(async () => sources.click())
     expect(workspaceSurface.querySelector('input[placeholder="Search exact words across transcript and sources"]')).toBeTruthy()
+    const fullScreen = [...container.querySelectorAll<HTMLButtonElement>('.lecture-saved-actions button')].find((button) => button.textContent === 'Open full screen')!
+    await act(async () => fullScreen.click())
+    expect(document.body.querySelector('[role="dialog"] [aria-label="Lecture workspace views"]')).toBeTruthy()
+
   })
 
   it('keeps the transcript-first journal on writing and general class overviews', async () => {
@@ -560,9 +565,11 @@ describe('ClassHub approved Overview', () => {
     })
 
     expect(container.textContent).toContain('Class journal')
-    expect(container.textContent).toContain('Add source')
-    expect(container.textContent).toContain('Add materials')
-    expect(container.textContent).toContain('Guide + Mastery')
+    expect(container.textContent).toContain('Add your first lecture to start the journal')
+    expect(container.querySelector('.lecture-overview-composition')).toBeNull()
+    const addLecture = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Add today’s lecture')!
+    await act(async () => addLecture.click())
+    expect(document.body.textContent).toContain('Add the transcript')
   })
 
   it('retires the legacy Create study work action in favor of the lecture workspace', async () => {

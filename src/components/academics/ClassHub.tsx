@@ -53,6 +53,7 @@ import { generateStudyGuide, sourcesFor } from '@/lib/academics/generateStudyGui
 import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationIntake'
 import { LectureCapturePanel, type LectureDestination } from '@/components/academics/LectureCapturePanel'
 import { LectureRecordMenu } from '@/components/academics/LectureRecordMenu'
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { LecturePreview } from '@/components/academics/LecturePreview'
 import { AssignmentCreateDialog, AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
@@ -306,7 +307,7 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
 }
 
 function Overview({
-  course, workspace, data, topics, assignments, notes, onTab, onOpenExamPrep,
+  course, data, topics, assignments, notes, onTab, onOpenExamPrep,
 }: {
   course: Course
   workspace: ClassWorkspace
@@ -332,8 +333,6 @@ function Overview({
   const courseFiles = data.files.filter((file) => file.courseId === course.id && isPrimaryMaterial(file))
   const unfiledCount = courseFiles.filter((file) => !file.topicId && file.linkedTopicIds.length === 0).length
   const guideSuggestionCount = data.lectureNoteProposals.filter((proposal) => proposal.courseId === course.id && proposal.status === 'pending').length
-  const nextLectureNumber = chronologicalLectures.length + 1
-  const scheduleContext = [workspace.meetingTime, workspace.location].filter(Boolean).join(' · ')
   const examTopics = exam?.coveredTopicIds?.length ? topics.filter((topic) => exam.coveredTopicIds?.includes(topic.id)) : topics
   const examCovered = examTopics.filter((topic) => (topic.linkedFileIds?.length ?? 0) || topic.sourceNoteIds.length).length
   const recentStudyWork = notes.filter(isMaterialNote).filter((note) => note.type === 'study-guide' || note.type === 'lecture').slice(0, 3)
@@ -363,52 +362,29 @@ function Overview({
 
   return (
     <div className="class-hub-overview grid grid-cols-12 gap-4">
-      {/* Visual provenance: mockup-lab/01-academics/academics-class-hub.html,
-          Variant A, view=overview. Geometry and class names below map directly
-          to the approved journal-shell / journal-rail / journal-stage recipe. */}
-      <section className="lecture-overview-composition col-span-12" aria-labelledby="lecture-ledger-title">
-        <aside className="lecture-rail">
-          <div className="lecture-rail-heading">
-            <div><p className="lecture-ledger-kicker">Class journal</p><h2 id="lecture-ledger-title">Lecture evidence</h2></div>
-          </div>
-          <p className="lecture-rail-caption">{lectures.length ? `${lectures.length} ${lectures.length === 1 ? 'lecture' : 'lectures'} · newest first` : 'No lectures yet'}</p>
-          <div className="lecture-rail-list" tabIndex={0} aria-label="Lecture history">
-            {lectures.length ? [...chronologicalLectures].reverse().map((lecture) => {
-              const materialCount = data.files.filter((file) => file.lectureId === lecture.id && file.id !== lecture.transcriptFileId).length
-              const isActive = activeLecture?.id === lecture.id
-              return <LectureRecordMenu
-                key={lecture.id}
-                lecture={lecture}
-                onOpen={() => setSelectedLectureId(lecture.id)}
-                onOpenFullScreen={() => openLecture(lecture.id, 'overview')}
-                onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }}
-                rail
-              >
-                <button type="button" onClick={() => setSelectedLectureId(lecture.id)} className={cn('lecture-rail-entry', isActive && 'is-active')} aria-current={isActive ? 'true' : undefined}>
-                  <b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b>
-                  <span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'} · {lecture.transcriptFileId ? 'transcript saved' : 'no transcript'}{materialCount ? ` + ${materialCount} ${materialCount === 1 ? 'material' : 'materials'}` : ''}</span>
-                </button>
+      {/* Journal rows expand in place so sparse histories do not leave a vacant column. */}
+      <section className="lecture-journal col-span-12" aria-labelledby="lecture-ledger-title">
+        <div className="lecture-journal-heading">
+          <div><h2 id="lecture-ledger-title">Class journal</h2><p className="lecture-rail-caption">{lectures.length ? `${lectures.length} ${lectures.length === 1 ? 'lecture' : 'lectures'} · newest first` : 'Your lectures, sources, and study guides in one place.'}</p></div>
+          <Button size="sm" onClick={() => openLecture(undefined, 'transcript')}><Plus aria-hidden="true" /> Add today’s lecture</Button>
+        </div>
+        {lectures.length ? <Accordion type="single" collapsible value={selectedLectureId ?? ''} onValueChange={(value) => setSelectedLectureId(value || undefined)} className="lecture-journal-list" aria-label="Lecture history">
+          {[...chronologicalLectures].reverse().map((lecture) => {
+            const materialCount = data.files.filter((file) => file.lectureId === lecture.id && file.id !== lecture.transcriptFileId).length
+            const isActive = activeLecture?.id === lecture.id
+            return <AccordionItem key={lecture.id} value={lecture.id} className="lecture-journal-item">
+              <LectureRecordMenu lecture={lecture} onOpen={() => setSelectedLectureId(lecture.id)} onOpenFullScreen={() => openLecture(lecture.id, 'overview')} onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail>
+                <AccordionTrigger className={cn('lecture-rail-entry', isActive && 'is-active')}>
+                  <span className="lecture-journal-row-text"><b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'} · {lecture.transcriptFileId ? 'transcript saved' : 'no transcript'}{materialCount ? ` + ${materialCount} ${materialCount === 1 ? 'material' : 'materials'}` : ''}</span></span>
+                </AccordionTrigger>
               </LectureRecordMenu>
-            }) : <div className="lecture-ledger-empty"><span aria-hidden="true" /><p>Your first transcript starts the journal.</p></div>}
-          </div>
-          <button type="button" className="lecture-rail-add" onClick={() => openLecture(undefined, 'transcript')}><Plus aria-hidden="true" /> Add today’s lecture</button>
-        </aside>
-
-        <article className={cn('lecture-active-context', !activeLecture && 'lecture-capture-default')}>
-          {activeLecture ? <>
-            <div className="lecture-active-header">
-              <div><p className="lecture-ledger-kicker">Saved lecture</p><h2>{completedLectureTitle(lectureNumber(activeLecture.id), activeLecture)}</h2><p>{activeLecture.occurredOn ? fmtEventDate(activeLecture.occurredOn) : 'Date not set'}</p></div>
-              <div className="lecture-saved-actions"><Button size="sm" variant="ghost" onClick={() => setSelectedLectureId(undefined)}>Close</Button><Button size="sm" onClick={() => openLecture(activeLecture.id, 'overview')}>Open lecture</Button></div>
-            </div>
-            <LecturePreview lecture={activeLecture} sourceCount={activeLectureSources.length} />
-          </> : <>
-            <div className="lecture-active-header"><div><p className="lecture-ledger-kicker">{scheduleContext ? `Today · ${scheduleContext}` : 'Today'}</p><h2>Build a lecture page</h2></div><span className="lecture-number-pill">Lecture {nextLectureNumber}</span></div>
-            <div className="lecture-capture-steps" aria-label="Lecture import workflow"><div className="is-current"><b>1 · Add source</b><span>Transcript</span></div><div><b>2 · Add materials</b><span>Required</span></div><div><b>3 · Build page</b><span>Guide + Mastery</span></div></div>
-            <button type="button" className="lecture-transcript-drop" onClick={() => openLecture(undefined, 'transcript')}><b>Paste or upload a lecture source</b><span>PDF, DOCX, TXT, image, or clipboard text</span></button>
-            <div className="lecture-capture-actions"><Button size="sm" onClick={() => openLecture(undefined, 'transcript')}>Import lecture</Button></div>
-            <p className="lecture-journal-next"><b>Result:</b> one Study Guide from At a glance through full depth, plus a Mastery Map. Transcript and materials stay under Sources.</p>
-          </>}
-        </article>
+              <AccordionContent className="lecture-journal-detail">
+                <div className="lecture-saved-actions"><Button size="sm" variant="outline" onClick={() => openLecture(lecture.id, 'overview')}>{lecture.workspaceState === 'complete' ? 'Open full screen' : 'Open lecture'}</Button></div>
+                {lecture.workspaceState === 'complete' ? <div className="lecture-journal-workspace"><LectureCapturePanel key={lecture.id} courseId={course.id} course={course} data={data} initialLectureId={lecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={() => onTab('guide')} /></div> : <LecturePreview lecture={lecture} sourceCount={isActive ? activeLectureSources.length : 0} />}
+              </AccordionContent>
+            </AccordionItem>
+          })}
+        </Accordion> : <p className="lecture-journal-empty">Add your first lecture to start the journal. You can paste a transcript or upload your lecture files.</p>}
       </section>
 
       {/* Visual provenance: mockup-lab/01-academics/academics-class-hub.html,
