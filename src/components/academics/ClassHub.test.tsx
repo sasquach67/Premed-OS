@@ -446,9 +446,9 @@ describe('ClassHub approved Overview', () => {
     expect(controls?.className).toContain('focus-within:opacity-100')
     expect(card.textContent).not.toMatch(/Lecture \d+\s*·\s*Lecture \d+/)
     for (const [lectureId, expectedTitle] of [
-      ['lecture-actions', 'Lecture 1 · Cell signaling'],
-      ['lecture-actions-2', 'Lecture 2 · Autophagy quality control'],
-      ['lecture-actions-3', 'Lecture 3'],
+      ['lecture-actions', 'Lesson 1 — Cell signaling'],
+      ['lecture-actions-2', 'Lesson 2 — Autophagy quality control'],
+      ['lecture-actions-3', 'Lesson 2'],
     ]) {
       const record = container.querySelector<HTMLElement>(`[data-lecture-actions="${lectureId}"]`)!
       expect(record.className).toContain('grid-cols-[minmax(0,1fr)_1.75rem]')

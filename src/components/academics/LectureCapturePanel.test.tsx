@@ -144,7 +144,7 @@ describe('lecture import and workspace', () => {
     expect(container.querySelector('[aria-label="Lecture build summary"]')).toBeTruthy()
     expect(container.textContent).toContain('Ready to build')
     expect(container.querySelector('[aria-label="Lecture import 67% complete"]')).toBeTruthy()
-    expect(container.querySelector('[aria-label="Lecture build summary"] h4')?.textContent).toBe('Lecture 1 · Conditioning')
+    expect(container.querySelector('[aria-label="Lecture build summary"] h4')?.textContent).toBe('Lesson 1 — Conditioning')
     expect(container.textContent).toContain('2 sources')
     expect(container.textContent).toContain('2 readable passages')
     expect(container.textContent).toContain('Study Guide')

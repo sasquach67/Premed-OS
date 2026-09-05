@@ -89,11 +89,14 @@ export function conciseStudyGuideTitle(artifact: Pick<StudyGuideArtifact, 'secti
   const raw = titleSection?.blocks
     .flatMap((block) => [block.text?.content, ...(block.items?.map((item) => item.content) ?? [])])
     .find((value) => value?.trim())
+    // Older completed guides may omit TITLE. Reuse a provider-authored topic
+    // heading so they gain a descriptive label without rerunning generation.
+    ?? artifact.sections.find((section) => !/^(?:title|at a glance|overview|core concepts|must understand|must memorize|examples and applications|section[ _-]*\d+)$/i.test(section.title.trim()))?.title
   if (!raw) return undefined
   const cleaned = raw
     .replace(/^\s*#+\s*/, '')
     .replace(/^\s*title\s*:?\s*/i, '')
-    .replace(/^(?:\s*lecture\s*#?\d+\s*(?:[·:—–-]\s*)?)+/i, '')
+    .replace(/^(?:\s*(?:lesson|lecture)\s*#?\d+\s*(?:[·:—–-]\s*)?)+/i, '')
     .replace(/\b(?:auto[- ]generated|ai[- ]generated|generated)\b/gi, '')
     .replace(/\b(?:study guide|mastery map|transcript|script)\b/gi, '')
     .replace(/[|·:—–-]+\s*$/g, '')
@@ -152,6 +155,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
     chunkIds: prepared.chunkIds,
     request: [
       `Topic: ${label}. Action: generate one canonical study guide from the attached sources. Begin with AT A GLANCE, then preserve the full source-supported teaching depth in the detailed sections without repeating the opening.`,
+      'AI lecture naming: include a section with id "title" and title "TITLE", containing one cited text block with a concise 3–6 word title describing the central topic across the lecture. Do not echo the upload filename, lesson number, auto-generated transcript label, or "Study Guide". This title becomes the completed lecture name. Keep AT A GLANCE as the opening teaching section after this title metadata.',
       courseLensInstruction(courseLens),
       questionReferenceIds.length
         ? `Reference-question chunk IDs: ${questionReferenceIds.join(', ')}. Use their source-supported scenarios, representations, and reasoning moves as teaching examples where they clarify a concept. Explain the lesson without copying stems or answer choices, and never treat a distractor as fact.`

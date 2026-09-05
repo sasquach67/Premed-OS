@@ -65,7 +65,7 @@ import { readLocalBlob } from '@/lib/localBlobStore'
 import { readingDebt, READING_LIST_STATE_COPY, recurringFeedbackThemes } from '@/lib/academics/writingEvidence'
 import { normalizeMeetingDays } from '@/lib/academics/meetingSchedule'
 import { QuestionBankPdfButton } from '@/components/academics/QuestionBankPdfButton'
-import { lectureDisplayTitle } from '@/lib/academics/lectureLabels'
+import { completedLectureTitle } from '@/lib/academics/lectureLabels'
 import {
   acceptGuideProposal, buildSyllabusGuideProposals, dismissGuideProposal, editGuideProposal,
   ensureSyllabusGuideProposals, guideProposalsForCourse, isGuideSourceValid,
@@ -389,7 +389,7 @@ function Overview({
                 rail
               >
                 <button type="button" onClick={() => setSelectedLectureId(lecture.id)} className={cn('lecture-rail-entry', isActive && 'is-active')} aria-current={isActive ? 'true' : undefined}>
-                  <b>{lectureDisplayTitle(lectureNumber(lecture.id), lecture.title, lecture.aiTitle)}</b>
+                  <b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b>
                   <span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'} · {lecture.transcriptFileId ? 'transcript saved' : 'no transcript'}{materialCount ? ` + ${materialCount} ${materialCount === 1 ? 'material' : 'materials'}` : ''}</span>
                 </button>
               </LectureRecordMenu>
@@ -401,7 +401,7 @@ function Overview({
         <article className={cn('lecture-active-context', !activeLecture && 'lecture-capture-default')}>
           {activeLecture ? <>
             <div className="lecture-active-header">
-              <div><p className="lecture-ledger-kicker">Saved lecture</p><h2>{lectureDisplayTitle(lectureNumber(activeLecture.id), activeLecture.title, activeLecture.aiTitle)}</h2><p>{activeLecture.occurredOn ? fmtEventDate(activeLecture.occurredOn) : 'Date not set'}</p></div>
+              <div><p className="lecture-ledger-kicker">Saved lecture</p><h2>{completedLectureTitle(lectureNumber(activeLecture.id), activeLecture)}</h2><p>{activeLecture.occurredOn ? fmtEventDate(activeLecture.occurredOn) : 'Date not set'}</p></div>
               <div className="lecture-saved-actions"><Button size="sm" variant="ghost" onClick={() => setSelectedLectureId(undefined)}>Close</Button><Button size="sm" onClick={() => openLecture(activeLecture.id, 'overview')}>Open full screen</Button></div>
             </div>
             {activeLecture.workspaceState === 'complete'
