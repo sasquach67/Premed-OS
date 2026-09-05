@@ -100,7 +100,7 @@ export function ReviewItemPage() {
       />
 
       <Card className="overflow-hidden">
-        <CardHeader className="border-b border-border bg-muted/45">
+        <CardHeader className="border-b border-border bg-muted">
           <CardTitle className="flex items-center gap-2"><Users className="size-5 text-primary" /> {candidate.left.label} and {candidate.right.label}</CardTitle>
           <p className="text-sm text-muted-foreground">{candidate.why}</p>
         </CardHeader>
@@ -118,7 +118,7 @@ export function ReviewItemPage() {
           )}
 
           {!!candidate.differingFields.length && (
-            <p className="rounded-xl border border-border bg-muted/35 px-4 py-3 text-sm font-semibold text-muted-foreground">
+            <p className="rounded-xl border border-border bg-muted px-4 py-3 text-sm font-semibold text-muted-foreground">
               Fields to compare: {candidate.differingFields.join(', ')}
             </p>
           )}

@@ -509,7 +509,15 @@ export function AuthPage() {
               </div>
 
               <div className="pl-bd" style={{ gap: 13 }}>
-                <div className="pl-auth-intent" role="tablist" aria-label="Choose account action">
+                <div className="pl-auth-intent" role="tablist" aria-label="Choose account action" onKeyDown={(event) => {
+                  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+                  event.preventDefault()
+                  const tabs = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
+                  const current = tabs.indexOf(document.activeElement as HTMLButtonElement)
+                  const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length
+                  tabs[next]?.click()
+                  tabs[next]?.focus()
+                }}>
                   <button
                     id="auth-sign-in-tab"
                     type="button"

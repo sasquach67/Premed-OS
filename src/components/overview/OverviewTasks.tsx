@@ -400,7 +400,7 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
             <p className="text-xs text-muted-foreground">Add any pages, documents, folders, or directories you need to finish it.</p>
           </div>
 
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-muted/35 px-3 py-2.5">
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2.5">
             <Checkbox checked={important} onCheckedChange={(checked) => setImportant(checked === true)} aria-label="Mark task important" />
             <Flag className="size-4 text-warning" />
             <span className="text-sm font-bold">Mark as important</span>

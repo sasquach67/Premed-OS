@@ -1,3 +1,4 @@
+import { preferredScrollBehavior } from '@/lib/scroll'
 import {
   Archive,
   Clock3,
@@ -8,7 +9,7 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { CenterPeek, type RecordOpenMode } from '@/components/common/CenterPeek'
 import { MascotNote } from '@/components/common/MascotNote'
 import { useToast } from '@/components/common/useToast'
@@ -49,11 +50,11 @@ export function QuickAccess() {
         )}
         <button
           type="button"
-          onClick={() => document.getElementById('quick-capture')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          onClick={() => document.getElementById('quick-capture')?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' })}
           className="group flex w-full items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:bg-muted/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground"><Lightbulb className="size-4" /></span>
-          <span><span className="block text-sm font-extrabold">Capture a thought</span><span className="block text-xs text-muted-foreground">Saves directly to Story Bank</span></span>
+          <span><span className="block text-sm font-extrabold">Capture a thought</span><span className="block text-xs text-muted-foreground">Saved in Activity & capture below</span></span>
         </button>
       </CardContent>
     </Card>
@@ -66,8 +67,7 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} MB`
 }
 
-function currentForTarget(target: keyof Goals, goals: Goals) {
-  const state = useStore.getState()
+function currentForTarget(target: keyof Goals, goals: Goals, state: Pick<import('@/lib/types').AppData, 'courses' | 'mcat' | 'experiences' | 'experienceHourEntries'>) {
   if (target === 'gpaTarget') return gpaStats(state.courses).cum
   if (target === 'mcatTarget') {
     const latest = [...state.mcat.attempts]
@@ -104,6 +104,10 @@ function standingTargetUnit(target: keyof Goals): string {
 }
 
 export function QuarterlyGoalsPanel() {
+  const courses = useStore(s => s.courses)
+  const mcat = useStore(s => s.mcat)
+  const experiences = useStore(s => s.experiences)
+  const experienceHourEntries = useStore(s => s.experienceHourEntries)
   const goals = useStore((state) => state.goals)
   const quarterlyGoals = useStore((state) => state.quarterlyGoals)
   const patchItem = useStore((state) => state.patchItem)
@@ -167,7 +171,7 @@ export function QuarterlyGoalsPanel() {
             const kind = normalizedGoalKind(goal)
             const target = goal.standingTarget
             const targetValue = target ? goals[target] : 0
-            const current = target ? currentForTarget(target, goals) : 0
+            const current = target ? currentForTarget(target, goals, { courses, mcat, experiences, experienceHourEntries }) : 0
             const periodHasMeasurement = kind === 'period' && goal.currentValue != null && Boolean(goal.targetValue && goal.targetValue > 0)
             const cumulativeHasMeasurement = kind === 'cumulative' && Boolean(target && targetValue > 0 && current > 0)
             const progress = periodHasMeasurement
@@ -461,7 +465,7 @@ export function ActivityAndCapture() {
     <Card id="quick-capture" className="h-full scroll-mt-24" role="region" aria-labelledby="activity-capture-heading">
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle id="activity-capture-heading">Recent activity + capture</CardTitle>
-        <Button asChild size="sm" variant="ghost"><Link to="/essays">Open Story Bank</Link></Button>
+        <span className="text-xs text-muted-foreground">Story Bank coming soon</span>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="space-y-1">
@@ -472,7 +476,7 @@ export function ActivityAndCapture() {
               title="No recent activity yet"
               actions={<Button type="button" size="sm" onClick={() => document.getElementById('overview-capture')?.focus()}>Capture something</Button>}
             >
-              Add a thought below and it will appear in Story Bank immediately.
+              Add a thought below and find it here in recent activity.
             </MascotNote>
           )}
           {activity.map((entry) => {
@@ -506,7 +510,7 @@ export function ActivityAndCapture() {
         <form onSubmit={submit} className="space-y-2 border-t border-border pt-3">
           <div className="flex items-center justify-between gap-2">
             <label htmlFor="overview-capture" className="flex items-center gap-2 text-sm font-extrabold"><Lightbulb className="size-4 text-primary" />Quick Capture</label>
-            <Badge variant="muted">Story Bank</Badge>
+            <Badge variant="muted">Local capture</Badge>
           </div>
           <div className="flex items-center gap-1" role="tablist" aria-label="Capture type">
             <Button type="button" size="sm" role="tab" aria-selected={captureKind === 'thought'} variant={captureKind === 'thought' ? 'secondary' : 'ghost'} onClick={() => { setCaptureKind('thought'); setError(null); setSaved(null) }}>Thought</Button>
@@ -516,7 +520,7 @@ export function ActivityAndCapture() {
           {captureKind === 'thought'
             ? <Textarea id="overview-capture" value={value} onChange={(event) => { setValue(event.target.value); setError(null) }} rows={2} placeholder="Type or paste a thought…" />
             : captureKind === 'link'
-              ? <><Input id="overview-capture-link" aria-label="Link to save in Story Bank" value={url} onChange={(event) => { setUrl(event.target.value); setError(null) }} placeholder="https://…" /><Input aria-label="Optional note about this link" value={value} onChange={(event) => setValue(event.target.value)} placeholder="Optional note" /></>
+              ? <><Input id="overview-capture-link" aria-label="Link to capture" value={url} onChange={(event) => { setUrl(event.target.value); setError(null) }} placeholder="https://…" /><Input aria-label="Optional note about this link" value={value} onChange={(event) => setValue(event.target.value)} placeholder="Optional note" /></>
               : <div className="space-y-2 rounded-lg border border-border bg-muted p-2.5">
                 <input
                   ref={fileInputRef}
@@ -533,14 +537,14 @@ export function ActivityAndCapture() {
                   <Button id="overview-capture-file-choose" type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}><FileUp className="size-3.5" />{selectedFile ? 'Choose another file' : 'Choose file'}</Button>
                   {selectedFile
                     ? <span className="min-w-0 flex-1 truncate text-xs font-bold" aria-live="polite" title={selectedFile.name}>{selectedFile.name} · {formatFileSize(selectedFile.size)}</span>
-                    : <span className="text-xs font-semibold text-muted-foreground">Select a file to save to Story Bank.</span>}
+                    : <span className="text-xs font-semibold text-muted-foreground">Select a file to keep in Activity & capture.</span>}
                   {selectedFile && <Button type="button" size="icon" variant="ghost" onClick={clearSelectedFile} aria-label={`Remove ${selectedFile.name}`} title="Remove selected file"><X className="size-3.5" /></Button>}
                 </div>
                 <Input aria-label="Optional note about this file" value={value} onChange={(event) => setValue(event.target.value)} placeholder="Optional note" />
                 <p className="text-[11px] font-semibold text-muted-foreground">File bytes stay on this device and are not included in JSON backup or restore.</p>
               </div>}
           {error && <p role="alert" className="border-l-2 border-destructive pl-2 text-xs font-semibold text-destructive">{error} <Button type="button" size="sm" variant="link" onClick={() => document.getElementById(captureKind === 'link' ? 'overview-capture-link' : captureKind === 'file' ? 'overview-capture-file-choose' : 'overview-capture')?.focus()}>Retry</Button></p>}
-          {saved && <p role="status" className="rounded-lg border border-success/30 bg-success/10 px-2.5 py-2 text-xs font-bold text-[color-mix(in_srgb,var(--success)_55%,var(--foreground))]">{saved === 'file' ? 'Saved file to Story Bank.' : 'Saved to Story Bank.'} <Link className="underline underline-offset-2" to="/essays">Open it</Link></p>}
+          {saved && <p role="status" className="rounded-lg border border-success/30 bg-success/10 px-2.5 py-2 text-xs font-bold text-[color-mix(in_srgb,var(--success)_55%,var(--foreground))]">{saved === 'file' ? 'File saved in Activity & capture.' : 'Saved in Activity & capture.'} <span>Find it in recent activity above.</span></p>}
           {captureKind !== 'file' && <p className="text-[11px] font-semibold text-muted-foreground">Atlas connection: reserved for a later phase.</p>}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <label htmlFor="overview-capture-local" className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground">

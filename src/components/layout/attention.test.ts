@@ -108,7 +108,9 @@ describe('attention model is unified', () => {
       startDate: '2026-06-01', endDate: '2026-05-01', // invalid → blocking
     }]
 
+    data.courses = [{ id: 'bad-course', term: 'Fall 2026', code: 'BIOL 103', title: 'Biology', credits: 0, grade: '', bcpm: true, status: 'completed', inResidence: true, satisfies: [], order: 0 }]
     const items = buildAttention(data)
+    expect(items.some(item => item.route === '/clinical')).toBe(false)
     const sources = new Set(items.map((item) => item.source))
     expect(sources).toEqual(new Set(['deadline', 'data-health', 'system']))
     // blocking first, suggested last — never interleaved

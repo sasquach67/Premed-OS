@@ -22,6 +22,9 @@ export interface RouteDef {
 }
 
 export const ROUTES: RouteDef[] = [
+  { id: 'onboarding', label: 'Setup', group: 'Account', icon: Settings, tagline: '', nav: false },
+  { id: 'upgrade', label: 'Upgrade', group: 'Account', icon: Settings, tagline: '', nav: false },
+  { id: 'founder', label: 'Founder control', group: 'Account', icon: Settings, tagline: '', nav: false },
   { id: 'home', label: 'Overview', group: 'Home', icon: Home, tagline: '' },
   { id: 'northstar', label: 'Ultimate Guide', group: 'Home', icon: Compass, tagline: 'The big-picture roadmap to med school.', nav: false },
   { id: 'academics', label: 'Academics', group: 'Foundation', icon: GraduationCap, tagline: 'AMCAS GPA engine + course planning.' },

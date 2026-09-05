@@ -1,3 +1,4 @@
+import { preferredScrollBehavior } from '@/lib/scroll'
 /* ============================================================
    PublicNav — three floating islands. ONE component, all public routes.
 
@@ -76,7 +77,7 @@ export function PublicNav() {
     (event: React.MouseEvent) => {
       event.preventDefault()
       const scroll = () =>
-        document.getElementById('features')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        document.getElementById('features')?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' })
       if (pathname === '/' || pathname === '/landing') scroll()
       // Landing has to mount before the section exists to scroll to.
       else navigate('/landing', { state: { scrollTo: 'features' } })

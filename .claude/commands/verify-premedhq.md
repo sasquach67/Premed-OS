@@ -14,4 +14,9 @@ state:
    other than Baloo 2 / Nunito, `any` types.
 4. Confirm any localStorage schema change has a versioned migration and
    old data loads losslessly.
-5. Report a short pass/fail summary per check. Do NOT auto-push.
+5. For changed panel, row, or field surfaces, compare computed background
+   colors in light and dark themes with the approved mockup and shared
+   visual recipe. Inner surfaces use solid `var(--muted)` when prescribed;
+   preserve deliberate hero glass and hover tints. Record the measured
+   values and reference rule, not just the class names.
+6. Report a short pass/fail summary per check. Do NOT auto-push.

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { LogOut, X } from 'lucide-react'
 import { AnimatePresence, m, useReducedMotion } from 'motion/react'
@@ -14,7 +14,7 @@ import { QuickAddDialog } from './QuickAddDialog'
 import { HelpFeedbackLauncher } from './HelpFeedbackLauncher'
 import { MOTION_TRANSITION } from '@/lib/motion'
 import { crossfade } from '@/lib/motion'
-import { isTypingTarget } from '@/lib/keyboard'
+import { isTypingTarget, isModalOpen } from '@/lib/keyboard'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -43,6 +43,8 @@ export function AppShell() {
   const [signOutError, setSignOutError] = useState('')
   const reduceMotion = useReducedMotion()
   const location = useLocation()
+  const mainRef = useRef<HTMLElement>(null)
+  useLayoutEffect(() => { mainRef.current?.scrollTo?.({ top: 0, left: 0, behavior: 'instant' }) }, [location.pathname])
   const navigate = useNavigate()
   useTheme()
   useBackup() // wires daily-on-open check + debounced auto-backup
@@ -77,10 +79,9 @@ export function AppShell() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isTypingTarget(event.target)) return
+      if (event.isComposing || event.defaultPrevented || isTypingTarget(event.target) || isModalOpen()) return
       const commandToggle = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b'
-      const bracketToggle = !event.metaKey && !event.ctrlKey && !event.altKey && event.key === '['
-      if (commandToggle || bracketToggle) {
+      if (commandToggle) {
         event.preventDefault()
         toggleDesktopSidebarLock()
       }
@@ -92,7 +93,7 @@ export function AppShell() {
   return (
     <TooltipProvider delayDuration={200}>
       <ToastProvider>
-      <ShellActionsProvider onRequestSignOut={requestSignOut}>
+      <ShellActionsProvider onRequestSignOut={requestSignOut} onToggleSidebar={toggleDesktopSidebarLock}>
       <div className="flex h-svh overflow-hidden">
         <m.aside
           className="fixed inset-y-0 left-0 z-40 hidden w-[15.625rem] lg:block"
@@ -134,7 +135,7 @@ export function AppShell() {
         {/* main column */}
         <div className={`flex min-w-0 flex-1 flex-col transition-[padding] duration-200 ${desktopSidebarLocked ? 'lg:pl-[15.625rem]' : 'lg:pl-[4.25rem]'}`}>
           <Topbar onMenu={() => setMobileOpen(true)} onShowDesktopSidebar={toggleDesktopSidebarLock} desktopSidebarHidden={!desktopSidebarVisible} />
-          <main data-app-scroll-container className="relative flex-1 overflow-y-auto">
+          <main ref={mainRef} data-app-scroll-container className="relative flex-1 overflow-y-auto">
             <div className="mx-auto w-full max-w-[84rem] px-4 py-6 md:px-8 md:py-8">
               <AnimatePresence mode="wait" initial={false}>
                 <m.div

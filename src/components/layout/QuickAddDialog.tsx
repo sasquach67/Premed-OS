@@ -1,3 +1,4 @@
+import { isQuickAddAvailable } from '@/app/availability'
 import { useMemo, useState, type FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -64,8 +65,14 @@ export function QuickAddDialog() {
   const [detail, setDetail] = useState('')
   const [date, setDate] = useState('')
   const [amount, setAmount] = useState('')
+  const [courseId, setCourseId] = useState('')
+  const classes = data.academics.classCenter.workspaces.flatMap(workspace => {
+    const course = data.courses.find(course => course.id === workspace.courseId && !course.deletedAt)
+    return course ? [course] : []
+  })
   const [category, setCategory] = useState<ExperienceCategory>('clinical')
-  const activeKind = choosing ? kind : (kind ?? quickAddKind ?? contextKind(location.pathname))
+  const requestedKind = choosing ? kind : (kind ?? quickAddKind ?? contextKind(location.pathname))
+  const activeKind = requestedKind && isQuickAddAvailable(requestedKind) ? requestedKind : undefined
   const activeCategory = activeKind === 'experience' ? categoryForPath(location.pathname) : category
 
   const route = useMemo(() => ({
@@ -74,7 +81,7 @@ export function QuickAddDialog() {
   })[activeKind ?? 'task'], [activeKind, category])
 
   function reset() {
-    setTitle(''); setDetail(''); setDate(''); setAmount(''); setKind(undefined); setChoosing(false)
+    setCourseId(''); setTitle(''); setDetail(''); setDate(''); setAmount(''); setKind(undefined); setChoosing(false)
   }
 
   function created(label: string, recoveryId?: string, onUndo?: () => void, openRoute = route) {
@@ -89,7 +96,7 @@ export function QuickAddDialog() {
 
   function submit(event: FormEvent) {
     event.preventDefault()
-    if (!activeKind || !title.trim()) return
+    if (!activeKind || !title.trim() || (activeKind === 'assignment' && !classes.some(course => course.id === courseId))) return
     const id = uid()
     const beforeRecovery = data.meta.recoveryStack[0]?.id
     const order = (key: 'tasks' | 'courses' | 'experiences' | 'schools' | 'stories' | 'notePages') => data[key].length
@@ -106,8 +113,7 @@ export function QuickAddDialog() {
     } else if (activeKind === 'note') {
       addItem('notePages', { id, title: title.trim(), body: detail, pillar: location.pathname.split('/').filter(Boolean)[0] || 'home', updatedAt: Date.now(), order: order('notePages') })
     } else if (activeKind === 'assignment') {
-      const courseId = data.academics.classCenter.workspaces[0]?.courseId
-      const row = { id, courseId: courseId ?? '', title: title.trim(), type: 'homework' as const, dueDate: date || undefined, status: 'not-started' as const, linkedTopicIds: [], linkedFileIds: [], notes: detail, createdAt: Date.now(), updatedAt: Date.now(), order: data.academics.classCenter.assignments.length }
+      const row = { id, courseId, title: title.trim(), type: 'homework' as const, dueDate: date || undefined, status: 'not-started' as const, linkedTopicIds: [], linkedFileIds: [], notes: detail, createdAt: Date.now(), updatedAt: Date.now(), order: data.academics.classCenter.assignments.length }
       update((draft) => { draft.academics.classCenter.assignments.push(row) })
       created('Assignment', undefined, () => update((draft) => { draft.academics.classCenter.assignments = draft.academics.classCenter.assignments.filter((item) => item.id !== id) }))
     } else if (activeKind === 'mistake') {
@@ -132,7 +138,7 @@ export function QuickAddDialog() {
           </DialogHeader>
           {!activeKind ? (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {TYPES.map(([value, label, Icon]) => (
+              {TYPES.filter(([value]) => isQuickAddAvailable(value)).map(([value, label, Icon]) => (
                 <button key={value} type="button" onClick={() => { setKind(value); setChoosing(false) }} className="flex min-h-20 flex-col items-start justify-between rounded-xl border border-border bg-card p-3 text-left text-sm font-bold hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                   <Icon className="size-4 text-primary" /> {label}
                 </button>
@@ -140,10 +146,18 @@ export function QuickAddDialog() {
             </div>
           ) : (
             <form onSubmit={submit} className="space-y-4">
-              <div className="flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2">
+              <div className="flex items-center justify-between rounded-xl bg-muted px-3 py-2">
                 <span className="text-sm font-bold">{TYPES.find(([value]) => value === activeKind)?.[1]}</span>
                 <Button type="button" variant="ghost" size="sm" onClick={() => { setKind(undefined); setChoosing(true) }}>Change type</Button>
               </div>
+              {activeKind === 'assignment' && <div className="space-y-1.5">
+                <Label htmlFor="quick-course">Class</Label>
+                <Select value={courseId} onValueChange={setCourseId}>
+                  <SelectTrigger id="quick-course" aria-label="Assignment class"><SelectValue placeholder="Choose a class" /></SelectTrigger>
+                  <SelectContent>{classes.map(course => <SelectItem key={course.id} value={course.id}>{course.code} · {course.title}</SelectItem>)}</SelectContent>
+                </Select>
+                {!classes.length && <p className="text-sm text-muted-foreground">Add a class in Academics before creating an assignment. <Button type="button" variant="link" onClick={() => { closeQuickAdd(); reset(); navigate('/academics') }}>Open Academics</Button></p>}
+              </div>}
               <div className="space-y-1.5"><Label htmlFor="quick-title">{activeKind === 'course' ? 'Course code' : activeKind === 'hours' ? 'Organization' : activeKind === 'mistake' ? 'Topic' : 'Title'}</Label><Input id="quick-title" autoFocus value={title} onChange={(event) => setTitle(event.target.value)} required /></div>
               {(activeKind === 'task' || activeKind === 'course' || activeKind === 'hours' || activeKind === 'school' || activeKind === 'story' || activeKind === 'note' || activeKind === 'assignment' || activeKind === 'mistake') && (
                 <div className="space-y-1.5"><Label htmlFor="quick-detail">{activeKind === 'course' ? 'Course name' : activeKind === 'mistake' ? 'Section' : activeKind === 'hours' ? 'Role' : activeKind === 'note' ? 'Note' : 'Details'}</Label>{activeKind === 'note' ? <Textarea id="quick-detail" value={detail} onChange={(event) => setDetail(event.target.value)} /> : <Input id="quick-detail" value={detail} onChange={(event) => setDetail(event.target.value)} />}</div>
@@ -151,7 +165,7 @@ export function QuickAddDialog() {
               {(activeKind === 'task' || activeKind === 'assignment' || activeKind === 'hours' || activeKind === 'mistake') && <div className="space-y-1.5"><Label>{activeKind === 'hours' ? 'Log date' : activeKind === 'mistake' ? 'Date noticed' : 'Due date'}</Label><DateField value={date} onChange={setDate} ariaLabel={activeKind === 'hours' ? 'Log date' : activeKind === 'mistake' ? 'Date noticed' : 'Due date'} /></div>}
               {(activeKind === 'course' || activeKind === 'hours') && <div className="space-y-1.5"><Label htmlFor="quick-amount">{activeKind === 'course' ? 'Credits' : 'Hours'}</Label><Input id="quick-amount" type="number" min="0" step="0.25" value={amount} onChange={(event) => setAmount(event.target.value)} /></div>}
               {activeKind === 'hours' && <div className="space-y-1.5"><Label>Experience type</Label><Select value={category} onValueChange={(value) => setCategory(value as ExperienceCategory)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{['clinical', 'volunteering', 'shadowing', 'research', 'leadership'].map((value) => <SelectItem key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</SelectItem>)}</SelectContent></Select></div>}
-              <DialogFooter><Button type="button" variant="outline" onClick={() => { closeQuickAdd(); reset() }}>Cancel</Button><Button type="submit">Create</Button></DialogFooter>
+              <DialogFooter><Button type="button" variant="outline" onClick={() => { closeQuickAdd(); reset() }}>Cancel</Button><Button type="submit" disabled={!title.trim() || (activeKind === 'assignment' && !classes.some(course => course.id === courseId))}>Create</Button></DialogFooter>
             </form>
           )}
         </DialogContent>

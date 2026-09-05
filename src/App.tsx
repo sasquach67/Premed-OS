@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { RootRoute, LandingRoute } from '@/components/public/RootRoute'
+import { ConfirmProvider } from '@/components/common/ConfirmProvider'
 import { MergeGate } from '@/components/public/MergeGate'
 
 /* Route-level code splitting: each page loads on demand, so the initial
@@ -47,6 +48,7 @@ function PageFallback() {
 function App() {
   return (
     <HashRouter>
+      <ConfirmProvider>
       <MergeGate />
       <Suspense fallback={<PageFallback />}>
         <Routes>
@@ -103,6 +105,7 @@ function App() {
           </Route>
         </Routes>
       </Suspense>
+      </ConfirmProvider>
     </HashRouter>
   )
 }

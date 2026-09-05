@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { AlertCircle, CheckCircle2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { uid } from '@/lib/id'
@@ -26,19 +26,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const toast = useCallback((input: ToastInput) => {
     const id = uid()
-    setToasts((current) => [...current.slice(-3), { ...input, id }])
-    window.setTimeout(() => dismiss(id), input.duration ?? 5000)
+    setToasts((current) => [...current, { ...input, id }])
     return id
-  }, [dismiss])
+  }, [])
 
   const value = useMemo(() => ({ toast }), [toast])
 
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-[80] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2" aria-live="polite" aria-atomic="false">
+      <div className="pointer-events-none fixed bottom-20 right-4 z-[80] flex max-h-[80svh] w-[min(24rem,calc(100vw-2rem))] flex-col gap-2 overflow-y-auto" aria-live="polite" aria-atomic="false">
         {toasts.map((entry) => (
-          <div key={entry.id} className="pointer-events-auto rounded-2xl border border-border bg-card p-3 shadow-xl motion-safe:animate-in motion-safe:slide-in-from-bottom-2">
+          <ToastSurface key={entry.id} entry={entry} dismiss={dismiss} className="pointer-events-auto rounded-2xl border border-border bg-card p-3 shadow-xl motion-safe:animate-in motion-safe:slide-in-from-bottom-2">
             <div className="flex items-start gap-3">
               {entry.tone === 'error'
                 ? <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true" />
@@ -57,9 +56,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <X className="size-4" />
               </button>
             </div>
-          </div>
+          </ToastSurface>
         ))}
       </div>
     </ToastContext.Provider>
   )
+}
+
+function ToastSurface({ entry, dismiss, children, className }: { entry: ToastEntry; dismiss: (id: string) => void; children: ReactNode; className: string }) {
+  const [hovered, setHovered] = useState(false)
+  const [focused, setFocused] = useState(false)
+  useEffect(() => {
+    if (hovered || focused || entry.onUndo || entry.onOpen) return
+    const timer = window.setTimeout(() => dismiss(entry.id), entry.duration ?? 5000)
+    return () => window.clearTimeout(timer)
+  }, [entry, dismiss, hovered, focused])
+  return <div className={className} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocusCapture={() => setFocused(true)} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false) }}>{children}</div>
 }

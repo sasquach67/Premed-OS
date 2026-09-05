@@ -71,6 +71,19 @@ describe('AuthPage account intent', () => {
     expect(container.querySelector<HTMLInputElement>('#auth-password')?.autocomplete).toBe('current-password')
   })
 
+  it('moves account intent with arrow keys and keeps focus on the selected tab', async () => {
+    await render()
+    const tabs = [...container.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
+    await act(async () => {
+      tabs[0].focus()
+      tabs[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))
+    })
+    expect(tabs[1].getAttribute('aria-selected')).toBe('true')
+    expect(document.activeElement).toBe(tabs[1])
+    await act(async () => tabs[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true })))
+    expect(document.activeElement).toBe(tabs[0])
+  })
+
   it('switches the complete screen hierarchy to account creation', async () => {
     await render()
 

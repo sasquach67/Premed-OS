@@ -24,7 +24,7 @@ export function Home() {
 
           <div className="lg:col-span-3 xl:col-span-4"><QuickAccess /></div>
           <div className="order-last lg:order-none lg:col-span-3 xl:col-span-4"><QuarterlyGoalsPanel /></div>
-          <div className="lg:col-span-3 xl:col-span-4"><ActivityAndCapture /></div>
+          <div className="lg:col-span-6 xl:col-span-4"><ActivityAndCapture /></div>
 
           <div className="order-last lg:col-span-6 xl:col-span-12"><OverviewRoadmap /></div>
         </EqualHeightGrid>

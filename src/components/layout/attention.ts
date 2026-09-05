@@ -1,3 +1,4 @@
+import { isRouteAvailable } from '@/app/availability'
 /* Part 5 — the unified attention model.
  *
  * ONE deterministic source, three feeds (shell §7.5): deadlines · data-health ·
@@ -160,6 +161,7 @@ export function buildAttention(data: AppData, extraFeeds: AttentionFeed[] = []):
   const now = Date.now()
   return [deadlinesFeed, dataHealthFeed, systemFeed, ...extraFeeds]
     .flatMap((feed) => feed(data))
+    .filter((item) => isRouteAvailable(item.route))
     .filter((item) => (data.settings.attentionSnoozedUntil[item.id] ?? 0) <= now)
     .sort((a, b) => SEVERITY_ORDER[a.priority] - SEVERITY_ORDER[b.priority])
 }

@@ -1,3 +1,4 @@
+import { useConfirm } from '@/components/common/useConfirm'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
@@ -34,6 +35,7 @@ import { supabase } from '@/lib/supabase'
 import { useShellActions } from '@/components/layout/shellActions'
 
 export function Settings() {
+  const confirm = useConfirm()
   const route = ROUTE_MAP.settings
   const settings = useStore((s) => s.settings)
   const update = useStore((s) => s.update)
@@ -82,7 +84,7 @@ export function Settings() {
   }
 
   async function deleteAiSources() {
-    if (!confirm('Delete every class-source chunk copied to your private Premed OS server workspace? Your local notes, files, and study history will stay intact.')) return
+    if (!(await confirm({ title: 'Delete server copies of class sources?', description: 'Local notes, files, and study history stay intact.', confirmLabel: 'Delete server copies', tone: 'danger' }))) return
     setDeletingAiSources(true)
     const result = await studyTools.deleteSources()
     setDeletingAiSources(false)
@@ -119,8 +121,8 @@ export function Settings() {
             {demoActive && (
               <Button
                 variant="outline"
-                onClick={() => {
-                  if (confirm('Reset only the demo namespace to its fresh relative-date state?')) {
+                onClick={async () => {
+                  if (await confirm({ title: 'Reset demo data?', description: 'Your personal workspace stays intact.', confirmLabel: 'Reset demo' })) {
                     resetToSeed()
                     setMsg('Demo data reset to a fresh state.')
                   }
@@ -191,7 +193,7 @@ export function Settings() {
               />
             </div>
 
-            <div className="rounded-xl border border-border bg-muted/25 px-3 py-2 text-xs text-muted-foreground">
+            <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
               Add this exact origin in Google Cloud → OAuth client → Authorized JavaScript origins:
               <code className="mt-1 block select-all rounded-md bg-card px-2 py-1 font-mono text-foreground">{origin}</code>
             </div>
@@ -228,6 +230,22 @@ export function Settings() {
         <CalendarIntegrationSection onMessage={setMsg} />
 
         <WeeklyCapacityCard />
+        <Card>
+          <CardHeader><CardTitle>Dismissed suggestions and reminders</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">Restore dismissed suggestions, muted rules, and snoozed reminders. Accepted suggestions stay accepted.</p>
+            <Button variant="outline" onClick={() => {
+              update(draft => {
+                for (const [id, entry] of Object.entries(draft.settings.recommendationState)) {
+                  if (entry.status === 'dismissed') delete draft.settings.recommendationState[id]
+                }
+                draft.settings.mutedRecommendationRules = {}
+                draft.settings.attentionSnoozedUntil = {}
+              })
+              setMsg('Dismissed suggestions and reminders restored.')
+            }}>Restore suggestions and reminders</Button>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><Palette className="size-4 text-primary" /> Preferences</CardTitle></CardHeader>
@@ -264,7 +282,7 @@ export function Settings() {
             </div>
 
             {settings.dismissedAlertKey && (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/35 px-3 py-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted px-3 py-2">
                 <span className="text-sm font-semibold">Due-soon task strip hidden</span>
                 <Button size="sm" variant="outline" onClick={() => update((d) => { d.settings.dismissedAlertKey = '' })}>Restore</Button>
               </div>
@@ -279,7 +297,7 @@ export function Settings() {
             <p className="text-sm text-muted-foreground">{demoActive ? 'Reset only the isolated demo namespace.' : 'Reset everything to an empty personal workspace. Export first if you want a copy.'}</p>
             <Button
               variant="destructive"
-              onClick={() => { if (confirm(demoActive ? 'Reset the demo namespace to a fresh state?' : 'Reset all data to an empty personal workspace? This cannot be undone.')) { resetToSeed(); setMsg(demoActive ? 'Demo data reset.' : 'Personal workspace reset.') } }}
+              onClick={async () => { if (await confirm({ title: demoActive ? 'Reset demo data?' : 'Erase this workspace?', description: 'This removes the records in this workspace. Export a backup first. There is no undo.', confirmLabel: demoActive ? 'Reset demo' : 'Erase this workspace', tone: 'danger', onExport: exportJson })) { resetToSeed(); setMsg(demoActive ? 'Demo data reset.' : 'Personal workspace reset.') } }}
             >
               <RotateCcw className="size-4" /> {demoActive ? 'Reset demo' : 'Reset workspace'}
             </Button>
@@ -388,6 +406,7 @@ function CloudSyncSection({ onMessage }: { onMessage: (msg: string) => void }) {
 }
 
 function AccountSecuritySection({ onMessage }: { onMessage: (msg: string) => void }) {
+  const confirm = useConfirm()
   const cloud = useCloudSync()
   const navigate = useNavigate()
   const [newEmail, setNewEmail] = useState('')
@@ -422,7 +441,7 @@ function AccountSecuritySection({ onMessage }: { onMessage: (msg: string) => voi
   }
 
   async function signOutEverywhere() {
-    if (!window.confirm('Sign out of Premed OS on every device? Your account data will stay saved.')) return
+    if (!(await confirm({ title: 'Sign out on every device?', description: 'Your account data stays saved.', confirmLabel: 'Sign out everywhere' }))) return
     setBusy('signout')
     const { error } = await client.auth.signOut({ scope: 'global' })
     setBusy(null)
@@ -510,7 +529,7 @@ function CalendarIntegrationSection({ onMessage }: { onMessage: (msg: string) =>
       </CardHeader>
       <CardContent className="grid gap-5 lg:grid-cols-[1fr_1fr]">
         <section className="space-y-3">
-          <div className="rounded-xl border border-border bg-muted/25 px-3 py-2 text-sm">
+          <div className="rounded-xl border border-border bg-muted px-3 py-2 text-sm">
             <p className="font-bold">{sync.connected ? `Connected${calendar.connectedAccount ? ` · ${calendar.connectedAccount}` : ''}` : calendar.enabled ? 'Reconnect needed' : 'Not connected'}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">Premed OS reads upcoming events from your primary calendar only. It cannot list other calendars or edit events.</p>
             {calendar.lastSyncedAt && <p className="mt-1 text-xs text-muted-foreground">Last synced {fmtTimeAgo(calendar.lastSyncedAt)}.</p>}
@@ -589,7 +608,7 @@ function CalendarIntegrationSection({ onMessage }: { onMessage: (msg: string) =>
             
           </div>
 
-          <div className="rounded-xl border border-border bg-muted/25 px-3 py-2 text-xs text-muted-foreground">
+          <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
             Selected calendar: <b className="text-foreground">Primary</b>. Other calendars are not requested or read.
           </div>
         </section>
@@ -600,7 +619,7 @@ function CalendarIntegrationSection({ onMessage }: { onMessage: (msg: string) =>
 
 function ToggleRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
   return (
-    <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-muted/20 px-3 py-2">
+    <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-muted px-3 py-2">
       <span className="text-sm font-bold">{label}</span>
       <Switch checked={checked} onCheckedChange={onChange} />
     </div>
@@ -628,7 +647,7 @@ function ArchiveSettingsSection({ highlight }: { highlight: boolean }) {
           <EmptyState icon={ArchiveIcon} title="Nothing archived yet" hint="Finished tasks and completed focus targets land here." />
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
-            <section className="rounded-xl border border-border bg-muted/20 p-3">
+            <section className="rounded-xl border border-border bg-muted p-3">
               <h3 className="mb-2 flex items-center gap-2 text-sm font-bold"><CheckCircle2 className="size-4 text-success" /> Finished tasks <span className="text-xs font-normal text-muted-foreground">({doneTasks.length})</span></h3>
               <div className="space-y-1.5">
                 {doneTasks.length === 0 && <p className="py-2 text-sm text-muted-foreground">No finished tasks.</p>}
@@ -645,7 +664,7 @@ function ArchiveSettingsSection({ highlight }: { highlight: boolean }) {
               </div>
             </section>
 
-            <section className="rounded-xl border border-border bg-muted/20 p-3">
+            <section className="rounded-xl border border-border bg-muted p-3">
               <h3 className="mb-2 flex items-center gap-2 text-sm font-bold"><CheckCircle2 className="size-4 text-success" /> Completed focus <span className="text-xs font-normal text-muted-foreground">({doneFocus.length})</span></h3>
               <div className="space-y-1.5">
                 {doneFocus.length === 0 && <p className="py-2 text-sm text-muted-foreground">No completed focus targets.</p>}
@@ -691,7 +710,7 @@ function PublicLayerReset() {
   const navigate = useNavigate()
   const [done, setDone] = useState(false)
   return (
-    <div className="space-y-2 rounded-lg border border-dashed bg-muted/40 p-3">
+    <div className="space-y-2 rounded-lg border border-dashed bg-muted p-3">
       <p className="text-xs font-semibold">Front door</p>
       <p className="text-xs text-muted-foreground">
         The landing page only greets first-time visitors. Reset it to see that flow again —
