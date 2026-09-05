@@ -136,7 +136,7 @@ export function AppShell() {
         <div className={`flex min-w-0 flex-1 flex-col transition-[padding] duration-200 ${desktopSidebarLocked ? 'lg:pl-[15.625rem]' : 'lg:pl-[4.25rem]'}`}>
           <Topbar onMenu={() => setMobileOpen(true)} onShowDesktopSidebar={toggleDesktopSidebarLock} desktopSidebarHidden={!desktopSidebarVisible} />
           <main ref={mainRef} data-app-scroll-container className="relative flex-1 overflow-y-auto">
-            <div className="mx-auto w-full max-w-[84rem] px-4 py-6 md:px-8 md:py-8">
+            <div className={/^\/academics\/classes\/[^/]+\/lectures\/[^/]+$/.test(location.pathname) ? "w-full" : "mx-auto w-full max-w-[84rem] px-4 py-6 md:px-8 md:py-8"}>
               <AnimatePresence mode="wait" initial={false}>
                 <m.div
                   key={location.pathname}

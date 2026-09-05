@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
 import { useStore } from '@/store/store'
 import { LectureCapturePanel } from '@/components/academics/LectureCapturePanel'
 import './LecturePage.css'
@@ -29,7 +28,8 @@ export function LecturePage() {
     scroller.scrollTop = 0
     const size = () => {
       // Use the actual shell height, including browser zoom and compact/mobile navigation.
-      const available = scroller.clientHeight - (element.offsetTop - scroller.offsetTop) - 16
+      const topInset = element.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop
+      const available = scroller.clientHeight - topInset
       element.style.height = `${Math.max(240, available)}px`
     }
     size()
@@ -42,7 +42,6 @@ export function LecturePage() {
   if (!course || (!lecture && lectureId !== 'new')) return <section className="space-y-4" aria-label="Lecture unavailable"><h1 className="font-display text-2xl font-bold">Lecture not found</h1><p>This lecture may have been deleted or isn’t available in this class.</p><Link to={back}>{course ? `Back to ${course.code} class journal` : 'Back to Class Center'}</Link></section>
 
   return <section ref={page} className="lecture-page" aria-label="Lecture page">
-    <div className="lecture-page-back"><Link to={back}><ArrowLeft className="size-4" aria-hidden="true" />{course.code} · Class journal</Link></div>
     <div className="lecture-page-body">
       <LectureCapturePanel key={lectureId} courseId={course.id} course={course} data={data}
         initialLectureId={lecture?.id} displayMode="page"

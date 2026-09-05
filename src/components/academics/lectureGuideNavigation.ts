@@ -1,7 +1,10 @@
 import { preferredScrollBehavior } from '@/lib/scroll'
 
 export function scrollGuideHeadingIntoReadingPane(heading: HTMLHeadingElement) {
-  const readingPane = heading.closest<HTMLElement>('[aria-label="Lecture reading area"]')
+  const article = heading.closest<HTMLElement>('[data-guide-scroll-container="true"]')
+  const readingPane = article && /auto|scroll/.test(getComputedStyle(article).overflowY)
+    ? article
+    : heading.closest<HTMLElement>('[aria-label="Lecture reading area"]')
   if (!readingPane) {
     heading.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' })
     heading.focus({ preventScroll: true })

@@ -397,8 +397,11 @@ describe('lecture import and workspace', () => {
     useStore.getState().replaceAll(seed)
     await render('demo-course-biol103-current', 'demo-lecture-biol103-2', undefined, 'page')
     const reading = container.querySelector<HTMLElement>('[aria-label="Lecture reading area"]')
-    const catalog = container.querySelector<HTMLElement>('[aria-label="Lecture catalog"]')
-    const lectureList = container.querySelector<HTMLElement>('[aria-label="Lecture list"]')
+    expect(container.querySelector('[aria-label="Lecture catalog"]')).toBeNull()
+    const switcher = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Switch lecture')!
+    await act(async () => switcher.click())
+    const catalog = document.body.querySelector<HTMLElement>('[aria-label="Lecture catalog"]')
+    const lectureList = document.body.querySelector<HTMLElement>('[aria-label="Lecture list"]')
     const header = container.querySelector<HTMLElement>('[aria-label="Lecture header"]')
     expect(reading).not.toBeNull()
     expect(reading?.getAttribute('tabindex')).toBe('0')

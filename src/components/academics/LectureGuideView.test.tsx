@@ -54,7 +54,7 @@ describe('lecture study guide reading navigation', () => {
     await act(async () => root.render(
       <div data-testid="shell-scroll-owner">
         <div className={kind === 'page' ? 'lecture-workspace-reading' : ''} role="region" aria-label="Lecture reading area" tabIndex={0}>
-          <GeneratedLectureGuideView lecture={lecture} guide={guide} brief={{} as NonNullable<LectureRecord['lectureBrief']>} chunks={chunks} files={[slides]} onOpenMastery={() => {}} />
+          <GeneratedLectureGuideView standalone={kind === 'page'} lecture={lecture} guide={guide} brief={{} as NonNullable<LectureRecord['lectureBrief']>} chunks={chunks} files={[slides]} onOpenMastery={() => {}} />
         </div>
       </div>,
     ))
@@ -86,6 +86,20 @@ describe('lecture study guide reading navigation', () => {
     await act(async () => target.click())
 
     expect(pane.scrollTo).toHaveBeenCalledWith({ top: 456, behavior: 'instant' })
+  })
+
+  it('scrolls the dedicated article instead of moving the bookmarks on desktop', async () => {
+    const { pane, heading } = await renderInReadingPane('page')
+    const article = container.querySelector<HTMLElement>('[data-guide-scroll-container]')!
+    article.style.overflowY = 'auto'
+    article.getBoundingClientRect = pane.getBoundingClientRect
+    article.scrollTop = 120
+    article.scrollTo = vi.fn()
+    const target = [...container.querySelectorAll<HTMLButtonElement>('nav button')].find(button => button.textContent === 'Apply it')!
+    await act(async () => target.click())
+    expect(article.scrollTo).toHaveBeenCalledWith({ top: 456, behavior: 'smooth' })
+    expect(pane.scrollTo).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(heading)
   })
 
   it('renders supported exam-application metadata without presenting it as an instructor prediction', async () => {

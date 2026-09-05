@@ -67,6 +67,22 @@ describe('Topbar attention status', () => {
     vi.useRealTimers()
   })
 
+  it('puts the class journal return link in the shell on lecture pages', async () => {
+    const course = useStore.getState().courses[0]
+    await act(async () => root.render(
+      <MemoryRouter initialEntries={[`/academics/classes/${course.id}/lectures/lesson-2`]}>
+        <ShellActionsProvider onRequestSignOut={() => undefined}>
+          <Topbar onMenu={() => undefined} />
+          <LocationProbe />
+        </ShellActionsProvider>
+      </MemoryRouter>,
+    ))
+    const link = container.querySelector<HTMLAnchorElement>('a[aria-label*="class journal"]')!
+    expect(link.getAttribute('href')).toBe(`/academics/classes/${course.id}?classTab=overview`)
+    await act(async () => link.click())
+    expect(container.querySelector('[aria-label="Current route"]')?.textContent).toBe(`/academics/classes/${course.id}`)
+  })
+
   it('opens the live Attention feed instead of navigating to the generic Tasks page', async () => {
     await act(async () => {
       root.render(

@@ -140,16 +140,19 @@ describe('LecturePage route lifecycle', () => {
     expect(location()).toBe(`/academics/classes/${courseId}/lectures/lecture-two`)
   })
 
-  it('returns to the owning class journal and can move forward to the lecture again', async () => {
+  it('sizes the reader from viewport geometry rather than mismatched offset parents', async () => {
+    Object.defineProperty(scroller, 'clientHeight', { configurable: true, value: 743 })
+    Object.defineProperty(scroller, 'offsetTop', { configurable: true, value: 56 })
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top: 56, bottom: 799, height: 743, left: 0, right: 1000, width: 1000, x: 0, y: 56, toJSON: () => ({}) })
     await render([`/academics/classes/${courseId}/lectures/lecture-one`])
-    const returnLink = container.querySelector<HTMLAnchorElement>('a[href*="classTab=overview"]')!
-    expect(returnLink.textContent).toContain('Class journal')
+    expect(container.querySelector<HTMLElement>('.lecture-page')?.style.height).toBe('743px')
+    rect.mockRestore()
+  })
 
-    await act(async () => returnLink.click())
-    expect(location()).toBe(`/academics/classes/${courseId}?classTab=overview`)
-    expect(container.textContent).toContain('Class journal route')
-    await act(async () => button('Browser back').click())
-    expect(location()).toBe(`/academics/classes/${courseId}/lectures/lecture-one`)
+  it('does not duplicate the shell journal breadcrumb in the reading page', async () => {
+    await render([`/academics/classes/${courseId}/lectures/lecture-one`])
+    expect(container.querySelector('.lecture-page-back')).toBeNull()
+    expect(container.querySelector('[aria-label="Lecture page"]')).toBeTruthy()
   })
 
   it.each([

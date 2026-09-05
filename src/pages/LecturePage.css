@@ -3,7 +3,7 @@
   flex-direction: column;
   min-height: 0;
   height: calc(100svh - 7.5rem);
-  max-height: calc(100svh - 7.5rem);
+  max-height: none;
 }
 
 .lecture-page-back {
@@ -28,9 +28,130 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--card);
+  background: var(--background);
+}
+
+/* A dedicated reader uses the full page; the journal retains its inline preview. */
+.lecture-workspace.lecture-workspace-standalone {
+  display: flex;
+  flex-direction: column;
+}
+
+.lecture-workspace-standalone > .lecture-workspace-main {
+  flex: 1;
+  background: var(--background);
+}
+
+.lecture-workspace-standalone .lecture-workspace-header {
+  background: var(--background);
+  padding: 16px 24px 0;
+}
+
+.lecture-workspace-standalone .lecture-workspace-actions > button,
+.lecture-workspace-standalone .lecture-workspace-actions > [data-slot] {
+  margin-right: 0;
+}
+
+.lecture-workspace-standalone .lecture-workspace-reading:has([data-reader-page]) {
+  padding: 0;
+}
+
+.lecture-study-guide[data-reader-page] {
+  max-width: none;
+}
+
+.lecture-study-guide[data-reader-page] > header {
+  display: none;
+}
+
+.lecture-study-guide[data-reader-page] .lecture-guide-layout {
+  margin-top: 0;
+  gap: 0;
+}
+
+.lecture-study-guide[data-reader-page] aside {
+  padding: 24px;
+}
+
+.lecture-study-guide-content {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.lecture-study-guide[data-reader-page] article {
+  padding: 24px;
+}
+
+.lecture-switcher .lecture-workspace-catalog {
+  flex: 1;
+  max-height: none;
+  border: 0;
+  background: transparent;
+}
+
+.lecture-switcher .lecture-workspace-catalog-list {
+  display: block;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.lecture-switcher .lecture-workspace-catalog-record {
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  margin-bottom: 8px;
+}
+
+@media (min-width: 768px) {
+  .lecture-workspace-standalone .lecture-workspace-reading:has([data-reader-page]) {
+    overflow: hidden;
+  }
+
+  .lecture-study-guide[data-reader-page],
+  .lecture-study-guide[data-reader-page] .lecture-guide-layout {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .lecture-study-guide[data-reader-page] .lecture-guide-layout {
+    grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .lecture-study-guide[data-reader-page] aside {
+    position: static;
+    min-height: 0;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+
+  .lecture-study-guide[data-reader-page] nav {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .lecture-study-guide[data-reader-page] nav > div {
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .lecture-study-guide[data-reader-page] .lecture-guide-nav-link {
+    width: 100%;
+  }
+
+  .lecture-study-guide[data-reader-page] article {
+    overflow-y: auto;
+    min-height: 0;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding: 24px clamp(24px, 3vw, 40px);
+  }
+
+  .lecture-study-guide[data-reader-page] article > * {
+    max-width: 75ch;
+  }
 }
 
 /* Import steps may use the page body's scroll. A completed workspace owns
@@ -115,7 +236,7 @@
 /* The guide reads like a marked-up course reader, not another dashboard. */
 .lecture-guide-heading {
   font-family: var(--font-sans);
-  font-style: italic;
+  font-style: normal;
   font-weight: 800;
   letter-spacing: -0.025em;
   line-height: 1.18;
@@ -140,6 +261,8 @@
 }
 
 .lecture-guide-nav-link {
+  font-weight: 800;
+  font-size: 14px;
   border-left: 2px solid transparent;
   border-radius: 0.4rem;
 }
@@ -199,7 +322,7 @@
 @media (max-width: 640px) {
   .lecture-page {
     height: calc(100svh - 6.5rem);
-    max-height: calc(100svh - 6.5rem);
+    max-height: none;
   }
 
   .lecture-page-back {
