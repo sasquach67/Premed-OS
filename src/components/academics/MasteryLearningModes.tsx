@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { preferredScrollBehavior } from '@/lib/scroll'
 import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
@@ -50,7 +52,7 @@ function SourceDetails({ ids, chunks }: { ids: string[]; chunks: SourceChunk[] }
 function MasterySection({ label, items, caution = false }: { label: string; items: string[]; caution?: boolean }) {
   if (!items.length) return null
   return (
-    <section className={cn(caution && 'rounded-xl border-l-4 border-amber-500 bg-muted p-4')}>
+    <section className={cn(caution && 'rounded-xl border-l-4 border-warning bg-muted p-4')}>
       <h4 className="text-sm font-extrabold">{label}</h4>
       <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-7 marker:text-primary">
         {items.map((item, index) => <li key={index}>{studentText(item)}</li>)}
@@ -64,7 +66,7 @@ function ObjectiveChecklist({ standard, chunks }: { standard: Standard; chunks: 
     <div className="space-y-6">
       <MasterySection label="Understand" items={standard.understand} />
       <MasterySection label="Be able to do" items={standard.beAbleToDo} />
-      <MasterySection label="Watch for on an exam" items={standard.watchFor} caution />
+      <MasterySection label="Watch for" items={standard.watchFor} caution />
       <section aria-label={`Exam practice for ${standard.title}`} data-testid={`exam-practice-${standard.id}`} className="border-t border-border pt-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-lg font-extrabold">Apply the objective</h4>
@@ -121,24 +123,24 @@ function ModeChoice({ mode, value, title, purpose, noteState, onChoose }: {
   const active = mode === value
   const Icon = value === 'outline' ? BookOpen : Brain
   return (
-    <button
+    <Button
+      variant="ghost"
       type="button"
       aria-pressed={active}
       onClick={() => onChoose(value)}
       className={cn(
-        'group min-h-28 rounded-xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'h-auto min-h-11 min-w-0 items-start justify-start whitespace-normal rounded-lg border px-4 py-3 text-left focus-visible:ring-2 focus-visible:ring-ring',
         active && value === 'outline' && 'border-primary bg-primary/5',
-        active && value === 'recall' && 'border-amber-500 bg-amber-500/5',
+        active && value === 'recall' && 'border-warning bg-warning/5',
         !active && 'border-border bg-card hover:bg-muted/60',
       )}
     >
-      <span className="flex items-start justify-between gap-3">
-        <span className={cn('grid size-9 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground', active && value === 'outline' && 'bg-primary text-primary-foreground', active && value === 'recall' && 'bg-amber-500 text-white')}><Icon className="size-4" /></span>
-        <Badge variant="outline" className="shrink-0">{noteState}</Badge>
+      <Icon className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+      <span className="min-w-0">
+        <span className="block font-bold text-foreground">{title} <span className="font-normal text-muted-foreground">· {noteState}</span></span>
+        <span className="mt-1 block text-xs leading-5 text-muted-foreground">{purpose}</span>
       </span>
-      <span className="mt-3 block font-bold text-foreground">{title}</span>
-      <span className="mt-1 block text-xs leading-5 text-muted-foreground">{purpose}</span>
-    </button>
+    </Button>
   )
 }
 
@@ -169,15 +171,15 @@ export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline
   function openObjective(id: string) {
     const target = document.getElementById(`${prefix}-${id}`)
     if (target?.getAttribute('data-state') === 'closed') target.click()
-    target?.scrollIntoView({ block: 'start' })
+    target?.scrollIntoView({ block: 'start', behavior: preferredScrollBehavior() })
     target?.focus({ preventScroll: true })
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto min-w-0 max-w-4xl space-y-6 break-words [overflow-wrap:anywhere]">
       <header>
         <p className="text-sm font-bold text-primary">Mastery Map</p>
-        <h2 className="mt-2 text-3xl font-extrabold">{mode === 'outline' ? 'Learn the map' : 'Practice from memory'}</h2>
+        <h2 className="mt-2 font-display text-3xl font-extrabold">{mode === 'outline' ? 'Learn the map' : 'Practice from memory'}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
           {mode === 'outline'
             ? 'Keep your notes open. Learn what each objective means, what you must be able to do, and which traps to recognize.'
@@ -194,13 +196,13 @@ export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline
         <Progress value={outline.standards.length ? applied / outline.standards.length * 100 : 0} aria-label="Objectives marked can apply without notes" className="mt-2 h-2" />
       </header>
 
-      <nav aria-label="Mastery objectives" className="rounded-xl border border-border p-4">
+      <nav aria-label="Mastery objectives" className="border-y border-border py-4">
         <p className="mb-3 text-xs font-bold text-muted-foreground">{mode === 'outline' ? 'Objectives in this outline' : 'Choose a closed-notes prompt'}</p>
         <ol className="grid gap-2 sm:grid-cols-2">
           {outline.standards.map((standard, index) => (
             <li key={standard.id}>
               <button type="button" className="flex min-h-11 w-full items-start gap-3 rounded-lg px-2 py-2 text-left text-sm font-semibold hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => openObjective(standard.id)}>
-                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-muted text-xs font-extrabold text-primary" aria-hidden="true">{index + 1}</span>
+                <span className="w-6 shrink-0 text-xs font-extrabold leading-6 text-primary" aria-hidden="true">{index + 1}</span>
                 <span>{standard.title}</span>
               </button>
             </li>
@@ -215,7 +217,7 @@ export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline
               <AccordionItem key={standard.id} value={standard.id}>
                 <AccordionTrigger id={`${prefix}-${standard.id}`} className="scroll-mt-4 items-center py-5 hover:no-underline">
                   <span className="flex min-w-0 items-start gap-3">
-                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-primary">{standard.masteryState === 'can-apply-without-notes' ? <CheckCircle2 className="size-4" /> : index + 1}</span>
+                    <span className="flex w-6 shrink-0 justify-center pt-1 text-success">{standard.masteryState === 'can-apply-without-notes' ? <CheckCircle2 className="size-4" /> : index + 1}</span>
                     <span className="min-w-0"><span className="block text-lg font-extrabold">{standard.title}</span><span className="mt-1 block text-xs text-muted-foreground">{readiness[standard.masteryState ?? 'not-started']}</span></span>
                   </span>
                 </AccordionTrigger>
@@ -228,7 +230,7 @@ export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline
                     </>
                   ) : (
                     <>
-                      <section aria-label={`Closed-notes prompt for ${standard.title}`} className="rounded-xl border-l-4 border-amber-500 bg-muted p-5">
+                      <section aria-label={`Closed-notes prompt for ${standard.title}`} className="rounded-xl border-l-4 border-warning bg-muted p-5">
                         <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-extrabold">Try before you reveal</h3><Badge variant="outline"><EyeOff className="mr-1 size-3" />Notes closed</Badge></div>
                         <p className="mt-2 text-sm text-muted-foreground">Answer aloud or on a blank page. Explain the “why,” not only the vocabulary.</p>
                         <ul className="mt-3 space-y-3 text-base leading-7">{(standard.freeRecallCues?.length ? standard.freeRecallCues : [standard.title]).map((cue, cueIndex) => <li key={cueIndex}>{studentText(cue)}</li>)}</ul>

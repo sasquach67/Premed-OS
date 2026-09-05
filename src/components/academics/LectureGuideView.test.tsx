@@ -102,6 +102,45 @@ describe('lecture study guide reading navigation', () => {
     expect(document.activeElement).toBe(heading)
   })
 
+
+  it('offers every section in the compact picker and focuses its selected heading', async () => {
+    const { pane, heading } = await renderInReadingPane('page')
+    const picker = container.querySelector<HTMLSelectElement>('nav select')!
+    expect([...picker.options].map((option) => option.text)).toEqual(['Jump to a section', 'Big picture', 'Apply it'])
+    await act(async () => {
+      picker.value = 'application'
+      picker.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    expect(document.activeElement).toBe(heading)
+    expect(pane.scrollTo).toHaveBeenCalled()
+    expect(container.querySelector('nav button[aria-current="location"]')?.textContent).toBe('Apply it')
+  })
+
+  it('preserves every saved concept and directed relationship with sources folded away', async () => {
+    await act(async () => root.render(<GeneratedLectureGuideView lecture={lecture} guide={guide} chunks={chunks} files={[slides]} onOpenMastery={() => {}} brief={{ conceptMap: {
+      title: 'Expression and evidence',
+      nodes: [
+        { id: 'dna', label: 'DNA', detail: 'A template carries the sequence.', lane: 'flow', sourceChunkIds: ['slide-chunk-1'] },
+        { id: 'rna', label: 'RNA', detail: 'A complementary product.', lane: 'flow', sourceChunkIds: [] },
+        { id: 'assay', label: 'RNA measurement', detail: 'Evidence for synthesis.', lane: 'evidence', sourceChunkIds: [] },
+      ],
+      edges: [
+        { id: 'a', fromNodeId: 'dna', toNodeId: 'rna', label: 'is transcribed into', sourceChunkIds: [] },
+        { id: 'b', fromNodeId: 'rna', toNodeId: 'assay', label: 'is detected by', sourceChunkIds: ['slide-chunk-1'] },
+        { id: 'c', fromNodeId: 'dna', toNodeId: 'assay', label: 'provides the template tested in', sourceChunkIds: [] },
+      ],
+    } } as NonNullable<LectureRecord['lectureBrief']>} />))
+    const relationships = container.querySelector('ul[aria-label="Concept relationships"]')!
+    expect(relationships.children).toHaveLength(3)
+    expect(relationships.children[1].textContent).toBe('RNA→is detected by→RNA measurement')
+    const disclosure = relationships.closest('details')!
+    expect(disclosure.open).toBe(false)
+    expect(disclosure.querySelectorAll('dt')).toHaveLength(3)
+    expect(disclosure.querySelectorAll('[data-source-chunk-id]')).toHaveLength(1)
+    expect(disclosure.querySelector('details')?.open).toBe(false)
+    expect(container.textContent).toContain('Genes are expressed through connected synthesis steps.')
+  })
+
   it('renders supported exam-application metadata without presenting it as an instructor prediction', async () => {
     await renderInReadingPane('page')
     expect(container.textContent).toContain('Professor emphasis')

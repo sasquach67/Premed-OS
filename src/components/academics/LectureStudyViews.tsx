@@ -1,5 +1,5 @@
-import { useId, useRef, type ReactNode } from 'react'
-import { BookOpen, ArrowRight } from 'lucide-react'
+import { useId, useRef, useState, type ReactNode } from 'react'
+import { BookOpen, ArrowRight, Network } from 'lucide-react'
 import type { AcademicFile, ClassCenterData, LectureRecord, SourceChunk } from '@/lib/types'
 import type { ContentBlock, RichText, StudyGuideArtifact } from '@/lib/generation/schemas/studyGuide.v1'
 import { useStore } from '@/store/store'
@@ -36,13 +36,31 @@ function SourceDetails({ ids, chunks, files = [] }: { ids: string[]; chunks: Sou
   })}</div></details>
 }
 
+function ConceptConnections({ map, chunks, files }: { map: NonNullable<NonNullable<LectureRecord['lectureBrief']>['conceptMap']>; chunks: SourceChunk[]; files: AcademicFile[] }) {
+  return <details className="mb-6 border-b border-border pb-5">
+    <summary className="cursor-pointer rounded py-2 font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Network className="mr-2 inline size-4 text-primary" aria-hidden="true" />How the ideas connect</summary>
+    <div className="mt-3 space-y-5">
+      <h3 className="font-display text-xl font-bold">{map.title}</h3>
+      <dl className="space-y-4">{map.nodes.map((node) => <div key={node.id} className="min-w-0 break-words">
+        <dt className="font-bold">{node.label}</dt><dd className="mt-1 text-sm leading-7">{node.detail}</dd>
+      </div>)}</dl>
+      {map.edges.length > 0 && <ul aria-label="Concept relationships" className="space-y-3 border-l-2 border-success pl-4">{map.edges.map((edge) => {
+        const from = map.nodes.find((node) => node.id === edge.fromNodeId)
+        const to = map.nodes.find((node) => node.id === edge.toNodeId)
+        return <li key={edge.id} className="break-words text-sm leading-7"><strong>{from?.label ?? 'Unavailable concept'}</strong><span className="mx-2 text-success" aria-hidden="true">→</span>{edge.label}<span className="mx-2 text-success" aria-hidden="true">→</span><strong>{to?.label ?? 'Unavailable concept'}</strong></li>
+      })}</ul>}
+      <SourceDetails ids={[...map.nodes.flatMap((node) => node.sourceChunkIds), ...map.edges.flatMap((edge) => edge.sourceChunkIds)]} chunks={chunks} files={files} />
+    </div>
+  </details>
+}
+
 function GuideBlock({ block }: { block: ContentBlock }) {
   const labels: Partial<Record<ContentBlock['type'], string>> = { must_understand: 'Understand this', must_memorize: 'Commit to memory', recall: 'Try without notes', contradiction: 'Conflicting explanations', gap: 'Still unclear', callout: 'Take note' }
   const examApplication = block.conceptLabel?.trim().toLowerCase() === 'generated exam application'
   const workedAnswer = block.conceptLabel?.trim().toLowerCase() === 'worked answer'
   const label = examApplication ? undefined : labels[block.type]
   const List = block.type === 'numbered' ? 'ol' : 'ul'
-  return <div data-guide-block={examApplication ? 'exam-application' : workedAnswer ? 'worked-answer' : undefined} className={cn('min-w-0 break-words', label && 'rounded-xl border-l-4 border-primary bg-muted px-5 py-4', (block.type === 'gap' || block.type === 'contradiction') && 'border-amber-500', examApplication && 'lecture-guide-exam-application', workedAnswer && 'lecture-guide-worked-answer')}>
+  return <div data-guide-block={examApplication ? 'exam-application' : workedAnswer ? 'worked-answer' : undefined} className={cn('min-w-0 break-words', label && 'rounded-xl border-l-4 border-primary bg-muted px-5 py-4', (block.type === 'gap' || block.type === 'contradiction') && 'border-warning', examApplication && 'lecture-guide-exam-application rounded-lg px-4 py-4', workedAnswer && 'lecture-guide-worked-answer')}>
     {label && <p className="mb-2 text-xs font-extrabold text-primary">{label}</p>}
     {block.conceptLabel && <h4 className="lecture-guide-concept-heading mb-2 text-lg font-bold text-foreground">{block.conceptLabel}</h4>}
     {examApplication && <Badge variant="outline" className="mb-3">Practice, not an exam prediction</Badge>}
@@ -53,16 +71,36 @@ function GuideBlock({ block }: { block: ContentBlock }) {
   </div>
 }
 
-export function GeneratedLectureGuideView({ lecture, guide, chunks, files, mastery, onOpenMastery, standalone = false }: { standalone?: boolean; lecture: LectureRecord; guide: StudyGuideArtifact; brief: NonNullable<LectureRecord['lectureBrief']>; chunks: SourceChunk[]; files: AcademicFile[]; mastery?: Outline; onOpenMastery: () => void }) {
+export function GeneratedLectureGuideView({ lecture, guide, brief, chunks, files, mastery, onOpenMastery, standalone = false }: { standalone?: boolean; lecture: LectureRecord; guide: StudyGuideArtifact; brief: NonNullable<LectureRecord['lectureBrief']>; chunks: SourceChunk[]; files: AcademicFile[]; mastery?: Outline; onOpenMastery: () => void }) {
   const sections = guide.sections.filter((section) => section.id.toLowerCase() !== 'title' && section.title.trim().toLowerCase() !== 'title')
   const prefix = useId()
+  const [selectedSection, setSelectedSection] = useState('')
   const headings = useRef(new Map<string, HTMLHeadingElement>())
+  function jumpToSection(id: string) {
+    const heading = headings.current.get(id)
+    if (!heading) return
+    setSelectedSection(id)
+    scrollGuideHeadingIntoReadingPane(heading)
+  }
   return <div className="lecture-study-guide @container mx-auto max-w-6xl" data-reader-page={standalone || undefined}>
     <header className="border-b border-border pb-6"><p className="flex items-center gap-2 text-sm font-bold text-primary"><BookOpen className="size-4" />Study Guide</p><h2 className="lecture-guide-heading mt-2 text-3xl">Read to understand.</h2><p className="mt-2 text-sm text-muted-foreground">Start with the big picture, work through the explanations, then test your recall.</p></header>
     <div className="lecture-guide-layout mt-6 grid items-start gap-8 @min-[52rem]:grid-cols-[13rem_minmax(0,1fr)] @min-[52rem]:gap-10">
-      <aside className="min-w-0 @min-[52rem]:sticky @min-[52rem]:top-4"><nav aria-label="Study guide sections"><p className="mb-2 text-xs font-extrabold uppercase tracking-wider text-muted-foreground">In this guide</p><div className="flex gap-1 overflow-x-auto pb-2 @min-[52rem]:flex-col @min-[52rem]:overflow-visible">{sections.map((section) => <Button key={section.id} variant="ghost" className="lecture-guide-nav-link h-auto min-h-11 shrink-0 justify-start whitespace-normal px-3 py-2 text-left text-xs @min-[52rem]:w-full" onClick={() => { const heading = headings.current.get(section.id); if (heading) scrollGuideHeadingIntoReadingPane(heading) }}>{section.title}</Button>)}</div></nav><Button onClick={onOpenMastery} variant="outline" className="mt-4 w-full justify-between">Practice recall<ArrowRight className="size-4" /></Button></aside>
+      <aside className="min-w-0 @min-[52rem]:sticky @min-[52rem]:top-4">
+        <nav aria-label="Study guide sections">
+          <label htmlFor={`${prefix}-section-picker`} className="mb-2 block text-xs font-extrabold uppercase tracking-wider text-muted-foreground">In this guide · {sections.length} sections</label>
+          <select id={`${prefix}-section-picker`} value={selectedSection} onChange={(event) => jumpToSection(event.target.value)} className={cn('h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring @min-[52rem]:hidden', standalone && 'md:hidden')}>
+            <option value="" disabled>Jump to a section</option>
+            {sections.map((section) => <option key={section.id} value={section.id}>{section.title}</option>)}
+          </select>
+          <div className={cn('hidden flex-col gap-1 @min-[52rem]:flex', standalone && 'md:flex')}>
+            {sections.map((section) => <Button key={section.id} variant="ghost" aria-current={selectedSection === section.id ? 'location' : undefined} className="lecture-guide-nav-link h-auto min-h-11 w-full justify-start whitespace-normal break-words px-3 py-2 text-left text-xs focus-visible:ring-2 focus-visible:ring-ring aria-[current=location]:border-primary aria-[current=location]:bg-primary/10" onClick={() => jumpToSection(section.id)}>{section.title}</Button>)}
+          </div>
+        </nav>
+        <Button onClick={onOpenMastery} variant="outline" className="mt-4 h-auto min-h-11 w-full justify-between whitespace-normal">Practice recall<ArrowRight className="size-4" /></Button>
+      </aside>
       <article data-guide-scroll-container={standalone || undefined} aria-label={standalone ? "Study guide text" : undefined} tabIndex={standalone ? 0 : undefined} className="lecture-study-guide-content min-w-0 rounded-2xl border border-border bg-card px-5 py-6 shadow-sm sm:px-9 sm:py-8">
-        {sections.map((section, index) => <section key={section.id} aria-labelledby={`${prefix}-${section.id}`} className="lecture-guide-section border-b border-border py-8 first:pt-0 last:border-0 last:pb-0"><div className="mb-5 flex items-baseline gap-3"><span className="lecture-guide-section-number text-sm font-extrabold tabular-nums text-primary" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><h3 id={`${prefix}-${section.id}`} ref={(node) => { if (node) headings.current.set(section.id, node); else headings.current.delete(section.id) }} tabIndex={-1} className="lecture-guide-heading scroll-mt-6 rounded-sm text-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{section.title}</h3></div><div className="space-y-6">{section.blocks.map((block) => <GuideBlock key={block.id} block={block} />)}</div><SourceDetails ids={section.blocks.flatMap((block) => block.sourceRef ? [block.sourceRef.chunkId] : [])} chunks={chunks} files={files} /></section>)}
+        {brief.conceptMap && <ConceptConnections map={brief.conceptMap} chunks={chunks} files={files} />}
+        {sections.map((section, index) => <section key={section.id} aria-labelledby={`${prefix}-${section.id}`} className="lecture-guide-section border-b border-border py-8 first:pt-0 last:border-0 last:pb-0"><div className="mb-5 flex items-baseline gap-3"><span className="lecture-guide-section-number text-sm font-extrabold tabular-nums text-primary" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><h3 id={`${prefix}-${section.id}`} ref={(node) => { if (node) headings.current.set(section.id, node); else headings.current.delete(section.id) }} tabIndex={-1} className="lecture-guide-heading min-w-0 break-words scroll-mt-6 rounded-sm text-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{section.title}</h3></div><div className="space-y-6">{section.blocks.map((block) => <GuideBlock key={block.id} block={block} />)}</div><SourceDetails ids={section.blocks.flatMap((block) => block.sourceRef ? [block.sourceRef.chunkId] : [])} chunks={chunks} files={files} /></section>)}
         <footer className="mt-8 border-t border-border pt-6"><h3 className="lecture-guide-heading text-xl">Can you explain it without looking?</h3><p className="mt-2 text-sm text-muted-foreground">{mastery ? `${mastery.standards.length} objectives to work through at your own pace.` : 'Open Mastery Map to check which objectives are available.'}</p><Button className="mt-4" onClick={onOpenMastery}>Practice in Mastery Map<ArrowRight className="ml-2 size-4" /></Button></footer>
         <details className="mt-6 text-xs text-muted-foreground"><summary className="w-fit cursor-pointer rounded py-2 focus-visible:ring-2 focus-visible:ring-ring">About this guide</summary><p className="mt-2">Independent audit: {lecture.generationAuditStatus ?? 'Not recorded'}. Specification: {guide.specHash}.</p></details>
       </article>
