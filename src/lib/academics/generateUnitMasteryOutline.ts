@@ -41,7 +41,17 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
   const result = await generateWithSourceRecovery(courseId, chunks, { action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map with objective-specific free-recall cues. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline.${questionReferenceIds.length ? ' Use the marked question passages as task-pattern evidence without copying them.' : ''}` })
   if (!result.ok) return { ok: false, failure: failureFor(result.code), message: result.message }
   const issues: string[] = []
-  const artifact = validateMasteryOutline(result.data.artifact, assembled.chunkIds, issues)
+  let artifact = validateMasteryOutline(result.data.artifact, assembled.chunkIds, issues)
+  if (!artifact) {
+    const repair = await generateWithSourceRecovery(courseId, chunks, {
+      action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds,
+      specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt,
+      request: `Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Rebuild the complete Mastery Map from the same selected evidence. A prior attempt failed these deterministic checks: ${issues.join('; ')}. Correct every listed requirement. Keep all required fields, objective-specific cues, at least one cue explicitly saying "without notes" per objective, five distinct Understand points, two distinct Be able to do points, and one Watch for point. Source IDs must come only from the supplied evidence. Do not invent missing facts or repeat points to satisfy counts. Return the full valid artifact, not a patch.`,
+    })
+    if (!repair.ok) return { ok: false, failure: failureFor(repair.code), message: repair.message }
+    issues.length = 0
+    artifact = validateMasteryOutline(repair.data.artifact, assembled.chunkIds, issues)
+  }
   if (!artifact) return { ok: false, failure: 'invalid-response', message: `The mastery outline did not pass its source-trace and section checks. Nothing was saved. Check: ${issues.join('; ')}` }
   return {
     ok: true,
