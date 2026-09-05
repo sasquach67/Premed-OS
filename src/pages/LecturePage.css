@@ -1,22 +1,242 @@
-.lecture-page { display: flex; flex-direction: column; min-height: 0; height: calc(100svh - 10rem); }
-.lecture-page-back { flex: none; padding: 0 0 12px; font-size: 13px; font-weight: 700; }
-.lecture-page-back a { display: inline-flex; align-items: center; gap: 8px; }
-.lecture-page-back a:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
-.lecture-page-body { flex: 1; min-height: 0; overflow-y: auto; border: 1px solid var(--border); border-radius: 16px; background: var(--card); }
-.lecture-page-body > .lecture-workspace { height: 100%; min-height: 0; }
-.lecture-workspace { height: min(78svh, 64rem); grid-template-rows: auto minmax(0, 1fr); }
-.lecture-workspace-catalog { max-height: 9rem; overscroll-behavior: contain; }
-.lecture-workspace-main { display: flex; flex-direction: column; min-height: 0; }
-.lecture-workspace-main > header { flex: none; }
-.lecture-workspace-reading { flex: 1; min-height: 0; overscroll-behavior: contain; scrollbar-gutter: stable; }
-@media (min-width: 1024px) {
-  .lecture-workspace { grid-template-rows: minmax(0, 1fr); }
-  .lecture-workspace-catalog { max-height: none; }
+.lecture-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: calc(100svh - 7.5rem);
+  max-height: calc(100svh - 7.5rem);
 }
-/* The section navigator stays visible while the reading pane scrolls. */
-.lecture-study-guide nav { max-height: 55svh; overflow-y: auto; overscroll-behavior: contain; }
+
+.lecture-page-back {
+  flex: none;
+  padding: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lecture-page-back a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lecture-page-back a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+}
+
+.lecture-page-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+}
+
+/* Import steps may use the page body's scroll. A completed workspace owns
+   its two scroll regions instead, so the shell and card never drift away. */
+.lecture-page-body:has(> .lecture-workspace) {
+  overflow: hidden;
+}
+
+.lecture-page-body > .lecture-workspace {
+  height: 100%;
+  min-height: 0;
+}
+
+.lecture-workspace {
+  height: min(78svh, 64rem);
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  container-type: inline-size;
+  isolation: isolate;
+}
+
+.lecture-workspace-catalog {
+  display: flex;
+  min-height: 0;
+  max-height: 9rem;
+  flex-direction: column;
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.lecture-workspace-catalog-header {
+  flex: none;
+}
+
+.lecture-workspace-catalog-list {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: inline proximity;
+  scrollbar-gutter: stable;
+}
+
+.lecture-workspace-catalog-record {
+  height: 100%;
+  scroll-snap-align: start;
+}
+
+.lecture-workspace-main {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.lecture-workspace-header {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  background: var(--card);
+}
+
+.lecture-workspace-tabs {
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+
+.lecture-workspace-tabs button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+.lecture-workspace-reading {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 1.5rem;
+  scrollbar-gutter: stable;
+}
+
+/* The section navigator remains useful inside the reading scroll owner. */
+.lecture-study-guide nav {
+  max-height: none;
+  overflow-y: visible;
+}
+
+@media (min-width: 1024px) {
+  .lecture-workspace {
+    grid-template-columns: clamp(11.5rem, 15vw, 13.5rem) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .lecture-workspace-catalog {
+    max-height: none;
+  }
+
+  .lecture-workspace-catalog-list {
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-block: contain;
+    scroll-snap-type: block proximity;
+  }
+
+  .lecture-workspace-catalog-record {
+    height: auto;
+  }
+
+  .lecture-study-guide nav {
+    max-height: min(55svh, 34rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+}
+
 @media (max-width: 640px) {
-  .lecture-workspace-main > header { padding: 12px; }
-  .lecture-workspace-main > header h1 { font-size: 18px; }
-  .lecture-workspace-main > header p { font-size: 11px; }
+  .lecture-page {
+    height: calc(100svh - 6.5rem);
+    max-height: calc(100svh - 6.5rem);
+  }
+
+  .lecture-page-back {
+    padding-bottom: 8px;
+  }
+
+  .lecture-workspace-catalog {
+    max-height: 7.75rem;
+  }
+
+  .lecture-workspace-catalog-header {
+    padding-block: 8px;
+  }
+
+  .lecture-workspace-catalog-header h2 {
+    font-size: 14px;
+  }
+
+  .lecture-workspace-catalog-list {
+    padding-bottom: 8px;
+  }
+
+  .lecture-workspace-catalog-record {
+    min-width: 12.75rem;
+    padding-block: 8px;
+  }
+
+  .lecture-workspace-catalog-status {
+    display: none;
+  }
+
+  .lecture-workspace-header {
+    padding: 12px;
+  }
+
+  .lecture-workspace-header h1 {
+    font-size: 18px;
+    line-height: 1.2;
+  }
+
+  .lecture-workspace-header p {
+    font-size: 11px;
+  }
+
+  .lecture-workspace-heading-row {
+    gap: 8px;
+  }
+
+  .lecture-workspace-actions {
+    width: 100%;
+  }
+
+  .lecture-workspace-actions > :first-child {
+    flex: 1;
+  }
+
+  .lecture-workspace-tabs {
+    margin-top: 8px;
+  }
+
+  .lecture-workspace-reading {
+    padding: 14px;
+    scrollbar-gutter: auto;
+  }
+}
+
+@media (max-height: 700px) {
+  .lecture-workspace-header {
+    padding-block: 10px;
+  }
+
+  .lecture-workspace-header h1 {
+    font-size: 18px;
+    line-height: 1.2;
+  }
+
+  .lecture-workspace-tabs {
+    margin-top: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lecture-workspace-catalog-list,
+  .lecture-workspace-reading,
+  .lecture-workspace-tabs {
+    scroll-behavior: auto;
+  }
 }
