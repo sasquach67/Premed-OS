@@ -11,9 +11,24 @@ interface SourceRefRecord {
   end?: unknown
 }
 
+const SOURCE_REF_REQUIRED_BLOCK_TYPES = new Set([
+  'prose',
+  'bullets',
+  'numbered',
+  'table',
+  'must_memorize',
+  'must_understand',
+])
+
+export function openAIGenerationSourceRefRequired(record: Record<string, unknown>) {
+  return record.provenance === 'source'
+    && typeof record.type === 'string'
+    && SOURCE_REF_REQUIRED_BLOCK_TYPES.has(record.type)
+}
+
 export const OPENAI_GENERATION_CITATION_INSTRUCTION = [
   'Use only the supplied source IDs.',
-  'Every object with provenance source must include sourceRef.',
+  'Every source-backed prose, bullets, numbered, table, must_memorize, or must_understand block must include sourceRef.',
   'For sourceRef/sourceRefs, copy the exact supplied sourceRef object from the chosen source document.',
   'Never calculate, shorten, expand, or otherwise alter sourceRef offsets.',
   'For sourceChunkId/sourceChunkIds/evidenceIds, copy the exact supplied chunkId. Never invent an ID or range.',

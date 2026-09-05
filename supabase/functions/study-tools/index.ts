@@ -2,6 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.110.2'
 import {
   canonicalizeOpenAIGenerationSourceRefs,
   OPENAI_GENERATION_CITATION_INSTRUCTION,
+  openAIGenerationSourceRefRequired,
   openAIGenerationSources,
 } from '../_shared/openAIGenerationGrounding.ts'
 
@@ -449,7 +450,7 @@ function validateArtifactReferences(
     }
     if (typeof candidate !== 'object') return
     const record = candidate as Record<string, unknown>
-    if (record.provenance === 'source' && !exactRef(record.sourceRef)) valid = false
+    if (openAIGenerationSourceRefRequired(record) && !exactRef(record.sourceRef)) valid = false
     if (record.sourceRef != null && !exactRef(record.sourceRef)) valid = false
     if (record.sourceRefs != null) {
       if (!Array.isArray(record.sourceRefs) || !record.sourceRefs.length || !record.sourceRefs.every(exactRef)) valid = false

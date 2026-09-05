@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   canonicalizeOpenAIGenerationSourceRefs,
   OPENAI_GENERATION_CITATION_INSTRUCTION,
+  openAIGenerationSourceRefRequired,
   openAIGenerationSources,
 } from '../../../supabase/functions/_shared/openAIGenerationGrounding'
 
@@ -27,9 +28,20 @@ describe('OpenAI generation grounding contract', () => {
   })
 
   it('requires exact copying rather than offset reconstruction', () => {
-    expect(OPENAI_GENERATION_CITATION_INSTRUCTION).toContain('provenance source must include sourceRef')
+    expect(OPENAI_GENERATION_CITATION_INSTRUCTION).toContain('must_understand block must include sourceRef')
     expect(OPENAI_GENERATION_CITATION_INSTRUCTION).toContain('copy the exact supplied sourceRef')
     expect(OPENAI_GENERATION_CITATION_INSTRUCTION).toContain('Never calculate')
+  })
+
+  it('matches the study-guide contract for which blocks require a sourceRef', () => {
+    for (const type of ['prose', 'bullets', 'numbered', 'table', 'must_memorize', 'must_understand']) {
+      expect(openAIGenerationSourceRefRequired({ type, provenance: 'source' })).toBe(true)
+    }
+    for (const type of ['gap', 'contradiction', 'callout', 'recall']) {
+      expect(openAIGenerationSourceRefRequired({ type, provenance: 'source' })).toBe(false)
+    }
+    expect(openAIGenerationSourceRefRequired({ type: 'prose', provenance: 'background' })).toBe(false)
+    expect(openAIGenerationSourceRefRequired({ provenance: 'source', sourceRefs: [] })).toBe(false)
   })
 
   it('canonicalizes only the range of a source identity selected by the model', () => {
