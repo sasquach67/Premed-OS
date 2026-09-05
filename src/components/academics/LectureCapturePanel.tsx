@@ -107,10 +107,10 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
   const chronological = [...lectures].sort((a, b) => String(a.occurredOn ?? '').localeCompare(String(b.occurredOn ?? '')) || a.createdAt - b.createdAt)
   const lectureNumber = lecture ? Math.max(1, chronological.findIndex((item) => item.id === lecture.id) + 1) : chronological.length + 1
   const [occurredOn, setOccurredOn] = useState(lecture?.occurredOn ?? isoToday)
-  const [studyIntent, setStudyIntent] = useState<JournalStudyIntent>(lecture?.studyIntent ?? { purpose: 'study' })
+  const [studyIntent, setStudyIntent] = useState<JournalStudyIntent>(lecture?.studyIntent ?? { purpose: 'study', entryKind: lecture && !lecture.transcriptFileId ? 'readings' : 'lecture' })
   const [sourceText, setSourceText] = useState('')
-  const [title, setTitle] = useState(lecture?.title ?? `Study session ${lectureNumber}`)
-  const [titleEdited, setTitleEdited] = useState(Boolean(lecture?.title && !/^Lecture \d+$/.test(lecture.title)))
+  const [title, setTitle] = useState(lecture?.title ?? `Lecture ${lectureNumber}`)
+  const [titleEdited, setTitleEdited] = useState(Boolean(lecture?.title && !/^(Lecture|Study session|Readings) \d+$/.test(lecture.title)))
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [pendingExtraction, setPendingExtraction] = useState<ExtractedDocument | null>(null)
   const [reading, setReading] = useState(false)
@@ -128,9 +128,7 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
   const supportingMaterials = lectureSources.filter((file) => file.id !== lecture?.transcriptFileId)
   const readableChunks = data.sourceChunks.filter((chunk) => chunk.courseId === courseId && lectureSourceIds.includes(chunk.fileId) && Boolean(chunk.content.trim()))
   const allQuestionReferenceChunkIds = practiceQuestionChunkIds(lectureSources, readableChunks)
-  const primaryFileIds = lecture?.studyIntent?.purpose === 'exam-prep' && lecture.studyIntent.reviewSheetFileId
-    ? [lecture.studyIntent.reviewSheetFileId]
-    : instructorSourceFileIds(lectureSources, lecture?.transcriptFileId)
+  const primaryFileIds = instructorSourceFileIds(lectureSources, lecture?.transcriptFileId)
   const generationChunks = selectGenerationSourceChunks(readableChunks, {
     preferredFileIds: primaryFileIds,
     priorityChunkIds: allQuestionReferenceChunkIds,
@@ -209,14 +207,14 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
     setBuildError(null)
     setBuildPhase('guide')
     try {
-      const guide = await generateStudyGuide({ studyIntent: lecture.studyIntent, courseId, chunks: chunksForGeneration, label: lecture.title, practiceQuestionChunkIds: questionReferenceChunkIds, primarySourceChunkIds: lecture.studyIntent?.purpose === 'exam-prep' ? [] : chunksForGeneration.filter((chunk) => primaryFileIds.includes(chunk.fileId)).map((chunk) => chunk.id) })
+      const guide = await generateStudyGuide({ studyIntent: lecture.studyIntent, courseId, chunks: chunksForGeneration, label: lecture.title, practiceQuestionChunkIds: questionReferenceChunkIds, primarySourceChunkIds: chunksForGeneration.filter((chunk) => primaryFileIds.includes(chunk.fileId)).map((chunk) => chunk.id) })
       if (!guide.ok || !guide.artifact) {
         setBuildError({ stage: 'Study Guide', message: guide.message ?? 'The lecture guide could not be generated.' })
         toast({ title: 'Nothing was saved', description: guide.message ?? 'The lecture guide could not be generated.', tone: 'error' })
         return
       }
       setBuildPhase('mastery')
-      const mastery = await generateUnitMasteryOutline({ studyIntent: lecture.studyIntent, courseId, chunks: chunksForGeneration, unit: lecture.title, label: lecture.title, scope: lecture.studyIntent?.purpose === 'exam-prep' ? 'exam' : 'lecture', practiceQuestionChunkIds: questionReferenceChunkIds, primarySourceChunkIds: lecture.studyIntent?.purpose === 'exam-prep' ? [] : chunksForGeneration.filter((chunk) => primaryFileIds.includes(chunk.fileId)).map((chunk) => chunk.id) })
+      const mastery = await generateUnitMasteryOutline({ studyIntent: lecture.studyIntent, courseId, chunks: chunksForGeneration, unit: lecture.title, label: lecture.title, scope: lecture.studyIntent?.purpose === 'exam-prep' ? 'exam' : 'lecture', practiceQuestionChunkIds: questionReferenceChunkIds, primarySourceChunkIds: chunksForGeneration.filter((chunk) => primaryFileIds.includes(chunk.fileId)).map((chunk) => chunk.id) })
       if (!mastery.ok || !mastery.artifact) {
         setBuildError({ stage: 'Mastery Map', message: mastery.message ?? 'The lecture Mastery Map could not be generated.' })
         toast({ title: 'Nothing was saved', description: mastery.message ?? 'The lecture Mastery Map could not be generated.', tone: 'error' })
@@ -275,7 +273,7 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
     <header className="border-b border-border px-4 py-4 sm:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Class Journal</p><h2 className="mt-1 font-display text-xl font-extrabold">Create a study entry</h2></div>
-        <Badge aria-label="Lecture identity" className="mr-8 shrink-0" variant="outline">{course?.code ?? 'Class'} · {studyIntent.purpose === 'exam-prep' ? 'Exam prep' : 'Study guide'}</Badge>
+        <Badge aria-label="Lecture identity" className="mr-8 shrink-0" variant="outline">{course?.code ?? 'Class'} · {studyIntent.purpose === 'exam-prep' ? 'Exam prep' : studyIntent.entryKind === 'readings' ? 'Readings' : 'Lecture'}</Badge>
       </div>
       <div className="mt-3" aria-label="Lecture import progress">
         <div className="flex items-center justify-between gap-3 text-xs font-extrabold"><span>Step {step} of 3 · {stepLabels[step - 1]}</span><span className="tabular-nums text-primary">{progressPercent}%</span></div>
@@ -288,12 +286,12 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
     <div className="mx-auto max-w-5xl p-4 sm:p-6">
       {step === 3 && buildError && <section role="alert" className="mb-4 rounded-xl border border-destructive/40 bg-destructive/5 p-4"><h3 className="font-display text-base font-extrabold">{buildError.stage} needs attention</h3><p className="mt-2 break-words text-sm leading-6">{buildError.message}</p><p className="mt-2 text-xs font-semibold text-muted-foreground">Your uploaded sources are still attached. You do not need to import them again.</p></section>}
       {step === 1 && <section aria-label="Journal entry setup" className="space-y-5">
-        <JournalIntentFields value={studyIntent} onChange={value => { setStudyIntent(value); if (!titleEdited) setTitle(value.purpose === 'exam-prep' ? 'Exam preparation' : `Study session ${lectureNumber}`) }} />
+        <JournalIntentFields value={studyIntent} onChange={value => { setStudyIntent(value); if (!titleEdited) setTitle(value.purpose === 'exam-prep' ? 'Exam preparation' : `${value.entryKind === 'readings' ? 'Readings' : 'Lecture'} ${lectureNumber}`) }} />
         <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
-          <label className="block text-sm font-extrabold">Entry title<Input className="mt-2" value={title} onChange={event => { setTitle(event.target.value); setTitleEdited(true) }} placeholder="Exam 1 · Readings and key concepts" /></label>
+          <label className="block text-sm font-extrabold">Entry title<Input className="mt-2" value={title} onChange={event => { setTitle(event.target.value); setTitleEdited(true) }} aria-label="Entry title" placeholder={studyIntent.purpose === 'exam-prep' ? 'Exam 1 · Key concepts' : studyIntent.entryKind === 'readings' ? 'Chapter 3 · Reading and questions' : 'Lecture 2 · Main topic'} /></label>
           <div className="text-sm font-extrabold"><span>Entry date</span><DateField ariaLabel="Entry date" className="mt-2 min-h-9 rounded-md border-input bg-background px-3 py-1 font-extrabold" value={occurredOn} onChange={setOccurredOn} /></div>
         </div>
-        <details className="rounded-xl border border-border">
+        <details key={studyIntent.entryKind} open={studyIntent.entryKind === 'lecture'} className="rounded-xl border border-border">
           <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{lecture?.transcriptFileId ? 'Replace transcript' : 'Add a transcript'} <span className="font-normal text-muted-foreground">Optional</span>{sourceText.trim() && <span className="ml-2 text-primary">Text added</span>}</summary>
           <div className="grid gap-4 border-t border-border p-4 lg:grid-cols-[minmax(0,1fr)_15rem]">
             <label className="block text-sm font-extrabold">Transcript<Textarea className="mt-2 min-h-44" value={sourceText} onChange={event => { setSourceText(event.target.value); setPendingFile(null); setPendingExtraction(null) }} placeholder="Paste a transcript here. Timestamps are optional." /></label>

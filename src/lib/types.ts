@@ -710,6 +710,7 @@ export type LectureProcessingState = 'recording' | 'ready' | 'unavailable' | 'fa
 
 /** Optional on older lecture records. A journal entry need not represent a lecture. */
 export interface JournalStudyIntent {
+  entryKind?: 'lecture' | 'readings' | 'exam-prep'
   purpose: 'study' | 'exam-prep'
   instructions?: string
   reviewSheetFileId?: ID

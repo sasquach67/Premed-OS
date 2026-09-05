@@ -65,6 +65,28 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).not.toContain('CaptureReviewIndex')
   })
 
+  it('preserves a custom title and the readings choice across setup and a saved draft', async () => {
+    const seed = structuredClone(createSeedData())
+    const courseId = seed.academics.classCenter.workspaces[0].courseId
+    useStore.getState().replaceAll(seed)
+    await render(courseId)
+    expect(container.querySelector<HTMLInputElement>('input[value="lecture"]')?.checked).toBe(true)
+    await act(async () => container.querySelector<HTMLInputElement>('input[value="readings"]')!.click())
+    const title = container.querySelector<HTMLInputElement>('input[aria-label="Entry title"]')!
+    expect(title.value).toMatch(/^Readings /)
+    await act(async () => changeField(title, 'Chapter 4 · My questions'))
+    await act(async () => container.querySelector<HTMLInputElement>('input[value="exam-prep"]')!.click())
+    expect(title.value).toBe('Chapter 4 · My questions')
+    await act(async () => container.querySelector<HTMLInputElement>('input[value="readings"]')!.click())
+    const transcript = container.querySelector('textarea[placeholder*="Paste a transcript"]')!
+    expect(transcript.closest('details')?.open).toBe(false)
+    await act(async () => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Continue to materials'))!.click())
+    const entry = useStore.getState().academics.classCenter.lectures.at(-1)!
+    expect(entry).toMatchObject({ title: 'Chapter 4 · My questions', inputPath: 'materials', studyIntent: { purpose: 'study', entryKind: 'readings' } })
+    expect(entry.transcriptFileId).toBeUndefined()
+    expect(generationMocks.generateStudyGuide).not.toHaveBeenCalled()
+  })
+
   it('creates a materials-only exam entry, reuses selected readings, and preserves the review-sheet choice', async () => {
     const seed = structuredClone(createSeedData())
     const courseId = seed.academics.classCenter.workspaces[0].courseId
@@ -104,7 +126,7 @@ describe('lecture import and workspace', () => {
     await act(async () => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Build Guide + Mastery'))!.click())
     const request = generationMocks.generateStudyGuide.mock.calls[0][0]
     expect(request.chunks.map((chunk: { id: string }) => chunk.id)).toEqual(['review-chunk', 'reading-chunk'])
-    expect(request.studyIntent).toEqual({ purpose: 'exam-prep', reviewSheetFileId: 'review' })
+    expect(request.studyIntent).toEqual({ purpose: 'exam-prep', entryKind: 'exam-prep', reviewSheetFileId: 'review' })
     expect(generationMocks.generateUnitMasteryOutline).toHaveBeenCalledWith(expect.objectContaining({ scope: 'exam', studyIntent: request.studyIntent }))
     expect(useStore.getState().academics.classCenter.lectures.find(item => item.id === entry.id)?.workspaceState).toBe('complete')
   })
@@ -129,7 +151,7 @@ describe('lecture import and workspace', () => {
     const navigate = vi.fn()
     useStore.getState().replaceAll(seed)
     await render(courseId, undefined, undefined, 'page', navigate)
-    const title = container.querySelector<HTMLInputElement>('input[placeholder="Exam 1 · Readings and key concepts"]')!
+    const title = container.querySelector<HTMLInputElement>('input[aria-label="Entry title"]')!
     const transcript = container.querySelector<HTMLTextAreaElement>('textarea[placeholder*="Paste a transcript here"]')!
     await act(async () => {
       changeField(title, 'Lecture 1 · Cell signaling')
@@ -570,7 +592,7 @@ describe('lecture import and workspace', () => {
 
     await act(async () => rebuild.click())
 
-    expect(container.textContent).toContain('What do you want to create?')
+    expect(container.textContent).toContain('What are you adding?')
     expect(container.textContent).toContain('Continue to materials')
     const preserved = useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.id === 'demo-lecture-biol103-2')!
     expect(preserved.workspaceState).toBe('complete')
