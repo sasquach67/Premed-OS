@@ -104,7 +104,7 @@ describe('Overview File Capture', () => {
 
     expect(capture).toHaveBeenCalledTimes(1)
     expect(capture).toHaveBeenCalledWith(file, { commentary: 'Read after lab', localOnly: true })
-    expect(container.textContent).toContain('Saved file to Story Bank.')
+    expect(container.textContent).toContain('File saved in Activity & capture.')
     expect(container.querySelector('#overview-capture-file')).toBeTruthy()
     expect(container.textContent).not.toContain('reflection.pdf · 5 B')
   })
@@ -120,7 +120,7 @@ describe('Overview File Capture', () => {
     expect(capture).toHaveBeenCalledWith(file, { commentary: '', localOnly: false })
     expect(container.textContent).toContain('We couldn’t save this file on this device. Try again.')
     expect(container.textContent).toContain('reflection.pdf · 5 B')
-    expect(container.textContent).not.toContain('Saved file to Story Bank.')
+    expect(container.textContent).not.toContain('File saved in Activity & capture.')
   })
 
   it('keeps quarterly goal and standing-target editors mutually exclusive', async () => {

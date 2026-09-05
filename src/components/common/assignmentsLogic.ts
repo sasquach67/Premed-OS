@@ -50,3 +50,12 @@ export function workloadLabel(total: number) {
   if (total <= 30) return 'Busy'
   return 'Heavy'
 }
+
+export function assignmentWorkload(items: readonly Pick<ClassAssignment, 'weight'>[]) {
+  const total = items.reduce((sum, item) => sum + (item.weight ?? 0), 0)
+  const unknown = items.filter((item) => item.weight == null).length
+  return {
+    total, unknown,
+    label: !items.length ? 'Free' : unknown || total === 0 ? `${items.length} due` : workloadLabel(total),
+  }
+}

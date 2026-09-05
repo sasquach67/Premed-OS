@@ -1,3 +1,4 @@
+import { isTypingTarget } from '@/lib/keyboard'
 import { useEffect, useState, type ReactNode } from 'react'
 import { AlertCircle, Pin, PinOff } from 'lucide-react'
 import { CenterPeek, type RecordOpenMode } from '@/components/common/CenterPeek'
@@ -44,8 +45,7 @@ export function RecordOpenWorkspace({
   useEffect(() => {
     if (!open || mode !== 'split') return
     const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null
-      if (target?.matches('input, textarea, select, [contenteditable="true"]')) return
+      if (event.defaultPrevented || event.isComposing || isTypingTarget(event.target)) return
       if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
       const index = records.findIndex((record) => record.id === activeId)
       if (index < 0) return

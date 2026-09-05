@@ -34,6 +34,6 @@ export function rankCommandHits(index: CommandHit[], query: string, recentIds: s
     }))
     const actionBoost = verbQuery && hit.kind === 'action' ? -100 : 0
     const recentBoost = recentIds.indexOf(hit.id)
-    return { hit, score: score + actionBoost + (recentBoost >= 0 ? recentBoost - 8 : 0) }
+    return { hit, score: score === 9999 ? 9999 : score + actionBoost + (recentBoost >= 0 ? recentBoost - recentIds.length : 0) }
   }).filter((entry) => entry.score < 9999).sort((a, b) => a.score - b.score).map((entry) => entry.hit).slice(0, limit)
 }

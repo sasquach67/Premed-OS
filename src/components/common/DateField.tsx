@@ -5,9 +5,9 @@
    Built on the existing Radix Popover + date-fns; no new deps.
    Value is an ISO 'yyyy-MM-dd' string ('' = unset).
    ============================================================ */
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
-  addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay,
+  addDays, addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay,
   isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths,
 } from 'date-fns'
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from 'lucide-react'
@@ -15,7 +15,7 @@ import { fmtDeadline, fmtEventDate } from '@/lib/date'
 import { cn } from '@/lib/utils'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
-const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 function toDate(iso: string): Date | null {
   if (!iso) return null
@@ -38,6 +38,20 @@ export function DateField({
   const selected = toDate(value)
   const [open, setOpen] = useState(false)
   const [view, setView] = useState(() => selected ?? new Date())
+  const [focusedDate, setFocusedDate] = useState(() => selected ?? new Date())
+  const gridRef = useRef<HTMLDivElement>(null)
+  const focusRequested = useRef(false)
+  function moveFocus(date: Date) {
+    focusRequested.current = true
+    setFocusedDate(date)
+    setView(date)
+  }
+  useLayoutEffect(() => {
+    if (open && focusRequested.current) {
+      gridRef.current?.querySelector<HTMLButtonElement>(`[data-date="${format(focusedDate, 'yyyy-MM-dd')}"]`)?.focus()
+      focusRequested.current = false
+    }
+  }, [focusedDate, open])
 
   const days = useMemo(() => {
     const gridStart = startOfWeek(startOfMonth(view), { weekStartsOn: 0 })
@@ -53,7 +67,7 @@ export function DateField({
     : placeholder
 
   return (
-    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) setView(selected ?? new Date()) }}>
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) { setView(selected ?? new Date()); setFocusedDate(selected ?? new Date()) } }}>
       <PopoverTrigger
         aria-label={ariaLabel ?? placeholder}
         className={cn(
@@ -67,34 +81,56 @@ export function DateField({
       </PopoverTrigger>
       <PopoverContent
         align={align}
+        onOpenAutoFocus={event => {
+          event.preventDefault()
+          gridRef.current?.querySelector<HTMLButtonElement>('[tabindex="0"]')?.focus()
+        }}
         className="w-[17rem] rounded-2xl border-border bg-card/95 p-3 font-display shadow-xl backdrop-blur-md"
       >
         <div className="mb-2 flex items-center justify-between">
-          <button type="button" aria-label="Previous month" onClick={() => setView((v) => subMonths(v, 1))} className="grid size-7 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35">
+          <button type="button" aria-label="Previous month" onClick={() => moveFocus(subMonths(focusedDate, 1))} className="grid size-7 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35">
             <ChevronLeft className="size-4" />
           </button>
           <span className="text-sm font-extrabold tabular-nums">{format(view, 'MMMM yyyy')}</span>
-          <button type="button" aria-label="Next month" onClick={() => setView((v) => addMonths(v, 1))} className="grid size-7 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35">
+          <button type="button" aria-label="Next month" onClick={() => moveFocus(addMonths(focusedDate, 1))} className="grid size-7 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35">
             <ChevronRight className="size-4" />
           </button>
         </div>
         <div className="mb-1 grid grid-cols-7 text-center text-[0.65rem] font-bold uppercase tracking-wide text-muted-foreground">
-          {WEEKDAYS.map((d, i) => <span key={i} className="py-1">{d}</span>)}
+          {WEEKDAYS.map((d, i) => <abbr key={i} title={d} className="py-1 no-underline">{d[0]}</abbr>)}
         </div>
-        <div className="grid grid-cols-7 gap-0.5">
-          {days.map((day) => {
+        <div ref={gridRef} role="grid" aria-label={format(view, 'MMMM yyyy')} onKeyDown={event => {
+          let next: Date
+          switch (event.key) {
+            case 'ArrowLeft': next = addDays(focusedDate, -1); break
+            case 'ArrowRight': next = addDays(focusedDate, 1); break
+            case 'ArrowUp': next = addDays(focusedDate, -7); break
+            case 'ArrowDown': next = addDays(focusedDate, 7); break
+            case 'Home': next = startOfWeek(focusedDate); break
+            case 'End': next = endOfWeek(focusedDate); break
+            case 'PageUp': next = subMonths(focusedDate, event.shiftKey ? 12 : 1); break
+            case 'PageDown': next = addMonths(focusedDate, event.shiftKey ? 12 : 1); break
+            default: return
+          }
+          event.preventDefault()
+          moveFocus(next)
+        }}>
+          {Array.from({ length: days.length / 7 }, (_, week) => <div key={week} role="row" className="grid grid-cols-7 gap-0.5">
+          {days.slice(week * 7, week * 7 + 7).map((day) => {
             const isSel = selected != null && isSameDay(day, selected)
             const isToday = isSameDay(day, today)
             const inMonth = isSameMonth(day, view)
             return (
-              <button
-                key={day.toISOString()}
+              <div key={day.toISOString()} role="gridcell" aria-selected={isSel}><button
+                data-date={format(day, 'yyyy-MM-dd')}
+                tabIndex={isSameDay(day, focusedDate) ? 0 : -1}
+                onFocus={() => setFocusedDate(day)}
                 type="button"
                 aria-label={format(day, 'PPPP')}
-                aria-pressed={isSel}
+                aria-current={isToday ? 'date' : undefined}
                 onClick={() => { onChange(format(day, 'yyyy-MM-dd')); setOpen(false) }}
                 className={cn(
-                  'grid size-9 place-items-center rounded-lg text-sm font-bold tabular-nums transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+                  'grid h-9 w-full place-items-center rounded-lg text-sm font-bold tabular-nums transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
                   !inMonth && 'text-muted-foreground/40',
                   inMonth && !isSel && 'hover:bg-muted',
                   isSel && 'bg-primary text-primary-foreground shadow-sm',
@@ -102,9 +138,10 @@ export function DateField({
                 )}
               >
                 {format(day, 'd')}
-              </button>
+              </button></div>
             )
           })}
+          </div>)}
         </div>
         <div className="mt-2 flex items-center justify-between border-t border-border/60 pt-2">
           <button type="button" onClick={() => { onChange(format(new Date(), 'yyyy-MM-dd')); setOpen(false) }} className="rounded-md px-2 py-1 text-xs font-bold text-primary transition hover:bg-primary/10">

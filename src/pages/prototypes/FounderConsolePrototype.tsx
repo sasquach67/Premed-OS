@@ -1,3 +1,4 @@
+import { isTypingTarget } from '@/lib/keyboard'
 /*
  * PROTOTYPE ONLY — Three founder-console directions, switchable with
  * `?variant=command|desk|pulse` at /prototype/founder-console.
@@ -85,7 +86,7 @@ function Switcher({ variant }: { variant: Variant }) {
   const navigate = useNavigate()
   const index = VARIANTS.findIndex((item) => item.id === variant)
   const move = useCallback((step: number) => navigate(`/prototype/founder-console?variant=${VARIANTS[(index + step + VARIANTS.length) % VARIANTS.length].id}`), [index, navigate])
-  useEffect(() => { const onKey = (event: KeyboardEvent) => { const tag = (event.target as HTMLElement | null)?.tagName; if (tag === 'INPUT' || tag === 'TEXTAREA' || (event.target as HTMLElement | null)?.isContentEditable) return; if (event.key === 'ArrowLeft') move(-1); if (event.key === 'ArrowRight') move(1) }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey) }, [move])
+  useEffect(() => { const onKey = (event: KeyboardEvent) => { if (event.isComposing || event.defaultPrevented || isTypingTarget(event.target)) return; if (event.key === 'ArrowLeft') move(-1); if (event.key === 'ArrowRight') move(1) }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey) }, [move])
   if (!import.meta.env.DEV) return null
   return <div className="fixed inset-x-0 bottom-5 z-50 flex justify-center"><div className="flex items-center gap-2 rounded-full border border-border bg-background/95 p-1.5 shadow-2xl backdrop-blur"><button aria-label="Previous prototype" onClick={() => move(-1)} className="grid size-9 place-items-center rounded-full hover:bg-muted"><ArrowLeft className="size-4" /></button><span className="min-w-44 text-center text-xs font-extrabold">{VARIANTS[index].label}</span><button aria-label="Next prototype" onClick={() => move(1)} className="grid size-9 place-items-center rounded-full hover:bg-muted"><ArrowRight className="size-4" /></button></div></div>
 }

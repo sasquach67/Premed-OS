@@ -25,3 +25,13 @@ describe('command ranking', () => {
     expect(elapsed).toBeLessThan(100)
   })
 })
+
+it('never penalises the least recent remembered match or promotes a nonmatch', () => {
+  const hits: CommandHit[] = [
+    { id: 'unused', label: 'Biology', sub: '', group: 'Records', kind: 'record' },
+    { id: 'recent', label: 'Biology', sub: '', group: 'Records', kind: 'record' },
+    { id: 'miss', label: 'Chemistry', sub: '', group: 'Records', kind: 'record' },
+  ]
+  const recents = ['miss', ...Array.from({length: 10}, (_, i) => String(i)), 'recent']
+  expect(rankCommandHits(hits, 'Biology', recents).map(hit => hit.id)).toEqual(['recent', 'unused'])
+})

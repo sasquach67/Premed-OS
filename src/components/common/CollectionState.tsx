@@ -9,12 +9,14 @@ export type CollectionLoadState = 'ready' | 'loading' | 'error'
 export function CollectionState({
   state,
   empty,
+  filtered,
   errorMessage = 'This collection could not be loaded.',
   onRetry,
   skeletonRows = 4,
 }: {
   state: CollectionLoadState
   empty?: { icon: LucideIcon; title: string; hint: string; action?: React.ReactNode }
+  filtered?: { active: boolean; title?: string; hint?: string; onClear: () => void }
   errorMessage?: string
   onRetry?: () => void
   skeletonRows?: number
@@ -43,6 +45,7 @@ export function CollectionState({
   }
 
   if (empty) {
+    if (filtered?.active) return <EmptyState icon={empty.icon} title={filtered.title ?? 'No matching records'} hint={filtered.hint ?? 'Try a different search or clear your filters.'} action={<Button variant="outline" onClick={filtered.onClear}>Clear filters</Button>} />
     return <EmptyState icon={empty.icon} title={empty.title} hint={empty.hint} action={empty.action} />
   }
 

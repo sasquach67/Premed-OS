@@ -1,3 +1,4 @@
+import { isRouteAvailable } from '@/app/availability'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Bell, BookOpenText, Crown, LogOut, PanelLeftClose, PanelLeftOpen, Settings, ShieldCheck, UserRound } from 'lucide-react'
@@ -72,7 +73,7 @@ function DesktopSidebar({ onNavigate, onSignOut, signedIn = false, desktopLocked
             {isFounder && <DropdownMenuItem asChild><Link to="/founder" onClick={onNavigate}><ShieldCheck className="size-4" /> Founder control</Link></DropdownMenuItem>}
             <DropdownMenuItem asChild><Link to="/upgrade" onClick={onNavigate}><Crown className="size-4" /> Upgrade plan</Link></DropdownMenuItem>
             <DropdownMenuItem onSelect={() => { setPatchNotesOpen(true); setPatchNotesSeen(true); localStorage.setItem('premed_hq_patch_notes_seen', 'foundation-l5-shell') }}><BookOpenText className="size-4" /> Patch Notes {!patchNotesSeen && <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-extrabold text-primary">New</span>}</DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => window.dispatchEvent(new Event('premed:attention'))}><Bell className="size-4" /> Notifications</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => window.setTimeout(() => window.dispatchEvent(new Event('premed:attention')), 0)}><Bell className="size-4" /> Notifications</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem disabled={!signedIn} onSelect={onSignOut}><LogOut className="size-4" /> {signedIn ? 'Sign out' : 'Signed out'}</DropdownMenuItem>
           </DropdownMenuContent>
@@ -87,7 +88,7 @@ function DesktopSidebar({ onNavigate, onSignOut, signedIn = false, desktopLocked
 function DesktopNavItem({ route, locationPath, onNavigate, onRoute }: { route: RouteDef; locationPath: string; onNavigate?: () => void; onRoute: (route: string) => void }) {
   const to = route.id === 'home' ? '/' : `/${route.id}`
   const active = route.id === 'home' ? locationPath === '/' : locationPath === to || locationPath.startsWith(`${to}/`)
-  return <li><Link to={to} aria-current={active ? 'page' : undefined} onClick={() => { onRoute(route.id); onNavigate?.() }} className={cn('sidebar-static-row group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring', active && 'sidebar-static-row-active')}><span className="sidebar-static-icon"><route.icon className={cn('size-5', active ? 'text-sidebar-primary' : 'text-muted-foreground group-hover:text-sidebar-primary')} /></span><span className="sidebar-static-label">{route.label}</span></Link></li>
+  return <li><Link to={to} aria-current={active ? 'page' : undefined} onClick={() => { onRoute(route.id); onNavigate?.() }} className={cn('sidebar-static-row group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring', active && 'sidebar-static-row-active')}><span className="sidebar-static-icon"><route.icon className={cn('size-5', active ? 'text-sidebar-primary' : 'text-muted-foreground group-hover:text-sidebar-primary')} /></span><span className="sidebar-static-label flex items-center gap-1"><span className="truncate">{route.label}</span>{!isRouteAvailable(`/${route.id}`) && <span className="shrink-0 text-[10px] font-semibold text-muted-foreground"> Soon</span>}</span></Link></li>
 }
 
 function MobileSidebar({ onNavigate, signedIn = false }: SidebarProps) {
@@ -108,9 +109,9 @@ function MobileSidebar({ onNavigate, signedIn = false }: SidebarProps) {
 function MobileItem({ route, locationPath, onNavigate, onRoute }: { route: RouteDef; locationPath: string; onNavigate?: () => void; onRoute: (route: string) => void }) {
   const to = route.id === 'home' ? '/' : `/${route.id}`
   const active = route.id === 'home' ? locationPath === '/' : locationPath === to || locationPath.startsWith(`${to}/`)
-  return <Link to={to} onClick={() => { onRoute(route.id); onNavigate?.() }} className={cn('flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold', active ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/85')}><route.icon className="size-5 text-sidebar-primary" />{route.label}</Link>
+  return <Link to={to} onClick={() => { onRoute(route.id); onNavigate?.() }} className={cn('flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold', active ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/85')}><route.icon className="size-5 text-sidebar-primary" />{route.label}{!isRouteAvailable(`/${route.id}`) && <span className="ml-2 text-[10px] font-semibold text-muted-foreground"> Soon</span>}</Link>
 }
 
 function PatchNotesDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (value: boolean) => void }) {
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>What’s new in Premed OS</DialogTitle><DialogDescription>Foundation update · version 0.0.0</DialogDescription></DialogHeader><div className="space-y-3 text-sm"><p><strong>A safer workspace.</strong> Undo, Trash, autosave states, and guarded record opening now work together.</p><p><strong>Lists that fit your work.</strong> Comfortable and compact density, saved views, bulk actions, and two-pane focus.</p><p><strong>A connected shell.</strong> Quick Add, command actions, Attention, Atlas reservation, and the finalized navigation.</p></div></DialogContent></Dialog>
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>What’s new in Premed OS</DialogTitle><DialogDescription>Academics beta</DialogDescription></DialogHeader><div className="space-y-3 text-sm"><p><strong>A safer workspace.</strong> Undo, Trash, autosave states, and guarded record opening now work together.</p><p><strong>Lists that fit your work.</strong> Comfortable and compact density, saved views, bulk actions, and two-pane focus.</p><p><strong>A connected shell.</strong> Quick Add, command actions, Attention, Atlas reservation, and the finalized navigation.</p></div></DialogContent></Dialog>
 }

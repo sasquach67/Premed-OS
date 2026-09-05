@@ -1,3 +1,5 @@
+import { useToast } from '@/components/common/useToast'
+import { isRouteAvailable } from '@/app/availability'
 import { AnimatePresence, m, useReducedMotion } from 'motion/react'
 import { ArrowRight, BookOpenCheck, CalendarClock, Scale, Sparkles, TrendingDown, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -19,6 +21,7 @@ export function SmartActionPanel({
   recommendations?: Recommendation[]
 }) {
   const state = useStore()
+  const toast = useToast()
   const accept = useStore((store) => store.acceptRecommendation)
   const dismiss = useStore((store) => store.dismissRecommendation)
   const reduceMotion = useReducedMotion()
@@ -27,11 +30,19 @@ export function SmartActionPanel({
   // derived by their parent. Filter here too so a persisted dismissal removes
   // the card immediately, just as it does on the Overview panel.
   const visibleRecommendations = recommendations.filter(
-    (recommendation) => !state.settings.recommendationState[recommendation.id]
+    (recommendation) => !state.settings.recommendationState[recommendation.id] && isRouteAvailable(recommendation.route)
   )
 
   function dismissAll() {
-    visibleRecommendations.forEach((recommendation) => dismiss(recommendation))
+    const ids = visibleRecommendations.map(rec => rec.id)
+    const previous = Object.fromEntries(ids.map(id => [id, state.settings.recommendationState[id]]))
+    const dismissedAt = Date.now()
+    state.update(draft => {
+      for (const id of ids) draft.settings.recommendationState[id] = { status: 'dismissed', at: dismissedAt, reason: 'Dismissed together' }
+    })
+    toast({ title: 'Suggestions dismissed', description: 'You can also restore dismissed suggestions in Settings.', onUndo: () => useStore.getState().update(draft => {
+      for (const id of ids) { if (draft.settings.recommendationState[id]?.status !== 'dismissed' || draft.settings.recommendationState[id]?.at !== dismissedAt) continue; if (previous[id]) draft.settings.recommendationState[id] = previous[id]; else delete draft.settings.recommendationState[id] }
+    }) })
   }
 
   return (

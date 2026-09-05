@@ -6,8 +6,9 @@
    crash-loop with no way to reach Settings → Export. This screen
    always offers a raw data export + recovery actions.
 
-   Deliberately dependency-free: no store import, no UI kit, no
+   Independent of the app UI: no store import, no UI kit, no
    router — so it still renders when any of those are the problem.
+   The small demoMode helper selects the active workspace storage key.
    ============================================================ */
 import { Component, type CSSProperties, type ErrorInfo, type ReactNode } from 'react'
 import { activeStorageKey } from '@/lib/demoMode'
@@ -17,7 +18,7 @@ function rawStorageKey() {
 }
 
 interface Props { children: ReactNode }
-interface State { error: Error | null }
+interface State { error: Error | null; copied?: boolean }
 
 function downloadRawData(): void {
   const raw = localStorage.getItem(rawStorageKey())
@@ -37,6 +38,7 @@ function downloadRawData(): void {
 
 export class AppErrorBoundary extends Component<Props, State> {
   state: State = { error: null }
+  private componentStack = ''
 
   static getDerivedStateFromError(error: Error): State {
     return { error }
@@ -44,6 +46,7 @@ export class AppErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
     // Log for debugging; there is no telemetry in this app by design.
+    this.componentStack = info.componentStack ?? ''
     console.error('Premed OS crashed:', error, info.componentStack)
   }
 
@@ -59,21 +62,27 @@ export class AppErrorBoundary extends Component<Props, State> {
 
   render(): ReactNode {
     if (!this.state.error) return this.props.children
+    const dark = document.documentElement.classList.contains('dark')
+    const surface = dark ? '#2b2722' : '#fff'
+    const border = dark ? '#3c352d' : '#e5e7eb'
     return (
       <div style={{
         minHeight: '100vh', display: 'grid', placeItems: 'center',
-        fontFamily: 'system-ui, sans-serif', background: '#faf7f2', color: '#1f2937', padding: 24,
+        fontFamily: 'system-ui, sans-serif', background: dark ? '#211e1a' : '#faf7f2', color: dark ? '#ece3d4' : '#1f2937', padding: 24,
       }}>
-        <div style={{ maxWidth: 520, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: 28, boxShadow: '0 8px 24px rgba(0,0,0,.06)' }}>
+        <div style={{ maxWidth: 520, background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: 28, boxShadow: '0 8px 24px rgba(0,0,0,.06)' }}>
           <h1 style={{ fontSize: 20, margin: '0 0 8px' }}>Something went wrong</h1>
           <p style={{ margin: '0 0 16px', lineHeight: 1.5 }}>
             Premed OS hit an unexpected error. Your data is still saved in this browser —
             export a copy below, then try reloading.
           </p>
-          <pre style={{ background: '#f3f4f6', borderRadius: 8, padding: 12, fontSize: 12, overflow: 'auto', maxHeight: 120 }}>
+          <pre style={{ background: dark ? '#322e28' : '#f3f4f6', borderRadius: 8, padding: 12, fontSize: 12, overflow: 'auto', maxHeight: 120 }}>
             {this.state.error.message}
           </pre>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
+            <button onClick={async () => {
+              try { await navigator.clipboard.writeText(`${this.state.error?.stack ?? this.state.error?.message}\n${this.componentStack}`); this.setState({ copied: true }) } catch { this.setState({ copied: false }) }
+            }} style={btn('#374151')}>{this.state.copied ? 'Copied' : 'Copy error details'}</button>
             <button onClick={downloadRawData} style={btn('#0f766e')}>Export my data (JSON)</button>
             <button onClick={() => window.location.reload()} style={btn('#1d4ed8')}>Reload</button>
             <button onClick={this.handleReset} style={btn('#b91c1c')}>Reset to defaults…</button>

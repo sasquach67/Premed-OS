@@ -54,6 +54,21 @@ describe('ClassHub Guide contract', () => {
     })
   }
 
+  it('creates a visible Guide item only after Save and preserves Cancel', async () => {
+    const original = useStore.getState().academics.classCenter.notes.length
+    const open = () => [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('New Guide item'))!.click()
+    await act(async () => open())
+    expect(useStore.getState().academics.classCenter.notes).toHaveLength(original)
+    await act(async () => [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find((button) => button.textContent === 'Cancel')!.click())
+    expect(useStore.getState().academics.classCenter.notes).toHaveLength(original)
+    await act(async () => open())
+    await act(async () => changeField(document.querySelector<HTMLInputElement>('[role="dialog"] input')!, 'Ask about office hours'))
+    await act(async () => document.querySelector<HTMLFormElement>('[role="dialog"] form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    await render()
+    expect(container.textContent).toContain('Ask about office hours')
+    expect(useStore.getState().academics.classCenter.notes.find((note) => note.title === 'Ask about office hours')).toMatchObject({ type: 'other', kind: 'about-class' })
+  })
+
   it('creates source-backed syllabus suggestions and keeps accept/dismiss controls live', async () => {
     await render()
     const proposals = useStore.getState().academics.classCenter.guideProposals.filter((item) => item.courseId === courseId && item.source.sourceKind === 'syllabus')
@@ -151,6 +166,7 @@ describe('ClassHub Guide contract', () => {
   })
 
   it('collapses an unsaved Course lens when the student cancels', async () => {
+    await act(async () => [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Course lens and professor evidence'))!.click())
     expect(container.querySelector('textarea[aria-label="Course lens"]')).toBeTruthy()
     const lensEditor = container.querySelector('textarea[aria-label="Course lens"]')!.closest('.class-hub-panel')!
     const cancel = [...lensEditor.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Cancel')!

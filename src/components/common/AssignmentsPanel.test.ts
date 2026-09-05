@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ClassAssignment } from '@/lib/types'
-import { assignmentBucket, workloadLabel } from '@/components/common/assignmentsLogic'
+import { assignmentBucket, assignmentWorkload, workloadLabel } from '@/components/common/assignmentsLogic'
 
 function assignment(patch: Partial<ClassAssignment>): ClassAssignment {
   return {
@@ -38,4 +38,11 @@ describe('assignment agenda rules', () => {
     expect(workloadLabel(30)).toBe('Busy')
     expect(workloadLabel(30.1)).toBe('Heavy')
   })
+})
+
+it('does not call unweighted or zero-weight work free', () => {
+  expect(assignmentWorkload([{ weight: undefined }]).label).toBe('1 due')
+  expect(assignmentWorkload([{ weight: 0 }]).label).toBe('1 due')
+  expect(assignmentWorkload([{ weight: 20 }, { weight: undefined }])).toMatchObject({ total: 20, unknown: 1, label: '2 due' })
+  expect(assignmentWorkload([]).label).toBe('Free')
 })

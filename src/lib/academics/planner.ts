@@ -222,3 +222,11 @@ export function prereqVsMcat(courses: Course[], mcatDate?: string): Course[] {
     return own != null && own >= months
   })
 }
+
+/** Only an actual placement or a protected academic record supports coverage. */
+export function placedCourseCodes(courses: readonly Course[], slots: readonly PlannerTerm[] = []): string[] {
+  return courses.filter((course) => course.status === 'completed' || course.status === 'in-progress'
+    || termToMonths(course.term) != null
+    || slots.some((slot) => slot.id === course.plannerTermId && termToMonths(slot.label) != null))
+    .map((course) => course.code)
+}

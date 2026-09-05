@@ -27,7 +27,7 @@ export function HelpFeedbackLauncher() {
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="fixed bottom-4 right-4 z-40 grid size-10 place-items-center rounded-full border border-border bg-card text-sm font-extrabold shadow-lg transition-transform duration-200 hover:-translate-y-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Help and feedback" title="Help and feedback (?)">?</button>
+      <button type="button" onClick={() => setOpen(true)} className="fixed bottom-4 right-4 z-40 grid size-11 place-items-center rounded-full border border-border bg-card text-sm font-extrabold shadow-lg transition-transform duration-200 hover:-translate-y-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Help and feedback" title="Help and feedback"><HelpCircle className="size-5" aria-hidden="true" /></button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
@@ -35,9 +35,10 @@ export function HelpFeedbackLauncher() {
             <DialogDescription>Tell us what feels confusing, broken, or worth improving.</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" asChild><a href="#/help"><MessageSquareText className="size-4" /> Open help</a></Button>
+            <Button variant="outline" asChild><a href="#/help" onClick={() => setOpen(false)}><MessageSquareText className="size-4" /> Open help</a></Button>
             <Button variant="outline" asChild><a href={`mailto:${SUPPORT_EMAIL}`}><Mail className="size-4" /> Email support</a></Button>
           </div>
+          <p className="text-xs text-muted-foreground">Keyboard: ⌘/Ctrl K opens search; ⌘/Ctrl B toggles the sidebar; ⌘/Ctrl Shift A opens Quick Add.</p>
           <form onSubmit={send} className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="shell-feedback">Feedback</Label>

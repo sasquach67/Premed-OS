@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/breadcrumb'
 import { cn } from '@/lib/utils'
 import { isDemoMode } from '@/lib/demoMode'
-import { isTypingTarget } from '@/lib/keyboard'
+import { isTypingTarget, isModalOpen } from '@/lib/keyboard'
 
 type TopbarProps = {
   onMenu: () => void
@@ -32,20 +32,22 @@ export function Topbar({ onMenu, onShowDesktopSidebar, desktopSidebarHidden = fa
   const { openQuickAdd } = useShellActions()
   const activeRoute = useMemo(() => {
     const first = location.pathname.split('/').filter(Boolean)[0] || 'home'
-    return ROUTE_MAP[first] ?? ROUTE_MAP.home
+    return ROUTE_MAP[first === 'overview' ? 'home' : first] ?? ROUTE_MAP.home
   }, [location.pathname])
   const deepLabel = useMemo(() => {
     const parts = location.pathname.split('/').filter(Boolean)
     if (parts.length < 2 || parts[0] === 'atlas') return ''
     if (parts[0] === 'ecs' && parts[1] === 'org') return data.orgs.find((org) => org.id === parts[2])?.name ?? 'Organization'
     if (parts[0] === 'academics' && parts[1] === 'classes') return data.courses.find((course) => course.id === parts[2])?.code ?? 'Class'
-    return parts.at(-1)?.replace(/-/g, ' ') ?? ''
-  }, [location.pathname, data.orgs, data.courses])
+    if (parts[0] === 'overview' && parts[1] === 'goals') return parts[2] === 'new' ? 'New goal' : data.quarterlyGoals.find(goal => goal.id === parts[2])?.text ?? 'Goal'
+    if (parts[0] === 'review' && parts.length > 1) return 'Review item'
+    return parts.length === 2 ? (parts[1] === 'tasks' ? 'Tasks' : '') : ''
+  }, [location.pathname, data.orgs, data.courses, data.quarterlyGoals])
   const status = useMemo(() => attentionStatus(buildAttention(data), backup.enabled), [data, backup.enabled])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (!isTypingTarget(event.target) && !event.metaKey && !event.ctrlKey && !event.altKey && event.key.toLowerCase() === 'q') {
+      if (!event.isComposing && !event.defaultPrevented && !isModalOpen() && !isTypingTarget(event.target) && (event.metaKey || event.ctrlKey) && event.shiftKey && !event.altKey && event.key.toLowerCase() === 'a') {
         event.preventDefault()
         openQuickAdd()
       }
@@ -58,7 +60,7 @@ export function Topbar({ onMenu, onShowDesktopSidebar, desktopSidebarHidden = fa
     <header className="shell-topbar sticky top-0 z-20 border-b border-border/60 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/78">
       <div className="mx-auto flex min-h-14 w-full max-w-[84rem] min-w-0 items-center gap-2 px-4 py-2 md:px-8">
         <Button variant="ghost" size="icon" className="shrink-0 lg:hidden" onClick={onMenu} aria-label="Open menu"><Menu className="size-5" /></Button>
-        {desktopSidebarHidden && onShowDesktopSidebar && <Button variant="ghost" size="icon" className="hidden shrink-0 lg:inline-flex" onPointerDown={(event) => { event.preventDefault(); onShowDesktopSidebar() }} aria-label="Show sidebar"><PanelLeftOpen className="size-5" /></Button>}
+        {desktopSidebarHidden && onShowDesktopSidebar && <Button variant="ghost" size="icon" className="hidden shrink-0 lg:inline-flex" onClick={onShowDesktopSidebar} aria-label="Show sidebar"><PanelLeftOpen className="size-5" /></Button>}
         {/* Keep a stable context column so a deep breadcrumb does not visually
          * crowd the command field. The search affordance then begins at a
          * predictable point across Overview detail routes. */}
@@ -102,13 +104,5 @@ function LiveStatusChip({ label, tone }: { label: string; tone: 'alert' | 'due' 
   )
   const content = <><span className="size-1.5 rounded-full bg-current" /><span className="truncate">{label}</span></>
 
-  if (tone === 'alert' || tone === 'due') {
-    return (
-      <button type="button" className={className} onClick={() => window.dispatchEvent(new Event('premed:attention'))}>
-        {content}
-      </button>
-    )
-  }
-
-  return <Link to="/settings" className={className}>{content}</Link>
+  return <button type="button" className={className} onClick={() => window.dispatchEvent(new Event('premed:attention'))}>{content}</button>
 }

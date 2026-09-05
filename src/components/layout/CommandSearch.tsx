@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ExternalLink, Search, Zap } from 'lucide-react'
 import { useStore } from '@/store/store'
+import { isRouteAvailable, isQuickAddAvailable } from '@/app/availability'
 import { ROUTES, ROUTE_MAP } from '@/app/routes'
 import {
   CommandDialog,
@@ -15,7 +16,7 @@ import { useShellActions } from './shellActions'
 import { useTheme } from '@/store/useTheme'
 import type { QuickAddKind } from './shellActions'
 import { rankCommandHits, type CommandHit } from './commandSearchCore'
-import { isTypingTarget } from '@/lib/keyboard'
+import { isTypingTarget, isModalOpen } from '@/lib/keyboard'
 import { workspaceScopedKey } from '@/lib/demoMode'
 
 const RECENT_KEY = 'premed_hq_command_recents'
@@ -30,12 +31,12 @@ export function CommandSearch() {
   const [recentIds, setRecentIds] = useState(readRecents)
   const navigate = useNavigate()
   const store = useStore()
-  const { openQuickAdd } = useShellActions()
+  const { openQuickAdd, toggleSidebar } = useShellActions()
   const { isDark, setTheme } = useTheme()
 
   const actions = useMemo<CommandHit[]>(() => {
     const quick = (kind: QuickAddKind) => () => window.setTimeout(() => openQuickAdd(kind), 0)
-    return [
+    const entries: CommandHit[] = [
       { id: 'action-task', label: 'New task', verbs: 'add create log', sub: 'Create without leaving this page', group: 'Actions', kind: 'action', action: quick('task') },
       { id: 'action-course', label: 'New course', verbs: 'add create', sub: 'Add to Academics', group: 'Actions', kind: 'action', action: quick('course') },
       { id: 'action-hours', label: 'Log hours', verbs: 'add new create', sub: 'Add an experience hour log', group: 'Actions', kind: 'action', action: quick('hours') },
@@ -43,15 +44,16 @@ export function CommandSearch() {
       { id: 'action-school', label: 'New school', verbs: 'add create', sub: 'Add to School List', group: 'Actions', kind: 'action', action: quick('school') },
       { id: 'action-story', label: 'New story', verbs: 'add create', sub: 'Add to Story Bank', group: 'Actions', kind: 'action', action: quick('story') },
       { id: 'action-overdue', label: 'Find overdue work', verbs: 'show open', sub: 'Open tasks', group: 'Actions', kind: 'action', action: () => navigate('/overview/tasks?filter=overdue') },
-      { id: 'action-incomplete', label: 'Find incomplete records', verbs: 'show open', sub: 'Open the data-health Attention feed', group: 'Actions', kind: 'action', action: () => window.dispatchEvent(new Event('premed:attention')) },
+      { id: 'action-incomplete', label: 'Find incomplete records', verbs: 'show open', sub: 'Open the data-health Attention feed', group: 'Actions', kind: 'action', action: () => window.setTimeout(() => window.dispatchEvent(new Event('premed:attention')), 0) },
       { id: 'action-theme', label: 'Toggle appearance', verbs: 'switch change', sub: `Use ${isDark ? 'light' : 'dark'} mode`, group: 'Actions', kind: 'action', action: () => setTheme(isDark ? 'light' : 'dark') },
-      { id: 'action-sidebar', label: 'Toggle sidebar', verbs: 'show hide collapse expand', sub: 'Change sidebar dock', group: 'Actions', kind: 'action', action: () => store.update((draft) => { draft.settings.sidebarCollapsed = !draft.settings.sidebarCollapsed }) },
+      { id: 'action-sidebar', label: 'Toggle sidebar', verbs: 'show hide collapse expand', sub: 'Change sidebar dock', group: 'Actions', kind: 'action', action: () => toggleSidebar?.() },
     ]
-  }, [openQuickAdd, navigate, isDark, setTheme, store])
+    return entries.filter(hit => !['hours', 'experience', 'school', 'story'].some(kind => hit.id === `action-${kind}` && !isQuickAddAvailable(kind)))
+  }, [openQuickAdd, toggleSidebar, navigate, isDark, setTheme])
 
   const index = useMemo<CommandHit[]>(() => {
     const hits: CommandHit[] = [...actions]
-    for (const route of ROUTES.filter((item) => item.nav !== false)) hits.push({ id: `page-${route.id}`, label: route.label, sub: route.group, group: 'Navigate', kind: 'page', route: route.id === 'home' ? '/' : `/${route.id}` })
+    for (const route of ROUTES.filter((item) => item.nav !== false)) hits.push({ id: `page-${route.id}`, label: route.label, sub: isRouteAvailable(`/${route.id}`) ? route.group : 'Coming soon', group: 'Navigate', kind: 'page', route: route.id === 'home' ? '/' : `/${route.id}` })
     hits.push({ id: 'page-guide', label: 'Premed Ultimate Guide', sub: 'Overview', group: 'Navigate', kind: 'page', route: '/?guide=open' })
     for (const row of store.orgs) hits.push({ id: `org-${row.id}`, label: row.name, sub: row.role || row.type, group: 'Records', kind: 'record', route: `/ecs/org/${row.id}` })
     const courseById = new Map(store.courses.map((course) => [course.id, course]))
@@ -65,7 +67,7 @@ export function CommandSearch() {
     for (const row of store.schools) hits.push({ id: `school-${row.id}`, label: row.name, sub: row.location || row.type, group: 'Records', kind: 'record', route: '/schools' })
     for (const row of store.stories) hits.push({ id: `story-${row.id}`, label: row.title || row.prompt, sub: 'Story Bank', group: 'Records', kind: 'record', route: '/essays' })
     for (const row of store.resources) hits.push({ id: `resource-${row.id}`, label: row.label, sub: `${ROUTE_MAP[row.pillar]?.label ?? row.pillar} · ${row.category}`, group: 'External links', kind: 'external', url: row.url })
-    return hits
+    return hits.filter(hit => hit.kind !== 'record' || !hit.route || isRouteAvailable(hit.route))
   }, [actions, store.orgs, store.courses, store.academics.classCenter.workspaces, store.tasks, store.timelineMilestones, store.experiences, store.schools, store.stories, store.resources])
 
   const results = useMemo(() => {
@@ -78,9 +80,9 @@ export function CommandSearch() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (isTypingTarget(event.target)) return
+      if (event.isComposing || event.defaultPrevented || isTypingTarget(event.target) || isModalOpen()) return
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); setOpen((value) => !value) }
-      else if (event.key === '/') { event.preventDefault(); setOpen(true) }
+
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -103,6 +105,7 @@ export function CommandSearch() {
         <Search className="size-4" /><span className="hidden truncate md:inline">Search or run a command...</span><Kbd className="ml-auto hidden border border-border bg-transparent text-[10px] md:inline-flex">⌘K</Kbd>
       </button>
       <CommandDialog
+        shouldFilter={false}
         open={open}
         onOpenChange={setOpen}
         title="Search Premed OS"

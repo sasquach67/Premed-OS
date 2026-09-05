@@ -1,3 +1,4 @@
+import { preferredScrollBehavior } from '@/lib/scroll'
 /* ============================================================
    Landing — one page, not a marketing site (05 §1).
 
@@ -146,7 +147,7 @@ export function Landing() {
   useEffect(() => {
     const target = (location.state as { scrollTo?: string } | null)?.scrollTo
     if (!target) return
-    document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    document.getElementById(target)?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' })
   }, [location.state])
 
   return (

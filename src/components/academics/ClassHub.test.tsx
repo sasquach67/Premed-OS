@@ -87,6 +87,22 @@ describe('WritingTools', () => {
     })
   }
 
+  it('requires a title before saving a paper and keeps single feedback notes visible', async () => {
+    const count = useStore.getState().academics.classCenter.paperDrafts.length
+    await act(async () => [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Add paper'))!.click())
+    expect(useStore.getState().academics.classCenter.paperDrafts).toHaveLength(count)
+    const input = document.querySelector<HTMLInputElement>('[role="dialog"] input')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, 'Named paper')
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await act(async () => document.querySelector<HTMLFormElement>('[role="dialog"] form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    await render()
+    expect(container.textContent).toContain('Named paper')
+    expect(container.querySelector('button[aria-label="Edit Named paper"]')).toBeTruthy()
+    expect(container.textContent).toContain('Move the reader through the paragraph.')
+  })
+
   it('renders the writing ladder from persisted records and keeps its controls durable across a rerender', async () => {
     expect(container.textContent).toContain('Current draft')
     expect(container.textContent).toContain('Professor deadline')

@@ -5,6 +5,7 @@ export interface ShellActionsValue {
   openQuickAdd: (kind?: QuickAddKind) => void
   closeQuickAdd: () => void
   requestSignOut: () => void
+  toggleSidebar?: () => void
   quickAddOpen: boolean
   quickAddKind?: QuickAddKind
 }

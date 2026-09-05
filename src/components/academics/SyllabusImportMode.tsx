@@ -1,3 +1,4 @@
+import { preferredScrollBehavior } from '@/lib/scroll'
 /**
  * Syllabus import — the temporary full-screen mode (§4.1-M-a).
  *
@@ -391,7 +392,7 @@ export function SyllabusImportMode({
                                 <button
                                   key={kind}
                                   type="button"
-                                  onClick={() => document.getElementById(`syllabus-group-${kind}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                  onClick={() => document.getElementById(`syllabus-group-${kind}`)?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' })}
                                   className="group flex w-full shrink-0 items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:w-full"
                                 >
                                   <span className={cn('size-2 shrink-0 rounded-full', flagged ? 'bg-warning' : items.length ? 'bg-success' : 'border border-border bg-background')} aria-hidden="true" />

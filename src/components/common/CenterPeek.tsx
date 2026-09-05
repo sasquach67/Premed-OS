@@ -46,10 +46,10 @@ export function CenterPeek({
   }
 
   useEffect(() => {
-    if (!open) return
+    if (!open || confirmClose) return
     const onKeyDown = (event: KeyboardEvent) => {
       const command = event.metaKey || event.ctrlKey
-      if (command && event.key === '\\') {
+      if (command && allowSplit && event.key === '\\') {
         event.preventDefault()
         onModeChange(mode === 'split' ? 'peek' : 'split')
       }
@@ -57,14 +57,11 @@ export function CenterPeek({
         event.preventDefault()
         onModeChange(mode === 'expanded' ? 'peek' : 'expanded')
       }
-      if (event.key === 'Escape' && mode !== 'peek') {
-        event.preventDefault()
-        onModeChange('peek')
-      }
+
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [mode, onModeChange, open])
+  }, [mode, onModeChange, open, confirmClose, allowSplit])
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 767px)')
@@ -133,10 +130,6 @@ export function CenterPeek({
         >
           {children}
         </SidePeek>
-      ) : mode === 'expanded' ? (
-        <section className="min-h-[calc(100svh-10rem)] overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          {content}
-        </section>
       ) : (
         <DialogPrimitive.Root
           open
@@ -148,16 +141,18 @@ export function CenterPeek({
             <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-foreground/35 backdrop-blur-sm motion-safe:data-[state=open]:animate-in motion-safe:data-[state=open]:fade-in-0" />
             <DialogPrimitive.Content
               aria-label={label}
+              aria-describedby={undefined}
               className={cn(
                 'fixed z-50 flex overflow-hidden border border-border glass-surface shadow-2xl outline-none',
                 'inset-0 h-svh w-screen flex-col rounded-none',
                 'lg:inset-auto lg:left-1/2 lg:top-1/2 lg:h-[85vh] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-3xl',
+                mode === 'expanded' && 'lg:w-[96vw] lg:h-[96svh]',
                 mode === 'peek' && 'lg:w-[min(920px,72vw)]',
                 mode === 'split' && 'lg:w-[min(1180px,92vw)]',
                 'motion-safe:data-[state=open]:animate-in motion-safe:data-[state=open]:fade-in-0 motion-safe:lg:data-[state=open]:zoom-in-95'
               )}
               onEscapeKeyDown={(event) => {
-                if (mode !== 'peek') event.preventDefault()
+                if (mode !== 'peek') { event.preventDefault(); onModeChange('peek') }
               }}
             >
               <DialogPrimitive.Title className="sr-only">{label}</DialogPrimitive.Title>
