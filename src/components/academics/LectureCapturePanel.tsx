@@ -1,3 +1,5 @@
+import '@/pages/LecturePage.css'
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { BookOpen, Brain, Check, ChevronDown, CircleHelp, FileCheck2, FilePlus2, FileSearch, FileStack, FileText, FileUp, FlaskConical, Image as ImageIcon, ListChecks, MoreHorizontal, NotebookText, Presentation, Search, Sparkles } from 'lucide-react'
 import type { AcademicFile, ClassCenterData, Course, JournalStudyIntent, LectureBriefTrace, LectureRecord, SourceChunk } from '@/lib/types'
@@ -83,8 +85,8 @@ function TranscriptSourceHelp() {
   )
 }
 
-export function LectureCapturePanel({ courseId, course, data, onOpenNotes, initialLectureId, initialDestination = 'overview', displayMode = 'dialog' }: {
-  courseId: string; course?: Pick<Course, 'code' | 'title'>; data: ClassCenterData; onOpenNotes: () => void; initialLectureId?: string; initialDestination?: LectureDestination; displayMode?: 'dialog' | 'embedded'
+export function LectureCapturePanel({ courseId, course, data, onOpenNotes, initialLectureId, initialDestination = 'overview', displayMode = 'dialog', onNavigateLecture, onDeletedLecture }: {
+  courseId: string; course?: Pick<Course, 'code' | 'title'>; data: ClassCenterData; onOpenNotes: () => void; initialLectureId?: string; initialDestination?: LectureDestination; displayMode?: 'dialog' | 'embedded' | 'page'; onNavigateLecture?: (id: string) => void; onDeletedLecture?: () => void
 }) {
   const lectures = useMemo(() => data.lectures.filter((lecture) => lecture.courseId === courseId).sort((a, b) => b.createdAt - a.createdAt), [courseId, data.lectures])
   const [activeLectureId, setActiveLectureId] = useState<string | undefined>(initialLectureId)
@@ -93,12 +95,13 @@ export function LectureCapturePanel({ courseId, course, data, onOpenNotes, initi
   const [rebuildingLectureId, setRebuildingLectureId] = useState<string>()
   const [view, setView] = useState<WorkspaceView>(initialDestination === 'transcript' || initialDestination === 'evidence' ? 'sources' : initialDestination === 'study-work' ? 'materials' : 'brief')
   const [captureGuideOpen, setCaptureGuideOpen] = useState(false)
-  if (activeLecture?.workspaceState === 'complete' && rebuildingLectureId !== activeLecture.id) return <LectureWorkspace course={course} courseId={courseId} data={data} lectures={lectures} activeLecture={activeLecture} view={view} onView={setView} onSelect={(lecture) => { setActiveLectureId(lecture.id); setRebuildingLectureId(undefined); setView('brief') }} onDeleted={(lectureId) => { if (activeLectureId !== lectureId) return; setActiveLectureId(lectures.find((lecture) => lecture.id !== lectureId)?.id); setRebuildingLectureId(undefined); setView('brief') }} onRebuild={() => { setStep(1); setRebuildingLectureId(activeLecture.id) }} onOpenNotes={onOpenNotes} onHelp={() => setCaptureGuideOpen(true)} help={<LectureCaptureGuide open={captureGuideOpen} onOpenChange={setCaptureGuideOpen} />} embedded={displayMode === 'embedded'} />
-  return <LectureImportWizard courseId={courseId} course={course} data={data} lectures={lectures} lecture={activeLecture} step={step} onStep={setStep} onLecture={setActiveLectureId} onBuilt={() => { setRebuildingLectureId(undefined); setView('brief') }} />
+  if (activeLecture?.workspaceState === 'complete' && rebuildingLectureId !== activeLecture.id) return <LectureWorkspace course={course} courseId={courseId} data={data} lectures={lectures} activeLecture={activeLecture} view={view} onView={setView} onSelect={(lecture) => { if (onNavigateLecture) { onNavigateLecture(lecture.id); return }; setActiveLectureId(lecture.id); setRebuildingLectureId(undefined); setView('brief') }} onDeleted={(lectureId) => { if (activeLectureId !== lectureId) return; if (onDeletedLecture) { onDeletedLecture(); return }; setActiveLectureId(lectures.find((lecture) => lecture.id !== lectureId)?.id); setRebuildingLectureId(undefined); setView('brief') }} onRebuild={() => { setStep(1); setRebuildingLectureId(activeLecture.id) }} onOpenNotes={onOpenNotes} onHelp={() => setCaptureGuideOpen(true)} help={<LectureCaptureGuide open={captureGuideOpen} onOpenChange={setCaptureGuideOpen} />} embedded={displayMode === 'embedded'} standalone={displayMode === 'page'} />
+  return <LectureImportWizard courseId={courseId} course={course} data={data} lectures={lectures} lecture={activeLecture} step={step} onStep={setStep} onLecture={(lectureId, isNew) => { setActiveLectureId(lectureId); if (isNew) onNavigateLecture?.(lectureId) }} onBuilt={() => { setRebuildingLectureId(undefined); setView('brief'); if (activeLectureId) onNavigateLecture?.(activeLectureId) }} />
+
 }
 
 function LectureImportWizard({ courseId, course, data, lectures, lecture, step, onStep, onLecture, onBuilt }: {
-  courseId: string; course?: Pick<Course, 'code' | 'title'>; data: ClassCenterData; lectures: LectureRecord[]; lecture?: LectureRecord; step: WizardStep; onStep: (step: WizardStep) => void; onLecture: (id: string) => void; onBuilt: () => void
+  courseId: string; course?: Pick<Course, 'code' | 'title'>; data: ClassCenterData; lectures: LectureRecord[]; lecture?: LectureRecord; step: WizardStep; onStep: (step: WizardStep) => void; onLecture: (id: string, isNew: boolean) => void; onBuilt: () => void
 }) {
   const toast = useToast()
   const chronological = [...lectures].sort((a, b) => String(a.occurredOn ?? '').localeCompare(String(b.occurredOn ?? '')) || a.createdAt - b.createdAt)
@@ -158,14 +161,14 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
         if (existing) Object.assign(existing, { title: title.trim(), occurredOn, studyIntent, updatedAt: now })
         else center.lectures.push({ id, courseId, title: title.trim(), occurredOn, studyIntent, inputPath: 'materials', processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds: [], createdAt: now, updatedAt: now, order: center.lectures.filter(item => item.courseId === courseId).length })
       })
-      onLecture(id); onStep(2)
+      onLecture(id, !lecture); onStep(2)
       return
     }
     if (!parsed.segments.length) return toast({ title: 'No readable transcript text', description: 'Edit the transcript or clear it to continue with materials.' })
     const savedTitle = titleEdited || studyIntent.purpose === 'exam-prep' ? title.trim() : approximateLectureTitle(lectureNumber, sourceText)
     const built = buildTranscriptImport({ courseId, title: savedTitle, text: sourceText, order: data.files.filter((file) => file.courseId === courseId).length })
     if (!built) return
-    const now = Date.now(); const lectureId = lecture?.id ?? uid(); const blobRef = pendingFile ? await retainLocalMaterial(pendingFile, built.file.id) : undefined
+    const now = Date.now(); const isNewLecture = !lecture; const lectureId = lecture?.id ?? uid(); const blobRef = pendingFile ? await retainLocalMaterial(pendingFile, built.file.id) : undefined
     useStore.getState().update((draft) => {
       const center = draft.academics.classCenter
       Object.assign(built.file, {
@@ -181,7 +184,8 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
       else center.lectures.push({ id: lectureId, courseId, title: savedTitle, studyIntent, inputPath: pendingFile ? 'uploaded' : 'pasted', transcriptFileId: built.file.id, occurredOn, topicIds: [], processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds, createdAt: now, processedAt: now, updatedAt: now, order: center.lectures.filter((item) => item.courseId === courseId).length })
     })
     setSourceText(''); setPendingFile(null); setPendingExtraction(null)
-    onLecture(lectureId); onStep(2)
+    onLecture(lectureId, isNewLecture); onStep(2)
+
   }
   function goToPreview() {
     if (!lecture) return
@@ -267,7 +271,7 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
   const progressPercent = Math.round(((step - 1) / 3) * 100)
   const stepLabels = ['Purpose', 'Materials', 'Build'] as const
 
-  return <Card className="overflow-hidden border-border bg-card shadow-[0_18px_48px_-28px_rgba(0,0,0,.72)]"><CardContent className="p-0">
+  return <Card className="lecture-import-wizard overflow-hidden border-border bg-card shadow-[0_18px_48px_-28px_rgba(0,0,0,.72)]"><CardContent className="p-0">
     <header className="border-b border-border px-4 py-4 sm:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Class Journal</p><h2 className="mt-1 font-display text-xl font-extrabold">Create a study entry</h2></div>
@@ -442,7 +446,8 @@ function LectureMaterialStatus({ file, chunks }: { file: AcademicFile; chunks: S
   return <div className="flex w-full items-start gap-3 rounded-xl border border-border bg-card p-3"><span className={cn('mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg', ready ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-700 dark:text-amber-300')}><FileText className="size-4" /></span><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><b className="truncate">{file.fileName ?? file.title}</b><Badge variant="outline">{fileExtension(file)}</Badge><Badge variant={ready ? 'default' : 'outline'}>{ready ? 'Ready' : 'Needs attention'}</Badge></span><span className="mt-1 block text-xs font-bold text-muted-foreground">{fileKind(file)} · {fileCoverageLabel(file, chunks.length)}{file.sourceCoverage?.figureStatus === 'not-interpreted' ? ' · figures not interpreted' : file.sourceCoverage?.figureStatus === 'question-bank-reviewed' ? ' · visually inspected by Claude for a question bank' : ''}</span>{!ready && <span className="mt-1 block text-xs font-semibold text-amber-700 dark:text-amber-300">Fix: {file.processingError ?? 'Add readable text or a clearer scan.'}</span>}</span></div>
 }
 
-function LectureWorkspace({ course, courseId, data, lectures, activeLecture, view, onView, onSelect, onDeleted, onRebuild, onOpenNotes, onHelp, help, embedded = false }: { course?: Pick<Course, 'code' | 'title'>; courseId: string; data: ClassCenterData; lectures: LectureRecord[]; activeLecture: LectureRecord; view: WorkspaceView; onView: (view: WorkspaceView) => void; onSelect: (lecture: LectureRecord) => void; onDeleted: (lectureId: string) => void; onRebuild: () => void; onOpenNotes: () => void; onHelp: () => void; help: ReactNode; embedded?: boolean }) {
+function LectureWorkspace({ course, courseId, data, lectures, activeLecture, view, onView, onSelect, onDeleted, onRebuild, onOpenNotes, onHelp, help, embedded = false, standalone = false }: { course?: Pick<Course, 'code' | 'title'>; courseId: string; data: ClassCenterData; lectures: LectureRecord[]; activeLecture: LectureRecord; view: WorkspaceView; onView: (view: WorkspaceView) => void; onSelect: (lecture: LectureRecord) => void; onDeleted: (lectureId: string) => void; onRebuild: () => void; onOpenNotes: () => void; onHelp: () => void; help: ReactNode; embedded?: boolean; standalone?: boolean }) {
+  const [catalogOpen, setCatalogOpen] = useState(false)
   const selectedIds = activeLecture.selectedSourceFileIds ?? (activeLecture.transcriptFileId ? [activeLecture.transcriptFileId] : [])
   const files = data.files.filter((file) => selectedIds.includes(file.id)); const chunks = sourceChunksForLecture(data, activeLecture)
   const brief = activeLecture.lectureBrief ?? buildLectureBrief(chunks, selectedIds, data.files)
@@ -450,14 +455,37 @@ function LectureWorkspace({ course, courseId, data, lectures, activeLecture, vie
   const chronological = [...lectures].sort((a, b) => String(a.occurredOn ?? '').localeCompare(String(b.occurredOn ?? '')) || a.createdAt - b.createdAt)
   const lectureNumber = (id: string) => chronological.findIndex((lecture) => lecture.id === id) + 1
   const moreMenu = <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" aria-label={embedded ? 'More lecture tools' : undefined} className={cn(!embedded && 'mr-8')}><MoreHorizontal className="size-4" /><span className={cn(embedded && 'hidden sm:inline')}>More</span></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Lecture tools</DropdownMenuLabel><DropdownMenuItem onClick={() => onView('sources')}><Search className="size-4" /> Search sources</DropdownMenuItem><DropdownMenuItem onClick={onOpenNotes}><NotebookText className="size-4" /> Open class Guide</DropdownMenuItem><DropdownMenuItem onClick={onHelp}><CircleHelp className="size-4" /> Transcript help</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
-  const tabs = <nav className={cn('flex min-w-0 gap-1 overflow-x-auto', !embedded && 'mt-4')} aria-label="Lecture workspace views">{([['brief', 'Study Guide'], ['mastery', 'Mastery Map'], ['materials', 'Materials'], ['sources', 'Sources']] as const).map(([value, label]) => <button key={value} type="button" aria-current={view === value ? 'page' : undefined} onClick={() => onView(value)} className={cn('whitespace-nowrap border-b-2 py-2 font-extrabold', embedded ? 'px-2 text-xs sm:px-3 sm:text-sm' : 'px-3 text-sm', view === value ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')}>{label}</button>)}</nav>
+  const tabs = <nav className={cn('lecture-workspace-tabs flex min-w-0 gap-1 overflow-x-auto', !embedded && 'mt-4')} aria-label="Lecture workspace views">{([['brief', 'Study Guide'], ['mastery', 'Mastery Map'], ['materials', 'Materials'], ['sources', 'Sources']] as const).map(([value, label]) => <button key={value} type="button" aria-current={view === value ? 'page' : undefined} onClick={() => onView(value)} className={cn('whitespace-nowrap border-b-2 py-2 font-extrabold', embedded ? 'px-2 text-xs sm:px-3 sm:text-sm' : 'px-3 text-sm', view === value ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')}>{label}</button>)}</nav>
   const content = <>{view === 'brief' && (activeLecture.studyGuide
-    ? <GeneratedLectureGuideView lecture={activeLecture} guide={activeLecture.studyGuide} brief={brief} chunks={chunks} files={files} mastery={mastery} onOpenMastery={() => onView('mastery')} />
+    ? <GeneratedLectureGuideView standalone={standalone} lecture={activeLecture} guide={activeLecture.studyGuide} brief={brief} chunks={chunks} files={files} mastery={mastery} onOpenMastery={() => onView('mastery')} />
     : <LectureBriefView brief={brief} chunks={chunks} files={files} mastery={mastery} onOpenMastery={() => onView('mastery')} />)}{view === 'mastery' && <MasteryMapView outline={mastery} chunks={chunks} lecture={activeLecture} />}{view === 'materials' && <LectureMaterialsView data={data} lecture={activeLecture} files={data.files.filter((file) => file.lectureId === activeLecture.id || selectedIds.includes(file.id))} onOpenBrief={() => onView('brief')} onOpenMastery={() => onView('mastery')} />}{view === 'sources' && <LectureSourcesView courseId={courseId} lecture={activeLecture} files={files} chunks={chunks} data={data} />}</>
 
   if (embedded) return <section className="min-w-0 overflow-hidden border-t border-border bg-card" aria-label="Embedded lecture workspace"><div className="flex min-w-0 items-center justify-between gap-2 border-b border-border px-1 sm:px-2"><div className="min-w-0 flex-1">{tabs}</div><div className="shrink-0">{moreMenu}</div></div><div role="region" aria-label="Lecture reading area" tabIndex={0} className="max-h-[38rem] min-w-0 overflow-y-auto p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:p-5">{content}</div>{help}</section>
 
-  return <div className="grid min-h-[38rem] w-full min-w-0 max-w-full overflow-x-hidden lg:grid-cols-[15rem_minmax(0,1fr)]"><aside className="min-w-0 border-b border-border bg-muted/25 p-3 lg:border-b-0 lg:border-r" aria-label="Lecture catalog"><div className="flex items-center justify-between gap-2 px-1"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">{course?.code ?? 'Class'}</p><h2 className="font-display text-base font-extrabold">Class journal</h2></div><Badge variant="outline">{lectures.length}</Badge></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1.5 lg:overflow-visible">{lectures.map((lecture) => <LectureRecordMenu key={lecture.id} lecture={lecture} onOpen={() => onSelect(lecture)} onDeleted={onDeleted}><button type="button" aria-current={lecture.id === activeLecture.id ? 'page' : undefined} onClick={() => onSelect(lecture)} className={cn('min-w-56 rounded-xl border p-3 pr-9 text-left lg:min-w-0 lg:w-full', lecture.id === activeLecture.id ? 'border-primary bg-card shadow-sm' : 'border-transparent hover:border-border hover:bg-card/70')}><span className="block text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">{lecture.studyIntent ? lecture.studyIntent.purpose === 'exam-prep' ? 'Exam prep' : 'Study guide' : `Lecture ${lectureNumber(lecture.id)}`} · {lecture.occurredOn ?? 'Date not set'}</span><b className="mt-1 block line-clamp-2 font-display text-sm">{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span className="mt-1 block text-[11px] font-bold text-muted-foreground">{lecture.studyGuide && lecture.masteryMapId ? 'Generated Guide + Mastery' : lecture.workspaceState === 'complete' ? 'Local preview · rebuild available' : 'Import in progress'}</span></button></LectureRecordMenu>)}</div></aside><main className="min-w-0 bg-card"><header className="border-b border-border px-4 py-4 sm:px-6"><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">{activeLecture.studyIntent ? activeLecture.studyIntent.purpose === 'exam-prep' ? 'Exam prep' : 'Study guide' : `Lecture ${lectureNumber(activeLecture.id)}`} · {activeLecture.occurredOn ?? 'Date not set'}</p><h1 className="mt-1 break-words font-display text-2xl font-extrabold">{completedLectureTitle(lectureNumber(activeLecture.id), activeLecture)}</h1><p className="mt-1 text-sm font-semibold text-muted-foreground">{files.length} selected {files.length === 1 ? 'source' : 'sources'} · {chunks.length} readable {chunks.length === 1 ? 'passage' : 'passages'}</p></div><div className="flex flex-wrap items-center gap-2"><Button size="sm" onClick={onRebuild}><Sparkles className="size-4" /> Rebuild with AI</Button>{moreMenu}</div></div>{tabs}</header><div className="min-w-0 p-4 sm:p-6">{content}</div>{help}</main></div>
+  const catalog = <aside className="lecture-workspace-catalog min-h-0 min-w-0 border-b border-border bg-muted/25 lg:border-b-0 lg:border-r" aria-label="Lecture catalog">
+      <div className="lecture-workspace-catalog-header flex items-center justify-between gap-2 px-4 py-3">
+        <div><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">{course?.code ?? 'Class'}</p><h2 className="font-display text-base font-extrabold">Lectures</h2></div>
+        <Badge variant="outline">{lectures.length}</Badge>
+      </div>
+      <div className="lecture-workspace-catalog-list flex min-h-0 gap-2 px-3 pb-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring lg:block lg:space-y-1.5" role="region" aria-label="Lecture list" tabIndex={0}>
+        {lectures.map((lecture) => <LectureRecordMenu key={lecture.id} lecture={lecture} onOpen={() => { setCatalogOpen(false); onSelect(lecture) }} onDeleted={onDeleted}><button type="button" aria-current={lecture.id === activeLecture.id ? 'page' : undefined} onClick={() => { setCatalogOpen(false); onSelect(lecture) }} className={cn('lecture-workspace-catalog-record min-w-56 rounded-xl border p-3 pr-9 text-left lg:min-w-0 lg:w-full', lecture.id === activeLecture.id ? 'border-primary bg-card shadow-sm' : 'border-transparent hover:border-border hover:bg-card/70')}><span className="block text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">{lecture.studyIntent ? lecture.studyIntent.purpose === 'exam-prep' ? 'Exam prep' : 'Study guide' : `Lecture ${lectureNumber(lecture.id)}`}  · {lecture.occurredOn ?? 'Date not set'}</span><b className="mt-1 block line-clamp-2 font-display text-sm">{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span className="lecture-workspace-catalog-status mt-1 block text-[11px] font-bold text-muted-foreground">{lecture.studyGuide && lecture.masteryMapId ? 'Generated Guide + Mastery' : lecture.workspaceState === 'complete' ? 'Local preview · rebuild available' : 'Import in progress'}</span></button></LectureRecordMenu>)}
+      </div>
+    </aside>
+  return <div className={cn("lecture-workspace grid w-full min-w-0 max-w-full overflow-hidden", standalone && "lecture-workspace-standalone")} data-layout="independent-scroll">
+    {!standalone && catalog}
+    <div className="lecture-workspace-main min-w-0 bg-card">
+      <header className="lecture-workspace-header border-b border-border px-4 py-4 sm:px-6" aria-label="Lecture header">
+        <div className="lecture-workspace-heading-row flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">{activeLecture.studyIntent ? activeLecture.studyIntent.purpose === 'exam-prep' ? 'Exam prep' : 'Study guide' : `Lecture ${lectureNumber(activeLecture.id)}`}  · {activeLecture.occurredOn ?? 'Date not set'}</p><h1 className="mt-1 break-words font-display text-2xl font-extrabold">{completedLectureTitle(lectureNumber(activeLecture.id), activeLecture)}</h1><p className="lecture-workspace-source-summary mt-1 text-sm font-semibold text-muted-foreground">{files.length} selected {files.length === 1 ? 'source' : 'sources'} · {chunks.length} readable {chunks.length === 1 ? 'passage' : 'passages'}</p></div>
+          <div className="lecture-workspace-actions flex flex-wrap items-center gap-2">{standalone && <Sheet open={catalogOpen} onOpenChange={setCatalogOpen}><SheetTrigger asChild><Button size="sm" variant="outline"><BookOpen className="size-4" />Switch lecture</Button></SheetTrigger><SheetContent side="left" className="lecture-switcher"><SheetHeader><SheetTitle>Class lectures</SheetTitle><SheetDescription>Choose a lecture to open its study workspace.</SheetDescription></SheetHeader>{catalog}</SheetContent></Sheet>}<Button size="sm" onClick={onRebuild}><Sparkles className="size-4" /> Rebuild with AI</Button>{moreMenu}</div>
+        </div>
+        {tabs}
+      </header>
+      <div key={`${activeLecture.id}:${view}`} role="region" aria-label="Lecture reading area" tabIndex={0} className="lecture-workspace-reading min-w-0 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:p-6">{content}</div>
+      {help}
+    </div>
+  </div>
+
 }
 
 function BriefSection({ eyebrow, title, items, chunks, empty, tone = 'plain' }: {

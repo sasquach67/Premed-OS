@@ -26,6 +26,7 @@ type TopbarProps = {
 
 export function Topbar({ onMenu, onShowDesktopSidebar, desktopSidebarHidden = false }: TopbarProps) {
   const location = useLocation()
+  const lectureCourseId = location.pathname.match(/^\/academics\/classes\/([^/]+)\/lectures\/[^/]+$/)?.[1]
   const data = useStore()
   const { isDark, setTheme } = useTheme()
   const backup = useBackup()
@@ -64,18 +65,18 @@ export function Topbar({ onMenu, onShowDesktopSidebar, desktopSidebarHidden = fa
         {/* Keep a stable context column so a deep breadcrumb does not visually
          * crowd the command field. The search affordance then begins at a
          * predictable point across Overview detail routes. */}
-        <Breadcrumb className="hidden w-36 shrink-0 xl:block">
+        <Breadcrumb className={lectureCourseId ? "min-w-0 max-w-56 shrink-0" : "hidden w-36 shrink-0 xl:block"}>
           <BreadcrumbList className="h-9 flex-nowrap gap-1 font-display text-xs font-bold sm:gap-1">
-            <BreadcrumbItem className="min-w-0">
+            <BreadcrumbItem className={lectureCourseId ? "hidden xl:block" : "min-w-0"}>
               <BreadcrumbLink asChild>
                 <Link to={activeRoute.id === 'home' ? '/' : `/${activeRoute.id}`} className="max-w-32 truncate">{activeRoute.label}</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             {deepLabel && (
               <>
-                <BreadcrumbSeparator />
+                <BreadcrumbSeparator className={lectureCourseId ? "hidden xl:block" : undefined} />
                 <BreadcrumbItem className="min-w-0">
-                  <BreadcrumbPage className="max-w-32 truncate capitalize font-bold">{deepLabel}</BreadcrumbPage>
+                  {lectureCourseId ? <BreadcrumbLink asChild><Link to={`/academics/classes/${lectureCourseId}?classTab=overview`} className="block max-w-40 truncate font-bold" aria-label={`Back to ${deepLabel} class journal`}>{deepLabel} · Class journal</Link></BreadcrumbLink> : <BreadcrumbPage className="max-w-32 truncate capitalize font-bold">{deepLabel}</BreadcrumbPage>}
                 </BreadcrumbItem>
               </>
             )}

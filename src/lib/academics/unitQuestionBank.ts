@@ -94,7 +94,18 @@ export function privateAssessmentSimilarity(candidate: string, reference: string
   return overlap / Math.min(left.size, right.size)
 }
 
-export function validateMasteryOutline(value: unknown, closedChunkIds: readonly string[], issues?: string[]): UnitMasteryOutlineArtifact | null {
+export interface MasteryValidationEvidence {
+  /** Selected assessment text only; checked locally, never echoed in errors. */
+  privateAssessmentPhrases?: readonly string[]
+}
+
+// These fields contain no external visual attachment. Inline values, sequences,
+// tables and student-drawn diagrams are fine; references to a missing image are not.
+const MISSING_PRACTICE_VISUAL = /\b(?:diagram|figure|graph|image|table)\s+(?:above|attached)\b|\b(?:attached|above)\s+(?:diagram|figure|graph|image|table)\b|\b(?:see|refer to)\s+(?:the\s+)?(?:figure|diagram|graph|image)\s+\d+\b/i
+const PLACEHOLDER_REASONING = /^(?:because )?(?:it is|this is|the answer is) (?:correct|right)[.! ]*$/i
+
+/** Default mode retains legacy outlines; all newly generated maps opt in. */
+export function validateMasteryOutline(value: unknown, closedChunkIds: readonly string[], issues?: string[], requireExamPractice = false, evidence: MasteryValidationEvidence = {}): UnitMasteryOutlineArtifact | null {
   const fail = (reason: string): null => { issues?.push(reason); return null }
   if (!value || typeof value !== 'object') return fail('artifact: expected an object')
   const artifact = value as Partial<UnitMasteryOutlineArtifact>
@@ -103,6 +114,7 @@ export function validateMasteryOutline(value: unknown, closedChunkIds: readonly 
   const seen = new Set<string>()
   const seenApplications = new Set<string>()
   const seenRecallCues = new Set<string>()
+  const seenExamPrompts = new Set<string>()
   for (const [index, raw] of artifact.standards.entries()) {
     const path = `standards[${index}]`
     if (!raw || typeof raw !== 'object') return fail(`${path}: expected an objective object`)
@@ -132,7 +144,29 @@ export function validateMasteryOutline(value: unknown, closedChunkIds: readonly 
       seenApplications.add(normalized)
     }
     if (!allClosed(standard.sourceChunkIds, closed)) return fail(`${path}.sourceChunkIds: missing or outside selected sources`)
-    if (!unique(standard.sourceChunkIds!)) return fail(`${path}.sourceChunkIds: duplicate source IDs`)
+    if (new Set(standard.sourceChunkIds).size !== standard.sourceChunkIds!.length) return fail(`${path}.sourceChunkIds: duplicate source IDs`)
+    if (requireExamPractice || standard.examPractice !== undefined) {
+      if (!Array.isArray(standard.examPractice) || standard.examPractice.length < 1 || standard.examPractice.length > 2) return fail(`${path}.examPractice: needs 1 to 2 complete application questions`)
+      for (const [questionIndex, question] of standard.examPractice.entries()) {
+        const questionPath = `${path}.examPractice[${questionIndex}]`
+        if (!question || !text(question.prompt) || !text(question.answer) || !text(question.rationale)
+          || !allClosed(question.sourceChunkIds, new Set(standard.sourceChunkIds))) return fail(`${questionPath}: question, answer, reasoning and objective source IDs required`)
+        if (new Set(question.sourceChunkIds).size !== question.sourceChunkIds.length) return fail(`${questionPath}.sourceChunkIds: duplicate source IDs`)
+        const normalized = clean(question.prompt)
+        if (seenExamPrompts.has(normalized)) return fail(`${questionPath}.prompt: question repeated within or across objectives`)
+        seenExamPrompts.add(normalized)
+        if (requireExamPractice) {
+          // Low floors reject obvious empty/recall stubs, not a claim that lexical
+          // checks establish scenario dependence or scientific correctness.
+          if (normalized.split(' ').length < 5 || !(/\b(what|which|how|why|select|apply)\b/i.test(question.prompt) || FREE_RECALL_ACTION.test(question.prompt))) return fail(`${questionPath}.prompt: needs a self-contained application task, not a definition stub`)
+          if (MISSING_PRACTICE_VISUAL.test(question.prompt)) return fail(`${questionPath}.prompt: replace the absent visual reference with all needed information in the prompt`)
+          if (clean(question.rationale) === clean(question.answer) || PLACEHOLDER_REASONING.test(question.rationale.trim())) return fail(`${questionPath}.rationale: explain the reasoning, do not repeat the answer or assert it is correct`)
+          const candidate = [question.prompt, question.answer, question.rationale].join(' ')
+          if (evidence.privateAssessmentPhrases?.some((phrase) => text(phrase) && clean(phrase).split(' ').length >= 8
+            && (clean(candidate).includes(clean(phrase)) || privateAssessmentSimilarity(question.prompt, phrase) >= 0.75))) return fail(`${questionPath}: resembles supplied assessment wording; create an original scenario and solution`)
+        }
+      }
+    }
     seen.add(standard.id)
   }
   return artifact as UnitMasteryOutlineArtifact

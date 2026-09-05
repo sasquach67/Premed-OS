@@ -16,6 +16,6 @@ export function JournalEntryPage() {
   return <section className="mx-auto w-full max-w-6xl space-y-5 p-4 sm:p-6">
     <Button variant="ghost" onClick={() => navigate(back)}><ArrowLeft aria-hidden="true"/>Back to Class Journal</Button>
     <header><h1 className="font-display text-3xl font-extrabold">{entry ? 'Continue journal entry' : 'Add to journal'}</h1><p className="mt-2 text-muted-foreground">{course.code} · A lecture, a study session, or an exam review.</p></header>
-    <LectureCapturePanel key={entryId} courseId={course.id} course={course} data={data} initialLectureId={entry?.id} initialDestination="transcript" onOpenNotes={() => navigate(`${back}?classTab=guide`)}/>
+    <LectureCapturePanel key={entryId} courseId={course.id} course={course} data={data} initialLectureId={entry?.id} initialDestination="transcript" onNavigateLecture={id => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/${encodeURIComponent(id)}`, { replace: true })} onOpenNotes={() => navigate(`${back}?classTab=guide`)}/>
   </section>
 }

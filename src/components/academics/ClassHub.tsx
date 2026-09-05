@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/components/common/useToast'
 import { InfoTip } from '@/components/common/InfoTip'
 import { Collapsible } from '@/components/common/Collapsible'
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -53,7 +54,6 @@ import { generateStudyGuide, sourcesFor } from '@/lib/academics/generateStudyGui
 import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationIntake'
 import { LectureCapturePanel, type LectureDestination } from '@/components/academics/LectureCapturePanel'
 import { LectureRecordMenu } from '@/components/academics/LectureRecordMenu'
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { LecturePreview } from '@/components/academics/LecturePreview'
 import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
@@ -338,6 +338,7 @@ function Overview({ course, workspace, data, assignments, onTab }: {
   function selectLecture(id?: string) {
     setSelectedLectureId(id)
     if (id) update(draft => { const item = draft.academics.classCenter.workspaces.find(row => row.courseId === course.id); if(item) item.lastOpenedLectureId=id })
+
   }
   function openLecture(id?: string, _destination?: LectureDestination) {
     if (!id) { startEntry(); return }
@@ -379,6 +380,7 @@ function Overview({ course, workspace, data, assignments, onTab }: {
         <Card className="overview-side-card"><CardHeader><CardTitle><CalendarDays aria-hidden="true"/>This week</CardTitle></CardHeader><CardContent>{weekItems.length ? <ul className="overview-week">{weekItems.map(item => <li key={item.id}><time dateTime={item.dueDate}>{new Date(`${item.dueDate!.slice(0,10)}T12:00:00`).toLocaleDateString(undefined,{weekday:'short'})}</time><div><b>{item.title}</b><small>{assignmentDateLabel(item)}</small></div></li>)}</ul> : <p>No dated work due in the next seven days.</p>}<Button variant="link" onClick={() => onTab('assignments')}>View class work <ArrowRight aria-hidden="true"/></Button></CardContent></Card>
         <Card className="overview-side-card overview-feedback"><CardHeader><CardTitle><MessageSquare aria-hidden="true"/>Recent feedback</CardTitle></CardHeader><CardContent>{feedback ? <><b>{feedbackAssignment?.title ?? feedback.theme}</b><p>Saved feedback · {fmtEventDate(new Date(feedback.updatedAt).toISOString().slice(0,10))}</p><blockquote>{feedback.quote || feedback.theme}</blockquote><>{feedbackAssignment && <Button variant="link" onClick={() => navigate(`/academics/classes/${encodeURIComponent(course.id)}?classTab=assignments&assignment=${encodeURIComponent(feedbackAssignment.id)}`)}>Open returned work <ArrowRight aria-hidden="true"/></Button>}</></> : <p>No feedback saved yet. Returned-work notes will appear here.</p>}</CardContent></Card>
       </aside>
+
     </div>
     <Dialog open={focusOpen} onOpenChange={setFocusOpen}><DialogContent><DialogHeader><DialogTitle>Your focus</DialogTitle><DialogDescription>Choose what you want to work on in this class.</DialogDescription></DialogHeader><label htmlFor="class-study-focus">Class focus</label><Input id="class-study-focus" maxLength={120} value={focusDraft} onChange={event=>setFocusDraft(event.target.value)} placeholder="What would you like to understand?"/><Button onClick={()=>{update(draft=>{const item=draft.academics.classCenter.workspaces.find(row=>row.courseId===course.id);if(item)item.studyFocus=focusDraft.trim()||undefined});setFocusOpen(false)}}>Save focus</Button></DialogContent></Dialog>
     <Dialog open={lectureDialogOpen} onOpenChange={setLectureDialogOpen}><DialogContent className="overview-fullscreen"><DialogHeader className="sr-only"><DialogTitle>{activeLecture?.title || 'Study guide'}</DialogTitle><DialogDescription>Full screen journal reader</DialogDescription></DialogHeader>{activeLecture && <LectureCapturePanel key={activeLecture.id} courseId={course.id} course={course} data={data} initialLectureId={activeLecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={()=>{setLectureDialogOpen(false);onTab('guide')}}/>}</DialogContent></Dialog>

@@ -27,6 +27,7 @@ import { generateWithSourceRecovery, prepareGenerationSources } from '@/lib/acad
 import type { JournalStudyIntent, SourceChunk } from '@/lib/types'
 import { courseLensInstruction, type CourseLensGenerationContext } from '@/lib/academics/courseLens'
 import type { StudyGuideArtifact } from '@/lib/generation/schemas/studyGuide.v1'
+import { CONNECTED_GUIDE_RULES } from '@/lib/generation/artifacts/studyGuide.v1'
 import type { GenerationAuditStatus } from '@/lib/intelligence/studyTools'
 
 export type GenerateFailure =
@@ -182,6 +183,8 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
     request: [
       sourcePriority,
       journalInstruction,
+      ...CONNECTED_GUIDE_RULES.map((rule) => rule.text),
+
       `Topic: ${label}.`,
       'Return one complete Study Guide: AT A GLANCE is its opening layer, not a separate brief and not a substitute for the full explanation.',
       courseLens ? 'Apply the supplied Course lens only within its selected evidence trace.' : '',

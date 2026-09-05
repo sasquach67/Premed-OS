@@ -54,9 +54,9 @@ Deno.serve(async (request) => {
       headers: { Authorization: `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(30_000),
       body: JSON.stringify({
-        model: Deno.env.get('OPENAI_MODEL') || 'gpt-4.1-mini',
+        model: 'gpt-6-astra',
+        reasoning_effort: 'low',
         response_format: { type: 'json_object' },
-        temperature: 0,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: JSON.stringify({ courseId: body.courseId, segments }) },

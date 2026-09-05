@@ -30,9 +30,15 @@ describe('lecture import and workspace', () => {
   })
   afterEach(async () => { await act(async () => root.unmount()); container.remove(); useStore.getState().replaceAll(createInitialDataForMode(false)) })
 
-  function render(courseId: string, initialLectureId?: string, initialDestination?: 'transcript' | 'evidence' | 'study-work') {
+  function render(courseId: string, initialLectureId?: string, initialDestination?: 'transcript' | 'evidence' | 'study-work', displayMode: 'dialog' | 'embedded' | 'page' = 'dialog', onNavigateLecture?: (id: string) => void) {
     const center = useStore.getState().academics.classCenter
-    return act(async () => root.render(<MemoryRouter><ToastProvider><LectureCapturePanel courseId={courseId} data={center} initialLectureId={initialLectureId} initialDestination={initialDestination} onOpenNotes={() => {}} /></ToastProvider></MemoryRouter>))
+    return act(async () => root.render(<MemoryRouter><ToastProvider><LectureCapturePanel courseId={courseId} data={center} initialLectureId={initialLectureId} initialDestination={initialDestination} displayMode={displayMode} onNavigateLecture={onNavigateLecture} onOpenNotes={() => {}} /></ToastProvider></MemoryRouter>))
+  }
+
+  function changeField(field: HTMLInputElement | HTMLTextAreaElement, value: string) {
+    const prototype = field instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
+    Object.getOwnPropertyDescriptor(prototype, 'value')?.set?.call(field, value)
+    field.dispatchEvent(new Event('input', { bubbles: true }))
   }
 
   it('starts with purpose and an optional transcript', async () => {
@@ -115,6 +121,29 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).toContain('This exam packet exceeds the current build limit')
     expect([...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Build Guide + Mastery'))!.disabled).toBe(true)
     expect(generationMocks.generateStudyGuide).not.toHaveBeenCalled()
+  })
+
+  it('adopts the permanent lecture URL as soon as a new transcript is saved', async () => {
+    const seed = structuredClone(createSeedData())
+    const courseId = seed.academics.classCenter.workspaces[0].courseId
+    const navigate = vi.fn()
+    useStore.getState().replaceAll(seed)
+    await render(courseId, undefined, undefined, 'page', navigate)
+    const title = container.querySelector<HTMLInputElement>('input[placeholder="Exam 1 · Readings and key concepts"]')!
+    const transcript = container.querySelector<HTMLTextAreaElement>('textarea[placeholder*="Paste a transcript here"]')!
+    await act(async () => {
+      changeField(title, 'Lecture 1 · Cell signaling')
+      changeField(transcript, 'The receptor binds its ligand at the membrane. The activated receptor then starts an intracellular signaling cascade.')
+    })
+    const save = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Continue to materials'))!
+    await act(async () => { save.click(); await Promise.resolve() })
+    const saved = useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.title === 'Lecture 1 · Cell signaling')
+    expect(saved).toBeTruthy()
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenCalledWith(saved?.id)
+    await render(courseId, saved?.id, undefined, 'page', navigate)
+    expect(container.textContent).toContain('Add materials')
+
   })
 
   it('collapses a large attached batch without hiding its attention count or dropping sources', async () => {
@@ -409,6 +438,52 @@ describe('lecture import and workspace', () => {
     expect(actions).toEqual(expect.arrayContaining(['Open lecture', 'Edit lecture', 'Delete lecture']))
   })
 
+  it('gives the lecture list, fixed header, and reading pane separate layout ownership', async () => {
+    const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
+    seed.academics.classCenter.lectures.push(...Array.from({ length: 18 }, (_, index) => ({
+      id: `long-catalog-${index}`,
+      courseId: 'demo-course-biol103-current',
+      title: `Lecture ${index + 3} · Extended catalog item`,
+      inputPath: 'pasted' as const,
+      occurredOn: `2026-02-${String(index + 1).padStart(2, '0')}`,
+      processingState: 'ready' as const,
+      workspaceState: 'draft' as const,
+      selectedSourceFileIds: [],
+      createdAt: index + 20,
+      updatedAt: index + 20,
+      order: index + 2,
+    })))
+    useStore.getState().replaceAll(seed)
+    await render('demo-course-biol103-current', 'demo-lecture-biol103-2', undefined, 'page')
+    const reading = container.querySelector<HTMLElement>('[aria-label="Lecture reading area"]')
+    expect(container.querySelector('[aria-label="Lecture catalog"]')).toBeNull()
+    const switcher = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Switch lecture')!
+    await act(async () => switcher.click())
+    const catalog = document.body.querySelector<HTMLElement>('[aria-label="Lecture catalog"]')
+    const lectureList = document.body.querySelector<HTMLElement>('[aria-label="Lecture list"]')
+    const header = container.querySelector<HTMLElement>('[aria-label="Lecture header"]')
+    expect(reading).not.toBeNull()
+    expect(reading?.getAttribute('tabindex')).toBe('0')
+    expect(lectureList?.getAttribute('tabindex')).toBe('0')
+    expect(lectureList?.querySelectorAll('.lecture-workspace-catalog-record').length).toBeGreaterThan(18)
+    expect(reading?.contains(catalog)).toBe(false)
+    expect(reading?.contains(header)).toBe(false)
+    expect(catalog?.contains(lectureList)).toBe(true)
+    expect(header?.querySelector('nav[aria-label="Lecture workspace views"]')).toBeTruthy()
+    expect(container.querySelector('.lecture-workspace')?.getAttribute('data-layout')).toBe('independent-scroll')
+  })
+
+  it('keeps the embedded journal preview bounded without adding the page catalog', async () => {
+    const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
+    useStore.getState().replaceAll(seed)
+    await render('demo-course-biol103-current', 'demo-lecture-biol103-2', undefined, 'embedded')
+    const embedded = container.querySelector<HTMLElement>('[aria-label="Embedded lecture workspace"]')
+    const reading = embedded?.querySelector<HTMLElement>('[aria-label="Lecture reading area"]')
+    expect(embedded).toBeTruthy()
+    expect(reading?.className).toContain('max-h-[38rem]')
+    expect(container.querySelector('[aria-label="Lecture catalog"]')).toBeNull()
+  })
+
   it('shows the BIOL 103 concept map itself with source-backed stages and method branches', async () => {
     const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
     const outline = seed.academics.classCenter.generatedMasteryOutlines.find((item) => item.lectureId === 'demo-lecture-biol103-2')!
@@ -429,7 +504,9 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).toContain('Biol 103 Lecture 2 Captions.txt · Transcript excerpt · central information flow')
     const mastery = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Mastery Map')!
     await act(async () => mastery.click())
-    expect(container.textContent).toContain('Try without notes')
+    const recall = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Active recall'))!
+    await act(async () => recall.click())
+    expect(container.textContent).toContain('Try before you reveal')
     expect(container.textContent).toContain('Keep the actual teaching sentence.')
     expect(container.textContent).not.toContain('provenance: source')
     expect(useStore.getState().academics.classCenter.generatedMasteryOutlines.find((item) => item.id === outline.id)?.standards[0].understand).toContain('Keep the actual teaching sentence. provenance: source')
@@ -440,7 +517,7 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).toContain('Infer the likely destination of a protein')
     expect(container.textContent).toContain('Use the Ebola activity data and controls')
     expect(container.querySelectorAll('button[aria-label^="Mastery state for"]').length).toBe(5)
-    expect([...container.querySelectorAll('details')].filter((item) => item.querySelector('summary')?.textContent === 'Reveal the checklist').every((item) => !item.open)).toBe(true)
+    expect([...container.querySelectorAll('details')].filter((item) => item.querySelector('summary')?.textContent === 'Reveal after trying').every((item) => !item.open)).toBe(true)
   })
 
   it('uses Materials as a lecture-scoped library for generated work and uploaded sources', async () => {

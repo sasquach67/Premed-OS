@@ -815,7 +815,9 @@ async function callOpenAIGeneration(response: string, chunks: Chunk[], specPromp
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: Deno.env.get('OPENAI_MODEL') || 'gpt-5.4-mini',
+      // Pin the user-selected model; legacy OPENAI_MODEL must not override it.
+      model: 'gpt-6-astra',
+      reasoning: { effort: 'low' },
       store: false,
       max_output_tokens: 10_000,
       input: [
@@ -1028,7 +1030,8 @@ async function callOpenAI(response: string, chunks: Chunk[], image?: ImageEviden
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: Deno.env.get('OPENAI_MODEL') || 'gpt-5.4-mini',
+      model: 'gpt-6-astra',
+      reasoning: { effort: 'low' },
       store: false,
       input: [{
         role: 'user',

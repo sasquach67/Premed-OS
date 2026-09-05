@@ -37,6 +37,22 @@ describe('unit resource generation callers', () => {
     mocks.prepare.mockResolvedValue({ ok: true, scopeId: 'class-material', chunkIds: ['chunk-1', 'chunk-2'] })
   })
 
+  it('retains connected practice and worked reasoning through the existing guide block format', async () => {
+    const sourceRef = { fileId: 'file-1', chunkId: 'chunk-1', start: 0, end: sources[0].content.length }
+    const sections = [{ id: 'application', title: 'Applying the mechanism', blocks: [
+      { id: 'task', type: 'callout', provenance: 'clarification', conceptLabel: 'Variable control', text: { content: 'Generated exam application — Hypothetical scenario: Two samples differ only in light exposure. Which comparison isolates its effect, and why?' }, sourceRef },
+      { id: 'solution', type: 'numbered', provenance: 'clarification', conceptLabel: 'Variable control', items: [{ content: 'Worked answer: Compare the two otherwise matched samples.' }, { content: 'Holding other conditions constant isolates light exposure; changing multiple conditions would prevent that inference.' }], sourceRef },
+    ] }]
+    mocks.generate.mockResolvedValue({ ok: true, data: { artifact: { sections }, citations: [], auditStatus: 'approved' } })
+    const result = await generateStudyGuide({ courseId: 'course-1', chunks: sources, label: 'Controls' })
+    expect(result.ok).toBe(true)
+    expect(result.artifact?.sections).toEqual(sections)
+    expect(result.content).toContain('Generated exam application')
+    expect(result.content).toContain('Worked answer: Compare')
+    expect(result.content).toContain('prevent that inference')
+    expect(mocks.generate.mock.calls[0][0].request).toContain('No instructor evidence was identified')
+  })
+
   it('assembles a mastery outline request without sending source text', async () => {
     mocks.generate.mockResolvedValue({ ok: true, data: {
       artifact: {
@@ -44,6 +60,7 @@ describe('unit resource generation callers', () => {
           id: 'std-1', title: 'Gene expression', understand: ['DNA is transcribed into RNA.', 'The primary transcript is processed.', 'Mature mRNA is translated into a polypeptide.', 'Template and coding strands relate differently to RNA.', 'Bacterial and eukaryotic cells organize gene expression differently.'],
           freeRecallCues: ['Without notes, explain transcription and RNA processing from template DNA to mature mRNA.'],
           beAbleToDo: ['Predict the result of a processing disruption.', 'Trace an unfamiliar sequence from template DNA to mature mRNA.'], watchFor: ['Do not confuse transcription and translation.'], sourceChunkIds: ['chunk-1'],
+          examPractice: [{ prompt: 'In a hypothetical cell, intron removal stops while transcription continues. Predict how the RNA product differs from normally processed mRNA and explain why.', answer: 'The transcript retains its introns.', rationale: 'Transcription still produces RNA, but the blocked removal step leaves introns in that product rather than removing them during processing.', sourceChunkIds: ['chunk-1'] }],
         }],
       }, citations: [],
     } })
@@ -59,6 +76,10 @@ describe('unit resource generation callers', () => {
     expect(request.systemPrompt).toContain('UMO-DEPTH')
     expect(request.systemPrompt).toContain('UMO-PRACTICE-EVIDENCE')
     expect(request.systemPrompt).toContain('UMO-RECALL')
+    expect(request.systemPrompt).toContain('UMO-EXAM-APPLICATION')
+    expect(request.systemPrompt).toContain('UMO-EXAM-SOLUTION')
+    expect(request.systemPrompt).toContain('UMO-OBJECTIVE-IDENTITY')
+    expect(request.request).toContain('examPractice with 1 or 2')
     expect(request.systemPrompt).toContain('at least five distinct Understand bullets')
     expect(request.systemPrompt).toContain('Reference-question chunk IDs: chunk-1')
     expect(request.request).toContain('do not summarize a detailed outline')
@@ -75,7 +96,7 @@ describe('unit resource generation callers', () => {
       citations: [], auditStatus: 'approved',
     } })
 
-    const outcome = await generateStudyGuide({ courseId: 'course-1', chunks: sources, label: 'BIOL 103 · Unit 2', practiceQuestionChunkIds: ['chunk-1'] })
+    const outcome = await generateStudyGuide({ courseId: 'course-1', chunks: sources, label: 'BIOL 103 · Unit 2', practiceQuestionChunkIds: ['chunk-1'], primarySourceChunkIds: ['chunk-1', 'unselected-instructor'] })
 
     expect(outcome.ok).toBe(true)
     expect(outcome.suggestedTitle).toBe('Variable Control Logic')
@@ -84,6 +105,13 @@ describe('unit resource generation callers', () => {
     expect(request.systemPrompt).toContain('SG-AT-A-GLANCE')
     expect(request.systemPrompt).toContain('SG-FULL-DEPTH')
     expect(request.systemPrompt).toContain('SG-NO-DUPLICATE-LAYERS')
+    expect(request.systemPrompt).toContain('SG-INSTRUCTOR-FIRST')
+    expect(request.systemPrompt).toContain('SG-CONNECTED-EXAMPLES')
+    expect(request.systemPrompt).toContain('SG-GENERATED-APPLICATION')
+    expect(request.request).toContain('Generated exam application')
+    expect(request.request).toContain('Worked answer')
+    expect(request.request).toContain('Instructor evidence chunk IDs: chunk-1.')
+    expect(JSON.stringify(request)).not.toContain('unselected-instructor')
     expect(request.systemPrompt).toContain('Reference-question chunk IDs: chunk-1')
     expect(request.systemPrompt).toContain('never treat a distractor as fact')
     expect(request.request).toContain('marked question passages as source-backed explanatory examples')
