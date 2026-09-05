@@ -33,27 +33,33 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
   const preparedIds = new Set(prepared.chunkIds)
   const sourcePriority = lectureSourcePriorityInstruction(primarySourceChunkIds.filter((id) => preparedIds.has(id)))
   const questionReferenceIds = [...new Set(practiceQuestionChunkIds.filter((id) => preparedIds.has(id)))]
+  const validationEvidence = {
+    privateAssessmentPhrases: chunks.filter((chunk) => questionReferenceIds.includes(chunk.id))
+      .flatMap((chunk) => [chunk.content, ...chunk.content.split(/\n+|(?<=\?)\s+/)]),
+  }
+  const examInstruction = 'For every objective, include examPractice with 1 or 2 original self-contained application questions, each with prompt, answer, rationale, and sourceChunkIds drawn only from that objective. Provide the complete scenario and all necessary values, units, sequences, orientation, or text representations in the prompt. The answer must solve every requested part; the rationale must work through the evidence and mechanism or calculation, not merely repeat the answer. Label invented scenarios or data hypothetical. Do not copy supplied assessment wording, reference absent diagrams, invent instructor emphasis, or predict exam content. Keep questions distinct across objectives. If the selected evidence cannot support a solution, fail rather than invent support.'
   const assembled = assembleGenerationRequest({
     specId: 'unit-mastery-outline-v1', chunkIds: prepared.chunkIds, controls: { source_mode: 'SOURCE_ONLY' },
     request: [
       sourcePriority,
+      examInstruction,
       `Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Build the detailed mastery map from the selected sources. Preserve every explicit objective relevant to this scope and all distinct supported Free-recall cues, Understand, Be able to do, and Watch for points. Each objective needs a concrete blank-page retrieval cue; process or mechanism objectives must ask the student to explain or reconstruct the full process without notes.`,
       questionReferenceIds.length ? `Reference-question chunk IDs: ${questionReferenceIds.join(', ')}. Use their task patterns, representations, distinctions, and traps to make Be able to do and Watch for concrete. Do not copy stems, and never treat distractors as facts.` : '',
     ].filter(Boolean).join('\n'),
   })
-  const result = await generateWithSourceRecovery(courseId, chunks, { action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `${sourcePriority} Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map with objective-specific free-recall cues. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline.${questionReferenceIds.length ? ' Use the marked question passages as task-pattern evidence without copying them.' : ''}` })
+  const result = await generateWithSourceRecovery(courseId, chunks, { action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `${sourcePriority} Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map with objective-specific free-recall cues. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline. ${examInstruction}${questionReferenceIds.length ? ' Use the marked question passages as task-pattern evidence without copying them.' : ''}` })
   if (!result.ok) return { ok: false, failure: failureFor(result.code), message: result.message }
   const issues: string[] = []
-  let artifact = validateMasteryOutline(result.data.artifact, assembled.chunkIds, issues, true)
+  let artifact = validateMasteryOutline(result.data.artifact, assembled.chunkIds, issues, true, validationEvidence)
   if (!artifact) {
     const repair = await generateWithSourceRecovery(courseId, chunks, {
       action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds,
       specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt,
-      request: `Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Rebuild the complete Mastery Map from the same selected evidence. A prior attempt failed these deterministic checks: ${issues.join('; ')}. Correct every listed requirement. Keep all required fields, objective-specific cues, at least one cue explicitly saying "without notes" per objective, five distinct Understand points, two distinct Be able to do points, and one Watch for point. Source IDs must come only from the supplied evidence. Do not invent missing facts or repeat points to satisfy counts. Return the full valid artifact, not a patch.`,
+      request: `${sourcePriority} Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Rebuild the complete Mastery Map from the same selected evidence. A prior attempt failed these deterministic checks: ${issues.join('; ')}. Correct every listed requirement. Keep all required fields, objective-specific cues, at least one cue explicitly saying "without notes" per objective, five distinct Understand points, two distinct Be able to do points, and one Watch for point. ${examInstruction} Source IDs must come only from the supplied evidence. Do not invent missing facts or repeat points to satisfy counts. Return the full valid artifact, not a patch.`,
     })
     if (!repair.ok) return { ok: false, failure: failureFor(repair.code), message: repair.message }
     issues.length = 0
-    artifact = validateMasteryOutline(repair.data.artifact, assembled.chunkIds, issues, true)
+    artifact = validateMasteryOutline(repair.data.artifact, assembled.chunkIds, issues, true, validationEvidence)
   }
   if (!artifact) return { ok: false, failure: 'invalid-response', message: `The mastery outline did not pass its source-trace and section checks. Nothing was saved. Check: ${issues.join('; ')}` }
   return {

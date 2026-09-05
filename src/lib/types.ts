@@ -1036,6 +1036,16 @@ export interface GeneratedRevisedNotes {
   order: number
 }
 
+/** Original generated practice, not an instructor question or exam prediction.
+ * All inputs needed to solve it are in prompt; sources support the reasoning.
+ * Source IDs must be a subset of the containing objective's evidence. */
+export interface MasteryExamPractice {
+  prompt: string
+  answer: string
+  rationale: string
+  sourceChunkIds: ID[]
+}
+
 /** A durable unit map used as the source contract for generated study work. */
 export interface GeneratedMasteryOutlineStandard {
   id: string
@@ -1047,7 +1057,7 @@ export interface GeneratedMasteryOutlineStandard {
   beAbleToDo: string[]
   watchFor: string[]
   /** Older saved maps have no generated exam applications until rebuilt. */
-  examPractice?: Array<{ prompt: string; answer: string; rationale: string; sourceChunkIds: ID[] }>
+  examPractice?: MasteryExamPractice[]
   sourceChunkIds: ID[]
   masteryState?: 'not-started' | 'can-explain' | 'can-apply-without-notes'
 }

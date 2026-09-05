@@ -44,6 +44,7 @@ describe('unit resource generation callers', () => {
           id: 'std-1', title: 'Gene expression', understand: ['DNA is transcribed into RNA.', 'The primary transcript is processed.', 'Mature mRNA is translated into a polypeptide.', 'Template and coding strands relate differently to RNA.', 'Bacterial and eukaryotic cells organize gene expression differently.'],
           freeRecallCues: ['Without notes, explain transcription and RNA processing from template DNA to mature mRNA.'],
           beAbleToDo: ['Predict the result of a processing disruption.', 'Trace an unfamiliar sequence from template DNA to mature mRNA.'], watchFor: ['Do not confuse transcription and translation.'], sourceChunkIds: ['chunk-1'],
+          examPractice: [{ prompt: 'In a hypothetical cell, intron removal stops while transcription continues. Predict how the RNA product differs from normally processed mRNA and explain why.', answer: 'The transcript retains its introns.', rationale: 'Transcription still produces RNA, but the blocked removal step leaves introns in that product rather than removing them during processing.', sourceChunkIds: ['chunk-1'] }],
         }],
       }, citations: [],
     } })
@@ -59,6 +60,10 @@ describe('unit resource generation callers', () => {
     expect(request.systemPrompt).toContain('UMO-DEPTH')
     expect(request.systemPrompt).toContain('UMO-PRACTICE-EVIDENCE')
     expect(request.systemPrompt).toContain('UMO-RECALL')
+    expect(request.systemPrompt).toContain('UMO-EXAM-APPLICATION')
+    expect(request.systemPrompt).toContain('UMO-EXAM-SOLUTION')
+    expect(request.systemPrompt).toContain('UMO-OBJECTIVE-IDENTITY')
+    expect(request.request).toContain('examPractice with 1 or 2')
     expect(request.systemPrompt).toContain('at least five distinct Understand bullets')
     expect(request.systemPrompt).toContain('Reference-question chunk IDs: chunk-1')
     expect(request.request).toContain('do not summarize a detailed outline')
