@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { preferredScrollBehavior } from '@/lib/scroll'
+import { ReadingContents } from './ReadingContents'
 import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
@@ -175,7 +176,7 @@ export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline
   }
 
   return (
-    <div className="mx-auto min-w-0 max-w-4xl space-y-6 break-words [overflow-wrap:anywhere]">
+    <div className="@container mx-auto min-w-0 max-w-6xl space-y-6 break-words [overflow-wrap:anywhere]">
       <header>
         <p className="text-sm font-bold text-primary">Mastery Map</p>
         <h2 className="mt-2 font-display text-3xl font-extrabold">{mode === 'outline' ? 'Learn the map' : 'Practice from memory'}</h2>
@@ -195,21 +196,9 @@ export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline
         <Progress value={outline.standards.length ? applied / outline.standards.length * 100 : 0} aria-label="Objectives marked can apply without notes" className="mt-2 h-2" />
       </header>
 
-      <nav aria-label="Mastery objectives" className="border-y border-border py-4">
-        <p className="mb-3 text-xs font-bold text-muted-foreground">{mode === 'outline' ? 'Objectives in this outline' : 'Choose a closed-notes prompt'}</p>
-        <ol className="grid gap-2 sm:grid-cols-2">
-          {outline.standards.map((standard, index) => (
-            <li key={standard.id}>
-              <button type="button" className="flex min-h-11 w-full items-start gap-3 rounded-lg px-2 py-2 text-left text-sm font-semibold hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => openObjective(standard.id)}>
-                <span className="w-6 shrink-0 text-xs font-extrabold leading-6 text-primary" aria-hidden="true">{index + 1}</span>
-                <span>{standard.title}</span>
-              </button>
-            </li>
-          ))}
-        </ol>
-      </nav>
-
-      <Card>
+      <div className="mastery-reading-layout">
+        <aside><ReadingContents label="Mastery objectives" title="Objectives" items={outline.standards.map(standard => ({ id: standard.id, title: standard.title, targetId: `${prefix}-${standard.id}`, status: standard.masteryState ?? 'not-started' }))} onNavigate={openObjective}/></aside>
+      <Card className="mastery-reading-content">
         <CardContent className="px-4 py-0 sm:px-6">
           <Accordion key={`${outline.id}:${mode}`} type="multiple" defaultValue={mode === 'outline' ? outline.standards.map((standard) => standard.id) : outline.standards[0] ? [outline.standards[0].id] : []}>
             {outline.standards.map((standard, index) => (
@@ -251,6 +240,7 @@ export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline
           </Accordion>
         </CardContent>
       </Card>
+      </div>
       <p className="text-xs text-muted-foreground">{lecture.title} · {scopeLabel}</p>
     </div>
   )

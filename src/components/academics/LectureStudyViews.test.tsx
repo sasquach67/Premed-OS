@@ -128,7 +128,7 @@ describe('lecture mastery study view', () => {
     await act(async () => recallMode.click())
 
     expect(container.textContent).toContain('Close your notes. Answer first')
-    expect(container.textContent).toContain('Choose a closed-notes prompt')
+    expect(container.querySelector('nav[aria-label="Mastery objectives"]')?.textContent).toContain('Objectives')
     const secondTrigger = document.getElementById([...container.querySelectorAll<HTMLElement>('[data-state]')].find((node) => node.textContent?.includes('Connect codons to a polypeptide product') && node.tagName === 'BUTTON')?.id ?? '') as HTMLButtonElement
     expect(secondTrigger.getAttribute('data-state')).toBe('closed')
 

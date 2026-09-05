@@ -71,7 +71,7 @@ describe('lecture study guide reading navigation', () => {
 
   it.each(['embedded', 'page'] as const)('scrolls only the %s reading pane and focuses the requested heading', async (kind) => {
     const { pane, shell, heading } = await renderInReadingPane(kind)
-    const target = [...container.querySelectorAll<HTMLButtonElement>('nav[aria-label="Study guide sections"] button')].find((button) => button.textContent === 'Apply it')!
+    const target = [...container.querySelectorAll<HTMLButtonElement>('nav[aria-label="Study guide sections"] button')].find((button) => button.textContent?.includes('Apply it'))!
     await act(async () => target.click())
 
     expect(pane.scrollTo).toHaveBeenCalledWith({ top: 456, behavior: 'smooth' })
@@ -82,7 +82,7 @@ describe('lecture study guide reading navigation', () => {
   it('uses an instant reading-pane scroll when reduced motion is requested', async () => {
     reduceMotion = true
     const { pane } = await renderInReadingPane('page')
-    const target = [...container.querySelectorAll<HTMLButtonElement>('nav[aria-label="Study guide sections"] button')].find((button) => button.textContent === 'Apply it')!
+    const target = [...container.querySelectorAll<HTMLButtonElement>('nav[aria-label="Study guide sections"] button')].find((button) => button.textContent?.includes('Apply it'))!
     await act(async () => target.click())
 
     expect(pane.scrollTo).toHaveBeenCalledWith({ top: 456, behavior: 'instant' })
@@ -95,7 +95,7 @@ describe('lecture study guide reading navigation', () => {
     article.getBoundingClientRect = pane.getBoundingClientRect
     article.scrollTop = 120
     article.scrollTo = vi.fn()
-    const target = [...container.querySelectorAll<HTMLButtonElement>('nav button')].find(button => button.textContent === 'Apply it')!
+    const target = [...container.querySelectorAll<HTMLButtonElement>('nav button')].find(button => button.textContent?.includes('Apply it'))!
     await act(async () => target.click())
     expect(article.scrollTo).toHaveBeenCalledWith({ top: 456, behavior: 'smooth' })
     expect(pane.scrollTo).not.toHaveBeenCalled()
@@ -113,7 +113,7 @@ describe('lecture study guide reading navigation', () => {
     })
     expect(document.activeElement).toBe(heading)
     expect(pane.scrollTo).toHaveBeenCalled()
-    expect(container.querySelector('nav button[aria-current="location"]')?.textContent).toBe('Apply it')
+    expect(container.querySelector('nav button[aria-current="location"]')?.textContent).toContain('Apply it')
   })
 
   it('preserves every saved concept and directed relationship with sources folded away', async () => {

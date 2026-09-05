@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type ReactNode } from 'react'
+import { useId, useRef, type ReactNode } from 'react'
 import { BookOpen, ArrowRight, Network } from 'lucide-react'
 import type { AcademicFile, ClassCenterData, LectureRecord, SourceChunk } from '@/lib/types'
 import type { ContentBlock, RichText, StudyGuideArtifact } from '@/lib/generation/schemas/studyGuide.v1'
@@ -6,6 +6,7 @@ import { useStore } from '@/store/store'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { ReadingContents } from './ReadingContents'
 import { scrollGuideHeadingIntoReadingPane } from './lectureGuideNavigation'
 
 type Outline = ClassCenterData['generatedMasteryOutlines'][number]
@@ -74,28 +75,17 @@ function GuideBlock({ block }: { block: ContentBlock }) {
 export function GeneratedLectureGuideView({ lecture, guide, brief, chunks, files, mastery, onOpenMastery, standalone = false }: { standalone?: boolean; lecture: LectureRecord; guide: StudyGuideArtifact; brief: NonNullable<LectureRecord['lectureBrief']>; chunks: SourceChunk[]; files: AcademicFile[]; mastery?: Outline; onOpenMastery: () => void }) {
   const sections = guide.sections.filter((section) => section.id.toLowerCase() !== 'title' && section.title.trim().toLowerCase() !== 'title')
   const prefix = useId()
-  const [selectedSection, setSelectedSection] = useState('')
   const headings = useRef(new Map<string, HTMLHeadingElement>())
   function jumpToSection(id: string) {
     const heading = headings.current.get(id)
     if (!heading) return
-    setSelectedSection(id)
     scrollGuideHeadingIntoReadingPane(heading)
   }
   return <div className="lecture-study-guide @container mx-auto max-w-6xl" data-reader-page={standalone || undefined}>
     <header className="border-b border-border pb-6"><p className="flex items-center gap-2 text-sm font-bold text-primary"><BookOpen className="size-4" />Study Guide</p><h2 className="lecture-guide-heading mt-2 text-3xl">Read to understand.</h2><p className="mt-2 text-sm text-muted-foreground">Start with the big picture, work through the explanations, then test your recall.</p></header>
     <div className="lecture-guide-layout mt-6 grid items-start gap-8 @min-[52rem]:grid-cols-[13rem_minmax(0,1fr)] @min-[52rem]:gap-10">
       <aside className="min-w-0 @min-[52rem]:sticky @min-[52rem]:top-4">
-        <nav aria-label="Study guide sections">
-          <label htmlFor={`${prefix}-section-picker`} className="mb-2 block text-xs font-extrabold uppercase tracking-wider text-muted-foreground">In this guide · {sections.length} sections</label>
-          <select id={`${prefix}-section-picker`} value={selectedSection} onChange={(event) => jumpToSection(event.target.value)} className={cn('h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring @min-[52rem]:hidden', standalone && 'md:hidden')}>
-            <option value="" disabled>Jump to a section</option>
-            {sections.map((section) => <option key={section.id} value={section.id}>{section.title}</option>)}
-          </select>
-          <div className={cn('hidden flex-col gap-1 @min-[52rem]:flex', standalone && 'md:flex')}>
-            {sections.map((section) => <Button key={section.id} variant="ghost" aria-current={selectedSection === section.id ? 'location' : undefined} className="lecture-guide-nav-link h-auto min-h-11 w-full justify-start whitespace-normal break-words px-3 py-2 text-left text-xs focus-visible:ring-2 focus-visible:ring-ring aria-[current=location]:border-primary aria-[current=location]:bg-primary/10" onClick={() => jumpToSection(section.id)}>{section.title}</Button>)}
-          </div>
-        </nav>
+        <ReadingContents label="Study guide sections" standalone={standalone} items={sections.map(section => ({ id: section.id, title: section.title, targetId: `${prefix}-${section.id}` }))} onNavigate={jumpToSection}/>
         <Button onClick={onOpenMastery} variant="outline" className="mt-4 h-auto min-h-11 w-full justify-between whitespace-normal">Practice recall<ArrowRight className="size-4" /></Button>
       </aside>
       <article data-guide-scroll-container={standalone || undefined} aria-label={standalone ? "Study guide text" : undefined} tabIndex={standalone ? 0 : undefined} className="lecture-study-guide-content min-w-0 rounded-2xl border border-border bg-card px-5 py-6 shadow-sm sm:px-9 sm:py-8">
