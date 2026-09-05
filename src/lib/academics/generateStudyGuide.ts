@@ -1,3 +1,4 @@
+import { lectureSourcePriorityInstruction } from './lectureSourcePriority'
 /**
  * Generate a study guide from a class's own material.
  *
@@ -107,7 +108,7 @@ export function conciseStudyGuideTitle(artifact: Pick<StudyGuideArtifact, 'secti
   return words.length > 56 ? `${words.slice(0, 55).trimEnd()}…` : words
 }
 
-export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [] }: {
+export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [], primarySourceChunkIds = [] }: {
   courseId: string
   topicId?: string
   chunks: SourceChunk[]
@@ -117,6 +118,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
   courseLens?: CourseLensGenerationContext
   /** Selected passages containing supplied question examples. */
   practiceQuestionChunkIds?: readonly string[]
+  primarySourceChunkIds?: readonly string[]
 }): Promise<GenerateOutcome> {
   const sources = chunks
   if (!sources.length) {
@@ -148,12 +150,14 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
     return { ok: false, failure: 'provider-unavailable', message: prepared.message ?? 'Source material could not be prepared.' }
   }
   const preparedIds = new Set(prepared.chunkIds)
+  const sourcePriority = lectureSourcePriorityInstruction(primarySourceChunkIds.filter((id) => preparedIds.has(id)))
   const questionReferenceIds = [...new Set(practiceQuestionChunkIds.filter((id) => preparedIds.has(id)))]
 
   const syncedAssembly = assembleGenerationRequest({
     specId: 'study-guide-v1',
     chunkIds: prepared.chunkIds,
     request: [
+      sourcePriority,
       `Topic: ${label}. Action: generate one canonical study guide from the attached sources. Begin with AT A GLANCE, then preserve the full source-supported teaching depth in the detailed sections without repeating the opening.`,
       'AI lecture naming: include a section with id "title" and title "TITLE", containing one cited text block with a concise 3–6 word title describing the central topic across the lecture. Do not echo the upload filename, lesson number, auto-generated transcript label, or "Study Guide". This title becomes the completed lecture name. Keep AT A GLANCE as the opening teaching section after this title metadata.',
       courseLensInstruction(courseLens),
@@ -172,6 +176,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
     specHash: syncedAssembly.specHash,
     systemPrompt: syncedAssembly.systemPrompt,
     request: [
+      sourcePriority,
       `Topic: ${label}.`,
       'Return one complete Study Guide: AT A GLANCE is its opening layer, not a separate brief and not a substitute for the full explanation.',
       courseLens ? 'Apply the supplied Course lens only within its selected evidence trace.' : '',

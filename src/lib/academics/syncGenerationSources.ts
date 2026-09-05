@@ -127,7 +127,8 @@ export function selectGenerationSourceChunks(
 
   const sampled = includedGroups.flatMap(([fileId, group]) => sampleGroup(group, quotas.get(fileId) ?? 0, focusTerms, priorityChunkIds))
   const originalOrder = new Map(usable.map((chunk, index) => [chunk.id, index]))
-  const ordered = sampled.sort((left, right) => (originalOrder.get(left.id) ?? 0) - (originalOrder.get(right.id) ?? 0))
+  // Enforce instructor priority when the character budget, not chunk count, binds.
+  const ordered = sampled.sort((left, right) => Number(preferredFileIds.has(right.fileId)) - Number(preferredFileIds.has(left.fileId)) || (originalOrder.get(left.id) ?? 0) - (originalOrder.get(right.id) ?? 0))
   const withinCharacterLimit: SourceChunk[] = []
   let characters = 0
   for (const chunk of ordered) {
@@ -135,7 +136,7 @@ export function selectGenerationSourceChunks(
     withinCharacterLimit.push(chunk)
     characters += chunk.content.length
   }
-  return withinCharacterLimit
+  return withinCharacterLimit.sort((left, right) => (originalOrder.get(left.id) ?? 0) - (originalOrder.get(right.id) ?? 0))
 }
 
 export interface GenerationSourcePreparation {

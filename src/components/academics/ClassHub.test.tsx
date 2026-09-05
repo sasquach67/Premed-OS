@@ -523,7 +523,7 @@ describe('ClassHub approved Overview', () => {
     const mastery = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Mastery Map')!
     await act(async () => mastery.click())
     expect(workspaceSurface.textContent).toContain('Trace gene expression from DNA to a mature transcript')
-    expect(workspaceSurface.querySelectorAll('select[aria-label^="Mastery state for"]').length).toBe(5)
+    expect(workspaceSurface.querySelectorAll('button[aria-label^="Mastery state for"]').length).toBe(1)
 
     const materials = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Materials')!
     await act(async () => materials.click())

@@ -152,3 +152,10 @@ describe('generation source preparation', () => {
     expect(chunks[0].id).toBe('transcript-0')
   })
 })
+
+it('keeps late instructor passages when earlier textbook text would exhaust the character budget', () => {
+  const chunks = [chunk({id: 'book', fileId: 'textbook', content: 'b'.repeat(70)}), chunk({id: 'lecture', fileId: 'transcript', content: 't'.repeat(70)}), chunk({id: 'slides', fileId: 'slides', content: 's'.repeat(70)})]
+  const selected = selectGenerationSourceChunks(chunks, {preferredFileIds: ['transcript', 'slides'], maxCharacters: 140, maxChunks: 3})
+  expect(selected.map((item) => item.id)).toEqual(['lecture', 'slides'])
+  expect(chunks).toHaveLength(3)
+})
