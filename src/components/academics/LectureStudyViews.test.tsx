@@ -87,12 +87,12 @@ describe('lecture mastery study view', () => {
   it('shows the full objective outline first while keeping generated answers hidden and sources exact', async () => {
     await render()
 
-    expect(container.textContent).toContain('Your mastery outline')
+    expect(container.textContent).toContain('Learn the map')
     expect(container.querySelector('nav[aria-label="Mastery objectives"]')).toBeTruthy()
     expect(container.textContent).toContain('RNA is complementary to the DNA template strand.')
     expect(container.textContent).toContain('Given a template sequence, write the RNA product 5′ to 3′.')
     expect(container.textContent).toContain('Do not copy the coding strand')
-    expect(container.textContent).toContain('Original practice built from your selected sources')
+    expect(container.textContent).toContain('Original practice built from the selected sources')
     expect(container.textContent).toContain('A template strand reads 3′-TAC-5′.')
 
     const solution = container.querySelector<HTMLDetailsElement>('[data-testid="practice-solution-objective-1-0"]')!
@@ -109,11 +109,11 @@ describe('lecture mastery study view', () => {
 
   it('keeps blank-page recall separate and opens a chosen objective without revealing its checklist', async () => {
     await render()
-    const recallMode = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent === 'What can you explain?')!
+    const recallMode = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Active recall'))!
     await act(async () => recallMode.click())
 
-    expect(container.textContent).toContain('Answer aloud or on a blank page before revealing the checklist.')
-    expect(container.textContent).toContain('Choose a recall objective')
+    expect(container.textContent).toContain('Close your notes. Answer first')
+    expect(container.textContent).toContain('Choose a closed-notes prompt')
     const secondTrigger = document.getElementById([...container.querySelectorAll<HTMLElement>('[data-state]')].find((node) => node.textContent?.includes('Connect codons to a polypeptide product') && node.tagName === 'BUTTON')?.id ?? '') as HTMLButtonElement
     expect(secondTrigger.getAttribute('data-state')).toBe('closed')
 
@@ -124,7 +124,7 @@ describe('lecture mastery study view', () => {
     expect(document.activeElement).toBe(secondTrigger)
     expect(scrollIntoView).toHaveBeenCalled()
     expect(container.textContent).toContain('Explain how a codon sequence becomes an amino-acid sequence.')
-    expect(container.querySelector<HTMLDetailsElement>('[data-testid="recall-checklist-objective-2"]')?.open).toBe(false)
+    expect(container.querySelector<HTMLDetailsElement>('[data-testid="recall-reveal-objective-2"]')?.open).toBe(false)
   })
 
   it('persists self-assessment and renders an honest fallback for legacy saved maps', async () => {
@@ -147,7 +147,7 @@ describe('lecture mastery study view', () => {
 
     expect(container.textContent).toContain('Legacy unit scope')
     expect(container.querySelector('[data-testid="legacy-practice-objective-1"]')).toBeTruthy()
-    expect(container.textContent).toContain('This earlier saved map has no generated exam-style questions or worked answers')
+    expect(container.textContent).toContain('This earlier saved map has no generated application questions or worked answers')
     expect(container.textContent).toContain('Given a template sequence, write the RNA product 5′ to 3′.')
     expect(container.textContent).not.toContain('Rebuild with AI')
     expect(container.querySelector('[data-testid^="practice-solution-"]')).toBeNull()

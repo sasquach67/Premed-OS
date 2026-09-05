@@ -442,9 +442,9 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).toContain('Biol 103 Lecture 2 Captions.txt · Transcript excerpt · central information flow')
     const mastery = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Mastery Map')!
     await act(async () => mastery.click())
-    const recall = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'What can you explain?')!
+    const recall = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Active recall'))!
     await act(async () => recall.click())
-    expect(container.textContent).toContain('Try without notes')
+    expect(container.textContent).toContain('Try before you reveal')
     expect(container.textContent).toContain('Keep the actual teaching sentence.')
     expect(container.textContent).not.toContain('provenance: source')
     expect(useStore.getState().academics.classCenter.generatedMasteryOutlines.find((item) => item.id === outline.id)?.standards[0].understand).toContain('Keep the actual teaching sentence. provenance: source')
@@ -455,7 +455,7 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).toContain('Infer the likely destination of a protein')
     expect(container.textContent).toContain('Use the Ebola activity data and controls')
     expect(container.querySelectorAll('button[aria-label^="Mastery state for"]').length).toBe(5)
-    expect([...container.querySelectorAll('details')].filter((item) => item.querySelector('summary')?.textContent === 'Reveal the checklist').every((item) => !item.open)).toBe(true)
+    expect([...container.querySelectorAll('details')].filter((item) => item.querySelector('summary')?.textContent === 'Reveal after trying').every((item) => !item.open)).toBe(true)
   })
 
   it('uses Materials as a lecture-scoped library for generated work and uploaded sources', async () => {

@@ -1,21 +1,15 @@
-import { useId, useRef, useState, type ReactNode } from 'react'
-import { BookOpen, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { useId, useRef, type ReactNode } from 'react'
+import { BookOpen, ArrowRight } from 'lucide-react'
 import type { AcademicFile, ClassCenterData, LectureRecord, SourceChunk } from '@/lib/types'
 import type { ContentBlock, RichText, StudyGuideArtifact } from '@/lib/generation/schemas/studyGuide.v1'
 import { useStore } from '@/store/store'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { Progress } from '@/components/ui/progress'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { scrollGuideHeadingIntoReadingPane } from './lectureGuideNavigation'
 
 type Outline = ClassCenterData['generatedMasteryOutlines'][number]
-const readiness = { 'not-started': 'Not started', 'can-explain': 'Can explain', 'can-apply-without-notes': 'Can apply without notes' } as const
 
-function studentText(text: string) { return text.replace(/\s+provenance:\s*(?:source|clarification|background)\s*$/i, '') }
 
 function StudyText({ value }: { value: RichText }) {
   const terms = value.emphasis?.map((span) => span.text).filter(Boolean) ?? []
@@ -75,56 +69,4 @@ export function GeneratedLectureGuideView({ lecture, guide, chunks, files, maste
     </div>
   </div>
 }
-export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline; chunks: SourceChunk[]; lecture: LectureRecord }) {
-  const [mode, setMode] = useState<'outline' | 'recall'>('outline')
-  const prefix = useId()
-  function setMastery(id: string, state: keyof typeof readiness) { useStore.getState().update((draft) => { const record = draft.academics.classCenter.generatedMasteryOutlines.find((item) => item.id === outline?.id); const standard = record?.standards.find((item) => item.id === id); if (record && standard) { standard.masteryState = state; record.updatedAt = Date.now() } }) }
-  if (!outline) return <Card><CardContent className="p-6"><h2 className="font-display text-xl font-extrabold">No Mastery Map yet</h2><p className="mt-2 text-sm text-muted-foreground">Add or link course objectives, then rebuild this lecture to create the outline and recall practice.</p></CardContent></Card>
-  const applied = outline.standards.filter((standard) => standard.masteryState === 'can-apply-without-notes').length
-  const explained = outline.standards.filter((standard) => standard.masteryState === 'can-explain').length
-  const scopeLabel = outline.scope ? `${outline.scope[0].toUpperCase()}${outline.scope.slice(1)} scope` : 'Legacy unit scope'
-  function openObjective(id: string) {
-    const target = document.getElementById(`${prefix}-${id}`)
-    if (target?.getAttribute('data-state') === 'closed') target.click()
-    target?.scrollIntoView({ block: 'start' })
-    target?.focus({ preventScroll: true })
-  }
-  const checklist = (standard: Outline['standards'][number]) => <div className="space-y-6">
-    <MasterySection label="Understand" items={standard.understand} />
-    <MasterySection label="Be able to do" items={standard.beAbleToDo} />
-    <section className="rounded-xl border-l-4 border-amber-500 bg-muted p-4"><MasterySection label="Watch for on an exam" items={standard.watchFor} /></section>
-    <section aria-label={`Exam practice for ${standard.title}`} data-testid={`exam-practice-${standard.id}`} className="border-t border-border pt-5">
-      <div className="flex flex-wrap items-center justify-between gap-2"><h4 className="font-display text-lg font-extrabold">Apply it on an exam</h4><Badge variant="secondary">Generated practice</Badge></div>
-      <p className="mt-1 text-xs leading-5 text-muted-foreground">Original practice built from your selected sources—not an instructor-authored question or a prediction of the actual exam.</p>
-      {standard.examPractice?.length ? standard.examPractice.map((question, i) => <article key={i} className="mt-4 rounded-xl border border-border p-4">
-        <p className="text-xs font-bold text-primary">Application {i + 1}</p>
-        <p className="mt-2 whitespace-pre-wrap text-base leading-7">{studentText(question.prompt)}</p>
-        <details data-testid={`practice-solution-${standard.id}-${i}`} className="mt-3"><summary className="w-fit cursor-pointer rounded py-2 text-sm font-bold focus-visible:ring-2 focus-visible:ring-ring">Show answer and working</summary><div className="mt-2 space-y-3 text-sm leading-7"><p><b>Answer: </b>{studentText(question.answer)}</p><p><b>Working: </b>{studentText(question.rationale)}</p><SourceDetails ids={question.sourceChunkIds} chunks={chunks} /></div></details>
-      </article>) : <div data-testid={`legacy-practice-${standard.id}`} className="mt-3 rounded-xl border border-dashed border-border p-4"><p className="text-sm font-bold">Use the application targets above</p><p className="mt-1 text-sm leading-6 text-muted-foreground">This earlier saved map has no generated exam-style questions or worked answers, so none are shown. Its Be able to do targets remain available for practice.</p></div>}
-    </section>
-  </div>
-  return <div className="mx-auto max-w-4xl space-y-6">
-    <header><p className="text-sm font-bold text-primary">Mastery Map</p><h2 className="mt-2 font-display text-3xl font-extrabold">{mode === 'outline' ? 'Your mastery outline' : 'What can you explain?'}</h2>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{mode === 'outline' ? 'Work through every objective: understand the ideas, apply them, and recognize the traps. Then practice without notes.' : 'Try each prompt aloud or on a blank page. Reveal the checklist afterward, then record how you did.'}</p>
-      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Mastery study mode">
-        <Button variant={mode === 'outline' ? 'default' : 'outline'} aria-pressed={mode === 'outline'} onClick={() => setMode('outline')}>Mastery outline</Button>
-        <Button variant={mode === 'recall' ? 'default' : 'outline'} aria-pressed={mode === 'recall'} onClick={() => setMode('recall')}>What can you explain?</Button>
-      </div>
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs font-semibold"><span>{applied} of {outline.standards.length} ready to apply · {explained} can explain</span><span>Your self-assessment</span></div>
-      <Progress value={outline.standards.length ? applied / outline.standards.length * 100 : 0} aria-label="Objectives you can apply without notes" className="mt-2 h-2" />
-    </header>
-    <nav aria-label="Mastery objectives" className="rounded-xl border border-border p-4"><p className="mb-3 text-xs font-bold text-muted-foreground">{mode === 'outline' ? 'Things to master' : 'Choose a recall objective'}</p><ol className="grid gap-2 sm:grid-cols-2">{outline.standards.map((standard, index) => <li key={standard.id}><button type="button" className="flex min-h-11 w-full items-start gap-3 rounded-lg px-2 py-2 text-left text-sm font-semibold hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => openObjective(standard.id)}><span className="grid size-6 shrink-0 place-items-center rounded-full bg-muted text-xs font-extrabold text-primary" aria-hidden="true">{index + 1}</span><span>{standard.title}</span></button></li>)}</ol></nav>
-    <Card><CardContent className="px-4 py-0 sm:px-6"><Accordion key={`${outline.id}:${mode}`} type="multiple" defaultValue={mode === 'outline' ? outline.standards.map((standard) => standard.id) : outline.standards[0] ? [outline.standards[0].id] : []}>
-      {outline.standards.map((standard, index) => <AccordionItem key={standard.id} value={standard.id}>
-        <AccordionTrigger id={`${prefix}-${standard.id}`} className="scroll-mt-4 items-center py-5 hover:no-underline"><span className="flex min-w-0 items-start gap-3"><span className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-primary">{standard.masteryState === 'can-apply-without-notes' ? <CheckCircle2 className="size-4" /> : index + 1}</span><span className="min-w-0"><span className="block font-display text-lg font-extrabold">{standard.title}</span><span className="mt-1 block text-xs text-muted-foreground">{readiness[standard.masteryState ?? 'not-started']}</span></span></span></AccordionTrigger>
-        <AccordionContent className="pb-6">
-          {mode === 'outline' ? checklist(standard) : <><section className="rounded-xl border-l-4 border-primary bg-muted p-5"><h3 className="text-xs font-extrabold text-primary">Try without notes</h3><p className="mt-2 text-sm text-muted-foreground">Answer aloud or on a blank page before revealing the checklist.</p><ul className="mt-3 space-y-3 text-base leading-7">{(standard.freeRecallCues?.length ? standard.freeRecallCues : [standard.title]).map((cue, i) => <li key={i}>{studentText(cue)}</li>)}</ul></section><details data-testid={`recall-checklist-${standard.id}`} className="mt-4 rounded-xl border border-border"><summary className="cursor-pointer rounded-xl px-4 py-3 text-sm font-bold focus-visible:ring-2 focus-visible:ring-ring">Reveal the checklist</summary><div className="border-t border-border p-5">{checklist(standard)}</div></details></>}
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-bold">How did you do?</p><Select value={standard.masteryState ?? 'not-started'} onValueChange={(value) => setMastery(standard.id, value as keyof typeof readiness)}><SelectTrigger className="h-11 w-full sm:w-60" aria-label={`Mastery state for ${standard.title}`}><SelectValue /></SelectTrigger><SelectContent>{Object.entries(readiness).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
-          <SourceDetails ids={standard.sourceChunkIds} chunks={chunks} />
-        </AccordionContent>
-      </AccordionItem>)}
-    </Accordion></CardContent></Card>
-    <p className="text-xs text-muted-foreground">{lecture.title} · {scopeLabel}</p>
-  </div>
-}
-function MasterySection({ label, items }: { label: string; items: string[] }) { return items.length ? <section><h4 className="text-sm font-extrabold">{label}</h4><ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-7 marker:text-primary">{items.map((item, index) => <li key={index}>{studentText(item)}</li>)}</ul></section> : null }
+export { MasteryMapView } from './MasteryLearningModes'
