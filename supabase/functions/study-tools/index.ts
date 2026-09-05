@@ -1,10 +1,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.110.2'
 import { OpenAIGenerationResponseError, readOpenAIGenerationResponse } from '../_shared/openAIGenerationResponse.ts'
+import { createOpenAICitationWire } from '../_shared/openAICitationWire.ts'
 import {
   canonicalizeOpenAIGenerationSourceRefs,
   OPENAI_GENERATION_CITATION_INSTRUCTION,
   openAIGenerationSourceRefRequired,
-  openAIGenerationSources,
 } from '../_shared/openAIGenerationGrounding.ts'
 
 const MAX_REQUEST_BYTES = 8 * 1024 * 1024
@@ -809,7 +809,8 @@ function openAIOutputText(payload: Record<string, unknown>): string {
 async function callOpenAIGeneration(response: string, chunks: Chunk[], specPrompt: string) {
   const key = Deno.env.get('OPENAI_API_KEY')
   if (!key) throw new Error('OpenAI is not configured')
-  const sources = openAIGenerationSources(chunks)
+  const wire = createOpenAICitationWire(chunks)
+  const sources = wire.sources
   const result = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
@@ -823,7 +824,7 @@ async function callOpenAIGeneration(response: string, chunks: Chunk[], specPromp
           content: [{
             type: 'input_text',
             text: [
-              specPrompt,
+              wire.encodePrompt(specPrompt),
               'Reply with one JSON object only. Follow the required artifact shape in the specification.',
               OPENAI_GENERATION_CITATION_INSTRUCTION,
             ].join('\n'),
@@ -833,7 +834,7 @@ async function callOpenAIGeneration(response: string, chunks: Chunk[], specPromp
           role: 'user',
           content: [{
             type: 'input_text',
-            text: `Request:\n${response}\n\nSource documents:\n${JSON.stringify(sources)}`,
+            text: `Request:\n${wire.encodePrompt(response)}\n\nSource documents:\n${JSON.stringify(sources)}`,
           }],
         },
       ],
@@ -841,7 +842,7 @@ async function callOpenAIGeneration(response: string, chunks: Chunk[], specPromp
     }),
   })
   const value = canonicalizeOpenAIGenerationSourceRefs(
-    await readOpenAIGenerationResponse(result),
+    wire.decode(await readOpenAIGenerationResponse(result)),
     chunks,
   )
   return { value, trustedCitations: collectArtifactCitations(value, chunks), webSearchRequests: 0 }
