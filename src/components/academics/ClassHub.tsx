@@ -354,11 +354,11 @@ function Overview({
   return (
     <div className="class-hub-overview grid grid-cols-12 gap-4">
       {/* Keep the vertical journal and selected preview visible together. Opening a page is a separate action. */}
-      <section className="lecture-overview-composition lecture-journal-vertical col-span-12" aria-labelledby="lecture-ledger-title">
+      <section className={cn('lecture-overview-composition lecture-journal-vertical col-span-12', !activeLecture && 'is-empty')} aria-labelledby="lecture-ledger-title" data-lecture-count={lectures.length}>
         <aside className="lecture-rail">
           <div className="lecture-rail-heading"><h2 id="lecture-ledger-title">Class journal</h2></div>
           <p className="lecture-rail-caption">{lectures.length ? `${lectures.length} ${lectures.length === 1 ? 'lecture' : 'lectures'} · newest first` : 'No lectures yet'}</p>
-          <div className="lecture-rail-list" tabIndex={0} aria-label="Lecture history">
+          {lectures.length ? <div className="lecture-rail-list" tabIndex={0} aria-label="Lecture history">
             {[...chronologicalLectures].reverse().map((lecture) => {
               const materialCount = data.files.filter((file) => file.lectureId === lecture.id && file.id !== lecture.transcriptFileId).length
               const isActive = activeLecture?.id === lecture.id
@@ -369,18 +369,16 @@ function Overview({
                 </button>
               </LectureRecordMenu>
             })}
-          </div>
+          </div> : <div className="lecture-journal-empty"><b>Start with today’s lecture</b><p>Add a transcript and materials; the preview will stay here as you build.</p></div>}
           <button type="button" className="lecture-rail-add" onClick={() => openLecture()}><Plus aria-hidden="true" /> Add today’s lecture</button>
         </aside>
-        <article className="lecture-active-context" aria-label="Selected lecture preview">
-          {activeLecture ? <>
-            <div className="lecture-active-header">
-              <div><p className="lecture-ledger-kicker">Lecture preview</p><h2>{completedLectureTitle(lectureNumber(activeLecture.id), activeLecture)}</h2></div>
-              <div className="lecture-saved-actions"><Button size="sm" variant="outline" onClick={() => openLecture(activeLecture.id)}>Open lecture</Button></div>
-            </div>
-            {activeLecture.workspaceState === 'complete' ? <div className="lecture-journal-workspace"><LectureCapturePanel key={activeLecture.id} courseId={course.id} course={course} data={data} initialLectureId={activeLecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={() => onTab('guide')} /></div> : <LecturePreview lecture={activeLecture} sourceCount={activeLectureSources.length} />}
-          </> : <div className="lecture-journal-empty"><h2>Your lecture preview will appear here</h2><p>Add your first lecture to start the journal.</p></div>}
-        </article>
+        {activeLecture && <article className="lecture-active-context" aria-label="Selected lecture preview">
+          <div className="lecture-active-header">
+            <div><p className="lecture-ledger-kicker">Lecture preview</p><h2>{completedLectureTitle(lectureNumber(activeLecture.id), activeLecture)}</h2></div>
+            <div className="lecture-saved-actions"><Button size="sm" variant="outline" onClick={() => openLecture(activeLecture.id)}>{activeLecture.workspaceState === 'complete' ? 'Open full study guide' : 'Continue lecture'}</Button></div>
+          </div>
+          {activeLecture.workspaceState === 'complete' ? <div className="lecture-journal-workspace"><LectureCapturePanel key={activeLecture.id} courseId={course.id} course={course} data={data} initialLectureId={activeLecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={() => onTab('guide')} /></div> : <LecturePreview lecture={activeLecture} sourceCount={activeLectureSources.length} />}
+        </article>}
       </section>
 
       {/* Visual provenance: mockup-lab/01-academics/academics-class-hub.html,

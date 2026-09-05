@@ -191,10 +191,11 @@
 /* Overview journal: .journal-shell / .journal-rail / .journal-stage. */
 .class-hub .lecture-overview-composition {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
+  grid-template-columns: clamp(232px, 24vw, 276px) minmax(0, 1fr);
   gap: 14px;
   align-items: start;
 }
+.class-hub .lecture-overview-composition.is-empty { grid-template-columns: minmax(0, 1fr); }
 
 .class-hub .lecture-rail,
 .class-hub .lecture-active-context {
@@ -208,6 +209,8 @@
 
 .class-hub .lecture-rail {
   display: block;
+  align-self: start;
+  block-size: fit-content;
   padding: 13px;
 }
 
@@ -233,7 +236,7 @@
 
 .class-hub .lecture-rail-list {
   display: block;
-  max-height: 320px;
+  max-height: min(14rem, 38vh);
   margin-top: 7px;
   padding-right: 3px;
   overflow-y: auto;
@@ -250,6 +253,7 @@
 .class-hub .lecture-rail-add {
   display: flex;
   width: 100%;
+  min-height: 44px;
   align-items: center;
   gap: 5px;
   margin-top: 11px;
@@ -269,6 +273,7 @@
   position: relative;
   display: block;
   width: 100%;
+  min-height: 50px;
   margin: 0;
   padding: 9px 10px;
   border: 1px solid transparent;
@@ -366,6 +371,16 @@
   font-size: 11px;
   font-weight: 700;
 }
+
+.class-hub .lecture-journal-empty {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: 11px;
+  background: var(--muted);
+}
+.class-hub .lecture-journal-empty b { font: 800 13px/1.25 'Baloo 2', var(--font-display); }
+.class-hub .lecture-journal-empty p { margin-top: 3px; color: var(--muted-foreground); font-size: 11.5px; font-weight: 700; line-height: 1.45; }
 
 .class-hub .lecture-number-pill {
   padding: 3px 8px;
@@ -980,7 +995,7 @@
   .class-hub .lecture-rail,
   .class-hub .lecture-active-context { min-height: 0; }
   .class-hub .lecture-rail { padding: 11px; }
-  .class-hub .lecture-rail-list { max-height: 220px; }
+  .class-hub .lecture-rail-list { max-height: min(15rem, 42vh); }
   .class-hub .lecture-active-header { flex-direction: column; }
   .class-hub .lecture-capture-steps,
   .class-hub .lecture-evidence-summary { grid-template-columns: 1fr; }
@@ -1012,40 +1027,6 @@
 @media (prefers-reduced-motion: reduce) {
   .class-hub button { transition: none !important; }
 }
-
-/* A single reading list: each preview belongs to its lecture row. */
-.class-hub .lecture-journal { min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 16px; background: var(--card); }
-.class-hub .lecture-journal-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; }
-.class-hub .lecture-journal-heading h2 { font: 800 20px/1.2 'Baloo 2', var(--font-display); }
-.class-hub .lecture-journal-heading .lecture-rail-caption { margin-top: 4px; }
-.class-hub .lecture-journal-list { border-top: 1px solid var(--border); }
-.class-hub .lecture-journal-item { padding: 0 20px; }
-.class-hub .lecture-journal-item .lecture-record--rail { border: 0; border-radius: 0; }
-.class-hub .lecture-journal-item .lecture-record--rail:has(.is-active) { background: transparent; box-shadow: none; }
-.class-hub .lecture-journal-item .lecture-record--rail > h3 { min-width: 0; }
-.class-hub .lecture-journal-item .lecture-rail-entry { display: flex; align-items: center; padding: 14px 8px 14px 0; gap: 16px; }
-.class-hub .lecture-journal-row-text { min-width: 0; }
-.class-hub .lecture-journal-item .lecture-rail-entry > span { max-width: 100%; margin: 0; white-space: normal; }
-.class-hub .lecture-journal-item .lecture-rail-entry b { max-width: 100%; color: var(--foreground); font-size: 14px; white-space: normal; overflow-wrap: anywhere; }
-.class-hub .lecture-journal-row-text > span { display: block; margin-top: 4px; color: var(--muted-foreground); font-size: 12px; }
-.class-hub .lecture-journal-detail { padding: 0 0 18px; }
-.class-hub .lecture-journal-detail .lecture-compact-preview { margin: 0; padding: 4px 0 0; border: 0; }
-.class-hub .lecture-journal-detail .lecture-preview-summary { max-width: 100%; }
-.class-hub .lecture-journal-item .lecture-rail-entry:hover { text-decoration: none; }
-.class-hub .lecture-journal-detail .lecture-preview-footer { margin-top: 12px; padding-top: 0; border: 0; }
-.class-hub .lecture-journal-detail .lecture-saved-actions { margin-top: 12px; }
-.class-hub .lecture-journal-empty { padding: 0 20px 20px; color: var(--muted-foreground); font-size: 14px; }
-@media (max-width: 600px) {
-  .class-hub .lecture-journal-heading { align-items: flex-start; flex-direction: column; gap: 12px; padding: 16px; }
-  .class-hub .lecture-journal-item { padding: 0 16px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .class-hub .lecture-journal [data-slot="accordion-content"] { animation: none; }
-  .class-hub .lecture-journal [data-slot="accordion-trigger"],
-  .class-hub .lecture-journal [data-slot="accordion-trigger"] > svg { transition: none; }
-}
-
-.class-hub .lecture-journal-detail > .lecture-saved-actions { justify-content: flex-end; margin: 0 0 10px; }
 .class-hub .lecture-journal-workspace [aria-label="Lecture reading area"] { max-height: min(68vh, 38rem); padding: 16px 0; overscroll-behavior-y: contain; }
 .class-hub .lecture-journal-workspace .lecture-study-guide > header { padding-bottom: 16px; }
 .class-hub .lecture-journal-workspace .lecture-study-guide > header h2 { font-size: 24px; }

@@ -337,7 +337,7 @@ describe('ClassHub approved Overview', () => {
     expect(document.body.textContent).not.toContain('Flashcards')
   })
 
-  it('keeps transcript capture as the default while the bounded journal opens saved lecture evidence on demand', async () => {
+  it('shows a one-lecture vertical journal with its preview selected by default', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -371,23 +371,23 @@ describe('ClassHub approved Overview', () => {
 
     expect(container.textContent).toContain('Class journal')
     expect(container.textContent).not.toContain('Build a lecture page')
-    expect(container.querySelector('.lecture-journal-list')).toBeTruthy()
-    expect(container.querySelector('.lecture-overview-composition')).toBeNull()
+    expect(container.querySelector('.lecture-rail-list')).toBeTruthy()
+    expect(container.querySelector('.lecture-overview-composition')?.getAttribute('data-lecture-count')).toBe('1')
+    expect(container.querySelector('[aria-label="Selected lecture preview"]')).toBeTruthy()
     expect(container.textContent).toContain('Recent study work')
     expect(container.textContent).not.toContain('Class Plan')
     expect([...container.querySelectorAll<HTMLButtonElement>('button')].some((button) => button.textContent?.trim().startsWith('Topics'))).toBe(true)
 
     const savedLecture = container.querySelector('button.lecture-rail-entry') as HTMLButtonElement
+    expect(savedLecture.getAttribute('aria-current')).toBe('true')
+    expect(container.querySelector('[aria-label="Selected lecture preview"] [aria-label="Lecture preview"]')).toBeTruthy()
     await act(async () => savedLecture.click())
     expect(container.textContent).toContain('Study Guide')
     expect(container.textContent).not.toContain('Lecture Brief')
     expect(container.textContent).toContain('Mastery Map')
     expect(container.textContent).toContain('0 selected sources')
-    expect(savedLecture.getAttribute('aria-expanded')).toBe('true')
-    expect(savedLecture.closest('.lecture-journal-item')?.querySelector('[aria-label="Lecture preview"]')).toBeTruthy()
-    await act(async () => savedLecture.click())
-    expect(savedLecture.getAttribute('aria-expanded')).toBe('false')
-    expect(container.querySelector('[aria-label="Lecture preview"]')).toBeNull()
+    expect(savedLecture.getAttribute('aria-current')).toBe('true')
+    expect(container.querySelector('[aria-label="Selected lecture preview"] [aria-label="Lecture preview"]')).toBeTruthy()
 
     const addToday = [...container.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.trim() === 'Add today’s lecture')
@@ -520,10 +520,17 @@ describe('ClassHub approved Overview', () => {
       root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><LocationProbe /></MemoryRouter>)
     })
 
+    const lectureOne = [...container.querySelectorAll<HTMLButtonElement>('button.lecture-rail-entry')]
+      .find((button) => button.textContent?.includes('Experimental thinking'))!
     const lectureTwo = [...container.querySelectorAll<HTMLButtonElement>('button.lecture-rail-entry')]
       .find((button) => button.textContent?.includes('Central Dogma'))!
-    expect(container.querySelector('[aria-label="Embedded lecture workspace"]')).toBeTruthy()
+    const selectedPreview = container.querySelector('[aria-label="Selected lecture preview"]')!
+    expect(selectedPreview.querySelector('[aria-label="Embedded lecture workspace"]')).toBeTruthy()
+    expect(selectedPreview.querySelector('h2')?.textContent).toContain('Central Dogma')
+    await act(async () => lectureOne.click())
+    expect(selectedPreview.querySelector('h2')?.textContent).toContain('Experimental thinking')
     await act(async () => lectureTwo.click())
+    expect(selectedPreview.querySelector('h2')?.textContent).toContain('Central Dogma')
 
     const workspaceSurface = container.querySelector('[aria-label="Embedded lecture workspace"]')!
     expect(lectureTwo.closest('[aria-label="Lecture history"]')?.contains(workspaceSurface)).toBe(false)
@@ -550,10 +557,47 @@ describe('ClassHub approved Overview', () => {
     const sources = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Sources')!
     await act(async () => sources.click())
     expect(workspaceSurface.querySelector('input[placeholder="Search exact words across transcript and sources"]')).toBeTruthy()
-    const openLecture = [...container.querySelectorAll<HTMLButtonElement>('.lecture-saved-actions button')].find((button) => button.textContent === 'Open lecture')!
+    const openLecture = [...container.querySelectorAll<HTMLButtonElement>('.lecture-saved-actions button')].find((button) => button.textContent === 'Open full study guide')!
     await act(async () => openLecture.click())
     expect(container.querySelector('[data-testid="location"]')?.textContent).toBe(`/academics/classes/${course.id}/lectures/demo-lecture-biol103-2`)
 
+  })
+
+  it('bounds a long vertical lecture history while keeping selection in the adjacent preview', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
+    const course = seed.courses.find((item) => item.id === workspace.courseId)!
+    const center = seed.academics.classCenter
+    center.lectures = center.lectures.filter((lecture) => lecture.courseId !== course.id)
+    center.lectures.push(...Array.from({ length: 8 }, (_, index) => ({
+      id: `many-lecture-${index + 1}`,
+      courseId: course.id,
+      title: `Lecture ${index + 1} · Topic ${index + 1}`,
+      inputPath: 'pasted' as const,
+      processingState: 'ready' as const,
+      occurredOn: `2026-09-${String(index + 1).padStart(2, '0')}`,
+      createdAt: now + index,
+      updatedAt: now + index,
+      order: index,
+    })))
+    useStore.getState().replaceAll(seed)
+
+    await act(async () => {
+      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={center} persons={seed.persons} /></ToastProvider></MemoryRouter>)
+    })
+
+    const composition = container.querySelector<HTMLElement>('.lecture-overview-composition')!
+    const history = composition.querySelector<HTMLElement>('[aria-label="Lecture history"]')!
+    const entries = [...history.querySelectorAll<HTMLButtonElement>('button.lecture-rail-entry')]
+    expect(composition.dataset.lectureCount).toBe('8')
+    expect(entries).toHaveLength(8)
+    expect(history.getAttribute('tabindex')).toBe('0')
+    expect(composition.querySelector('[aria-label="Selected lecture preview"] h2')?.textContent).toContain('Topic 8')
+
+    const third = entries.find((entry) => entry.textContent?.includes('Topic 3'))!
+    await act(async () => third.click())
+    expect(third.getAttribute('aria-current')).toBe('true')
+    expect(composition.querySelector('[aria-label="Selected lecture preview"] h2')?.textContent).toContain('Topic 3')
   })
 
   it('keeps the transcript-first journal on writing and general class overviews', async () => {
@@ -574,8 +618,10 @@ describe('ClassHub approved Overview', () => {
     })
 
     expect(container.textContent).toContain('Class journal')
-    expect(container.textContent).toContain('Add your first lecture to start the journal')
-    expect(container.querySelector('.lecture-overview-composition')).toBeNull()
+    expect(container.textContent).toContain('Start with today’s lecture')
+    expect(container.querySelector('.lecture-overview-composition')?.className).toContain('is-empty')
+    expect(container.querySelector('.lecture-overview-composition')?.getAttribute('data-lecture-count')).toBe('0')
+    expect(container.querySelector('[aria-label="Selected lecture preview"]')).toBeNull()
     const addLecture = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Add today’s lecture')!
     await act(async () => addLecture.click())
     expect(container.querySelector('[data-testid="location"]')?.textContent).toBe(`/academics/classes/${course.id}/lectures/new`)
