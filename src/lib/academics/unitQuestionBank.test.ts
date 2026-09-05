@@ -36,6 +36,12 @@ describe('unit question bank contracts', () => {
     expect(validateMasteryOutline({ ...outline, standards: [{ ...outline.standards[0], sourceChunkIds: ['not-closed'] }] }, chunks)).toBeNull()
   })
 
+  it('reports the exact failed mastery requirement without exposing source text', () => {
+    const issues: string[] = []
+    expect(validateMasteryOutline({ ...outline, standards: [{ ...outline.standards[0], understand: ['One detail'] }] }, chunks, issues)).toBeNull()
+    expect(issues).toEqual(['standards[0].understand: needs at least 5 distinct points'])
+  })
+
   it.each([
     'Convert a DNA template sequence into the corresponding mRNA sequence on a blank page.',
     'Translate a short mRNA sequence into amino acids and identify the start and stop signals from memory.',

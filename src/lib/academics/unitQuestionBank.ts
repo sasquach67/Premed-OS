@@ -94,32 +94,45 @@ export function privateAssessmentSimilarity(candidate: string, reference: string
   return overlap / Math.min(left.size, right.size)
 }
 
-export function validateMasteryOutline(value: unknown, closedChunkIds: readonly string[]): UnitMasteryOutlineArtifact | null {
-  if (!value || typeof value !== 'object') return null
+export function validateMasteryOutline(value: unknown, closedChunkIds: readonly string[], issues?: string[]): UnitMasteryOutlineArtifact | null {
+  const fail = (reason: string): null => { issues?.push(reason); return null }
+  if (!value || typeof value !== 'object') return fail('artifact: expected an object')
   const artifact = value as Partial<UnitMasteryOutlineArtifact>
-  if (!text(artifact.title) || !text(artifact.unit) || !Array.isArray(artifact.standards) || !artifact.standards.length) return null
+  if (!text(artifact.title) || !text(artifact.unit) || !Array.isArray(artifact.standards) || !artifact.standards.length) return fail('artifact: title, unit and nonempty standards are required')
   const closed = new Set(closedChunkIds)
   const seen = new Set<string>()
   const seenApplications = new Set<string>()
   const seenRecallCues = new Set<string>()
-  for (const raw of artifact.standards) {
-    if (!raw || typeof raw !== 'object') return null
+  for (const [index, raw] of artifact.standards.entries()) {
+    const path = `standards[${index}]`
+    if (!raw || typeof raw !== 'object') return fail(`${path}: expected an objective object`)
     const standard = raw as Partial<MasteryStandard>
-    if (!text(standard.id) || !text(standard.title) || seen.has(standard.id)) return null
-    if (!validFreeRecallCues(standard.freeRecallCues) || !validStringList(standard.understand) || !validStringList(standard.beAbleToDo) || !validStringList(standard.watchFor)) return null
-    if (standard.understand.length < 5 || standard.beAbleToDo.length < 2 || standard.watchFor.length < 1) return null
-    if (!unique(standard.freeRecallCues) || !unique(standard.understand) || !unique(standard.beAbleToDo) || !unique(standard.watchFor)) return null
+    if (!text(standard.id) || !text(standard.title) || seen.has(standard.id)) return fail(`${path}: nonempty title and unique id required`)
+    if (!validFreeRecallCues(standard.freeRecallCues)) {
+      const cues: unknown = (raw as unknown as Record<string, unknown>).freeRecallCues
+      if (!validStringList(cues) || cues.length < 1 || cues.length > 3) return fail(`${path}.freeRecallCues: needs 1 to 3 nonempty cues`)
+      if (!cues.some((cue) => /\bwithout notes\b/i.test(cue))) return fail(`${path}.freeRecallCues: at least one cue must explicitly say without notes`)
+      const invalid = cues.findIndex((cue) => clean(cue).split(' ').length < 5 || !FREE_RECALL_ACTION.test(cue) || GENERIC_FREE_RECALL.test(cue))
+      return fail(`${path}.freeRecallCues[${invalid}]: needs a concrete retrieval action and named subject, at least 5 words`)
+    }
+    for (const [field, minimum] of [['understand', 5], ['beAbleToDo', 2], ['watchFor', 1]] as const) {
+      const list = standard[field]
+      if (!validStringList(list) || list.length < minimum) return fail(`${path}.${field}: needs at least ${minimum} distinct points`)
+      if (!unique(list)) return fail(`${path}.${field}: repeated points`)
+    }
+    if (!unique(standard.freeRecallCues)) return fail(`${path}.freeRecallCues: repeated cues`)
     for (const cue of standard.freeRecallCues) {
       const normalized = clean(cue)
-      if (seenRecallCues.has(normalized)) return null
+      if (seenRecallCues.has(normalized)) return fail(`${path}.freeRecallCues: cue repeated across objectives`)
       seenRecallCues.add(normalized)
     }
-    for (const application of standard.beAbleToDo) {
+    for (const application of standard.beAbleToDo!) {
       const normalized = clean(application)
-      if (seenApplications.has(normalized)) return null
+      if (seenApplications.has(normalized)) return fail(`${path}.beAbleToDo: application repeated across objectives`)
       seenApplications.add(normalized)
     }
-    if (!allClosed(standard.sourceChunkIds, closed) || !unique(standard.sourceChunkIds!)) return null
+    if (!allClosed(standard.sourceChunkIds, closed)) return fail(`${path}.sourceChunkIds: missing or outside selected sources`)
+    if (!unique(standard.sourceChunkIds!)) return fail(`${path}.sourceChunkIds: duplicate source IDs`)
     seen.add(standard.id)
   }
   return artifact as UnitMasteryOutlineArtifact
