@@ -3,6 +3,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { LecturePage } from '@/pages/LecturePage'
 import { JournalEntryPage } from '@/pages/JournalEntryPage'
 import { ClassHub, WritingTools } from '@/components/academics/ClassHub'
 import { ToastProvider } from '@/components/common/ToastProvider'
@@ -222,7 +223,7 @@ describe('ClassHub approved Overview', () => {
       { ...base, id: 'generated', title: 'Generated concept map', fileName: 'map.png', mimeType: 'image/png', owner: 'generated' },
     ]
     seed.academics.classCenter.notes = []
-    await act(async () => root.render(<MemoryRouter initialEntries={['/?classTab=materials']}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>))
+    await act(async () => root.render(<MemoryRouter initialEntries={['/?classTab=materials']}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>))
     expect(container.textContent).toContain('2 items in this course library')
     expect(container.querySelector('[role="tab"][data-state="active"]')?.textContent).toContain('Materials2')
     expect(container.textContent).toContain('Lecture handout')
@@ -241,7 +242,7 @@ describe('ClassHub approved Overview', () => {
     workspace.color = 'red'
 
     await act(async () => {
-      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
+      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
     })
 
     const banner = container.querySelector<HTMLElement>('.class-hub-banner')!
@@ -277,7 +278,7 @@ describe('ClassHub approved Overview', () => {
       ])
 
     await act(async () => {
-      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
+      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
     })
 
     const trigger = [...container.querySelectorAll('button')].find((item) => item.textContent?.includes('Office hours & links')) as HTMLButtonElement
@@ -302,7 +303,7 @@ describe('ClassHub approved Overview', () => {
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
 
     await act(async () => {
-      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
+      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
     })
 
     const trigger = container.querySelector('button.class-hub-primary-action') as HTMLButtonElement
@@ -321,7 +322,7 @@ describe('ClassHub approved Overview', () => {
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
 
     await act(async () => {
-      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
+      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
     })
 
     const trigger = container.querySelector('button.class-hub-primary-action') as HTMLButtonElement
@@ -362,7 +363,7 @@ describe('ClassHub approved Overview', () => {
           <ToastProvider>
             <ClassHub course={course} workspace={{...workspace, id: course.id}} data={seed.academics.classCenter} persons={seed.persons} />
           </ToastProvider>
-        <Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
+        <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
 
       )
     })
@@ -450,7 +451,7 @@ describe('ClassHub approved Overview', () => {
     useStore.getState().replaceAll(seed)
 
     await act(async () => {
-      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={center} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
+      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={center} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
     })
 
     const lectureRecord = container.querySelector<HTMLElement>('[data-lecture-actions="lecture-actions"]')!
@@ -528,7 +529,7 @@ describe('ClassHub approved Overview', () => {
     useStore.getState().replaceAll(seed)
 
     await act(async () => {
-      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
+      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
 
     })
 
@@ -568,7 +569,8 @@ describe('ClassHub approved Overview', () => {
     expect(workspaceSurface.querySelector('input[placeholder="Search exact words across transcript and sources"]')).toBeTruthy()
     const fullScreen = [...container.querySelectorAll<HTMLButtonElement>('.lecture-saved-actions button')].find((button) => button.textContent?.includes('Full Screen'))!
     await act(async () => fullScreen.click())
-    expect(document.body.querySelector('[role="dialog"] [aria-label="Lecture workspace views"]')).toBeTruthy()
+    expect(container.querySelector('[aria-label="Lecture page"]')).toBeTruthy()
+    expect(document.body.querySelector('[role="dialog"]')).toBeNull()
 
   })
 
@@ -585,7 +587,7 @@ describe('ClassHub approved Overview', () => {
           <ToastProvider>
             <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
           </ToastProvider>
-        <Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
+        <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
 
       )
     })
@@ -625,7 +627,7 @@ describe('ClassHub approved Overview', () => {
           <ToastProvider>
             <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
           </ToastProvider>
-        <Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
+        <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
       )
     })
 
@@ -654,7 +656,7 @@ describe('ClassHub approved Overview', () => {
     useStore.getState().replaceAll(seed)
 
     await act(async () => {
-      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
+      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
     })
     await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
     expect(container.textContent).not.toContain('Read transcript')
@@ -676,7 +678,7 @@ describe('ClassHub approved Overview', () => {
     useStore.getState().replaceAll(seed)
 
     await act(async () => {
-      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
+      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
     })
     await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
     expect(container.textContent).not.toContain('Add evidence')
@@ -698,7 +700,7 @@ describe('ClassHub approved Overview', () => {
     useStore.getState().replaceAll(seed)
 
     await act(async () => {
-      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
+      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
     })
     await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
     expect(container.textContent).not.toContain('Supporting evidence')
@@ -720,7 +722,7 @@ describe('ClassHub approved Overview', () => {
     useStore.getState().replaceAll(seed)
 
     await act(async () => {
-      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
+      root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>)
     })
     await act(async () => (container.querySelector('button.lecture-rail-entry') as HTMLButtonElement).click())
     expect(container.textContent).not.toContain('Open study work')
@@ -744,7 +746,7 @@ describe('ClassHub approved Overview', () => {
           <ToastProvider>
             <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
           </ToastProvider>
-        <Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
+        <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
       )
     })
 
@@ -778,7 +780,7 @@ describe('ClassHub approved Overview', () => {
           <ToastProvider>
             <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
           </ToastProvider>
-        <Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
+        <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
       )
     })
     await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())) })
@@ -805,7 +807,7 @@ describe('ClassHub approved Overview', () => {
           <ToastProvider>
             <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
           </ToastProvider>
-        <Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
+        <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
       )
     })
 
@@ -826,7 +828,7 @@ describe('ClassHub approved Overview', () => {
           <ToastProvider>
             <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
           </ToastProvider>
-        <Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
+        <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
       )
     })
 
@@ -849,7 +851,7 @@ describe('ClassHub approved Overview', () => {
           <ToastProvider>
             <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
           </ToastProvider>
-        <Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
+        <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
       )
     })
 
@@ -891,7 +893,7 @@ describe('ClassHub approved Overview', () => {
       root.render(
         <MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=materials`]}>
           <ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider>
-        <Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
+        <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
       )
     })
 
@@ -948,7 +950,7 @@ describe('ClassHub approved Overview', () => {
       root.render(
         <MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=materials`]}>
           <ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider>
-        <Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
+        <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
       )
     })
 
@@ -972,7 +974,7 @@ describe('ClassHub approved Overview', () => {
       root.render(
         <MemoryRouter key="materials-boundary" initialEntries={[`/academics/classes/${course.id}?classTab=materials&materialNote=boundary-study-guide`]}>
           <ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider>
-        <Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
+        <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
       )
     })
     expect(container.textContent).toContain('Learning objectives outline')
@@ -983,7 +985,7 @@ describe('ClassHub approved Overview', () => {
       root.render(
         <MemoryRouter key="guide-boundary" initialEntries={[`/academics/classes/${course.id}?classTab=guide`]}>
           <ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider>
-        <Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
+        <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
       )
       await Promise.resolve()
     })

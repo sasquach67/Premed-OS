@@ -52,7 +52,7 @@ import { RevisedNotesPanel } from '@/components/academics/RevisedNotesPanel'
 import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
 import { generateStudyGuide, sourcesFor } from '@/lib/academics/generateStudyGuide'
 import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationIntake'
-import { LectureCapturePanel, type LectureDestination } from '@/components/academics/LectureCapturePanel'
+import { LectureCapturePanel } from '@/components/academics/LectureCapturePanel'
 import { LectureRecordMenu } from '@/components/academics/LectureRecordMenu'
 import { LecturePreview } from '@/components/academics/LecturePreview'
 import { AssignmentsPanel } from '@/components/common/AssignmentsPanel'
@@ -312,7 +312,6 @@ function Overview({ course, workspace, data, assignments, onTab }: {
   const [overviewParams] = useSearchParams()
   const navigate = useNavigate()
   const update = useStore(state => state.update)
-  const [lectureDialogOpen, setLectureDialogOpen] = useState(false)
   const [focusOpen, setFocusOpen] = useState(false)
   const [focusDraft, setFocusDraft] = useState('')
   const [selectedLectureId, setSelectedLectureId] = useState<string>()
@@ -340,11 +339,12 @@ function Overview({ course, workspace, data, assignments, onTab }: {
     if (id) update(draft => { const item = draft.academics.classCenter.workspaces.find(row => row.courseId === course.id); if(item) item.lastOpenedLectureId=id })
 
   }
-  function openLecture(id?: string, _destination?: LectureDestination) {
+  function openLecture(id?: string) {
     if (!id) { startEntry(); return }
     const lecture = lectures.find(item => item.id === id)
     if (lecture?.workspaceState !== 'complete') { navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/${encodeURIComponent(id)}`); return }
-    selectLecture(id); setLectureDialogOpen(true)
+    selectLecture(id)
+    navigate(`/academics/classes/${encodeURIComponent(course.id)}/lectures/${encodeURIComponent(id)}`)
   }
   return <div className="class-hub-overview overview-approved">
     <section className="class-hub-course-pulse" aria-label="Your class at a glance">
@@ -361,13 +361,13 @@ function Overview({ course, workspace, data, assignments, onTab }: {
           {[...chronologicalLectures].reverse().map((lecture) => {
             const isActive = activeLecture?.id === lecture.id
             return <AccordionItem key={lecture.id} value={lecture.id} className="lecture-journal-item">
-              <LectureRecordMenu lecture={lecture} onOpen={() => setSelectedLectureId(lecture.id)} onOpenFullScreen={() => openLecture(lecture.id, 'overview')} onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail>
+              <LectureRecordMenu lecture={lecture} onOpen={() => setSelectedLectureId(lecture.id)} onOpenFullScreen={() => openLecture(lecture.id)} onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail>
                 <AccordionTrigger className={cn('lecture-rail-entry', isActive && 'is-active')}>
                   <span className="overview-date-stamp" aria-hidden="true">{lecture.occurredOn ? new Date(`${lecture.occurredOn.slice(0,10)}T12:00:00`).toLocaleDateString(undefined, { month: 'short' }) : 'Entry'}<strong>{lecture.occurredOn?.slice(8,10) ?? '—'}</strong></span><span className="lecture-journal-row-text"><b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'}</span></span>
                 </AccordionTrigger>
               </LectureRecordMenu>
               <AccordionContent className="lecture-journal-detail">
-                <div className="lecture-saved-actions"><span className="text-sm font-bold text-muted-foreground">Study preview</span><Button size="default" variant="default" onClick={() => openLecture(lecture.id, 'overview')}>{lecture.workspaceState === 'complete' ? <><Maximize2 className="size-4" /> Full Screen</> : 'Continue entry'}</Button></div>
+                <div className="lecture-saved-actions"><span className="text-sm font-bold text-muted-foreground">Study preview</span><Button size="default" variant="default" onClick={() => openLecture(lecture.id)}>{lecture.workspaceState === 'complete' ? <><Maximize2 className="size-4" /> Full Screen</> : 'Continue entry'}</Button></div>
                 {lecture.workspaceState === 'complete' ? <div className="lecture-journal-workspace"><LectureCapturePanel key={lecture.id} courseId={course.id} course={course} data={data} initialLectureId={lecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={() => onTab('guide')} /></div> : <LecturePreview lecture={lecture} sourceCount={isActive ? activeLectureSources.length : 0} />}
               </AccordionContent>
             </AccordionItem>
@@ -382,7 +382,6 @@ function Overview({ course, workspace, data, assignments, onTab }: {
 
     </div>
     <Dialog open={focusOpen} onOpenChange={setFocusOpen}><DialogContent><DialogHeader><DialogTitle>Your focus</DialogTitle><DialogDescription>Choose what you want to work on in this class.</DialogDescription></DialogHeader><label htmlFor="class-study-focus">Class focus</label><Input id="class-study-focus" maxLength={120} value={focusDraft} onChange={event=>setFocusDraft(event.target.value)} placeholder="What would you like to understand?"/><Button onClick={()=>{update(draft=>{const item=draft.academics.classCenter.workspaces.find(row=>row.courseId===course.id);if(item)item.studyFocus=focusDraft.trim()||undefined});setFocusOpen(false)}}>Save focus</Button></DialogContent></Dialog>
-    <Dialog open={lectureDialogOpen} onOpenChange={setLectureDialogOpen}><DialogContent className="overview-fullscreen"><DialogHeader className="sr-only"><DialogTitle>{activeLecture?.title || 'Study guide'}</DialogTitle><DialogDescription>Full screen journal reader</DialogDescription></DialogHeader>{activeLecture && <LectureCapturePanel key={activeLecture.id} courseId={course.id} course={course} data={data} initialLectureId={activeLecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={()=>{setLectureDialogOpen(false);onTab('guide')}}/>}</DialogContent></Dialog>
   </div>
 }
 

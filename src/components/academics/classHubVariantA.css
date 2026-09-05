@@ -1084,8 +1084,6 @@
 .overview-feedback { border-top:3px solid var(--warning); }
 .overview-feedback [data-slot="card-title"] svg { color:var(--warning); }
 .overview-feedback blockquote { padding-left:.8rem;border-left:2px solid var(--warning);margin:.75rem 0;font-family:var(--font-display);font-size:1.1rem; }
-.overview-fullscreen { width:95vw!important;max-width:75rem!important;max-height:92vh;overflow:auto;padding:2.5rem 0 0!important;background:var(--card)!important; }
-.overview-fullscreen [aria-label="Lecture reading area"] { max-height:75vh; }
 @media(max-width:1050px){.overview-approved-columns{grid-template-columns:minmax(0,1fr)}.overview-side{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:720px){.overview-approved .class-hub-course-pulse,.overview-side{grid-template-columns:1fr}.overview-approved .overview-entry-tile{margin:0 1rem 1rem;width:calc(100% - 2rem)}.overview-approved .lecture-rail-entry{padding:1rem}.overview-approved .course-pulse-item{border-left:0;border-top:1px solid var(--border)}}
 
