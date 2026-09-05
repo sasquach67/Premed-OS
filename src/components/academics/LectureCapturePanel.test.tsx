@@ -77,6 +77,7 @@ describe('lecture import and workspace', () => {
     generationMocks.generateStudyGuide.mockResolvedValue({
       ok: true,
       title: 'Generated · Lecture 1 study guide',
+      suggestedTitle: 'Classical Conditioning',
       content: '## Big picture\nConditioning links cues with outcomes.',
       specHash: 'guide-hash',
       fileIds: ['transcript', 'slides'],
@@ -139,6 +140,7 @@ describe('lecture import and workspace', () => {
     expect(generationMocks.generateStudyGuide).toHaveBeenCalledWith(expect.objectContaining({ courseId, chunks: expect.arrayContaining([expect.objectContaining({ id: 'transcript-chunk' }), expect.objectContaining({ id: 'slides-chunk' })]), practiceQuestionChunkIds: ['slides-chunk'] }))
     expect(generationMocks.generateUnitMasteryOutline).toHaveBeenCalledWith(expect.objectContaining({ courseId, scope: 'lecture', chunks: expect.arrayContaining([expect.objectContaining({ id: 'transcript-chunk' }), expect.objectContaining({ id: 'slides-chunk' })]), practiceQuestionChunkIds: ['slides-chunk'] }))
     expect(saved.workspaceState).toBe('complete')
+    expect(saved.aiTitle).toBe('Classical Conditioning')
     expect(saved.studyGuide?.specId).toBe('study-guide-v1')
     expect(saved.selectedSourceFileIds).toEqual(expect.arrayContaining(['transcript', 'slides']))
     expect(saved.lectureBrief?.selectedSourceFileIds).toEqual(expect.arrayContaining(['transcript', 'slides']))

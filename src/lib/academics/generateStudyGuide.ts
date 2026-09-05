@@ -42,6 +42,8 @@ export interface GenerateOutcome {
   specHash?: string
   fileIds?: string[]
   courseLens?: CourseLensGenerationContext
+  /** A short provider-authored lecture label taken from the guide's TITLE section. */
+  suggestedTitle?: string
 }
 
 /** The chunks this class has, optionally narrowed to one file. */
@@ -80,6 +82,26 @@ function isStudyGuideContent(value: unknown): value is Pick<StudyGuideArtifact, 
       section && typeof section.id === 'string' && typeof section.title === 'string'
       && Array.isArray(section.blocks) && section.blocks.length > 0,
     ))
+}
+
+export function conciseStudyGuideTitle(artifact: Pick<StudyGuideArtifact, 'sections'>): string | undefined {
+  const titleSection = artifact.sections.find((section) => section.id.toLocaleLowerCase() === 'title')
+  const raw = titleSection?.blocks
+    .flatMap((block) => [block.text?.content, ...(block.items?.map((item) => item.content) ?? [])])
+    .find((value) => value?.trim())
+  if (!raw) return undefined
+  const cleaned = raw
+    .replace(/^\s*#+\s*/, '')
+    .replace(/^\s*title\s*:?\s*/i, '')
+    .replace(/^(?:\s*lecture\s*#?\d+\s*(?:[·:—–-]\s*)?)+/i, '')
+    .replace(/\b(?:auto[- ]generated|ai[- ]generated|generated)\b/gi, '')
+    .replace(/\b(?:study guide|mastery map|transcript|script)\b/gi, '')
+    .replace(/[|·:—–-]+\s*$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!cleaned || /^(?:title|lecture)$/i.test(cleaned)) return undefined
+  const words = cleaned.split(' ').slice(0, 6).join(' ')
+  return words.length > 56 ? `${words.slice(0, 55).trimEnd()}…` : words
 }
 
 export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [] }: {
@@ -197,5 +219,6 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
     specHash: syncedAssembly.specHash,
     fileIds: [...new Set(sources.map((chunk) => chunk.fileId))],
     courseLens,
+    suggestedTitle: conciseStudyGuideTitle(artifact),
   }
 }

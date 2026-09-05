@@ -22,6 +22,7 @@ document by `src/lib/generation/artifacts/studyGuide.v1.ts`.
 | `SG-9` | If material is incomplete, mark the gap explicitly; never invent. | invariant |
 | `SG-10` | Every major concept gets an explicit representation decision. Bullets are not the default and must be justified by structure — a process in bullets, a comparison in bullets, and a hierarchy in bullets are all defects. | tunable |
 | `SG-11` | Visual grammar is consistent across the whole artifact. | invariant |
+| `SG-SHORT-TITLE` | The TITLE section must contain one concise, content-specific label of two to six words. Omit lecture numbers, file names, and words such as generated, transcript, script, or study guide; the app owns chronology and presentation labels. | invariant |
 | `SG-AT-A-GLANCE` | The Study Guide is the one canonical lecture-learning document. Begin with an AT A GLANCE section that performs the former Lecture Brief job: give a concise connected orientation, surface the strongest source-supported instructor emphasis, anchor essential vocabulary in context, and name the highest-risk distinction or misconception. This opening is a map into the full guide, not a second summary artifact. | invariant |
 | `SG-FULL-DEPTH` | Combining the overview and guide must not reduce coverage or explanatory depth. After AT A GLANCE, teach every supported major concept, process, relationship, comparison, and application at the depth warranted by the selected sources. | invariant |
 | `SG-NO-DUPLICATE-LAYERS` | AT A GLANCE names and connects what matters; later sections expand it with mechanism, evidence, examples, and application. Do not repeat the same stand-alone explanation, list, table, or wording in both layers. | invariant |
@@ -51,7 +52,7 @@ than no section.
 
 | # | Section | Required? | Purpose |
 |---|---|---|---|
-| 1 | **TITLE** | always | The topic, in the instructor's terms |
+| 1 | **TITLE** | always | One concise, content-specific label of two to six words; no lecture number, file name, or generated/transcript/script/study guide wording |
 | 2 | **AT A GLANCE** | always | The former Lecture Brief role inside this same document: a concise connected orientation, strongest instructor emphasis, essential vocabulary in context, and highest-risk distinction. It points into the detailed guide without replacing or duplicating it. |
 | 3 | **LEARNING OBJECTIVES** | conditional | Preserved verbatim when the professor supplied them; inferred only when clearly supported |
 | 4 | **CORE CONCEPTS** | always | Organized by concept, not slide order |
@@ -115,6 +116,7 @@ Final Synthesis integrates *after* it, and should connect concepts that were int
 | `SG-9` | If material is incomplete, mark the gap explicitly; never invent | invariant |
 | `SG-10` | Every major concept gets a **representation decision** (`06` §2) — bullets are not the default | tunable |
 | `SG-11` | Visual grammar is consistent across the whole artifact (`06` §8) | invariant |
+| `SG-SHORT-TITLE` | The TITLE section must contain one concise, content-specific label of two to six words. Omit lecture numbers, file names, and words such as generated, transcript, script, or study guide; the app owns chronology and presentation labels. | invariant |
 | `SG-AT-A-GLANCE` | The Study Guide is the one canonical lecture-learning document. Begin with an AT A GLANCE section that performs the former Lecture Brief job: give a concise connected orientation, surface the strongest source-supported instructor emphasis, anchor essential vocabulary in context, and name the highest-risk distinction or misconception. This opening is a map into the full guide, not a second summary artifact. | invariant |
 | `SG-FULL-DEPTH` | Combining the overview and guide must not reduce coverage or explanatory depth. After AT A GLANCE, teach every supported major concept, process, relationship, comparison, and application at the depth warranted by the selected sources. | invariant |
 | `SG-NO-DUPLICATE-LAYERS` | AT A GLANCE names and connects what matters; later sections expand it with mechanism, evidence, examples, and application. Do not repeat the same stand-alone explanation, list, table, or wording in both layers. | invariant |

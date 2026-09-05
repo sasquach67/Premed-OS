@@ -208,6 +208,7 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
           unusedSourceFileIds: ids.filter((id) => !usedSourceFileIds.includes(id)),
         }
         record.studyGuide = generatedGuide
+        if (guide.suggestedTitle) record.aiTitle = guide.suggestedTitle
         record.generationAuditStatus = guide.auditStatus
         const existing = center.generatedMasteryOutlines.find((outline) => outline.lectureId === record.id)
         if (existing) {

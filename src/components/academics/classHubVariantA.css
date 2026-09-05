@@ -327,26 +327,9 @@
   white-space: nowrap;
 }
 
-.class-hub .lecture-journal-status {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 2px 5px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--success) 13%, transparent);
-  color: var(--success);
-  font: 800 9px 'Baloo 2', var(--font-display);
-  font-style: normal;
-}
-
 .class-hub .lecture-record--rail .lecture-rail-entry b,
 .class-hub .lecture-record--rail .lecture-rail-entry > span {
   max-width: 100%;
-}
-
-.class-hub .lecture-rail-controls .lecture-journal-status {
-  position: static;
-  white-space: nowrap;
 }
 
 .class-hub .lecture-rail-controls {

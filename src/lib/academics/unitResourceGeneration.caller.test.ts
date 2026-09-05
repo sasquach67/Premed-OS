@@ -68,13 +68,17 @@ describe('unit resource generation callers', () => {
 
   it('marks supplied question passages as teaching examples in a study guide', async () => {
     mocks.generate.mockResolvedValue({ ok: true, data: {
-      artifact: { sections: [{ id: 'core-concepts', title: 'CORE CONCEPTS', blocks: [{ id: 'block-1', type: 'prose', text: { content: 'A control isolates the variable whose effect is being tested.' }, provenance: 'source', sourceRef: { fileId: 'file-1', chunkId: 'chunk-1', start: 0, end: 40 } }] }] },
+      artifact: { sections: [
+        { id: 'title', title: 'TITLE', blocks: [{ id: 'title-1', type: 'prose', text: { content: 'Lecture 2 · Auto-generated Variable Control Logic Study Guide' }, provenance: 'source', sourceRef: { fileId: 'file-1', chunkId: 'chunk-1', start: 0, end: 40 } }] },
+        { id: 'core-concepts', title: 'CORE CONCEPTS', blocks: [{ id: 'block-1', type: 'prose', text: { content: 'A control isolates the variable whose effect is being tested.' }, provenance: 'source', sourceRef: { fileId: 'file-1', chunkId: 'chunk-1', start: 0, end: 40 } }] },
+      ] },
       citations: [], auditStatus: 'approved',
     } })
 
     const outcome = await generateStudyGuide({ courseId: 'course-1', chunks: sources, label: 'BIOL 103 · Unit 2', practiceQuestionChunkIds: ['chunk-1'] })
 
     expect(outcome.ok).toBe(true)
+    expect(outcome.suggestedTitle).toBe('Variable Control Logic')
     const request = mocks.generate.mock.calls[0][0]
     expect(request.systemPrompt).toContain('SG-PRACTICE-EXAMPLES')
     expect(request.systemPrompt).toContain('SG-AT-A-GLANCE')

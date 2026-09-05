@@ -78,14 +78,14 @@ export function LectureRecordMenu({
   onOpen,
   onOpenFullScreen,
   onDeleted,
-  railStatus,
+  rail,
   children,
 }: {
   lecture: LectureRecord
   onOpen: () => void
   onOpenFullScreen?: () => void
   onDeleted?: (lectureId: string) => void
-  railStatus?: string
+  rail?: boolean
   children: ReactElement
 }) {
   const update = useStore((state) => state.update)
@@ -145,15 +145,14 @@ export function LectureRecordMenu({
         {(overflow) => (
           <div
             data-lecture-actions={lecture.id}
-            className={railStatus
-              ? 'group/lecture-record lecture-record--rail grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-1'
+            className={rail
+              ? 'group/lecture-record lecture-record--rail grid w-full min-w-0 grid-cols-[minmax(0,1fr)_1.75rem] items-start gap-1'
               : 'group/lecture-record relative w-full min-w-0 [&>.lecture-rail-entry]:pr-9'}
           >
             {children}
-            {railStatus
-              ? <div data-lecture-rail-controls className="lecture-rail-controls flex shrink-0 items-center gap-1 pt-1">
-                  <i className="lecture-journal-status">{railStatus}</i>
-                  <span className="opacity-65 transition-opacity hover:opacity-100 focus-within:opacity-100 group-hover/lecture-record:opacity-100 [&_button]:size-7 [&_button]:bg-card/85 [&_button]:shadow-sm">{overflow}</span>
+            {rail
+              ? <div data-lecture-rail-controls className="lecture-rail-controls pointer-events-none flex shrink-0 items-center pt-1 opacity-0 transition-opacity group-hover/lecture-record:pointer-events-auto group-hover/lecture-record:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100 [&_button]:size-7 [&_button]:bg-card/85 [&_button]:shadow-sm">
+                  {overflow}
                 </div>
               : <div className="absolute right-1 top-1 z-10 opacity-65 transition-opacity hover:opacity-100 focus-within:opacity-100 group-hover/lecture-record:opacity-100 [&_button]:size-7 [&_button]:bg-card/85 [&_button]:shadow-sm">
                   {overflow}

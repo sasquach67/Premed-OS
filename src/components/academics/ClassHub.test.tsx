@@ -362,6 +362,7 @@ describe('ClassHub approved Overview', () => {
       },
       {
         id: 'lecture-actions-2', courseId: course.id, title: 'Lecture 2 · Autophagy generation', inputPath: 'pasted',
+        aiTitle: 'Autophagy quality control',
         transcriptFileId: 'lecture-actions-source-2', occurredOn: '2026-09-02', processingState: 'ready',
         createdAt: now + 1, updatedAt: now + 1, order: 1,
       },
@@ -397,17 +398,21 @@ describe('ClassHub approved Overview', () => {
     const overflow = container.querySelector<HTMLButtonElement>('button[aria-label="Actions for Lecture 1 · Cell signaling"]')!
     const controls = overflow.closest<HTMLElement>('[data-lecture-rail-controls]')
     expect(controls).toBeTruthy()
-    expect(controls?.textContent).toContain('captured')
-    expect(lectureRecord.className).toContain('grid-cols-[minmax(0,1fr)_auto]')
+    expect(controls?.textContent?.trim()).toBe('')
+    expect(lectureRecord.className).toContain('grid-cols-[minmax(0,1fr)_1.75rem]')
     expect(controls?.className).not.toContain('absolute')
+    expect(controls?.className).toContain('opacity-0')
+    expect(controls?.className).toContain('pointer-events-none')
+    expect(controls?.className).toContain('group-hover/lecture-record:opacity-100')
+    expect(controls?.className).toContain('focus-within:opacity-100')
     expect(card.textContent).not.toMatch(/Lecture \d+\s*·\s*Lecture \d+/)
     for (const [lectureId, expectedTitle] of [
       ['lecture-actions', 'Lecture 1 · Cell signaling'],
-      ['lecture-actions-2', 'Lecture 2 · Autophagy generation'],
+      ['lecture-actions-2', 'Lecture 2 · Autophagy quality control'],
       ['lecture-actions-3', 'Lecture 3'],
     ]) {
       const record = container.querySelector<HTMLElement>(`[data-lecture-actions="${lectureId}"]`)!
-      expect(record.className).toContain('grid-cols-[minmax(0,1fr)_auto]')
+      expect(record.className).toContain('grid-cols-[minmax(0,1fr)_1.75rem]')
       expect(record.querySelector('.lecture-rail-controls')?.className).not.toContain('absolute')
       expect(record.querySelector('b')?.textContent).toBe(expectedTitle)
     }

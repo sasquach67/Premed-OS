@@ -375,7 +375,6 @@ function Overview({
           <div className="lecture-rail-list" tabIndex={0} aria-label="Lecture history">
             {lectures.length ? [...chronologicalLectures].reverse().map((lecture) => {
               const materialCount = data.files.filter((file) => file.lectureId === lecture.id && file.id !== lecture.transcriptFileId).length
-              const generatedCount = data.files.filter((file) => file.lectureId === lecture.id && file.owner === 'generated').length
               const isActive = activeLecture?.id === lecture.id
               return <LectureRecordMenu
                 key={lecture.id}
@@ -383,7 +382,7 @@ function Overview({
                 onOpen={() => setSelectedLectureId(lecture.id)}
                 onOpenFullScreen={() => openLecture(lecture.id, 'overview')}
                 onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }}
-                railStatus={generatedCount ? 'study work' : lecture.transcriptFileId ? 'captured' : 'new'}
+                rail
               >
                 <button type="button" onClick={() => setSelectedLectureId(lecture.id)} className={cn('lecture-rail-entry', isActive && 'is-active')} aria-current={isActive ? 'true' : undefined}>
                   <b>{lectureDisplayTitle(lectureNumber(lecture.id), lecture.title, lecture.aiTitle)}</b>
