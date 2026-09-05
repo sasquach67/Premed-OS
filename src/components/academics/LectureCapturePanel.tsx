@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { BookOpen, Brain, Check, ChevronDown, CircleHelp, FileCheck2, FilePlus2, FileSearch, FileStack, FileText, FileUp, FlaskConical, Image as ImageIcon, ListChecks, MoreHorizontal, NotebookText, Presentation, Search, Sparkles } from 'lucide-react'
-import type { AcademicFile, ClassCenterData, Course, LectureBriefTrace, LectureRecord, SourceChunk } from '@/lib/types'
+import type { AcademicFile, ClassCenterData, Course, JournalStudyIntent, LectureBriefTrace, LectureRecord, SourceChunk } from '@/lib/types'
 import { uid } from '@/lib/id'
 import { cn } from '@/lib/utils'
 import { useStore } from '@/store/store'
@@ -16,6 +16,7 @@ import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationInta
 import { instructorSourceFileIds } from '@/lib/academics/lectureSourcePriority'
 import { selectGenerationSourceChunks } from '@/lib/academics/syncGenerationSources'
 import { completedLectureTitle } from '@/lib/academics/lectureLabels'
+import { JournalIntentFields } from './JournalIntentFields'
 import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialog'
 import { LectureCaptureGuide } from '@/components/academics/LectureCaptureGuide'
 import { LectureRecordMenu } from '@/components/academics/LectureRecordMenu'
@@ -88,11 +89,11 @@ export function LectureCapturePanel({ courseId, course, data, onOpenNotes, initi
   const lectures = useMemo(() => data.lectures.filter((lecture) => lecture.courseId === courseId).sort((a, b) => b.createdAt - a.createdAt), [courseId, data.lectures])
   const [activeLectureId, setActiveLectureId] = useState<string | undefined>(initialLectureId)
   const activeLecture = lectures.find((lecture) => lecture.id === activeLectureId)
-  const [step, setStep] = useState<WizardStep>(activeLecture?.transcriptFileId ? 2 : 1)
+  const [step, setStep] = useState<WizardStep>(activeLecture ? 2 : 1)
   const [rebuildingLectureId, setRebuildingLectureId] = useState<string>()
   const [view, setView] = useState<WorkspaceView>(initialDestination === 'transcript' || initialDestination === 'evidence' ? 'sources' : initialDestination === 'study-work' ? 'materials' : 'brief')
   const [captureGuideOpen, setCaptureGuideOpen] = useState(false)
-  if (activeLecture?.workspaceState === 'complete' && rebuildingLectureId !== activeLecture.id) return <LectureWorkspace course={course} courseId={courseId} data={data} lectures={lectures} activeLecture={activeLecture} view={view} onView={setView} onSelect={(lecture) => { setActiveLectureId(lecture.id); setRebuildingLectureId(undefined); setView('brief') }} onDeleted={(lectureId) => { if (activeLectureId !== lectureId) return; setActiveLectureId(lectures.find((lecture) => lecture.id !== lectureId)?.id); setRebuildingLectureId(undefined); setView('brief') }} onRebuild={() => { setStep(activeLecture.transcriptFileId ? 2 : 1); setRebuildingLectureId(activeLecture.id) }} onOpenNotes={onOpenNotes} onHelp={() => setCaptureGuideOpen(true)} help={<LectureCaptureGuide open={captureGuideOpen} onOpenChange={setCaptureGuideOpen} />} embedded={displayMode === 'embedded'} />
+  if (activeLecture?.workspaceState === 'complete' && rebuildingLectureId !== activeLecture.id) return <LectureWorkspace course={course} courseId={courseId} data={data} lectures={lectures} activeLecture={activeLecture} view={view} onView={setView} onSelect={(lecture) => { setActiveLectureId(lecture.id); setRebuildingLectureId(undefined); setView('brief') }} onDeleted={(lectureId) => { if (activeLectureId !== lectureId) return; setActiveLectureId(lectures.find((lecture) => lecture.id !== lectureId)?.id); setRebuildingLectureId(undefined); setView('brief') }} onRebuild={() => { setStep(1); setRebuildingLectureId(activeLecture.id) }} onOpenNotes={onOpenNotes} onHelp={() => setCaptureGuideOpen(true)} help={<LectureCaptureGuide open={captureGuideOpen} onOpenChange={setCaptureGuideOpen} />} embedded={displayMode === 'embedded'} />
   return <LectureImportWizard courseId={courseId} course={course} data={data} lectures={lectures} lecture={activeLecture} step={step} onStep={setStep} onLecture={setActiveLectureId} onBuilt={() => { setRebuildingLectureId(undefined); setView('brief') }} />
 }
 
@@ -103,8 +104,9 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
   const chronological = [...lectures].sort((a, b) => String(a.occurredOn ?? '').localeCompare(String(b.occurredOn ?? '')) || a.createdAt - b.createdAt)
   const lectureNumber = lecture ? Math.max(1, chronological.findIndex((item) => item.id === lecture.id) + 1) : chronological.length + 1
   const [occurredOn, setOccurredOn] = useState(lecture?.occurredOn ?? isoToday)
+  const [studyIntent, setStudyIntent] = useState<JournalStudyIntent>(lecture?.studyIntent ?? { purpose: 'study' })
   const [sourceText, setSourceText] = useState('')
-  const [title, setTitle] = useState(lecture?.title ?? `Lecture ${lectureNumber}`)
+  const [title, setTitle] = useState(lecture?.title ?? `Study session ${lectureNumber}`)
   const [titleEdited, setTitleEdited] = useState(Boolean(lecture?.title && !/^Lecture \d+$/.test(lecture.title)))
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [pendingExtraction, setPendingExtraction] = useState<ExtractedDocument | null>(null)
@@ -113,17 +115,19 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
   const [buildError, setBuildError] = useState<{ stage: string; message: string } | null>(null)
   const [buildPhase, setBuildPhase] = useState<'idle' | 'guide' | 'mastery' | 'saving'>('idle')
   const input = useRef<HTMLInputElement>(null)
-  const lectureFiles = data.files.filter((file) => file.lectureId === lecture?.id)
+  const lectureFiles = lecture ? data.files.filter((file) => file.courseId === courseId && file.lectureId === lecture.id) : []
   const lectureSourceIds = [...new Set([
     ...(lecture?.transcriptFileId ? [lecture.transcriptFileId] : []),
     ...(lecture?.selectedSourceFileIds ?? []),
     ...lectureFiles.map((file) => file.id),
   ])]
-  const lectureSources = data.files.filter((file) => lectureSourceIds.includes(file.id))
+  const lectureSources = data.files.filter((file) => file.courseId === courseId && lectureSourceIds.includes(file.id))
   const supportingMaterials = lectureSources.filter((file) => file.id !== lecture?.transcriptFileId)
-  const readableChunks = data.sourceChunks.filter((chunk) => lectureSourceIds.includes(chunk.fileId) && Boolean(chunk.content.trim()))
+  const readableChunks = data.sourceChunks.filter((chunk) => chunk.courseId === courseId && lectureSourceIds.includes(chunk.fileId) && Boolean(chunk.content.trim()))
   const allQuestionReferenceChunkIds = practiceQuestionChunkIds(lectureSources, readableChunks)
-  const primaryFileIds = instructorSourceFileIds(lectureSources, lecture?.transcriptFileId)
+  const primaryFileIds = lecture?.studyIntent?.purpose === 'exam-prep' && lecture.studyIntent.reviewSheetFileId
+    ? [lecture.studyIntent.reviewSheetFileId]
+    : instructorSourceFileIds(lectureSources, lecture?.transcriptFileId)
   const generationChunks = selectGenerationSourceChunks(readableChunks, {
     preferredFileIds: primaryFileIds,
     priorityChunkIds: allQuestionReferenceChunkIds,
@@ -136,7 +140,7 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
       const extracted = await extractDocumentText(file, { recoverScannedPdfPages: true })
       if (!extracted.text.trim()) return toast({ title: 'No readable transcript text', description: 'On-device OCR could not recover this source. Try a clearer file or paste the transcript.', tone: 'error' })
       setPendingFile(file); setPendingExtraction(extracted); setSourceText(extracted.text)
-      if (!titleEdited) setTitle(approximateLectureTitle(lectureNumber, extracted.text))
+      if (!titleEdited && studyIntent.purpose === 'study') setTitle(approximateLectureTitle(lectureNumber, extracted.text))
     } catch (error) {
       toast({ title: 'Transcript could not be read', description: error instanceof Error ? error.message : 'Try a text, PDF, DOCX, or clearer image.', tone: 'error' })
     } finally { setReading(false) }
@@ -144,8 +148,21 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
 
   async function saveSource() {
     const parsed = parseTranscript(sourceText)
-    if (!title.trim() || !occurredOn || !parsed.segments.length) return toast({ title: 'Add the lecture source', description: 'A title, date, and readable transcript are required.' })
-    const savedTitle = titleEdited ? title.trim() : approximateLectureTitle(lectureNumber, sourceText)
+    if (!title.trim() || !occurredOn) return toast({ title: 'Name this journal entry', description: 'Add a title and date to continue.' })
+    if (!sourceText.trim()) {
+      const now = Date.now()
+      const id = lecture?.id ?? uid()
+      useStore.getState().update(draft => {
+        const center = draft.academics.classCenter
+        const existing = center.lectures.find(item => item.id === id)
+        if (existing) Object.assign(existing, { title: title.trim(), occurredOn, studyIntent, updatedAt: now })
+        else center.lectures.push({ id, courseId, title: title.trim(), occurredOn, studyIntent, inputPath: 'materials', processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds: [], createdAt: now, updatedAt: now, order: center.lectures.filter(item => item.courseId === courseId).length })
+      })
+      onLecture(id); onStep(2)
+      return
+    }
+    if (!parsed.segments.length) return toast({ title: 'No readable transcript text', description: 'Edit the transcript or clear it to continue with materials.' })
+    const savedTitle = titleEdited || studyIntent.purpose === 'exam-prep' ? title.trim() : approximateLectureTitle(lectureNumber, sourceText)
     const built = buildTranscriptImport({ courseId, title: savedTitle, text: sourceText, order: data.files.filter((file) => file.courseId === courseId).length })
     if (!built) return
     const now = Date.now(); const lectureId = lecture?.id ?? uid(); const blobRef = pendingFile ? await retainLocalMaterial(pendingFile, built.file.id) : undefined
@@ -160,9 +177,10 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
       center.sourceChunks.push(...built.chunks.map((chunk) => ({ ...chunk, topicId: undefined, assignmentMethod: 'pending' as const, assignmentConfirmed: false })))
       const existing = center.lectures.find((item) => item.id === lectureId)
       const selectedSourceFileIds = [...new Set([...(existing?.selectedSourceFileIds ?? []), built.file.id])]
-      if (existing) Object.assign(existing, { title: savedTitle, occurredOn, inputPath: pendingFile ? 'uploaded' : 'pasted', transcriptFileId: built.file.id, processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds, processedAt: now, updatedAt: now })
-      else center.lectures.push({ id: lectureId, courseId, title: savedTitle, inputPath: pendingFile ? 'uploaded' : 'pasted', transcriptFileId: built.file.id, occurredOn, topicIds: [], processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds, createdAt: now, processedAt: now, updatedAt: now, order: center.lectures.filter((item) => item.courseId === courseId).length })
+      if (existing) Object.assign(existing, { title: savedTitle, occurredOn, studyIntent, inputPath: pendingFile ? 'uploaded' : 'pasted', transcriptFileId: built.file.id, processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds, processedAt: now, updatedAt: now })
+      else center.lectures.push({ id: lectureId, courseId, title: savedTitle, studyIntent, inputPath: pendingFile ? 'uploaded' : 'pasted', transcriptFileId: built.file.id, occurredOn, topicIds: [], processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds, createdAt: now, processedAt: now, updatedAt: now, order: center.lectures.filter((item) => item.courseId === courseId).length })
     })
+    setSourceText(''); setPendingFile(null); setPendingExtraction(null)
     onLecture(lectureId); onStep(2)
   }
   function goToPreview() {
@@ -170,8 +188,15 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
     useStore.getState().update((draft) => { const record = draft.academics.classCenter.lectures.find((item) => item.id === lecture.id); if (record) Object.assign(record, { selectedSourceFileIds: lectureSourceIds, updatedAt: Date.now() }) })
     onStep(3)
   }
+  const buildBlockedReason = !readableChunks.length
+    ? 'Add at least one readable source before building.'
+    : lecture?.studyIntent?.purpose === 'exam-prep' && lecture.studyIntent.reviewSheetFileId && !generationChunks.some(chunk => chunk.fileId === lecture.studyIntent?.reviewSheetFileId)
+      ? 'The selected review sheet has no readable passages in this build. Choose a readable review sheet in Materials.'
+      : lecture?.studyIntent?.purpose === 'exam-prep' && generationChunks.length < readableChunks.length
+        ? 'This exam packet exceeds the current build limit. Choose a smaller set of readings or split it into focused entries so no readable passages are skipped.'
+        : undefined
   async function buildWorkspace() {
-    if (!lecture || building) return
+    if (!lecture || building || buildBlockedReason) return
     const ids = lectureSourceIds
     const chunks = readableChunks
     const chunksForGeneration = generationChunks
@@ -180,14 +205,14 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
     setBuildError(null)
     setBuildPhase('guide')
     try {
-      const guide = await generateStudyGuide({ courseId, chunks: chunksForGeneration, label: lecture.title, practiceQuestionChunkIds: questionReferenceChunkIds, primarySourceChunkIds: chunksForGeneration.filter((chunk) => primaryFileIds.includes(chunk.fileId)).map((chunk) => chunk.id) })
+      const guide = await generateStudyGuide({ studyIntent: lecture.studyIntent, courseId, chunks: chunksForGeneration, label: lecture.title, practiceQuestionChunkIds: questionReferenceChunkIds, primarySourceChunkIds: lecture.studyIntent?.purpose === 'exam-prep' ? [] : chunksForGeneration.filter((chunk) => primaryFileIds.includes(chunk.fileId)).map((chunk) => chunk.id) })
       if (!guide.ok || !guide.artifact) {
         setBuildError({ stage: 'Study Guide', message: guide.message ?? 'The lecture guide could not be generated.' })
         toast({ title: 'Nothing was saved', description: guide.message ?? 'The lecture guide could not be generated.', tone: 'error' })
         return
       }
       setBuildPhase('mastery')
-      const mastery = await generateUnitMasteryOutline({ courseId, chunks: chunksForGeneration, unit: lecture.title, label: lecture.title, scope: 'lecture', practiceQuestionChunkIds: questionReferenceChunkIds, primarySourceChunkIds: chunksForGeneration.filter((chunk) => primaryFileIds.includes(chunk.fileId)).map((chunk) => chunk.id) })
+      const mastery = await generateUnitMasteryOutline({ studyIntent: lecture.studyIntent, courseId, chunks: chunksForGeneration, unit: lecture.title, label: lecture.title, scope: lecture.studyIntent?.purpose === 'exam-prep' ? 'exam' : 'lecture', practiceQuestionChunkIds: questionReferenceChunkIds, primarySourceChunkIds: lecture.studyIntent?.purpose === 'exam-prep' ? [] : chunksForGeneration.filter((chunk) => primaryFileIds.includes(chunk.fileId)).map((chunk) => chunk.id) })
       if (!mastery.ok || !mastery.artifact) {
         setBuildError({ stage: 'Mastery Map', message: mastery.message ?? 'The lecture Mastery Map could not be generated.' })
         toast({ title: 'Nothing was saved', description: mastery.message ?? 'The lecture Mastery Map could not be generated.', tone: 'error' })
@@ -229,7 +254,7 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
         record.updatedAt = now
       })
       onBuilt()
-      toast({ title: 'Lecture study page built', description: 'The combined Study Guide and Mastery Map passed the source-trace checks before either one was saved.' })
+      toast({ title: 'Journal study page built', description: 'The combined Study Guide and Mastery Map passed the source-trace checks before either one was saved.' })
     } catch {
       setBuildError({ stage: 'Lecture build', message: 'Generation stopped unexpectedly. Your transcript and lecture materials are still here.' })
       toast({ title: 'Nothing was saved', description: 'Lecture generation stopped unexpectedly. Your transcript and lecture materials are still here.', tone: 'error' })
@@ -240,13 +265,13 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
   }
 
   const progressPercent = Math.round(((step - 1) / 3) * 100)
-  const stepLabels = ['Transcript', 'Materials', 'Build'] as const
+  const stepLabels = ['Purpose', 'Materials', 'Build'] as const
 
   return <Card className="overflow-hidden border-border bg-card shadow-[0_18px_48px_-28px_rgba(0,0,0,.72)]"><CardContent className="p-0">
     <header className="border-b border-border px-4 py-4 sm:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">New lecture</p><h2 className="mt-1 font-display text-xl font-extrabold">Build a lecture</h2></div>
-        <Badge aria-label="Lecture identity" className="mr-8 shrink-0" variant="outline">{course?.code ?? 'Class'} · Lecture {lectureNumber}</Badge>
+        <div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Class Journal</p><h2 className="mt-1 font-display text-xl font-extrabold">Create a study entry</h2></div>
+        <Badge aria-label="Lecture identity" className="mr-8 shrink-0" variant="outline">{course?.code ?? 'Class'} · {studyIntent.purpose === 'exam-prep' ? 'Exam prep' : 'Study guide'}</Badge>
       </div>
       <div className="mt-3" aria-label="Lecture import progress">
         <div className="flex items-center justify-between gap-3 text-xs font-extrabold"><span>Step {step} of 3 · {stepLabels[step - 1]}</span><span className="tabular-nums text-primary">{progressPercent}%</span></div>
@@ -258,19 +283,37 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
     </header>
     <div className="mx-auto max-w-5xl p-4 sm:p-6">
       {step === 3 && buildError && <section role="alert" className="mb-4 rounded-xl border border-destructive/40 bg-destructive/5 p-4"><h3 className="font-display text-base font-extrabold">{buildError.stage} needs attention</h3><p className="mt-2 break-words text-sm leading-6">{buildError.message}</p><p className="mt-2 text-xs font-semibold text-muted-foreground">Your uploaded sources are still attached. You do not need to import them again.</p></section>}
-      {step === 1 && <section aria-labelledby="lecture-source-heading"><h3 id="lecture-source-heading" className="font-display text-lg font-extrabold">Add the transcript</h3><p className="mt-1 text-sm font-semibold text-muted-foreground">Paste it below or upload a text, PDF, DOCX, or image.</p><div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]"><div className="space-y-4"><label className="block text-sm font-extrabold">Lecture title<Input className="mt-1.5" value={title} onChange={(event) => { setTitle(event.target.value); setTitleEdited(true) }} placeholder="Lecture 1 · Origins of Psychology" /></label><div className="block max-w-56 text-sm font-extrabold"><span>Lecture date</span><DateField ariaLabel="Lecture date" className="mt-1.5 min-h-9 rounded-md border-input bg-background px-3 py-1 font-extrabold" value={occurredOn} onChange={setOccurredOn} /></div><label className="block text-sm font-extrabold">Transcript<Textarea className="mt-1.5 min-h-52" value={sourceText} onChange={(event) => { setSourceText(event.target.value); setPendingFile(null); setPendingExtraction(null) }} placeholder={'Paste the transcript here…\n\nTimestamps are welcome but not required.'} /></label></div><aside className="rounded-2xl border border-border bg-muted/25 p-4"><FileUp className="size-5 text-primary" /><p className="mt-2 font-display text-sm font-extrabold">Upload transcript</p><p className="mt-1 text-xs font-semibold text-muted-foreground">Files stay on this device while text is read.</p><Button className="mt-4 w-full" variant="outline" disabled={reading} onClick={() => input.current?.click()}>{reading ? 'Reading on device…' : 'Choose file'}</Button><input ref={input} type="file" className="sr-only" accept=".pdf,.docx,.txt,.md,image/*,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void chooseTranscript(file); event.currentTarget.value = '' }} />{pendingFile && <div className="mt-3 rounded-xl border border-border bg-card p-3"><p className="truncate text-sm font-extrabold">{pendingFile.name}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{fileExtension({ fileName: pendingFile.name, title: pendingFile.name, mimeType: pendingFile.type, sourceType: 'upload' })} · {pendingExtraction?.pageCount ? `${pendingExtraction.pageCount} pages` : `${sourceText.length.toLocaleString()} characters`}{pendingExtraction?.ocrPageCount ? ` · ${pendingExtraction.ocrPageCount} OCR recovered` : ''}</p></div>}<TranscriptSourceHelp /></aside></div><div className="mt-5 flex justify-end"><Button onClick={() => void saveSource()} disabled={!sourceText.trim() || !title.trim() || !occurredOn}><FileCheck2 className="size-4" /> Continue to materials</Button></div></section>}
-      {step === 2 && lecture && <MaterialsStep courseId={courseId} data={data} lecture={lecture} materials={supportingMaterials} readableChunks={readableChunks} onContinue={goToPreview} />}
-      {step === 3 && lecture && <section aria-labelledby="lecture-build-heading"><h3 id="lecture-build-heading" className="font-display text-lg font-extrabold">Ready to build</h3><p className="mt-1 text-sm font-semibold text-muted-foreground">Check the source receipt, then create both study tools.</p><LectureBuildSummary title={completedLectureTitle(lectureNumber, lecture)} sourceCount={lectureSources.length} materialCount={supportingMaterials.length} readableCount={readableChunks.length} generationCount={generationChunks.length} />{building && buildPhase !== 'idle' && <LectureBuildProgress phase={buildPhase} />}<details data-testid="lecture-ai-details" className="group/details mt-4 rounded-xl border border-border bg-muted/20"><summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-details-marker]:hidden"><span>What gets sent to AI</span><ChevronDown className="size-4 text-muted-foreground transition-transform group-open/details:rotate-180" aria-hidden="true" /></summary><p className="border-t border-border px-4 py-3 text-xs font-semibold leading-5 text-muted-foreground">Only the readable passages prepared for this build are copied to your private server workspace. Original file bytes stay local, figures are not sent, and nothing partial is saved if either study tool fails.</p></details><div className="mt-5 flex items-center justify-between gap-3"><Button variant="outline" onClick={() => onStep(2)} disabled={building}>Back to materials</Button><Button onClick={() => void buildWorkspace()} disabled={building}><Sparkles className="size-4" /> {building ? 'Building…' : 'Build Guide + Mastery'}</Button></div></section>}
+      {step === 1 && <section aria-label="Journal entry setup" className="space-y-5">
+        <JournalIntentFields value={studyIntent} onChange={value => { setStudyIntent(value); if (!titleEdited) setTitle(value.purpose === 'exam-prep' ? 'Exam preparation' : `Study session ${lectureNumber}`) }} />
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
+          <label className="block text-sm font-extrabold">Entry title<Input className="mt-2" value={title} onChange={event => { setTitle(event.target.value); setTitleEdited(true) }} placeholder="Exam 1 · Readings and key concepts" /></label>
+          <div className="text-sm font-extrabold"><span>Entry date</span><DateField ariaLabel="Entry date" className="mt-2 min-h-9 rounded-md border-input bg-background px-3 py-1 font-extrabold" value={occurredOn} onChange={setOccurredOn} /></div>
+        </div>
+        <details className="rounded-xl border border-border">
+          <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{lecture?.transcriptFileId ? 'Replace transcript' : 'Add a transcript'} <span className="font-normal text-muted-foreground">Optional</span>{sourceText.trim() && <span className="ml-2 text-primary">Text added</span>}</summary>
+          <div className="grid gap-4 border-t border-border p-4 lg:grid-cols-[minmax(0,1fr)_15rem]">
+            <label className="block text-sm font-extrabold">Transcript<Textarea className="mt-2 min-h-44" value={sourceText} onChange={event => { setSourceText(event.target.value); setPendingFile(null); setPendingExtraction(null) }} placeholder="Paste a transcript here. Timestamps are optional." /></label>
+            <div><p className="text-sm font-bold">Upload transcript</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Text, PDF, DOCX, or image. Files stay on this device while text is read.</p><Button className="mt-3 w-full" variant="outline" disabled={reading} onClick={() => input.current?.click()}><FileUp className="size-4" />{reading ? 'Reading on device…' : 'Choose file'}</Button>
+              <input ref={input} type="file" className="sr-only" accept=".pdf,.docx,.txt,.md,image/*,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={event => { const file = event.currentTarget.files?.[0]; if (file) void chooseTranscript(file); event.currentTarget.value = '' }} />
+              {pendingFile && <p className="mt-2 break-words text-xs font-bold">{pendingFile.name}</p>}
+              <TranscriptSourceHelp />
+            </div>
+          </div>
+        </details>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"><p className="max-w-md text-sm text-muted-foreground">A transcript is optional. Add readings, notes, a review sheet, or questions in the next step.</p><Button onClick={() => void saveSource()} disabled={reading || !title.trim() || !occurredOn}><FileCheck2 className="size-4" /> Continue to materials</Button></div>
+      </section>}
+      {step === 2 && lecture && <MaterialsStep courseId={courseId} data={data} lecture={lecture} materials={supportingMaterials} readableChunks={readableChunks} onContinue={goToPreview} onBack={() => { setStudyIntent(lecture.studyIntent ?? { purpose: 'study' }); onStep(1) }} />}
+      {step === 3 && lecture && <section aria-labelledby="lecture-build-heading"><h3 id="lecture-build-heading" className="font-display text-lg font-extrabold">Ready to build</h3><p className="mt-1 text-sm font-semibold text-muted-foreground">Check the source receipt, then create both study tools.</p><p className="mt-3 text-sm font-bold">{lecture.studyIntent?.purpose === 'exam-prep' ? 'Exam preparation' : 'Understand material'}</p>{lecture.studyIntent?.reviewSheetFileId && <p className="mt-1 break-words text-sm">Review sheet: {lectureSources.find(file => file.id === lecture.studyIntent?.reviewSheetFileId)?.title ?? 'Source unavailable'}</p>}{lecture.studyIntent?.instructions && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-muted-foreground">{lecture.studyIntent.instructions}</p>}<LectureBuildSummary title={completedLectureTitle(lectureNumber, lecture)} hasTranscript={Boolean(lecture.transcriptFileId && readableChunks.some(chunk => chunk.fileId === lecture.transcriptFileId))} sourceCount={lectureSources.length} materialCount={supportingMaterials.length} readableCount={readableChunks.length} generationCount={generationChunks.length} />{buildBlockedReason && <p role="alert" className="mt-3 text-sm text-destructive">{buildBlockedReason}</p>}{building && buildPhase !== 'idle' && <LectureBuildProgress phase={buildPhase} />}<details data-testid="lecture-ai-details" className="group/details mt-4 rounded-xl border border-border bg-muted/20"><summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-details-marker]:hidden"><span>What gets sent to AI</span><ChevronDown className="size-4 text-muted-foreground transition-transform group-open/details:rotate-180" aria-hidden="true" /></summary><p className="border-t border-border px-4 py-3 text-xs font-semibold leading-5 text-muted-foreground">Only the readable passages prepared for this build are copied to your private server workspace. Original file bytes stay local, figures are not sent, and nothing partial is saved if either study tool fails.</p></details><div className="mt-5 flex items-center justify-between gap-3"><Button variant="outline" onClick={() => onStep(2)} disabled={building}>Back to materials</Button><Button onClick={() => void buildWorkspace()} disabled={building || Boolean(buildBlockedReason)}><Sparkles className="size-4" /> {building ? 'Building…' : 'Build Guide + Mastery'}</Button></div></section>}
     </div>
   </CardContent></Card>
 }
 
-function LectureBuildSummary({ title, sourceCount, materialCount, readableCount, generationCount }: { title: string; sourceCount: number; materialCount: number; readableCount: number; generationCount: number }) {
+function LectureBuildSummary({ title, hasTranscript, sourceCount, materialCount, readableCount, generationCount }: { title: string; hasTranscript: boolean; sourceCount: number; materialCount: number; readableCount: number; generationCount: number }) {
   return <section aria-label="Lecture build summary" className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
     <header className="flex items-start gap-3 bg-muted/25 px-4 py-4"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary" aria-hidden="true"><FileCheck2 className="size-4" /></span><div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Source receipt</p><h4 className="mt-0.5 truncate font-display text-base font-extrabold">{title}</h4></div></header>
-    <dl className="grid border-t border-border sm:grid-cols-3 sm:divide-x sm:divide-border"><div className="px-4 py-3"><dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Transcript</dt><dd className="mt-1 text-sm font-extrabold text-success">Ready</dd></div><div className="border-t border-border px-4 py-3 sm:border-t-0"><dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Sources</dt><dd className="mt-1 text-sm font-extrabold">{sourceCount} {sourceCount === 1 ? 'source' : 'sources'} · {materialCount} {materialCount === 1 ? 'material' : 'materials'}</dd></div><div className="border-t border-border px-4 py-3 sm:border-t-0"><dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Readable text</dt><dd className="mt-1 text-sm font-extrabold">{readableCount.toLocaleString()} readable {readableCount === 1 ? 'passage' : 'passages'}</dd></div></dl>
-    <div className="grid border-t border-border bg-muted/15 sm:grid-cols-2 sm:divide-x sm:divide-border"><div className="flex gap-3 px-4 py-3"><BookOpen className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" /><div><b className="text-sm">Study Guide</b><span className="mt-0.5 block text-xs font-semibold text-muted-foreground">At a glance plus the full lecture</span></div></div><div className="flex gap-3 border-t border-border px-4 py-3 sm:border-t-0"><ListChecks className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" /><div><b className="text-sm">Mastery Map</b><span className="mt-0.5 block text-xs font-semibold text-muted-foreground">Free-recall cues and application goals</span></div></div></div>
-    {readableCount > 24 && <p className="border-t border-border px-4 py-3 text-xs font-semibold leading-5 text-muted-foreground">{readableCount === generationCount ? `All ${readableCount.toLocaleString()} readable passages will be reviewed for this build.` : `All ${readableCount.toLocaleString()} readable passages stay attached. The build will automatically use ${generationCount.toLocaleString()} representative, lecture-relevant passages.`}</p>}
+    <dl className="grid border-t border-border sm:grid-cols-3 sm:divide-x sm:divide-border"><div className="px-4 py-3"><dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Transcript</dt><dd className="mt-1 text-sm font-extrabold text-foreground">{hasTranscript ? 'Ready' : 'Not added · optional'}</dd></div><div className="border-t border-border px-4 py-3 sm:border-t-0"><dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Sources</dt><dd className="mt-1 text-sm font-extrabold">{sourceCount} {sourceCount === 1 ? 'source' : 'sources'} · {materialCount} {materialCount === 1 ? 'material' : 'materials'}</dd></div><div className="border-t border-border px-4 py-3 sm:border-t-0"><dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Readable text</dt><dd className="mt-1 text-sm font-extrabold">{readableCount.toLocaleString()} readable {readableCount === 1 ? 'passage' : 'passages'}</dd></div></dl>
+    <div className="grid border-t border-border bg-muted/15 sm:grid-cols-2 sm:divide-x sm:divide-border"><div className="flex gap-3 px-4 py-3"><BookOpen className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" /><div><b className="text-sm">Study Guide</b><span className="mt-0.5 block text-xs font-semibold text-muted-foreground">At a glance plus detailed explanations</span></div></div><div className="flex gap-3 border-t border-border px-4 py-3 sm:border-t-0"><ListChecks className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" /><div><b className="text-sm">Mastery Map</b><span className="mt-0.5 block text-xs font-semibold text-muted-foreground">Free-recall cues and application goals</span></div></div></div>
+    {(readableCount > 24 || readableCount !== generationCount) && <p className="border-t border-border px-4 py-3 text-xs font-semibold leading-5 text-muted-foreground">{readableCount === generationCount ? `All ${readableCount.toLocaleString()} readable passages will be sent for this build. This does not guarantee every passage will be cited.` : `All ${readableCount.toLocaleString()} readable passages stay attached. ${generationCount.toLocaleString()} passages fit in this build; ${(readableCount - generationCount).toLocaleString()} will not be sent. This is partial source coverage.`}</p>}
   </section>
 }
 
@@ -285,17 +328,38 @@ function LectureBuildProgress({ phase }: { phase: 'guide' | 'mastery' | 'saving'
   return <section className="mt-4 rounded-xl border border-primary/25 bg-primary/[0.06] p-3.5" role="status" aria-live="polite" aria-busy="true"><div className="flex items-start gap-3"><span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary" aria-hidden="true"><Sparkles className="size-4" /></span><div className="min-w-0 flex-1"><div className="flex items-baseline justify-between gap-3"><p className="font-display text-sm font-extrabold">Building lecture</p><span className="shrink-0 text-xs font-extrabold tabular-nums text-primary">{current.percent}%</span></div><p className="mt-1 text-xs font-semibold text-muted-foreground">Step {stepNumber} of 3 · {current.label}</p><Progress className="mt-2 h-2" value={current.percent} aria-label={`Lecture generation ${current.percent}% complete`} /></div></div></section>
 }
 
-function MaterialsStep({ courseId, data, lecture, materials, readableChunks, onContinue }: { courseId: string; data: ClassCenterData; lecture: LectureRecord; materials: AcademicFile[]; readableChunks: SourceChunk[]; onContinue: () => void }) {
+function MaterialsStep({ courseId, data, lecture, materials, readableChunks, onContinue, onBack }: { courseId: string; data: ClassCenterData; lecture: LectureRecord; materials: AcademicFile[]; readableChunks: SourceChunk[]; onContinue: () => void; onBack: () => void }) {
   const [showMaterials, setShowMaterials] = useState(false)
   const readableFileIds = new Set(readableChunks.map(chunk => chunk.fileId))
   const readyCount = materials.filter(file => file.processingStatus === 'ready' && readableFileIds.has(file.id)).length
   const compact = materials.length > 3
+  const libraryFiles = data.files.filter(file => file.courseId === courseId && file.lectureId !== lecture.id && file.id !== lecture.transcriptFileId)
+  const selectedIds = new Set(lecture.selectedSourceFileIds ?? [])
+  const reviewSheetId = lecture.studyIntent?.reviewSheetFileId
+  const reviewSheetReadable = !reviewSheetId || readableFileIds.has(reviewSheetId)
+  function chooseLibraryFile(fileId: string, included: boolean) {
+    useStore.getState().update(draft => {
+      const record = draft.academics.classCenter.lectures.find(item => item.id === lecture.id)
+      if (!record) return
+      record.selectedSourceFileIds = included ? [...new Set([...(record.selectedSourceFileIds ?? []), fileId])] : (record.selectedSourceFileIds ?? []).filter(id => id !== fileId)
+      if (!included && record.studyIntent?.reviewSheetFileId === fileId) record.studyIntent.reviewSheetFileId = undefined
+      record.updatedAt = Date.now()
+    })
+  }
+  function chooseReviewSheet(fileId: string) {
+    useStore.getState().update(draft => {
+      const record = draft.academics.classCenter.lectures.find(item => item.id === lecture.id)
+      if (!record) return
+      record.studyIntent = { ...record.studyIntent, purpose: 'exam-prep', reviewSheetFileId: fileId || undefined }
+      record.updatedAt = Date.now()
+    })
+  }
   return (
     <section aria-labelledby="lecture-materials-heading">
       <h3 id="lecture-materials-heading" className="font-display text-lg font-extrabold">
         Add materials
       </h3>
-      <p className="mt-1 text-sm font-semibold text-muted-foreground">Add the textbook pages, slides, notes, or practice for this lecture.</p>
+      <p className="mt-1 text-sm font-semibold text-muted-foreground">Add files or choose saved class materials. Only the sources selected for this entry will be used.</p>
 
       <div data-testid="add-material-strip" className="mt-4 flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
@@ -308,10 +372,29 @@ function MaterialsStep({ courseId, data, lecture, materials, readableChunks, onC
         <MaterialIntakeDialog courseId={courseId} lectureId={lecture.id} trigger={<Button className="min-h-11 w-full sm:w-auto" variant="outline"><FilePlus2 className="size-4" /> Add material</Button>} />
       </div>
 
+      {libraryFiles.length > 0 && <details className="mt-3 rounded-xl border border-border">
+        <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Choose saved class materials</summary>
+        <div className="max-h-64 overflow-y-auto border-t border-border p-2" aria-label="Saved class materials">
+          {libraryFiles.map(file => <label key={file.id} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg p-3 hover:bg-muted/30 focus-within:ring-2 focus-within:ring-ring">
+            <input className="mt-1 accent-primary" type="checkbox" checked={selectedIds.has(file.id)} onChange={event => chooseLibraryFile(file.id, event.target.checked)} />
+            <span className="min-w-0"><b className="block break-words text-sm">{file.title}</b><span className="text-xs text-muted-foreground">{fileKind(file)}{!data.sourceChunks.some(chunk => chunk.fileId === file.id && chunk.content.trim()) ? ' · No readable text yet' : ''}</span></span>
+          </label>)}
+        </div>
+      </details>}
+      {lecture.studyIntent?.purpose === 'exam-prep' && <div className="mt-4 border-l-2 border-primary pl-4">
+        <label className="block text-sm font-bold">Organize around a review sheet
+          <select className="mt-2 block min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm" value={reviewSheetId ?? ''} onChange={event => chooseReviewSheet(event.target.value)}>
+            <option value="">No review sheet — use selected topics</option>
+            {materials.map(file => <option key={file.id} value={file.id}>{file.title}</option>)}
+          </select>
+        </label>
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">Select an attached exam review sheet to set the topic order. Readings, lectures, and questions supply the explanations and examples.</p>
+        {!reviewSheetReadable && <p role="alert" className="mt-2 text-sm text-destructive">This review sheet has no readable text. Add a readable copy or choose another source before building.</p>}
+      </div>}
       <section className="mt-5" aria-labelledby="lecture-material-list-heading">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <p id="lecture-material-list-heading" className="font-display text-sm font-extrabold">Added to this lecture</p>
+            <p id="lecture-material-list-heading" className="font-display text-sm font-extrabold">Selected for this entry</p>
             <p className="mt-0.5 text-xs font-semibold text-muted-foreground">Automatically included when readable. Unreadable files remain visible with a fix.</p>
           </div>
           <Badge variant="outline">{materials.length} {materials.length === 1 ? 'material' : 'materials'}</Badge>
@@ -324,8 +407,8 @@ function MaterialsStep({ courseId, data, lecture, materials, readableChunks, onC
           {(!compact || showMaterials) && <div role="region" aria-label="Attached lecture materials" tabIndex={0} className="mt-2 max-h-64 space-y-2 overflow-y-auto overscroll-contain rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             {materials.map(file => <LectureMaterialStatus key={file.id} file={file} chunks={data.sourceChunks.filter(chunk => chunk.fileId === file.id && Boolean(chunk.content.trim()))} />)}
           </div>}
-        </div> : <div className="mt-2 rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-5 text-sm font-semibold text-muted-foreground">Add at least one lecture material to continue.</div>}
-        <p className="mt-2 text-xs font-semibold text-muted-foreground">Transcript ready · {readableChunks.length} readable {readableChunks.length === 1 ? 'passage' : 'passages'} across this lecture.</p>
+        </div> : <div className="mt-2 rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-5 text-sm font-semibold text-muted-foreground">Add a readable source or select one from your class materials to continue.</div>}
+        <p className="mt-2 text-xs font-semibold text-muted-foreground">{lecture.transcriptFileId ? 'Transcript included' : 'No transcript needed'} · {readableChunks.length} readable {readableChunks.length === 1 ? 'passage' : 'passages'} across this entry.</p>
       </section>
 
       <details data-testid="material-suggestion-guide" className="group/details mt-4 rounded-2xl border border-border bg-muted/20">
@@ -347,8 +430,8 @@ function MaterialsStep({ courseId, data, lecture, materials, readableChunks, onC
       </details>
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs font-semibold text-muted-foreground">Your transcript is included automatically.</p>
-        <Button onClick={onContinue} disabled={!materials.length}>Review and build <ChevronDown className="size-4 -rotate-90" /></Button>
+        <Button variant="outline" onClick={onBack}>Back to purpose</Button>
+        <Button onClick={onContinue} disabled={!readableChunks.length || !reviewSheetReadable}>Review and build <ChevronDown className="size-4 -rotate-90" /></Button>
       </div>
     </section>
   )
@@ -374,7 +457,7 @@ function LectureWorkspace({ course, courseId, data, lectures, activeLecture, vie
 
   if (embedded) return <section className="min-w-0 overflow-hidden border-t border-border bg-card" aria-label="Embedded lecture workspace"><div className="flex min-w-0 items-center justify-between gap-2 border-b border-border px-1 sm:px-2"><div className="min-w-0 flex-1">{tabs}</div><div className="shrink-0">{moreMenu}</div></div><div role="region" aria-label="Lecture reading area" tabIndex={0} className="max-h-[38rem] min-w-0 overflow-y-auto p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:p-5">{content}</div>{help}</section>
 
-  return <div className="grid min-h-[38rem] w-full min-w-0 max-w-full overflow-x-hidden lg:grid-cols-[15rem_minmax(0,1fr)]"><aside className="min-w-0 border-b border-border bg-muted/25 p-3 lg:border-b-0 lg:border-r" aria-label="Lecture catalog"><div className="flex items-center justify-between gap-2 px-1"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">{course?.code ?? 'Class'}</p><h2 className="font-display text-base font-extrabold">Lectures</h2></div><Badge variant="outline">{lectures.length}</Badge></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1.5 lg:overflow-visible">{lectures.map((lecture) => <LectureRecordMenu key={lecture.id} lecture={lecture} onOpen={() => onSelect(lecture)} onDeleted={onDeleted}><button type="button" aria-current={lecture.id === activeLecture.id ? 'page' : undefined} onClick={() => onSelect(lecture)} className={cn('min-w-56 rounded-xl border p-3 pr-9 text-left lg:min-w-0 lg:w-full', lecture.id === activeLecture.id ? 'border-primary bg-card shadow-sm' : 'border-transparent hover:border-border hover:bg-card/70')}><span className="block text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">Lecture {lectureNumber(lecture.id)} · {lecture.occurredOn ?? 'Date not set'}</span><b className="mt-1 block line-clamp-2 font-display text-sm">{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span className="mt-1 block text-[11px] font-bold text-muted-foreground">{lecture.studyGuide && lecture.masteryMapId ? 'Generated Guide + Mastery' : lecture.workspaceState === 'complete' ? 'Local preview · rebuild available' : 'Import in progress'}</span></button></LectureRecordMenu>)}</div></aside><main className="min-w-0 bg-card"><header className="border-b border-border px-4 py-4 sm:px-6"><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">Lecture {lectureNumber(activeLecture.id)} · {activeLecture.occurredOn ?? 'Date not set'}</p><h1 className="mt-1 break-words font-display text-2xl font-extrabold">{completedLectureTitle(lectureNumber(activeLecture.id), activeLecture)}</h1><p className="mt-1 text-sm font-semibold text-muted-foreground">{files.length} selected {files.length === 1 ? 'source' : 'sources'} · {chunks.length} readable {chunks.length === 1 ? 'passage' : 'passages'}</p></div><div className="flex flex-wrap items-center gap-2"><Button size="sm" onClick={onRebuild}><Sparkles className="size-4" /> Rebuild with AI</Button>{moreMenu}</div></div>{tabs}</header><div className="min-w-0 p-4 sm:p-6">{content}</div>{help}</main></div>
+  return <div className="grid min-h-[38rem] w-full min-w-0 max-w-full overflow-x-hidden lg:grid-cols-[15rem_minmax(0,1fr)]"><aside className="min-w-0 border-b border-border bg-muted/25 p-3 lg:border-b-0 lg:border-r" aria-label="Lecture catalog"><div className="flex items-center justify-between gap-2 px-1"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">{course?.code ?? 'Class'}</p><h2 className="font-display text-base font-extrabold">Class journal</h2></div><Badge variant="outline">{lectures.length}</Badge></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1.5 lg:overflow-visible">{lectures.map((lecture) => <LectureRecordMenu key={lecture.id} lecture={lecture} onOpen={() => onSelect(lecture)} onDeleted={onDeleted}><button type="button" aria-current={lecture.id === activeLecture.id ? 'page' : undefined} onClick={() => onSelect(lecture)} className={cn('min-w-56 rounded-xl border p-3 pr-9 text-left lg:min-w-0 lg:w-full', lecture.id === activeLecture.id ? 'border-primary bg-card shadow-sm' : 'border-transparent hover:border-border hover:bg-card/70')}><span className="block text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">{lecture.studyIntent ? lecture.studyIntent.purpose === 'exam-prep' ? 'Exam prep' : 'Study guide' : `Lecture ${lectureNumber(lecture.id)}`} · {lecture.occurredOn ?? 'Date not set'}</span><b className="mt-1 block line-clamp-2 font-display text-sm">{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span className="mt-1 block text-[11px] font-bold text-muted-foreground">{lecture.studyGuide && lecture.masteryMapId ? 'Generated Guide + Mastery' : lecture.workspaceState === 'complete' ? 'Local preview · rebuild available' : 'Import in progress'}</span></button></LectureRecordMenu>)}</div></aside><main className="min-w-0 bg-card"><header className="border-b border-border px-4 py-4 sm:px-6"><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary">{activeLecture.studyIntent ? activeLecture.studyIntent.purpose === 'exam-prep' ? 'Exam prep' : 'Study guide' : `Lecture ${lectureNumber(activeLecture.id)}`} · {activeLecture.occurredOn ?? 'Date not set'}</p><h1 className="mt-1 break-words font-display text-2xl font-extrabold">{completedLectureTitle(lectureNumber(activeLecture.id), activeLecture)}</h1><p className="mt-1 text-sm font-semibold text-muted-foreground">{files.length} selected {files.length === 1 ? 'source' : 'sources'} · {chunks.length} readable {chunks.length === 1 ? 'passage' : 'passages'}</p></div><div className="flex flex-wrap items-center gap-2"><Button size="sm" onClick={onRebuild}><Sparkles className="size-4" /> Rebuild with AI</Button>{moreMenu}</div></div>{tabs}</header><div className="min-w-0 p-4 sm:p-6">{content}</div>{help}</main></div>
 }
 
 function BriefSection({ eyebrow, title, items, chunks, empty, tone = 'plain' }: {

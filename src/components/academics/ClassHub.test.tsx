@@ -332,7 +332,7 @@ describe('ClassHub approved Overview', () => {
     expect(document.body.textContent).not.toContain('Flashcards')
   })
 
-  it('keeps transcript capture as the default while the bounded journal opens saved lecture evidence on demand', async () => {
+  it('opens journal entry creation by default while the bounded journal opens saved lecture evidence on demand', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -364,7 +364,7 @@ describe('ClassHub approved Overview', () => {
     })
 
     expect(container.textContent).toContain('Class journal')
-    expect(container.textContent).not.toContain('Build a lecture page')
+    expect(container.textContent).not.toContain('Create a study entry page')
     expect(container.querySelector('.lecture-journal-list')).toBeTruthy()
     expect(container.querySelector('.lecture-overview-composition')).toBeNull()
     expect(container.textContent).toContain('Recent study work')
@@ -384,11 +384,11 @@ describe('ClassHub approved Overview', () => {
     expect(container.querySelector('[aria-label="Lecture preview"]')).toBeNull()
 
     const addToday = [...container.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Add today’s lecture')
+      .find((button) => button.textContent?.trim() === 'Add to journal')
     expect(addToday).toBeTruthy()
     await act(async () => addToday!.click())
-    expect(document.body.textContent).toContain('Build a lecture')
-    expect(document.body.textContent).toContain('Add the transcript')
+    expect(document.body.textContent).toContain('Create a study entry')
+    expect(document.body.textContent).toContain('Add a transcript')
   })
 
   it('gives every saved lecture matching right-click and overflow actions for edit and recoverable delete', async () => {
@@ -548,7 +548,7 @@ describe('ClassHub approved Overview', () => {
 
   })
 
-  it('keeps the transcript-first journal on writing and general class overviews', async () => {
+  it('offers the optional-transcript journal on writing and general class overviews', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'writing')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -565,11 +565,11 @@ describe('ClassHub approved Overview', () => {
     })
 
     expect(container.textContent).toContain('Class journal')
-    expect(container.textContent).toContain('Add your first lecture to start the journal')
+    expect(container.textContent).toContain('Create a study guide or prepare for an exam')
     expect(container.querySelector('.lecture-overview-composition')).toBeNull()
-    const addLecture = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Add today’s lecture')!
+    const addLecture = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Add to journal')!
     await act(async () => addLecture.click())
-    expect(document.body.textContent).toContain('Add the transcript')
+    expect(document.body.textContent).toContain('Add a transcript')
   })
 
   it('retires the legacy Create study work action in favor of the lecture workspace', async () => {
@@ -787,7 +787,7 @@ describe('ClassHub approved Overview', () => {
     expect(container.textContent).toContain('Nothing outside this selection is used.')
   })
 
-  it('opens Add today’s lecture from the lecture-capture deep link', async () => {
+  it('opens Add to journal from the lecture-capture deep link', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -803,7 +803,7 @@ describe('ClassHub approved Overview', () => {
       )
     })
 
-    expect(document.body.textContent).toContain('Build a lecture')
+    expect(document.body.textContent).toContain('Create a study entry')
     expect(document.body.textContent).toContain('Transcript')
     expect(document.body.textContent).toContain('Materials')
   })

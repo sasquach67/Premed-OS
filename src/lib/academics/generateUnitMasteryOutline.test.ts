@@ -42,3 +42,16 @@ it('never saves a still-invalid repair or retries indefinitely', async () => {
   expect(result.message).toContain('sourceChunkIds: missing or outside selected sources')
   expect(generateWithSourceRecovery).toHaveBeenCalledTimes(2)
 })
+
+it('keeps exam scope and the review-sheet instructions on both generation and repair', async () => {
+  vi.mocked(generateWithSourceRecovery)
+    .mockResolvedValueOnce(response({ ...artifact, standards: [] }))
+    .mockResolvedValueOnce(response(artifact))
+  const result = await generateUnitMasteryOutline({ ...input, scope: 'exam', chunks: [{ ...input.chunks[0], fileId: 'review' }], studyIntent: { purpose: 'exam-prep', reviewSheetFileId: 'review', instructions: 'Connect the readings.' } })
+  expect(result.ok).toBe(true)
+  expect(result.artifact?.scope).toBe('exam')
+  for (const call of vi.mocked(generateWithSourceRecovery).mock.calls) {
+    expect(call[2].request).toContain('Exam review-sheet chunk IDs: chunk-1.')
+    expect(call[2].request).toContain('Connect the readings.')
+  }
+})

@@ -1,3 +1,4 @@
+import { journalStudyInstruction } from './journalStudyIntent'
 import { lectureSourcePriorityInstruction } from './lectureSourcePriority'
 /**
  * Generate a study guide from a class's own material.
@@ -23,7 +24,7 @@ import { lectureSourcePriorityInstruction } from './lectureSourcePriority'
 import { assembleGenerationRequest } from '@/lib/generation'
 import { assertGenerationAllowed, GenerationNotAllowedError, generatedTitle } from '@/lib/academics/generationPolicy'
 import { generateWithSourceRecovery, prepareGenerationSources } from '@/lib/academics/syncGenerationSources'
-import type { SourceChunk } from '@/lib/types'
+import type { JournalStudyIntent, SourceChunk } from '@/lib/types'
 import { courseLensInstruction, type CourseLensGenerationContext } from '@/lib/academics/courseLens'
 import type { StudyGuideArtifact } from '@/lib/generation/schemas/studyGuide.v1'
 import type { GenerationAuditStatus } from '@/lib/intelligence/studyTools'
@@ -108,7 +109,7 @@ export function conciseStudyGuideTitle(artifact: Pick<StudyGuideArtifact, 'secti
   return words.length > 56 ? `${words.slice(0, 55).trimEnd()}…` : words
 }
 
-export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [], primarySourceChunkIds = [] }: {
+export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [], primarySourceChunkIds = [], studyIntent }: {
   courseId: string
   topicId?: string
   chunks: SourceChunk[]
@@ -119,6 +120,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
   /** Selected passages containing supplied question examples. */
   practiceQuestionChunkIds?: readonly string[]
   primarySourceChunkIds?: readonly string[]
+  studyIntent?: JournalStudyIntent
 }): Promise<GenerateOutcome> {
   const sources = chunks
   if (!sources.length) {
@@ -151,6 +153,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
   }
   const preparedIds = new Set(prepared.chunkIds)
   const sourcePriority = lectureSourcePriorityInstruction(primarySourceChunkIds.filter((id) => preparedIds.has(id)))
+  const journalInstruction = journalStudyInstruction(studyIntent, sources.filter(chunk => preparedIds.has(chunk.id)))
   const questionReferenceIds = [...new Set(practiceQuestionChunkIds.filter((id) => preparedIds.has(id)))]
 
   const syncedAssembly = assembleGenerationRequest({
@@ -158,6 +161,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
     chunkIds: prepared.chunkIds,
     request: [
       sourcePriority,
+      journalInstruction,
       `Topic: ${label}. Action: generate one canonical study guide from the attached sources. Begin with AT A GLANCE, then preserve the full source-supported teaching depth in the detailed sections without repeating the opening.`,
       'AI lecture naming: include a section with id "title" and title "TITLE", containing one cited text block with a concise 3–6 word title describing the central topic across the lecture. Do not echo the upload filename, lesson number, auto-generated transcript label, or "Study Guide". This title becomes the completed lecture name. Keep AT A GLANCE as the opening teaching section after this title metadata.',
       courseLensInstruction(courseLens),
@@ -177,6 +181,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
     systemPrompt: syncedAssembly.systemPrompt,
     request: [
       sourcePriority,
+      journalInstruction,
       `Topic: ${label}.`,
       'Return one complete Study Guide: AT A GLANCE is its opening layer, not a separate brief and not a substitute for the full explanation.',
       courseLens ? 'Apply the supplied Course lens only within its selected evidence trace.' : '',

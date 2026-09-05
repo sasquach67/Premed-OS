@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lectureDisplayTitle } from './lectureLabels'
+import { completedLectureTitle, lectureDisplayTitle } from './lectureLabels'
 import { conciseStudyGuideTitle } from './generateStudyGuide'
 
 describe('completed lecture titles', () => {
@@ -15,4 +15,9 @@ describe('completed lecture titles', () => {
       { id: 'section_1', title: 'Gene Expression', blocks: [] },
     ] })).toBe('Gene Expression')
   })
+})
+
+it('keeps custom exam titles and uses AI titles for generic journal labels without lesson numbering', () => {
+  expect(completedLectureTitle(3, { title: 'Exam 1 — Anthropology', aiTitle: 'Culture and Healing', studyIntent: { purpose: 'exam-prep' } })).toBe('Exam 1 — Anthropology')
+  expect(completedLectureTitle(3, { title: 'Study session 3', aiTitle: 'Culture and Healing', studyIntent: { purpose: 'study' } })).toBe('Culture and Healing')
 })

@@ -35,12 +35,12 @@ describe('lecture import and workspace', () => {
     return act(async () => root.render(<MemoryRouter><ToastProvider><LectureCapturePanel courseId={courseId} data={center} initialLectureId={initialLectureId} initialDestination={initialDestination} onOpenNotes={() => {}} /></ToastProvider></MemoryRouter>))
   }
 
-  it('starts with a compact three-step lecture import and one primary continuation', async () => {
+  it('starts with purpose and an optional transcript', async () => {
     const seed = structuredClone(createSeedData())
     const courseId = seed.academics.classCenter.workspaces[0].courseId
     useStore.getState().replaceAll(seed)
     await render(courseId)
-    expect(container.textContent).toContain('Build a lecture')
+    expect(container.textContent).toContain('Create a study entry')
     expect(container.textContent).toContain('Transcript')
     expect(container.textContent).toContain('Materials')
     expect(container.textContent).toContain('Build')
@@ -53,10 +53,68 @@ describe('lecture import and workspace', () => {
     expect(container.querySelector<HTMLDetailsElement>('[data-testid="transcript-help"]')?.open).toBe(false)
     expect(container.querySelector('[aria-label="Lecture identity"]')?.className).toContain('mr-8')
     expect(container.querySelector('input[type="date"]')).toBeNull()
-    const lectureDate = container.querySelector<HTMLButtonElement>('button[aria-label="Lecture date"]')
+    const lectureDate = container.querySelector<HTMLButtonElement>('button[aria-label="Entry date"]')
     expect(lectureDate?.textContent).toMatch(/^[A-Z][a-z]{2} \d{1,2}, 20\d{2}$/)
     expect([...container.querySelectorAll('button')].filter((button) => button.textContent?.includes('Continue to materials'))).toHaveLength(1)
     expect(container.textContent).not.toContain('CaptureReviewIndex')
+  })
+
+  it('creates a materials-only exam entry, reuses selected readings, and preserves the review-sheet choice', async () => {
+    const seed = structuredClone(createSeedData())
+    const courseId = seed.academics.classCenter.workspaces[0].courseId
+    const beforeFiles = seed.academics.classCenter.files.length
+    for (const id of ['review', 'reading', 'unselected']) {
+      seed.academics.classCenter.files.push({ id, courseId, title: id, type: 'reading', sourceType: 'paste', owner: 'course', linkedTopicIds: [], processingStatus: 'ready', createdAt: 1, updatedAt: 1, order: 0 })
+      seed.academics.classCenter.sourceChunks.push({ id: `${id}-chunk`, fileId: id, courseId, content: id === 'review' ? 'Explain the relationship between culture and healing.' : 'The author describes a case and explains how culture shapes its interpretation.', coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: 0 })
+    }
+    useStore.getState().replaceAll(seed)
+    await render(courseId)
+    await act(async () => container.querySelector<HTMLInputElement>('input[value="exam-prep"]')!.click())
+    await act(async () => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Continue to materials'))!.click())
+    const entry = useStore.getState().academics.classCenter.lectures.at(-1)!
+    expect(entry.inputPath).toBe('materials')
+    expect(entry.transcriptFileId).toBeUndefined()
+    expect(entry.studyIntent?.purpose).toBe('exam-prep')
+    expect(useStore.getState().academics.classCenter.files).toHaveLength(beforeFiles + 3)
+    await render(courseId)
+    expect([...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Review and build'))!.disabled).toBe(true)
+    for (const id of ['review', 'reading']) {
+      const label = [...container.querySelectorAll<HTMLLabelElement>('[aria-label="Saved class materials"] label')].find(item => item.querySelector('b')?.textContent === id)!
+      await act(async () => label.querySelector<HTMLInputElement>('input')!.click())
+      await render(courseId)
+    }
+    const select = container.querySelector<HTMLSelectElement>('select')!
+    await act(async () => { select.value = 'review'; select.dispatchEvent(new Event('change', { bubbles: true })) })
+    await render(courseId)
+    await act(async () => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Back to purpose')!.click())
+    await act(async () => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Continue to materials'))!.click())
+    await render(courseId)
+    expect(useStore.getState().academics.classCenter.lectures.find(item => item.id === entry.id)?.studyIntent?.reviewSheetFileId).toBe('review')
+    await act(async () => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Review and build'))!.click())
+    await render(courseId)
+    expect(container.textContent).toContain('Not added · optional')
+    generationMocks.generateStudyGuide.mockResolvedValue({ ok: true, artifact: { sections: [{ blocks: [{ sourceRef: { chunkId: 'reading-chunk' } }] }] } })
+    generationMocks.generateUnitMasteryOutline.mockResolvedValue({ ok: true, artifact: { standards: [], sourceChunkIds: ['reading-chunk'], scope: 'exam' } })
+    await act(async () => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Build Guide + Mastery'))!.click())
+    const request = generationMocks.generateStudyGuide.mock.calls[0][0]
+    expect(request.chunks.map((chunk: { id: string }) => chunk.id)).toEqual(['review-chunk', 'reading-chunk'])
+    expect(request.studyIntent).toEqual({ purpose: 'exam-prep', reviewSheetFileId: 'review' })
+    expect(generationMocks.generateUnitMasteryOutline).toHaveBeenCalledWith(expect.objectContaining({ scope: 'exam', studyIntent: request.studyIntent }))
+    expect(useStore.getState().academics.classCenter.lectures.find(item => item.id === entry.id)?.workspaceState).toBe('complete')
+  })
+
+  it('blocks an exam packet that would otherwise omit readable passages', async () => {
+    const seed = structuredClone(createSeedData())
+    const courseId = seed.academics.classCenter.workspaces[0].courseId
+    seed.academics.classCenter.lectures.push({ id: 'exam-limit', courseId, title: 'Exam 1', inputPath: 'materials', studyIntent: { purpose: 'exam-prep' }, selectedSourceFileIds: ['large-reading'], processingState: 'ready', workspaceState: 'draft', createdAt: 1, updatedAt: 1, order: 0 })
+    seed.academics.classCenter.files.push({ id: 'large-reading', courseId, title: 'Readings', type: 'reading', owner: 'course', sourceType: 'paste', linkedTopicIds: [], processingStatus: 'ready', createdAt: 1, updatedAt: 1, order: 0 })
+    seed.academics.classCenter.sourceChunks.push(...Array.from({ length: 481 }, (_, index) => ({ id: `large-${index}`, fileId: 'large-reading', courseId, content: `Reading passage ${index} with a distinct course example.`, coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: index })))
+    useStore.getState().replaceAll(seed)
+    await render(courseId, 'exam-limit')
+    await act(async () => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Review and build'))!.click())
+    expect(container.textContent).toContain('This exam packet exceeds the current build limit')
+    expect([...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Build Guide + Mastery'))!.disabled).toBe(true)
+    expect(generationMocks.generateStudyGuide).not.toHaveBeenCalled()
   })
 
   it('collapses a large attached batch without hiding its attention count or dropping sources', async () => {
@@ -78,7 +136,7 @@ describe('lecture import and workspace', () => {
     expect(useStore.getState().academics.classCenter.files.filter(file => file.lectureId === 'batch-lecture')).toHaveLength(50)
   })
 
-  it('uses only materials added to this lecture, without a class-wide source picker', async () => {
+  it('keeps unselected class materials out of generation while offering reuse', async () => {
     const seed = structuredClone(createSeedData())
     const courseId = seed.academics.classCenter.workspaces[0].courseId
     const now = 10
@@ -118,8 +176,8 @@ describe('lecture import and workspace', () => {
     })
     await render(courseId, 'lecture', 'transcript')
     expect(container.textContent).not.toContain('Choose sources')
-    expect(container.textContent).not.toContain('selected')
-    expect(container.textContent).toContain('Added to this lecture')
+    expect(container.querySelector('[aria-label="Saved class materials"]')).toBeTruthy()
+    expect(container.textContent).toContain('Selected for this entry')
     expect(container.textContent).toContain('Automatically included when readable')
     expect([...container.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Add material')).toBe(true)
     const suggestionGuide = container.querySelector<HTMLDetailsElement>('[data-testid="material-suggestion-guide"]')!
@@ -232,7 +290,7 @@ describe('lecture import and workspace', () => {
     await render(courseId, 'large-lecture', 'transcript')
     const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Review and build'))!
     await act(async () => continueButton.click())
-    expect(container.textContent).toContain('All 1,123 readable passages stay attached. The build will automatically use 480 representative, lecture-relevant passages.')
+    expect(container.textContent).toContain('All 1,123 readable passages stay attached. 480 passages fit in this build; 643 will not be sent. This is partial source coverage.')
     const build = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Build Guide + Mastery'))!
     await act(async () => { build.click(); await Promise.resolve() })
 
@@ -277,7 +335,7 @@ describe('lecture import and workspace', () => {
     expect(buildAlert?.textContent).toContain('You do not need to import them again')
   })
 
-  it('requires one supporting material before continuing to the build preview', async () => {
+  it('allows a readable transcript alone without requiring filler material', async () => {
     const seed = structuredClone(createSeedData())
     const courseId = seed.academics.classCenter.workspaces[0].courseId
     const now = 10
@@ -288,11 +346,11 @@ describe('lecture import and workspace', () => {
 
     await render(courseId, 'lecture', 'transcript')
 
-    expect(container.textContent).toContain('Add at least one lecture material to continue.')
+    expect(container.textContent).toContain('Add a readable source or select one from your class materials to continue.')
     expect(container.textContent).not.toContain('Skip for now')
     expect(container.textContent).not.toContain('Choose sources')
     const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Review and build'))!
-    expect(continueButton.disabled).toBe(true)
+    expect(continueButton.disabled).toBe(false)
   })
 
   it('treats legacy selected lecture sources as attached materials', async () => {
@@ -435,8 +493,8 @@ describe('lecture import and workspace', () => {
 
     await act(async () => rebuild.click())
 
-    expect(container.textContent).toContain('Add materials')
-    expect(container.textContent).toContain('Review and build')
+    expect(container.textContent).toContain('What do you want to create?')
+    expect(container.textContent).toContain('Continue to materials')
     const preserved = useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.id === 'demo-lecture-biol103-2')!
     expect(preserved.workspaceState).toBe('complete')
     expect(preserved.studyGuide).toBeDefined()

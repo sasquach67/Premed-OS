@@ -702,8 +702,15 @@ export interface SourceChunk {
  * A course-owned lecture capture. The optional audio reference points at the
  * device-local blob store; binary audio never enters persisted app state.
  */
-export type LectureInputPath = 'recorded' | 'uploaded' | 'pasted'
+export type LectureInputPath = 'recorded' | 'uploaded' | 'pasted' | 'materials'
 export type LectureProcessingState = 'recording' | 'ready' | 'unavailable' | 'failed'
+
+/** Optional on older lecture records. A journal entry need not represent a lecture. */
+export interface JournalStudyIntent {
+  purpose: 'study' | 'exam-prep'
+  instructions?: string
+  reviewSheetFileId?: ID
+}
 
 export interface LectureRecord {
   id: ID
@@ -711,6 +718,7 @@ export interface LectureRecord {
   title: string
   /** A provider-generated descriptive title, kept separate from chronology. */
   aiTitle?: string
+  studyIntent?: JournalStudyIntent
   inputPath: LectureInputPath
   /** Present only for a locally retained recording or audio upload. */
   audioBlobRef?: string

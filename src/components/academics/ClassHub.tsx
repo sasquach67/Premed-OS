@@ -365,26 +365,26 @@ function Overview({
       {/* Journal rows expand in place so sparse histories do not leave a vacant column. */}
       <section className="lecture-journal col-span-12" aria-labelledby="lecture-ledger-title">
         <div className="lecture-journal-heading">
-          <div><h2 id="lecture-ledger-title">Class journal</h2><p className="lecture-rail-caption">{lectures.length ? `${lectures.length} ${lectures.length === 1 ? 'lecture' : 'lectures'} · newest first` : 'Your lectures, sources, and study guides in one place.'}</p></div>
-          <Button size="sm" onClick={() => openLecture(undefined, 'transcript')}><Plus aria-hidden="true" /> Add today’s lecture</Button>
+          <div><h2 id="lecture-ledger-title">Class journal</h2><p className="lecture-rail-caption">{lectures.length ? `${lectures.length} ${lectures.length === 1 ? 'entry' : 'entries'} · newest first` : 'Your readings, lectures, and exam preparation in one place.'}</p></div>
+          <Button size="sm" onClick={() => openLecture(undefined, 'transcript')}><Plus aria-hidden="true" /> Add to journal</Button>
         </div>
         {lectures.length ? <Accordion type="single" collapsible value={selectedLectureId ?? ''} onValueChange={(value) => setSelectedLectureId(value || undefined)} className="lecture-journal-list" aria-label="Lecture history">
           {[...chronologicalLectures].reverse().map((lecture) => {
-            const materialCount = data.files.filter((file) => file.lectureId === lecture.id && file.id !== lecture.transcriptFileId).length
+            const materialCount = data.files.filter((file) => (file.lectureId === lecture.id || lecture.selectedSourceFileIds?.includes(file.id)) && file.id !== lecture.transcriptFileId).length
             const isActive = activeLecture?.id === lecture.id
             return <AccordionItem key={lecture.id} value={lecture.id} className="lecture-journal-item">
               <LectureRecordMenu lecture={lecture} onOpen={() => setSelectedLectureId(lecture.id)} onOpenFullScreen={() => openLecture(lecture.id, 'overview')} onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail>
                 <AccordionTrigger className={cn('lecture-rail-entry', isActive && 'is-active')}>
-                  <span className="lecture-journal-row-text"><b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'} · {lecture.transcriptFileId ? 'transcript saved' : 'no transcript'}{materialCount ? ` + ${materialCount} ${materialCount === 1 ? 'material' : 'materials'}` : ''}</span></span>
+                  <span className="lecture-journal-row-text"><b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'} · {lecture.studyIntent?.purpose === 'exam-prep' ? 'exam prep' : lecture.transcriptFileId ? 'transcript saved' : 'study materials'}{materialCount ? ` + ${materialCount} ${materialCount === 1 ? 'material' : 'materials'}` : ''}</span></span>
                 </AccordionTrigger>
               </LectureRecordMenu>
               <AccordionContent className="lecture-journal-detail">
-                <div className="lecture-saved-actions"><Button size="sm" variant="outline" onClick={() => openLecture(lecture.id, 'overview')}>{lecture.workspaceState === 'complete' ? 'Open full screen' : 'Open lecture'}</Button></div>
+                <div className="lecture-saved-actions"><Button size="sm" variant="outline" onClick={() => openLecture(lecture.id, 'overview')}>{lecture.workspaceState === 'complete' ? 'Open full screen' : 'Continue entry'}</Button></div>
                 {lecture.workspaceState === 'complete' ? <div className="lecture-journal-workspace"><LectureCapturePanel key={lecture.id} courseId={course.id} course={course} data={data} initialLectureId={lecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={() => onTab('guide')} /></div> : <LecturePreview lecture={lecture} sourceCount={isActive ? activeLectureSources.length : 0} />}
               </AccordionContent>
             </AccordionItem>
           })}
-        </Accordion> : <p className="lecture-journal-empty">Add your first lecture to start the journal. You can paste a transcript or upload your lecture files.</p>}
+        </Accordion> : <p className="lecture-journal-empty">Create a study guide or prepare for an exam with your class materials. A transcript is optional.</p>}
       </section>
 
       {/* Visual provenance: mockup-lab/01-academics/academics-class-hub.html,
