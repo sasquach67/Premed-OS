@@ -355,20 +355,19 @@ function Overview({ course, workspace, data, assignments, onTab }: {
     </section>
     <div className="overview-approved-columns">
       <section className="lecture-journal" aria-labelledby="lecture-ledger-title">
-        <div className="lecture-journal-heading"><div><h2 id="lecture-ledger-title">Class journal</h2><p className="lecture-rail-caption">{lectures.length ? `${lectures.length} ${lectures.length===1?'entry':'entries'} · newest first` : 'Your learning starts here'}</p></div></div>
-        <Button variant="outline" className="overview-entry-tile" onClick={startEntry}><Plus aria-hidden="true"/><span><strong>Add to journal</strong><small>Capture a lecture, study your materials, or prepare for an exam.</small></span><ArrowRight aria-hidden="true"/></Button>
+        <div className="lecture-journal-heading"><div><h2 id="lecture-ledger-title">Class journal</h2></div></div>
+        <Button variant="outline" className="overview-entry-tile" onClick={startEntry}><Plus aria-hidden="true"/><span><strong>Add to journal</strong></span><ArrowRight aria-hidden="true"/></Button>
         {lectures.length ? <Accordion type="single" collapsible value={selectedLectureId ?? ''} onValueChange={(value) => selectLecture(value || undefined)} className="lecture-journal-list" aria-label="Lecture history">
           {[...chronologicalLectures].reverse().map((lecture) => {
-            const materialCount = data.files.filter((file) => (file.lectureId === lecture.id || lecture.selectedSourceFileIds?.includes(file.id)) && file.id !== lecture.transcriptFileId).length
             const isActive = activeLecture?.id === lecture.id
             return <AccordionItem key={lecture.id} value={lecture.id} className="lecture-journal-item">
               <LectureRecordMenu lecture={lecture} onOpen={() => setSelectedLectureId(lecture.id)} onOpenFullScreen={() => openLecture(lecture.id, 'overview')} onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail>
                 <AccordionTrigger className={cn('lecture-rail-entry', isActive && 'is-active')}>
-                  <span className="overview-date-stamp" aria-hidden="true">{lecture.occurredOn ? new Date(`${lecture.occurredOn.slice(0,10)}T12:00:00`).toLocaleDateString(undefined, { month: 'short' }) : 'Entry'}<strong>{lecture.occurredOn?.slice(8,10) ?? '—'}</strong></span><span className="lecture-journal-row-text"><b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'} · {lecture.studyIntent?.purpose === 'exam-prep' ? 'exam prep' : lecture.transcriptFileId ? 'transcript saved' : 'study materials'}{materialCount ? ` + ${materialCount} ${materialCount === 1 ? 'material' : 'materials'}` : ''}</span></span>
+                  <span className="overview-date-stamp" aria-hidden="true">{lecture.occurredOn ? new Date(`${lecture.occurredOn.slice(0,10)}T12:00:00`).toLocaleDateString(undefined, { month: 'short' }) : 'Entry'}<strong>{lecture.occurredOn?.slice(8,10) ?? '—'}</strong></span><span className="lecture-journal-row-text"><b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'}</span></span>
                 </AccordionTrigger>
               </LectureRecordMenu>
               <AccordionContent className="lecture-journal-detail">
-                <div className="lecture-saved-actions"><Button size="sm" variant="outline" onClick={() => openLecture(lecture.id, 'overview')}>{lecture.workspaceState === 'complete' ? <><Maximize2 className="size-4" /> Full Screen</> : 'Continue entry'}</Button></div>
+                <div className="lecture-saved-actions"><span className="text-sm font-bold text-muted-foreground">Study preview</span><Button size="default" variant="default" onClick={() => openLecture(lecture.id, 'overview')}>{lecture.workspaceState === 'complete' ? <><Maximize2 className="size-4" /> Full Screen</> : 'Continue entry'}</Button></div>
                 {lecture.workspaceState === 'complete' ? <div className="lecture-journal-workspace"><LectureCapturePanel key={lecture.id} courseId={course.id} course={course} data={data} initialLectureId={lecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={() => onTab('guide')} /></div> : <LecturePreview lecture={lecture} sourceCount={isActive ? activeLectureSources.length : 0} />}
               </AccordionContent>
             </AccordionItem>
