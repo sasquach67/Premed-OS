@@ -1,6 +1,6 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ClassHub, WritingTools } from '@/components/academics/ClassHub'
 import { ToastProvider } from '@/components/common/ToastProvider'
@@ -28,6 +28,11 @@ HTMLElement.prototype.hasPointerCapture = vi.fn(() => false)
 HTMLElement.prototype.setPointerCapture = vi.fn()
 vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => { callback(0); return 1 }))
 vi.stubGlobal('cancelAnimationFrame', vi.fn())
+
+function LocationProbe() {
+  const location = useLocation()
+  return <output data-testid="location">{location.pathname}{location.search}</output>
+}
 
 let courseId = ''
 const now = Date.UTC(2026, 7, 23)
@@ -359,6 +364,7 @@ describe('ClassHub approved Overview', () => {
           <ToastProvider>
             <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
           </ToastProvider>
+          <LocationProbe />
         </MemoryRouter>,
       )
     })
@@ -387,8 +393,7 @@ describe('ClassHub approved Overview', () => {
       .find((button) => button.textContent?.trim() === 'Add today’s lecture')
     expect(addToday).toBeTruthy()
     await act(async () => addToday!.click())
-    expect(document.body.textContent).toContain('Build a lecture')
-    expect(document.body.textContent).toContain('Add the transcript')
+    expect(container.querySelector('[data-testid="location"]')?.textContent).toBe(`/academics/classes/${course.id}/lectures/new`)
   })
 
   it('gives every saved lecture matching right-click and overflow actions for edit and recoverable delete', async () => {
@@ -462,9 +467,10 @@ describe('ClassHub approved Overview', () => {
     }
     await act(async () => card.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 12, clientY: 12 })))
     const contextItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
-    for (const label of ['Open lecture', 'Open full screen', 'Edit lecture', 'Delete lecture']) {
+    for (const label of ['Open lecture', 'Edit lecture', 'Delete lecture']) {
       expect(contextItems.some((item) => item.textContent?.trim() === label)).toBe(true)
     }
+    expect(contextItems.some((item) => item.textContent?.trim() === 'Open full screen')).toBe(false)
 
     const edit = contextItems.find((item) => item.textContent?.trim() === 'Edit lecture')!
     await act(async () => edit.click())
@@ -504,14 +510,14 @@ describe('ClassHub approved Overview', () => {
     expect(restored.lectureFindings.some((finding) => finding.id === 'lecture-actions-finding')).toBe(true)
   })
 
-  it('keeps the full inline workspace inside its lecture row and supports full-screen expansion', async () => {
+  it('keeps the inline workspace inside its lecture row and opens the dedicated lecture page', async () => {
     const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
     const course = seed.courses.find((item) => item.id === 'demo-course-biol103-current')!
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.courseId === course.id)!
     useStore.getState().replaceAll(seed)
 
     await act(async () => {
-      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>)
+      root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider><LocationProbe /></MemoryRouter>)
     })
 
     const lectureTwo = [...container.querySelectorAll<HTMLButtonElement>('button.lecture-rail-entry')]
@@ -529,7 +535,7 @@ describe('ClassHub approved Overview', () => {
     const mastery = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Mastery Map')!
     await act(async () => mastery.click())
     expect(workspaceSurface.textContent).toContain('Trace gene expression from DNA to a mature transcript')
-    expect(workspaceSurface.querySelectorAll('button[aria-label^="Mastery state for"]').length).toBe(1)
+    expect(workspaceSurface.querySelectorAll('button[aria-label^="Mastery state for"]').length).toBe(5)
 
     const materials = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Materials')!
     await act(async () => materials.click())
@@ -542,9 +548,9 @@ describe('ClassHub approved Overview', () => {
     const sources = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Sources')!
     await act(async () => sources.click())
     expect(workspaceSurface.querySelector('input[placeholder="Search exact words across transcript and sources"]')).toBeTruthy()
-    const fullScreen = [...container.querySelectorAll<HTMLButtonElement>('.lecture-saved-actions button')].find((button) => button.textContent === 'Open full screen')!
-    await act(async () => fullScreen.click())
-    expect(document.body.querySelector('[role="dialog"] [aria-label="Lecture workspace views"]')).toBeTruthy()
+    const openLecture = [...container.querySelectorAll<HTMLButtonElement>('.lecture-saved-actions button')].find((button) => button.textContent === 'Open lecture')!
+    await act(async () => openLecture.click())
+    expect(container.querySelector('[data-testid="location"]')?.textContent).toBe(`/academics/classes/${course.id}/lectures/demo-lecture-biol103-2`)
 
   })
 
@@ -560,6 +566,7 @@ describe('ClassHub approved Overview', () => {
           <ToastProvider>
             <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
           </ToastProvider>
+          <LocationProbe />
         </MemoryRouter>,
       )
     })
@@ -569,7 +576,7 @@ describe('ClassHub approved Overview', () => {
     expect(container.querySelector('.lecture-overview-composition')).toBeNull()
     const addLecture = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Add today’s lecture')!
     await act(async () => addLecture.click())
-    expect(document.body.textContent).toContain('Add the transcript')
+    expect(container.querySelector('[data-testid="location"]')?.textContent).toBe(`/academics/classes/${course.id}/lectures/new`)
   })
 
   it('retires the legacy Create study work action in favor of the lecture workspace', async () => {
@@ -799,13 +806,12 @@ describe('ClassHub approved Overview', () => {
           <ToastProvider>
             <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
           </ToastProvider>
+          <LocationProbe />
         </MemoryRouter>,
       )
     })
 
-    expect(document.body.textContent).toContain('Build a lecture')
-    expect(document.body.textContent).toContain('Transcript')
-    expect(document.body.textContent).toContain('Materials')
+    expect(container.querySelector('[data-testid="location"]')?.textContent).toBe(`/academics/classes/${course.id}/lectures/new`)
   })
 
   it('keeps the topic-focused Guide notice outside the New Guide item action', async () => {

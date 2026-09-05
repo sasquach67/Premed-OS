@@ -12,8 +12,15 @@ export function LecturePage() {
   const course = useStore((s) => s.courses.find((item) => item.id === courseId))
   const data = useStore((s) => s.academics.classCenter)
   const page = useRef<HTMLElement>(null)
-  const back = `/academics/classes/${encodeURIComponent(courseId ?? '')}?classTab=overview`
+  const back = course && courseId
+    ? `/academics/classes/${encodeURIComponent(courseId)}?classTab=overview`
+    : '/academics?tab=class-center'
   const lecture = data.lectures.find((item) => item.id === lectureId && item.courseId === courseId)
+
+  function openLecture(id: string) {
+    if (!course || id === lectureId) return
+    navigate(`/academics/classes/${encodeURIComponent(course.id)}/lectures/${encodeURIComponent(id)}`, { replace: lectureId === 'new' })
+  }
 
   useLayoutEffect(() => {
     const element = page.current
@@ -32,14 +39,14 @@ export function LecturePage() {
     return () => { observer.disconnect(); window.removeEventListener('resize', size) }
   }, [courseId, lectureId])
 
-  if (!course || (!lecture && lectureId !== 'new')) return <section className="space-y-4"><h1 className="font-display text-2xl font-bold">Lecture not found</h1><p>This lecture may have been deleted or isn’t available in this workspace.</p><Link to={back}>Back to class</Link></section>
+  if (!course || (!lecture && lectureId !== 'new')) return <section className="space-y-4" aria-label="Lecture unavailable"><h1 className="font-display text-2xl font-bold">Lecture not found</h1><p>This lecture may have been deleted or isn’t available in this class.</p><Link to={back}>{course ? `Back to ${course.code} class journal` : 'Back to Class Center'}</Link></section>
 
   return <section ref={page} className="lecture-page" aria-label="Lecture page">
     <div className="lecture-page-back"><Link to={back}><ArrowLeft className="size-4" aria-hidden="true" />{course.code} · Class journal</Link></div>
     <div className="lecture-page-body">
       <LectureCapturePanel key={lectureId} courseId={course.id} course={course} data={data}
         initialLectureId={lecture?.id} displayMode="page"
-        onNavigateLecture={(id) => navigate(`/academics/classes/${encodeURIComponent(course.id)}/lectures/${encodeURIComponent(id)}`)}
+        onNavigateLecture={openLecture}
         onDeletedLecture={() => navigate(back, { replace: true })}
         onOpenNotes={() => navigate(`/academics/classes/${encodeURIComponent(course.id)}?classTab=guide`)} />
     </div>
