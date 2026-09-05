@@ -17,8 +17,12 @@ import type { SourceChunk } from '@/lib/types'
  * but generation still needs one stable server-side bucket.
  */
 export const CLASS_MATERIAL_SCOPE = '__class_material__'
-export const MAX_GENERATION_SOURCE_CHUNKS = 2_000
-export const MAX_GENERATION_SOURCE_CHARACTERS = 700_000
+// Ordinary OpenAI study artifacts must complete inside the hosted function's
+// execution window. Keep enough room for broad transcript-weighted coverage,
+// the generation specification, and the artifact itself. Question Banks use a
+// separate Anthropic-only full-corpus path and retain the 2,000 / 700k ceiling.
+export const MAX_GENERATION_SOURCE_CHUNKS = 480
+export const MAX_GENERATION_SOURCE_CHARACTERS = 220_000
 
 const COMMON_SOURCE_WORDS = new Set([
   'about', 'after', 'also', 'because', 'before', 'being', 'between', 'could', 'does', 'each', 'from', 'have', 'into',

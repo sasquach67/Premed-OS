@@ -32,10 +32,10 @@ describe('generation source preparation', () => {
     }])
   })
 
-  it('allows a full 2,000-passage corpus and explains how to reduce a larger request', () => {
-    expect(generationSourceLimitMessage(2000)).toBeUndefined()
-    expect(generationSourceLimitMessage(2001)).toBe(
-      'Choose fewer source files or add a shorter excerpt. This selection contains 2001 passages, and AI study tools can use up to 2000 at a time.',
+  it('keeps ordinary generation inside the reliable provider window', () => {
+    expect(generationSourceLimitMessage(480)).toBeUndefined()
+    expect(generationSourceLimitMessage(481)).toBe(
+      'Choose fewer source files or add a shorter excerpt. This selection contains 481 passages, and AI study tools can use up to 480 at a time.',
     )
   })
 
@@ -135,7 +135,7 @@ describe('generation source preparation', () => {
 
     const selected = selectGenerationSourceChunks(chunks, { preferredFileIds: ['transcript'] })
 
-    expect(selected).toHaveLength(2000)
+    expect(selected).toHaveLength(480)
     expect(selected.some((item) => item.fileId === 'transcript')).toBe(true)
     expect(selected.some((item) => item.fileId === 'textbook')).toBe(true)
     expect(chunks).toHaveLength(2123)

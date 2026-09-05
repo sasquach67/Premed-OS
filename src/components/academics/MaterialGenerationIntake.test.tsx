@@ -92,7 +92,7 @@ describe('MaterialGenerationIntake generation reliability', () => {
       .find((button) => button.textContent?.includes('Generate study guide'))!
   }
 
-  it('keeps a 1,123-passage uploaded packet usable as one full-corpus study-guide request', async () => {
+  it('keeps a 1,123-passage packet attached while generating from a reliable representative pass', async () => {
     mocks.generateStudyGuide.mockResolvedValue({ ok: false, message: 'Captured bounded request.' })
     await renderIntake(1123)
 
@@ -100,11 +100,11 @@ describe('MaterialGenerationIntake generation reliability', () => {
     expect(container.textContent).toContain('Add individual files or a whole folder')
     expect(container.textContent).toContain('Select all ready')
 
-    expect(container.textContent).toContain('All 1,123 selected passages will be reviewed for this output')
+    expect(container.textContent).toContain('All 1,123 selected passages stay in Materials. This output will automatically use 480 representative passages across the selected sources.')
     expect(generateButton().disabled).toBe(false)
     await act(async () => { generateButton().click(); await Promise.resolve() })
     expect(mocks.generateStudyGuide).toHaveBeenCalledWith(expect.objectContaining({ chunks: expect.any(Array) }))
-    expect(mocks.generateStudyGuide.mock.calls[0][0].chunks).toHaveLength(1123)
+    expect(mocks.generateStudyGuide.mock.calls[0][0].chunks).toHaveLength(480)
   })
 
   it('keeps a full-corpus question bank available above 24 passages', async () => {

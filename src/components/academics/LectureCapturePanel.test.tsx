@@ -206,14 +206,14 @@ describe('lecture import and workspace', () => {
     await render(courseId, 'large-lecture', 'transcript')
     const continueButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Review and build'))!
     await act(async () => continueButton.click())
-    expect(container.textContent).toContain('All 1,123 readable passages will be reviewed for this build')
+    expect(container.textContent).toContain('All 1,123 readable passages stay attached. The build will automatically use 480 representative, lecture-relevant passages.')
     const build = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Build Guide + Mastery'))!
     await act(async () => { build.click(); await Promise.resolve() })
 
     const guideCall = generationMocks.generateStudyGuide.mock.calls[0]?.[0]
     const masteryCall = generationMocks.generateUnitMasteryOutline.mock.calls[0]?.[0]
-    expect(guideCall.chunks).toHaveLength(1123)
-    expect(masteryCall.chunks).toHaveLength(1123)
+    expect(guideCall.chunks).toHaveLength(480)
+    expect(masteryCall.chunks).toHaveLength(480)
     expect(guideCall.chunks.some((chunk: { fileId: string }) => chunk.fileId === 'large-transcript')).toBe(true)
     expect(guideCall.chunks.some((chunk: { fileId: string }) => chunk.fileId === 'large-textbook')).toBe(true)
     const saved = useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.id === 'large-lecture')!
