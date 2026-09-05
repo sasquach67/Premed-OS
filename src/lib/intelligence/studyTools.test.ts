@@ -2,6 +2,20 @@ import { describe, expect, it } from 'vitest'
 import { createStudyToolsClient, isGapCheckResult, studySourceFingerprint } from './studyTools'
 
 describe('study tools boundary', () => {
+  it('preserves the classified output-limit error through the client boundary', async () => {
+    const message = 'The generated document exceeded the build’s output limit before it finished. Nothing was saved.'
+    const client = {
+      auth: { getSession: async () => ({ data: { session: { access_token: 'test' } } }) },
+      functions: { invoke: async () => ({ data: null, error: {
+        context: new Response(JSON.stringify({ error: { code: 'openai-output-limit', message } }), { status: 503 }),
+      } }) },
+    }
+    await expect(createStudyToolsClient(client as never).generate({
+      action: 'generate', courseId: 'course-1', topicId: 'topic-1', chunkIds: ['chunk-1'],
+      specId: 'study-guide-v1', specHash: 'hash', systemPrompt: 'spec', request: 'Generate a guide.',
+    })).resolves.toEqual({ ok: false, code: 'unavailable', message })
+  })
+
   it('keeps a zero-Supabase clone fully deterministic and offline', async () => {
     const result = await createStudyToolsClient(null).gapCheck({
       action: 'gap-check',

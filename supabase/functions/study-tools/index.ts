@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.110.2'
+import { OpenAIGenerationResponseError, readOpenAIGenerationResponse } from '../_shared/openAIGenerationResponse.ts'
 import {
   canonicalizeOpenAIGenerationSourceRefs,
   OPENAI_GENERATION_CITATION_INSTRUCTION,
@@ -379,6 +380,10 @@ Deno.serve(async (request) => {
       })
     } catch (error) {
       console.error('study-tools generate failure', error instanceof Error ? error.message : 'unknown')
+      if (error instanceof OpenAIGenerationResponseError) {
+        if (error.rejected) await releaseAIReservation(serviceClient, userData.user.id, quota.reservationCents)
+        return failure(503, error.code, `${error.message} Nothing was saved.`)
+      }
       if (error instanceof AnthropicGenerationError && error.reason === 'credit-exhausted') {
         await releaseAIReservation(serviceClient, userData.user.id, quota.reservationCents)
         return failure(402, 'anthropic-credit-exhausted', 'Anthropic credits are exhausted. Add credits before generating another question bank. Nothing was saved.')
@@ -832,10 +837,8 @@ async function callOpenAIGeneration(response: string, chunks: Chunk[], specPromp
       text: { format: { type: 'json_object' } },
     }),
   })
-  if (!result.ok) throw new ProviderRejectedError(`OpenAI generation ${result.status}`)
-  const payload = await result.json() as Record<string, unknown>
   const value = canonicalizeOpenAIGenerationSourceRefs(
-    parseJsonObject(openAIOutputText(payload)),
+    await readOpenAIGenerationResponse(result),
     chunks,
   )
   return { value, trustedCitations: collectArtifactCitations(value, chunks), webSearchRequests: 0 }

@@ -268,6 +268,19 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
         }
         return { ok: false, code: 'invalid-response', message: 'The generator returned an invalid result. Nothing was saved.' }
       }
+      if (status === 503) {
+        const responseBody = await readFunctionErrorBody(context)
+        const errorDetail = isRecord(responseBody) && isRecord(responseBody.error) ? responseBody.error : undefined
+        const knownCodes = new Set([
+          'openai-invalid-response', 'openai-quota-exhausted', 'openai-rate-limited',
+          'openai-access-denied', 'openai-context-limit', 'openai-request-rejected',
+          'openai-output-limit', 'openai-incomplete', 'openai-response-failed',
+          'openai-refused', 'openai-empty-output', 'openai-invalid-json',
+        ])
+        if (knownCodes.has(String(errorDetail?.code)) && typeof errorDetail?.message === 'string') {
+          return { ok: false, code: 'unavailable', message: errorDetail.message }
+        }
+      }
       return { ok: false, code: 'unavailable', message: 'AI study tools are unavailable. Your local data was not changed.' }
     }
     return { ok: true, data: data as T }
