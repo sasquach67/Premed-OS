@@ -78,3 +78,17 @@ export function catalogEntries(files: AcademicFile[], topics: Topic[], unit?: st
     .filter((entry) => unit == null || entry.unit === unit)
     .sort((a, b) => a.file.order - b.file.order)
 }
+
+/** The study shelf excludes supporting images; the source collection stays intact.
+ * Generated diagrams remain study artifacts. Metadata takes precedence over
+ * legacy screenshot titles so a PDF named after a screenshot remains a document.
+ */
+export function isPrimaryMaterial(file: AcademicFile): boolean {
+  if (file.owner === 'generated') return true
+  if (file.mimeType?.toLowerCase().startsWith('image/')) return false
+  const name = file.fileName ?? file.url ?? file.title
+  if (/\.(png|jpe?g|webp|gif|heic|heif|avif|bmp|tiff?|svg)(?:$|[?#])/i.test(name)) return false
+  if (/\.(pdf|docx?|pptx?|xlsx?|txt|md|rtf)(?:$|[?#])/i.test(name)) return true
+  if (file.mimeType && file.mimeType !== 'application/octet-stream') return true
+  return !/^(screenshot|screen[ _-]?shot|screen capture|codex-clipboard)[ _-]/i.test(file.title)
+}

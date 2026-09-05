@@ -209,6 +209,29 @@ describe('ClassHub approved Overview', () => {
     container.remove()
   })
 
+  it('keeps supporting screenshots out of Materials and its badge without deleting source records', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find(item => item.type === 'stem')!
+    const course = seed.courses.find(item => item.id === workspace.courseId)!
+    const base = { courseId: course.id, sourceType: 'upload' as const, type: 'reading' as const, linkedTopicIds: [], createdAt: now, updatedAt: now, order: 0 }
+    seed.academics.classCenter.files = [
+      { ...base, id: 'pdf', title: 'Lecture handout', fileName: 'lecture.pdf', mimeType: 'application/pdf', owner: 'course' },
+      { ...base, id: 'shot', title: 'Screenshot 2026-09-03', fileName: 'capture.png', mimeType: 'image/png', owner: 'mine' },
+      { ...base, id: 'generated', title: 'Generated concept map', fileName: 'map.png', mimeType: 'image/png', owner: 'generated' },
+    ]
+    seed.academics.classCenter.notes = []
+    await act(async () => root.render(<MemoryRouter initialEntries={['/?classTab=materials']}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>))
+    expect(container.textContent).toContain('2 items in this course library')
+    expect(container.querySelector('[role="tab"][data-state="active"]')?.textContent).toContain('Materials2')
+    expect(container.textContent).toContain('Lecture handout')
+    expect(container.textContent).toContain('Generated concept map')
+    expect(container.textContent).not.toContain('Screenshot 2026-09-03')
+    const toggle = [...container.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent === 'Show supporting images (1)')!
+    await act(async () => toggle.click())
+    expect(container.textContent).toContain('Screenshot 2026-09-03')
+    expect(seed.academics.classCenter.files).toHaveLength(3)
+  })
+
   it('uses the saved class color as the banner ambience while keeping the study-resource action blue', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!

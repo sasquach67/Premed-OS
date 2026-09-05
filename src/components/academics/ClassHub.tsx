@@ -1,3 +1,4 @@
+import { isPrimaryMaterial } from '@/lib/academics/materialCatalog'
 import { preferredScrollBehavior } from '@/lib/scroll'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -143,6 +144,7 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
   }, [canonicalRequestedTab])
   const courseTopics = ordered(data.topics.filter((item) => item.courseId === course.id))
   const courseFiles = ordered(data.files.filter((item) => item.courseId === course.id))
+  const libraryFiles = courseFiles.filter(isPrimaryMaterial)
   const courseNotes = [...data.notes.filter((item) => item.courseId === course.id)].sort((a, b) => b.updatedAt - a.updatedAt)
   const courseMaterialNotes = courseNotes.filter(isMaterialNote)
   const courseGuideNotes = courseNotes.filter(isGuideNote)
@@ -202,7 +204,7 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
   }
 
   const counts = {
-    materials: courseFiles.length + courseMaterialNotes.length,
+    materials: libraryFiles.length + courseMaterialNotes.length,
     topics: courseTopics.length,
     readings: courseReadings.length,
     assignments: courseAssignments.filter((item) => !isComplete(item)).length,
@@ -247,7 +249,7 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
                   { id: 'grade', label: 'Grade', value: stats.grade, cadence: 'variable' },
                   ...(classType === 'stem' ? [
                     { id: 'topics', label: 'Topics', value: String(courseTopics.length), cadence: 'variable' as const },
-                    { id: 'materials', label: 'Materials', value: String(courseFiles.length), cadence: 'variable' as const },
+                    { id: 'materials', label: 'Materials', value: String(libraryFiles.length), cadence: 'variable' as const },
                     { id: 'next-exam', label: 'Next exam', value: stats.examCountdown, cadence: 'variable' as const },
                   ] : classType === 'writing' ? [
                     { id: 'next-due', label: 'Next due', value: stats.nextDue, cadence: 'variable' as const },
@@ -331,7 +333,7 @@ function Overview({
   const activeLecturePreviewRecord = activeLecture ? { ...activeLecture, selectedSourceFileIds: activeLectureSources.map((file) => file.id) } : undefined
   const activeLectureBrief = activeLecturePreviewRecord ? activeLecturePreviewRecord.lectureBrief ?? buildLectureBrief(activeLectureChunks, activeLecturePreviewRecord.selectedSourceFileIds, data.files) : undefined
   const activeMasteryMap = activeLecturePreviewRecord ? data.generatedMasteryOutlines.find((outline) => outline.id === activeLecturePreviewRecord.masteryMapId || outline.lectureId === activeLecturePreviewRecord.id) ?? buildLectureMasteryMap({ lecture: activeLecturePreviewRecord, topics, chunks: activeLectureChunks, files: activeLectureSources }) : undefined
-  const courseFiles = data.files.filter((file) => file.courseId === course.id)
+  const courseFiles = data.files.filter((file) => file.courseId === course.id && isPrimaryMaterial(file))
   const unfiledCount = courseFiles.filter((file) => !file.topicId && file.linkedTopicIds.length === 0).length
   const guideSuggestionCount = data.lectureNoteProposals.filter((proposal) => proposal.courseId === course.id && proposal.status === 'pending').length
   const nextLectureNumber = chronologicalLectures.length + 1
@@ -794,9 +796,13 @@ function CoverageMetric({ label, value, tone }: { label: string; value: number; 
 }
 
 function Materials({
-  course, workspace, classType, data, files, topics, notes, writingTools,
+  course, workspace, classType, data, files: sourceFiles, topics, notes, writingTools,
 }: { course: Course; workspace: ClassWorkspace; classType: ClassWorkspaceType; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; writingTools?: React.ReactNode }) {
   const courseId = course.id
+  const [showSupportingImages, setShowSupportingImages] = useState(false)
+  const primaryFiles = useMemo(() => sourceFiles.filter(isPrimaryMaterial), [sourceFiles])
+  const supportingCount = sourceFiles.length - primaryFiles.length
+  const files = showSupportingImages ? sourceFiles : primaryFiles
   const navigate = useNavigate()
   const [materialParams, setMaterialParams] = useSearchParams()
   const [filter, setFilter] = useState<'all' | 'course' | 'mine' | 'generated' | 'unassigned'>('all')
@@ -807,11 +813,11 @@ function Materials({
   const [artifact, setArtifact] = useState<MaterialArtifact | null>(requestedArtifact)
   const folderIntakeOpen = materialParams.get('folderIntake') === '1'
   const materialNotes = useMemo(() => notes.filter(isMaterialNote), [notes])
-  const groups = useMemo(() => groupMaterials(files, materialNotes, topics, workspace.syllabusSchedule ?? [], groupBy), [files, groupBy, materialNotes, topics, workspace.syllabusSchedule])
+  const groups = useMemo(() => groupMaterials(sourceFiles, materialNotes, topics, workspace.syllabusSchedule ?? [], groupBy), [sourceFiles, groupBy, materialNotes, topics, workspace.syllabusSchedule])
   const visible = groups.map((group) => ({
     ...group,
-    files: sortMaterialItems(group.files.filter((file) => materialFilterMatches(filter, file.owner, materialIsUnassigned(file, topics, workspace.syllabusSchedule ?? []))), sortBy),
-    notes: sortMaterialItems(group.notes.filter((note) => materialFilterMatches(filter, materialNoteOwner(note), materialNoteIsUnassigned(note, topics, files, workspace.syllabusSchedule ?? []))), sortBy),
+    files: sortMaterialItems(group.files.filter((file) => (showSupportingImages || isPrimaryMaterial(file)) && materialFilterMatches(filter, file.owner, materialIsUnassigned(file, topics, workspace.syllabusSchedule ?? []))), sortBy),
+    notes: sortMaterialItems(group.notes.filter((note) => materialFilterMatches(filter, materialNoteOwner(note), materialNoteIsUnassigned(note, topics, sourceFiles, workspace.syllabusSchedule ?? []))), sortBy),
   })).filter((group) => group.files.length || group.notes.length)
   const categories = data.gradeCategories.filter((item) => item.courseId === courseId).sort((a, b) => a.order - b.order)
   useEffect(() => setArtifact(requestedArtifact), [requestedArtifact])
@@ -859,9 +865,12 @@ function Materials({
     <div className="class-hub-materials space-y-3">
       <SectionToolbar
         title="Materials"
-        detail={`${files.length + materialNotes.length} ${(files.length + materialNotes.length) === 1 ? 'item' : 'items'} in this course library`}
+        detail={`${primaryFiles.length + materialNotes.length} ${(primaryFiles.length + materialNotes.length) === 1 ? 'item' : 'items'} in this course library`}
         action={<div className="class-hub-material-add"><MaterialIntakeDialog courseId={courseId} trigger={<Button size="sm"><Plus className="size-4" /> Add material</Button>} /></div>}
       />
+      {supportingCount > 0 && <Button type="button" variant="ghost" size="sm" aria-pressed={showSupportingImages} onClick={() => setShowSupportingImages(value => !value)}>
+        {showSupportingImages ? 'Hide supporting images' : `Show supporting images (${supportingCount})`}
+      </Button>}
       <div className="class-hub-material-controls">
         <div className="class-hub-material-filter-set" aria-label="Material filters">
           <span className="class-hub-material-control-label">Show</span>
@@ -899,8 +908,8 @@ function Materials({
         </div>
       </div>
       {artifact === 'revised-notes'
-        ? <div className="space-y-2"><div className="flex justify-end"><Button size="sm" variant="ghost" onClick={closeArtifact}>Close revised notes</Button></div><RevisedNotesPanel courseId={courseId} files={files} data={data} /></div>
-        : artifact && <MaterialGenerationIntake artifact={artifact} courseId={courseId} courseLabel={course.code} course={{ code: course.code, title: course.title, type: classType }} files={files} onClose={closeArtifact} />}
+        ? <div className="space-y-2"><div className="flex justify-end"><Button size="sm" variant="ghost" onClick={closeArtifact}>Close revised notes</Button></div><RevisedNotesPanel courseId={courseId} files={sourceFiles} data={data} /></div>
+        : artifact && <MaterialGenerationIntake artifact={artifact} courseId={courseId} courseLabel={course.code} course={{ code: course.code, title: course.title, type: classType }} files={sourceFiles} onClose={closeArtifact} />}
       {writingTools}
       {visible.map((group) => (
         <Card key={group.key} className={cn('class-hub-material-group', groupBy === 'week' && 'is-sequence', group.unassigned && 'is-unplaced')}>
@@ -914,7 +923,7 @@ function Materials({
               {group.unassigned && <div className="class-hub-material-placement-note">These materials are still usable. Place one in a course week only when you know where it belongs.</div>}
               {mergedMaterialItems(group.files, group.notes, sortBy).map((entry) => entry.kind === 'file'
                 ? <FileRow key={entry.item.id} file={entry.item} ownership={entry.item.owner} courseWeek={materialCourseWeekForFile(entry.item, topics, workspace.syllabusSchedule ?? [])} onWeekChange={(courseWeek) => setMaterialFileWeek(entry.item.id, courseWeek)} onReimport={entry.item.type === 'syllabus' ? () => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}&reimport=1&reimportFile=${entry.item.id}`) : undefined} />
-                : <MaterialNoteRow key={entry.item.id} note={entry.item} open={entry.item.id === requestedNoteId} courseWeek={materialCourseWeekForNote(entry.item, topics, files, workspace.syllabusSchedule ?? [])} onWeekChange={(courseWeek) => setMaterialNoteWeek(entry.item.id, courseWeek)} />)}
+                : <MaterialNoteRow key={entry.item.id} note={entry.item} open={entry.item.id === requestedNoteId} courseWeek={materialCourseWeekForNote(entry.item, topics, sourceFiles, workspace.syllabusSchedule ?? [])} onWeekChange={(courseWeek) => setMaterialNoteWeek(entry.item.id, courseWeek)} />)}
               {groupBy !== 'category' && !group.unassigned && <div className="class-hub-material-prime">
                 <div><p>Prime yourself</p><span>Hold one question in mind before this module&apos;s next lecture.</span></div>
                 <Button size="sm" variant="outline" onClick={() => addQuestionNote(courseId, group.unitLabel ?? group.label)}>Add to Guide</Button>
@@ -932,7 +941,7 @@ function Materials({
         </div>
         <div className="mt-3 space-y-3">
           <MaterialCatalog files={files} topics={topics} />
-          <AssessmentCatalog courseId={courseId} data={data} files={files} />
+          <AssessmentCatalog courseId={courseId} data={data} files={sourceFiles} />
           <GeneratedFlashcardDecks courseId={courseId} data={data} />
           <GeneratedMasteryOutlines courseId={courseId} data={data} />
           <GeneratedUnitQuestionBanks courseId={courseId} data={data} />

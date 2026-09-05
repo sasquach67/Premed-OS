@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createTopicFsrsState } from '@/lib/academics/fsrs'
 import {
-  UNFILED, catalogEntries, catalogUnits, provenanceOf, unitOf,
+  isPrimaryMaterial, UNFILED, catalogEntries, catalogUnits, provenanceOf, unitOf,
 } from '@/lib/academics/materialCatalog'
 import type { AcademicFile, Topic } from '@/lib/types'
 
@@ -71,5 +71,18 @@ describe('catalog entries', () => {
 
   it('returns everything when no unit is selected', () => {
     expect(catalogEntries([file('f1'), file('f2')], topics)).toHaveLength(2)
+  })
+})
+
+
+describe('primary study materials', () => {
+  it('uses file metadata and legacy screenshot names without excluding documents or generated diagrams', () => {
+    expect(isPrimaryMaterial(file('screen', { mimeType: 'image/png' }))).toBe(false)
+    expect(isPrimaryMaterial(file('camera', { fileName: 'IMG_2048.HEIC' }))).toBe(false)
+    expect(isPrimaryMaterial(file('legacy', { title: 'Screenshot 2026-09-03 at 3.47.44 PM' }))).toBe(false)
+    expect(isPrimaryMaterial(file('pdf', { title: 'Screenshot analysis', fileName: 'analysis.pdf' }))).toBe(true)
+    expect(isPrimaryMaterial(file('transcript', { mimeType: 'text/plain' }))).toBe(true)
+    expect(isPrimaryMaterial(file('diagram', { owner: 'generated', mimeType: 'image/png' }))).toBe(true)
+    expect(isPrimaryMaterial(file('unknown-document'))).toBe(true)
   })
 })
