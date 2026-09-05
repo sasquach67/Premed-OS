@@ -48,4 +48,11 @@ describe('study-tools provider routing', () => {
     expect(source).toContain("type: 'image'")
     expect(source).toContain('visualSourceFileIds: isQuestionBank')
   })
+
+  it('bounds and retries large source retrieval before generation', () => {
+    expect(source).toContain("return failure(503, 'source-read-failed'")
+    expect(source).toContain('for (const batch of batches)')
+    expect(source).toContain('for (let attempt = 0; attempt < 2; attempt += 1)')
+    expect(source).not.toContain('Promise.all(batches.map')
+  })
 })

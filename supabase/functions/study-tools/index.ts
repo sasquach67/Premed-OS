@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.110.2'
 import {
+  canonicalizeOpenAIGenerationSourceRefs,
   OPENAI_GENERATION_CITATION_INSTRUCTION,
   openAIGenerationSources,
 } from '../_shared/openAIGenerationGrounding.ts'
@@ -266,7 +267,13 @@ Deno.serve(async (request) => {
   )
   if (!chunkIds?.length) return failure(400, 'invalid-request', 'At least one trusted chunk ID is required.')
 
-  const chunks = await retrieveChunks(client, userData.user.id, body.courseId, body.topicId, chunkIds)
+  let chunks: Chunk[]
+  try {
+    chunks = await retrieveChunks(client, userData.user.id, body.courseId, body.topicId, chunkIds)
+  } catch (error) {
+    console.error('study-tools source retrieval failure', error instanceof Error ? error.message : 'unknown')
+    return failure(503, 'source-read-failed', 'Synced source material could not be read. Nothing was generated.')
+  }
   if (!chunks.length) return failure(422, 'no-sources', 'No selected source material is available.')
   if (isQuestionBankGeneration && chunks.length !== chunkIds.length) {
     return failure(422, 'source-sync-incomplete', 'The complete selected corpus could not be verified. Nothing was generated.')
@@ -310,9 +317,10 @@ Deno.serve(async (request) => {
    * artifact. If Anthropic is unavailable or out of credit, the bank fails
    * closed and the student receives the provider-specific reason.
    *
-   * ⚠️ A citation outside the closed set REJECTS the artifact. It is never
-   * repaired — repairing would mean choosing a citation on the model's behalf,
-   * which is the fabrication this whole mechanism exists to prevent.
+   * ⚠️ A citation identity outside the closed set REJECTS the artifact.
+   * The server may canonicalize the range of a valid model-selected source to
+   * that server-owned chunk's full text; it never chooses or substitutes a
+   * source identity on the model's behalf.
    *
    * ⚠️ The same rule is implemented and exhaustively tested client-side in
    * `src/lib/generation/citations.ts`. That module is the readable reference;
@@ -627,24 +635,42 @@ async function retrieveChunks(
     { length: Math.ceil(chunkIds.length / CHUNK_RETRIEVAL_BATCH_SIZE) },
     (_, index) => chunkIds.slice(index * CHUNK_RETRIEVAL_BATCH_SIZE, (index + 1) * CHUNK_RETRIEVAL_BATCH_SIZE),
   )
-  const results = await Promise.all(batches.map((batch) => client
-    .from('academic_source_chunks')
-    .select('chunk_id,file_id,content,character_start,character_end')
-    .eq('user_id', userId)
-    .eq('course_id', courseId)
-    .eq('topic_id', topicId)
-    .in('chunk_id', batch)
-    .limit(batch.length)))
   const rows: Chunk[] = []
-  for (const { data, error } of results) {
-    if (error) throw error
-    rows.push(...((data || []) as Chunk[]))
+  // A full lecture can span more than a thousand passages. Reading every
+  // batch concurrently caused intermittent gateway 500s before quota or model
+  // work began. Keep the requests bounded and retry one transient read.
+  for (const batch of batches) {
+    let result: Awaited<ReturnType<typeof readChunkBatch>> | undefined
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      result = await readChunkBatch(client, userId, courseId, topicId, batch)
+      if (!result.error) break
+      if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 75))
+    }
+    if (!result || result.error) throw result?.error ?? new Error('Source batch was not returned')
+    rows.push(...((result.data || []) as Chunk[]))
   }
   const byId = new Map(rows.map((chunk) => [chunk.chunk_id, chunk]))
   return chunkIds.flatMap((chunkId) => {
     const chunk = byId.get(chunkId)
     return chunk ? [chunk] : []
   })
+}
+
+function readChunkBatch(
+  client: ReturnType<typeof createClient>,
+  userId: string,
+  courseId: string,
+  topicId: string,
+  batch: string[],
+) {
+  return client
+    .from('academic_source_chunks')
+    .select('chunk_id,file_id,content,character_start,character_end')
+    .eq('user_id', userId)
+    .eq('course_id', courseId)
+    .eq('topic_id', topicId)
+    .in('chunk_id', batch)
+    .limit(batch.length)
 }
 
 /**
@@ -802,7 +828,10 @@ async function callOpenAIGeneration(response: string, chunks: Chunk[], specPromp
   })
   if (!result.ok) throw new ProviderRejectedError(`OpenAI generation ${result.status}`)
   const payload = await result.json() as Record<string, unknown>
-  const value = parseJsonObject(openAIOutputText(payload))
+  const value = canonicalizeOpenAIGenerationSourceRefs(
+    parseJsonObject(openAIOutputText(payload)),
+    chunks,
+  )
   return { value, trustedCitations: collectArtifactCitations(value, chunks), webSearchRequests: 0 }
 }
 

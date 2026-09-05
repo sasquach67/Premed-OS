@@ -4,8 +4,16 @@ export interface OpenAIGenerationChunk {
   content: string
 }
 
+interface SourceRefRecord {
+  fileId?: unknown
+  chunkId?: unknown
+  start?: unknown
+  end?: unknown
+}
+
 export const OPENAI_GENERATION_CITATION_INSTRUCTION = [
   'Use only the supplied source IDs.',
+  'Every object with provenance source must include sourceRef.',
   'For sourceRef/sourceRefs, copy the exact supplied sourceRef object from the chosen source document.',
   'Never calculate, shorten, expand, or otherwise alter sourceRef offsets.',
   'For sourceChunkId/sourceChunkIds/evidenceIds, copy the exact supplied chunkId. Never invent an ID or range.',
@@ -28,4 +36,44 @@ export function openAIGenerationSources(chunks: readonly OpenAIGenerationChunk[]
       end: chunk.content.length,
     },
   }))
+}
+
+/**
+ * The model chooses the source identity; the server owns the text and therefore
+ * owns its mechanical full-chunk range. Normalize only references whose file
+ * and chunk IDs already match a supplied source. Missing or unknown identities
+ * are deliberately left untouched so the citation validator still rejects
+ * them instead of guessing a source on the model's behalf.
+ */
+export function canonicalizeOpenAIGenerationSourceRefs(
+  value: unknown,
+  chunks: readonly OpenAIGenerationChunk[],
+): unknown {
+  const byChunkId = new Map(chunks.map((chunk) => [chunk.chunk_id, chunk]))
+
+  function canonicalRef(candidate: unknown): unknown {
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return candidate
+    const ref = candidate as SourceRefRecord
+    if (typeof ref.fileId !== 'string' || typeof ref.chunkId !== 'string') return candidate
+    const chunk = byChunkId.get(ref.chunkId)
+    if (!chunk || chunk.file_id !== ref.fileId || !chunk.content.length) return candidate
+    return {
+      fileId: chunk.file_id,
+      chunkId: chunk.chunk_id,
+      start: 0,
+      end: chunk.content.length,
+    }
+  }
+
+  function visit(candidate: unknown): unknown {
+    if (Array.isArray(candidate)) return candidate.map(visit)
+    if (!candidate || typeof candidate !== 'object') return candidate
+    return Object.fromEntries(Object.entries(candidate as Record<string, unknown>).map(([key, item]) => {
+      if (key === 'sourceRef') return [key, canonicalRef(item)]
+      if (key === 'sourceRefs' && Array.isArray(item)) return [key, item.map(canonicalRef)]
+      return [key, visit(item)]
+    }))
+  }
+
+  return visit(value)
 }
