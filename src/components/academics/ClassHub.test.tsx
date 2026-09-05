@@ -510,7 +510,7 @@ describe('ClassHub approved Overview', () => {
     expect(restored.lectureFindings.some((finding) => finding.id === 'lecture-actions-finding')).toBe(true)
   })
 
-  it('keeps the inline workspace inside its lecture row and opens the dedicated lecture page', async () => {
+  it('keeps a vertical journal beside an automatically visible preview and opens the dedicated page separately', async () => {
     const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
     const course = seed.courses.find((item) => item.id === 'demo-course-biol103-current')!
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.courseId === course.id)!
@@ -522,10 +522,12 @@ describe('ClassHub approved Overview', () => {
 
     const lectureTwo = [...container.querySelectorAll<HTMLButtonElement>('button.lecture-rail-entry')]
       .find((button) => button.textContent?.includes('Central Dogma'))!
+    expect(container.querySelector('[aria-label="Embedded lecture workspace"]')).toBeTruthy()
     await act(async () => lectureTwo.click())
 
     const workspaceSurface = container.querySelector('[aria-label="Embedded lecture workspace"]')!
-    expect(lectureTwo.closest('.lecture-journal-item')?.contains(workspaceSurface)).toBe(true)
+    expect(lectureTwo.closest('[aria-label="Lecture history"]')?.contains(workspaceSurface)).toBe(false)
+    expect(container.querySelector('[aria-label="Selected lecture preview"]')?.contains(workspaceSurface)).toBe(true)
     expect(workspaceSurface.textContent).toContain('A gene is expressed through linked but distinct synthesis steps')
     expect(workspaceSurface.textContent).toContain('Gene expression can be tested at two different levels')
     expect(workspaceSurface.querySelector('[aria-label="Lecture workspace views"]')).toBeTruthy()
