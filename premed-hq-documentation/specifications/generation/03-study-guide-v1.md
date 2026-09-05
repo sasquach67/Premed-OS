@@ -11,6 +11,9 @@ document by `src/lib/generation/artifacts/studyGuide.v1.ts`.
 
 | id | Runtime rule | Kind |
 | --- | --- | --- |
+| `SG-INSTRUCTOR-FIRST` | Use identified instructor transcript and slide evidence to establish the teaching scope, terminology, load-bearing sequence, explicit objectives and emphasis. Organize concepts for understanding without losing that sequence. Textbook material supplements and clarifies those concepts; its volume does not establish course emphasis or expand the assessed scope. If instructor evidence is not identified, state that limitation rather than inferring it. Selected evidence is not proof of complete lecture coverage. | invariant |
+| `SG-CONNECTED-EXAMPLES` | For each major concept with a supplied instructor example, connect the explanation to the concrete case: describe the relevant setup, show the reasoning step or mechanism, and explain what the example demonstrates. When transcript and slides contribute distinct details, use adjacent blocks with a valid sourceRef for each contribution and a shared conceptLabel. Retain instructor terminology, corrections and warnings only when supported. Never invent quotes, slide numbers, diagram contents or course emphasis. Missing setup, unreadable visuals and unresolved conflicts must be stated as gaps, not silently supplied from general knowledge. | invariant |
+| `SG-GENERATED-APPLICATION` | Integrate one concise original application beside each major source-supported mechanism or distinction where the evidence can support a worked solution. Use an existing callout block labeled Generated exam application for a self-contained prompt, followed by an existing numbered block labeled Worked answer with the answer and reasoning, sharing the conceptLabel. Mark both as clarification and cite the source-supported principles with sourceRef. Include all needed scenario facts, quantities, units, sequence directions and text representations in the prompt; label invented scenarios or data hypothetical. The scenario must matter to the solution. Explain each inference or calculation and the relevant tempting error. Do not copy assessment stems, require an absent diagram, predict exam content, or present practice as instructor-authored. Do not use hypothetical observations as empirical evidence or mark an application highYield merely because it is practice. If support is missing, use a gap block instead of inventing an answer. | invariant |
 | `SG-1` | Do not preserve bad source organization merely because it appeared in that order. | tunable |
 | `SG-2` | Do preserve sequencing when the sequence is pedagogically important. | invariant |
 | `SG-3` | Avoid paragraph walls. | tunable |
@@ -126,6 +129,23 @@ Final Synthesis integrates *after* it, and should connect concepts that were int
 
 ## 4. The representation decision
 
+### Instructor-led explanation and connected practice
+
+Course scope and instructor emphasis come from identified transcript/slide passages, not from the number of textbook pages. Preserve explicit professor objectives, terminology, important sequencing, examples and corrections. Do not promote greetings, captions or assessment stems to official objectives. Reorganizing a confusing slide deck is allowed; losing a meaningful mechanism sequence is not.
+
+Within the relevant concept section, show what an instructor example demonstrates, not merely that an example occurred. If the transcript supplies the explanation and the slide supplies the setup, use separate adjacent source-provenance blocks with the same `conceptLabel` and a `sourceRef` supporting each contribution. Do not create a fictitious combined citation, quote, slide number, or diagram interpretation. Textbook clarification follows the instructor concept and must not be mislabeled as professor emphasis. If a referenced case lacks its setup or figure details, state the missing evidence.
+
+Generated exam applications remain inside the explanatory guide, not a duplicate question bank. Use existing fields and block types only:
+
+1. A `callout` whose `text.content` begins **Generated exam application — Hypothetical scenario:** and contains the complete original task and all needed inputs.
+2. An adjacent `numbered` block whose first item begins **Worked answer:** followed by the reasoning steps and the relevant tempting error. Put the complete answer in the block, not in an unavailable separate resource.
+
+Both blocks share the underlying concept label, use `provenance: clarification`, and retain a valid `sourceRef` for the principle supporting the solution. They do not require new schema fields, renderer types, migration or backend routing. Label fictional data as hypothetical; do not confuse invented teaching inputs with empirical observations. Do not set `highYield` or `basis: assessment-form` merely because a practice question was generated. Only source-supported assessment evidence or instructor emphasis can justify those claims. A `gap` block with explanatory `text.content` replaces an unsupported application; do not pad the guide with invented solutions.
+
+### Selection is not coverage proof
+
+The lecture caller identifies primary files from the attached transcript identity and explicit `transcript` / `lecture-slides` metadata, not filename guesses. Under the current bounded selector, preferred files receive three-times allocation weight; sampled primary passages win when the character budget binds. This is weighted prioritization, not guaranteed full transcript/slide coverage. The selector may omit passages from any file, and output citation references show only the evidence cited, not semantic completeness. No generator may claim it read every slide or every instructor example without an independently supported coverage receipt. If a file is unclassified or its visual information was not extracted, do not invent that missing classification or content.
+
 **For every major concept, the generator explicitly chooses a representation.** This is the core of
 the visual system and is specified in full in `06`. Summary of the obligation here:
 
@@ -193,7 +213,7 @@ Recorded so a later version does not treat these as oversights:
   course. Whole-course synthesis is a different artifact with a different grounding problem.
 - **No spaced-repetition scheduling.** The guide does not create FSRS state. Flashcards generated
   *from* a guide do (`04` §6).
-- **No standalone practice-question set.** ACTIVE RECALL prompts are self-test, not assessment
-  items. Supplied question scenarios and reasoning moves may still serve as source-grounded teaching
-  examples under `SG-PRACTICE-EXAMPLES`; generated practice exams remain a separate artifact and
-  remain restricted in MCAT scope.
+- **No standalone practice-question set.** ACTIVE RECALL remains self-test. Short original
+  applications with worked answers are integrated beside explanations under
+  `SG-GENERATED-APPLICATION`; a full question bank or practice exam remains a separate artifact
+  and remains restricted in MCAT scope. Neither format predicts the actual exam.

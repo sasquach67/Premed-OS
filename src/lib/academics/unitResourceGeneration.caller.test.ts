@@ -37,6 +37,22 @@ describe('unit resource generation callers', () => {
     mocks.prepare.mockResolvedValue({ ok: true, scopeId: 'class-material', chunkIds: ['chunk-1', 'chunk-2'] })
   })
 
+  it('retains connected practice and worked reasoning through the existing guide block format', async () => {
+    const sourceRef = { fileId: 'file-1', chunkId: 'chunk-1', start: 0, end: sources[0].content.length }
+    const sections = [{ id: 'application', title: 'Applying the mechanism', blocks: [
+      { id: 'task', type: 'callout', provenance: 'clarification', conceptLabel: 'Variable control', text: { content: 'Generated exam application — Hypothetical scenario: Two samples differ only in light exposure. Which comparison isolates its effect, and why?' }, sourceRef },
+      { id: 'solution', type: 'numbered', provenance: 'clarification', conceptLabel: 'Variable control', items: [{ content: 'Worked answer: Compare the two otherwise matched samples.' }, { content: 'Holding other conditions constant isolates light exposure; changing multiple conditions would prevent that inference.' }], sourceRef },
+    ] }]
+    mocks.generate.mockResolvedValue({ ok: true, data: { artifact: { sections }, citations: [], auditStatus: 'approved' } })
+    const result = await generateStudyGuide({ courseId: 'course-1', chunks: sources, label: 'Controls' })
+    expect(result.ok).toBe(true)
+    expect(result.artifact?.sections).toEqual(sections)
+    expect(result.content).toContain('Generated exam application')
+    expect(result.content).toContain('Worked answer: Compare')
+    expect(result.content).toContain('prevent that inference')
+    expect(mocks.generate.mock.calls[0][0].request).toContain('No instructor evidence was identified')
+  })
+
   it('assembles a mastery outline request without sending source text', async () => {
     mocks.generate.mockResolvedValue({ ok: true, data: {
       artifact: {
@@ -80,7 +96,7 @@ describe('unit resource generation callers', () => {
       citations: [], auditStatus: 'approved',
     } })
 
-    const outcome = await generateStudyGuide({ courseId: 'course-1', chunks: sources, label: 'BIOL 103 · Unit 2', practiceQuestionChunkIds: ['chunk-1'] })
+    const outcome = await generateStudyGuide({ courseId: 'course-1', chunks: sources, label: 'BIOL 103 · Unit 2', practiceQuestionChunkIds: ['chunk-1'], primarySourceChunkIds: ['chunk-1', 'unselected-instructor'] })
 
     expect(outcome.ok).toBe(true)
     expect(outcome.suggestedTitle).toBe('Variable Control Logic')
@@ -89,6 +105,13 @@ describe('unit resource generation callers', () => {
     expect(request.systemPrompt).toContain('SG-AT-A-GLANCE')
     expect(request.systemPrompt).toContain('SG-FULL-DEPTH')
     expect(request.systemPrompt).toContain('SG-NO-DUPLICATE-LAYERS')
+    expect(request.systemPrompt).toContain('SG-INSTRUCTOR-FIRST')
+    expect(request.systemPrompt).toContain('SG-CONNECTED-EXAMPLES')
+    expect(request.systemPrompt).toContain('SG-GENERATED-APPLICATION')
+    expect(request.request).toContain('Generated exam application')
+    expect(request.request).toContain('Worked answer')
+    expect(request.request).toContain('Instructor evidence chunk IDs: chunk-1.')
+    expect(JSON.stringify(request)).not.toContain('unselected-instructor')
     expect(request.systemPrompt).toContain('Reference-question chunk IDs: chunk-1')
     expect(request.systemPrompt).toContain('never treat a distractor as fact')
     expect(request.request).toContain('marked question passages as source-backed explanatory examples')

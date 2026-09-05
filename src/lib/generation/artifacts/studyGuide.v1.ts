@@ -45,6 +45,13 @@ export const REQUIRED_SECTION_IDS = STUDY_GUIDE_SECTIONS
   .filter((section) => section.required === 'always')
   .map((section) => section.id)
 
+/** Reused in the immediate request as well as the versioned system contract. */
+export const CONNECTED_GUIDE_RULES = [
+  { id: 'SG-INSTRUCTOR-FIRST', kind: 'invariant' as const, text: 'Use identified instructor transcript and slide evidence to establish the teaching scope, terminology, load-bearing sequence, explicit objectives and emphasis. Organize concepts for understanding without losing that sequence. Textbook material supplements and clarifies those concepts; its volume does not establish course emphasis or expand the assessed scope. If instructor evidence is not identified, state that limitation rather than inferring it. Selected evidence is not proof of complete lecture coverage.' },
+  { id: 'SG-CONNECTED-EXAMPLES', kind: 'invariant' as const, text: 'For each major concept with a supplied instructor example, connect the explanation to the concrete case: describe the relevant setup, show the reasoning step or mechanism, and explain what the example demonstrates. When transcript and slides contribute distinct details, use adjacent blocks with a valid sourceRef for each contribution and a shared conceptLabel. Retain instructor terminology, corrections and warnings only when supported. Never invent quotes, slide numbers, diagram contents or course emphasis. Missing setup, unreadable visuals and unresolved conflicts must be stated as gaps, not silently supplied from general knowledge.' },
+  { id: 'SG-GENERATED-APPLICATION', kind: 'invariant' as const, text: 'Integrate one concise original application beside each major source-supported mechanism or distinction where the evidence can support a worked solution. Use an existing callout block labeled Generated exam application for a self-contained prompt, followed by an existing numbered block labeled Worked answer with the answer and reasoning, sharing the conceptLabel. Mark both as clarification and cite the source-supported principles with sourceRef. Include all needed scenario facts, quantities, units, sequence directions and text representations in the prompt; label invented scenarios or data hypothetical. The scenario must matter to the solution. Explain each inference or calculation and the relevant tempting error. Do not copy assessment stems, require an absent diagram, predict exam content, or present practice as instructor-authored. Do not use hypothetical observations as empirical evidence or mark an application highYield merely because it is practice. If support is missing, use a gap block instead of inventing an answer.' },
+]
+
 export const STUDY_GUIDE_V1: ArtifactSpec = {
   specId: 'study-guide-v1',
   authorityDocument: 'premed-hq-documentation/specifications/generation/03-study-guide-v1.md',
@@ -54,6 +61,7 @@ export const STUDY_GUIDE_V1: ArtifactSpec = {
     + 'reads this guide and then re-reads the lecture should find the lecture easier to follow '
     + 'than they did the first time.',
   rules: [
+    ...CONNECTED_GUIDE_RULES,
     { id: 'SG-1', kind: 'tunable', text: 'Do not preserve bad source organization merely because it appeared in that order.' },
     { id: 'SG-2', kind: 'invariant', text: 'Do preserve sequencing when the sequence is pedagogically important.' },
     { id: 'SG-3', kind: 'tunable', text: 'Avoid paragraph walls.' },
