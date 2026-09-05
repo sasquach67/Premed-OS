@@ -165,7 +165,7 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
   const canSaveText = text.trim().length >= MIN_PASTED_EXCERPT_CHARACTERS
   const files = pendingFiles.map((item) => item.file)
   const canSave = pendingFiles.length > 0 || canSaveText
-  const condensePendingFiles = Boolean(folderSummary) || pendingFiles.length > 4
+  const condensePendingFiles = Boolean(folderSummary) || pendingFiles.length > 1
 
   useEffect(() => {
     pendingFilesRef.current = pendingFiles

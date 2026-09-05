@@ -284,6 +284,10 @@ function LectureBuildProgress({ phase }: { phase: 'guide' | 'mastery' | 'saving'
 }
 
 function MaterialsStep({ courseId, data, lecture, materials, readableChunks, onContinue }: { courseId: string; data: ClassCenterData; lecture: LectureRecord; materials: AcademicFile[]; readableChunks: SourceChunk[]; onContinue: () => void }) {
+  const [showMaterials, setShowMaterials] = useState(false)
+  const readableFileIds = new Set(readableChunks.map(chunk => chunk.fileId))
+  const readyCount = materials.filter(file => file.processingStatus === 'ready' && readableFileIds.has(file.id)).length
+  const compact = materials.length > 3
   return (
     <section aria-labelledby="lecture-materials-heading">
       <h3 id="lecture-materials-heading" className="font-display text-lg font-extrabold">
@@ -310,7 +314,15 @@ function MaterialsStep({ courseId, data, lecture, materials, readableChunks, onC
           </div>
           <Badge variant="outline">{materials.length} {materials.length === 1 ? 'material' : 'materials'}</Badge>
         </div>
-        {materials.length ? <div className="mt-2 space-y-2">{materials.map((file) => <LectureMaterialStatus key={file.id} file={file} chunks={data.sourceChunks.filter((chunk) => chunk.fileId === file.id && Boolean(chunk.content.trim()))} />)}</div> : <div className="mt-2 rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-5 text-sm font-semibold text-muted-foreground">Add at least one lecture material to continue.</div>}
+        {materials.length ? <div className="mt-2">
+          {compact && <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted px-3 py-2">
+            <p className="text-xs font-semibold" role="status">{readyCount} ready · {materials.length - readyCount} need attention</p>
+            <Button type="button" variant="ghost" size="sm" aria-expanded={showMaterials} onClick={() => setShowMaterials(value => !value)}>{showMaterials ? 'Hide file details' : `Review ${materials.length} files`}</Button>
+          </div>}
+          {(!compact || showMaterials) && <div role="region" aria-label="Attached lecture materials" tabIndex={0} className="mt-2 max-h-64 space-y-2 overflow-y-auto overscroll-contain rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            {materials.map(file => <LectureMaterialStatus key={file.id} file={file} chunks={data.sourceChunks.filter(chunk => chunk.fileId === file.id && Boolean(chunk.content.trim()))} />)}
+          </div>}
+        </div> : <div className="mt-2 rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-5 text-sm font-semibold text-muted-foreground">Add at least one lecture material to continue.</div>}
         <p className="mt-2 text-xs font-semibold text-muted-foreground">Transcript ready · {readableChunks.length} readable {readableChunks.length === 1 ? 'passage' : 'passages'} across this lecture.</p>
       </section>
 

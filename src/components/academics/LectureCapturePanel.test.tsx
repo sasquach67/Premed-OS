@@ -59,6 +59,25 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).not.toContain('CaptureReviewIndex')
   })
 
+  it('collapses a large attached batch without hiding its attention count or dropping sources', async () => {
+    const seed = structuredClone(createSeedData())
+    const courseId = seed.academics.classCenter.workspaces[0].courseId
+    seed.academics.classCenter.lectures.push({ id: 'batch-lecture', courseId, title: 'Lecture batch', inputPath: 'pasted', transcriptFileId: 'batch-transcript', processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds: ['batch-transcript'], createdAt: 1, updatedAt: 1, order: 0 })
+    seed.academics.classCenter.files.push(...Array.from({ length: 50 }, (_, index) => ({ id: `batch-${index}`, courseId, lectureId: 'batch-lecture', sourceType: 'upload' as const, title: `Screenshot ${index}`, mimeType: 'image/png', type: 'other' as const, linkedTopicIds: [], owner: 'mine' as const, processingStatus: 'pending' as const, createdAt: 1, updatedAt: 1, order: index })))
+    useStore.getState().replaceAll(seed)
+    await render(courseId, 'batch-lecture')
+    expect(container.textContent).toContain('0 ready · 50 need attention')
+    expect(container.querySelector('[aria-label="Attached lecture materials"]')).toBeNull()
+    const review = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Review 50 files')!
+    expect(review.getAttribute('aria-expanded')).toBe('false')
+    await act(async () => review.click())
+    const list = container.querySelector('[aria-label="Attached lecture materials"]')!
+    expect(list.className).toContain('max-h-64')
+    expect(list.className).toContain('overflow-y-auto')
+    expect(list.textContent).toContain('Screenshot 49')
+    expect(useStore.getState().academics.classCenter.files.filter(file => file.lectureId === 'batch-lecture')).toHaveLength(50)
+  })
+
   it('uses only materials added to this lecture, without a class-wide source picker', async () => {
     const seed = structuredClone(createSeedData())
     const courseId = seed.academics.classCenter.workspaces[0].courseId

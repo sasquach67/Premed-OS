@@ -102,6 +102,17 @@ describe('MaterialIntakeDialog clipboard intake', () => {
     expect(document.body.textContent).not.toContain('answer-key.zip')
   })
 
+  it('condenses even a small batch selected through ordinary file upload', async () => {
+    await openDialog()
+    const input = document.body.querySelector<HTMLInputElement>('input[type="file"]:not([webkitdirectory])')!
+    Object.defineProperty(input, 'files', { configurable: true, value: [new File(['a'], 'one.png', { type: 'image/png' }), new File(['b'], 'two.png', { type: 'image/png' })] })
+    await act(async () => input.dispatchEvent(new Event('change', { bubbles: true })))
+    expect(document.body.textContent).toContain('2 screenshots selected')
+    expect(document.body.querySelectorAll('[data-testid="pending-file-card"]')).toHaveLength(0)
+    const review = [...document.body.querySelectorAll('summary')].find(item => item.textContent?.includes('Review 2 files'))!
+    expect((review.parentElement as HTMLDetailsElement).open).toBe(false)
+  })
+
   it('keeps a screenshot-heavy folder condensed inside a bounded scroll region', async () => {
     await openDialog()
     const folderInput = document.body.querySelector<HTMLInputElement>('input[aria-label="Choose a material folder"]')!
