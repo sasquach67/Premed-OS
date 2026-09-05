@@ -36,6 +36,14 @@ describe('unit question bank contracts', () => {
     expect(validateMasteryOutline({ ...outline, standards: [{ ...outline.standards[0], sourceChunkIds: ['not-closed'] }] }, chunks)).toBeNull()
   })
 
+  it.each([
+    'Convert a DNA template sequence into the corresponding mRNA sequence on a blank page.',
+    'Translate a short mRNA sequence into amino acids and identify the start and stop signals from memory.',
+  ])('accepts the live generation recall action: %s', (cue) => {
+    const artifact = { ...outline, standards: [{ ...outline.standards[0], freeRecallCues: [...outline.standards[0].freeRecallCues, cue] }] }
+    expect(validateMasteryOutline(artifact, chunks)).toEqual(artifact)
+  })
+
   it('rejects a shallow outline or a generic application repeated across objectives', () => {
     expect(validateMasteryOutline({ ...outline, standards: [{ ...outline.standards[0], understand: ['Only one detail.'] }] }, chunks)).toBeNull()
     expect(validateMasteryOutline({ ...outline, standards: [{ ...outline.standards[0], freeRecallCues: undefined }] }, chunks)).toBeNull()
