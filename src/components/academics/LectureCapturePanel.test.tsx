@@ -124,6 +124,7 @@ describe('lecture import and workspace', () => {
     await act(async () => continueButton.click())
     expect(container.querySelector('[aria-label="Lecture build summary"]')).toBeTruthy()
     expect(container.textContent).toContain('Ready to build')
+    expect(container.querySelector('[aria-label="Lecture import 67% complete"]')).toBeTruthy()
     expect(container.querySelector('[aria-label="Lecture build summary"] h4')?.textContent).toBe('Lecture 1 · Conditioning')
     expect(container.textContent).toContain('2 sources')
     expect(container.textContent).toContain('2 readable passages')
@@ -245,6 +246,10 @@ describe('lecture import and workspace', () => {
     expect(saved.workspaceState).toBe('draft')
     expect(saved.studyGuide).toBeUndefined()
     expect(container.textContent).toContain('Nothing was saved')
+    const buildAlert = container.querySelector('section[role="alert"]')
+    expect(buildAlert?.textContent).toContain('Mastery Map needs attention')
+    expect(buildAlert?.textContent).toContain('The mastery outline was invalid')
+    expect(buildAlert?.textContent).toContain('You do not need to import them again')
   })
 
   it('requires one supporting material before continuing to the build preview', async () => {

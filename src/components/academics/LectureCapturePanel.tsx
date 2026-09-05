@@ -109,6 +109,7 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
   const [pendingExtraction, setPendingExtraction] = useState<ExtractedDocument | null>(null)
   const [reading, setReading] = useState(false)
   const [building, setBuilding] = useState(false)
+  const [buildError, setBuildError] = useState<{ stage: string; message: string } | null>(null)
   const [buildPhase, setBuildPhase] = useState<'idle' | 'guide' | 'mastery' | 'saving'>('idle')
   const input = useRef<HTMLInputElement>(null)
   const lectureFiles = data.files.filter((file) => file.lectureId === lecture?.id)
@@ -174,16 +175,19 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
     const chunksForGeneration = generationChunks
     const questionReferenceChunkIds = generationQuestionReferenceChunkIds
     setBuilding(true)
+    setBuildError(null)
     setBuildPhase('guide')
     try {
       const guide = await generateStudyGuide({ courseId, chunks: chunksForGeneration, label: lecture.title, practiceQuestionChunkIds: questionReferenceChunkIds })
       if (!guide.ok || !guide.artifact) {
+        setBuildError({ stage: 'Study Guide', message: guide.message ?? 'The lecture guide could not be generated.' })
         toast({ title: 'Nothing was saved', description: guide.message ?? 'The lecture guide could not be generated.', tone: 'error' })
         return
       }
       setBuildPhase('mastery')
       const mastery = await generateUnitMasteryOutline({ courseId, chunks: chunksForGeneration, unit: lecture.title, label: lecture.title, scope: 'lecture', practiceQuestionChunkIds: questionReferenceChunkIds })
       if (!mastery.ok || !mastery.artifact) {
+        setBuildError({ stage: 'Mastery Map', message: mastery.message ?? 'The lecture Mastery Map could not be generated.' })
         toast({ title: 'Nothing was saved', description: mastery.message ?? 'The lecture Mastery Map could not be generated.', tone: 'error' })
         return
       }
@@ -225,6 +229,7 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
       onBuilt()
       toast({ title: 'Lecture study page built', description: 'The combined Study Guide and Mastery Map passed the source-trace checks before either one was saved.' })
     } catch {
+      setBuildError({ stage: 'Lecture build', message: 'Generation stopped unexpectedly. Your transcript and lecture materials are still here.' })
       toast({ title: 'Nothing was saved', description: 'Lecture generation stopped unexpectedly. Your transcript and lecture materials are still here.', tone: 'error' })
     } finally {
       setBuilding(false)
@@ -232,7 +237,7 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
     }
   }
 
-  const progressPercent = Math.round((step / 3) * 100)
+  const progressPercent = Math.round(((step - 1) / 3) * 100)
   const stepLabels = ['Transcript', 'Materials', 'Build'] as const
 
   return <Card className="overflow-hidden border-border bg-card shadow-[0_18px_48px_-28px_rgba(0,0,0,.72)]"><CardContent className="p-0">
@@ -250,6 +255,7 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
       </div>
     </header>
     <div className="mx-auto max-w-5xl p-4 sm:p-6">
+      {step === 3 && buildError && <section role="alert" className="mb-4 rounded-xl border border-destructive/40 bg-destructive/5 p-4"><h3 className="font-display text-base font-extrabold">{buildError.stage} needs attention</h3><p className="mt-2 break-words text-sm leading-6">{buildError.message}</p><p className="mt-2 text-xs font-semibold text-muted-foreground">Your uploaded sources are still attached. You do not need to import them again.</p></section>}
       {step === 1 && <section aria-labelledby="lecture-source-heading"><h3 id="lecture-source-heading" className="font-display text-lg font-extrabold">Add the transcript</h3><p className="mt-1 text-sm font-semibold text-muted-foreground">Paste it below or upload a text, PDF, DOCX, or image.</p><div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]"><div className="space-y-4"><label className="block text-sm font-extrabold">Lecture title<Input className="mt-1.5" value={title} onChange={(event) => { setTitle(event.target.value); setTitleEdited(true) }} placeholder="Lecture 1 · Origins of Psychology" /></label><div className="block max-w-56 text-sm font-extrabold"><span>Lecture date</span><DateField ariaLabel="Lecture date" className="mt-1.5 min-h-9 rounded-md border-input bg-background px-3 py-1 font-extrabold" value={occurredOn} onChange={setOccurredOn} /></div><label className="block text-sm font-extrabold">Transcript<Textarea className="mt-1.5 min-h-52" value={sourceText} onChange={(event) => { setSourceText(event.target.value); setPendingFile(null); setPendingExtraction(null) }} placeholder={'Paste the transcript here…\n\nTimestamps are welcome but not required.'} /></label></div><aside className="rounded-2xl border border-border bg-muted/25 p-4"><FileUp className="size-5 text-primary" /><p className="mt-2 font-display text-sm font-extrabold">Upload transcript</p><p className="mt-1 text-xs font-semibold text-muted-foreground">Files stay on this device while text is read.</p><Button className="mt-4 w-full" variant="outline" disabled={reading} onClick={() => input.current?.click()}>{reading ? 'Reading on device…' : 'Choose file'}</Button><input ref={input} type="file" className="sr-only" accept=".pdf,.docx,.txt,.md,image/*,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void chooseTranscript(file); event.currentTarget.value = '' }} />{pendingFile && <div className="mt-3 rounded-xl border border-border bg-card p-3"><p className="truncate text-sm font-extrabold">{pendingFile.name}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{fileExtension({ fileName: pendingFile.name, title: pendingFile.name, mimeType: pendingFile.type, sourceType: 'upload' })} · {pendingExtraction?.pageCount ? `${pendingExtraction.pageCount} pages` : `${sourceText.length.toLocaleString()} characters`}{pendingExtraction?.ocrPageCount ? ` · ${pendingExtraction.ocrPageCount} OCR recovered` : ''}</p></div>}<TranscriptSourceHelp /></aside></div><div className="mt-5 flex justify-end"><Button onClick={() => void saveSource()} disabled={!sourceText.trim() || !title.trim() || !occurredOn}><FileCheck2 className="size-4" /> Continue to materials</Button></div></section>}
       {step === 2 && lecture && <MaterialsStep courseId={courseId} data={data} lecture={lecture} materials={supportingMaterials} readableChunks={readableChunks} onContinue={goToPreview} />}
       {step === 3 && lecture && <section aria-labelledby="lecture-build-heading"><h3 id="lecture-build-heading" className="font-display text-lg font-extrabold">Ready to build</h3><p className="mt-1 text-sm font-semibold text-muted-foreground">Check the source receipt, then create both study tools.</p><LectureBuildSummary title={lectureDisplayTitle(lectureNumber, lecture.title, lecture.aiTitle)} sourceCount={lectureSources.length} materialCount={supportingMaterials.length} readableCount={readableChunks.length} generationCount={generationChunks.length} />{building && buildPhase !== 'idle' && <LectureBuildProgress phase={buildPhase} />}<details data-testid="lecture-ai-details" className="group/details mt-4 rounded-xl border border-border bg-muted/20"><summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-details-marker]:hidden"><span>What gets sent to AI</span><ChevronDown className="size-4 text-muted-foreground transition-transform group-open/details:rotate-180" aria-hidden="true" /></summary><p className="border-t border-border px-4 py-3 text-xs font-semibold leading-5 text-muted-foreground">Only the readable passages prepared for this build are copied to your private server workspace. Original file bytes stay local, figures are not sent, and nothing partial is saved if either study tool fails.</p></details><div className="mt-5 flex items-center justify-between gap-3"><Button variant="outline" onClick={() => onStep(2)} disabled={building}>Back to materials</Button><Button onClick={() => void buildWorkspace()} disabled={building}><Sparkles className="size-4" /> {building ? 'Building…' : 'Build Guide + Mastery'}</Button></div></section>}
