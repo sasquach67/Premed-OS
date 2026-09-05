@@ -355,9 +355,9 @@ function Overview({ course, workspace, data, assignments, onTab }: {
     </section>
     <div className="overview-approved-columns">
       <section className="lecture-journal" aria-labelledby="lecture-ledger-title">
-        <div className="lecture-journal-heading"><div><h2 id="lecture-ledger-title">Class journal</h2></div></div>
-        <Button variant="outline" className="overview-entry-tile" onClick={startEntry}><Plus aria-hidden="true"/><span><strong>Add to journal</strong></span><ArrowRight aria-hidden="true"/></Button>
-        {lectures.length ? <Accordion type="single" collapsible value={selectedLectureId ?? ''} onValueChange={(value) => selectLecture(value || undefined)} className="lecture-journal-list" aria-label="Lecture history">
+        <div className="lecture-journal-heading"><div><h2 id="lecture-ledger-title">Class notebook</h2></div></div>
+        <Button variant="outline" className="overview-entry-tile" onClick={startEntry}><Plus aria-hidden="true"/><span><strong>Add to notebook</strong></span><ArrowRight aria-hidden="true"/></Button>
+        {lectures.length ? <Accordion type="single" collapsible value={selectedLectureId ?? ''} onValueChange={(value) => selectLecture(value || undefined)} className="lecture-journal-list" aria-label="Notebook entries">
           {[...chronologicalLectures].reverse().map((lecture) => {
             const isActive = activeLecture?.id === lecture.id
             return <AccordionItem key={lecture.id} value={lecture.id} className="lecture-journal-item">
@@ -367,15 +367,15 @@ function Overview({ course, workspace, data, assignments, onTab }: {
                 </AccordionTrigger>
               </LectureRecordMenu>
               <AccordionContent className="lecture-journal-detail">
-                <div className="lecture-saved-actions"><span className="text-sm font-bold text-muted-foreground">Study preview</span><Button size="default" variant="default" onClick={() => openLecture(lecture.id)}>{lecture.workspaceState === 'complete' ? <><Maximize2 className="size-4" /> Full Screen</> : 'Continue entry'}</Button></div>
+                <div className="lecture-saved-actions"><span className="text-sm font-bold text-muted-foreground">Notebook preview</span><Button size="default" variant="default" onClick={() => openLecture(lecture.id)}>{lecture.workspaceState === 'complete' ? <><Maximize2 className="size-4" /> Full Screen</> : 'Continue entry'}</Button></div>
                 {lecture.workspaceState === 'complete' ? <div className="lecture-journal-workspace"><LectureCapturePanel key={lecture.id} courseId={course.id} course={course} data={data} initialLectureId={lecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={() => onTab('guide')} /></div> : <LecturePreview lecture={lecture} sourceCount={isActive ? activeLectureSources.length : 0} />}
               </AccordionContent>
             </AccordionItem>
           })}
-        </Accordion> : <p className="lecture-journal-empty">Create a study guide or prepare for an exam with your class materials. A transcript is optional.</p>}
+        </Accordion> : <p className="lecture-journal-empty">Bring your class materials and tell us what would help. No transcript required.</p>}
       </section>
       <aside className="overview-side" aria-label="Class overview highlights">
-        <Card className="overview-side-card overview-reading"><CardHeader><CardTitle><BookOpen aria-hidden="true"/>Continue studying</CardTitle></CardHeader><CardContent>{resumeLecture ? <><h3>{completedLectureTitle(lectureNumber(resumeLecture.id), resumeLecture)}</h3><p>{resumeLecture.studyIntent?.purpose === 'exam-prep' ? 'Exam preparation' : 'Study guide'}</p><Button variant="outline" onClick={() => { selectLecture(resumeLecture.id); requestAnimationFrame(() => document.getElementById('lecture-ledger-title')?.scrollIntoView({behavior:preferredScrollBehavior(), block:'start'})) }}>Continue reading <ArrowRight aria-hidden="true"/></Button></> : <p>Your first study guide will appear here once it is ready.</p>}</CardContent></Card>
+        <Card className="overview-side-card overview-reading"><CardHeader><CardTitle><BookOpen aria-hidden="true"/>Continue studying</CardTitle></CardHeader><CardContent>{resumeLecture ? <><h3>{completedLectureTitle(lectureNumber(resumeLecture.id), resumeLecture)}</h3><p>{resumeLecture.notebookOutput === 'tailored-page' ? 'Notebook page' : resumeLecture.studyIntent?.purpose === 'exam-prep' ? 'Exam preparation' : 'Study guide'}</p><Button variant="outline" onClick={() => { selectLecture(resumeLecture.id); requestAnimationFrame(() => document.getElementById('lecture-ledger-title')?.scrollIntoView({behavior:preferredScrollBehavior(), block:'start'})) }}>Continue reading <ArrowRight aria-hidden="true"/></Button></> : <p>Your first notebook page will appear here once it is ready.</p>}</CardContent></Card>
         <Card className="overview-side-card"><CardHeader><CardTitle><CalendarDays aria-hidden="true"/>This week</CardTitle></CardHeader><CardContent>{weekItems.length ? <ul className="overview-week">{weekItems.map(item => <li key={item.id}><time dateTime={item.dueDate}>{new Date(`${item.dueDate!.slice(0,10)}T12:00:00`).toLocaleDateString(undefined,{weekday:'short'})}</time><div><b>{item.title}</b><small>{assignmentDateLabel(item)}</small></div></li>)}</ul> : <p>No dated work due in the next seven days.</p>}<Button variant="link" onClick={() => onTab('assignments')}>View class work <ArrowRight aria-hidden="true"/></Button></CardContent></Card>
         <Card className="overview-side-card overview-feedback"><CardHeader><CardTitle><MessageSquare aria-hidden="true"/>Recent feedback</CardTitle></CardHeader><CardContent>{feedback ? <><b>{feedbackAssignment?.title ?? feedback.theme}</b><p>Saved feedback · {fmtEventDate(new Date(feedback.updatedAt).toISOString().slice(0,10))}</p><blockquote>{feedback.quote || feedback.theme}</blockquote><>{feedbackAssignment && <Button variant="link" onClick={() => navigate(`/academics/classes/${encodeURIComponent(course.id)}?classTab=assignments&assignment=${encodeURIComponent(feedbackAssignment.id)}`)}>Open returned work <ArrowRight aria-hidden="true"/></Button>}</></> : <p>No feedback saved yet. Returned-work notes will appear here.</p>}</CardContent></Card>
       </aside>

@@ -110,7 +110,7 @@ export function conciseStudyGuideTitle(artifact: Pick<StudyGuideArtifact, 'secti
   return words.length > 56 ? `${words.slice(0, 55).trimEnd()}…` : words
 }
 
-export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [], primarySourceChunkIds = [], studyIntent }: {
+export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [], primarySourceChunkIds = [], studyIntent, notebookRequest }: {
   courseId: string
   topicId?: string
   chunks: SourceChunk[]
@@ -122,6 +122,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
   practiceQuestionChunkIds?: readonly string[]
   primarySourceChunkIds?: readonly string[]
   studyIntent?: JournalStudyIntent
+  notebookRequest?: string
 }): Promise<GenerateOutcome> {
   const sources = chunks
   if (!sources.length) {
@@ -153,18 +154,23 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
     return { ok: false, failure: 'provider-unavailable', message: prepared.message ?? 'Source material could not be prepared.' }
   }
   const preparedIds = new Set(prepared.chunkIds)
-  const sourcePriority = lectureSourcePriorityInstruction(primarySourceChunkIds.filter((id) => preparedIds.has(id)))
-  const journalInstruction = journalStudyInstruction(studyIntent, sources.filter(chunk => preparedIds.has(chunk.id)))
+  const customRequest = notebookRequest?.trim()
+  const sourcePriority = customRequest ? '' : lectureSourcePriorityInstruction(primarySourceChunkIds.filter((id) => preparedIds.has(id)))
+  const journalInstruction = customRequest ? '' : journalStudyInstruction(studyIntent, sources.filter(chunk => preparedIds.has(chunk.id)))
   const questionReferenceIds = [...new Set(practiceQuestionChunkIds.filter((id) => preparedIds.has(id)))]
 
+  const notebookInstruction = customRequest ? `Student request (task and format preferences, not factual evidence): ${JSON.stringify(customRequest.slice(0, 4000))}. Create one complete notebook page meeting this request from the selected sources. Mark missing evidence explicitly.` : ''
+  const specId = customRequest ? 'notebook-entry-v1' : 'study-guide-v1'
   const syncedAssembly = assembleGenerationRequest({
-    specId: 'study-guide-v1',
+    specId,
     chunkIds: prepared.chunkIds,
     request: [
       sourcePriority,
       journalInstruction,
+      ...(customRequest ? [notebookInstruction] : [
       `Topic: ${label}. Action: generate one canonical study guide from the attached sources. Begin with AT A GLANCE, then preserve the full source-supported teaching depth in the detailed sections without repeating the opening.`,
       'AI lecture naming: include a section with id "title" and title "TITLE", containing one cited text block with a concise 3–6 word title describing the central topic across the lecture. Do not echo the upload filename, lesson number, auto-generated transcript label, or "Study Guide". This title becomes the completed lecture name. Keep AT A GLANCE as the opening teaching section after this title metadata.',
+      ]),
       courseLensInstruction(courseLens),
       questionReferenceIds.length
         ? `Reference-question chunk IDs: ${questionReferenceIds.join(', ')}. Use their source-supported scenarios, representations, and reasoning moves as teaching examples where they clarify a concept. Explain the lesson without copying stems or answer choices, and never treat a distractor as fact.`
@@ -183,10 +189,10 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
     request: [
       sourcePriority,
       journalInstruction,
-      ...CONNECTED_GUIDE_RULES.map((rule) => rule.text),
+      ...(customRequest ? [] : CONNECTED_GUIDE_RULES.map((rule) => rule.text)),
 
       `Topic: ${label}.`,
-      'Return one complete Study Guide: AT A GLANCE is its opening layer, not a separate brief and not a substitute for the full explanation.',
+      customRequest ? notebookInstruction : 'Return one complete Study Guide: AT A GLANCE is its opening layer, not a separate brief and not a substitute for the full explanation.',
       courseLens ? 'Apply the supplied Course lens only within its selected evidence trace.' : '',
       questionReferenceIds.length ? 'Use the marked question passages as source-backed explanatory examples, without copying their assessment wording.' : '',
     ].filter(Boolean).join(' '),
@@ -218,7 +224,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
   // Stable identity belongs to the runtime, not the model. Stamp the exact
   // assembled values after the server has closed the artifact's citations.
   const artifact: StudyGuideArtifact = {
-    specId: 'study-guide-v1',
+    specId,
     specHash: syncedAssembly.specHash,
     courseId,
     topicId: prepared.scopeId,

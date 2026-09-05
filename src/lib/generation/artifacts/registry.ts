@@ -7,6 +7,7 @@
  * would let the assembler produce a prompt for an artifact nothing can
  * generate.
  */
+import { NOTEBOOK_ENTRY_V1 } from './notebookEntry.v1'
 import { GAP_CHECK_V1 } from '@/lib/generation/artifacts/gapCheck.v1'
 import { STUDY_GUIDE_V1 } from '@/lib/generation/artifacts/studyGuide.v1'
 import { FLASHCARDS_V1 } from '@/lib/generation/artifacts/flashcards.v1'
@@ -18,6 +19,7 @@ import { UNIT_QUESTION_BANK_V1 } from '@/lib/generation/artifacts/unitQuestionBa
 import type { ArtifactSpec } from '@/lib/generation/types'
 
 export const ARTIFACT_REGISTRY: Record<string, ArtifactSpec> = {
+  [NOTEBOOK_ENTRY_V1.specId]: NOTEBOOK_ENTRY_V1,
   [GAP_CHECK_V1.specId]: GAP_CHECK_V1,
   [STUDY_GUIDE_V1.specId]: STUDY_GUIDE_V1,
   [FLASHCARDS_V1.specId]: FLASHCARDS_V1,

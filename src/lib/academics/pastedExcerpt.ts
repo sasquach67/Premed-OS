@@ -11,6 +11,7 @@ export const MIN_PASTED_EXCERPT_CHARACTERS = 120
 
 export interface PastedExcerptInput {
   courseId: string
+  minimumCharacters?: number
   lectureId?: string
   linkedTopicIds?: string[]
   text: string
@@ -33,7 +34,7 @@ export interface PastedExcerptImport {
  */
 export function buildPastedExcerpt(input: PastedExcerptInput): PastedExcerptImport | undefined {
   const text = input.text.trim()
-  if (text.length < MIN_PASTED_EXCERPT_CHARACTERS) return undefined
+  if (text.length < Math.max(1, input.minimumCharacters ?? MIN_PASTED_EXCERPT_CHARACTERS)) return undefined
 
   const now = input.now ?? Date.now()
   const fileId = uid()

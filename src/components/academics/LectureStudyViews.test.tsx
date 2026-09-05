@@ -3,7 +3,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AcademicFile, GeneratedMasteryOutline, LectureRecord, SourceChunk } from '@/lib/types'
 import { createInitialDataForMode, useStore } from '@/store/store'
-import { MasteryMapView } from './LectureStudyViews'
+import { MasteryMapView, NotebookPageView } from './LectureStudyViews'
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
@@ -83,6 +83,21 @@ describe('lecture mastery study view', () => {
   function render(viewOutline: GeneratedMasteryOutline = outline) {
     return act(async () => root.render(<MasteryMapView outline={viewOutline} chunks={chunks} lecture={lecture} />))
   }
+
+  it('renders a tailored page with the generated request and source evidence without lecture study controls', async () => {
+    await act(async () => root.render(<NotebookPageView standalone lecture={{ ...lecture, notebookRequest: 'New draft request', notebookGeneratedRequest: 'Compare the readings', notebookOutput: 'tailored-page' }} guide={{ specId: 'notebook-entry-v1', specHash: 'sample', courseId, topicId: '', sections: [
+      { id: 'title', title: 'TITLE', blocks: [{ id: 'title-block', type: 'prose', provenance: 'source', text: { content: 'A comparison' } }] },
+      { id: 'comparison', title: 'How the explanations connect', blocks: [{ id: 'evidence', type: 'prose', provenance: 'source', text: { content: 'A source-grounded comparison.' }, sourceRef: { chunkId: 'source-1', fileId: textbook.id, start: 0, end: 15 } }] },
+    ] }} chunks={chunks} files={[textbook]} />))
+    expect(container.textContent).toContain('How the explanations connect')
+    expect(container.textContent).toContain('Compare the readings')
+    expect(container.textContent).not.toContain('New draft request')
+    expect(container.textContent).not.toContain('TITLE')
+    expect(container.textContent).not.toContain('Learn the map')
+    expect(container.querySelector('[data-reader-page]')).toBeNull()
+    expect(container.querySelector('[data-notebook-page]')).not.toBeNull()
+    expect(container.querySelector('[data-source-chunk-id="source-1"]')?.textContent).toContain(sourceText)
+  })
 
   it('shows the full objective outline first while keeping generated answers hidden and sources exact', async () => {
     await render()

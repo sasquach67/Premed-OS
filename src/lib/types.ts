@@ -723,6 +723,11 @@ export interface LectureRecord {
   /** A provider-generated descriptive title, kept separate from chronology. */
   aiTitle?: string
   studyIntent?: JournalStudyIntent
+  /** Materials-first composer request; an empty string explicitly chooses the default study package. */
+  notebookRequest?: string
+  /** Output of the last successful build, kept separate from an edited draft request. */
+  notebookOutput?: 'study-package' | 'tailored-page'
+  notebookGeneratedRequest?: string
   inputPath: LectureInputPath
   /** Present only for a locally retained recording or audio upload. */
   audioBlobRef?: string

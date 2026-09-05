@@ -32,3 +32,17 @@ it('sends exam intent, the review-sheet anchor, and student focus through the ac
   expect(call[2].request).toContain('Compare authors.')
   expect(call[2].chunkIds).toEqual(['review-chunk', 'reading-chunk'])
 })
+
+it('uses a distinct flexible briefing for a specific notebook request without forced study-guide sections', async () => {
+  await generateStudyGuide({ courseId: 'course', label: 'Paper outline', chunks, notebookRequest: 'Help outline a comparison of these authors.' })
+  const request = vi.mocked(generateWithSourceRecovery).mock.calls.at(-1)![2]
+  expect(request.specId).toBe('notebook-entry-v1')
+  expect(request.request).toContain('Help outline a comparison of these authors.')
+  expect(request.systemPrompt).toContain('NB-TASK')
+  expect(request.systemPrompt).not.toContain('SG-AT-A-GLANCE')
+  expect(request.request).not.toContain('Return one complete Study Guide:')
+  expect(request.request).not.toContain('Generated exam application')
+  expect(request.request).not.toContain('No instructor evidence')
+  expect(request.request).not.toContain('For each major concept')
+  expect(request.chunkIds).toEqual(['review-chunk', 'reading-chunk'])
+})

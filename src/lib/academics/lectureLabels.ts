@@ -2,10 +2,10 @@ import type { LectureRecord } from '@/lib/types'
 import { conciseStudyGuideTitle } from './generateStudyGuide'
 
 /** Also upgrades the display of saved guides that predate AI title storage. */
-export function completedLectureTitle(position: number, lecture: Pick<LectureRecord, 'title' | 'aiTitle' | 'studyGuide' | 'studyIntent'>) {
-  if (lecture.studyIntent) {
+export function completedLectureTitle(position: number, lecture: Pick<LectureRecord, 'title' | 'aiTitle' | 'studyGuide' | 'studyIntent' | 'notebookRequest'>) {
+  if (lecture.studyIntent || lecture.notebookRequest !== undefined) {
     const suggested = lecture.aiTitle || (lecture.studyGuide && conciseStudyGuideTitle(lecture.studyGuide))
-    return /^(?:Study session \d+|Exam preparation)$/i.test(lecture.title.trim())
+    return /^(?:Study session \d+|Notebook entry \d+|Exam preparation)$/i.test(lecture.title.trim())
       ? suggested || lecture.title
       : lecture.title.trim() || suggested || 'Study entry'
   }

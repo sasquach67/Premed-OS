@@ -139,7 +139,7 @@ describe('MaterialIntakeDialog clipboard intake', () => {
       draft.academics.classCenter.lectures.push({ id: 'lecture-1', courseId: 'course-1', title: 'Lecture 1', inputPath: 'pasted', transcriptFileId: 'transcript-1', processingState: 'ready', workspaceState: 'draft', selectedSourceFileIds: ['transcript-1'], createdAt: 1, updatedAt: 1, order: 0 })
     })
     await openDialog('lecture-1')
-    const textarea = document.body.querySelector<HTMLTextAreaElement>('textarea[placeholder^="Paste the specific textbook passage"]')!
+    const textarea = document.body.querySelector<HTMLTextAreaElement>('textarea[placeholder^="Paste a transcript, reading, problem"]')!
     const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set
     await act(async () => {
       setValue?.call(textarea, 'This textbook excerpt explains how a conditioned stimulus predicts a biologically meaningful outcome through repeated pairings.')

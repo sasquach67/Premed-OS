@@ -108,3 +108,15 @@ export function GeneratedLectureGuideView({ lecture, guide, brief, chunks, files
   </div>
 }
 export { MasteryMapView } from './MasteryLearningModes'
+
+/** Uses the shared cited block renderer without imposing a lecture/recall structure. */
+export function NotebookPageView({ lecture, guide, chunks, files, standalone = false }: {
+  lecture: LectureRecord; guide: StudyGuideArtifact; chunks: SourceChunk[]; files: AcademicFile[]; standalone?: boolean
+}) {
+  const prefix = useId()
+  const sections = guide.sections.filter(section => section.id.toLowerCase() !== 'title')
+  return <article className="lecture-study-guide notebook-page mx-auto w-full max-w-4xl" data-notebook-page={standalone || undefined}>
+    <header className="border-b border-border pb-5"><p className="flex items-center gap-2 text-sm font-bold text-primary"><BookOpen className="size-4"/>Notebook page</p><h2 className="mt-2 font-display text-2xl font-extrabold">{lecture.aiTitle || lecture.title}</h2><details className="mt-3 text-sm text-muted-foreground"><summary className="cursor-pointer py-2 focus-visible:ring-2 focus-visible:ring-ring">Your request</summary><p className="whitespace-pre-wrap break-words leading-6">{lecture.notebookGeneratedRequest ?? lecture.notebookRequest}</p></details></header>
+    {sections.map(section => <section key={section.id} aria-labelledby={`${prefix}-${section.id}`} className="border-b border-border py-6 last:border-0"><h3 id={`${prefix}-${section.id}`} className="font-display text-xl font-extrabold">{section.title}</h3><div className="mt-4 space-y-5">{section.blocks.map(block => <GuideBlock key={block.id} block={block}/>)}</div><SourceDetails ids={section.blocks.flatMap(block => block.sourceRef ? [block.sourceRef.chunkId] : [])} chunks={chunks} files={files}/></section>)}
+  </article>
+}

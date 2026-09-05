@@ -368,7 +368,7 @@ describe('ClassHub approved Overview', () => {
       )
     })
 
-    expect(container.textContent).toContain('Class journal')
+    expect(container.textContent).toContain('Class notebook')
     expect(container.textContent).not.toContain('Create a study entry page')
     expect(container.querySelector('.lecture-journal-list')).toBeTruthy()
     expect(container.querySelector('.lecture-overview-composition')).toBeNull()
@@ -403,8 +403,8 @@ describe('ClassHub approved Overview', () => {
       .find((button) => button.classList.contains('overview-entry-tile'))
     expect(addToday).toBeTruthy()
     await act(async () => addToday!.click())
-    expect(document.body.textContent).toContain('Create a study entry')
-    expect(document.body.textContent).toContain('Add a transcript')
+    expect(document.body.textContent).toContain('Start with your materials')
+    expect(document.body.textContent).toContain('Upload or paste')
 
   })
 
@@ -592,12 +592,12 @@ describe('ClassHub approved Overview', () => {
       )
     })
 
-    expect(container.textContent).toContain('Class journal')
-    expect(container.textContent).toContain('Create a study guide or prepare for an exam')
+    expect(container.textContent).toContain('Class notebook')
+    expect(container.textContent).toContain('Bring your class materials')
     expect(container.querySelector('.lecture-overview-composition')).toBeNull()
     const addLecture = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.classList.contains('overview-entry-tile'))!
     await act(async () => addLecture.click())
-    expect(document.body.textContent).toContain('Add a transcript')
+    expect(document.body.textContent).toContain('Upload or paste')
 
   })
 
@@ -816,7 +816,7 @@ describe('ClassHub approved Overview', () => {
     expect(container.textContent).toContain('Nothing outside this selection is used.')
   })
 
-  it('opens Add to journal from the lecture-capture deep link', async () => {
+  it('opens Add to notebook from the lecture-capture deep link', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -832,7 +832,7 @@ describe('ClassHub approved Overview', () => {
       )
     })
 
-    expect(document.body.textContent).toContain('Create a study entry')
+    expect(document.body.textContent).toContain('Start with your materials')
     expect(document.body.textContent).toContain('Transcript')
     expect(document.body.textContent).toContain('Materials')
 

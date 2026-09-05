@@ -142,12 +142,14 @@ function PendingFileBatch({ items, folderName, onRemove }: {
 }
 
 /** One local intake surface for files, clipboard screenshots, and exact pasted text. */
-export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [], trigger, initialOpen = false }: {
+export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [], trigger, initialOpen = false, onAdded, minimumTextCharacters = MIN_PASTED_EXCERPT_CHARACTERS }: {
   courseId: string
   lectureId?: string
   linkedTopicIds?: string[]
   trigger: ReactElement
   initialOpen?: boolean
+  minimumTextCharacters?: number
+  onAdded?: (fileIds: string[]) => void
 }) {
   const toast = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -162,7 +164,7 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
   const [folderSummary, setFolderSummary] = useState<{ name: string; accepted: number; unsupported: number; overLimit: number } | null>(null)
   const [saving, setSaving] = useState(false)
   const [readingProgress, setReadingProgress] = useState<{ current: number; total: number; message: string; progress: number } | null>(null)
-  const canSaveText = text.trim().length >= MIN_PASTED_EXCERPT_CHARACTERS
+  const canSaveText = text.trim().length >= Math.max(1, minimumTextCharacters)
   const files = pendingFiles.map((item) => item.file)
   const canSave = pendingFiles.length > 0 || canSaveText
   const condensePendingFiles = Boolean(folderSummary) || pendingFiles.length > 1
@@ -261,6 +263,7 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
       }
     }
     const excerpt = canSaveText ? buildPastedExcerpt({
+      minimumCharacters: minimumTextCharacters,
       courseId, lectureId, linkedTopicIds, text, title, sourceLabel, sectionLabel,
       order: center.files.filter((file) => file.courseId === courseId).length + retained.length,
     }) : undefined
@@ -274,7 +277,8 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
           : []) ?? []
         const segments = pageSegments.length ? pageSegments : parsed?.segments ?? []
         const lowerName = file.name.toLocaleLowerCase()
-        const materialType = /slide|deck/.test(lowerName) ? 'lecture-slides' as const
+        const materialType = /transcript|caption/.test(lowerName) ? 'transcript' as const
+          : /slide|deck/.test(lowerName) ? 'lecture-slides' as const
           : /lab/.test(lowerName) ? 'lab-handout' as const
             : /read|chapter|textbook/.test(lowerName) ? 'reading' as const
               : 'other' as const
@@ -305,6 +309,7 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
         })))
       })
       if (excerpt) {
+        if (/transcript|caption/i.test(`${title} ${sourceLabel}`)) excerpt.file.type = 'transcript'
         records.unshift(excerpt.file)
         draft.academics.classCenter.sourceChunks.push(...excerpt.chunks)
       }
@@ -321,12 +326,13 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
         }
       }
     })
+    onAdded?.([...retained.map(item => item.id), ...(excerpt ? [excerpt.file.id] : [])])
     const count = retained.length + (excerpt ? 1 : 0)
     const unreadable = retained.filter((item) => !item.extracted?.text.trim()).length
     const recovered = retained.reduce((total, item) => total + (item.extracted?.ocrPageCount ?? 0), 0)
     toast({ title: count === 1 ? 'Material added' : `${count} materials added`, description: unreadable
       ? `${unreadable} ${unreadable === 1 ? 'file needs' : 'files need'} a clearer copy or pasted text.${recovered ? ` ${recovered} scanned ${recovered === 1 ? 'page was' : 'pages were'} recovered on this device.` : ''}`
-      : `${lectureId ? 'Saved with this lecture' : 'Saved in Materials'} and indexed on this device.${recovered ? ` ${recovered} scanned ${recovered === 1 ? 'page was' : 'pages were'} recovered with on-device OCR.` : ''} Figures were not interpreted.` })
+      : `${lectureId ? 'Saved with this entry' : 'Saved in Materials'} and indexed on this device.${recovered ? ` ${recovered} scanned ${recovered === 1 ? 'page was' : 'pages were'} recovered with on-device OCR.` : ''} Figures were not interpreted.` })
     setOpen(false); clearPendingFiles(); setFolderSummary(null); setTitle(''); setSourceLabel(''); setSectionLabel(''); setText('')
     } finally {
       setSaving(false)
@@ -337,7 +343,7 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
   return <Dialog open={open} onOpenChange={(next) => { if (!saving) setOpen(next) }}>
     <DialogTrigger asChild>{trigger}</DialogTrigger>
     <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-xl grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden bg-card p-0">
-      <DialogHeader className="px-6 pb-4 pr-12 pt-6"><DialogTitle>Add material</DialogTitle><DialogDescription>{lectureId ? 'Anything added here becomes a source for this lecture. ' : ''}Choose files or a folder, paste a screenshot, or paste textbook text. Text and scanned pages are read on this device. File bytes stay local; only readable source text is copied to your private server workspace after disclosure when you request an AI output.</DialogDescription></DialogHeader>
+      <DialogHeader className="px-6 pb-4 pr-12 pt-6"><DialogTitle>Add material</DialogTitle><DialogDescription>{lectureId ? 'Anything added here becomes a source for this notebook entry. ' : ''}Choose files or a folder, paste a screenshot, or paste text—including a transcript. Text and scanned pages are read on this device. File bytes stay local; only readable source text is copied to your private server workspace after disclosure when you request an AI output.</DialogDescription></DialogHeader>
       <div data-testid="material-intake-scroll-region" className="min-h-0 overflow-y-auto overscroll-contain px-6 pb-5">
       <div className="grid gap-4">
         <input ref={inputRef} type="file" multiple accept={MATERIAL_FILE_ACCEPT} aria-label="Choose material files" className="sr-only" onChange={(event) => { addFiles(event.target.files ?? [], 'upload'); event.currentTarget.value = '' }} />
@@ -351,7 +357,7 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
         {pendingFiles.length > 0 && (condensePendingFiles
           ? <PendingFileBatch items={pendingFiles} folderName={folderSummary?.name} onRemove={removePendingFile} />
           : <div className="grid gap-2" aria-label="Files ready to add">{pendingFiles.map(({ file, previewUrl }, index) => <PendingFilePreview key={`${file.name}-${file.size}-${file.lastModified}-${index}`} file={file} previewUrl={previewUrl} onRemove={() => removePendingFile(index)} />)}</div>)}
-        <div className="border-t border-border pt-4"><p className="font-semibold">Or paste textbook text</p><p className="mt-1 text-xs text-muted-foreground">Only the excerpt you paste becomes a study source.</p><div className="mt-3 grid gap-3 sm:grid-cols-2"><div className="grid gap-1"><Label htmlFor="material-title">Material title <span className="text-muted-foreground">(optional)</span></Label><Input id="material-title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Chapter 4 reading" /></div><div className="grid gap-1"><Label htmlFor="material-section">Section <span className="text-muted-foreground">(optional)</span></Label><Input id="material-section" value={sectionLabel} onChange={(event) => setSectionLabel(event.target.value)} placeholder="4.2 Synaptic signaling" /></div></div><Textarea className="mt-3 min-h-36" value={text} onChange={(event) => setText(event.target.value)} placeholder="Paste the specific textbook passage, notes, or reading excerpt…" /><p className="mt-1 text-xs font-semibold text-muted-foreground">{text.trim().length} / {MIN_PASTED_EXCERPT_CHARACTERS} characters for a text source</p></div>
+        <div className="border-t border-border pt-4"><p className="font-semibold">Or paste text</p><p className="mt-1 text-xs text-muted-foreground">Only the excerpt you paste becomes a study source.</p><div className="mt-3 grid gap-3 sm:grid-cols-2"><div className="grid gap-1"><Label htmlFor="material-title">Material title <span className="text-muted-foreground">(optional)</span></Label><Input id="material-title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Chapter 4 reading" /></div><div className="grid gap-1"><Label htmlFor="material-section">Section <span className="text-muted-foreground">(optional)</span></Label><Input id="material-section" value={sectionLabel} onChange={(event) => setSectionLabel(event.target.value)} placeholder="4.2 Synaptic signaling" /></div></div><Textarea className="mt-3 min-h-36" value={text} onChange={(event) => setText(event.target.value)} placeholder="Paste a transcript, reading, problem, notes, or draft…" /><p className="mt-1 text-xs font-semibold text-muted-foreground">{text.trim().length} / {minimumTextCharacters} characters for a text source</p></div>
       </div>
       </div>
       <div className="border-t border-border bg-card px-6 py-4">
