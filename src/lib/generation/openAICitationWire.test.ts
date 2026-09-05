@@ -8,6 +8,13 @@ const chunks = [
 ]
 
 describe('OpenAI citation wire identities', () => {
+  it('expands a single exact passage citation without model-authored file IDs or offsets', () => {
+    const wire = createOpenAICitationWire(chunks)
+    expect(wire.sources[2].sourceRef).toEqual({ citationId: 'S3' })
+    expect(wire.decode({ sourceRef: { citationId: 'S3' } })).toEqual({ sourceRef: { fileId: 'original-file-b', chunkId: 'original-chunk-c', start: 0, end: chunks[2].content.length } })
+    expect(wire.decode({ sourceRef: { citationId: 'S999' } })).toEqual({ sourceRef: { citationId: 'S999' } })
+    expect(wire.decode({ sourceRef: { citationId: 'S3', fileId: 'F1' } })).toEqual({ sourceRef: { citationId: 'S3', fileId: 'F1' } })
+  })
   it('round trips model-selected references to the exact original identities', () => {
     const wire = createOpenAICitationWire(chunks)
     expect(wire.sources.map(s => [s.fileId, s.chunkId])).toEqual([['F1','S1'],['F1','S2'],['F2','S3']])

@@ -24,6 +24,13 @@ export function createOpenAICitationWire(chunks: readonly OpenAIGenerationChunk[
   function decodeRef(candidate: unknown): unknown {
     if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return candidate
     const ref = candidate as Record<string, unknown>
+    if (typeof ref.citationId === 'string') {
+      // The passage ID is the entire wire citation. Conflicting metadata is
+      // rejected rather than silently repaired or guessed.
+      if (Object.keys(ref).some(key => key !== 'citationId')) return candidate
+      const selected = originals.get(ref.citationId)
+      return selected ? { fileId: selected.file_id, chunkId: selected.chunk_id, start: 0, end: selected.content.length } : candidate
+    }
     const original = typeof ref.chunkId === 'string' ? originals.get(ref.chunkId) : undefined
     if (!original || ref.fileId !== fileAliases.get(original.file_id)) return candidate
     return { fileId: original.file_id, chunkId: original.chunk_id, start: 0, end: original.content.length }
@@ -53,5 +60,8 @@ export function createOpenAICitationWire(chunks: readonly OpenAIGenerationChunk[
     return prompt.replace(pattern, id => promptAliases.get(id)!)
   }
 
-  return { sources: openAIGenerationSources(aliased), decode, encodePrompt }
+  return {
+    sources: openAIGenerationSources(aliased).map(source => ({ ...source, sourceRef: { citationId: source.chunkId } })),
+    decode, encodePrompt,
+  }
 }

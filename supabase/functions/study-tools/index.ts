@@ -827,6 +827,7 @@ async function callOpenAIGeneration(response: string, chunks: Chunk[], specPromp
               wire.encodePrompt(specPrompt),
               'Reply with one JSON object only. Follow the required artifact shape in the specification.',
               OPENAI_GENERATION_CITATION_INSTRUCTION,
+              'Transport-only citation format override: wherever the artifact schema asks for sourceRef, output only {"citationId":"S123"}, using the exact S identifier of the chosen supplied passage. For sourceRefs output an array of these single-key objects. Do not output fileId, chunkId, start or end inside these objects. The server expands the exact passage identity into the schema-required file/chunk/range before validation. This overrides only the sourceRef wire shape, not grounding or any other artifact requirement. sourceChunkId/sourceChunkIds/evidenceIds still use the supplied S passage IDs directly.',
             ].join('\n'),
           }],
         },
