@@ -1,3 +1,4 @@
+import { isTypingTarget, isModalOpen } from '@/lib/keyboard'
 import {
   useEffect,
   useMemo,
@@ -424,8 +425,7 @@ export function AssignmentsPanel({
   useEffect(() => {
     function keyboard(event: KeyboardEvent) {
       if (!(event.metaKey || event.ctrlKey) || event.key.toLocaleLowerCase() !== 'n') return
-      const target = event.target as HTMLElement | null
-      if (target?.matches('input, textarea, [contenteditable="true"]')) return
+      if (event.isComposing || event.defaultPrevented || isTypingTarget(event.target) || isModalOpen()) return
       event.preventDefault()
       requestAdd()
     }

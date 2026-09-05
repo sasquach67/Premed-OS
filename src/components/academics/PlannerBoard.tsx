@@ -1,3 +1,4 @@
+import { preferredScrollBehavior } from '@/lib/scroll'
 /**
  * The Planner term board (§4.2) — the ruled **A + C** composition.
  *
@@ -517,7 +518,7 @@ export function PlannerCourseDiscovery({ destinations, selectedProgramId, reques
     if (!request) return
     setEntryDestinationKey(destinationKey(requestedDestination))
     setDestination(destinationKey(requestedDestination))
-    sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    sectionRef.current?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' })
     searchRef.current?.focus()
   }, [request?.id, requestedDestination])
 

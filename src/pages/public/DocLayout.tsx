@@ -1,3 +1,4 @@
+import { preferredScrollBehavior } from '@/lib/scroll'
 /* ============================================================
    DocLayout — ONE shell, four routes (About · Privacy · Terms · Pricing).
 
@@ -111,7 +112,7 @@ export function DocLayout({
               aria-current={active === section.id ? 'true' : undefined}
               onClick={(event) => {
                 event.preventDefault()
-                document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth' })
+                document.getElementById(section.id)?.scrollIntoView({ behavior: preferredScrollBehavior() })
                 setActive(section.id)
               }}
             >

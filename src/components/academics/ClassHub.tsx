@@ -1,3 +1,4 @@
+import { preferredScrollBehavior } from '@/lib/scroll'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
@@ -1082,7 +1083,7 @@ function Assignments({ courseId, assignments, categories, focusWhatIf = false }:
   useEffect(() => {
     if (!focusWhatIf) return
     const frame = window.requestAnimationFrame(() => {
-      whatIfRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+      whatIfRef.current?.scrollIntoView({ block: 'start', behavior: preferredScrollBehavior() })
       whatIfRef.current?.querySelector<HTMLElement>('button, input, [role="combobox"]')?.focus({ preventScroll: true })
     })
     return () => window.cancelAnimationFrame(frame)
