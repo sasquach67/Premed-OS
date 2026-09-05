@@ -53,7 +53,7 @@ import { generateStudyGuide, sourcesFor } from '@/lib/academics/generateStudyGui
 import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationIntake'
 import { LectureCapturePanel, type LectureDestination } from '@/components/academics/LectureCapturePanel'
 import { LectureRecordMenu } from '@/components/academics/LectureRecordMenu'
-import { buildLectureBrief, buildLectureMasteryMap, sourceChunksForLecture } from '@/lib/academics/lectureWorkspace'
+import { LecturePreview } from '@/components/academics/LecturePreview'
 import { AssignmentCreateDialog, AssignmentsPanel } from '@/components/common/AssignmentsPanel'
 import { CalendarReview } from '@/components/academics/CalendarReview'
 import { MaterialGenerationIntake, type MaterialArtifact } from '@/components/academics/MaterialGenerationIntake'
@@ -329,10 +329,6 @@ function Overview({
   const lectureNumber = (lectureId: string) => chronologicalLectures.findIndex((lecture) => lecture.id === lectureId) + 1
   const activeLecture = selectedLectureId ? lectures.find((lecture) => lecture.id === selectedLectureId) : undefined
   const activeLectureSources = activeLecture ? data.files.filter((file) => activeLecture.selectedSourceFileIds?.includes(file.id) || file.id === activeLecture.transcriptFileId) : []
-  const activeLectureChunks = activeLecture ? sourceChunksForLecture(data, activeLecture) : []
-  const activeLecturePreviewRecord = activeLecture ? { ...activeLecture, selectedSourceFileIds: activeLectureSources.map((file) => file.id) } : undefined
-  const activeLectureBrief = activeLecturePreviewRecord ? activeLecturePreviewRecord.lectureBrief ?? buildLectureBrief(activeLectureChunks, activeLecturePreviewRecord.selectedSourceFileIds, data.files) : undefined
-  const activeMasteryMap = activeLecturePreviewRecord ? data.generatedMasteryOutlines.find((outline) => outline.id === activeLecturePreviewRecord.masteryMapId || outline.lectureId === activeLecturePreviewRecord.id) ?? buildLectureMasteryMap({ lecture: activeLecturePreviewRecord, topics, chunks: activeLectureChunks, files: activeLectureSources }) : undefined
   const courseFiles = data.files.filter((file) => file.courseId === course.id && isPrimaryMaterial(file))
   const unfiledCount = courseFiles.filter((file) => !file.topicId && file.linkedTopicIds.length === 0).length
   const guideSuggestionCount = data.lectureNoteProposals.filter((proposal) => proposal.courseId === course.id && proposal.status === 'pending').length
@@ -402,11 +398,9 @@ function Overview({
           {activeLecture ? <>
             <div className="lecture-active-header">
               <div><p className="lecture-ledger-kicker">Saved lecture</p><h2>{completedLectureTitle(lectureNumber(activeLecture.id), activeLecture)}</h2><p>{activeLecture.occurredOn ? fmtEventDate(activeLecture.occurredOn) : 'Date not set'}</p></div>
-              <div className="lecture-saved-actions"><Button size="sm" variant="ghost" onClick={() => setSelectedLectureId(undefined)}>Close</Button><Button size="sm" onClick={() => openLecture(activeLecture.id, 'overview')}>Open full screen</Button></div>
+              <div className="lecture-saved-actions"><Button size="sm" variant="ghost" onClick={() => setSelectedLectureId(undefined)}>Close</Button><Button size="sm" onClick={() => openLecture(activeLecture.id, 'overview')}>Open lecture</Button></div>
             </div>
-            {activeLecture.workspaceState === 'complete'
-              ? <div className="lecture-inline-workspace"><LectureCapturePanel key={`embedded:${activeLecture.id}`} courseId={course.id} course={course} data={data} initialLectureId={activeLecture.id} initialDestination="overview" displayMode="embedded" onOpenNotes={() => onTab('guide')} /></div>
-              : activeLecture.lectureBrief && activeLectureBrief ? <SavedLecturePreview brief={activeLectureBrief} mastery={activeMasteryMap} sourceCount={activeLectureSources.length} /> : <div className="lecture-saved-empty"><b>Sources captured</b><span>No Study Guide has been generated yet. Open this lecture to review its sources and build study resources.</span><span>{activeLectureSources.length} selected sources · Transcript and supporting files stay under Sources.</span></div>}
+            <LecturePreview lecture={activeLecture} sourceCount={activeLectureSources.length} />
           </> : <>
             <div className="lecture-active-header"><div><p className="lecture-ledger-kicker">{scheduleContext ? `Today · ${scheduleContext}` : 'Today'}</p><h2>Build a lecture page</h2></div><span className="lecture-number-pill">Lecture {nextLectureNumber}</span></div>
             <div className="lecture-capture-steps" aria-label="Lecture import workflow"><div className="is-current"><b>1 · Add source</b><span>Transcript</span></div><div><b>2 · Add materials</b><span>Required</span></div><div><b>3 · Build page</b><span>Guide + Mastery</span></div></div>
@@ -445,29 +439,6 @@ function Overview({
 
     </div>
   )
-}
-
-function SavedLecturePreview({ brief, mastery, sourceCount }: {
-  brief: ReturnType<typeof buildLectureBrief>
-  mastery?: ReturnType<typeof buildLectureMasteryMap>
-  sourceCount: number
-}) {
-  const flow = brief.conceptMap?.nodes.filter((node) => node.lane === 'flow').slice(0, 4) ?? []
-  const connection = brief.connections[0]
-  const vocabulary = brief.vocabulary.slice(0, 3)
-  return <div className="lecture-saved-preview">
-    <section className="lecture-saved-brief" aria-label="Study Guide preview">
-      <p className="lecture-saved-label">Study Guide · At a glance</p>
-      {brief.summary.length ? <div className="lecture-saved-summary">{brief.summary.slice(0, 2).map((item) => <p key={item.id}>{item.text}</p>)}</div> : <div className="lecture-saved-empty"><b>No readable lecture content yet</b><span>Add a transcript or another processed source to build the study front.</span></div>}
-      {flow.length > 1 ? <ol className="lecture-saved-flow" aria-label="Concept flow preview">{flow.map((node, index) => <li key={node.id} className="contents"><span>{node.label}</span>{index < flow.length - 1 && <i aria-hidden="true">→</i>}</li>)}</ol> : connection ? <p className="lecture-saved-connection"><b>Connection:</b> {connection.text}</p> : null}
-      {vocabulary.length > 0 && <div className="lecture-saved-vocabulary"><b>Key language</b>{vocabulary.map((item) => <span key={item.id}>{item.term}</span>)}</div>}
-    </section>
-    <aside className="lecture-saved-mastery" aria-label="Mastery Map preview">
-      <div className="lecture-saved-mastery-heading"><ListChecks aria-hidden="true" /><p className="lecture-saved-label">Mastery Map</p>{mastery && <span>{mastery.standards.length} objectives</span>}</div>
-      {mastery ? <ol>{mastery.standards.slice(0, 3).map((standard, index) => <li key={standard.id}><span>{index + 1}</span><b>{standard.title}</b></li>)}</ol> : <div className="lecture-saved-empty"><b>Objectives need a course source</b><span>Add learning objectives or syllabus material; transcript topics are not treated as official objectives.</span></div>}
-    </aside>
-    <footer><span><b>{sourceCount} selected {sourceCount === 1 ? 'source' : 'sources'}</b> · {brief.usedSourceFileIds.length} used here</span><span>Transcript and supporting files stay under Sources; figures are not interpreted</span></footer>
-  </div>
 }
 
 export function WritingTools({ courseId, readingListState, drafts, readings, feedback, assignments }: {

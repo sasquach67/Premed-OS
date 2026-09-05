@@ -499,7 +499,7 @@ describe('ClassHub approved Overview', () => {
     expect(restored.lectureFindings.some((finding) => finding.id === 'lecture-actions-finding')).toBe(true)
   })
 
-  it('makes the completed lecture workspace usable from the Class Hub with full screen still available', async () => {
+  it('keeps the journal compact and opens the complete lecture workspace on demand', async () => {
     const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
     const course = seed.courses.find((item) => item.id === 'demo-course-biol103-current')!
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.courseId === course.id)!
@@ -513,11 +513,16 @@ describe('ClassHub approved Overview', () => {
       .find((button) => button.textContent?.includes('Central Dogma'))!
     await act(async () => lectureTwo.click())
 
-    const workspaceSurface = container.querySelector('[aria-label="Embedded lecture workspace"]')!
-    expect(workspaceSurface.textContent).toContain('A gene is expressed through linked but distinct synthesis steps')
-    expect(workspaceSurface.textContent).toContain('DNA gene')
-    expect(workspaceSurface.textContent).toContain('Primary RNA transcript')
-    expect(container.textContent).toContain('Open full screen')
+    const preview = container.querySelector('[aria-label="Lecture preview"]')!
+    expect(preview.textContent).toContain('A gene is expressed through linked but distinct synthesis steps')
+    expect(preview.querySelectorAll('.lecture-preview-summary p')).toHaveLength(2)
+    expect(container.querySelector('[aria-label="Embedded lecture workspace"]')).toBeNull()
+    expect(container.querySelector('[aria-label="Lecture workspace views"]')).toBeNull()
+    expect(preview.textContent).not.toContain('Trace gene expression from DNA to a mature transcript')
+    const openLecture = [...container.querySelectorAll<HTMLButtonElement>('.lecture-saved-actions button')].find((button) => button.textContent === 'Open lecture')!
+    await act(async () => openLecture.click())
+    const workspaceSurface = document.body.querySelector('[role="dialog"]')!
+    expect(workspaceSurface.querySelector('[aria-label="Lecture workspace views"]')).toBeTruthy()
     expect(workspaceSurface.textContent).not.toContain('Source-led draft available')
 
     const mastery = [...workspaceSurface.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Mastery Map')!
