@@ -353,6 +353,8 @@ describe('lecture import and workspace', () => {
 
   it('shows the BIOL 103 concept map itself with source-backed stages and method branches', async () => {
     const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
+    const outline = seed.academics.classCenter.generatedMasteryOutlines.find((item) => item.lectureId === 'demo-lecture-biol103-2')!
+    outline.standards[0].understand.push('Keep the actual teaching sentence. provenance: source')
     useStore.getState().replaceAll(seed)
     await render('demo-course-biol103-current', 'demo-lecture-biol103-2')
     expect(container.textContent).toContain('From stored gene to working protein')
@@ -370,6 +372,9 @@ describe('lecture import and workspace', () => {
     const mastery = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Mastery Map')!
     await act(async () => mastery.click())
     expect(container.textContent).toContain('Try without notes')
+    expect(container.textContent).toContain('Keep the actual teaching sentence.')
+    expect(container.textContent).not.toContain('provenance: source')
+    expect(useStore.getState().academics.classCenter.generatedMasteryOutlines.find((item) => item.id === outline.id)?.standards[0].understand).toContain('Keep the actual teaching sentence. provenance: source')
     expect(container.textContent).toContain('Without notes, explain the complete process of transcription and RNA processing')
     expect(container.textContent).toContain('Trace gene expression from DNA to a mature transcript')
     for (const trigger of container.querySelectorAll<HTMLButtonElement>('[data-slot="accordion-trigger"][data-state="closed"]')) await act(async () => trigger.click())
@@ -377,6 +382,7 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).toContain('Infer the likely destination of a protein')
     expect(container.textContent).toContain('Use the Ebola activity data and controls')
     expect(container.querySelectorAll('button[aria-label^="Mastery state for"]').length).toBe(5)
+    expect([...container.querySelectorAll('details')].filter((item) => item.querySelector('summary')?.textContent === 'Reveal the checklist').every((item) => !item.open)).toBe(true)
   })
 
   it('uses Materials as a lecture-scoped library for generated work and uploaded sources', async () => {
