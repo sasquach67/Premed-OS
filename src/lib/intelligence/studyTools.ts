@@ -246,10 +246,17 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
           }
         }
         if (serverCode === 'audit-rejected') {
+          const rawIssues = isRecord(responseBody) && isRecord(responseBody.error)
+            ? responseBody.error.issues
+            : undefined
+          const firstIssue = Array.isArray(rawIssues)
+            ? rawIssues.find((issue): issue is string => typeof issue === 'string' && Boolean(issue.trim()))
+            : undefined
           return {
             ok: false,
             code: 'audit-rejected',
-            message: 'The independent provider review found a source or format problem. Nothing was saved.',
+            message: 'The independent provider review found a source or format problem. Nothing was saved.'
+              + (firstIssue ? ` Review note: ${firstIssue}` : ''),
           }
         }
         if (serverCode === 'web-search-not-used') {

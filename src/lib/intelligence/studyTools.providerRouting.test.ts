@@ -25,6 +25,8 @@ describe('study-tools provider routing', () => {
     expect(generationBlock).toContain("Deno.env.get('ANTHROPIC_API_KEY')")
     expect(generationBlock).toContain('primaryProvider')
     expect(generationBlock).toContain('auditStatus')
+    expect(source).toContain('sourceRef intentionally spans the full server-owned chunk')
+    expect(source).toContain('Set approved=false only for a blocking unsupported claim')
   })
 
   it('defaults the single-provider gap check to OpenAI', () => {

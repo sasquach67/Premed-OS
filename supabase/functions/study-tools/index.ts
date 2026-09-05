@@ -356,7 +356,12 @@ Deno.serve(async (request) => {
         try {
           const audit = await callAnthropicAudit(primary.value, chunks, specPrompt)
           if (!audit.approved) {
-            return failure(502, 'audit-rejected', 'The secondary review found a source or specification problem. Nothing was saved.')
+            return failure(
+              502,
+              'audit-rejected',
+              'The secondary review found a source or specification problem. Nothing was saved.',
+              { issues: safeAuditIssues(audit.issues) },
+            )
           }
           auditStatus = 'approved'
         } catch (error) {
@@ -959,7 +964,8 @@ async function callAnthropicAudit(value: unknown, chunks: Chunk[], specPrompt: s
       system: [
         'You are the independent secondary reviewer. OpenAI already authored the artifact.',
         'Check every grounded claim and source reference against the supplied documents and the quoted specification.',
-        'Set approved=false for any unsupported claim, invented or shifted citation, invalid structure, or violated invariant.',
+        'Each sourceRef intentionally spans the full server-owned chunk. Verify that the claim is supported somewhere in the document identified by fileId and chunkId; do not reject a correct identity merely because its range is broader than one sentence.',
+        'Set approved=false only for a blocking unsupported claim, invented source identity, invalid required structure, or violated invariant. Do not reject for style preferences or other non-blocking improvements.',
         'Do not rewrite the artifact. Reply with one JSON object only, with no markdown.',
         `The audit result must match this JSON Schema: ${JSON.stringify(generationAuditSchema)}`,
       ].join('\n'),
@@ -994,6 +1000,10 @@ async function callAnthropicAudit(value: unknown, chunks: Chunk[], specPrompt: s
   }
   if (!audit.approved && audit.issues.length === 0) throw new Error('Anthropic rejected without an audit reason')
   return { approved: audit.approved, issues: audit.issues as string[] }
+}
+
+function safeAuditIssues(issues: string[]) {
+  return issues.slice(0, 3).map((issue) => issue.replace(/\s+/g, ' ').trim().slice(0, 240))
 }
 
 async function callOpenAI(response: string, chunks: Chunk[], image?: ImageEvidence) {
