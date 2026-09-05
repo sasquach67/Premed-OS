@@ -1,4 +1,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.110.2'
+import {
+  OPENAI_GENERATION_CITATION_INSTRUCTION,
+  openAIGenerationSources,
+} from '../_shared/openAIGenerationGrounding.ts'
 
 const MAX_REQUEST_BYTES = 8 * 1024 * 1024
 const MAX_CHUNKS = 2_000
@@ -765,11 +769,7 @@ function openAIOutputText(payload: Record<string, unknown>): string {
 async function callOpenAIGeneration(response: string, chunks: Chunk[], specPrompt: string) {
   const key = Deno.env.get('OPENAI_API_KEY')
   if (!key) throw new Error('OpenAI is not configured')
-  const sources = chunks.map((chunk) => ({
-    fileId: chunk.file_id,
-    chunkId: chunk.chunk_id,
-    content: chunk.content,
-  }))
+  const sources = openAIGenerationSources(chunks)
   const result = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
@@ -785,8 +785,7 @@ async function callOpenAIGeneration(response: string, chunks: Chunk[], specPromp
             text: [
               specPrompt,
               'Reply with one JSON object only. Follow the required artifact shape in the specification.',
-              'Use only the supplied source IDs. For sourceRef/sourceRefs, use zero-based offsets within that chunk content.',
-              'For sourceChunkId/sourceChunkIds/evidenceIds, copy the exact supplied chunkId. Never invent an ID or range.',
+              OPENAI_GENERATION_CITATION_INSTRUCTION,
             ].join('\n'),
           }],
         },
