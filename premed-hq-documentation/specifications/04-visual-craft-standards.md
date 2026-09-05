@@ -125,6 +125,8 @@ Respect the app's existing typography — never swap fonts unless asked.
 
 ## 5. Spacing & layout
 
+- **Full-page destinations are the page, not an enclosing card (Andy, September 5, 2026).** Do not wrap a dedicated page's entire workspace in a rounded border box or outer card shadow. Use the page surface, normal content padding, and internal section dividers. Borders remain appropriate for inputs, controls, small supporting panels, and embedded previews/dialogs. The expanded lecture reader is the reference; its full-page builder follows the same rule.
+
 - Everything on the 4/8px grid; align to it. Inconsistent spacing is the fastest "amateur" tell.
 - **Proximity = meaning:** related items sit close, unrelated items get a clear gap. Whitespace groups better than borders do.
 - Consistent outer margins and gutters across tabs. Content respects the shell's max width; long-form text is width-limited for readability.

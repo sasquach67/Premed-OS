@@ -244,7 +244,7 @@ function LectureImportWizard({ courseId, course, data, lectures, lecture, step, 
   const progressPercent = Math.round(((step - 1) / 3) * 100)
   const stepLabels = ['Transcript', 'Materials', 'Build'] as const
 
-  return <Card className="overflow-hidden border-border bg-card shadow-[0_18px_48px_-28px_rgba(0,0,0,.72)]"><CardContent className="p-0">
+  return <Card className="lecture-import-wizard overflow-hidden border-border bg-card shadow-[0_18px_48px_-28px_rgba(0,0,0,.72)]"><CardContent className="p-0">
     <header className="border-b border-border px-4 py-4 sm:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">New lecture</p><h2 className="mt-1 font-display text-xl font-extrabold">Build a lecture</h2></div>

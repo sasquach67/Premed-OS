@@ -4,6 +4,8 @@ User-approved refinement: preserve the Class Hub library-style lecture selector 
 
 On that route, the guide is the page, not a rounded card inside another card:
 
+September 5 follow-up: this also applies to the full-page lecture builder, including new imports and rebuilds. Its outer wizard wrapper has no border, radius, shadow, or separate card-colored background. Inputs, upload panels, and internal dividers retain their own boundaries. Embedded previews and dialogs remain distinct surfaces.
+
 - Put the return-to-class-journal link in the shell breadcrumb. Do not repeat a second return row below the shell.
 - Use the available page width, preserving internal reading padding and a readable text measure.
 - Make “In this guide” the primary desktop sidebar. Bookmarks and article scroll independently; selecting a bookmark scrolls and focuses the corresponding heading without moving the shell or bookmark column. On narrow screens, use the existing compact bookmark strip and the outer reading pane.

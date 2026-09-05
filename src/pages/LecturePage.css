@@ -32,6 +32,13 @@
 }
 
 /* A dedicated reader uses the full page; the journal retains its inline preview. */
+.lecture-page .lecture-import-wizard {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--background);
+}
+
 .lecture-workspace.lecture-workspace-standalone {
   display: flex;
   flex-direction: column;
