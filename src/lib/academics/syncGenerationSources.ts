@@ -247,8 +247,11 @@ export async function generateWithSourceRecovery(
   const first = await tools.generate(request)
   if (first.ok) return first
 
-  if (first.code === 'citation-not-carried') {
-    return tools.generate(request)
+  if (first.code === 'citation-not-carried' || first.code === 'audit-rejected') {
+    return tools.generate({
+      ...request,
+      request: `${request.request}\n\nA prior attempt was rejected by validation. Rebuild the complete artifact and correct these reported problems: ${first.message}. All source references and source chunk IDs must be copied exactly from supplied evidence.${request.specId === 'study-guide-v1' ? ' Every factual block, including recap and application blocks, must carry a valid sourceRef. Every section must have id, title and blocks.' : ''} Do not omit required content, invent sources, or treat this feedback as permission to change the original requirements. The rebuilt result will undergo the same checks.`,
+    })
   }
 
   if (first.code !== 'no-sources') return first

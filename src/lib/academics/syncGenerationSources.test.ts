@@ -99,7 +99,7 @@ describe('generation source preparation', () => {
 
     expect(outcome.ok).toBe(true)
     expect(tools.generate).toHaveBeenCalledTimes(2)
-    expect(tools.generate).toHaveBeenNthCalledWith(2, request)
+    expect(tools.generate.mock.calls[1][0]).toMatchObject({ ...request, request: expect.stringContaining('A citation could not be traced.') })
     expect(tools.syncSources).not.toHaveBeenCalled()
   })
 
@@ -117,13 +117,23 @@ describe('generation source preparation', () => {
     }
     const tools = {
       syncSources: vi.fn(),
-      generate: vi.fn().mockResolvedValue({ ok: false, code: 'audit-rejected', message: 'The audit rejected the output.' }),
+      generate: vi.fn().mockResolvedValue({ ok: false, code: 'unavailable', message: 'The provider is unavailable.' }),
     }
 
     const outcome = await generateWithSourceRecovery('course-1', [source], request, {}, tools)
 
-    expect(outcome).toMatchObject({ ok: false, code: 'audit-rejected' })
+    expect(outcome).toMatchObject({ ok: false, code: 'unavailable' })
     expect(tools.generate).toHaveBeenCalledTimes(1)
+    expect(tools.syncSources).not.toHaveBeenCalled()
+  })
+
+  it('uses the audit failure as repair feedback once and still rejects an invalid repair', async () => {
+    const request = { action: 'generate' as const, courseId: 'course-1', topicId: CLASS_MATERIAL_SCOPE, chunkIds: ['chunk-1'], specId: 'study-guide-v1', specHash: 'hash', systemPrompt: 'Source only', request: 'Build guide' }
+    const tools = { syncSources: vi.fn(), generate: vi.fn().mockResolvedValue({ ok: false, code: 'audit-rejected', message: 'sections[3] is malformed' }) }
+    const result = await generateWithSourceRecovery('course-1', [chunk()], request, {}, tools)
+    expect(result.ok).toBe(false)
+    expect(tools.generate).toHaveBeenCalledTimes(2)
+    expect(tools.generate.mock.calls[1][0].request).toContain('sections[3] is malformed')
     expect(tools.syncSources).not.toHaveBeenCalled()
   })
 
