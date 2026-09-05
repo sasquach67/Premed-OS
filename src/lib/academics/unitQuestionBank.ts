@@ -61,7 +61,9 @@ function validStringList(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(text)
 }
 
-const FREE_RECALL_ACTION = /\b(explain|reconstruct|draw|trace|compare|predict|describe|organize|outline|design|interpret|derive|label|map)\b/i
+// Observable retrieval tasks include sequence conversion and translation, not
+// just prose explanations. Keep this aligned with the tasks the spec requests.
+const FREE_RECALL_ACTION = /\b(explain|reconstruct|draw|trace|compare|predict|describe|organize|outline|design|interpret|derive|label|map|convert|translate|transcribe|identify|write|list|name|state|distinguish|calculate|determine|classify|sequence|sketch|summarize|justify|evaluate|analyze)\b/i
 const GENERIC_FREE_RECALL = /\b(?:this|the)\s+(?:topic|objective|concept)\b/i
 
 function validFreeRecallCues(value: unknown): value is string[] {
