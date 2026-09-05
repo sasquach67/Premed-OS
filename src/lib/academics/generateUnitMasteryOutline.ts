@@ -44,7 +44,7 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
   const result = await generateWithSourceRecovery(courseId, chunks, { action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `${sourcePriority} Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map with objective-specific free-recall cues. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline.${questionReferenceIds.length ? ' Use the marked question passages as task-pattern evidence without copying them.' : ''}` })
   if (!result.ok) return { ok: false, failure: failureFor(result.code), message: result.message }
   const issues: string[] = []
-  let artifact = validateMasteryOutline(result.data.artifact, assembled.chunkIds, issues)
+  let artifact = validateMasteryOutline(result.data.artifact, assembled.chunkIds, issues, true)
   if (!artifact) {
     const repair = await generateWithSourceRecovery(courseId, chunks, {
       action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds,
@@ -53,7 +53,7 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
     })
     if (!repair.ok) return { ok: false, failure: failureFor(repair.code), message: repair.message }
     issues.length = 0
-    artifact = validateMasteryOutline(repair.data.artifact, assembled.chunkIds, issues)
+    artifact = validateMasteryOutline(repair.data.artifact, assembled.chunkIds, issues, true)
   }
   if (!artifact) return { ok: false, failure: 'invalid-response', message: `The mastery outline did not pass its source-trace and section checks. Nothing was saved. Check: ${issues.join('; ')}` }
   return {

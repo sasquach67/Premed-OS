@@ -8,6 +8,7 @@ export interface MasteryStandard {
   understand: string[]
   beAbleToDo: string[]
   watchFor: string[]
+  examPractice?: Array<{ prompt: string; answer: string; rationale: string; sourceChunkIds: string[] }>
   sourceChunkIds: string[]
 }
 
@@ -23,6 +24,7 @@ export const UNIT_MASTERY_OUTLINE_V1: ArtifactSpec = {
   objective: 'Turn the supplied course evidence into a detailed mastery map. Preserve every explicit objective relevant to the requested scope and organize its distinct source-supported subpoints into Free-recall cues, Understand, Be able to do, and Watch for. This map is the source contract for later study resources, not a transcript summary.',
   rules: [
     { id: 'UMO-SOURCE', kind: 'invariant', text: 'Every standard and every bullet must be traceable to at least one supplied source chunk.' },
+    { id: 'UMO-EXAM-APPLICATION', kind: 'invariant', text: 'Each objective needs one or two original, self-contained exam-style application questions in examPractice, with an answer, reasoning rationale, and sourceChunkIds supporting the solution. Supply any sequence, values, scenario or other information needed to solve it in the prompt; never refer to an absent diagram. Test application, not definition recall. Label hypothetical scenarios as hypothetical. These are generated practice, not predicted exam questions or instructor-authored questions. Never copy supplied assessment stems or claim a topic will be on the exam. Watch for points should identify concrete tempting errors relevant to solving these tasks.' },
     { id: 'UMO-STANDARDS', kind: 'invariant', text: 'Use syllabus learning standards or explicitly stated objectives as the stable standard identity. Never promote a transcript-derived concept into a Topic.' },
     { id: 'UMO-COVERAGE', kind: 'invariant', text: 'Preserve every explicit objective relevant to the requested lecture, unit, or exam scope and every distinct supported subpoint. Do not merge separate objectives or compress a detailed source outline into a summary.' },
     { id: 'UMO-SPLIT', kind: 'invariant', text: 'Separate blank-page retrieval cues, understanding, observable performance, and likely confusion or watch-for points. Do not repeat one sentence across fields.' },
@@ -35,12 +37,15 @@ export const UNIT_MASTERY_OUTLINE_V1: ArtifactSpec = {
   outputSchema: {
     type: 'object', required: ['title', 'unit', 'standards'], properties: {
       title: { type: 'string' }, unit: { type: 'string' },
-      standards: { type: 'array', items: { type: 'object', required: ['id', 'title', 'freeRecallCues', 'understand', 'beAbleToDo', 'watchFor', 'sourceChunkIds'], properties: {
+      standards: { type: 'array', items: { type: 'object', required: ['id', 'title', 'freeRecallCues', 'understand', 'beAbleToDo', 'watchFor', 'examPractice', 'sourceChunkIds'], properties: {
         id: { type: 'string' }, title: { type: 'string' },
         freeRecallCues: { type: 'array', minItems: 1, maxItems: 3, items: { type: 'string' } },
         understand: { type: 'array', minItems: 5, items: { type: 'string' } },
         beAbleToDo: { type: 'array', minItems: 2, items: { type: 'string' } },
         watchFor: { type: 'array', minItems: 1, items: { type: 'string' } },
+        examPractice: { type: 'array', minItems: 1, maxItems: 2, items: { type: 'object', required: ['prompt', 'answer', 'rationale', 'sourceChunkIds'], properties: {
+          prompt: { type: 'string' }, answer: { type: 'string' }, rationale: { type: 'string' }, sourceChunkIds: { type: 'array', minItems: 1, items: { type: 'string' } },
+        } } },
         sourceChunkIds: { type: 'array', items: { type: 'string' } },
       } } },
     },

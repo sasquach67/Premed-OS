@@ -13,6 +13,7 @@ const OverviewTasksPage = lazy(() => import('@/pages/OverviewTasksPage').then((m
 const OverviewQuarterlyGoalsPage = lazy(() => import('@/pages/OverviewQuarterlyGoalsPage').then((m) => ({ default: m.OverviewQuarterlyGoalsPage })))
 const ReviewItemPage = lazy(() => import('@/pages/ReviewItemPage').then((m) => ({ default: m.ReviewItemPage })))
 const Academics = lazy(() => import('@/pages/Academics').then((m) => ({ default: m.Academics })))
+const LecturePage = lazy(() => import('@/pages/LecturePage').then((m) => ({ default: m.LecturePage })))
 const McatFocusSession = lazy(() => import('@/pages/McatFocusSession').then((m) => ({ default: m.McatFocusSession })))
 const Profile = lazy(() => import('@/pages/Profile').then((m) => ({ default: m.Profile })))
 const Help = lazy(() => import('@/pages/Help').then((m) => ({ default: m.Help })))
@@ -83,6 +84,7 @@ function App() {
             <Route path="review" element={<ReviewItemPage />} />
             <Route path="academics" element={<Academics />} />
             <Route path="academics/classes/:courseId" element={<Academics />} />
+            <Route path="academics/classes/:courseId/lectures/:lectureId" element={<LecturePage />} />
             <Route path="mcat" element={<ReservedSpace routeId="mcat" />} />
             <Route path="letters" element={<ReservedSpace routeId="letters" />} />
             <Route path="clinical" element={<ReservedSpace routeId="clinical" />} />

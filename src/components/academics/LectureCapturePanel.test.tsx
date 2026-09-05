@@ -351,6 +351,18 @@ describe('lecture import and workspace', () => {
     expect(actions).toEqual(expect.arrayContaining(['Open lecture', 'Edit lecture', 'Delete lecture']))
   })
 
+  it('keeps the lecture catalog outside the independently bounded reading pane', async () => {
+    const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
+    useStore.getState().replaceAll(seed)
+    await render('demo-course-biol103-current', 'demo-lecture-biol103-2')
+    const reading = container.querySelector<HTMLElement>('[aria-label="Lecture reading area"]')
+    const catalog = container.querySelector<HTMLElement>('[aria-label="Lecture catalog"]')
+    expect(reading).not.toBeNull()
+    expect(reading?.style.overflowY).toBe('auto')
+    expect(catalog?.style.overflowY).toBe('auto')
+    expect(reading?.contains(catalog)).toBe(false)
+  })
+
   it('shows the BIOL 103 concept map itself with source-backed stages and method branches', async () => {
     const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
     const outline = seed.academics.classCenter.generatedMasteryOutlines.find((item) => item.lectureId === 'demo-lecture-biol103-2')!

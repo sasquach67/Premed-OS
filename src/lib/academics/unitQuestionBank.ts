@@ -94,7 +94,7 @@ export function privateAssessmentSimilarity(candidate: string, reference: string
   return overlap / Math.min(left.size, right.size)
 }
 
-export function validateMasteryOutline(value: unknown, closedChunkIds: readonly string[], issues?: string[]): UnitMasteryOutlineArtifact | null {
+export function validateMasteryOutline(value: unknown, closedChunkIds: readonly string[], issues?: string[], requireExamPractice = false): UnitMasteryOutlineArtifact | null {
   const fail = (reason: string): null => { issues?.push(reason); return null }
   if (!value || typeof value !== 'object') return fail('artifact: expected an object')
   const artifact = value as Partial<UnitMasteryOutlineArtifact>
@@ -133,6 +133,14 @@ export function validateMasteryOutline(value: unknown, closedChunkIds: readonly 
     }
     if (!allClosed(standard.sourceChunkIds, closed)) return fail(`${path}.sourceChunkIds: missing or outside selected sources`)
     if (!unique(standard.sourceChunkIds!)) return fail(`${path}.sourceChunkIds: duplicate source IDs`)
+    if (requireExamPractice || standard.examPractice !== undefined) {
+      if (!Array.isArray(standard.examPractice) || standard.examPractice.length < 1 || standard.examPractice.length > 2) return fail(`${path}.examPractice: needs 1 to 2 complete application questions`)
+      for (const question of standard.examPractice) {
+        if (!question || !text(question.prompt) || !text(question.answer) || !text(question.rationale)
+          || !allClosed(question.sourceChunkIds, new Set(standard.sourceChunkIds))) return fail(`${path}.examPractice: question, answer, reasoning and objective source IDs required`)
+      }
+      if (!unique(standard.examPractice.map((question) => question.prompt))) return fail(`${path}.examPractice: repeated questions`)
+    }
     seen.add(standard.id)
   }
   return artifact as UnitMasteryOutlineArtifact

@@ -320,9 +320,8 @@ function Overview({
 }) {
   const [overviewParams, setOverviewParams] = useSearchParams()
   const [examCreateOpen, setExamCreateOpen] = useState(false)
-  const [lectureDialogOpen, setLectureDialogOpen] = useState(false)
+  const navigateLecture = useNavigate()
   const [selectedLectureId, setSelectedLectureId] = useState<string | undefined>()
-  const [lectureDestination, setLectureDestination] = useState<LectureDestination>('overview')
   const open = assignments.filter((item) => !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
   const exam = open.find((item) => item.type === 'exam')
   const lectures = data.lectures.filter((item) => item.courseId === course.id).sort((a, b) => b.createdAt - a.createdAt)
@@ -339,18 +338,12 @@ function Overview({
 
   useEffect(() => {
     if (overviewParams.get('captureLecture') !== '1') return
-    setSelectedLectureId(undefined)
-    setLectureDestination('transcript')
-    setLectureDialogOpen(true)
-    const next = new URLSearchParams(overviewParams)
-    next.delete('captureLecture')
-    setOverviewParams(next, { replace: true })
-  }, [overviewParams, setOverviewParams])
+    navigateLecture(`/academics/classes/${encodeURIComponent(course.id)}/lectures/new`, { replace: true })
+  }, [overviewParams, navigateLecture, course.id])
 
   function openLecture(lectureId?: string, destination: LectureDestination = 'overview') {
-    setSelectedLectureId(lectureId)
-    setLectureDestination(destination)
-    setLectureDialogOpen(true)
+    void destination
+    navigateLecture(`/academics/classes/${encodeURIComponent(course.id)}/lectures/${encodeURIComponent(lectureId ?? 'new')}`)
   }
 
   function openMaterialNote(noteId: string) {
@@ -398,11 +391,6 @@ function Overview({
         <button type="button" className="course-pulse-item" onClick={() => onTab('guide')}><span>Guide</span><b>{guideSuggestionCount ? `${guideSuggestionCount} ${guideSuggestionCount === 1 ? 'suggestion' : 'suggestions'}` : `${notes.filter(isGuideNote).length} saved ${notes.filter(isGuideNote).length === 1 ? 'item' : 'items'}`}</b><i>Review class context →</i></button>
       </section>
 
-      <Dialog open={lectureDialogOpen} onOpenChange={setLectureDialogOpen}>
-        <DialogContent className="max-h-[88vh] max-w-6xl overflow-y-auto !rounded-2xl !border-border !bg-card !p-0 !shadow-[0_22px_55px_-27px_rgba(0,0,0,0.8)] ![backdrop-filter:none]">
-          <LectureCapturePanel key={`${selectedLectureId ?? 'new'}:${lectureDestination}`} courseId={course.id} course={course} data={data} initialLectureId={selectedLectureId} initialDestination={lectureDestination} onOpenNotes={() => { setLectureDialogOpen(false); onTab('guide') }} />
-        </DialogContent>
-      </Dialog>
 
       <AssignmentCreateDialog open={examCreateOpen} onOpenChange={setExamCreateOpen} fixedCourseId={course.id} initialType="exam" />
       <Card className="class-hub-panel col-span-12">

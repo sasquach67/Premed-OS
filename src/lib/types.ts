@@ -1046,6 +1046,8 @@ export interface GeneratedMasteryOutlineStandard {
   understand: string[]
   beAbleToDo: string[]
   watchFor: string[]
+  /** Older saved maps have no generated exam applications until rebuilt. */
+  examPractice?: Array<{ prompt: string; answer: string; rationale: string; sourceChunkIds: ID[] }>
   sourceChunkIds: ID[]
   masteryState?: 'not-started' | 'can-explain' | 'can-apply-without-notes'
 }
