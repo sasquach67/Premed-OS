@@ -23,6 +23,21 @@ const goalOptions: { value: NotebookGoal; label: string; output: string; descrip
   { value: 'assignment', label: 'Work on an assignment', output: 'Assignment workspace', description: 'Work through the task using its instructions, your materials, and any draft or attempt.' },
 ]
 
+const uploadGuidance: Record<NotebookGoal, { start: string; suggestions: string[] }> = {
+  review: {
+    start: 'Start with the lecture or reading you want to understand. You do not need every item below.',
+    suggestions: ['Lecture transcript, slides, or your notes — what your instructor explained and emphasized.', 'Assigned reading or textbook excerpt — the pages that support this topic.', 'Guided-reading questions or learning objectives — what you are expected to explain or apply.'],
+  },
+  assessment: {
+    start: 'Start with the review sheet or exam topic list, if your instructor provided one.',
+    suggestions: ['Review sheet, exam scope, or learning objectives — what the assessment covers.', 'Relevant lecture notes, transcripts, slides, and assigned readings — evidence for those topics.', 'Practice questions, answer explanations, or past feedback — what you need to work through.'],
+  },
+  assignment: {
+    start: 'Start with the assignment prompt or the exact problem you need help with.',
+    suggestions: ['Instructions and grading rubric — what the task asks for and how it is assessed.', 'Required readings, data, or examples — the material you are supposed to use.', 'Your draft, outline, attempted solution, or instructor feedback — where you are starting.'],
+  },
+}
+
 export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }: {
   courseId: string
   course?: Pick<Course, 'code' | 'title'>
@@ -74,11 +89,12 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
     saveDraft(included ? [...new Set([...selectedIds, id])] : selectedIds.filter(item => item !== id))
     setError('')
   }
-  function review() {
-    if (sourceProblem) return
+  function goToStep(index: number) {
+    if (phase || (index === 2 && sourceProblem)) return
     saveDraft()
     setError('')
-    setReviewing(true)
+    setChoosingGoal(index === 0)
+    setReviewing(index === 2)
   }
   async function build() {
     if (phase || sourceProblem) return
@@ -141,13 +157,13 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
     <header className="space-y-6 pt-2">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <p className="text-sm font-bold text-primary">{course?.code ?? 'Class'} · Notebook</p>
-        <nav aria-label="Entry progress"><ol className="flex items-center gap-2 text-xs">
+        <nav aria-label="Entry progress" className="w-full"><ol className="flex items-center gap-2 text-sm">
           {['Goal', 'Materials', 'Create'].map((label, index) => {
             const current = choosingGoal ? 0 : reviewing ? 2 : 1
-            return <li key={label} className="flex items-center gap-2">
+            return <li key={label} className="flex min-w-0 flex-1 items-center gap-2">
               {index > 0 && <span aria-hidden="true" className="h-px w-4 bg-border sm:w-8"/>}
-              <button type="button" disabled={Boolean(phase) || index > current} aria-current={index === current ? 'step' : undefined} onClick={() => { setChoosingGoal(index === 0); setReviewing(index === 2); setError('') }} className={cn('flex min-h-11 items-center gap-2 rounded-lg px-2 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default', index === current ? 'font-bold text-foreground' : 'text-muted-foreground')}>
-                <span className={cn('flex size-6 items-center justify-center rounded-full', index <= current ? 'bg-primary text-primary-foreground' : 'bg-muted')}>{index < current ? <Check aria-hidden="true" className="size-3.5"/> : index + 1}</span>{label}
+              <button type="button" aria-label={`Go to ${label.toLowerCase()}`} disabled={Boolean(phase) || (index === 2 && Boolean(sourceProblem))} aria-current={index === current ? 'step' : undefined} onClick={() => goToStep(index)} className={cn('flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border px-2 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50', index === current ? 'border-primary bg-muted text-foreground' : 'border-border text-muted-foreground enabled:hover:bg-muted enabled:hover:text-foreground')}>
+                <span aria-hidden="true" className={cn('flex size-6 shrink-0 items-center justify-center rounded-full', index === current ? 'bg-primary text-primary-foreground' : 'bg-muted')}>{index + 1}</span>{label}
               </button>
             </li>
           })}
@@ -171,13 +187,18 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
             <div className="flex items-start gap-3"><FileText className="mt-1 size-5 shrink-0 text-primary" aria-hidden="true"/><div><p className="text-sm text-muted-foreground">Transcripts, readings, questions, or drafts.</p></div></div>
             <MaterialIntakeDialog minimumTextCharacters={1} courseId={courseId} onAdded={ids => { saveDraft([...new Set([...selectedIds, ...ids])]); setError('') }} trigger={<Button variant="outline"><FilePlus2 className="size-4"/>Upload or paste</Button>}/>
           </div>
+          <details className="rounded-xl border border-border px-4 py-2" open={files.length === 0}>
+            <summary className="cursor-pointer py-2 text-sm font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Not sure what to upload?</summary>
+            <p className="mt-2 text-sm leading-6">{uploadGuidance[goal].start}</p>
+            <ul className="my-3 list-disc space-y-2 pl-5 text-sm leading-6 text-muted-foreground">{uploadGuidance[goal].suggestions.map(suggestion => <li key={suggestion}>{suggestion}</li>)}</ul>
+            <p className="pb-2 text-xs leading-5 text-muted-foreground">Use Upload or paste, or choose files already saved for this class. Add only the relevant pages or excerpts; check that each selection says “Readable text ready.”</p>
+          </details>
           {library.length > 0 && <div>
             <Button type="button" variant="ghost" className="px-0 text-primary" aria-expanded={libraryOpen} onClick={() => setLibraryOpen(!libraryOpen)}>Choose saved class materials</Button>
             {libraryOpen && <div className="max-h-56 overflow-y-auto rounded-xl border border-border p-2" aria-label="Saved class materials">{library.map(file => <label key={file.id} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg p-3 hover:bg-muted focus-within:ring-2 focus-within:ring-ring"><input type="checkbox" className="mt-1 accent-primary" checked={selectedIds.includes(file.id)} onChange={event => changeSources(file.id, event.target.checked)}/><span className="min-w-0 break-words text-sm">{file.title}</span></label>)}</div>}
           </div>}
           {files.length > 0 && <ul aria-label="Selected materials" className="max-h-64 divide-y divide-border overflow-y-auto">{files.map(file => <li key={file.id} className="flex min-w-0 items-center gap-3 py-3"><FileText className="size-4 shrink-0 text-muted-foreground"/><span className="min-w-0 flex-1"><b className="block break-words text-sm">{file.title}</b><span className="text-xs text-muted-foreground">{readableIds.has(file.id) ? 'Readable text ready' : 'No readable text · add a clearer copy'}</span></span><Button variant="ghost" size="icon" aria-label={`Exclude ${file.title}`} onClick={() => changeSources(file.id, false)}><X className="size-4"/></Button></li>)}</ul>}
         </section>
-        <div className="flex flex-wrap items-center gap-2 text-sm"><span className="rounded-full bg-muted px-3 py-1">{chosenGoal.label}</span><Button variant="ghost" onClick={() => setChoosingGoal(true)}>Edit goal</Button></div>
         <details><summary className="cursor-pointer py-2 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring">Entry title <span className="font-normal text-muted-foreground">Optional</span></summary><label className="block pt-2"><span className="sr-only">Entry title</span><Input value={title} placeholder="Name it, or use the generated title" onChange={event => { setTitle(event.target.value); saveDraft(selectedIds, event.target.value, request) }}/></label></details>
       </> : <>
         <section aria-label="Creation plan" className="rounded-xl border-l-4 border-primary bg-muted p-5">
@@ -187,14 +208,14 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
         </section>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm"><span><b>{files.length}</b> selected materials</span><span><b>{chunks.length}</b> readable passages</span><span className="inline-flex items-center gap-1 text-primary"><Check className="size-4"/>All readable passages included</span></div>
         {unreadable.length > 0 && <p className="text-sm text-destructive">{unreadable.length} selected {unreadable.length === 1 ? 'file has' : 'files have'} no readable text and cannot contribute to this result. Go back to replace or exclude them.</p>}
-        <details className="rounded-xl border border-border p-4 text-sm"><summary className="cursor-pointer font-semibold focus-visible:ring-2 focus-visible:ring-ring">Sources and AI use</summary><ul className="mt-3 max-h-48 space-y-2 overflow-y-auto">{files.map(file => <li key={file.id} className="break-words">{file.title} · {readableIds.has(file.id) ? 'Text included' : 'Unreadable'}</li>)}</ul><p className="mt-3 text-xs leading-5 text-muted-foreground">Readable source text and your request are sent when you create the entry. Original files stay on this device. Generated explanations include source references you can open when needed.</p></details>
+        <details className="rounded-xl border border-border p-4 text-sm"><summary className="cursor-pointer font-semibold focus-visible:ring-2 focus-visible:ring-ring">Sources and AI use</summary><ul className="mt-3 max-h-48 space-y-2 overflow-y-auto">{files.map(file => <li key={file.id} className="break-words">{file.title} · {readableIds.has(file.id) ? 'Text included' : 'Unreadable'}</li>)}</ul><p className="mt-3 text-xs leading-5 text-muted-foreground">Readable source text and your request are sent when you create the entry. Signed-in account sync stores academic originals privately so you can open them in another browser. Generated explanations include source references you can open when needed.</p></details>
       </>}
       {!choosingGoal && sourceProblem && <p role="status" className="text-sm text-muted-foreground">{sourceProblem}</p>}
       {error && <p role="alert" className="rounded-xl border border-destructive/30 p-3 text-sm text-destructive">{error}</p>}
       {phase && <NotebookBuildProgress phase={phase} tailored={tailored} output={chosenGoal.output}/>}
       <footer className="flex flex-wrap items-center justify-between gap-3 pt-2">
-        {!choosingGoal && reviewing ? <Button variant="ghost" disabled={Boolean(phase)} onClick={() => { setReviewing(false); setError('') }}><ArrowLeft className="size-4"/>Edit materials or request</Button> : <p className="text-xs text-muted-foreground">{draft ? 'Draft saved' : ''}</p>}
-        <Button className="ml-auto" disabled={Boolean(phase) || (!choosingGoal && Boolean(sourceProblem))} onClick={choosingGoal ? () => { saveDraft(); setReviewing(false); setChoosingGoal(false) } : reviewing ? () => void build() : review}>{!choosingGoal && reviewing ? <Sparkles className="size-4"/> : <ArrowRight className="size-4"/>}{choosingGoal ? 'Continue to materials' : phase ? 'Creating…' : reviewing ? 'Create entry' : 'Review and create'}</Button>
+        {!choosingGoal ? <Button variant="outline" disabled={Boolean(phase)} onClick={() => goToStep(reviewing ? 1 : 0)}><ArrowLeft className="size-4"/>{reviewing ? 'Back to materials' : 'Back to goal'}</Button> : <p className="text-xs text-muted-foreground">{draft ? 'Draft saved' : ''}</p>}
+        <Button className="ml-auto" disabled={Boolean(phase) || (!choosingGoal && Boolean(sourceProblem))} onClick={choosingGoal ? () => goToStep(1) : reviewing ? () => void build() : () => goToStep(2)}>{!choosingGoal && reviewing ? <Sparkles className="size-4"/> : <ArrowRight className="size-4"/>}{choosingGoal ? 'Continue to materials' : phase ? 'Creating…' : reviewing ? 'Create entry' : 'Review and create'}</Button>
       </footer>
     </div>
   </section>
