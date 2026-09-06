@@ -22,7 +22,7 @@ function failureFor(code: string): GenerateFailure {
   return 'provider-unavailable'
 }
 
-export async function generateUnitMasteryOutline({ courseId, chunks, unit, label, scope = 'unit', practiceQuestionChunkIds = [], primarySourceChunkIds = [], studyIntent }: { courseId: string; chunks: SourceChunk[]; unit: string; label: string; scope?: 'lecture' | 'unit' | 'exam'; practiceQuestionChunkIds?: readonly string[]; primarySourceChunkIds?: readonly string[]; studyIntent?: JournalStudyIntent }): Promise<UnitMasteryOutlineOutcome> {
+export async function generateUnitMasteryOutline({ courseId, chunks, unit, label, scope = 'unit', practiceQuestionChunkIds = [], primarySourceChunkIds = [], studyIntent, notebookRequest }: { courseId: string; chunks: SourceChunk[]; unit: string; label: string; scope?: 'lecture' | 'unit' | 'exam'; practiceQuestionChunkIds?: readonly string[]; primarySourceChunkIds?: readonly string[]; studyIntent?: JournalStudyIntent; notebookRequest?: string }): Promise<UnitMasteryOutlineOutcome> {
   if (!chunks.length) return { ok: false, failure: 'no-sources', message: 'Select processed course material first. The mastery map stays empty rather than guessing.' }
   try {
     assertGenerationAllowed({ scope: 'academics', artifact: 'unit-mastery-outline', courseId, groundedIn: chunks.map((chunk) => chunk.id) })
@@ -34,6 +34,7 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
   const preparedIds = new Set(prepared.chunkIds)
   const sourcePriority = lectureSourcePriorityInstruction(primarySourceChunkIds.filter((id) => preparedIds.has(id)))
   const journalInstruction = journalStudyInstruction(studyIntent, chunks.filter(chunk => preparedIds.has(chunk.id)))
+  const refinements = notebookRequest?.trim() ? `Additional student instructions (preferences, not factual evidence): ${JSON.stringify(notebookRequest.trim().slice(0, 4000))}. Apply within the Mastery Map contract and selected evidence; preserve objective depth and do not invent support.` : ''
   const questionReferenceIds = [...new Set(practiceQuestionChunkIds.filter((id) => preparedIds.has(id)))]
   const validationEvidence = {
     privateAssessmentPhrases: chunks.filter((chunk) => questionReferenceIds.includes(chunk.id))
@@ -45,13 +46,14 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
     request: [
       sourcePriority,
       journalInstruction,
+      refinements,
       examInstruction,
 
       `Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Build the detailed mastery map from the selected sources. Preserve every explicit objective relevant to this scope and all distinct supported Free-recall cues, Understand, Be able to do, and Watch for points. Each objective needs a concrete blank-page retrieval cue; process or mechanism objectives must ask the student to explain or reconstruct the full process without notes.`,
       questionReferenceIds.length ? `Reference-question chunk IDs: ${questionReferenceIds.join(', ')}. Use their task patterns, representations, distinctions, and traps to make Be able to do and Watch for concrete. Do not copy stems, and never treat distractors as facts.` : '',
     ].filter(Boolean).join('\n'),
   })
-  const result = await generateWithSourceRecovery(courseId, chunks, { action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `${sourcePriority} ${journalInstruction} Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map with objective-specific free-recall cues. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline. ${examInstruction}${questionReferenceIds.length ? ' Use the marked question passages as task-pattern evidence without copying them.' : ''}` })
+  const result = await generateWithSourceRecovery(courseId, chunks, { action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `${sourcePriority} ${journalInstruction} ${refinements} Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map with objective-specific free-recall cues. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline. ${examInstruction}${questionReferenceIds.length ? ' Use the marked question passages as task-pattern evidence without copying them.' : ''}` })
 
   if (!result.ok) return { ok: false, failure: failureFor(result.code), message: result.message }
   const issues: string[] = []
@@ -60,7 +62,7 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
     const repair = await generateWithSourceRecovery(courseId, chunks, {
       action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds,
       specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt,
-      request: `${sourcePriority} ${journalInstruction} Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Rebuild the complete Mastery Map from the same selected evidence. A prior attempt failed these deterministic checks: ${issues.join('; ')}. Correct every listed requirement. Keep all required fields, objective-specific cues, at least one cue explicitly saying "without notes" per objective, five distinct Understand points, two distinct Be able to do points, and one Watch for point. ${examInstruction} Source IDs must come only from the supplied evidence. Do not invent missing facts or repeat points to satisfy counts. Return the full valid artifact, not a patch.`,
+      request: `${sourcePriority} ${journalInstruction} ${refinements} Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Rebuild the complete Mastery Map from the same selected evidence. A prior attempt failed these deterministic checks: ${issues.join('; ')}. Correct every listed requirement. Keep all required fields, objective-specific cues, at least one cue explicitly saying "without notes" per objective, five distinct Understand points, two distinct Be able to do points, and one Watch for point. ${examInstruction} Source IDs must come only from the supplied evidence. Do not invent missing facts or repeat points to satisfy counts. Return the full valid artifact, not a patch.`,
 
     })
     if (!repair.ok) return { ok: false, failure: failureFor(repair.code), message: repair.message }

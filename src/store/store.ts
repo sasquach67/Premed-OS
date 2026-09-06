@@ -65,6 +65,7 @@ import { migrateReadingTaskScheduleV38 } from '@/store/migrations/readingTaskSch
 import { migrateGeneratedUnitResourcesV39 } from '@/store/migrations/generatedUnitResourcesV39'
 import { migrateProfileMinorsV40 } from '@/store/migrations/profileMinorsV40'
 import { migrateNotebookV49 } from '@/store/migrations/notebookV49'
+import { migrateNotebookV50 } from '@/store/migrations/notebookV50'
 import { migrateJournalIntentV48 } from '@/store/migrations/journalIntentV48'
 import { migrateLectureWorkspaceV41 } from '@/store/migrations/lectureWorkspaceV41'
 import { migrateStaffEmailV42 } from '@/store/migrations/staffEmailV42'
@@ -91,8 +92,8 @@ if (DEMO_MODE) clearUnstampedDemoNamespace()
 export const STORAGE_KEY = activeStorageKey()
 /** Version 0 is the oldest local-first root shape this migration chain accepts. */
 export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateNotebookV49`. */
-export const CURRENT_STORE_VERSION = 49
+/** Matches the newest migration in `migrateAll`: `migrateNotebookV50`. */
+export const CURRENT_STORE_VERSION = 50
 
 function createInitialData() {
   const initial = createInitialDataForMode(DEMO_MODE)
@@ -609,7 +610,7 @@ export function migrateAll(data: AppData): AppData {
   migrated = migrateClassIdentityV46(migrated)
   migrated = migrateCurrentClassIdentityV47(migrated)
   migrated = migrateJournalIntentV48(migrated)
-  return migrateNotebookV49(migrated)
+  return migrateNotebookV50(migrateNotebookV49(migrated))
 }
 
 /**

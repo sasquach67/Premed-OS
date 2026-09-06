@@ -1,19 +1,21 @@
 # Class Notebook: goal before materials
 
-Corrected direction, 2026-09-05: ask what the student wants to do before showing intake. Broad starting points are editable suggestions, not exclusive modes.
-
-Original foundation: replace the transcript-first journal wizard with a simple, adaptable Notebook entry. The three-choice entry picker is superseded. Understanding, assessment preparation, and assignment work can overlap; students do not need to classify their class or task.
+Updated direction, 2026-09-05: choose the general purpose before adding materials. The three choices select a generation contract; the optional text box contains only further human instructions and is never populated by selecting a choice.
 
 ## Interaction
 
-1. Add to notebook first asks “What would you like to do?” Offer Review class material, Prepare for an assessment, and Work on an assignment as starting points. Students can describe their own task or combine goals in the optional text box. No material intake appears on this screen.
-2. Continue to materials opens upload, paste, and saved class sources. Show the goal with an Edit goal action. A transcript is optional. Excluding a source does not delete it from the library.
-3. Review the selected sources and creation plan before generation. Blank request keeps Study Guide + Mastery Map; specific requests create a tailored Notebook page. The initial question requires no sources and makes no AI call.
-4. Open the saved result, retaining task-specific headings, expandable evidence, and existing entry compatibility.
+1. Add to notebook asks “What would you like to do?” Select Review class material, Prepare for an assessment, or Work on an assignment. Highlight the selected option. These are starting purposes, not claims that understanding and assessment preparation cannot overlap. The default is Review class material.
+2. Optionally add instructions such as easier explanations, more examples, or lecture emphasis. Keep this text independent of the selected purpose.
+3. Continue to upload, paste, or saved class sources. A transcript is optional. Review sources, purpose, instructions, and output before creation.
+4. Open the saved result; preserve previous results if rebuilding fails.
 
 ## Generation contract
 
-The default retains study-guide-v1 and unit-mastery-outline-v1. Tailored pages use notebook-entry-v1, with the shared cited content-block schema and a separate task-adaptive specification. The existing generateStudyGuide transport/function and record.studyGuide field are reused for compatibility; their internal names do not force the tailored outline. No model, credentials, billing, or backend deployment changes are part of this redesign.
+Review class material retains the existing [study-guide-v1 briefing](../../specifications/generation/03-study-guide-v1.md) and [unit-mastery-outline-v1 briefing](../../specifications/generation/11-unit-mastery-outline-v1.md), including when optional instructions are present. Refinements reach both actual generation requests and the Mastery Map repair request. The canonical guide structure and source guards remain authoritative.
+
+Prepare for an assessment uses [notebook-assessment-v1](notebook-assessment-v1.md). Work on an assignment uses [notebook-assignment-v1](notebook-assignment-v1.md). Both reuse the cited content-block reader and create a task-specific page without automatic Mastery Map generation. The selected goal and optional instructions are included in both the assembled prompt and actual generation request. No model, credentials, billing, or backend deployment changes are part of this update.
+
+Legacy callers without an explicit notebookGoal preserve the earlier behavior: blank notebookRequest uses the study package; a nonempty request uses notebook-entry-v1. This compatibility path is not the new composer interaction.
 
 Every selected readable passage must fit the existing preparation limit (480 chunks / 220,000 characters); the composer blocks oversized sets instead of silently selecting a subset. Unreadable selected files are identified before creation and do not contribute evidence. This is not full-corpus staged processing or OCR expansion. Generation still uses existing authentication, source synchronization, citation validation, and audit handling.
 
@@ -21,11 +23,11 @@ Uploaded documents are evidence, not executable instructions. Prompts and rubric
 
 ## Persistence and compatibility
 
-Schema v49 adds optional notebookRequest, notebookOutput, and notebookGeneratedRequest fields to LectureRecord. Existing lecture records and legacy studyIntent are preserved. The generated request snapshot stays separate from the editable draft request. A failed build keeps any previous guide and mastery artifact. Tailored rebuilds retain older mastery data without placing a new automatic Mastery tab on the tailored page. Internal journal/lecture routes remain compatible.
+Schema v49 added optional notebookRequest, notebookOutput, and notebookGeneratedRequest fields to LectureRecord. Schema v50 adds notebookGoal and notebookGeneratedGoal separately, using a lossless additive migration. Exact old preset text is recognized on resume; custom instructions remain untouched. Existing lecture records and legacy studyIntent are preserved. The generated request snapshot stays separate from the editable draft request. A failed build keeps any previous guide and mastery artifact. Tailored rebuilds retain older mastery data without placing a new automatic Mastery tab on the tailored page. Internal journal/lecture routes remain compatible.
 
 ## Design and ownership
 
-NotebookEntryComposer owns intake, source selection, request, and review. LectureCapturePanel chooses the saved result view. NotebookPageView reuses source-aware reading blocks with a simple reading column. Existing semantic tokens, fonts, and button/dialog/input components remain authoritative; no new component dependency is introduced. ClassHub's larger layout and full-screen route work are coordinated separately.
+NotebookEntryComposer owns intake, source selection, request, and review. LectureCapturePanel chooses the saved result view. NotebookPageView reuses source-aware reading blocks with a simple reading column. The dedicated entry route uses the full app content width with compact top padding, no enclosing composer card, and shared accessible radio controls with a selected outline and fill. Existing semantic tokens, fonts, and button/dialog/input components remain authoritative; no new component dependency is introduced. ClassHub's larger layout and full-screen route work are coordinated separately.
 
 ## Verification boundary
 

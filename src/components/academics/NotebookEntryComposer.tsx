@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { ArrowLeft, ArrowRight, Check, FilePlus2, FileText, Loader2, NotebookPen, Sparkles, X } from 'lucide-react'
-import type { ClassCenterData, Course, LectureRecord } from '@/lib/types'
+import type { ClassCenterData, Course, LectureRecord, NotebookGoal } from '@/lib/types'
 import { uid } from '@/lib/id'
 import { useStore } from '@/store/store'
 import { Button } from '@/components/ui/button'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { inferNotebookGoal, initialNotebookInstructions } from '@/lib/academics/notebookGoal'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { MaterialIntakeDialog } from './MaterialIntakeDialog'
@@ -14,10 +17,11 @@ import { instructorSourceFileIds } from '@/lib/academics/lectureSourcePriority'
 import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationIntake'
 import { buildLectureBrief } from '@/lib/academics/lectureWorkspace'
 
-function initialRequest(entry?: LectureRecord) {
-  return entry?.notebookRequest ?? entry?.studyIntent?.instructions
-    ?? (entry?.studyIntent?.purpose === 'exam-prep' ? 'Prepare for my exam using the selected review sheet and course materials.' : '')
-}
+const goalOptions: { value: NotebookGoal; label: string; output: string; description: string }[] = [
+  { value: 'review', label: 'Review class material', output: 'Study Guide + Mastery Map', description: 'Connect ideas, work through examples, and build recall from your class material.' },
+  { value: 'assessment', label: 'Prepare for an assessment', output: 'Assessment study guide', description: 'Organize the topics to know, connect the supporting materials, and identify gaps in preparation.' },
+  { value: 'assignment', label: 'Work on an assignment', output: 'Assignment workspace', description: 'Work through the task using its instructions, your materials, and any draft or attempt.' },
+]
 
 export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }: {
   courseId: string
@@ -28,7 +32,10 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
 }) {
   const [draftId] = useState(() => entry?.id ?? uid())
   const [title, setTitle] = useState(entry?.title ?? '')
-  const [request, setRequest] = useState(initialRequest(entry))
+  const [request, setRequest] = useState(initialNotebookInstructions(entry))
+  const [goal, setGoal] = useState<NotebookGoal>(() => inferNotebookGoal(entry))
+  const goalId = useId()
+  const chosenGoal = goalOptions.find(option => option.value === goal)!
   const [choosingGoal, setChoosingGoal] = useState(true)
   const [reviewing, setReviewing] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
@@ -42,7 +49,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
   const chunks = data.sourceChunks.filter(chunk => chunk.courseId === courseId && selectedIds.includes(chunk.fileId) && chunk.content.trim())
   const readableIds = new Set(chunks.map(chunk => chunk.fileId))
   const unreadable = files.filter(file => !readableIds.has(file.id))
-  const tailored = Boolean(request.trim())
+  const tailored = goal !== 'review'
   const primaryIds = instructorSourceFileIds(files)
   const prepared = selectGenerationSourceChunks(chunks, { preferredFileIds: primaryIds, priorityChunkIds: practiceQuestionChunkIds(files, chunks) })
   const tooLarge = prepared.length < chunks.length
@@ -51,14 +58,14 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
   const library = data.files.filter(file => file.courseId === courseId)
   const defaultTitle = `Notebook entry ${data.lectures.filter(item => item.courseId === courseId).length + (draft ? 0 : 1)}`
 
-  function saveDraft(ids = selectedIds, nextTitle = title, nextRequest = request) {
+  function saveDraft(ids = selectedIds, nextTitle = title, nextRequest = request, nextGoal = goal) {
     // Event handler only; saving never runs during render.
     // eslint-disable-next-line react-hooks/purity
     const now = Date.now()
     useStore.getState().update(state => {
       const center = state.academics.classCenter
       const current = center.lectures.find(item => item.id === draftId)
-      const values = { title: nextTitle.trim() || defaultTitle, notebookRequest: nextRequest, selectedSourceFileIds: ids, updatedAt: now }
+      const values = { title: nextTitle.trim() || defaultTitle, notebookRequest: nextRequest, notebookGoal: nextGoal, selectedSourceFileIds: ids, updatedAt: now }
       if (current) Object.assign(current, values)
       else center.lectures.push({ id: draftId, courseId, ...values, inputPath: 'materials', processingState: 'ready', workspaceState: 'draft', occurredOn: new Date(now).toISOString().slice(0, 10), createdAt: now, order: center.lectures.filter(item => item.courseId === courseId).length })
     })
@@ -81,12 +88,12 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
       const label = title.trim() || draft?.title || defaultTitle
       const primarySourceChunkIds = chunks.filter(chunk => primaryIds.includes(chunk.fileId)).map(chunk => chunk.id)
       const questionIds = practiceQuestionChunkIds(files, chunks)
-      const guide = await generateStudyGuide({ courseId, chunks, label, notebookRequest: tailored ? request : undefined, primarySourceChunkIds: tailored ? [] : primarySourceChunkIds, practiceQuestionChunkIds: questionIds })
+      const guide = await generateStudyGuide({ courseId, chunks, label, notebookGoal: goal, notebookRequest: request.trim() || undefined, primarySourceChunkIds: tailored ? [] : primarySourceChunkIds, practiceQuestionChunkIds: questionIds })
       if (!guide.ok || !guide.artifact) { setError(guide.message ?? 'The page could not be created. Your materials and any previous result are still saved.'); return }
       let mastery: Awaited<ReturnType<typeof generateUnitMasteryOutline>> | undefined
       if (!tailored) {
         setPhase('mastery')
-        mastery = await generateUnitMasteryOutline({ courseId, chunks, unit: label, label, scope: 'lecture', primarySourceChunkIds, practiceQuestionChunkIds: questionIds })
+        mastery = await generateUnitMasteryOutline({ courseId, chunks, unit: label, label, scope: 'lecture', notebookRequest: request.trim() || undefined, primarySourceChunkIds, practiceQuestionChunkIds: questionIds })
         if (!mastery.ok || !mastery.artifact) { setError(mastery.message ?? 'The Mastery Map could not be created. Your previous result is unchanged.'); return }
       }
       const generatedGuide = guide.artifact
@@ -105,6 +112,8 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
         record.notebookOutput = tailored ? 'tailored-page' : 'study-package'
         record.notebookRequest = request
         record.notebookGeneratedRequest = request
+        record.notebookGoal = goal
+        record.notebookGeneratedGoal = goal
         record.selectedSourceFileIds = selectedIds
         record.generationAuditStatus = guide.auditStatus
         record.lectureBrief = { ...buildLectureBrief(chunks, selectedIds, center.files, now), usedSourceFileIds: usedFiles, unusedSourceFileIds: selectedIds.filter(id => !usedFiles.includes(id)) }
@@ -127,24 +136,23 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
     } finally { setPhase(null) }
   }
 
-  return <section className="notebook-composer mx-auto w-full max-w-4xl overflow-hidden rounded-xl border border-border bg-card" aria-label="Notebook entry composer">
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-7">
+  return <section className="notebook-composer w-full min-w-0" aria-label="Notebook entry composer">
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4 pt-2">
       <div><p className="text-xs font-bold text-primary">{course?.code ?? 'Class'} · Notebook</p><h2 className="mt-1 font-display text-xl font-extrabold">{choosingGoal ? 'What would you like to do?' : reviewing ? 'Ready to create' : 'Bring your materials'}</h2></div>
       <p className="text-xs text-muted-foreground">{choosingGoal ? '1 of 3 · Your goal' : reviewing ? '3 of 3 · Review' : '2 of 3 · Materials'}</p>
     </header>
-    <div className="space-y-6 p-5 sm:p-7">
+    <div className="space-y-6 py-6">
       {choosingGoal ? <section aria-label="Notebook goal" className="space-y-5">
-        <p className="text-sm text-muted-foreground">Choose a starting point, or describe your own. You can combine goals.</p>
-        <div className="grid gap-2 sm:grid-cols-3">
-          {[
-            { label: 'Review class material', request: '' },
-            { label: 'Prepare for an assessment', request: 'Help me prepare for an assessment using my class materials.' },
-            { label: 'Work on an assignment', request: 'Help me work through an assignment using its instructions and my class materials.' },
-          ].map(option => <Button key={option.label} variant="outline" className="h-auto min-h-14 whitespace-normal px-4 py-3 text-left" onClick={() => { setRequest(option.request); saveDraft(selectedIds, title, option.request) }}>{option.label}</Button>)}
-        </div>
+        <p className="text-sm text-muted-foreground">Choose what you want to create. Add any further instructions below.</p>
+        <RadioGroup aria-label="What would you like to do?" value={goal} onValueChange={value => { const nextGoal = value as NotebookGoal; setGoal(nextGoal); saveDraft(selectedIds, title, request, nextGoal) }} className="gap-3 sm:grid-cols-3">
+          {goalOptions.map(option => <label key={option.value} htmlFor={`${goalId}-${option.value}`} className={cn('flex min-h-20 cursor-pointer items-center gap-3 rounded-lg border p-4 transition-colors focus-within:ring-2 focus-within:ring-ring', goal === option.value ? 'border-primary bg-muted ring-1 ring-primary' : 'border-border hover:bg-muted')}>
+            <RadioGroupItem id={`${goalId}-${option.value}`} value={option.value} aria-label={option.label}/><span className="text-sm font-bold">{option.label}</span>
+          </label>)}
+        </RadioGroup>
+        <p className="text-sm text-muted-foreground" aria-live="polite">{chosenGoal.description}</p>
         <label className="block text-sm font-bold">Anything specific? <span className="font-normal text-muted-foreground">Optional</span>
           <Textarea className="mt-2 min-h-24" maxLength={4000} value={request} onChange={event => { setRequest(event.target.value); saveDraft(selectedIds, title, event.target.value) }} placeholder="e.g., explain simply, give examples, focus on a topic…"/>
-          <span className="mt-2 block text-xs font-normal leading-5 text-muted-foreground">Leave this blank to review class material with a Study Guide and Mastery Map.</span>
+          <span className="mt-2 block text-xs font-normal leading-5 text-muted-foreground">Optional refinements: make it easier to digest, add examples, or emphasize lecture material. Your selected goal stays the same.</span>
         </label>
         <p className="text-xs text-muted-foreground">Next, bring whatever supports your goal. A transcript is optional.</p>
       </section> : !reviewing ? <>
@@ -159,13 +167,13 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
           </div>}
           {files.length > 0 && <ul aria-label="Selected materials" className="max-h-64 divide-y divide-border overflow-y-auto">{files.map(file => <li key={file.id} className="flex min-w-0 items-center gap-3 py-3"><FileText className="size-4 shrink-0 text-muted-foreground"/><span className="min-w-0 flex-1"><b className="block break-words text-sm">{file.title}</b><span className="text-xs text-muted-foreground">{readableIds.has(file.id) ? 'Readable text ready' : 'No readable text · add a clearer copy'}</span></span><Button variant="ghost" size="icon" aria-label={`Exclude ${file.title}`} onClick={() => changeSources(file.id, false)}><X className="size-4"/></Button></li>)}</ul>}
         </section>
-        <div className="flex flex-wrap items-start justify-between gap-3 border-t border-border pt-4"><div className="min-w-0 flex-1"><p className="text-xs font-bold text-primary">Your goal</p><p className="mt-1 whitespace-pre-wrap break-words text-sm">{request.trim() || 'Review class material · Study Guide + Mastery Map'}</p></div><Button variant="ghost" onClick={() => setChoosingGoal(true)}>Edit goal</Button></div>
+        <div className="flex flex-wrap items-start justify-between gap-3 border-t border-border pt-4"><div className="min-w-0 flex-1"><p className="text-xs font-bold text-primary">Your goal</p><p className="mt-1 whitespace-pre-wrap break-words text-sm">{chosenGoal.label}</p>{request.trim() && <p className="mt-2 whitespace-pre-wrap break-words text-sm text-muted-foreground">{request}</p>}</div><Button variant="ghost" onClick={() => setChoosingGoal(true)}>Edit goal</Button></div>
         <details className="border-t border-border pt-3"><summary className="cursor-pointer py-2 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring">Entry title <span className="font-normal text-muted-foreground">Optional</span></summary><label className="block pt-2"><span className="sr-only">Entry title</span><Input value={title} placeholder="Name it, or use the generated title" onChange={event => { setTitle(event.target.value); saveDraft(selectedIds, event.target.value, request) }}/></label></details>
       </> : <>
         <section aria-label="Creation plan" className="rounded-xl border-l-4 border-primary bg-muted p-5">
-          <div className="flex items-center gap-2 text-primary"><NotebookPen className="size-5"/><h3 className="font-display text-lg font-bold">{tailored ? 'A page shaped around your request' : 'Study Guide + Mastery Map'}</h3></div>
-          <p className="mt-3 text-sm leading-6">{tailored ? 'The AI will choose an outline suited to your request and support it with the selected materials. A Mastery Map is not added automatically.' : 'Connect the ideas in your materials, then create recall cues and application goals. Transcripts and slides guide the explanation when included; readings add supporting detail.'}</p>
-          {tailored && <blockquote className="mt-3 whitespace-pre-wrap break-words border-l-2 border-border pl-3 text-sm leading-6">{request}</blockquote>}
+          <div className="flex items-center gap-2 text-primary"><NotebookPen className="size-5"/><h3 className="font-display text-lg font-bold">{chosenGoal.output}</h3></div>
+          <p className="mt-3 text-sm leading-6">{chosenGoal.label}: {chosenGoal.description}</p>
+          {request.trim() && <blockquote className="mt-3 whitespace-pre-wrap break-words border-l-2 border-border pl-3 text-sm leading-6">{request}</blockquote>}
         </section>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm"><span><b>{files.length}</b> selected materials</span><span><b>{chunks.length}</b> readable passages</span><span className="inline-flex items-center gap-1 text-primary"><Check className="size-4"/>All readable passages included</span></div>
         {unreadable.length > 0 && <p className="text-sm text-destructive">{unreadable.length} selected {unreadable.length === 1 ? 'file has' : 'files have'} no readable text and cannot contribute to this result. Go back to replace or exclude them.</p>}

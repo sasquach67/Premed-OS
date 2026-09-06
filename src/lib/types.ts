@@ -716,6 +716,8 @@ export interface JournalStudyIntent {
   reviewSheetFileId?: ID
 }
 
+export type NotebookGoal = 'review' | 'assessment' | 'assignment'
+
 export interface LectureRecord {
   id: ID
   courseId: ID
@@ -723,11 +725,15 @@ export interface LectureRecord {
   /** A provider-generated descriptive title, kept separate from chronology. */
   aiTitle?: string
   studyIntent?: JournalStudyIntent
-  /** Materials-first composer request; an empty string explicitly chooses the default study package. */
+  /** Selected purpose for the next build; independent of optional student instructions. */
+  notebookGoal?: NotebookGoal
+  /** Optional student instructions refining the selected goal. */
   notebookRequest?: string
   /** Output of the last successful build, kept separate from an edited draft request. */
   notebookOutput?: 'study-package' | 'tailored-page'
   notebookGeneratedRequest?: string
+  /** Goal used by the last successful build; draft edits do not rewrite saved output. */
+  notebookGeneratedGoal?: NotebookGoal
   inputPath: LectureInputPath
   /** Present only for a locally retained recording or audio upload. */
   audioBlobRef?: string

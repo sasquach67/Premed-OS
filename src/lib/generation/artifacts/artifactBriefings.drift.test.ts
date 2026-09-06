@@ -1,3 +1,5 @@
+import assessmentDocument from '../../../../premed-hq-documentation/implementation/briefs/notebook-assessment-v1.md?raw'
+import assignmentDocument from '../../../../premed-hq-documentation/implementation/briefs/notebook-assignment-v1.md?raw'
 import notebookDocument from '../../../../premed-hq-documentation/implementation/briefs/class-notebook-materials-first.md?raw'
 import { describe, expect, it } from 'vitest'
 import gapCheckDocument from '../../../../premed-hq-documentation/specifications/generation/14-gap-check-v1.md?raw'
@@ -12,6 +14,8 @@ import { assembleGenerationRequest } from '@/lib/generation/assemble'
 import { ARTIFACT_REGISTRY } from './registry'
 
 const briefings = {
+  'notebook-assessment-v1': { path: 'premed-hq-documentation/implementation/briefs/notebook-assessment-v1.md', document: assessmentDocument },
+  'notebook-assignment-v1': { path: 'premed-hq-documentation/implementation/briefs/notebook-assignment-v1.md', document: assignmentDocument },
   'notebook-entry-v1': { path: 'premed-hq-documentation/implementation/briefs/class-notebook-materials-first.md', document: notebookDocument },
   'gap-check-v1': { path: 'premed-hq-documentation/specifications/generation/14-gap-check-v1.md', document: gapCheckDocument },
   'study-guide-v1': { path: 'premed-hq-documentation/specifications/generation/03-study-guide-v1.md', document: studyGuideDocument },

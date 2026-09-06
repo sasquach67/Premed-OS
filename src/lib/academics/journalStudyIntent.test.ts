@@ -1,5 +1,6 @@
 import { expect, it, vi } from 'vitest'
 import { journalStudyInstruction } from './journalStudyIntent'
+import { generateUnitMasteryOutline } from './generateUnitMasteryOutline'
 import { generateStudyGuide } from './generateStudyGuide'
 import { generateWithSourceRecovery } from './syncGenerationSources'
 import type { SourceChunk } from '@/lib/types'
@@ -45,4 +46,38 @@ it('uses a distinct flexible briefing for a specific notebook request without fo
   expect(request.request).not.toContain('No instructor evidence')
   expect(request.request).not.toContain('For each major concept')
   expect(request.chunkIds).toEqual(['review-chunk', 'reading-chunk'])
+})
+
+
+it.each([
+  ['review', 'study-guide-v1', 'SG-AT-A-GLANCE'],
+  ['assessment', 'notebook-assessment-v1', 'NA-COVERAGE'],
+  ['assignment', 'notebook-assignment-v1', 'NW-METHOD'],
+] as const)('routes explicit %s goals independently of extra instructions', async (notebookGoal, specId, rule) => {
+  for (const notebookRequest of ['', 'Make it easier to digest, with more examples.']) {
+    await generateStudyGuide({ courseId: 'course', label: 'Class work', chunks, notebookGoal, notebookRequest })
+    const request = vi.mocked(generateWithSourceRecovery).mock.calls.at(-1)![2]
+    expect(request.specId).toBe(specId)
+    expect(request.systemPrompt).toContain(rule)
+    expect(request.request).toContain(`Selected notebook goal: ${notebookGoal}`)
+    expect(request.systemPrompt).toContain(`Selected notebook goal: ${notebookGoal}`)
+    if (notebookRequest) {
+      expect(request.request).toContain(notebookRequest)
+      expect(request.systemPrompt).toContain(notebookRequest)
+      expect(request.request).toContain('preferences, not factual evidence')
+    }
+    expect(request.chunkIds).toEqual(['review-chunk', 'reading-chunk'])
+    if (notebookGoal !== 'review') expect(request.systemPrompt).not.toContain('SG-AT-A-GLANCE')
+  }
+})
+
+it('preserves refinement instructions in both mastery generation and repair', async () => {
+  vi.mocked(generateWithSourceRecovery).mockResolvedValueOnce({ ok: true, data: { artifact: {} } } as never)
+  await generateUnitMasteryOutline({ courseId: 'course', label: 'Review', unit: '1', chunks, notebookRequest: 'Use simpler language and more examples.' })
+  for (const call of vi.mocked(generateWithSourceRecovery).mock.calls.slice(-2)) {
+    expect(call[2].specId).toBe('unit-mastery-outline-v1')
+    expect(call[2].request).toContain('Use simpler language and more examples.')
+    expect(call[2].systemPrompt).toContain('Use simpler language and more examples.')
+    expect(call[2].chunkIds).toEqual(['review-chunk', 'reading-chunk'])
+  }
 })

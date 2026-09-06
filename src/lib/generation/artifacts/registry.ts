@@ -1,3 +1,5 @@
+import { NOTEBOOK_ASSESSMENT_V1 } from './notebookAssessment.v1'
+import { NOTEBOOK_ASSIGNMENT_V1 } from './notebookAssignment.v1'
 /**
  * The artifact version registry (`01` §2.1).
  *
@@ -19,6 +21,8 @@ import { UNIT_QUESTION_BANK_V1 } from '@/lib/generation/artifacts/unitQuestionBa
 import type { ArtifactSpec } from '@/lib/generation/types'
 
 export const ARTIFACT_REGISTRY: Record<string, ArtifactSpec> = {
+  [NOTEBOOK_ASSESSMENT_V1.specId]: NOTEBOOK_ASSESSMENT_V1,
+  [NOTEBOOK_ASSIGNMENT_V1.specId]: NOTEBOOK_ASSIGNMENT_V1,
   [NOTEBOOK_ENTRY_V1.specId]: NOTEBOOK_ENTRY_V1,
   [GAP_CHECK_V1.specId]: GAP_CHECK_V1,
   [STUDY_GUIDE_V1.specId]: STUDY_GUIDE_V1,

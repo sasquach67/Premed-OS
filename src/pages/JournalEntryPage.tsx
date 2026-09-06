@@ -13,8 +13,8 @@ export function JournalEntryPage() {
   const back = `/academics/classes/${encodeURIComponent(course.id)}`
   const entry = entryId !== 'new' ? data.lectures.find(item => item.id === entryId && item.courseId === course.id) : undefined
   if (entryId !== 'new' && !entry) return <section className="p-6"><h1>Notebook entry not found</h1><Button onClick={() => navigate(back)}>Back to Class Notebook</Button></section>
-  return <section className="mx-auto w-full max-w-6xl space-y-5 p-4 sm:p-6">
-    <Button variant="ghost" onClick={() => navigate(back)}><ArrowLeft aria-hidden="true"/>Back to Class Notebook</Button>
+  return <section className="notebook-entry-page w-full min-w-0 space-y-5 px-4 pb-8 pt-2 md:px-8">
+    <Button variant="ghost" className="h-9 px-0 hover:bg-transparent" onClick={() => navigate(back)}><ArrowLeft aria-hidden="true"/>Back to Class Notebook</Button>
     <header><h1 className="font-display text-3xl font-extrabold">{entry ? 'Continue notebook entry' : 'Add to notebook'}</h1><p className="mt-2 text-muted-foreground">{course.code} · Start with what you want to do, then add the materials that will help.</p></header>
     <LectureCapturePanel key={entryId} courseId={course.id} course={course} data={data} initialLectureId={entry?.id} initialDestination="transcript" onNavigateLecture={id => navigate(`/academics/classes/${encodeURIComponent(course.id)}/lectures/${encodeURIComponent(id)}`, { replace: true })} onOpenNotes={() => navigate(`${back}?classTab=guide`)}/>
   </section>

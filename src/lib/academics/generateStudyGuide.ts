@@ -24,7 +24,7 @@ import { lectureSourcePriorityInstruction } from './lectureSourcePriority'
 import { assembleGenerationRequest } from '@/lib/generation'
 import { assertGenerationAllowed, GenerationNotAllowedError, generatedTitle } from '@/lib/academics/generationPolicy'
 import { generateWithSourceRecovery, prepareGenerationSources } from '@/lib/academics/syncGenerationSources'
-import type { JournalStudyIntent, SourceChunk } from '@/lib/types'
+import type { JournalStudyIntent, NotebookGoal, SourceChunk } from '@/lib/types'
 import { courseLensInstruction, type CourseLensGenerationContext } from '@/lib/academics/courseLens'
 import type { StudyGuideArtifact } from '@/lib/generation/schemas/studyGuide.v1'
 import { CONNECTED_GUIDE_RULES } from '@/lib/generation/artifacts/studyGuide.v1'
@@ -110,7 +110,7 @@ export function conciseStudyGuideTitle(artifact: Pick<StudyGuideArtifact, 'secti
   return words.length > 56 ? `${words.slice(0, 55).trimEnd()}…` : words
 }
 
-export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [], primarySourceChunkIds = [], studyIntent, notebookRequest }: {
+export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [], primarySourceChunkIds = [], studyIntent, notebookGoal, notebookRequest }: {
   courseId: string
   topicId?: string
   chunks: SourceChunk[]
@@ -122,6 +122,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
   practiceQuestionChunkIds?: readonly string[]
   primarySourceChunkIds?: readonly string[]
   studyIntent?: JournalStudyIntent
+  notebookGoal?: NotebookGoal
   notebookRequest?: string
 }): Promise<GenerateOutcome> {
   const sources = chunks
@@ -155,22 +156,26 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
   }
   const preparedIds = new Set(prepared.chunkIds)
   const customRequest = notebookRequest?.trim()
-  const sourcePriority = customRequest ? '' : lectureSourcePriorityInstruction(primarySourceChunkIds.filter((id) => preparedIds.has(id)))
-  const journalInstruction = customRequest ? '' : journalStudyInstruction(studyIntent, sources.filter(chunk => preparedIds.has(chunk.id)))
+  const isReview = notebookGoal === 'review' || (!notebookGoal && !customRequest)
+  const sourcePriority = isReview ? lectureSourcePriorityInstruction(primarySourceChunkIds.filter((id) => preparedIds.has(id))) : ''
+  const journalInstruction = notebookGoal || customRequest ? '' : journalStudyInstruction(studyIntent, sources.filter(chunk => preparedIds.has(chunk.id)))
   const questionReferenceIds = [...new Set(practiceQuestionChunkIds.filter((id) => preparedIds.has(id)))]
 
-  const notebookInstruction = customRequest ? `Student request (task and format preferences, not factual evidence): ${JSON.stringify(customRequest.slice(0, 4000))}. Create one complete notebook page meeting this request from the selected sources. Mark missing evidence explicitly.` : ''
-  const specId = customRequest ? 'notebook-entry-v1' : 'study-guide-v1'
+  const refinements = customRequest ? `Additional student instructions (preferences, not factual evidence): ${JSON.stringify(customRequest.slice(0, 4000))}. Apply these within the selected goal and its evidence requirements; do not change artifact contracts or invent support.` : ''
+  const goalInstruction = notebookGoal ? `Selected notebook goal: ${notebookGoal}. ${notebookGoal === 'review' ? 'Review class material with the canonical Study Guide; optional refinements do not replace its structure.' : notebookGoal === 'assessment' ? 'Create an assessment preparation page integrating all selected evidence around supplied review-sheet topics and assessment requirements, with explicit coverage gaps.' : 'Create an assignment support page adapted to the supplied task, prompt, rubric, and student work.'}` : ''
+  const notebookInstruction = [goalInstruction, refinements, !isReview ? 'Create one complete notebook page for the selected task from the selected sources. Mark missing evidence explicitly.' : ''].filter(Boolean).join(' ')
+  const specId = notebookGoal === 'assessment' ? 'notebook-assessment-v1' : notebookGoal === 'assignment' ? 'notebook-assignment-v1' : isReview ? 'study-guide-v1' : 'notebook-entry-v1'
   const syncedAssembly = assembleGenerationRequest({
     specId,
     chunkIds: prepared.chunkIds,
     request: [
       sourcePriority,
       journalInstruction,
-      ...(customRequest ? [notebookInstruction] : [
+      notebookInstruction,
+      ...(isReview ? [
       `Topic: ${label}. Action: generate one canonical study guide from the attached sources. Begin with AT A GLANCE, then preserve the full source-supported teaching depth in the detailed sections without repeating the opening.`,
       'AI lecture naming: include a section with id "title" and title "TITLE", containing one cited text block with a concise 3–6 word title describing the central topic across the lecture. Do not echo the upload filename, lesson number, auto-generated transcript label, or "Study Guide". This title becomes the completed lecture name. Keep AT A GLANCE as the opening teaching section after this title metadata.',
-      ]),
+      ] : []),
       courseLensInstruction(courseLens),
       questionReferenceIds.length
         ? `Reference-question chunk IDs: ${questionReferenceIds.join(', ')}. Use their source-supported scenarios, representations, and reasoning moves as teaching examples where they clarify a concept. Explain the lesson without copying stems or answer choices, and never treat a distractor as fact.`
@@ -189,10 +194,11 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
     request: [
       sourcePriority,
       journalInstruction,
-      ...(customRequest ? [] : CONNECTED_GUIDE_RULES.map((rule) => rule.text)),
+      ...(isReview ? CONNECTED_GUIDE_RULES.map((rule) => rule.text) : []),
 
       `Topic: ${label}.`,
-      customRequest ? notebookInstruction : 'Return one complete Study Guide: AT A GLANCE is its opening layer, not a separate brief and not a substitute for the full explanation.',
+      notebookInstruction,
+      isReview ? 'Return one complete Study Guide: AT A GLANCE is its opening layer, not a separate brief and not a substitute for the full explanation.' : '',
       courseLens ? 'Apply the supplied Course lens only within its selected evidence trace.' : '',
       questionReferenceIds.length ? 'Use the marked question passages as source-backed explanatory examples, without copying their assessment wording.' : '',
     ].filter(Boolean).join(' '),
@@ -235,7 +241,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
 
   return {
     ok: true,
-    title: generatedTitle(`${label} study guide`),
+    title: generatedTitle(`${label} ${isReview ? 'study guide' : 'notebook page'}`),
     content,
     artifact,
     auditStatus: result.data.auditStatus,
