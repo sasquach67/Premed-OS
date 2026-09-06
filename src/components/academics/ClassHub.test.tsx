@@ -964,7 +964,7 @@ describe('ClassHub approved Overview', () => {
       const seed = structuredClone(createSeedData())
       const workspace = seed.academics.classCenter.workspaces.find(item => item.type === 'stem')!
       const course = seed.courses.find(item => item.id === workspace.courseId)!
-      seed.academics.classCenter.files.push({ id: 'original-preview', title: 'Original reading', type: 'reading', courseId: course.id, blobRef: 'idb://academics/material/original-preview', linkedTopicIds: [], createdAt: now, updatedAt: now, order: 900 })
+      seed.academics.classCenter.files.push({ id: 'original-preview', title: 'Original reading', type: 'reading', sourceType: 'upload', owner: 'mine', courseId: course.id, blobRef: 'idb://academics/material/original-preview', linkedTopicIds: [], createdAt: now, updatedAt: now, order: 900 })
       useStore.getState().replaceAll(seed)
       await act(async () => root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=materials`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>))
       await act(async () => container.querySelector<HTMLButtonElement>('button[aria-label="Open Original reading"]')!.click())
