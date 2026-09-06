@@ -39,6 +39,7 @@ describe('private academic originals', () => {
     expect(mock.set).not.toHaveBeenCalled()
   })
   it('reports originals absent from both this browser and the account', async () => {
+    mock.exists.mockResolvedValue({ data: false, error: { status: 404 } })
     expect(await syncAcademicOriginals([{ blobRef: ref }])).toEqual({ uploaded: 0, available: 0, missing: 1 })
     expect(mock.upload).not.toHaveBeenCalled()
   })

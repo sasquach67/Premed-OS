@@ -36,7 +36,10 @@ export async function syncAcademicOriginals(files: readonly { blobRef?: string }
     if (!(local instanceof Blob)) {
       // A new browser may already have a shared original; don't download every file just to check.
       const { data, error } = await supabase!.storage.from(MATERIAL_BUCKET).exists(key)
-      if (error) throw new Error('Could not check original file storage. Try syncing again.')
+      // Storage exists() returns its 400/404 error alongside data:false.
+      // Those are missing originals, not a failed account sync.
+      const status = error && 'status' in error ? Number(error.status) : undefined
+      if (error && status !== 400 && status !== 404) throw new Error('Could not check original file storage. Try syncing again.')
       if (data) available += 1
       else missing += 1
       continue
