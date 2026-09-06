@@ -196,7 +196,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
     }
   }
 
-  return <section className="notebook-composer w-full min-w-0" aria-label="Notebook entry composer">
+  return <section className="notebook-composer box-border w-full min-w-0 px-4 py-5 sm:px-6 sm:py-6 lg:px-8" aria-label="Notebook entry composer">
     {!phase && draft?.studyGuide && <Button variant="outline" onClick={() => {
       useStore.getState().update(state => {
         const saved = state.academics.classCenter.lectures.find(item => item.id === draftId)
