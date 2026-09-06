@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { inferNotebookGoal, initialNotebookInstructions } from '@/lib/academics/notebookGoal'
 import { cn } from '@/lib/utils'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { MaterialIntakeDialog } from './MaterialIntakeDialog'
@@ -264,14 +265,18 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
             <Button type="button" variant="ghost" className="px-0 text-primary" aria-expanded={libraryOpen} onClick={() => setLibraryOpen(!libraryOpen)}>Choose saved class materials</Button>
             {libraryOpen && <div className="max-h-56 overflow-y-auto rounded-xl border border-border p-2" aria-label="Saved class materials">{library.map(file => <label key={file.id} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg p-3 hover:bg-muted focus-within:ring-2 focus-within:ring-ring"><input type="checkbox" className="mt-1 accent-primary" checked={selectedIds.includes(file.id)} onChange={event => changeSources(file.id, event.target.checked)}/><span className="min-w-0 break-words text-sm">{file.title}</span></label>)}</div>}
           </div>}
-          {files.length > 0 && <ul aria-label="Selected materials" className="max-h-64 divide-y divide-border overflow-y-auto">{files.map(file => <li key={file.id} className="flex min-w-0 items-center gap-3 py-3"><FileText className="size-4 shrink-0 text-muted-foreground"/><span className="min-w-0 flex-1"><b className="block break-words text-sm">{file.title}</b><span className="text-xs text-muted-foreground">{readableIds.has(file.id) ? 'Readable text ready' : 'No readable text · add a clearer copy'}</span><label className="mt-2 block text-xs text-muted-foreground">Material type<select aria-label={`Material type for ${file.title}`} value={file.type} disabled={Boolean(phase)} className="mt-1 block min-h-10 w-full max-w-64 rounded-md border border-border bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onChange={event => {
-              const type = event.target.value
+          {files.length > 0 && <ul aria-label="Selected materials" className="max-h-64 divide-y divide-border overflow-y-auto">{files.map(file => <li key={file.id} className="flex min-w-0 items-center gap-3 py-3"><FileText className="size-4 shrink-0 text-muted-foreground"/><span className="min-w-0 flex-1"><b className="block break-words text-sm">{file.title}</b><span className="text-xs text-muted-foreground">{readableIds.has(file.id) ? 'Readable text ready' : 'No readable text · add a clearer copy'}</span><span className="mt-2 block text-xs text-muted-foreground">Material type</span><Select value={file.type} disabled={Boolean(phase)} onValueChange={type => {
               if (!(type in STUDY_MATERIAL_TYPES)) return
               useStore.getState().update(state => {
                 const material = state.academics.classCenter.files.find(item => item.id === file.id && item.courseId === courseId)
                 if (material) { material.type = type as typeof file.type; material.updatedAt = Date.now() }
               })
-            }}>{Object.entries(STUDY_MATERIAL_TYPES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></span><Button variant="ghost" size="icon" aria-label={`Exclude ${file.title}`} onClick={() => changeSources(file.id, false)}><X className="size-4"/></Button></li>)}</ul>}
+            }}>
+              <SelectTrigger aria-label={`Material type for ${file.title}`} className="mt-1 min-h-10 w-full max-w-64 text-foreground"><SelectValue /></SelectTrigger>
+              <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-24px)] bg-popover">
+                {Object.entries(STUDY_MATERIAL_TYPES).map(([value, label]) => <SelectItem key={value} value={value} className="min-h-10 whitespace-normal break-words">{label}</SelectItem>)}
+              </SelectContent>
+            </Select></span><Button variant="ghost" size="icon" aria-label={`Exclude ${file.title}`} onClick={() => changeSources(file.id, false)}><X className="size-4"/></Button></li>)}</ul>}
         </section>
         <details><summary className="cursor-pointer py-2 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring">Entry title <span className="font-normal text-muted-foreground">Optional</span></summary><label className="block pt-2"><span className="sr-only">Entry title</span><Input value={title} placeholder="Name it, or use the generated title" onChange={event => { setTitle(event.target.value); saveDraft(selectedIds, event.target.value, request) }}/></label></details>
       </> : <>

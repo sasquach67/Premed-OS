@@ -366,9 +366,16 @@ it('keeps a newer pending build active when an older response is discarded', asy
 
 it('lets the student identify personal notes and carries that role to both generators', async () => {
   await render(); await selectSource()
-  const select = container.querySelector<HTMLSelectElement>('select[aria-label^="Material type for"]')
+  const select = container.querySelector<HTMLButtonElement>('button[role="combobox"][aria-label^="Material type for"]')
   expect(select).toBeTruthy()
-  await act(async () => { select!.value = 'class-notes'; select!.dispatchEvent(new Event('change', { bubbles: true })) })
+  const originalScroll = HTMLElement.prototype.scrollIntoView
+  HTMLElement.prototype.scrollIntoView = vi.fn()
+  try {
+    await act(async () => select!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })))
+    const option = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find(item => item.textContent === 'My class notes')!
+    expect(option).toBeTruthy()
+    await act(async () => option.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })))
+  } finally { HTMLElement.prototype.scrollIntoView = originalScroll }
   expect(useStore.getState().academics.classCenter.files.find(file => file.id === 'source')?.type).toBe('class-notes')
   await click('Review and create'); await click('Create entry')
   for (const generator of [generateStudyGuide, generateUnitMasteryOutline]) {
