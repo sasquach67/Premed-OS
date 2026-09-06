@@ -40,7 +40,7 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
     privateAssessmentPhrases: chunks.filter((chunk) => questionReferenceIds.includes(chunk.id))
       .flatMap((chunk) => [chunk.content, ...chunk.content.split(/\n+|(?<=\?)\s+/)]),
   }
-  const examInstruction = 'For every objective, include examPractice with 1 or 2 original self-contained application questions, each with prompt, answer, rationale, and sourceChunkIds drawn only from that objective. Provide the complete scenario and all necessary values, units, sequences, orientation, or text representations in the prompt. The answer must solve every requested part; the rationale must work through the evidence and mechanism or calculation, not merely repeat the answer. Label invented scenarios or data hypothetical. Do not copy supplied assessment wording, reference absent diagrams, invent instructor emphasis, or predict exam content. Keep questions distinct across objectives. If the selected evidence cannot support a solution, fail rather than invent support.'
+  const examInstruction = 'For every sufficiently supported objective, include examPractice with 1 or 2 original self-contained application questions, each with prompt, answer, rationale, and sourceChunkIds drawn only from that objective. Provide the complete scenario and all necessary values, units, sequences, orientation, or text representations in the prompt. The answer must solve every requested part; the rationale must work through the evidence and mechanism or calculation, not merely repeat the answer. Label invented scenarios or data hypothetical. Do not copy supplied assessment wording, reference absent diagrams, invent instructor emphasis, or predict exam content. Keep questions distinct across objectives. If the selected evidence cannot support a solution, explain the specific absent support in evidenceLimit and use an empty examPractice array rather than inventing support. The evidenceLimit exception may not compress rich source material; retain every supported point and omit evidenceLimit when support is complete.'
   const assembled = assembleGenerationRequest({
     specId: 'unit-mastery-outline-v1', chunkIds: prepared.chunkIds, controls: { source_mode: 'SOURCE_ONLY' },
     request: [
@@ -56,16 +56,18 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
   const result = await generateWithSourceRecovery(courseId, chunks, { action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `${sourcePriority} ${journalInstruction} ${refinements} Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map with objective-specific free-recall cues. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline. ${examInstruction}${questionReferenceIds.length ? ' Use the marked question passages as task-pattern evidence without copying them.' : ''}` })
 
   if (!result.ok) return { ok: false, failure: failureFor(result.code), message: result.message }
+  let generationAuditStatus = result.data.auditStatus
   const issues: string[] = []
   let artifact = validateMasteryOutline(result.data.artifact, assembled.chunkIds, issues, true, validationEvidence)
   if (!artifact) {
     const repair = await generateWithSourceRecovery(courseId, chunks, {
       action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds,
       specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt,
-      request: `${sourcePriority} ${journalInstruction} ${refinements} Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Rebuild the complete Mastery Map from the same selected evidence. A prior attempt failed these deterministic checks: ${issues.join('; ')}. Correct every listed requirement. Keep all required fields, objective-specific cues, at least one cue explicitly saying "without notes" per objective, five distinct Understand points, two distinct Be able to do points, and one Watch for point. ${examInstruction} Source IDs must come only from the supplied evidence. Do not invent missing facts or repeat points to satisfy counts. Return the full valid artifact, not a patch.`,
+      request: `${sourcePriority} ${journalInstruction} ${refinements} Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Rebuild the complete Mastery Map from the same selected evidence. A prior attempt failed these deterministic checks: ${issues.join('; ')}. Correct every listed requirement. Keep all required fields, objective-specific cues, at least one cue explicitly saying "without notes" per objective, the ordinary five distinct Understand points, two distinct Be able to do points, and one Watch for point. Only if the selected evidence genuinely cannot support these floors, explain the specific missing support in evidenceLimit using at least eight words; retain at least one supported Understand point and all supported detail, and allow unsupported task or watch-for arrays to be empty. Never use a limitation to compress rich evidence. ${examInstruction} Source IDs must come only from the supplied evidence. Do not invent missing facts or repeat points to satisfy counts. Return the full valid artifact, not a patch.`,
 
     })
     if (!repair.ok) return { ok: false, failure: failureFor(repair.code), message: repair.message }
+    generationAuditStatus = repair.data.auditStatus
     issues.length = 0
     artifact = validateMasteryOutline(repair.data.artifact, assembled.chunkIds, issues, true, validationEvidence)
   }
@@ -73,7 +75,7 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
   return {
     ok: true,
     artifact: {
-      courseId, title: generatedTitle(artifact.title), unit: artifact.unit, scope, specId: 'unit-mastery-outline-v1', specHash: assembled.specHash,
+      courseId, title: generatedTitle(artifact.title), unit: artifact.unit, scope, specId: 'unit-mastery-outline-v1', specHash: assembled.specHash, generationAuditStatus,
       standards: artifact.standards.map((standard) => ({ ...standard, masteryState: 'not-started' as const })), sourceChunkIds: [...new Set(artifact.standards.flatMap((standard) => standard.sourceChunkIds))],
     },
   }

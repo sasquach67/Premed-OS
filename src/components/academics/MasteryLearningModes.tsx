@@ -1,3 +1,4 @@
+import { GenerationReviewNotice } from './GenerationReviewNotice'
 import { useId, useState } from 'react'
 import { BookOpen, Brain, CheckCircle2, EyeOff } from 'lucide-react'
 import type { ClassCenterData, LectureRecord, SourceChunk } from '@/lib/types'
@@ -65,6 +66,7 @@ function MasterySection({ label, items, caution = false }: { label: string; item
 function ObjectiveChecklist({ standard, chunks }: { standard: Standard; chunks: SourceChunk[] }) {
   return (
     <div className="space-y-6">
+      {standard.evidenceLimit && <p className="rounded-xl border-l-4 border-warning bg-muted p-4 text-sm leading-6"><b>Limited source support: </b>{standard.evidenceLimit}</p>}
       <MasterySection label="Understand" items={standard.understand} />
       <MasterySection label="Be able to do" items={standard.beAbleToDo} />
       <MasterySection label="Watch for" items={standard.watchFor} caution />
@@ -87,7 +89,9 @@ function ObjectiveChecklist({ standard, chunks }: { standard: Standard; chunks: 
               </div>
             </details>
           </article>
-        )) : (
+        )) : standard.evidenceLimit ? (
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">No application question was generated because the selected sources do not support a worked solution. Use the supported recall and understanding points above.</p>
+        ) : (
           <div data-testid={`legacy-practice-${standard.id}`} className="mt-3 rounded-xl border border-dashed border-border p-4">
             <p className="text-sm font-bold">Use the application targets above</p>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">This earlier saved map has no generated application questions or worked answers. Its “Be able to do” targets remain available for practice.</p>
@@ -178,6 +182,7 @@ export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline
   return (
     <div className="@container mx-auto min-w-0 max-w-6xl space-y-6 break-words [overflow-wrap:anywhere]">
       <header>
+        <GenerationReviewNotice status={outline.generationAuditStatus} />
         <p className="text-sm font-bold text-primary">Mastery Map</p>
         <h2 className="mt-2 font-display text-3xl font-extrabold">{mode === 'outline' ? 'Learn the map' : 'Practice from memory'}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">

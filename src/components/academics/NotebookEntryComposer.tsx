@@ -17,6 +17,10 @@ import { instructorSourceFileIds } from '@/lib/academics/lectureSourcePriority'
 import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationIntake'
 import { buildLectureBrief, fileCoverageLabel } from '@/lib/academics/lectureWorkspace'
 
+// Shared across composer mounts: navigation does not cancel valid work, but a
+// newer explicit build supersedes every pending response for that entry.
+const activeBuildAttempts = new Map<string, symbol>()
+
 const goalOptions: { value: NotebookGoal; label: string; output: string; description: string }[] = [
   { value: 'review', label: 'Review class material', output: 'Study Guide + Mastery Map', description: 'Connect ideas, work through examples, and build recall from your class material.' },
   { value: 'assessment', label: 'Prepare for an assessment', output: 'Assessment study guide', description: 'Organize the topics to know, connect the supporting materials, and identify gaps in preparation.' },
@@ -101,11 +105,15 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
     if (phase || sourceProblem) return
     setError('')
     setPhase(tailored ? 'page' : 'guide')
+    const attempt = Symbol(draftId)
+    activeBuildAttempts.set(draftId, attempt)
+    const isCurrentAttempt = () => activeBuildAttempts.get(draftId) === attempt
     try {
       const label = title.trim() || draft?.title || defaultTitle
       const primarySourceChunkIds = chunks.filter(chunk => primaryIds.includes(chunk.fileId)).map(chunk => chunk.id)
       const questionIds = practiceQuestionChunkIds(files, chunks)
       const guide = await generateStudyGuide({ courseId, chunks, label, notebookGoal: goal, notebookRequest: request.trim() || undefined, primarySourceChunkIds: tailored ? [] : primarySourceChunkIds, practiceQuestionChunkIds: questionIds })
+      if (!isCurrentAttempt()) return
       if (!guide.ok || !guide.artifact) { setError(guide.message ?? 'The page could not be created. Your materials and any previous result are still saved.'); return }
       setPhase('saving')
       const generatedGuide = guide.artifact
@@ -142,6 +150,9 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
         } catch {
           mastery = { ok: false }
         }
+        // A student may reopen and rebuild while this request is still running.
+        // Only attach the map to the exact guide produced by this attempt.
+        if (!isCurrentAttempt() || useStore.getState().academics.classCenter.lectures.find(item => item.id === draftId)?.studyGuide !== generatedGuide) return
         const generatedMastery = mastery.ok ? mastery.artifact : undefined
         useStore.getState().update(state => {
           const center = state.academics.classCenter
@@ -172,10 +183,14 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
           record.updatedAt = Date.now()
         })
       }
-      onBuilt(draftId)
+      if (isCurrentAttempt()) onBuilt(draftId)
     } catch (failure) {
+      if (!isCurrentAttempt()) return
       setError(failure instanceof Error ? failure.message : 'Creation stopped. Your materials and any previous result are still saved.')
-    } finally { setPhase(null) }
+    } finally {
+      if (isCurrentAttempt()) activeBuildAttempts.delete(draftId)
+      setPhase(null)
+    }
   }
 
   return <section className="notebook-composer w-full min-w-0" aria-label="Notebook entry composer">

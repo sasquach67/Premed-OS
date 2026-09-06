@@ -37,5 +37,14 @@ describe('lecture workspace source contract', () => {
     expect(map.standards[0].beAbleToDo[0]).toBe('Compare SN1 with SN2 mechanisms using the distinctions supported by the selected sources.')
     expect(map.standards[0].freeRecallCues?.[0]).toMatch(/^Without notes, compare/)
   })
-  it('reports partial PDF and OCR coverage honestly', () => expect(fileCoverageLabel(files[1], 1)).toBe('3/4 pages readable · 1 recovered with on-device OCR · 1 unreadable'))
+  it('describes header-only extraction without claiming the page was fully read', () => {
+    // A nonempty header bypasses OCR even when the remaining page is a scan.
+    // Coverage records prove text extraction, not completeness of the page.
+    const headerOnly: AcademicFile = {
+      ...files[1],
+      sourceCoverage: { pageCount: 1, readablePages: [1], ocrRecoveredPages: [], unreadablePages: [], readableCharacterCount: 'PSYC 101'.length, figureStatus: 'not-interpreted' },
+    }
+    expect(fileCoverageLabel(headerOnly, 1)).toBe('Text extracted on 1/1 pages')
+  })
+  it('reports partial PDF and OCR coverage honestly', () => expect(fileCoverageLabel(files[1], 1)).toBe('Text extracted on 3/4 pages · 1 recovered with on-device OCR · 1 unreadable'))
 })

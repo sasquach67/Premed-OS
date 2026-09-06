@@ -249,9 +249,17 @@ export async function generateWithSourceRecovery(
   if (first.ok) return first
 
   if (first.code === 'citation-not-carried' || first.code === 'audit-rejected') {
+    // Empty objectives have no citations, so the Edge rejects them before the
+    // caller can inspect their shape. Include the relevant artifact repair
+    // here instead of spending this bounded attempt on citation wording alone.
+    const artifactRepair = request.specId === 'unit-mastery-outline-v1'
+      ? ' Return a nonempty standards array with title and unit at the top level. Missing instructor objectives do not justify an empty map: derive clearly labeled Study objective: entries from the selected concepts. Each objective must have a unique id, title, freeRecallCues, understand, beAbleToDo, watchFor, examPractice, and nonempty exact sourceChunkIds. Preserve the ordinary depth and application requirements for rich sources. When evidence genuinely cannot support that depth or a solved application, explain the specific missing support in evidenceLimit, retain at least one supported understanding point and a concrete without-notes cue, and leave only unsupported arrays empty. Do not invent support, shorten rich material, or return a failure/status object instead of the artifact.'
+      : request.specId === 'study-guide-v1'
+        ? ' Every factual block, including recap and application blocks, must carry a valid sourceRef. Every section must have id, title and blocks.'
+        : ''
     return tools.generate({
       ...request,
-      request: `${request.request}\n\nA prior attempt was rejected by validation. Rebuild the complete artifact and correct these reported problems: ${first.message}. All source references and source chunk IDs must be copied exactly from supplied evidence.${request.specId === 'study-guide-v1' ? ' Every factual block, including recap and application blocks, must carry a valid sourceRef. Every section must have id, title and blocks.' : ''} Do not omit required content, invent sources, or treat this feedback as permission to change the original requirements. The rebuilt result will undergo the same checks.`,
+      request: `${request.request}\n\nA prior attempt was rejected by validation. Rebuild the complete artifact and correct these reported problems: ${first.message}. All source references and source chunk IDs must be copied exactly from supplied evidence.${artifactRepair} Do not omit required content, invent sources, or treat this feedback as permission to change the original requirements. The rebuilt result will undergo the same checks.`,
     })
   }
 

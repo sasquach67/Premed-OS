@@ -127,3 +127,64 @@ it('allows source-derived study objectives in generation and repair without clai
     expect(call[2].systemPrompt).toContain('never create or modify syllabus Topics')
   }
 })
+
+it('saves an explicitly evidence-limited objective without inventing depth or application', async () => {
+  const limited = { ...artifact, standards: [{ ...artifact.standards[0],
+    evidenceLimit: 'The selected excerpt describes only template selection; it supplies no steps or worked examples supporting further application.',
+    understand: ['RNA is complementary to the DNA template.'], beAbleToDo: [], watchFor: [], examPractice: [],
+  }] }
+  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response(limited))
+  const result = await generateUnitMasteryOutline(input)
+  expect(result.ok).toBe(true)
+  expect(result.artifact?.standards[0]).toMatchObject(limited.standards[0])
+  expect(generateWithSourceRecovery).toHaveBeenCalledTimes(1)
+})
+
+it('does not let an evidence limitation waive grounding or a useful understanding point', async () => {
+  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response({ ...artifact, standards: [{ ...artifact.standards[0],
+    evidenceLimit: 'The selected excerpt supplies no steps or examples supporting further application.',
+    understand: [], beAbleToDo: [], watchFor: [], examPractice: [],
+  }] }))
+  const result = await generateUnitMasteryOutline(input)
+  expect(result.ok).toBe(false)
+  expect(result.message).toContain('understand')
+})
+
+
+it.each(['', 'Too short', undefined])('does not waive rich-source depth for a missing or vague limitation %j', async (evidenceLimit) => {
+  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response({ ...artifact, standards: [{ ...artifact.standards[0],
+    evidenceLimit, understand: ['One supported detail.'], beAbleToDo: [], watchFor: [], examPractice: [],
+  }] }))
+  expect((await generateUnitMasteryOutline(input)).ok).toBe(false)
+})
+
+it('retains the closed source boundary even for an evidence-limited map', async () => {
+  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response({ ...artifact, standards: [{ ...artifact.standards[0],
+    evidenceLimit: 'The selected excerpt supplies no worked scenarios or detailed process steps.',
+    understand: ['One supported detail.'], beAbleToDo: [], watchFor: [], examPractice: [], sourceChunkIds: ['unselected'],
+  }] }))
+  const result = await generateUnitMasteryOutline(input)
+  expect(result.ok).toBe(false)
+  expect(result.message).toContain('outside selected sources')
+})
+
+it('assembles mutually consistent thin-source, citation, and practice instructions on both attempts', async () => {
+  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response({ ...artifact, standards: [] }))
+  await generateUnitMasteryOutline(input)
+  for (const call of vi.mocked(generateWithSourceRecovery).mock.calls) {
+    expect(call[2].systemPrompt).toContain('Only when selected evidence genuinely cannot support these floors')
+    expect(call[2].systemPrompt).toContain('Do not invent extra fields or objects inside string arrays')
+    expect(call[2].systemPrompt).toContain('Coverage is a runtime and presentation responsibility')
+    expect(call[2].systemPrompt).not.toContain('fail instead of padding')
+    expect(call[2].request).toContain('empty examPractice array')
+  }
+})
+
+it('records the audit status of the final valid response, including a shape repair', async () => {
+  vi.mocked(generateWithSourceRecovery)
+    .mockResolvedValueOnce({ ok: true, data: { artifact: { ...artifact, standards: [] }, citations: [], auditStatus: 'approved' } })
+    .mockResolvedValueOnce({ ok: true, data: { artifact, citations: [], auditStatus: 'unavailable' } })
+  const result = await generateUnitMasteryOutline(input)
+  expect(result.ok).toBe(true)
+  expect(result.artifact?.generationAuditStatus).toBe('unavailable')
+})

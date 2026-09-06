@@ -36,7 +36,7 @@ export const SOURCE_MODES: Record<SourceMode, SourceModeSpec> = {
     instruction:
       'SOURCE_ONLY: introduce no fact that the supplied sources do not support. '
       + 'Where the sources are incomplete, emit an explicit gap rather than filling it. '
-      + 'Every claim carries provenance: source.',
+      + 'Every factual claim must be supported by the selected evidence. Use provenance: source where the artifact schema has that field; otherwise use its required exact evidence IDs. Explicitly labeled hypothetical practice may introduce scenario assumptions, never unsupported empirical claims. Do not change the artifact schema.',
     headerCountLabel: null,
   },
   SOURCE_PLUS_CLARIFICATION: {

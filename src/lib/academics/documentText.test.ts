@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
+const pdfMocks = vi.hoisted(() => ({ getDocument: vi.fn() }))
+vi.mock('pdfjs-dist/legacy/build/pdf.mjs', () => ({
+  GlobalWorkerOptions: { workerSrc: 'test-worker.js' },
+  getDocument: pdfMocks.getDocument,
+}))
+
 const ocrMocks = vi.hoisted(() => ({
   createLocalOcrSession: vi.fn(async () => ({
     recognizeImage: vi.fn(async () => 'Recovered screenshot text on this device.'),
@@ -27,6 +33,29 @@ describe('document type sniffing', () => {
       text: 'PSYC 101 — Introduction to Psychology',
       scanDetected: false,
     })
+  })
+
+  it('recognizes PNG bytes when a folder import has no image MIME type', async () => {
+    const file = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], 'notes.png', { type: '' })
+    expect(await sniffDocumentKind(file)).toBe('image')
+  })
+
+  it('releases PDF worker resources after successful extraction', async () => {
+    const destroy = vi.fn().mockResolvedValue(undefined)
+    const pdf = { numPages: 1, getPage: vi.fn().mockResolvedValue({ getTextContent: vi.fn().mockResolvedValue({ items: [{ str: 'Psychology notes' }] }) }) }
+    pdfMocks.getDocument.mockReturnValue({ promise: Promise.resolve(pdf), destroy })
+    await extractDocumentText(new File(['%PDF-fake'], 'notes.pdf'))
+    expect(destroy).toHaveBeenCalledOnce()
+    expect(pdfMocks.getDocument).toHaveBeenCalledWith(expect.objectContaining({
+      cMapUrl: '/pdfjs/cmaps/', cMapPacked: true, standardFontDataUrl: '/pdfjs/standard_fonts/',
+    }))
+  })
+
+  it('releases PDF worker resources when an oversized PDF is rejected', async () => {
+    const destroy = vi.fn().mockResolvedValue(undefined)
+    pdfMocks.getDocument.mockReturnValue({ promise: Promise.resolve({ numPages: 251 }), destroy })
+    await expect(extractDocumentText(new File(['%PDF-fake'], 'notes.pdf'))).rejects.toThrow(/250 pages/)
+    expect(destroy).toHaveBeenCalledOnce()
   })
 
   it('trusts a real PDF signature over an empty MIME type', async () => {

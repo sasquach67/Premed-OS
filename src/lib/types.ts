@@ -1078,6 +1078,8 @@ export interface MasteryExamPractice {
 export interface GeneratedMasteryOutlineStandard {
   id: string
   title: string
+  /** Absent for ordinary complete and legacy maps. */
+  evidenceLimit?: string
   /** Added after v41. Older saved maps omit this and render their objective
    * title as a compatibility recall cue. */
   freeRecallCues?: string[]
@@ -1101,6 +1103,7 @@ export interface GeneratedMasteryOutline {
   scopeId?: ID
   lectureId?: ID
   specId: 'unit-mastery-outline-v1'
+  generationAuditStatus?: 'approved' | 'skipped' | 'unavailable'
   specHash: string
   standards: GeneratedMasteryOutlineStandard[]
   sourceChunkIds: ID[]

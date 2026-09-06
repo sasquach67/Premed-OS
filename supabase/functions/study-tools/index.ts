@@ -277,7 +277,7 @@ Deno.serve(async (request) => {
     return failure(503, 'source-read-failed', 'Synced source material could not be read. Nothing was generated.')
   }
   if (!chunks.length) return failure(422, 'no-sources', 'No selected source material is available.')
-  if (isQuestionBankGeneration && chunks.length !== chunkIds.length) {
+  if (chunks.length !== chunkIds.length) {
     return failure(422, 'source-sync-incomplete', 'The complete selected corpus could not be verified. Nothing was generated.')
   }
   const sourceCharacterLimit = isQuestionBankGeneration
@@ -291,6 +291,10 @@ Deno.serve(async (request) => {
   }
   if (isGeneration && !isQuestionBankGeneration && !Deno.env.get('OPENAI_API_KEY')) {
     return failure(503, 'server-unconfigured', 'OpenAI generation is not configured. Nothing was saved.')
+  }
+  const specPrompt = typeof body.systemPrompt === 'string' ? body.systemPrompt : ''
+  if (isGeneration && !specPrompt.trim()) {
+    return failure(400, 'invalid-request', 'An assembled spec prompt is required.')
   }
   const gapProvider = (Deno.env.get('AI_PROVIDER') || 'openai').toLowerCase()
   if (isGapCheck && !Deno.env.get(gapProvider === 'openai' ? 'OPENAI_API_KEY' : 'ANTHROPIC_API_KEY')) {
@@ -330,10 +334,6 @@ Deno.serve(async (request) => {
    * deliberately identical so a diff is obvious.
    */
   if (body.action === 'generate') {
-    const specPrompt = typeof body.systemPrompt === 'string' ? body.systemPrompt : ''
-    if (!specPrompt.trim()) {
-      return failure(400, 'invalid-request', 'An assembled spec prompt is required.')
-    }
     try {
       const requestText = typeof body.request === 'string' ? body.request : 'Generate the artifact.'
       const isQuestionBank = isQuestionBankGeneration
@@ -583,7 +583,7 @@ function quotaFailure(quota: AIQuotaClaim) {
     : quota.reason === 'daily-limit'
       ? 'Your daily AI limit has been reached.'
       : quota.reason === 'weekly-budget-limit'
-        ? 'The shared beta AI budget has been used for this week.'
+        ? 'The shared $10 weekly beta AI allowance cannot cover another request under its conservative reservations. Attempts that reached a provider can count even when no result was saved. Try again after the reset.'
         : 'AI usage could not be allowed for this request.'
   return failure(429, quota.reason, message, { resetAt: quota.resetAt })
 }
@@ -642,7 +642,7 @@ async function retrieveChunks(
   client: ReturnType<typeof createClient>,
   userId: string,
   courseId: string,
-  topicId: string,
+  _topicId: string,
   chunkIds: string[],
 ): Promise<Chunk[]> {
   const batches = Array.from(
@@ -656,7 +656,7 @@ async function retrieveChunks(
   for (const batch of batches) {
     let result: Awaited<ReturnType<typeof readChunkBatch>> | undefined
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      result = await readChunkBatch(client, userId, courseId, topicId, batch)
+      result = await readChunkBatch(client, userId, courseId, batch)
       if (!result.error) break
       if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 75))
     }
@@ -674,15 +674,16 @@ function readChunkBatch(
   client: ReturnType<typeof createClient>,
   userId: string,
   courseId: string,
-  topicId: string,
   batch: string[],
 ) {
+  // A chunk has one owner-scoped mirror row. Another selection can update its
+  // topic metadata while this request is running; topic is not an ownership
+  // boundary. Explicit requested IDs plus owner and course define this corpus.
   return client
     .from('academic_source_chunks')
     .select('chunk_id,file_id,content,character_start,character_end')
     .eq('user_id', userId)
     .eq('course_id', courseId)
-    .eq('topic_id', topicId)
     .in('chunk_id', batch)
     .limit(batch.length)
 }

@@ -133,12 +133,17 @@ type SniffedDocumentKind = 'pdf' | 'docx' | 'image' | 'text' | 'unsupported'
 export async function sniffDocumentKind(file: File): Promise<SniffedDocumentKind> {
   const name = file.name || 'Document'
   const type = (file.type || '').toLowerCase()
-  const signature = new Uint8Array(await file.slice(0, 8).arrayBuffer())
+  const signature = new Uint8Array(await file.slice(0, 12).arrayBuffer())
   const startsWith = (...bytes: number[]) => bytes.every((byte, index) => signature[index] === byte)
 
   if (startsWith(0x25, 0x50, 0x44, 0x46)) return 'pdf' // %PDF
   if (startsWith(0x50, 0x4b, 0x03, 0x04) || startsWith(0x50, 0x4b, 0x05, 0x06) || startsWith(0x50, 0x4b, 0x07, 0x08)) return 'docx'
-  if (type.startsWith('image/')) return 'image'
+  if (startsWith(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)
+    || startsWith(0xff, 0xd8, 0xff)
+    || startsWith(0x47, 0x49, 0x46, 0x38)
+    || startsWith(0x42, 0x4d)
+    || (startsWith(0x52, 0x49, 0x46, 0x46) && signature[8] === 0x57 && signature[9] === 0x45 && signature[10] === 0x42 && signature[11] === 0x50)) return 'image'
+  if (type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(name)) return 'image'
   if (type.startsWith('text/') || /\.(txt|csv|tsv|md)$/i.test(name)) return 'text'
   if (/wordprocessingml|\.docx$/i.test(type || name)) return 'docx'
   if (type === 'application/pdf' || /\.pdf$/i.test(name)) return 'pdf'
@@ -198,75 +203,88 @@ export async function extractDocumentText(file: File, options: DocumentExtractio
       const workerUrl = (await import('pdfjs-dist/legacy/build/pdf.worker.mjs?url')).default
       pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
     }
-    const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise
-    validateDocumentBounds(file.size, pdf.numPages)
-    const pages: string[] = []
-    const pageHandles: Array<Awaited<ReturnType<typeof pdf.getPage>> | undefined> = []
-    let unreadablePageCount = 0
-    let imageOnlyPageCount = 0
-    let ocrPageCount = 0
-    for (let number = 1; number <= pdf.numPages; number += 1) {
-      if (options.signal?.aborted) throw new DOMException('Syllabus reading was cancelled.', 'AbortError')
-      const page = await pdf.getPage(number)
-      const content = await page.getTextContent()
-      const pageText = pdfTextToLines(content.items as PdfTextItem[])
-      if (!pageText.replace(/\s/g, '')) {
-        unreadablePageCount += 1
-        imageOnlyPageCount += 1
-        pageHandles[number - 1] = page
-      }
-      pages.push(pageText)
-      options.onProgress?.({ phase: 'extracting', page: number, pageCount: pdf.numPages, progress: number / pdf.numPages, message: `Reading page ${number} of ${pdf.numPages}` })
-    }
-
-    if (options.recoverScannedPdfPages && unreadablePageCount) {
-      const { createLocalOcrSession } = await import('@/lib/academics/documentOcr')
-      let activePage = 0
-      try {
-        const ocr = await createLocalOcrSession((progress) => {
-          options.onProgress?.({
-            phase: 'ocr', page: activePage, pageCount: pdf.numPages, progress: progress.progress,
-            message: activePage ? `Reading scanned page ${activePage} of ${pdf.numPages}` : 'Starting on-device OCR',
-          })
-        }, options.signal)
-        try {
-          for (let index = 0; index < pageHandles.length; index += 1) {
-            const page = pageHandles[index]
-            if (!page) continue
-            activePage = index + 1
-            options.onProgress?.({
-              phase: 'ocr', page: activePage, pageCount: pdf.numPages,
-              progress: 0,
-              message: `Reading scanned page ${activePage} of ${pdf.numPages}`,
-            })
-            try {
-              const recovered = await ocr.recognizePdfPage(page)
-              if (recovered.replace(/\s/g, '')) {
-                pages[index] = recovered
-                unreadablePageCount -= 1
-                ocrPageCount += 1
-              }
-            } catch (error) {
-              if (isAbortError(error)) throw error
-              // Partial success is intentional. The review UI names any pages
-              // that still could not be read and preserves manual correction.
-            }
-          }
-        } finally {
-          await ocr.terminate()
+    const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`
+    const loadingTask = pdfjs.getDocument({
+      data: new Uint8Array(await file.arrayBuffer()),
+      cMapUrl: `${base}pdfjs/cmaps/`,
+      cMapPacked: true,
+      standardFontDataUrl: `${base}pdfjs/standard_fonts/`,
+    })
+    try {
+      const pdf = await loadingTask.promise
+      validateDocumentBounds(file.size, pdf.numPages)
+      const pages: string[] = []
+      const pageHandles: Array<Awaited<ReturnType<typeof pdf.getPage>> | undefined> = []
+      let unreadablePageCount = 0
+      let imageOnlyPageCount = 0
+      let ocrPageCount = 0
+      for (let number = 1; number <= pdf.numPages; number += 1) {
+        if (options.signal?.aborted) throw new DOMException('Syllabus reading was cancelled.', 'AbortError')
+        const page = await pdf.getPage(number)
+        const content = await page.getTextContent()
+        const pageText = pdfTextToLines(content.items as PdfTextItem[])
+        if (!pageText.replace(/\s/g, '')) {
+          unreadablePageCount += 1
+          imageOnlyPageCount += 1
+          pageHandles[number - 1] = page
         }
-      } catch (error) {
-        if (isAbortError(error)) throw error
-        options.onProgress?.({
-          phase: 'ocr', page: 0, pageCount: pdf.numPages, progress: 1,
-          message: `${unreadablePageCount} scanned ${unreadablePageCount === 1 ? 'page was' : 'pages were'} kept for manual review`,
-        })
+        pages.push(pageText)
+        options.onProgress?.({ phase: 'extracting', page: number, pageCount: pdf.numPages, progress: number / pdf.numPages, message: `Reading page ${number} of ${pdf.numPages}` })
       }
-    }
-    const text = pages.join('\n')
-    return {
-      text, sourceKind: 'pdf', scanDetected: imageOnlyPageCount > 0, unreadablePageCount, imageOnlyPageCount, ocrPageCount, pageCount: pdf.numPages,
-      pages: pages.map((pageText, index) => ({ pageNumber: index + 1, text: pageText, readable: Boolean(pageText.trim()), ocrRecovered: Boolean(pageHandles[index] && pageText.trim()) })),
+
+      if (options.recoverScannedPdfPages && unreadablePageCount) {
+        const { createLocalOcrSession } = await import('@/lib/academics/documentOcr')
+        let activePage = 0
+        try {
+          const ocr = await createLocalOcrSession((progress) => {
+            options.onProgress?.({
+              phase: 'ocr', page: activePage, pageCount: pdf.numPages, progress: progress.progress,
+              message: activePage ? `Reading scanned page ${activePage} of ${pdf.numPages}` : 'Starting on-device OCR',
+            })
+          }, options.signal)
+          try {
+            for (let index = 0; index < pageHandles.length; index += 1) {
+              const page = pageHandles[index]
+              if (!page) continue
+              activePage = index + 1
+              options.onProgress?.({
+                phase: 'ocr', page: activePage, pageCount: pdf.numPages,
+                progress: 0,
+                message: `Reading scanned page ${activePage} of ${pdf.numPages}`,
+              })
+              try {
+                const recovered = await ocr.recognizePdfPage(page)
+                if (recovered.replace(/\s/g, '')) {
+                  pages[index] = recovered
+                  unreadablePageCount -= 1
+                  ocrPageCount += 1
+                }
+              } catch (error) {
+                if (isAbortError(error)) throw error
+                // Partial success is intentional. The review UI names any pages
+                // that still could not be read and preserves manual correction.
+              }
+            }
+          } finally {
+            await ocr.terminate()
+          }
+        } catch (error) {
+          if (isAbortError(error)) throw error
+          options.onProgress?.({
+            phase: 'ocr', page: 0, pageCount: pdf.numPages, progress: 1,
+            message: `${unreadablePageCount} scanned ${unreadablePageCount === 1 ? 'page was' : 'pages were'} kept for manual review`,
+          })
+        }
+      }
+      const text = pages.join('\n')
+      return {
+        text, sourceKind: 'pdf', scanDetected: imageOnlyPageCount > 0, unreadablePageCount, imageOnlyPageCount, ocrPageCount, pageCount: pdf.numPages,
+        pages: pages.map((pageText, index) => ({ pageNumber: index + 1, text: pageText, readable: Boolean(pageText.trim()), ocrRecovered: Boolean(pageHandles[index] && pageText.trim()) })),
+      }
+    } finally {
+      // A fresh worker is allocated for every import. Release it on success,
+      // rejected bounds, failed extraction, and cancellation alike.
+      await loadingTask.destroy()
     }
   }
 

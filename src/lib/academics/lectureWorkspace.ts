@@ -157,7 +157,7 @@ export function fileCoverageLabel(file: AcademicFile, chunkCount: number) {
     const readable = coverage.readablePages?.length ?? 0
     const unreadable = coverage.unreadablePages?.length ?? 0
     const ocr = coverage.ocrRecoveredPages?.length ?? 0
-    return `${readable}/${coverage.pageCount} pages readable${ocr ? ` · ${ocr} recovered with on-device OCR` : ''}${unreadable ? ` · ${unreadable} unreadable` : ''}`
+    return `Text extracted on ${readable}/${coverage.pageCount} pages${ocr ? ` · ${ocr} recovered with on-device OCR` : ''}${unreadable ? ` · ${unreadable} unreadable` : ''}`
   }
   return coverage.readableCharacterCount ? `${coverage.readableCharacterCount.toLocaleString()} readable characters` : 'No readable text yet'
 }

@@ -10,6 +10,7 @@ import { generateUnitMasteryOutline } from '@/lib/academics/generateUnitMasteryO
 import type { LectureRecord } from '@/lib/types'
 vi.mock('@/lib/academics/generateStudyGuide', () => ({ generateStudyGuide: vi.fn() }))
 vi.mock('@/lib/academics/generateUnitMasteryOutline', () => ({ generateUnitMasteryOutline: vi.fn() }))
+;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 let container: HTMLDivElement, root: Root
 const built = vi.fn()
 const guide = { ok: true, artifact: { specId: 'study-guide-v1', specHash: 'test', courseId: 'course', topicId: 'scope', sections: [{ id: 'concepts', title: 'Concepts', blocks: [{ id: 'b', type: 'prose', text: { content: 'A grounded explanation.' }, provenance: 'source', sourceRef: { fileId: 'source', chunkId: 'chunk', start: 0, end: 10 } }] }] } } as const
@@ -248,7 +249,7 @@ it('blocks unreadable selected files even when another source is readable', asyn
 it('discloses partial page coverage and uninterpreted figures at review', async () => {
   useStore.getState().update(data => { data.academics.classCenter.files[0].sourceCoverage = { pageCount: 3, readablePages: [1, 2], unreadablePages: [3], ocrRecoveredPages: [2], readableCharacterCount: 50, figureStatus: 'not-interpreted' } })
   await render(); await selectSource(); await click('Review and create')
-  expect(container.textContent).toContain('2/3 pages readable')
+  expect(container.textContent).toContain('Text extracted on 2/3 pages')
   expect(container.textContent).toContain('1 recovered with on-device OCR')
   expect(container.textContent).toContain('Some selected pages remain unreadable')
   expect(container.textContent).toContain('Diagrams and figures are not interpreted')
@@ -278,4 +279,87 @@ it('sends all selected readable resources to both generators across material typ
     const ids = vi.mocked(generate).mock.calls[0][0].chunks.map(chunk => chunk.id)
     expect(ids).toEqual(['chunk', 'reading-chunk', 'notes-chunk'])
   }
+})
+
+it('does not let an interrupted older map request overwrite a newer rebuild', async () => {
+  let finishOldMap!: (value: Awaited<ReturnType<typeof generateUnitMasteryOutline>>) => void
+  vi.mocked(generateUnitMasteryOutline).mockImplementationOnce(() => new Promise(resolve => { finishOldMap = resolve }))
+  await render(); await selectSource(); await click('Review and create'); await click('Create entry')
+  const saved = useStore.getState().academics.classCenter.lectures[0]
+  expect(saved.studyGuide).toEqual(guide.artifact)
+  await act(async () => root.unmount()); root = createRoot(container)
+  const newerGuide = structuredClone(guide)
+  Object.assign(newerGuide.artifact.sections[0], { title: 'Newer guide' })
+  vi.mocked(generateStudyGuide).mockResolvedValue(newerGuide as unknown as Awaited<ReturnType<typeof generateStudyGuide>>)
+  await render(saved); await click('Continue to materials'); await click('Review and create'); await click('Create entry')
+  const currentMap = structuredClone(useStore.getState().academics.classCenter.generatedMasteryOutlines[0])
+  built.mockClear()
+  await act(async () => finishOldMap({ ok: true, artifact: { courseId: 'course', title: 'Obsolete map', unit: 'Unit', scope: 'lecture', specId: 'unit-mastery-outline-v1', specHash: 'old', standards: [], sourceChunkIds: ['chunk'] } }))
+  expect(useStore.getState().academics.classCenter.generatedMasteryOutlines[0]).toEqual(currentMap)
+  expect(useStore.getState().academics.classCenter.lectures[0].studyGuide).toEqual(newerGuide.artifact)
+  expect(built).not.toHaveBeenCalled()
+})
+
+it.each([true, false])('ignores an older guide response after a newer attempt (new attempt succeeds: %s)', async newerSucceeds => {
+  let finishOldGuide!: (value: Awaited<ReturnType<typeof generateStudyGuide>>) => void
+  vi.mocked(generateStudyGuide).mockImplementationOnce(() => new Promise(resolve => { finishOldGuide = resolve }))
+  await render(); await selectSource(); await click('Review and create'); await click('Create entry')
+  const draft = useStore.getState().academics.classCenter.lectures[0]
+  await act(async () => root.unmount()); root = createRoot(container)
+  const newerGuide = structuredClone(guide)
+  Object.assign(newerGuide.artifact.sections[0], { title: 'Newest result' })
+  vi.mocked(generateStudyGuide).mockResolvedValue(newerSucceeds
+    ? newerGuide as unknown as Awaited<ReturnType<typeof generateStudyGuide>>
+    : { ok: false, message: 'Newer attempt failed' })
+  await render(draft); await click('Continue to materials'); await click('Review and create'); await click('Create entry')
+  const beforeOldResponse = structuredClone(useStore.getState().academics.classCenter)
+  built.mockClear()
+  const calls = vi.mocked(generateUnitMasteryOutline).mock.calls.length
+  await act(async () => finishOldGuide(structuredClone(guide) as unknown as Awaited<ReturnType<typeof generateStudyGuide>>))
+  expect(generateUnitMasteryOutline).toHaveBeenCalledTimes(calls)
+  expect(useStore.getState().academics.classCenter).toEqual(beforeOldResponse)
+  expect(built).not.toHaveBeenCalled()
+})
+
+it('does not attach an older map when a newer guide attempt fails', async () => {
+  let finishOldMap!: (value: Awaited<ReturnType<typeof generateUnitMasteryOutline>>) => void
+  vi.mocked(generateUnitMasteryOutline).mockImplementationOnce(() => new Promise(resolve => { finishOldMap = resolve }))
+  await render(); await selectSource(); await click('Review and create'); await click('Create entry')
+  const saved = useStore.getState().academics.classCenter.lectures[0]
+  await act(async () => root.unmount()); root = createRoot(container)
+  vi.mocked(generateStudyGuide).mockResolvedValue({ ok: false, message: 'Latest attempt failed' })
+  await render(saved); await click('Continue to materials'); await click('Review and create'); await click('Create entry')
+  const beforeOldResponse = structuredClone(useStore.getState().academics.classCenter)
+  built.mockClear()
+  await act(async () => finishOldMap({ ok: true, artifact: { courseId: 'course', title: 'Obsolete map', unit: 'Unit', scope: 'lecture', specId: 'unit-mastery-outline-v1', specHash: 'old', standards: [], sourceChunkIds: ['chunk'] } }))
+  expect(useStore.getState().academics.classCenter).toEqual(beforeOldResponse)
+  expect(built).not.toHaveBeenCalled()
+})
+
+it('preserves generation after leaving the composer when no newer build supersedes it', async () => {
+  let finishGuide!: (value: Awaited<ReturnType<typeof generateStudyGuide>>) => void
+  vi.mocked(generateStudyGuide).mockImplementationOnce(() => new Promise(resolve => { finishGuide = resolve }))
+  await render(); await selectSource(); await click('Review and create'); await click('Create entry')
+  await act(async () => root.unmount()); root = createRoot(container)
+  await act(async () => finishGuide(structuredClone(guide) as unknown as Awaited<ReturnType<typeof generateStudyGuide>>))
+  expect(useStore.getState().academics.classCenter.lectures[0]).toMatchObject({ studyGuide: guide.artifact, workspaceState: 'complete' })
+  expect(generateUnitMasteryOutline).toHaveBeenCalledTimes(1)
+})
+
+it('keeps a newer pending build active when an older response is discarded', async () => {
+  let finishOld!: (value: Awaited<ReturnType<typeof generateStudyGuide>>) => void
+  let finishNew!: (value: Awaited<ReturnType<typeof generateStudyGuide>>) => void
+  vi.mocked(generateStudyGuide)
+    .mockImplementationOnce(() => new Promise(resolve => { finishOld = resolve }))
+    .mockImplementationOnce(() => new Promise(resolve => { finishNew = resolve }))
+  await render(); await selectSource(); await click('Review and create'); await click('Create entry')
+  const draft = useStore.getState().academics.classCenter.lectures[0]
+  await act(async () => root.unmount()); root = createRoot(container)
+  await render(draft); await click('Continue to materials'); await click('Review and create'); await click('Create entry')
+  await act(async () => finishOld(structuredClone(guide) as unknown as Awaited<ReturnType<typeof generateStudyGuide>>))
+  expect(useStore.getState().academics.classCenter.lectures[0].studyGuide).toBeUndefined()
+  expect(generateUnitMasteryOutline).not.toHaveBeenCalled()
+  await act(async () => finishNew(structuredClone(guide) as unknown as Awaited<ReturnType<typeof generateStudyGuide>>))
+  expect(useStore.getState().academics.classCenter.lectures[0]).toMatchObject({ studyGuide: guide.artifact, workspaceState: 'complete' })
+  expect(generateUnitMasteryOutline).toHaveBeenCalledTimes(1)
 })

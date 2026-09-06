@@ -1,3 +1,4 @@
+import { GenerationReviewNotice } from './GenerationReviewNotice'
 import '@/pages/LecturePage.css'
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { useMemo, useState, type ReactNode } from 'react'
@@ -66,16 +67,29 @@ function LectureWorkspace({ course, courseId, data, lectures, activeLecture, vie
   const selectedIds = activeLecture.selectedSourceFileIds ?? (activeLecture.transcriptFileId ? [activeLecture.transcriptFileId] : [])
   const files = data.files.filter((file) => selectedIds.includes(file.id)); const chunks = sourceChunksForLecture(data, activeLecture)
   const brief = activeLecture.lectureBrief ?? buildLectureBrief(chunks, selectedIds, data.files)
-  const mastery = data.generatedMasteryOutlines.find((outline) => outline.id === activeLecture.masteryMapId || outline.lectureId === activeLecture.id)
+  const mastery = activeLecture.masteryMapId
+    ? data.generatedMasteryOutlines.find(outline => outline.id === activeLecture.masteryMapId && outline.courseId === courseId)
+    : data.generatedMasteryOutlines.find(outline => outline.lectureId === activeLecture.id && outline.courseId === courseId)
+  // Rebuild selections are editable before generation succeeds. Resolve saved
+  // citations from the class library so retained work keeps its original evidence.
+  const evidenceIds = new Set([
+    ...chunks.map(chunk => chunk.id),
+    ...(activeLecture.studyGuide?.sections.flatMap(section => section.blocks.flatMap(block => block.sourceRef ? [block.sourceRef.chunkId] : [])) ?? []),
+    ...(mastery?.sourceChunkIds ?? []),
+    ...(mastery?.standards.flatMap(standard => [...standard.sourceChunkIds, ...(standard.examPractice?.flatMap(question => question.sourceChunkIds) ?? [])]) ?? []),
+  ])
+  const evidenceChunks = data.sourceChunks.filter(chunk => chunk.courseId === courseId && evidenceIds.has(chunk.id))
+  const evidenceFileIds = new Set(evidenceChunks.map(chunk => chunk.fileId))
+  const evidenceFiles = data.files.filter(file => file.courseId === courseId && evidenceFileIds.has(file.id))
   const chronological = [...lectures].sort((a, b) => String(a.occurredOn ?? '').localeCompare(String(b.occurredOn ?? '')) || a.createdAt - b.createdAt)
   const lectureNumber = (id: string) => chronological.findIndex((lecture) => lecture.id === id) + 1
   const moreMenu = <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" aria-label={embedded ? 'More lecture tools' : undefined} className={cn(!embedded && 'mr-8')}><MoreHorizontal className="size-4" /><span className={cn(embedded && 'hidden sm:inline')}>More</span></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Lecture tools</DropdownMenuLabel><DropdownMenuItem onClick={() => onView('sources')}><Search className="size-4" /> Search sources</DropdownMenuItem><DropdownMenuItem onClick={onOpenNotes}><NotebookText className="size-4" /> Open class Guide</DropdownMenuItem><DropdownMenuItem onClick={onHelp}><CircleHelp className="size-4" /> Transcript help</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
   const tailored = activeLecture.notebookOutput === 'tailored-page'
   const views: Array<[WorkspaceView, string]> = tailored ? [['brief', 'Notebook page'], ['materials', 'Materials'], ['sources', 'Sources']] : [['brief', 'Study Guide'], ['mastery', 'Mastery Map'], ['materials', 'Materials'], ['sources', 'Sources']]
   const tabs = <nav className={cn('lecture-workspace-tabs flex min-w-0 gap-1 overflow-x-auto', !embedded && 'mt-4')} aria-label="Lecture workspace views">{views.map(([value, label]) => <button key={value} type="button" aria-current={view === value ? 'page' : undefined} onClick={() => onView(value)} className={cn('whitespace-nowrap border-b-2 py-2 font-extrabold', embedded ? 'px-2 text-xs sm:px-3 sm:text-sm' : 'px-3 text-sm', view === value ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')}>{label}</button>)}</nav>
-  const content = <>{activeLecture.studyGuide && activeLecture.processingError && <p role="status" className="mb-4 rounded-lg border border-border bg-muted p-3 text-sm text-muted-foreground">{activeLecture.processingError}</p>}{view === 'brief' && (activeLecture.studyGuide
-    ? tailored ? <NotebookPageView lecture={activeLecture} guide={activeLecture.studyGuide} chunks={chunks} files={files} standalone={standalone} /> : <GeneratedLectureGuideView standalone={standalone} lecture={activeLecture} guide={activeLecture.studyGuide} brief={brief} chunks={chunks} files={files} mastery={mastery} onOpenMastery={() => onView('mastery')} />
-    : <LectureBriefView brief={brief} chunks={chunks} files={files} mastery={mastery} onOpenMastery={() => onView('mastery')} />)}{view === 'mastery' && <MasteryMapView outline={mastery} chunks={chunks} lecture={activeLecture} />}{view === 'materials' && <LectureMaterialsView data={data} lecture={activeLecture} files={data.files.filter((file) => file.lectureId === activeLecture.id || selectedIds.includes(file.id))} onOpenBrief={() => onView('brief')} onOpenMastery={() => onView('mastery')} />}{view === 'sources' && <LectureSourcesView courseId={courseId} lecture={activeLecture} files={files} chunks={chunks} data={data} />}</>
+  const content = <>{view === 'brief' && activeLecture.studyGuide && <GenerationReviewNotice status={activeLecture.generationAuditStatus} />}{activeLecture.studyGuide && activeLecture.processingError && <p role="status" className="mb-4 rounded-lg border border-border bg-muted p-3 text-sm text-muted-foreground">{activeLecture.processingError}</p>}{view === 'brief' && (activeLecture.studyGuide
+    ? tailored ? <NotebookPageView lecture={activeLecture} guide={activeLecture.studyGuide} chunks={evidenceChunks} files={evidenceFiles} standalone={standalone} /> : <GeneratedLectureGuideView standalone={standalone} lecture={activeLecture} guide={activeLecture.studyGuide} brief={brief} chunks={evidenceChunks} files={evidenceFiles} mastery={mastery} onOpenMastery={() => onView('mastery')} />
+    : <LectureBriefView brief={brief} chunks={chunks} files={files} mastery={mastery} onOpenMastery={() => onView('mastery')} />)}{view === 'mastery' && <MasteryMapView outline={mastery} chunks={evidenceChunks} lecture={activeLecture} />}{view === 'materials' && <LectureMaterialsView data={data} lecture={activeLecture} files={data.files.filter((file) => file.lectureId === activeLecture.id || selectedIds.includes(file.id))} onOpenBrief={() => onView('brief')} onOpenMastery={() => onView('mastery')} />}{view === 'sources' && <LectureSourcesView courseId={courseId} lecture={activeLecture} files={files} chunks={chunks} data={data} />}</>
 
   if (embedded) return <section className="min-w-0 overflow-hidden border-t border-border bg-card" aria-label="Embedded lecture workspace"><div className="flex min-w-0 items-center justify-between gap-2 border-b border-border px-1 sm:px-2"><div className="min-w-0 flex-1">{tabs}</div><div className="shrink-0">{moreMenu}</div></div><div role="region" aria-label="Lecture reading area" tabIndex={0} className="max-h-[38rem] min-w-0 overflow-y-auto p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:p-5">{content}</div>{help}</section>
 

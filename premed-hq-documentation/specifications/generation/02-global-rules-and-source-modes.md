@@ -27,7 +27,7 @@ reference tunables, and so the assembler can reject any attempt to touch an inva
 | `G-FID-4` | **Do not silently resolve contradictions in the source.** If two sources disagree, surface both and mark the disagreement. |
 | `G-FID-5` | **Surface ambiguity when the source itself is unclear.** Do not smooth it into false confidence. |
 | `G-FID-6` | **If material is incomplete, say so.** Emit an explicit gap marker. Never invent to fill it. |
-| `G-FID-7` | Every claim carries `provenance`: `source` \| `clarification` \| `background`. Never omit it. |
+| `G-FID-7` | Every claim must retain its source or generated status using the artifact schema. Where the schema exposes provenance, every claim carries source, clarification, or background; never omit it. For objective/list schemas without claim-level provenance fields, retain the required exact source IDs and explicitly label generated objectives and hypothetical practice in their existing text fields. Do not invent extra fields or objects inside string arrays. |
 
 > **On `G-FID-4` and `G-FID-5`:** these are the two rules most likely to be quietly dropped, because
 > a clean-looking artifact scores better on first impression than an honest one. A study guide that
@@ -119,7 +119,7 @@ All three are deterministic and enforced in code (`08` §2.1), not left to model
 **One setting, three values, applied at L1 and enforced server-side.** The mode determines *what
 knowledge may enter the artifact* — never what quality it should have.
 
-Every claim carries `provenance`. The mode is the filter over that field.
+Every claim retains its source or generated status through its artifact schema as specified by G-FID-7. Where the schema has a `provenance` field, the source mode filters that field; objective/list schemas retain their exact evidence IDs and explicit generated labels instead.
 
 | Mode | `source` | `clarification` | `background` |
 |---|---|---|---|
@@ -272,7 +272,7 @@ contained nothing the lecture didn't.
 
 | id | Rule |
 |---|---|
-| `G-COV-1` | Every artifact records `chunksUsed`, `chunksAvailable`, and the **set of `fileId`s actually drawn from**. |
+| `G-COV-1` | Coverage is a runtime and presentation responsibility derived from selected source IDs and actual artifact citations, never a model guess. The model must preserve every schema-required evidence reference and must not invent coverage fields absent from its schema. Report actual use separately from selection; never claim that every selected file or passage contributed merely because it was supplied. |
 | `G-COV-2` | The UI states coverage plainly — *"Built from 3 of your 5 files for this topic."* |
 | `G-COV-3` | A file in scope that contributed **zero** blocks is named, so the student can tell whether it was irrelevant or missed. |
 | `G-COV-4` | When retrieval falls back to non-semantic ordering (no embedding key), the artifact is **marked as reduced-quality retrieval**. The same label must never cover two different retrieval qualities. |

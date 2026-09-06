@@ -81,6 +81,44 @@ describe('lecture import and workspace', () => {
     expect(container.textContent).toContain('Study Guide')
   })
 
+  it('keeps saved guide and map citations readable after their source is excluded from a rebuild', async () => {
+    const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
+    const center = seed.academics.classCenter
+    const entry = center.lectures.find(item => item.id === 'demo-lecture-biol103-2')!
+    const source = center.sourceChunks.find(item => item.fileId === entry.selectedSourceFileIds?.[0])!
+    entry.selectedSourceFileIds = []
+    entry.notebookOutput = 'study-package'
+    entry.studyGuide = { specId: 'study-guide-v1', specHash: 'test', courseId: entry.courseId, topicId: entry.id, sections: [{ id: 'saved', title: 'Saved explanation', blocks: [{ id: 'saved-block', type: 'prose', provenance: 'source', text: { content: 'A retained explanation.' }, sourceRef: { chunkId: source.id, fileId: source.fileId, start: 0, end: 10 } }] }] }
+    const map = center.generatedMasteryOutlines.find(item => item.lectureId === entry.id)!
+    entry.masteryMapId = map.id
+    map.standards[0].sourceChunkIds = [source.id]
+    useStore.getState().replaceAll(seed)
+    await render(entry.courseId, entry.id)
+    expect(container.querySelector(`[data-source-chunk-id="${source.id}"]`)?.textContent).toContain(source.content)
+    const mastery = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Mastery Map')!
+    await act(async () => mastery.click())
+    for (const trigger of container.querySelectorAll<HTMLButtonElement>('[data-slot="accordion-trigger"][data-state="closed"]')) await act(async () => trigger.click())
+    expect(container.textContent).toContain(source.content)
+    expect(useStore.getState().academics.classCenter.lectures.find(item => item.id === entry.id)?.selectedSourceFileIds).toEqual([])
+  })
+
+  it('opens the explicitly linked map when an older map is associated with the same entry', async () => {
+    const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
+    const center = seed.academics.classCenter
+    const entry = center.lectures.find(item => item.id === 'demo-lecture-biol103-2')!
+    const oldMap = center.generatedMasteryOutlines.find(item => item.lectureId === entry.id)!
+    const latestMap = structuredClone(oldMap)
+    latestMap.id = 'latest-map'
+    latestMap.standards[0].title = 'Latest selected learning objective'
+    center.generatedMasteryOutlines.push(latestMap)
+    entry.masteryMapId = latestMap.id
+    useStore.getState().replaceAll(seed)
+    await render(entry.courseId, entry.id)
+    const mastery = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Mastery Map')!
+    await act(async () => mastery.click())
+    expect(container.textContent).toContain('Latest selected learning objective')
+  })
+
   it('gives the lecture list, fixed header, and reading pane separate layout ownership', async () => {
     const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
     seed.academics.classCenter.lectures.push(...Array.from({ length: 18 }, (_, index) => ({

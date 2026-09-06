@@ -122,6 +122,10 @@ export function validateMasteryOutline(value: unknown, closedChunkIds: readonly 
     if (!raw || typeof raw !== 'object') return fail(`${path}: expected an objective object`)
     const standard = raw as Partial<MasteryStandard>
     if (!text(standard.id) || !text(standard.title) || seen.has(standard.id)) return fail(`${path}: nonempty title and unique id required`)
+    const limited = standard.evidenceLimit !== undefined
+    if (limited && (!text(standard.evidenceLimit) || clean(standard.evidenceLimit).split(' ').length < 8)) {
+      return fail(`${path}.evidenceLimit: explain the specific missing source support in at least 8 words`)
+    }
     if (!validFreeRecallCues(standard.freeRecallCues)) {
       const cues: unknown = (raw as unknown as Record<string, unknown>).freeRecallCues
       if (!validStringList(cues) || cues.length < 1 || cues.length > 3) return fail(`${path}.freeRecallCues: needs 1 to 3 nonempty cues`)
@@ -129,7 +133,9 @@ export function validateMasteryOutline(value: unknown, closedChunkIds: readonly 
       const invalid = cues.findIndex((cue) => clean(cue).split(' ').length < 5 || !FREE_RECALL_ACTION.test(cue) || GENERIC_FREE_RECALL.test(cue))
       return fail(`${path}.freeRecallCues[${invalid}]: needs a concrete retrieval action and named subject, at least 5 words`)
     }
-    for (const [field, minimum] of [['understand', 5], ['beAbleToDo', 2], ['watchFor', 1]] as const) {
+    const floors = limited ? [['understand', 1], ['beAbleToDo', 0], ['watchFor', 0]] as const
+      : [['understand', 5], ['beAbleToDo', 2], ['watchFor', 1]] as const
+    for (const [field, minimum] of floors) {
       const list = standard[field]
       if (!validStringList(list) || list.length < minimum) return fail(`${path}.${field}: needs at least ${minimum} distinct points`)
       if (!unique(list)) return fail(`${path}.${field}: repeated points`)
@@ -148,7 +154,7 @@ export function validateMasteryOutline(value: unknown, closedChunkIds: readonly 
     if (!allClosed(standard.sourceChunkIds, closed)) return fail(`${path}.sourceChunkIds: missing or outside selected sources`)
     if (new Set(standard.sourceChunkIds).size !== standard.sourceChunkIds!.length) return fail(`${path}.sourceChunkIds: duplicate source IDs`)
     if (requireExamPractice || standard.examPractice !== undefined) {
-      if (!Array.isArray(standard.examPractice) || standard.examPractice.length < 1 || standard.examPractice.length > 2) return fail(`${path}.examPractice: needs 1 to 2 complete application questions`)
+      if (!Array.isArray(standard.examPractice) || standard.examPractice.length < (limited ? 0 : 1) || standard.examPractice.length > 2) return fail(`${path}.examPractice: needs ${limited ? '0' : '1'} to 2 complete application questions`)
       for (const [questionIndex, question] of standard.examPractice.entries()) {
         const questionPath = `${path}.examPractice[${questionIndex}]`
         if (!question || !text(question.prompt) || !text(question.answer) || !text(question.rationale)

@@ -105,4 +105,20 @@ describe('mastery learning modes', () => {
     expect(saved?.standards[0].masteryState).toBe('can-apply-without-notes')
     expect(container.textContent).not.toContain('exam ready')
   })
+  it('shows evidence-limited depth and explains intentionally absent practice', async () => {
+    const limited = structuredClone(outline)
+    limited.standards[0].evidenceLimit = 'The selected excerpt names template selection but supplies no worked sequence or further process steps.'
+    limited.standards[0].examPractice = []
+    await act(async () => root.render(<MasteryMapView outline={limited} chunks={chunks} lecture={lecture} />))
+    expect(container.textContent).toContain('Limited source support:')
+    expect(container.textContent).toContain(limited.standards[0].evidenceLimit)
+    expect(container.textContent).toContain('No application question was generated because')
+    expect(container.textContent).not.toContain('This earlier saved map')
+  })
+
+  it.each(['unavailable', 'skipped'] as const)('discloses %s independent review on a saved map', async (generationAuditStatus) => {
+    await act(async () => root.render(<MasteryMapView outline={{...outline, generationAuditStatus}} chunks={chunks} lecture={lecture} />))
+    expect(container.textContent).toContain(generationAuditStatus === 'unavailable' ? 'Independent review was unavailable' : 'Independent review was not run')
+  })
+
 })

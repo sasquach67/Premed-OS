@@ -3,6 +3,7 @@ import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { pdfjsAssets } from './scripts/pdfjs-assets'
 
 // Vite config for Premed OS.
 // - @tailwindcss/vite  : Tailwind v4 (no separate tailwind.config; tokens live in index.css)
@@ -12,7 +13,7 @@ export default defineConfig({
   // https://premedos.app/. The Pages repository path is no longer part of
   // public asset URLs, so this must stay '/'.
   base: '/',
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), pdfjsAssets()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

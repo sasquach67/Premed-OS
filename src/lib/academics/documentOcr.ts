@@ -31,6 +31,7 @@ export interface LocalOcrSession {
 const MAX_OCR_PIXELS = 16_000_000
 const TARGET_SCALE = 4
 export const OCR_STARTUP_TIMEOUT_MS = 20_000
+export const OCR_OPERATION_TIMEOUT_MS = 60_000
 
 function assetPath(file: string): string {
   const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`
@@ -85,15 +86,52 @@ export async function createLocalOcrSession(
       (error) => finish(() => reject(error)),
     )
   })
-  await worker.setParameters({
-    tessedit_pageseg_mode: PSM.AUTO,
-    preserve_interword_spaces: '1',
-  })
+  let termination: Promise<void> | undefined
+  const terminate = () => termination ??= Promise.resolve().then(async () => { await worker.terminate() })
+  // Tesseract may stop answering after startup. Bound each operation as well
+  // so one scanned page cannot indefinitely hold up a multi-file import.
+  const runOperation = <T>(operation: () => Promise<T>): Promise<T> => {
+    throwIfAborted(signal)
+    if (termination) return Promise.reject(new Error('The on-device reader has stopped. Try this page again or paste its text.'))
+    return new Promise<T>((resolve, reject) => {
+      let settled = false
+      const finish = (callback: () => void) => {
+        if (settled) return
+        settled = true
+        window.clearTimeout(timeout)
+        signal?.removeEventListener('abort', onAbort)
+        callback()
+      }
+      const stop = (error: Error) => finish(() => {
+        void terminate().catch(() => {})
+        reject(error)
+      })
+      const onAbort = () => stop(new DOMException('Document reading was cancelled.', 'AbortError'))
+      const timeout = window.setTimeout(() => stop(new Error('The on-device reader took too long. Readable pages were kept; try this page again or paste its text.')), OCR_OPERATION_TIMEOUT_MS)
+      signal?.addEventListener('abort', onAbort, { once: true })
+      Promise.resolve().then(() => {
+        throwIfAborted(signal)
+        return operation()
+      }).then(
+        (value) => finish(() => resolve(value)),
+        (error) => finish(() => reject(error)),
+      )
+    })
+  }
+  try {
+    await runOperation(() => worker.setParameters({
+      tessedit_pageseg_mode: PSM.AUTO,
+      preserve_interword_spaces: '1',
+    }))
+  } catch (error) {
+    void terminate().catch(() => {})
+    throw error
+  }
 
   return {
     async recognizeImage(image) {
       throwIfAborted(signal)
-      const result = await worker.recognize(image as Parameters<typeof worker.recognize>[0])
+      const result = await runOperation(() => worker.recognize(image as Parameters<typeof worker.recognize>[0]))
       throwIfAborted(signal)
       return result.data.text.replace(/\r/g, '').trim()
     },
@@ -111,10 +149,10 @@ export async function createLocalOcrSession(
       canvas.height = Math.ceil(viewport.height)
       const context = canvas.getContext('2d', { alpha: false })
       if (!context) throw new Error('This browser could not prepare the scanned syllabus page.')
-      await page.render({ canvas, canvasContext: context, viewport, background: '#fff' }).promise
-      throwIfAborted(signal)
       try {
-        const result = await worker.recognize(canvas)
+        await runOperation(() => page.render({ canvas, canvasContext: context, viewport, background: '#fff' }).promise)
+        throwIfAborted(signal)
+        const result = await runOperation(() => worker.recognize(canvas))
         throwIfAborted(signal)
         return result.data.text.replace(/\r/g, '').trim()
       } finally {
@@ -123,7 +161,7 @@ export async function createLocalOcrSession(
       }
     },
     async terminate() {
-      await worker.terminate()
+      await terminate()
     },
   }
 }

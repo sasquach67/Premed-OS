@@ -228,7 +228,19 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
       }
       if (status === 402) return { ok: false, code: 'anthropic-credit-exhausted', message: 'Anthropic credits are exhausted. Add credits before generating another question bank.' }
       if (status === 413) return { ok: false, code: 'request-too-large', message: 'This request is too large for one study-tool action.' }
-      if (status === 422) return { ok: false, code: 'no-sources', message: 'No synced source material is available for this topic.' }
+      if (status === 422) {
+        const responseBody = await readFunctionErrorBody(context)
+        const serverError = isRecord(responseBody) && isRecord(responseBody.error) ? responseBody.error : undefined
+        if (serverError?.code === 'no-sources' || serverError?.code === 'source-sync-incomplete') {
+          return { ok: false, code: 'no-sources', message: serverError.code === 'source-sync-incomplete'
+            ? 'Some selected material is missing from the server copy. Restore the complete selection before generating.'
+            : 'No synced source material is available for this topic.' }
+        }
+        if (serverError?.code === 'no-verified-citations') {
+          return { ok: false, code: 'citation-not-carried', message: 'The generated artifact did not include any verifiable source citations. Rebuild it with source references from the supplied material. Nothing was saved.' }
+        }
+        return { ok: false, code: 'invalid-response', message: 'The server could not validate this study-tool result. Nothing was saved.' }
+      }
       // A 502 carries the server's own reason. Collapsing it into "unavailable"
       // would tell the student the service is down when in fact it refused a
       // specific artifact and would accept another attempt immediately.
@@ -253,14 +265,14 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
           const rawIssues = isRecord(responseBody) && isRecord(responseBody.error)
             ? responseBody.error.issues
             : undefined
-          const firstIssue = Array.isArray(rawIssues)
-            ? rawIssues.find((issue): issue is string => typeof issue === 'string' && Boolean(issue.trim()))
-            : undefined
+          const reviewIssues = Array.isArray(rawIssues)
+            ? rawIssues.filter((issue): issue is string => typeof issue === 'string' && Boolean(issue.trim())).slice(0, 3).map(issue => issue.slice(0, 500))
+            : []
           return {
             ok: false,
             code: 'audit-rejected',
             message: 'The independent provider review found a source or format problem. Nothing was saved.'
-              + (firstIssue ? ` Review note: ${firstIssue}` : ''),
+              + (reviewIssues.length ? ` Review note: ${reviewIssues.join('; ')}` : ''),
           }
         }
         if (serverCode === 'web-search-not-used') {

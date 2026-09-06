@@ -76,6 +76,26 @@ export function renderGuide(artifact: unknown): string {
   return lines.join('\n').trim()
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+const guideBlockTypes = new Set(['prose', 'bullets', 'numbered', 'table', 'callout', 'gap', 'contradiction', 'must_memorize', 'must_understand', 'recall'])
+
+function isGuideRichText(value: unknown): boolean {
+  return isRecord(value) && typeof value.content === 'string'
+    && (value.emphasis === undefined || (Array.isArray(value.emphasis)
+      && value.emphasis.every(span => isRecord(span) && typeof span.text === 'string' && typeof span.emphasis === 'string')))
+}
+
+function isGuideBlock(value: unknown): boolean {
+  if (!isRecord(value) || typeof value.id !== 'string' || !guideBlockTypes.has(String(value.type))
+    || !['source', 'clarification', 'background'].includes(String(value.provenance))) return false
+  if (value.text !== undefined && !isGuideRichText(value.text)) return false
+  if (value.items !== undefined && (!Array.isArray(value.items) || !value.items.every(isGuideRichText))) return false
+  // A heading alone cannot make a generated document renderable. Refuse a
+  // malformed block as a whole rather than dropping part of the user's result.
+  return Boolean(isRecord(value.text) && typeof value.text.content === 'string' && value.text.content.trim())
+    || Boolean(Array.isArray(value.items) && value.items.some(item => isRecord(item) && typeof item.content === 'string' && item.content.trim()))
+}
+
 function isStudyGuideContent(value: unknown): value is Pick<StudyGuideArtifact, 'sections'> {
   if (!value || typeof value !== 'object') return false
   const artifact = value as Partial<StudyGuideArtifact>
@@ -83,7 +103,7 @@ function isStudyGuideContent(value: unknown): value is Pick<StudyGuideArtifact, 
     && artifact.sections.length > 0
     && artifact.sections.every((section) => Boolean(
       section && typeof section.id === 'string' && typeof section.title === 'string'
-      && Array.isArray(section.blocks) && section.blocks.length > 0,
+      && Array.isArray(section.blocks) && section.blocks.length > 0 && section.blocks.every(isGuideBlock),
     ))
 }
 
