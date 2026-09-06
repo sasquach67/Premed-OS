@@ -161,8 +161,8 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
           {['Goal', 'Materials', 'Create'].map((label, index) => {
             const current = choosingGoal ? 0 : reviewing ? 2 : 1
             return <li key={label} className="flex min-w-0 flex-1 items-center gap-2">
-              {index > 0 && <span aria-hidden="true" className="h-px w-4 bg-border sm:w-8"/>}
-              <button type="button" aria-label={`Go to ${label.toLowerCase()}`} disabled={Boolean(phase) || (index === 2 && Boolean(sourceProblem))} aria-current={index === current ? 'step' : undefined} onClick={() => goToStep(index)} className={cn('flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border px-2 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50', index === current ? 'border-primary bg-muted text-foreground' : 'border-border text-muted-foreground enabled:hover:bg-muted enabled:hover:text-foreground')}>
+              {index > 0 && <span aria-hidden="true" className="hidden h-px w-8 bg-border sm:block"/>}
+              <button type="button" aria-label={`Go to ${label.toLowerCase()}`} disabled={Boolean(phase) || (index === 2 && Boolean(sourceProblem))} aria-current={index === current ? 'step' : undefined} onClick={() => goToStep(index)} className={cn('flex min-h-12 w-full items-center justify-center gap-1 rounded-lg border px-1 text-xs font-semibold sm:gap-2 sm:px-2 sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50', index === current ? 'border-primary bg-muted text-foreground' : 'border-border text-muted-foreground enabled:hover:bg-muted enabled:hover:text-foreground')}>
                 <span aria-hidden="true" className={cn('flex size-6 shrink-0 items-center justify-center rounded-full', index === current ? 'bg-primary text-primary-foreground' : 'bg-muted')}>{index + 1}</span>{label}
               </button>
             </li>
