@@ -158,3 +158,35 @@ it('preserves the generated goal and instructions if a tailored rebuild fails', 
   expect(generateUnitMasteryOutline).not.toHaveBeenCalled()
   expect(built).not.toHaveBeenCalled()
 })
+
+it('shows real generation stages and prevents navigation while generation is pending', async () => {
+  let finishGuide!: (value: Awaited<ReturnType<typeof generateStudyGuide>>) => void
+  let finishMastery!: (value: Awaited<ReturnType<typeof generateUnitMasteryOutline>>) => void
+  vi.mocked(generateStudyGuide).mockImplementation(() => new Promise(resolve => { finishGuide = resolve }))
+  vi.mocked(generateUnitMasteryOutline).mockImplementation(() => new Promise(resolve => { finishMastery = resolve }))
+  await render(); await selectSource(); await click('Review and create'); await click('Create entry')
+  const progress = () => container.querySelector('[aria-label="Creation progress"]')!
+  expect(progress().textContent).toContain('Study Guide: in progress')
+  expect(progress().textContent).toContain('Mastery Map: waiting')
+  expect(progress().textContent).toContain('elapsed')
+  expect([...container.querySelectorAll<HTMLButtonElement>('[aria-label="Entry progress"] button')].every(button => button.disabled)).toBe(true)
+  await act(async () => finishGuide(structuredClone(guide) as unknown as Awaited<ReturnType<typeof generateStudyGuide>>))
+  expect(progress().textContent).toContain('Study Guide: complete')
+  expect(progress().textContent).toContain('Mastery Map: in progress')
+  expect(progress().textContent).toContain('Save entry: waiting')
+  await act(async () => finishMastery({ ok: false, message: 'Try again later' }))
+  expect(container.querySelector('[aria-label="Creation progress"]')).toBeNull()
+  expect(container.querySelector('[role="alert"]')?.textContent).toBe('Try again later')
+  expect(built).not.toHaveBeenCalled()
+})
+
+it('shows only applicable progress for an assessment', async () => {
+  let finish!: (value: Awaited<ReturnType<typeof generateStudyGuide>>) => void
+  vi.mocked(generateStudyGuide).mockImplementation(() => new Promise(resolve => { finish = resolve }))
+  await render(); await click('Prepare for an assessment'); await selectSource(); await click('Review and create'); await click('Create entry')
+  const progress = container.querySelector('[aria-label="Creation progress"]')!
+  expect(progress.textContent).toContain('Assessment study guide: in progress')
+  expect(progress.textContent).not.toContain('Mastery Map')
+  await act(async () => finish(structuredClone(guide) as unknown as Awaited<ReturnType<typeof generateStudyGuide>>))
+  expect(built).toHaveBeenCalledTimes(1)
+})

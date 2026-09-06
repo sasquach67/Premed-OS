@@ -833,7 +833,7 @@ describe('ClassHub approved Overview', () => {
     })
 
     expect(document.body.textContent).toContain('What would you like to do?')
-    expect(document.body.textContent).toContain('Your goal')
+    expect(document.body.querySelector('[aria-label="Entry progress"]')?.textContent).toContain('Goal')
     expect(document.body.textContent).toContain('Materials')
 
   })

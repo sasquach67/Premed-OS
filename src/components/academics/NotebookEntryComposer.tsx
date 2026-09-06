@@ -1,5 +1,5 @@
-import { useId, useState } from 'react'
-import { ArrowLeft, ArrowRight, Check, FilePlus2, FileText, Loader2, NotebookPen, Sparkles, X } from 'lucide-react'
+import { useEffect, useId, useState } from 'react'
+import { ArrowLeft, ArrowRight, BookOpen, ClipboardCheck, PenLine, Check, FilePlus2, FileText, Loader2, NotebookPen, Sparkles, X } from 'lucide-react'
 import type { ClassCenterData, Course, LectureRecord, NotebookGoal } from '@/lib/types'
 import { uid } from '@/lib/id'
 import { useStore } from '@/store/store'
@@ -39,7 +39,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
   const [choosingGoal, setChoosingGoal] = useState(true)
   const [reviewing, setReviewing] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
-  const [phase, setPhase] = useState<'page' | 'guide' | 'mastery' | null>(null)
+  const [phase, setPhase] = useState<'page' | 'guide' | 'mastery' | 'saving' | null>(null)
   const [error, setError] = useState('')
   const draft = data.lectures.find(item => item.id === draftId) ?? entry
   const selectedIds = draft?.notebookRequest !== undefined
@@ -96,6 +96,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
         mastery = await generateUnitMasteryOutline({ courseId, chunks, unit: label, label, scope: 'lecture', notebookRequest: request.trim() || undefined, primarySourceChunkIds, practiceQuestionChunkIds: questionIds })
         if (!mastery.ok || !mastery.artifact) { setError(mastery.message ?? 'The Mastery Map could not be created. Your previous result is unchanged.'); return }
       }
+      setPhase('saving')
       const generatedGuide = guide.artifact
       const generatedMastery = mastery?.artifact
       const usedIds = new Set([...generatedGuide.sections.flatMap(section => section.blocks.flatMap(block => block.sourceRef ? [block.sourceRef.chunkId] : [])), ...(generatedMastery?.sourceChunkIds ?? [])])
@@ -137,28 +138,37 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
   }
 
   return <section className="notebook-composer w-full min-w-0" aria-label="Notebook entry composer">
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4 pt-2">
-      <div><p className="text-xs font-bold text-primary">{course?.code ?? 'Class'} · Notebook</p><h2 className="mt-1 font-display text-xl font-extrabold">{choosingGoal ? 'What would you like to do?' : reviewing ? 'Ready to create' : 'Bring your materials'}</h2></div>
-      <p className="text-xs text-muted-foreground">{choosingGoal ? '1 of 3 · Your goal' : reviewing ? '3 of 3 · Review' : '2 of 3 · Materials'}</p>
+    <header className="space-y-6 pt-2">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <p className="text-sm font-bold text-primary">{course?.code ?? 'Class'} · Notebook</p>
+        <nav aria-label="Entry progress"><ol className="flex items-center gap-2 text-xs">
+          {['Goal', 'Materials', 'Create'].map((label, index) => {
+            const current = choosingGoal ? 0 : reviewing ? 2 : 1
+            return <li key={label} className="flex items-center gap-2">
+              {index > 0 && <span aria-hidden="true" className="h-px w-4 bg-border sm:w-8"/>}
+              <button type="button" disabled={Boolean(phase) || index > current} aria-current={index === current ? 'step' : undefined} onClick={() => { setChoosingGoal(index === 0); setReviewing(index === 2); setError('') }} className={cn('flex min-h-11 items-center gap-2 rounded-lg px-2 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default', index === current ? 'font-bold text-foreground' : 'text-muted-foreground')}>
+                <span className={cn('flex size-6 items-center justify-center rounded-full', index <= current ? 'bg-primary text-primary-foreground' : 'bg-muted')}>{index < current ? <Check aria-hidden="true" className="size-3.5"/> : index + 1}</span>{label}
+              </button>
+            </li>
+          })}
+        </ol></nav>
+      </div>
+      <h1 className="font-display text-3xl font-extrabold">{choosingGoal ? 'What would you like to do?' : reviewing ? 'Ready to create' : 'Bring your materials'}</h1>
     </header>
     <div className="space-y-6 py-6">
       {choosingGoal ? <section aria-label="Notebook goal" className="space-y-5">
-        <p className="text-sm text-muted-foreground">Choose what you want to create. Add any further instructions below.</p>
         <RadioGroup aria-label="What would you like to do?" value={goal} onValueChange={value => { const nextGoal = value as NotebookGoal; setGoal(nextGoal); saveDraft(selectedIds, title, request, nextGoal) }} className="gap-3 sm:grid-cols-3">
-          {goalOptions.map(option => <label key={option.value} htmlFor={`${goalId}-${option.value}`} className={cn('flex min-h-20 cursor-pointer items-center gap-3 rounded-lg border p-4 transition-colors focus-within:ring-2 focus-within:ring-ring', goal === option.value ? 'border-primary bg-muted ring-1 ring-primary' : 'border-border hover:bg-muted')}>
-            <RadioGroupItem id={`${goalId}-${option.value}`} value={option.value} aria-label={option.label}/><span className="text-sm font-bold">{option.label}</span>
+          {goalOptions.map(option => <label key={option.value} htmlFor={`${goalId}-${option.value}`} className={cn('flex min-h-20 cursor-pointer items-center gap-3 rounded-xl border bg-card p-4 shadow-sm transition-colors focus-within:ring-2 focus-within:ring-ring', goal === option.value ? 'border-primary bg-muted ring-1 ring-primary shadow-md' : 'border-border hover:bg-muted')}>
+            {option.value === 'review' ? <BookOpen aria-hidden="true" className="size-5 shrink-0 text-primary"/> : option.value === 'assessment' ? <ClipboardCheck aria-hidden="true" className="size-5 shrink-0 text-primary"/> : <PenLine aria-hidden="true" className="size-5 shrink-0 text-primary"/>}<RadioGroupItem className="sr-only" id={`${goalId}-${option.value}`} value={option.value} aria-label={option.label}/><span className="flex-1 text-sm font-bold">{option.label}</span>{goal === option.value && <Check aria-hidden="true" className="size-4 shrink-0 text-primary"/>}
           </label>)}
         </RadioGroup>
-        <p className="text-sm text-muted-foreground" aria-live="polite">{chosenGoal.description}</p>
         <label className="block text-sm font-bold">Anything specific? <span className="font-normal text-muted-foreground">Optional</span>
-          <Textarea className="mt-2 min-h-24" maxLength={4000} value={request} onChange={event => { setRequest(event.target.value); saveDraft(selectedIds, title, event.target.value) }} placeholder="e.g., explain simply, give examples, focus on a topic…"/>
-          <span className="mt-2 block text-xs font-normal leading-5 text-muted-foreground">Optional refinements: make it easier to digest, add examples, or emphasize lecture material. Your selected goal stays the same.</span>
+          <Textarea className="mt-2 min-h-20" maxLength={4000} value={request} onChange={event => { setRequest(event.target.value); saveDraft(selectedIds, title, event.target.value) }} placeholder="e.g., explain simply, give examples, focus on a topic…"/>
         </label>
-        <p className="text-xs text-muted-foreground">Next, bring whatever supports your goal. A transcript is optional.</p>
       </section> : !reviewing ? <>
         <section aria-label="Entry materials" className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-muted p-4">
-            <div className="flex items-start gap-3"><FileText className="mt-1 size-5 shrink-0 text-primary" aria-hidden="true"/><div><h3 className="font-display text-lg font-bold">Bring what you have</h3><p className="mt-1 max-w-sm text-sm text-muted-foreground">Transcripts, slides, readings, questions, drafts—anything relevant.</p></div></div>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <div className="flex items-start gap-3"><FileText className="mt-1 size-5 shrink-0 text-primary" aria-hidden="true"/><div><p className="text-sm text-muted-foreground">Transcripts, readings, questions, or drafts.</p></div></div>
             <MaterialIntakeDialog minimumTextCharacters={1} courseId={courseId} onAdded={ids => { saveDraft([...new Set([...selectedIds, ...ids])]); setError('') }} trigger={<Button variant="outline"><FilePlus2 className="size-4"/>Upload or paste</Button>}/>
           </div>
           {library.length > 0 && <div>
@@ -167,12 +177,12 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
           </div>}
           {files.length > 0 && <ul aria-label="Selected materials" className="max-h-64 divide-y divide-border overflow-y-auto">{files.map(file => <li key={file.id} className="flex min-w-0 items-center gap-3 py-3"><FileText className="size-4 shrink-0 text-muted-foreground"/><span className="min-w-0 flex-1"><b className="block break-words text-sm">{file.title}</b><span className="text-xs text-muted-foreground">{readableIds.has(file.id) ? 'Readable text ready' : 'No readable text · add a clearer copy'}</span></span><Button variant="ghost" size="icon" aria-label={`Exclude ${file.title}`} onClick={() => changeSources(file.id, false)}><X className="size-4"/></Button></li>)}</ul>}
         </section>
-        <div className="flex flex-wrap items-start justify-between gap-3 border-t border-border pt-4"><div className="min-w-0 flex-1"><p className="text-xs font-bold text-primary">Your goal</p><p className="mt-1 whitespace-pre-wrap break-words text-sm">{chosenGoal.label}</p>{request.trim() && <p className="mt-2 whitespace-pre-wrap break-words text-sm text-muted-foreground">{request}</p>}</div><Button variant="ghost" onClick={() => setChoosingGoal(true)}>Edit goal</Button></div>
-        <details className="border-t border-border pt-3"><summary className="cursor-pointer py-2 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring">Entry title <span className="font-normal text-muted-foreground">Optional</span></summary><label className="block pt-2"><span className="sr-only">Entry title</span><Input value={title} placeholder="Name it, or use the generated title" onChange={event => { setTitle(event.target.value); saveDraft(selectedIds, event.target.value, request) }}/></label></details>
+        <div className="flex flex-wrap items-center gap-2 text-sm"><span className="rounded-full bg-muted px-3 py-1">{chosenGoal.label}</span><Button variant="ghost" onClick={() => setChoosingGoal(true)}>Edit goal</Button></div>
+        <details><summary className="cursor-pointer py-2 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring">Entry title <span className="font-normal text-muted-foreground">Optional</span></summary><label className="block pt-2"><span className="sr-only">Entry title</span><Input value={title} placeholder="Name it, or use the generated title" onChange={event => { setTitle(event.target.value); saveDraft(selectedIds, event.target.value, request) }}/></label></details>
       </> : <>
         <section aria-label="Creation plan" className="rounded-xl border-l-4 border-primary bg-muted p-5">
           <div className="flex items-center gap-2 text-primary"><NotebookPen className="size-5"/><h3 className="font-display text-lg font-bold">{chosenGoal.output}</h3></div>
-          <p className="mt-3 text-sm leading-6">{chosenGoal.label}: {chosenGoal.description}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{chosenGoal.label}</p>
           {request.trim() && <blockquote className="mt-3 whitespace-pre-wrap break-words border-l-2 border-border pl-3 text-sm leading-6">{request}</blockquote>}
         </section>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm"><span><b>{files.length}</b> selected materials</span><span><b>{chunks.length}</b> readable passages</span><span className="inline-flex items-center gap-1 text-primary"><Check className="size-4"/>All readable passages included</span></div>
@@ -181,11 +191,28 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
       </>}
       {!choosingGoal && sourceProblem && <p role="status" className="text-sm text-muted-foreground">{sourceProblem}</p>}
       {error && <p role="alert" className="rounded-xl border border-destructive/30 p-3 text-sm text-destructive">{error}</p>}
-      {phase && <p role="status" aria-live="polite" className="flex items-center gap-2 text-sm"><Loader2 className="size-4 animate-spin motion-reduce:animate-none"/>{phase === 'page' ? 'Creating your notebook page…' : phase === 'guide' ? 'Creating the Study Guide…' : 'Creating the Mastery Map…'}</p>}
-      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-        {!choosingGoal && reviewing ? <Button variant="ghost" disabled={Boolean(phase)} onClick={() => { setReviewing(false); setError('') }}><ArrowLeft className="size-4"/>Edit materials or request</Button> : <p className="text-xs text-muted-foreground">{draft ? 'Draft saved in this class' : 'No transcript required'}</p>}
-        <Button disabled={Boolean(phase) || (!choosingGoal && Boolean(sourceProblem))} onClick={choosingGoal ? () => { saveDraft(); setReviewing(false); setChoosingGoal(false) } : reviewing ? () => void build() : review}>{!choosingGoal && reviewing ? <Sparkles className="size-4"/> : <ArrowRight className="size-4"/>}{choosingGoal ? 'Continue to materials' : phase ? 'Creating…' : reviewing ? 'Create entry' : 'Review and create'}</Button>
+      {phase && <NotebookBuildProgress phase={phase} tailored={tailored} output={chosenGoal.output}/>}
+      <footer className="flex flex-wrap items-center justify-between gap-3 pt-2">
+        {!choosingGoal && reviewing ? <Button variant="ghost" disabled={Boolean(phase)} onClick={() => { setReviewing(false); setError('') }}><ArrowLeft className="size-4"/>Edit materials or request</Button> : <p className="text-xs text-muted-foreground">{draft ? 'Draft saved' : ''}</p>}
+        <Button className="ml-auto" disabled={Boolean(phase) || (!choosingGoal && Boolean(sourceProblem))} onClick={choosingGoal ? () => { saveDraft(); setReviewing(false); setChoosingGoal(false) } : reviewing ? () => void build() : review}>{!choosingGoal && reviewing ? <Sparkles className="size-4"/> : <ArrowRight className="size-4"/>}{choosingGoal ? 'Continue to materials' : phase ? 'Creating…' : reviewing ? 'Create entry' : 'Review and create'}</Button>
       </footer>
     </div>
+  </section>
+}
+
+function NotebookBuildProgress({ phase, tailored, output }: { phase: 'page' | 'guide' | 'mastery' | 'saving'; tailored: boolean; output: string }) {
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    const start = Date.now()
+    const timer = window.setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+  const steps = tailored ? [output, 'Save entry'] : ['Study Guide', 'Mastery Map', 'Save entry']
+  const current = phase === 'saving' ? steps.length - 1 : phase === 'mastery' ? 1 : 0
+  return <section aria-label="Creation progress" className="rounded-xl border border-primary bg-card p-5 shadow-sm">
+    <div className="flex items-center justify-between gap-3"><p role="status" className="text-sm font-bold">{phase === 'saving' ? 'Saving your entry…' : `Creating ${steps[current]}…`}</p><span className="text-xs tabular-nums text-muted-foreground">{Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, '0')} elapsed</span></div>
+    <ol className="mt-4 flex flex-wrap gap-x-6 gap-y-3 text-sm">{steps.map((label, index) => <li key={label} aria-current={index === current ? 'step' : undefined} className={cn('flex items-center gap-2', index > current ? 'text-muted-foreground' : 'text-primary')}>
+      {index < current ? <Check aria-hidden="true" className="size-4"/> : index === current ? <Loader2 aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none"/> : <span aria-hidden="true" className="size-3 rounded-full border border-border"/>}<span>{label}<span className="sr-only">{index < current ? ': complete' : index === current ? ': in progress' : ': waiting'}</span></span>
+    </li>)}</ol>
   </section>
 }
