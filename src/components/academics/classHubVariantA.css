@@ -1110,3 +1110,21 @@
  .class-hub .overview-approved .lecture-journal-workspace [aria-label="Lecture reading area"] { padding: .875rem; }
  .class-hub .overview-approved .lecture-journal-row-text > b { font-size: .875rem; }
 }
+
+/* Placement is the only primary row action; general resources are settled. */
+.class-hub-material-place.needs-placement {
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 65%, var(--border));
+}
+.class-hub-material-group.is-unplaced {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+}
+.class-hub-material-group.is-unplaced .class-hub-material-placement-note {
+  color: var(--foreground);
+  font-size: 13px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+.class-hub-material-file > div { flex-wrap: wrap; }
+.class-hub-material-file > div > div:first-child { flex: 1 1 14rem; }
+.class-hub-material-file > div > div:last-child { flex-wrap: wrap; }

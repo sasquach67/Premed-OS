@@ -899,11 +899,27 @@ describe('ClassHub approved Overview', () => {
 
     expect(container.textContent).toContain('Course weeks')
     expect(container.textContent).toContain('Week 3')
-    expect(container.textContent).toContain('Not placed yet')
-    expect(container.textContent).toContain('No week assumed')
+    expect(container.textContent).toContain('Needs organizing')
+    expect(container.textContent).toContain('Choose a week or keep it in General materials')
     expect(container.textContent).toContain('Study outline · Membrane transport')
+    expect(container.querySelector('.class-hub-material-file')?.textContent).not.toContain('Summarize')
+    expect(container.querySelector('.class-hub-material-file')?.textContent).not.toContain('Mine')
+    expect(container.textContent).not.toContain('Prime yourself')
+    // General is an explicit saved choice, even for a source linked to Week 3.
+    const organizeSlides = container.querySelector<HTMLButtonElement>('button[aria-label="Organize Membrane transport slides"]')!
+    await act(async () => {
+      organizeSlides.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }))
+      organizeSlides.click()
+    })
+    const general = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(item => item.textContent?.startsWith('General materials'))!
+    await act(async () => general.click())
+    expect(useStore.getState().academics.classCenter.files.find(file => file.id === slides.id)?.materialPlacement).toBe('general')
+    const saved = structuredClone(snapshotData())
+    await act(async () => useStore.getState().replaceAll(saved))
+    expect(useStore.getState().academics.classCenter.files.find(file => file.id === slides.id)?.materialPlacement).toBe('general')
 
-    const placeHomework = container.querySelector<HTMLButtonElement>('button[aria-label="Place Homework 4 in a course week"]')!
+
+    const placeHomework = container.querySelector<HTMLButtonElement>('button[aria-label="Organize Homework 4"]')!
     await act(async () => {
       placeHomework.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }))
       placeHomework.click()
@@ -927,10 +943,45 @@ describe('ClassHub approved Overview', () => {
     expect(container.textContent).toContain('Slides')
     expect(container.textContent).toContain('Learning objectives')
     expect(container.textContent).toContain('Generated resources')
-    const unassigned = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Not placed')!
+    const unassigned = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Needs organizing')!
     await act(async () => unassigned.click())
     expect(container.textContent).toContain('Homework 4')
     expect(container.textContent).not.toContain('Unassigned')
+  })
+
+  it('keeps general files and notes out of the organizing inbox and allows moving them to a week', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find(item => item.type === 'stem')!
+    const course = seed.courses.find(item => item.id === workspace.courseId)!
+    const topic = seed.academics.classCenter.topics.find(item => item.courseId === course.id)!
+    topic.scheduledFor = '2026-09-09'
+    workspace.syllabusSchedule = [{ id: 'week-three', week: 'Week 3', label: 'Teaching', startDate: '2026-09-07', order: 0 }]
+    seed.academics.classCenter.files.push({ id: 'general-transcript', title: 'Class discussion transcript', type: 'transcript', courseId: course.id, sourceType: 'paste', owner: 'mine', linkedTopicIds: [topic.id], materialPlacement: 'general', createdAt: now, updatedAt: now, order: 900 })
+    seed.academics.classCenter.notes.push({ id: 'general-note', courseId: course.id, title: 'Reference notes', type: 'study-guide', kind: 'on-material', materialPlacement: 'general', date: '2026-09-09', unit: '', topicIds: [topic.id], content: 'Reference explanation', syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: 901 })
+    useStore.getState().replaceAll(seed)
+    function LiveMaterials() {
+      const state = useStore()
+      return <ClassHub course={course} workspace={workspace} data={state.academics.classCenter} persons={state.persons} />
+    }
+    await act(async () => root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=materials`]}><ToastProvider><LiveMaterials /></ToastProvider></MemoryRouter>))
+    const generalGroup = () => [...container.querySelectorAll<HTMLElement>('.class-hub-material-group')].find(group => group.textContent?.includes('For the whole class'))!
+    expect(generalGroup().textContent).toContain('Class discussion transcript')
+    expect(generalGroup().textContent).toContain('Reference notes')
+    const filter = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Needs organizing')!
+    await act(async () => filter.click())
+    expect(container.textContent).not.toContain('Class discussion transcript')
+    expect(container.textContent).not.toContain('Reference notes')
+    const all = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim().startsWith('All '))!
+    await act(async () => all.click())
+    const organize = container.querySelector<HTMLButtonElement>('button[aria-label="Organize Class discussion transcript"]')!
+    await act(async () => { organize.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 })); organize.click() })
+    const week = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(item => item.textContent?.trim() === 'Week 2')!
+    await act(async () => week.click())
+    const file = useStore.getState().academics.classCenter.files.find(item => item.id === 'general-transcript')!
+    expect(file.materialPlacement).toBeUndefined()
+    expect(file.courseWeek).toBe(2)
+    expect(generalGroup().textContent).not.toContain('Class discussion transcript')
+    expect(generalGroup().textContent).toContain('Reference notes')
   })
 
   it('does not invent a course week from a topic date without an explicit numbered syllabus week', async () => {
@@ -954,9 +1005,9 @@ describe('ClassHub approved Overview', () => {
       )
     })
 
-    const inbox = [...container.querySelectorAll<HTMLElement>('.class-hub-material-group')].find((group) => group.textContent?.includes('Not placed yet'))!
+    const inbox = [...container.querySelectorAll<HTMLElement>('.class-hub-material-group')].find((group) => group.textContent?.includes('Needs organizing'))!
     expect(inbox.textContent).toContain('Dated lecture slides')
-    expect(inbox.textContent).toContain('No week assumed')
+    expect(inbox.textContent).toContain('Choose a week or keep it in General materials')
     expect(container.textContent).not.toMatch(/Week of Sep/)
   })
 

@@ -480,6 +480,8 @@ export interface ClassNote {
   date?: string
   /** Student-chosen course sequence placement. This is never inferred from today's date. */
   courseWeek?: number
+  /** Explicitly kept outside the course week sequence. */
+  materialPlacement?: 'general'
   unit?: string
   topicIds: ID[]
   content: string
@@ -544,6 +546,8 @@ export interface AcademicFile {
   lectureId?: ID
   /** Student-chosen course sequence placement. Syllabus topic links may supply an explicit week separately. */
   courseWeek?: number
+  /** Explicitly kept outside the course week sequence. */
+  materialPlacement?: 'general'
   sourceType: AcademicFileSourceType
   title: string
   type: ClassFileType
