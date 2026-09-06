@@ -29,6 +29,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
   const [draftId] = useState(() => entry?.id ?? uid())
   const [title, setTitle] = useState(entry?.title ?? '')
   const [request, setRequest] = useState(initialRequest(entry))
+  const [choosingGoal, setChoosingGoal] = useState(true)
   const [reviewing, setReviewing] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
   const [phase, setPhase] = useState<'page' | 'guide' | 'mastery' | null>(null)
@@ -128,11 +129,25 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
 
   return <section className="notebook-composer mx-auto w-full max-w-4xl overflow-hidden rounded-xl border border-border bg-card" aria-label="Notebook entry composer">
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-7">
-      <div><p className="text-xs font-bold text-primary">{course?.code ?? 'Class'} · Notebook</p><h2 className="mt-1 font-display text-xl font-extrabold">{reviewing ? 'Ready to create' : 'Start with your materials'}</h2></div>
-      <p className="text-xs text-muted-foreground">{reviewing ? '2 of 2 · Review' : '1 of 2 · Materials'}</p>
+      <div><p className="text-xs font-bold text-primary">{course?.code ?? 'Class'} · Notebook</p><h2 className="mt-1 font-display text-xl font-extrabold">{choosingGoal ? 'What would you like to do?' : reviewing ? 'Ready to create' : 'Bring your materials'}</h2></div>
+      <p className="text-xs text-muted-foreground">{choosingGoal ? '1 of 3 · Your goal' : reviewing ? '3 of 3 · Review' : '2 of 3 · Materials'}</p>
     </header>
     <div className="space-y-6 p-5 sm:p-7">
-      {!reviewing ? <>
+      {choosingGoal ? <section aria-label="Notebook goal" className="space-y-5">
+        <p className="text-sm text-muted-foreground">Choose a starting point, or describe your own. You can combine goals.</p>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {[
+            { label: 'Review class material', request: '' },
+            { label: 'Prepare for an assessment', request: 'Help me prepare for an assessment using my class materials.' },
+            { label: 'Work on an assignment', request: 'Help me work through an assignment using its instructions and my class materials.' },
+          ].map(option => <Button key={option.label} variant="outline" className="h-auto min-h-14 whitespace-normal px-4 py-3 text-left" onClick={() => { setRequest(option.request); saveDraft(selectedIds, title, option.request) }}>{option.label}</Button>)}
+        </div>
+        <label className="block text-sm font-bold">Anything specific? <span className="font-normal text-muted-foreground">Optional</span>
+          <Textarea className="mt-2 min-h-24" maxLength={4000} value={request} onChange={event => { setRequest(event.target.value); saveDraft(selectedIds, title, event.target.value) }} placeholder="e.g., explain simply, give examples, focus on a topic…"/>
+          <span className="mt-2 block text-xs font-normal leading-5 text-muted-foreground">Leave this blank to review class material with a Study Guide and Mastery Map.</span>
+        </label>
+        <p className="text-xs text-muted-foreground">Next, bring whatever supports your goal. A transcript is optional.</p>
+      </section> : !reviewing ? <>
         <section aria-label="Entry materials" className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-muted p-4">
             <div className="flex items-start gap-3"><FileText className="mt-1 size-5 shrink-0 text-primary" aria-hidden="true"/><div><h3 className="font-display text-lg font-bold">Bring what you have</h3><p className="mt-1 max-w-sm text-sm text-muted-foreground">Transcripts, slides, readings, questions, drafts—anything relevant.</p></div></div>
@@ -144,10 +159,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
           </div>}
           {files.length > 0 && <ul aria-label="Selected materials" className="max-h-64 divide-y divide-border overflow-y-auto">{files.map(file => <li key={file.id} className="flex min-w-0 items-center gap-3 py-3"><FileText className="size-4 shrink-0 text-muted-foreground"/><span className="min-w-0 flex-1"><b className="block break-words text-sm">{file.title}</b><span className="text-xs text-muted-foreground">{readableIds.has(file.id) ? 'Readable text ready' : 'No readable text · add a clearer copy'}</span></span><Button variant="ghost" size="icon" aria-label={`Exclude ${file.title}`} onClick={() => changeSources(file.id, false)}><X className="size-4"/></Button></li>)}</ul>}
         </section>
-        <label className="block text-sm font-bold">What would you like help with? <span className="font-normal text-muted-foreground">Optional</span>
-          <Textarea className="mt-2 min-h-24" maxLength={4000} value={request} onChange={event => { setRequest(event.target.value); saveDraft(selectedIds, title, event.target.value) }} placeholder="e.g., explain simply, give examples, focus on a topic…"/>
-          <span className="mt-2 block text-xs font-normal leading-5 text-muted-foreground">Leave this blank for a Study Guide and Mastery Map.</span>
-        </label>
+        <div className="flex flex-wrap items-start justify-between gap-3 border-t border-border pt-4"><div className="min-w-0 flex-1"><p className="text-xs font-bold text-primary">Your goal</p><p className="mt-1 whitespace-pre-wrap break-words text-sm">{request.trim() || 'Review class material · Study Guide + Mastery Map'}</p></div><Button variant="ghost" onClick={() => setChoosingGoal(true)}>Edit goal</Button></div>
         <details className="border-t border-border pt-3"><summary className="cursor-pointer py-2 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring">Entry title <span className="font-normal text-muted-foreground">Optional</span></summary><label className="block pt-2"><span className="sr-only">Entry title</span><Input value={title} placeholder="Name it, or use the generated title" onChange={event => { setTitle(event.target.value); saveDraft(selectedIds, event.target.value, request) }}/></label></details>
       </> : <>
         <section aria-label="Creation plan" className="rounded-xl border-l-4 border-primary bg-muted p-5">
@@ -159,12 +171,12 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
         {unreadable.length > 0 && <p className="text-sm text-destructive">{unreadable.length} selected {unreadable.length === 1 ? 'file has' : 'files have'} no readable text and cannot contribute to this result. Go back to replace or exclude them.</p>}
         <details className="rounded-xl border border-border p-4 text-sm"><summary className="cursor-pointer font-semibold focus-visible:ring-2 focus-visible:ring-ring">Sources and AI use</summary><ul className="mt-3 max-h-48 space-y-2 overflow-y-auto">{files.map(file => <li key={file.id} className="break-words">{file.title} · {readableIds.has(file.id) ? 'Text included' : 'Unreadable'}</li>)}</ul><p className="mt-3 text-xs leading-5 text-muted-foreground">Readable source text and your request are sent when you create the entry. Original files stay on this device. Generated explanations include source references you can open when needed.</p></details>
       </>}
-      {sourceProblem && <p role="status" className="text-sm text-muted-foreground">{sourceProblem}</p>}
+      {!choosingGoal && sourceProblem && <p role="status" className="text-sm text-muted-foreground">{sourceProblem}</p>}
       {error && <p role="alert" className="rounded-xl border border-destructive/30 p-3 text-sm text-destructive">{error}</p>}
       {phase && <p role="status" aria-live="polite" className="flex items-center gap-2 text-sm"><Loader2 className="size-4 animate-spin motion-reduce:animate-none"/>{phase === 'page' ? 'Creating your notebook page…' : phase === 'guide' ? 'Creating the Study Guide…' : 'Creating the Mastery Map…'}</p>}
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-        {reviewing ? <Button variant="ghost" disabled={Boolean(phase)} onClick={() => { setReviewing(false); setError('') }}><ArrowLeft className="size-4"/>Edit materials or request</Button> : <p className="text-xs text-muted-foreground">{draft ? 'Draft saved in this class' : 'No transcript required'}</p>}
-        <Button disabled={Boolean(phase) || Boolean(sourceProblem)} onClick={reviewing ? () => void build() : review}>{reviewing ? <Sparkles className="size-4"/> : <ArrowRight className="size-4"/>}{phase ? 'Creating…' : reviewing ? 'Create entry' : 'Review and create'}</Button>
+        {!choosingGoal && reviewing ? <Button variant="ghost" disabled={Boolean(phase)} onClick={() => { setReviewing(false); setError('') }}><ArrowLeft className="size-4"/>Edit materials or request</Button> : <p className="text-xs text-muted-foreground">{draft ? 'Draft saved in this class' : 'No transcript required'}</p>}
+        <Button disabled={Boolean(phase) || (!choosingGoal && Boolean(sourceProblem))} onClick={choosingGoal ? () => { saveDraft(); setReviewing(false); setChoosingGoal(false) } : reviewing ? () => void build() : review}>{!choosingGoal && reviewing ? <Sparkles className="size-4"/> : <ArrowRight className="size-4"/>}{choosingGoal ? 'Continue to materials' : phase ? 'Creating…' : reviewing ? 'Create entry' : 'Review and create'}</Button>
       </footer>
     </div>
   </section>

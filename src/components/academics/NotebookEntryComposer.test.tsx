@@ -30,16 +30,20 @@ async function render(entry?: LectureRecord) {
 }
 async function click(text: string) { const button = [...document.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent?.trim() === text)!; expect(button, text).toBeTruthy(); await act(async () => button.click()) }
 async function fill(element: HTMLTextAreaElement, value: string) { await act(async () => { Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(element, value); element.dispatchEvent(new Event('input', { bubbles: true })) }) }
-async function selectSource() { await click('Choose saved class materials'); await act(async () => container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click()) }
+async function selectSource() { await click('Continue to materials'); await click('Choose saved class materials'); await act(async () => container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click()) }
 
-it('starts with one materials area and one optional request, without modes or an empty draft', async () => {
+it('asks the goal before showing any material intake, without creating an empty draft', async () => {
   await render()
-  expect(container.textContent).toContain('Start with your materials')
+  expect(container.textContent).toContain('What would you like to do?')
+  expect(container.textContent).not.toContain('Upload or paste')
+  expect(container.textContent).not.toContain('Choose saved class materials')
+  expect(container.textContent).toContain('Prepare for an assessment')
+  expect(container.textContent).toContain('Work on an assignment')
   expect(container.querySelector('input[type="radio"]')).toBeNull()
   expect(container.querySelectorAll('textarea')).toHaveLength(1)
-  expect(container.textContent).toContain('Leave this blank for a Study Guide and Mastery Map')
+  expect(container.textContent).toContain('Leave this blank to review class material with a Study Guide and Mastery Map')
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
-  await click('Choose saved class materials')
+  await click('Continue to materials'); await click('Choose saved class materials')
   expect(container.textContent).not.toContain('Another class file')
 })
 it('keeps the default Guide + Mastery path and passes the complete selected transcript', async () => {
@@ -52,7 +56,7 @@ it('keeps the default Guide + Mastery path and passes the complete selected tran
   expect(built).toHaveBeenCalledWith(saved.id)
 })
 it('uses a specific writing request for one tailored page and does not generate a Mastery Map', async () => {
-  await render(); await selectSource(); await fill(container.querySelector('textarea')!, 'Help outline an argument for my paper.')
+  await render(); await fill(container.querySelector('textarea')!, 'Help outline an argument for my paper.'); await selectSource()
   await click('Review and create')
   expect(container.textContent).toContain('A page shaped around your request')
   await click('Create entry')
@@ -61,7 +65,7 @@ it('uses a specific writing request for one tailored page and does not generate 
   expect(useStore.getState().academics.classCenter.lectures[0]).toMatchObject({ notebookOutput: 'tailored-page', notebookGeneratedRequest: 'Help outline an argument for my paper.' })
 })
 it('lets students revise their request at review and return to the default', async () => {
-  await render(); await selectSource(); await fill(container.querySelector('textarea')!, 'Compare the readings.'); await click('Review and create'); await click('Edit materials or request'); await fill(container.querySelector('textarea')!, ''); await click('Review and create')
+  await render(); await fill(container.querySelector('textarea')!, 'Compare the readings.'); await selectSource(); await click('Review and create'); await click('Edit materials or request'); await click('Edit goal'); await fill(container.querySelector('textarea')!, ''); await click('Continue to materials'); await click('Review and create')
   expect(container.textContent).not.toContain('A page shaped around your request')
   await click('Create entry'); expect(generateUnitMasteryOutline).toHaveBeenCalledTimes(1)
 })
@@ -76,7 +80,7 @@ it('preserves the prior complete result when rebuilding the default package fail
   const old: LectureRecord = { id: 'old', courseId: 'course', title: 'Previous page', inputPath: 'materials', processingState: 'ready', workspaceState: 'complete', notebookRequest: '', notebookOutput: 'tailored-page', notebookGeneratedRequest: 'Original request', selectedSourceFileIds: ['source'], studyGuide: structuredClone(guide.artifact) as unknown as LectureRecord['studyGuide'], createdAt: 1, updatedAt: 1, order: 0 }
   useStore.getState().update(data => { data.academics.classCenter.lectures.push(old) })
   vi.mocked(generateUnitMasteryOutline).mockResolvedValue({ ok: false, message: 'Mastery failed' })
-  await render(old); await click('Review and create'); await click('Create entry')
+  await render(old); await click('Continue to materials'); await click('Review and create'); await click('Create entry')
   expect(container.querySelector('[role="alert"]')?.textContent).toBe('Mastery failed')
   expect(useStore.getState().academics.classCenter.lectures[0]).toMatchObject({ notebookOutput: 'tailored-page', notebookGeneratedRequest: 'Original request', studyGuide: old.studyGuide })
   expect(built).not.toHaveBeenCalled()
@@ -88,7 +92,7 @@ it('rejects packets that would omit readable passages', async () => {
   expect(generateStudyGuide).not.toHaveBeenCalled()
 })
 it('accepts a short math problem through the same paste intake and selects it for the entry', async () => {
-  await render(); await click('Upload or paste')
+  await render(); await click('Continue to materials'); await click('Upload or paste')
   const paste = document.querySelector<HTMLTextAreaElement>('textarea[placeholder="Paste a transcript, reading, problem, notes, or draft…"]')!
   await fill(paste, 'Solve x + 2 = 5.'); await click('Add material')
   const center = useStore.getState().academics.classCenter
@@ -96,4 +100,14 @@ it('accepts a short math problem through the same paste intake and selects it fo
   expect(chunk).toBeTruthy()
   expect(center.lectures[0].selectedSourceFileIds).toContain(chunk.fileId)
   expect(center.lectures[0].transcriptFileId).toBeUndefined()
+})
+
+it('carries an assessment starting point into review and lets students combine goals', async () => {
+  await render(); await click('Prepare for an assessment')
+  expect(container.querySelector('textarea')?.value).toContain('assessment')
+  await fill(container.querySelector('textarea')!, 'Prepare for an assessment and help revise my essay outline.')
+  await selectSource(); await click('Review and create')
+  expect(container.textContent).toContain('Prepare for an assessment and help revise my essay outline.')
+  await click('Create entry')
+  expect(generateStudyGuide).toHaveBeenCalledWith(expect.objectContaining({ notebookRequest: 'Prepare for an assessment and help revise my essay outline.' }))
 })

@@ -202,8 +202,8 @@ describe('lecture import and workspace', () => {
 
     await act(async () => rebuild.click())
 
-    expect(container.textContent).toContain('Start with your materials')
-    expect(container.textContent).toContain('Review and create')
+    expect(container.textContent).toContain('What would you like to do?')
+    expect(container.textContent).toContain('Continue to materials')
     const preserved = useStore.getState().academics.classCenter.lectures.find((lecture) => lecture.id === 'demo-lecture-biol103-2')!
     expect(preserved.workspaceState).toBe('complete')
     expect(preserved.studyGuide).toBeDefined()

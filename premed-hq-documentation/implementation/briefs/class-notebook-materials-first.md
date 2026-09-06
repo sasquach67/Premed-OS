@@ -1,13 +1,15 @@
-# Class Notebook: materials first
+# Class Notebook: goal before materials
 
-Approved direction, 2026-09-05: replace the transcript-first journal wizard with a simple, adaptable Notebook entry. The three-choice entry picker is superseded. Understanding, assessment preparation, and assignment work can overlap; students do not need to classify their class or task.
+Corrected direction, 2026-09-05: ask what the student wants to do before showing intake. Broad starting points are editable suggestions, not exclusive modes.
+
+Original foundation: replace the transcript-first journal wizard with a simple, adaptable Notebook entry. The three-choice entry picker is superseded. Understanding, assessment preparation, and assignment work can overlap; students do not need to classify their class or task.
 
 ## Interaction
 
-1. Add to notebook opens one materials collection. Upload files, paste text (including short problems), or choose saved materials from the same class. A transcript is optional and treated as a material. Excluding a material changes only this entry's selection.
-2. Optionally answer “What would you like help with?” An optional title stays collapsed. Drafts save after an interaction, not on opening an empty form.
-3. Review the selected sources and creation plan before making any generation request. Blank request produces the existing Study Guide + Mastery Map. A specific request produces a tailored Notebook page without automatically creating a Mastery Map.
-4. Open the saved result. Tailored pages use task-specific headings and expandable source evidence. Students can revisit the request, materials, and source text.
+1. Add to notebook first asks “What would you like to do?” Offer Review class material, Prepare for an assessment, and Work on an assignment as starting points. Students can describe their own task or combine goals in the optional text box. No material intake appears on this screen.
+2. Continue to materials opens upload, paste, and saved class sources. Show the goal with an Edit goal action. A transcript is optional. Excluding a source does not delete it from the library.
+3. Review the selected sources and creation plan before generation. Blank request keeps Study Guide + Mastery Map; specific requests create a tailored Notebook page. The initial question requires no sources and makes no AI call.
+4. Open the saved result, retaining task-specific headings, expandable evidence, and existing entry compatibility.
 
 ## Generation contract
 
