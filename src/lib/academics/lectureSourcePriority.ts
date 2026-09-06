@@ -1,3 +1,4 @@
+import { STUDY_SOURCE_CONTRACT } from '@/lib/generation/layers/studySourceContract'
 import type { AcademicFile } from '@/lib/types'
 
 /** Use attached metadata, not filename guesses, to identify instructor evidence. */
@@ -5,7 +6,23 @@ export function instructorSourceFileIds(files: readonly AcademicFile[], transcri
   return [...new Set(files.filter((file) => file.id === transcriptFileId || file.type === 'transcript' || file.type === 'lecture-slides').map((file) => file.id))]
 }
 
-export function lectureSourcePriorityInstruction(primaryChunkIds: readonly string[]): string {
+export function personalNoteSourceFileIds(files: readonly AcademicFile[]): string[] {
+  return [...new Set(files.filter(file => file.type === 'class-notes' && file.owner !== 'generated').map(file => file.id))]
+}
+
+export const STUDY_MATERIAL_TYPES = {
+  'class-notes': 'My class notes', transcript: 'Lecture transcript', 'lecture-slides': 'Instructor slides',
+  reading: 'Reading / textbook', syllabus: 'Syllabus', 'study-guide': 'Study guide', rubric: 'Rubric',
+  'past-exam': 'Past exam / questions', 'lab-handout': 'Lab handout', link: 'Link', other: 'Other material',
+} satisfies Record<AcademicFile['type'], string>
+
+export function lectureSourcePriorityInstruction(primaryChunkIds: readonly string[], personalNoteChunkIds: readonly string[] = [], reportMissingInstructor = true): string {
+  const notes = [...new Set(personalNoteChunkIds)]
+  const roles = notes.length ? `Personal class-note chunk IDs: ${notes.join(', ')}. These are the student's notes, not instructor-authored evidence. ` : ''
+  return `${STUDY_SOURCE_CONTRACT}\n\n${roles}${primaryChunkIds.length || reportMissingInstructor ? instructorPriorityInstruction(primaryChunkIds) : ''}`
+}
+
+function instructorPriorityInstruction(primaryChunkIds: readonly string[]): string {
   if (!primaryChunkIds.length) return 'No instructor evidence was identified in the selected passages. Do not infer professor emphasis, official objectives, or lecture coverage from filenames or textbook volume. Use the selected evidence with its actual provenance and state the missing instructor-context limitation where relevant.'
-  return `Instructor evidence chunk IDs: ${[...new Set(primaryChunkIds)].join(', ')}. Use these lecture transcripts and slides as the primary teaching sequence, scope, terminology, and emphasis. Use textbooks and other readings to confirm, clarify, and fill supported gaps; do not let their volume displace what the professor taught. Preserve only explicitly stated learning objectives verbatim, and retain instructor warnings, distinctions, and worked examples. Dialogue, acknowledgments, slide captions and assessment stems are not official objectives. Connect transcript and slide passages about the same concept when both are supplied; cite each contribution separately rather than pretending one passage supports both. Separate supplementary background from instructor emphasis. If sources conflict, flag the disagreement rather than silently overriding either source. Preserve source-supported mechanism steps and worked examples instead of reducing them to topic names. Do not invent slide numbers, quotations, exam predictions, missing objectives or emphasis. These IDs describe selected evidence, not proof that all instructor material was processed or used; never claim complete lecture coverage without a supporting coverage receipt.`
+  return `Instructor evidence chunk IDs: ${[...new Set(primaryChunkIds)].join(', ')}. Use transcript evidence with the separately identified personal class notes as the primary teaching structure; use slides to connect and complete it. Attribute instructor emphasis only to supporting instructor evidence. Use textbooks and other readings to confirm, clarify, and fill supported gaps; do not let their volume displace what the professor taught. Preserve only explicitly stated learning objectives verbatim, and retain instructor warnings, distinctions, and worked examples. Dialogue, acknowledgments, slide captions and assessment stems are not official objectives. Connect transcript and slide passages about the same concept when both are supplied; cite each contribution separately rather than pretending one passage supports both. Separate supplementary background from instructor emphasis. If sources conflict, flag the disagreement rather than silently overriding either source. Preserve source-supported mechanism steps and worked examples instead of reducing them to topic names. Do not invent slide numbers, quotations, exam predictions, missing objectives or emphasis. These IDs describe selected evidence, not proof that all instructor material was processed or used; never claim complete lecture coverage without a supporting coverage receipt.`
 }

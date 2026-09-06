@@ -22,7 +22,7 @@ function failureFor(code: string): GenerateFailure {
   return 'provider-unavailable'
 }
 
-export async function generateUnitMasteryOutline({ courseId, chunks, unit, label, scope = 'unit', practiceQuestionChunkIds = [], primarySourceChunkIds = [], studyIntent, notebookRequest }: { courseId: string; chunks: SourceChunk[]; unit: string; label: string; scope?: 'lecture' | 'unit' | 'exam'; practiceQuestionChunkIds?: readonly string[]; primarySourceChunkIds?: readonly string[]; studyIntent?: JournalStudyIntent; notebookRequest?: string }): Promise<UnitMasteryOutlineOutcome> {
+export async function generateUnitMasteryOutline({ courseId, chunks, unit, label, scope = 'unit', practiceQuestionChunkIds = [], primarySourceChunkIds = [], personalNoteChunkIds = [], studyIntent, notebookRequest }: { courseId: string; chunks: SourceChunk[]; unit: string; label: string; scope?: 'lecture' | 'unit' | 'exam'; practiceQuestionChunkIds?: readonly string[]; primarySourceChunkIds?: readonly string[]; personalNoteChunkIds?: readonly string[]; studyIntent?: JournalStudyIntent; notebookRequest?: string }): Promise<UnitMasteryOutlineOutcome> {
   if (!chunks.length) return { ok: false, failure: 'no-sources', message: 'Select processed course material first. The mastery map stays empty rather than guessing.' }
   try {
     assertGenerationAllowed({ scope: 'academics', artifact: 'unit-mastery-outline', courseId, groundedIn: chunks.map((chunk) => chunk.id) })
@@ -32,7 +32,7 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
   const prepared = await prepareGenerationSources(courseId, chunks)
   if (!prepared.ok || !prepared.scopeId || !prepared.chunkIds) return { ok: false, failure: 'provider-unavailable', message: prepared.message ?? 'Selected material could not be prepared.' }
   const preparedIds = new Set(prepared.chunkIds)
-  const sourcePriority = lectureSourcePriorityInstruction(primarySourceChunkIds.filter((id) => preparedIds.has(id)))
+  const sourcePriority = lectureSourcePriorityInstruction(primarySourceChunkIds.filter(id => preparedIds.has(id)), personalNoteChunkIds.filter(id => preparedIds.has(id)))
   const journalInstruction = journalStudyInstruction(studyIntent, chunks.filter(chunk => preparedIds.has(chunk.id)))
   const refinements = notebookRequest?.trim() ? `Additional student instructions (preferences, not factual evidence): ${JSON.stringify(notebookRequest.trim().slice(0, 4000))}. Apply within the Mastery Map contract and selected evidence; preserve objective depth and do not invent support.` : ''
   const questionReferenceIds = [...new Set(practiceQuestionChunkIds.filter((id) => preparedIds.has(id)))]

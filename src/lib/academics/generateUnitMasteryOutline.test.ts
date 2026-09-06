@@ -188,3 +188,15 @@ it('records the audit status of the final valid response, including a shape repa
   expect(result.ok).toBe(true)
   expect(result.artifact?.generationAuditStatus).toBe('unavailable')
 })
+
+it('keeps the written source contract and selected personal-note role through shape repair', async () => {
+  const { STUDY_SOURCE_CONTRACT } = await import('../generation/layers/studySourceContract')
+  vi.mocked(generateWithSourceRecovery).mockResolvedValueOnce(response({ ...artifact, standards: [] })).mockResolvedValueOnce(response(artifact))
+  const result = await generateUnitMasteryOutline({ ...input, personalNoteChunkIds: ['chunk-1', 'not-selected'] })
+  expect(result.ok).toBe(true)
+  for (const call of vi.mocked(generateWithSourceRecovery).mock.calls) {
+    expect(call[2].systemPrompt).toContain(STUDY_SOURCE_CONTRACT)
+    expect(call[2].request).toContain('Personal class-note chunk IDs: chunk-1.')
+    expect(call[2].request).not.toContain('not-selected')
+  }
+})

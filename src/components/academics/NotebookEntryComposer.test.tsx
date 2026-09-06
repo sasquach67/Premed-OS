@@ -363,3 +363,15 @@ it('keeps a newer pending build active when an older response is discarded', asy
   expect(useStore.getState().academics.classCenter.lectures[0]).toMatchObject({ studyGuide: guide.artifact, workspaceState: 'complete' })
   expect(generateUnitMasteryOutline).toHaveBeenCalledTimes(1)
 })
+
+it('lets the student identify personal notes and carries that role to both generators', async () => {
+  await render(); await selectSource()
+  const select = container.querySelector<HTMLSelectElement>('select[aria-label^="Material type for"]')
+  expect(select).toBeTruthy()
+  await act(async () => { select!.value = 'class-notes'; select!.dispatchEvent(new Event('change', { bubbles: true })) })
+  expect(useStore.getState().academics.classCenter.files.find(file => file.id === 'source')?.type).toBe('class-notes')
+  await click('Review and create'); await click('Create entry')
+  for (const generator of [generateStudyGuide, generateUnitMasteryOutline]) {
+    expect(generator).toHaveBeenCalledWith(expect.objectContaining({ primarySourceChunkIds: [], personalNoteChunkIds: ['chunk'] }))
+  }
+})

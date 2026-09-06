@@ -96,7 +96,7 @@ describe('unit resource generation callers', () => {
       citations: [], auditStatus: 'approved',
     } })
 
-    const outcome = await generateStudyGuide({ courseId: 'course-1', chunks: sources, label: 'BIOL 103 · Unit 2', practiceQuestionChunkIds: ['chunk-1'], primarySourceChunkIds: ['chunk-1', 'unselected-instructor'] })
+    const outcome = await generateStudyGuide({ courseId: 'course-1', chunks: sources, label: 'BIOL 103 · Unit 2', practiceQuestionChunkIds: ['chunk-1'], primarySourceChunkIds: ['chunk-1', 'unselected-instructor'], personalNoteChunkIds: ['chunk-2', 'unselected-note'] })
 
     expect(outcome.ok).toBe(true)
     expect(outcome.suggestedTitle).toBe('Variable Control Logic')
@@ -112,6 +112,9 @@ describe('unit resource generation callers', () => {
     expect(request.request).toContain('Worked answer')
     expect(request.request).toContain('Instructor evidence chunk IDs: chunk-1.')
     expect(JSON.stringify(request)).not.toContain('unselected-instructor')
+    expect(JSON.stringify(request)).not.toContain('unselected-note')
+    expect(request.request).toContain('Personal class-note chunk IDs: chunk-2.')
+    expect(request.systemPrompt).toContain('Personal class-note chunk IDs: chunk-2.')
     expect(request.systemPrompt).toContain('Reference-question chunk IDs: chunk-1')
     expect(request.systemPrompt).toContain('never treat a distractor as fact')
     expect(request.request).toContain('marked question passages as source-backed explanatory examples')

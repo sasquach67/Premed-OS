@@ -13,7 +13,7 @@ import { MaterialIntakeDialog } from './MaterialIntakeDialog'
 import { generateStudyGuide } from '@/lib/academics/generateStudyGuide'
 import { generateUnitMasteryOutline } from '@/lib/academics/generateUnitMasteryOutline'
 import { selectGenerationSourceChunks } from '@/lib/academics/syncGenerationSources'
-import { instructorSourceFileIds } from '@/lib/academics/lectureSourcePriority'
+import { instructorSourceFileIds, personalNoteSourceFileIds, STUDY_MATERIAL_TYPES } from '@/lib/academics/lectureSourcePriority'
 import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationIntake'
 import { buildLectureBrief, fileCoverageLabel } from '@/lib/academics/lectureWorkspace'
 
@@ -69,7 +69,9 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
   const readableIds = new Set(chunks.map(chunk => chunk.fileId))
   const unreadable = files.filter(file => !readableIds.has(file.id))
   const tailored = goal !== 'review'
-  const primaryIds = instructorSourceFileIds(files)
+  const instructorIds = instructorSourceFileIds(files)
+  const noteIds = personalNoteSourceFileIds(files)
+  const primaryIds = [...instructorIds, ...noteIds]
   const prepared = selectGenerationSourceChunks(chunks, { preferredFileIds: primaryIds, priorityChunkIds: practiceQuestionChunkIds(files, chunks) })
   const tooLarge = prepared.length < chunks.length
   const sourceProblem = !chunks.length ? 'Add at least one readable material to continue.'
@@ -110,9 +112,10 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
     const isCurrentAttempt = () => activeBuildAttempts.get(draftId) === attempt
     try {
       const label = title.trim() || draft?.title || defaultTitle
-      const primarySourceChunkIds = chunks.filter(chunk => primaryIds.includes(chunk.fileId)).map(chunk => chunk.id)
+      const primarySourceChunkIds = chunks.filter(chunk => instructorIds.includes(chunk.fileId)).map(chunk => chunk.id)
+      const personalNoteChunkIds = chunks.filter(chunk => noteIds.includes(chunk.fileId)).map(chunk => chunk.id)
       const questionIds = practiceQuestionChunkIds(files, chunks)
-      const guide = await generateStudyGuide({ courseId, chunks, label, notebookGoal: goal, notebookRequest: request.trim() || undefined, primarySourceChunkIds: tailored ? [] : primarySourceChunkIds, practiceQuestionChunkIds: questionIds })
+      const guide = await generateStudyGuide({ courseId, chunks, label, notebookGoal: goal, notebookRequest: request.trim() || undefined, primarySourceChunkIds, personalNoteChunkIds, practiceQuestionChunkIds: questionIds })
       if (!isCurrentAttempt()) return
       if (!guide.ok || !guide.artifact) { setError(guide.message ?? 'The page could not be created. Your materials and any previous result are still saved.'); return }
       setPhase('saving')
@@ -146,7 +149,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
         setPhase('mastery')
         let mastery: Awaited<ReturnType<typeof generateUnitMasteryOutline>>
         try {
-          mastery = await generateUnitMasteryOutline({ courseId, chunks, unit: label, label, scope: 'lecture', notebookRequest: request.trim() || undefined, primarySourceChunkIds, practiceQuestionChunkIds: questionIds })
+          mastery = await generateUnitMasteryOutline({ courseId, chunks, unit: label, label, scope: 'lecture', notebookRequest: request.trim() || undefined, primarySourceChunkIds, personalNoteChunkIds, practiceQuestionChunkIds: questionIds })
         } catch {
           mastery = { ok: false }
         }
@@ -244,7 +247,14 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
             <Button type="button" variant="ghost" className="px-0 text-primary" aria-expanded={libraryOpen} onClick={() => setLibraryOpen(!libraryOpen)}>Choose saved class materials</Button>
             {libraryOpen && <div className="max-h-56 overflow-y-auto rounded-xl border border-border p-2" aria-label="Saved class materials">{library.map(file => <label key={file.id} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg p-3 hover:bg-muted focus-within:ring-2 focus-within:ring-ring"><input type="checkbox" className="mt-1 accent-primary" checked={selectedIds.includes(file.id)} onChange={event => changeSources(file.id, event.target.checked)}/><span className="min-w-0 break-words text-sm">{file.title}</span></label>)}</div>}
           </div>}
-          {files.length > 0 && <ul aria-label="Selected materials" className="max-h-64 divide-y divide-border overflow-y-auto">{files.map(file => <li key={file.id} className="flex min-w-0 items-center gap-3 py-3"><FileText className="size-4 shrink-0 text-muted-foreground"/><span className="min-w-0 flex-1"><b className="block break-words text-sm">{file.title}</b><span className="text-xs text-muted-foreground">{readableIds.has(file.id) ? 'Readable text ready' : 'No readable text · add a clearer copy'}</span></span><Button variant="ghost" size="icon" aria-label={`Exclude ${file.title}`} onClick={() => changeSources(file.id, false)}><X className="size-4"/></Button></li>)}</ul>}
+          {files.length > 0 && <ul aria-label="Selected materials" className="max-h-64 divide-y divide-border overflow-y-auto">{files.map(file => <li key={file.id} className="flex min-w-0 items-center gap-3 py-3"><FileText className="size-4 shrink-0 text-muted-foreground"/><span className="min-w-0 flex-1"><b className="block break-words text-sm">{file.title}</b><span className="text-xs text-muted-foreground">{readableIds.has(file.id) ? 'Readable text ready' : 'No readable text · add a clearer copy'}</span><label className="mt-2 block text-xs text-muted-foreground">Material type<select aria-label={`Material type for ${file.title}`} value={file.type} disabled={Boolean(phase)} className="mt-1 block min-h-10 w-full max-w-64 rounded-md border border-border bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onChange={event => {
+              const type = event.target.value
+              if (!(type in STUDY_MATERIAL_TYPES)) return
+              useStore.getState().update(state => {
+                const material = state.academics.classCenter.files.find(item => item.id === file.id && item.courseId === courseId)
+                if (material) { material.type = type as typeof file.type; material.updatedAt = Date.now() }
+              })
+            }}>{Object.entries(STUDY_MATERIAL_TYPES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></span><Button variant="ghost" size="icon" aria-label={`Exclude ${file.title}`} onClick={() => changeSources(file.id, false)}><X className="size-4"/></Button></li>)}</ul>}
         </section>
         <details><summary className="cursor-pointer py-2 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring">Entry title <span className="font-normal text-muted-foreground">Optional</span></summary><label className="block pt-2"><span className="sr-only">Entry title</span><Input value={title} placeholder="Name it, or use the generated title" onChange={event => { setTitle(event.target.value); saveDraft(selectedIds, event.target.value, request) }}/></label></details>
       </> : <>

@@ -29,3 +29,15 @@ describe('lecture source priority', () => {
     expect(instruction).toContain('Do not invent slide numbers')
   })
 })
+
+it('keeps personal notes primary without identifying them as instructor evidence', async () => {
+  const { personalNoteSourceFileIds } = await import('./lectureSourcePriority')
+  const notes = { id: 'notes', type: 'class-notes', owner: 'mine' } as unknown as AcademicFile
+  const generated = { id: 'generated', type: 'class-notes', owner: 'generated' } as unknown as AcademicFile
+  expect(personalNoteSourceFileIds([notes, generated])).toEqual(['notes'])
+  expect(instructorSourceFileIds([notes])).toEqual([])
+  const instruction = lectureSourcePriorityInstruction([], ['notes-chunk'])
+  expect(instruction).toContain('Personal class-note chunk IDs: notes-chunk.')
+  expect(instruction).not.toContain('Instructor evidence chunk IDs: notes-chunk')
+  expect(instruction).toContain('student')
+})

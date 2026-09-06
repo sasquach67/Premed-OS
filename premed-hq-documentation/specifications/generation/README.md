@@ -141,3 +141,5 @@ preference.**
 - **Generated titles never claim to be the genuine article.** Guardrail 3 — `generatedTitle()`.
 - **localStorage stays canonical.** Generated artifacts are user data and persist locally first.
 - **Signed-out mode must keep working.** Generation requires sign-in; the surrounding app must not.
+
+Source priority and formatting amendment: [19-study-source-and-format-contract.md](19-study-source-and-format-contract.md). The Notebook callers include this Markdown verbatim in the assembled request; typed personal class notes remain distinct from instructor evidence.

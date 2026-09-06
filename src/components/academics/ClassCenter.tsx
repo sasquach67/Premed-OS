@@ -123,7 +123,7 @@ const ICON_ALIASES: Record<string, string> = {
 }
 const TOPIC_STATUSES: TopicStatus[] = ['not-started', 'seen', 'notes-made', 'reviewing', 'weak', 'ready']
 const NOTE_TYPES: ClassNoteType[] = ['lecture', 'reading', 'lab', 'study-guide', 'exam-review', 'question-log', 'other']
-const FILE_TYPES: ClassFileType[] = ['syllabus', 'lecture-slides', 'reading', 'study-guide', 'rubric', 'past-exam', 'lab-handout', 'link', 'other']
+const FILE_TYPES: ClassFileType[] = ['class-notes', 'transcript', 'syllabus', 'lecture-slides', 'reading', 'study-guide', 'rubric', 'past-exam', 'lab-handout', 'link', 'other']
 const CONTACT_ROLES: ClassContactRole[] = ['professor', 'TA', 'advisor', 'study-partner', 'tutor', 'peer', 'other']
 const CLASS_TYPES: Array<{ value: ClassWorkspaceType; label: string; detail: string }> = [
   { value: 'stem', label: 'STEM', detail: 'Topics and source-backed study work' },

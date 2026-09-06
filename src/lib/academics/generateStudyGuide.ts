@@ -134,7 +134,7 @@ export function conciseStudyGuideTitle(artifact: Pick<StudyGuideArtifact, 'secti
   return words.length > 56 ? `${words.slice(0, 55).trimEnd()}…` : words
 }
 
-export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [], primarySourceChunkIds = [], studyIntent, notebookGoal, notebookRequest }: {
+export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [], primarySourceChunkIds = [], personalNoteChunkIds = [], studyIntent, notebookGoal, notebookRequest }: {
   courseId: string
   topicId?: string
   chunks: SourceChunk[]
@@ -145,6 +145,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
   /** Selected passages containing supplied question examples. */
   practiceQuestionChunkIds?: readonly string[]
   primarySourceChunkIds?: readonly string[]
+  personalNoteChunkIds?: readonly string[]
   studyIntent?: JournalStudyIntent
   notebookGoal?: NotebookGoal
   notebookRequest?: string
@@ -181,7 +182,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
   const preparedIds = new Set(prepared.chunkIds)
   const customRequest = notebookRequest?.trim()
   const isReview = notebookGoal === 'review' || (!notebookGoal && !customRequest)
-  const sourcePriority = isReview ? lectureSourcePriorityInstruction(primarySourceChunkIds.filter((id) => preparedIds.has(id))) : ''
+  const sourcePriority = lectureSourcePriorityInstruction(primarySourceChunkIds.filter(id => preparedIds.has(id)), personalNoteChunkIds.filter(id => preparedIds.has(id)), isReview)
   const journalInstruction = notebookGoal || customRequest ? '' : journalStudyInstruction(studyIntent, sources.filter(chunk => preparedIds.has(chunk.id)))
   const questionReferenceIds = [...new Set(practiceQuestionChunkIds.filter((id) => preparedIds.has(id)))]
 
