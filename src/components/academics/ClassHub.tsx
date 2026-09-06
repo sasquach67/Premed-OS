@@ -1355,9 +1355,9 @@ function TopicRow({ topic, data, onOpenNotes }: {
 }
 
 function FileRow({ file, data, courseLabel, ownership, courseWeek, onWeekChange, onReimport }: { file: AcademicFile; data: ClassCenterData; courseLabel: string; ownership: 'course' | 'mine' | 'generated'; courseWeek?: number; onWeekChange: (week?: number | 'general') => void; onReimport?: () => void }) {
-  const toast = useToast()
   const [opening, setOpening] = useState(false)
   const [reading, setReading] = useState(false)
+  const [originalUnavailable, setOriginalUnavailable] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
   const chunks = useStore(state => state.academics.classCenter.sourceChunks)
   const text = chunks.filter(chunk => chunk.fileId === file.id && chunk.courseId === file.courseId).sort((a, b) => a.order - b.order).map(chunk => chunk.content).join('\n\n')
@@ -1371,8 +1371,8 @@ function FileRow({ file, data, courseLabel, ownership, courseWeek, onWeekChange,
     let blob: Blob | undefined
     try { blob = await readLocalBlob(file.blobRef) ?? undefined } catch { blob = undefined } finally { setOpening(false) }
     if (!blob) {
-      if (text) setReading(true)
-      else toast({ title: 'Local file is unavailable', description: 'The material record remains, but its device-local bytes could not be opened.' })
+      setOriginalUnavailable(true)
+      setReading(true)
       return
     }
     const url = URL.createObjectURL(blob)
@@ -1393,7 +1393,7 @@ function FileRow({ file, data, courseLabel, ownership, courseWeek, onWeekChange,
       </div>
     </div>
   )
-  return <>{content}<Dialog open={reading} onOpenChange={setReading}><DialogContent className="sm:max-w-3xl"><DialogHeader><DialogTitle>{file.title}</DialogTitle><DialogDescription>Saved material text</DialogDescription></DialogHeader><Button variant="outline" className="w-fit" onClick={() => { setReading(false); setSummaryOpen(true) }}>Summarize for class…</Button><div className="max-h-[65vh] overflow-y-auto whitespace-pre-wrap text-sm leading-7">{text || 'No readable text is saved for this material. Add a readable copy to view it here.'}</div></DialogContent></Dialog><ReadingSummaryDialog reading={file} data={data} courseLabel={courseLabel} open={summaryOpen} onOpenChange={setSummaryOpen} /></>
+  return <>{content}<Dialog open={reading} onOpenChange={setReading}><DialogContent className="sm:max-w-3xl"><DialogHeader><DialogTitle>{file.title}</DialogTitle><DialogDescription>{originalUnavailable ? 'Original file unavailable in this browser' : 'Saved material text'}</DialogDescription></DialogHeader>{originalUnavailable && <p className="text-sm text-muted-foreground">Each original upload is saved only in the browser and site where you uploaded it. Open the material there, or use Add material to upload a copy here. If browser storage was cleared, you will need the original file again. {text ? 'The saved text is available below; it does not preserve the original layout or images.' : 'No readable text is saved for this material.'}</p>}{text.trim() && <Button variant="outline" className="w-fit" onClick={() => { setReading(false); setSummaryOpen(true) }}>Summarize for class…</Button>}<div className="max-h-[65vh] overflow-y-auto whitespace-pre-wrap text-sm leading-7">{text || 'No readable text is saved for this material. Add a readable copy to view it here.'}</div></DialogContent></Dialog><ReadingSummaryDialog reading={file} data={data} courseLabel={courseLabel} open={summaryOpen} onOpenChange={setSummaryOpen} /></>
 }
 
 function MaterialNoteRow({ note, open, courseWeek, onWeekChange }: { note: ClassNote; open: boolean; courseWeek?: number; onWeekChange: (week?: number | 'general') => void }) {

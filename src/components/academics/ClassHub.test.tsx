@@ -32,6 +32,9 @@ HTMLElement.prototype.setPointerCapture = vi.fn()
 vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => { callback(0); return 1 }))
 vi.stubGlobal('cancelAnimationFrame', vi.fn())
 
+const localFiles = vi.hoisted(() => ({ readLocalBlob: vi.fn() }))
+vi.mock('@/lib/localBlobStore', () => localFiles)
+
 let courseId = ''
 const now = Date.UTC(2026, 7, 23)
 
@@ -947,6 +950,24 @@ describe('ClassHub approved Overview', () => {
     await act(async () => unassigned.click())
     expect(container.textContent).toContain('Homework 4')
     expect(container.textContent).not.toContain('Unassigned')
+  })
+
+  it.each(['missing', 'storage-error'])('explains an unavailable original in the file reader (%s)', async (reason) => {
+    if (reason === 'storage-error') localFiles.readLocalBlob.mockRejectedValueOnce(new Error('Storage denied'))
+    else localFiles.readLocalBlob.mockResolvedValueOnce(undefined)
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find(item => item.type === 'stem')!
+    const course = seed.courses.find(item => item.id === workspace.courseId)!
+    seed.academics.classCenter.files.push({ id: 'missing-original', title: 'Missing reading', type: 'reading', courseId: course.id, sourceType: 'upload', blobRef: 'idb://missing-original', owner: 'mine', linkedTopicIds: [], createdAt: now, updatedAt: now, order: 900 })
+    useStore.getState().replaceAll(seed)
+    await act(async () => root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=materials`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>))
+    await act(async () => container.querySelector<HTMLButtonElement>('button[aria-label="Open Missing reading"]')!.click())
+    expect(localFiles.readLocalBlob).toHaveBeenCalledWith('idb://missing-original')
+    const reader = document.body.querySelector('[role="dialog"]')!
+    expect(reader).not.toBeNull()
+    expect(reader.textContent).toContain('Original file unavailable in this browser')
+    expect(reader.textContent).toContain('browser and site where you uploaded it')
+    expect([...reader.querySelectorAll('button')].find(button => button.textContent?.includes('Summarize for class'))).toBeUndefined()
   })
 
   it('keeps general files and notes out of the organizing inbox and allows moving them to a week', async () => {
