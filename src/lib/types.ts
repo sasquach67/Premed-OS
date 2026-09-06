@@ -485,6 +485,7 @@ export interface ClassNote {
   unit?: string
   topicIds: ID[]
   content: string
+  readingSummary?: { artifact: StudyGuideArtifact; readingKind: 'assigned-reading' | 'primary-research' | 'textbook-chapter'; primaryFileId: ID; focus?: string; auditStatus?: 'approved' | 'skipped' | 'unavailable' }
   externalDocUrl?: string
   googleDocId?: string
   syncStatus: ClassNoteSyncStatus

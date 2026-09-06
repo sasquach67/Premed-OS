@@ -1,3 +1,4 @@
+import readingDocument from '../../../../premed-hq-documentation/specifications/generation/10-reading-summary-v1.md?raw'
 import assessmentDocument from '../../../../premed-hq-documentation/implementation/briefs/notebook-assessment-v1.md?raw'
 import assignmentDocument from '../../../../premed-hq-documentation/implementation/briefs/notebook-assignment-v1.md?raw'
 import notebookDocument from '../../../../premed-hq-documentation/implementation/briefs/class-notebook-materials-first.md?raw'
@@ -14,6 +15,7 @@ import { assembleGenerationRequest } from '@/lib/generation/assemble'
 import { ARTIFACT_REGISTRY } from './registry'
 
 const briefings = {
+  'reading-summary-v1': { path: 'premed-hq-documentation/specifications/generation/10-reading-summary-v1.md', document: readingDocument },
   'notebook-assessment-v1': { path: 'premed-hq-documentation/implementation/briefs/notebook-assessment-v1.md', document: assessmentDocument },
   'notebook-assignment-v1': { path: 'premed-hq-documentation/implementation/briefs/notebook-assignment-v1.md', document: assignmentDocument },
   'notebook-entry-v1': { path: 'premed-hq-documentation/implementation/briefs/class-notebook-materials-first.md', document: notebookDocument },

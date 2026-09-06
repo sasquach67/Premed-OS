@@ -1,3 +1,4 @@
+import { ReadingSummaryDialog, ReadingSummaryContent } from './ReadingSummaryDialog'
 import { isPrimaryMaterial } from '@/lib/academics/materialCatalog'
 import { preferredScrollBehavior } from '@/lib/scroll'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
@@ -833,7 +834,7 @@ function Materials({
             <CardContent className="class-hub-material-group-content">
               {group.unassigned && <div className="class-hub-material-placement-note">Choose a week for scheduled work, or General materials for transcripts, reference files, and anything you use across the class.</div>}
               {mergedMaterialItems(group.files, group.notes, sortBy).map((entry) => entry.kind === 'file'
-                ? <FileRow key={entry.item.id} file={entry.item} ownership={entry.item.owner} courseWeek={materialCourseWeekForFile(entry.item, topics, workspace.syllabusSchedule ?? [])} onWeekChange={(courseWeek) => setMaterialFileWeek(entry.item.id, courseWeek)} onReimport={entry.item.type === 'syllabus' ? () => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}&reimport=1&reimportFile=${entry.item.id}`) : undefined} />
+                ? <FileRow key={entry.item.id} file={entry.item} data={data} courseLabel={`${course.code} · ${course.title}`} ownership={entry.item.owner} courseWeek={materialCourseWeekForFile(entry.item, topics, workspace.syllabusSchedule ?? [])} onWeekChange={(courseWeek) => setMaterialFileWeek(entry.item.id, courseWeek)} onReimport={entry.item.type === 'syllabus' ? () => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}&reimport=1&reimportFile=${entry.item.id}`) : undefined} />
                 : <MaterialNoteRow key={entry.item.id} note={entry.item} open={entry.item.id === requestedNoteId} courseWeek={materialCourseWeekForNote(entry.item, topics, sourceFiles, workspace.syllabusSchedule ?? [])} onWeekChange={(courseWeek) => setMaterialNoteWeek(entry.item.id, courseWeek)} />)}
 
             </CardContent>
@@ -1353,10 +1354,11 @@ function TopicRow({ topic, data, onOpenNotes }: {
   )
 }
 
-function FileRow({ file, ownership, courseWeek, onWeekChange, onReimport }: { file: AcademicFile; ownership: 'course' | 'mine' | 'generated'; courseWeek?: number; onWeekChange: (week?: number | 'general') => void; onReimport?: () => void }) {
+function FileRow({ file, data, courseLabel, ownership, courseWeek, onWeekChange, onReimport }: { file: AcademicFile; data: ClassCenterData; courseLabel: string; ownership: 'course' | 'mine' | 'generated'; courseWeek?: number; onWeekChange: (week?: number | 'general') => void; onReimport?: () => void }) {
   const toast = useToast()
   const [opening, setOpening] = useState(false)
   const [reading, setReading] = useState(false)
+  const [summaryOpen, setSummaryOpen] = useState(false)
   const chunks = useStore(state => state.academics.classCenter.sourceChunks)
   const text = chunks.filter(chunk => chunk.fileId === file.id && chunk.courseId === file.courseId).sort((a, b) => a.order - b.order).map(chunk => chunk.content).join('\n\n')
   async function openFile() {
@@ -1384,13 +1386,14 @@ function FileRow({ file, ownership, courseWeek, onWeekChange, onReimport }: { fi
         <div className="flex items-center gap-2">
         <WeekPlacementControl title={file.title} general={file.materialPlacement === 'general'} courseWeek={courseWeek} onChange={onWeekChange} />
         {ownership === 'generated' && <Badge variant="secondary">Generated</Badge>}
+        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`Actions for ${file.title}`}><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => setSummaryOpen(true)}>Summarize for class…</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
         {onReimport && <Button type="button" size="sm" variant="outline" onClick={(event) => { event.preventDefault(); onReimport() }}>Re-import</Button>}
 
         </div>
       </div>
     </div>
   )
-  return <>{content}<Dialog open={reading} onOpenChange={setReading}><DialogContent className="sm:max-w-3xl"><DialogHeader><DialogTitle>{file.title}</DialogTitle><DialogDescription>Saved material text</DialogDescription></DialogHeader><div className="max-h-[65vh] overflow-y-auto whitespace-pre-wrap text-sm leading-7">{text || 'No readable text is saved for this material. Add a readable copy to view it here.'}</div></DialogContent></Dialog></>
+  return <>{content}<Dialog open={reading} onOpenChange={setReading}><DialogContent className="sm:max-w-3xl"><DialogHeader><DialogTitle>{file.title}</DialogTitle><DialogDescription>Saved material text</DialogDescription></DialogHeader><Button variant="outline" className="w-fit" onClick={() => { setReading(false); setSummaryOpen(true) }}>Summarize for class…</Button><div className="max-h-[65vh] overflow-y-auto whitespace-pre-wrap text-sm leading-7">{text || 'No readable text is saved for this material. Add a readable copy to view it here.'}</div></DialogContent></Dialog><ReadingSummaryDialog reading={file} data={data} courseLabel={courseLabel} open={summaryOpen} onOpenChange={setSummaryOpen} /></>
 }
 
 function MaterialNoteRow({ note, open, courseWeek, onWeekChange }: { note: ClassNote; open: boolean; courseWeek?: number; onWeekChange: (week?: number | 'general') => void }) {
@@ -1406,7 +1409,7 @@ function MaterialNoteRow({ note, open, courseWeek, onWeekChange }: { note: Class
         <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       </summary>
       <div className="class-hub-material-note-body mt-2 border-t border-border pt-3">
-        <p className="whitespace-pre-wrap text-sm font-semibold leading-relaxed text-muted-foreground">{note.content || 'This generated resource has no saved content.'}</p>
+        <>{note.readingSummary ? <ReadingSummaryContent artifact={note.readingSummary.artifact} /> : <p className="whitespace-pre-wrap text-sm font-semibold leading-relaxed text-muted-foreground">{note.content || 'This generated resource has no saved content.'}</p>}</>
         {note.externalDocUrl && <Button size="sm" variant="outline" className="mt-3" asChild><a href={note.externalDocUrl} target="_blank" rel="noreferrer">Open document</a></Button>}
       </div>
     </details>

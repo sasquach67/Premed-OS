@@ -61,7 +61,7 @@ and available in production without shipping the entire documentation corpus.
 | Class Practice Mock | `16-class-full-mock-v1.md` | Registered API artifact |
 | Term Report | `17-term-report-v1.md` | Registered API artifact |
 | Recall Gap Check | `14-gap-check-v1.md` | Registered API artifact |
-| Reading Summary | `10-reading-summary-v1.md` | Proposed only; deliberately not registered or exposed |
+| Reading Summary | `10-reading-summary-v1.md` | Registered with reading-kind selection and explicit course context; local implementation, live quality evaluation pending |
 
 ## Your 12 deliverables → where they landed
 
