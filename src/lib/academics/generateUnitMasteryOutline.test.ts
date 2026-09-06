@@ -101,3 +101,17 @@ it('keeps exam scope and the review-sheet instructions on both generation and re
     expect(call[2].request).toContain('Connect the readings.')
   }
 })
+
+it.each([
+  { ...artifact, title: '' },
+  { ...artifact, unit: '' },
+  { ...artifact, standards: [] },
+  { artifact },
+])('rejects malformed top-level output after one repair without saving', async (value) => {
+  vi.mocked(generateWithSourceRecovery).mockResolvedValue(response(value))
+  const result = await generateUnitMasteryOutline(input)
+  expect(result.ok).toBe(false)
+  expect(result.artifact).toBeUndefined()
+  expect(result.message).toBe('The mastery outline did not pass its source-trace and section checks. Nothing was saved. Check: artifact: title, unit and nonempty standards are required')
+  expect(generateWithSourceRecovery).toHaveBeenCalledTimes(2)
+})
