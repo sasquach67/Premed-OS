@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react'
-import { ArrowLeft, ArrowRight, BookOpen, ClipboardCheck, PenLine, Check, FilePlus2, FileText, Loader2, NotebookPen, Sparkles, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, ClipboardCheck, PenLine, Check, FilePlus2, FileText, Loader2, NotebookPen, Sparkles, X, Camera, Image, ChartColumn, Network, Presentation, ScanText } from 'lucide-react'
 import type { ClassCenterData, Course, LectureRecord, NotebookGoal } from '@/lib/types'
 import { uid } from '@/lib/id'
 import { useStore } from '@/store/store'
@@ -41,6 +41,15 @@ const uploadGuidance: Record<NotebookGoal, { start: string; suggestions: string[
     suggestions: ['Instructions and grading rubric — what the task asks for and how it is assessed.', 'Required readings, data, or examples — the material you are supposed to use.', 'Your draft, outline, attempted solution, or instructor feedback — where you are starting.'],
   },
 }
+
+const visualUploadSuggestions = [
+  { title: 'Diagrams & concept maps', detail: 'Labeled processes, anatomy, and connections between ideas.', icon: Network },
+  { title: 'Charts & graphs', detail: 'Plots, tables, and figures from class or a reading.', icon: ChartColumn },
+  { title: 'Screenshots', detail: 'A question, worked example, or passage you want to revisit.', icon: ScanText },
+  { title: 'Photos of notes', detail: 'Handwritten notes, whiteboards, and annotated pages.', icon: Camera },
+  { title: 'Textbook figures', detail: 'Illustrations with their captions and surrounding explanation.', icon: Image },
+  { title: 'Slides with images', detail: 'Export slides as a PDF, or add individual slide images.', icon: Presentation },
+]
 
 export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }: {
   courseId: string
@@ -234,13 +243,21 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
       </section> : !reviewing ? <>
         <section aria-label="Entry materials" className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-sm">
-            <div className="flex items-start gap-3"><FileText className="mt-1 size-5 shrink-0 text-primary" aria-hidden="true"/><div><p className="text-sm text-muted-foreground">Transcripts, readings, questions, or drafts.</p></div></div>
+            <div className="flex items-start gap-3"><FileText className="mt-1 size-5 shrink-0 text-primary" aria-hidden="true"/><div><p className="text-sm text-muted-foreground">Notes, readings, questions, screenshots, or visual material.</p></div></div>
             <MaterialIntakeDialog minimumTextCharacters={1} courseId={courseId} onAdded={ids => { saveDraft([...new Set([...selectedIds, ...ids])]); setError('') }} trigger={<Button variant="outline"><FilePlus2 className="size-4"/>Upload or paste</Button>}/>
           </div>
           <details className="rounded-xl border border-border px-4 py-2" open={files.length === 0}>
             <summary className="cursor-pointer py-2 text-sm font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Not sure what to upload?</summary>
             <p className="mt-2 text-sm leading-6">{uploadGuidance[goal].start}</p>
             <ul className="my-3 list-disc space-y-2 pl-5 text-sm leading-6 text-muted-foreground">{uploadGuidance[goal].suggestions.map(suggestion => <li key={suggestion}>{suggestion}</li>)}</ul>
+            <p className="mt-5 text-sm font-bold">Visual material works here too</p>
+            <ul aria-label="Visual material suggestions" className="my-3 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
+              {visualUploadSuggestions.map(({ title, detail, icon: Icon }) => <li key={title} className="flex min-w-0 items-start gap-3 rounded-xl border border-border bg-card p-4">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><Icon aria-hidden="true" className="size-5" /></span>
+                <div className="min-w-0"><p className="text-sm font-semibold">{title}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p></div>
+              </li>)}
+            </ul>
+            <p className="mb-3 text-xs leading-5 text-muted-foreground">Use clear images with readable labels. For diagrams and charts, include the caption or a short explanation so the guide has the context.</p>
             <p className="pb-2 text-xs leading-5 text-muted-foreground">Use Upload or paste, or choose files already saved for this class. Add only the relevant pages or excerpts; check that each selection says “Readable text ready.”</p>
           </details>
           {library.length > 0 && <div>
