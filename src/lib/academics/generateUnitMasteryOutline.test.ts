@@ -103,15 +103,27 @@ it('keeps exam scope and the review-sheet instructions on both generation and re
 })
 
 it.each([
-  { ...artifact, title: '' },
-  { ...artifact, unit: '' },
-  { ...artifact, standards: [] },
-  { artifact },
-])('rejects malformed top-level output after one repair without saving', async (value) => {
+  [{ ...artifact, title: '' }, 'artifact.title: a nonempty title is required'],
+  [{ ...artifact, unit: '' }, 'artifact.unit: a nonempty unit is required'],
+  [{ ...artifact, standards: [] }, 'artifact.standards: no study objectives were returned'],
+  [{ artifact }, 'artifact.title: a nonempty title is required'],
+])('rejects malformed top-level output after one repair without saving', async (value, issue) => {
   vi.mocked(generateWithSourceRecovery).mockResolvedValue(response(value))
   const result = await generateUnitMasteryOutline(input)
   expect(result.ok).toBe(false)
   expect(result.artifact).toBeUndefined()
-  expect(result.message).toBe('The mastery outline did not pass its source-trace and section checks. Nothing was saved. Check: artifact: title, unit and nonempty standards are required')
+  expect(result.message).toContain(issue)
   expect(generateWithSourceRecovery).toHaveBeenCalledTimes(2)
+})
+
+it('allows source-derived study objectives in generation and repair without claiming instructor authority', async () => {
+  vi.mocked(generateWithSourceRecovery)
+    .mockResolvedValueOnce(response({ title: 'Psychology', unit: 'Chapter 1', status: 'failed_missing_explicit_objectives', standards: [] }))
+    .mockResolvedValueOnce(response(artifact))
+  await generateUnitMasteryOutline(input)
+  for (const call of vi.mocked(generateWithSourceRecovery).mock.calls) {
+    expect(call[2].systemPrompt).toContain('Do not require formal learning objectives')
+    expect(call[2].systemPrompt).toContain('Study objective:')
+    expect(call[2].systemPrompt).toContain('never create or modify syllabus Topics')
+  }
 })

@@ -15,7 +15,7 @@ import { generateUnitMasteryOutline } from '@/lib/academics/generateUnitMasteryO
 import { selectGenerationSourceChunks } from '@/lib/academics/syncGenerationSources'
 import { instructorSourceFileIds } from '@/lib/academics/lectureSourcePriority'
 import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationIntake'
-import { buildLectureBrief } from '@/lib/academics/lectureWorkspace'
+import { buildLectureBrief, fileCoverageLabel } from '@/lib/academics/lectureWorkspace'
 
 const goalOptions: { value: NotebookGoal; label: string; output: string; description: string }[] = [
   { value: 'review', label: 'Review class material', output: 'Study Guide + Mastery Map', description: 'Connect ideas, work through examples, and build recall from your class material.' },
@@ -69,6 +69,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
   const prepared = selectGenerationSourceChunks(chunks, { preferredFileIds: primaryIds, priorityChunkIds: practiceQuestionChunkIds(files, chunks) })
   const tooLarge = prepared.length < chunks.length
   const sourceProblem = !chunks.length ? 'Add at least one readable material to continue.'
+    : unreadable.length ? 'Replace or exclude unreadable materials before creating the entry; every selected file needs readable text.'
     : tooLarge ? 'These materials exceed the current build limit. Select a smaller set or split this work into entries; nothing will be silently left out.' : ''
   const library = data.files.filter(file => file.courseId === courseId)
   const defaultTitle = `Notebook entry ${data.lectures.filter(item => item.courseId === courseId).length + (draft ? 0 : 1)}`
@@ -106,16 +107,9 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
       const questionIds = practiceQuestionChunkIds(files, chunks)
       const guide = await generateStudyGuide({ courseId, chunks, label, notebookGoal: goal, notebookRequest: request.trim() || undefined, primarySourceChunkIds: tailored ? [] : primarySourceChunkIds, practiceQuestionChunkIds: questionIds })
       if (!guide.ok || !guide.artifact) { setError(guide.message ?? 'The page could not be created. Your materials and any previous result are still saved.'); return }
-      let mastery: Awaited<ReturnType<typeof generateUnitMasteryOutline>> | undefined
-      if (!tailored) {
-        setPhase('mastery')
-        mastery = await generateUnitMasteryOutline({ courseId, chunks, unit: label, label, scope: 'lecture', notebookRequest: request.trim() || undefined, primarySourceChunkIds, practiceQuestionChunkIds: questionIds })
-        if (!mastery.ok || !mastery.artifact) { setError(mastery.message ?? 'The Mastery Map could not be created. Your previous result is unchanged.'); return }
-      }
       setPhase('saving')
       const generatedGuide = guide.artifact
-      const generatedMastery = mastery?.artifact
-      const usedIds = new Set([...generatedGuide.sections.flatMap(section => section.blocks.flatMap(block => block.sourceRef ? [block.sourceRef.chunkId] : [])), ...(generatedMastery?.sourceChunkIds ?? [])])
+      const usedIds = new Set(generatedGuide.sections.flatMap(section => section.blocks.flatMap(block => block.sourceRef ? [block.sourceRef.chunkId] : [])))
       const usedFiles = [...new Set(chunks.filter(chunk => usedIds.has(chunk.id)).map(chunk => chunk.fileId))]
       // Runs after the explicit Create entry action and successful generation.
       // eslint-disable-next-line react-hooks/purity
@@ -134,19 +128,50 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
         record.selectedSourceFileIds = selectedIds
         record.generationAuditStatus = guide.auditStatus
         record.lectureBrief = { ...buildLectureBrief(chunks, selectedIds, center.files, now), usedSourceFileIds: usedFiles, unusedSourceFileIds: selectedIds.filter(id => !usedFiles.includes(id)) }
-        if (generatedMastery) {
-          const existing = center.generatedMasteryOutlines.find(outline => outline.id === record.masteryMapId)
-          if (existing) Object.assign(existing, generatedMastery, { updatedAt: now })
-          else {
-            const id = uid()
-            center.generatedMasteryOutlines.push({ ...generatedMastery, id, lectureId: draftId, scopeId: draftId, createdAt: now, updatedAt: now, order: center.generatedMasteryOutlines.length })
-            record.masteryMapId = id
-          }
-        }
-        // Old mastery work is retained in the store if a rebuild now requests a tailored page.
-        record.workspaceState = 'complete'
+        // Persist the independently validated guide before attempting the map.
+        // Keep a new draft in the composer until the map settles.
+        record.processingError = tailored ? undefined : 'Study Guide is saved. Mastery Map generation has not completed.'
+        if (tailored) record.workspaceState = 'complete'
         record.updatedAt = now
       })
+      if (!tailored) {
+        setPhase('mastery')
+        let mastery: Awaited<ReturnType<typeof generateUnitMasteryOutline>>
+        try {
+          mastery = await generateUnitMasteryOutline({ courseId, chunks, unit: label, label, scope: 'lecture', notebookRequest: request.trim() || undefined, primarySourceChunkIds, practiceQuestionChunkIds: questionIds })
+        } catch {
+          mastery = { ok: false }
+        }
+        const generatedMastery = mastery.ok ? mastery.artifact : undefined
+        useStore.getState().update(state => {
+          const center = state.academics.classCenter
+          const record = center.lectures.find(item => item.id === draftId)
+          if (!record) return
+          if (generatedMastery) {
+            const existing = center.generatedMasteryOutlines.find(outline => outline.id === record.masteryMapId)
+            if (existing) Object.assign(existing, generatedMastery, { updatedAt: Date.now() })
+            else {
+              const id = uid()
+              center.generatedMasteryOutlines.push({ ...generatedMastery, id, lectureId: draftId, scopeId: draftId, createdAt: now, updatedAt: now, order: center.generatedMasteryOutlines.length })
+              record.masteryMapId = id
+            }
+            record.processingError = undefined
+            const allUsedIds = new Set([...usedIds, ...generatedMastery.sourceChunkIds])
+            const allUsedFiles = [...new Set(chunks.filter(chunk => allUsedIds.has(chunk.id)).map(chunk => chunk.fileId))]
+            if (record.lectureBrief) {
+              record.lectureBrief.usedSourceFileIds = allUsedFiles
+              record.lectureBrief.unusedSourceFileIds = selectedIds.filter(id => !allUsedFiles.includes(id))
+            }
+          } else {
+            record.processingError = record.masteryMapId
+              ? 'Study Guide is saved. The Mastery Map could not be updated; your previous Mastery Map is still available and may reflect earlier materials.'
+              : 'Study Guide is saved. The Mastery Map could not be created from this attempt. You can read the guide now.'
+            if (mastery.message) record.processingError += ` ${mastery.message.replaceAll('Nothing was saved.', 'No new Mastery Map was saved.')}`
+          }
+          record.workspaceState = 'complete'
+          record.updatedAt = Date.now()
+        })
+      }
       onBuilt(draftId)
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : 'Creation stopped. Your materials and any previous result are still saved.')
@@ -154,6 +179,13 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
   }
 
   return <section className="notebook-composer w-full min-w-0" aria-label="Notebook entry composer">
+    {!phase && draft?.studyGuide && <Button variant="outline" onClick={() => {
+      useStore.getState().update(state => {
+        const saved = state.academics.classCenter.lectures.find(item => item.id === draftId)
+        if (saved) saved.workspaceState = 'complete'
+      })
+      onBuilt(draftId)
+    }}>Open saved entry</Button>}
     <header className="space-y-6 pt-2">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <p className="text-sm font-bold text-primary">{course?.code ?? 'Class'} · Notebook</p>
@@ -208,7 +240,8 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
         </section>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm"><span><b>{files.length}</b> selected materials</span><span><b>{chunks.length}</b> readable passages</span><span className="inline-flex items-center gap-1 text-primary"><Check className="size-4"/>All readable passages included</span></div>
         {unreadable.length > 0 && <p className="text-sm text-destructive">{unreadable.length} selected {unreadable.length === 1 ? 'file has' : 'files have'} no readable text and cannot contribute to this result. Go back to replace or exclude them.</p>}
-        <details className="rounded-xl border border-border p-4 text-sm"><summary className="cursor-pointer font-semibold focus-visible:ring-2 focus-visible:ring-ring">Sources and AI use</summary><ul className="mt-3 max-h-48 space-y-2 overflow-y-auto">{files.map(file => <li key={file.id} className="break-words">{file.title} · {readableIds.has(file.id) ? 'Text included' : 'Unreadable'}</li>)}</ul><p className="mt-3 text-xs leading-5 text-muted-foreground">Readable source text and your request are sent when you create the entry. Signed-in account sync stores academic originals privately so you can open them in another browser. Generated explanations include source references you can open when needed.</p></details>
+        {files.some(file => file.sourceCoverage?.unreadablePages?.length) && <p role="status" className="text-sm text-muted-foreground">Some selected pages remain unreadable. Only the readable text will be used; review the page counts below before creating.</p>}
+        <details className="rounded-xl border border-border p-4 text-sm"><summary className="cursor-pointer font-semibold focus-visible:ring-2 focus-visible:ring-ring">Sources and AI use</summary><ul className="mt-3 max-h-48 space-y-2 overflow-y-auto">{files.map(file => <li key={file.id} className="break-words">{file.title} · {fileCoverageLabel(file, chunks.filter(chunk => chunk.fileId === file.id).length)}{file.sourceCoverage?.figureStatus === 'not-interpreted' ? ' · Diagrams and figures are not interpreted' : ''}</li>)}</ul><p className="mt-3 text-xs leading-5 text-muted-foreground">Readable source text and your request are sent when you create the entry. Signed-in account sync stores academic originals privately so you can open them in another browser. Generated explanations include source references you can open when needed.</p></details>
       </>}
       {!choosingGoal && sourceProblem && <p role="status" className="text-sm text-muted-foreground">{sourceProblem}</p>}
       {error && <p role="alert" className="rounded-xl border border-destructive/30 p-3 text-sm text-destructive">{error}</p>}

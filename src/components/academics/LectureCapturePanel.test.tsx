@@ -70,6 +70,17 @@ describe('lecture import and workspace', () => {
     expect(actions).toEqual(expect.arrayContaining(['Open lecture', 'Edit lecture', 'Delete lecture']))
   })
 
+  it('shows a saved guide warning when its Mastery Map could not be created', async () => {
+    const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
+    const entry = seed.academics.classCenter.lectures.find(item => item.id === 'demo-lecture-biol103-2')!
+    entry.studyGuide = { specId: 'study-guide-v1', specHash: 'test', courseId: entry.courseId, topicId: entry.id, sections: [] }
+    entry.processingError = 'Study Guide is saved. The Mastery Map could not be created from this attempt. You can read the guide now.'
+    useStore.getState().replaceAll(seed)
+    await render(entry.courseId, entry.id)
+    expect(container.querySelector('[role="status"]')?.textContent).toBe(entry.processingError)
+    expect(container.textContent).toContain('Study Guide')
+  })
+
   it('gives the lecture list, fixed header, and reading pane separate layout ownership', async () => {
     const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
     seed.academics.classCenter.lectures.push(...Array.from({ length: 18 }, (_, index) => ({

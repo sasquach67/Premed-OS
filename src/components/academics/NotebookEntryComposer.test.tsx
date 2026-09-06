@@ -81,14 +81,13 @@ it('excludes sources without deleting them from the class library', async () => 
   expect(useStore.getState().academics.classCenter.lectures[0].selectedSourceFileIds).toEqual([])
   expect([...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Review and create')?.disabled).toBe(true)
 })
-it('preserves the prior complete result when rebuilding the default package fails', async () => {
+it('saves a successful guide when rebuilding the Mastery Map fails', async () => {
   const old: LectureRecord = { id: 'old', courseId: 'course', title: 'Previous page', inputPath: 'materials', processingState: 'ready', workspaceState: 'complete', notebookRequest: '', notebookGoal: 'review', notebookGeneratedGoal: 'assignment', notebookOutput: 'tailored-page', notebookGeneratedRequest: 'Original request', selectedSourceFileIds: ['source'], studyGuide: structuredClone(guide.artifact) as unknown as LectureRecord['studyGuide'], createdAt: 1, updatedAt: 1, order: 0 }
   useStore.getState().update(data => { data.academics.classCenter.lectures.push(old) })
   vi.mocked(generateUnitMasteryOutline).mockResolvedValue({ ok: false, message: 'Mastery failed' })
   await render(old); await click('Continue to materials'); await click('Review and create'); await click('Create entry')
-  expect(container.querySelector('[role="alert"]')?.textContent).toBe('Mastery failed')
-  expect(useStore.getState().academics.classCenter.lectures[0]).toMatchObject({ notebookOutput: 'tailored-page', notebookGeneratedGoal: 'assignment', notebookGeneratedRequest: 'Original request', studyGuide: old.studyGuide })
-  expect(built).not.toHaveBeenCalled()
+  expect(useStore.getState().academics.classCenter.lectures[0]).toMatchObject({ notebookOutput: 'study-package', notebookGeneratedGoal: 'review', notebookGeneratedRequest: '', studyGuide: guide.artifact, processingError: expect.stringContaining('Study Guide is saved') })
+  expect(built).toHaveBeenCalledWith('old')
 })
 it('rejects packets that would omit readable passages', async () => {
   useStore.getState().update(data => { data.academics.classCenter.sourceChunks.push(...Array.from({ length: 480 }, (_, index) => ({ id: `extra-${index}`, fileId: 'source', courseId: 'course', content: `Passage ${index}`, coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: index }))) })
@@ -173,11 +172,12 @@ it('shows real generation stages and prevents navigation while generation is pen
   await act(async () => finishGuide(structuredClone(guide) as unknown as Awaited<ReturnType<typeof generateStudyGuide>>))
   expect(progress().textContent).toContain('Study Guide: complete')
   expect(progress().textContent).toContain('Mastery Map: in progress')
+  expect(useStore.getState().academics.classCenter.lectures[0].studyGuide).toEqual(guide.artifact)
   expect(progress().textContent).toContain('Save entry: waiting')
   await act(async () => finishMastery({ ok: false, message: 'Try again later' }))
   expect(container.querySelector('[aria-label="Creation progress"]')).toBeNull()
-  expect(container.querySelector('[role="alert"]')?.textContent).toBe('Try again later')
-  expect(built).not.toHaveBeenCalled()
+  expect(useStore.getState().academics.classCenter.lectures[0].processingError).toContain('Study Guide is saved')
+  expect(built).toHaveBeenCalledTimes(1)
 })
 
 it('shows only applicable progress for an assessment', async () => {
@@ -223,4 +223,59 @@ it('keeps Create unavailable until readable materials are selected', async () =>
   await click('Go to goal')
   expect(container.querySelector<HTMLButtonElement>('[aria-label="Go to create"]')?.disabled).toBe(true)
   expect(generateStudyGuide).not.toHaveBeenCalled()
+})
+
+it('saves the guide and preserves an older map when the mastery request throws', async () => {
+  const old: LectureRecord = { id: 'old', courseId: 'course', title: 'Previous page', inputPath: 'materials', processingState: 'ready', workspaceState: 'complete', notebookRequest: '', notebookGoal: 'review', selectedSourceFileIds: ['source'], masteryMapId: 'old-map', createdAt: 1, updatedAt: 1, order: 0 }
+  useStore.getState().update(data => { data.academics.classCenter.lectures.push(old); data.academics.classCenter.generatedMasteryOutlines.push({ id: 'old-map', title: 'Older map', courseId: 'course', unit: 'Old', scope: 'lecture', lectureId: 'old', standards: [], sourceChunkIds: ['old-source'], specId: 'unit-mastery-outline-v1', specHash: 'old', createdAt: 1, updatedAt: 1, order: 0 }) })
+  vi.mocked(generateUnitMasteryOutline).mockRejectedValue(new Error('Connection interrupted'))
+  await render(old); await click('Continue to materials'); await click('Review and create'); await click('Create entry')
+  expect(useStore.getState().academics.classCenter.lectures[0]).toMatchObject({ studyGuide: guide.artifact, masteryMapId: 'old-map', workspaceState: 'complete', processingError: expect.stringContaining('previous Mastery Map') })
+  expect(useStore.getState().academics.classCenter.generatedMasteryOutlines[0]).toMatchObject({ id: 'old-map', title: 'Older map', sourceChunkIds: ['old-source'], updatedAt: 1 })
+  expect(built).toHaveBeenCalledWith('old')
+})
+
+it('blocks unreadable selected files even when another source is readable', async () => {
+  useStore.getState().update(data => { data.academics.classCenter.files.push({ id: 'unreadable', courseId: 'course', title: 'Unreadable scan', type: 'reading', sourceType: 'upload', owner: 'mine', linkedTopicIds: [], createdAt: 1, updatedAt: 1, order: 1 }) })
+  await render(); await selectSource()
+  const checkboxes = container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
+  await act(async () => checkboxes[1].click())
+  expect(container.textContent).toContain('Replace or exclude unreadable materials')
+  expect([...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Review and create')?.disabled).toBe(true)
+  expect(generateStudyGuide).not.toHaveBeenCalled()
+})
+
+it('discloses partial page coverage and uninterpreted figures at review', async () => {
+  useStore.getState().update(data => { data.academics.classCenter.files[0].sourceCoverage = { pageCount: 3, readablePages: [1, 2], unreadablePages: [3], ocrRecoveredPages: [2], readableCharacterCount: 50, figureStatus: 'not-interpreted' } })
+  await render(); await selectSource(); await click('Review and create')
+  expect(container.textContent).toContain('2/3 pages readable')
+  expect(container.textContent).toContain('1 recovered with on-device OCR')
+  expect(container.textContent).toContain('Some selected pages remain unreadable')
+  expect(container.textContent).toContain('Diagrams and figures are not interpreted')
+})
+
+it('opens a guide retained in an interrupted draft without another AI call', async () => {
+  const entry: LectureRecord = { id: 'saved-draft', courseId: 'course', title: 'Saved guide', inputPath: 'materials', processingState: 'ready', workspaceState: 'draft', notebookRequest: '', selectedSourceFileIds: ['source'], studyGuide: structuredClone(guide.artifact) as unknown as LectureRecord['studyGuide'], processingError: 'Study Guide is saved. Mastery Map generation has not completed.', createdAt: 1, updatedAt: 1, order: 0 }
+  useStore.getState().update(data => { data.academics.classCenter.lectures.push(entry) })
+  await render(entry); await click('Open saved entry')
+  expect(built).toHaveBeenCalledWith(entry.id)
+  expect(useStore.getState().academics.classCenter.lectures[0].workspaceState).toBe('complete')
+  expect(generateStudyGuide).not.toHaveBeenCalled()
+  expect(generateUnitMasteryOutline).not.toHaveBeenCalled()
+})
+
+it('sends all selected readable resources to both generators across material types', async () => {
+  useStore.getState().update(data => {
+    for (const [id, type] of [['reading', 'reading'], ['notes', 'other']] as const) {
+      data.academics.classCenter.files.push({ id, courseId: 'course', title: id, type, sourceType: 'paste', owner: 'mine', linkedTopicIds: [], createdAt: 1, updatedAt: 1, order: 1 })
+      data.academics.classCenter.sourceChunks.push({ id: `${id}-chunk`, fileId: id, courseId: 'course', content: `Readable ${id} material`, coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: 1 })
+    }
+  })
+  await render(); await selectSource()
+  await act(async () => { useStore.getState().update(data => { data.academics.classCenter.lectures[0].selectedSourceFileIds = ['source', 'reading', 'notes'] }) })
+  await click('Review and create'); await click('Create entry')
+  for (const generate of [generateStudyGuide, generateUnitMasteryOutline]) {
+    const ids = vi.mocked(generate).mock.calls[0][0].chunks.map(chunk => chunk.id)
+    expect(ids).toEqual(['chunk', 'reading-chunk', 'notes-chunk'])
+  }
 })

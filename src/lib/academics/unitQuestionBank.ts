@@ -109,7 +109,9 @@ export function validateMasteryOutline(value: unknown, closedChunkIds: readonly 
   const fail = (reason: string): null => { issues?.push(reason); return null }
   if (!value || typeof value !== 'object') return fail('artifact: expected an object')
   const artifact = value as Partial<UnitMasteryOutlineArtifact>
-  if (!text(artifact.title) || !text(artifact.unit) || !Array.isArray(artifact.standards) || !artifact.standards.length) return fail('artifact: title, unit and nonempty standards are required')
+  if (!text(artifact.title)) return fail('artifact.title: a nonempty title is required')
+  if (!text(artifact.unit)) return fail('artifact.unit: a nonempty unit is required')
+  if (!Array.isArray(artifact.standards) || !artifact.standards.length) return fail('artifact.standards: no study objectives were returned')
   const closed = new Set(closedChunkIds)
   const seen = new Set<string>()
   const seenApplications = new Set<string>()
