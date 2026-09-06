@@ -87,14 +87,18 @@ function isStudyGuideContent(value: unknown): value is Pick<StudyGuideArtifact, 
     ))
 }
 
+function isCoverageReceipt(value: string) {
+  return /^(?:built from|source coverage|coverage receipt|selected sources?\s*[:·])/i.test(value.trim())
+}
+
 export function conciseStudyGuideTitle(artifact: Pick<StudyGuideArtifact, 'sections'>): string | undefined {
   const titleSection = artifact.sections.find((section) => section.id.toLocaleLowerCase() === 'title')
   const raw = titleSection?.blocks
     .flatMap((block) => [block.text?.content, ...(block.items?.map((item) => item.content) ?? [])])
-    .find((value) => value?.trim())
+    .find((value) => value?.trim() && !isCoverageReceipt(value))
     // Older completed guides may omit TITLE. Reuse a provider-authored topic
     // heading so they gain a descriptive label without rerunning generation.
-    ?? artifact.sections.find((section) => !/^(?:title|at a glance|overview|core concepts|must understand|must memorize|examples and applications|section[ _-]*\d+)$/i.test(section.title.trim()))?.title
+    ?? artifact.sections.find((section) => !isCoverageReceipt(section.title) && !/^(?:title|at a glance|overview|core concepts|must understand|must memorize|examples and applications|section[ _-]*\d+)$/i.test(section.title.trim()))?.title
   if (!raw) return undefined
   const cleaned = raw
     .replace(/^\s*#+\s*/, '')
