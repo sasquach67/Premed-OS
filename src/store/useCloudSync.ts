@@ -23,6 +23,8 @@ import type { AppData } from '@/lib/types'
 import { dataForRemote } from '@/lib/storyPrivacy'
 import { ACCOUNT_WORKSPACE_READY_EVENT, decideCloudReconcile } from '@/lib/accountWorkspace'
 
+import { syncAcademicOriginals } from '@/lib/academics/sharedMaterialFiles'
+
 const DEBOUNCE_MS = 4000
 const META_KEY = 'premed_hq_cloud_meta'
 
@@ -39,8 +41,8 @@ function writeMeta(m: CloudMeta) {
 
 /** Snapshot minus Drive-backup metadata, so a Drive timestamp write
  *  doesn't look like a data change and cause a redundant cloud push. */
-function contentSignature(): string {
-  const d = dataForRemote(snapshotData()) as unknown as Record<string, unknown>
+function contentSignature(snapshot = snapshotData()): string {
+  const d = dataForRemote(snapshot) as unknown as Record<string, unknown>
   const settings = { ...(d.settings as Record<string, unknown>) }
   delete settings.backup
   return JSON.stringify({ ...d, settings })
@@ -53,30 +55,40 @@ export function useCloudSync() {
   const [lastSyncAt, setLastSyncAt] = useState<number | undefined>(readMeta().lastSyncAt)
   const [accountReady, setAccountReady] = useState(false)
   const lastSig = useRef('')
+  const pushing = useRef(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const reconciledFor = useRef<string | null>(null)
 
-  const markSynced = useCallback((userId: string) => {
-    lastSig.current = contentSignature()
+  const markSynced = useCallback((userId: string, snapshot?: AppData) => {
+    lastSig.current = contentSignature(snapshot)
     const at = Date.now()
     writeMeta({ userId, lastSyncAt: at })
     setLastSyncAt(at)
   }, [])
 
-  const pushNow = useCallback(async () => {
+  const pushNow = useCallback(async function pushCurrentWorkspace() {
     if (!supabase || !user || !accountReady || activeAccountWorkspaceId() !== user.id) return false
+    if (pushing.current) return false
+    pushing.current = true
     setStatus('syncing'); setError('')
     try {
-      const row: DashboardRow = { user_id: user.id, data: dataForRemote(snapshotData()), updated_at: new Date().toISOString() }
+      const snapshot = snapshotData()
+      await syncAcademicOriginals(snapshot.academics.classCenter.files, user.id)
+      if (activeAccountWorkspaceId() !== user.id) return false
+      const row: DashboardRow = { user_id: user.id, data: dataForRemote(snapshot), updated_at: new Date().toISOString() }
       const { error: e } = await supabase.from('dashboards').upsert(row, { onConflict: 'user_id' })
       if (e) throw e
-      markSynced(user.id)
+      markSynced(user.id, snapshot)
+      if (contentSignature() !== lastSig.current) {
+        if (timer.current) clearTimeout(timer.current)
+        timer.current = setTimeout(() => { void pushCurrentWorkspace() }, DEBOUNCE_MS)
+      }
       setStatus('synced')
       return true
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Sync failed'); setStatus('error')
       return false
-    }
+    } finally { pushing.current = false }
   }, [user, accountReady, markSynced])
 
   const pullNow = useCallback(async () => {
@@ -136,10 +148,13 @@ export function useCloudSync() {
       if (activeAccountWorkspaceId() !== u2.id) {
         throw new Error('The active browser workspace does not belong to this account.')
       }
-      const row: DashboardRow = { user_id: u2.id, data: dataForRemote(snapshotData()), updated_at: new Date().toISOString() }
+      const snapshot = snapshotData()
+      await syncAcademicOriginals(snapshot.academics.classCenter.files, u2.id)
+      if (activeAccountWorkspaceId() !== u2.id) throw new Error('Your account changed during sync.')
+      const row: DashboardRow = { user_id: u2.id, data: dataForRemote(snapshot), updated_at: new Date().toISOString() }
       const { error: e2 } = await supabase!.from('dashboards').upsert(row, { onConflict: 'user_id' })
       if (e2) throw e2
-      markSynced(u2.id)
+      markSynced(u2.id, snapshot)
       setAccountReady(true)
       setStatus('synced')
     }

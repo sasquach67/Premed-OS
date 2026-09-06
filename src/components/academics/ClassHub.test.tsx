@@ -952,6 +952,32 @@ describe('ClassHub approved Overview', () => {
     expect(container.textContent).not.toContain('Unassigned')
   })
 
+  it('previews a retrieved PDF inside the app without an asynchronous popup', async () => {
+    const createUrl = vi.fn(() => 'blob:original-preview')
+    const revokeUrl = vi.fn()
+    const previousCreate = URL.createObjectURL
+    const previousRevoke = URL.revokeObjectURL
+    URL.createObjectURL = createUrl
+    URL.revokeObjectURL = revokeUrl
+    try {
+      localFiles.readLocalBlob.mockResolvedValueOnce(new Blob(['pdf'], { type: 'application/pdf' }))
+      const seed = structuredClone(createSeedData())
+      const workspace = seed.academics.classCenter.workspaces.find(item => item.type === 'stem')!
+      const course = seed.courses.find(item => item.id === workspace.courseId)!
+      seed.academics.classCenter.files.push({ id: 'original-preview', title: 'Original reading', type: 'reading', courseId: course.id, blobRef: 'idb://academics/material/original-preview', linkedTopicIds: [], createdAt: now, updatedAt: now, order: 900 })
+      useStore.getState().replaceAll(seed)
+      await act(async () => root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=materials`]}><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>))
+      await act(async () => container.querySelector<HTMLButtonElement>('button[aria-label="Open Original reading"]')!.click())
+      expect(document.body.querySelector('iframe[title="Preview of Original reading"]')?.getAttribute('src')).toBe('blob:original-preview')
+      expect(document.body.querySelector('a[download="Original reading"]')?.getAttribute('href')).toBe('blob:original-preview')
+      await act(async () => root.render(null))
+      expect(revokeUrl).toHaveBeenCalledWith('blob:original-preview')
+    } finally {
+      URL.createObjectURL = previousCreate
+      URL.revokeObjectURL = previousRevoke
+    }
+  })
+
   it.each(['missing', 'storage-error'])('explains an unavailable original in the file reader (%s)', async (reason) => {
     if (reason === 'storage-error') localFiles.readLocalBlob.mockRejectedValueOnce(new Error('Storage denied'))
     else localFiles.readLocalBlob.mockResolvedValueOnce(undefined)

@@ -1,0 +1,13 @@
+# Materials release: private originals, organization, and reading summaries
+
+User authorized implementation and publication of the Materials cleanup, contextual reading summary, and cross-browser original-file access on September 5, 2026.
+
+Includes e02dfe9, bd39770, dba8780, plus this release change. General materials remains a deliberate placement without an assigned week. The row menu exposes Summarize for class. The registered reading-summary-v1 instructions preserve arguments, themes, rhetoric, source boundaries, course context, and genre-specific interpretation. Selected context is explicit. No paid generation evaluation was run for this release.
+
+Academic blobs retain their existing references. Account sync copies available local originals into the private academic-originals bucket before uploading the matching dashboard snapshot. Failed uploads preserve browser copies and report a sync error. Guest/demo workspaces and non-academic captures never upload through this path. Each account can access only paths beginning with its own UUID. Downloads cache under account-scoped keys. Sync originals backfills older copies and reports missing originals. Files absent from all browsers cannot be recreated from metadata. Limit: 50 MB per original.
+
+Original PDFs and images use an in-app preview; explicit Open original and Download links support other formats and avoid asynchronously opened popup windows. Saved readable text remains the fallback.
+
+Verification: 197 test files / 1,253 tests passed before the additional preview regression; subsequent targeted run passed 40 tests including that regression. Production build passed. Targeted lint has no errors, three pre-existing ClassHub warnings. Live migration installed; transactional policy probe verified owner insert/read, denied cross-account insert/read, and rolled back its synthetic records. No signed-in end-to-end browser upload/download test was performed.
+
+Storage policies follow https://supabase.com/docs/guides/storage/security/access-control . Security advisors reported no storage findings. Existing unrelated findings remain: server-managed tables with RLS and no client policies (https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy), callable founder-admin SECURITY DEFINER helper (https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable), and disabled leaked-password protection (https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). These were not changed by this release.

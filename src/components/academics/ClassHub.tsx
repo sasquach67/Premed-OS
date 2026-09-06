@@ -48,6 +48,7 @@ import { ExamPrepMode } from '@/components/academics/ExamPrepMode'
 import { AssignmentLinkField } from '@/components/academics/TopicLinkFields'
 import { TopicConnectField } from '@/components/academics/TopicConnectField'
 import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
+import { SyncOriginalFilesButton } from '@/components/academics/SyncOriginalFilesButton'
 import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialog'
 import { RevisedNotesPanel } from '@/components/academics/RevisedNotesPanel'
 import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
@@ -778,7 +779,7 @@ function Materials({
       <SectionToolbar
         title="Materials"
         detail={`${primaryFiles.length + materialNotes.length} ${(primaryFiles.length + materialNotes.length) === 1 ? 'item' : 'items'} in this course library`}
-        action={<div className="class-hub-material-add"><MaterialIntakeDialog courseId={courseId} trigger={<Button size="sm"><Plus className="size-4" /> Add material</Button>} /></div>}
+        action={<div className="class-hub-material-add"><SyncOriginalFilesButton files={primaryFiles} /><MaterialIntakeDialog courseId={courseId} trigger={<Button size="sm"><Plus className="size-4" /> Add material</Button>} /></div>}
       />
       {supportingCount > 0 && <Button type="button" variant="ghost" size="sm" aria-pressed={showSupportingImages} onClick={() => setShowSupportingImages(value => !value)}>
         {showSupportingImages ? 'Hide supporting images' : `Show supporting images (${supportingCount})`}
@@ -1358,6 +1359,8 @@ function FileRow({ file, data, courseLabel, ownership, courseWeek, onWeekChange,
   const [opening, setOpening] = useState(false)
   const [reading, setReading] = useState(false)
   const [originalUnavailable, setOriginalUnavailable] = useState(false)
+  const [original, setOriginal] = useState<{ url: string; type: string } | null>(null)
+  useEffect(() => () => { if (original) URL.revokeObjectURL(original.url) }, [original])
   const [summaryOpen, setSummaryOpen] = useState(false)
   const chunks = useStore(state => state.academics.classCenter.sourceChunks)
   const text = chunks.filter(chunk => chunk.fileId === file.id && chunk.courseId === file.courseId).sort((a, b) => a.order - b.order).map(chunk => chunk.content).join('\n\n')
@@ -1375,9 +1378,7 @@ function FileRow({ file, data, courseLabel, ownership, courseWeek, onWeekChange,
       setReading(true)
       return
     }
-    const url = URL.createObjectURL(blob)
-    window.open(url, '_blank', 'noopener,noreferrer')
-    window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    setOriginal({ url: URL.createObjectURL(blob), type: blob.type || file.mimeType || '' })
   }
   const content = (
     <div className="class-hub-material-file rounded-xl border border-border bg-muted p-3">
@@ -1393,7 +1394,7 @@ function FileRow({ file, data, courseLabel, ownership, courseWeek, onWeekChange,
       </div>
     </div>
   )
-  return <>{content}<Dialog open={reading} onOpenChange={setReading}><DialogContent className="sm:max-w-3xl"><DialogHeader><DialogTitle>{file.title}</DialogTitle><DialogDescription>{originalUnavailable ? 'Original file unavailable in this browser' : 'Saved material text'}</DialogDescription></DialogHeader>{originalUnavailable && <p className="text-sm text-muted-foreground">Each original upload is saved only in the browser and site where you uploaded it. Open the material there, or use Add material to upload a copy here. If browser storage was cleared, you will need the original file again. {text ? 'The saved text is available below; it does not preserve the original layout or images.' : 'No readable text is saved for this material.'}</p>}{text.trim() && <Button variant="outline" className="w-fit" onClick={() => { setReading(false); setSummaryOpen(true) }}>Summarize for class…</Button>}<div className="max-h-[65vh] overflow-y-auto whitespace-pre-wrap text-sm leading-7">{text || 'No readable text is saved for this material. Add a readable copy to view it here.'}</div></DialogContent></Dialog><ReadingSummaryDialog reading={file} data={data} courseLabel={courseLabel} open={summaryOpen} onOpenChange={setSummaryOpen} /></>
+  return <>{content}<Dialog open={Boolean(original)} onOpenChange={open => { if (!open) setOriginal(null) }}><DialogContent className="sm:max-w-4xl"><DialogHeader><DialogTitle>{file.title}</DialogTitle><DialogDescription>Original file</DialogDescription></DialogHeader>{original && <><div className="flex gap-2"><Button variant="outline" asChild><a href={original.url} target="_blank" rel="noopener noreferrer">Open original</a></Button><Button variant="outline" asChild><a href={original.url} download={file.fileName || file.title}>Download</a></Button></div>{original.type === 'application/pdf' ? <iframe title={`Preview of ${file.title}`} src={original.url} className="h-[65vh] w-full rounded-md border border-border" /> : original.type.startsWith('image/') ? <img src={original.url} alt={file.title} className="max-h-[65vh] w-full object-contain" /> : <p className="text-sm text-muted-foreground">Open or download this file to view it in a supported app.</p>}</>}</DialogContent></Dialog><Dialog open={reading} onOpenChange={setReading}><DialogContent className="sm:max-w-3xl"><DialogHeader><DialogTitle>{file.title}</DialogTitle><DialogDescription>{originalUnavailable ? 'Original file unavailable in this browser' : 'Saved material text'}</DialogDescription></DialogHeader>{originalUnavailable && <p className="text-sm text-muted-foreground">We could not retrieve the original from this browser or your account. In the browser and site where you uploaded it, sign in and choose Sync originals. You can also use Add material to upload a copy here. If browser storage was cleared, you will need the original file again. {text ? 'The saved text is available below; it does not preserve the original layout or images.' : 'No readable text is saved for this material.'}</p>}{text.trim() && <Button variant="outline" className="w-fit" onClick={() => { setReading(false); setSummaryOpen(true) }}>Summarize for class…</Button>}<div className="max-h-[65vh] overflow-y-auto whitespace-pre-wrap text-sm leading-7">{text || 'No readable text is saved for this material. Add a readable copy to view it here.'}</div></DialogContent></Dialog><ReadingSummaryDialog reading={file} data={data} courseLabel={courseLabel} open={summaryOpen} onOpenChange={setSummaryOpen} /></>
 }
 
 function MaterialNoteRow({ note, open, courseWeek, onWeekChange }: { note: ClassNote; open: boolean; courseWeek?: number; onWeekChange: (week?: number | 'general') => void }) {
