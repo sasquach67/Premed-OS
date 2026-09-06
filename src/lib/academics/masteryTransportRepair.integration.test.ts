@@ -1,3 +1,4 @@
+import * as astraWalletRoute from '../../../supabase/functions/_shared/astraWalletRoute'
 import { readFileSync } from 'node:fs'
 import ts from 'typescript'
 import { beforeEach, expect, it, vi } from 'vitest'
@@ -38,7 +39,7 @@ function routeThroughEdge(outputs: unknown[]) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText
   const requireStub = (id: string) => id.startsWith('npm:') ? { createClient: () => client }
-    : id.includes('openAIGenerationResponse') ? responseBoundary : id.includes('openAICitationWire') ? citationWire : grounding
+    : id.includes('astraWalletRoute') ? astraWalletRoute : id.includes('openAIGenerationResponse') ? responseBoundary : id.includes('openAICitationWire') ? citationWire : grounding
   const deno = { env: { get: (key: string) => ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'OPENAI_API_KEY'].includes(key) ? 'test-only' : undefined },
     serve: (fn: typeof handler) => { handler = fn },
   }

@@ -288,6 +288,7 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
         const responseBody = await readFunctionErrorBody(context)
         const errorDetail = isRecord(responseBody) && isRecord(responseBody.error) ? responseBody.error : undefined
         const knownCodes = new Set([
+          'wallet-unavailable', 'backup-budget-limit',
           'openai-invalid-response', 'openai-quota-exhausted', 'openai-rate-limited',
           'openai-access-denied', 'openai-context-limit', 'openai-request-rejected',
           'openai-output-limit', 'openai-incomplete', 'openai-response-failed',

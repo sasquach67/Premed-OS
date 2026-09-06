@@ -1,3 +1,4 @@
+import { AstraRouteError, postAstraResponse } from '../_shared/astraWalletRoute.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2.110.2'
 import { OpenAIGenerationResponseError, readOpenAIGenerationResponse } from '../_shared/openAIGenerationResponse.ts'
 import { createOpenAICitationWire } from '../_shared/openAICitationWire.ts'
@@ -380,6 +381,7 @@ Deno.serve(async (request) => {
         webSearchRequests: primary.webSearchRequests,
       })
     } catch (error) {
+      if (error instanceof AstraRouteError) return failure(503, error.code, error.message)
       console.error('study-tools generate failure', error instanceof Error ? error.message : 'unknown')
       if (error instanceof OpenAIGenerationResponseError) {
         if (error.rejected) await releaseAIReservation(serviceClient, userData.user.id, quota.reservationCents)
@@ -404,6 +406,7 @@ Deno.serve(async (request) => {
     if (!validated) return failure(502, 'invalid-response', 'The provider returned invalid structured data.')
     return json(validated)
   } catch (error) {
+    if (error instanceof AstraRouteError) return failure(503, error.code, error.message)
     console.error('study-tools provider failure', error instanceof Error ? error.message : 'unknown')
     if (error instanceof ProviderRejectedError) await releaseAIReservation(serviceClient, userData.user.id, quota.reservationCents)
     return failure(503, 'provider-unavailable', 'The AI provider is unavailable.')
@@ -807,15 +810,32 @@ function openAIOutputText(payload: Record<string, unknown>): string {
   return text
 }
 
+async function routeAstraResponse(payload: Record<string, unknown>, openAIKey: string) {
+  return postAstraResponse(payload, {
+    openAIKey,
+    walletKey: Deno.env.get('CHEAPER_INFERENCE_API_KEY'),
+    ledger: {
+      async reserve(cents) {
+        const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+        const { data, error } = await admin.rpc('reserve_astra_backup', { p_cents: cents })
+        if (error) throw new AstraRouteError('backup-budget-limit', 'The OpenAI backup allowance could not be verified. No backup request was sent.')
+        return typeof data === 'string' ? data : null
+      },
+      async settle(id, cents) {
+        const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+        const { error } = await admin.rpc('settle_astra_backup', { p_id: id, p_cents: cents })
+        if (error) throw new Error('Backup settlement unavailable')
+      },
+    },
+  }, fetch)
+}
+
 async function callOpenAIGeneration(response: string, chunks: Chunk[], specPrompt: string) {
   const key = Deno.env.get('OPENAI_API_KEY')
   if (!key) throw new Error('OpenAI is not configured')
   const wire = createOpenAICitationWire(chunks)
   const sources = wire.sources
-  const result = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+  const result = await routeAstraResponse({
       // Pin the user-selected model; legacy OPENAI_MODEL must not override it.
       model: 'gpt-6-astra',
       reasoning: { effort: 'low' },
@@ -843,8 +863,7 @@ async function callOpenAIGeneration(response: string, chunks: Chunk[], specPromp
         },
       ],
       text: { format: { type: 'json_object' } },
-    }),
-  })
+  }, key)
   const value = canonicalizeOpenAIGenerationSourceRefs(
     wire.decode(await readOpenAIGenerationResponse(result)),
     chunks,
@@ -1027,13 +1046,11 @@ async function callOpenAI(response: string, chunks: Chunk[], image?: ImageEviden
     end: chunk.character_end,
     content: chunk.content,
   }))
-  const result = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+  const result = await routeAstraResponse({
       model: 'gpt-6-astra',
       reasoning: { effort: 'low' },
       store: false,
+      max_output_tokens: 10_000,
       input: [{
         role: 'user',
         content: [
@@ -1042,8 +1059,7 @@ async function callOpenAI(response: string, chunks: Chunk[], image?: ImageEviden
         ],
       }],
       text: { format: { type: 'json_schema', name: 'gap_check', strict: true, schema: resultSchema } },
-    }),
-  })
+  }, key)
   if (!result.ok) throw new ProviderRejectedError(`OpenAI ${result.status}`)
   const payload = await result.json() as Record<string, unknown>
   return { value: JSON.parse(openAIOutputText(payload)), trustedCitations: undefined }
