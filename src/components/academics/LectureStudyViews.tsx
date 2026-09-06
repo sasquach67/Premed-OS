@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ReadingContents } from './ReadingContents'
+import { splitStudyTables } from './studyTable'
 import { scrollGuideHeadingIntoReadingPane } from './lectureGuideNavigation'
 
 type Outline = ClassCenterData['generatedMasteryOutlines'][number]
@@ -24,6 +25,17 @@ function StudyText({ value }: { value: RichText }) {
     cursor = next.at + next.term.length
   }
   return <>{pieces}</>
+}
+
+function StudyBlockText({ value }: { value: RichText }) {
+  return <>{splitStudyTables(value.content).map((part, index) => part.type === 'text'
+    ? <p key={index} className="whitespace-pre-wrap text-[15px] leading-8"><StudyText value={{ ...value, content: part.content }} /></p>
+    : <div key={index} role="region" aria-label="Comparison table" tabIndex={0} className="my-4 max-w-full overflow-x-auto rounded-lg border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <table className="w-full border-collapse text-left text-sm leading-6">
+        <thead className="bg-muted"><tr>{part.headers.map((content, column) => <th key={column} scope="col" className="min-w-32 border-b border-border px-4 py-3 font-bold"><StudyText value={{ ...value, content }} /></th>)}</tr></thead>
+        <tbody>{part.rows.map((row, rowIndex) => <tr key={rowIndex} className="border-b border-border last:border-0">{row.map((content, column) => <td key={column} className="px-4 py-3 align-top"><StudyText value={{ ...value, content }} /></td>)}</tr>)}</tbody>
+      </table>
+    </div>)}</>
 }
 
 function SourceDetails({ ids, chunks, files = [] }: { ids: string[]; chunks: SourceChunk[]; files?: AcademicFile[] }) {
@@ -67,7 +79,7 @@ function GuideBlock({ block }: { block: ContentBlock }) {
     {examApplication && <Badge variant="outline" className="mb-3">Practice, not an exam prediction</Badge>}
     {block.basis === 'instructor-emphasis' && <Badge variant="secondary" className="mb-2">Professor emphasis</Badge>}
     {block.provenance === 'background' && <p className="mb-2 text-xs font-bold text-muted-foreground">Extra context</p>}
-    {block.text?.content && <p className="whitespace-pre-wrap text-[15px] leading-8"><StudyText value={block.text} /></p>}
+    {block.text?.content && <StudyBlockText value={block.text} />}
     {!!block.items?.length && <List className={cn('mt-3 space-y-3 pl-5 text-[15px] leading-7', block.type === 'numbered' ? 'list-decimal marker:font-extrabold marker:text-primary' : 'list-disc marker:text-primary')}>{block.items.map((item, index) => <li key={index} className="pl-1 whitespace-pre-wrap"><StudyText value={item} /></li>)}</List>}
   </div>
 }

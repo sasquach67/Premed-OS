@@ -150,4 +150,18 @@ describe('lecture study guide reading navigation', () => {
     expect(container.querySelector('[data-guide-block="worked-answer"]')?.textContent).toContain('Worked answer')
     expect(container.textContent).toContain('Lecture-2-Slides.pdf · Slide 14')
   })
+  it('renders a generated comparison as a real table and keeps surrounding explanation', async () => {
+    const tableGuide: StudyGuideArtifact = { ...guide, sections: [{ id: 'comparison', title: 'Compare the perspectives', blocks: [
+      { id: 'table', type: 'table', provenance: 'source', conceptLabel: 'Early schools', text: { content: 'Compare their questions.\n\n| Dimension | Structuralism | Functionalism |\n| --- | --- | --- |\n| Question | Components of experience | Purpose of consciousness |\n\nThese are different explanatory goals.' } },
+    ] }] }
+    await act(async () => root.render(<GeneratedLectureGuideView lecture={lecture} guide={tableGuide} brief={{} as NonNullable<LectureRecord['lectureBrief']>} chunks={chunks} files={[slides]} onOpenMastery={() => {}} />))
+    const table = container.querySelector('table')
+    expect(table).toBeTruthy()
+    expect([...table!.querySelectorAll('th')].map(cell => cell.textContent)).toEqual(['Dimension', 'Structuralism', 'Functionalism'])
+    expect(table!.querySelector('tbody')?.textContent).toContain('Purpose of consciousness')
+    expect(container.textContent).toContain('Compare their questions.')
+    expect(container.textContent).toContain('These are different explanatory goals.')
+    expect(container.textContent).not.toContain('| --- |')
+  })
+
 })
