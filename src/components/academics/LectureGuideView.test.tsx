@@ -105,12 +105,13 @@ describe('lecture study guide reading navigation', () => {
 
   it('offers every section in the compact picker and focuses its selected heading', async () => {
     const { pane, heading } = await renderInReadingPane('page')
-    const picker = container.querySelector<HTMLSelectElement>('nav select')!
-    expect([...picker.options].map((option) => option.text)).toEqual(['Jump to a section', 'Big picture', 'Apply it'])
-    await act(async () => {
-      picker.value = 'application'
-      picker.dispatchEvent(new Event('change', { bubbles: true }))
-    })
+    const picker = container.querySelector<HTMLButtonElement>('nav button[role="combobox"]')!
+    expect(picker).not.toBeNull()
+    HTMLElement.prototype.scrollIntoView = vi.fn()
+    await act(async () => picker.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })))
+    const options = [...document.querySelectorAll<HTMLElement>('[role="option"]')]
+    expect(options.map(option => option.textContent)).toEqual(['Big picture', 'Apply it'])
+    await act(async () => options[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })))
     expect(document.activeElement).toBe(heading)
     expect(pane.scrollTo).toHaveBeenCalled()
     expect(container.querySelector('nav button[aria-current="location"]')?.textContent).toContain('Apply it')

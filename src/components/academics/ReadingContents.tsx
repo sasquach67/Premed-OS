@@ -1,5 +1,6 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { BookOpen, Check, Circle, CircleDot } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import './ReadingContents.css'
 
 type ContentsItem = { id: string; title: string; targetId: string; status?: string }
@@ -9,6 +10,7 @@ export function ReadingContents({ items, label, title = 'Contents', onNavigate, 
   items: ContentsItem[]; label: string; title?: string; onNavigate: (id: string) => void; standalone?: boolean
 }) {
   const pickerId = useId()
+  const jumpFromPicker = useRef<string | null>(null)
   const [selected, setSelected] = useState('')
   const active = items.some(item => item.id === selected) ? selected : items[0]?.id ?? ''
   const targets = items.map(item => `${item.id}\t${item.targetId}`).join('\n')
@@ -36,10 +38,20 @@ export function ReadingContents({ items, label, title = 'Contents', onNavigate, 
   function navigate(id: string) { setSelected(id); onNavigate(id) }
   return <nav aria-label={label} className="reading-contents" data-standalone={standalone || undefined}>
     <header className="reading-contents-heading"><BookOpen aria-hidden="true"/><label htmlFor={pickerId}>{title}</label><span>{items.length}</span></header>
-    <select id={pickerId} className="reading-contents-picker" value={active} onChange={event => navigate(event.target.value)}>
-      <option value="" disabled>Jump to a section</option>
-      {items.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
-    </select>
+    <Select value={active} onValueChange={id => { setSelected(id); jumpFromPicker.current = id }}>
+      <SelectTrigger id={pickerId} className="reading-contents-picker" aria-label="Jump to a section">
+        <SelectValue placeholder="Jump to a section" />
+      </SelectTrigger>
+      <SelectContent className="reading-contents-menu" onCloseAutoFocus={event => {
+        if (jumpFromPicker.current !== null) {
+          event.preventDefault()
+          onNavigate(jumpFromPicker.current)
+          jumpFromPicker.current = null
+        }
+      }}>
+        {items.map(item => <SelectItem className="reading-contents-option" key={item.id} value={item.id}>{item.title}</SelectItem>)}
+      </SelectContent>
+    </Select>
     <ol className="reading-contents-list">{items.map((item, index) => <li key={item.id}>
       <button type="button" className="reading-contents-link" aria-current={active === item.id ? 'location' : undefined} onClick={() => navigate(item.id)}>
         <span className="reading-contents-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>

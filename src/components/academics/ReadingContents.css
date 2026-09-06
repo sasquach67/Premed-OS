@@ -36,3 +36,11 @@
   .reading-contents[data-standalone] .reading-contents-list { display:block; }
 }
 @media (prefers-reduced-motion:reduce) { .reading-contents-link { transition:none; } }
+
+/* A themed popup keeps section previews readable across browsers and pane widths. */
+.reading-contents-picker { height:auto; text-align:left; line-height:1.5; }
+.reading-contents-picker > span { min-width:0; white-space:normal; overflow-wrap:anywhere; }
+.reading-contents-picker > svg { flex-shrink:0; }
+.reading-contents-menu { width:var(--radix-select-trigger-width); max-width:calc(100vw - 24px); max-height:min(24rem, var(--radix-select-content-available-height)); background:var(--popover); }
+.reading-contents-option { min-height:44px; align-items:flex-start; white-space:normal; overflow-wrap:anywhere; line-height:1.5; padding-top:10px; padding-bottom:10px; }
+.reading-contents-option > span:first-child { top:12px; }
