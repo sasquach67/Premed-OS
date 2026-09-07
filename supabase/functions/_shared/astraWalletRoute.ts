@@ -11,6 +11,13 @@ export type AstraRouteConfig = {
   ledger: BackupLedger
   /** Aborts the underlying fetch so a step can never outlive its worker. */
   signal?: AbortSignal
+  /**
+   * Best-effort duplicate-charge protection for a retried request. Sent as the
+   * conventional `Idempotency-Key` header; a route that ignores it simply
+   * proceeds, so this is a mitigation and NOT the control that bounds paid
+   * work — the task lease and the attempt cap are.
+   */
+  idempotencyKey?: string
 }
 
 /** Routing outcomes only. A step that ran out of worker budget raises
@@ -114,7 +121,11 @@ function assertBackupBoundable(payload: Record<string, unknown>, body: string) {
 function poster(body: string | undefined, config: AstraRouteConfig) {
   return (fetcher: typeof fetch, url: string, key: string, method: 'POST' | 'GET') => fetcher(url, {
     method,
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      ...(config.idempotencyKey && method === 'POST' ? { 'Idempotency-Key': config.idempotencyKey } : {}),
+    },
     ...(method === 'POST' ? { body } : {}),
     ...(config.signal ? { signal: config.signal } : {}),
   })

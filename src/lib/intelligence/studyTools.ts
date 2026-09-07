@@ -144,7 +144,7 @@ export interface StartGenerationRequest extends Omit<GenerateRequest, 'action'> 
   action: 'generate-start'
 }
 export interface GenerationStepRequest {
-  action: 'generate-step' | 'generate-status'
+  action: 'run-task' | 'generate-status'
   jobId: string
 }
 
@@ -160,18 +160,31 @@ export interface GenerationJobError {
   issues?: string[]
 }
 
+export interface GenerationTaskView {
+  stage: string
+  ordinal: number
+  label: string
+  status: 'pending' | 'running' | 'done' | 'failed' | 'skipped'
+  attempts: number
+  durationMs: number | null
+  /** A request timed out with no confirmed outcome; it may have been billed. */
+  ambiguous: boolean
+}
+
 export interface GenerationJobView {
   jobId: string
   status: GenerationJobStatus
-  step: string
+  /** The pipeline stage this build is in. */
+  stage: string
+  /** The stage's own label, shown to the student. */
   phase: string
-  providerAttempts: number
-  pollCount: number
+  /** Tasks finished / total within the current stage. */
+  stageDone?: number
+  stageTotal?: number
+  /** One continuous 0–1 reading across the whole pipeline. */
+  progress?: number
   updatedAt: string
-  /** How long to wait before advancing the job again. */
-  retryAfterMs?: number
-  /** Another runner already holds this job's step. */
-  busy?: boolean
+  tasks?: GenerationTaskView[]
   /** This start joined an existing build instead of creating a second one. */
   rejoined?: boolean
   result?: GeneratedStudyToolArtifact
@@ -247,6 +260,10 @@ const DEFAULT_DURABLE_WAIT_MS = 12 * 60 * 1000
  *  back without advancing it — a worker with nothing left to give, over and
  *  over — must not become a tight request loop. */
 const MAX_DURABLE_STEPS = 400
+/** How often the page asks how the build is going. The build does not depend
+ *  on being asked — pg_cron drives it — so this is purely how fresh the
+ *  progress reading is. */
+const POLL_INTERVAL_MS = 2_500
 const GENERATION_JOB_PREFIX = 'premed-os:ai-generation-job:v1'
 
 export interface DurableGenerationOptions {
@@ -281,7 +298,7 @@ export function isGenerationJobView(value: unknown): value is GenerationJobView 
   return isRecord(value)
     && typeof value.jobId === 'string'
     && ['queued', 'running', 'succeeded', 'failed'].includes(String(value.status))
-    && typeof value.step === 'string'
+    && typeof value.stage === 'string'
     && typeof value.phase === 'string'
 }
 
@@ -506,12 +523,13 @@ export function createStudyToolsClient(
         : { ok: false, code: 'invalid-response', message: 'The server did not return a build to track. Nothing was saved.' }
     },
 
-    async stepGeneration(jobId: string): Promise<StudyToolResponse<GenerationJobView>> {
-      const result = await invoke<GenerationJobView>({ action: 'generate-step', jobId })
-      if (!result.ok) return result
-      return isGenerationJobView(result.data)
-        ? { ok: true, data: result.data }
-        : { ok: false, code: 'invalid-response', message: 'The server returned an unreadable build status.' }
+    /**
+     * Ask the runner to pick up a task now rather than at the next scheduled
+     * tick. This is a latency courtesy, not the engine: pg_cron advances the
+     * build regardless, so a failure here is not a failure of the build.
+     */
+    async nudgeGeneration(jobId: string): Promise<void> {
+      await invoke({ action: 'run-task', jobId })
     },
 
     async generationStatus(jobId: string): Promise<StudyToolResponse<GenerationJobView>> {
@@ -554,10 +572,14 @@ export function createStudyToolsClient(
       }
       options.onProgress?.(job)
 
+      // Nudge once so the first stage starts immediately instead of waiting for
+      // the scheduler's next tick. Everything after this is the scheduler's.
+      await this.nudgeGeneration(job.jobId)
+
       while (now() < deadline && steps < MAX_DURABLE_STEPS) {
         if (options.signal?.aborted) {
-          // The job stays saved and resumable; only this driver stops.
-          return { ok: false, code: 'unavailable', message: 'This build was left running. Reopen the entry to pick it up.' }
+          // The build keeps running on the server; only this watcher stops.
+          return { ok: false, code: 'unavailable', message: 'This build is still running. Reopen the entry to see it finish.' }
         }
         if (job.status === 'succeeded') {
           store?.clear()
@@ -569,20 +591,18 @@ export function createStudyToolsClient(
           store?.clear()
           return generationJobFailure(job.error)
         }
-        const wait = Math.max(500, Math.min(job.retryAfterMs ?? 1_500, 15_000))
-        await sleep(wait)
+        await sleep(POLL_INTERVAL_MS)
         steps += 1
-        const stepped = await this.stepGeneration(job.jobId)
-        if (!stepped.ok) {
-          // A transport hiccup must not discard a job the server is still
-          // running. Re-read it; a genuinely missing job ends the build.
-          const status = await this.generationStatus(job.jobId)
-          if (!status.ok) { store?.clear(); return stepped }
+        const status = await this.generationStatus(job.jobId)
+        // A dropped status read is a network blip, not a failed build: the
+        // scheduler is still advancing it. Keep watching until the deadline.
+        if (status.ok) {
           job = status.data
-        } else {
-          job = stepped.data
+          options.onProgress?.(job)
+        } else if (status.code === 'invalid-response') {
+          store?.clear()
+          return status
         }
-        options.onProgress?.(job)
       }
       // Out of client patience, not out of job: the build stays resumable.
       return { ok: false, code: 'unavailable', message: 'This build is taking longer than expected and is still running. Reopen the entry to pick it up; nothing saved was changed.' }

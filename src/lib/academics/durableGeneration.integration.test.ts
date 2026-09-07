@@ -1,266 +1,324 @@
 /**
- * The failure this suite exists for.
+ * The generation engine, exercised as the real compiled Edge handler.
  *
- * A study-guide build spent its whole life inside one Edge invocation. Supabase
- * gives an Edge worker a wall-clock lifetime it is killed at (150s free / 400s
- * paid) and can also retire it early while it looks idle on a socket, and that
- * clock belongs to the worker rather than to the request. So a build that took
- * several minutes was not slow — it was destroyed, with nothing recorded, and
- * the student saw one catch-all sentence.
+ * What these pin is the shape of the work. A build is a sequence of stages, and
+ * a stage's tasks are pieces of the ARTIFACT — a plan, one section, the audit —
+ * never slices of the student's material. Each task runs in its own invocation,
+ * is persisted before its successor is scheduled, and is driven by a scheduler
+ * rather than by the browser.
  *
- * These tests run the REAL compiled Edge handler against a faithful in-memory
- * job store and a scripted provider, and assert the properties that make the
- * replacement durable: progress is persisted, a refresh rejoins the same build,
- * a double press does not pay twice, paid attempts are capped, a timeout is
- * reported as a timeout, and a failure never disturbs a saved result.
+ * The queue here stands in for pg_cron. It is deliberately never given a
+ * browser: `drainQueue` is the only thing that advances a build, so a test that
+ * passes proves the build does not need a page open.
+ *
+ * These do NOT establish that the provider supports background responses. That
+ * is unprovable from a test double and is settled at runtime by `probe-background`
+ * against the live route; until it passes, every stage runs synchronously.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { bootStudyToolsEdge } from './edgeStudyToolsHarness.testing'
-import { createStudyToolsClient, generationJobStore, type GenerationJobView } from '@/lib/intelligence/studyTools'
 
-const chunk = { chunk_id: 'chunk-1', file_id: 'file-1', content: 'Encoding transforms incoming information into a form memory can store.' }
-
-const guide = (sourceRef: unknown = { citationId: 'S1' }) => ({
-  sections: [{
-    id: 'at-a-glance',
-    title: 'AT A GLANCE',
-    blocks: [{ id: 'block-1', type: 'prose', provenance: 'source', text: { content: 'Encoding converts experience into a storable form.' }, sourceRef }],
-  }],
-})
+const passages = [
+  { chunk_id: 'c1', file_id: 'lecture', content: 'Encoding transforms incoming information into a form memory can store.' },
+  { chunk_id: 'c2', file_id: 'lecture', content: 'Retrieval reconstructs a stored trace rather than replaying a recording.' },
+  { chunk_id: 'c3', file_id: 'reading', content: 'Consolidation stabilises a labile trace over hours to days, largely during sleep.' },
+]
 
 const startBody = {
-  action: 'generate-start', courseId: 'course-1', topicId: 'topic-1', chunkIds: ['chunk-1'],
+  action: 'generate-start', courseId: 'course-1', topicId: 'topic-1',
+  chunkIds: passages.map((passage) => passage.chunk_id),
   specId: 'study-guide-v1', specHash: 'hash', systemPrompt: 'spec', request: 'Topic: Memory.',
 }
 
-/** A provider that answers a background submit with an id, then a scripted
- *  sequence of poll bodies — the shape the durable engine is built around. */
-function backgroundProvider(script: Array<Record<string, unknown>>) {
-  const calls: Array<{ method: string; url: string }> = []
-  const fetcher = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
-    const method = init?.method ?? 'GET'
-    calls.push({ method, url: String(url) })
-    if (method === 'POST') return new Response(JSON.stringify({ id: 'resp_1', status: 'queued' }), { status: 200 })
-    return new Response(JSON.stringify(script.shift() ?? { id: 'resp_1', status: 'in_progress' }), { status: 200 })
-  })
-  return { fetcher: fetcher as unknown as typeof fetch, calls }
+const plan = {
+  sections: [
+    { id: 'at-a-glance', title: 'AT A GLANCE', purpose: 'Orient', sourceChunkIds: ['S1', 'S2'] },
+    { id: 'consolidation', title: 'Consolidation', purpose: 'Explain', sourceChunkIds: ['S2', 'S3'] },
+  ],
+  unusedSources: [],
 }
 
-const completed = (artifact: unknown) => ({ id: 'resp_1', status: 'completed', output_text: JSON.stringify(artifact) })
+const section = (id: string, citationId: string) => ({
+  section: {
+    id, title: id, blocks: [{
+      id: `${id}-b1`, type: 'prose', provenance: 'source',
+      text: { content: 'A source-supported explanation.' }, sourceRef: { citationId },
+    }],
+  },
+})
+
+/** A provider scripted per request, so each stage's own call is observable. */
+function scriptedProvider(script: Array<unknown | ((body: string) => unknown)>) {
+  const requests: string[] = []
+  const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+    const body = String(init?.body ?? '')
+    requests.push(body)
+    const next = script.shift()
+    const value = typeof next === 'function' ? (next as (input: string) => unknown)(body) : next
+    return new Response(JSON.stringify({ status: 'completed', output_text: JSON.stringify(value ?? {}) }), { status: 200 })
+  })
+  return { fetcher: fetcher as unknown as typeof fetch, requests }
+}
+
+function guideRun() {
+  return scriptedProvider([plan, section('at-a-glance', 'S1'), section('consolidation', 'S3')])
+}
 
 async function readJson(response: Response) {
-  return await response.json() as GenerationJobView & { error?: { code: string; message: string } }
+  return await response.json() as Record<string, unknown>
 }
 
 beforeEach(() => { localStorage.clear() })
 
-describe('durable study generation across bounded Edge steps', () => {
-  it('records the job and answers immediately, before any provider work', async () => {
-    const { fetcher, calls } = backgroundProvider([])
-    const edge = bootStudyToolsEdge({ chunks: [chunk], fetch: fetcher })
+describe('stages are shaped by the artifact, not by the material', () => {
+  it('plans first, then writes one task per section — never a slice of the corpus', async () => {
+    const { fetcher, requests } = guideRun()
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
+    await edge.call(startBody)
+    await edge.drainQueue()
 
-    const started = await readJson(await edge.call(startBody))
+    const stages = edge.tasks.rows.map((task) => `${task.stage}:${task.task_key}`)
+    expect(stages).toContain('inventory:inventory')
+    expect(stages).toContain('outline:outline')
+    // One task per planned section, keyed by the section, not by a text batch.
+    expect(stages).toContain('sections:at-a-glance')
+    expect(stages).toContain('sections:consolidation')
+    expect(stages).toContain('verify:verify')
+    expect(stages).toContain('assemble:assemble')
 
-    expect(started.status).toBe('queued')
-    expect(started.jobId).toBeTruthy()
-    // The whole point: returning the id costs no provider call at all.
-    expect(calls).toHaveLength(0)
-    expect(edge.jobs.rows.get(started.jobId)?.step).toBe('submit')
+    // The planning call sees the whole corpus; each section call sees only the
+    // passages its plan mapped to it — at full length, never summarised.
+    expect(requests[0]).toContain('Encoding transforms')
+    expect(requests[0]).toContain('Consolidation stabilises')
+    expect(requests[1]).toContain('Encoding transforms')
+    expect(requests[1]).not.toContain('Consolidation stabilises')
+    expect(requests[2]).toContain('Consolidation stabilises')
   })
 
-  it('advances submit → poll → audit and persists the artifact only once it succeeds', async () => {
-    const { fetcher } = backgroundProvider([{ id: 'resp_1', status: 'in_progress' }, completed(guide())])
-    const edge = bootStudyToolsEdge({ chunks: [chunk], fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
-
+  it('produces a coherent artifact in plan order, with verified citations', async () => {
+    const { fetcher } = guideRun()
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
     const started = await readJson(await edge.call(startBody))
-    const submitted = await readJson(await edge.call({ action: 'generate-step', jobId: started.jobId }))
-    expect(submitted.step).toBe('poll')
-    expect(edge.jobs.rows.get(started.jobId)?.provider_response_id).toBe('resp_1')
+    await edge.drainQueue()
 
-    const stillWorking = await readJson(await edge.call({ action: 'generate-step', jobId: started.jobId }))
-    expect(stillWorking.status).toBe('running')
-    expect(stillWorking.result).toBeUndefined()
-
-    const settled = await readJson(await edge.call({ action: 'generate-step', jobId: started.jobId }))
-    expect(settled.step).toBe('audit')
-    // An unaudited artifact must never reach the student.
-    expect(settled.result).toBeUndefined()
-
-    const done = await readJson(await edge.call({ action: 'generate-step', jobId: started.jobId }))
-    expect(done.status).toBe('succeeded')
-    expect(done.result?.auditStatus).toBe('skipped')
-    expect(done.result?.citations).toHaveLength(1)
+    const view = await readJson(await edge.call({ action: 'generate-status', jobId: started.jobId }))
+    expect(view.status).toBe('succeeded')
+    const result = view.result as { artifact: { sections: Array<{ id: string }> }; citations: unknown[] }
+    expect(result.artifact.sections.map((entry) => entry.id)).toEqual(['at-a-glance', 'consolidation'])
+    expect(result.citations.length).toBeGreaterThan(0)
   })
 
-  it('does not re-read the whole source mirror on every poll', async () => {
-    const { fetcher } = backgroundProvider([
-      { id: 'resp_1', status: 'in_progress' }, { id: 'resp_1', status: 'in_progress' }, completed(guide()),
+  it('does not force a question bank through the section pipeline', async () => {
+    const { fetcher } = guideRun()
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher })
+    const rejected = await readJson(await edge.call({ ...startBody, specId: 'unit-question-bank-v1' }))
+    expect((rejected.error as { code?: string })?.code).toBe('invalid-request')
+  })
+})
+
+describe('the scheduler owns the build, not the browser', () => {
+  it('advances to completion with no client call after the start', async () => {
+    const { fetcher } = guideRun()
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
+    const started = await readJson(await edge.call(startBody))
+    // Nothing between these two lines is a browser. This is the whole point.
+    await edge.drainQueue()
+    expect(edge.jobs.rows.get(String(started.jobId))?.status).toBe('succeeded')
+  })
+
+  it('persists each stage before the next is scheduled', async () => {
+    const { fetcher } = guideRun()
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
+    const started = await readJson(await edge.call(startBody))
+
+    // One dispatch = one task. After inventory only, no section task exists yet.
+    await edge.call({ action: 'run-task' }, { 'x-generation-runner': 'runner-test-only' })
+    const job = edge.jobs.rows.get(String(started.jobId))!
+    expect(job.inventory).toBeTruthy()
+    expect(edge.tasks.rows.some((task) => task.stage === 'sections')).toBe(false)
+
+    await edge.call({ action: 'run-task' }, { 'x-generation-runner': 'runner-test-only' })
+    // The plan is persisted, and only now do its section tasks exist.
+    expect(edge.jobs.rows.get(String(started.jobId))?.outline).toBeTruthy()
+    expect(edge.tasks.rows.filter((task) => task.stage === 'sections')).toHaveLength(2)
+  })
+
+  it('resumes from the last completed stage after a worker dies mid-task', async () => {
+    const { fetcher } = guideRun()
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
+    const started = await readJson(await edge.call(startBody))
+    await edge.call({ action: 'run-task' }, { 'x-generation-runner': 'runner-test-only' })
+    await edge.call({ action: 'run-task' }, { 'x-generation-runner': 'runner-test-only' })
+
+    // A worker is retired holding a section task: its lease expires unreleased.
+    const claimed = edge.tasks.claim({ p_lease_seconds: 100 })!
+    expect(claimed.task.stage).toBe('sections')
+    const stalled = edge.tasks.rows.find((task) => task.id === claimed.task.id)!
+    stalled.lease_expires_at = Date.now() - 1
+
+    await edge.drainQueue()
+    // The finished stages were not redone, and the build still completed.
+    expect(edge.jobs.rows.get(String(started.jobId))?.status).toBe('succeeded')
+    expect(edge.tasks.rows.filter((task) => task.stage === 'inventory')[0].attempts).toBe(1)
+    expect(edge.tasks.rows.filter((task) => task.stage === 'outline')[0].attempts).toBe(1)
+  })
+
+  it('refuses an unauthenticated runner call', async () => {
+    const { fetcher } = guideRun()
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher })
+    const refused = await edge.call({ action: 'run-task' })
+    expect(refused.status).toBe(403)
+  })
+})
+
+describe('quality is preserved across the stage boundary', () => {
+  it('sends identical passage text once, but keeps every id citable and reports the repeat', async () => {
+    const repeated = [
+      ...passages,
+      { chunk_id: 'c4', file_id: 'slides', content: 'Encoding transforms incoming information into a form memory can store.' },
+    ]
+    const { fetcher, requests } = scriptedProvider([
+      { sections: [{ id: 'only', title: 'Only', purpose: '', sourceChunkIds: ['S1', 'S4'] }], unusedSources: [{ fileId: 'reading', reason: 'no distinct content' }] },
+      section('only', 'S4'),
     ])
-    const edge = bootStudyToolsEdge({ chunks: [chunk], fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
+    const edge = bootStudyToolsEdge({ chunks: repeated, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
+    await edge.call(startBody.chunkIds ? { ...startBody, chunkIds: repeated.map((entry) => entry.chunk_id) } : startBody)
+    await edge.drainQueue()
+
+    const planning = requests[0]
+    const occurrences = planning.split('Encoding transforms incoming information').length - 1
+    // Once in the passage payload; the repetition notice names the ids instead.
+    expect(occurrences).toBe(1)
+    expect(planning).toContain('Repeated passages')
+    // The duplicate is still a citable identity: the artifact cited S4.
+    const jobs = [...edge.jobs.rows.values()]
+    const citations = (jobs[0].result as { citations?: Array<{ chunkId: string }> })?.citations ?? []
+    expect(citations.some((citation) => citation.chunkId === 'c4')).toBe(true)
+  })
+
+  it('refuses a plan that leaves a selected source neither used nor explained', async () => {
+    const { fetcher } = scriptedProvider([
+      { sections: [{ id: 'only', title: 'Only', purpose: '', sourceChunkIds: ['S1'] }], unusedSources: [] },
+      { sections: [{ id: 'only', title: 'Only', purpose: '', sourceChunkIds: ['S1'] }], unusedSources: [] },
+    ])
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher })
     const started = await readJson(await edge.call(startBody))
-    await edge.call({ action: 'generate-step', jobId: started.jobId })
-    const afterSubmit = edge.sourceReads.count
+    await edge.drainQueue()
 
-    await edge.call({ action: 'generate-step', jobId: started.jobId })
-    await edge.call({ action: 'generate-step', jobId: started.jobId })
-    // A build polled for minutes must not spend its worker budget re-reading
-    // several hundred passages that have not changed.
-    expect(edge.sourceReads.count).toBe(afterSubmit)
-
-    const settled = await readJson(await edge.call({ action: 'generate-step', jobId: started.jobId }))
-    expect(settled.step).toBe('audit')
-    // Verifying a completed artifact does need them again.
-    expect(edge.sourceReads.count).toBeGreaterThan(afterSubmit)
+    const job = edge.jobs.rows.get(String(started.jobId))!
+    expect(job.status).toBe('failed')
+    expect(String(job.error?.code)).toBe('coverage-incomplete')
+    // Nothing was saved, so an entry the student already had is untouched.
+    expect(job.result).toBeNull()
   })
 
-  it('widens the polling interval instead of asking every three seconds forever', async () => {
-    const { fetcher } = backgroundProvider(Array.from({ length: 6 }, () => ({ id: 'resp_1', status: 'in_progress' })))
-    const edge = bootStudyToolsEdge({ chunks: [chunk], fetch: fetcher })
+  it('refuses a build whose material went missing rather than generating less', async () => {
+    const { fetcher } = guideRun()
+    const edge = bootStudyToolsEdge({ chunks: [passages[0]], fetch: fetcher })
+    const refused = await readJson(await edge.call({ ...startBody, chunkIds: ['c1', 'c2', 'c3'] }))
+    // Refused before a job is queued, so no quota and no provider call is spent.
+    expect((refused.error as { code?: string })?.code).toBe('source-sync-incomplete')
+    expect(edge.jobs.rows.size).toBe(0)
+  })
+})
+
+describe('repair is targeted, and paid work is bounded', () => {
+  it('rebuilds only the section verification flagged', async () => {
+    const { fetcher, requests } = scriptedProvider([
+      plan,
+      section('at-a-glance', 'S1'),
+      // A forged citation identity: this section alone must be rebuilt.
+      { section: { id: 'consolidation', title: 'Consolidation', blocks: [{ id: 'x', type: 'prose', provenance: 'source', text: { content: 'Unsupported.' }, sourceRef: { fileId: 'nope', chunkId: 'nope', start: 0, end: 1 } }] } },
+      section('consolidation', 'S3'),
+    ])
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
     const started = await readJson(await edge.call(startBody))
-    await edge.call({ action: 'generate-step', jobId: started.jobId })
+    await edge.drainQueue()
 
-    const waits: number[] = []
-    for (let poll = 0; poll < 5; poll += 1) {
-      const view = await readJson(await edge.call({ action: 'generate-step', jobId: started.jobId })) as { retryAfterMs?: number }
-      waits.push(view.retryAfterMs ?? 0)
-    }
-    expect(waits[0]).toBeLessThan(waits.at(-1)!)
-    expect(Math.max(...waits)).toBeLessThanOrEqual(15_000)
+    const repairs = edge.tasks.rows.filter((task) => task.stage === 'repair')
+    expect(repairs).toHaveLength(1)
+    expect(repairs[0].task_key).toBe('consolidation')
+    // The clean section was not regenerated: four provider calls, not five.
+    expect(requests).toHaveLength(4)
+    expect(edge.jobs.rows.get(String(started.jobId))?.status).toBe('succeeded')
   })
 
-  it('records nothing as a result when a build fails, so a saved entry is untouched', async () => {
-    const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) =>
-      (init?.method ?? 'GET') === 'POST'
-        ? new Response(JSON.stringify({ error: { code: 'insufficient_quota', message: 'quota' } }), { status: 429 })
-        : new Response('{}', { status: 200 })) as unknown as typeof fetch
-    const edge = bootStudyToolsEdge({ chunks: [chunk], fetch: fetcher })
+  it('stops after the attempt budget instead of paying indefinitely', async () => {
+    const bad = { section: { id: 'at-a-glance', title: 'x', blocks: [{ id: 'x', type: 'prose', provenance: 'source', text: { content: 'Unsupported.' }, sourceRef: { fileId: 'nope', chunkId: 'nope', start: 0, end: 1 } }] } }
+    const { fetcher, requests } = scriptedProvider([plan, bad, bad, bad, bad, bad, bad, bad, bad])
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
     const started = await readJson(await edge.call(startBody))
-    const failed = await readJson(await edge.call({ action: 'generate-step', jobId: started.jobId }))
+    await edge.drainQueue()
 
-    expect(failed.status).toBe('failed')
-    expect(failed.result).toBeUndefined()
-    expect(edge.jobs.rows.get(started.jobId)?.result).toBeNull()
-    // A rate-limited wallet never silently reaches for the capped OpenAI
-    // backup: that route activates only on an explicit insufficient balance.
-    expect(failed.error?.code).toBe('wallet-unavailable')
-    expect(failed.error?.providerStatus).toBe(429)
+    expect(edge.jobs.rows.get(String(started.jobId))?.status).toBe('failed')
+    for (const task of edge.tasks.rows) expect(task.attempts).toBeLessThanOrEqual(task.max_attempts)
+    expect(requests.length).toBeLessThanOrEqual(9)
   })
 
-  it('rejoins one build instead of starting a second when the same request arrives twice', async () => {
-    const { fetcher, calls } = backgroundProvider([])
-    const edge = bootStudyToolsEdge({ chunks: [chunk], fetch: fetcher })
-
-    const first = await readJson(await edge.call(startBody))
-    const second = await readJson(await edge.call(startBody)) as GenerationJobView & { rejoined?: boolean }
-
-    expect(second.jobId).toBe(first.jobId)
-    expect(second.rejoined).toBe(true)
-    expect(edge.jobs.rows.size).toBe(1)
-    expect(calls).toHaveLength(0)
-  })
-
-  it('reports the running job rather than paying twice when a second runner steps it', async () => {
-    const { fetcher } = backgroundProvider([{ id: 'resp_1', status: 'in_progress' }])
-    const edge = bootStudyToolsEdge({ chunks: [chunk], fetch: fetcher })
-    const started = await readJson(await edge.call(startBody))
-    await edge.call({ action: 'generate-step', jobId: started.jobId })
-
-    // Hold the lease, as a still-running worker would.
-    const row = edge.jobs.rows.get(started.jobId)!
-    row.lease_token = 'held'
-    row.lease_expires_at = Date.now() + 60_000
-
-    const blocked = await readJson(await edge.call({ action: 'generate-step', jobId: started.jobId })) as GenerationJobView & { busy?: boolean }
-    expect(blocked.busy).toBe(true)
-    expect(row.provider_attempts).toBe(1)
-  })
-
-  it('caps paid attempts: one rebuild after an unverifiable citation, then a real refusal', async () => {
-    const unverifiable = guide({ citationId: 'S9' })
-    const { fetcher } = backgroundProvider([completed(unverifiable), completed(unverifiable)])
-    const edge = bootStudyToolsEdge({ chunks: [chunk], fetch: fetcher })
-    const started = await readJson(await edge.call(startBody))
-
-    let latest: Awaited<ReturnType<typeof readJson>> | undefined
-    for (let step = 0; step < 8; step += 1) {
-      latest = await readJson(await edge.call({ action: 'generate-step', jobId: started.jobId }))
-      if (latest.status === 'failed' || latest.status === 'succeeded') break
-    }
-
-    expect(latest?.status).toBe('failed')
-    const row = edge.jobs.rows.get(started.jobId)!
-    expect(row.provider_attempts).toBe(2)
-    expect(String(row.error?.code)).toMatch(/citation-not-carried|provider-attempts-exhausted/)
-    // The rebuild carried the reason forward rather than repeating the request.
-    expect(String((row.payload as { repairRequest?: string }).repairRequest ?? '')).toContain('rejected by validation')
-  })
-
-  it('names a provider timeout as a timeout, with a status and request id and no credentials', async () => {
+  it('records an ambiguous timeout as possibly billed rather than assuming it never landed', async () => {
     const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
-      if ((init?.method ?? 'GET') === 'POST') return new Response(JSON.stringify({ id: 'resp_1', status: 'queued' }), { status: 200 })
-      return new Response(JSON.stringify({ error: { code: 'not_found', message: 'No such response' } }), {
-        status: 404, headers: { 'x-request-id': 'req_abc123' },
+      const signal = init?.signal
+      return await new Promise<Response>((_resolve, reject) => {
+        signal?.addEventListener('abort', () => reject(new Error('aborted')))
       })
     }) as unknown as typeof fetch
-    const edge = bootStudyToolsEdge({ chunks: [chunk], fetch: fetcher })
+    const edge = bootStudyToolsEdge({
+      chunks: passages, fetch: fetcher,
+      // Tighten every stage's provider ceiling so the deadline fires in-suite.
+      env: { GENERATION_STAGE_DEADLINE_MS: '60' },
+    })
     const started = await readJson(await edge.call(startBody))
-    await edge.call({ action: 'generate-step', jobId: started.jobId })
-    const lost = await readJson(await edge.call({ action: 'generate-step', jobId: started.jobId }))
+    await edge.drainQueue(6)
 
-    expect(lost.status).toBe('failed')
-    expect(lost.error?.code).toBe('provider-response-lost')
-    expect(JSON.stringify(lost)).toContain('req_abc123')
-    expect(JSON.stringify(lost)).not.toContain('test-only')
-    expect(JSON.stringify(lost)).not.toContain(chunk.content)
+    const outline = edge.tasks.rows.find((task) => task.stage === 'outline')
+    expect(outline?.ambiguous).toBe(true)
+    const job = edge.jobs.rows.get(String(started.jobId))!
+    expect(String(job.error?.code)).toBe('provider-timeout-ambiguous')
+    expect(String(job.error?.message)).toContain('may have been accepted')
+  })
+})
+
+describe('provider background capability is proved, never assumed', () => {
+  it('stays synchronous until a probe records both submit and retrieve', async () => {
+    const { fetcher, requests } = guideRun()
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
+    await edge.call(startBody)
+    await edge.drainQueue()
+    // No capability row exists, so nothing asked for background mode.
+    for (const request of requests) expect(request).not.toContain('"background":true')
   })
 
-  it('falls back to one bounded synchronous call when the route has no background mode', async () => {
-    let posts = 0
-    const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
-      if ((init?.method ?? 'GET') !== 'POST') throw new Error('unexpected poll')
-      posts += 1
-      return posts === 1
-        ? new Response(JSON.stringify({ error: { code: 'unknown_parameter', param: 'background', message: 'Unrecognized request argument supplied: background' } }), { status: 400 })
-        : new Response(JSON.stringify(completed(guide())), { status: 200 })
-    }) as unknown as typeof fetch
-    const edge = bootStudyToolsEdge({ chunks: [chunk], fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
-    const started = await readJson(await edge.call(startBody))
-
-    const fellBack = await readJson(await edge.call({ action: 'generate-step', jobId: started.jobId }))
-    expect(fellBack.step).toBe('sync')
-    // A capability answer must not be charged as a generation attempt.
-    expect(edge.jobs.rows.get(started.jobId)?.provider_attempts).toBe(0)
-
-    await edge.call({ action: 'generate-step', jobId: started.jobId })
-    const done = await readJson(await edge.call({ action: 'generate-step', jobId: started.jobId }))
-    expect(done.status).toBe('succeeded')
+  it('records a route that cannot retrieve as unusable, even when submit succeeds', async () => {
+    const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => (init?.method ?? 'GET') === 'POST'
+      ? new Response(JSON.stringify({ id: 'resp_1', status: 'queued' }), { status: 200 })
+      : new Response(JSON.stringify({ error: { message: 'not found' } }), { status: 404 })) as unknown as typeof fetch
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher })
+    const probe = await readJson(await edge.call({ action: 'probe-background' }))
+    expect(probe.backgroundSubmit).toBe(true)
+    expect(probe.backgroundRetrieve).toBe(false)
+    expect(probe.usable).toBe(false)
+    expect(edge.capabilities.get('wallet')?.background_retrieve).toBe(false)
   })
 
-  it('keeps a build readable after the page reloads, and the driver resumes it', async () => {
-    const { fetcher } = backgroundProvider([completed(guide())])
-    const edge = bootStudyToolsEdge({ chunks: [chunk], fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
-    const invoke = vi.fn(async (_name: string, options: { body: unknown }) => {
-      const response = await edge.call(options.body)
-      const body = await response.clone().json()
-      return response.ok ? { data: body, error: null } : { data: null, error: { context: response } }
-    })
-    const tools = createStudyToolsClient({ auth: { getSession: async () => ({ data: { session: {} } }) }, functions: { invoke } } as never)
+  it('records a route that does both as usable', async () => {
+    const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => (init?.method ?? 'GET') === 'POST'
+      ? new Response(JSON.stringify({ id: 'resp_1', status: 'queued' }), { status: 200 })
+      : new Response(JSON.stringify({ id: 'resp_1', status: 'completed', output_text: 'OK' }), { status: 200 })) as unknown as typeof fetch
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher })
+    const probe = await readJson(await edge.call({ action: 'probe-background' }))
+    expect(probe.usable).toBe(true)
+  })
+})
 
-    // First page: start the build, then "close the tab" mid-flight.
-    const started = await tools.startGeneration({ ...startBody, action: 'generate' })
-    expect(started.ok).toBe(true)
-    if (!started.ok) return
-    await tools.stepGeneration(started.data.jobId)
-
-    // Second page load: the same resume key finds the same job and finishes it.
-    const store = generationJobStore('study-guide-v1:reload')
-    store.write(started.data.jobId)
-    const resumed = await tools.generateDurable({ ...startBody, action: 'generate' }, {
-      resumeKey: 'study-guide-v1:reload', sleep: async () => {},
-    })
-
-    expect(resumed.ok).toBe(true)
-    expect(edge.jobs.rows.size).toBe(1)
-    expect(store.read()).toBeNull()
+describe('measured headroom', () => {
+  it('records every task duration, and none approaches the worker lifetime', async () => {
+    const { fetcher } = guideRun()
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
+    await edge.call(startBody)
+    await edge.drainQueue()
+    for (const task of edge.tasks.rows) {
+      expect(task.duration_ms).not.toBeNull()
+      expect(task.duration_ms!).toBeLessThan(130_000)
+    }
   })
 })

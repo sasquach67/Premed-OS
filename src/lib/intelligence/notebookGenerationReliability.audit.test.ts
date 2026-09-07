@@ -25,11 +25,12 @@ describe('Notebook generation reliability: source versus output failure', () => 
 it('restores an incomplete server mirror once, then uses the exact selected source boundary', async () => {
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   let starts = 0
-  const job = { jobId: '11111111-1111-4111-8111-111111111111', status: 'queued', step: 'submit', phase: 'Preparing', providerAttempts: 0, pollCount: 0, updatedAt: '' }
+  const job = { jobId: '11111111-1111-4111-8111-111111111111', status: 'queued', stage: 'inventory', phase: 'Checking your material', updatedAt: '' }
   const invoke = vi.fn(async (_name: string, options: { body: { action: string } }) => {
     if (options.body.action === 'sync-sources') return { data: { synced: 1 }, error: null }
-    if (options.body.action === 'generate-step') {
-      return { data: { ...job, status: 'succeeded', step: 'done', phase: 'Finished', result: { artifact: {}, citations: [], auditStatus: 'skipped' } }, error: null }
+    if (options.body.action === 'run-task') return { data: { ran: true }, error: null }
+    if (options.body.action === 'generate-status') {
+      return { data: { ...job, status: 'succeeded', stage: 'done', phase: 'Finished', result: { artifact: {}, citations: [], auditStatus: 'skipped' } }, error: null }
     }
     starts++
     return starts === 1

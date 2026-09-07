@@ -70,9 +70,11 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
   const [reviewing, setReviewing] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
   const [phase, setPhase] = useState<'page' | 'guide' | 'mastery' | 'saving' | null>(null)
-  // What the server says this build is doing right now. A generation that runs
-  // for minutes must not look like a frozen spinner.
+  // What the server says this build is doing right now, as one continuous
+  // reading. A generation that runs for minutes must not look like a frozen
+  // spinner, and the student should never have to click to keep it moving.
   const [detail, setDetail] = useState('')
+  const [fraction, setFraction] = useState(0)
   const [resumed, setResumed] = useState(false)
   const [error, setError] = useState('')
   const draft = data.lectures.find(item => item.id === draftId) ?? entry
@@ -132,9 +134,11 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
     const pending = pendingBuildStore(draftId)
     const started = pending.read()
     pending.write({ phase: 'Preparing', startedAt: started?.startedAt ?? Date.now(), resumes: (started?.resumes ?? 0) + (options.resuming ? 1 : 0) })
-    const onProgress = (job: { phase: string }) => {
+    const onProgress = (job: { phase: string; progress?: number; stageDone?: number; stageTotal?: number }) => {
       if (!isCurrentAttempt()) return
-      setDetail(job.phase)
+      const counted = (job.stageTotal ?? 0) > 1 ? ` — ${Math.min((job.stageDone ?? 0) + 1, job.stageTotal!)} of ${job.stageTotal}` : ''
+      setDetail(`${job.phase}${counted}`)
+      setFraction(job.progress ?? 0)
       const current = pending.read()
       if (current) pending.write({ ...current, phase: job.phase })
     }
@@ -147,6 +151,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
       if (!isCurrentAttempt()) return
       if (!guide.ok || !guide.artifact) { setError(guide.message ?? 'The page could not be created. Your materials and any previous result are still saved.'); return }
       setDetail('')
+      setFraction(1)
       setPhase('saving')
       const generatedGuide = guide.artifact
       const usedIds = new Set(generatedGuide.sections.flatMap(section => section.blocks.flatMap(block => block.sourceRef ? [block.sourceRef.chunkId] : [])))
@@ -227,6 +232,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
       }
       setPhase(null)
       setDetail('')
+      setFraction(0)
     }
   }
 
@@ -334,7 +340,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
       </>}
       {!choosingGoal && sourceProblem && <p role="status" className="text-sm text-muted-foreground">{sourceProblem}</p>}
       {error && <p role="alert" className="rounded-xl border border-destructive/30 p-3 text-sm text-destructive">{error}</p>}
-      {phase && <NotebookBuildProgress phase={phase} detail={detail} resumed={resumed} tailored={tailored} output={chosenGoal.output}/>}
+      {phase && <NotebookBuildProgress phase={phase} detail={detail} fraction={fraction} resumed={resumed} tailored={tailored} output={chosenGoal.output}/>}
       <footer className="flex flex-wrap items-center justify-between gap-3 pt-2">
         {!choosingGoal ? <Button variant="outline" disabled={Boolean(phase)} onClick={() => goToStep(reviewing ? 1 : 0)}><ArrowLeft className="size-4"/>{reviewing ? 'Back to materials' : 'Back to goal'}</Button> : <p className="text-xs text-muted-foreground">{draft ? 'Draft saved' : ''}</p>}
         <Button className="ml-auto" disabled={Boolean(phase) || (!choosingGoal && Boolean(sourceProblem))} onClick={choosingGoal ? () => goToStep(1) : reviewing ? () => void build() : () => goToStep(2)}>{!choosingGoal && reviewing ? <Sparkles className="size-4"/> : <ArrowRight className="size-4"/>}{choosingGoal ? 'Continue to materials' : phase ? 'Creating…' : reviewing ? 'Create entry' : 'Review and create'}</Button>
@@ -343,7 +349,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
   </section>
 }
 
-function NotebookBuildProgress({ phase, detail, resumed, tailored, output }: { phase: 'page' | 'guide' | 'mastery' | 'saving'; detail?: string; resumed?: boolean; tailored: boolean; output: string }) {
+function NotebookBuildProgress({ phase, detail, fraction, resumed, tailored, output }: { phase: 'page' | 'guide' | 'mastery' | 'saving'; detail?: string; fraction?: number; resumed?: boolean; tailored: boolean; output: string }) {
   const [elapsed, setElapsed] = useState(0)
   useEffect(() => {
     const start = Date.now()
@@ -357,11 +363,16 @@ function NotebookBuildProgress({ phase, detail, resumed, tailored, output }: { p
     <ol className="mt-4 flex flex-wrap gap-x-6 gap-y-3 text-sm">{steps.map((label, index) => <li key={label} aria-current={index === current ? 'step' : undefined} className={cn('flex items-center gap-2', index > current ? 'text-muted-foreground' : 'text-primary')}>
       {index < current ? <Check aria-hidden="true" className="size-4"/> : index === current ? <Loader2 aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none"/> : <span aria-hidden="true" className="size-3 rounded-full border border-border"/>}<span>{label}<span className="sr-only">{index < current ? ': complete' : index === current ? ': in progress' : ': waiting'}</span></span>
     </li>)}</ol>
-    {detail && <p className="mt-3 text-xs text-muted-foreground">{detail}</p>}
+    {detail && <>
+      <p className="mt-4 text-xs font-semibold text-muted-foreground">{detail}</p>
+      <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round((fraction ?? 0) * 100)} aria-label={detail} className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        <div className="h-full rounded-full bg-primary transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${Math.max(2, Math.round((fraction ?? 0) * 100))}%` }}/>
+      </div>
+    </>}
     <p className="mt-3 text-xs text-muted-foreground">
       {resumed
         ? 'Picking up the build this entry already started. Nothing is generated twice.'
-        : 'A full build can take a few minutes. You can leave this page — the build is saved on the server, and reopening this entry picks it back up.'}
+        : 'A full build can take a few minutes and runs on the server. You can close this page — it keeps going, and reopening this entry shows where it got to.'}
     </p>
   </section>
 }

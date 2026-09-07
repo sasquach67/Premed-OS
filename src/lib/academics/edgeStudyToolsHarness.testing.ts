@@ -15,6 +15,8 @@ import { readFileSync } from 'node:fs'
 import ts from 'typescript'
 import * as astraWalletRoute from '../../../supabase/functions/_shared/astraWalletRoute'
 import * as generationJobs from '../../../supabase/functions/_shared/generationJobs'
+import * as generationStages from '../../../supabase/functions/_shared/generationStages'
+import * as sourceInventory from '../../../supabase/functions/_shared/sourceInventory'
 import * as responseBoundary from '../../../supabase/functions/_shared/openAIGenerationResponse'
 import * as citationWire from '../../../supabase/functions/_shared/openAICitationWire'
 import * as grounding from '../../../supabase/functions/_shared/openAIGenerationGrounding'
@@ -35,6 +37,12 @@ export type JobRow = {
   lease_token: string | null
   lease_expires_at: number | null
   quota_reservation_cents: number
+  spec_id: string | null
+  stage: string
+  inventory: Record<string, unknown> | null
+  outline: Record<string, unknown> | null
+  verification: Record<string, unknown> | null
+  progress: number
   result: Record<string, unknown> | null
   error: Record<string, unknown> | null
   updated_at: string
@@ -71,6 +79,7 @@ export function createJobStore(now: () => number = Date.now) {
         provider_response_id: null, backup_reservation_id: null, provider_attempts: 0, poll_count: 0,
         lease_token: null, lease_expires_at: null,
         quota_reservation_cents: Number(args.p_reservation_cents ?? 0), result: null, error: null,
+        spec_id: null, stage: 'inventory', inventory: null, outline: null, verification: null, progress: 0,
         updated_at: new Date(now()).toISOString(), expires_at: now() + 24 * 60 * 60 * 1000,
       }
       rows.set(row.id, row)
@@ -110,6 +119,148 @@ export function createJobStore(now: () => number = Date.now) {
   }
 }
 
+export type TaskRow = {
+  id: string
+  job_id: string
+  stage: string
+  ordinal: number
+  task_key: string
+  status: 'pending' | 'running' | 'done' | 'failed' | 'skipped'
+  label: string
+  input: Record<string, unknown>
+  output: Record<string, unknown> | null
+  attempts: number
+  max_attempts: number
+  provider_route: string | null
+  provider_request_id: string | null
+  provider_response_id: string | null
+  backup_reservation_id: string | null
+  idempotency_key: string
+  ambiguous: boolean
+  lease_token: string | null
+  lease_expires_at: number | null
+  duration_ms: number | null
+  error: Record<string, unknown> | null
+  created_at: number
+}
+
+/**
+ * The task queue, with the migration's actual rules: a task is claimable only
+ * when its stage is the job's current stage, its attempts are not spent, and no
+ * unexpired lease is held; writes require the lease token; fan-out is idempotent
+ * by (job, stage, task_key).
+ */
+export function createTaskStore(jobs: ReturnType<typeof createJobStore>, now: () => number = Date.now) {
+  const rows: TaskRow[] = []
+  let sequence = 0
+  const uuid = (prefix: string) => {
+    sequence += 1
+    return `${prefix}-0000-4000-8000-${String(sequence).padStart(12, '0')}`
+  }
+
+  return {
+    rows,
+    add(args: Record<string, unknown>) {
+      const incoming = (args.p_tasks as Array<Record<string, unknown>>) ?? []
+      let added = 0
+      for (const entry of incoming) {
+        const key = String(entry.taskKey)
+        const stage = String(args.p_stage)
+        const jobId = String(args.p_job_id)
+        if (rows.some((row) => row.job_id === jobId && row.stage === stage && row.task_key === key)) continue
+        rows.push({
+          id: uuid('7a5c0000'), job_id: jobId, stage, ordinal: Number(entry.ordinal ?? 0), task_key: key,
+          status: 'pending', label: String(entry.label ?? ''), input: (entry.input as Record<string, unknown>) ?? {},
+          output: null, attempts: 0, max_attempts: Number(entry.maxAttempts ?? 2), provider_route: null,
+          provider_request_id: null, provider_response_id: null, backup_reservation_id: null, idempotency_key: uuid('1de00000'),
+          ambiguous: false, lease_token: null, lease_expires_at: null, duration_ms: null, error: null,
+          created_at: now(),
+        })
+        added += 1
+      }
+      return added
+    },
+    claim(args: Record<string, unknown>) {
+      const candidates = rows.filter((row) => {
+        const job = jobs.rows.get(row.job_id)
+        if (!job || !['queued', 'running'].includes(job.status)) return false
+        if (args.p_job_id != null && row.job_id !== String(args.p_job_id)) return false
+        if (args.p_user_id != null && job.user_id !== String(args.p_user_id)) return false
+        if (job.expires_at <= now()) return false
+        if (row.stage !== job.stage) return false
+        if (!['pending', 'running'].includes(row.status)) return false
+        if (row.attempts >= row.max_attempts) return false
+        return row.lease_expires_at === null || row.lease_expires_at < now()
+      }).sort((left, right) => left.ordinal - right.ordinal || left.created_at - right.created_at)
+      const task = candidates[0]
+      if (!task) return null
+      task.status = 'running'
+      task.lease_token = uuid('1ea50000')
+      task.lease_expires_at = now() + Number(args.p_lease_seconds ?? 100) * 1000
+      task.attempts += 1
+      const job = jobs.rows.get(task.job_id)!
+      if (job.status === 'queued') job.status = 'running'
+      return { task: { ...task }, job: { ...job } }
+    },
+    complete(args: Record<string, unknown>) {
+      const task = rows.find((row) => row.id === String(args.p_task_id))
+      if (!task || task.lease_token !== String(args.p_lease_token)) return null
+      const status = String(args.p_status) as TaskRow['status']
+      task.status = status
+      if (args.p_output != null) task.output = args.p_output as Record<string, unknown>
+      if (args.p_error != null) task.error = args.p_error as Record<string, unknown>
+      if (args.p_duration_ms != null) task.duration_ms = Number(args.p_duration_ms)
+      if (args.p_provider_route != null) task.provider_route = String(args.p_provider_route)
+      if (args.p_provider_request_id != null) task.provider_request_id = String(args.p_provider_request_id)
+      if (args.p_provider_response_id != null) task.provider_response_id = String(args.p_provider_response_id)
+      if (args.p_clear_backup_reservation === true) task.backup_reservation_id = null
+      else if (args.p_backup_reservation_id != null) task.backup_reservation_id = String(args.p_backup_reservation_id)
+      if (args.p_ambiguous != null) task.ambiguous = args.p_ambiguous === true
+      task.lease_token = null
+      task.lease_expires_at = null
+      if (status === 'failed') {
+        if (task.attempts < task.max_attempts) task.status = 'pending'
+        else {
+          const job = jobs.rows.get(task.job_id)
+          if (job) {
+            job.status = 'failed'
+            job.stage = 'done'
+            job.phase = 'Stopped'
+            job.error = task.error ?? { code: 'stage-failed', message: 'A generation stage could not be completed. Nothing was saved.' }
+          }
+        }
+      }
+      return { ...task }
+    },
+    advance(args: Record<string, unknown>) {
+      const jobId = String(args.p_job_id)
+      const job = jobs.rows.get(jobId)
+      if (!job) return null
+      const open = rows.filter((row) => row.job_id === jobId && row.stage === job.stage && !['done', 'skipped'].includes(row.status))
+      if (open.length) return null
+      if (!['queued', 'running'].includes(job.status)) return null
+      job.stage = String(args.p_next_stage)
+      if (args.p_progress != null) job.progress = Number(args.p_progress)
+      return { ...job }
+    },
+    view(args: Record<string, unknown>) {
+      const job = jobs.rows.get(String(args.p_job_id))
+      if (!job) return null
+      const mine = rows.filter((row) => row.job_id === job.id)
+      const stageTasks = mine.filter((row) => row.stage === job.stage)
+      return {
+        job: { ...job },
+        stageDone: stageTasks.filter((row) => ['done', 'skipped'].includes(row.status)).length,
+        stageTotal: stageTasks.length,
+        tasks: mine.map((row) => ({
+          stage: row.stage, ordinal: row.ordinal, label: row.label, status: row.status,
+          attempts: row.attempts, durationMs: row.duration_ms, ambiguous: row.ambiguous,
+        })),
+      }
+    },
+  }
+}
+
 export interface EdgeHarnessOptions {
   chunks: Array<{ chunk_id: string; file_id: string; content: string; character_start?: number; character_end?: number }>
   fetch: typeof fetch
@@ -126,6 +277,8 @@ export interface EdgeHarnessOptions {
 export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
   const now = options.now ?? Date.now
   const jobs = createJobStore(now)
+  const tasks = createTaskStore(jobs, now)
+  const capabilities = new Map<string, Record<string, unknown>>()
   const chunkRows = options.chunks.map((chunk) => ({
     chunk_id: chunk.chunk_id, file_id: chunk.file_id, content: chunk.content,
     character_start: chunk.character_start ?? 0, character_end: chunk.character_end ?? chunk.content.length,
@@ -134,17 +287,52 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
   const sourceReads = { count: 0 }
   const jobQuery = (table: string) => {
     let id = ''
+    let jobId = ''
+    let route = ''
+    let pendingUpdate: Record<string, unknown> | null = null
     const builder = {
       select() { return builder },
       in() { return builder },
-      eq(column: string, value: string) { if (column === 'id') id = value; return builder },
+      order() { return builder },
+      eq(column: string, value: string) {
+        if (column === 'id') id = value
+        if (column === 'job_id') jobId = value
+        if (column === 'route') route = value
+        if (pendingUpdate && table === 'study_generation_jobs') {
+          const row = jobs.rows.get(value)
+          if (row) Object.assign(row, pendingUpdate)
+          pendingUpdate = null
+        }
+        if (pendingUpdate && table === 'study_generation_tasks') {
+          const row = tasks.rows.find((entry) => entry.id === value)
+          if (row) Object.assign(row, pendingUpdate)
+          pendingUpdate = null
+        }
+        return builder
+      },
+      update(values: Record<string, unknown>) { pendingUpdate = values; return builder },
       async limit() { sourceReads.count += 1; return { data: chunkRows, error: null } },
       async maybeSingle() {
-        const row = table === 'study_generation_jobs' ? jobs.rows.get(id) : null
-        return { data: row ? { ...row } : null, error: null }
+        if (table === 'study_generation_jobs') {
+          const row = jobs.rows.get(id)
+          return { data: row ? { ...row } : null, error: null }
+        }
+        if (table === 'generation_provider_capabilities') {
+          return { data: capabilities.get(route) ?? null, error: null }
+        }
+        return { data: null, error: null }
       },
-      async upsert() { return { error: null } },
+      async upsert(values: Record<string, unknown>) {
+        if (table === 'generation_provider_capabilities') capabilities.set(String(values.route), values)
+        return { error: null }
+      },
       async delete() { return { error: null } },
+      then(resolve: (value: { data: unknown; error: null }) => unknown) {
+        const data = table === 'study_generation_tasks'
+          ? tasks.rows.filter((row) => row.job_id === jobId).map((row) => ({ ...row }))
+          : []
+        return Promise.resolve({ data, error: null }).then(resolve)
+      },
     }
     return builder
   }
@@ -156,6 +344,11 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
       if (name === 'start_generation_job') return { data: jobs.start(args), error: null }
       if (name === 'lease_generation_job') return { data: jobs.lease(args), error: null }
       if (name === 'update_generation_job') return { data: jobs.update(args), error: null }
+      if (name === 'add_generation_tasks') return { data: tasks.add(args), error: null }
+      if (name === 'claim_generation_task') return { data: tasks.claim(args), error: null }
+      if (name === 'complete_generation_task') return { data: tasks.complete(args), error: null }
+      if (name === 'advance_generation_stage') return { data: tasks.advance(args), error: null }
+      if (name === 'generation_job_view') return { data: tasks.view(args), error: null }
       if (name === 'reserve_astra_backup') return { data: 'reservation-1', error: null }
       if (name === 'settle_astra_backup') return { data: null, error: null }
       if (name === 'release_ai_reservation') return { data: null, error: null }
@@ -169,6 +362,7 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
     // Production shape: Cheaper Inference is the primary route, and the direct
     // OpenAI credential exists only for the capped empty-wallet backup.
     CHEAPER_INFERENCE_API_KEY: 'wallet-test-only',
+    GENERATION_RUNNER_SECRET: 'runner-test-only',
     ...options.env,
   }
 
@@ -176,6 +370,8 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText
   const requireStub = (id: string) => id.startsWith('npm:') ? { createClient: () => client }
+    : id.includes('generationStages') ? generationStages
+    : id.includes('sourceInventory') ? sourceInventory
     : id.includes('generationJobs') ? generationJobs
     : id.includes('astraWalletRoute') ? astraWalletRoute
     : id.includes('openAIGenerationResponse') ? responseBoundary
@@ -188,12 +384,28 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
 
   return {
     jobs,
+    tasks,
+    capabilities,
     /** How many times the caller's source mirror was actually read. */
     sourceReads,
-    async call(body: unknown) {
+    async call(body: unknown, headers: Record<string, string> = {}) {
       return handler(new Request('https://local.invalid/study-tools', {
-        method: 'POST', headers: { Authorization: 'Bearer test-only' }, body: JSON.stringify(body),
+        method: 'POST',
+        headers: { Authorization: 'Bearer test-only', ...headers },
+        body: JSON.stringify(body),
       }))
+    },
+    /**
+     * Stand in for pg_cron: keep dispatching `run-task` until the build settles.
+     * The browser is deliberately not involved, exactly as in production.
+     */
+    async drainQueue(limit = 60) {
+      for (let tick = 0; tick < limit; tick += 1) {
+        const response = await this.call({ action: 'run-task' }, { 'x-generation-runner': 'runner-test-only' })
+        const body = await response.json().catch(() => null)
+        if (!body?.ran) return tick
+      }
+      return limit
     },
   }
 }

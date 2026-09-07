@@ -1,3 +1,5 @@
+> **Superseded by `task-staged-generation-2026-09-07.md`.** Its diagnosis over-claimed: the 141-second Cheaper Inference failures do not by themselves prove a client disconnect, and `EarlyDrop` normally indicates completed work rather than a killed socket. The confirmed 150-second `WallClockTime` shutdown stands. The synchronous fallback described below was an oversized request relabelled as a stage and has been removed.
+
 # Durable study generation — September 7, 2026
 
 ## Confirmed failure

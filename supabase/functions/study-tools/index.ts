@@ -18,10 +18,25 @@ import {
   openAIGenerationSourceRefRequired,
 } from '../_shared/openAIGenerationGrounding.ts'
 import {
+  assertSourceReadiness,
+  buildSourceInventory,
+  coverageBriefing,
+  deduplicatedSources,
+  repetitionNotice,
+  SourceReadinessError,
+  type SourceInventory,
+} from '../_shared/sourceInventory.ts'
+import {
+  firstStage,
+  nextStage,
+  pipelineProgress,
+  stageSpec,
+  type StageId,
+  type StageSpec,
+} from '../_shared/generationStages.ts'
+import {
   canRunStep,
   leaseJob,
-  MAX_POLLS,
-  MAX_PROVIDER_ATTEMPTS,
   publicJob,
   remainingWorkerMs,
   startJob,
@@ -143,28 +158,45 @@ Deno.serve(async (request) => {
   }
 
   const budget = workerBudget((key) => Deno.env.get(key))
-  const stepClients: StepClients = { client, service: serviceClient }
 
   /**
-   * Durable generation, read and advance. Neither action touches a provider for
-   * longer than this worker can survive, so neither can be lost to a
-   * WallClockTime kill or an EarlyDrop retirement.
+   * Read one build. Owner-scoped through RLS, and it exposes stage counts so
+   * the composer can show one continuous reading rather than a spinner.
    */
-  if (body.action === 'generate-status' || body.action === 'generate-step') {
-    if (!isText(body.jobId) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.jobId)) {
-      return failure(400, 'invalid-request', 'A build id is required.')
+  if (body.action === 'generate-status') {
+    if (!isText(body.jobId) || !UUID.test(body.jobId)) return failure(400, 'invalid-request', 'A build id is required.')
+    const { data, error } = await client.rpc('generation_job_view', { p_job_id: body.jobId })
+    if (error) return failure(503, 'job-read-failed', 'This build’s status could not be read. Nothing saved was changed.')
+    if (!isRecord(data) || !isRecord(data.job)) return failure(404, 'job-not-found', 'This build is no longer available. Nothing saved was changed.')
+    return json(jobView(data))
+  }
+
+  /**
+   * Advance the queue by one task.
+   *
+   * pg_cron calls this on a schedule, which is what makes a build independent
+   * of the browser. The signed-in owner may also call it to start their own
+   * build immediately instead of waiting for the next tick; the lease means an
+   * eager nudge and a scheduled tick can never run the same task twice.
+   */
+  if (body.action === 'run-task') {
+    const runnerSecret = Deno.env.get('GENERATION_RUNNER_SECRET')
+    const presented = request.headers.get('x-generation-runner')
+    const scheduled = Boolean(runnerSecret && presented && timingSafeEqual(runnerSecret, presented))
+    if (!scheduled && !isText(body.jobId)) {
+      return failure(403, 'runner-forbidden', 'This endpoint is driven by the scheduler.')
     }
-    if (body.action === 'generate-status') {
-      const { data, error } = await client
-        .from('study_generation_jobs')
-        .select('*')
-        .eq('id', body.jobId)
-        .maybeSingle()
-      if (error) return failure(503, 'job-read-failed', 'This build’s status could not be read. Nothing saved was changed.')
-      if (!data) return failure(404, 'job-not-found', 'This build is no longer available. Nothing saved was changed.')
-      return json(publicJob(data as GenerationJob))
-    }
-    return runGenerationStep(stepClients, userData.user.id, body.jobId, budget)
+    // A nudge is scoped to the caller's own build; the scheduler is not.
+    return runOneTask(client, serviceClient, budget, scheduled ? null : { jobId: body.jobId as string, userId: userData.user.id })
+  }
+
+  /**
+   * Prove background submission AND retrieval against the live route. Owner
+   * initiated, and the only thing that may switch the engine into background
+   * mode — documentation and tests do not qualify.
+   */
+  if (body.action === 'probe-background') {
+    return probeBackgroundCapability(serviceClient, budget)
   }
 
   if (body.action === 'sync-sources') {
@@ -400,7 +432,17 @@ Deno.serve(async (request) => {
       if (startQuota.error) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
       return quotaFailure(startQuota)
     }
-    return json({ ...publicJob(started.job), phase: JOB_PHASES.submit, retryAfterMs: 0 })
+    // Seed stage one, then let the scheduler take it from here.
+    const opening = firstStage(payload.specId)
+    await serviceClient.rpc('add_generation_tasks', {
+      p_job_id: started.job.id,
+      p_stage: opening,
+      p_tasks: tasksForStage(payload.specId, opening, { ...started.job, outline: null } as unknown as JobRow, null),
+    })
+    await serviceClient.from('study_generation_jobs')
+      .update({ spec_id: payload.specId, stage: opening, phase: stageSpec(payload.specId, opening)?.label ?? 'Preparing' })
+      .eq('id', started.job.id)
+    return json({ ...publicJob(started.job), stage: opening, phase: stageSpec(payload.specId, opening)?.label ?? 'Preparing' })
   }
 
   const quota = await claimAIRequest(
@@ -920,11 +962,12 @@ function openAIOutputText(payload: Record<string, unknown>): string {
  * direct-OpenAI backup still activates only on an explicit insufficient-balance
  * 402 — the durable path reuses this policy rather than restating it.
  */
-function astraRouteConfig(openAIKey: string, signal?: AbortSignal): AstraRouteConfig {
+function astraRouteConfig(openAIKey: string, signal?: AbortSignal, idempotencyKey?: string): AstraRouteConfig {
   return {
     openAIKey,
     walletKey: Deno.env.get('CHEAPER_INFERENCE_API_KEY'),
     signal,
+    idempotencyKey,
     ledger: {
       async reserve(cents) {
         const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
@@ -941,8 +984,8 @@ function astraRouteConfig(openAIKey: string, signal?: AbortSignal): AstraRouteCo
   }
 }
 
-async function routeAstraResponse(payload: Record<string, unknown>, openAIKey: string, signal?: AbortSignal) {
-  return postAstraResponse(payload, astraRouteConfig(openAIKey, signal), fetch)
+async function routeAstraResponse(payload: Record<string, unknown>, openAIKey: string, signal?: AbortSignal, idempotencyKey?: string) {
+  return postAstraResponse(payload, astraRouteConfig(openAIKey, signal, idempotencyKey), fetch)
 }
 
 /**
@@ -1447,13 +1490,17 @@ function failure(status: number, code: string, message: string, details: Record<
   return json({ error: { code, message, ...details } }, status)
 }
 
+
 /* ------------------------------------------------------------------------- *
- * Durable generation engine
+ * Task-based generation engine
  *
- * One Edge invocation = one bounded step. The job row carries everything a
- * later step needs, so a retired worker costs at most the step in flight and
- * never the build. `generate-start` records the job and returns in about a
- * second; `generate-step` advances it; `generate-status` reads it.
+ * One Edge invocation runs exactly ONE task. pg_cron dispatches the next one
+ * through pg_net, so a build advances whether or not a browser is open, and a
+ * worker's lifetime is never asked to cover more than a single piece of work.
+ *
+ * Tasks are pieces of the ARTIFACT — a plan, one section, the audit — chosen so
+ * that no request is oversized in the first place. Nothing here divides the
+ * student's material into batches, and nothing shortens it to fit a clock.
  * ------------------------------------------------------------------------- */
 
 type JobPayload = {
@@ -1464,38 +1511,96 @@ type JobPayload = {
   specHash: string
   systemPrompt: string
   request: string
-  /** Artifact-specific correction guidance supplied by the caller: only it
-   *  knows this artifact's own shape requirements. Used by the one bounded
-   *  rebuild below, so a rejected Mastery Map is told what a Mastery Map needs
-   *  rather than a generic note about citations. */
   repairGuidance?: string
-  /** Set only after a validation rejection, so the rebuild is a bounded replay. */
-  repairRequest?: string
 }
 
-const JOB_PHASES = {
-  submit: 'Sending your material to the generator',
-  sync: 'Generating from your material',
-  poll: 'Generating from your material',
-  audit: 'Independent source review',
-  done: 'Finished',
-} as const
+type TaskRow = {
+  id: string
+  job_id: string
+  stage: StageId
+  ordinal: number
+  task_key: string
+  status: string
+  label: string
+  input: Record<string, unknown>
+  output: Record<string, unknown> | null
+  attempts: number
+  max_attempts: number
+  provider_route: string | null
+  provider_request_id: string | null
+  provider_response_id: string | null
+  backup_reservation_id: string | null
+  idempotency_key: string
+  ambiguous: boolean
+  lease_token: string
+  duration_ms: number | null
+}
 
-/** How much of a worker's remaining life each step needs before it is safe to
- *  begin. Starting a step that cannot finish burns a paid call for nothing. */
-const STEP_BUDGET_MS = { submit: 30_000, poll: 25_000, audit: 45_000, sync: 100_000 } as const
+type JobRow = GenerationJob & {
+  spec_id: string | null
+  stage: StageId
+  inventory: Record<string, unknown> | null
+  outline: Record<string, unknown> | null
+  verification: Record<string, unknown> | null
+  progress: number
+}
+
+/** A stage result: what to persist, and whether the task is finished. */
+type TaskOutcome =
+  | { kind: 'done'; output?: Record<string, unknown>; providerResponseId?: string; providerRoute?: string; providerRequestId?: string; backupReservationId?: string; clearBackupReservation?: boolean }
+  | { kind: 'pending'; output?: Record<string, unknown>; providerResponseId?: string; providerRoute?: string; providerRequestId?: string; backupReservationId?: string }
+  | { kind: 'failed'; error: JobErrorDetail; ambiguous?: boolean; providerRequestId?: string }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Constant-time compare so the runner secret cannot be probed a byte at a time. */
+function timingSafeEqual(expected: string, presented: string) {
+  const left = new TextEncoder().encode(expected)
+  const right = new TextEncoder().encode(presented)
+  let diff = left.length ^ right.length
+  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+    diff |= (left[index] ?? 0) ^ (right[index] ?? 0)
+  }
+  return diff === 0
+}
 
 /**
- * How long to wait before the next poll. It widens with the wait so a build
- * that genuinely takes minutes costs a handful of invocations rather than one
- * every three seconds — the provider is not answering faster for being asked
- * more often.
+ * One build, as the composer sees it: a single continuous progress reading, the
+ * current stage's label, and per-task state so "writing section 4 of 9" is
+ * honest rather than a guess. Never the payload, the lease, or an unaudited
+ * artifact — a result is released only once the job has succeeded.
  */
-function pollBackoffMs(pollCount: number) {
-  return Math.min(3_000 + pollCount * 1_500, 15_000)
+function jobView(view: Record<string, unknown>) {
+  const job = view.job as JobRow
+  const done = Number(view.stageDone ?? 0)
+  const total = Number(view.stageTotal ?? 0)
+  const specId = job.spec_id ?? (isRecord(job.payload) && isText(job.payload.specId) ? job.payload.specId : 'study-guide-v1')
+  return {
+    jobId: job.id,
+    status: job.status,
+    stage: job.stage,
+    phase: job.phase,
+    stageDone: done,
+    stageTotal: total,
+    progress: job.status === 'succeeded' ? 1 : Math.max(job.progress ?? 0, pipelineProgress(specId, job.stage, done, total)),
+    updatedAt: job.updated_at,
+    tasks: Array.isArray(view.tasks) ? view.tasks : [],
+    ...(job.status === 'succeeded' && job.result ? { result: job.result } : {}),
+    ...(job.status === 'failed' && job.error ? { error: job.error } : {}),
+  }
 }
 
-function jobPayload(value: unknown): JobPayload | null {
+function jobError(code: string, message: string, detail: { providerStatus?: number; requestId?: string; issues?: string[] } = {}): JobErrorDetail {
+  return {
+    code,
+    message,
+    ...(Number.isInteger(detail.providerStatus) ? { providerStatus: detail.providerStatus } : {}),
+    ...(detail.requestId ? { requestId: detail.requestId } : {}),
+    ...(detail.issues?.length ? { issues: detail.issues } : {}),
+  }
+}
+
+function taskPayload(value: unknown): JobPayload | null {
   if (!isRecord(value)) return null
   const ids = Array.isArray(value.chunkIds) && value.chunkIds.every(isText) ? value.chunkIds as string[] : null
   if (!ids?.length || !isText(value.courseId) || !isText(value.topicId) || !isText(value.specId)
@@ -1509,15 +1614,9 @@ function jobPayload(value: unknown): JobPayload | null {
     systemPrompt: value.systemPrompt,
     request: value.request,
     repairGuidance: isText(value.repairGuidance) ? value.repairGuidance : undefined,
-    repairRequest: isText(value.repairRequest) ? value.repairRequest : undefined,
   }
 }
 
-/**
- * The idempotency key. Derived server-side from the request itself so a double
- * press, a retry after a dropped connection, or a second tab all converge on
- * one job instead of paying twice.
- */
 async function generationDedupeKey(userId: string, payload: JobPayload) {
   const canonical = JSON.stringify([
     userId, payload.courseId, payload.topicId, payload.specId, payload.specHash,
@@ -1527,61 +1626,148 @@ async function generationDedupeKey(userId: string, payload: JobPayload) {
   return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
-/** Diagnostics that are safe to persist and to show: a code, a sentence, an
- *  upstream status, a provider request id. Never a key, prompt, or source text. */
-function jobError(code: string, message: string, detail: { providerStatus?: number; requestId?: string } = {}): JobErrorDetail {
-  return {
-    code,
-    message,
-    ...(Number.isInteger(detail.providerStatus) ? { providerStatus: detail.providerStatus } : {}),
-    ...(detail.requestId ? { requestId: detail.requestId } : {}),
+type Rpc = { rpc: (name: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }> }
+
+async function rpc(client: unknown, name: string, args: Record<string, unknown>) {
+  const { data, error } = await (client as Rpc).rpc(name, args)
+  if (error) {
+    console.error(`generation rpc ${name} failed`, error.message)
+    return null
   }
-}
-
-/** The caller's server mirror no longer holds every selected passage. */
-class IncompleteSourceError extends Error {}
-
-type StepClients = {
-  client: ReturnType<typeof createClient>
-  service: ReturnType<typeof createClient>
-}
-
-/** Persist a terminal failure and answer with it, so the student always learns
- *  the real reason rather than a catch-all. Saved work is untouched. */
-async function failJob(
-  { service }: StepClients,
-  job: GenerationJob,
-  error: JobErrorDetail,
-  releaseCents = 0,
-  userId?: string,
-) {
-  if (releaseCents > 0 && userId) await releaseAIReservation(service, userId, releaseCents)
-  const updated = await updateJob(service, job.id, job.lease_token!, {
-    status: 'failed', step: 'done', phase: 'Stopped', error, clearBackupReservation: true,
-  })
-  return json(updated ? publicJob(updated) : { jobId: job.id, status: 'failed', step: 'done', phase: 'Stopped', error })
-}
-
-/** Hand the job back unfinished, with a hint for when to call again. The client
- *  keeps polling; the next call lands on a worker with a fresh budget. */
-async function continueJob(
-  { service }: StepClients,
-  job: GenerationJob,
-  patch: Parameters<typeof updateJob>[3],
-  retryAfterMs: number,
-) {
-  const updated = await updateJob(service, job.id, job.lease_token!, { ...patch, status: 'running' })
-  const view = updated ? publicJob(updated) : { ...publicJob(job), status: 'running' as const }
-  return json({ ...view, retryAfterMs })
+  return data
 }
 
 /**
- * Translate one Astra failure into a persisted, student-readable outcome.
- * Provider status codes and request ids are kept; bodies are not.
+ * What the provider route can actually do, as PROVED against this deployment by
+ * `probe-background` — never assumed from documentation. Background mode is
+ * used only when a real request was submitted AND its result was read back.
  */
+async function backgroundCapability(service: unknown, route: 'wallet' | 'openai-backup') {
+  const { data } = await (service as { from: (table: string) => { select: (columns: string) => { eq: (column: string, value: string) => { maybeSingle: () => PromiseLike<{ data: unknown }> } } } })
+    .from('generation_provider_capabilities').select('*').eq('route', route).maybeSingle()
+  return isRecord(data) && data.background_submit === true && data.background_retrieve === true
+}
+
+function activeRoute(): 'wallet' | 'openai-backup' {
+  return Deno.env.get('CHEAPER_INFERENCE_API_KEY') ? 'wallet' : 'openai-backup'
+}
+
+/**
+ * Run one bounded provider request for a stage.
+ *
+ * Two shapes, chosen by proven capability rather than hope:
+ *
+ *  - **Background** — submit, persist the response id, poll. If the result is
+ *    not ready inside this worker's slice, the task returns `pending` with the
+ *    id recorded, and the next dispatch resumes polling. No work is repeated
+ *    and nothing is charged twice.
+ *  - **Synchronous** — one request under a deadline. The stage shapes make each
+ *    request small, so this is a real bounded call, not a long one in disguise.
+ *    A deadline hit here is AMBIGUOUS: the provider may have accepted and
+ *    billed it. That is recorded on the task, counted against its attempts, and
+ *    surfaced — never assumed to have not happened.
+ */
+async function runProviderStage(
+  service: unknown,
+  task: TaskRow,
+  spec: StageSpec,
+  budget: WorkerBudget,
+  build: () => { payload: Record<string, unknown>; wire: ReturnType<typeof createOpenAICitationWire> },
+  settle: (raw: unknown, wire: ReturnType<typeof createOpenAICitationWire>) => TaskOutcome | Promise<TaskOutcome>,
+): Promise<TaskOutcome> {
+  const key = Deno.env.get('OPENAI_API_KEY')
+  if (!key) return { kind: 'failed', error: jobError('server-unconfigured', 'OpenAI generation is not configured. Nothing was saved.') }
+  const route = activeRoute()
+  // An operator may tighten every stage's ceiling below its declared maximum,
+  // for a smaller plan or a stricter latency budget. It can only tighten.
+  const configured = Number(Deno.env.get('GENERATION_STAGE_DEADLINE_MS'))
+  const ceiling = Number.isFinite(configured) && configured > 0 ? Math.min(spec.maxProviderMs, configured) : spec.maxProviderMs
+  const deadline = stepDeadlineMs(budget, ceiling)
+
+  // Resume: this task already has a submitted response waiting to be read.
+  if (task.provider_response_id) {
+    try {
+      const response = await withDeadline('retrieve', Math.min(deadline, 25_000), (signal) =>
+        getAstraResponse(task.provider_response_id!, (task.provider_route as AstraRoute) || route, astraRouteConfig(key, signal), fetch))
+      const text = await response.text()
+      const parsed = ((): unknown => { try { return JSON.parse(text) } catch { return null } })()
+      const requestId = providerRequestId(response)
+      if (response.status === 404) {
+        return { kind: 'failed', error: jobError('provider-response-lost', 'The generator no longer holds this piece of the build. Nothing was saved.', { providerStatus: 404, requestId }) }
+      }
+      if (!response.ok) {
+        return { kind: 'pending', providerRequestId: requestId }
+      }
+      const status = isRecord(parsed) ? parsed.status : null
+      if (status === 'queued' || status === 'in_progress') return { kind: 'pending', providerRequestId: requestId }
+      // Terminal. If the capped backup carried this request, settle its
+      // reservation against real usage before anything else can retry.
+      if (task.backup_reservation_id) {
+        await settleAstraBackground(task.backup_reservation_id, response.status, isRecord(parsed) ? parsed.usage : null, astraRouteConfig(key).ledger)
+      }
+      const { wire } = build()
+      const outcome = await settle(await readOpenAIGenerationResponse(new Response(text, { status: 200 })), wire)
+      return outcome.kind === 'done' ? { ...outcome, clearBackupReservation: true } : outcome
+    } catch (error) {
+      if (error instanceof StepTimeoutError) return { kind: 'pending' }
+      return { kind: 'failed', error: astraFailure(error) }
+    }
+  }
+
+  const { payload, wire } = build()
+  const useBackground = await backgroundCapability(service, route)
+
+  try {
+    if (useBackground) {
+      const submitted = await withDeadline('submit', Math.min(deadline, 30_000), (signal) =>
+        submitAstraBackgroundResponse({ ...payload, background: true }, astraRouteConfig(key, signal), fetch))
+      const text = await submitted.response.text()
+      const parsed = ((): unknown => { try { return JSON.parse(text) } catch { return null } })()
+      const requestId = providerRequestId(submitted.response)
+      if (!submitted.response.ok) {
+        await readOpenAIGenerationResponse(new Response(text, { status: submitted.response.status }))
+        return { kind: 'failed', error: jobError('provider-unavailable', 'The generator rejected this piece of the build. Nothing was saved.', { providerStatus: submitted.response.status, requestId }) }
+      }
+      const responseId = isRecord(parsed) && isText(parsed.id) ? parsed.id : null
+      const status = isRecord(parsed) ? parsed.status : null
+      if (responseId && (status === 'queued' || status === 'in_progress')) {
+        return {
+          kind: 'pending', providerResponseId: responseId, providerRoute: submitted.route, providerRequestId: requestId,
+          ...(submitted.reservationId ? { backupReservationId: submitted.reservationId } : {}),
+        }
+      }
+      // Completed inside the submit call: settle here instead of on retrieval.
+      if (submitted.reservationId) {
+        await settleAstraBackground(submitted.reservationId, submitted.response.status, isRecord(parsed) ? parsed.usage : null, astraRouteConfig(key).ledger)
+      }
+      return await settle(await readOpenAIGenerationResponse(new Response(text, { status: 200 })), wire)
+    }
+
+    const response = await withDeadline('generation', deadline, (signal) =>
+      routeAstraResponse(payload, key, signal, task.idempotency_key))
+    const text = await response.text()
+    const requestId = providerRequestId(response)
+    if (!response.ok) {
+      await readOpenAIGenerationResponse(new Response(text, { status: response.status }))
+      return { kind: 'failed', error: jobError('provider-unavailable', 'The generator rejected this piece of the build. Nothing was saved.', { providerStatus: response.status, requestId }) }
+    }
+    return await settle(await readOpenAIGenerationResponse(new Response(text, { status: 200 })), wire)
+  } catch (error) {
+    if (error instanceof StepTimeoutError) {
+      // The request may have been accepted and billed. Say so.
+      return {
+        kind: 'failed',
+        ambiguous: true,
+        error: jobError('provider-timeout-ambiguous', `${error.message} The request may have been accepted by the provider, so this attempt is counted. Nothing was saved and your material is unchanged.`),
+      }
+    }
+    return { kind: 'failed', error: astraFailure(error) }
+  }
+}
+
 function astraFailure(error: unknown): JobErrorDetail {
   if (error instanceof StepTimeoutError) {
-    return jobError('provider-timeout', `${error.message} Your material and any saved result were not changed.`)
+    return jobError('provider-timeout', `${error.message} Nothing was saved.`)
   }
   if (error instanceof AstraRouteError) {
     return jobError(error.code, error.message, { providerStatus: error.status, requestId: error.requestId })
@@ -1589,364 +1775,667 @@ function astraFailure(error: unknown): JobErrorDetail {
   if (error instanceof OpenAIGenerationResponseError) {
     return jobError(error.code, `${error.message} Nothing was saved.`)
   }
-  return jobError('provider-unavailable', 'The AI provider could not complete this build. Nothing was saved.')
+  if (error instanceof SourceReadinessError) {
+    return jobError(error.code, error.message)
+  }
+  if (error instanceof AnthropicGenerationError) {
+    return jobError('anthropic-credit-exhausted', 'Anthropic credits are exhausted. Nothing was saved.')
+  }
+  return jobError('provider-unavailable', 'The AI provider could not complete this piece of the build. Nothing was saved.')
+}
+
+/** Passages this build may cite, loaded once per invocation. */
+async function loadCorpus(client: ReturnType<typeof createClient>, userId: string, payload: JobPayload) {
+  const chunks = await retrieveChunks(client, userId, payload.courseId, payload.topicId, payload.chunkIds)
+  assertSourceReadiness(payload.chunkIds, chunks)
+  return chunks
 }
 
 /**
- * Finish one completed Astra response: close its citations, enforce the
- * artifact's own references, and hand the audit step a verified artifact.
+ * The wire for a stage.
  *
- * A rejection here is a real outcome. It is replayed at most once — the server
- * counts the attempts, so a client cannot turn a refusal into unbounded paid
- * retries.
+ * Identical passage text crosses the wire once, and every passage ID that
+ * carries it stays citable and is reported to the model with its occurrence
+ * count. That is a transfer saving; the corpus the model reasons over is
+ * unchanged, and repetition — which is how an instructor signals emphasis —
+ * survives as information rather than being silently collapsed.
  */
-async function settleGenerationResponse(
-  clients: StepClients,
-  job: GenerationJob,
-  payload: JobPayload,
-  chunks: Chunk[],
-  wire: ReturnType<typeof createOpenAICitationWire>,
-  body: string,
-  userId: string,
-) {
-  let decoded
-  try {
-    decoded = decodeAstraGeneration(await readOpenAIGenerationResponse(new Response(body, { status: 200 })), chunks, wire)
-  } catch (error) {
-    if (error instanceof OpenAIGenerationResponseError && error.rejected) {
-      return failJob(clients, job, astraFailure(error), job.quota_reservation_cents, userId)
-    }
-    return failJob(clients, job, astraFailure(error))
+function stageWire(chunks: Chunk[], inventory: SourceInventory) {
+  const { canonical, aliasesFor } = deduplicatedSources(chunks, inventory)
+  // Aliases are assigned over the FULL corpus so every original ID decodes.
+  const wire = createOpenAICitationWire(chunks)
+  const aliasOf = (chunkId: string) => {
+    const index = chunks.findIndex((chunk) => chunk.chunk_id === chunkId)
+    return index >= 0 ? `S${index + 1}` : chunkId
   }
-
-  const closed = closeCitationSet(decoded.trustedCitations, chunks)
-  const issues: string[] = []
-  const referencesHold = closed.length > 0 && validateArtifactReferences(decoded.value, closed, issues)
-  if (!referencesHold) {
-    const reason = closed.length
-      ? 'The generated artifact referenced material outside the verified citation set.'
-      : 'No citation from the generated artifact could be verified against your material.'
-    if (job.provider_attempts >= MAX_PROVIDER_ATTEMPTS) {
-      return failJob(clients, job, jobError('citation-not-carried', `${reason} Nothing was saved.`))
-    }
-    // The one bounded rebuild. This is the same repair the client used to
-    // attempt, moved server-side where the attempt budget is enforced.
-    return continueJob(clients, job, {
-      step: 'submit',
-      phase: 'Rebuilding with corrected source references',
-      providerResponseId: undefined,
-      clearBackupReservation: true,
-      payload: {
-        ...payload,
-        repairRequest: `A prior attempt was rejected by validation. Rebuild the complete artifact and correct these reported problems: ${reason}${issues.length ? ` Reference check: ${issues.slice(0, 5).join('; ')}.` : ''} All source references and source chunk IDs must be copied exactly from supplied evidence.${payload.repairGuidance ?? ''} Do not omit required content, invent sources, or treat this feedback as permission to change the original requirements. The rebuilt result will undergo the same checks.`,
-      },
-    }, 0)
-  }
-
-  // Held as pending, not as a result: `publicJob` reveals a result only once the
-  // job succeeds, so an unaudited artifact can never reach the student.
-  return continueJob(clients, job, {
-    step: 'audit',
-    phase: JOB_PHASES.audit,
-    result: { artifact: decoded.value, citations: closed, auditStatus: 'pending', primaryProvider: 'openai' },
-  }, 0)
+  const canonicalIds = new Set(canonical.map((chunk) => chunk.chunk_id))
+  const sources = wire.sources.filter((_source, index) => canonicalIds.has(chunks[index].chunk_id))
+  return { wire, sources, aliasOf, aliasesFor }
 }
 
-async function runSubmitStep(
-  clients: StepClients,
-  job: GenerationJob,
-  payload: JobPayload,
-  chunks: () => Promise<Chunk[]>,
-  budget: WorkerBudget,
-  userId: string,
-) {
-  if (job.provider_attempts >= MAX_PROVIDER_ATTEMPTS) {
-    return failJob(clients, job, jobError('provider-attempts-exhausted', 'This build used its allowed generation attempts without producing a verifiable result. Nothing was saved.'))
+function fileAliasOf(chunks: Chunk[]) {
+  const aliases = new Map<string, string>()
+  for (const chunk of chunks) if (!aliases.has(chunk.file_id)) aliases.set(chunk.file_id, `F${aliases.size + 1}`)
+  return (fileId: string) => aliases.get(fileId) ?? fileId
+}
+
+const STAGE_JSON_RULE = 'Reply with one JSON object only, with no markdown fence and no preamble.'
+
+function astraStagePayload(system: string[], user: string, maxOutputTokens: number) {
+  return {
+    // Pinned. The user-selected model is not a per-stage decision.
+    model: 'gpt-6-astra',
+    reasoning: { effort: 'low' },
+    store: false,
+    max_output_tokens: maxOutputTokens,
+    input: [
+      { role: 'system', content: [{ type: 'input_text', text: system.filter(Boolean).join('\n') }] },
+      { role: 'user', content: [{ type: 'input_text', text: user }] },
+    ],
+    text: { format: { type: 'json_object' } },
   }
-  if (!canRunStep(budget, STEP_BUDGET_MS.submit)) {
-    return continueJob(clients, job, { phase: JOB_PHASES.submit }, 750)
+}
+
+/** Stage 1 — source readiness and the coverage inventory. No provider call. */
+async function execInventory(
+  service: unknown, client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload,
+): Promise<TaskOutcome> {
+  const chunks = await loadCorpus(client, job.user_id, payload)
+  const inventory = buildSourceInventory(chunks)
+  const usable = chunks.filter((chunk) => chunk.content.trim())
+  if (!usable.length) {
+    return { kind: 'failed', error: jobError('no-sources', 'None of the selected material has readable text, so there is nothing to build from.') }
   }
-  const key = Deno.env.get('OPENAI_API_KEY')
-  if (!key) return failJob(clients, job, jobError('server-unconfigured', 'OpenAI generation is not configured. Nothing was saved.'))
-
-  const source = await chunks()
-  const request = payload.repairRequest ? `${payload.request}\n\n${payload.repairRequest}` : payload.request
-  const { payload: body, wire } = astraGenerationPayload(request, source, payload.systemPrompt, { background: true })
-
-  let submitted
-  try {
-    submitted = await withDeadline('submit', stepDeadlineMs(budget, STEP_BUDGET_MS.submit), (signal) =>
-      submitAstraBackgroundResponse(body, astraRouteConfig(key, signal), fetch))
-  } catch (error) {
-    return failJob(clients, job, astraFailure(error))
+  await (service as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: string) => PromiseLike<unknown> } } })
+    .from('study_generation_jobs').update({ inventory }).eq('id', job.id)
+  return {
+    kind: 'done',
+    output: {
+      files: inventory.files.length,
+      passages: inventory.totalChunks,
+      characters: inventory.totalCharacters,
+      uniqueTexts: inventory.uniqueTexts,
+      transferSavedCharacters: inventory.transferSavedCharacters,
+      emptyPassages: inventory.emptyChunkIds.length,
+    },
   }
+}
 
-  const text = await submitted.response.text()
-  const parsed = ((): unknown => { try { return JSON.parse(text) } catch { return null } })()
-  const requestId = providerRequestId(submitted.response)
+type PlannedSection = { id: string; title: string; purpose: string; passageIds: string[] }
 
-  if (!submitted.response.ok) {
-    if (await isBackgroundParameterRejection(new Response(text, { status: submitted.response.status }))) {
-      // The route cannot hand back an id to poll. Fall back to one bounded
-      // synchronous call — on its OWN fresh worker, so the model gets the whole
-      // budget instead of whatever this invocation had left.
-      console.error('astra background mode unavailable; using bounded synchronous fallback')
-      return continueJob(clients, job, {
-        step: 'sync',
-        phase: JOB_PHASES.sync,
-        providerRoute: submitted.route,
-        ...(submitted.reservationId ? { backupReservationId: submitted.reservationId } : {}),
-      }, 250)
+/**
+ * Read the plan AFTER the citation wire has decoded it.
+ *
+ * The plan names its passages with `sourceChunkIds` — the wire's own vocabulary
+ * — so the request-local aliases the model was given decode back to real
+ * passage identities here. A plan that references anything else simply fails to
+ * resolve, which is the behaviour we want: no guessing a source on its behalf.
+ */
+function readPlan(value: unknown, resolves: (id: string) => boolean) {
+  if (!isRecord(value) || !Array.isArray(value.sections)) return null
+  const sections: PlannedSection[] = []
+  for (const entry of value.sections) {
+    if (!isRecord(entry) || !isText(entry.id) || !isText(entry.title)) return null
+    const ids = Array.isArray(entry.sourceChunkIds) ? entry.sourceChunkIds.filter(isText).filter(resolves) : []
+    if (!ids.length) return null
+    sections.push({ id: entry.id, title: entry.title, purpose: isText(entry.purpose) ? entry.purpose : '', passageIds: ids })
+  }
+  if (!sections.length) return null
+  const ids = new Set(sections.map((section) => section.id))
+  if (ids.size !== sections.length) return null
+  const unusedSources = Array.isArray(value.unusedSources)
+    ? value.unusedSources.filter(isRecord).map((entry) => ({
+        fileId: isText(entry.fileId) ? entry.fileId : '',
+        reason: isText(entry.reason) ? entry.reason : '',
+      })).filter((entry) => entry.fileId)
+    : []
+  return { sections, unusedSources }
+}
+
+/**
+ * Stage 2 — the plan.
+ *
+ * This is the only stage that sees the whole corpus at once, and it stays fast
+ * because its OUTPUT is small: a section list and, per section, the exact
+ * passages that support it, chosen from everything. Nothing is summarised here;
+ * the passages are carried forward at full length into the writing stage.
+ */
+async function execOutline(
+  service: unknown, client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload,
+  task: TaskRow, spec: StageSpec, budget: WorkerBudget,
+): Promise<TaskOutcome> {
+  const chunks = await loadCorpus(client, job.user_id, payload)
+  const inventory = buildSourceInventory(chunks)
+  const objectives = payload.specId === 'unit-mastery-outline-v1'
+  const unit = objectives ? 'objective' : 'section'
+
+  const outcome = await runProviderStage(service, task, spec, budget, () => {
+    const { wire, sources, aliasOf } = stageWire(chunks, inventory)
+    const payloadBody = astraStagePayload([
+      wire.encodePrompt(payload.systemPrompt),
+      STAGE_JSON_RULE,
+      `Plan only. Do not write the ${unit}s yet.`,
+      `Return {"sections":[{"id","title","purpose","sourceChunkIds":[...]}],"unusedSources":[{"fileId","reason"}]}.`,
+      `Each ${unit} must list the exact supplied passage IDs that support it, drawn from anywhere in the corpus — a ${unit} may and should draw on several sources when they bear on it.`,
+      'A passage may support more than one section. Every source must appear in at least one section unless you name it in unusedSources with a specific reason.',
+      'Do not shorten, merge away, or drop material to make a smaller plan: plan as many sections as the material genuinely supports.',
+      repetitionNotice(inventory, aliasOf),
+      coverageBriefing(inventory, fileAliasOf(chunks)),
+      isText(task.input?.problem)
+        ? `A prior attempt at this plan was rejected: ${task.input.problem}. Correct exactly that.${payload.repairGuidance ?? ''}`
+        : '',
+    ], `Request:\n${wire.encodePrompt(payload.request)}\n\nSource passages:\n${JSON.stringify(sources)}`,
+    // A plan, not prose. Small output is what keeps this request quick.
+    4_000)
+    return { payload: payloadBody, wire }
+  }, (raw, wire) => {
+    const decoded = wire.decode(raw)
+    const known = new Set(chunks.map((chunk) => chunk.chunk_id))
+    const plan = readPlan(decoded, (id) => known.has(id))
+    if (!plan) {
+      return { kind: 'failed', error: jobError('invalid-response', `The plan did not name usable ${unit}s with resolvable passages. Nothing was saved.`) }
     }
-    if (submitted.reservationId) {
-      await settleAstraBackground(submitted.reservationId, submitted.response.status, isRecord(parsed) ? parsed.usage : null, astraRouteConfig(key).ledger)
+    // Completion criterion: coverage. Every selected source is used, or named.
+    const used = new Set(plan.sections.flatMap((section) => section.passageIds))
+    const fileOf = new Map(chunks.map((chunk) => [chunk.chunk_id, chunk.file_id]))
+    const usedFiles = new Set([...used].map((id) => fileOf.get(id)!))
+    const explained = new Set(plan.unusedSources.map((entry) => entry.fileId))
+    const uncovered = inventory.files
+      .filter((file) => file.chunkIds.length > file.emptyChunkIds.length)
+      .filter((file) => !usedFiles.has(file.fileId) && !explained.has(file.fileId))
+    if (uncovered.length) {
+      return { kind: 'failed', error: jobError('coverage-incomplete', `The plan left ${uncovered.length} selected source(s) neither used nor explained. Nothing was saved.`) }
     }
-    try {
-      await readOpenAIGenerationResponse(new Response(text, { status: submitted.response.status }))
-    } catch (error) {
-      const detail = astraFailure(error)
-      return failJob(clients, job, { ...detail, providerStatus: submitted.response.status, ...(requestId ? { requestId } : {}) },
-        error instanceof OpenAIGenerationResponseError && error.rejected ? job.quota_reservation_cents : 0, userId)
-    }
-    return failJob(clients, job, jobError('provider-unavailable', 'The generator rejected this build. Nothing was saved.', { providerStatus: submitted.response.status, requestId }))
-  }
-
-  const responseId = isRecord(parsed) && isText(parsed.id) ? parsed.id : null
-  const status = isRecord(parsed) ? parsed.status : null
-  if (!responseId) {
-    return failJob(clients, job, jobError('provider-unavailable', 'The generator accepted the build but returned no job to track. Nothing was saved.', { providerStatus: submitted.response.status, requestId }))
-  }
-
-  const patched = await updateJob(clients.service, job.id, job.lease_token!, {
-    status: 'running',
-    step: 'poll',
-    phase: JOB_PHASES.poll,
-    providerRoute: submitted.route,
-    providerResponseId: responseId,
-    providerAttemptsDelta: 1,
-    ...(submitted.reservationId ? { backupReservationId: submitted.reservationId } : {}),
-    releaseLease: status === 'queued' || status === 'in_progress',
+    return { kind: 'done', output: { plan } as unknown as Record<string, unknown> }
   })
-  const current = patched ?? job
 
-  // Some routes complete a short request before returning. Nothing is gained by
-  // making the student wait for a poll we already have the answer to.
-  if (status !== 'queued' && status !== 'in_progress') {
-    if (submitted.reservationId) {
-      await settleAstraBackground(submitted.reservationId, submitted.response.status, isRecord(parsed) ? parsed.usage : null, astraRouteConfig(key).ledger)
-    }
-    return settleGenerationResponse(clients, { ...current, lease_token: job.lease_token }, payload, source, wire, text, userId)
+  if (outcome.kind === 'done' && isRecord(outcome.output)) {
+    await (service as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: string) => PromiseLike<unknown> } } })
+      .from('study_generation_jobs').update({ outline: outcome.output.plan }).eq('id', job.id)
   }
-  return json({ ...publicJob(current), retryAfterMs: 3_000 })
-}
-
-async function runPollStep(
-  clients: StepClients,
-  job: GenerationJob,
-  payload: JobPayload,
-  chunks: () => Promise<Chunk[]>,
-  budget: WorkerBudget,
-  userId: string,
-) {
-  if (!job.provider_response_id || !job.provider_route) {
-    return continueJob(clients, job, { step: 'submit', phase: JOB_PHASES.submit }, 250)
-  }
-  if (job.poll_count >= MAX_POLLS) {
-    return failJob(clients, job, jobError('provider-timeout', 'The generator did not finish this build within its allowed window. Nothing was saved, and your material is unchanged.'))
-  }
-  if (!canRunStep(budget, STEP_BUDGET_MS.poll)) {
-    return continueJob(clients, job, { phase: JOB_PHASES.poll }, 750)
-  }
-  const key = Deno.env.get('OPENAI_API_KEY')
-  if (!key) return failJob(clients, job, jobError('server-unconfigured', 'OpenAI generation is not configured. Nothing was saved.'))
-
-  let response: Response
-  try {
-    response = await withDeadline('poll', stepDeadlineMs(budget, STEP_BUDGET_MS.poll), (signal) =>
-      getAstraResponse(job.provider_response_id!, job.provider_route as AstraRoute, astraRouteConfig(key, signal), fetch))
-  } catch (error) {
-    // A poll that could not be made is not a failed build: the provider is
-    // still working. Come back on a fresh worker.
-    if (error instanceof StepTimeoutError) return continueJob(clients, job, { pollDelta: 1, phase: JOB_PHASES.poll }, pollBackoffMs(job.poll_count))
-    return failJob(clients, job, astraFailure(error))
-  }
-
-  const text = await response.text()
-  const parsed = ((): unknown => { try { return JSON.parse(text) } catch { return null } })()
-  const requestId = providerRequestId(response)
-
-  if (response.status === 404) {
-    return failJob(clients, job, jobError('provider-response-lost', 'The generator no longer holds this build. Start it again; nothing was saved and your material is unchanged.', { providerStatus: 404, requestId }))
-  }
-  if (!response.ok) {
-    // Transient read failures should not discard work the provider may still
-    // finish. Retry within the poll budget, then stop with a real reason.
-    if (response.status >= 500 || response.status === 429) {
-      return continueJob(clients, job, { pollDelta: 1, phase: JOB_PHASES.poll }, pollBackoffMs(job.poll_count + 2))
-    }
-    return failJob(clients, job, jobError('provider-unavailable', `The generator could not report on this build (HTTP ${response.status}). Nothing was saved.`, { providerStatus: response.status, requestId }))
-  }
-
-  const status = isRecord(parsed) ? parsed.status : null
-  if (status === 'queued' || status === 'in_progress') {
-    return continueJob(clients, job, { pollDelta: 1, phase: JOB_PHASES.poll }, pollBackoffMs(job.poll_count))
-  }
-  if (job.backup_reservation_id) {
-    await settleAstraBackground(job.backup_reservation_id, response.status, isRecord(parsed) ? parsed.usage : null, astraRouteConfig(key).ledger)
-    await updateJob(clients.service, job.id, job.lease_token!, { clearBackupReservation: true, releaseLease: false })
-  }
-  const source = await chunks()
-  return settleGenerationResponse(clients, job, payload, source, createOpenAICitationWire(source), text, userId)
+  return outcome
 }
 
 /**
- * The fallback for a route without background responses: one synchronous call,
- * hard-bounded by what this worker can survive. It is strictly better than the
- * behaviour it replaces, because a timeout now ends as a recorded, resumable
- * job failure instead of a worker the platform kills with nothing written down.
+ * Stage 3 — write one section (or develop one objective).
+ *
+ * The task carries its own mapped passages at FULL length plus the whole plan,
+ * so the section is grounded in all the evidence that bears on it and knows
+ * what its neighbours cover. That is what makes the document cohere without
+ * ever asking one request to write the whole thing.
  */
-async function runSyncStep(
-  clients: StepClients,
-  job: GenerationJob,
-  payload: JobPayload,
-  chunks: () => Promise<Chunk[]>,
-  budget: WorkerBudget,
-  userId: string,
-) {
-  if (job.provider_attempts >= MAX_PROVIDER_ATTEMPTS) {
-    return failJob(clients, job, jobError('provider-attempts-exhausted', 'This build used its allowed generation attempts without producing a verifiable result. Nothing was saved.'))
+async function execSection(
+  service: unknown, client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload,
+  task: TaskRow, spec: StageSpec, budget: WorkerBudget,
+): Promise<TaskOutcome> {
+  const chunks = await loadCorpus(client, job.user_id, payload)
+  const inventory = buildSourceInventory(chunks)
+  const section = task.input as unknown as PlannedSection & { plan?: PlannedSection[]; problem?: string }
+  const objectives = payload.specId === 'unit-mastery-outline-v1'
+  const mapped = new Set(section.passageIds ?? [])
+  const supporting = chunks.filter((chunk) => mapped.has(chunk.chunk_id))
+  if (!supporting.length) {
+    return { kind: 'failed', error: jobError('invalid-response', 'This section lost its supporting passages. Nothing was saved.') }
   }
-  if (!canRunStep(budget, STEP_BUDGET_MS.sync)) {
-    return continueJob(clients, job, { phase: JOB_PHASES.sync }, 750)
-  }
-  const key = Deno.env.get('OPENAI_API_KEY')
-  if (!key) return failJob(clients, job, jobError('server-unconfigured', 'OpenAI generation is not configured. Nothing was saved.'))
 
-  const source = await chunks()
-  const request = payload.repairRequest ? `${payload.request}\n\n${payload.repairRequest}` : payload.request
-  const { payload: body, wire } = astraGenerationPayload(request, source, payload.systemPrompt)
-  await updateJob(clients.service, job.id, job.lease_token!, { providerAttemptsDelta: 1, releaseLease: false })
-
-  let response: Response
-  try {
-    response = await withDeadline('generation', stepDeadlineMs(budget, remainingWorkerMs(budget)), (signal) =>
-      routeAstraResponse(body, key, signal))
-  } catch (error) {
-    return failJob(clients, job, astraFailure(error))
-  }
-  const text = await response.text()
-  if (!response.ok) {
-    try {
-      await readOpenAIGenerationResponse(new Response(text, { status: response.status }))
-    } catch (error) {
-      const detail = astraFailure(error)
-      return failJob(clients, job, { ...detail, providerStatus: response.status, ...(providerRequestId(response) ? { requestId: providerRequestId(response) } : {}) },
-        error instanceof OpenAIGenerationResponseError && error.rejected ? job.quota_reservation_cents : 0, userId)
+  return runProviderStage(service, task, spec, budget, () => {
+    const { wire, aliasOf } = stageWire(chunks, inventory)
+    const supportingSources = createOpenAICitationWire(chunks).sources
+      .filter((_source, index) => mapped.has(chunks[index].chunk_id))
+    const outline = (section.plan ?? []).map((entry) => `${entry.id}: ${entry.title}`).join(' | ')
+    const body = astraStagePayload([
+      wire.encodePrompt(payload.systemPrompt),
+      STAGE_JSON_RULE,
+      objectives
+        ? 'Return {"standard": { ... }} for exactly this one objective, matching the artifact specification for a single standards entry.'
+        : 'Return {"section": {"id","title","blocks":[...]}} for exactly this one section, matching the artifact specification for a single section.',
+      `Write only this ${objectives ? 'objective' : 'section'}: ${section.id} — ${section.title}. ${section.purpose ?? ''}`,
+      outline ? `The full plan, so this piece fits the whole and does not repeat its neighbours: ${outline}.` : '',
+      'Use the supplied passages in full. Do not compress or omit supported detail to be brief.',
+      OPENAI_GENERATION_CITATION_INSTRUCTION,
+      'Transport-only citation format override: wherever the artifact schema asks for sourceRef, output only {"citationId":"S123"} using the exact supplied passage ID. For sourceRefs output an array of these single-key objects. sourceChunkId/sourceChunkIds/evidenceIds still use the supplied passage IDs directly.',
+      repetitionNotice(inventory, aliasOf),
+      section.problem ? `A prior attempt at this piece was rejected: ${section.problem}. Correct exactly that.${payload.repairGuidance ?? ''}` : '',
+    ], `Request:\n${wire.encodePrompt(payload.request)}\n\nSupporting passages:\n${JSON.stringify(supportingSources)}`,
+    8_000)
+    return { payload: body, wire }
+  }, (raw, wire) => {
+    const decoded = canonicalizeOpenAIGenerationSourceRefs(wire.decode(raw), chunks)
+    const piece = isRecord(decoded) ? (objectives ? decoded.standard : decoded.section) : null
+    if (!isRecord(piece)) {
+      return { kind: 'failed', error: jobError('invalid-response', 'The generator returned nothing usable for this piece. Nothing was saved.') }
     }
-  }
-  return settleGenerationResponse(clients, { ...job, provider_attempts: job.provider_attempts + 1 }, payload, source, wire, text, userId)
+    return { kind: 'done', output: { piece } as Record<string, unknown> }
+  })
+}
+
+/** Single-pass artifacts keep one drafting task; the durability is around it. */
+async function execDraft(
+  service: unknown, client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload,
+  task: TaskRow, spec: StageSpec, budget: WorkerBudget,
+): Promise<TaskOutcome> {
+  const chunks = await loadCorpus(client, job.user_id, payload)
+  const inventory = buildSourceInventory(chunks)
+  const problem = isText(task.input?.problem) ? task.input.problem : ''
+  return runProviderStage(service, task, spec, budget, () => {
+    const { wire, sources, aliasOf } = stageWire(chunks, inventory)
+    const body = astraStagePayload([
+      wire.encodePrompt(payload.systemPrompt),
+      STAGE_JSON_RULE,
+      'Follow the required artifact shape in the specification.',
+      OPENAI_GENERATION_CITATION_INSTRUCTION,
+      'Transport-only citation format override: wherever the artifact schema asks for sourceRef, output only {"citationId":"S123"} using the exact supplied passage ID. For sourceRefs output an array of these single-key objects. sourceChunkId/sourceChunkIds/evidenceIds still use the supplied passage IDs directly.',
+      repetitionNotice(inventory, aliasOf),
+      problem ? `A prior attempt was rejected: ${problem}. Rebuild the complete artifact and correct exactly that.${payload.repairGuidance ?? ''}` : '',
+    ], `Request:\n${wire.encodePrompt(payload.request)}\n\nSource passages:\n${JSON.stringify(sources)}`, 10_000)
+    return { payload: body, wire }
+  }, (raw, wire) => {
+    const value = canonicalizeOpenAIGenerationSourceRefs(wire.decode(raw), chunks)
+    return { kind: 'done', output: { piece: value } as Record<string, unknown> }
+  })
 }
 
 /**
- * The independent Anthropic review, unchanged in authority: it still blocks a
- * result it rejects. Only its runtime is bounded now, and a review that cannot
- * be reached is reported as `unavailable` exactly as before.
+ * Stage 4 — verification. Deterministic, no provider call.
+ *
+ * Three questions the student would ask: is every claim traceable, did the
+ * build actually use what I selected, and do the pieces hold together? A
+ * failure here names the specific pieces, so stage 5 rebuilds only those.
  */
-async function runAuditStep(
-  clients: StepClients,
-  job: GenerationJob,
-  payload: JobPayload,
-  chunks: () => Promise<Chunk[]>,
-  budget: WorkerBudget,
-) {
-  const pending = isRecord(job.result) ? job.result : null
-  if (!pending || !('artifact' in pending)) {
-    return failJob(clients, job, jobError('invalid-response', 'This build lost its generated result before review. Nothing was saved.'))
-  }
-  const succeed = async (auditStatus: 'approved' | 'skipped' | 'unavailable') => {
-    const updated = await updateJob(clients.service, job.id, job.lease_token!, {
-      status: 'succeeded', step: 'done', phase: JOB_PHASES.done,
-      result: { ...pending, auditStatus },
-    })
-    return json(updated ? publicJob(updated) : { ...publicJob(job), status: 'succeeded', result: { ...pending, auditStatus } })
+async function execVerify(
+  service: unknown, client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload, tasks: TaskRow[],
+): Promise<TaskOutcome> {
+  const chunks = await loadCorpus(client, job.user_id, payload)
+  const inventory = buildSourceInventory(chunks)
+  const produced = tasks
+    .filter((entry) => (entry.stage === 'sections' || entry.stage === 'draft' || entry.stage === 'repair') && entry.status === 'done')
+    .sort((left, right) => left.ordinal - right.ordinal)
+
+  // A later repair supersedes the original piece with the same key.
+  const byKey = new Map<string, TaskRow>()
+  for (const entry of produced) byKey.set(entry.task_key, entry)
+  const entries = [...byKey.entries()]
+    .sort(([, left], [, right]) => left.ordinal - right.ordinal)
+    .map(([key, entry]) => ({ key, piece: isRecord(entry.output) ? entry.output.piece : null }))
+  const pieces = entries.map((entry) => entry.piece).filter((piece): piece is Record<string, unknown> => isRecord(piece))
+
+  const closed = closeCitationSet(collectArtifactCitations(pieces, chunks), chunks)
+  const problems: Array<{ key: string; problem: string }> = []
+
+  // Each piece is checked on its own, so a repair rebuilds only what failed.
+  for (const entry of entries) {
+    if (!isRecord(entry.piece)) { problems.push({ key: entry.key, problem: 'the piece is missing' }); continue }
+    const issues: string[] = []
+    if (!validateArtifactReferences(entry.piece, closed, issues)) {
+      problems.push({ key: entry.key, problem: `unverified source references — ${issues.slice(0, 3).join('; ')}` })
+    }
   }
 
-  if (!Deno.env.get('ANTHROPIC_API_KEY')) return succeed('skipped')
-  if (!canRunStep(budget, STEP_BUDGET_MS.audit)) {
-    return continueJob(clients, job, { phase: JOB_PHASES.audit }, 750)
+  // Coverage: what the student selected must actually be represented.
+  const citedFiles = new Set(closed.map((ref) => ref.fileId))
+  const uncovered = inventory.files
+    .filter((file) => file.chunkIds.length > file.emptyChunkIds.length && !citedFiles.has(file.fileId))
+    .map((file) => file.fileId)
+
+  // Cross-piece consistency: no duplicate identities in the assembled artifact.
+  const identities = pieces.map((piece) => (isText(piece.id) ? piece.id : '')).filter(Boolean)
+  const duplicateIdentities = identities.length !== new Set(identities).size
+
+  const verification = {
+    pieces: pieces.length,
+    verifiedCitations: closed.length,
+    // The closed set is carried forward so assembly does not recompute it from
+    // a corpus it no longer holds.
+    closed,
+    problems,
+    uncoveredFileIds: uncovered,
+    duplicateIdentities,
+    clean: problems.length === 0 && closed.length > 0 && !duplicateIdentities,
   }
+  await (service as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: string) => PromiseLike<unknown> } } })
+    .from('study_generation_jobs').update({ verification }).eq('id', job.id)
+
+  if (!closed.length) {
+    return { kind: 'failed', error: jobError('citation-not-carried', 'No claim in the generated work could be traced to your material, so it was refused rather than corrected. Nothing was saved.') }
+  }
+  return { kind: 'done', output: verification as unknown as Record<string, unknown> }
+}
+
+/** Stage 6 — the independent review, unchanged in authority. */
+async function execAudit(
+  client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload, tasks: TaskRow[],
+  spec: StageSpec, budget: WorkerBudget,
+): Promise<TaskOutcome> {
+  if (!Deno.env.get('ANTHROPIC_API_KEY')) return { kind: 'done', output: { auditStatus: 'skipped' } }
+  if (!canRunStep(budget, 20_000)) return { kind: 'pending' }
+  const chunks = await loadCorpus(client, job.user_id, payload)
+  const artifact = assembleArtifact(payload, job, tasks)
   try {
-    const source = await chunks()
-    const audit = await withDeadline('review', stepDeadlineMs(budget, STEP_BUDGET_MS.audit), (signal) =>
-      callAnthropicAudit(pending.artifact, source, payload.systemPrompt, signal))
+    const audit = await withDeadline('review', stepDeadlineMs(budget, spec.maxProviderMs), (signal) =>
+      callAnthropicAudit(artifact, chunks, payload.systemPrompt, signal))
     if (!audit.approved) {
-      return failJob(clients, job, {
-        ...jobError('audit-rejected', 'The independent provider review found a source or specification problem. Nothing was saved.'),
-        issues: safeAuditIssues(audit.issues),
-      })
+      return { kind: 'failed', error: jobError('audit-rejected', 'The independent provider review found a source or specification problem. Nothing was saved.', { issues: safeAuditIssues(audit.issues) }) }
     }
-    return succeed('approved')
+    return { kind: 'done', output: { auditStatus: 'approved' } }
   } catch (error) {
     console.error('study-tools audit unavailable', error instanceof Error ? error.message : 'unknown')
-    return succeed('unavailable')
+    return { kind: 'done', output: { auditStatus: 'unavailable' } }
   }
 }
 
-async function runGenerationStep(
-  clients: StepClients,
-  userId: string,
-  jobId: string,
+/**
+ * Stage 7 — assembly. The artifact is the verified pieces in plan order, so a
+ * section that was repaired takes its original place rather than being appended.
+ */
+function assembleArtifact(payload: JobPayload, job: JobRow, tasks: TaskRow[]): unknown {
+  const produced = tasks
+    .filter((entry) => ['sections', 'draft', 'repair'].includes(entry.stage) && entry.status === 'done')
+    .sort((left, right) => left.ordinal - right.ordinal)
+  const byKey = new Map<string, Record<string, unknown>>()
+  for (const entry of produced) {
+    const piece = isRecord(entry.output) ? entry.output.piece : null
+    if (isRecord(piece)) byKey.set(entry.task_key, piece)
+  }
+  const plan = isRecord(job.outline) && Array.isArray(job.outline.sections)
+    ? job.outline.sections as PlannedSection[]
+    : []
+  const ordered = plan.length
+    ? plan.map((section) => byKey.get(section.id)).filter((piece): piece is Record<string, unknown> => isRecord(piece))
+    : [...byKey.values()]
+
+  if (payload.specId === 'unit-mastery-outline-v1') {
+    const first = ordered[0] as Record<string, unknown> | undefined
+    return {
+      title: isText(job.outline?.title) ? job.outline.title : (isText(first?.unit) ? first!.unit : 'Mastery Map'),
+      unit: isText(job.outline?.unit) ? job.outline.unit : 'Unit',
+      standards: ordered,
+    }
+  }
+  if (!plan.length && ordered.length === 1) return ordered[0]
+  return { sections: ordered }
+}
+
+/**
+ * Which stage comes next, skipping a repair stage with nothing to repair.
+ * Repair is scheduled only for the pieces verification actually named.
+ */
+function nextStageWithWork(specId: string, stage: StageId, verification: Record<string, unknown> | null): StageId | undefined {
+  let candidate = nextStage(specId, stage)
+  while (candidate === 'repair') {
+    const problems = isRecord(verification) && Array.isArray(verification.problems) ? verification.problems : []
+    if (problems.length) return candidate
+    candidate = nextStage(specId, candidate)
+  }
+  return candidate
+}
+
+/** The tasks a stage begins with. Fan-out stages read the previous stage's output. */
+function tasksForStage(specId: string, stage: StageId, job: JobRow, verification: Record<string, unknown> | null) {
+  if (stage === 'sections') {
+    const plan = isRecord(job.outline) && Array.isArray(job.outline.sections) ? job.outline.sections as PlannedSection[] : []
+    return plan.map((section, index) => ({
+      taskKey: section.id,
+      ordinal: index,
+      label: section.title,
+      input: { ...section, plan: plan.map(({ id, title }) => ({ id, title })) },
+    }))
+  }
+  if (stage === 'repair') {
+    const problems = isRecord(verification) && Array.isArray(verification.problems) ? verification.problems : []
+    const plan = isRecord(job.outline) && Array.isArray(job.outline.sections) ? job.outline.sections as PlannedSection[] : []
+    return problems.filter(isRecord).map((problem, index) => {
+      const key = isText(problem.key) ? problem.key : `piece-${index}`
+      const section = plan.find((entry) => entry.id === key)
+      return {
+        taskKey: key,
+        ordinal: plan.findIndex((entry) => entry.id === key),
+        label: section?.title ?? 'Flagged piece',
+        input: { ...(section ?? { id: key, title: key, purpose: '', passageIds: [] }), plan: plan.map(({ id, title }) => ({ id, title })), problem: isText(problem.problem) ? problem.problem : 'validation failed' },
+      }
+    })
+  }
+  const spec = stageSpec(specId, stage)
+  return [{ taskKey: stage, ordinal: 0, label: spec?.label ?? stage, input: {} }]
+}
+
+/**
+ * Run exactly ONE task, then return.
+ *
+ * This is the whole contract with the platform: an invocation does a single
+ * piece of work well inside its worker's remaining lifetime, persists it, and
+ * lets the scheduler bring the next one. Chaining a second task in here would
+ * be pretending the worker's clock restarts — it does not.
+ */
+async function runOneTask(
+  client: ReturnType<typeof createClient>,
+  service: unknown,
   budget: WorkerBudget,
+  scope: { jobId: string; userId: string } | null = null,
 ): Promise<Response> {
-  // The lease window never outlives this worker, so a step orphaned by an
-  // EarlyDrop frees itself for the next invocation instead of wedging the job.
-  const leaseSeconds = Math.max(20, Math.ceil(remainingWorkerMs(budget) / 1000) + 10)
-  const job = await leaseJob(clients.service, userId, jobId, leaseSeconds)
-  if (!job) {
-    const { data } = await clients.client.from('study_generation_jobs').select('*').eq('id', jobId).maybeSingle()
-    if (!data) return failure(404, 'job-not-found', 'This build is no longer available. Nothing saved was changed.')
-    const current = data as GenerationJob
-    // Another runner holds it. Reporting that is what stops a second tab from
-    // paying for the same step.
-    return json({ ...publicJob(current), ...(current.status === 'running' ? { retryAfterMs: 3_000, busy: true } : {}) })
+  // The lease never outlives this worker, so a task orphaned by a retirement
+  // becomes claimable again instead of wedging the job.
+  const leaseSeconds = Math.max(30, Math.ceil(remainingWorkerMs(budget) / 1000) + 15)
+  const claimed = await rpc(service, 'claim_generation_task', {
+    p_lease_seconds: leaseSeconds,
+    p_job_id: scope?.jobId ?? null,
+    p_user_id: scope?.userId ?? null,
+  })
+  if (!isRecord(claimed)) return json({ ran: false, reason: 'no-runnable-task' })
+
+  const task = claimed.task as TaskRow
+  const job = claimed.job as JobRow
+  const payload = taskPayload(job.payload)
+  const started = Date.now()
+
+  const finish = async (outcome: TaskOutcome) => {
+    const durationMs = Date.now() - started
+    const status = outcome.kind === 'done' ? 'done' : outcome.kind === 'pending' ? 'pending' : 'failed'
+    if (outcome.kind === 'failed' && task.attempts < task.max_attempts) {
+      // A bounded retry should not repeat the same mistake blind. Carry the
+      // rejection into the next attempt's input, alongside the artifact's own
+      // repair guidance, so the rebuild is told what specifically was wrong.
+      await (service as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: string) => PromiseLike<unknown> } } })
+        .from('study_generation_tasks')
+        .update({ input: { ...task.input, problem: outcome.error.message } })
+        .eq('id', task.id)
+    }
+    await rpc(service, 'complete_generation_task', {
+      p_task_id: task.id,
+      p_lease_token: task.lease_token,
+      p_status: status,
+      p_output: outcome.kind === 'failed' ? null : outcome.output ?? null,
+      p_error: outcome.kind === 'failed' ? outcome.error : null,
+      p_duration_ms: durationMs,
+      p_provider_route: outcome.kind === 'failed' ? null : outcome.providerRoute ?? null,
+      p_provider_request_id: outcome.providerRequestId ?? null,
+      p_provider_response_id: outcome.kind === 'failed' ? null : outcome.providerResponseId ?? null,
+      p_backup_reservation_id: outcome.kind === 'failed' ? null : outcome.backupReservationId ?? null,
+      p_clear_backup_reservation: outcome.kind === 'done' && outcome.clearBackupReservation === true,
+      p_ambiguous: outcome.kind === 'failed' ? outcome.ambiguous === true : null,
+    })
+    return { status, durationMs }
   }
 
-  const payload = jobPayload(job.payload)
-  if (!payload) return failJob(clients, job, jobError('invalid-request', 'This build’s request could not be read. Nothing was saved.'))
+  if (!payload) {
+    await finish({ kind: 'failed', error: jobError('invalid-request', 'This build’s request could not be read. Nothing was saved.') })
+    return json({ ran: true, task: task.stage, status: 'failed' })
+  }
 
-  /**
-   * Source text is deliberately not stored on the job: it is re-read from the
-   * caller’s own mirror, under their RLS, so the job row holds identifiers and
-   * prompts only.
-   *
-   * Read LAZILY. A long build is polled many times, and re-reading several
-   * hundred passages on each poll would spend the worker’s budget on the one
-   * thing that has not changed. Only a step that must talk to the model, or
-   * must verify a completed artifact, actually needs them.
-   */
-  let cached: Chunk[] | null = null
-  const chunks = async () => {
-    if (cached) return cached
-    const rows = await retrieveChunks(clients.client, userId, payload.courseId, payload.topicId, payload.chunkIds)
-    if (rows.length !== payload.chunkIds.length) throw new IncompleteSourceError()
-    cached = rows
-    return rows
+  const spec = stageSpec(payload.specId, task.stage)
+  if (!spec) {
+    await finish({ kind: 'failed', error: jobError('invalid-request', 'This build named a stage that does not exist for its artifact.') })
+    return json({ ran: true, task: task.stage, status: 'failed' })
+  }
+
+  // A provider stage that cannot finish inside this worker's remaining budget is
+  // handed back untouched rather than started and lost.
+  if (spec.provider !== 'none' && !canRunStep(budget, Math.min(spec.maxProviderMs, 30_000))) {
+    await rpc(service, 'complete_generation_task', {
+      p_task_id: task.id, p_lease_token: task.lease_token, p_status: 'pending',
+    })
+    return json({ ran: false, reason: 'insufficient-worker-budget' })
+  }
+
+  const allTasks = await readJobTasks(service, job.id)
+  let outcome: TaskOutcome
+  try {
+    switch (task.stage) {
+      case 'inventory': outcome = await execInventory(service, client, job, payload); break
+      case 'outline': outcome = await execOutline(service, client, job, payload, task, spec, budget); break
+      case 'sections':
+      case 'repair': outcome = await execSection(service, client, job, payload, task, spec, budget); break
+      case 'draft': outcome = payload.specId === 'unit-question-bank-v1'
+        ? { kind: 'failed', error: jobError('invalid-request', 'Question banks are generated through their own Claude route.') }
+        : await execDraft(service, client, job, payload, task, spec, budget); break
+      case 'verify': outcome = await execVerify(service, client, job, payload, allTasks); break
+      case 'audit': outcome = await execAudit(client, job, payload, allTasks, spec, budget); break
+      case 'assemble': outcome = { kind: 'done' }; break
+      default: outcome = { kind: 'failed', error: jobError('invalid-request', 'Unknown generation stage.') }
+    }
+  } catch (error) {
+    console.error('generation task failed', task.stage, error instanceof Error ? error.message : 'unknown')
+    outcome = { kind: 'failed', error: astraFailure(error) }
+  }
+
+  const finished = await finish(outcome)
+  if (finished.status === 'done') await advanceStage(service, job, payload, task)
+  return json({ ran: true, task: task.stage, status: finished.status, durationMs: finished.durationMs })
+}
+
+async function readJobTasks(service: unknown, jobId: string): Promise<TaskRow[]> {
+  const { data } = await (service as { from: (table: string) => { select: (columns: string) => { eq: (column: string, value: string) => { order: (column: string, options: Record<string, unknown>) => PromiseLike<{ data: unknown }> } } } })
+    .from('study_generation_tasks').select('*').eq('job_id', jobId).order('ordinal', { ascending: true })
+  return Array.isArray(data) ? data as TaskRow[] : []
+}
+
+/**
+ * Persist the completed stage, seed the successor, THEN move the pointer.
+ *
+ * That order is what makes a crash between stages recoverable: a job restarts
+ * at the last completed stage with its successor's work already described, and
+ * never resumes in the middle of a stage it only half-scheduled.
+ */
+async function advanceStage(service: unknown, job: JobRow, payload: JobPayload, task: TaskRow) {
+  const tasks = await readJobTasks(service, job.id)
+  const open = tasks.filter((entry) => entry.stage === task.stage && !['done', 'skipped'].includes(entry.status))
+  if (open.length) return
+
+  const { data: fresh } = await (service as { from: (table: string) => { select: (columns: string) => { eq: (column: string, value: string) => { maybeSingle: () => PromiseLike<{ data: unknown }> } } } })
+    .from('study_generation_jobs').select('*').eq('id', job.id).maybeSingle()
+  const current = (isRecord(fresh) ? fresh : job) as JobRow
+  const verification = isRecord(current.verification) ? current.verification : null
+
+  const upcoming = nextStageWithWork(payload.specId, task.stage, verification)
+  if (!upcoming) {
+    const artifact = assembleArtifact(payload, current, tasks)
+    const auditTask = tasks.find((entry) => entry.stage === 'audit' && entry.status === 'done')
+    const auditStatus = isRecord(auditTask?.output) && isText(auditTask.output.auditStatus) ? auditTask.output.auditStatus : 'skipped'
+    // The citation set verification already closed against the real corpus.
+    const citations = isRecord(verification) && Array.isArray(verification.closed) ? verification.closed : []
+    if (!citations.length) {
+      await (service as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: string) => PromiseLike<unknown> } } })
+        .from('study_generation_jobs').update({
+          status: 'failed', stage: 'done', phase: 'Stopped',
+          error: jobError('citation-not-carried', 'No claim in the finished work could be traced to your material. Nothing was saved, and any entry you already had is unchanged.'),
+        }).eq('id', job.id)
+      return
+    }
+    await (service as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: string) => PromiseLike<unknown> } } })
+      .from('study_generation_jobs').update({
+        status: 'succeeded', stage: 'done', phase: 'Finished', progress: 1,
+        result: { artifact, citations, auditStatus, primaryProvider: 'openai' },
+      }).eq('id', job.id)
+    return
+  }
+
+  const seed = tasksForStage(payload.specId, upcoming, current, verification)
+  if (seed.length) await rpc(service, 'add_generation_tasks', { p_job_id: job.id, p_stage: upcoming, p_tasks: seed })
+  const spec = stageSpec(payload.specId, upcoming)
+  await (service as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: string) => PromiseLike<unknown> } } })
+    .from('study_generation_jobs').update({ phase: spec?.label ?? upcoming }).eq('id', job.id)
+  await rpc(service, 'advance_generation_stage', {
+    p_job_id: job.id,
+    p_next_stage: upcoming,
+    p_progress: pipelineProgress(payload.specId, upcoming, 0, seed.length),
+  })
+}
+
+/**
+ * Prove what the provider route can actually do, against this deployment.
+ *
+ * Background mode is only useful if a submitted response can be READ BACK, so
+ * both halves are exercised for real: a tiny request is submitted with
+ * `background: true`, and the recorded capability is set only when its result
+ * is subsequently retrieved. Documentation and test doubles do not qualify;
+ * until this probe passes, the engine runs every stage synchronously, which its
+ * task shapes already keep small enough.
+ */
+async function probeBackgroundCapability(service: unknown, budget: WorkerBudget): Promise<Response> {
+  const key = Deno.env.get('OPENAI_API_KEY')
+  if (!key) return failure(503, 'server-unconfigured', 'No provider credential is configured.')
+  const route = activeRoute()
+  const detail: Record<string, unknown> = { route }
+  let submit = false
+  let retrieve = false
+  let responseId: string | null = null
+
+  const probe = {
+    model: 'gpt-6-astra', store: false, background: true, max_output_tokens: 16,
+    reasoning: { effort: 'low' },
+    input: [{ role: 'user', content: [{ type: 'input_text', text: 'Reply with the single word OK.' }] }],
   }
 
   try {
-    switch (job.step) {
-      case 'submit': return await runSubmitStep(clients, job, payload, chunks, budget, userId)
-      case 'sync': return await runSyncStep(clients, job, payload, chunks, budget, userId)
-      case 'poll': return await runPollStep(clients, job, payload, chunks, budget, userId)
-      case 'audit': return await runAuditStep(clients, job, payload, chunks, budget)
-      default:
-        return json(publicJob(job))
+    const submitted = await withDeadline('probe-submit', stepDeadlineMs(budget, 30_000), (signal) =>
+      submitAstraBackgroundResponse(probe, astraRouteConfig(key, signal), fetch))
+    const text = await submitted.response.text()
+    const parsed = ((): unknown => { try { return JSON.parse(text) } catch { return null } })()
+    detail.submitStatus = submitted.response.status
+    detail.requestId = providerRequestId(submitted.response) ?? null
+    if (submitted.response.ok && isRecord(parsed) && isText(parsed.id)) {
+      submit = true
+      responseId = parsed.id
+      detail.status = parsed.status ?? null
+    } else {
+      detail.reason = await isBackgroundParameterRejection(new Response(text, { status: submitted.response.status }))
+        ? 'route-does-not-implement-background'
+        : 'submit-rejected'
     }
   } catch (error) {
-    if (error instanceof IncompleteSourceError) {
-      return failJob(clients, job, jobError('source-sync-incomplete', 'The complete selected corpus could not be verified. Nothing was generated, and your material is unchanged.'))
-    }
-    console.error('study-tools generation step failure', error instanceof Error ? error.message : 'unknown')
-    return failJob(clients, job, jobError('source-read-failed', 'Your synced source material could not be read for this build. Nothing was generated.'))
+    detail.reason = error instanceof StepTimeoutError ? 'submit-timeout' : 'submit-failed'
   }
+
+  if (submit && responseId) {
+    const until = Date.now() + Math.min(45_000, remainingWorkerMs(budget) - 5_000)
+    while (Date.now() < until) {
+      try {
+        const read = await withDeadline('probe-retrieve', 15_000, (signal) =>
+          getAstraResponse(responseId!, route, astraRouteConfig(key, signal), fetch))
+        const body = await read.json().catch(() => null)
+        detail.retrieveStatus = read.status
+        if (read.ok && isRecord(body)) {
+          // Retrieval is proven by reading the record back at all; a terminal
+          // status additionally proves the work completed asynchronously.
+          retrieve = true
+          detail.retrievedStatus = body.status ?? null
+          if (body.status !== 'queued' && body.status !== 'in_progress') break
+        } else {
+          detail.reason = 'retrieve-rejected'
+          break
+        }
+      } catch {
+        detail.reason = 'retrieve-failed'
+        break
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2_000))
+    }
+  }
+
+  await (service as { from: (table: string) => { upsert: (values: Record<string, unknown>, options: Record<string, unknown>) => PromiseLike<unknown> } })
+    .from('generation_provider_capabilities').upsert({
+      route, background_submit: submit, background_retrieve: retrieve,
+      checked_at: new Date().toISOString(), detail,
+    }, { onConflict: 'route' })
+
+  return json({ route, backgroundSubmit: submit, backgroundRetrieve: retrieve, usable: submit && retrieve, detail })
 }
