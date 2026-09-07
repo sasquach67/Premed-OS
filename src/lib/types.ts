@@ -724,6 +724,8 @@ export interface JournalStudyIntent {
 export type NotebookGoal = 'review' | 'assessment' | 'assignment'
 
 export interface LectureRecord {
+  /** Imported content has not passed the app generation audit. */
+  importedStudyPackage?: { version: 1; fingerprint: string; importedAt: number }
   id: ID
   courseId: ID
   title: string

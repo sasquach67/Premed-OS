@@ -63,14 +63,14 @@ function MasterySection({ label, items, caution = false }: { label: string; item
   )
 }
 
-function ObjectiveChecklist({ standard, chunks }: { standard: Standard; chunks: SourceChunk[] }) {
+function ObjectiveChecklist({ standard, chunks, imported = false }: { standard: Standard; chunks: SourceChunk[]; imported?: boolean }) {
   return (
     <div className="space-y-6">
       {standard.evidenceLimit && <p className="rounded-xl border-l-4 border-warning bg-muted p-4 text-sm leading-6"><b>Limited source support: </b>{standard.evidenceLimit}</p>}
       <MasterySection label="Understand" items={standard.understand} />
       <MasterySection label="Be able to do" items={standard.beAbleToDo} />
       <MasterySection label="Watch for" items={standard.watchFor} caution />
-      <section aria-label={`Exam practice for ${standard.title}`} data-testid={`exam-practice-${standard.id}`} className="border-t border-border pt-5">
+      {!imported && <section aria-label={`Exam practice for ${standard.title}`} data-testid={`exam-practice-${standard.id}`} className="border-t border-border pt-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-lg font-extrabold">Apply the objective</h4>
           <Badge variant="secondary">Generated practice</Badge>
@@ -97,7 +97,7 @@ function ObjectiveChecklist({ standard, chunks }: { standard: Standard; chunks: 
             <p className="mt-1 text-sm leading-6 text-muted-foreground">This earlier saved map has no generated application questions or worked answers. Its “Be able to do” targets remain available for practice.</p>
           </div>
         )}
-      </section>
+      </section>}
     </div>
   )
 }
@@ -217,7 +217,7 @@ export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline
                 <AccordionContent className="pb-6">
                   {mode === 'outline' ? (
                     <>
-                      <ObjectiveChecklist standard={standard} chunks={chunks} />
+                      <ObjectiveChecklist standard={standard} chunks={chunks} imported={outline.specHash === 'external-import-v1'} />
                       <SelfAssessment standard={standard} onChange={(state) => setMastery(standard.id, state)} />
                       <SourceDetails ids={standard.sourceChunkIds} chunks={chunks} />
                     </>
@@ -232,7 +232,7 @@ export function MasteryMapView({ outline, chunks, lecture }: { outline?: Outline
                         <summary className="cursor-pointer rounded-xl px-4 py-3 text-sm font-bold focus-visible:ring-2 focus-visible:ring-ring">Reveal after trying</summary>
                         <div className="border-t border-border p-5">
                           <p className="mb-5 text-xs font-bold text-primary">Compare your answer with the teaching checklist</p>
-                          <ObjectiveChecklist standard={standard} chunks={chunks} />
+                          <ObjectiveChecklist standard={standard} chunks={chunks} imported={outline.specHash === 'external-import-v1'} />
                           <SelfAssessment standard={standard} onChange={(state) => setMastery(standard.id, state)} />
                           <SourceDetails ids={standard.sourceChunkIds} chunks={chunks} />
                         </div>

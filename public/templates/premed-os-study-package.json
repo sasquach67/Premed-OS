@@ -1,0 +1,11 @@
+{
+  "format": "premed-os-study-package",
+  "version": 1,
+  "title": "Example lecture — replace with your guide",
+  "sources": [{ "id": "source-1", "title": "Example lecture notes", "location": "Page 1", "text": "Replace with a real excerpt from the supplied material." }],
+  "sections": [{ "title": "Big picture", "blocks": [
+    { "type": "prose", "text": "Replace with your explanation.", "sourceId": "source-1" },
+    { "type": "bullets", "items": ["First key idea", "Second key idea"], "sourceId": "source-1" }
+  ] }],
+  "objectives": [{ "title": "Explain the central idea", "freeRecallCues": ["Explain the central idea without notes."], "understand": ["Replace with an understanding point."], "beAbleToDo": ["Apply the idea to a new example."], "watchFor": ["Replace with a likely misconception."], "sourceIds": ["source-1"] }]
+}

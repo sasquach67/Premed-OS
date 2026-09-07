@@ -1,6 +1,8 @@
 import { useEffect, useId, useState } from 'react'
 import { ArrowLeft, ArrowRight, BookOpen, ClipboardCheck, PenLine, Check, FilePlus2, FileText, Loader2, NotebookPen, Sparkles, X, Camera, Image, ChartColumn, Network, Presentation, ScanText } from 'lucide-react'
 import type { ClassCenterData, Course, LectureRecord, NotebookGoal } from '@/lib/types'
+import { GenerationUsageDialog } from './GenerationUsageDialog'
+import { StudyPackageImportDialog } from './StudyPackageImportDialog'
 import { uid } from '@/lib/id'
 import { useStore } from '@/store/store'
 import { Button } from '@/components/ui/button'
@@ -207,6 +209,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
   }
 
   return <section className="notebook-composer box-border w-full min-w-0 px-4 py-5 sm:px-6 sm:py-6 lg:px-8" aria-label="Notebook entry composer">
+    {!phase && <div className="mb-4 flex flex-wrap gap-2"><GenerationUsageDialog /><StudyPackageImportDialog courseId={courseId} onImported={onBuilt} /></div>}
     {!phase && draft?.studyGuide && <Button variant="outline" onClick={() => {
       useStore.getState().update(state => {
         const saved = state.academics.classCenter.lectures.find(item => item.id === draftId)
