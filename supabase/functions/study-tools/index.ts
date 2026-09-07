@@ -2366,7 +2366,19 @@ function subdivideSection(
   // No declared subpoints: divide this section's own passages in their document
   // order, sized to what one request can carry.
   const perPart = Math.max(1_000, Math.floor(verdict.affordableInputChars * 0.6))
-  const spans = orderedSpans(supporting, (chunk) => chunk.content.length, perPart)
+  let spans = orderedSpans(supporting, (chunk) => chunk.content.length, perPart)
+  if (spans.length < 2 && supporting.length > 1) {
+    // `affordableInputChars` measures the SERIALISED REQUEST — prompt, rules,
+    // citation wire and all — while orderedSpans measures raw passage content,
+    // which is a fraction of it. A budget expressed in the larger unit and
+    // applied to the smaller one can exceed the whole corpus and return a
+    // single span, so a task that must get smaller cannot. A live coverage
+    // repair hit exactly this: 109 passages, ~17k chars of content against a
+    // 56k-char request, one span, no split, job failed. When the passages
+    // themselves are divisible, halve by passage count rather than give up.
+    const half = Math.ceil(supporting.length / 2)
+    spans = [supporting.slice(0, half), supporting.slice(half)]
+  }
   if (spans.length < 2) return null
   return {
     kind: 'subdivide',

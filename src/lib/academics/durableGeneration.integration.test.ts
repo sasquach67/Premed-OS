@@ -509,6 +509,52 @@ describe('a section too large for one request', () => {
   })
 })
 
+describe('a section with no subpoints and many small passages', () => {
+  // Content chars are a small fraction of the SERIALISED request: 40 short
+  // passages carry ~1.6k of content inside a request many times that size.
+  // A per-part budget taken from the request size and applied to content can
+  // exceed the whole corpus, yield one span, and leave a task that must get
+  // smaller unable to. A live coverage repair failed exactly this way: 109
+  // passages, ~17k of content in a 56k-char request, no split, job dead.
+  const many = Array.from({ length: 40 }, (_, index) => ({
+    chunk_id: `c${index + 1}`,
+    file_id: 'lecture',
+    content: `Passage ${index + 1}. Short but load-bearing detail.`,
+  }))
+
+  it('halves by passage count rather than refusing to divide', async () => {
+    const flatPlan = {
+      sections: [{
+        id: 'coverage', title: 'Coverage', purpose: 'Cover the material',
+        sourceChunkIds: many.map((_, index) => `S${index + 1}`),
+      }],
+      unusedSources: [],
+    }
+    const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = String(init?.body ?? '')
+      const first = [...body.matchAll(/\\"chunkId\\":\\"(S\d+)\\"/g)].map((match) => match[1])[0] ?? 'S1'
+      const value = body.includes('Plan only')
+        ? flatPlan
+        : { section: { id: 'part', title: 'Part', blocks: [{ id: `b-${first}`, type: 'prose', provenance: 'source', text: { content: 'Explained.' }, sourceRef: { citationId: first } }] } }
+      return new Response(JSON.stringify({ status: 'completed', output_text: JSON.stringify(value) }), { status: 200 })
+    }) as unknown as typeof fetch
+
+    const edge = bootStudyToolsEdge({
+      chunks: many, fetch: fetcher,
+      env: { ANTHROPIC_API_KEY: undefined, GENERATION_STAGE_DEADLINE_MS: '65000' },
+    })
+    await edge.call({ ...startBody, chunkIds: many.map((entry) => entry.chunk_id) })
+    await edge.drainQueue(60)
+
+    const parts = edge.tasks.rows.filter((task) => task.stage === 'sections' && task.parent_task_key)
+    expect(parts.length).toBeGreaterThan(1)
+    // Nothing is dropped by the fallback: the halves partition the passages.
+    const covered = parts.flatMap((task) => (task.input.passageIds as string[]) ?? [])
+    expect(new Set(covered).size).toBe(many.length)
+    expect(covered.length).toBe(many.length)
+  })
+})
+
 describe('coverage is judged against the original inventory', () => {
   it('repairs passages the plan never accounted for, rather than trusting the plan', async () => {
     const corpus = [
