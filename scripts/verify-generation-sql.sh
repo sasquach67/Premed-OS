@@ -40,14 +40,19 @@ sed 's/^create extension if not exists pg_cron;/-- pg_cron: provided by Supabase
 # cron.unschedule runs as written: the stub registry makes it faithful, so a
 # reschedule that unschedules a job nobody scheduled fails here, not in prod.
 cp "$REPO/supabase/migrations/20260907030000_generation_stage_budgets.sql" "$ROOT/03_budgets.sql"
+cp "$REPO/supabase/migrations/20260907060000_subdivision_progress_guard.sql" "$ROOT/035_guard.sql"
 cp "$REPO/supabase/tests/generation_queue_test.sql" "$ROOT/04_test.sql"
+cp "$REPO/supabase/tests/subdivision_bound_test.sql" "$ROOT/05_bound.sql"
 chown postgres:postgres "$ROOT"/*.sql
 
-for file in 00_stubs 01_jobs 02_tasks 03_budgets; do
+for file in 00_stubs 01_jobs 02_tasks 03_budgets 035_guard; do
   su postgres -c "psql -h $ROOT -p $PORT -d postgres -v ON_ERROR_STOP=1 -q -f $ROOT/$file.sql" >/dev/null
 done
 echo "migrations applied"
 su postgres -c "psql -h $ROOT -p $PORT -d postgres -v ON_ERROR_STOP=1 -q -f $ROOT/04_test.sql" 2>&1 | tee "$ROOT/test.out"
+# Subdivision must terminate and the bill must be finite: per-task attempt caps
+# bound retries of one task, not a subdivider that keeps minting tasks.
+su postgres -c "psql -h $ROOT -p $PORT -d postgres -v ON_ERROR_STOP=1 -f $ROOT/05_bound.sql" 2>&1 | tee -a "$ROOT/test.out"
 
 if grep -qi "BUG" "$ROOT/test.out"; then echo "FAILED: a guarantee did not hold"; exit 1; fi
 echo "generation queue SQL verified"

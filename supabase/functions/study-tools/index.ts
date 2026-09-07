@@ -2776,8 +2776,29 @@ async function runOneTask(
         p_lease_token: task.lease_token,
         p_parts: outcome.parts,
       })
-      console.error(`generation task subdivided stage=${task.stage} parts=${outcome.parts.length} reason=${outcome.reason}`)
-      return { status: added === null ? 'failed' : 'subdivided', durationMs }
+      console.error(`generation task subdivided stage=${task.stage} parts=${outcome.parts.length} reason=${outcome.reason} children=${String(added)}`)
+      // 0 means the split produced no child task — every proposed key collided
+      // with a sibling, because child keys hang off the flattened root. Treating
+      // that as success is how a section's material used to leave the build with
+      // no error recorded anywhere. It is a failure, and it is loud.
+      if (added === null || added === 0) {
+        await rpc(service, 'complete_generation_task', {
+          p_task_id: task.id,
+          p_lease_token: task.lease_token,
+          p_status: 'failed',
+          p_output: null,
+          p_error: jobError('subdivision-made-no-progress', 'This part of the guide could not be divided any further.'),
+          p_duration_ms: durationMs,
+          p_provider_route: null,
+          p_provider_request_id: null,
+          p_provider_response_id: null,
+          p_backup_reservation_id: null,
+          p_clear_backup_reservation: false,
+          p_ambiguous: null,
+        })
+        return { status: 'failed', durationMs }
+      }
+      return { status: 'subdivided', durationMs }
     }
 
     // Measured cost of a real provider round trip, folded into this stage's
