@@ -415,4 +415,4 @@ grant execute on function public.reap_generation_work() to service_role;
 -- Every 10 seconds: dispatch runnable work. Every minute: release dead leases.
 -- `cron.schedule` is idempotent by job name, so re-running this migration is safe.
 select cron.schedule('premedos-generation-runner', '10 seconds', $cron$ select public.dispatch_generation_work(4) $cron$);
-select cron.schedule('premedos-generation-reaper', '1 minute', $cron$ select public.reap_generation_work() $cron$);
+select cron.schedule('premedos-generation-reaper', '* * * * *', $cron$ select public.reap_generation_work() $cron$);

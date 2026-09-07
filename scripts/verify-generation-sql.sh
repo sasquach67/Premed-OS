@@ -37,8 +37,9 @@ cp "$REPO/supabase/migrations/20260906230000_study_generation_jobs.sql" "$ROOT/0
 # pg_cron and pg_net ship with the platform, not with a local cluster.
 sed 's/^create extension if not exists pg_cron;/-- pg_cron: provided by Supabase/; s/^create extension if not exists pg_net;/-- pg_net: provided by Supabase/' \
   "$REPO/supabase/migrations/20260907010000_generation_task_stages.sql" > "$ROOT/02_tasks.sql"
-sed 's/^select cron.unschedule/-- pg_cron: /' \
-  "$REPO/supabase/migrations/20260907030000_generation_stage_budgets.sql" > "$ROOT/03_budgets.sql"
+# cron.unschedule runs as written: the stub registry makes it faithful, so a
+# reschedule that unschedules a job nobody scheduled fails here, not in prod.
+cp "$REPO/supabase/migrations/20260907030000_generation_stage_budgets.sql" "$ROOT/03_budgets.sql"
 cp "$REPO/supabase/tests/generation_queue_test.sql" "$ROOT/04_test.sql"
 chown postgres:postgres "$ROOT"/*.sql
 
