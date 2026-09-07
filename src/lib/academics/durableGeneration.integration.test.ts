@@ -593,6 +593,79 @@ describe('coverage is judged against the original inventory', () => {
   })
 })
 
+describe('a mastery coverage repair spans more than one objective', () => {
+  // The repair carries whatever no planned objective accounted for. Demanding
+  // exactly one `standard` back made the honest answer unrepresentable: a live
+  // Mastery Map build sent 108 forgotten passages into one repair, got a reply
+  // that was not a single objective, and failed twice on shape — never on time
+  // (78.1s then 79.5s, both well inside budget).
+  const corpus = [
+    { chunk_id: 'c1', file_id: 'lecture', content: 'Encoding transforms information.' },
+    { chunk_id: 'c2', file_id: 'lecture', content: 'Retrieval reconstructs a trace.' },
+    { chunk_id: 'c3', file_id: 'lecture', content: 'Random assignment supports causal inference.' },
+    { chunk_id: 'c4', file_id: 'lecture', content: 'Operational definitions make constructs measurable.' },
+  ]
+  const masteryStart = {
+    ...startBody, specId: 'unit-mastery-outline-v1', chunkIds: corpus.map((c) => c.chunk_id),
+  }
+
+  it('accepts a list of objectives and carries every one into the map', async () => {
+    const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = String(init?.body ?? '')
+      let value: unknown
+      if (body.includes('Plan only')) {
+        // Forgets c3 and c4, so a coverage repair carries both.
+        value = { sections: [{ id: 'encoding', title: 'Encoding', purpose: '', sourceChunkIds: ['S1', 'S2'], subpoints: [] }], unusedSources: [] }
+      } else if (body.includes('one entry per objective')) {
+        // The repair: the leftover passages support two distinct objectives.
+        value = { standards: [
+          { id: 'causal', unit: 'Unit 1', title: 'Causal inference', objective: 'Explain random assignment', sourceChunkIds: ['S3'] },
+          { id: 'operational', unit: 'Unit 1', title: 'Operational definitions', objective: 'Define constructs measurably', sourceChunkIds: ['S4'] },
+        ] }
+      } else {
+        value = { standard: { id: 'encoding', unit: 'Unit 1', title: 'Encoding', objective: 'Explain encoding', sourceChunkIds: ['S1'] } }
+      }
+      return new Response(JSON.stringify({ status: 'completed', output_text: JSON.stringify(value) }), { status: 200 })
+    }) as unknown as typeof fetch
+
+    const edge = bootStudyToolsEdge({ chunks: corpus, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
+    const started = await readJson(await edge.call(masteryStart))
+    await edge.drainQueue(60)
+
+    const coverage = edge.tasks.rows.filter((task) => task.stage === 'repair' && task.task_key.startsWith('coverage::'))
+    expect(coverage).toHaveLength(1)
+    // The repair is asked for a list, and the list is accepted.
+    expect(coverage[0].status).toBe('done')
+    expect(coverage[0].error).toBeNull()
+
+    const job = edge.jobs.rows.get(String(started.jobId))!
+    expect(job.status).toBe('succeeded')
+    const artifact = (job.result as { artifact: { standards: Array<{ id?: string }> } }).artifact
+    // Flattened: the planned objective plus BOTH recovered ones, not a nested list.
+    expect(artifact.standards.map((entry) => entry.id).sort()).toEqual(['causal', 'encoding', 'operational'])
+  })
+
+  it('says what shape came back when a piece is unusable', async () => {
+    const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = String(init?.body ?? '')
+      const value = body.includes('Plan only')
+        ? { sections: [{ id: 'encoding', title: 'Encoding', purpose: '', sourceChunkIds: ['S1'], subpoints: [] }], unusedSources: [] }
+        : { paragraphs: ['neither a standard nor a standards list'] }
+      return new Response(JSON.stringify({ status: 'completed', output_text: JSON.stringify(value) }), { status: 200 })
+    }) as unknown as typeof fetch
+
+    const edge = bootStudyToolsEdge({ chunks: corpus, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
+    await edge.call(masteryStart)
+    await edge.drainQueue(60)
+
+    const failed = edge.tasks.rows.find((task) => task.status === 'failed' && (task.error as { code?: string })?.code === 'invalid-response')
+    expect(failed, 'an unusable reply must fail loudly').toBeTruthy()
+    // Diagnosable from the row alone — no rerun needed to learn what arrived.
+    const issues = (failed!.error as { issues?: string[] }).issues ?? []
+    expect(issues.join(' ')).toContain('received: paragraphs')
+  })
+})
+
 describe('measurement replaces guessing', () => {
   it('records what each stage actually cost, per stage', async () => {
     const { fetcher } = guideRun()

@@ -1235,7 +1235,19 @@ async function callAnthropicAudit(value: unknown, chunks: Chunk[], specPrompt: s
       }],
     }),
   })
-  if (!result.ok) throw new Error(`Anthropic audit ${result.status}`)
+  if (!result.ok) {
+    // Carry the provider's own reason. A bare status told us an audit failed
+    // and nothing about why, which is not enough to fix it.
+    const detail = await result.text().catch(() => '')
+    const parsedError = ((): string => {
+      try {
+        const body = JSON.parse(detail)
+        const message = body?.error?.message
+        return isText(message) ? message : detail.slice(0, 300)
+      } catch { return detail.slice(0, 300) }
+    })()
+    throw new Error(`Anthropic audit ${result.status}: ${parsedError}`)
+  }
   const payload = await result.json()
   const text = Array.isArray(payload?.content)
     ? payload.content.filter((block: { type?: string }) => block.type === 'text')
@@ -2300,6 +2312,8 @@ async function execSection(
   const inventory = buildSourceInventory(chunks)
   const section = task.input as unknown as PlannedSection & { plan?: PlannedSection[]; problem?: string }
   const objectives = payload.specId === 'unit-mastery-outline-v1'
+  // A coverage repair carries the passages no planned piece accounted for.
+  const isCoverageRepair = task.stage === 'repair' && task.task_key.startsWith('coverage::')
   const mapped = new Set(section.passageIds ?? [])
   const supporting = chunks.filter((chunk) => mapped.has(chunk.chunk_id))
   if (!supporting.length) {
@@ -2315,7 +2329,11 @@ async function execSection(
       wire.encodePrompt(payload.systemPrompt),
       STAGE_JSON_RULE,
       objectives
-        ? 'Return {"standard": { ... }} for exactly this one objective, matching the artifact specification for a single standards entry.'
+        ? (isCoverageRepair
+          // Leftover passages need not belong to one objective. Asking for
+          // exactly one made the honest answer unrepresentable.
+          ? 'Return {"standards":[ { ... } ]} — one entry per objective these passages support, each matching the artifact specification for a single standards entry. Return a single-entry list if one objective genuinely covers them.'
+          : 'Return {"standard": { ... }} for exactly this one objective, matching the artifact specification for a single standards entry.')
         : 'Return {"section": {"id","title","blocks":[...]}} for exactly this one section, matching the artifact specification for a single section.',
       `Write only this ${objectives ? 'objective' : 'section'}: ${section.id} — ${section.title}. ${section.purpose ?? ''}`,
       outline ? `The full plan, so this piece fits the whole and does not repeat its neighbours: ${outline}.` : '',
@@ -2328,9 +2346,27 @@ async function execSection(
     return { payload: body, wire }
   }, (raw, wire) => {
     const decoded = canonicalizeOpenAIGenerationSourceRefs(wire.decode(raw), chunks)
-    const piece = isRecord(decoded) ? (objectives ? decoded.standard : decoded.section) : null
-    if (!isRecord(piece)) {
-      return { kind: 'failed', error: jobError('invalid-response', 'The generator returned nothing usable for this piece. Nothing was saved.') }
+    const single = isRecord(decoded) ? (objectives ? decoded.standard : decoded.section) : null
+    // A coverage repair carries whatever no planned piece accounted for, which
+    // for a mastery map can legitimately span several objectives. Demanding
+    // exactly one `standard` made that unsatisfiable: the leftover passages
+    // cannot honestly be one objective, so the reply never matched and the
+    // build failed on shape rather than on content. A list is accepted and
+    // flattened at assembly.
+    const many = objectives && isRecord(decoded) && Array.isArray(decoded.standards)
+      ? decoded.standards.filter(isRecord)
+      : []
+    const piece: Record<string, unknown> | null = isRecord(single)
+      ? single
+      : many.length ? { standards: many } : null
+    if (!piece) {
+      // Say what came back, so the next failure is diagnosable from the row
+      // instead of needing a rerun. Keys only — never the generated content.
+      const shape = isRecord(decoded) ? Object.keys(decoded).slice(0, 12).join(',') : typeof decoded
+      return {
+        kind: 'failed',
+        error: jobError('invalid-response', 'The generator returned nothing usable for this piece. Nothing was saved.', { issues: [`expected ${objectives ? 'standard | standards[]' : 'section'}; received: ${shape}`] }),
+      }
     }
     return { kind: 'done', output: { piece } as Record<string, unknown> }
   }, (verdict) => subdivideSection(section, supporting, task, verdict, spec), sized)
@@ -2591,8 +2627,18 @@ async function execAudit(
     }
     return { kind: 'done', output: { auditStatus: 'approved' } }
   } catch (error) {
-    console.error('study-tools audit unavailable', error instanceof Error ? error.message : 'unknown')
-    return { kind: 'done', output: { auditStatus: 'unavailable' } }
+    // The gate holds or it is not a gate. An audit that could not run has not
+    // approved anything, and returning 'done' shipped the artifact unreviewed —
+    // a live build saved a study guide with auditStatus 'unavailable' and no
+    // record anywhere of why the reviewer failed. `skipped` (no key configured)
+    // stays a deliberate deployment choice and still passes; a configured
+    // reviewer that errors is a failure, and it carries its own reason.
+    const reason = error instanceof Error ? error.message : 'unknown'
+    console.error('study-tools audit unavailable', reason)
+    return {
+      kind: 'failed',
+      error: jobError('audit-unavailable', 'The independent review could not be completed, so this build was not saved unreviewed.', { issues: [reason.slice(0, 300)] }),
+    }
   }
 }
 
@@ -2649,16 +2695,34 @@ function assembleArtifact(payload: JobPayload, job: JobRow, tasks: TaskRow[]): u
   const plan = isRecord(job.outline) && Array.isArray(job.outline.sections)
     ? job.outline.sections as PlannedSection[]
     : []
+  // Planned pieces first, in plan order. Then anything produced that the plan
+  // never named — which is what a coverage repair is: material no planned piece
+  // accounted for. Keeping only planned ids silently dropped those pieces after
+  // the build had already generated and paid for them, so the artifact was
+  // missing exactly the passages the coverage check went and recovered.
+  const plannedIds = new Set(plan.map((section) => section.id))
   const ordered = plan.length
-    ? plan.map((section) => byKey.get(section.id)).filter((piece): piece is Record<string, unknown> => isRecord(piece))
+    ? [
+      ...plan.map((section) => byKey.get(section.id)).filter((piece): piece is Record<string, unknown> => isRecord(piece)),
+      ...[...byKey.entries()]
+        .filter(([key]) => !plannedIds.has(key))
+        .map(([, piece]) => piece)
+        .filter((piece): piece is Record<string, unknown> => isRecord(piece)),
+    ]
     : [...byKey.values()]
 
   if (payload.specId === 'unit-mastery-outline-v1') {
     const first = ordered[0] as Record<string, unknown> | undefined
+    // One task usually yields one objective, but a coverage repair may return a
+    // list of them; flatten so the map carries each as its own standard.
+    const standards = ordered.flatMap((piece) =>
+      Array.isArray((piece as { standards?: unknown }).standards)
+        ? ((piece as { standards: unknown[] }).standards.filter(isRecord))
+        : [piece])
     return {
       title: isText(job.outline?.title) ? job.outline.title : (isText(first?.unit) ? first!.unit : 'Mastery Map'),
       unit: isText(job.outline?.unit) ? job.outline.unit : 'Unit',
-      standards: ordered,
+      standards,
     }
   }
   if (!plan.length && ordered.length === 1) return ordered[0]

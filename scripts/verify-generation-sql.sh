@@ -42,11 +42,12 @@ sed 's/^create extension if not exists pg_cron;/-- pg_cron: provided by Supabase
 cp "$REPO/supabase/migrations/20260907030000_generation_stage_budgets.sql" "$ROOT/03_budgets.sql"
 cp "$REPO/supabase/migrations/20260907060000_subdivision_progress_guard.sql" "$ROOT/035_guard.sql"
 cp "$REPO/supabase/migrations/20260907070000_subdivision_all_or_nothing.sql" "$ROOT/036_atomic.sql"
+cp "$REPO/supabase/migrations/20260907090000_reap_exhausted_tasks.sql" "$ROOT/037_reap.sql"
 cp "$REPO/supabase/tests/generation_queue_test.sql" "$ROOT/04_test.sql"
 cp "$REPO/supabase/tests/subdivision_bound_test.sql" "$ROOT/05_bound.sql"
 chown postgres:postgres "$ROOT"/*.sql
 
-for file in 00_stubs 01_jobs 02_tasks 03_budgets 035_guard 036_atomic; do
+for file in 00_stubs 01_jobs 02_tasks 03_budgets 035_guard 036_atomic 037_reap; do
   su postgres -c "psql -h $ROOT -p $PORT -d postgres -v ON_ERROR_STOP=1 -q -f $ROOT/$file.sql" >/dev/null
 done
 echo "migrations applied"
