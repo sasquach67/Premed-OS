@@ -2395,8 +2395,16 @@ function subdivideSection(
   const known = new Set(supporting.map((chunk) => chunk.chunk_id))
   const floor = spec.minOutputTokens ?? 1_000
   const parentWant = Number(section.outputTokens) || spec.outputTokens || 5_000
-  // Each part's share of the writing, never below what a real piece needs.
-  const shareFor = (count: number) => Math.max(floor, Math.ceil(parentWant / count))
+  // A coverage repair's parts are independent pieces over DISJOINT passages,
+  // not slices of one piece of writing, so dividing the output ask between them
+  // starves each one. A live split proved it: 109 passages halved into 54 and
+  // 55, the 4,000-token ask halved with them, and both parts died on
+  // openai-output-limit — truncated, not slow. Each part keeps the parent's ask;
+  // sizing still refuses it if the budget cannot afford it.
+  const coverageRepair = task.stage === 'repair' && task.task_key.startsWith('coverage::')
+  const shareFor = (count: number) => coverageRepair
+    ? parentWant
+    : Math.max(floor, Math.ceil(parentWant / count))
 
   const subpoints = (section.subpoints ?? []).filter((point) => point.id && (point.sourceChunkIds ?? []).some((id) => known.has(id)))
   if (subpoints.length > 1) {
