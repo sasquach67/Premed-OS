@@ -407,7 +407,7 @@ describe('ClassHub approved Overview', () => {
     expect(addToday).toBeTruthy()
     await act(async () => addToday!.click())
     expect(document.body.textContent).toContain('What would you like to do?')
-    expect(document.body.textContent).toContain('Continue to materials')
+    expect(document.body.textContent).toContain('View full prompt')
 
   })
 
@@ -600,7 +600,7 @@ describe('ClassHub approved Overview', () => {
     expect(container.querySelector('.lecture-overview-composition')).toBeNull()
     const addLecture = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.classList.contains('overview-entry-tile'))!
     await act(async () => addLecture.click())
-    expect(document.body.textContent).toContain('Continue to materials')
+    expect(document.body.textContent).toContain('View full prompt')
 
   })
 
@@ -836,8 +836,8 @@ describe('ClassHub approved Overview', () => {
     })
 
     expect(document.body.textContent).toContain('What would you like to do?')
-    expect(document.body.querySelector('[aria-label="Entry progress"]')?.textContent).toContain('Goal')
-    expect(document.body.textContent).toContain('Materials')
+    expect(document.body.querySelector('[aria-label="Notebook workflow progress"]')?.textContent).toContain('Goal')
+    expect(document.body.textContent).toContain('Use your AI')
 
   })
 

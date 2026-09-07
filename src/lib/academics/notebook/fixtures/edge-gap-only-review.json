@@ -1,0 +1,115 @@
+{
+  "format": "premed-os-notebook-package",
+  "version": 2,
+  "instructionsVersion": "notebook-workflows-draft-2",
+  "course": {
+    "code": "DEMO 101",
+    "title": "Invented Route Workshop",
+    "term": null
+  },
+  "sources": [
+    {
+      "id": "objectives",
+      "title": "Invented official objective sheet",
+      "role": "objectives",
+      "access": "read",
+      "inspected": "Complete invented passage printed in the fixture.",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "ex-objectives",
+          "location": "Invented fixture paragraph 1",
+          "text": "Explain how route sorting algorithms optimize travel time."
+        }
+      ]
+    },
+    {
+      "id": "unreadable",
+      "title": "Invented unreadable algorithm notes",
+      "role": "reading",
+      "access": "unreadable",
+      "inspected": "",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": false,
+      "excerpts": []
+    },
+    {
+      "id": "uninspected",
+      "title": "Invented uninspected appendix",
+      "role": "reading",
+      "access": "not-accessed",
+      "inspected": "",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": false,
+      "excerpts": []
+    }
+  ],
+  "entries": [
+    {
+      "id": "fixture-review",
+      "revision": 1,
+      "baseRevision": null,
+      "title": "Routes, labels and tags",
+      "goal": "review",
+      "scope": "Invented structural fixture. No real course materials or student trial were processed.",
+      "request": {
+        "helpStage": null,
+        "classPreferences": "Define terms before comparisons.",
+        "assessmentFormat": null
+      },
+      "sections": [
+        {
+          "id": "missing",
+          "title": "Uncovered objective",
+          "purpose": "next-steps",
+          "blocks": [
+            {
+              "id": "gap",
+              "type": "gap",
+              "provenance": "clarification",
+              "sourceIds": [
+                "objectives"
+              ],
+              "excerptIds": [
+                "ex-objectives"
+              ],
+              "text": "The objective sheet states the sorting objective, but supplies no explanation. The algorithm notes were unreadable.",
+              "nextStep": "Supply a readable explanation of the sorting method and its relationship to travel time."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "id": "req-missing",
+          "text": "Explain how route sorting algorithms optimize travel time.",
+          "kind": "objective",
+          "authority": "official",
+          "sourceIds": [
+            "objectives"
+          ],
+          "excerptIds": [
+            "ex-objectives"
+          ],
+          "status": "missing",
+          "basis": "This excerpt establishes only the official objective wording; no accessible passage supports teaching or a solution.",
+          "sectionIds": [
+            "missing"
+          ],
+          "nextStep": "Supply readable algorithm teaching before adding a mastery objective."
+        }
+      ],
+      "objectives": [],
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ]
+    }
+  ]
+}

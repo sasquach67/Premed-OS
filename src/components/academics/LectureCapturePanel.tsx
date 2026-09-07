@@ -1,4 +1,5 @@
 import { GenerationUsageDialog } from './GenerationUsageDialog'
+import { ExternalNotebookView } from './ExternalNotebookView'
 import { StudyPackageImportDialog } from './StudyPackageImportDialog'
 import { GenerationReviewNotice } from './GenerationReviewNotice'
 import '@/pages/LecturePage.css'
@@ -54,6 +55,7 @@ export function LectureCapturePanel({ courseId, course, data, onOpenNotes, initi
   const [rebuildingLectureId, setRebuildingLectureId] = useState<string>()
   const [view, setView] = useState<WorkspaceView>(initialDestination === 'transcript' || initialDestination === 'evidence' ? 'sources' : initialDestination === 'study-work' ? 'materials' : 'brief')
   const [captureGuideOpen, setCaptureGuideOpen] = useState(false)
+  if (activeLecture?.importedNotebook) return <ExternalNotebookView key={activeLecture.id} lecture={activeLecture} courseCode={course?.code ?? courseId} />
   if (activeLecture?.workspaceState === 'complete' && rebuildingLectureId !== activeLecture.id) return <LectureWorkspace course={course} courseId={courseId} data={data} lectures={lectures} activeLecture={activeLecture} view={view} onView={setView} onSelect={(lecture) => { if (onNavigateLecture) { onNavigateLecture(lecture.id); return }; setActiveLectureId(lecture.id); setRebuildingLectureId(undefined); setView('brief') }} onDeleted={(lectureId) => { if (activeLectureId !== lectureId) return; if (onDeletedLecture) { onDeletedLecture(); return }; setActiveLectureId(lectures.find((lecture) => lecture.id !== lectureId)?.id); setRebuildingLectureId(undefined); setView('brief') }} onRebuild={() => { setRebuildingLectureId(activeLecture.id) }} onOpenNotes={onOpenNotes} onHelp={() => setCaptureGuideOpen(true)} help={<LectureCaptureGuide open={captureGuideOpen} onOpenChange={setCaptureGuideOpen} />} embedded={displayMode === 'embedded'} standalone={displayMode === 'page'} />
   return <NotebookEntryComposer courseId={courseId} course={course} data={data} entry={activeLecture} onBuilt={id => { setActiveLectureId(id); setRebuildingLectureId(undefined); setView('brief'); onNavigateLecture?.(id) }} />
 

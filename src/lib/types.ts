@@ -279,6 +279,8 @@ export interface SyllabusScheduleEntry {
 /** Operational extension for one canonical Course. It exists only for the
  * profile's current term and never repeats course code/title/term. */
 export interface ClassWorkspace {
+  /** Student-owned preferences used in externally generated notebook prompts. */
+  externalNotebookPreferences?: string
   /** Student-owned Overview focus and reading shortcut; absent for older workspaces. */
   studyFocus?: string
   lastOpenedLectureId?: ID
@@ -724,6 +726,8 @@ export interface JournalStudyIntent {
 export type NotebookGoal = 'review' | 'assessment' | 'assignment'
 
 export interface LectureRecord {
+  /** Lossless external notebook plus separately editable content and local progress. */
+  importedNotebook?: import('./academics/notebook/types').ImportedNotebook
   /** Imported content has not passed the app generation audit. */
   importedStudyPackage?: { version: 1; fingerprint: string; importedAt: number }
   id: ID

@@ -1,0 +1,89 @@
+{
+  "instructionsVersion": "notebook-workflows-draft-2",
+  "canonicalHeadAtBuild": "55f9cb39c2d26616a00314c70df1b89ffac9dc85",
+  "canonicalRootAtBuild": "/private/tmp/premed-notebook-instructions-v2",
+  "sources": {
+    "premed-hq-documentation/specifications/generation/21-external-notebook-request-template.md": {
+      "sha256": "600fd2f1c4eefe22d1ea63cf14909e6ecf3b71ae96ef3377813b31cf7d719b91",
+      "sections": {
+        "full": "600fd2f1c4eefe22d1ea63cf14909e6ecf3b71ae96ef3377813b31cf7d719b91"
+      }
+    },
+    "premed-hq-documentation/specifications/generation/19-study-source-and-format-contract.md": {
+      "sha256": "fa229efb555dddda56cd7dd6002d81572d499ba1e75b2243065a8e55a696a127",
+      "sections": {
+        "full": "fa229efb555dddda56cd7dd6002d81572d499ba1e75b2243065a8e55a696a127"
+      }
+    },
+    "premed-hq-documentation/specifications/generation/20-external-notebook-workflow.md": {
+      "sha256": "d1e276e4eb3d8650a6148677e493fa64460a84789b4d7894826dc4312f7649c6",
+      "sections": {
+        "full": "d1e276e4eb3d8650a6148677e493fa64460a84789b4d7894826dc4312f7649c6"
+      }
+    },
+    "premed-hq-documentation/specifications/generation/03-study-guide-v1.md": {
+      "sha256": "bf9801f8ac195ce53353a6e0074b14fda480198ce6b864f2297e09c0b48cd003",
+      "sections": {
+        "Runtime briefing mirror": "ea0156a12578f169350c7ef7700ed6f28c72d675bda7cc0f01502e6dbe1267e4",
+        "Portable review notebook": "09a6a8295fac6979500126d6f35bb2bf2eb5315372b074c43f21565120d28350"
+      }
+    },
+    "premed-hq-documentation/specifications/generation/11-unit-mastery-outline-v1.md": {
+      "sha256": "786c2030e2a9ef8b2a937a2edd5d2937771ac0eb42248fc85c5b35cb0c951692",
+      "sections": {
+        "Introduction and Rules excluding runtime plumbing": "e74d0a5c0dbd851e6cbbed78d65a5f340daab3a6b5b3cf1845b2edd3a42eadfb",
+        "Portable objective coverage": "b735b31b3a181bcce04fea1f4fa608e7647c9d36029121dee562ef81979ceae1"
+      }
+    },
+    "premed-hq-documentation/implementation/briefs/notebook-assessment-v1.md": {
+      "sha256": "374adec02b255f87b0ebc1d2c4fb8aa323be6fe7d63ae1a68648f0d181bb98ac",
+      "sections": {
+        "All substantive NA- rules": "895cc6629f4ac14c2afac2f404e1e3e93072b10b844a61201c75a88f8653806f",
+        "Portable multi-lesson assessment preparation": "de9152c879731dd2e347f83a8ee583f4f24b53005c90a486e340f398cc6bbae6"
+      }
+    },
+    "premed-hq-documentation/implementation/briefs/notebook-assignment-v1.md": {
+      "sha256": "9cc2ad0a3a69bdc3279af2c79e57a98fc01ac6355a73a1f8156c18db27e43a1a",
+      "sections": {
+        "All substantive NW- rules": "772eb4de6bb8cb5f0e4afc8b1be6bf38c8a080428b0b19af585f0385b609f0aa",
+        "Portable assignment support": "3b3aa3cff8c7c0ce0e599522a41a65f15753bee9cdc6c3d968ae4f23838e1bab"
+      }
+    }
+  },
+  "schema": {
+    "path": "premed-hq-documentation/specifications/generation/portable-notebooks/notebook-package.schema.json",
+    "sha256": "41d6f3e5adaebb55ee80cb567354fb7698e252dafca1c0009ea15f81910c7b43"
+  },
+  "tooling": {
+    "premed-hq-documentation/specifications/generation/portable-notebooks/build_fixtures.py": "31d262db6aafa9788e30e20be0f2b3d4af3c80eba634990984d25a2d623ff169",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "9046ef8579ecb3f3c7456aea071932458e12f5c05c8a3e4d4f8d37815ca6a585",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/build_schema.py": "86cee42747b37f0dc735f28e21a1aa586f77015454b6fcfd593eb8178684085d",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/check_package.py": "7d9db5b5e4107dec32f4323312ba247a2dcf1c898dd52e3f833f3b6a57ddfcbd",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/validate_package.py": "7c936b86ccb41bd54294eeab8fbe58f80d709a273cb8d0d46bf7c4dbfad6722b"
+  },
+  "outputs": {
+    "copy-prompt-review.md": {
+      "sha256": "29b03ce04c86604cb840cb6b0db488d9f5035a02f1d1d3c68a91a9d7f8c8c269",
+      "bytes": 43947
+    },
+    "copy-prompt-assessment.md": {
+      "sha256": "8e77218575f0950fc1bf4724092a502bf5d174df8c2b7752ec4b11717b14a406",
+      "bytes": 40409
+    },
+    "copy-prompt-assignment.md": {
+      "sha256": "0eeff044901931902437817c45a4ff36bc3a64964df570e9856eb8bb99383885",
+      "bytes": 36836
+    }
+  },
+  "deliberateEdits": [
+    "Adds external transport, coverage ledger, source access and revision rules in canonical 20.",
+    "Adds portable extensions to 03/11 and assessment/assignment briefs.",
+    "Strengthens multi-lesson assessment scope and teaching in the canonical assessment brief.",
+    "Selects full shared rules, all runtime study-guide rules, all mastery Rules and all substantive goal rule bullets; excludes renderer/persistence/repair implementation paragraphs.",
+    "Legacy names retained verbatim as methodological provenance, explicitly mapped by canonical 20.",
+    "JSON Schema copied byte-for-byte from coordinator v2; no schema changes.",
+    "Class preferences supplied per request; no invented course rules.",
+    "Coordinator request template 21 reconciled into canonical JSON request envelope; final 11-token contract supersedes the earlier draft tokens."
+  ],
+  "qualityStatus": "Draft; structural checks and invented fixtures cannot establish learning quality or count as manual course trials."
+}

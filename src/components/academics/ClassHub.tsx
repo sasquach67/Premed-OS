@@ -1,4 +1,5 @@
 import { GenerationReviewNotice } from './GenerationReviewNotice'
+import { NotebookImportDialog } from './NotebookImportPanel'
 import { ReadingSummaryDialog, ReadingSummaryContent } from './ReadingSummaryDialog'
 import { isPrimaryMaterial } from '@/lib/academics/materialCatalog'
 import { preferredScrollBehavior } from '@/lib/scroll'
@@ -354,15 +355,16 @@ function Overview({ course, workspace, data, assignments, onTab }: {
     </section>
     <div className="overview-approved-columns">
       <section className="lecture-journal" aria-labelledby="lecture-ledger-title">
-        <div className="lecture-journal-heading"><div><h2 id="lecture-ledger-title">Class notebook</h2></div></div>
+        <div className="lecture-journal-heading"><div><h2 id="lecture-ledger-title">Class notebook</h2></div><NotebookImportDialog courseId={course.id} onImported={id => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/${encodeURIComponent(id)}`)} /></div>
         <Button variant="outline" className="overview-entry-tile" onClick={startEntry}><Plus aria-hidden="true"/><span><strong>Add to notebook</strong></span><ArrowRight aria-hidden="true"/></Button>
         {lectures.length ? <Accordion type="single" collapsible value={selectedLectureId ?? ''} onValueChange={(value) => selectLecture(value || undefined)} className="lecture-journal-list" aria-label="Notebook entries">
           {[...chronologicalLectures].reverse().map((lecture) => {
             const isActive = activeLecture?.id === lecture.id
+            const importedEntry = lecture.importedNotebook?.current.entries.find(entry => entry.id === lecture.importedNotebook?.entryId)
             return <AccordionItem key={lecture.id} value={lecture.id} className="lecture-journal-item">
               <LectureRecordMenu lecture={lecture} onOpen={() => setSelectedLectureId(lecture.id)} onOpenFullScreen={() => openLecture(lecture.id)} onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail>
                 <AccordionTrigger className={cn('lecture-rail-entry', isActive && 'is-active')}>
-                  <span className="overview-date-stamp" aria-hidden="true">{lecture.occurredOn ? new Date(`${lecture.occurredOn.slice(0,10)}T12:00:00`).toLocaleDateString(undefined, { month: 'short' }) : 'Entry'}<strong>{lecture.occurredOn?.slice(8,10) ?? '—'}</strong></span><span className="lecture-journal-row-text"><b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span>{lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'}</span></span>
+                  <span className="overview-date-stamp" aria-hidden="true">{lecture.occurredOn ? new Date(`${lecture.occurredOn.slice(0,10)}T12:00:00`).toLocaleDateString(undefined, { month: 'short' }) : 'Entry'}<strong>{lecture.occurredOn?.slice(8,10) ?? '—'}</strong></span><span className="lecture-journal-row-text"><b>{completedLectureTitle(lectureNumber(lecture.id), lecture)}</b><span>{importedEntry ? `${({ review: 'Review', assessment: 'Assessment', assignment: 'Assignment' })[importedEntry.goal]} / Revision ${importedEntry.revision}` : lecture.occurredOn ? fmtEventDate(lecture.occurredOn) : 'Date not set'}</span></span>
                 </AccordionTrigger>
               </LectureRecordMenu>
               <AccordionContent className="lecture-journal-detail">

@@ -1,0 +1,113 @@
+{
+  "format": "premed-os-notebook-package",
+  "version": 2,
+  "instructionsVersion": "notebook-workflows-draft-2",
+  "course": {
+    "code": "DEMO 101",
+    "title": "Invented Route Workshop",
+    "term": null
+  },
+  "sources": [
+    {
+      "id": "lesson-1",
+      "title": "Invented lesson 1",
+      "role": "reading",
+      "access": "partial",
+      "inspected": "Only the first sentence of the invented handout.",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "ex-lesson-1",
+          "location": "Invented fixture paragraph 1",
+          "text": "A route is an ordered list of stops."
+        }
+      ]
+    }
+  ],
+  "entries": [
+    {
+      "id": "fixture-review",
+      "revision": 1,
+      "baseRevision": null,
+      "title": "Routes, labels and tags",
+      "goal": "review",
+      "scope": "Invented structural fixture. No real course materials or student trial were processed.",
+      "request": {
+        "helpStage": null,
+        "classPreferences": "Define terms before comparisons.",
+        "assessmentFormat": null
+      },
+      "sections": [
+        {
+          "id": "teaching",
+          "title": "Available definition",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "definition",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "sourceIds": [
+                "lesson-1"
+              ],
+              "excerptIds": [
+                "ex-lesson-1"
+              ],
+              "text": "A route records stops in a specific order. The supplied fragment does not explain the other requested distinctions."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "id": "req-route",
+          "text": "Study objective: Distinguish route order, labels and tags.",
+          "kind": "objective",
+          "authority": "selected-material",
+          "sourceIds": [
+            "lesson-1"
+          ],
+          "excerptIds": [
+            "ex-lesson-1"
+          ],
+          "status": "partial",
+          "basis": "Only route is defined in the available fragment; label and tag distinctions are absent.",
+          "sectionIds": [
+            "teaching"
+          ],
+          "nextStep": "Supply the missing label and tag explanation."
+        }
+      ],
+      "objectives": [
+        {
+          "id": "obj-route",
+          "requirementId": "req-route",
+          "title": "Study objective: Distinguish route order, labels and tags.",
+          "origin": "derived",
+          "sourceIds": [
+            "lesson-1"
+          ],
+          "excerptIds": [
+            "ex-lesson-1"
+          ],
+          "freeRecallCues": [
+            "Without notes, state what a route records."
+          ],
+          "understand": [
+            "A route specifies an order of stops."
+          ],
+          "beAbleToDo": [],
+          "watchFor": [],
+          "practiceBlockIds": [],
+          "evidenceLimit": "The inspected fragment defines route but lacks label, tag, and application details."
+        }
+      ],
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ]
+    }
+  ]
+}

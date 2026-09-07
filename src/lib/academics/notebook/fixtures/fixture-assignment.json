@@ -1,0 +1,190 @@
+{
+  "format": "premed-os-notebook-package",
+  "version": 2,
+  "instructionsVersion": "notebook-workflows-draft-2",
+  "course": {
+    "code": "DEMO 101",
+    "title": "Invented Route Workshop",
+    "term": null
+  },
+  "sources": [
+    {
+      "id": "lesson-1",
+      "title": "Invented lesson 1",
+      "role": "reading",
+      "access": "read",
+      "inspected": "Complete invented passage printed in the fixture.",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "ex-lesson-1",
+          "location": "Invented fixture paragraph 1",
+          "text": "A route is an ordered list of stops. A label names one stop. A tag groups stops by a shared feature. Changing a label does not change the route order. Rearranging stops changes the route order. Two stops may share a tag while retaining different labels."
+        }
+      ]
+    },
+    {
+      "id": "task",
+      "title": "Invented assignment prompt",
+      "role": "assignment-prompt",
+      "access": "read",
+      "inspected": "Complete invented passage printed in the fixture.",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "ex-task",
+          "location": "Invented fixture paragraph 1",
+          "text": "Plan a route with two differently labeled stops that share one tag. Write the final route description."
+        }
+      ]
+    },
+    {
+      "id": "request",
+      "title": "Invented student request",
+      "role": "other",
+      "access": "read",
+      "inspected": "Complete invented passage printed in the fixture.",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "ex-request",
+          "location": "Invented fixture paragraph 1",
+          "text": "Help me plan; leave the final route description for me."
+        }
+      ]
+    }
+  ],
+  "entries": [
+    {
+      "id": "fixture-assignment",
+      "revision": 1,
+      "baseRevision": null,
+      "title": "Routes, labels and tags",
+      "goal": "assignment",
+      "scope": "Invented structural fixture. No real course materials or student trial were processed.",
+      "request": {
+        "helpStage": "planning only",
+        "classPreferences": "Define terms before comparisons.",
+        "assessmentFormat": null
+      },
+      "sections": [
+        {
+          "id": "workspace",
+          "title": "Plan the route",
+          "purpose": "workspace",
+          "blocks": [
+            {
+              "id": "help",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "sourceIds": [
+                "lesson-1"
+              ],
+              "excerptIds": [
+                "ex-lesson-1"
+              ],
+              "text": "Plan in two steps: choose different labels for the two stops; then choose a feature both stops share and use it as their tag. Keep the proposed order explicit when you later write the route. The shared tag groups the stops without collapsing their different labels."
+            }
+          ]
+        },
+        {
+          "id": "next",
+          "title": "Your next step",
+          "purpose": "next-steps",
+          "blocks": [
+            {
+              "id": "boundary",
+              "type": "gap",
+              "provenance": "clarification",
+              "sourceIds": [
+                "request",
+                "task"
+              ],
+              "excerptIds": [
+                "ex-request",
+                "ex-task"
+              ],
+              "text": "The final route description is outside the requested help stage.",
+              "nextStep": "Write your own route description after choosing its labels and shared tag."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "id": "req-plan",
+          "text": "Plan a route with two differently labeled stops that share one tag.",
+          "kind": "assignment",
+          "authority": "official",
+          "sourceIds": [
+            "task",
+            "lesson-1"
+          ],
+          "excerptIds": [
+            "ex-task",
+            "ex-lesson-1"
+          ],
+          "status": "supported",
+          "basis": "Task text establishes the requirement; the plan explains how to choose distinct labels and a shared tag. This assesses planning support, not student completion.",
+          "sectionIds": [
+            "workspace"
+          ],
+          "nextStep": null
+        },
+        {
+          "id": "req-final",
+          "text": "Write the final route description.",
+          "kind": "assignment",
+          "authority": "official",
+          "sourceIds": [
+            "task",
+            "request"
+          ],
+          "excerptIds": [
+            "ex-task",
+            "ex-request"
+          ],
+          "status": "out-of-scope",
+          "basis": "The explicit student request limits help to planning, leaving the final description to the student.",
+          "sectionIds": [
+            "next"
+          ],
+          "nextStep": "Write the description yourself, or explicitly request a later support stage."
+        },
+        {
+          "id": "req-help",
+          "text": "Help me plan; leave the final route description for me.",
+          "kind": "student-request",
+          "authority": "student-request",
+          "sourceIds": [
+            "request",
+            "lesson-1"
+          ],
+          "excerptIds": [
+            "ex-request",
+            "ex-lesson-1"
+          ],
+          "status": "supported",
+          "basis": "The response supplies the requested planning support without a finished route.",
+          "sectionIds": [
+            "workspace"
+          ],
+          "nextStep": null
+        }
+      ],
+      "objectives": [],
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "instructionsVersion": "notebook-workflows-draft-2",
+  "formatVersion": 2,
+  "delivery": "Exactly three prewritten static goal templates, derived from canonical Markdown during development. Goal selection retrieves the chosen template; placeholder insertion and student notes are local plain-text operations. No AI API generates or rewrites prompts. The student uses the resulting prompt in their preferred AI to generate notebook content.",
+  "templates": {
+    "review": "copy-prompt-review.md",
+    "assessment": "copy-prompt-assessment.md",
+    "assignment": "copy-prompt-assignment.md"
+  },
+  "placeholders": {
+    "COURSE_CODE": "courseCode",
+    "COURSE_TITLE": "courseTitle",
+    "TERM": "term",
+    "SCOPE": "scope",
+    "MATERIALS": "materials",
+    "DEPTH": "depth",
+    "CLASS_PREFERENCES": "classPreferences",
+    "HELP_STAGE": "helpStage",
+    "ASSESSMENT_FORMAT": "assessmentFormat",
+    "USER_REQUEST": "userRequest",
+    "REVISION_INPUT": "revisionInput"
+  },
+  "replacement": "Single-pass literal token replacement using JSON.stringify(value); never rescan replacement values. All values string or null; classPreferences defaults to empty string.",
+  "identity": "Preview text, clipboard text and UTF-8 .md download bytes come from the same composed string. Do not prepend, append, regenerate or normalize one surface separately.",
+  "defaults": {
+    "COURSE_CODE": null,
+    "COURSE_TITLE": null,
+    "TERM": null,
+    "SCOPE": null,
+    "MATERIALS": null,
+    "DEPTH": null,
+    "CLASS_PREFERENCES": "",
+    "HELP_STAGE": null,
+    "ASSESSMENT_FORMAT": null,
+    "USER_REQUEST": null,
+    "REVISION_INPUT": null
+  },
+  "courseProfiles": "No inferred class presets. Use the actual class identity, explicit student preferences, and supplied source evidence. These class values are the complete class-specific input; the five manual course projects are not inspected by this builder."
+}

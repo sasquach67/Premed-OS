@@ -1,0 +1,77 @@
+{
+  "format": "premed-os-notebook-package",
+  "version": 2,
+  "instructionsVersion": "notebook-workflows-draft-2",
+  "course": {
+    "code": "DEMO 101",
+    "title": "Invented Route Workshop",
+    "term": null
+  },
+  "sources": [
+    {
+      "id": "scan-only",
+      "title": "Invented unreadable route scan",
+      "role": "reading",
+      "access": "unreadable",
+      "inspected": "",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": false,
+      "excerpts": []
+    }
+  ],
+  "entries": [
+    {
+      "id": "fixture-review",
+      "revision": 1,
+      "baseRevision": null,
+      "title": "Routes, labels and tags",
+      "goal": "review",
+      "scope": "Invented structural fixture. No real course materials or student trial were processed.",
+      "request": {
+        "helpStage": null,
+        "classPreferences": "Define terms before comparisons.",
+        "assessmentFormat": null
+      },
+      "sections": [
+        {
+          "id": "missing-material",
+          "title": "Material needed",
+          "purpose": "next-steps",
+          "blocks": [
+            {
+              "id": "all-gap",
+              "type": "gap",
+              "provenance": "clarification",
+              "sourceIds": [],
+              "excerptIds": [],
+              "text": "The supplied material was unreadable, so no teaching claims or mastery objectives can be supported.",
+              "nextStep": "Supply readable text or an accessible version of the material."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "id": "req-review",
+          "text": "Review the supplied route material.",
+          "kind": "student-request",
+          "authority": "student-request",
+          "sourceIds": [],
+          "excerptIds": [],
+          "status": "missing",
+          "basis": "No supplied teaching material could be read. The ledger preserves the explicit student request without claiming an official objective.",
+          "sectionIds": [
+            "missing-material"
+          ],
+          "nextStep": "Supply readable material and retry this same scope."
+        }
+      ],
+      "objectives": [],
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ]
+    }
+  ]
+}

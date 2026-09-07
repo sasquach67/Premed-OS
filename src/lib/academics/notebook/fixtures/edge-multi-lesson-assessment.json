@@ -1,0 +1,354 @@
+{
+  "format": "premed-os-notebook-package",
+  "version": 2,
+  "instructionsVersion": "notebook-workflows-draft-2",
+  "course": {
+    "code": "DEMO 101",
+    "title": "Invented Route Workshop",
+    "term": null
+  },
+  "sources": [
+    {
+      "id": "lesson-1",
+      "title": "Invented lesson 1",
+      "role": "reading",
+      "access": "read",
+      "inspected": "Complete invented passage printed in the fixture.",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "ex-lesson-1",
+          "location": "Invented fixture paragraph 1",
+          "text": "A route is an ordered list of stops. A label names one stop. A tag groups stops by a shared feature. Changing a label does not change the route order. Rearranging stops changes the route order. Two stops may share a tag while retaining different labels."
+        }
+      ]
+    },
+    {
+      "id": "scope",
+      "title": "Invented assessment scope",
+      "role": "assessment-scope",
+      "access": "read",
+      "inspected": "Complete invented passage printed in the fixture.",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "ex-scope",
+          "location": "Invented fixture paragraph 1",
+          "text": "Compare route order, labels and tags. Apply the rename rule to an example. Short explanations and original applications are the stated format. Compare a rename with a display filter. Do not cover route sorting algorithms."
+        }
+      ]
+    },
+    {
+      "id": "lesson-2",
+      "title": "Invented lesson 2",
+      "role": "reading",
+      "access": "read",
+      "inspected": "Complete invented passage printed in the fixture.",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "ex-lesson-2",
+          "location": "Invented fixture paragraph 1",
+          "text": "A display filter hides stops that lack a selected tag without changing the stored route order."
+        }
+      ]
+    },
+    {
+      "id": "notes",
+      "title": "Invented personal notes",
+      "role": "personal-notes",
+      "access": "read",
+      "inspected": "Complete invented passage printed in the fixture.",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "ex-notes",
+          "location": "Invented fixture paragraph 1",
+          "text": "Question: If I cannot see a stop, was it deleted?"
+        }
+      ]
+    },
+    {
+      "id": "supplement",
+      "title": "Invented reading",
+      "role": "reading",
+      "access": "read",
+      "inspected": "Complete invented passage printed in the fixture.",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "ex-supplement",
+          "location": "Invented fixture paragraph 1",
+          "text": "A hidden stop remains in the stored route. Hiding is a display change, not deletion."
+        }
+      ]
+    },
+    {
+      "id": "scan",
+      "title": "Invented unreadable scan",
+      "role": "reading",
+      "access": "unreadable",
+      "inspected": "",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": false,
+      "excerpts": []
+    }
+  ],
+  "entries": [
+    {
+      "id": "fixture-assessment",
+      "revision": 1,
+      "baseRevision": null,
+      "title": "Routes, labels and tags",
+      "goal": "assessment",
+      "scope": "Invented structural fixture. No real course materials or student trial were processed.",
+      "request": {
+        "helpStage": null,
+        "classPreferences": "Define terms before comparisons.",
+        "assessmentFormat": "Short explanations and original applications."
+      },
+      "sections": [
+        {
+          "id": "prepare",
+          "title": "Connect names, groups and order",
+          "purpose": "preparation",
+          "blocks": [
+            {
+              "id": "teach",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "sourceIds": [
+                "lesson-1"
+              ],
+              "excerptIds": [
+                "ex-lesson-1"
+              ],
+              "text": "Order, naming and grouping answer different questions. A route fixes sequence; labels name individual stops; tags link stops by shared features. A rename preserves order, so first identify whether a task changes a name or a position before predicting the route."
+            },
+            {
+              "id": "filter",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "sourceIds": [
+                "lesson-1",
+                "lesson-2"
+              ],
+              "excerptIds": [
+                "ex-lesson-1",
+                "ex-lesson-2"
+              ],
+              "text": "A display filter changes which stops appear according to a selected tag. It leaves the stored order intact, just as renaming leaves order intact, although the two actions change different things."
+            },
+            {
+              "id": "qualify",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "sourceIds": [
+                "supplement",
+                "notes"
+              ],
+              "excerptIds": [
+                "ex-supplement",
+                "ex-notes"
+              ],
+              "text": "The reading distinguishes hiding from deletion. This addresses the question in the personal notes: lack of visibility alone does not mean a stop was deleted. The note is a student question; the reading supplies the explanation."
+            }
+          ]
+        },
+        {
+          "id": "practice",
+          "title": "Application practice",
+          "purpose": "practice",
+          "blocks": [
+            {
+              "id": "practice-1",
+              "type": "practice",
+              "provenance": "generated-practice",
+              "sourceIds": [
+                "lesson-1"
+              ],
+              "excerptIds": [
+                "ex-lesson-1"
+              ],
+              "prompt": "Hypothetical route: North then South. Both stops have the tag quiet. Rename North to Oak without moving it. State the resulting order and whether sharing quiet makes the two stop labels identical.",
+              "answer": "Oak then South. Their labels remain different despite the shared tag.",
+              "rationale": "Renaming changes a label, not position, so the first stop is still first. A tag groups stops by feature; the handout explicitly permits shared tags with different labels. Confusing a shared tag with a shared label would erase this distinction."
+            }
+          ]
+        },
+        {
+          "id": "cross-practice",
+          "title": "Connect both lessons",
+          "purpose": "practice",
+          "blocks": [
+            {
+              "id": "cross",
+              "type": "practice",
+              "provenance": "generated-practice",
+              "sourceIds": [
+                "lesson-1",
+                "lesson-2",
+                "supplement"
+              ],
+              "excerptIds": [
+                "ex-lesson-1",
+                "ex-lesson-2",
+                "ex-supplement"
+              ],
+              "prompt": "Hypothetical stored route: North (quiet), South (busy). Rename North to Oak, then filter the display to quiet. State the visible stop, the stored route, and whether South was deleted.",
+              "answer": "Visible: Oak. Stored route: Oak then South. South was hidden, not deleted.",
+              "rationale": "Renaming changes the first label without reordering. The filter displays stops tagged quiet, so only Oak appears. The reading establishes that hidden stops remain stored; South therefore remains second."
+            }
+          ]
+        },
+        {
+          "id": "excluded",
+          "title": "Explicit boundary",
+          "purpose": "next-steps",
+          "blocks": [
+            {
+              "id": "scope-gap",
+              "type": "gap",
+              "provenance": "clarification",
+              "sourceIds": [
+                "scope"
+              ],
+              "excerptIds": [
+                "ex-scope"
+              ],
+              "text": "Sorting algorithms are explicitly excluded by the invented scope.",
+              "nextStep": "Keep sorting outside this assessment preparation unless the scope is explicitly revised."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "id": "req-compare",
+          "text": "Compare route order, labels and tags.",
+          "kind": "assessment",
+          "authority": "official",
+          "sourceIds": [
+            "scope",
+            "lesson-1"
+          ],
+          "excerptIds": [
+            "ex-scope",
+            "ex-lesson-1"
+          ],
+          "status": "supported",
+          "basis": "Scope excerpt establishes the requirement; lesson 1 supplies the comparison.",
+          "sectionIds": [
+            "prepare"
+          ],
+          "nextStep": null
+        },
+        {
+          "id": "req-apply",
+          "text": "Apply the rename rule to an example.",
+          "kind": "assessment",
+          "authority": "official",
+          "sourceIds": [
+            "scope",
+            "lesson-1"
+          ],
+          "excerptIds": [
+            "ex-scope",
+            "ex-lesson-1"
+          ],
+          "status": "supported",
+          "basis": "Scope establishes the demand; lesson 1 supports the solution in the original hypothetical practice.",
+          "sectionIds": [
+            "prepare",
+            "practice"
+          ],
+          "nextStep": null
+        },
+        {
+          "id": "req-format",
+          "text": "Short explanations and original applications are the stated format.",
+          "kind": "assessment",
+          "authority": "official",
+          "sourceIds": [
+            "scope"
+          ],
+          "excerptIds": [
+            "ex-scope"
+          ],
+          "status": "supported",
+          "basis": "The scope excerpt establishes the format; preparation provides short explanations and practice provides an original hypothetical application with a worked answer.",
+          "sectionIds": [
+            "prepare",
+            "practice",
+            "cross-practice"
+          ],
+          "nextStep": null
+        },
+        {
+          "id": "req-filter",
+          "text": "Compare a rename with a display filter.",
+          "kind": "assessment",
+          "authority": "official",
+          "sourceIds": [
+            "scope",
+            "lesson-1",
+            "lesson-2",
+            "supplement"
+          ],
+          "excerptIds": [
+            "ex-scope",
+            "ex-lesson-1",
+            "ex-lesson-2",
+            "ex-supplement"
+          ],
+          "status": "supported",
+          "basis": "Scope establishes the comparison. Lesson 1 teaches renaming; lesson 2 and the reading explain display filtering and retention.",
+          "sectionIds": [
+            "prepare",
+            "cross-practice"
+          ],
+          "nextStep": null
+        },
+        {
+          "id": "req-excluded",
+          "text": "Do not cover route sorting algorithms.",
+          "kind": "assessment",
+          "authority": "official",
+          "sourceIds": [
+            "scope"
+          ],
+          "excerptIds": [
+            "ex-scope"
+          ],
+          "status": "out-of-scope",
+          "basis": "The supplied scope explicitly excludes this content.",
+          "sectionIds": [
+            "excluded"
+          ],
+          "nextStep": "Revisit only if the scope is explicitly revised."
+        }
+      ],
+      "objectives": [],
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ]
+    }
+  ]
+}

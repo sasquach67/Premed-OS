@@ -1,0 +1,171 @@
+{
+  "format": "premed-os-notebook-package",
+  "version": 2,
+  "instructionsVersion": "notebook-workflows-draft-2",
+  "course": {
+    "code": "DEMO 101",
+    "title": "Invented Route Workshop",
+    "term": null
+  },
+  "sources": [
+    {
+      "id": "lesson-1",
+      "title": "Invented lesson 1",
+      "role": "reading",
+      "access": "read",
+      "inspected": "Complete invented passage printed in the fixture.",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "ex-lesson-1",
+          "location": "Invented fixture paragraph 1",
+          "text": "A route is an ordered list of stops. A label names one stop. A tag groups stops by a shared feature. Changing a label does not change the route order. Rearranging stops changes the route order. Two stops may share a tag while retaining different labels."
+        }
+      ]
+    },
+    {
+      "id": "scope",
+      "title": "Invented assessment scope",
+      "role": "assessment-scope",
+      "access": "read",
+      "inspected": "Complete invented passage printed in the fixture.",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "ex-scope",
+          "location": "Invented fixture paragraph 1",
+          "text": "Compare route order, labels and tags. Apply the rename rule to an example. Short explanations and original applications are the stated format."
+        }
+      ]
+    }
+  ],
+  "entries": [
+    {
+      "id": "fixture-assessment",
+      "revision": 1,
+      "baseRevision": null,
+      "title": "Routes, labels and tags",
+      "goal": "assessment",
+      "scope": "Invented structural fixture. No real course materials or student trial were processed.",
+      "request": {
+        "helpStage": null,
+        "classPreferences": "Define terms before comparisons.",
+        "assessmentFormat": "Short explanations and original applications."
+      },
+      "sections": [
+        {
+          "id": "prepare",
+          "title": "Connect names, groups and order",
+          "purpose": "preparation",
+          "blocks": [
+            {
+              "id": "teach",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "sourceIds": [
+                "lesson-1"
+              ],
+              "excerptIds": [
+                "ex-lesson-1"
+              ],
+              "text": "Order, naming and grouping answer different questions. A route fixes sequence; labels name individual stops; tags link stops by shared features. A rename preserves order, so first identify whether a task changes a name or a position before predicting the route."
+            }
+          ]
+        },
+        {
+          "id": "practice",
+          "title": "Application practice",
+          "purpose": "practice",
+          "blocks": [
+            {
+              "id": "practice-1",
+              "type": "practice",
+              "provenance": "generated-practice",
+              "sourceIds": [
+                "lesson-1"
+              ],
+              "excerptIds": [
+                "ex-lesson-1"
+              ],
+              "prompt": "Hypothetical route: North then South. Both stops have the tag quiet. Rename North to Oak without moving it. State the resulting order and whether sharing quiet makes the two stop labels identical.",
+              "answer": "Oak then South. Their labels remain different despite the shared tag.",
+              "rationale": "Renaming changes a label, not position, so the first stop is still first. A tag groups stops by feature; the handout explicitly permits shared tags with different labels. Confusing a shared tag with a shared label would erase this distinction."
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "id": "req-compare",
+          "text": "Compare route order, labels and tags.",
+          "kind": "assessment",
+          "authority": "official",
+          "sourceIds": [
+            "scope",
+            "lesson-1"
+          ],
+          "excerptIds": [
+            "ex-scope",
+            "ex-lesson-1"
+          ],
+          "status": "supported",
+          "basis": "Scope excerpt establishes the requirement; lesson 1 supplies the comparison.",
+          "sectionIds": [
+            "prepare"
+          ],
+          "nextStep": null
+        },
+        {
+          "id": "req-apply",
+          "text": "Apply the rename rule to an example.",
+          "kind": "assessment",
+          "authority": "official",
+          "sourceIds": [
+            "scope",
+            "lesson-1"
+          ],
+          "excerptIds": [
+            "ex-scope",
+            "ex-lesson-1"
+          ],
+          "status": "supported",
+          "basis": "Scope establishes the demand; lesson 1 supports the solution in the original hypothetical practice.",
+          "sectionIds": [
+            "prepare",
+            "practice"
+          ],
+          "nextStep": null
+        },
+        {
+          "id": "req-format",
+          "text": "Short explanations and original applications are the stated format.",
+          "kind": "assessment",
+          "authority": "official",
+          "sourceIds": [
+            "scope"
+          ],
+          "excerptIds": [
+            "ex-scope"
+          ],
+          "status": "supported",
+          "basis": "The scope excerpt establishes the format; preparation provides short explanations and practice provides an original hypothetical application with a worked answer.",
+          "sectionIds": [
+            "prepare",
+            "practice"
+          ],
+          "nextStep": null
+        }
+      ],
+      "objectives": [],
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,214 @@
+{
+  "format": "premed-os-notebook-package",
+  "version": 2,
+  "instructionsVersion": "notebook-workflows-draft-2",
+  "course": {
+    "code": "DEMO 101",
+    "title": "Invented Route Workshop",
+    "term": null
+  },
+  "sources": [
+    {
+      "id": "lesson-1",
+      "title": "Invented lesson 1",
+      "role": "reading",
+      "access": "read",
+      "inspected": "Complete invented passage printed in the fixture.",
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "ex-lesson-1",
+          "location": "Invented fixture paragraph 1",
+          "text": "A route is an ordered list of stops. A label names one stop. A tag groups stops by a shared feature. Changing a label does not change the route order. Rearranging stops changes the route order. Two stops may share a tag while retaining different labels."
+        }
+      ]
+    }
+  ],
+  "entries": [
+    {
+      "id": "fixture-review",
+      "revision": 1,
+      "baseRevision": null,
+      "title": "Routes, labels and tags",
+      "goal": "review",
+      "scope": "Invented structural fixture. No real course materials or student trial were processed.",
+      "request": {
+        "helpStage": null,
+        "classPreferences": "Define terms before comparisons.",
+        "assessmentFormat": null
+      },
+      "sections": [
+        {
+          "id": "orientation",
+          "title": "At a glance",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "orientation-text",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "sourceIds": [
+                "lesson-1"
+              ],
+              "excerptIds": [
+                "ex-lesson-1"
+              ],
+              "text": "A route records order, a label identifies a stop, and a tag groups stops by a feature. Keep these three jobs distinct when describing a change."
+            }
+          ]
+        },
+        {
+          "id": "teaching",
+          "title": "Understand the change",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "mechanism",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "sourceIds": [
+                "lesson-1"
+              ],
+              "excerptIds": [
+                "ex-lesson-1"
+              ],
+              "text": "Renaming a stop changes how it is named while preserving its place in the route. Moving a stop changes the order. Tags address a different question: which stops share a feature? Thus two differently named stops can share a tag without becoming the same label."
+            },
+            {
+              "id": "compare",
+              "type": "table",
+              "provenance": "clarification",
+              "sourceIds": [
+                "lesson-1"
+              ],
+              "excerptIds": [
+                "ex-lesson-1"
+              ],
+              "columns": [
+                "Action",
+                "What changes"
+              ],
+              "rows": [
+                [
+                  "Rename a stop",
+                  "Its label; order stays fixed"
+                ],
+                [
+                  "Rearrange stops",
+                  "Route order changes"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "practice",
+          "title": "Apply the distinction",
+          "purpose": "practice",
+          "blocks": [
+            {
+              "id": "practice-1",
+              "type": "practice",
+              "provenance": "generated-practice",
+              "sourceIds": [
+                "lesson-1"
+              ],
+              "excerptIds": [
+                "ex-lesson-1"
+              ],
+              "prompt": "Hypothetical route: North then South. Both stops have the tag quiet. Rename North to Oak without moving it. State the resulting order and whether sharing quiet makes the two stop labels identical.",
+              "answer": "Oak then South. Their labels remain different despite the shared tag.",
+              "rationale": "Renaming changes a label, not position, so the first stop is still first. A tag groups stops by feature; the handout explicitly permits shared tags with different labels. Confusing a shared tag with a shared label would erase this distinction."
+            }
+          ]
+        },
+        {
+          "id": "synthesis",
+          "title": "Remember and connect",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "memory",
+              "type": "bullets",
+              "provenance": "clarification",
+              "sourceIds": [
+                "lesson-1"
+              ],
+              "excerptIds": [
+                "ex-lesson-1"
+              ],
+              "items": [
+                "Memorize: route = ordered stops; label = stop name; tag = shared feature.",
+                "Understand: identifying what changed requires distinguishing a new name from a new position."
+              ]
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "id": "req-route",
+          "text": "Study objective: Distinguish route order, labels and tags.",
+          "kind": "objective",
+          "authority": "selected-material",
+          "sourceIds": [
+            "lesson-1"
+          ],
+          "excerptIds": [
+            "ex-lesson-1"
+          ],
+          "status": "supported",
+          "basis": "The cited passage supports the teaching in the linked section.",
+          "sectionIds": [
+            "teaching",
+            "practice",
+            "synthesis"
+          ],
+          "nextStep": null
+        }
+      ],
+      "objectives": [
+        {
+          "id": "obj-route",
+          "requirementId": "req-route",
+          "title": "Study objective: Distinguish route order, labels and tags.",
+          "origin": "derived",
+          "sourceIds": [
+            "lesson-1"
+          ],
+          "excerptIds": [
+            "ex-lesson-1"
+          ],
+          "freeRecallCues": [
+            "Without notes, explain the distinct jobs of route, label and tag."
+          ],
+          "understand": [
+            "A route specifies an order of stops.",
+            "A label names an individual stop.",
+            "A tag groups stops through a shared feature.",
+            "Renaming a stop preserves its route position.",
+            "Rearranging stops changes route order.",
+            "Stops sharing a tag can still have different labels."
+          ],
+          "beAbleToDo": [
+            "Predict route order after a rename with no movement.",
+            "Distinguish a shared tag from identical stop labels in a supplied example."
+          ],
+          "watchFor": [
+            "Do not treat a shared tag as proof that two labels are identical."
+          ],
+          "practiceBlockIds": [
+            "practice-1"
+          ],
+          "evidenceLimit": null
+        }
+      ],
+      "limitations": [
+        "Invented structural fixture. No real course materials or student trial were processed."
+      ]
+    }
+  ]
+}
