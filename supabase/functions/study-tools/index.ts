@@ -1,3 +1,4 @@
+import { trackedGenerationFetch, type UsageService } from '../_shared/generationUsage.ts'
 import {
   AstraRouteError,
   getAstraResponse,
@@ -186,6 +187,8 @@ Deno.serve(async (request) => {
   } catch {
     return failure(400, 'invalid-request', 'A JSON request is required.')
   }
+  const usageGroup = crypto.randomUUID()
+  const requestUsageFetch = (stage: string) => trackedGenerationFetch(serviceClient as unknown as UsageService, { user_id: userData.user.id, request_group_id: usageGroup, stage }, fetch)
   if (body.action === 'delete-sources') {
     const { error } = await client
       .from('academic_source_chunks')
@@ -345,6 +348,7 @@ Deno.serve(async (request) => {
         'Create the Term Report from this reviewed evidence snapshot.',
         chunks,
         body.systemPrompt,
+        requestUsageFetch('term-report'),
       )
       const closed = closeCitationSet(primary.trustedCitations, chunks)
       if (!closed.length) return failure(422, 'no-verified-citations', 'No report claim could be traced to the reviewed evidence.')
@@ -356,7 +360,7 @@ Deno.serve(async (request) => {
       let auditStatus: GenerationAuditStatus = 'skipped'
       if (Deno.env.get('ANTHROPIC_API_KEY')) {
         try {
-          const audit = await callAnthropicAudit(primary.value, chunks, body.systemPrompt)
+          const audit = await callAnthropicAudit(primary.value, chunks, body.systemPrompt, undefined, requestUsageFetch('review'))
           if (!audit.approved) {
             return failure(502, 'audit-rejected', 'The secondary review found a source or specification problem. Nothing was saved.')
           }
@@ -520,8 +524,8 @@ Deno.serve(async (request) => {
       const isQuestionBank = isQuestionBankGeneration
       const primaryProvider: 'anthropic' | 'openai' = isQuestionBank ? 'anthropic' : 'openai'
       const primary = isQuestionBank
-        ? await callAnthropicGeneration(requestText, chunks, specPrompt, visualSources ?? [])
-        : await callOpenAIGeneration(requestText, chunks, specPrompt)
+        ? await callAnthropicGeneration(requestText, chunks, specPrompt, visualSources ?? [], requestUsageFetch('question-bank'))
+        : await callOpenAIGeneration(requestText, chunks, specPrompt, requestUsageFetch('generate'))
       if (isQuestionBank && primary.webSearchRequests < 1) {
         return failure(502, 'web-search-not-used', 'Claude did not complete the required official assessment-pattern search. Nothing was saved.')
       }
@@ -537,7 +541,7 @@ Deno.serve(async (request) => {
       let auditStatus: GenerationAuditStatus = 'skipped'
       if (!isQuestionBank && Deno.env.get('ANTHROPIC_API_KEY')) {
         try {
-          const audit = await callAnthropicAudit(primary.value, chunks, specPrompt)
+          const audit = await callAnthropicAudit(primary.value, chunks, specPrompt, undefined, requestUsageFetch('review'))
           if (!audit.approved) {
             return failure(
               502,
@@ -1020,8 +1024,8 @@ function astraRouteConfig(openAIKey: string, signal?: AbortSignal, idempotencyKe
   }
 }
 
-async function routeAstraResponse(payload: Record<string, unknown>, openAIKey: string, signal?: AbortSignal, idempotencyKey?: string) {
-  return postAstraResponse(payload, astraRouteConfig(openAIKey, signal, idempotencyKey), fetch)
+async function routeAstraResponse(payload: Record<string, unknown>, openAIKey: string, signal?: AbortSignal, idempotencyKey?: string, fetcher: typeof fetch = fetch) {
+  return postAstraResponse(payload, astraRouteConfig(openAIKey, signal, idempotencyKey), fetcher)
 }
 
 /**
@@ -1080,11 +1084,11 @@ function decodeAstraGeneration(raw: unknown, chunks: Chunk[], wire: ReturnType<t
   return { value, trustedCitations: collectArtifactCitations(value, chunks), webSearchRequests: 0 }
 }
 
-async function callOpenAIGeneration(response: string, chunks: Chunk[], specPrompt: string) {
+async function callOpenAIGeneration(response: string, chunks: Chunk[], specPrompt: string, fetcher: typeof fetch = fetch) {
   const key = Deno.env.get('OPENAI_API_KEY')
   if (!key) throw new Error('OpenAI is not configured')
   const { payload, wire } = astraGenerationPayload(response, chunks, specPrompt)
-  const result = await routeAstraResponse(payload, key)
+  const result = await routeAstraResponse(payload, key, undefined, undefined, fetcher)
   return decodeAstraGeneration(await readOpenAIGenerationResponse(result), chunks, wire)
 }
 
@@ -1101,10 +1105,11 @@ async function callAnthropicGeneration(
   chunks: Chunk[],
   specPrompt: string,
   visualSources: QuestionBankVisualSource[],
+  fetcher: typeof fetch = fetch,
 ) {
   const key = Deno.env.get('ANTHROPIC_API_KEY')
   if (!key) throw new Error('Anthropic is not configured')
-  const result = await fetch('https://api.anthropic.com/v1/messages', {
+  const result = await fetcher('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'x-api-key': key,
@@ -1195,10 +1200,10 @@ const generationAuditSchema = {
   },
 }
 
-async function callAnthropicAudit(value: unknown, chunks: Chunk[], specPrompt: string, signal?: AbortSignal) {
+async function callAnthropicAudit(value: unknown, chunks: Chunk[], specPrompt: string, signal?: AbortSignal, fetcher: typeof fetch = fetch) {
   const key = Deno.env.get('ANTHROPIC_API_KEY')
   if (!key) throw new Error('Anthropic is not configured')
-  const result = await fetch('https://api.anthropic.com/v1/messages', {
+  const result = await fetcher('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     ...(signal ? { signal } : {}),
     headers: {
@@ -1781,6 +1786,7 @@ async function runProviderStage(
   /** Receives what sizing settled on, so the completion record is accurate. */
   sized?: { inputChars?: number; outputTokens?: number },
 ): Promise<TaskOutcome> {
+  const usageFetch = trackedGenerationFetch(service as UsageService, task, fetch)
   const key = Deno.env.get('OPENAI_API_KEY')
   if (!key) return { kind: 'failed', error: jobError('server-unconfigured', 'OpenAI generation is not configured. Nothing was saved.') }
   const route = activeRoute()
@@ -1791,7 +1797,7 @@ async function runProviderStage(
   if (task.provider_response_id) {
     try {
       const response = await withDeadline('retrieve', Math.min(deadline, 25_000), (signal) =>
-        getAstraResponse(task.provider_response_id!, (task.provider_route as AstraRoute) || route, astraRouteConfig(key, signal), fetch))
+        getAstraResponse(task.provider_response_id!, (task.provider_route as AstraRoute) || route, astraRouteConfig(key, signal), usageFetch))
       const text = await response.text()
       const parsed = ((): unknown => { try { return JSON.parse(text) } catch { return null } })()
       const requestId = providerRequestId(response)
@@ -1885,7 +1891,7 @@ async function runProviderStage(
   try {
     if (useBackground) {
       const submitted = await withDeadline('submit', Math.min(deadline, 30_000), (signal) =>
-        submitAstraBackgroundResponse({ ...payload, background: true }, astraRouteConfig(key, signal), fetch))
+        submitAstraBackgroundResponse({ ...payload, background: true }, astraRouteConfig(key, signal), usageFetch))
       const text = await submitted.response.text()
       const parsed = ((): unknown => { try { return JSON.parse(text) } catch { return null } })()
       const requestId = providerRequestId(submitted.response)
@@ -1909,7 +1915,7 @@ async function runProviderStage(
     }
 
     const sent = await withDeadline('generation', deadline, (signal) =>
-      postAstraResponseWithRoute(payload, astraRouteConfig(key, signal, task.idempotency_key), fetch))
+      postAstraResponseWithRoute(payload, astraRouteConfig(key, signal, task.idempotency_key), usageFetch))
     const response = sent.response
     const text = await response.text()
     const requestId = providerRequestId(response)
@@ -2602,7 +2608,7 @@ async function execVerify(
 
 /** Stage 6 — the independent review, unchanged in authority. */
 async function execAudit(
-  client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload, tasks: TaskRow[],
+  service: unknown, client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload, tasks: TaskRow[],
   spec: StageSpec, budget: WorkerBudget, task: TaskRow,
 ): Promise<TaskOutcome> {
   if (!Deno.env.get('ANTHROPIC_API_KEY')) return { kind: 'done', output: { auditStatus: 'skipped' } }
@@ -2629,7 +2635,7 @@ async function execAudit(
 
   try {
     const audit = await withDeadline('review', stepDeadlineMs(budget, providerBudgetMs(spec, budget)), (signal) =>
-      callAnthropicAudit(subject, evidence, instruction, signal))
+      callAnthropicAudit(subject, evidence, instruction, signal, trackedGenerationFetch(service as UsageService, task, fetch)))
     if (!audit.approved) {
       return { kind: 'failed', error: jobError('audit-rejected', 'The independent provider review found a source or specification problem. Nothing was saved.', { issues: safeAuditIssues(audit.issues) }) }
     }
@@ -3019,7 +3025,7 @@ async function runOneTask(
         ? { kind: 'failed', error: jobError('invalid-request', 'Question banks are generated through their own Claude route.') }
         : await execDraft(service, client, job, payload, task, spec, budget, sized); break
       case 'verify': outcome = await execVerify(service, client, job, payload, allTasks); break
-      case 'audit': outcome = await execAudit(client, job, payload, allTasks, spec, budget, task); break
+      case 'audit': outcome = await execAudit(service, client, job, payload, allTasks, spec, budget, task); break
       case 'assemble': outcome = { kind: 'done' }; break
       default: outcome = { kind: 'failed', error: jobError('invalid-request', 'Unknown generation stage.') }
     }

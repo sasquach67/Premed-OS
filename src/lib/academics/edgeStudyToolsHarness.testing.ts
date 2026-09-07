@@ -1,3 +1,4 @@
+import * as generationUsage from '../../../supabase/functions/_shared/generationUsage'
 /**
  * Test harness: run the real `study-tools` Edge function in-process.
  *
@@ -359,10 +360,12 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
   }))
 
   const sourceReads = { count: 0 }
+  const usageRows: Record<string, unknown>[] = []
   const jobQuery = (table: string) => {
     let id = ''
     let jobId = ''
     let route = ''
+    const usageFilters: [string, string][] = []
     let specFilter = ''
     let stageFilter = ''
     let pendingUpdate: Record<string, unknown> | null = null
@@ -371,6 +374,10 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
       in() { return builder },
       order() { return builder },
       eq(column: string, value: string) {
+        usageFilters.push([column, value])
+        if (pendingUpdate && table === 'study_generation_usage' && column === 'id') {
+          const row = usageRows.find(row => row.id === value); if (row) Object.assign(row, pendingUpdate); pendingUpdate = null
+        }
         if (column === 'id') id = value
         if (column === 'job_id') jobId = value
         if (column === 'route') route = value
@@ -388,8 +395,9 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
         }
         return builder
       },
+      insert(values: Record<string, unknown>) { if (table === 'study_generation_usage') usageRows.push(values); return builder },
       update(values: Record<string, unknown>) { pendingUpdate = values; return builder },
-      async limit() { sourceReads.count += 1; return { data: chunkRows, error: null } },
+      async limit() { if (table === 'study_generation_usage') return { data: usageRows.filter(row => usageFilters.every(([k,v]) => row[k] === v)), error: null }; sourceReads.count += 1; return { data: chunkRows, error: null } },
       async maybeSingle() {
         if (table === 'study_generation_jobs') {
           const row = jobs.rows.get(id)
@@ -453,6 +461,7 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText
   const requireStub = (id: string) => id.startsWith('npm:') ? { createClient: () => client }
+    : id.includes('generationUsage') ? generationUsage
     : id.includes('generationStages') ? generationStages
     : id.includes('stageBudget') ? stageBudget
     : id.includes('sourceInventory') ? sourceInventory
