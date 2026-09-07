@@ -6,12 +6,47 @@ from build_prompts import build, compose, TOKENS
 from build_fixtures import build as fixtures
 from validate_package import validate
 
+def assessment_fixture_scope_errors(data):
+    """Focused audit of the invented workshop's flat scope sentences, not arbitrary sources."""
+    errors=[]
+    entry=data['entries'][0]
+    scope=next(s for s in data['sources'] if s['id']=='scope')
+    excerpt=scope['excerpts'][0]
+    # In these two hand-authored fixtures each sentence is one complete requirement.
+    statements=[sentence.strip()+'.' for sentence in excerpt['text'].split('.') if sentence.strip()]
+    for statement in statements:
+        matches=[r for r in entry['requirements'] if r['text']==statement]
+        if len(matches)!=1:
+            errors.append('fixture-scope-coverage: '+statement)
+            continue
+        record=matches[0]
+        if record['kind']!='assessment' or record['authority']!='official' or scope['id'] not in record['sourceIds'] or excerpt['id'] not in record['excerptIds'] or not record['sectionIds']:
+            errors.append('fixture-scope-evidence: '+statement)
+    fmt=next((r for r in entry['requirements'] if r['id']=='req-format'),None)
+    if fmt is None or fmt['text']!='Short explanations and original applications are the stated format.':
+        errors.append('fixture-format-ledger: missing exact format requirement')
+    else:
+        sections={s['id']:s for s in entry['sections']}
+        purposes={sections[id]['purpose'] for id in fmt['sectionIds'] if id in sections}
+        if not {'preparation','practice'}<=purposes:
+            errors.append('fixture-format-sections: link explanation and application content')
+    return errors
+
 def run(root,out):
     schema=json.loads((out/'notebook-package.schema.json').read_text());Draft202012Validator.check_schema(schema)
-    examples={p.stem:json.loads(p.read_text()) for p in sorted(out.glob('fixture-*.json'))+sorted(out.glob('edge-*.json'))}
+    examples={p.stem:json.loads(p.read_text()) for p in sorted(out.glob('fixture-*.json'))+sorted(out.glob('edge-*.json')) if p.name!='fixture-manifest.json'}
     results=[]
     for name,data in examples.items():
         errors=validate(data,schema);assert not errors,(name,errors);results.append({'case':name,'expected':'valid','passed':True})
+    for name in ('fixture-assessment','edge-multi-lesson-assessment'):
+        data=examples[name];errors=assessment_fixture_scope_errors(data);assert not errors,(name,errors)
+        results.append({'case':name+'-complete-source-scope-ledger','expected':'every supplied scope sentence including format has evidence and content links','passed':True})
+        omitted=copy.deepcopy(data);omitted['entries'][0]['requirements']=[r for r in omitted['entries'][0]['requirements'] if r['id']!='req-format']
+        assert omitted['entries'][0]['request']['assessmentFormat']
+        assert not validate(omitted,schema), 'The focused audit must detect a content omission not guaranteed by structural validity.'
+        errors=assessment_fixture_scope_errors(omitted)
+        assert any(error.startswith('fixture-scope-coverage:') for error in errors)
+        results.append({'case':name+'-reject-format-only-in-request','expected':'fixture scope guard rejects omitted ledger requirement despite schema-valid metadata','passed':True})
     base=examples['fixture-review'];r=lambda p:p['entries'][0]['requirements'][0];o=lambda p:p['entries'][0]['objectives'][0];b=lambda p:p['entries'][0]['sections'][0]['blocks'][0]
     cases=[]
     def case(name,code,change,seed=base):cases.append((name,code,change,seed))

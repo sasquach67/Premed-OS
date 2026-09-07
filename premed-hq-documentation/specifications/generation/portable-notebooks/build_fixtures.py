@@ -1,6 +1,6 @@
 """Invented structural examples. Never class trials or claimed learning-quality evidence."""
 from pathlib import Path
-import argparse, copy, json
+import argparse, copy, hashlib, json
 DISCLAIMER='Invented structural fixture. No real course materials or student trial were processed.'
 TEXT='A route is an ordered list of stops. A label names one stop. A tag groups stops by a shared feature. Changing a label does not change the route order. Rearranging stops changes the route order. Two stops may share a tag while retaining different labels.'
 def source(id,title,text,role='reading',access='read'):
@@ -19,19 +19,21 @@ def review():
     objective=dict(id='obj-route',requirementId='req-route',title='Study objective: Distinguish route order, labels and tags.',origin='derived',**ev('lesson-1'),freeRecallCues=['Without notes, explain the distinct jobs of route, label and tag.'],understand=['A route specifies an order of stops.','A label names an individual stop.','A tag groups stops through a shared feature.','Renaming a stop preserves its route position.','Rearranging stops changes route order.','Stops sharing a tag can still have different labels.'],beAbleToDo=['Predict route order after a rename with no movement.','Distinguish a shared tag from identical stop labels in a supplied example.'],watchFor=['Do not treat a shared tag as proof that two labels are identical.'],practiceBlockIds=['practice-1'],evidenceLimit=None)
     return package(entry('review',sections,[req('req-route',objective['title'],['teaching','practice','synthesis'])],[objective]))
 def assessment(multi=False):
-    scope='Compare route order, labels and tags. Apply the rename rule to an example.'
+    scope='Compare route order, labels and tags. Apply the rename rule to an example. Short explanations and original applications are the stated format.'
     sources=[source('lesson-1','Invented lesson 1',TEXT),source('scope','Invented assessment scope',scope,'assessment-scope')]
     p=practice()
-    sections=[section('prepare','Connect names, groups and order','preparation',[block('teach',text='Order, naming and grouping answer different questions. A route fixes sequence; labels name individual stops; tags link stops by shared features. A rename preserves order, so first identify whether a task changes a name or a position before predicting the route.')]),section('practice','Suggested application practice','practice',[p])]
+    sections=[section('prepare','Connect names, groups and order','preparation',[block('teach',text='Order, naming and grouping answer different questions. A route fixes sequence; labels name individual stops; tags link stops by shared features. A rename preserves order, so first identify whether a task changes a name or a position before predicting the route.')]),section('practice','Application practice','practice',[p])]
     requirements=[req('req-compare','Compare route order, labels and tags.',['prepare'],kind='assessment',authority='official',sources=('scope','lesson-1'),basis='Scope excerpt establishes the requirement; lesson 1 supplies the comparison.'),req('req-apply','Apply the rename rule to an example.',['prepare','practice'],kind='assessment',authority='official',sources=('scope','lesson-1'),basis='Scope establishes the demand; lesson 1 supports the solution in the original hypothetical practice.')]
+    requirements.append(req('req-format','Short explanations and original applications are the stated format.',['prepare','practice'],kind='assessment',authority='official',sources=('scope',),basis='The scope excerpt establishes the format; preparation provides short explanations and practice provides an original hypothetical application with a worked answer.'))
     if multi:
+        requirements[-1]['sectionIds'].append('cross-practice')
         sources += [source('lesson-2','Invented lesson 2','A display filter hides stops that lack a selected tag without changing the stored route order.'),source('notes','Invented personal notes','Question: If I cannot see a stop, was it deleted?','personal-notes'),source('supplement','Invented reading','A hidden stop remains in the stored route. Hiding is a display change, not deletion.'),source('scan','Invented unreadable scan','',access='unreadable')]
-        sources[1]['excerpts'][0]['text']+=' Compare a rename with a display filter. Do not cover route sorting algorithms. Short explanations and original applications are the stated format.'
+        sources[1]['excerpts'][0]['text']+=' Compare a rename with a display filter. Do not cover route sorting algorithms.'
         sections[0]['blocks'] += [block('filter',sources=('lesson-1','lesson-2'),text='A display filter changes which stops appear according to a selected tag. It leaves the stored order intact, just as renaming leaves order intact, although the two actions change different things.'),block('qualify',sources=('supplement','notes'),text='The reading distinguishes hiding from deletion. This addresses the question in the personal notes: lack of visibility alone does not mean a stop was deleted. The note is a student question; the reading supplies the explanation.')]
         sections += [section('cross-practice','Connect both lessons','practice',[block('cross','practice','generated-practice',('lesson-1','lesson-2','supplement'),prompt='Hypothetical stored route: North (quiet), South (busy). Rename North to Oak, then filter the display to quiet. State the visible stop, the stored route, and whether South was deleted.',answer='Visible: Oak. Stored route: Oak then South. South was hidden, not deleted.',rationale='Renaming changes the first label without reordering. The filter displays stops tagged quiet, so only Oak appears. The reading establishes that hidden stops remain stored; South therefore remains second.')]),section('excluded','Explicit boundary','next-steps',[block('scope-gap','gap',sources=('scope',),text='Sorting algorithms are explicitly excluded by the invented scope.',nextStep='Keep sorting outside this assessment preparation unless the scope is explicitly revised.')])]
         requirements += [req('req-filter','Compare a rename with a display filter.',['prepare','cross-practice'],kind='assessment',authority='official',sources=('scope','lesson-1','lesson-2','supplement'),basis='Scope establishes the comparison. Lesson 1 teaches renaming; lesson 2 and the reading explain display filtering and retention.'),req('req-excluded','Do not cover route sorting algorithms.',['excluded'],'out-of-scope','assessment','official',('scope',),'The supplied scope explicitly excludes this content.','Revisit only if the scope is explicitly revised.')]
     e=entry('assessment',sections,requirements)
-    if multi:e['request']['assessmentFormat']='Short explanations and original applications.'
+    e['request']['assessmentFormat']='Short explanations and original applications.'
     return package(e,sources)
 def assignment(hint=False):
     prompt='Plan a route with two differently labeled stops that share one tag. Write the final route description.'
@@ -58,6 +60,8 @@ def build(out):
     revision['entries'][0]['sections'][0]['blocks'][0]['text']+=' Suggested check: identify which of the three jobs a change affects before predicting the result.'
     examples['fixture-review-revision']=revision
     for name,data in examples.items():(out/(name+'.json')).write_text(json.dumps(data,indent=2)+'\n')
+    manifest={'instructionsVersion':'notebook-workflows-draft-2','purpose':'Invented structural fixtures, not real class trials or learning-quality acceptance.','fixtures':{name+'.json':{'sha256':hashlib.sha256((out/(name+'.json')).read_bytes()).hexdigest(),'bytes':len((out/(name+'.json')).read_bytes())} for name in examples}}
+    (out/'fixture-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     return examples
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);a=p.parse_args();print('Wrote',len(build(a.output)),'invented structural fixtures.')
