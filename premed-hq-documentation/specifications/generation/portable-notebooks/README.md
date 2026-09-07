@@ -28,6 +28,8 @@ python3 -m venv /tmp/notebook-validation
 
 ## App integration contract
 
+Maintain exactly three prewritten goal templates derived from canonical Markdown. Goal selection retrieves the chosen static template; no AI API generates or rewrites prompts. Local placeholder insertion and student notes are plain-text operations. The student subsequently uses that prompt in their preferred AI to generate notebook content.
+
 Load the generated template for the selected goal. Replace its eleven literal `{{TOKEN}}` values exactly once with JSON-encoded string values (or null where unknown). CLASS_PREFERENCES defaults to an empty string. Use a regex replacement callback or equivalent single-pass algorithm; do not repeatedly replace tokens in already inserted user text. `compose()` in build_prompts.py is a reference implementation. JSON-encoding handles quotes and newlines; it does not turn source text into instructions or give access to named attachments.
 
 The completed prompt string is the single value for preview, clipboard and UTF-8 Markdown download. Keep each surface byte-identical. Selected saved-file titles and user-listed attachments can populate MATERIALS, but the app must explain that the original material still needs to be supplied to the chosen AI. SCOPE may include the selected lessons and scope authority. Existing exported JSON can populate or be identified in REVISION_INPUT; naming it is not reading it.
