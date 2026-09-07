@@ -221,3 +221,7 @@ Recorded so a later version does not treat these as oversights:
 ## Shared source and formatting contract
 
 [19-study-source-and-format-contract.md](19-study-source-and-format-contract.md) is included verbatim in the caller’s assembled instructions, including repair and independent review. Selected `class-notes` files receive primary priority with transcripts while retaining a separate personal-note evidence label. Material types can be corrected explicitly in Notebook Materials; filenames alone do not identify personal notes. Existing records retain their current type. This adds an allowed value to the existing material-type field without changing record shape or rewriting existing data.
+
+## Portable review notebook
+
+External notebooks compose this guide's learning rules with the shared source contract and `20-external-notebook-workflow.md`. The portable contract supplies a four-status objective ledger, precise excerpt references, separate practice/answers and class preferences. Use its explicit transport mapping instead of the built-in schema names in this document. The full guide still begins At a glance, teaches supported concepts in connected detail, distinguishes understanding from memorization, and ends with synthesis. A structurally valid gap-only export is not a useful completed review trial.

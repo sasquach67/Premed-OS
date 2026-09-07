@@ -47,3 +47,7 @@ set. A source set that cannot support the ordinary detail floor may produce an e
 ## Shared source and formatting contract
 
 [19-study-source-and-format-contract.md](19-study-source-and-format-contract.md) is included verbatim in the caller’s assembled instructions, including repair and independent review. Selected `class-notes` files receive primary priority with transcripts while retaining a separate personal-note evidence label. Material types can be corrected explicitly in Notebook Materials; filenames alone do not identify personal notes. Existing records retain their current type. This adds an allowed value to the existing material-type field without changing record shape or rewriting existing data.
+
+## Portable objective coverage
+
+The external notebook workflow in `20-external-notebook-workflow.md` adds a requirements ledger separate from the Mastery Map. Preserve every supplied official objective verbatim in that ledger, including partial, missing and explicitly excluded objectives. Populate a mastery objective only for supported understanding; link it to its ledger requirement. A fully unsupported objective stays visible in coverage without invented understanding or practice. Ordinary depth standards above remain in force when evidence supports them. This proposed portable representation does not change built-in runtime validation by itself.
