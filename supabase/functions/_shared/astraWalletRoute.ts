@@ -131,19 +131,27 @@ function poster(body: string | undefined, config: AstraRouteConfig) {
   })
 }
 
-export async function postAstraResponse(
+/**
+ * Send one request and say which upstream actually carried it.
+ *
+ * The route matters after the fact: a completed task that records no route
+ * cannot be audited, and "which provider did this build actually use" is not a
+ * question the ledger alone answers. `postAstraResponse` keeps the old
+ * Response-only shape for callers that do not record it.
+ */
+export async function postAstraResponseWithRoute(
   payload: Record<string, unknown>,
   config: AstraRouteConfig,
   fetcher: typeof fetch = fetch,
-): Promise<Response> {
+): Promise<{ response: Response; route: AstraRoute }> {
   assertAstraPayload(payload)
   const body = JSON.stringify(payload)
   const send = poster(body, config)
   const post = (url: string, key: string) => send(fetcher, url, key, 'POST')
   // Until a wallet key is configured, preserve the existing direct connection.
-  if (!config.walletKey) return post(OPENAI_BASE, config.openAIKey)
+  if (!config.walletKey) return { response: await post(OPENAI_BASE, config.openAIKey), route: 'openai-backup' }
   const wallet = await post(WALLET_BASE, config.walletKey)
-  if (wallet.ok) return wallet
+  if (wallet.ok) return { response: wallet, route: 'wallet' }
   if (!await isEmptyWallet(wallet)) {
     throw new AstraRouteError(
       'wallet-unavailable',
@@ -164,7 +172,16 @@ export async function postAstraResponse(
     // A failed accounting write must not turn a billed success into a retry.
     await config.ledger.settle(id, cents).catch(() => { console.error('Astra backup settlement failed; reservation retained') })
   }
-  return direct
+  return { response: direct, route: 'openai-backup' }
+}
+
+/** Backward-compatible shape for callers that do not record the route. */
+export async function postAstraResponse(
+  payload: Record<string, unknown>,
+  config: AstraRouteConfig,
+  fetcher: typeof fetch = fetch,
+): Promise<Response> {
+  return (await postAstraResponseWithRoute(payload, config, fetcher)).response
 }
 
 /**

@@ -3,6 +3,7 @@ import {
   getAstraResponse,
   isBackgroundParameterRejection,
   postAstraResponse,
+  postAstraResponseWithRoute,
   providerRequestId,
   settleAstraBackground,
   submitAstraBackgroundResponse,
@@ -1807,11 +1808,25 @@ async function runProviderStage(
   const inputChars = serialisedChars(probe.payload)
   const verdict = fitsBudget({ inputChars, outputTokens: wanted }, ceiling, floor, observed)
 
-  if (!verdict.fits) {
-    const split = subdivide?.({
-      affordableInputChars: verdict.affordableInputChars,
-      affordableOutputTokens: verdict.affordableOutputTokens,
-    })
+  // A task the provider already timed out on is oversized by MEASUREMENT, not
+  // by prediction. The estimate said it would fit and it did not, so on the
+  // next attempt the estimate is not evidence: this must get smaller or not run
+  // at all. Without this the flag was write-only — recorded on the timeout and
+  // never read again — and the "next attempt must be a subdivision" guarantee
+  // did not exist. A live build proved it: one section timed out at 75.8s, was
+  // flagged oversized, and its second attempt re-sent the same request for
+  // 75.4s and failed the job.
+  const provenOversized = task.oversized === true
+  if (!verdict.fits || provenOversized) {
+    // Halve what already failed, so the split is genuinely smaller than the
+    // request that timed out rather than whatever the stale estimate allows.
+    const affordableInputChars = provenOversized
+      ? Math.max(1_000, Math.floor(Math.min(verdict.affordableInputChars, inputChars) / 2))
+      : verdict.affordableInputChars
+    const affordableOutputTokens = provenOversized
+      ? Math.max(floor, Math.floor(Math.min(verdict.affordableOutputTokens, wanted) / 2))
+      : verdict.affordableOutputTokens
+    const split = subdivide?.({ affordableInputChars, affordableOutputTokens })
     if (split) return split
     // Nothing left to split. Background execution is the only honest way to
     // run this, and it is used only where it has been proved to work.
@@ -1819,7 +1834,9 @@ async function runProviderStage(
       return {
         kind: 'failed',
         oversized: true,
-        error: jobError('stage-too-large', `This piece of the build needs about ${Math.round(verdict.estimateMs / 1000)}s at the provider, beyond the ${Math.round(ceiling / 1000)}s a single worker can safely spend, and it cannot be divided further. Nothing was saved. Background submission on this route has not been proved, so it was not attempted.`),
+        error: jobError('stage-too-large', provenOversized
+          ? `This piece of the build already timed out at the provider and cannot be divided any further. Nothing was saved. Background submission on this route has not been proved, so it was not attempted.`
+          : `This piece of the build needs about ${Math.round(verdict.estimateMs / 1000)}s at the provider, beyond the ${Math.round(ceiling / 1000)}s a single worker can safely spend, and it cannot be divided further. Nothing was saved. Background submission on this route has not been proved, so it was not attempted.`),
       }
     }
   }
@@ -1865,15 +1882,21 @@ async function runProviderStage(
       return await settle(await readOpenAIGenerationResponse(new Response(text, { status: 200 })), wire)
     }
 
-    const response = await withDeadline('generation', deadline, (signal) =>
-      routeAstraResponse(payload, key, signal, task.idempotency_key))
+    const sent = await withDeadline('generation', deadline, (signal) =>
+      postAstraResponseWithRoute(payload, astraRouteConfig(key, signal, task.idempotency_key), fetch))
+    const response = sent.response
     const text = await response.text()
     const requestId = providerRequestId(response)
     if (!response.ok) {
       await readOpenAIGenerationResponse(new Response(text, { status: response.status }))
       return { kind: 'failed', error: jobError('provider-unavailable', 'The generator rejected this piece of the build. Nothing was saved.', { providerStatus: response.status, requestId }) }
     }
-    return await settle(await readOpenAIGenerationResponse(new Response(text, { status: 200 })), wire)
+    const settled = await settle(await readOpenAIGenerationResponse(new Response(text, { status: 200 })), wire)
+    // Record which upstream actually carried it, so a finished build can be
+    // audited for its provider path instead of leaving provider_route null.
+    return settled.kind === 'done' || settled.kind === 'pending'
+      ? { ...settled, providerRoute: settled.providerRoute ?? sent.route, providerRequestId: settled.providerRequestId ?? requestId }
+      : settled
   } catch (error) {
     if (error instanceof StepTimeoutError) {
       // The request may have been accepted and billed. Say so.

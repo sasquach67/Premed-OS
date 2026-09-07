@@ -256,10 +256,18 @@ export function createTaskStore(jobs: ReturnType<typeof createJobStore>, now: ()
       const task = rows.find((row) => row.id === String(args.p_task_id))
       if (!task || task.lease_token !== String(args.p_lease_token)) return null
       const parts = (args.p_parts as Array<Record<string, unknown>>) ?? []
+      if (!parts.length) return 0
+      // Mirrors 20260907070000: subdivision is all-or-nothing. A part whose key
+      // already exists means the split is proposing keys in a sibling's
+      // namespace, and inserting only the rest silently drops the parent's
+      // material. The parent is left exactly as it was for the runner to fail.
+      const collides = parts.some((entry) =>
+        rows.some((row) => row.job_id === task.job_id && row.stage === task.stage
+          && row.task_key === String(entry.taskKey)))
+      if (collides) return 0
       let added = 0
       for (const entry of parts) {
         const key = String(entry.taskKey)
-        if (rows.some((row) => row.job_id === task.job_id && row.stage === task.stage && row.task_key === key)) continue
         rows.push({
           ...task,
           id: uuid('7a5c1111'), task_key: key, status: 'pending', attempts: 0,
