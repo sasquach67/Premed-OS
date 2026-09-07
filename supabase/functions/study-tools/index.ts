@@ -139,6 +139,36 @@ Deno.serve(async (request) => {
     global: { headers: { Authorization: authorization } },
     auth: { persistSession: false },
   })
+  // pg_cron dispatches under a service-role JWT, which carries a role and no
+  // `sub`, so auth.getUser() cannot resolve a user for it. Checking the session
+  // gate first therefore 401s every scheduled dispatch and leaves the queue
+  // unable to advance unless a browser is open — the one thing this design
+  // exists to prevent. The runner secret is the scheduler's credential: it is
+  // compared in constant time, and on its own it admits nothing but 'run-task'.
+  const runnerSecret = Deno.env.get('GENERATION_RUNNER_SECRET')
+  const presentedRunner = request.headers.get('x-generation-runner')
+  const scheduled = Boolean(runnerSecret && presentedRunner && timingSafeEqual(runnerSecret, presentedRunner))
+  if (scheduled) {
+    let scheduledBody: Record<string, unknown>
+    try {
+      scheduledBody = JSON.parse(await request.text())
+    } catch {
+      return failure(400, 'invalid-request', 'A JSON request is required.')
+    }
+    if (scheduledBody.action !== 'run-task') {
+      return failure(403, 'runner-forbidden', 'The scheduler may only advance the queue.')
+    }
+    // The scheduler runs across every owner's builds, so it reads with the
+    // function's own service-role key rather than a JWT sent over the wire.
+    // pg_net records request headers in the `net` tables, so dispatching under
+    // a service-role bearer would persist that key in the database; the
+    // dispatcher now carries only the public anon key plus the runner secret.
+    const scheduledService = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false },
+    })
+    return runOneTask(scheduledService, scheduledService, workerBudget((key) => Deno.env.get(key)), null)
+  }
+
   const { data: userData, error: userError } = await client.auth.getUser()
   if (userError || !userData.user) return failure(401, 'sign-in-required', 'Authentication required.')
   const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
@@ -187,14 +217,12 @@ Deno.serve(async (request) => {
    * eager nudge and a scheduled tick can never run the same task twice.
    */
   if (body.action === 'run-task') {
-    const runnerSecret = Deno.env.get('GENERATION_RUNNER_SECRET')
-    const presented = request.headers.get('x-generation-runner')
-    const scheduled = Boolean(runnerSecret && presented && timingSafeEqual(runnerSecret, presented))
-    if (!scheduled && !isText(body.jobId)) {
+    // A scheduled dispatch returned above. Reaching here means a signed-in
+    // owner nudging their own build, which is always scoped to that build.
+    if (!isText(body.jobId)) {
       return failure(403, 'runner-forbidden', 'This endpoint is driven by the scheduler.')
     }
-    // A nudge is scoped to the caller's own build; the scheduler is not.
-    return runOneTask(client, serviceClient, budget, scheduled ? null : { jobId: body.jobId as string, userId: userData.user.id })
+    return runOneTask(client, serviceClient, budget, { jobId: body.jobId as string, userId: userData.user.id })
   }
 
   /**
