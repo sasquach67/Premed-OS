@@ -23,7 +23,7 @@ import { lectureSourcePriorityInstruction } from './lectureSourcePriority'
  */
 import { assembleGenerationRequest } from '@/lib/generation'
 import { assertGenerationAllowed, GenerationNotAllowedError, generatedTitle } from '@/lib/academics/generationPolicy'
-import { generateWithSourceRecovery, prepareGenerationSources } from '@/lib/academics/syncGenerationSources'
+import { generateWithSourceRecovery, prepareGenerationSources, type GenerationSourceOptions } from '@/lib/academics/syncGenerationSources'
 import type { JournalStudyIntent, NotebookGoal, SourceChunk } from '@/lib/types'
 import { courseLensInstruction, type CourseLensGenerationContext } from '@/lib/academics/courseLens'
 import type { StudyGuideArtifact } from '@/lib/generation/schemas/studyGuide.v1'
@@ -134,7 +134,7 @@ export function conciseStudyGuideTitle(artifact: Pick<StudyGuideArtifact, 'secti
   return words.length > 56 ? `${words.slice(0, 55).trimEnd()}…` : words
 }
 
-export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [], primarySourceChunkIds = [], personalNoteChunkIds = [], studyIntent, notebookGoal, notebookRequest }: {
+export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [], primarySourceChunkIds = [], personalNoteChunkIds = [], studyIntent, notebookGoal, notebookRequest, onProgress }: {
   courseId: string
   topicId?: string
   chunks: SourceChunk[]
@@ -149,6 +149,8 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
   studyIntent?: JournalStudyIntent
   notebookGoal?: NotebookGoal
   notebookRequest?: string
+  /** Live build phase, so a multi-minute generation is never silent. */
+  onProgress?: GenerationSourceOptions['onProgress']
 }): Promise<GenerateOutcome> {
   const sources = chunks
   if (!sources.length) {
@@ -227,7 +229,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
       courseLens ? 'Apply the supplied Course lens only within its selected evidence trace.' : '',
       questionReferenceIds.length ? 'Use the marked question passages as source-backed explanatory examples, without copying their assessment wording.' : '',
     ].filter(Boolean).join(' '),
-  })
+  }, { onProgress })
 
   if (!result.ok) {
     // Every server code maps to an outcome the student can act on. `unknown`

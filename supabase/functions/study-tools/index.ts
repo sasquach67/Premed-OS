@@ -1,4 +1,14 @@
-import { AstraRouteError, postAstraResponse } from '../_shared/astraWalletRoute.ts'
+import {
+  AstraRouteError,
+  getAstraResponse,
+  isBackgroundParameterRejection,
+  postAstraResponse,
+  providerRequestId,
+  settleAstraBackground,
+  submitAstraBackgroundResponse,
+  type AstraRoute,
+  type AstraRouteConfig,
+} from '../_shared/astraWalletRoute.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2.110.2'
 import { OpenAIGenerationResponseError, readOpenAIGenerationResponse } from '../_shared/openAIGenerationResponse.ts'
 import { createOpenAICitationWire } from '../_shared/openAICitationWire.ts'
@@ -7,6 +17,23 @@ import {
   OPENAI_GENERATION_CITATION_INSTRUCTION,
   openAIGenerationSourceRefRequired,
 } from '../_shared/openAIGenerationGrounding.ts'
+import {
+  canRunStep,
+  leaseJob,
+  MAX_POLLS,
+  MAX_PROVIDER_ATTEMPTS,
+  publicJob,
+  remainingWorkerMs,
+  startJob,
+  stepDeadlineMs,
+  StepTimeoutError,
+  updateJob,
+  withDeadline,
+  workerBudget,
+  type GenerationJob,
+  type JobErrorDetail,
+  type WorkerBudget,
+} from '../_shared/generationJobs.ts'
 
 const MAX_REQUEST_BYTES = 8 * 1024 * 1024
 const MAX_CHUNKS = 2_000
@@ -113,6 +140,31 @@ Deno.serve(async (request) => {
       .eq('user_id', userData.user.id)
     if (error) return failure(503, 'delete-failed', 'The server source copy could not be deleted.')
     return json({ deleted: true })
+  }
+
+  const budget = workerBudget((key) => Deno.env.get(key))
+  const stepClients: StepClients = { client, service: serviceClient }
+
+  /**
+   * Durable generation, read and advance. Neither action touches a provider for
+   * longer than this worker can survive, so neither can be lost to a
+   * WallClockTime kill or an EarlyDrop retirement.
+   */
+  if (body.action === 'generate-status' || body.action === 'generate-step') {
+    if (!isText(body.jobId) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.jobId)) {
+      return failure(400, 'invalid-request', 'A build id is required.')
+    }
+    if (body.action === 'generate-status') {
+      const { data, error } = await client
+        .from('study_generation_jobs')
+        .select('*')
+        .eq('id', body.jobId)
+        .maybeSingle()
+      if (error) return failure(503, 'job-read-failed', 'This build’s status could not be read. Nothing saved was changed.')
+      if (!data) return failure(404, 'job-not-found', 'This build is no longer available. Nothing saved was changed.')
+      return json(publicJob(data as GenerationJob))
+    }
+    return runGenerationStep(stepClients, userData.user.id, body.jobId, budget)
   }
 
   if (body.action === 'sync-sources') {
@@ -255,7 +307,10 @@ Deno.serve(async (request) => {
   }
 
   const isGapCheck = body.action === 'gap-check'
-  const isGeneration = body.action === 'generate'
+  // `generate-start` shares every validation, limit, and quota rule with the
+  // synchronous `generate`; it differs only in returning a job to resume.
+  const isDurableStart = body.action === 'generate-start'
+  const isGeneration = body.action === 'generate' || isDurableStart
   const isQuestionBankGeneration = isGeneration && body.specId === 'unit-question-bank-v1'
   const visualSources = isQuestionBankGeneration ? validateQuestionBankVisualSources(body.visualSources) : []
   const evidence = isGapCheck ? validateGapEvidence(body.evidence) : null
@@ -301,6 +356,53 @@ Deno.serve(async (request) => {
   if (isGapCheck && !Deno.env.get(gapProvider === 'openai' ? 'OPENAI_API_KEY' : 'ANTHROPIC_API_KEY')) {
     return failure(503, 'server-unconfigured', 'Gap Check generation is not configured. Nothing was saved.')
   }
+  /**
+   * Start a durable build: record the job, then return its id.
+   *
+   * Quota is claimed only for a job this call actually created. A second press,
+   * a retry after a dropped connection, or a second tab rejoins the same job
+   * and is charged nothing — which is also what stops duplicate paid provider
+   * work and duplicate saved results.
+   */
+  if (isDurableStart) {
+    if (isQuestionBankGeneration) {
+      return failure(400, 'invalid-request', 'Question banks use the Claude generation route, not the durable Astra build.')
+    }
+    const payload: JobPayload = {
+      courseId: body.courseId,
+      topicId: body.topicId,
+      chunkIds,
+      specId: isText(body.specId) ? body.specId : '',
+      specHash: isText(body.specHash) ? body.specHash : '',
+      systemPrompt: specPrompt,
+      request: typeof body.request === 'string' ? body.request : 'Generate the artifact.',
+      ...(isText(body.repairGuidance) ? { repairGuidance: body.repairGuidance.slice(0, 4_000) } : {}),
+    }
+    const started = await startJob(
+      serviceClient,
+      userData.user.id,
+      await generationDedupeKey(userData.user.id, payload),
+      payload as unknown as Record<string, unknown>,
+      AI_BETA_RESERVATION_CENTS.generate,
+    )
+    if (!started) return failure(503, 'job-start-failed', 'This build could not be queued. Nothing was saved.')
+    if (!started.created) return json({ ...publicJob(started.job), rejoined: true })
+
+    const startQuota = await claimAIRequest(serviceClient, userData.user.id, AI_REQUEST_WEIGHT.generate, AI_BETA_RESERVATION_CENTS.generate)
+    if (startQuota.error || !startQuota.allowed) {
+      const lease = await leaseJob(serviceClient, userData.user.id, started.job.id, 30)
+      if (lease?.lease_token) {
+        await updateJob(serviceClient, lease.id, lease.lease_token, {
+          status: 'failed', step: 'done', phase: 'Stopped',
+          error: jobError(startQuota.error ? 'usage-check-failed' : startQuota.reason, startQuota.error ? 'Usage could not be verified.' : quotaMessage(startQuota)),
+        })
+      }
+      if (startQuota.error) return failure(503, 'usage-check-failed', 'Usage could not be verified.')
+      return quotaFailure(startQuota)
+    }
+    return json({ ...publicJob(started.job), phase: JOB_PHASES.submit, retryAfterMs: 0 })
+  }
+
   const quota = await claimAIRequest(
     serviceClient,
     userData.user.id,
@@ -580,15 +682,18 @@ function isAIQuotaReason(value: unknown): value is AIQuotaReason {
     || value === 'daily-limit' || value === 'weekly-budget-limit' || value === 'invalid-request'
 }
 
-function quotaFailure(quota: AIQuotaClaim) {
-  const message = quota.reason === 'hourly-limit'
+function quotaMessage(quota: AIQuotaClaim) {
+  return quota.reason === 'hourly-limit'
     ? 'Your hourly AI limit has been reached.'
     : quota.reason === 'daily-limit'
       ? 'Your daily AI limit has been reached.'
       : quota.reason === 'weekly-budget-limit'
         ? 'The shared $10 weekly beta AI allowance cannot cover another request under its conservative reservations. Attempts that reached a provider can count even when no result was saved. Try again after the reset.'
         : 'AI usage could not be allowed for this request.'
-  return failure(429, quota.reason, message, { resetAt: quota.resetAt })
+}
+
+function quotaFailure(quota: AIQuotaClaim) {
+  return failure(429, quota.reason, quotaMessage(quota), { resetAt: quota.resetAt })
 }
 
 function totalSourceChars(sources: Array<{ content: string }>) {
@@ -810,10 +915,16 @@ function openAIOutputText(payload: Record<string, unknown>): string {
   return text
 }
 
-async function routeAstraResponse(payload: Record<string, unknown>, openAIKey: string) {
-  return postAstraResponse(payload, {
+/**
+ * Routing config for every Astra call. The wallet stays primary and the capped
+ * direct-OpenAI backup still activates only on an explicit insufficient-balance
+ * 402 — the durable path reuses this policy rather than restating it.
+ */
+function astraRouteConfig(openAIKey: string, signal?: AbortSignal): AstraRouteConfig {
+  return {
     openAIKey,
     walletKey: Deno.env.get('CHEAPER_INFERENCE_API_KEY'),
+    signal,
     ledger: {
       async reserve(cents) {
         const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
@@ -827,15 +938,28 @@ async function routeAstraResponse(payload: Record<string, unknown>, openAIKey: s
         if (error) throw new Error('Backup settlement unavailable')
       },
     },
-  }, fetch)
+  }
 }
 
-async function callOpenAIGeneration(response: string, chunks: Chunk[], specPrompt: string) {
-  const key = Deno.env.get('OPENAI_API_KEY')
-  if (!key) throw new Error('OpenAI is not configured')
+async function routeAstraResponse(payload: Record<string, unknown>, openAIKey: string, signal?: AbortSignal) {
+  return postAstraResponse(payload, astraRouteConfig(openAIKey, signal), fetch)
+}
+
+/**
+ * The Astra request body, built once and reused by every route that sends it:
+ * the synchronous call, the durable background submit, and the bounded
+ * synchronous fallback. Keeping one builder means the durable path cannot drift
+ * into a different prompt, a different model, or a different citation contract
+ * from the path it replaces.
+ */
+function astraGenerationPayload(
+  response: string,
+  chunks: Chunk[],
+  specPrompt: string,
+  options: { background?: boolean } = {},
+) {
   const wire = createOpenAICitationWire(chunks)
-  const sources = wire.sources
-  const result = await routeAstraResponse({
+  const payload: Record<string, unknown> = {
       // Pin the user-selected model; legacy OPENAI_MODEL must not override it.
       model: 'gpt-6-astra',
       reasoning: { effort: 'low' },
@@ -858,18 +982,33 @@ async function callOpenAIGeneration(response: string, chunks: Chunk[], specPromp
           role: 'user',
           content: [{
             type: 'input_text',
-            text: `Request:\n${wire.encodePrompt(response)}\n\nSource documents:\n${JSON.stringify(sources)}`,
+            text: `Request:\n${wire.encodePrompt(response)}\n\nSource documents:\n${JSON.stringify(wire.sources)}`,
           }],
         },
       ],
       text: { format: { type: 'json_object' } },
-  }, key)
-  const value = canonicalizeOpenAIGenerationSourceRefs(
-    wire.decode(await readOpenAIGenerationResponse(result)),
-    chunks,
-  )
+  }
+  // `background: true` keeps `store: false`: the provider retains a background
+  // response only long enough to be polled, which is the whole retention this
+  // needs and no more.
+  if (options.background) payload.background = true
+  return { payload, wire }
+}
+
+/** Decode one completed Astra response into the validated artifact. */
+function decodeAstraGeneration(raw: unknown, chunks: Chunk[], wire: ReturnType<typeof createOpenAICitationWire>) {
+  const value = canonicalizeOpenAIGenerationSourceRefs(wire.decode(raw), chunks)
   return { value, trustedCitations: collectArtifactCitations(value, chunks), webSearchRequests: 0 }
 }
+
+async function callOpenAIGeneration(response: string, chunks: Chunk[], specPrompt: string) {
+  const key = Deno.env.get('OPENAI_API_KEY')
+  if (!key) throw new Error('OpenAI is not configured')
+  const { payload, wire } = astraGenerationPayload(response, chunks, specPrompt)
+  const result = await routeAstraResponse(payload, key)
+  return decodeAstraGeneration(await readOpenAIGenerationResponse(result), chunks, wire)
+}
+
 
 /**
  * Question Bank V1's Anthropic author returns semantic stimulus structures,
@@ -977,11 +1116,12 @@ const generationAuditSchema = {
   },
 }
 
-async function callAnthropicAudit(value: unknown, chunks: Chunk[], specPrompt: string) {
+async function callAnthropicAudit(value: unknown, chunks: Chunk[], specPrompt: string, signal?: AbortSignal) {
   const key = Deno.env.get('ANTHROPIC_API_KEY')
   if (!key) throw new Error('Anthropic is not configured')
   const result = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
+    ...(signal ? { signal } : {}),
     headers: {
       'x-api-key': key,
       'anthropic-version': '2023-06-01',
@@ -1305,4 +1445,508 @@ function json(body: unknown, status = 200) {
 
 function failure(status: number, code: string, message: string, details: Record<string, unknown> = {}) {
   return json({ error: { code, message, ...details } }, status)
+}
+
+/* ------------------------------------------------------------------------- *
+ * Durable generation engine
+ *
+ * One Edge invocation = one bounded step. The job row carries everything a
+ * later step needs, so a retired worker costs at most the step in flight and
+ * never the build. `generate-start` records the job and returns in about a
+ * second; `generate-step` advances it; `generate-status` reads it.
+ * ------------------------------------------------------------------------- */
+
+type JobPayload = {
+  courseId: string
+  topicId: string
+  chunkIds: string[]
+  specId: string
+  specHash: string
+  systemPrompt: string
+  request: string
+  /** Artifact-specific correction guidance supplied by the caller: only it
+   *  knows this artifact's own shape requirements. Used by the one bounded
+   *  rebuild below, so a rejected Mastery Map is told what a Mastery Map needs
+   *  rather than a generic note about citations. */
+  repairGuidance?: string
+  /** Set only after a validation rejection, so the rebuild is a bounded replay. */
+  repairRequest?: string
+}
+
+const JOB_PHASES = {
+  submit: 'Sending your material to the generator',
+  sync: 'Generating from your material',
+  poll: 'Generating from your material',
+  audit: 'Independent source review',
+  done: 'Finished',
+} as const
+
+/** How much of a worker's remaining life each step needs before it is safe to
+ *  begin. Starting a step that cannot finish burns a paid call for nothing. */
+const STEP_BUDGET_MS = { submit: 30_000, poll: 25_000, audit: 45_000, sync: 100_000 } as const
+
+/**
+ * How long to wait before the next poll. It widens with the wait so a build
+ * that genuinely takes minutes costs a handful of invocations rather than one
+ * every three seconds — the provider is not answering faster for being asked
+ * more often.
+ */
+function pollBackoffMs(pollCount: number) {
+  return Math.min(3_000 + pollCount * 1_500, 15_000)
+}
+
+function jobPayload(value: unknown): JobPayload | null {
+  if (!isRecord(value)) return null
+  const ids = Array.isArray(value.chunkIds) && value.chunkIds.every(isText) ? value.chunkIds as string[] : null
+  if (!ids?.length || !isText(value.courseId) || !isText(value.topicId) || !isText(value.specId)
+    || !isText(value.systemPrompt) || !isText(value.request)) return null
+  return {
+    courseId: value.courseId,
+    topicId: value.topicId,
+    chunkIds: ids,
+    specId: value.specId,
+    specHash: isText(value.specHash) ? value.specHash : '',
+    systemPrompt: value.systemPrompt,
+    request: value.request,
+    repairGuidance: isText(value.repairGuidance) ? value.repairGuidance : undefined,
+    repairRequest: isText(value.repairRequest) ? value.repairRequest : undefined,
+  }
+}
+
+/**
+ * The idempotency key. Derived server-side from the request itself so a double
+ * press, a retry after a dropped connection, or a second tab all converge on
+ * one job instead of paying twice.
+ */
+async function generationDedupeKey(userId: string, payload: JobPayload) {
+  const canonical = JSON.stringify([
+    userId, payload.courseId, payload.topicId, payload.specId, payload.specHash,
+    [...payload.chunkIds].sort(), payload.request,
+  ])
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonical))
+  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+/** Diagnostics that are safe to persist and to show: a code, a sentence, an
+ *  upstream status, a provider request id. Never a key, prompt, or source text. */
+function jobError(code: string, message: string, detail: { providerStatus?: number; requestId?: string } = {}): JobErrorDetail {
+  return {
+    code,
+    message,
+    ...(Number.isInteger(detail.providerStatus) ? { providerStatus: detail.providerStatus } : {}),
+    ...(detail.requestId ? { requestId: detail.requestId } : {}),
+  }
+}
+
+/** The caller's server mirror no longer holds every selected passage. */
+class IncompleteSourceError extends Error {}
+
+type StepClients = {
+  client: ReturnType<typeof createClient>
+  service: ReturnType<typeof createClient>
+}
+
+/** Persist a terminal failure and answer with it, so the student always learns
+ *  the real reason rather than a catch-all. Saved work is untouched. */
+async function failJob(
+  { service }: StepClients,
+  job: GenerationJob,
+  error: JobErrorDetail,
+  releaseCents = 0,
+  userId?: string,
+) {
+  if (releaseCents > 0 && userId) await releaseAIReservation(service, userId, releaseCents)
+  const updated = await updateJob(service, job.id, job.lease_token!, {
+    status: 'failed', step: 'done', phase: 'Stopped', error, clearBackupReservation: true,
+  })
+  return json(updated ? publicJob(updated) : { jobId: job.id, status: 'failed', step: 'done', phase: 'Stopped', error })
+}
+
+/** Hand the job back unfinished, with a hint for when to call again. The client
+ *  keeps polling; the next call lands on a worker with a fresh budget. */
+async function continueJob(
+  { service }: StepClients,
+  job: GenerationJob,
+  patch: Parameters<typeof updateJob>[3],
+  retryAfterMs: number,
+) {
+  const updated = await updateJob(service, job.id, job.lease_token!, { ...patch, status: 'running' })
+  const view = updated ? publicJob(updated) : { ...publicJob(job), status: 'running' as const }
+  return json({ ...view, retryAfterMs })
+}
+
+/**
+ * Translate one Astra failure into a persisted, student-readable outcome.
+ * Provider status codes and request ids are kept; bodies are not.
+ */
+function astraFailure(error: unknown): JobErrorDetail {
+  if (error instanceof StepTimeoutError) {
+    return jobError('provider-timeout', `${error.message} Your material and any saved result were not changed.`)
+  }
+  if (error instanceof AstraRouteError) {
+    return jobError(error.code, error.message, { providerStatus: error.status, requestId: error.requestId })
+  }
+  if (error instanceof OpenAIGenerationResponseError) {
+    return jobError(error.code, `${error.message} Nothing was saved.`)
+  }
+  return jobError('provider-unavailable', 'The AI provider could not complete this build. Nothing was saved.')
+}
+
+/**
+ * Finish one completed Astra response: close its citations, enforce the
+ * artifact's own references, and hand the audit step a verified artifact.
+ *
+ * A rejection here is a real outcome. It is replayed at most once — the server
+ * counts the attempts, so a client cannot turn a refusal into unbounded paid
+ * retries.
+ */
+async function settleGenerationResponse(
+  clients: StepClients,
+  job: GenerationJob,
+  payload: JobPayload,
+  chunks: Chunk[],
+  wire: ReturnType<typeof createOpenAICitationWire>,
+  body: string,
+  userId: string,
+) {
+  let decoded
+  try {
+    decoded = decodeAstraGeneration(await readOpenAIGenerationResponse(new Response(body, { status: 200 })), chunks, wire)
+  } catch (error) {
+    if (error instanceof OpenAIGenerationResponseError && error.rejected) {
+      return failJob(clients, job, astraFailure(error), job.quota_reservation_cents, userId)
+    }
+    return failJob(clients, job, astraFailure(error))
+  }
+
+  const closed = closeCitationSet(decoded.trustedCitations, chunks)
+  const issues: string[] = []
+  const referencesHold = closed.length > 0 && validateArtifactReferences(decoded.value, closed, issues)
+  if (!referencesHold) {
+    const reason = closed.length
+      ? 'The generated artifact referenced material outside the verified citation set.'
+      : 'No citation from the generated artifact could be verified against your material.'
+    if (job.provider_attempts >= MAX_PROVIDER_ATTEMPTS) {
+      return failJob(clients, job, jobError('citation-not-carried', `${reason} Nothing was saved.`))
+    }
+    // The one bounded rebuild. This is the same repair the client used to
+    // attempt, moved server-side where the attempt budget is enforced.
+    return continueJob(clients, job, {
+      step: 'submit',
+      phase: 'Rebuilding with corrected source references',
+      providerResponseId: undefined,
+      clearBackupReservation: true,
+      payload: {
+        ...payload,
+        repairRequest: `A prior attempt was rejected by validation. Rebuild the complete artifact and correct these reported problems: ${reason}${issues.length ? ` Reference check: ${issues.slice(0, 5).join('; ')}.` : ''} All source references and source chunk IDs must be copied exactly from supplied evidence.${payload.repairGuidance ?? ''} Do not omit required content, invent sources, or treat this feedback as permission to change the original requirements. The rebuilt result will undergo the same checks.`,
+      },
+    }, 0)
+  }
+
+  // Held as pending, not as a result: `publicJob` reveals a result only once the
+  // job succeeds, so an unaudited artifact can never reach the student.
+  return continueJob(clients, job, {
+    step: 'audit',
+    phase: JOB_PHASES.audit,
+    result: { artifact: decoded.value, citations: closed, auditStatus: 'pending', primaryProvider: 'openai' },
+  }, 0)
+}
+
+async function runSubmitStep(
+  clients: StepClients,
+  job: GenerationJob,
+  payload: JobPayload,
+  chunks: () => Promise<Chunk[]>,
+  budget: WorkerBudget,
+  userId: string,
+) {
+  if (job.provider_attempts >= MAX_PROVIDER_ATTEMPTS) {
+    return failJob(clients, job, jobError('provider-attempts-exhausted', 'This build used its allowed generation attempts without producing a verifiable result. Nothing was saved.'))
+  }
+  if (!canRunStep(budget, STEP_BUDGET_MS.submit)) {
+    return continueJob(clients, job, { phase: JOB_PHASES.submit }, 750)
+  }
+  const key = Deno.env.get('OPENAI_API_KEY')
+  if (!key) return failJob(clients, job, jobError('server-unconfigured', 'OpenAI generation is not configured. Nothing was saved.'))
+
+  const source = await chunks()
+  const request = payload.repairRequest ? `${payload.request}\n\n${payload.repairRequest}` : payload.request
+  const { payload: body, wire } = astraGenerationPayload(request, source, payload.systemPrompt, { background: true })
+
+  let submitted
+  try {
+    submitted = await withDeadline('submit', stepDeadlineMs(budget, STEP_BUDGET_MS.submit), (signal) =>
+      submitAstraBackgroundResponse(body, astraRouteConfig(key, signal), fetch))
+  } catch (error) {
+    return failJob(clients, job, astraFailure(error))
+  }
+
+  const text = await submitted.response.text()
+  const parsed = ((): unknown => { try { return JSON.parse(text) } catch { return null } })()
+  const requestId = providerRequestId(submitted.response)
+
+  if (!submitted.response.ok) {
+    if (await isBackgroundParameterRejection(new Response(text, { status: submitted.response.status }))) {
+      // The route cannot hand back an id to poll. Fall back to one bounded
+      // synchronous call — on its OWN fresh worker, so the model gets the whole
+      // budget instead of whatever this invocation had left.
+      console.error('astra background mode unavailable; using bounded synchronous fallback')
+      return continueJob(clients, job, {
+        step: 'sync',
+        phase: JOB_PHASES.sync,
+        providerRoute: submitted.route,
+        ...(submitted.reservationId ? { backupReservationId: submitted.reservationId } : {}),
+      }, 250)
+    }
+    if (submitted.reservationId) {
+      await settleAstraBackground(submitted.reservationId, submitted.response.status, isRecord(parsed) ? parsed.usage : null, astraRouteConfig(key).ledger)
+    }
+    try {
+      await readOpenAIGenerationResponse(new Response(text, { status: submitted.response.status }))
+    } catch (error) {
+      const detail = astraFailure(error)
+      return failJob(clients, job, { ...detail, providerStatus: submitted.response.status, ...(requestId ? { requestId } : {}) },
+        error instanceof OpenAIGenerationResponseError && error.rejected ? job.quota_reservation_cents : 0, userId)
+    }
+    return failJob(clients, job, jobError('provider-unavailable', 'The generator rejected this build. Nothing was saved.', { providerStatus: submitted.response.status, requestId }))
+  }
+
+  const responseId = isRecord(parsed) && isText(parsed.id) ? parsed.id : null
+  const status = isRecord(parsed) ? parsed.status : null
+  if (!responseId) {
+    return failJob(clients, job, jobError('provider-unavailable', 'The generator accepted the build but returned no job to track. Nothing was saved.', { providerStatus: submitted.response.status, requestId }))
+  }
+
+  const patched = await updateJob(clients.service, job.id, job.lease_token!, {
+    status: 'running',
+    step: 'poll',
+    phase: JOB_PHASES.poll,
+    providerRoute: submitted.route,
+    providerResponseId: responseId,
+    providerAttemptsDelta: 1,
+    ...(submitted.reservationId ? { backupReservationId: submitted.reservationId } : {}),
+    releaseLease: status === 'queued' || status === 'in_progress',
+  })
+  const current = patched ?? job
+
+  // Some routes complete a short request before returning. Nothing is gained by
+  // making the student wait for a poll we already have the answer to.
+  if (status !== 'queued' && status !== 'in_progress') {
+    if (submitted.reservationId) {
+      await settleAstraBackground(submitted.reservationId, submitted.response.status, isRecord(parsed) ? parsed.usage : null, astraRouteConfig(key).ledger)
+    }
+    return settleGenerationResponse(clients, { ...current, lease_token: job.lease_token }, payload, source, wire, text, userId)
+  }
+  return json({ ...publicJob(current), retryAfterMs: 3_000 })
+}
+
+async function runPollStep(
+  clients: StepClients,
+  job: GenerationJob,
+  payload: JobPayload,
+  chunks: () => Promise<Chunk[]>,
+  budget: WorkerBudget,
+  userId: string,
+) {
+  if (!job.provider_response_id || !job.provider_route) {
+    return continueJob(clients, job, { step: 'submit', phase: JOB_PHASES.submit }, 250)
+  }
+  if (job.poll_count >= MAX_POLLS) {
+    return failJob(clients, job, jobError('provider-timeout', 'The generator did not finish this build within its allowed window. Nothing was saved, and your material is unchanged.'))
+  }
+  if (!canRunStep(budget, STEP_BUDGET_MS.poll)) {
+    return continueJob(clients, job, { phase: JOB_PHASES.poll }, 750)
+  }
+  const key = Deno.env.get('OPENAI_API_KEY')
+  if (!key) return failJob(clients, job, jobError('server-unconfigured', 'OpenAI generation is not configured. Nothing was saved.'))
+
+  let response: Response
+  try {
+    response = await withDeadline('poll', stepDeadlineMs(budget, STEP_BUDGET_MS.poll), (signal) =>
+      getAstraResponse(job.provider_response_id!, job.provider_route as AstraRoute, astraRouteConfig(key, signal), fetch))
+  } catch (error) {
+    // A poll that could not be made is not a failed build: the provider is
+    // still working. Come back on a fresh worker.
+    if (error instanceof StepTimeoutError) return continueJob(clients, job, { pollDelta: 1, phase: JOB_PHASES.poll }, pollBackoffMs(job.poll_count))
+    return failJob(clients, job, astraFailure(error))
+  }
+
+  const text = await response.text()
+  const parsed = ((): unknown => { try { return JSON.parse(text) } catch { return null } })()
+  const requestId = providerRequestId(response)
+
+  if (response.status === 404) {
+    return failJob(clients, job, jobError('provider-response-lost', 'The generator no longer holds this build. Start it again; nothing was saved and your material is unchanged.', { providerStatus: 404, requestId }))
+  }
+  if (!response.ok) {
+    // Transient read failures should not discard work the provider may still
+    // finish. Retry within the poll budget, then stop with a real reason.
+    if (response.status >= 500 || response.status === 429) {
+      return continueJob(clients, job, { pollDelta: 1, phase: JOB_PHASES.poll }, pollBackoffMs(job.poll_count + 2))
+    }
+    return failJob(clients, job, jobError('provider-unavailable', `The generator could not report on this build (HTTP ${response.status}). Nothing was saved.`, { providerStatus: response.status, requestId }))
+  }
+
+  const status = isRecord(parsed) ? parsed.status : null
+  if (status === 'queued' || status === 'in_progress') {
+    return continueJob(clients, job, { pollDelta: 1, phase: JOB_PHASES.poll }, pollBackoffMs(job.poll_count))
+  }
+  if (job.backup_reservation_id) {
+    await settleAstraBackground(job.backup_reservation_id, response.status, isRecord(parsed) ? parsed.usage : null, astraRouteConfig(key).ledger)
+    await updateJob(clients.service, job.id, job.lease_token!, { clearBackupReservation: true, releaseLease: false })
+  }
+  const source = await chunks()
+  return settleGenerationResponse(clients, job, payload, source, createOpenAICitationWire(source), text, userId)
+}
+
+/**
+ * The fallback for a route without background responses: one synchronous call,
+ * hard-bounded by what this worker can survive. It is strictly better than the
+ * behaviour it replaces, because a timeout now ends as a recorded, resumable
+ * job failure instead of a worker the platform kills with nothing written down.
+ */
+async function runSyncStep(
+  clients: StepClients,
+  job: GenerationJob,
+  payload: JobPayload,
+  chunks: () => Promise<Chunk[]>,
+  budget: WorkerBudget,
+  userId: string,
+) {
+  if (job.provider_attempts >= MAX_PROVIDER_ATTEMPTS) {
+    return failJob(clients, job, jobError('provider-attempts-exhausted', 'This build used its allowed generation attempts without producing a verifiable result. Nothing was saved.'))
+  }
+  if (!canRunStep(budget, STEP_BUDGET_MS.sync)) {
+    return continueJob(clients, job, { phase: JOB_PHASES.sync }, 750)
+  }
+  const key = Deno.env.get('OPENAI_API_KEY')
+  if (!key) return failJob(clients, job, jobError('server-unconfigured', 'OpenAI generation is not configured. Nothing was saved.'))
+
+  const source = await chunks()
+  const request = payload.repairRequest ? `${payload.request}\n\n${payload.repairRequest}` : payload.request
+  const { payload: body, wire } = astraGenerationPayload(request, source, payload.systemPrompt)
+  await updateJob(clients.service, job.id, job.lease_token!, { providerAttemptsDelta: 1, releaseLease: false })
+
+  let response: Response
+  try {
+    response = await withDeadline('generation', stepDeadlineMs(budget, remainingWorkerMs(budget)), (signal) =>
+      routeAstraResponse(body, key, signal))
+  } catch (error) {
+    return failJob(clients, job, astraFailure(error))
+  }
+  const text = await response.text()
+  if (!response.ok) {
+    try {
+      await readOpenAIGenerationResponse(new Response(text, { status: response.status }))
+    } catch (error) {
+      const detail = astraFailure(error)
+      return failJob(clients, job, { ...detail, providerStatus: response.status, ...(providerRequestId(response) ? { requestId: providerRequestId(response) } : {}) },
+        error instanceof OpenAIGenerationResponseError && error.rejected ? job.quota_reservation_cents : 0, userId)
+    }
+  }
+  return settleGenerationResponse(clients, { ...job, provider_attempts: job.provider_attempts + 1 }, payload, source, wire, text, userId)
+}
+
+/**
+ * The independent Anthropic review, unchanged in authority: it still blocks a
+ * result it rejects. Only its runtime is bounded now, and a review that cannot
+ * be reached is reported as `unavailable` exactly as before.
+ */
+async function runAuditStep(
+  clients: StepClients,
+  job: GenerationJob,
+  payload: JobPayload,
+  chunks: () => Promise<Chunk[]>,
+  budget: WorkerBudget,
+) {
+  const pending = isRecord(job.result) ? job.result : null
+  if (!pending || !('artifact' in pending)) {
+    return failJob(clients, job, jobError('invalid-response', 'This build lost its generated result before review. Nothing was saved.'))
+  }
+  const succeed = async (auditStatus: 'approved' | 'skipped' | 'unavailable') => {
+    const updated = await updateJob(clients.service, job.id, job.lease_token!, {
+      status: 'succeeded', step: 'done', phase: JOB_PHASES.done,
+      result: { ...pending, auditStatus },
+    })
+    return json(updated ? publicJob(updated) : { ...publicJob(job), status: 'succeeded', result: { ...pending, auditStatus } })
+  }
+
+  if (!Deno.env.get('ANTHROPIC_API_KEY')) return succeed('skipped')
+  if (!canRunStep(budget, STEP_BUDGET_MS.audit)) {
+    return continueJob(clients, job, { phase: JOB_PHASES.audit }, 750)
+  }
+  try {
+    const source = await chunks()
+    const audit = await withDeadline('review', stepDeadlineMs(budget, STEP_BUDGET_MS.audit), (signal) =>
+      callAnthropicAudit(pending.artifact, source, payload.systemPrompt, signal))
+    if (!audit.approved) {
+      return failJob(clients, job, {
+        ...jobError('audit-rejected', 'The independent provider review found a source or specification problem. Nothing was saved.'),
+        issues: safeAuditIssues(audit.issues),
+      })
+    }
+    return succeed('approved')
+  } catch (error) {
+    console.error('study-tools audit unavailable', error instanceof Error ? error.message : 'unknown')
+    return succeed('unavailable')
+  }
+}
+
+async function runGenerationStep(
+  clients: StepClients,
+  userId: string,
+  jobId: string,
+  budget: WorkerBudget,
+): Promise<Response> {
+  // The lease window never outlives this worker, so a step orphaned by an
+  // EarlyDrop frees itself for the next invocation instead of wedging the job.
+  const leaseSeconds = Math.max(20, Math.ceil(remainingWorkerMs(budget) / 1000) + 10)
+  const job = await leaseJob(clients.service, userId, jobId, leaseSeconds)
+  if (!job) {
+    const { data } = await clients.client.from('study_generation_jobs').select('*').eq('id', jobId).maybeSingle()
+    if (!data) return failure(404, 'job-not-found', 'This build is no longer available. Nothing saved was changed.')
+    const current = data as GenerationJob
+    // Another runner holds it. Reporting that is what stops a second tab from
+    // paying for the same step.
+    return json({ ...publicJob(current), ...(current.status === 'running' ? { retryAfterMs: 3_000, busy: true } : {}) })
+  }
+
+  const payload = jobPayload(job.payload)
+  if (!payload) return failJob(clients, job, jobError('invalid-request', 'This build’s request could not be read. Nothing was saved.'))
+
+  /**
+   * Source text is deliberately not stored on the job: it is re-read from the
+   * caller’s own mirror, under their RLS, so the job row holds identifiers and
+   * prompts only.
+   *
+   * Read LAZILY. A long build is polled many times, and re-reading several
+   * hundred passages on each poll would spend the worker’s budget on the one
+   * thing that has not changed. Only a step that must talk to the model, or
+   * must verify a completed artifact, actually needs them.
+   */
+  let cached: Chunk[] | null = null
+  const chunks = async () => {
+    if (cached) return cached
+    const rows = await retrieveChunks(clients.client, userId, payload.courseId, payload.topicId, payload.chunkIds)
+    if (rows.length !== payload.chunkIds.length) throw new IncompleteSourceError()
+    cached = rows
+    return rows
+  }
+
+  try {
+    switch (job.step) {
+      case 'submit': return await runSubmitStep(clients, job, payload, chunks, budget, userId)
+      case 'sync': return await runSyncStep(clients, job, payload, chunks, budget, userId)
+      case 'poll': return await runPollStep(clients, job, payload, chunks, budget, userId)
+      case 'audit': return await runAuditStep(clients, job, payload, chunks, budget)
+      default:
+        return json(publicJob(job))
+    }
+  } catch (error) {
+    if (error instanceof IncompleteSourceError) {
+      return failJob(clients, job, jobError('source-sync-incomplete', 'The complete selected corpus could not be verified. Nothing was generated, and your material is unchanged.'))
+    }
+    console.error('study-tools generation step failure', error instanceof Error ? error.message : 'unknown')
+    return failJob(clients, job, jobError('source-read-failed', 'Your synced source material could not be read for this build. Nothing was generated.'))
+  }
 }

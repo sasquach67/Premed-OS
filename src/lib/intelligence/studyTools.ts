@@ -105,6 +105,10 @@ export interface GenerateRequest {
   systemPrompt: string
   /** L6 — this topic, this scope, this action. */
   request: string
+  /** Artifact-specific correction guidance for the server's one bounded
+   *  rebuild after a citation rejection. Assembled by the caller because only
+   *  it knows the artifact's own shape requirements. */
+  repairGuidance?: string
   /** Question Bank only: bounded selected image pages for Claude vision. */
   visualSources?: StudySourceImageInput[]
   /** Question Bank only: require official public assessment-pattern research. */
@@ -133,6 +137,45 @@ export interface SyncStudySourcesRequest {
 
 export interface DeleteStudySourcesRequest {
   action: 'delete-sources'
+}
+
+/** Durable generation — start, advance, and read one persisted build. */
+export interface StartGenerationRequest extends Omit<GenerateRequest, 'action'> {
+  action: 'generate-start'
+}
+export interface GenerationStepRequest {
+  action: 'generate-step' | 'generate-status'
+  jobId: string
+}
+
+export type GenerationJobStatus = 'queued' | 'running' | 'succeeded' | 'failed'
+
+export interface GenerationJobError {
+  code: string
+  message: string
+  /** Upstream HTTP status, when the failure had one. Never a response body. */
+  providerStatus?: number
+  /** Provider correlation id, safe to quote in a support note. */
+  requestId?: string
+  issues?: string[]
+}
+
+export interface GenerationJobView {
+  jobId: string
+  status: GenerationJobStatus
+  step: string
+  phase: string
+  providerAttempts: number
+  pollCount: number
+  updatedAt: string
+  /** How long to wait before advancing the job again. */
+  retryAfterMs?: number
+  /** Another runner already holds this job's step. */
+  busy?: boolean
+  /** This start joined an existing build instead of creating a second one. */
+  rejoined?: boolean
+  result?: GeneratedStudyToolArtifact
+  error?: GenerationJobError
 }
 
 export type StudyToolFailureCode =
@@ -197,8 +240,96 @@ function formatQuotaReset(resetAt: unknown) {
   return ` It resets ${date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}.`
 }
 
-export function createStudyToolsClient(client: FunctionClient | null = supabase) {
-  async function invoke<T>(request: GapCheckRequest | TranscribeResponseRequest | GenerateRequest | TermReportRequest | SyncStudySourcesRequest | DeleteStudySourcesRequest): Promise<StudyToolResponse<T>> {
+/** How long the driver keeps advancing one build before handing it back as
+ *  still-running. The job itself is not cancelled by this. */
+const DEFAULT_DURABLE_WAIT_MS = 12 * 60 * 1000
+/** A second bound, on calls rather than time. A step that keeps handing the job
+ *  back without advancing it — a worker with nothing left to give, over and
+ *  over — must not become a tight request loop. */
+const MAX_DURABLE_STEPS = 400
+const GENERATION_JOB_PREFIX = 'premed-os:ai-generation-job:v1'
+
+export interface DurableGenerationOptions {
+  /** Stable per-build key. Its stored job id is what a refreshed page resumes. */
+  resumeKey?: string
+  onProgress?: (job: GenerationJobView) => void
+  signal?: AbortSignal
+  maxWaitMs?: number
+  sleep?: (ms: number) => Promise<void>
+  now?: () => number
+}
+
+/** Where a build's id is remembered between page loads. */
+export function generationJobStore(resumeKey: string) {
+  const key = `${workspaceScopedKey(GENERATION_JOB_PREFIX)}:${resumeKey}`
+  return {
+    read(): string | null {
+      if (typeof localStorage === 'undefined') return null
+      const value = localStorage.getItem(key)
+      return value && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value) ? value : null
+    },
+    write(jobId: string) {
+      if (typeof localStorage !== 'undefined') localStorage.setItem(key, jobId)
+    },
+    clear() {
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(key)
+    },
+  }
+}
+
+export function isGenerationJobView(value: unknown): value is GenerationJobView {
+  return isRecord(value)
+    && typeof value.jobId === 'string'
+    && ['queued', 'running', 'succeeded', 'failed'].includes(String(value.status))
+    && typeof value.step === 'string'
+    && typeof value.phase === 'string'
+}
+
+function isGeneratedArtifact(value: unknown): value is GeneratedStudyToolArtifact {
+  return isRecord(value) && 'artifact' in value && Array.isArray(value.citations)
+    && ['approved', 'skipped', 'unavailable'].includes(String(value.auditStatus))
+}
+
+/**
+ * A failed job carries the server's own reason. Mapping it back to a specific
+ * code is the point of the whole change: "AI study tools are unavailable" hid
+ * a timeout, a refused artifact, and a spent allowance behind one sentence.
+ */
+export function generationJobFailure(error: GenerationJobError | undefined): StudyToolResponse<never> {
+  const code = String(error?.code ?? '')
+  const detail = [
+    error?.providerStatus ? `Provider status ${error.providerStatus}.` : '',
+    error?.requestId ? `Request ${error.requestId}.` : '',
+  ].filter(Boolean).join(' ')
+  const withDetail = (message: string) => (detail ? `${message} ${detail}` : message)
+  const message = error?.message?.trim()
+
+  if (code === 'citation-not-carried' || code === 'no-verified-citations' || code === 'provider-attempts-exhausted') {
+    return { ok: false, code: 'citation-not-carried', message: withDetail(message || 'The generated guide cited something that could not be traced back to your material, so it was refused rather than corrected. Nothing was saved.') }
+  }
+  if (code === 'audit-rejected') {
+    const issues = (error?.issues ?? []).filter((issue): issue is string => typeof issue === 'string' && Boolean(issue.trim())).slice(0, 3)
+    return { ok: false, code: 'audit-rejected', message: `${message || 'The independent provider review found a source or format problem. Nothing was saved.'}${issues.length ? ` Review note: ${issues.join('; ')}` : ''}` }
+  }
+  if (code === 'no-sources' || code === 'source-sync-incomplete' || code === 'source-read-failed') {
+    return { ok: false, code: 'no-sources', message: message || 'Some selected material is missing from the server copy. Restore the complete selection before generating.' }
+  }
+  if (code === 'invalid-response' || code === 'openai-invalid-json' || code === 'openai-empty-output') {
+    return { ok: false, code: 'invalid-response', message: withDetail(message || 'The generator returned an invalid result. Nothing was saved.') }
+  }
+  if (['hourly-limit', 'daily-limit', 'weekly-budget-limit'].includes(code)) {
+    return { ok: false, code: code as StudyToolFailureCode, message: message || 'AI usage limit reached. Try again later.' }
+  }
+  return { ok: false, code: 'unavailable', message: withDetail(message || 'The AI provider could not complete this build. Your local data was not changed.') }
+}
+
+export function createStudyToolsClient(
+  client: FunctionClient | null = supabase,
+  /** Pacing seam. Production uses real timers; tests pass an instant sleep so a
+   *  multi-step build does not spend its polling interval in the suite. */
+  defaults: Pick<DurableGenerationOptions, 'sleep' | 'now'> = {},
+) {
+  async function invoke<T>(request: GapCheckRequest | TranscribeResponseRequest | GenerateRequest | StartGenerationRequest | GenerationStepRequest | TermReportRequest | SyncStudySourcesRequest | DeleteStudySourcesRequest): Promise<StudyToolResponse<T>> {
     if (!client) {
       return { ok: false, code: 'unconfigured', message: 'AI study tools are not configured. Local study workflows remain available.' }
     }
@@ -349,6 +480,112 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
         return { ok: false, code: 'invalid-response', message: 'The generator returned an invalid result. Nothing was saved.' }
       }
       return { ok: true, data: result.data as unknown as GeneratedStudyToolArtifact }
+    },
+
+    /**
+     * Durable generation — the transport that survives the platform.
+     *
+     * A Supabase Edge worker has a wall-clock lifetime it will be killed at,
+     * and that clock belongs to the worker rather than to your request. A
+     * multi-minute build held open on one invocation is therefore lost with
+     * nothing recorded, which is the failure this replaces. Instead the server
+     * records the job and returns its id in about a second, and this driver
+     * advances it one short, bounded step at a time.
+     *
+     * Nothing here lengthens a browser timeout: every HTTP call it makes is
+     * short. The waiting happens between calls, against a job that is already
+     * saved, so closing or refreshing the page pauses the build rather than
+     * destroying it.
+     */
+    async startGeneration(request: GenerateRequest): Promise<StudyToolResponse<GenerationJobView>> {
+      const { action: _action, visualSources: _visuals, webPatternResearch: _research, ...rest } = request
+      const result = await invoke<GenerationJobView>({ action: 'generate-start', ...rest })
+      if (!result.ok) return result
+      return isGenerationJobView(result.data)
+        ? { ok: true, data: result.data }
+        : { ok: false, code: 'invalid-response', message: 'The server did not return a build to track. Nothing was saved.' }
+    },
+
+    async stepGeneration(jobId: string): Promise<StudyToolResponse<GenerationJobView>> {
+      const result = await invoke<GenerationJobView>({ action: 'generate-step', jobId })
+      if (!result.ok) return result
+      return isGenerationJobView(result.data)
+        ? { ok: true, data: result.data }
+        : { ok: false, code: 'invalid-response', message: 'The server returned an unreadable build status.' }
+    },
+
+    async generationStatus(jobId: string): Promise<StudyToolResponse<GenerationJobView>> {
+      const result = await invoke<GenerationJobView>({ action: 'generate-status', jobId })
+      if (!result.ok) return result
+      return isGenerationJobView(result.data)
+        ? { ok: true, data: result.data }
+        : { ok: false, code: 'invalid-response', message: 'The server returned an unreadable build status.' }
+    },
+
+    /**
+     * Run one build to completion across as many bounded steps as it needs.
+     *
+     * `resumeKey` is what makes a refresh survivable: the job id is written
+     * before the first step and cleared only on a terminal outcome, so a
+     * reopened page rejoins the same build instead of paying for a second one.
+     */
+    async generateDurable(
+      request: GenerateRequest,
+      options: DurableGenerationOptions = {},
+    ): Promise<StudyToolResponse<GeneratedStudyToolArtifact>> {
+      const sleep = options.sleep ?? defaults.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)))
+      const now = options.now ?? defaults.now ?? (() => Date.now())
+      const deadline = now() + (options.maxWaitMs ?? DEFAULT_DURABLE_WAIT_MS)
+      const store = options.resumeKey ? generationJobStore(options.resumeKey) : null
+
+      let steps = 0
+      let job: GenerationJobView | null = null
+      const resumed = store?.read()
+      if (resumed) {
+        const status = await this.generationStatus(resumed)
+        if (status.ok) job = status.data
+        else if (status.code !== 'unavailable') store?.clear()
+      }
+      if (!job) {
+        const started = await this.startGeneration(request)
+        if (!started.ok) return started
+        job = started.data
+        store?.write(job.jobId)
+      }
+      options.onProgress?.(job)
+
+      while (now() < deadline && steps < MAX_DURABLE_STEPS) {
+        if (options.signal?.aborted) {
+          // The job stays saved and resumable; only this driver stops.
+          return { ok: false, code: 'unavailable', message: 'This build was left running. Reopen the entry to pick it up.' }
+        }
+        if (job.status === 'succeeded') {
+          store?.clear()
+          return isGeneratedArtifact(job.result)
+            ? { ok: true, data: job.result }
+            : { ok: false, code: 'invalid-response', message: 'The generator returned an invalid result. Nothing was saved.' }
+        }
+        if (job.status === 'failed') {
+          store?.clear()
+          return generationJobFailure(job.error)
+        }
+        const wait = Math.max(500, Math.min(job.retryAfterMs ?? 1_500, 15_000))
+        await sleep(wait)
+        steps += 1
+        const stepped = await this.stepGeneration(job.jobId)
+        if (!stepped.ok) {
+          // A transport hiccup must not discard a job the server is still
+          // running. Re-read it; a genuinely missing job ends the build.
+          const status = await this.generationStatus(job.jobId)
+          if (!status.ok) { store?.clear(); return stepped }
+          job = status.data
+        } else {
+          job = stepped.data
+        }
+        options.onProgress?.(job)
+      }
+      // Out of client patience, not out of job: the build stays resumable.
+      return { ok: false, code: 'unavailable', message: 'This build is taking longer than expected and is still running. Reopen the entry to pick it up; nothing saved was changed.' }
     },
 
     async termReport(request: TermReportRequest): Promise<StudyToolResponse<GeneratedStudyToolArtifact>> {

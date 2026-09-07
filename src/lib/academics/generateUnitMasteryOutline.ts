@@ -2,7 +2,7 @@ import { journalStudyInstruction } from './journalStudyIntent'
 import { lectureSourcePriorityInstruction } from './lectureSourcePriority'
 import { assembleGenerationRequest } from '@/lib/generation'
 import { assertGenerationAllowed, GenerationNotAllowedError, generatedTitle } from '@/lib/academics/generationPolicy'
-import { generateWithSourceRecovery, prepareGenerationSources } from '@/lib/academics/syncGenerationSources'
+import { generateWithSourceRecovery, prepareGenerationSources, type GenerationSourceOptions } from '@/lib/academics/syncGenerationSources'
 import { validateMasteryOutline } from '@/lib/academics/unitQuestionBank'
 import type { GeneratedMasteryOutline, JournalStudyIntent, SourceChunk } from '@/lib/types'
 import type { GenerateFailure } from './generateStudyGuide'
@@ -22,7 +22,7 @@ function failureFor(code: string): GenerateFailure {
   return 'provider-unavailable'
 }
 
-export async function generateUnitMasteryOutline({ courseId, chunks, unit, label, scope = 'unit', practiceQuestionChunkIds = [], primarySourceChunkIds = [], personalNoteChunkIds = [], studyIntent, notebookRequest }: { courseId: string; chunks: SourceChunk[]; unit: string; label: string; scope?: 'lecture' | 'unit' | 'exam'; practiceQuestionChunkIds?: readonly string[]; primarySourceChunkIds?: readonly string[]; personalNoteChunkIds?: readonly string[]; studyIntent?: JournalStudyIntent; notebookRequest?: string }): Promise<UnitMasteryOutlineOutcome> {
+export async function generateUnitMasteryOutline({ courseId, chunks, unit, label, scope = 'unit', practiceQuestionChunkIds = [], primarySourceChunkIds = [], personalNoteChunkIds = [], studyIntent, notebookRequest, onProgress }: { courseId: string; chunks: SourceChunk[]; unit: string; label: string; scope?: 'lecture' | 'unit' | 'exam'; practiceQuestionChunkIds?: readonly string[]; primarySourceChunkIds?: readonly string[]; personalNoteChunkIds?: readonly string[]; studyIntent?: JournalStudyIntent; notebookRequest?: string; onProgress?: GenerationSourceOptions['onProgress'] }): Promise<UnitMasteryOutlineOutcome> {
   if (!chunks.length) return { ok: false, failure: 'no-sources', message: 'Select processed course material first. The mastery map stays empty rather than guessing.' }
   try {
     assertGenerationAllowed({ scope: 'academics', artifact: 'unit-mastery-outline', courseId, groundedIn: chunks.map((chunk) => chunk.id) })
@@ -53,7 +53,7 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
       questionReferenceIds.length ? `Reference-question chunk IDs: ${questionReferenceIds.join(', ')}. Use their task patterns, representations, distinctions, and traps to make Be able to do and Watch for concrete. Do not copy stems, and never treat distractors as facts.` : '',
     ].filter(Boolean).join('\n'),
   })
-  const result = await generateWithSourceRecovery(courseId, chunks, { action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `${sourcePriority} ${journalInstruction} ${refinements} Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map with objective-specific free-recall cues. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline. ${examInstruction}${questionReferenceIds.length ? ' Use the marked question passages as task-pattern evidence without copying them.' : ''}` })
+  const result = await generateWithSourceRecovery(courseId, chunks, { action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds, specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt, request: `${sourcePriority} ${journalInstruction} ${refinements} Scope: ${scope}. Unit: ${unit}. Build a detailed source-grounded Mastery Map with objective-specific free-recall cues. Preserve the relevant objective structure and subpoints; do not summarize a detailed outline. ${examInstruction}${questionReferenceIds.length ? ' Use the marked question passages as task-pattern evidence without copying them.' : ''}` }, { onProgress })
 
   if (!result.ok) return { ok: false, failure: failureFor(result.code), message: result.message }
   let generationAuditStatus = result.data.auditStatus
@@ -65,7 +65,7 @@ export async function generateUnitMasteryOutline({ courseId, chunks, unit, label
       specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt,
       request: `${sourcePriority} ${journalInstruction} ${refinements} Scope: ${scope}. Unit: ${unit}. Topic label: ${label}. Rebuild the complete Mastery Map from the same selected evidence. A prior attempt failed these deterministic checks: ${issues.join('; ')}. Correct every listed requirement. Keep all required fields, objective-specific cues, at least one cue explicitly saying "without notes" per objective, the ordinary five distinct Understand points, two distinct Be able to do points, and one Watch for point. Only if the selected evidence genuinely cannot support these floors, explain the specific missing support in evidenceLimit using at least eight words; retain at least one supported Understand point and all supported detail, and allow unsupported task or watch-for arrays to be empty. Never use a limitation to compress rich evidence. ${examInstruction} Source IDs must come only from the supplied evidence. Do not invent missing facts or repeat points to satisfy counts. Return the full valid artifact, not a patch.`,
 
-    })
+    }, { onProgress })
     if (!repair.ok) return { ok: false, failure: failureFor(repair.code), message: repair.message }
     generationAuditStatus = repair.data.auditStatus
     issues.length = 0

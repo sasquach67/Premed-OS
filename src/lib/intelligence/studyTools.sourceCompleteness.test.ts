@@ -1,3 +1,4 @@
+import * as generationJobs from '../../../supabase/functions/_shared/generationJobs'
 import { readFileSync } from 'node:fs'
 import ts from 'typescript'
 import { describe, expect, it, vi } from 'vitest'
@@ -14,7 +15,8 @@ function handlerWithRows(rows: Array<{ chunk_id: string; file_id: string; conten
   const client = { auth: { getUser: async () => ({ data: { user: { id: 'user' } }, error: null }) }, from: () => query, rpc }
   const source = readFileSync('supabase/functions/study-tools/index.ts', 'utf8')
   const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
-  const requireStub = (id: string) => id.startsWith('npm:') ? { createClient: () => client } : {}
+  const requireStub = (id: string) => id.startsWith('npm:') ? { createClient: () => client }
+    : id.includes('generationJobs') ? generationJobs : {}
   const deno = { env: { get: () => 'test-only' }, serve: (fn: typeof handler) => { handler = fn } }
   new Function('require', 'exports', 'Deno', compiled)(requireStub, {}, deno)
   return { handler, rpc }

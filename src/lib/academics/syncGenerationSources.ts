@@ -8,6 +8,7 @@ import {
   type GenerateRequest,
   type StudyToolResponse,
   type StudySourceInput,
+  type DurableGenerationOptions,
 } from '@/lib/intelligence/studyTools'
 import type { SourceChunk } from '@/lib/types'
 
@@ -149,11 +150,16 @@ export interface GenerationSourcePreparation {
 export interface GenerationSourceOptions {
   artifact?: string
   forceSync?: boolean
+  /** Live build phase for the composer, so a multi-minute build is not silent. */
+  onProgress?: DurableGenerationOptions['onProgress']
+  signal?: AbortSignal
 }
 
 interface GenerationSourceTools {
   syncSources(request: Parameters<typeof studyTools.syncSources>[0]): ReturnType<typeof studyTools.syncSources>
   generate(request: GenerateRequest): Promise<StudyToolResponse<GeneratedStudyToolArtifact>>
+  /** Present on the real client. Test doubles without it keep the direct call. */
+  generateDurable?(request: GenerateRequest, options?: DurableGenerationOptions): Promise<StudyToolResponse<GeneratedStudyToolArtifact>>
 }
 
 export function sourceScopeForGeneration(chunks: readonly SourceChunk[]): string {
@@ -245,19 +251,35 @@ export async function generateWithSourceRecovery(
   options: GenerationSourceOptions = {},
   tools: GenerationSourceTools = studyTools,
 ): Promise<StudyToolResponse<GeneratedStudyToolArtifact>> {
-  const first = await tools.generate(request)
+  /**
+   * Durable transport when the client offers one. Each provider call then runs
+   * as a persisted, resumable job step rather than inside a single Edge
+   * invocation that the platform's worker lifetime can end without a trace.
+   *
+   * `citation-not-carried` is no longer replayed here: the server performs that
+   * one rebuild inside the job, where the attempt budget is enforced. Replaying
+   * it here as well would mean two jobs, and paid work nobody is counting.
+   */
+  const run = (payload: GenerateRequest) => tools.generateDurable
+    ? tools.generateDurable({ ...payload, repairGuidance: artifactRepairGuidance(payload.specId) }, {
+        resumeKey: generationResumeKey(courseId, payload),
+        onProgress: options.onProgress,
+        signal: options.signal,
+      })
+    : tools.generate(payload)
+
+  const first = await run(request)
   if (first.ok) return first
 
-  if (first.code === 'citation-not-carried' || first.code === 'audit-rejected') {
-    // Empty objectives have no citations, so the Edge rejects them before the
-    // caller can inspect their shape. Include the relevant artifact repair
-    // here instead of spending this bounded attempt on citation wording alone.
-    const artifactRepair = request.specId === 'unit-mastery-outline-v1'
-      ? ' Return a nonempty standards array with title and unit at the top level. Missing instructor objectives do not justify an empty map: derive clearly labeled Study objective: entries from the selected concepts. Each objective must have a unique id, title, freeRecallCues, understand, beAbleToDo, watchFor, examPractice, and nonempty exact sourceChunkIds. Preserve the ordinary depth and application requirements for rich sources. When evidence genuinely cannot support that depth or a solved application, explain the specific missing support in evidenceLimit, retain at least one supported understanding point and a concrete without-notes cue, and leave only unsupported arrays empty. Do not invent support, shorten rich material, or return a failure/status object instead of the artifact.'
-      : request.specId === 'study-guide-v1'
-        ? ' Every factual block, including recap and application blocks, must carry a valid sourceRef. Every section must have id, title and blocks.'
-        : ''
-    return tools.generate({
+  const serverRepairsCitations = Boolean(tools.generateDurable)
+  if (first.code === 'audit-rejected' || (first.code === 'citation-not-carried' && !serverRepairsCitations)) {
+    // An audit rejection is the server's final answer on a job, so its replay
+    // stays here. Carry the artifact's own shape requirements rather than
+    // spending this bounded attempt on citation wording alone — and, on a
+    // client without the durable transport, this branch still covers a
+    // citation rejection the server could not rebuild for itself.
+    const artifactRepair = artifactRepairGuidance(request.specId)
+    return run({
       ...request,
       request: `${request.request}\n\nA prior attempt was rejected by validation. Rebuild the complete artifact and correct these reported problems: ${first.message}. All source references and source chunk IDs must be copied exactly from supplied evidence.${artifactRepair} Do not omit required content, invent sources, or treat this feedback as permission to change the original requirements. The rebuilt result will undergo the same checks.`,
     })
@@ -270,9 +292,41 @@ export async function generateWithSourceRecovery(
     return { ok: false, code: 'unavailable', message: refreshed.message ?? 'Source material could not be restored.' }
   }
 
-  return tools.generate({
+  return run({
     ...request,
     topicId: refreshed.scopeId,
     chunkIds: refreshed.chunkIds,
   })
+}
+
+/**
+ * What a rejected artifact must fix, in that artifact's own terms.
+ *
+ * The durable path hands this to the server so its one bounded rebuild carries
+ * the same guidance the client used to add — a generic "cite correctly" note
+ * loses the shape requirements that make an empty Mastery Map recoverable.
+ */
+export function artifactRepairGuidance(specId: string): string {
+  if (specId === 'unit-mastery-outline-v1') {
+    return ' Return a nonempty standards array with title and unit at the top level. Missing instructor objectives do not justify an empty map: derive clearly labeled Study objective: entries from the selected concepts. Each objective must have a unique id, title, freeRecallCues, understand, beAbleToDo, watchFor, examPractice, and nonempty exact sourceChunkIds. Preserve the ordinary depth and application requirements for rich sources. When evidence genuinely cannot support that depth or a solved application, explain the specific missing support in evidenceLimit, retain at least one supported understanding point and a concrete without-notes cue, and leave only unsupported arrays empty. Do not invent support, shorten rich material, or return a failure/status object instead of the artifact.'
+  }
+  if (specId === 'study-guide-v1') {
+    return ' Every factual block, including recap and application blocks, must carry a valid sourceRef. Every section must have id, title and blocks.'
+  }
+  return ''
+}
+
+/**
+ * A stable per-build key. It is derived from the request, so a page that is
+ * refreshed mid-build rejoins the same job; a genuinely different build (new
+ * material, new instructions, a repair replay) gets its own.
+ */
+export function generationResumeKey(courseId: string, request: GenerateRequest) {
+  const canonical = `${courseId}\u0000${request.topicId}\u0000${request.specId}\u0000${request.specHash}\u0000${[...request.chunkIds].sort().join(',')}\u0000${request.request}`
+  let hash = 0x811c9dc5
+  for (let index = 0; index < canonical.length; index += 1) {
+    hash ^= canonical.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return `${request.specId}:${(hash >>> 0).toString(16)}`
 }

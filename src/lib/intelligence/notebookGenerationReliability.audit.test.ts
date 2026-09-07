@@ -15,25 +15,35 @@ describe('Notebook generation reliability: source versus output failure', () => 
     const result = await generateWithSourceRecovery('course-1', [{ id: 'chunk-1', fileId: 'file-1', courseId: 'course-1', topicId: 'topic-1', content: 'A readable psychology source.' } as SourceChunk], request, {}, client)
     expect(result).toMatchObject({ ok: false, code: 'citation-not-carried' })
     expect(invoke.mock.calls.filter(([, options]) => options.body.action === 'sync-sources')).toHaveLength(0)
+    // The rebuild after a citation rejection belongs to the durable job, where
+    // the attempt budget is enforced. Replaying it here too would mean a second
+    // job and paid work nobody is counting.
+    expect(invoke.mock.calls.filter(([, options]) => options.body.action === 'generate-start')).toHaveLength(1)
   })
 })
 
 it('restores an incomplete server mirror once, then uses the exact selected source boundary', async () => {
   vi.spyOn(window, 'confirm').mockReturnValue(true)
-  let attempts = 0
+  let starts = 0
+  const job = { jobId: '11111111-1111-4111-8111-111111111111', status: 'queued', step: 'submit', phase: 'Preparing', providerAttempts: 0, pollCount: 0, updatedAt: '' }
   const invoke = vi.fn(async (_name: string, options: { body: { action: string } }) => {
     if (options.body.action === 'sync-sources') return { data: { synced: 1 }, error: null }
-    attempts++
-    return attempts === 1
+    if (options.body.action === 'generate-step') {
+      return { data: { ...job, status: 'succeeded', step: 'done', phase: 'Finished', result: { artifact: {}, citations: [], auditStatus: 'skipped' } }, error: null }
+    }
+    starts++
+    return starts === 1
       ? { data: null, error: { context: new Response(JSON.stringify({ error: { code: 'source-sync-incomplete' } }), { status: 422 }) } }
-      : { data: { artifact: {}, citations: [], auditStatus: 'skipped' }, error: null }
+      : { data: job, error: null }
   })
-  const client = createStudyToolsClient({ auth: { getSession: async () => ({ data: { session: {} } }) }, functions: { invoke } } as never)
+  const client = createStudyToolsClient({ auth: { getSession: async () => ({ data: { session: {} } }) }, functions: { invoke } } as never, { sleep: async () => {} })
   const result = await generateWithSourceRecovery('course-1', [{ id: 'chunk-1', fileId: 'file-1', courseId: 'course-1', topicId: 'topic-1', content: 'A readable psychology source.' } as SourceChunk], request, {}, client)
   expect(result.ok).toBe(true)
-  expect(attempts).toBe(2)
+  // The mirror is rebuilt exactly once, and only the durable start is replayed.
+  expect(starts).toBe(2)
   expect(invoke.mock.calls.filter(([, options]) => options.body.action === 'sync-sources')).toHaveLength(1)
-  expect(invoke.mock.lastCall?.[1].body).toMatchObject({ chunkIds: ['chunk-1'], topicId: 'topic-1' })
+  const restarted = invoke.mock.calls.filter(([, options]) => options.body.action === 'generate-start').at(-1)
+  expect(restarted?.[1].body).toMatchObject({ chunkIds: ['chunk-1'], topicId: 'topic-1' })
 })
 
 it('does not retry an unknown 422 as though source material were missing', async () => {

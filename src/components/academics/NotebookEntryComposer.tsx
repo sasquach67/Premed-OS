@@ -17,6 +17,7 @@ import { selectGenerationSourceChunks } from '@/lib/academics/syncGenerationSour
 import { instructorSourceFileIds, personalNoteSourceFileIds, STUDY_MATERIAL_TYPES } from '@/lib/academics/lectureSourcePriority'
 import { practiceQuestionChunkIds } from '@/lib/academics/materialGenerationIntake'
 import { buildLectureBrief, fileCoverageLabel } from '@/lib/academics/lectureWorkspace'
+import { pendingBuildStore } from '@/lib/academics/pendingBuilds'
 
 // Shared across composer mounts: navigation does not cancel valid work, but a
 // newer explicit build supersedes every pending response for that entry.
@@ -69,6 +70,10 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
   const [reviewing, setReviewing] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
   const [phase, setPhase] = useState<'page' | 'guide' | 'mastery' | 'saving' | null>(null)
+  // What the server says this build is doing right now. A generation that runs
+  // for minutes must not look like a frozen spinner.
+  const [detail, setDetail] = useState('')
+  const [resumed, setResumed] = useState(false)
   const [error, setError] = useState('')
   const draft = data.lectures.find(item => item.id === draftId) ?? entry
   const selectedIds = draft?.notebookRequest !== undefined
@@ -113,27 +118,40 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
     setChoosingGoal(index === 0)
     setReviewing(index === 2)
   }
-  async function build() {
+  async function build(options: { resuming?: boolean } = {}) {
     if (phase || sourceProblem) return
     setError('')
+    setResumed(Boolean(options.resuming))
+    setDetail(options.resuming ? 'Picking this build back up' : '')
     setPhase(tailored ? 'page' : 'guide')
     const attempt = Symbol(draftId)
     activeBuildAttempts.set(draftId, attempt)
     const isCurrentAttempt = () => activeBuildAttempts.get(draftId) === attempt
+    // The marker survives a refresh; the job itself lives on the server, so
+    // reopening this entry rejoins that build rather than starting a new one.
+    const pending = pendingBuildStore(draftId)
+    const started = pending.read()
+    pending.write({ phase: 'Preparing', startedAt: started?.startedAt ?? Date.now(), resumes: (started?.resumes ?? 0) + (options.resuming ? 1 : 0) })
+    const onProgress = (job: { phase: string }) => {
+      if (!isCurrentAttempt()) return
+      setDetail(job.phase)
+      const current = pending.read()
+      if (current) pending.write({ ...current, phase: job.phase })
+    }
     try {
       const label = title.trim() || draft?.title || defaultTitle
       const primarySourceChunkIds = chunks.filter(chunk => instructorIds.includes(chunk.fileId)).map(chunk => chunk.id)
       const personalNoteChunkIds = chunks.filter(chunk => noteIds.includes(chunk.fileId)).map(chunk => chunk.id)
       const questionIds = practiceQuestionChunkIds(files, chunks)
-      const guide = await generateStudyGuide({ courseId, chunks, label, notebookGoal: goal, notebookRequest: request.trim() || undefined, primarySourceChunkIds, personalNoteChunkIds, practiceQuestionChunkIds: questionIds })
+      const guide = await generateStudyGuide({ courseId, chunks, label, notebookGoal: goal, notebookRequest: request.trim() || undefined, primarySourceChunkIds, personalNoteChunkIds, practiceQuestionChunkIds: questionIds, onProgress })
       if (!isCurrentAttempt()) return
       if (!guide.ok || !guide.artifact) { setError(guide.message ?? 'The page could not be created. Your materials and any previous result are still saved.'); return }
+      setDetail('')
       setPhase('saving')
       const generatedGuide = guide.artifact
       const usedIds = new Set(generatedGuide.sections.flatMap(section => section.blocks.flatMap(block => block.sourceRef ? [block.sourceRef.chunkId] : [])))
       const usedFiles = [...new Set(chunks.filter(chunk => usedIds.has(chunk.id)).map(chunk => chunk.fileId))]
       // Runs after the explicit Create entry action and successful generation.
-      // eslint-disable-next-line react-hooks/purity
       const now = Date.now()
       useStore.getState().update(state => {
         const center = state.academics.classCenter
@@ -159,7 +177,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
         setPhase('mastery')
         let mastery: Awaited<ReturnType<typeof generateUnitMasteryOutline>>
         try {
-          mastery = await generateUnitMasteryOutline({ courseId, chunks, unit: label, label, scope: 'lecture', notebookRequest: request.trim() || undefined, primarySourceChunkIds, personalNoteChunkIds, practiceQuestionChunkIds: questionIds })
+          mastery = await generateUnitMasteryOutline({ courseId, chunks, unit: label, label, scope: 'lecture', notebookRequest: request.trim() || undefined, primarySourceChunkIds, personalNoteChunkIds, practiceQuestionChunkIds: questionIds, onProgress })
         } catch {
           mastery = { ok: false }
         }
@@ -201,10 +219,34 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
       if (!isCurrentAttempt()) return
       setError(failure instanceof Error ? failure.message : 'Creation stopped. Your materials and any previous result are still saved.')
     } finally {
-      if (isCurrentAttempt()) activeBuildAttempts.delete(draftId)
+      if (isCurrentAttempt()) {
+        activeBuildAttempts.delete(draftId)
+        // Cleared on every terminal outcome, success or failure: a marker left
+        // behind would make the next visit resume a build that already ended.
+        pendingBuildStore(draftId).clear()
+      }
       setPhase(null)
+      setDetail('')
     }
   }
+
+  /**
+   * Recovery after a refresh.
+   *
+   * A build now lives on the server as a durable job, so a closed or reloaded
+   * page pauses it rather than destroying it. If this entry left one running,
+   * pick it up: the resume key and the server's active-job dedupe make this
+   * rejoin the same build, so nothing is generated — or paid for — twice.
+   */
+  useEffect(() => {
+    if (phase || sourceProblem || activeBuildAttempts.has(draftId)) return
+    if (!pendingBuildStore(draftId).read()) return
+    // Deferred so the resumed build's own state updates land outside this
+    // effect's render pass rather than cascading through it.
+    queueMicrotask(() => { void build({ resuming: true }) })
+    // Runs once per mount for this draft; `build` guards re-entry itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftId])
 
   return <section className="notebook-composer box-border w-full min-w-0 px-4 py-5 sm:px-6 sm:py-6 lg:px-8" aria-label="Notebook entry composer">
     {!phase && draft?.studyGuide && <Button variant="outline" onClick={() => {
@@ -292,7 +334,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
       </>}
       {!choosingGoal && sourceProblem && <p role="status" className="text-sm text-muted-foreground">{sourceProblem}</p>}
       {error && <p role="alert" className="rounded-xl border border-destructive/30 p-3 text-sm text-destructive">{error}</p>}
-      {phase && <NotebookBuildProgress phase={phase} tailored={tailored} output={chosenGoal.output}/>}
+      {phase && <NotebookBuildProgress phase={phase} detail={detail} resumed={resumed} tailored={tailored} output={chosenGoal.output}/>}
       <footer className="flex flex-wrap items-center justify-between gap-3 pt-2">
         {!choosingGoal ? <Button variant="outline" disabled={Boolean(phase)} onClick={() => goToStep(reviewing ? 1 : 0)}><ArrowLeft className="size-4"/>{reviewing ? 'Back to materials' : 'Back to goal'}</Button> : <p className="text-xs text-muted-foreground">{draft ? 'Draft saved' : ''}</p>}
         <Button className="ml-auto" disabled={Boolean(phase) || (!choosingGoal && Boolean(sourceProblem))} onClick={choosingGoal ? () => goToStep(1) : reviewing ? () => void build() : () => goToStep(2)}>{!choosingGoal && reviewing ? <Sparkles className="size-4"/> : <ArrowRight className="size-4"/>}{choosingGoal ? 'Continue to materials' : phase ? 'Creating…' : reviewing ? 'Create entry' : 'Review and create'}</Button>
@@ -301,7 +343,7 @@ export function NotebookEntryComposer({ courseId, course, data, entry, onBuilt }
   </section>
 }
 
-function NotebookBuildProgress({ phase, tailored, output }: { phase: 'page' | 'guide' | 'mastery' | 'saving'; tailored: boolean; output: string }) {
+function NotebookBuildProgress({ phase, detail, resumed, tailored, output }: { phase: 'page' | 'guide' | 'mastery' | 'saving'; detail?: string; resumed?: boolean; tailored: boolean; output: string }) {
   const [elapsed, setElapsed] = useState(0)
   useEffect(() => {
     const start = Date.now()
@@ -315,5 +357,11 @@ function NotebookBuildProgress({ phase, tailored, output }: { phase: 'page' | 'g
     <ol className="mt-4 flex flex-wrap gap-x-6 gap-y-3 text-sm">{steps.map((label, index) => <li key={label} aria-current={index === current ? 'step' : undefined} className={cn('flex items-center gap-2', index > current ? 'text-muted-foreground' : 'text-primary')}>
       {index < current ? <Check aria-hidden="true" className="size-4"/> : index === current ? <Loader2 aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none"/> : <span aria-hidden="true" className="size-3 rounded-full border border-border"/>}<span>{label}<span className="sr-only">{index < current ? ': complete' : index === current ? ': in progress' : ': waiting'}</span></span>
     </li>)}</ol>
+    {detail && <p className="mt-3 text-xs text-muted-foreground">{detail}</p>}
+    <p className="mt-3 text-xs text-muted-foreground">
+      {resumed
+        ? 'Picking up the build this entry already started. Nothing is generated twice.'
+        : 'A full build can take a few minutes. You can leave this page — the build is saved on the server, and reopening this entry picks it back up.'}
+    </p>
   </section>
 }
