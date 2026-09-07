@@ -2838,9 +2838,18 @@ async function runOneTask(
 
     // Measured cost of a real provider round trip, folded into this stage's
     // rates so the next sizing decision is made against evidence.
+    //
+    // A timeout is the most informative measurement a stage produces: it is
+    // precisely the case the estimate got wrong. Excluding it left the rates
+    // learning only from requests that fit, so they stayed optimistic exactly
+    // where they had already failed — a live section estimated at 58.3s ran
+    // 75.4s, timed out, and taught the model nothing. An ambiguous timeout did
+    // spend that wall clock at the provider, so it counts. Other failures — a
+    // rejection, unusable output — measured no generation and still do not.
     const inputChars = sized.inputChars ?? task.input_chars
     const outputTokens = sized.outputTokens ?? task.output_tokens
-    if (outcome.kind !== 'failed' && inputChars && outputTokens) {
+    const measuredRealWork = outcome.kind !== 'failed' || outcome.ambiguous === true
+    if (measuredRealWork && inputChars && outputTokens) {
       await rpc(service, 'record_stage_duration', {
         p_spec_id: specId,
         p_stage: task.stage,
