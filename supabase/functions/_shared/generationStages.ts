@@ -54,6 +54,20 @@ export interface StageSpec {
    * request idle timeout. A deadline is a failure control, not a promise the
    * work finishes — the stage shapes guarantee the request is small.
    */
+  /**
+   * Hard ceiling on ONE provider call, in milliseconds.
+   *
+   * This exists only to keep a call inside a worker's life. It does not
+   * describe the stage's shape — `stageBudget` sizes each task from measured
+   * latency and subdivides what does not fit, which is where shape belongs.
+   *
+   * `providerBudgetMs` already takes min(this, operator cap, remainingWorkerMs),
+   * so the worker is protected by that last term whatever this says. Per-stage
+   * values of 70-85s were therefore protecting against something already
+   * handled, and cost roughly 55s of every fresh worker's usable 130s
+   * (150s lifetime - 20s safety). A live build showed the cost directly: a
+   * coverage repair estimated at 61s was killed by the 70s cap.
+   */
   maxProviderMs: number
   /** This stage's tasks are created from the previous stage's output. */
   fanOut: boolean
@@ -105,7 +119,7 @@ const REPAIR: StageSpec = {
   outputs: 'Replacement sections for exactly those, leaving verified sections untouched.',
   completion: 'Every named section has been regenerated once, or its attempt budget is spent.',
   provider: 'openai',
-  maxProviderMs: 75_000,
+  maxProviderMs: 115_000,
   fanOut: true,
   maxAttempts: 2,
   optional: true,
@@ -124,7 +138,7 @@ const AUDIT: StageSpec = {
   // The review reads the artifact plus the corpus, so it is sized and, when
   // the corpus is large, run per section over that section's own evidence
   // followed by a consistency pass over the assembled claims.
-  maxProviderMs: 80_000,
+  maxProviderMs: 115_000,
   fanOut: true,
   maxAttempts: 2,
   outputTokens: 2_500,
@@ -168,7 +182,7 @@ const SURVEY: StageSpec = {
   outputs: 'That source\'s topics, each with the exact passage IDs supporting it, plus any qualifications the instructor attaches to them.',
   completion: 'Every source has been surveyed, and every passage of every source appears in exactly one survey.',
   provider: 'openai',
-  maxProviderMs: 70_000,
+  maxProviderMs: 115_000,
   fanOut: true,
   maxAttempts: 2,
   outputTokens: 3_000,
@@ -184,7 +198,7 @@ const MERGE: StageSpec = {
   outputs: 'One section plan whose sections may draw on topics from several sources, with the passage IDs carried through unchanged.',
   completion: 'Every surveyed topic is either placed in a section or explicitly set aside with a reason.',
   provider: 'openai',
-  maxProviderMs: 70_000,
+  maxProviderMs: 115_000,
   fanOut: false,
   maxAttempts: 2,
   outputTokens: 4_000,
@@ -206,7 +220,7 @@ const COVERAGE: StageSpec = {
   outputs: 'Placement of those passages into an existing section, or an explicit, reasoned exclusion.',
   completion: 'Every original passage is cited, placed, or excluded with a stated reason.',
   provider: 'openai',
-  maxProviderMs: 70_000,
+  maxProviderMs: 115_000,
   fanOut: true,
   maxAttempts: 2,
   outputTokens: 4_000,
@@ -238,7 +252,7 @@ const SECTIONED: StageSpec[] = [
     // Deliberately small output: a plan, not prose. When the corpus is too
     // large even for a plan-shaped reply, the survey/merge stages run instead —
     // the sizing decision is made before the request is sent, not discovered.
-    maxProviderMs: 80_000,
+    maxProviderMs: 115_000,
     fanOut: false,
     maxAttempts: 2,
     outputTokens: 4_000,
@@ -252,7 +266,7 @@ const SECTIONED: StageSpec[] = [
     outputs: 'That section\'s blocks, each source-backed block carrying a sourceRef.',
     completion: 'Every planned section has a persisted, structurally valid result.',
     provider: 'openai',
-    maxProviderMs: 75_000,
+    maxProviderMs: 115_000,
     fanOut: true,
     maxAttempts: 2,
     outputTokens: 5_000,
@@ -283,7 +297,7 @@ const OBJECTIVES: StageSpec[] = [
     outputs: 'The objective list; per objective a title and the exact passage IDs that support it, preserving explicit instructor objectives where the material states them.',
     completion: 'At least one objective, every objective\'s passages resolve, and every selected source is used or explicitly explained.',
     provider: 'openai',
-    maxProviderMs: 80_000,
+    maxProviderMs: 115_000,
     fanOut: false,
     maxAttempts: 2,
     outputTokens: 4_000,
@@ -297,7 +311,7 @@ const OBJECTIVES: StageSpec[] = [
     outputs: 'That objective\'s recall cues, understanding points, applications, watch-fors and practice, with exact passage IDs.',
     completion: 'Every objective has a persisted, structurally valid result.',
     provider: 'openai',
-    maxProviderMs: 75_000,
+    maxProviderMs: 115_000,
     fanOut: true,
     maxAttempts: 2,
     outputTokens: 5_000,
@@ -326,7 +340,7 @@ const SINGLE_PASS: StageSpec[] = [
     outputs: 'The whole artifact in one structured response.',
     completion: 'A structurally valid artifact is persisted.',
     provider: 'openai',
-    maxProviderMs: 85_000,
+    maxProviderMs: 115_000,
     fanOut: false,
     maxAttempts: 2,
     outputTokens: 8_000,
@@ -355,7 +369,7 @@ const QUESTION_BANK: StageSpec[] = [
     outputs: 'The validated stimulus sets in one grounded pass.',
     completion: 'A structurally valid bank whose required web research was actually performed.',
     provider: 'anthropic',
-    maxProviderMs: 110_000,
+    maxProviderMs: 115_000,
     fanOut: false,
     maxAttempts: 2,
     outputTokens: 24_000,

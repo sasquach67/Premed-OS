@@ -1719,10 +1719,24 @@ async function stageObservation(service: unknown, specId: string, stage: StageId
  * any operator cap, and what THIS worker actually has left after its safety
  * margin. A stage never gets to plan against the full 150s.
  */
-function providerBudgetMs(spec: StageSpec, budget: WorkerBudget) {
+function operatorStageCapMs() {
   const configured = Number(Deno.env.get('GENERATION_STAGE_DEADLINE_MS'))
-  const operatorCap = Number.isFinite(configured) && configured > 0 ? configured : Number.POSITIVE_INFINITY
-  return Math.max(0, Math.min(spec.maxProviderMs, operatorCap, remainingWorkerMs(budget)))
+  return Number.isFinite(configured) && configured > 0 ? configured : Number.POSITIVE_INFINITY
+}
+
+function providerBudgetMs(spec: StageSpec, budget: WorkerBudget) {
+  return Math.max(0, Math.min(spec.maxProviderMs, operatorStageCapMs(), remainingWorkerMs(budget)))
+}
+
+/**
+ * The budget this stage gets on a FRESH worker: everything providerBudgetMs
+ * considers except how much of this particular worker's life is already gone.
+ *
+ * Comparing the two separates "this work does not fit" from "this worker was
+ * nearly used up". Only the second is worth another attempt unchanged.
+ */
+function fullStageBudgetMs(spec: StageSpec, budget: WorkerBudget) {
+  return Math.max(0, Math.min(spec.maxProviderMs, operatorStageCapMs(), budget.lifetimeMs - budget.safetyMs))
 }
 
 const serialisedChars = (payload: Record<string, unknown>) => JSON.stringify(payload).length
@@ -1903,11 +1917,19 @@ async function runProviderStage(
       // The provider may have accepted and billed this. It is counted, and the
       // task is marked oversized so its next attempt must be a subdivision
       // rather than the identical request again.
+      // Distinguish "too big for any worker" from "unlucky". `providerBudgetMs`
+      // shrinks to whatever this worker has left, so a task can time out purely
+      // because it landed on a worker most of the way through its life. Marking
+      // that oversized would force a permanent subdivision — a needlessly
+      // fragmented artifact — when a retry on a fresh worker would have
+      // finished it. Only a timeout against a near-full stage budget is
+      // evidence the work itself does not fit.
+      const budgetWasFull = ceiling >= fullStageBudgetMs(spec, budget) * 0.8
       return {
         kind: 'failed',
         ambiguous: true,
-        oversized: true,
-        error: jobError('provider-timeout-ambiguous', `${error.message} The request may have been accepted by the provider, so this attempt is counted and will not be repeated unchanged. Nothing was saved and your material is unchanged.`),
+        oversized: budgetWasFull,
+        error: jobError('provider-timeout-ambiguous', `${error.message}${budgetWasFull ? '' : ' This worker was already part-way through its life, so the next attempt gets a full budget before anything is divided.'} The request may have been accepted by the provider, so this attempt is counted and will not be repeated unchanged. Nothing was saved and your material is unchanged.`),
       }
     }
     return { kind: 'failed', error: astraFailure(error) }
