@@ -178,11 +178,18 @@ describe('quality is preserved across the stage boundary', () => {
       { chunk_id: 'c4', file_id: 'slides', content: 'Encoding transforms incoming information into a form memory can store.' },
     ]
     const { fetcher, requests } = scriptedProvider([
-      { sections: [{ id: 'only', title: 'Only', purpose: '', sourceChunkIds: ['S1', 'S4'] }], unusedSources: [{ fileId: 'reading', reason: 'no distinct content' }] },
-      section('only', 'S4'),
+      {
+        sections: [
+          { id: 'encoding', title: 'Encoding', purpose: '', sourceChunkIds: ['S1', 'S2', 'S4'] },
+          { id: 'consolidation', title: 'Consolidation', purpose: '', sourceChunkIds: ['S3'] },
+        ],
+        unusedSources: [],
+      },
+      section('encoding', 'S4'),
+      section('consolidation', 'S3'),
     ])
     const edge = bootStudyToolsEdge({ chunks: repeated, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
-    await edge.call(startBody.chunkIds ? { ...startBody, chunkIds: repeated.map((entry) => entry.chunk_id) } : startBody)
+    await edge.call({ ...startBody, chunkIds: repeated.map((entry) => entry.chunk_id) })
     await edge.drainQueue()
 
     const planning = requests[0]
@@ -190,9 +197,11 @@ describe('quality is preserved across the stage boundary', () => {
     // Once in the passage payload; the repetition notice names the ids instead.
     expect(occurrences).toBe(1)
     expect(planning).toContain('Repeated passages')
+
     // The duplicate is still a citable identity: the artifact cited S4.
-    const jobs = [...edge.jobs.rows.values()]
-    const citations = (jobs[0].result as { citations?: Array<{ chunkId: string }> })?.citations ?? []
+    const [job] = [...edge.jobs.rows.values()]
+    expect(job.status).toBe('succeeded')
+    const citations = (job.result as { citations?: Array<{ chunkId: string }> })?.citations ?? []
     expect(citations.some((citation) => citation.chunkId === 'c4')).toBe(true)
   })
 
@@ -255,7 +264,29 @@ describe('repair is targeted, and paid work is bounded', () => {
     expect(requests.length).toBeLessThanOrEqual(9)
   })
 
-  it('records an ambiguous timeout as possibly billed rather than assuming it never landed', async () => {
+  it('refuses to send a request that sizing says cannot finish, rather than timing out', async () => {
+    const { fetcher, requests } = guideRun()
+    const edge = bootStudyToolsEdge({
+      chunks: passages, fetch: fetcher,
+      // A ceiling too small for any real reply. Nothing should be sent.
+      env: { GENERATION_STAGE_DEADLINE_MS: '4000' },
+    })
+    const started = await readJson(await edge.call(startBody))
+    await edge.drainQueue(8)
+
+    const job = edge.jobs.rows.get(String(started.jobId))!
+    expect(job.status).toBe('failed')
+    expect(String(job.error?.code)).toBe('stage-too-large')
+    // The point: no provider call was made at all. A queue, an AbortSignal or a
+    // retry would not have made it finish, so it was never sent.
+    expect(requests).toHaveLength(0)
+    // A ceiling this small also forces hierarchical planning, so the survey is
+    // what proves unsendable — and it is marked, not retried unchanged.
+    expect(job.inventory?.planningMode).toBe('hierarchical')
+    expect(edge.tasks.rows.some((task) => task.oversized)).toBe(true)
+  })
+
+  it('records an ambiguous timeout as possibly billed, and never repeats it unchanged', async () => {
     const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
       const signal = init?.signal
       return await new Promise<Response>((_resolve, reject) => {
@@ -264,18 +295,30 @@ describe('repair is targeted, and paid work is bounded', () => {
     }) as unknown as typeof fetch
     const edge = bootStudyToolsEdge({
       chunks: passages, fetch: fetcher,
-      // Tighten every stage's provider ceiling so the deadline fires in-suite.
-      env: { GENERATION_STAGE_DEADLINE_MS: '60' },
+      env: { GENERATION_STAGE_DEADLINE_MS: '3300', ANTHROPIC_API_KEY: undefined },
     })
+    // Measured rates from earlier runs say this request is affordable, so it is
+    // sent — and then the provider does not answer.
+    for (const stage of ['outline', 'survey']) {
+      edge.stats.rows.set(`study-guide-v1:${stage}`, {
+        spec_id: 'study-guide-v1', stage, samples: 12,
+        ms_per_output_token: 0.001, ms_per_kilo_input_char: 0.001, max_ms: 3200,
+      })
+    }
     const started = await readJson(await edge.call(startBody))
-    await edge.drainQueue(6)
+    // Two ticks: inventory, then the first provider stage, which hangs.
+    await edge.drainQueue(2)
 
-    const outline = edge.tasks.rows.find((task) => task.stage === 'outline')
-    expect(outline?.ambiguous).toBe(true)
-    const job = edge.jobs.rows.get(String(started.jobId))!
-    expect(String(job.error?.code)).toBe('provider-timeout-ambiguous')
-    expect(String(job.error?.message)).toContain('may have been accepted')
+    const spent = edge.tasks.rows.find((task) => task.ambiguous)
+    expect(spent).toBeTruthy()
+    expect(spent!.oversized).toBe(true)
+    expect(String(spent!.error?.code)).toBe('provider-timeout-ambiguous')
+    expect(String(spent!.error?.message)).toContain('may have been accepted')
+    expect(started.jobId).toBeTruthy()
+    // Every attempt stayed inside its budget; nothing was repeated unchanged.
+    for (const task of edge.tasks.rows) expect(task.attempts).toBeLessThanOrEqual(task.max_attempts)
   })
+
 })
 
 describe('provider background capability is proved, never assumed', () => {
@@ -319,6 +362,204 @@ describe('measured headroom', () => {
     for (const task of edge.tasks.rows) {
       expect(task.duration_ms).not.toBeNull()
       expect(task.duration_ms!).toBeLessThan(130_000)
+    }
+  })
+})
+
+/**
+ * The parts of the design that only matter when the material is big.
+ *
+ * A small corpus never exercises them, which is exactly why they are the parts
+ * most likely to be wrong. Each test below builds a corpus large enough to
+ * force the behaviour rather than asserting it in the abstract.
+ */
+describe('a corpus too large to plan in one request', () => {
+  // Three sources, each far beyond what one planning request can carry.
+  const bulk = (fileId: string, count: number, seed: string) =>
+    Array.from({ length: count }, (_, index) => ({
+      chunk_id: `${fileId}-${index + 1}`,
+      file_id: fileId,
+      content: `${seed} passage ${index + 1}. ${'Detailed lecture content that must not be summarised away. '.repeat(40)}`,
+    }))
+  const large = [...bulk('lecture', 30, 'Encoding'), ...bulk('reading', 30, 'Consolidation'), ...bulk('slides', 30, 'Retrieval')]
+  const largeStart = { ...startBody, chunkIds: large.map((entry) => entry.chunk_id) }
+
+  const topicsFor = (ids: string[]) => ({
+    topics: [{ id: 't1', title: 'Topic', summary: 'A surveyed topic.', sourceChunkIds: ids, qualifications: ['Only in adults'] }],
+  })
+
+  it('surveys each source, merges the surveys, and never plans the whole corpus at once', async () => {
+    const requests: string[] = []
+    const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = String(init?.body ?? '')
+      requests.push(body)
+      // Detect the stage from what it asked for, not from call order.
+      const ids = [...body.matchAll(/\\"chunkId\\":\\"(S\d+)\\"/g)].map((match) => match[1])
+      const planned = [...body.matchAll(/\\"sourceChunkIds\\":\[\\"(S\d+)\\"/g)].map((match) => match[1])
+      const value = body.includes('Survey only')
+        ? topicsFor(ids)
+        : { sections: [{ id: 'only', title: 'Only', purpose: '', sourceChunkIds: (ids.length ? ids : planned).slice(0, 40), subpoints: [] }], unusedSources: [] }
+      return new Response(JSON.stringify({ status: 'completed', output_text: JSON.stringify(value) }), { status: 200 })
+    }) as unknown as typeof fetch
+
+    const edge = bootStudyToolsEdge({ chunks: large, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
+    const started = await readJson(await edge.call(largeStart))
+    await edge.drainQueue(30)
+
+    const job = edge.jobs.rows.get(String(started.jobId))!
+    expect(job.inventory?.planningMode).toBe('hierarchical')
+
+    // One survey per SOURCE — a coherent unit of the student's material.
+    const surveys = edge.tasks.rows.filter((task) => task.stage === 'survey')
+    expect(surveys.length).toBeGreaterThanOrEqual(3)
+    expect(new Set(surveys.map((task) => String(task.input.fileId))).size).toBe(3)
+
+    // The merge reads topic lists, not the corpus: it is far smaller than any
+    // survey, which is what makes hierarchical planning bounded rather than
+    // just rearranged.
+    const mergeRequest = requests.find((request) => request.includes('Surveyed topics by source'))!
+    const surveyRequest = requests.find((request) => request.includes('Survey only'))!
+    expect(mergeRequest.length).toBeLessThan(surveyRequest.length)
+    expect(mergeRequest).toContain('Surveyed topics by source')
+    // Instructor qualifications survive the survey→merge boundary.
+    expect(mergeRequest).toContain('Only in adults')
+
+    // The one-pass planner never ran.
+    expect(edge.tasks.rows.some((task) => task.stage === 'outline')).toBe(false)
+  })
+
+  it('surveys an oversized single source as ordered spans, covering every passage once', async () => {
+    const oneHugeSource = bulk('transcript', 60, 'Lecture')
+    const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = String(init?.body ?? '')
+      const ids = [...body.matchAll(/\\"chunkId\\":\\"(S\d+)\\"/g)].map((match) => match[1])
+      return new Response(JSON.stringify({ status: 'completed', output_text: JSON.stringify(topicsFor(ids)) }), { status: 200 })
+    }) as unknown as typeof fetch
+
+    const edge = bootStudyToolsEdge({
+      chunks: oneHugeSource, fetch: fetcher,
+      // Narrow enough that one source cannot be surveyed in a single request.
+      env: { ANTHROPIC_API_KEY: undefined, GENERATION_STAGE_DEADLINE_MS: '20000' },
+    })
+    await edge.call({ ...startBody, chunkIds: oneHugeSource.map((entry) => entry.chunk_id) })
+    await edge.drainQueue(40)
+
+    const spans = edge.tasks.rows.filter((task) => task.stage === 'survey' && task.parent_task_key)
+    expect(spans.length).toBeGreaterThan(1)
+    // Every passage is surveyed exactly once: nothing dropped, nothing doubled.
+    const covered = spans.flatMap((task) => (task.input.passageIds as string[]) ?? [])
+    expect(new Set(covered).size).toBe(oneHugeSource.length)
+    expect(covered.length).toBe(oneHugeSource.length)
+    // The oversized parent was replaced, not retried unchanged.
+    const parent = edge.tasks.rows.find((task) => task.stage === 'survey' && !task.parent_task_key)
+    expect(parent?.status).toBe('skipped')
+    expect(parent?.oversized).toBe(true)
+  })
+})
+
+describe('a section too large for one request', () => {
+  const heavy = Array.from({ length: 18 }, (_, index) => ({
+    chunk_id: `c${index + 1}`,
+    file_id: 'lecture',
+    content: `Passage ${index + 1}. ${'Substantial explanatory content the guide must not lose. '.repeat(60)}`,
+  }))
+
+  it('splits along the section’s own subpoints, not into equal slices', async () => {
+    const planWithSubpoints = {
+      sections: [{
+        id: 'memory', title: 'Memory', purpose: 'Explain memory',
+        sourceChunkIds: heavy.map((_, index) => `S${index + 1}`),
+        subpoints: [
+          { id: 'encoding', title: 'Encoding', sourceChunkIds: heavy.slice(0, 6).map((_, index) => `S${index + 1}`) },
+          { id: 'storage', title: 'Storage', sourceChunkIds: heavy.slice(6, 12).map((_, index) => `S${index + 7}`) },
+          { id: 'retrieval', title: 'Retrieval', sourceChunkIds: heavy.slice(12).map((_, index) => `S${index + 13}`) },
+        ],
+      }],
+      unusedSources: [],
+    }
+    const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = String(init?.body ?? '')
+      const first = [...body.matchAll(/\\"chunkId\\":\\"(S\d+)\\"/g)].map((match) => match[1])[0] ?? 'S1'
+      const value = body.includes('Plan only')
+        ? planWithSubpoints
+        : { section: { id: 'part', title: 'Part', blocks: [{ id: `b-${first}`, type: 'prose', provenance: 'source', text: { content: 'Explained.' }, sourceRef: { citationId: first } }] } }
+      return new Response(JSON.stringify({ status: 'completed', output_text: JSON.stringify(value) }), { status: 200 })
+    }) as unknown as typeof fetch
+
+    const edge = bootStudyToolsEdge({
+      chunks: heavy, fetch: fetcher,
+      // Wide enough to plan (short reply), too narrow to write a whole section.
+      env: { ANTHROPIC_API_KEY: undefined, GENERATION_STAGE_DEADLINE_MS: '65000' },
+    })
+    const started = await readJson(await edge.call({ ...startBody, chunkIds: heavy.map((entry) => entry.chunk_id) }))
+    await edge.drainQueue(40)
+
+    const parts = edge.tasks.rows.filter((task) => task.stage === 'sections' && task.parent_task_key)
+    expect(parts.length).toBe(3)
+    // Named for the section's own divisions, which is what makes the split
+    // coherent rather than arbitrary.
+    expect(parts.map((task) => task.task_key).sort()).toEqual(['memory::encoding', 'memory::retrieval', 'memory::storage'])
+
+    // The parts reassemble into ONE section: the reader sees no seam.
+    const job = edge.jobs.rows.get(String(started.jobId))!
+    expect(job.status).toBe('succeeded')
+    const artifact = (job.result as { artifact: { sections: Array<{ blocks: unknown[] }> } }).artifact
+    expect(artifact.sections).toHaveLength(1)
+    expect(artifact.sections[0].blocks.length).toBe(3)
+  })
+})
+
+describe('coverage is judged against the original inventory', () => {
+  it('repairs passages the plan never accounted for, rather than trusting the plan', async () => {
+    const corpus = [
+      { chunk_id: 'c1', file_id: 'lecture', content: 'Encoding transforms information.' },
+      { chunk_id: 'c2', file_id: 'lecture', content: 'Retrieval reconstructs a trace.' },
+      { chunk_id: 'c3', file_id: 'lecture', content: 'Consolidation stabilises a trace during sleep.' },
+    ]
+    let planned = false
+    const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = String(init?.body ?? '')
+      let value: unknown
+      if (body.includes('Plan only')) {
+        // A plan that silently forgets c3 — the file is used, so a file-level
+        // check would have called this complete.
+        value = { sections: [{ id: 'only', title: 'Only', purpose: '', sourceChunkIds: ['S1', 'S2'], subpoints: [] }], unusedSources: [] }
+        planned = true
+      } else {
+        const first = [...body.matchAll(/\\"chunkId\\":\\"(S\d+)\\"/g)].map((match) => match[1])[0] ?? 'S1'
+        value = { section: { id: 'only', title: 'Only', blocks: [{ id: `b-${first}`, type: 'prose', provenance: 'source', text: { content: 'Explained.' }, sourceRef: { citationId: first } }] } }
+      }
+      return new Response(JSON.stringify({ status: 'completed', output_text: JSON.stringify(value) }), { status: 200 })
+    }) as unknown as typeof fetch
+
+    const edge = bootStudyToolsEdge({ chunks: corpus, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
+    const started = await readJson(await edge.call({ ...startBody, chunkIds: ['c1', 'c2', 'c3'] }))
+    await edge.drainQueue(40)
+
+    expect(planned).toBe(true)
+    const job = edge.jobs.rows.get(String(started.jobId))!
+    // Verification counted the forgotten passage against the inventory.
+    expect((job.verification as { unaccountedPassages?: number })?.unaccountedPassages).toBeGreaterThan(0)
+    // And scheduled a repair carrying exactly that passage.
+    const coverage = edge.tasks.rows.filter((task) => task.stage === 'repair' && task.task_key.startsWith('coverage::'))
+    expect(coverage).toHaveLength(1)
+    expect(coverage[0].input.passageIds).toEqual(['c3'])
+  })
+})
+
+describe('measurement replaces guessing', () => {
+  it('records what each stage actually cost, per stage', async () => {
+    const { fetcher } = guideRun()
+    const edge = bootStudyToolsEdge({ chunks: passages, fetch: fetcher, env: { ANTHROPIC_API_KEY: undefined } })
+    await edge.call(startBody)
+    await edge.drainQueue()
+
+    // Planning and writing have opposite shapes, so their rates are kept apart.
+    expect(edge.stats.get('study-guide-v1', 'outline')).toBeTruthy()
+    expect(edge.stats.get('study-guide-v1', 'sections')).toBeTruthy()
+    for (const task of edge.tasks.rows.filter((entry) => entry.input_chars)) {
+      expect(task.estimated_ms).toBeGreaterThan(0)
+      expect(task.output_tokens).toBeGreaterThan(0)
     }
   })
 })

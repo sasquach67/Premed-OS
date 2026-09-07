@@ -23,6 +23,10 @@
 
 export type StageId =
   | 'inventory'
+  /** Per-source survey, used only when the corpus cannot be planned in one pass. */
+  | 'survey'
+  /** Reconcile the surveys into one plan. Reads topic lists, not the corpus. */
+  | 'merge'
   | 'outline'
   | 'sections'
   | 'draft'
@@ -57,6 +61,14 @@ export interface StageSpec {
   maxAttempts: number
   /** A stage that may legitimately produce no tasks at all. */
   optional?: boolean
+  /**
+   * The reply this stage would like, and the smallest reply that would still be
+   * a real answer. Sizing may trim toward the floor; below it the task is
+   * SUBDIVIDED instead, because shrinking the answer to beat a clock is how
+   * material gets lost.
+   */
+  outputTokens?: number
+  minOutputTokens?: number
 }
 
 const INVENTORY: StageSpec = {
@@ -97,6 +109,8 @@ const REPAIR: StageSpec = {
   fanOut: true,
   maxAttempts: 2,
   optional: true,
+  outputTokens: 5_000,
+  minOutputTokens: 1_500,
 }
 
 const AUDIT: StageSpec = {
@@ -107,9 +121,14 @@ const AUDIT: StageSpec = {
   outputs: 'An approval, or blocking issues naming what is unsupported.',
   completion: 'The reviewer approved, or the review was unreachable and is recorded as unavailable. A rejection fails the job; nothing is saved.',
   provider: 'anthropic',
+  // The review reads the artifact plus the corpus, so it is sized and, when
+  // the corpus is large, run per section over that section's own evidence
+  // followed by a consistency pass over the assembled claims.
   maxProviderMs: 80_000,
-  fanOut: false,
+  fanOut: true,
   maxAttempts: 2,
+  outputTokens: 2_500,
+  minOutputTokens: 400,
 }
 
 const ASSEMBLE: StageSpec = {
@@ -125,6 +144,76 @@ const ASSEMBLE: StageSpec = {
   maxAttempts: 2,
 }
 
+
+/**
+ * Hierarchical planning, used when the corpus cannot be planned in one request.
+ *
+ * The stage is "survey this source" — a source is a coherent unit of the
+ * student's material, not an arbitrary fraction of it. Each survey reads one
+ * source in full and returns a topic list with exact passage IDs, which is a
+ * small reply. The merge stage then reads only those topic lists and produces
+ * the section plan, so it never carries the corpus at all.
+ *
+ * When one source is itself larger than a single request can hold, its survey
+ * runs as ordered spans of that source's own passage sequence. That is an
+ * execution detail of surveying an oversized document, not a definition of a
+ * stage: every passage is surveyed exactly once, provenance is preserved, and
+ * the merge is what re-establishes meaning across the spans.
+ */
+const SURVEY: StageSpec = {
+  id: 'survey',
+  label: 'Reading each source',
+  dependsOn: ['inventory'],
+  inputs: 'One source (or one ordered span of an oversized source), in full, with the assembled specification.',
+  outputs: 'That source\'s topics, each with the exact passage IDs supporting it, plus any qualifications the instructor attaches to them.',
+  completion: 'Every source has been surveyed, and every passage of every source appears in exactly one survey.',
+  provider: 'openai',
+  maxProviderMs: 70_000,
+  fanOut: true,
+  maxAttempts: 2,
+  outputTokens: 3_000,
+  minOutputTokens: 800,
+  optional: true,
+}
+
+const MERGE: StageSpec = {
+  id: 'merge',
+  label: 'Reconciling the sources',
+  dependsOn: ['survey'],
+  inputs: 'Every survey\'s topic list. Not the corpus — this stage is small by shape, not by trimming.',
+  outputs: 'One section plan whose sections may draw on topics from several sources, with the passage IDs carried through unchanged.',
+  completion: 'Every surveyed topic is either placed in a section or explicitly set aside with a reason.',
+  provider: 'openai',
+  maxProviderMs: 70_000,
+  fanOut: false,
+  maxAttempts: 2,
+  outputTokens: 4_000,
+  minOutputTokens: 1_200,
+  optional: true,
+}
+
+/**
+ * Coverage repair: passages the plan never accounted for.
+ *
+ * Verification checks against the ORIGINAL inventory, not the plan, so a plan
+ * that quietly forgot part of the material is caught rather than believed.
+ */
+const COVERAGE: StageSpec = {
+  id: 'repair',
+  label: 'Covering missed material',
+  dependsOn: ['verify'],
+  inputs: 'The specific passages no section accounted for, with their source and neighbouring context.',
+  outputs: 'Placement of those passages into an existing section, or an explicit, reasoned exclusion.',
+  completion: 'Every original passage is cited, placed, or excluded with a stated reason.',
+  provider: 'openai',
+  maxProviderMs: 70_000,
+  fanOut: true,
+  maxAttempts: 2,
+  outputTokens: 4_000,
+  minOutputTokens: 1_000,
+  optional: true,
+}
+
 /**
  * Documents with sections: Study Guide and the notebook pages.
  *
@@ -136,20 +225,24 @@ const ASSEMBLE: StageSpec = {
  */
 const SECTIONED: StageSpec[] = [
   INVENTORY,
+  SURVEY,
+  MERGE,
   {
     id: 'outline',
     label: 'Planning the structure',
-    dependsOn: ['inventory'],
+    dependsOn: ['inventory', 'merge'],
     inputs: 'The complete deduplicated corpus, the assembled specification, and the coverage briefing.',
     outputs: 'An ordered section plan; per section a title, a purpose, and the exact passage IDs that support it. Plus a coverage statement naming any source the plan does not use, and why.',
     completion: 'Every planned section references at least one passage that resolves, and every selected source is either used by some section or explicitly named as unusable with a reason.',
     provider: 'openai',
-    // Large input, deliberately small output: a plan, not prose. This is the
-    // one stage that sees the whole corpus at once, and it stays fast because
-    // it is not writing the document.
+    // Deliberately small output: a plan, not prose. When the corpus is too
+    // large even for a plan-shaped reply, the survey/merge stages run instead —
+    // the sizing decision is made before the request is sent, not discovered.
     maxProviderMs: 80_000,
     fanOut: false,
     maxAttempts: 2,
+    outputTokens: 4_000,
+    minOutputTokens: 1_200,
   },
   {
     id: 'sections',
@@ -162,9 +255,13 @@ const SECTIONED: StageSpec[] = [
     maxProviderMs: 75_000,
     fanOut: true,
     maxAttempts: 2,
+    outputTokens: 5_000,
+    // Below this a section would be a stub. A section that cannot be written
+    // within budget is split along its own subpoints instead.
+    minOutputTokens: 1_500,
   },
   { ...VERIFY, dependsOn: ['sections'] },
-  REPAIR,
+  COVERAGE,
   AUDIT,
   ASSEMBLE,
 ]
@@ -176,10 +273,12 @@ const SECTIONED: StageSpec[] = [
  */
 const OBJECTIVES: StageSpec[] = [
   INVENTORY,
+  { ...SURVEY, label: 'Reading each source' },
+  { ...MERGE, label: 'Reconciling the sources' },
   {
     id: 'outline',
     label: 'Identifying the objectives',
-    dependsOn: ['inventory'],
+    dependsOn: ['inventory', 'merge'],
     inputs: 'The complete deduplicated corpus, the assembled specification, and the coverage briefing.',
     outputs: 'The objective list; per objective a title and the exact passage IDs that support it, preserving explicit instructor objectives where the material states them.',
     completion: 'At least one objective, every objective\'s passages resolve, and every selected source is used or explicitly explained.',
@@ -187,6 +286,8 @@ const OBJECTIVES: StageSpec[] = [
     maxProviderMs: 80_000,
     fanOut: false,
     maxAttempts: 2,
+    outputTokens: 4_000,
+    minOutputTokens: 1_200,
   },
   {
     id: 'sections',
@@ -199,9 +300,11 @@ const OBJECTIVES: StageSpec[] = [
     maxProviderMs: 75_000,
     fanOut: true,
     maxAttempts: 2,
+    outputTokens: 5_000,
+    minOutputTokens: 1_500,
   },
   { ...VERIFY, dependsOn: ['sections'] },
-  REPAIR,
+  COVERAGE,
   AUDIT,
   ASSEMBLE,
 ]
@@ -226,6 +329,8 @@ const SINGLE_PASS: StageSpec[] = [
     maxProviderMs: 85_000,
     fanOut: false,
     maxAttempts: 2,
+    outputTokens: 8_000,
+    minOutputTokens: 2_000,
   },
   { ...VERIFY, dependsOn: ['draft'] },
   { ...REPAIR, fanOut: false },
@@ -253,6 +358,8 @@ const QUESTION_BANK: StageSpec[] = [
     maxProviderMs: 110_000,
     fanOut: false,
     maxAttempts: 2,
+    outputTokens: 24_000,
+    minOutputTokens: 6_000,
   },
   { ...VERIFY, dependsOn: ['draft'] },
   { ...ASSEMBLE, dependsOn: ['verify'] },

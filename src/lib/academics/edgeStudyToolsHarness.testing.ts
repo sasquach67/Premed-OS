@@ -16,6 +16,7 @@ import ts from 'typescript'
 import * as astraWalletRoute from '../../../supabase/functions/_shared/astraWalletRoute'
 import * as generationJobs from '../../../supabase/functions/_shared/generationJobs'
 import * as generationStages from '../../../supabase/functions/_shared/generationStages'
+import * as stageBudget from '../../../supabase/functions/_shared/stageBudget'
 import * as sourceInventory from '../../../supabase/functions/_shared/sourceInventory'
 import * as responseBoundary from '../../../supabase/functions/_shared/openAIGenerationResponse'
 import * as citationWire from '../../../supabase/functions/_shared/openAICitationWire'
@@ -137,6 +138,12 @@ export type TaskRow = {
   backup_reservation_id: string | null
   idempotency_key: string
   ambiguous: boolean
+  oversized: boolean
+  parent_task_key: string | null
+  part: number
+  estimated_ms: number | null
+  input_chars: number | null
+  output_tokens: number | null
   lease_token: string | null
   lease_expires_at: number | null
   duration_ms: number | null
@@ -173,7 +180,9 @@ export function createTaskStore(jobs: ReturnType<typeof createJobStore>, now: ()
           status: 'pending', label: String(entry.label ?? ''), input: (entry.input as Record<string, unknown>) ?? {},
           output: null, attempts: 0, max_attempts: Number(entry.maxAttempts ?? 2), provider_route: null,
           provider_request_id: null, provider_response_id: null, backup_reservation_id: null, idempotency_key: uuid('1de00000'),
-          ambiguous: false, lease_token: null, lease_expires_at: null, duration_ms: null, error: null,
+          ambiguous: false, oversized: false, parent_task_key: null, part: 0,
+          estimated_ms: null, input_chars: null, output_tokens: null,
+          lease_token: null, lease_expires_at: null, duration_ms: null, error: null,
           created_at: now(),
         })
         added += 1
@@ -243,6 +252,33 @@ export function createTaskStore(jobs: ReturnType<typeof createJobStore>, now: ()
       if (args.p_progress != null) job.progress = Number(args.p_progress)
       return { ...job }
     },
+    subdivide(args: Record<string, unknown>) {
+      const task = rows.find((row) => row.id === String(args.p_task_id))
+      if (!task || task.lease_token !== String(args.p_lease_token)) return null
+      const parts = (args.p_parts as Array<Record<string, unknown>>) ?? []
+      let added = 0
+      for (const entry of parts) {
+        const key = String(entry.taskKey)
+        if (rows.some((row) => row.job_id === task.job_id && row.stage === task.stage && row.task_key === key)) continue
+        rows.push({
+          ...task,
+          id: uuid('7a5c1111'), task_key: key, status: 'pending', attempts: 0,
+          ordinal: Number(entry.ordinal ?? task.ordinal), part: Number(entry.part ?? 0),
+          label: String(entry.label ?? task.label), input: (entry.input as Record<string, unknown>) ?? {},
+          output: null, error: null, duration_ms: null, lease_token: null, lease_expires_at: null,
+          parent_task_key: task.parent_task_key ?? task.task_key,
+          provider_response_id: null, provider_request_id: null, backup_reservation_id: null,
+          estimated_ms: null, input_chars: null, output_tokens: null, oversized: false,
+          created_at: now(),
+        })
+        added += 1
+      }
+      task.status = 'skipped'
+      task.oversized = true
+      task.lease_token = null
+      task.lease_expires_at = null
+      return added
+    },
     view(args: Record<string, unknown>) {
       const job = jobs.rows.get(String(args.p_job_id))
       if (!job) return null
@@ -258,6 +294,35 @@ export function createTaskStore(jobs: ReturnType<typeof createJobStore>, now: ()
         })),
       }
     },
+  }
+}
+
+/** Mirrors `record_stage_duration`: per-stage rates learned from real runs. */
+export function createStatsStore() {
+  const rows = new Map<string, Record<string, unknown>>()
+  return {
+    rows,
+    record(args: Record<string, unknown>) {
+      const key = `${args.p_spec_id}:${args.p_stage}`
+      const previous = rows.get(key)
+      const sample = {
+        durationMs: Number(args.p_duration_ms) || 1,
+        inputChars: Number(args.p_input_chars) || 0,
+        outputTokens: Number(args.p_output_tokens) || 1,
+      }
+      const next = stageBudget.recordObservation(previous ? {
+        samples: Number(previous.samples) || 0,
+        msPerOutputToken: Number(previous.ms_per_output_token) || 14,
+        msPerKiloInputChar: Number(previous.ms_per_kilo_input_char) || 40,
+        maxMs: Number(previous.max_ms) || 0,
+      } : null, sample)
+      rows.set(key, {
+        spec_id: args.p_spec_id, stage: args.p_stage, samples: next.samples,
+        ms_per_output_token: next.msPerOutputToken, ms_per_kilo_input_char: next.msPerKiloInputChar,
+        max_ms: next.maxMs,
+      })
+    },
+    get(specId: string, stage: string) { return rows.get(`${specId}:${stage}`) ?? null },
   }
 }
 
@@ -279,6 +344,7 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
   const jobs = createJobStore(now)
   const tasks = createTaskStore(jobs, now)
   const capabilities = new Map<string, Record<string, unknown>>()
+  const stats = createStatsStore()
   const chunkRows = options.chunks.map((chunk) => ({
     chunk_id: chunk.chunk_id, file_id: chunk.file_id, content: chunk.content,
     character_start: chunk.character_start ?? 0, character_end: chunk.character_end ?? chunk.content.length,
@@ -289,6 +355,8 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
     let id = ''
     let jobId = ''
     let route = ''
+    let specFilter = ''
+    let stageFilter = ''
     let pendingUpdate: Record<string, unknown> | null = null
     const builder = {
       select() { return builder },
@@ -298,12 +366,14 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
         if (column === 'id') id = value
         if (column === 'job_id') jobId = value
         if (column === 'route') route = value
+        if (column === 'spec_id') specFilter = value
+        if (column === 'stage') stageFilter = value
         if (pendingUpdate && table === 'study_generation_jobs') {
           const row = jobs.rows.get(value)
           if (row) Object.assign(row, pendingUpdate)
           pendingUpdate = null
         }
-        if (pendingUpdate && table === 'study_generation_tasks') {
+        if (pendingUpdate && table === 'study_generation_tasks' && column === 'id') {
           const row = tasks.rows.find((entry) => entry.id === value)
           if (row) Object.assign(row, pendingUpdate)
           pendingUpdate = null
@@ -319,6 +389,9 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
         }
         if (table === 'generation_provider_capabilities') {
           return { data: capabilities.get(route) ?? null, error: null }
+        }
+        if (table === 'generation_stage_stats') {
+          return { data: stats.get(specFilter, stageFilter), error: null }
         }
         return { data: null, error: null }
       },
@@ -349,6 +422,8 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
       if (name === 'complete_generation_task') return { data: tasks.complete(args), error: null }
       if (name === 'advance_generation_stage') return { data: tasks.advance(args), error: null }
       if (name === 'generation_job_view') return { data: tasks.view(args), error: null }
+      if (name === 'record_stage_duration') { stats.record(args); return { data: null, error: null } }
+      if (name === 'subdivide_generation_task') return { data: tasks.subdivide(args), error: null }
       if (name === 'reserve_astra_backup') return { data: 'reservation-1', error: null }
       if (name === 'settle_astra_backup') return { data: null, error: null }
       if (name === 'release_ai_reservation') return { data: null, error: null }
@@ -371,6 +446,7 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
   }).outputText
   const requireStub = (id: string) => id.startsWith('npm:') ? { createClient: () => client }
     : id.includes('generationStages') ? generationStages
+    : id.includes('stageBudget') ? stageBudget
     : id.includes('sourceInventory') ? sourceInventory
     : id.includes('generationJobs') ? generationJobs
     : id.includes('astraWalletRoute') ? astraWalletRoute
@@ -386,6 +462,7 @@ export function bootStudyToolsEdge(options: EdgeHarnessOptions) {
     jobs,
     tasks,
     capabilities,
+    stats,
     /** How many times the caller's source mirror was actually read. */
     sourceReads,
     async call(body: unknown, headers: Record<string, string> = {}) {

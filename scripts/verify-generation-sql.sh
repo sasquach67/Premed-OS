@@ -37,14 +37,16 @@ cp "$REPO/supabase/migrations/20260906230000_study_generation_jobs.sql" "$ROOT/0
 # pg_cron and pg_net ship with the platform, not with a local cluster.
 sed 's/^create extension if not exists pg_cron;/-- pg_cron: provided by Supabase/; s/^create extension if not exists pg_net;/-- pg_net: provided by Supabase/' \
   "$REPO/supabase/migrations/20260907010000_generation_task_stages.sql" > "$ROOT/02_tasks.sql"
-cp "$REPO/supabase/tests/generation_queue_test.sql" "$ROOT/03_test.sql"
+sed 's/^select cron.unschedule/-- pg_cron: /' \
+  "$REPO/supabase/migrations/20260907030000_generation_stage_budgets.sql" > "$ROOT/03_budgets.sql"
+cp "$REPO/supabase/tests/generation_queue_test.sql" "$ROOT/04_test.sql"
 chown postgres:postgres "$ROOT"/*.sql
 
-for file in 00_stubs 01_jobs 02_tasks; do
+for file in 00_stubs 01_jobs 02_tasks 03_budgets; do
   su postgres -c "psql -h $ROOT -p $PORT -d postgres -v ON_ERROR_STOP=1 -q -f $ROOT/$file.sql" >/dev/null
 done
 echo "migrations applied"
-su postgres -c "psql -h $ROOT -p $PORT -d postgres -v ON_ERROR_STOP=1 -q -f $ROOT/03_test.sql" 2>&1 | tee "$ROOT/test.out"
+su postgres -c "psql -h $ROOT -p $PORT -d postgres -v ON_ERROR_STOP=1 -q -f $ROOT/04_test.sql" 2>&1 | tee "$ROOT/test.out"
 
 if grep -qi "BUG" "$ROOT/test.out"; then echo "FAILED: a guarantee did not hold"; exit 1; fi
 echo "generation queue SQL verified"

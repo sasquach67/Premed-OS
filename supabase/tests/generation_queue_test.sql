@@ -156,3 +156,44 @@ begin;
   exception when insufficient_privilege then raise notice 'capabilities table not readable (correct)';
   end $$;
 commit;
+
+\echo '== a task proven oversized is REPLACED by its parts, never retried unchanged =='
+truncate public.study_generation_jobs cascade;
+select public.start_generation_job('11111111-1111-4111-8111-111111111111','key-c','{"specId":"study-guide-v1"}'::jsonb,300);
+select public.add_generation_tasks((select id from public.study_generation_jobs where dedupe_key='key-c'),'inventory',
+  '[{"taskKey":"big","ordinal":0}]'::jsonb);
+select (public.claim_generation_task(100)->'task'->>'task_key') as claimed_big;
+select public.subdivide_generation_task(
+  (select id from public.study_generation_tasks where task_key='big'),
+  (select lease_token from public.study_generation_tasks where task_key='big'),
+  '[{"taskKey":"big::a","part":0},{"taskKey":"big::b","part":1},{"taskKey":"big::c","part":2}]'::jsonb) as parts_added;
+select task_key, status, oversized, parent_task_key, part
+  from public.study_generation_tasks order by part, task_key;
+\echo '-- the oversized parent is skipped, so it can never be claimed again'
+select coalesce((public.claim_generation_task(100)->'task'->>'task_key'),'<none>') as next_claim_expect_a_part;
+
+\echo '== subdivision is idempotent: a redelivered split adds nothing =='
+select public.add_generation_tasks((select id from public.study_generation_jobs where dedupe_key='key-c'),'inventory',
+  '[{"taskKey":"big::a"},{"taskKey":"big::b"},{"taskKey":"big::c"}]'::jsonb) as duplicate_parts_expect_zero;
+
+\echo '== measured stage rates are recorded per stage and keep the worst case =='
+select (public.record_stage_duration('study-guide-v1','outline',40000,60000,1500)->>'samples') as first_sample;
+select (public.record_stage_duration('study-guide-v1','outline',9000,60000,1500)->>'samples') as second_sample;
+select stage, samples, max_ms, max_input_chars,
+       ms_per_output_token > 0 as output_rate_positive,
+       ms_per_kilo_input_char > 0 as input_rate_positive
+  from public.generation_stage_stats where spec_id = 'study-guide-v1';
+\echo '-- a different stage keeps its own rates rather than sharing one number'
+select (public.record_stage_duration('study-guide-v1','sections',70000,8000,5000)->>'samples') as sections_sample;
+select count(*) as distinct_stage_rows from public.generation_stage_stats where spec_id='study-guide-v1';
+
+\echo '== the stats table is invisible to signed-in users =='
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+  do $$ begin
+    perform count(*) from public.generation_stage_stats;
+    raise notice 'stage stats readable - BUG';
+  exception when insufficient_privilege then raise notice 'stage stats not readable (correct)';
+  end $$;
+commit;

@@ -19,7 +19,7 @@ describe('pipelines differ by artifact', () => {
   it('gives a document sections, and a mastery map objectives', () => {
     const guide = pipelineFor('study-guide-v1').map((stage) => stage.id)
     const mastery = pipelineFor('unit-mastery-outline-v1').map((stage) => stage.id)
-    expect(guide).toEqual(['inventory', 'outline', 'sections', 'verify', 'repair', 'audit', 'assemble'])
+    expect(guide).toEqual(['inventory', 'survey', 'merge', 'outline', 'sections', 'verify', 'repair', 'audit', 'assemble'])
     expect(mastery).toEqual(guide)
     // Same stage names, different work: the labels say what is being produced.
     expect(stageSpec('study-guide-v1', 'sections')?.label).toBe('Writing each section')
@@ -31,6 +31,14 @@ describe('pipelines differ by artifact', () => {
     expect(bank.map((stage) => stage.id)).toEqual(['inventory', 'draft', 'verify', 'assemble'])
     expect(bank.find((stage) => stage.id === 'draft')?.provider).toBe('anthropic')
     expect(bank.some((stage) => stage.id === 'audit')).toBe(false)
+  })
+
+  it('keeps the hierarchical planning branch out of single-pass artifacts', () => {
+    for (const specId of ['flashcards-v1', 'reading-summary-v1', 'unit-question-bank-v1']) {
+      const stages = pipelineFor(specId).map((stage) => stage.id)
+      expect(stages).not.toContain('survey')
+      expect(stages).not.toContain('merge')
+    }
   })
 
   it('does not invent seams in a small artifact', () => {
@@ -81,15 +89,35 @@ describe('every stage declares its contract', () => {
   it('fans out only where the work is genuinely per-piece', () => {
     const guide = pipelineFor('study-guide-v1')
     expect(guide.find((stage) => stage.id === 'sections')?.fanOut).toBe(true)
+    // A survey is per source; a review is per section plus a consistency pass.
+    expect(guide.find((stage) => stage.id === 'survey')?.fanOut).toBe(true)
+    expect(guide.find((stage) => stage.id === 'audit')?.fanOut).toBe(true)
     expect(guide.find((stage) => stage.id === 'outline')?.fanOut).toBe(false)
+    expect(guide.find((stage) => stage.id === 'merge')?.fanOut).toBe(false)
     expect(pipelineFor('flashcards-v1').find((stage) => stage.id === 'draft')?.fanOut).toBe(false)
+  })
+
+  it('declares an output shape with a floor for every provider stage', () => {
+    for (const specId of ['study-guide-v1', 'unit-mastery-outline-v1', 'flashcards-v1']) {
+      for (const stage of pipelineFor(specId)) {
+        if (stage.provider === 'none') continue
+        // Sizing may trim toward the floor; below it the task is subdivided,
+        // because shrinking the answer to beat a clock loses material.
+        expect(stage.outputTokens).toBeGreaterThan(0)
+        expect(stage.minOutputTokens).toBeGreaterThan(0)
+        expect(stage.minOutputTokens!).toBeLessThan(stage.outputTokens!)
+      }
+    }
   })
 })
 
 describe('stage ordering', () => {
   it('starts at inventory and walks to the end', () => {
     expect(firstStage('study-guide-v1')).toBe('inventory')
-    expect(nextStage('study-guide-v1', 'inventory')).toBe('outline')
+    // Survey and merge exist for a corpus too large to plan in one request;
+    // exactly one planning branch runs, chosen at inventory time.
+    expect(nextStage('study-guide-v1', 'inventory')).toBe('survey')
+    expect(nextStage('study-guide-v1', 'merge')).toBe('outline')
     expect(nextStage('study-guide-v1', 'assemble')).toBeUndefined()
   })
 

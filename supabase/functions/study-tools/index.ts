@@ -27,6 +27,13 @@ import {
   type SourceInventory,
 } from '../_shared/sourceInventory.ts'
 import {
+  estimateMs,
+  fitsBudget,
+  orderedSpans,
+  singlePassCorpusChars,
+  type StageObservation,
+} from '../_shared/stageBudget.ts'
+import {
   firstStage,
   nextStage,
   pipelineProgress,
@@ -1532,6 +1539,12 @@ type TaskRow = {
   backup_reservation_id: string | null
   idempotency_key: string
   ambiguous: boolean
+  oversized: boolean
+  parent_task_key: string | null
+  part: number
+  estimated_ms: number | null
+  input_chars: number | null
+  output_tokens: number | null
   lease_token: string
   duration_ms: number | null
 }
@@ -1549,7 +1562,12 @@ type JobRow = GenerationJob & {
 type TaskOutcome =
   | { kind: 'done'; output?: Record<string, unknown>; providerResponseId?: string; providerRoute?: string; providerRequestId?: string; backupReservationId?: string; clearBackupReservation?: boolean }
   | { kind: 'pending'; output?: Record<string, unknown>; providerResponseId?: string; providerRoute?: string; providerRequestId?: string; backupReservationId?: string }
-  | { kind: 'failed'; error: JobErrorDetail; ambiguous?: boolean; providerRequestId?: string }
+  | { kind: 'failed'; error: JobErrorDetail; ambiguous?: boolean; providerRequestId?: string; oversized?: boolean }
+  /**
+   * This task cannot fit one request. It is replaced by coherent parts before
+   * anything is sent — never sent and hoped for, never retried unchanged.
+   */
+  | { kind: 'subdivide'; parts: Array<{ taskKey: string; ordinal?: number; part?: number; label?: string; input: Record<string, unknown> }>; reason: string }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -1652,6 +1670,34 @@ function activeRoute(): 'wallet' | 'openai-backup' {
   return Deno.env.get('CHEAPER_INFERENCE_API_KEY') ? 'wallet' : 'openai-backup'
 }
 
+/** What this stage has actually cost on this deployment, or null for the prior. */
+async function stageObservation(service: unknown, specId: string, stage: StageId): Promise<StageObservation | null> {
+  const { data } = await (service as { from: (table: string) => { select: (columns: string) => { eq: (column: string, value: string) => { eq: (column: string, value: string) => { maybeSingle: () => PromiseLike<{ data: unknown }> } } } } })
+    .from('generation_stage_stats').select('*').eq('spec_id', specId).eq('stage', stage).maybeSingle()
+  if (!isRecord(data)) return null
+  return {
+    samples: Number(data.samples) || 0,
+    msPerOutputToken: Number(data.ms_per_output_token) || 14,
+    msPerKiloInputChar: Number(data.ms_per_kilo_input_char) || 40,
+    maxMs: Number(data.max_ms) || 0,
+  }
+}
+
+/**
+ * The time this task may spend at the provider.
+ *
+ * Conservative by construction: the smaller of the stage's declared ceiling,
+ * any operator cap, and what THIS worker actually has left after its safety
+ * margin. A stage never gets to plan against the full 150s.
+ */
+function providerBudgetMs(spec: StageSpec, budget: WorkerBudget) {
+  const configured = Number(Deno.env.get('GENERATION_STAGE_DEADLINE_MS'))
+  const operatorCap = Number.isFinite(configured) && configured > 0 ? configured : Number.POSITIVE_INFINITY
+  return Math.max(0, Math.min(spec.maxProviderMs, operatorCap, remainingWorkerMs(budget)))
+}
+
+const serialisedChars = (payload: Record<string, unknown>) => JSON.stringify(payload).length
+
 /**
  * Run one bounded provider request for a stage.
  *
@@ -1672,16 +1718,18 @@ async function runProviderStage(
   task: TaskRow,
   spec: StageSpec,
   budget: WorkerBudget,
-  build: () => { payload: Record<string, unknown>; wire: ReturnType<typeof createOpenAICitationWire> },
+  specId: string,
+  build: (outputTokens: number) => { payload: Record<string, unknown>; wire: ReturnType<typeof createOpenAICitationWire> },
   settle: (raw: unknown, wire: ReturnType<typeof createOpenAICitationWire>) => TaskOutcome | Promise<TaskOutcome>,
+  /** How to split this task if it does not fit. Absent means it cannot be split. */
+  subdivide?: (verdict: { affordableInputChars: number; affordableOutputTokens: number }) => TaskOutcome | null,
+  /** Receives what sizing settled on, so the completion record is accurate. */
+  sized?: { inputChars?: number; outputTokens?: number },
 ): Promise<TaskOutcome> {
   const key = Deno.env.get('OPENAI_API_KEY')
   if (!key) return { kind: 'failed', error: jobError('server-unconfigured', 'OpenAI generation is not configured. Nothing was saved.') }
   const route = activeRoute()
-  // An operator may tighten every stage's ceiling below its declared maximum,
-  // for a smaller plan or a stricter latency budget. It can only tighten.
-  const configured = Number(Deno.env.get('GENERATION_STAGE_DEADLINE_MS'))
-  const ceiling = Number.isFinite(configured) && configured > 0 ? Math.min(spec.maxProviderMs, configured) : spec.maxProviderMs
+  const ceiling = providerBudgetMs(spec, budget)
   const deadline = stepDeadlineMs(budget, ceiling)
 
   // Resume: this task already has a submitted response waiting to be read.
@@ -1705,7 +1753,7 @@ async function runProviderStage(
       if (task.backup_reservation_id) {
         await settleAstraBackground(task.backup_reservation_id, response.status, isRecord(parsed) ? parsed.usage : null, astraRouteConfig(key).ledger)
       }
-      const { wire } = build()
+      const { wire } = build(task.output_tokens ?? spec.outputTokens ?? 8_000)
       const outcome = await settle(await readOpenAIGenerationResponse(new Response(text, { status: 200 })), wire)
       return outcome.kind === 'done' ? { ...outcome, clearBackupReservation: true } : outcome
     } catch (error) {
@@ -1714,7 +1762,53 @@ async function runProviderStage(
     }
   }
 
-  const { payload, wire } = build()
+  // ---- Size before sending. -------------------------------------------------
+  // A request that cannot finish is not sent. It is subdivided along the
+  // artifact's own structure, or the task fails with a reason — because no
+  // amount of queueing, aborting or retrying makes an oversized call finish.
+  const observed = await stageObservation(service, specId, task.stage)
+  const floor = spec.minOutputTokens ?? 1_000
+  // A subdivided part writes a fraction of what its parent would have, so it
+  // asks for a fraction of the output. Subdividing that only shrank the INPUT
+  // would leave the expensive half of the request untouched.
+  const declared = Number(task.input?.outputTokens)
+  const wanted = Number.isFinite(declared) && declared > 0
+    ? Math.max(floor, Math.min(declared, spec.outputTokens ?? 8_000))
+    : spec.outputTokens ?? 8_000
+  const probe = build(wanted)
+  const inputChars = serialisedChars(probe.payload)
+  const verdict = fitsBudget({ inputChars, outputTokens: wanted }, ceiling, floor, observed)
+
+  if (!verdict.fits) {
+    const split = subdivide?.({
+      affordableInputChars: verdict.affordableInputChars,
+      affordableOutputTokens: verdict.affordableOutputTokens,
+    })
+    if (split) return split
+    // Nothing left to split. Background execution is the only honest way to
+    // run this, and it is used only where it has been proved to work.
+    if (!await backgroundCapability(service, route)) {
+      return {
+        kind: 'failed',
+        oversized: true,
+        error: jobError('stage-too-large', `This piece of the build needs about ${Math.round(verdict.estimateMs / 1000)}s at the provider, beyond the ${Math.round(ceiling / 1000)}s a single worker can safely spend, and it cannot be divided further. Nothing was saved. Background submission on this route has not been proved, so it was not attempted.`),
+      }
+    }
+  }
+
+  // Past this point the request is either affordable, or it is going to the
+  // proved background route where the worker's clock does not bind. Either way
+  // it asks for the whole answer; nothing is trimmed to beat a deadline.
+  const outputTokens = wanted
+  const { payload, wire } = build(outputTokens)
+  const sentChars = serialisedChars(payload)
+  const estimatedMs = estimateMs({ inputChars: sentChars, outputTokens }, observed)
+  if (sized) { sized.inputChars = sentChars; sized.outputTokens = outputTokens }
+  await (service as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: string) => PromiseLike<unknown> } } })
+    .from('study_generation_tasks')
+    .update({ estimated_ms: estimatedMs, input_chars: sentChars, output_tokens: outputTokens })
+    .eq('id', task.id)
+
   const useBackground = await backgroundCapability(service, route)
 
   try {
@@ -1755,10 +1849,14 @@ async function runProviderStage(
   } catch (error) {
     if (error instanceof StepTimeoutError) {
       // The request may have been accepted and billed. Say so.
+      // The provider may have accepted and billed this. It is counted, and the
+      // task is marked oversized so its next attempt must be a subdivision
+      // rather than the identical request again.
       return {
         kind: 'failed',
         ambiguous: true,
-        error: jobError('provider-timeout-ambiguous', `${error.message} The request may have been accepted by the provider, so this attempt is counted. Nothing was saved and your material is unchanged.`),
+        oversized: true,
+        error: jobError('provider-timeout-ambiguous', `${error.message} The request may have been accepted by the provider, so this attempt is counted and will not be repeated unchanged. Nothing was saved and your material is unchanged.`),
       }
     }
     return { kind: 'failed', error: astraFailure(error) }
@@ -1838,7 +1936,7 @@ function astraStagePayload(system: string[], user: string, maxOutputTokens: numb
 
 /** Stage 1 — source readiness and the coverage inventory. No provider call. */
 async function execInventory(
-  service: unknown, client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload,
+  service: unknown, client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload, budget: WorkerBudget,
 ): Promise<TaskOutcome> {
   const chunks = await loadCorpus(client, job.user_id, payload)
   const inventory = buildSourceInventory(chunks)
@@ -1846,8 +1944,21 @@ async function execInventory(
   if (!usable.length) {
     return { kind: 'failed', error: jobError('no-sources', 'None of the selected material has readable text, so there is nothing to build from.') }
   }
+  /**
+   * Decide here, with the real corpus in hand, whether the whole thing can be
+   * planned in one request. This is the point at which the shape of the rest of
+   * the job is fixed — not discovered later by a request that fails.
+   */
+  const outlineSpec = stageSpec(payload.specId, 'outline')
+  const observed = await stageObservation(service, payload.specId, 'outline')
+  const planningBudget = providerBudgetMs(outlineSpec ?? { maxProviderMs: 80_000 } as StageSpec, budget)
+  const canPlanInOne = singlePassCorpusChars(planningBudget, outlineSpec?.minOutputTokens ?? 1_200, observed)
+  // The wire carries more than the raw text: identifiers, framing, the spec.
+  const wireOverhead = 1.6
+  const planningMode = inventory.totalCharacters * wireOverhead <= canPlanInOne ? 'single' : 'hierarchical'
+
   await (service as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: string) => PromiseLike<unknown> } } })
-    .from('study_generation_jobs').update({ inventory }).eq('id', job.id)
+    .from('study_generation_jobs').update({ inventory: { ...inventory, planningMode, planningBudgetChars: canPlanInOne } }).eq('id', job.id)
   return {
     kind: 'done',
     output: {
@@ -1857,11 +1968,14 @@ async function execInventory(
       uniqueTexts: inventory.uniqueTexts,
       transferSavedCharacters: inventory.transferSavedCharacters,
       emptyPassages: inventory.emptyChunkIds.length,
+      planningMode,
+      planningBudgetChars: canPlanInOne,
     },
   }
 }
 
-type PlannedSection = { id: string; title: string; purpose: string; passageIds: string[] }
+type PlannedSubpoint = { id: string; title: string; sourceChunkIds: string[] }
+type PlannedSection = { id: string; title: string; purpose: string; passageIds: string[]; subpoints?: PlannedSubpoint[] }
 
 /**
  * Read the plan AFTER the citation wire has decoded it.
@@ -1878,7 +1992,14 @@ function readPlan(value: unknown, resolves: (id: string) => boolean) {
     if (!isRecord(entry) || !isText(entry.id) || !isText(entry.title)) return null
     const ids = Array.isArray(entry.sourceChunkIds) ? entry.sourceChunkIds.filter(isText).filter(resolves) : []
     if (!ids.length) return null
-    sections.push({ id: entry.id, title: entry.title, purpose: isText(entry.purpose) ? entry.purpose : '', passageIds: ids })
+    const subpoints = Array.isArray(entry.subpoints)
+      ? entry.subpoints.filter(isRecord).map((point) => ({
+          id: isText(point.id) ? point.id : '',
+          title: isText(point.title) ? point.title : '',
+          sourceChunkIds: Array.isArray(point.sourceChunkIds) ? point.sourceChunkIds.filter(isText).filter(resolves) : [],
+        })).filter((point) => point.id && point.title && point.sourceChunkIds.length)
+      : []
+    sections.push({ id: entry.id, title: entry.title, purpose: isText(entry.purpose) ? entry.purpose : '', passageIds: ids, subpoints })
   }
   if (!sections.length) return null
   const ids = new Set(sections.map((section) => section.id))
@@ -1902,20 +2023,21 @@ function readPlan(value: unknown, resolves: (id: string) => boolean) {
  */
 async function execOutline(
   service: unknown, client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload,
-  task: TaskRow, spec: StageSpec, budget: WorkerBudget,
+  task: TaskRow, spec: StageSpec, budget: WorkerBudget, sized?: { inputChars?: number; outputTokens?: number },
 ): Promise<TaskOutcome> {
   const chunks = await loadCorpus(client, job.user_id, payload)
   const inventory = buildSourceInventory(chunks)
   const objectives = payload.specId === 'unit-mastery-outline-v1'
   const unit = objectives ? 'objective' : 'section'
 
-  const outcome = await runProviderStage(service, task, spec, budget, () => {
+  const outcome = await runProviderStage(service, task, spec, budget, payload.specId, (outputTokens) => {
     const { wire, sources, aliasOf } = stageWire(chunks, inventory)
     const payloadBody = astraStagePayload([
       wire.encodePrompt(payload.systemPrompt),
       STAGE_JSON_RULE,
       `Plan only. Do not write the ${unit}s yet.`,
-      `Return {"sections":[{"id","title","purpose","sourceChunkIds":[...]}],"unusedSources":[{"fileId","reason"}]}.`,
+      `Return {"sections":[{"id","title","purpose","sourceChunkIds":[...],"subpoints":[{"id","title","sourceChunkIds":[...]}]}],"unusedSources":[{"fileId","reason"}]}.`,
+      'Give every section subpoints covering its material. They are the section\'s own internal divisions and are used if the section has to be written in parts.',
       `Each ${unit} must list the exact supplied passage IDs that support it, drawn from anywhere in the corpus — a ${unit} may and should draw on several sources when they bear on it.`,
       'A passage may support more than one section. Every source must appear in at least one section unless you name it in unusedSources with a specific reason.',
       'Do not shorten, merge away, or drop material to make a smaller plan: plan as many sections as the material genuinely supports.',
@@ -1924,36 +2046,169 @@ async function execOutline(
       isText(task.input?.problem)
         ? `A prior attempt at this plan was rejected: ${task.input.problem}. Correct exactly that.${payload.repairGuidance ?? ''}`
         : '',
-    ], `Request:\n${wire.encodePrompt(payload.request)}\n\nSource passages:\n${JSON.stringify(sources)}`,
-    // A plan, not prose. Small output is what keeps this request quick.
-    4_000)
+    ], `Request:\n${wire.encodePrompt(payload.request)}\n\nSource passages:\n${JSON.stringify(sources)}`, outputTokens)
     return { payload: payloadBody, wire }
+  }, (raw, wire) => settlePlan(wire.decode(raw), chunks, inventory, service, job, unit), undefined, sized)
+
+  return outcome
+}
+
+
+/**
+ * Survey one source (or one ordered span of an oversized source).
+ *
+ * Reads that source in full and returns a topic list with exact passage IDs and
+ * any qualification the instructor attaches. Small output by shape; nothing is
+ * summarised away, because the passages themselves travel on to the writing
+ * stage untouched — this stage only decides what is IN the source.
+ */
+async function execSurvey(
+  service: unknown, client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload,
+  task: TaskRow, spec: StageSpec, budget: WorkerBudget, sized?: { inputChars?: number; outputTokens?: number },
+): Promise<TaskOutcome> {
+  const chunks = await loadCorpus(client, job.user_id, payload)
+  const inventory = buildSourceInventory(chunks)
+  const scope = new Set((task.input.passageIds as string[]) ?? [])
+  const mine = chunks.filter((chunk) => scope.has(chunk.chunk_id))
+  if (!mine.length) return { kind: 'failed', error: jobError('invalid-response', 'This source survey lost its passages. Nothing was saved.') }
+
+  return runProviderStage(service, task, spec, budget, payload.specId, (outputTokens) => {
+    const { wire } = stageWire(chunks, inventory)
+    const sources = createOpenAICitationWire(chunks).sources.filter((_source, index) => scope.has(chunks[index].chunk_id))
+    const body = astraStagePayload([
+      wire.encodePrompt(payload.systemPrompt),
+      STAGE_JSON_RULE,
+      'Survey only. Do not write the artifact.',
+      'Return {"topics":[{"id","title","summary","sourceChunkIds":[...],"qualifications":[...]}]}.',
+      'List every distinct topic this source covers, with the exact supplied passage IDs that support it. Every supplied passage must appear under at least one topic.',
+      'Record in qualifications any limit, exception, caveat, or emphasis the source itself attaches — "only in adults", "not on the exam", "the instructor stressed this". These must not be lost when sources are later combined.',
+      'Do not merge distinct topics to shorten the list, and do not omit a topic because it seems minor.',
+    ], `Request:\n${wire.encodePrompt(payload.request)}\n\nSource passages:\n${JSON.stringify(sources)}`, outputTokens)
+    return { payload: body, wire }
   }, (raw, wire) => {
     const decoded = wire.decode(raw)
-    const known = new Set(chunks.map((chunk) => chunk.chunk_id))
-    const plan = readPlan(decoded, (id) => known.has(id))
-    if (!plan) {
-      return { kind: 'failed', error: jobError('invalid-response', `The plan did not name usable ${unit}s with resolvable passages. Nothing was saved.`) }
+    const known = new Set(mine.map((chunk) => chunk.chunk_id))
+    const topics = isRecord(decoded) && Array.isArray(decoded.topics)
+      ? decoded.topics.filter(isRecord).map((topic) => ({
+          id: isText(topic.id) ? topic.id : '',
+          title: isText(topic.title) ? topic.title : '',
+          summary: isText(topic.summary) ? topic.summary : '',
+          sourceChunkIds: Array.isArray(topic.sourceChunkIds) ? topic.sourceChunkIds.filter(isText).filter((id) => known.has(id)) : [],
+          qualifications: Array.isArray(topic.qualifications) ? topic.qualifications.filter(isText).slice(0, 12) : [],
+        })).filter((topic) => topic.title && topic.sourceChunkIds.length)
+      : []
+    if (!topics.length) {
+      return { kind: 'failed', error: jobError('invalid-response', 'The survey of this source returned no usable topics. Nothing was saved.') }
     }
-    // Completion criterion: coverage. Every selected source is used, or named.
-    const used = new Set(plan.sections.flatMap((section) => section.passageIds))
-    const fileOf = new Map(chunks.map((chunk) => [chunk.chunk_id, chunk.file_id]))
-    const usedFiles = new Set([...used].map((id) => fileOf.get(id)!))
-    const explained = new Set(plan.unusedSources.map((entry) => entry.fileId))
-    const uncovered = inventory.files
-      .filter((file) => file.chunkIds.length > file.emptyChunkIds.length)
-      .filter((file) => !usedFiles.has(file.fileId) && !explained.has(file.fileId))
-    if (uncovered.length) {
-      return { kind: 'failed', error: jobError('coverage-incomplete', `The plan left ${uncovered.length} selected source(s) neither used nor explained. Nothing was saved.`) }
+    // Coverage is checked here, not deferred: a survey that silently skipped
+    // passages would hand the planner an incomplete picture of the source.
+    const covered = new Set(topics.flatMap((topic) => topic.sourceChunkIds))
+    const missed = mine.filter((chunk) => chunk.content.trim() && !covered.has(chunk.chunk_id)).map((chunk) => chunk.chunk_id)
+    return { kind: 'done', output: { topics, missedChunkIds: missed, fileId: task.input.fileId ?? null } as unknown as Record<string, unknown> }
+  }, (verdict) => {
+    // An oversized source is surveyed as ordered spans of its own passages.
+    const perPart = Math.max(1_000, Math.floor(verdict.affordableInputChars * 0.6))
+    const spans = orderedSpans(mine, (chunk) => chunk.content.length, perPart)
+    if (spans.length < 2) return null
+    const parentKey = task.parent_task_key ?? task.task_key
+    return {
+      kind: 'subdivide',
+      reason: `${spans.length} ordered spans of one source`,
+      parts: spans.map((span, index) => ({
+        taskKey: `${parentKey}::span-${index + 1}`,
+        ordinal: task.ordinal,
+        part: index,
+        label: `${task.label} (${index + 1} of ${spans.length})`,
+        input: {
+        ...task.input,
+        passageIds: span.map((chunk) => chunk.chunk_id),
+        span: index + 1,
+        spans: spans.length,
+        outputTokens: Math.max(spec.minOutputTokens ?? 800, Math.ceil((spec.outputTokens ?? 3_000) / spans.length)),
+      },
+      })),
     }
-    return { kind: 'done', output: { plan } as unknown as Record<string, unknown> }
+  }, sized)
+}
+
+/**
+ * Reconcile every survey into one plan.
+ *
+ * Reads topic lists, never the corpus, so it is small by shape rather than by
+ * trimming. This is where cross-source structure is established: a section may
+ * draw topics from several sources, and a qualification one source attaches to
+ * a claim travels with it so a later section cannot state the claim flatly.
+ */
+async function execMerge(
+  service: unknown, client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload,
+  task: TaskRow, spec: StageSpec, budget: WorkerBudget, tasks: TaskRow[], sized?: { inputChars?: number; outputTokens?: number },
+): Promise<TaskOutcome> {
+  const chunks = await loadCorpus(client, job.user_id, payload)
+  const inventory = buildSourceInventory(chunks)
+  const surveys = tasks.filter((entry) => entry.stage === 'survey' && entry.status === 'done')
+    .sort((left, right) => left.ordinal - right.ordinal || left.part - right.part)
+  if (!surveys.length) return { kind: 'failed', error: jobError('invalid-response', 'No source survey survived to be reconciled. Nothing was saved.') }
+
+  const wireIndex = new Map(chunks.map((chunk, index) => [chunk.chunk_id, `S${index + 1}`]))
+  const fileAlias = fileAliasOf(chunks)
+  const topics = surveys.flatMap((entry) => {
+    const output = isRecord(entry.output) && Array.isArray(entry.output.topics) ? entry.output.topics : []
+    const fileId = isRecord(entry.output) && isText(entry.output.fileId) ? entry.output.fileId : ''
+    return output.filter(isRecord).map((topic) => ({
+      source: fileId ? fileAlias(fileId) : entry.task_key,
+      title: topic.title,
+      summary: topic.summary,
+      qualifications: topic.qualifications,
+      sourceChunkIds: Array.isArray(topic.sourceChunkIds) ? topic.sourceChunkIds.map((id) => wireIndex.get(String(id)) ?? String(id)) : [],
+    }))
   })
 
-  if (outcome.kind === 'done' && isRecord(outcome.output)) {
-    await (service as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: string) => PromiseLike<unknown> } } })
-      .from('study_generation_jobs').update({ outline: outcome.output.plan }).eq('id', job.id)
+  return runProviderStage(service, task, spec, budget, payload.specId, (outputTokens) => {
+    const { wire } = stageWire(chunks, inventory)
+    const body = astraStagePayload([
+      wire.encodePrompt(payload.systemPrompt),
+      STAGE_JSON_RULE,
+      'Plan only. You are given every source\'s surveyed topics, not the passages themselves.',
+      'Return {"sections":[{"id","title","purpose","sourceChunkIds":[...],"subpoints":[{"id","title","sourceChunkIds":[...]}]}],"unusedSources":[{"fileId","reason"}]}.',
+      'Group topics into sections by what they teach, so a section may and should draw on several sources when they bear on the same idea. Do not organise the artifact by source.',
+      'Where sources qualify or disagree with each other, keep both and say so in that section\'s purpose; never silently drop the qualified version.',
+      'Give every section subpoints covering its material. They are the section\'s own internal divisions and are used if the section has to be written in parts.',
+      'Every surveyed topic must be placed in a section, or its source named in unusedSources with a specific reason.',
+      coverageBriefing(inventory, fileAlias),
+      isText(task.input?.problem) ? `A prior attempt at this plan was rejected: ${task.input.problem}. Correct exactly that.${payload.repairGuidance ?? ''}` : '',
+    ], `Request:\n${wire.encodePrompt(payload.request)}\n\nSurveyed topics by source:\n${JSON.stringify(topics)}`, outputTokens)
+    return { payload: body, wire }
+  }, (raw, wire) => settlePlan(wire.decode(raw), chunks, inventory, service, job, 'section'), undefined, sized)
+}
+
+/**
+ * Accept a plan only if it resolves and accounts for the material.
+ *
+ * Shared by the one-pass planner and the merge, so both are held to the same
+ * completion criterion: every section resolves to real passages, and every
+ * source is used or explicitly explained.
+ */
+async function settlePlan(
+  decoded: unknown, chunks: Chunk[], inventory: SourceInventory, service: unknown, job: JobRow, unit: string,
+): Promise<TaskOutcome> {
+  const known = new Set(chunks.map((chunk) => chunk.chunk_id))
+  const plan = readPlan(decoded, (id) => known.has(id))
+  if (!plan) {
+    return { kind: 'failed', error: jobError('invalid-response', `The plan did not name usable ${unit}s with resolvable passages. Nothing was saved.`) }
   }
-  return outcome
+  const used = new Set(plan.sections.flatMap((section) => section.passageIds))
+  const fileOf = new Map(chunks.map((chunk) => [chunk.chunk_id, chunk.file_id]))
+  const usedFiles = new Set([...used].map((id) => fileOf.get(id)!))
+  const explained = new Set(plan.unusedSources.map((entry) => entry.fileId))
+  const uncovered = inventory.files
+    .filter((file) => file.chunkIds.length > file.emptyChunkIds.length)
+    .filter((file) => !usedFiles.has(file.fileId) && !explained.has(file.fileId))
+  if (uncovered.length) {
+    return { kind: 'failed', error: jobError('coverage-incomplete', `The plan left ${uncovered.length} selected source(s) neither used nor explained. Nothing was saved.`) }
+  }
+  await (service as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: string) => PromiseLike<unknown> } } })
+    .from('study_generation_jobs').update({ outline: plan }).eq('id', job.id)
+  return { kind: 'done', output: { plan } as unknown as Record<string, unknown> }
 }
 
 /**
@@ -1966,7 +2221,7 @@ async function execOutline(
  */
 async function execSection(
   service: unknown, client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload,
-  task: TaskRow, spec: StageSpec, budget: WorkerBudget,
+  task: TaskRow, spec: StageSpec, budget: WorkerBudget, sized?: { inputChars?: number; outputTokens?: number },
 ): Promise<TaskOutcome> {
   const chunks = await loadCorpus(client, job.user_id, payload)
   const inventory = buildSourceInventory(chunks)
@@ -1978,7 +2233,7 @@ async function execSection(
     return { kind: 'failed', error: jobError('invalid-response', 'This section lost its supporting passages. Nothing was saved.') }
   }
 
-  return runProviderStage(service, task, spec, budget, () => {
+  return runProviderStage(service, task, spec, budget, payload.specId, (outputTokens) => {
     const { wire, aliasOf } = stageWire(chunks, inventory)
     const supportingSources = createOpenAICitationWire(chunks).sources
       .filter((_source, index) => mapped.has(chunks[index].chunk_id))
@@ -1996,8 +2251,7 @@ async function execSection(
       'Transport-only citation format override: wherever the artifact schema asks for sourceRef, output only {"citationId":"S123"} using the exact supplied passage ID. For sourceRefs output an array of these single-key objects. sourceChunkId/sourceChunkIds/evidenceIds still use the supplied passage IDs directly.',
       repetitionNotice(inventory, aliasOf),
       section.problem ? `A prior attempt at this piece was rejected: ${section.problem}. Correct exactly that.${payload.repairGuidance ?? ''}` : '',
-    ], `Request:\n${wire.encodePrompt(payload.request)}\n\nSupporting passages:\n${JSON.stringify(supportingSources)}`,
-    8_000)
+    ], `Request:\n${wire.encodePrompt(payload.request)}\n\nSupporting passages:\n${JSON.stringify(supportingSources)}`, outputTokens)
     return { payload: body, wire }
   }, (raw, wire) => {
     const decoded = canonicalizeOpenAIGenerationSourceRefs(wire.decode(raw), chunks)
@@ -2006,18 +2260,92 @@ async function execSection(
       return { kind: 'failed', error: jobError('invalid-response', 'The generator returned nothing usable for this piece. Nothing was saved.') }
     }
     return { kind: 'done', output: { piece } as Record<string, unknown> }
-  })
+  }, (verdict) => subdivideSection(section, supporting, task, verdict, spec), sized)
+}
+
+/**
+ * Split one oversized section along ITS OWN structure.
+ *
+ * First choice is the plan's subpoints: those are the section's real internal
+ * divisions, so each part is a coherent piece of writing that the assembler can
+ * put back together in order. Only when the plan offered none does it fall back
+ * to ordered spans of the section's own passage sequence — still that section's
+ * material, in its own order, never a fixed fraction of the corpus.
+ *
+ * Returns null when the section is a single passage that cannot be divided; the
+ * caller then reports the size honestly rather than sending it anyway.
+ */
+function subdivideSection(
+  section: PlannedSection & { plan?: Array<{ id: string; title: string }>; subpoints?: Array<{ id: string; title: string; sourceChunkIds?: string[] }>; problem?: string; outputTokens?: number },
+  supporting: Chunk[],
+  task: TaskRow,
+  verdict: { affordableInputChars: number; affordableOutputTokens: number },
+  spec: StageSpec,
+): TaskOutcome | null {
+  const parentKey = task.parent_task_key ?? task.task_key
+  const known = new Set(supporting.map((chunk) => chunk.chunk_id))
+  const floor = spec.minOutputTokens ?? 1_000
+  const parentWant = Number(section.outputTokens) || spec.outputTokens || 5_000
+  // Each part's share of the writing, never below what a real piece needs.
+  const shareFor = (count: number) => Math.max(floor, Math.ceil(parentWant / count))
+
+  const subpoints = (section.subpoints ?? []).filter((point) => point.id && (point.sourceChunkIds ?? []).some((id) => known.has(id)))
+  if (subpoints.length > 1) {
+    return {
+      kind: 'subdivide',
+      reason: `${subpoints.length} subpoints`,
+      parts: subpoints.map((point, index) => ({
+        taskKey: `${parentKey}::${point.id}`,
+        ordinal: task.ordinal,
+        part: index,
+        label: `${section.title} — ${point.title}`,
+        input: {
+          ...section,
+          id: `${section.id}::${point.id}`,
+          title: point.title,
+          purpose: `${section.purpose ?? ''} This part covers: ${point.title}.`,
+          passageIds: (point.sourceChunkIds ?? []).filter((id) => known.has(id)),
+          subpoints: undefined,
+          outputTokens: shareFor(subpoints.length),
+        },
+      })),
+    }
+  }
+
+  // No declared subpoints: divide this section's own passages in their document
+  // order, sized to what one request can carry.
+  const perPart = Math.max(1_000, Math.floor(verdict.affordableInputChars * 0.6))
+  const spans = orderedSpans(supporting, (chunk) => chunk.content.length, perPart)
+  if (spans.length < 2) return null
+  return {
+    kind: 'subdivide',
+    reason: `${spans.length} ordered passage spans`,
+    parts: spans.map((span, index) => ({
+      taskKey: `${parentKey}::part-${index + 1}`,
+      ordinal: task.ordinal,
+      part: index,
+      label: `${section.title} (${index + 1} of ${spans.length})`,
+      input: {
+        ...section,
+        id: `${section.id}::part-${index + 1}`,
+        title: index === 0 ? section.title : `${section.title} (continued)`,
+        purpose: `${section.purpose ?? ''} This is part ${index + 1} of ${spans.length} of this section, covering its passages in order. Continue the same explanation; do not restate earlier parts.`,
+        passageIds: span.map((chunk) => chunk.chunk_id),
+        outputTokens: shareFor(spans.length),
+      },
+    })),
+  }
 }
 
 /** Single-pass artifacts keep one drafting task; the durability is around it. */
 async function execDraft(
   service: unknown, client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload,
-  task: TaskRow, spec: StageSpec, budget: WorkerBudget,
+  task: TaskRow, spec: StageSpec, budget: WorkerBudget, sized?: { inputChars?: number; outputTokens?: number },
 ): Promise<TaskOutcome> {
   const chunks = await loadCorpus(client, job.user_id, payload)
   const inventory = buildSourceInventory(chunks)
   const problem = isText(task.input?.problem) ? task.input.problem : ''
-  return runProviderStage(service, task, spec, budget, () => {
+  return runProviderStage(service, task, spec, budget, payload.specId, (outputTokens) => {
     const { wire, sources, aliasOf } = stageWire(chunks, inventory)
     const body = astraStagePayload([
       wire.encodePrompt(payload.systemPrompt),
@@ -2027,12 +2355,12 @@ async function execDraft(
       'Transport-only citation format override: wherever the artifact schema asks for sourceRef, output only {"citationId":"S123"} using the exact supplied passage ID. For sourceRefs output an array of these single-key objects. sourceChunkId/sourceChunkIds/evidenceIds still use the supplied passage IDs directly.',
       repetitionNotice(inventory, aliasOf),
       problem ? `A prior attempt was rejected: ${problem}. Rebuild the complete artifact and correct exactly that.${payload.repairGuidance ?? ''}` : '',
-    ], `Request:\n${wire.encodePrompt(payload.request)}\n\nSource passages:\n${JSON.stringify(sources)}`, 10_000)
+    ], `Request:\n${wire.encodePrompt(payload.request)}\n\nSource passages:\n${JSON.stringify(sources)}`, outputTokens)
     return { payload: body, wire }
   }, (raw, wire) => {
     const value = canonicalizeOpenAIGenerationSourceRefs(wire.decode(raw), chunks)
     return { kind: 'done', output: { piece: value } as Record<string, unknown> }
-  })
+  }, undefined, sized)
 }
 
 /**
@@ -2051,12 +2379,24 @@ async function execVerify(
     .filter((entry) => (entry.stage === 'sections' || entry.stage === 'draft' || entry.stage === 'repair') && entry.status === 'done')
     .sort((left, right) => left.ordinal - right.ordinal)
 
-  // A later repair supersedes the original piece with the same key.
-  const byKey = new Map<string, TaskRow>()
-  for (const entry of produced) byKey.set(entry.task_key, entry)
-  const entries = [...byKey.entries()]
-    .sort(([, left], [, right]) => left.ordinal - right.ordinal)
-    .map(([key, entry]) => ({ key, piece: isRecord(entry.output) ? entry.output.piece : null }))
+  // Group by parent, so a section written in parts is verified as the one
+  // section it will be, and a later repair supersedes what it repaired.
+  const grouped = new Map<string, Array<{ part: number; ordinal: number; piece: unknown }>>()
+  for (const entry of produced) {
+    const key = entry.parent_task_key ?? entry.task_key
+    const piece = isRecord(entry.output) ? entry.output.piece : null
+    const list = grouped.get(key) ?? []
+    const index = list.findIndex((candidate) => candidate.part === entry.part)
+    if (index >= 0) list[index] = { part: entry.part, ordinal: entry.ordinal, piece }
+    else list.push({ part: entry.part, ordinal: entry.ordinal, piece })
+    grouped.set(key, list)
+  }
+  const entries = [...grouped.entries()]
+    .sort(([, left], [, right]) => (left[0]?.ordinal ?? 0) - (right[0]?.ordinal ?? 0))
+    .map(([key, parts]) => {
+      const usable = parts.filter((entry) => isRecord(entry.piece)) as Array<{ part: number; piece: Record<string, unknown> }>
+      return { key, piece: usable.length ? mergeParts(usable) : null }
+    })
   const pieces = entries.map((entry) => entry.piece).filter((piece): piece is Record<string, unknown> => isRecord(piece))
 
   const closed = closeCitationSet(collectArtifactCitations(pieces, chunks), chunks)
@@ -2071,8 +2411,36 @@ async function execVerify(
     }
   }
 
-  // Coverage: what the student selected must actually be represented.
+  /**
+   * Coverage is checked against the ORIGINAL inventory, never against the plan.
+   *
+   * A plan that quietly forgot part of the material would otherwise become the
+   * authority for what "complete" means. Every usable passage must end up
+   * cited, or planned into a section, or explicitly set aside with a reason —
+   * anything else is unaccounted for and gets its own repair.
+   */
+  const citedChunks = new Set(closed.map((ref) => ref.chunkId))
   const citedFiles = new Set(closed.map((ref) => ref.fileId))
+  const plan = isRecord(job.outline) && Array.isArray(job.outline.sections) ? job.outline.sections as PlannedSection[] : []
+  const plannedChunks = new Set(plan.flatMap((section) => section.passageIds ?? []))
+  const excusedFiles = new Set(
+    isRecord(job.outline) && Array.isArray(job.outline.unusedSources)
+      ? job.outline.unusedSources.filter(isRecord).map((entry) => String(entry.fileId))
+      : [],
+  )
+  // Duplicate text is transferred once but every id stays accountable: a
+  // passage counts as covered when the text it carries was cited.
+  const canonicalCovered = new Set<string>()
+  for (const group of inventory.duplicateGroups) {
+    if (group.chunkIds.some((id) => citedChunks.has(id) || plannedChunks.has(id))) {
+      for (const id of group.chunkIds) canonicalCovered.add(id)
+    }
+  }
+  const unaccountedChunkIds = chunks
+    .filter((chunk) => chunk.content.trim())
+    .filter((chunk) => !excusedFiles.has(chunk.file_id))
+    .filter((chunk) => !citedChunks.has(chunk.chunk_id) && !plannedChunks.has(chunk.chunk_id) && !canonicalCovered.has(chunk.chunk_id))
+    .map((chunk) => chunk.chunk_id)
   const uncovered = inventory.files
     .filter((file) => file.chunkIds.length > file.emptyChunkIds.length && !citedFiles.has(file.fileId))
     .map((file) => file.fileId)
@@ -2089,8 +2457,10 @@ async function execVerify(
     closed,
     problems,
     uncoveredFileIds: uncovered,
+    unaccountedChunkIds,
+    unaccountedPassages: unaccountedChunkIds.length,
     duplicateIdentities,
-    clean: problems.length === 0 && closed.length > 0 && !duplicateIdentities,
+    clean: problems.length === 0 && closed.length > 0 && !duplicateIdentities && unaccountedChunkIds.length === 0,
   }
   await (service as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: string) => PromiseLike<unknown> } } })
     .from('study_generation_jobs').update({ verification }).eq('id', job.id)
@@ -2104,15 +2474,33 @@ async function execVerify(
 /** Stage 6 — the independent review, unchanged in authority. */
 async function execAudit(
   client: ReturnType<typeof createClient>, job: JobRow, payload: JobPayload, tasks: TaskRow[],
-  spec: StageSpec, budget: WorkerBudget,
+  spec: StageSpec, budget: WorkerBudget, task: TaskRow,
 ): Promise<TaskOutcome> {
   if (!Deno.env.get('ANTHROPIC_API_KEY')) return { kind: 'done', output: { auditStatus: 'skipped' } }
   if (!canRunStep(budget, 20_000)) return { kind: 'pending' }
   const chunks = await loadCorpus(client, job.user_id, payload)
   const artifact = assembleArtifact(payload, job, tasks)
+
+  // Scope this review. A per-piece task carries only that piece and only the
+  // passages it cites; the consistency pass carries the assembled claims and no
+  // documents at all, so neither grows with the size of the corpus.
+  const consistency = task.input?.consistency === true
+  const pieceKey = isText(task.input?.pieceKey) ? task.input.pieceKey : null
+  const scopedIds = new Set((task.input?.passageIds as string[]) ?? [])
+  const evidence = consistency ? [] : scopedIds.size ? chunks.filter((chunk) => scopedIds.has(chunk.chunk_id)) : chunks
+  const sections = isRecord(artifact) && Array.isArray(artifact.sections) ? artifact.sections : []
+  const subject = consistency
+    ? artifact
+    : pieceKey
+      ? sections.find((section) => isRecord(section) && section.id === pieceKey) ?? artifact
+      : artifact
+  const instruction = consistency
+    ? `${payload.systemPrompt}\n\nReview only for internal consistency: sections that contradict each other, a claim stated flatly in one section that another section qualifies, duplicated identities, or a required section missing. No documents are supplied; judge the artifact against itself.`
+    : payload.systemPrompt
+
   try {
-    const audit = await withDeadline('review', stepDeadlineMs(budget, spec.maxProviderMs), (signal) =>
-      callAnthropicAudit(artifact, chunks, payload.systemPrompt, signal))
+    const audit = await withDeadline('review', stepDeadlineMs(budget, providerBudgetMs(spec, budget)), (signal) =>
+      callAnthropicAudit(subject, evidence, instruction, signal))
     if (!audit.approved) {
       return { kind: 'failed', error: jobError('audit-rejected', 'The independent provider review found a source or specification problem. Nothing was saved.', { issues: safeAuditIssues(audit.issues) }) }
     }
@@ -2127,15 +2515,52 @@ async function execAudit(
  * Stage 7 — assembly. The artifact is the verified pieces in plan order, so a
  * section that was repaired takes its original place rather than being appended.
  */
+/**
+ * Put a subdivided section back together.
+ *
+ * A section written in parts is still ONE section in the artifact: its parts
+ * are concatenated in order under the parent's own title. The reader never sees
+ * the seam, which is the point of dividing along the section's own subpoints
+ * rather than along the material.
+ */
+function mergeParts(parts: Array<{ part: number; piece: Record<string, unknown> }>): Record<string, unknown> {
+  const ordered = [...parts].sort((left, right) => left.part - right.part)
+  const first = ordered[0].piece
+  if (ordered.length === 1) return first
+  const blocks = ordered.flatMap((entry) => (Array.isArray(entry.piece.blocks) ? entry.piece.blocks : []))
+  if (blocks.length) return { ...first, blocks }
+  // Objectives and other shapes: merge their array fields in order.
+  const merged: Record<string, unknown> = { ...first }
+  for (const key of Object.keys(first)) {
+    if (!Array.isArray(first[key])) continue
+    merged[key] = ordered.flatMap((entry) => (Array.isArray(entry.piece[key]) ? entry.piece[key] as unknown[] : []))
+  }
+  return merged
+}
+
 function assembleArtifact(payload: JobPayload, job: JobRow, tasks: TaskRow[]): unknown {
   const produced = tasks
     .filter((entry) => ['sections', 'draft', 'repair'].includes(entry.stage) && entry.status === 'done')
-    .sort((left, right) => left.ordinal - right.ordinal)
-  const byKey = new Map<string, Record<string, unknown>>()
+    .sort((left, right) => left.ordinal - right.ordinal || left.part - right.part)
+  // Group by parent so a section written in parts reassembles into one section,
+  // and a repair replaces the piece it repaired rather than being appended.
+  const grouped = new Map<string, Array<{ part: number; piece: Record<string, unknown> }>>()
   for (const entry of produced) {
     const piece = isRecord(entry.output) ? entry.output.piece : null
-    if (isRecord(piece)) byKey.set(entry.task_key, piece)
+    if (!isRecord(piece)) continue
+    const key = entry.parent_task_key ?? entry.task_key
+    const existing = grouped.get(key)
+    if (existing) {
+      // A later attempt at the same part supersedes the earlier one.
+      const index = existing.findIndex((candidate) => candidate.part === entry.part)
+      if (index >= 0) existing[index] = { part: entry.part, piece }
+      else existing.push({ part: entry.part, piece })
+    } else {
+      grouped.set(key, [{ part: entry.part, piece }])
+    }
   }
+  const byKey = new Map<string, Record<string, unknown>>()
+  for (const [key, parts] of grouped) byKey.set(key, mergeParts(parts))
   const plan = isRecord(job.outline) && Array.isArray(job.outline.sections)
     ? job.outline.sections as PlannedSection[]
     : []
@@ -2159,18 +2584,70 @@ function assembleArtifact(payload: JobPayload, job: JobRow, tasks: TaskRow[]): u
  * Which stage comes next, skipping a repair stage with nothing to repair.
  * Repair is scheduled only for the pieces verification actually named.
  */
-function nextStageWithWork(specId: string, stage: StageId, verification: Record<string, unknown> | null): StageId | undefined {
+function nextStageWithWork(
+  specId: string,
+  stage: StageId,
+  verification: Record<string, unknown> | null,
+  planningMode: 'single' | 'hierarchical',
+): StageId | undefined {
   let candidate = nextStage(specId, stage)
-  while (candidate === 'repair') {
-    const problems = isRecord(verification) && Array.isArray(verification.problems) ? verification.problems : []
-    if (problems.length) return candidate
-    candidate = nextStage(specId, candidate)
+  for (let guard = 0; candidate && guard < 12; guard += 1) {
+    // Exactly one planning branch runs. A corpus that fits is planned in one
+    // pass; one that does not is surveyed per source and then merged.
+    if ((candidate === 'survey' || candidate === 'merge') && planningMode === 'single') {
+      candidate = nextStage(specId, candidate)
+      continue
+    }
+    if (candidate === 'outline' && planningMode === 'hierarchical') {
+      candidate = nextStage(specId, candidate)
+      continue
+    }
+    if (candidate === 'repair') {
+      const problems = isRecord(verification) && Array.isArray(verification.problems) ? verification.problems : []
+      const unaccounted = isRecord(verification) && Array.isArray(verification.unaccountedChunkIds) ? verification.unaccountedChunkIds : []
+      if (problems.length || unaccounted.length) return candidate
+      candidate = nextStage(specId, candidate)
+      continue
+    }
+    return candidate
   }
   return candidate
 }
 
 /** The tasks a stage begins with. Fan-out stages read the previous stage's output. */
 function tasksForStage(specId: string, stage: StageId, job: JobRow, verification: Record<string, unknown> | null) {
+  if (stage === 'survey') {
+    // One task per SOURCE — a coherent unit of the student's material, not a
+    // fraction of the corpus. An oversized source subdivides at execution.
+    const inventory = isRecord(job.inventory) && Array.isArray(job.inventory.files) ? job.inventory.files : []
+    return inventory.filter(isRecord).map((file, index) => ({
+      taskKey: `source-${index + 1}`,
+      ordinal: index,
+      label: `Source ${index + 1} of ${inventory.length}`,
+      input: { fileId: file.fileId, passageIds: Array.isArray(file.chunkIds) ? file.chunkIds : [] },
+    })).filter((entry) => (entry.input.passageIds as string[]).length)
+  }
+  if (stage === 'audit') {
+    // One review per piece, over that piece's own evidence, plus one pass over
+    // the assembled claims for cross-section contradictions. A single review of
+    // the whole artifact against the whole corpus is the one call that would
+    // grow without bound as the material grows.
+    const plan = isRecord(job.outline) && Array.isArray(job.outline.sections) ? job.outline.sections as PlannedSection[] : []
+    const pieces = plan.length
+      ? plan.map((section, index) => ({
+          taskKey: `audit::${section.id}`,
+          ordinal: index,
+          label: `Reviewing ${section.title}`,
+          input: { pieceKey: section.id, passageIds: section.passageIds },
+        }))
+      : [{ taskKey: 'audit::artifact', ordinal: 0, label: 'Independent source review', input: {} }]
+    return [...pieces, {
+      taskKey: 'audit::consistency',
+      ordinal: 9_999,
+      label: 'Checking the sections agree',
+      input: { consistency: true },
+    }]
+  }
   if (stage === 'sections') {
     const plan = isRecord(job.outline) && Array.isArray(job.outline.sections) ? job.outline.sections as PlannedSection[] : []
     return plan.map((section, index) => ({
@@ -2183,7 +2660,32 @@ function tasksForStage(specId: string, stage: StageId, job: JobRow, verification
   if (stage === 'repair') {
     const problems = isRecord(verification) && Array.isArray(verification.problems) ? verification.problems : []
     const plan = isRecord(job.outline) && Array.isArray(job.outline.sections) ? job.outline.sections as PlannedSection[] : []
-    return problems.filter(isRecord).map((problem, index) => {
+    const unaccounted = isRecord(verification) && Array.isArray(verification.unaccountedChunkIds)
+      ? verification.unaccountedChunkIds.filter(isText)
+      : []
+    // Material the plan never accounted for gets its own repair, grouped by the
+    // source it came from so each task is a coherent piece of that source.
+    const bySource = new Map<string, string[]>()
+    if (unaccounted.length && isRecord(job.inventory) && Array.isArray(job.inventory.files)) {
+      for (const file of job.inventory.files.filter(isRecord)) {
+        const ids = (Array.isArray(file.chunkIds) ? file.chunkIds.filter(isText) : []).filter((id) => unaccounted.includes(id))
+        if (ids.length) bySource.set(String(file.fileId), ids)
+      }
+    }
+    const coverage = [...bySource.entries()].map(([fileId, ids], index) => ({
+      taskKey: `coverage::${fileId}`,
+      ordinal: 1_000 + index,
+      label: 'Covering missed material',
+      input: {
+        id: `coverage-${index + 1}`,
+        title: 'Material not yet covered',
+        purpose: 'These passages from the selected material were not represented anywhere in the artifact. Integrate what they teach, or state specifically why they cannot support any part of it.',
+        passageIds: ids,
+        plan: plan.map(({ id, title }) => ({ id, title })),
+        problem: 'no section accounted for these passages',
+      },
+    }))
+    return [...coverage, ...problems.filter(isRecord).map((problem, index) => {
       const key = isText(problem.key) ? problem.key : `piece-${index}`
       const section = plan.find((entry) => entry.id === key)
       return {
@@ -2192,7 +2694,7 @@ function tasksForStage(specId: string, stage: StageId, job: JobRow, verification
         label: section?.title ?? 'Flagged piece',
         input: { ...(section ?? { id: key, title: key, purpose: '', passageIds: [] }), plan: plan.map(({ id, title }) => ({ id, title })), problem: isText(problem.problem) ? problem.problem : 'validation failed' },
       }
-    })
+    })]
   }
   const spec = stageSpec(specId, stage)
   return [{ taskKey: stage, ordinal: 0, label: spec?.label ?? stage, input: {} }]
@@ -2223,13 +2725,53 @@ async function runOneTask(
   if (!isRecord(claimed)) return json({ ran: false, reason: 'no-runnable-task' })
 
   const task = claimed.task as TaskRow
+  // Filled in by sizing, so the completion record measures the request that was
+  // actually sent rather than the row as it looked when the task was claimed.
+  const sized: { inputChars?: number; outputTokens?: number } = {}
   const job = claimed.job as JobRow
   const payload = taskPayload(job.payload)
+  const specId = payload?.specId ?? job.spec_id ?? 'study-guide-v1'
   const started = Date.now()
 
   const finish = async (outcome: TaskOutcome) => {
     const durationMs = Date.now() - started
+
+    /**
+     * A task proven too large is replaced by its parts in one transaction. The
+     * oversized task is marked skipped rather than retried, which is what makes
+     * "never retry the same oversized task unchanged" structural rather than a
+     * convention someone has to remember.
+     */
+    if (outcome.kind === 'subdivide') {
+      const added = await rpc(service, 'subdivide_generation_task', {
+        p_task_id: task.id,
+        p_lease_token: task.lease_token,
+        p_parts: outcome.parts,
+      })
+      console.error(`generation task subdivided stage=${task.stage} parts=${outcome.parts.length} reason=${outcome.reason}`)
+      return { status: added === null ? 'failed' : 'subdivided', durationMs }
+    }
+
+    // Measured cost of a real provider round trip, folded into this stage's
+    // rates so the next sizing decision is made against evidence.
+    const inputChars = sized.inputChars ?? task.input_chars
+    const outputTokens = sized.outputTokens ?? task.output_tokens
+    if (outcome.kind !== 'failed' && inputChars && outputTokens) {
+      await rpc(service, 'record_stage_duration', {
+        p_spec_id: specId,
+        p_stage: task.stage,
+        p_duration_ms: durationMs,
+        p_input_chars: inputChars,
+        p_output_tokens: outputTokens,
+      })
+    }
+
     const status = outcome.kind === 'done' ? 'done' : outcome.kind === 'pending' ? 'pending' : 'failed'
+    if (outcome.kind === 'failed' && outcome.oversized) {
+      // Mark it, so the next attempt is forced down the subdivision path.
+      await (service as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: string) => PromiseLike<unknown> } } })
+        .from('study_generation_tasks').update({ oversized: true }).eq('id', task.id)
+    }
     if (outcome.kind === 'failed' && task.attempts < task.max_attempts) {
       // A bounded retry should not repeat the same mistake blind. Carry the
       // rejection into the next attempt's input, alongside the artifact's own
@@ -2280,15 +2822,17 @@ async function runOneTask(
   let outcome: TaskOutcome
   try {
     switch (task.stage) {
-      case 'inventory': outcome = await execInventory(service, client, job, payload); break
-      case 'outline': outcome = await execOutline(service, client, job, payload, task, spec, budget); break
+      case 'inventory': outcome = await execInventory(service, client, job, payload, budget); break
+      case 'survey': outcome = await execSurvey(service, client, job, payload, task, spec, budget, sized); break
+      case 'merge': outcome = await execMerge(service, client, job, payload, task, spec, budget, allTasks, sized); break
+      case 'outline': outcome = await execOutline(service, client, job, payload, task, spec, budget, sized); break
       case 'sections':
-      case 'repair': outcome = await execSection(service, client, job, payload, task, spec, budget); break
+      case 'repair': outcome = await execSection(service, client, job, payload, task, spec, budget, sized); break
       case 'draft': outcome = payload.specId === 'unit-question-bank-v1'
         ? { kind: 'failed', error: jobError('invalid-request', 'Question banks are generated through their own Claude route.') }
-        : await execDraft(service, client, job, payload, task, spec, budget); break
+        : await execDraft(service, client, job, payload, task, spec, budget, sized); break
       case 'verify': outcome = await execVerify(service, client, job, payload, allTasks); break
-      case 'audit': outcome = await execAudit(client, job, payload, allTasks, spec, budget); break
+      case 'audit': outcome = await execAudit(client, job, payload, allTasks, spec, budget, task); break
       case 'assemble': outcome = { kind: 'done' }; break
       default: outcome = { kind: 'failed', error: jobError('invalid-request', 'Unknown generation stage.') }
     }
@@ -2325,11 +2869,18 @@ async function advanceStage(service: unknown, job: JobRow, payload: JobPayload, 
   const current = (isRecord(fresh) ? fresh : job) as JobRow
   const verification = isRecord(current.verification) ? current.verification : null
 
-  const upcoming = nextStageWithWork(payload.specId, task.stage, verification)
+  const planningMode = isRecord(current.inventory) && current.inventory.planningMode === 'hierarchical' ? 'hierarchical' as const : 'single' as const
+  const upcoming = nextStageWithWork(payload.specId, task.stage, verification, planningMode)
   if (!upcoming) {
     const artifact = assembleArtifact(payload, current, tasks)
-    const auditTask = tasks.find((entry) => entry.stage === 'audit' && entry.status === 'done')
-    const auditStatus = isRecord(auditTask?.output) && isText(auditTask.output.auditStatus) ? auditTask.output.auditStatus : 'skipped'
+    const auditTasks = tasks.filter((entry) => entry.stage === 'audit' && entry.status === 'done')
+    const statuses = auditTasks.map((entry) => (isRecord(entry.output) && isText(entry.output.auditStatus) ? entry.output.auditStatus : 'skipped'))
+    // The weakest review wins: one unreachable reviewer means the artifact was
+    // not fully reviewed, and saying "approved" would overstate it.
+    const auditStatus = !statuses.length ? 'skipped'
+      : statuses.includes('unavailable') ? 'unavailable'
+      : statuses.every((status) => status === 'approved') ? 'approved'
+      : 'skipped'
     // The citation set verification already closed against the real corpus.
     const citations = isRecord(verification) && Array.isArray(verification.closed) ? verification.closed : []
     if (!citations.length) {
