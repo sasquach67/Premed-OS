@@ -145,8 +145,9 @@
 
 /* Refinement of Claude's baseline: use the ClassHub icon vocabulary and a single
    divided input/result group, without adding another stack of cards. */
-.en-flow .en-goal-card{display:grid;grid-template-columns:1.9rem minmax(0,1fr) 1rem;align-items:start;column-gap:.65rem;padding:1rem .9rem}
-.en-flow .en-goal-card>input{grid-column:3;grid-row:1;margin-top:.3rem}
+.en-flow .en-goal-card{position:relative;display:grid;grid-template-columns:1.9rem minmax(0,1fr);align-items:start;column-gap:.65rem;padding:1rem .9rem;cursor:pointer}
+.en-flow .en-goal-card>input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.en-flow .en-goal-card:has(input:focus-visible){outline:2px solid var(--ring);outline-offset:3px}
 .en-goal-symbol{grid-column:1;grid-row:1;display:grid;place-items:center;width:1.9rem;height:1.9rem;border-radius:.55rem;background:color-mix(in srgb,var(--primary) 10%,var(--card));color:var(--primary)}
 .en-goal-symbol svg{width:1.15rem;height:1.15rem;stroke-width:1.8}
 .en-goal-copy{grid-column:2;grid-row:1}
