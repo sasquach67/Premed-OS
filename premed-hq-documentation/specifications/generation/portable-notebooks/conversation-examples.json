@@ -1,6 +1,6 @@
 {
   "kind": "scripted-expected-conversations",
-  "promptBuild": "notebook-instructions-beta-8",
+  "promptBuild": "notebook-instructions-beta-9",
   "executed": false,
   "ratings": null,
   "notice": "Authored expectations for manual beta, not transcripts of a tested external AI, real course trials, importable notebook JSON, or additional maintained prompts. Use the corresponding complete goal prompt and inspect actual behavior.",

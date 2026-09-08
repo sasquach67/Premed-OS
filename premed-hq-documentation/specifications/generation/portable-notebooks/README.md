@@ -24,7 +24,7 @@ python3 -m venv /tmp/notebook-validation
 
 ## Rule selection
 
-- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-8; the unchanged transport instructionsVersion is notebook-workflows-draft-2.
+- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-9; new output uses instructionsVersion notebook-workflows-draft-3; v2 remains supported as input.
 - Every goal also includes applicable global rules from 02: sections 1.1–1.8, clarification/background boundaries, source primacy, cross-source behaviors and thin-source handling.
 - Review includes the full Runtime briefing mirror and Required structure from 03, its Portable review notebook section, the introduction and every Rules row from 11, its Portable objective coverage section, and applicable visual-learning sections from 06. All included fragments are verbatim; see METHODOLOGY-AUDIT.md for the section-level audit and explicit portable differences.
 - Assessment and assignment each include every substantive `NA-` or `NW-` rule verbatim and the corresponding portable section. Persistence/recovery and renderer implementation paragraphs are excluded.
@@ -39,7 +39,7 @@ Load the generated template for the selected goal. Replace its eleven literal `{
 
 The completed prompt string is the single value for preview, clipboard and UTF-8 Markdown download. Keep each surface byte-identical. Selected saved-file titles and user-listed attachments can populate MATERIALS, but the app must explain that the original material still needs to be supplied to the chosen AI. SCOPE may include the selected lessons and scope authority. Existing exported JSON can populate or be identified in REVISION_INPUT; naming it is not reading it.
 
-The output package format is `premed-os-notebook-package`, version 2, instructionsVersion `notebook-workflows-draft-2`. Keep the schema unchanged unless both development workflows agree a change is necessary. Template snapshots are generated assets: change canonical Markdown, regenerate, inspect the manifest/diff, and rerun checks rather than hand-editing prompt assets.
+New output uses `premed-os-notebook-package`, version 3, instructionsVersion `notebook-workflows-draft-3`, under the jointly agreed notebook-package-v3.schema.json. The exact v2 schema remains notebook-package.schema.json for compatibility and saved baselines. Template snapshots are generated assets: change canonical Markdown, regenerate, inspect the manifest/diff, and rerun checks rather than hand-editing prompt assets.
 
 ## Review limits and acceptance
 
@@ -55,7 +55,7 @@ Canonical 20 retains beta-2 evidence/coverage and beta-3 conversation behavior e
 
 `conversation-examples.json` contains fourteen authored expected scenarios, rendered into EXPECTED-CONVERSATIONS.md. The original nine scenarios cover the confirmation gate and conversation behavior; five beta-5 additions cover topic revision, absent/ambiguous correction context, stale saved baselines, ordinary Plus mixed materials and multi-message upload collection. Actual short hint drafts and a complete readable counterpart of the existing partial assessment fixture make review inspectable. Invalid/truncated repair samples remain in conversation-case-files/, outside valid-import globs. These files are not extra prompts or executed model trials; no ratings are prefilled.
 
-Published beta-2, beta-3, beta-4, beta-5, beta-6 and beta-7 snapshots retain their original identities and hashes. Their optional preservation checks run when each archive is present (a fresh staging directory without the six historical archives has six fewer checks). Beta-3 app verification does not establish the new beta-4 conversation behavior or asset parity. Coordinator-owned integration and real trials are separate acceptance steps.
+Published beta-2, beta-3, beta-4, beta-5, beta-6, beta-7 and beta-8 snapshots retain their original identities and hashes. Their optional preservation checks run when each archive is present (a fresh staging directory without the seven historical archives has seven fewer checks). Beta-3 app verification does not establish the new beta-4 conversation behavior or asset parity. Coordinator-owned integration and real trials are separate acceptance steps.
 
 ## Current beta 5: saved topic revision and ordinary-chat intake
 
@@ -82,3 +82,11 @@ Only EC-BASELINE changes customer instructions: request the previous notebook JS
 Use `compose(template, values, mode='update')` for the app-owned update journey and default `mode='new'` for creation. The optional mode is a local composer argument, never a twelfth request token. `prompt-modes.json`, embedded exactly as `prompt-composition.json.modes`, owns the heading/intro and precise transformation. Validate the exact leading trusted unfilled template heading; prepend no duplicate prompt. Replace only that leading heading in update mode, insert the short canonical update intro, then perform the existing single-pass JSON input substitution. Do not infer mode from user text or rewrite course/notebook/source titles or token-looking strings after insertion. Preview/copy/download consume one resulting string. There are still only three full base templates; the rule body and schema are identical across new/update mode for the same goal.
 
 Supply the latest saved baseline JSON and new materials separately. All shared conversation/revision/recovery rules remain in the composed prompt, so no prior chat is required. No actual provider/class generation was run; release remains paused.
+
+## Beta 9 — agreed v3 source visuals and question stimuli
+
+The same three prompts embed the complete v3 output schema, full applicable methodology and shared EC-VISUALREVIEW/FIGURES/DIAGRAMS/STIMULUS rules. Required visualReview retains source discovery/inspected/unprocessed state and candidate selection/skip/unclear/missing/version records; assets name actual PNG/JPEG sidecars with derivative-original closure. Safe figure and study-diagram blocks remain distinct. Practice references explicit same-entry neutral stimulus bodies; answer evidence stays after reveal. Missing required stimulus is a gap, never a guessed solvable question.
+
+The accepted app runtime keeps actual bytes/digests in an immutable local binding index and portable bundle, validating all required assets before commit. The original AI JSON and v2 schema remain exact; v2-to-v3 upgrade requires an explicit accepted proposal. Root owns actual app/backup proof and release. This owner’s separate BIOL augmentation is coordinator-authored source-grounded review work, not a new provider output or rating.
+
+Run build_visual_schema.py only to reproduce the frozen v3 schema (never overwrite v2), and run check_visual_package.py --output OUTPUT/v3-contract-cases for the 29 authored contract cases. The original check_package.py now tests legacy v2 fixtures and new v3 prompt embedding separately. Old feasibility/revision/cross-provider reference JSON stays labelled v2 content/compatibility material, not a new v3 output template. No test proves actual visual inspection, neutral stimulus, scientific correctness or provider capacity.
