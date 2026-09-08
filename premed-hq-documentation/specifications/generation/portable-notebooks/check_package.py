@@ -4,7 +4,7 @@ import argparse, copy, hashlib, importlib.metadata, json, re, tempfile
 from jsonschema import Draft202012Validator
 from build_prompts import build, compose, TOKENS
 from build_fixtures import build as fixtures
-from validate_package import validate
+from validate_package import validate, load_package_json, MAX_PACKAGE_BYTES
 
 def assessment_fixture_scope_errors(data):
     """Focused audit of the invented workshop's flat scope sentences, not arbitrary sources."""
@@ -32,6 +32,29 @@ def assessment_fixture_scope_errors(data):
             errors.append('fixture-format-sections: link explanation and application content')
     return errors
 
+def prompt_methodology_errors(root,goal,prompt):
+    """Check actual assembled text against independently selected canonical rule units."""
+    gen=root/'premed-hq-documentation/specifications/generation'
+    errors=[]
+    global_text=(gen/'02-global-rules-and-source-modes.md').read_text()
+    required=[line for line in global_text.split('## 1.1 Purpose',1)[1].split('## 1.9 Scope',1)[0].splitlines() if line.startswith('| `G-')]
+    required += [(gen/'19-study-source-and-format-contract.md').read_text().strip(),(gen/'20-external-notebook-workflow.md').read_text().strip()]
+    if goal=='review':
+        guide=(gen/'03-study-guide-v1.md').read_text()
+        required += [line for line in guide.split('## Runtime briefing mirror',1)[1].split('\n---',1)[0].splitlines() if line.startswith('| `SG-')]
+        required.append('## 2. Required structure\n'+guide.split('## 2. Required structure\n',1)[1].split('\n## 3. Study-guide rules',1)[0])
+        mastery=(gen/'11-unit-mastery-outline-v1.md').read_text()
+        required += [line for line in mastery.split('## Rules',1)[1].split('\nThe runtime artifact spec',1)[0].splitlines() if line.startswith('| `UMO-')]
+        visual=(gen/'06-visual-system.md').read_text()
+        required += [line for line in visual.splitlines() if line.startswith('| `VIS-')]
+    else:
+        path=root/'premed-hq-documentation/implementation/briefs'/('notebook-'+goal+'-v1.md')
+        prefix='NA-' if goal=='assessment' else 'NW-'
+        required += [line for line in path.read_text().splitlines() if line.startswith('- `'+prefix)]
+    for fragment in required:
+        if fragment.strip() not in prompt:errors.append('missing-canonical-methodology: '+fragment[:100])
+    return errors
+
 def run(root,out):
     schema=json.loads((out/'notebook-package.schema.json').read_text());Draft202012Validator.check_schema(schema)
     examples={p.stem:json.loads(p.read_text()) for p in sorted(out.glob('fixture-*.json'))+sorted(out.glob('edge-*.json')) if p.name!='fixture-manifest.json'}
@@ -47,6 +70,17 @@ def run(root,out):
         errors=assessment_fixture_scope_errors(omitted)
         assert any(error.startswith('fixture-scope-coverage:') for error in errors)
         results.append({'case':name+'-reject-format-only-in-request','expected':'fixture scope guard rejects omitted ledger requirement despite schema-valid metadata','passed':True})
+    for goal in ('review','assessment','assignment'):
+        prompt=(out/('copy-prompt-'+goal+'.md')).read_text()
+        errors=prompt_methodology_errors(root,goal,prompt);assert not errors,(goal,errors)
+        results.append({'case':goal+'-canonical-methodology-preserved','expected':'actual prompt includes full applicable rule rows and teaching sections verbatim','passed':True})
+    review_prompt=(out/'copy-prompt-review.md').read_text()
+    recall_paragraph="**ACTIVE RECALL** — questions test the concepts the guide itself marked important. A recall question\nabout something the guide did not treat as significant is a defect. Target 5–12 depending on\n`coverage_depth`. Every question's answer must exist in the guide."
+    for name,fragment in [('active-recall-answer-coverage',recall_paragraph),('instructor-synonym-preservation',next(line for line in (root/'premed-hq-documentation/specifications/generation/02-global-rules-and-source-modes.md').read_text().splitlines() if line.startswith('| `G-TERM-2`')))]:
+        assert fragment in review_prompt
+        omitted=review_prompt.replace(fragment,'')
+        assert prompt_methodology_errors(root,'review',omitted)
+        results.append({'case':'reject-prompt-omission-'+name,'expected':'methodology check catches omitted substantive rule even when schema stays intact','passed':True})
     base=examples['fixture-review'];r=lambda p:p['entries'][0]['requirements'][0];o=lambda p:p['entries'][0]['objectives'][0];b=lambda p:p['entries'][0]['sections'][0]['blocks'][0]
     cases=[]
     def case(name,code,change,seed=base):cases.append((name,code,change,seed))
@@ -66,6 +100,10 @@ def run(root,out):
     case('reject-unreadable-evidence','inaccessible-evidence',lambda p:p['sources'][0].update(access='unreadable'))
     case('reject-not-accessed-evidence','inaccessible-evidence',lambda p:p['sources'][0].update(access='not-accessed'))
     case('reject-uninspected-used','uninspected-used',lambda p:p['sources'][0].update(inspected=''))
+    case('reject-clarification-without-evidence','missing-evidence',lambda p:b(p).update(sourceIds=[],excerptIds=[]))
+    case('reject-student-request-support-without-evidence','coverage-evidence',lambda p:r(p).update(authority='student-request',sourceIds=[],excerptIds=[]))
+    case('reject-partial-without-section','coverage-evidence',lambda p:r(p).update(status='partial',sectionIds=[],nextStep='Provide missing content.'))
+    case('reject-missing-access-limitation','missing-access-limit',lambda p:p['sources'][0].update(access='partial',limitations=[]))
     case('reject-used-false','unused-reference',lambda p:p['sources'][0].update(used=False))
     case('reject-supported-without-content','supported-without-content',lambda p:r(p).update(sectionIds=[]))
     case('reject-unknown-section','section-reference',lambda p:r(p).update(sectionIds=['absent']))
@@ -85,6 +123,11 @@ def run(root,out):
         data=copy.deepcopy(seed);change(data);errors=validate(data,schema)
         assert any(e.startswith(code+':') for e in errors),(name,errors)
         results.append({'case':name,'expected':'rejected: '+code,'passed':True})
+    for name,raw,code in [('duplicate-json-key','{"version":2,"version":2}','duplicate-key'),('oversize-json-input',' '*(MAX_PACKAGE_BYTES+1),'package-size')]:
+        try:load_package_json(raw)
+        except ValueError as error:assert str(error).startswith(code+':')
+        else:raise AssertionError(name+' should fail before schema checks')
+        results.append({'case':'reject-'+name,'expected':code,'passed':True})
     prior=examples['fixture-review'];revised=examples['fixture-review-revision']
     expected=copy.deepcopy(prior);expected['entries'][0].update(revision=2,baseRevision=1)
     expected['entries'][0]['sections'][0]['blocks'][0]['text']+=' Suggested check: identify which of the three jobs a change affects before predicting the result.'
@@ -118,6 +161,8 @@ def run(root,out):
             assert path.read_bytes()==(fresh/path.name).read_bytes(),path.name
             template=path.read_text()
             assert all(template.count('{{'+token+'}}')==1 for token in TOKENS)
+            assert set(re.findall(r'\{\{([A-Z_]+)\}\}',template))==set(TOKENS)
+            assert 'Prompt build: notebook-instructions-beta-1.' in template
             values={token:'Sample '+token for token in TOKENS};values['CLASS_PREFERENCES']='Keep "quotes", newlines\n, unicode →, and {{SCOPE}} literal.'
             composed=compose(template,values)
             envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])

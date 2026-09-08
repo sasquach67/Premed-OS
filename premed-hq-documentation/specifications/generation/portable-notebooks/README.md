@@ -20,10 +20,11 @@ python3 -m venv /tmp/notebook-validation
 
 ## Rule selection
 
-- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label slot in 21 is fixed at build time; eleven student-input slots remain.
-- Review includes the full Runtime briefing mirror from 03, its Portable review notebook section, the introduction and every Rules row from 11, and its Portable objective coverage section.
+- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-1; the unchanged transport instructionsVersion is notebook-workflows-draft-2.
+- Every goal also includes applicable global rules from 02: sections 1.1–1.8, clarification/background boundaries, source primacy, cross-source behaviors and thin-source handling.
+- Review includes the full Runtime briefing mirror and Required structure from 03, its Portable review notebook section, the introduction and every Rules row from 11, its Portable objective coverage section, and applicable visual-learning sections from 06. All included fragments are verbatim; see METHODOLOGY-AUDIT.md for the section-level audit and explicit portable differences.
 - Assessment and assignment each include every substantive `NA-` or `NW-` rule verbatim and the corresponding portable section. Persistence/recovery and renderer implementation paragraphs are excluded.
-- Legacy transport terms in these verbatim rules are explicitly mapped in canonical 20. The v2 schema governs emitted fields. For example, absent objective evidenceLimit is encoded as null, practice uses prompt/answer/rationale with excerpt IDs, and TITLE becomes entry.title.
+- Legacy transport terms in these verbatim rules are explicitly mapped in canonical 20, including clarification references, diagrams, contradictions and emphasis metadata. The v2 schema governs emitted fields. For example, absent objective evidenceLimit is encoded as null, practice uses prompt/answer/rationale with excerpt IDs, and TITLE becomes entry.title.
 - Class preferences are explicit editable request input. No rule preset is inferred from BIOL103, ANTH147, PSYC101, ENGL105 or GEOG121; those are Andy's manual material/trial environments.
 
 ## App integration contract

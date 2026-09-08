@@ -1,0 +1,49 @@
+# Instruction beta methodology audit
+
+Audit baseline: canonical repository commit `6ced43d3876cb05bcb53997ffc0a82c78d366b92`, followed by the recorded portable draft changes. Output build: `notebook-instructions-beta-1`. Transport remains `premed-os-notebook-package` version 2 and `instructionsVersion=notebook-workflows-draft-2`. The schema and eleven request placeholders are unchanged.
+
+This audit compares the actual assembled prompt text with the substantive canonical learning rules. It does not infer learning quality from successful JSON parsing, and it does not replace a real student trial.
+
+## Preserved methodology and assembly coverage
+
+| Area | Canonical source and selected content | What the resulting prompt preserves |
+| --- | --- | --- |
+| Shared learning | 02 sections 1.1–1.8; 19 in full | Comprehension, retention and retrieval; factual fidelity; explicit uncertainty; instructor terminology with useful synonyms alongside it; qualifiers; meaningful sequences and relationships; economy without lost nuance; defensible emphasis |
+| Clarification and outside background | 02 sections 2.2, 2.3 before the UI decision, 2.6, cross-source behavior table and 3.2; 19 and 20 | Default explanation of supplied claims; no unsupported values, mechanisms or exceptions disguised as clarification; outside background only on explicit request, subordinate to the supplied concepts, never first in a section, and at most 25% of study-guide blocks; thin complete material is not automatically a gap |
+| Review guide | 03 full Runtime briefing mirror, full Required structure including section notes, Portable review notebook | At a glance; source-supported core explanations, mechanisms, relationships, comparisons and qualifications; understanding versus memorization; active recall whose answers are taught; final synthesis that connects rather than repeats |
+| Review mastery | 11 introduction, every Rules row and Portable objective coverage | Verbatim official objectives; clearly labeled derived study objectives; one to three specific recall cues; ordinary floors of five understanding points, two performance targets and one supported caution; one or two original applications with worked answers; specific evidence-limit exception rather than padding |
+| Review representation | 06 sections 1, 2, 3.1, 7, 8 and the scan test before native-renderer proxies | Choose a representation for learning, not decoration; compare across shared dimensions; preserve direction/branches/feedback; maintain readable density and consistent conventions; keep styling with the app |
+| Assessment | Every NA rule in notebook-assessment-v1, plus full portable multi-lesson section | Establish actual scope and format; inventory accessible lessons/readings/notes; preserve every requirement and qualifier; integrate teaching across sources; adapt reasoning and practice to supported demands; separate answers, rationale and answer evidence; retain disagreements and concrete next steps |
+| Assignment | Every NW rule in notebook-assignment-v1, plus full portable section | Honor the actual help stage; extract the task/rubric requirements; adapt to writing, quantitative, empirical and other work; preserve student voice; separate actual observations from calculations and hypothetical examples; check requested support without claiming a grade or completed submission |
+| Portable request/evidence | Full 20 and 21 | Editable course/request; exact source/excerpt inventory and coverage ledger; access limits; stable revisions; goal-appropriate sections; complete export and honest checks |
+
+Selected passages are copied verbatim into the templates, not summarized by a model or maintained as a second prose rule set. The manifest records both full-file and selected-fragment hashes. Repeated principles across canonical layers are preserved where they serve different contracts; the builder does not try to shorten them into a new methodology.
+
+## Substantive omissions corrected for this beta
+
+The earlier portable assembly included the compact runtime guide table and mastery Rules but did not include the full guide structure/notes, baseline global detail or visual-learning guidance. As a result, the intended active-recall answer-coverage test, synonym handling, background limits and representation guidance were incomplete in the copied prompt. The beta builder now includes the exact applicable passages above. These are restorations of existing methodology.
+
+The canonical assessment portable intake now explicitly names format, required methods and length constraints as requirements, even when a format is also present in request metadata. This makes the existing every-requirement rule harder to overlook. The separate synthetic fixture correction exposed the same omission; it is recorded in FIXTURE-CORRECTIONS.md, not as student trial feedback.
+
+## Conflicts resolved explicitly
+
+- The guide's five-item limit concerns a brief orientation list of inferred objectives. The canonical clarification makes explicit that it does not cap the complete requirements ledger or Mastery Map, or drop official objectives. It is not permission to abbreviate a rich source.
+- “Always” guide sections and tunable count targets apply when usable evidence supports them. A completely unreadable packet can produce an honest gap-only export; it cannot pass as a completed learning trial. Supported thin material stays thin. Mastery depth floors retain their evidence-limit rule.
+- Older global prose says clarification omits SourceRef and names clarifies. The portable contract instead requires the cited premise's sourceIds/excerptIds and a clear explanation of what is being clarified. This is a transport adaptation, not a claim that clarification adds independently verified facts.
+- Native diagrams, contradiction blocks, semantic emphasis, highYield/basis and owner fields do not exist in the portable schema. Canonical 20 maps their learning function to supported paragraphs, steps and tables without adding unknown fields. Direction, branches, return paths and disagreements must remain explicit. Essential visual information that cannot survive that representation remains a disclosed limit. This is not native diagram or styling parity.
+- Source-based relevance and a learning prerequisite do not establish exam predictions. The prompt preserves the baseline defensibility test while requiring the actual basis to be stated and keeping instructor evidence distinct from suggested learning order.
+- Earlier references to server-enforced checks, source-mode UI and renderer behavior describe the built-in pipeline. The external prompt cannot claim those checks ran. It reports performed checks separately and does not claim the app imported, saved or approved the notebook.
+
+## Deliberate portable additions and limits
+
+The four-status requirements ledger, unreadable/uninspected inventory, excerpt ownership, separate practice answer/rationale, class-request snapshot, goal-specific section purposes and stable revision rules are proposed external transport/workflow additions. They preserve source boundaries while allowing a student to use a preferred AI. Multi-lesson assessment preparation follows the assessment-specific contract; the one-lesson review is not silently expanded into a whole-course summary.
+
+The native UI's mode toggles, emphasis decorations, provider routing, retrieval allocation, chunk floors, persistence repair and automatic secondary audits are excluded from the copied prompt. The three-goal workflow defaults to source plus clarification, with outside background only when explicitly requested; it does not claim to reproduce every native source-mode control. Flashcards, standalone question banks, spaced-repetition scheduling and unrelated generator products are outside this package.
+
+No schema change was necessary. Inspection of the current app importer established the existing 8 MiB raw UTF-8 limit and additional evidence/access guards; the portable instructions and standalone validator now match those relevant constraints. Packages must split cleanly rather than silently lose content to fit. The app still needs the exact new static prompt assets; transport compatibility alone does not prove those assets are loaded.
+
+## Checks and remaining human review
+
+The check suite validates the ten invented packages, rejects malformed references and selected semantic-shape defects, tests source-scope fixture coverage, verifies exact revision preservation, and rebuilds outputs identically. Additional checks compare actual prompt rule units with canonical files; intentional removal of active-recall answer coverage or the instructor-synonym rule is detected even with a valid schema still embedded. Raw JSON duplicate keys and over-limit inputs are rejected.
+
+These checks do not prove excerpt authenticity, entailment, complete material understanding, original question quality, disciplinary fit or student usefulness. The readable synthetic examples were author-reviewed; the coordinator independently identified the omitted format requirement. No real class source was processed by this instruction workflow, no actual trial generated, and no student rating assigned. Five course review trials plus at least one assessment and one assignment still need Andy's ratings and resolved factual/source issues for final acceptance, together with separately verified app behavior.

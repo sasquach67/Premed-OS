@@ -6,6 +6,18 @@ from collections import defaultdict
 from pathlib import Path
 from jsonschema import Draft202012Validator
 
+MAX_PACKAGE_BYTES=8*1024*1024
+
+def load_package_json(raw):
+    if len(raw.encode('utf-8'))>MAX_PACKAGE_BYTES:raise ValueError('package-size: input exceeds 8 MiB')
+    def unique_keys(pairs):
+        result={}
+        for key,value in pairs:
+            if key in result:raise ValueError('duplicate-key: '+key)
+            result[key]=value
+        return result
+    return json.loads(raw,object_pairs_hook=unique_keys)
+
 def validate(data,schema):
     errors=['schema: '+e.json_path+': '+e.message for e in Draft202012Validator(schema).iter_errors(data)]
     if errors:return errors
@@ -20,6 +32,8 @@ def validate(data,schema):
         identify('source',src);sources[src['id']]=src
         if src['access'] in ('unreadable','not-accessed') and (src['used'] or src['excerpts']):fail('inaccessible-evidence',src['id'])
         if src['used'] and (not src['inspected'].strip() or not src['excerpts']):fail('uninspected-used',src['id'])
+        if src['access'] in ('read','partial') and not src['inspected'].strip():fail('missing-inspected',src['id'])
+        if src['access']!='read' and not src['limitations']:fail('missing-access-limit',src['id'])
         for ex in src['excerpts']:
             identify('excerpt',ex);excerpts[ex['id']]=src['id']
     def evidence(item,mandatory=False):
@@ -42,7 +56,7 @@ def validate(data,schema):
         for sec in entry['sections']:
             identify('section',sec)
             for b in sec['blocks']:
-                identify('block',b);evidence(b,b['type']!='gap' and b['provenance'] in ('source','generated-practice','student-work'))
+                identify('block',b);evidence(b,b['type']!='gap' and b['provenance'] in ('source','clarification','generated-practice','student-work'))
                 if b['type']=='practice' and b['provenance']!='generated-practice':fail('practice-provenance',b['id'])
                 if b['type']=='table' and any(len(row)!=len(b['columns']) for row in b['rows']):fail('table-width',b['id'])
         for r in entry['requirements']:
@@ -50,6 +64,7 @@ def validate(data,schema):
             if len(r['sectionIds'])!=len(set(r['sectionIds'])):fail('duplicate-reference',r['id'])
             if any(id not in sections for id in r['sectionIds']):fail('section-reference',r['id'])
             if r['status']=='supported' and not r['sectionIds']:fail('supported-without-content',r['id'])
+            if r['status'] in ('supported','partial') and (not r['excerptIds'] or not r['sectionIds']):fail('coverage-evidence',r['id'])
             if r['status']!='supported' and not (r['nextStep'] and r['nextStep'].strip()):fail('missing-next-step',r['id'])
         for o in entry['objectives']:
             identify('objective',o);evidence(o,True);r=requirements.get(o['requirementId'])
@@ -74,5 +89,7 @@ def validate(data,schema):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--schema',type=Path,required=True);p.add_argument('packages',type=Path,nargs='+');a=p.parse_args();schema=json.loads(a.schema.read_text());Draft202012Validator.check_schema(schema);failures=0
     for path in a.packages:
-        errors=validate(json.loads(path.read_text()),schema);failures+=bool(errors);print(path.name+': '+('PASS' if not errors else '\n'+'\n'.join(errors)))
+        try:errors=validate(load_package_json(path.read_text()),schema)
+        except ValueError as error:errors=[str(error)]
+        failures+=bool(errors);print(path.name+': '+('PASS' if not errors else '\n'+'\n'.join(errors)))
     raise SystemExit(bool(failures))

@@ -5,6 +5,7 @@ import argparse, hashlib, json, re, subprocess
 GEN = 'premed-hq-documentation/specifications/generation/'
 BRIEFS = 'premed-hq-documentation/implementation/briefs/'
 TOKENS = ['COURSE_CODE','COURSE_TITLE','TERM','SCOPE','MATERIALS','DEPTH','CLASS_PREFERENCES','HELP_STAGE','ASSESSMENT_FORMAT','USER_REQUEST','REVISION_INPUT']
+PROMPT_BUILD = 'notebook-instructions-beta-1'
 KEYS = ['courseCode','courseTitle','term','scope','materials','depth','classPreferences','helpStage','assessmentFormat','userRequest','revisionInput']
 PATTERN = re.compile(r'\{\{('+'|'.join(TOKENS)+r')\}\}')
 
@@ -37,13 +38,25 @@ def build(root, out):
         selections.setdefault(path,{'sha256':sha(raw),'sections':{}})['sections'][label]=sha(result.encode())
         return result
     request=take(GEN+'21-external-notebook-request-template.md','full')
-    shared=take(GEN+'19-study-source-and-format-contract.md','full')
+    global_path=GEN+'02-global-rules-and-source-modes.md'
+    global_rules=take(global_path,'Global rules 1.1 through 1.8',lambda t:t[t.index('## 1.1 Purpose'):t.index('## 1.9 Scope')].rstrip()+'\n')
+    for heading in ['2.2 `SOURCE_PLUS_CLARIFICATION`','2.3 `SOURCE_PLUS_BACKGROUND`','2.6 Source primacy (invariant) — *added Aug 2026, Andy’s question*'.replace('Andy’s',"Andy's"),'3.2 State C is not an error — the rule that matters most']:
+        global_rules+='\n'+take(global_path,heading,lambda t,h=heading:section(t,h).split('\n### ✅ Decision D-1',1)[0].rstrip()+'\n')
+    global_rules+='\n'+take(global_path,'Cross-source behavior table',lambda t:'| Behavior | Rule |'+t.split('| Behavior | Rule |',1)[1].split('\n\n**Out of scope',1)[0]+'\n')
+    shared=global_rules+'\n'+take(GEN+'19-study-source-and-format-contract.md','full')
     portable=take(GEN+'20-external-notebook-workflow.md','full')
     sg=take(GEN+'03-study-guide-v1.md','Runtime briefing mirror',lambda t:section(t,'Runtime briefing mirror').split('\n---',1)[0].rstrip()+'\n')
+    sg+='\n'+take(GEN+'03-study-guide-v1.md','2. Required structure',lambda t:section(t,'2. Required structure'))
     sg+= '\n'+take(GEN+'03-study-guide-v1.md','Portable review notebook',lambda t:section(t,'Portable review notebook'))
     umo=take(GEN+'11-unit-mastery-outline-v1.md','Introduction and Rules excluding runtime plumbing',lambda t:t.split('\nThe runtime artifact spec',1)[0].rstrip()+'\n')
     umo+='\n'+take(GEN+'11-unit-mastery-outline-v1.md','Portable objective coverage',lambda t:section(t,'Portable objective coverage'))
-    goal_rules={'review':sg+'\n'+umo}
+    visual_path=GEN+'06-visual-system.md'
+    visual=''
+    for heading in ['1. The division of responsibility','2. The representation decision','7. Density and whitespace','8. The consistency rule (invariant)']:
+        visual+='\n'+take(visual_path,heading,lambda t,h=heading:section(t,h))
+    visual+='\n'+take(visual_path,'3.1 Tables',lambda t:'### 3.1 Tables\n'+t.split('### 3.1 Tables\n',1)[1].split('\n### 3.2 Processes',1)[0].rstrip()+'\n')
+    visual+='\n'+take(visual_path,'9. The scan test without renderer-specific proxies',lambda t:section(t,'9. The scan test').split('\n### 9.1',1)[0].rstrip()+'\n')
+    goal_rules={'review':sg+'\n'+umo+'\n'+visual}
     for goal,prefix,heading in [('assessment','NA-','Portable multi-lesson assessment preparation'),('assignment','NW-','Portable assignment support')]:
         path=BRIEFS+'notebook-'+goal+'-v1.md'
         goal_rules[goal]=take(path,'All substantive '+prefix+' rules',lambda t:rules(t,prefix))+'\n'+take(path,heading,lambda t:section(t,heading))
@@ -53,7 +66,7 @@ def build(root, out):
     (out/'notebook-package.schema.json').write_bytes(schema_raw)
     products={}
     for goal in goal_rules:
-        prompt=request.replace('{{GOAL_LABEL}}',goal)+f'''\n## Applicable canonical learning rules
+        prompt=request.replace('{{GOAL_LABEL}}',goal).replace('{{PROMPT_BUILD}}',PROMPT_BUILD)+f'''\n## Applicable canonical learning rules
 
 The following text is copied reproducibly from the canonical Markdown. Its learning methodology remains in force. The portable contract below explicitly replaces legacy transport field names; use only the exact portable schema for output. Local paths in the copied text are provenance, not files you need to open.
 
@@ -70,10 +83,10 @@ Return format=premed-os-notebook-package, version=2, instructionsVersion=noteboo
 '''
         name='copy-prompt-'+goal+'.md'; (out/name).write_text(prompt)
         products[name]={'sha256':sha(prompt.encode()),'bytes':len(prompt.encode())}
-    contract={'instructionsVersion':'notebook-workflows-draft-2','formatVersion':2,'delivery':'Exactly three prewritten static goal templates, derived from canonical Markdown during development. Goal selection retrieves the chosen template; placeholder insertion and student notes are local plain-text operations. No AI API generates or rewrites prompts. The student uses the resulting prompt in their preferred AI to generate notebook content.','templates':{g:'copy-prompt-'+g+'.md' for g in goal_rules},'placeholders':dict(zip(TOKENS,KEYS)),'replacement':'Single-pass literal token replacement using JSON.stringify(value); never rescan replacement values. All values string or null; classPreferences defaults to empty string.','identity':'Preview text, clipboard text and UTF-8 .md download bytes come from the same composed string. Do not prepend, append, regenerate or normalize one surface separately.','defaults':{**{t:None for t in TOKENS},'CLASS_PREFERENCES':''},'courseProfiles':'No inferred class presets. Use the actual class identity, explicit student preferences, and supplied source evidence. These class values are the complete class-specific input; the five manual course projects are not inspected by this builder.'}
+    contract={'instructionsVersion':'notebook-workflows-draft-2','formatVersion':2,'promptBuild':PROMPT_BUILD,'delivery':'Exactly three prewritten static goal templates, derived from canonical Markdown during development. Goal selection retrieves the chosen template; placeholder insertion and student notes are local plain-text operations. No AI API generates or rewrites prompts. The student uses the resulting prompt in their preferred AI to generate notebook content.','templates':{g:'copy-prompt-'+g+'.md' for g in goal_rules},'placeholders':dict(zip(TOKENS,KEYS)),'replacement':'Single-pass literal token replacement using JSON.stringify(value); never rescan replacement values. All values string or null; classPreferences defaults to empty string.','identity':'Preview text, clipboard text and UTF-8 .md download bytes come from the same composed string. Do not prepend, append, regenerate or normalize one surface separately.','defaults':{**{t:None for t in TOKENS},'CLASS_PREFERENCES':''},'courseProfiles':'No inferred class presets. Use the actual class identity, explicit student preferences, and supplied source evidence. These class values are the complete class-specific input; the five manual course projects are not inspected by this builder.'}
     (out/'prompt-composition.json').write_text(json.dumps(contract,indent=2)+'\n')
     revision=subprocess.check_output(['git','-C',str(root),'rev-parse','HEAD'],text=True).strip()
-    manifest={'instructionsVersion':'notebook-workflows-draft-2','canonicalHeadAtBuild':revision,'canonicalRootAtBuild':str(root),'sources':selections,'schema':{'path':schema_path,'sha256':sha(schema_raw)},'tooling':{str(p.relative_to(root)):sha(p.read_bytes()) for p in sorted((root/GEN/'portable-notebooks').glob('*.py'))},'outputs':products,'deliberateEdits':['Adds external transport, coverage ledger, source access and revision rules in canonical 20.','Adds portable extensions to 03/11 and assessment/assignment briefs.','Strengthens multi-lesson assessment scope and teaching in the canonical assessment brief.','Selects full shared rules, all runtime study-guide rules, all mastery Rules and all substantive goal rule bullets; excludes renderer/persistence/repair implementation paragraphs.','Legacy names retained verbatim as methodological provenance, explicitly mapped by canonical 20.','JSON Schema copied byte-for-byte from coordinator v2; no schema changes.','Class preferences supplied per request; no invented course rules.','Coordinator request template 21 reconciled into canonical JSON request envelope; final 11-token contract supersedes the earlier draft tokens.'],'qualityStatus':'Draft; structural checks and invented fixtures cannot establish learning quality or count as manual course trials.'}
+    manifest={'instructionsVersion':'notebook-workflows-draft-2','promptBuild':PROMPT_BUILD,'canonicalHeadAtBuild':revision,'canonicalRootAtBuild':str(root),'sources':selections,'schema':{'path':schema_path,'sha256':sha(schema_raw)},'supportingDocuments':{str(p.relative_to(root)):sha(p.read_bytes()) for p in sorted((root/GEN/'portable-notebooks').glob('*.md'))},'tooling':{str(p.relative_to(root)):sha(p.read_bytes()) for p in sorted((root/GEN/'portable-notebooks').glob('*.py'))},'outputs':products,'deliberateEdits':['Adds external transport, coverage ledger, source access and revision rules in canonical 20.','Adds portable extensions to 03/11 and assessment/assignment briefs.','Strengthens multi-lesson assessment scope and teaching in the canonical assessment brief.','Includes applicable baseline global learning/source-mode rules verbatim, full shared 19, all runtime study-guide rules plus full required structure, all mastery Rules, selected visual learning sections and all substantive assessment/assignment rule bullets. Excludes renderer/persistence/repair implementation paragraphs.','Legacy names retained verbatim as methodological provenance, explicitly mapped by canonical 20.','JSON Schema copied byte-for-byte from coordinator v2; no schema changes.','Class preferences supplied per request; no invented course rules.','Coordinator request template 21 reconciled into canonical JSON request envelope; final 11-token contract supersedes the earlier draft tokens.'],'qualityStatus':'Draft; structural checks and invented fixtures cannot establish learning quality or count as manual course trials.'}
     (out/'canonical-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     return manifest
 

@@ -80,7 +80,9 @@ sections may expand an idea named here, but must not repeat the same explanation
 
 **LEARNING OBJECTIVES** — when the professor supplied objectives, they are **preserved verbatim** and
 marked `provenance: 'source'`. Inferred objectives are permitted only when the source structure makes
-them unambiguous, are capped at 5, and are marked as inferred. **When neither applies, omit the
+them unambiguous and are marked as inferred. A brief guide-level orientation may list up to five
+representative inferred objectives; this display limit does not cap the separate complete requirements
+ledger or detailed Mastery Map and never removes a supplied official objective. **When neither applies, omit the
 section.** A guessed objective list is actively misleading — students treat objectives as a contract.
 
 **CORE CONCEPTS** — the ordering decision. Default to conceptual grouping (`G-STRUCT-3`); preserve
