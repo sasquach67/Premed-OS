@@ -81,3 +81,11 @@ packages and built-in generation remain separate, unchanged paths.
 Five real class review trials, one assessment, one assignment, and Andy's ratings are
 still pending. Invented fixtures and builds are not learning-quality acceptance,
 production readiness, or deployment approval.
+
+## Audited instruction beta
+
+The integrated branch includes all four instruction commits through original5469c8f,
+plus exact regenerated assets for visible build notebook-instructions-beta-1. The
+source manifest records the integrated canonical commit, and the shared app evidence
+folder contains audited-prompt-parity.json and audited-beta-tests.txt. After this
+asset refresh,43 focused tests and the full app/review builds passed.

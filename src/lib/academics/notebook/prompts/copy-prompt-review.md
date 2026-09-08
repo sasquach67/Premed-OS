@@ -1,6 +1,6 @@
 # Create my Premed OS notebook: review
 
-Prompt version: notebook-workflows-draft-2. This is a draft instruction workflow awaiting manual class trials.
+Prompt build: notebook-instructions-beta-1. Transport instructionsVersion: notebook-workflows-draft-2. This is a draft instruction workflow awaiting manual class trials.
 
 Create finished, readable learning content for my request, then preserve it in the exact portable JSON format. The content is the notebook, not instructions for a later generator. Ask for essential missing information only; continue independent supported work. The rules and format below are complete within this prompt.
 
@@ -31,6 +31,179 @@ Return a complete downloadable notebook .json file when possible. If this chat c
 ## Applicable canonical learning rules
 
 The following text is copied reproducibly from the canonical Markdown. Its learning methodology remains in force. The portable contract below explicitly replaces legacy transport field names; use only the exact portable schema for output. Local paths in the copied text are provenance, not files you need to open.
+
+## 1.1 Purpose (invariant)
+
+| id | Rule |
+|---|---|
+| `G-PURPOSE-1` | Optimize for comprehension, retention, and retrieval — **not** summarization. An artifact that faithfully compresses the source but does not improve learning has failed. |
+| `G-PURPOSE-2` | The student is a pre-med studying for real coursework. Assume motivation, assume limited time, assume the material will be tested. |
+
+## 1.2 Factual fidelity (invariant — the load-bearing block)
+
+| id | Rule |
+|---|---|
+| `G-FID-1` | Preserve factual fidelity to the source material. |
+| `G-FID-2` | Under `SOURCE_ONLY`, introduce **no** fact not supported by the supplied sources. |
+| `G-FID-3` | Never fabricate a source reference, slide number, page, or figure. |
+| `G-FID-4` | **Do not silently resolve contradictions in the source.** If two sources disagree, surface both and mark the disagreement. |
+| `G-FID-5` | **Surface ambiguity when the source itself is unclear.** Do not smooth it into false confidence. |
+| `G-FID-6` | **If material is incomplete, say so.** Emit an explicit gap marker. Never invent to fill it. |
+| `G-FID-7` | Every claim must retain its source or generated status using the artifact schema. Where the schema exposes provenance, every claim carries source, clarification, or background; never omit it. For objective/list schemas without claim-level provenance fields, retain the required exact source IDs and explicitly label generated objectives and hypothetical practice in their existing text fields. Do not invent extra fields or objects inside string arrays. |
+
+> **On `G-FID-4` and `G-FID-5`:** these are the two rules most likely to be quietly dropped, because
+> a clean-looking artifact scores better on first impression than an honest one. A study guide that
+> says *"Lecture 4 gives the Km as 5 mM; the assigned reading says 2 mM — check with your
+> instructor"* is doing its job. One that silently picks 5 mM is not.
+
+## 1.3 Terminology (invariant)
+
+| id | Rule |
+|---|---|
+| `G-TERM-1` | Preserve the instructor's terminology when it is meaningful — if the lecture says "sodium-potassium ATPase," do not silently switch to "Na⁺/K⁺ pump." |
+| `G-TERM-2` | When a synonym genuinely aids understanding, give it **alongside** the instructor's term, never instead of it. |
+| `G-TERM-3` | Preserve important qualifiers. "Usually," "in most tissues," "at physiological pH" change meaning and must not be trimmed for concision. |
+
+## 1.4 Structure and relationships (tunable unless noted)
+
+| id | Rule | Kind |
+|---|---|---|
+| `G-STRUCT-1` | Explain **relationships** between concepts, not isolated facts | invariant |
+| `G-STRUCT-2` | Prefer meaningful chunking over arbitrary fragmentation | invariant |
+| `G-STRUCT-3` | Reorganize by concept; do not preserve source order merely because it existed | tunable |
+| `G-STRUCT-4` | **Do** preserve sequence when the sequence is itself pedagogically meaningful — a pathway, a developmental series, an action potential | invariant |
+| `G-STRUCT-5` | Distinguish conceptual understanding from pure memorization | invariant |
+
+## 1.5 Economy (tunable)
+
+| id | Rule |
+|---|---|
+| `G-ECON-1` | Reduce unnecessary repetition. Restating a concept in a second section requires a distinct learning purpose. |
+| `G-ECON-2` | Avoid decorative verbosity. No throat-clearing, no restating the prompt, no "in this section we will." |
+| `G-ECON-3` | **Do not inflate output to appear comprehensive.** Length is not evidence of quality and will not be treated as such. |
+| `G-ECON-4` | Avoid oversimplifying to the point that nuance is lost. Economy is not the same as thinness. |
+
+> `G-ECON-3` and `G-ECON-4` pull against each other on purpose. The resolution is that **coverage is
+> set by `coverage_depth`** (`05` §2), and within that budget the artifact should be as short as it
+> can be while still teaching. Neither rule licenses the other's failure.
+
+## 1.6 Emphasis (invariant)
+
+| id | Rule |
+|---|---|
+| `G-EMPH-1` | Preserve instructor emphasis. Explicit signals — "this will be on the exam," bolding, repetition across lectures, a stated objective — are the strongest available evidence of importance. |
+| `G-EMPH-2` | **Do not assume all details deserve equal emphasis.** Flat treatment is a failure mode, not neutrality. |
+| `G-EMPH-3` | Do not emphasize excessively. See §1.8 for the hard budget. |
+
+## 1.7 The high-yield defensibility test (invariant) — *added; you asked for a defensible basis*
+
+You wrote: *differentiate "high-yield" only when there is a defensible basis.* Without a definition,
+the model guesses and everything becomes high-yield. **A claim may be marked high-yield only on one
+of these five bases, and the basis must be recorded on the block:**
+
+| Basis | Evidence in source |
+|---|---|
+| `instructor-emphasis` | Explicit signal — "know this," "exam," bold/starred, repeated across slides |
+| `stated-objective` | Appears in the professor's own learning objectives |
+| `cross-source-repetition` | Independently present in ≥2 supplied sources |
+| `structural-load` | Other concepts in this topic depend on it — a prerequisite in the relationship graph |
+| `assessment-form` | The source itself presents it in tested form — a practice question, worked problem, or review item |
+
+**Not admissible:** the model's general sense that pre-meds find it important; that it is a common
+MCAT topic; that it sounds fundamental; that it appeared in the source at all.
+
+**Hard budget: at most 20% of a topic's concepts may be marked high-yield.** Over budget, the
+generator must rank by basis strength (in the order above) and cut. If nothing meets a basis, the
+high-yield section is **empty** — an empty section is a valid and honest outcome.
+
+## 1.8 Emphasis budget (invariant) — *added; makes "do not highlight everything" checkable*
+
+| id | Rule |
+|---|---|
+| `G-EMPH-4` | **≤ 8% of body words** may carry semantic emphasis, per section. |
+| `G-EMPH-5` | **≤ 3 callouts per section**, and never two adjacent callouts of the same type. |
+| `G-EMPH-6` | A term is emphasized on **first meaningful occurrence only** within a section. |
+
+All three are deterministic and enforced in code (`08` §2.1), not left to model judgment.
+
+## 2.2 `SOURCE_PLUS_CLARIFICATION`
+
+**Source content, plus explanation that makes the source's own claims comprehensible.**
+
+Permitted: defining a term the source uses but does not define · restating a mechanism in plainer
+language · adding a connective sentence that makes an implicit relationship explicit · an analogy
+that illuminates a source claim · naming a prerequisite the source assumes.
+
+**Forbidden:** any *new* fact — a value, structure, step, exception, or entity not in the source.
+The test is: **does this add information, or make existing information easier to grasp?** Only the
+second is clarification.
+
+Clarification blocks carry `provenance: 'clarification'` and no `SourceRef` (they are not source
+claims), but must name the source claim they clarify via `clarifies: blockId`.
+
+**This is the default mode.** It matches how a good TA explains a lecture.
+
+## 2.3 `SOURCE_PLUS_BACKGROUND`
+
+**Source content, clarification, plus genuinely external knowledge.**
+
+Permitted: standard background the course assumes · a clinical correlation the source omits · a
+common-confusion warning drawn from general knowledge of the subject · connecting the topic to
+material from a different course.
+
+**Constraints (invariant even in this mode):**
+
+- `G-FID-1` still holds — **background may never contradict the source.** Where it appears to, that
+  is a contradiction to surface (`G-FID-4`), not to resolve.
+- Background carries `provenance: 'background'` and **no `SourceRef`** — fabricating one is
+  `G-FID-3`.
+- Background may **never** be marked high-yield. High-yield is a claim about *this course's*
+  assessment, and external knowledge cannot support it (§1.7).
+- Background is capped at **25% of blocks** in a study guide. Past that it is a textbook, not a study
+  guide for this lecture.
+
+## 2.6 Source primacy (invariant) — *added Aug 2026, Andy's question*
+
+The modes above say what knowledge *may* enter. This section says what is **primary** when more than
+one kind is present. Without it, `SOURCE_PLUS_BACKGROUND` drifts into a textbook chapter with the
+student's lecture as a footnote — which is the opposite of the product.
+
+| id | Rule |
+|---|---|
+| `G-PRIM-1` | **The student's own materials are the spine of every artifact.** Background and clarification are subordinate to them in all three modes, including `SOURCE_PLUS_BACKGROUND`. |
+| `G-PRIM-2` | A `background` block may **never lead** a section. It attaches to a source claim via `elaborates: blockId` and is rendered after it. Background with nothing to attach to is out of scope for this topic and is dropped. |
+| `G-PRIM-3` | The **structure** of the artifact — which concepts exist, how they are grouped, what is high-yield — derives from the source alone. Background may add depth to a concept; it may never introduce one. |
+| `G-PRIM-4` | Where source and background disagree, this is a `contradiction` (`G-FID-4`), and **the source's version is stated first**. |
+| `G-PRIM-5` | Background is capped at **25% of blocks** (§2.3) and is excluded from the high-yield budget entirely. |
+
+**Deterministic checks:** every `background` block has a resolvable `elaborates` target · no section's
+first block is `background` · background block share ≤ 25% · no concept exists whose only support is
+background.
+
+## 3.2 State C is not an error — the rule that matters most
+
+A topic with two slides of content yields a short guide. **That is the correct output.** It is what
+`G-ECON-3` (do not inflate to appear comprehensive) and `SG-8` require, and the temptation to treat
+it as failure is exactly the pressure that produces padded artifacts.
+
+| id | Rule |
+|---|---|
+| `G-SUF-1` | Thin source produces a thin artifact. Never an error, never padding, never background substitution. |
+| `G-SUF-2` | The artifact **discloses its own scope** — *"Built from 2 files · 6 sections of source material"* — so thinness reads as honest coverage rather than a broken feature. |
+| `G-SUF-3` | Where the source is thin **because it is incomplete**, emit a `gap` block (`03` §5). Thin ≠ incomplete; only mark a gap when the source itself points at missing content. |
+| `G-SUF-4` | Thin source **never** relaxes the high-yield defensibility test (§1.7). A four-concept topic with no emphasis signals has an empty high-yield section. |
+
+**Mode interaction — worth noting because it self-corrects.** The background cap is 25% of *blocks*,
+not an absolute count. A topic yielding 4 source blocks allows 1 background block. So under
+`SOURCE_PLUS_BACKGROUND`, thin source automatically limits background rather than inviting the model
+to fill the space. No extra rule needed.
+
+| Behavior | Rule |
+|---|---|
+| **Agreement across sources** | ≥2 independent sources supporting a claim is `cross-source-repetition`, one of the five admissible high-yield bases (§1.7) |
+| **Disagreement across sources** | `G-FID-4`. Emit a `contradiction` block citing both. Never resolve, never average, never prefer the more recent file |
+| **Coverage in one source, silence in another** | Not a contradiction. Not remarked on |
+| **The professor's framing wins on terminology** | `G-TERM-1`. Where a `sourceType: 'course'` file and a student note use different terms, the course file's term is primary |
 
 # Study source priority and formatting
 
@@ -87,6 +260,66 @@ document by `src/lib/generation/artifacts/studyGuide.v1.ts`.
 | `SG-SECTIONS` | Conditional sections are omitted entirely when the source does not support them. An empty section rendered as a heading with nothing under it is worse than no section. | invariant |
 | `SG-PRACTICE-EXAMPLES` | When supplied questions instantiate a concept, use their source-supported scenario, representation, or reasoning move as an explanatory example in the relevant concept, process, or relationship section. Explain what the example teaches without copying its stem or answer choices and without turning the guide into a question bank. | invariant |
 
+## 2. Required structure
+
+The guide is a sequence of **sections**, each holding **content blocks** (`07` §2). The sections
+below are the default skeleton. Sections marked *conditional* are **omitted entirely** when the
+source does not support them — an empty section rendered as a heading with nothing under it is worse
+than no section.
+
+| # | Section | Required? | Purpose |
+|---|---|---|---|
+| 1 | **TITLE** | always | One concise, content-specific label of two to six words; no lecture number, file name, or generated/transcript/script/study guide wording |
+| 2 | **AT A GLANCE** | always | The former Lecture Brief role inside this same document: a concise connected orientation, strongest instructor emphasis, essential vocabulary in context, and highest-risk distinction. It points into the detailed guide without replacing or duplicating it. |
+| 3 | **LEARNING OBJECTIVES** | conditional | Preserved verbatim when the professor supplied them; inferred only when clearly supported |
+| 4 | **CORE CONCEPTS** | always | Organized by concept, not slide order |
+| 5 | **MECHANISMS / PROCESSES** | conditional | Causal or sequential processes, step by step, with *why* |
+| 6 | **RELATIONSHIPS** | conditional | Explicit connections: cause/effect, contrast, prerequisite, feedback, hierarchy |
+| 7 | **HIGH-YIELD DETAILS** | conditional | Only what passes the §1.7 defensibility test |
+| 8 | **COMPARISONS** | conditional | Comparison tables where ≥2 concepts are genuinely confusable |
+| 9 | **COMMON CONFUSIONS** | conditional | Plausible confusion points, with the distinction made explicit |
+| 10 | **CLINICAL / REAL-WORLD** | conditional | Only where the source supports it or the mode permits |
+| 11 | **MUST UNDERSTAND** | always | Concepts requiring comprehension |
+| 12 | **MUST MEMORIZE** | always | Facts, terms, formulas, pathways, values requiring direct recall |
+| 13 | **ACTIVE RECALL** | always | Concise self-test prompts on the most important concepts |
+| 14 | **FINAL SYNTHESIS** | always | Compact integrated overview |
+
+### 2.1 Notes on specific sections
+
+**AT A GLANCE** — the first reading depth of the same Study Guide, not a separate Lecture Brief.
+It should orient a student before the detail by answering: *what problem does this topic solve, what
+are its major parts, how do they relate, what did the instructor emphasize, which terms anchor the
+map, and what distinction is most likely to cause an error?* Keep it compact and connected. Later
+sections may expand an idea named here, but must not repeat the same explanation or list.
+
+**LEARNING OBJECTIVES** — when the professor supplied objectives, they are **preserved verbatim** and
+marked `provenance: 'source'`. Inferred objectives are permitted only when the source structure makes
+them unambiguous and are marked as inferred. A brief guide-level orientation may list up to five
+representative inferred objectives; this display limit does not cap the separate complete requirements
+ledger or detailed Mastery Map and never removes a supplied official objective. **When neither applies, omit the
+section.** A guessed objective list is actively misleading — students treat objectives as a contract.
+
+**CORE CONCEPTS** — the ordering decision. Default to conceptual grouping (`G-STRUCT-3`); preserve
+source order only where sequence is pedagogically load-bearing (`G-STRUCT-4`). When the generator
+reorders, that is not surfaced to the student as a note — but the guide must remain navigable by
+someone holding the original slides, so concept blocks carry their `SourceRef` and the renderer can
+show slide provenance.
+
+**MUST UNDERSTAND vs MUST MEMORIZE** — this split is one of the most useful things the artifact does
+and must not collapse into two lists of the same items. Test: *could a student who has memorized
+this item still fail to use it?* Yes → understand. *Could a student who understands the concept
+still not produce this from memory?* Yes → memorize. Items may legitimately appear in both, but if
+more than ~25% do, the split is not being made.
+
+**ACTIVE RECALL** — questions test the concepts the guide itself marked important. A recall question
+about something the guide did not treat as significant is a defect. Target 5–12 depending on
+`coverage_depth`. Every question's answer must exist in the guide.
+
+**FINAL SYNTHESIS** — not a repeat of AT A GLANCE. At a Glance frames the topic before the detail;
+Final Synthesis integrates *after* it, and should connect concepts that were introduced separately.
+
+---
+
 ## Portable review notebook
 
 External notebooks compose this guide's learning rules with the shared source contract and `20-external-notebook-workflow.md`. The portable contract supplies a four-status objective ledger, precise excerpt references, separate practice/answers and class preferences. Use its explicit transport mapping instead of the built-in schema names in this document. The full guide still begins At a glance, teaches supported concepts in connected detail, distinguishes understanding from memorization, and ends with synthesis. A structurally valid gap-only export is not a useful completed review trial.
@@ -119,6 +352,136 @@ The Unit Mastery Outline is a source-grounded map for one unit. It preserves sup
 
 The external notebook workflow in `20-external-notebook-workflow.md` adds a requirements ledger separate from the Mastery Map. Preserve every supplied official objective verbatim in that ledger, including partial, missing and explicitly excluded objectives. Populate a mastery objective only for supported understanding; link it to its ledger requirement. A fully unsupported objective stays visible in coverage without invented understanding or practice. Ordinary depth standards above remain in force when evidence supports them. This proposed portable representation does not change built-in runtime validation by itself.
 
+
+## 1. The division of responsibility
+
+Your correction, which is the right one:
+
+> **The model chooses what visual representation best communicates the information.
+> premedOS determines exactly how that representation looks.**
+
+| Model decides | premedOS decides |
+|---|---|
+| This is a comparison → `comparison_table` | Column widths, borders, zebra striping, header weight |
+| This is a pathway → `flow_diagram` | Node shape, line thickness, arrowheads, spacing, colour |
+| "nucleolus" is a `key_term` | Whether key terms are bold, tinted, underlined, or chipped |
+| This warrants a `common_confusion` callout | Icon, border, background, placement |
+| This process has 4 nodes and 3 directed edges | Layout algorithm, orientation, responsive collapse |
+
+**The model never emits styling.** No colours, no font sizes, no CSS, no markdown emphasis as
+styling, and — critically — **no ASCII diagrams**. It emits semantic type and structure.
+
+**The purpose test, applied to every visual:** does this *reduce cognitive load*, *clarify a
+relationship*, *improve scanning*, or *strengthen retrieval*? A visual that does none of these is
+decoration and must not be emitted.
+
+---
+
+## 2. The representation decision
+
+For every major concept the generator makes an explicit choice from this set. **Bullets are not the
+default.**
+
+| Representation | Use when |
+|---|---|
+| `prose` | A single idea needing explanation, not decomposition |
+| `bullets` | A genuinely unordered set of peer items |
+| `numbered_steps` | Ordered steps where order matters but there are no branches |
+| `comparison_table` | ≥2 entities compared across ≥2 shared dimensions |
+| `flow_diagram` | A pathway or process with direction, and possibly branching |
+| `hierarchy_tree` | Containment or classification — taxonomy, cell lineages, system organization |
+| `labeled_diagram` | Spatial or structural understanding is the point |
+| `cycle_diagram` | A process that returns to its start |
+| `timeline` | Events or phases along time |
+| `cause_effect_chain` | A causal chain where each link drives the next |
+| `formula_block` | A mathematical or chemical relationship |
+| `concept_map` | Several concepts with multiple non-hierarchical relationships |
+| `process_map` | A process with parallel tracks or actors |
+
+### 2.1 Structure-matching rules
+
+| Signal in the material | Correct representation | Common wrong choice |
+|---|---|---|
+| "First… then… finally" | `numbered_steps` or `flow_diagram` | bullets |
+| "A differs from B in…" | `comparison_table` | prose paragraph |
+| "X activates Y, which inhibits Z" | `flow_diagram` with typed edges | bullets |
+| "Type I, Type II, Type III under Class A" | `hierarchy_tree` | nested bullets |
+| "Returns to the starting compound" | `cycle_diagram` | `numbered_steps` |
+| "Occurs during phase 3 of 5" | `timeline` | prose |
+| Anatomical parts and their positions | `labeled_diagram` | bullets |
+
+**A process rendered as bullets, a comparison rendered as prose, or a hierarchy rendered as nested
+bullets are all defects**, checkable in the quality pass.
+
+---
+
+## 7. Density and whitespace
+
+**Comprehensive does not mean visually dense.**
+
+Preferred rhythm:
+
+```
+short explanation → visual → supporting detail
+```
+
+not:
+
+```
+paragraph → paragraph → paragraph
+```
+
+| Rule | Detail | Check |
+|---|---|---|
+| `VIS-1` | ≤ 2 consecutive prose blocks in a section | deterministic |
+| `VIS-2` | A section > 8 blocks splits into subsections | deterministic |
+| `VIS-3` | Prose blocks ≤ ~120 words; longer must decompose | deterministic |
+| `VIS-4` | Bullet nesting ≤ 2 levels (`SG-6`) | deterministic |
+| `VIS-5` | ≥ 1 non-prose representation per major section, where the material supports one | model-judged |
+
+---
+
+## 8. The consistency rule (invariant)
+
+**The same semantic type is represented the same way throughout the artifact.**
+
+- Key term → same emphasis type, every time
+- Memory aid → always `memory_tip`, never sometimes prose
+- Process → same representation for processes of the same shape
+- Comparison → always a `comparison_table`, never sometimes a bulleted contrast
+- High-yield exception → always `warning_exception`
+
+**Why this is invariant rather than stylistic:** predictability is a learning affordance. A student
+who has read two sections of a premedOS guide should know how to read the third without re-deriving
+its conventions. Attention spent decoding the document is attention not spent on the biology.
+
+Deterministic check: within one artifact, the same `concept.kind` must map to the same block type.
+Two comparisons rendered differently in one guide is a defect.
+
+---
+
+### 3.1 Tables
+
+Use when students compare multiple entities across **shared dimensions**.
+
+```
+Organelle       | Structure          | Function
+Hormone         | Source | Target    | Effect
+Transport type  | Energy | Direction | Example
+```
+
+**Do not convert arbitrary lists into tables for appearance.** A table needs ≥2 rows and ≥2 columns
+of genuinely varying content. A two-column table where one column is a term and the other a
+definition is a definition list, not a comparison.
+
+## 9. The scan test
+
+Before finalizing, the guide is checked against:
+
+> **If a student spent 30 seconds scanning this page, could they identify the major topic, the
+> important terminology, the major relationships, the major processes, and the most important
+> distinctions?**
+
 # External AI notebook workflow — draft 2
 
 This is the canonical shared Markdown contract for portable notebooks. The copyable prompts are generated from this file, the shared source contract, and the relevant existing goal contracts. They contain the rules themselves so an external AI does not need local file access. This is a deliberate proposed extension; manual trials have not validated it.
@@ -148,13 +511,26 @@ Requirement evidence may establish the requirement's wording without supporting 
 
 Explain and connect the source-supported concepts before packaging. Teach unfamiliar terms in context. Preserve mechanisms, qualifications, meaningful disagreements and instructor examples. A list of topics or coverage rows cannot replace the substantive notebook. Use prose for reasoning, ordered steps for sequences and tables for real comparisons. Keep source-derived assertions, clarification, explicitly permitted outside background, generated hypothetical practice and student work distinguishable. Each source-based claim or reasoning unit must point to the exact supporting excerpt(s); split a block when different evidence supports different contributions. A valid citation shape does not prove the evidence entails the claim.
 
+## Applying the baseline methodology in this external workflow
+
+The included baseline global rules define learning quality. The shared source contract and the selected goal's rules determine the actual scope. The general assumption that material may be tested is a reason to make retrieval useful, not evidence that a concept will appear on this assessment. A preference, learning prerequisite or repeated passage cannot establish an exam prediction. When explaining a priority, name its actual source-backed basis in text; preserve explicit instructor emphasis separately. If using a high-yield label, retain the baseline defensibility test and 20% concept cap. Omit an unsupported conditional heading rather than rendering an empty section.
+
+The default is SOURCE_PLUS_CLARIFICATION: clarify supplied claims without introducing unsupported values, entities, mechanism steps or exceptions. The optional background rules apply only after the student's explicit permission. Keep external background in separately labeled background blocks after the specific source-backed explanation it supplements; it may not create the notebook's topic structure, lead a section, or exceed 25% of study-guide blocks. Identify its actual origin in text and do not attach course excerpts that falsely authenticate it. A short but complete source is not automatically an evidence gap; name a missing part only when the source or requested requirement establishes it. Evidence-limited depth is not permission to pad.
+
+For review, the full guide structure and the complete Mastery Map serve different purposes. Keep the guide's At a glance, substantive teaching, understanding/memorization distinction, active recall and final synthesis when usable evidence supports them. The guide-level limit on representative inferred objectives does not limit the ledger or Mastery Map. Active recall tests concepts actually taught; every answer must be present in the guide. The baseline 5–12 guide recall prompts and block-count ranges are tunable targets, subordinate to evidence and the named scope; neither padding thin material nor shortening rich material is acceptable. Mastery depth floors remain in force as stated in the mastery rules. Reuse a practice block through its ID when both the guide and its matching mastery objective need that application; do not duplicate the same question as a separate invented item.
+
+The visual guidance applies to the review guide's learning structure. It does not impose guide sections, diagram quotas or long explanations on a short assignment hint. Use comparable dimensions for tables; preserve mechanisms and typed relationships when translating a visual representation into available text blocks. Keep typography and layout with the app. Baseline statements that a native renderer or server enforces a check describe that earlier pipeline; they do not prove an external chat or this importer executed it. The check receipt must still say what actually ran.
+
 ## Portable representation
 
 The exact JSON Schema in this prompt governs transport. Existing goal documents may name built-in fields such as SourceRef/sourceRef, sourceChunkIds, conceptLabel, callout/numbered blocks, examPractice, TITLE metadata, or standards. Those describe the original renderer. For this external workflow, preserve their learning function using the mapping below; do not emit the built-in field names or mix formats:
 
 - SourceRef/sourceChunkIds → sourceIds plus excerptIds on the applicable block, objective or requirement. Each excerptId resolves to an excerpt owned by one of those sourceIds; the sourceIds set equals the owners of the attached excerptIds. Excerpt IDs are unique across the package.
+- clarifies/elaborates → name the specific preceding idea in the block text. Clarification carries the sourceIds/excerptIds for the supplied premise it explains; this replaces the older instruction to omit SourceRef. Background has no fabricated course evidence; keep its sourceIds/excerptIds empty when its origin is outside the supplied inventory.
+- highYield/basis/emphasis/owner metadata → no extra JSON fields. State any defensible emphasis and its basis in supported text, keep generated content labeled by the available provenance values, and let the app style the content.
 - TITLE → entry.title, a concise topic-specific title; chronology and class labels are app metadata.
 - Prose/callout → paragraph. Numbered sequence → steps. Comparison → table. Gap → gap with a precise nextStep. Preserve unsupported visual details as limits; the package does not include source images or binaries.
+- Native diagrams, timelines, hierarchies, formula blocks and contradiction blocks → use supported paragraphs, steps and meaningful tables. Describe direction, branches, inhibition, feedback, membership or timing explicitly; a relationship table may name the origin, relation and target. Do not flatten a cycle into a sequence without stating the return, invent spatial details, output ASCII art or add unsupported diagram fields. State conflicting claims in separately cited adjacent blocks with a visible disagreement explanation. A required visual that cannot be faithfully conveyed in text remains an explicit representation limit.
 - Practice and its worked answer → one practice block with separate prompt, answer and rationale. Include all scenario facts in prompt, label hypothetical inputs, and cite solution principles. Do not leak the answer into the question. The app can reveal answer, rationale and answer-bearing evidence after an attempt.
 - Review guide → sections with purpose=study-guide, plus separate practice sections when useful. Mastery standards → objectives linked to requirementId; their practiceBlockIds point to practice blocks in the same entry. Preserve the ordinary evidence-supported depth requirements from the mastery contract, and explain real limits rather than padding or abbreviating rich material.
 - Assessment teaching → preparation sections and separate practice sections, with the scope in requirements. Integrate across lessons without repeating each source as a separate summary.
@@ -168,11 +544,11 @@ For a new entry, use a stable descriptive external id, revision=1, baseRevision=
 
 Use evidenceLimit=null for a fully supported objective; the portable schema requires the field even though the built-in rules say to omit an absent limit. If evidence is limited, retain the substantive minimum and specific explanation from the mastery rules. For derived study objectives, preserve the "Study objective:" prefix and selected-material authority.
 
-IDs must be unique within their kind across a package; every referenced source/excerpt must exist. requirement.sectionIds and objective.practiceBlockIds refer only to the same entry. objective.requirementId refers to its own entry's ledger. Every table row matches the column count. Every used source has usable inspected evidence and supporting excerpts, and is referenced by content or the ledger; every referenced source is marked used. Referencing only scope evidence does not make a requirement supported. Supported requirements link to sections that demonstrably address them. Official objective titles retain the exact wording of their linked objective requirement. A mastery objective links only to a supported or partial objective requirement; partial support needs a specific evidenceLimit. Each practice block linked by an objective uses evidence contained in that objective. Review objective cues and teaching points must all be substantiated by the attached excerpts, not merely the title. Missing/partial/out-of-scope requirements carry a concrete explanation and a nonempty nextStep. For out-of-scope requirements, state the explicit scope rationale in basis and use nextStep for the boundary-aware follow-up, such as revisiting only if the student changes the requested stage. Keep source-based claims out of gap-only blocks without evidence.
+IDs must be unique within their kind across a package; every referenced source/excerpt must exist. requirement.sectionIds and objective.practiceBlockIds refer only to the same entry. objective.requirementId refers to its own entry's ledger. Every table row matches the column count. Every used source has usable inspected evidence and supporting excerpts, and is referenced by content or the ledger; every referenced source is marked used. Referencing only scope evidence does not make a requirement supported. Supported and partial requirements need exact excerpt evidence and linked sections; supported means those sections demonstrably address the requirement. If a supported requirement comes only from the student’s explicit request, inventory that pasted request with an exact excerpt rather than inventing an official scope source. A non-gap clarification block must retain excerpts for the premise it explains. Sources marked read or partial must describe inspected portions even when unused, and every non-read source must describe its access limitation. Official objective titles retain the exact wording of their linked objective requirement. A mastery objective links only to a supported or partial objective requirement; partial support needs a specific evidenceLimit. Each practice block linked by an objective uses evidence contained in that objective. Review objective cues and teaching points must all be substantiated by the attached excerpts, not merely the title. Missing/partial/out-of-scope requirements carry a concrete explanation and a nonempty nextStep. For out-of-scope requirements, state the explicit scope rationale in basis and use nextStep for the boundary-aware follow-up, such as revisiting only if the student changes the requested stage. Keep source-based claims out of gap-only blocks without evidence.
 
 Check source access, exact requirement coverage, academic support, question-answer agreement and JSON structure separately. A model's self-review is not independent verification. If tools are available, parse and validate the file against the schema and check all cross-references; otherwise disclose which checks were not executed. Never claim the app imported it or the student mastered it.
 
-Return a complete downloadable .json file when the chat can create files. Otherwise return one complete JSON code block; the student can paste it into the app or save it as a UTF-8 .json file with no surrounding prose. Put a short honest check/limit receipt outside the JSON. If output limits would truncate a notebook, ask to split the scope into complete manageable entries/packages; preserve all supplied requirements in the overall coverage plan and explicitly track which later package will address deferred scope. Never silently shorten rich content to meet a file-size target or call an unfinished batch complete.
+Keep each complete UTF-8 JSON package at or below the current importer limit of 8 MiB (8,388,608 bytes). Split oversized scope into complete packages without truncating explanations or hiding deferred requirements. Return a complete downloadable .json file when the chat can create files. Otherwise return one complete JSON code block; the student can paste it into the app or save it as a UTF-8 .json file with no surrounding prose. Put a short honest check/limit receipt outside the JSON. If output limits would truncate a notebook, ask to split the scope into complete manageable entries/packages; preserve all supplied requirements in the overall coverage plan and explicitly track which later package will address deferred scope. Never silently shorten rich content to meet a file-size target or call an unfinished batch complete.
 
 ## Exact JSON Schema
 
