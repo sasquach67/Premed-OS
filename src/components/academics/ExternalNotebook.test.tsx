@@ -94,8 +94,15 @@ it('distinguishes minimum materials, optional lecture sources, partial exam scop
   expect(container.textContent).toContain('"Create the JSON" when you are happy with that version; equivalent clear approval works too.')
   expect(container.textContent).toContain('Done uploading ends intake; it is not approval to make JSON.')
   expect(container.textContent).toContain('Premed OS cannot check what happened in your AI.')
+  expect(container.textContent).toContain('download every referenced original PNG/JPEG alongside the JSON, keeping the matching filenames')
+  expect(container.textContent).toContain('Filenames in JSON do not contain the image files')
+  expect(container.textContent).toContain('A text-only notebook needs only its JSON')
+  expect(container.textContent).toContain('ask for the downloadable original again or recover the exact original file')
+  expect(container.textContent).toContain('Do not substitute a different image under the same ID')
+  expect(container.textContent).toContain('record it as unavailable with an actionable next step and revise dependent content')
+  expect(container.textContent).toContain('Do you have the notebook JSON and its referenced images?')
   expect(nextButton().disabled).toBe(true)
-  await click('I have my JSON'); await click('Next')
+  await click('I have my notebook files'); await click('Next')
   expect(container.textContent).toContain('Working checkpoint files are not final notebooks')
   expect(imported).not.toHaveBeenCalled()
 })
@@ -204,7 +211,7 @@ it('keeps a requested download on the copy step until the student acknowledges h
 it('keeps inputs on Back and invalidates copy and JSON readiness when the goal changes', async () => {
   await renderWorkflow(); await choose('assessment'); await fill('Additional instructions for your AI', 'Keep my exact request.')
   await click('Next'); await openFallback(); await click('I copied it manually'); await click('Next')
-  await click('I have my JSON'); await click('Next'); await fill('Paste complete JSON', raw)
+  await click('I have my notebook files'); await click('Next'); await fill('Paste complete JSON', raw)
   await click('Back to AI steps'); await click('Back to prompt')
   expect(nextButton().disabled).toBe(false)
   await click('Back to goal')
@@ -217,7 +224,7 @@ it('keeps inputs on Back and invalidates copy and JSON readiness when the goal c
 })
 it('restores the valid import stage and raw JSON in the same class, revalidates before save, and clears the draft after save', async () => {
   await renderWorkflow(); await choose('review'); await click('Next'); await openFallback(); await click('I copied it manually'); await click('Next')
-  await click('I have my JSON'); await click('Next'); await fill('Paste complete JSON', raw)
+  await click('I have my notebook files'); await click('Next'); await fill('Paste complete JSON', raw)
   await act(async () => root.unmount()); root = createRoot(container); await renderWorkflow()
   expect(container.querySelector('h1')?.textContent).toBe('Import your notebook')
   expect(container.querySelector<HTMLTextAreaElement>('.en-json')!.value).toBe(raw)
@@ -335,4 +342,23 @@ it('has no prominent Coverage mode in the saved notebook navigation', async () =
   const labels = [...container.querySelectorAll('button')].map(button => button.textContent?.trim())
   expect(labels).toContain('Study guide'); expect(labels).toContain('Practice'); expect(labels).toContain('Sources')
   expect(labels).not.toContain('Coverage'); expect(container.querySelector<HTMLDetailsElement>('.nbr-coverage-disclosure')!.open).toBe(false)
+})
+
+it('renders practice-prompt data as a safe table while retaining exact JSON, edit text and Reveal gating', async () => {
+  const pkg = (await prepareNotebook(raw)).package, practice = pkg.entries[0].sections.flatMap(s => s.blocks).find(b => b.type === 'practice')!
+  if (practice.type !== 'practice') throw new Error('Expected practice fixture')
+  const prompt = 'Represent an endpoint and a time course\n\n| Time, minutes | Lotion A | Lotion B |\n|---|---:|---:|\n| 0 | 0 | 0 |\n| 10 | 3 | 1 |\n| 20 | 6 | 1 |\n\nNo variability measurements or p-values are provided. <img src=x onerror=alert(1)>'
+  practice.prompt = prompt; practice.answer = 'Answer only behind Reveal.'
+  const prepared = await prepareNotebook(JSON.stringify(pkg)); let id = ''
+  useStore.getState().update(state => { [id] = importNotebook(state.academics.classCenter, course, prepared) })
+  const lecture = useStore.getState().academics.classCenter.lectures.find(l => l.id === id)!
+  await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode={course.code} />)); await click('Practice')
+  const table = container.querySelector('.nbr-prompt-table table')!
+  expect([...table.querySelectorAll('th')].map(e => e.textContent)).toEqual(['Time, minutes', 'Lotion A', 'Lotion B'])
+  expect(table.querySelectorAll('tbody tr')).toHaveLength(3)
+  expect(table.closest('.en-answer')).toBeNull(); expect(table.closest('.en-block-practice')?.querySelector<HTMLDetailsElement>('.en-answer')?.open).toBe(false)
+  expect(container.querySelector('img[src="x"]')).toBeNull()
+  expect(exportNotebook(lecture, 'original')).toBe(prepared.raw)
+  expect(JSON.parse(exportNotebook(lecture, 'current')).entries[0].sections.flatMap((s: { blocks: { id: string; prompt?: string }[] }) => s.blocks).find((b: { id: string }) => b.id === practice.id).prompt).toBe(prompt)
+  await click('Edit entry'); expect([...container.querySelectorAll('textarea')].some(e => e.value === prompt)).toBe(true)
 })

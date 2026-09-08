@@ -36,7 +36,7 @@ async function check(text: string) { const box = [...container.querySelectorAll(
 async function toImport() {
   await click('Update this notebook'); await click('Next'); await click('Copy update prompt')
   expect(button('Next').disabled).toBe(true)
-  await click('I have the baseline file or full JSON'); await click('Next'); await click('I have my JSON'); await click('Next')
+  await click('I have the baseline file or full JSON'); await click('Next'); await click('I have my notebook files'); await click('Next')
 }
 async function preview() { await toImport(); await fill('Paste complete JSON', JSON.stringify(correctedFixture())); await click('Validate and preview') }
 it('requires saved edits/notes, uses the same goal and names the real saved baseline', async () => {
@@ -127,7 +127,7 @@ it('keeps the update action visible and the complete guide available throughout 
   expect(button('Download current notebook JSON')).toBeTruthy()
   await click('Copy update prompt'); await click('I have the baseline file or full JSON'); await click('Next')
   expect(container.textContent).toContain('old conversation is not required')
-  expect(container.textContent).toContain('Attach the saved JSON and new materials')
+  expect(container.textContent).toContain('Attach the saved notebook, images and new materials')
   expect(container.textContent).toContain('open this same saved notebook and choose Update this notebook')
   expect(container.textContent).not.toContain('choose Add to notebook')
 })

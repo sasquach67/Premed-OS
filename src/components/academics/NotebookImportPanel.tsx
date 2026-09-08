@@ -93,7 +93,7 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
     finally { if (id === attempt.current) setBusy(false) }
   }
   if (!course) return <p role="alert">Destination class not found. Open import from an existing class notebook.</p>
-  return <section className="external-notebook en-import" aria-label="Import external notebook"><h2 className="en-import-heading">{preview ? 'Review before saving' : 'Choose your notebook file'}</h2><p className="en-import-lead">{preview ? `Check the content and source coverage. Nothing is saved to ${course.code} yet.` : `Use the complete final .json notebook from your AI. You will see a preview before saving to ${course.code}.`}</p>
+  return <section className="external-notebook en-import" aria-label="Import external notebook"><h2 className="en-import-heading">{preview ? 'Review before saving' : 'Choose your notebook file'}</h2><p className="en-import-lead">{preview ? `Check the content and source coverage. Nothing is saved to ${course.code} yet.` : `Bring the complete final notebook JSON and its referenced PNG/JPEG files, or an app-exported notebook ZIP. You will see a preview before saving to ${course.code}.`}</p>
     <details className="en-import-inputs" open={!preview}><summary>{preview ? 'Change the file or JSON' : 'Choose a file or paste JSON'}</summary>
     <label className="en-field en-upload">Notebook file (JSON or ZIP)<input type="file" accept=".json,.zip,application/json,application/zip" disabled={busy} onChange={async event => {
       const file = event.target.files?.[0]; clearPreview(); if (!file) return

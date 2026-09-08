@@ -8,6 +8,7 @@ import { ExternalNotebookWorkflow } from './ExternalNotebookWorkflow'
 import type { NotebookBlock, NotebookEntry, NotebookPackage, NotebookProgress, Evidence } from '@/lib/academics/notebook/types'
 import type { AppData, LectureRecord } from '@/lib/types'
 import { canonical } from '@/lib/academics/notebook/package'
+import { notebookPromptParts } from '@/lib/academics/notebook/promptTables'
 import { collectReaderEvidence, notebookReaderContents, readerBlocks, readerHeadingId, splitNotebookAnnotations, type NotebookReadingMode } from '@/lib/academics/notebook/readerPresentation'
 import { ReadingContents } from './ReadingContents'
 import { scrollGuideHeadingIntoReadingPane } from './lectureGuideNavigation'
@@ -49,8 +50,9 @@ export function downloadNotebookText(filename: string, text: string, mime = 'app
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 type ChangeText = (path: (string | number)[], text: string) => void
-function ContentText({ value, path, label, change, sourceIds, inlineSources = false }: { value: string; path: (string | number)[]; label: string; change?: ChangeText; sourceIds?: string[]; inlineSources?: boolean }) {
+function ContentText({ value, path, label, change, sourceIds, inlineSources = false, tables = false }: { value: string; path: (string | number)[]; label: string; change?: ChangeText; sourceIds?: string[]; inlineSources?: boolean; tables?: boolean }) {
   if (change) return <label className="en-field">{label}<textarea value={value} onChange={event => change(path, event.target.value)} /></label>
+  if (tables) return <>{notebookPromptParts(value).map((part, index) => part.type === 'text' ? <p className="en-text" key={index}>{part.text}</p> : <div className="en-table-scroll nbr-prompt-table" role="region" aria-label="Practice prompt data" tabIndex={0} key={index}><table><thead><tr>{part.columns.map((column, ci) => <th scope="col" style={{ textAlign: part.align[ci] }} key={ci}>{column}</th>)}</tr></thead><tbody>{part.rows.map((row, ri) => <tr key={ri}>{row.map((cell, ci) => <td style={{ textAlign: part.align[ci] }} key={ci}>{cell}</td>)}</tr>)}</tbody></table></div>)}</>
   if (!sourceIds) return <p className="en-text">{value}</p>
   const { body, leading, trailing } = splitNotebookAnnotations(value, sourceIds)
   const annotation = (note: typeof leading[number], index: number) => <div key={index} className={note.kind === 'limit' ? 'nbr-limit' : `nbr-prov${body.trim() ? '' : ' nbr-prov-standalone'}`} hidden={note.kind === 'citation' && Boolean(body.trim()) && !inlineSources}>{note.kind === 'limit' && <span className="nbr-limit-tag">Limit</span>}<span>{note.text}</span></div>
@@ -79,7 +81,7 @@ function ReaderSources({ blocks, pkg, scope, inlineSources, onInlineSources, sel
 function BlockView({ block, path, change, pkg, progress, onProgress, reader = false, inlineSources = false, onShowEvidence }: { block: NotebookBlock; path: (string | number)[]; change?: ChangeText; pkg: NotebookPackage; progress?: NotebookProgress; onProgress?: (id: string, response: string, complete: boolean) => void; reader?: boolean; inlineSources?: boolean; onShowEvidence?: (id: string) => void }) {
   const [practiceSources, setPracticeSources] = useState(false)
   const { missing } = useNotebookPracticeImages(block)
-  const text = (value: string, key: string, label: string) => <ContentText value={value} path={[...path, key]} label={label} change={change} sourceIds={reader && (block.type === 'paragraph' || (block.type === 'practice' && key !== 'prompt')) ? pkg.sources.map(source => source.id) : undefined} inlineSources={block.type === 'practice' ? practiceSources : inlineSources} />
+  const text = (value: string, key: string, label: string) => <ContentText value={value} path={[...path, key]} label={label} change={change} sourceIds={reader && (block.type === 'paragraph' || (block.type === 'practice' && key !== 'prompt')) ? pkg.sources.map(source => source.id) : undefined} inlineSources={block.type === 'practice' ? practiceSources : inlineSources} tables={block.type === 'practice' && key === 'prompt'} />
   const work = progress && Object.hasOwn(progress, block.id) ? progress[block.id] : { response: '', complete: false }
   function changeVisual(next: VisualNotebookBlock) {
     if (!change) return
