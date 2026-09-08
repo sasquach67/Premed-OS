@@ -41,13 +41,30 @@ export function NotebookAssetsProvider({ pkg, bindings, prepared, children }: { 
 }
 export function NotebookFigure({ block, onChange }: { block: NotebookFigureBlock; onChange?: (block: NotebookFigureBlock) => void }) {
   const { pkg, images, fail } = useContext(NotebookImages), state = images.get(block.assetId), dialog = useRef<HTMLDialogElement>(null)
+  const restoreView = useRef<(() => void) | null>(null), [zoomError, setZoomError] = useState('')
   const asset = pkg?.version === 3 ? pkg.assets.find(a => a.id === block.assetId) : undefined
+  useEffect(() => () => { restoreView.current?.(); restoreView.current = null }, [])
+  function finishZoom() { const restore = restoreView.current; restoreView.current = null; restore?.() }
+  function openZoom(opener: HTMLButtonElement) {
+    if (!dialog.current || dialog.current.open) return
+    setZoomError('')
+    const parents: { element: HTMLElement; overflow: string; top: number; left: number }[] = []
+    const scroll = { x: window.scrollX, y: window.scrollY }
+    for (let element = opener.parentElement; element; element = element.parentElement) {
+      if (element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth || /auto|scroll/.test(getComputedStyle(element).overflow) || element === document.body || element === document.documentElement) {
+        parents.push({ element, overflow: element.style.overflow, top: element.scrollTop, left: element.scrollLeft }); element.style.overflow = 'hidden'
+      }
+    }
+    restoreView.current = () => { for (const saved of parents) saved.element.style.overflow = saved.overflow; for (const saved of parents) { saved.element.scrollTop = saved.top; saved.element.scrollLeft = saved.left }; window.scrollTo(scroll.x, scroll.y); if (opener.isConnected) opener.focus({ preventScroll: true }) }
+    try { dialog.current.showModal() } catch { finishZoom(); setZoomError('This browser could not open the enlarged figure. Your image and notebook are unchanged.') }
+  }
   return <figure className="nbr-figure" data-asset-id={block.assetId}>
-    {state?.status === 'ready' ? <button type="button" className="nbr-figure-open" aria-label={`Enlarge figure: ${block.caption ?? block.alt}`} onClick={() => dialog.current?.showModal()}><img src={state.url} alt={block.alt} onError={() => fail(block.assetId)} /><span>Enlarge figure</span></button> : <div className="en-notice" role="status"><b>{state?.status === 'loading' ? 'Loading figure' : 'Figure unavailable on this device'}</b><p>{state?.error ?? 'Select and validate this notebook image before saving.'}</p><p>{block.alt}</p></div>}
+    {state?.status === 'ready' ? <button type="button" className="nbr-figure-open" aria-label={`Enlarge figure: ${block.caption ?? block.alt}`} onClick={event => openZoom(event.currentTarget)}><img src={state.url} alt={block.alt} onError={() => fail(block.assetId)} /><span>Enlarge figure</span></button> : <div className="en-notice" role="status"><b>{state?.status === 'loading' ? 'Loading figure' : 'Figure unavailable on this device'}</b><p>{state?.error ?? 'Select and validate this notebook image before saving.'}</p><p>{block.alt}</p></div>}
+    {zoomError && <p role="status">{zoomError}</p>}
     <figcaption>{block.caption && <strong>{block.caption}</strong>}{asset && <small>{asset.sourceId} / {asset.location}</small>}</figcaption>
     <p className="nbr-figure-context">{block.context}</p>
     {onChange && <div className="nbr-figure-edit"><label>Figure caption<input value={block.caption ?? ''} onChange={e => onChange({ ...block, caption: e.target.value || null })} /></label><label>Figure alternative text<textarea value={block.alt} onChange={e => onChange({ ...block, alt: e.target.value })} /></label><label>Figure context<textarea value={block.context} onChange={e => onChange({ ...block, context: e.target.value })} /></label><p>Image identity and original bytes stay protected. Use an update with a new asset ID to replace an image.</p></div>}
-    <dialog className="nbr-figure-dialog" ref={dialog} aria-label={block.caption ?? 'Full-size source figure'} onClick={e => { if (e.target === e.currentTarget) dialog.current?.close() }}><button type="button" autoFocus onClick={() => dialog.current?.close()}>Close figure</button>{state?.url && <img src={state.url} alt={block.alt} />}<p>{block.caption}</p>{asset && <small>{asset.sourceId} / {asset.location}</small>}<p>{block.context}</p></dialog>
+    <dialog className="nbr-figure-dialog" ref={dialog} aria-label="Enlarged source figure" onClose={finishZoom} onClick={event => { const bounds = event.currentTarget.getBoundingClientRect(); if (event.target === event.currentTarget && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) dialog.current?.close() }}><header><strong>Source figure</strong><button type="button" autoFocus onClick={() => dialog.current?.close()}>Close figure</button></header><div className="nbr-figure-stage">{state?.url && <img src={state.url} alt={block.alt} />}</div><div className="nbr-figure-description" tabIndex={0} aria-label="Figure caption and source">{block.caption && <p>{block.caption}</p>}{asset && <small>{asset.sourceId} / {asset.location}</small>}{block.context && <p>{block.context}</p>}</div></dialog>
   </figure>
 }
 export function NotebookStudyDiagram({ block, onChange }: { block: NotebookStudyDiagramBlock; onChange?: (block: NotebookStudyDiagramBlock) => void }) {

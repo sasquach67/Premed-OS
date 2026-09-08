@@ -8,12 +8,13 @@ import { createInitialDataForMode, STORAGE_KEY, useStore } from '@/store/store'
 import { NotebookImportPanel } from './NotebookImportPanel'
 import { ExternalNotebookView, NotebookPackageView, notebookTransaction } from './ExternalNotebookView'
 import { ExternalNotebookWorkflow } from './ExternalNotebookWorkflow'
-import { importNotebook, exportNotebook } from '@/lib/academics/notebook/import'
+import { importNotebook, exportNotebook, saveNotebookEdits } from '@/lib/academics/notebook/import'
 import { prepareNotebook } from '@/lib/academics/notebook/package'
 import { PROMPT_TEMPLATES } from '@/lib/academics/notebook/prompt'
 import { loadNotebookWorkflowDraft, notebookWorkflowDraftKey, persistNotebookWorkflowDraft } from '@/lib/academics/notebook/workflowDraft'
 import review from '@/lib/academics/notebook/fixtures/fixture-review.json'
 import type { Course } from '@/lib/types'
+import { plainVisualFixture } from '@/lib/academics/notebook/visual.test-fixtures'
 let root: Root, container: HTMLDivElement
 const imported = vi.fn()
 const course: Course = { id: 'test-notebook', code: review.course.code, title: review.course.title, term: review.course.term ?? 'Fall 2026', credits: 3, grade: '', bcpm: false, status: 'in-progress', inResidence: true, satisfies: [], order: 0 }
@@ -361,4 +362,66 @@ it('renders practice-prompt data as a safe table while retaining exact JSON, edi
   expect(exportNotebook(lecture, 'original')).toBe(prepared.raw)
   expect(JSON.parse(exportNotebook(lecture, 'current')).entries[0].sections.flatMap((s: { blocks: { id: string; prompt?: string }[] }) => s.blocks).find((b: { id: string }) => b.id === practice.id).prompt).toBe(prompt)
   await click('Edit entry'); expect([...container.querySelectorAll('textarea')].some(e => e.value === prompt)).toBe(true)
+})
+
+it('relocates provenance into source details without changing saved text, exports, notes or history', async () => {
+  const pkg = (await prepareNotebook(raw)).package, entry = pkg.entries[0], section = entry.sections[0]
+  const paragraph = entry.sections.flatMap(s => s.blocks).find(b => b.type === 'paragraph')!
+  if (paragraph.type !== 'paragraph') throw new Error('Expected paragraph fixture')
+  const sourceId = paragraph.sourceIds[0]
+  paragraph.text = `[Student-source explanation: ${sourceId} GRQ 3.] Quantitative data are numbers.`
+  section.title = 'At a glance'
+  section.blocks.push({ ...paragraph, id: 'graph-explanation', text: `[Source and clarification: ${sourceId} Activity 2 graphs.] In the firefly figure, read both axes.` })
+  section.blocks.push({ ...paragraph, id: 'reference-only', text: `[Source: ${sourceId} p.3.]` })
+  section.blocks.push({ ...paragraph, id: 'qualified-explanation', text: `[Source: ${sourceId} p.3; illustrative calculation, not empirical observations.] Keep the substantive teaching explanation.` })
+  const prepared = await prepareNotebook(JSON.stringify(pkg)); let id = ''
+  useStore.getState().update(state => {
+    [id] = importNotebook(state.academics.classCenter, course, prepared)
+    const lecture = state.academics.classCenter.lectures.find(l => l.id === id)!, edited = structuredClone(lecture.importedNotebook!.current)
+    edited.entries[0].title += ' (saved edit)'; saveNotebookEdits(lecture, edited, 'Keep my note')
+  })
+  const lecture = useStore.getState().academics.classCenter.lectures.find(l => l.id === id)!, before = JSON.stringify(lecture.importedNotebook)
+  const exports = (['current', 'original', 'backup'] as const).map(kind => exportNotebook(lecture, kind))
+  await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode={course.code} />))
+  const teaching = [...container.querySelectorAll('.nbr-blocks .en-text')].filter(e => !e.closest('.nbr-sources-panel')).map(e => e.textContent).join('\n')
+  expect(teaching).toContain('Quantitative data are numbers.'); expect(teaching).toContain('In the firefly figure, read both axes.')
+  expect(teaching).not.toContain('[Student-source explanation:'); expect(teaching).not.toContain('[Source and clarification:')
+  expect(teaching).toContain('Illustrative calculation, not empirical observations.'); expect(teaching).toContain('Keep the substantive teaching explanation.')
+  expect([...container.querySelectorAll('.en-block-paragraph')].every(e => e.textContent?.trim())).toBe(true)
+  const evidence = container.querySelector<HTMLDetailsElement>('.nbr-sources-panel')!
+  expect(evidence.open).toBe(false); expect(evidence.textContent).toContain(`[Student-source explanation: ${sourceId} GRQ 3.]`)
+  await act(async () => evidence.querySelector('summary')!.click()); expect(evidence.open).toBe(true)
+  const notes = evidence.querySelector<HTMLDetailsElement>('.nbr-reference-notes')!
+  expect(notes.open).toBe(false); await act(async () => notes.querySelector('summary')!.click()); expect(notes.open).toBe(true)
+  const article = container.querySelector('.nbr-doc article')!, firstSection = article.querySelector('.en-section')!, coverage = article.querySelector('.nbr-coverage-disclosure')!
+  expect(firstSection.querySelector('h2')?.textContent).toBe('At a glance')
+  expect(firstSection.compareDocumentPosition(coverage) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(container.querySelector('.nbr-tools > summary')?.textContent).toBe('Downloads, notes and history')
+  expect(container.querySelector('.nbr-views')?.tagName).toBe('NAV')
+  await click('Practice'); await click('Sources'); await click('Study guide')
+  expect(JSON.stringify(lecture.importedNotebook)).toBe(before)
+  expect((['current', 'original', 'backup'] as const).map(kind => exportNotebook(lecture, kind))).toEqual(exports)
+})
+it('keeps earlier work collapsed after answer and explanation inside the corresponding Reveal', async () => {
+  const prepared = await prepareNotebook(raw); let id = ''
+  useStore.getState().update(state => {
+    [id] = importNotebook(state.academics.classCenter, course, prepared)
+    const n = state.academics.classCenter.lectures.find(l => l.id === id)!.importedNotebook!, practice = n.current.entries[0].sections.flatMap(s => s.blocks).find(b => b.type === 'practice')!
+    n.progress[practice.id] = { response: 'Earlier response stays private until Reveal', complete: true }
+  })
+  const lecture = useStore.getState().academics.classCenter.lectures.find(l => l.id === id)!, before = JSON.stringify(lecture.importedNotebook)
+  await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode={course.code} />)); await click('Practice')
+  const earlier = [...container.querySelectorAll<HTMLDetailsElement>('.nbr-earlier-work')].find(e => e.textContent?.includes('Earlier response stays private'))!, answer = earlier.closest<HTMLDetailsElement>('.en-answer')!
+  expect(answer).toBeTruthy(); expect(answer.open).toBe(false); expect(earlier.open).toBe(false); expect(answer.lastElementChild).toBe(earlier)
+  await act(async () => answer.querySelector('summary')!.click()); expect(answer.open).toBe(true); expect(earlier.open).toBe(false)
+  await act(async () => earlier.querySelector('summary')!.click()); expect(earlier.open).toBe(true)
+  expect(JSON.stringify(lecture.importedNotebook)).toBe(before)
+})
+it('labels retained source questions without claiming their answer is a verified source key', async () => {
+  const pkg = plainVisualFixture(), entry = pkg.entries[0], practice = entry.sections.flatMap(s => s.blocks).find(b => b.type === 'practice')!
+  practice.provenance = 'source'
+  await act(async () => root.render(<NotebookPackageView pkg={pkg} entryId={entry.id} mode="practice" reader />))
+  const answer = container.querySelector<HTMLDetailsElement>('.en-answer')!
+  expect(answer.open).toBe(false); expect(answer.textContent).toContain('Question from supplied course material')
+  expect(answer.textContent).not.toContain('Verified source answer')
 })

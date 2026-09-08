@@ -95,7 +95,7 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
         global(b.id, blockIds, path); blocks.set(b.id, b)
         evidence(b, b.type !== 'gap' && ['source', 'clarification', 'generated-practice'].includes(b.provenance))
         for (const id of visualAssetReferences(b)) referenced.add(id)
-        if (b.type === 'practice' && (b.provenance !== 'generated-practice' || !b.sourceIds.length || (!b.excerptIds.length && !visualAssetReferences(b).length))) fail(path, 'Practice requires generated-practice provenance and precise evidence.')
+        if (b.type === 'practice' && (!['source', 'generated-practice'].includes(b.provenance) || !b.sourceIds.length || (!b.excerptIds.length && !visualAssetReferences(b).length))) fail(path, 'Practice requires source or generated-practice provenance and precise evidence.')
         if (b.type === 'table' && b.rows.some(r => r.length !== b.columns.length)) fail(path, 'Table rows must match the column count.')
         if (b.type === 'study-diagram') {
           const nodes = identify(b.nodes, path); identify(b.edges, path)
