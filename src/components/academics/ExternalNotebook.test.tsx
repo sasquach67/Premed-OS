@@ -113,7 +113,7 @@ it('keeps answers behind reveal and persists manual edits/response/notes through
   const practice = p.package.entries[0].sections.flatMap(s => s.blocks).find(b => b.type === 'practice')!
   await fill('Your response', 'My attempted answer')
   await fill('My notes', 'My independent note'); await click('Save notes')
-  await click('Edit content'); await fill('Entry title', 'My edited notebook'); await click('Save edits')
+  await click('Edit entry'); await fill('Entry title', 'My edited notebook'); await click('Save edits')
   const disk = JSON.parse(localStorage.getItem(STORAGE_KEY)!)
   expect(disk.state.academics.classCenter.lectures[0].importedNotebook.progress[practice.id].response).toBe('My attempted answer')
   await act(async () => root.unmount()); root = createRoot(container)

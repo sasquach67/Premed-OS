@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { STORAGE_KEY, useStore } from '@/store/store'
 import { storageFailure } from '@/store/storageHealth'
-import { exportNotebook, saveNotebookEdits } from '@/lib/academics/notebook/import'
+import { exportNotebook, restoreNotebookVersion, saveNotebookEdits } from '@/lib/academics/notebook/import'
+import { createNotebookUpdateSession, notebookContentKey, notebookPracticePolicy, notebookStateKey } from '@/lib/academics/notebook/revision'
+import { ExternalNotebookWorkflow } from './ExternalNotebookWorkflow'
 import type { NotebookBlock, NotebookEntry, NotebookPackage, NotebookProgress, Evidence } from '@/lib/academics/notebook/types'
 import type { AppData, LectureRecord } from '@/lib/types'
 import { canonical } from '@/lib/academics/notebook/package'
@@ -79,10 +81,14 @@ export function NotebookPackageView({ pkg, entryId, change, progress, onProgress
     <small className="en-muted">{pkg.instructionsVersion}. Externally created; structural validation does not verify teaching accuracy or source completeness.</small>
   </div>
 }
-export function ExternalNotebookView({ lecture, courseCode }: { lecture: LectureRecord; courseCode: string }) {
+export function ExternalNotebookView({ lecture, courseCode, onNavigateEntry }: { lecture: LectureRecord; courseCode: string; onNavigateEntry?: (id: string) => void }) {
   const n = lecture.importedNotebook!
   const [draft, setDraft] = useState<NotebookPackage | null>(null)
   const [notes, setNotes] = useState(n.notes)
+  const [notesBase, setNotesBase] = useState(n.notes)
+  const [editBase, setEditBase] = useState(notebookContentKey(n))
+  const [updating, setUpdating] = useState(Boolean(n.updateSession))
+  const [restore, setRestore] = useState<{ id: string; state: string } | null>(null)
   const [mode, setMode] = useState<ReadingMode>('study')
   const [message, setMessage] = useState('')
   function updateText(path: (string | number)[], value: string) {
@@ -102,16 +108,45 @@ export function ExternalNotebookView({ lecture, courseCode }: { lecture: Lecture
   }
   function save() {
     try {
-      notebookTransaction(state => { const target = state.academics.classCenter.lectures.find(l => l.id === lecture.id && l.courseId === lecture.courseId); if (!target) throw new Error('Entry no longer exists.'); saveNotebookEdits(target, draft ?? n.current, notes) })
-      setDraft(null); setMessage('Edits saved. Original import and study progress retained.')
+      const policy = notebookPracticePolicy(n.current, draft ?? n.current, n.entryId)
+      notebookTransaction(state => { const target = state.academics.classCenter.lectures.find(l => l.id === lecture.id && l.courseId === lecture.courseId); if (!target) throw new Error('Entry no longer exists.'); saveNotebookEdits(target, draft ?? n.current, notes, Date.now(), { content: draft ? editBase : notebookContentKey(n), notes: notesBase }) })
+      setDraft(null); setNotesBase(notes); setMessage(`Edits saved. Original import retained. ${policy.explanation}`)
     } catch (error) { setMessage((error as Error).message) }
   }
-  return <section className="external-notebook" aria-label="Saved external notebook"><header className="en-header"><div><p className="en-eyebrow">Saved in {courseCode}</p><h1>{lecture.title}</h1><p>Imported notebook{n.editedAt ? ' / Edited by you' : ''}</p></div><div className="en-actions"><Button variant="outline" onClick={() => { setDraft(structuredClone(n.current)); setNotes(n.notes); setMessage('Editing a separate copy. Save to keep changes.') }}>Edit content</Button><Button onClick={() => downloadNotebookText('notebook-current.json', exportNotebook(lecture, 'current'))}>Export current JSON</Button><Button variant="outline" onClick={() => downloadNotebookText('notebook-original.json', exportNotebook(lecture, 'original'))}>Export original</Button><Button variant="outline" onClick={() => downloadNotebookText('notebook-backup.json', exportNotebook(lecture, 'backup'))}>Backup with progress</Button></div></header>
+  function startUpdate(restart = false) {
+    if (draft || notes !== n.notes) { setMessage('Save your edits and notes, or cancel the unsaved changes, before starting an update. Only saved content is exported.'); return }
+    try {
+      notebookTransaction(state => {
+        const target = state.academics.classCenter.lectures.find(l => l.id === lecture.id && l.courseId === lecture.courseId)
+        if (!target?.importedNotebook || notebookStateKey(target.importedNotebook) !== notebookStateKey(n)) throw new Error('This notebook changed. Reopen its latest saved content before starting an update.')
+        if (restart || !target.importedNotebook.updateSession) target.importedNotebook.updateSession = createNotebookUpdateSession(target.importedNotebook, target.id)
+      })
+      setUpdating(true); setMessage('')
+    } catch (error) { setMessage((error as Error).message) }
+  }
+  function restoreVersion() {
+    if (!restore) return
+    if (draft || notes !== n.notes) { setMessage('Save or cancel unsaved edits and notes before restoring.'); return }
+    try {
+      notebookTransaction(state => {
+        const target = state.academics.classCenter.lectures.find(l => l.id === lecture.id && l.courseId === lecture.courseId)
+        if (!target) throw new Error('Entry no longer exists.')
+        restoreNotebookVersion(target, restore.id, restore.state)
+      })
+      const restored = useStore.getState().academics.classCenter.lectures.find(l => l.id === lecture.id)!.importedNotebook!
+      setNotes(restored.notes); setNotesBase(restored.notes); setRestore(null); setMessage('Version restored with its notes and study records. The version it replaced is also retained in history.')
+    } catch (error) { setMessage((error as Error).message) }
+  }
+  if (updating && n.updateSession) return <section className="external-notebook" aria-label="Update saved notebook"><div className="en-actions"><Button variant="outline" onClick={() => setUpdating(false)}>Back to saved entry</Button><Button variant="ghost" onClick={() => startUpdate(true)}>Restart from latest saved entry</Button></div><p className="en-muted">Restart only when you need a newer baseline. Keep any unfinished prompt or proposal first; it starts a fresh update draft, not a new notebook.</p><p role="status">{message}</p><ExternalNotebookWorkflow key={n.updateSession.id} courseId={lecture.courseId} revision={n.updateSession} onImported={id => { setUpdating(false); setMessage(id === lecture.id ? 'Notebook update saved. Previous versions remain in history.' : 'Separate entry saved. The original notebook remains unchanged.'); onNavigateEntry?.(id) }} /></section>
+  const restoreVersionPreview = restore ? n.history?.find(v => v.id === restore.id) : undefined
+  return <section className="external-notebook" aria-label="Saved external notebook"><header className="en-header"><div><p className="en-eyebrow">Saved in {courseCode}</p><h1>{lecture.title}</h1><p>Imported notebook{n.editedAt ? ' / Updated locally' : ''}</p></div><div className="en-actions"><Button variant="outline" disabled={Boolean(draft)} onClick={() => { setDraft(structuredClone(n.current)); setEditBase(notebookContentKey(n)); setMessage('Editing a separate copy. Save to keep changes; the previous content stays in history.') }}>Edit entry</Button><Button onClick={() => startUpdate()}>Update with new material</Button></div></header>
+    <details className="en-small-detail"><summary>Export and backup</summary><div className="en-actions"><Button variant="outline" onClick={() => downloadNotebookText('notebook-current.json', exportNotebook(lecture, 'current'))}>Export current JSON</Button><Button variant="outline" onClick={() => downloadNotebookText('notebook-original.json', exportNotebook(lecture, 'original'))}>Export original</Button><Button variant="outline" onClick={() => downloadNotebookText('notebook-backup.json', exportNotebook(lecture, 'backup'))}>Backup with progress</Button></div></details>
     {n.revisedFromLectureId && <p className="en-notice">Saved as a separate revision. Your earlier entry, edits, and progress remain in the class notebook.</p>}
     <p className="en-muted">Current JSON contains saved content and sources for your AI. The backup additionally contains notes, progress, and the original import; it is an archive, not an AI notebook package.</p>
-    {draft && <div className="en-notice"><b>Editing your copy</b><p>Exports use the last saved content. Reveal collapsed sections to edit their text.</p><div className="en-actions"><Button onClick={save}>Save edits</Button><Button variant="outline" onClick={() => { setDraft(null); setNotes(n.notes); setMessage('Unsaved content changes discarded.') }}>Cancel edits</Button></div></div>}
-    <label className="en-field">My notes<textarea value={notes} onChange={event => setNotes(event.target.value)} /></label>{!draft && <Button variant="outline" onClick={save}>Save notes</Button>}
+    {draft && <div className="en-notice"><b>Editing your copy</b><p>Exports use the last saved content. Reveal collapsed sections to edit their text.</p><p>{notebookPracticePolicy(n.current, draft, n.entryId).explanation}</p><div className="en-actions"><Button onClick={save}>Save edits</Button><Button variant="outline" onClick={() => { setDraft(null); setNotes(n.notes); setNotesBase(n.notes); setMessage('Unsaved content changes discarded.') }}>Cancel edits</Button></div></div>}
+    <label className="en-field">My notes<textarea value={notes} onChange={event => setNotes(event.target.value)} /></label>{!draft && <div className="en-actions"><Button variant="outline" onClick={save}>Save notes</Button>{notes !== n.notes && <Button variant="ghost" onClick={() => { setNotes(n.notes); setNotesBase(n.notes); setMessage('Unsaved notes discarded.') }}>Cancel note changes</Button>}</div>}
     <p role="status" aria-live="polite">{message}</p>
+    <details className="en-history"><summary>Version history ({n.history?.length ?? 0})</summary><p>Saved versions retain content, sources, notes and study records. Restoring also retains the version it replaces. Storage is limited; backups include history.</p>{!(n.history?.length) && <p>No earlier versions yet.</p>}{[...(n.history ?? [])].reverse().map(version => <div className="en-history-row" key={version.id}><span>{new Date(version.savedAt).toLocaleString()} / before {version.reason} / {version.current.entries.find(e => e.id === n.entryId)?.title}</span><Button variant="outline" onClick={() => setRestore({ id: version.id, state: notebookStateKey(n) })}>Review this version</Button></div>)}{restoreVersionPreview && <section className="en-stage-panel" aria-label="Restore preview"><h3>Review before restoring</h3><p>This restores the shown content and its saved notes and study records. Your current version will remain recoverable.</p><p className="en-text">Saved notes: {restoreVersionPreview.notes || 'None'}</p><details><summary>Saved practice responses and checkmarks</summary>{Object.entries(restoreVersionPreview.progress).map(([id, work]) => <p className="en-text" key={id}>{id}: {work.response || 'No response'} / {work.complete ? 'Checked by you' : 'Not checked'}</p>)}</details><NotebookPackageView pkg={restoreVersionPreview.current} entryId={n.entryId} /><div className="en-actions"><Button disabled={Boolean(draft) || notes !== n.notes} onClick={restoreVersion}>Restore this version</Button><Button variant="outline" onClick={() => setRestore(null)}>Cancel restore</Button></div></section>}</details>
     <nav className="en-actions" aria-label="Notebook reading views">{(['study', 'practice', 'coverage', 'sources'] as const).map(view => <Button key={view} variant={mode === view ? 'default' : 'outline'} aria-pressed={mode === view} onClick={() => setMode(view)}>{view === 'study' ? lecture.notebookGoal === 'assessment' ? 'Assessment prep' : lecture.notebookGoal === 'assignment' ? 'Assignment workspace' : 'Study guide' : view === 'practice' ? 'Practice' : view === 'coverage' ? 'Coverage' : 'Sources'}</Button>)}</nav>
     <NotebookPackageView mode={draft ? 'all' : mode} pkg={draft ?? n.current} entryId={n.entryId} change={draft ? updateText : undefined} progress={n.progress} onProgress={progress} />
   </section>

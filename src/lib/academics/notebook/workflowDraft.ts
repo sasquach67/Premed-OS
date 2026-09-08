@@ -5,6 +5,8 @@ export type PromptAcknowledgment = 'clipboard' | 'manual' | 'download'
 export interface NotebookWorkflowDraft {
   version: 1
   courseId: string
+  storageId?: string
+  baselineReady?: boolean
   step: NotebookWorkflowStep
   goal: NotebookGoal | null
   goalAccepted: boolean
@@ -29,15 +31,15 @@ const fields = ['preferences', 'scope', 'scopeSource', 'materials', 'stage', 'fo
 const steps: NotebookWorkflowStep[] = ['goal', 'details', 'prompt', 'handoff', 'import']
 export function notebookWorkflowDraftKey(courseId: string) { return `${PREFIX}${encodeURIComponent(courseId)}` }
 
-export function loadNotebookWorkflowDraft(courseId: string, defaults: { preferences: string; term: string }): { draft: NotebookWorkflowDraft; restored: boolean; warning: string } {
+export function loadNotebookWorkflowDraft(courseId: string, defaults: { preferences: string; term: string }, storageId = courseId): { draft: NotebookWorkflowDraft; restored: boolean; warning: string } {
   const draft: NotebookWorkflowDraft = {
-    version: 1, courseId, step: 'goal', goal: null, goalAccepted: false,
+    version: 1, courseId, storageId, step: 'goal', goal: null, goalAccepted: false, baselineReady: false,
     preferences: defaults.preferences, term: defaults.term, scope: '', scopeSource: '', materials: '', selected: [],
     stage: 'Understand and connect', format: '', depth: 'Full explanation with connections, examples, and practice', request: '',
     confirmedPrompt: null, acknowledgedBy: null, jsonReady: false, rawJson: '',
   }
   try {
-    const saved = sessionStorage.getItem(notebookWorkflowDraftKey(courseId))
+    const saved = sessionStorage.getItem(notebookWorkflowDraftKey(storageId))
     if (!saved) return { draft, restored: false, warning: '' }
     const value = JSON.parse(saved)
     if (!value || value.version !== 1 || value.courseId !== courseId) throw new Error('Draft identity differs')
@@ -49,6 +51,7 @@ export function loadNotebookWorkflowDraft(courseId: string, defaults: { preferen
     draft.confirmedPrompt = typeof value.confirmedPrompt === 'string' ? value.confirmedPrompt : null
     draft.acknowledgedBy = ['clipboard', 'manual', 'download'].includes(value.acknowledgedBy) ? value.acknowledgedBy : null
     draft.jsonReady = value.jsonReady === true
+    draft.baselineReady = value.baselineReady === true
     return { draft, restored: Boolean(draft.goal || draft.request || draft.rawJson), warning: '' }
   } catch {
     return { draft, restored: false, warning: 'The previous draft could not be restored. Keep your prompt and JSON downloads.' }
@@ -70,11 +73,11 @@ export function notebookWorkflowStep(draft: NotebookWorkflowDraft, prompt: strin
 
 export function persistNotebookWorkflowDraft(draft: NotebookWorkflowDraft): string {
   try {
-    sessionStorage.setItem(notebookWorkflowDraftKey(draft.courseId), JSON.stringify(draft))
+    sessionStorage.setItem(notebookWorkflowDraftKey(draft.storageId ?? draft.courseId), JSON.stringify(draft))
     return ''
   } catch {
     // Do not restore an older acknowledgment if the current draft could not be kept.
-    try { sessionStorage.removeItem(notebookWorkflowDraftKey(draft.courseId)) } catch { /* Storage may be unavailable. */ }
+    try { sessionStorage.removeItem(notebookWorkflowDraftKey(draft.storageId ?? draft.courseId)) } catch { /* Storage may be unavailable. */ }
     return 'This draft could not be kept for your return. Keep the prompt and JSON file before leaving this page.'
   }
 }

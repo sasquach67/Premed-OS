@@ -182,3 +182,16 @@
   .en-guide-output{border-left:0;border-top:1px solid var(--border)}
   .en-flow .en-goal-guide dt{margin-bottom:.65rem}
 }
+
+/* Saved-entry update comparison reuses the notebook's divided groups. */
+.en-comparison,.en-history{margin:1.25rem 0;min-width:0}
+.en-difference,.en-history-row{border-bottom:1px solid var(--border);padding:.9rem 0;min-width:0}
+.en-difference summary,.en-history>summary{font-weight:700;overflow-wrap:anywhere}
+.en-diff-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:.8rem}
+.en-diff-columns>div{min-width:0;background:var(--card);border:1px solid var(--border);border-radius:.7rem;padding:.9rem}
+.en-diff-columns h4{font-family:var(--font-display);margin:0 0 .5rem}
+.en-diff-columns pre{font:inherit;font-size:.85rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
+.en-history-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem}
+.en-history-row>span{min-width:0;overflow-wrap:anywhere}
+.en-history-row button{flex-shrink:0}
+@media(max-width:600px){.en-diff-columns{grid-template-columns:1fr}.en-history-row{align-items:flex-start;flex-direction:column}}

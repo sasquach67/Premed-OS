@@ -1,0 +1,555 @@
+{
+  "format": "premed-os-notebook-package",
+  "version": 2,
+  "instructionsVersion": "notebook-workflows-draft-2",
+  "course": {
+    "code": "PSYC 101",
+    "title": "Authored PSYC notebook example",
+    "term": null
+  },
+  "sources": [
+    {
+      "id": "psych-tue",
+      "title": "PSYC example — Tuesday 2026-09-08",
+      "role": "transcript",
+      "access": "partial",
+      "inspected": "Retained exact T1–T3 excerpts from the supplied saved content; the original Tuesday lecture file was not reread.",
+      "limitations": [
+        "Authored PSYC topic-revision example with invented passages, not actual course content, AI execution or student ratings.",
+        "Only retained excerpts are available; no claim of fresh full-file access."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "t1",
+          "location": "Passage T1",
+          "text": "In our classroom task, a triangle means choose left and a circle means choose right."
+        },
+        {
+          "id": "t2",
+          "location": "Passage T2",
+          "text": "The shape is shown for 100 milliseconds."
+        },
+        {
+          "id": "t3",
+          "location": "Passage T3",
+          "text": "Later, compare plain and noisy backgrounds, including whether performance differs."
+        }
+      ]
+    },
+    {
+      "id": "psych-thu",
+      "title": "PSYC example — Thursday 2026-09-10",
+      "role": "transcript",
+      "access": "read",
+      "inspected": "Complete invented passages below, not a real lecture file.",
+      "limitations": [
+        "Authored PSYC topic-revision example with invented passages, not actual course content, AI execution or student ratings."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "h1",
+          "location": "Passage H1",
+          "text": "The mapping is still triangle-left and circle-right."
+        },
+        {
+          "id": "h2",
+          "location": "Passage H2",
+          "text": "Now compare a plain background with a noisy background while keeping the shape-to-response mapping the same. We have not supplied the performance results."
+        },
+        {
+          "id": "h3",
+          "location": "Passage H3",
+          "text": "I said 100 milliseconds on Tuesday; that was a mistake. The shape duration for that example was 200 milliseconds."
+        },
+        {
+          "id": "h4",
+          "location": "Passage H4",
+          "text": "Chapter 4 starts a separate topic: a signal is the instruction presented; a response is the action selected. The rest of this chapter comes later."
+        }
+      ]
+    }
+  ],
+  "entries": [
+    {
+      "id": "psych-ch3",
+      "revision": 2,
+      "baseRevision": 1,
+      "title": "Chapter 3 — classroom task, Tuesday and Thursday",
+      "goal": "review",
+      "scope": "Selected Chapter 3 task and comparison through Tuesday and Thursday; performance results remain missing.",
+      "request": {
+        "helpStage": null,
+        "classPreferences": "Keep my reminders; define the task before comparing conditions.",
+        "assessmentFormat": null
+      },
+      "sections": [
+        {
+          "id": "ch3-orientation",
+          "title": "At a glance",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "ch3-overview",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "text": "This topic distinguishes the task instruction, response choice and presentation condition.",
+              "sourceIds": [
+                "psych-tue"
+              ],
+              "excerptIds": [
+                "t1",
+                "t2"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch3-mapping-teaching",
+          "title": "Shape-to-response mapping",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "ch3-mapping",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "text": "A triangle maps to a left response; a circle maps to a right response. My reminder: identify the shape first, then choose the response.",
+              "sourceIds": [
+                "psych-tue"
+              ],
+              "excerptIds": [
+                "t1"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch3-timing-teaching",
+          "title": "Presentation duration",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "ch3-timing",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "text": "The shape duration for this classroom example is 200 milliseconds. Thursday H3 explicitly corrects Tuesday T2, which originally said 100 milliseconds; keep that earlier wording as historical evidence.",
+              "sourceIds": [
+                "psych-tue",
+                "psych-thu"
+              ],
+              "excerptIds": [
+                "t2",
+                "h3"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch3-comparison-section",
+          "title": "Compare the presentation conditions",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "ch3-comparison",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "text": "The plain and noisy background conditions vary the background while keeping the shape-to-response mapping fixed. No performance results were supplied, so this setup does not establish a difference in accuracy or speed.",
+              "sourceIds": [
+                "psych-thu"
+              ],
+              "excerptIds": [
+                "h1",
+                "h2"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch3-mapping-practice",
+          "title": "Recall the mapping",
+          "purpose": "practice",
+          "blocks": [
+            {
+              "id": "ch3-practice-mapping",
+              "type": "practice",
+              "provenance": "generated-practice",
+              "prompt": "In the supplied classroom task, which response follows a triangle?",
+              "answer": "Choose left.",
+              "rationale": "The retained mapping assigns a triangle to the left response.",
+              "sourceIds": [
+                "psych-tue"
+              ],
+              "excerptIds": [
+                "t1"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch3-timing-practice",
+          "title": "Recall the duration",
+          "purpose": "practice",
+          "blocks": [
+            {
+              "id": "ch3-practice-timing",
+              "type": "practice",
+              "provenance": "generated-practice",
+              "prompt": "What shape-presentation duration is specified for this classroom example?",
+              "answer": "200 milliseconds.",
+              "rationale": "Thursday H3 explicitly corrects the earlier 100-millisecond statement in Tuesday T2 for this same example.",
+              "sourceIds": [
+                "psych-tue",
+                "psych-thu"
+              ],
+              "excerptIds": [
+                "t2",
+                "h3"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch3-comparison-practice",
+          "title": "Apply the comparison",
+          "purpose": "practice",
+          "blocks": [
+            {
+              "id": "ch3-practice-comparison",
+              "type": "practice",
+              "provenance": "generated-practice",
+              "prompt": "Compare the plain/noisy conditions: what changes, what stays fixed, and can you conclude that accuracy differs?",
+              "answer": "The background changes; the shape-to-response mapping stays fixed. Accuracy differences are unknown from the supplied material.",
+              "rationale": "Thursday H2 gives the changed and fixed elements but explicitly withholds performance results.",
+              "sourceIds": [
+                "psych-thu"
+              ],
+              "excerptIds": [
+                "h2"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch3-synthesis",
+          "title": "Keep the jobs distinct",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "ch3-summary",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "text": "Identify the shape, apply its response mapping, then check the stated presentation condition.",
+              "sourceIds": [
+                "psych-tue"
+              ],
+              "excerptIds": [
+                "t1",
+                "t2"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch3-gaps",
+          "title": "Coverage limits",
+          "purpose": "next-steps",
+          "blocks": [
+            {
+              "id": "ch3-comparison-gap",
+              "type": "gap",
+              "provenance": "clarification",
+              "text": "The comparison setup is now supplied, but its performance results remain missing.",
+              "nextStep": "Supply the actual performance results before concluding how accuracy or speed differs.",
+              "sourceIds": [
+                "psych-tue",
+                "psych-thu"
+              ],
+              "excerptIds": [
+                "t3",
+                "h2"
+              ]
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "id": "ch3-req-mapping",
+          "text": "Study objective: Use the shape-to-response mapping.",
+          "kind": "objective",
+          "authority": "selected-material",
+          "sectionIds": [
+            "ch3-mapping-teaching",
+            "ch3-mapping-practice"
+          ],
+          "status": "supported",
+          "basis": "The retained task passage supports the linked explanation and practice.",
+          "nextStep": null,
+          "sourceIds": [
+            "psych-tue"
+          ],
+          "excerptIds": [
+            "t1"
+          ]
+        },
+        {
+          "id": "ch3-req-task",
+          "text": "Study objective: Recall the stated presentation duration.",
+          "kind": "objective",
+          "authority": "selected-material",
+          "sectionIds": [
+            "ch3-timing-teaching",
+            "ch3-timing-practice"
+          ],
+          "status": "supported",
+          "basis": "Thursday H3 explicitly corrects the example duration to 200 milliseconds; the teaching and timing recall retain that correction.",
+          "nextStep": null,
+          "sourceIds": [
+            "psych-tue",
+            "psych-thu"
+          ],
+          "excerptIds": [
+            "t2",
+            "h3"
+          ]
+        },
+        {
+          "id": "ch3-req-comparison",
+          "text": "Study objective: Compare plain and noisy backgrounds, including whether performance differs.",
+          "kind": "objective",
+          "authority": "selected-material",
+          "sectionIds": [
+            "ch3-comparison-section",
+            "ch3-comparison-practice",
+            "ch3-gaps"
+          ],
+          "status": "partial",
+          "basis": "Thursday supports the changed/fixed conditions; the performance-result part of the original requirement remains unsupported.",
+          "nextStep": "Obtain the actual performance results to address the remaining comparison subpart.",
+          "sourceIds": [
+            "psych-tue",
+            "psych-thu"
+          ],
+          "excerptIds": [
+            "t3",
+            "h1",
+            "h2"
+          ]
+        }
+      ],
+      "objectives": [
+        {
+          "id": "ch3-obj-mapping",
+          "requirementId": "ch3-req-mapping",
+          "title": "Study objective: Use the shape-to-response mapping.",
+          "origin": "derived",
+          "freeRecallCues": [
+            "Recall the response assigned to each shape."
+          ],
+          "understand": [
+            "A shape supplies the task instruction.",
+            "A triangle maps to a left response.",
+            "A circle maps to a right response.",
+            "The two shapes have different assigned responses.",
+            "Identify the shape before applying its assigned mapping."
+          ],
+          "beAbleToDo": [
+            "Choose left for a triangle.",
+            "Choose right for a circle."
+          ],
+          "watchFor": [
+            "Keep the shape instruction distinct from any performance claim."
+          ],
+          "practiceBlockIds": [
+            "ch3-practice-mapping"
+          ],
+          "evidenceLimit": null,
+          "sourceIds": [
+            "psych-tue"
+          ],
+          "excerptIds": [
+            "t1"
+          ]
+        },
+        {
+          "id": "ch3-obj-task",
+          "requirementId": "ch3-req-task",
+          "title": "Study objective: Recall the stated presentation duration.",
+          "origin": "derived",
+          "freeRecallCues": [
+            "Recall the stated presentation duration and any explicit correction."
+          ],
+          "understand": [
+            "The duration refers to shape presentation in this classroom example.",
+            "Thursday explicitly corrects the example to 200 milliseconds; Tuesday originally stated 100."
+          ],
+          "beAbleToDo": [
+            "Recall the supported duration for this example."
+          ],
+          "watchFor": [
+            "Do not generalize a task-specific duration to every classroom task."
+          ],
+          "practiceBlockIds": [
+            "ch3-practice-timing"
+          ],
+          "evidenceLimit": "Only a task-specific duration is supplied; there is no evidence for a broader timing mechanism or general duration rule.",
+          "sourceIds": [
+            "psych-tue",
+            "psych-thu"
+          ],
+          "excerptIds": [
+            "t2",
+            "h3"
+          ]
+        },
+        {
+          "id": "ch3-obj-comparison",
+          "requirementId": "ch3-req-comparison",
+          "title": "Study objective: Compare plain and noisy backgrounds, including whether performance differs.",
+          "origin": "derived",
+          "freeRecallCues": [
+            "Distinguish the changed condition from the fixed mapping and identify the missing result."
+          ],
+          "understand": [
+            "The background varies between plain and noisy.",
+            "The shape-to-response mapping remains fixed.",
+            "Performance results are absent, so no accuracy or speed effect can be inferred."
+          ],
+          "beAbleToDo": [
+            "Identify what changes and what is fixed in this comparison."
+          ],
+          "watchFor": [
+            "Do not turn a specified comparison setup into an invented performance result."
+          ],
+          "practiceBlockIds": [
+            "ch3-practice-comparison"
+          ],
+          "evidenceLimit": "The supplied Thursday setup contains no performance results; the requirement to compare actual performance remains unsupported.",
+          "sourceIds": [
+            "psych-tue",
+            "psych-thu"
+          ],
+          "excerptIds": [
+            "t3",
+            "h1",
+            "h2"
+          ]
+        }
+      ],
+      "limitations": [
+        "Authored PSYC topic-revision example with invented passages, not actual course content, AI execution or student ratings."
+      ]
+    },
+    {
+      "id": "psych-ch4",
+      "revision": 1,
+      "baseRevision": null,
+      "title": "Chapter 4 — introductory distinction",
+      "goal": "review",
+      "scope": "Only the introductory signal/response distinction from Thursday; later Chapter 4 material is unavailable.",
+      "request": {
+        "helpStage": null,
+        "classPreferences": "Keep my reminders; define the task before comparing conditions.",
+        "assessmentFormat": null
+      },
+      "sections": [
+        {
+          "id": "ch4-teaching",
+          "title": "Signal and response",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "ch4-explain",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "text": "The signal is the instruction presented, whereas the response is the action selected. This is the supplied introduction only.",
+              "sourceIds": [
+                "psych-thu"
+              ],
+              "excerptIds": [
+                "h4"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch4-practice",
+          "title": "Apply the distinction",
+          "purpose": "practice",
+          "blocks": [
+            {
+              "id": "ch4-practice-distinction",
+              "type": "practice",
+              "provenance": "generated-practice",
+              "prompt": "In the supplied definitions, is the action selected the signal or the response?",
+              "answer": "The response.",
+              "rationale": "Thursday H4 defines the response as the selected action.",
+              "sourceIds": [
+                "psych-thu"
+              ],
+              "excerptIds": [
+                "h4"
+              ]
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "id": "ch4-req-distinction",
+          "text": "Study objective: Distinguish the presented signal from the selected response.",
+          "kind": "objective",
+          "authority": "selected-material",
+          "sectionIds": [
+            "ch4-teaching",
+            "ch4-practice"
+          ],
+          "status": "supported",
+          "basis": "The retained task passage supports the linked explanation and practice.",
+          "nextStep": null,
+          "sourceIds": [
+            "psych-thu"
+          ],
+          "excerptIds": [
+            "h4"
+          ]
+        }
+      ],
+      "objectives": [
+        {
+          "id": "ch4-obj-distinction",
+          "requirementId": "ch4-req-distinction",
+          "title": "Study objective: Distinguish the presented signal from the selected response.",
+          "origin": "derived",
+          "freeRecallCues": [
+            "State the difference between a presented instruction and the selected action."
+          ],
+          "understand": [
+            "The signal is the presented instruction.",
+            "The response is the selected action."
+          ],
+          "beAbleToDo": [
+            "Classify a presented instruction as signal and a selected action as response."
+          ],
+          "watchFor": [
+            "Do not claim the rest of Chapter 4 was supplied."
+          ],
+          "practiceBlockIds": [
+            "ch4-practice-distinction"
+          ],
+          "evidenceLimit": "Only the introductory distinction is supplied; later Chapter 4 mechanisms and examples are unavailable.",
+          "sourceIds": [
+            "psych-thu"
+          ],
+          "excerptIds": [
+            "h4"
+          ]
+        }
+      ],
+      "limitations": [
+        "Authored PSYC topic-revision example with invented passages, not actual course content, AI execution or student ratings."
+      ]
+    }
+  ]
+}

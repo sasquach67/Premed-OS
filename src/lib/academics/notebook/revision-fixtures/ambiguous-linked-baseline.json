@@ -1,0 +1,324 @@
+{
+  "format": "premed-os-notebook-package",
+  "version": 2,
+  "instructionsVersion": "notebook-workflows-draft-2",
+  "course": {
+    "code": "PSYC 101",
+    "title": "Authored PSYC notebook example",
+    "term": null
+  },
+  "sources": [
+    {
+      "id": "psych-tue",
+      "title": "PSYC example — Tuesday 2026-09-08",
+      "role": "transcript",
+      "access": "partial",
+      "inspected": "Retained exact T1–T3 excerpts from the supplied saved content; the original Tuesday lecture file was not reread.",
+      "limitations": [
+        "Authored PSYC topic-revision example with invented passages, not actual course content, AI execution or student ratings.",
+        "Only retained excerpts are available; no claim of fresh full-file access."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "t1",
+          "location": "Passage T1",
+          "text": "In our classroom task, a triangle means choose left and a circle means choose right."
+        },
+        {
+          "id": "t2",
+          "location": "Passage T2",
+          "text": "The shape is shown for 100 milliseconds."
+        },
+        {
+          "id": "t3",
+          "location": "Passage T3",
+          "text": "Later, compare plain and noisy backgrounds, including whether performance differs."
+        }
+      ]
+    }
+  ],
+  "entries": [
+    {
+      "id": "psych-ch3",
+      "revision": 1,
+      "baseRevision": null,
+      "title": "Chapter 3 — classroom task, Tuesday",
+      "goal": "review",
+      "scope": "Selected Chapter 3 task and named comparison from Tuesday; no whole-chapter coverage claim.",
+      "request": {
+        "helpStage": null,
+        "classPreferences": "Keep my reminders; define the task before comparing conditions.",
+        "assessmentFormat": null
+      },
+      "sections": [
+        {
+          "id": "ch3-orientation",
+          "title": "At a glance",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "ch3-overview",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "text": "This topic distinguishes the task instruction, response choice and presentation condition.",
+              "sourceIds": [
+                "psych-tue"
+              ],
+              "excerptIds": [
+                "t1",
+                "t2"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch3-mapping-teaching",
+          "title": "Shape-to-response mapping",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "ch3-mapping",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "text": "A triangle maps to a left response; a circle maps to a right response. My reminder: identify the shape first, then choose the response.",
+              "sourceIds": [
+                "psych-tue"
+              ],
+              "excerptIds": [
+                "t1"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch3-timing-teaching",
+          "title": "Presentation duration",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "ch3-timing",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "text": "Tuesday describes a 100-millisecond shape presentation in this classroom example.",
+              "sourceIds": [
+                "psych-tue"
+              ],
+              "excerptIds": [
+                "t2"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch3-mapping-practice",
+          "title": "Recall the mapping",
+          "purpose": "practice",
+          "blocks": [
+            {
+              "id": "ch3-practice-mapping",
+              "type": "practice",
+              "provenance": "generated-practice",
+              "prompt": "In the supplied classroom task, which response follows a triangle?",
+              "answer": "Choose left.",
+              "rationale": "The retained mapping assigns a triangle to the left response.",
+              "sourceIds": [
+                "psych-tue"
+              ],
+              "excerptIds": [
+                "t1"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch3-timing-practice",
+          "title": "Recall the duration",
+          "purpose": "practice",
+          "blocks": [
+            {
+              "id": "ch3-practice-timing",
+              "type": "practice",
+              "provenance": "generated-practice",
+              "prompt": "What shape-presentation duration is specified for this classroom example?",
+              "answer": "100 milliseconds.",
+              "rationale": "Tuesday Passage T2 states 100 milliseconds for this example.",
+              "sourceIds": [
+                "psych-tue"
+              ],
+              "excerptIds": [
+                "t2"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch3-synthesis",
+          "title": "Keep the jobs distinct",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "ch3-summary",
+              "type": "paragraph",
+              "provenance": "clarification",
+              "text": "Identify the shape, apply its response mapping, then check the stated presentation condition.",
+              "sourceIds": [
+                "psych-tue"
+              ],
+              "excerptIds": [
+                "t1",
+                "t2"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch3-gaps",
+          "title": "Coverage limits",
+          "purpose": "next-steps",
+          "blocks": [
+            {
+              "id": "ch3-comparison-gap",
+              "type": "gap",
+              "provenance": "clarification",
+              "text": "The plain/noisy comparison has been named but its teaching and results are not supplied.",
+              "nextStep": "Obtain the later comparison passages and actual performance evidence.",
+              "sourceIds": [
+                "psych-tue"
+              ],
+              "excerptIds": [
+                "t3"
+              ]
+            }
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "id": "ch3-req-mapping",
+          "text": "Study objective: Use the shape-to-response mapping.",
+          "kind": "objective",
+          "authority": "selected-material",
+          "sectionIds": [
+            "ch3-mapping-teaching",
+            "ch3-mapping-practice",
+            "ch3-timing-teaching"
+          ],
+          "status": "supported",
+          "basis": "The retained task passage supports the linked explanation and practice.",
+          "nextStep": null,
+          "sourceIds": [
+            "psych-tue"
+          ],
+          "excerptIds": [
+            "t1"
+          ]
+        },
+        {
+          "id": "ch3-req-task",
+          "text": "Study objective: Recall the stated presentation duration.",
+          "kind": "objective",
+          "authority": "selected-material",
+          "sectionIds": [
+            "ch3-timing-teaching",
+            "ch3-timing-practice"
+          ],
+          "status": "supported",
+          "basis": "Tuesday supplies the stated 100-millisecond duration for this classroom example.",
+          "nextStep": null,
+          "sourceIds": [
+            "psych-tue"
+          ],
+          "excerptIds": [
+            "t2"
+          ]
+        },
+        {
+          "id": "ch3-req-comparison",
+          "text": "Study objective: Compare plain and noisy backgrounds, including whether performance differs.",
+          "kind": "objective",
+          "authority": "selected-material",
+          "sectionIds": [
+            "ch3-gaps"
+          ],
+          "status": "missing",
+          "basis": "Tuesday identifies this future comparison but provides neither the setup details nor performance evidence.",
+          "nextStep": "Inspect the later comparison material and performance results when supplied.",
+          "sourceIds": [
+            "psych-tue"
+          ],
+          "excerptIds": [
+            "t3"
+          ]
+        }
+      ],
+      "objectives": [
+        {
+          "id": "ch3-obj-mapping",
+          "requirementId": "ch3-req-mapping",
+          "title": "Study objective: Use the shape-to-response mapping.",
+          "origin": "derived",
+          "freeRecallCues": [
+            "Recall the response assigned to each shape."
+          ],
+          "understand": [
+            "A shape supplies the task instruction.",
+            "A triangle maps to a left response.",
+            "A circle maps to a right response.",
+            "The two shapes have different assigned responses.",
+            "Identify the shape before applying its assigned mapping."
+          ],
+          "beAbleToDo": [
+            "Choose left for a triangle.",
+            "Choose right for a circle."
+          ],
+          "watchFor": [
+            "Keep the shape instruction distinct from any performance claim."
+          ],
+          "practiceBlockIds": [
+            "ch3-practice-mapping"
+          ],
+          "evidenceLimit": null,
+          "sourceIds": [
+            "psych-tue"
+          ],
+          "excerptIds": [
+            "t1"
+          ]
+        },
+        {
+          "id": "ch3-obj-task",
+          "requirementId": "ch3-req-task",
+          "title": "Study objective: Recall the stated presentation duration.",
+          "origin": "derived",
+          "freeRecallCues": [
+            "Recall the stated presentation duration and any explicit correction."
+          ],
+          "understand": [
+            "The duration refers to shape presentation in this classroom example.",
+            "Tuesday states a 100-millisecond presentation for this example."
+          ],
+          "beAbleToDo": [
+            "Recall the supported duration for this example."
+          ],
+          "watchFor": [
+            "Do not generalize a task-specific duration to every classroom task."
+          ],
+          "practiceBlockIds": [
+            "ch3-practice-timing"
+          ],
+          "evidenceLimit": "Only a task-specific duration is supplied; there is no evidence for a broader timing mechanism or general duration rule.",
+          "sourceIds": [
+            "psych-tue"
+          ],
+          "excerptIds": [
+            "t2"
+          ]
+        }
+      ],
+      "limitations": [
+        "Authored PSYC topic-revision example with invented passages, not actual course content, AI execution or student ratings."
+      ]
+    }
+  ]
+}

@@ -3,7 +3,8 @@ import { ArrowLeft, ArrowRight, BookOpen, Brain, Check, Copy, Download, FileCode
 import { Button } from '@/components/ui/button'
 import { useStore } from '@/store/store'
 import { composeNotebookPrompt, type PromptValues } from '@/lib/academics/notebook/prompt'
-import type { NotebookGoal } from '@/lib/academics/notebook/types'
+import type { NotebookGoal, NotebookUpdateSession } from '@/lib/academics/notebook/types'
+import { revisionInput, UPDATE_BASELINE_FILE } from '@/lib/academics/notebook/revision'
 import { clearNotebookWorkflowDraft, hasCurrentPromptAcknowledgment, loadNotebookWorkflowDraft, notebookWorkflowStep, persistNotebookWorkflowDraft, type NotebookWorkflowDraft, type NotebookWorkflowStep as Step, type PromptAcknowledgment } from '@/lib/academics/notebook/workflowDraft'
 import { NotebookImportPanel } from './NotebookImportPanel'
 import { downloadNotebookText, notebookTransaction } from './ExternalNotebookView'
@@ -63,11 +64,20 @@ const STEPS = [
   { id: 'import', label: 'Import notebook', title: 'Import your notebook', description: 'Preview the result, check what is missing, then save it to your class.' },
 ] as const
 
-export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: string; onImported: (id: string) => void }) {
+export function ExternalNotebookWorkflow({ courseId, onImported, revision }: { courseId: string; onImported: (id: string) => void; revision?: NotebookUpdateSession }) {
   const course = useStore(s => s.courses.find(c => c.id === courseId))
   const workspace = useStore(s => s.academics.classCenter.workspaces.find(w => w.courseId === courseId))
   const files = useStore(s => s.academics.classCenter.files)
-  const [loaded] = useState(() => loadNotebookWorkflowDraft(courseId, { preferences: workspace?.externalNotebookPreferences ?? '', term: course?.term ?? '' }))
+  const storageId = revision ? `${courseId}:update:${revision.localId}:${revision.id}` : courseId
+  const [loaded] = useState(() => {
+    const loaded = loadNotebookWorkflowDraft(courseId, { preferences: workspace?.externalNotebookPreferences ?? '', term: course?.term ?? '' }, storageId)
+    if (revision) {
+      const entry = revision.baseline.entries[0]
+      if (!loaded.restored) Object.assign(loaded.draft, { scope: entry.scope, preferences: entry.request.classPreferences, stage: entry.request.helpStage ?? GOALS[entry.goal].stages[0], format: entry.request.assessmentFormat ?? '', term: revision.baseline.course.term ?? '' })
+      loaded.draft.goal = entry.goal
+    }
+    return loaded
+  })
   const [draft, setDraft] = useState(loaded.draft)
   const { goal, preferences, scope, scopeSource, materials, selected, stage, format, depth, request, term } = draft
   const [message, setMessage] = useState('')
@@ -80,12 +90,13 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
   const finished = useRef(false)
   const latestPrompt = useRef('')
   const classFiles = files.filter(file => file.courseId === courseId)
-  const values: PromptValues = { COURSE_CODE: course?.code ?? '', COURSE_TITLE: course?.title ?? '', TERM: term || null, SCOPE: scope.trim() ? `${scope}\nScope authority: ${scopeSource || 'Not supplied; label provisional scope.'}` : null, MATERIALS: [...classFiles.filter(f => selected.includes(f.id)).map(f => `${f.title} (${f.type}; attach the actual original file in the AI conversation)`), materials].filter(Boolean).join('\n'), DEPTH: depth, CLASS_PREFERENCES: preferences, HELP_STAGE: stage, ASSESSMENT_FORMAT: goal === 'assessment' ? format || null : null, USER_REQUEST: request, REVISION_INPUT: null }
+  const values: PromptValues = { COURSE_CODE: revision?.baseline.course.code ?? course?.code ?? '', COURSE_TITLE: revision?.baseline.course.title ?? course?.title ?? '', TERM: revision ? revision.baseline.course.term : term || null, SCOPE: scope.trim() ? `${scope}\nScope authority: ${scopeSource || 'Not supplied; label provisional scope.'}` : null, MATERIALS: [revision ? `${UPDATE_BASELINE_FILE}: attach this exact saved baseline plus the new material; retained excerpts do not imply complete original files.` : '', ...classFiles.filter(f => selected.includes(f.id)).map(f => `${f.title} (${f.type}; attach the actual original file in the AI conversation)`), materials].filter(Boolean).join('\n'), DEPTH: depth, CLASS_PREFERENCES: preferences, HELP_STAGE: stage, ASSESSMENT_FORMAT: goal === 'assessment' ? format || null : null, USER_REQUEST: request, REVISION_INPUT: revision ? revisionInput(revision) : null }
   const fullPrompt = goal ? composeNotebookPrompt(goal, values) : ''
   const promptLines = fullPrompt ? fullPrompt.split('\n').length : 0
   latestPrompt.current = fullPrompt
   const copyReady = hasCurrentPromptAcknowledgment(draft, fullPrompt)
-  const step = notebookWorkflowStep(draft, fullPrompt)
+  const requestedStep = notebookWorkflowStep(draft, fullPrompt)
+  const step = revision && !draft.baselineReady && (requestedStep === 'handoff' || requestedStep === 'import') ? 'prompt' : requestedStep
   useEffect(() => {
     if (mounted.current) heading.current?.focus()
     mounted.current = true
@@ -96,11 +107,11 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
   if (!course) return <p role="alert">Class not found.</p>
 
   const activeStep = step === 'details' ? 0 : STEPS.findIndex(item => item.id === step)
-  const current = STEPS[activeStep]
+  const current = revision && activeStep === 0 ? { ...STEPS[0], title: 'Update with new material', description: 'Keep this topic notebook. Name the new material and what should change; the existing goal stays the same.' } : STEPS[activeStep]
   const goalInfo = GOALS[goal ?? 'review']
   const completed = [draft.goalAccepted, copyReady, copyReady && draft.jsonReady, false]
   function goTo(next: Step) {
-    if (copyBusy || ((next === 'details' || next === 'prompt') && !goal) || (next === 'handoff' && !copyReady) || (next === 'import' && (!copyReady || !draft.jsonReady))) return
+    if (copyBusy || ((next === 'details' || next === 'prompt') && !goal) || (next === 'handoff' && (!copyReady || (revision && !draft.baselineReady))) || (next === 'import' && (!copyReady || !draft.jsonReady || (revision && !draft.baselineReady)))) return
     setMessage('')
     setDraft(previous => ({ ...previous, step: next, goalAccepted: next === 'prompt' ? true : previous.goalAccepted }))
   }
@@ -156,7 +167,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
     <nav className="en-flow-nav" aria-label="Notebook workflow progress">
       <ol>{STEPS.map((item, index) => { const state = activeStep === index ? 'current' : completed[index] ? 'completed' : 'upcoming'; return <li key={item.id} data-state={state} aria-current={state === 'current' ? 'step' : undefined}>
         <span className="en-step-number" aria-hidden="true">{state === 'completed' ? <Check /> : index + 1}</span>
-        <span className="en-step-label">{item.label}</span>
+        <span className="en-step-label">{revision && index === 0 ? 'Update details' : item.label}</span>
         <span className="sr-only">, step {index + 1} of 4, {state}</span>
       </li> })}</ol>
     </nav>
@@ -166,14 +177,14 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
     <p className={message ? 'en-feedback' : 'sr-only'} role="status" aria-live="polite">{message}</p>
 
     {step === 'goal' && <div className="en-stage-content">
-      <fieldset>
+      {revision ? <p className="en-selected-goal">Updating {revision.baseline.entries[0].title} / {goalInfo.title}</p> : <fieldset>
         <legend className="sr-only">Notebook goal</legend>
         <div className="en-goals">{(Object.keys(GOALS) as NotebookGoal[]).map(g => { const GoalIcon = GOAL_PRESENTATION[g].icon; return <label key={g} className="en-goal-card">
           <input aria-label={GOALS[g].title} type="radio" name={`external-goal-${courseId}`} value={g} checked={goal === g} onChange={() => chooseGoal(g)} />
           <span className="en-goal-symbol"><GoalIcon aria-hidden="true" /></span>
           <span className="en-goal-copy"><b>{GOALS[g].title}</b><span>{GOALS[g].description}</span></span>
         </label> })}</div>
-      </fieldset>
+      </fieldset>}
       {goal && <section className="en-goal-guide" aria-label={`${goalInfo.title}: what to bring and expect`}>
         <dl>
           <div className="en-guide-input"><dt><FolderOpen aria-hidden="true" />Bring</dt><dd><strong className="en-material-label">{GOAL_PRESENTATION[goal].material}</strong><p>{goalInfo.bring}</p></dd></div>
@@ -208,7 +219,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
       </section>
       <section className="en-stage-panel">
         <h2>What will you attach?</h2>
-        <p className="en-muted">This is a checklist only. Upload the original files in your AI conversation.</p>
+        <p className="en-muted">This is a checklist only. Attach supported individual files, clear images or pasted text in your AI chat. A project is optional; naming a folder does not upload its contents.</p>
         {classFiles.length > 0 && <details><summary>Select saved class materials</summary><div className="en-materials" aria-label="Saved class materials">{classFiles.map(f => <label key={f.id} className="en-check"><input type="checkbox" checked={selected.includes(f.id)} onChange={e => setSelected(e.target.checked ? [...selected, f.id] : selected.filter(id => id !== f.id))} />{f.title} / {f.type}</label>)}</div></details>}
         <label className="en-field">Other materials you will attach<textarea value={materials} onChange={e => setMaterials(e.target.value)} placeholder={goal === 'assignment' ? 'Assignment prompt, rubric, required reading, my draft or attempted solution...' : 'Review sheet, notes for each lesson, slides, readings, practice questions, answer keys...'} /></label>
       </section>
@@ -220,13 +231,14 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
         <label className="en-field">Depth and style<input value={depth} onChange={e => setDepth(e.target.value)} /></label>
       </details>
       <label className="en-field en-flow-request">Additional instructions for your AI<span className="en-muted block">Optional. Included when you copy the prompt.</span><textarea aria-label="Additional instructions for your AI" value={request} onChange={e => setRequest(e.target.value)} /></label>
-      <footer className="en-stage-footer"><div className="en-actions"><Button onClick={() => goTo('prompt')}>Next<ArrowRight aria-hidden="true" /></Button><Button variant="ghost" onClick={() => goTo('goal')}>Back to goal</Button></div>
+      <footer className="en-stage-footer"><div className="en-actions"><Button onClick={() => goTo('prompt')}>Next<ArrowRight aria-hidden="true" /></Button><Button variant="ghost" onClick={() => goTo('goal')}>{revision ? 'Back to update details' : 'Back to goal'}</Button></div>
         <p className="en-next-note">You can fill in missing details in your AI conversation.</p>
       </footer>
     </div>}
 
     {step === 'prompt' && <div className="en-stage-content">
       <p className="en-selected-goal">{goalInfo.title} / {course.code} / {course.title}</p>
+      {revision && <section className="en-stage-panel" aria-label="Saved update baseline"><h2>Bring the saved notebook too</h2><p>This baseline contains saved content and retained source excerpts. Notes, practice progress and unsaved edits stay outside the AI handoff.</p><div className="en-actions"><Button variant="outline" onClick={() => { try { downloadNotebookText(UPDATE_BASELINE_FILE, JSON.stringify(revision.baseline, null, 2)); setMessage('Baseline download requested. Confirm when you have the file.') } catch { setMessage('Download unavailable. Expand the saved baseline and copy its complete JSON instead.') } }}>Download saved baseline</Button><Button variant="outline" aria-pressed={Boolean(draft.baselineReady)} onClick={() => setDraft(previous => ({ ...previous, baselineReady: true }))}>I have the baseline file or full JSON</Button></div><details className="en-small-detail"><summary>Show saved baseline JSON</summary><textarea className="en-json" aria-label="Saved baseline JSON" readOnly value={JSON.stringify(revision.baseline, null, 2)} /></details></section>}
       <section className="en-code-panel" aria-label="Your prepared prompt">
         <header className="en-code-head">
           <p className="en-code-name"><FileCode2 aria-hidden="true" />notebook-{goal}-prompt.md</p>
@@ -248,19 +260,20 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
         <div className="en-actions"><Button variant="outline" disabled={copyBusy} onClick={() => { try { downloadNotebookText(`notebook-${goal}-prompt.md`, fullPrompt, 'text/markdown'); setDownloadRequested(true); setMessage('Download requested. Confirm below when you have the full prompt file.') } catch { setMessage('Download unavailable. Select and copy the full text from the panel above instead.') } }}><Download aria-hidden="true" />Download full prompt</Button>
           <Button variant="outline" disabled={copyBusy} onClick={() => acknowledgePrompt('manual')}>I copied it manually</Button>{downloadRequested && <Button variant="outline" disabled={copyBusy} onClick={() => acknowledgePrompt('download')}>I have the downloaded prompt</Button>}</div>
       </details>
-      <footer className="en-stage-footer"><div className="en-actions"><Button variant={copyReady ? 'default' : 'outline'} disabled={!copyReady || copyBusy} onClick={() => goTo('handoff')}>Next<ArrowRight aria-hidden="true" /></Button><Button variant="ghost" disabled={copyBusy} onClick={() => goTo('goal')}><ArrowLeft aria-hidden="true" />Back to goal</Button></div><p className="en-next-note">Next: paste it into your AI and attach the materials there.</p></footer>
+      <footer className="en-stage-footer"><div className="en-actions"><Button variant={copyReady ? 'default' : 'outline'} disabled={!copyReady || copyBusy || Boolean(revision && !draft.baselineReady)} onClick={() => goTo('handoff')}>Next<ArrowRight aria-hidden="true" /></Button><Button variant="ghost" disabled={copyBusy} onClick={() => goTo('goal')}><ArrowLeft aria-hidden="true" />{revision ? 'Back to update details' : 'Back to goal'}</Button></div><p className="en-next-note">Next: paste it into your AI and attach the materials there.{revision && ' Confirm you have both the full prompt and saved baseline first.'}</p></footer>
     </div>}
 
     {step === 'handoff' && <div className="en-stage-content">
       <p className="en-selected-goal">{goalInfo.title}</p>
       <ol className="en-handoff-list">
         <li><span className="en-task-number" aria-hidden="true">1</span><div><h2>Paste the prompt</h2><p>Open a chat in your AI. A class project is optional. Paste the full prompt there.</p></div></li>
-        <li><span className="en-task-number" aria-hidden="true">2</span><div><h2>Attach your materials</h2><p className="en-text">{values.MATERIALS || goalInfo.bring}</p><p className="en-muted">Upload the originals in your AI. An upload, connection or retrieved excerpt does not prove every file was read. Ask what was inspected and what remains unread.</p>{goal === 'review' && <p className="en-muted">Use a recording only if your AI can inspect it. Otherwise, use a readable transcript.</p>}</div></li>
+        <li><span className="en-task-number" aria-hidden="true">2</span><div><h2>Attach your materials</h2><p className="en-text">{values.MATERIALS || goalInfo.bring}</p><p className="en-muted">Upload the originals in your AI. An upload, connection or retrieved excerpt does not prove every file was read. Ask what was inspected and what remains unread.</p><p className="en-muted">Use supported individual files, direct images or pasted text. For unclear scans, handwriting or embedded figures, add clear page images or crops and type unclear text or formulas. Keep the full question, options and diagram together. Batch by topic when needed; projects and connections are optional.</p>{goal === 'review' && <p className="en-muted">Use a recording only if your AI can inspect it. Otherwise, use a readable transcript.</p>}</div></li>
         <li><span className="en-task-number" aria-hidden="true">3</span><div><h2>Review, then get the notebook file</h2><p>Review the readable draft and its source or coverage gaps. Request changes if needed, review any substantive updates, then explicitly confirm that your AI can make the notebook JSON. Ask for a downloadable <strong>.json file</strong> containing the complete approved notebook. If downloads are unavailable, ask for the complete JSON block.</p></div></li>
       </ol>
       <aside className="en-brief-note">
         <b>What to expect from your AI</b>
         <p>Use a normal AI chat with your files or pasted material. Your AI should prepare the content, show you a readable draft, and wait for your confirmation before making the notebook JSON.</p>
+        <p>Lots of files? Send them in batches. Tell your AI when you are done uploading, then review and approve your notebook before downloading JSON. Done uploading ends intake; it is not approval to make JSON.</p>
         <p>{goalInfo.limit}</p>
         {goal === 'assessment' && <details className="en-small-detail"><summary>Too much material for one conversation?</summary>
           <p>Work in smaller batches. Save the source details and what each batch covered, then give that saved work to your AI for the final study guide. Premed OS does not combine separate batches.</p>
@@ -280,6 +293,6 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
       </footer>
     </div>}
 
-    {step === 'import' && <div className="en-stage-content"><NotebookImportPanel courseId={courseId} initialRaw={draft.rawJson} onRawChange={rawJson => setDraft(previous => ({ ...previous, rawJson }))} onImported={id => { finished.current = true; clearNotebookWorkflowDraft(courseId); onImported(id) }} /><div className="en-actions"><Button variant="ghost" onClick={() => goTo('handoff')}><ArrowLeft aria-hidden="true" />Back to AI steps</Button></div></div>}
+    {step === 'import' && <div className="en-stage-content"><NotebookImportPanel courseId={courseId} revision={revision} initialRaw={draft.rawJson} onRawChange={rawJson => setDraft(previous => ({ ...previous, rawJson }))} onImported={id => { finished.current = true; clearNotebookWorkflowDraft(storageId); onImported(id) }} /><div className="en-actions"><Button variant="ghost" onClick={() => goTo('handoff')}><ArrowLeft aria-hidden="true" />Back to AI steps</Button></div></div>}
   </section>
 }
