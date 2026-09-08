@@ -27,6 +27,22 @@ def run(out):
     for name,data in [('no-images',plain),('figure-diagram',pkg)]:
         errors=validate(data,schema);assert not errors,errors;results.append({'case':name,'passed':True})
     def block(p,id):return next(b for e in p['entries'] for s in e['sections'] for b in s['blocks'] if b['id']==id)
+    # Source-question origin is supported only in v3; it never authenticates an answer key.
+    for name,data in [('text-source-question',plain),('visual-source-question',pkg)]:
+        supplied=copy.deepcopy(data);block(supplied,'ch3-practice-mapping')['provenance']='source'
+        assert not validate(supplied,schema)
+        results.append({'case':name,'passed':True})
+    for value in ('clarification','background','student-work'):
+        wrong=copy.deepcopy(pkg);block(wrong,'ch3-practice-mapping')['provenance']=value
+        assert any(e.startswith('practice-provenance:') for e in validate(wrong,schema))
+        results.append({'case':'reject-practice-provenance-'+value,'passed':True})
+    wrong=copy.deepcopy(pkg);block(wrong,'ch3-practice-mapping').update(provenance='source',sourceIds=[],excerptIds=[])
+    assert any(e.startswith('missing-evidence:') for e in validate(wrong,schema))
+    results.append({'case':'reject-source-question-without-evidence','passed':True})
+    legacy,_=examples();block(legacy,'ch3-practice-mapping')['provenance']='source'
+    legacy_schema=json.loads((Path(__file__).parent/'notebook-package.schema.json').read_text())
+    assert any(e.startswith('practice-provenance:') for e in validate(legacy,legacy_schema))
+    results.append({'case':'v2-practice-origin-behavior-unchanged','passed':True})
     mutations=[
         ('missing-review','schema',lambda p:p.pop('visualReview')),
         ('missing-source-review','visual-source-inventory',lambda p:p['visualReview'].update(sources=[])),

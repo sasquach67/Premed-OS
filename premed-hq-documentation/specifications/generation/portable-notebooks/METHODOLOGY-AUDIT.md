@@ -93,3 +93,9 @@ The 29 v3 contract checks and v2 regression checks are authored/structural, not 
 ## Beta 10 presentation-only delta
 
 The portable representation section now distinguishes app-presented structured provenance/evidence from redundant bracketed wrappers in ordinary newly authored prose. Plain-language uncertainty, consequential student-source status, conflicts, missing evidence, hypothetical data, required academic citations and exact quotations/notation remain visible as applicable. Teaching depth and protected saved content are unchanged. No schema or composer change; no existing BIOL notebook rewrite or provider run.
+
+## Beta 11 teaching/source-question adaptation
+
+The original depth, evidence and goal methodology remains. Existing portable rules now require finished teaching rather than repeated audit/process notices, compact shared-dimension tables, useful supported relationship diagrams and figure-specific teaching beside real source images. Shared neutral practice stimuli keep interpretations after Reveal. The source-question rule retains relevant usable supplied course tasks and their exact context/options, keys or honestly authored reasoning, and inventories duplicates/omissions. Original-application no-copy restrictions still govern generated supplements; they do not prohibit the authorized supplied study questions.
+
+No schema bytes or fields changed. The narrow v3 semantic allowance permits source practice origin alongside generated-practice, while v2 retains its prior rule. The practice-origin field describes the source question, not proof that the whole solution is official. Thirty-six semantic cases include both v3 origins, evidence rejection and unchanged v2 behavior. The separate complete BIOL revision preserves originals/manual edits and adds source questions; it is authored review work, not a provider trial or accepted app update.

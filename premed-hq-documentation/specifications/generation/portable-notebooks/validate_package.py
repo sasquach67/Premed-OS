@@ -63,7 +63,7 @@ def validate(data,schema):
             identify('section',sec)
             for b in sec['blocks']:
                 identify('block',b);evidence(b,b['type']!='gap' and b['provenance'] in ('source','clarification','generated-practice','student-work'))
-                if b['type']=='practice' and b['provenance']!='generated-practice':fail('practice-provenance',b['id'])
+                if b['type']=='practice' and b['provenance'] not in (('source','generated-practice') if visual else ('generated-practice',)):fail('practice-provenance',b['id'])
                 if b['type']=='table' and any(len(row)!=len(b['columns']) for row in b['rows']):fail('table-width',b['id'])
         for r in entry['requirements']:
             identify('requirement',r);evidence(r,r['authority'] in ('official','selected-material'))

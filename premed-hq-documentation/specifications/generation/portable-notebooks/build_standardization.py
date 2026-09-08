@@ -3,7 +3,7 @@ from pathlib import Path
 import argparse, collections, hashlib, json, re, shutil
 from build_revision_cases import examples, render, TUESDAY, THURSDAY, REMINDER
 
-BUILD='notebook-instructions-beta-10'
+BUILD='notebook-instructions-beta-11'
 NOTICE='Authored synthetic regression packet; no actual coursework, provider/context trial or student rating.'
 SAFEGUARDS={
  'course-target-scope':['EC-TARGET','EC-BASELINE','EC-SCOPE'],
@@ -66,7 +66,7 @@ def build_packet(out, source_root=None):
      ('revision-preservation','EC-BASELINE','Use the latest saved baseline plus Thursday material in the Review revision run.','Keep the student reminder and isolated mapping content/IDs; correct timing answer/objective/coverage and retain old exact quotes. App acceptance/progress remain app-controlled.')]
     records=[{'id':id,'ruleId':rule,'goals':['review','assessment','assignment'],'manualAction':action,'expectedBehavior':behavior} for id,rule,action,behavior in cases]
     (out/'regressions.json').write_text(json.dumps({'promptBuild':BUILD,'executed':False,'ratings':None,'cases':records},indent=2)+'\n')
-    checklist=['# Manual cross-provider checklist',NOTICE,'Release remains paused. Record actual results below; all result cells intentionally start blank. Use the SAME complete beta-10 goal prompt, request values, source files and turn sequence for each provider. The packet is one shared fixture set, not an extra maintained prompt.',
+    checklist=['# Manual cross-provider checklist',NOTICE,'Release remains paused. Record actual results below; all result cells intentionally start blank. Use the SAME complete beta-11 goal prompt, request values, source files and turn sequence for each provider. The packet is one shared fixture set, not an extra maintained prompt.',
       'Provider / exact model / date / interface / enabled tools:','Prompt build and complete ending received:','Actually supplied files and inspected/missing portions:','Actual checkpoint, readable approved draft and final export paths:','| Check | Actual observation / evidence | Pass, fail or not run |','| --- | --- | --- |']
     checklist += [f'| {id}: {behavior} | | |' for id,_,_,behavior in cases]
     checklist += ['| Goal quality: connected review or assessment teaching, usable supported practice, or a useful one-hint assignment result; no filler/unsupported answers | | |','| Separate checks: gates; evidence/citations; factual/learning quality; JSON structure/references; revision/draft preservation | | |','Clarity / depth / usefulness / class fit ratings: leave blank until the actual student judges them.','Context/size result: record what the actual interface accepted and retained. Bytes, estimated tokens and these local checks do not establish provider capacity, enforcement or equal teaching quality.','A filename, folder-enabled Codex read, OCR success or this authored fixture does not count as a provider/context trial.']
@@ -144,13 +144,13 @@ def prompt_audit(root,out):
         refs=sorted(set(re.findall(r'[^\s`<>\[\]()]+\.md\b',t)))
         counts=collections.Counter(p.strip() for p in t.split('\n\n') if len(p.strip())>100 and not p.lstrip().startswith('```'))
         duplicate_bytes=sum((n-1)*len(p.encode()) for p,n in counts.items() if n>1)
-        baseline=out/'versions/notebook-instructions-beta-9'/name
-        old=baseline.stat().st_size if baseline.exists() else {'review':108849,'assessment':99394,'assignment':91793}[goal]
-        rows.append({'goal':goal,'bytes':m['bytes'],'words':m['words'],'beta9Bytes':old,'deltaBytes':m['bytes']-old,'deltaPercent':round(100*(m['bytes']-old)/old,2),'componentBytes':m['componentBytes'],'repeatedExactLongParagraphBytes':duplicate_bytes,'mdReferences':refs,'errors':errors})
+        baseline=out/'versions/notebook-instructions-beta-10'/name
+        old=baseline.stat().st_size if baseline.exists() else {'review':109692,'assessment':100237,'assignment':92636}[goal]
+        rows.append({'goal':goal,'bytes':m['bytes'],'words':m['words'],'beta10Bytes':old,'deltaBytes':m['bytes']-old,'deltaPercent':round(100*(m['bytes']-old)/old,2),'componentBytes':m['componentBytes'],'repeatedExactLongParagraphBytes':duplicate_bytes,'mdReferences':refs,'errors':errors})
     report={'promptBuild':BUILD,'release':'paused','canonicalHeadAtBuild':manifest['canonicalHeadAtBuild'],'goals':rows,'safeguards':SAFEGUARDS,'schemaSha256':manifest['schema']['sha256'],'canonicalManifestSha256':digest(out/'canonical-manifest.json'),'promptHashes':{name:value['sha256'] for name,value in manifest['outputs'].items()},'limits':['Static self-contained/dependency checks are not provider context/capacity tests.','Exact paragraph counting does not measure every semantic repetition.','No provider runs, real coursework or ratings.']}
     (out/'STANDARDIZATION-AUDIT.json').write_text(json.dumps(report,indent=2)+'\n')
-    parts=['# Beta-10 prose presentation audit', 'Release paused. Beta 10 adds only one shared paragraph preventing redundant bracketed citation/provenance wrappers in newly authored teaching and practice prose. Structured evidence, substantive plain-language limitations, required academic citations and protected saved content remain intact. The complete v3 output schema, exact v2 input schema and visual/stimulus rules are unchanged. Update composition applies the mode metadata before inserting student inputs. The beta-6 standardization checks below remain in force; no provider/context or class trial was run.','| Goal | Beta 9 bytes | Beta 10 bytes | Delta | Change |','| --- | ---: | ---: | ---: | ---: |']
-    for r in rows:parts.append(f"| {r['goal']} | {r['beta9Bytes']} | {r['bytes']} | {r['deltaBytes']:+} | {r['deltaPercent']:+}% |")
+    parts=['# Beta-11 teaching and source-question audit', 'Release paused. Beta 11 consolidates finished teaching, useful supported diagrams, figure interpretation and faithful usable source-question inclusion with the beta-10 prose presentation clarification. Exact schema bytes, three goals and eleven tokens are unchanged. V3 semantic validation now accepts source or generated-practice origins for practice; v2 behavior is preserved. Update composition applies the mode metadata before inserting student inputs. The beta-6 standardization checks below remain in force; no provider/context or class trial was run.','| Goal | Beta 10 bytes | Beta 11 bytes | Delta | Change |','| --- | ---: | ---: | ---: | ---: |']
+    for r in rows:parts.append(f"| {r['goal']} | {r['beta10Bytes']} | {r['bytes']} | {r['deltaBytes']:+} | {r['deltaPercent']:+}% |")
     parts+=['## Component contributions','| Goal | Request | Common learning | Goal learning | External workflow | Complete schema | Assembly | Exact repeated long paragraphs |','| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |']
     for r in rows:
         c=r['componentBytes'];parts.append('| '+r['goal']+' | '+' | '.join(str(c[k]) for k in ('request','commonLearningRules','goalLearningRules','externalWorkflow','schema','assembly'))+' | '+str(r['repeatedExactLongParagraphBytes'])+' |')
