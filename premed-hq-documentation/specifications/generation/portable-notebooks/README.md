@@ -24,7 +24,7 @@ python3 -m venv /tmp/notebook-validation
 
 ## Rule selection
 
-- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-9; new output uses instructionsVersion notebook-workflows-draft-3; v2 remains supported as input.
+- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-10; new output uses instructionsVersion notebook-workflows-draft-3; v2 remains supported as input.
 - Every goal also includes applicable global rules from 02: sections 1.1–1.8, clarification/background boundaries, source primacy, cross-source behaviors and thin-source handling.
 - Review includes the full Runtime briefing mirror and Required structure from 03, its Portable review notebook section, the introduction and every Rules row from 11, its Portable objective coverage section, and applicable visual-learning sections from 06. All included fragments are verbatim; see METHODOLOGY-AUDIT.md for the section-level audit and explicit portable differences.
 - Assessment and assignment each include every substantive `NA-` or `NW-` rule verbatim and the corresponding portable section. Persistence/recovery and renderer implementation paragraphs are excluded.
@@ -90,3 +90,7 @@ The same three prompts embed the complete v3 output schema, full applicable meth
 The accepted app runtime keeps actual bytes/digests in an immutable local binding index and portable bundle, validating all required assets before commit. The original AI JSON and v2 schema remain exact; v2-to-v3 upgrade requires an explicit accepted proposal. Root owns actual app/backup proof and release. This owner’s separate BIOL augmentation is coordinator-authored source-grounded review work, not a new provider output or rating.
 
 Run build_visual_schema.py only to reproduce the frozen v3 schema (never overwrite v2), and run check_visual_package.py --output OUTPUT/v3-contract-cases for the 29 authored contract cases. The original check_package.py now tests legacy v2 fixtures and new v3 prompt embedding separately. Old feasibility/revision/cross-provider reference JSON stays labelled v2 content/compatibility material, not a new v3 output template. No test proves actual visual inspection, neutral stimulus, scientific correctness or provider capacity.
+
+## Beta 10 — narrow prose presentation clarification
+
+One shared paragraph prevents redundant bracketed citation/provenance wrappers in newly authored ordinary teaching and practice prose. Structured provenance/evidence, substantive plain-language limitations, required academic citations, exact quotes/notation and protected saved content remain intact. No schema, learning-depth, goal, runtime token or new/update mode change. Beta 9 remains archived; no real notebook or provider output is regenerated.

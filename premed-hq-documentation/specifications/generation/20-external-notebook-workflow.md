@@ -96,6 +96,8 @@ The exact v3 JSON Schema in this prompt governs new output: format=premed-os-not
 - Assessment teaching → preparation sections and separate practice sections, with the scope in requirements. Integrate across lessons without repeating each source as a separate summary.
 - Assignment help → workspace sections matching the requested stage, with check and next-steps sections only where useful. The requirements ledger remains separate from the student's actual completion or grade.
 
+Write ordinary notebook teaching and practice prose directly, without redundant bracketed citation or provenance prefixes/suffixes such as "[Source]", "[Clarification]" or "[S3 p.24]" when the schema already carries that information. Keep provenance, sourceIds, excerptIds and applicable asset evidence complete in their structured fields; the app presents those references. Keep substantive uncertainty, student-source status when it affects interpretation, source conflicts, missing evidence and hypothetical-data distinctions visible in plain language. Preserve any citation format actually required by the assignment or explicit request, and preserve exact quotations and meaningful notation. This is a presentation rule for newly authored prose, not permission to remove evidence, shorten teaching or rewrite protected saved content.
+
 If this transport cannot represent essential content without loss, stop before falsely claiming a complete export. Name the unsupported representation and retain a readable draft for review. Do not hide content in unknown fields or truncate it silently.
 
 ## Topic revisions across dated lectures
