@@ -142,3 +142,43 @@
   .en-gate{align-items:stretch;padding:1rem}
   .en-gate>button{width:100%;justify-content:center}
 }
+
+/* Refinement of Claude's baseline: use the ClassHub icon vocabulary and a single
+   divided input/result group, without adding another stack of cards. */
+.en-flow .en-goal-card{display:grid;grid-template-columns:1.9rem minmax(0,1fr) 1rem;align-items:start;column-gap:.65rem;padding:1rem .9rem}
+.en-flow .en-goal-card>input{grid-column:3;grid-row:1;margin-top:.3rem}
+.en-goal-symbol{grid-column:1;grid-row:1;display:grid;place-items:center;width:1.9rem;height:1.9rem;border-radius:.55rem;background:color-mix(in srgb,var(--primary) 10%,var(--card));color:var(--primary)}
+.en-goal-symbol svg{width:1.15rem;height:1.15rem;stroke-width:1.8}
+.en-goal-copy{grid-column:2;grid-row:1}
+.en-flow .en-goals .en-goal-copy b{font-family:var(--font-display);font-size:1rem;font-weight:800;line-height:1.3;margin:0 0 .3rem}
+.en-flow .en-goals .en-goal-copy>span{font-size:.82rem;line-height:1.45}
+.en-flow .en-goal-card:has(input:checked){background:color-mix(in srgb,var(--primary) 7%,var(--card));box-shadow:0 0 0 1px var(--primary)}
+.en-goal-card:has(input:checked) .en-goal-symbol{background:var(--primary);color:var(--primary-foreground)}
+.en-flow .en-goal-card:has(input:checked) .en-goal-copy>span{color:var(--foreground)}
+.en-flow .en-goal-guide{padding:0;overflow:hidden;border-radius:.9rem;background:var(--card)}
+.en-flow .en-goal-guide dl{gap:0}
+.en-guide-input,.en-guide-output{min-width:0;padding:1.15rem 1.25rem}
+.en-guide-output{border-left:1px solid var(--border)}
+.en-flow .en-goal-guide dt{display:flex;align-items:center;gap:.55rem;margin:0 0 .85rem;font-family:var(--font-display);font-size:1.1rem;font-weight:800;line-height:1.3;letter-spacing:0;text-transform:none;color:var(--foreground)}
+.en-goal-guide dt svg{width:1.15rem;height:1.15rem;flex-shrink:0;color:var(--primary);stroke-width:1.8}
+.en-flow .en-goal-guide dd{font-size:.875rem;line-height:1.55}
+.en-material-label{display:block;color:var(--foreground);font-weight:800;margin:0 0 .3rem}
+.en-flow .en-guide-input p{font-size:.85rem;line-height:1.55;color:var(--muted-foreground);margin:0;max-width:31rem}
+.en-output-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem 1rem;list-style:none;padding:0;margin:0}
+.en-output-list li{display:flex;align-items:flex-start;gap:.5rem;min-width:0;font-size:.85rem;font-weight:700;line-height:1.4}
+.en-output-list svg{width:1rem;height:1rem;flex:0 0 1rem;margin-top:.1rem;color:var(--primary);stroke-width:1.8}
+.en-output-list span{min-width:0}
+.en-flow .en-goal-guide .en-guide-limit{margin:0 1.25rem;padding:.85rem 0 0;font-size:.82rem;line-height:1.55}
+.en-flow .en-goal-guide>.en-small-detail{padding:.65rem 1.25rem .95rem}
+.en-flow .en-goal-guide>.en-small-detail summary{color:var(--foreground);font-weight:700}
+@media(max-width:760px){
+  .en-flow .en-goal-card{padding:.85rem 1rem;column-gap:.75rem}
+  .en-guide-input,.en-guide-output{padding:1rem}
+  .en-output-list{gap:.65rem .75rem}
+  .en-flow .en-goal-guide .en-guide-limit{margin-inline:1rem}
+  .en-flow .en-goal-guide>.en-small-detail{padding-inline:1rem}
+}
+@media(max-width:480px){
+  .en-guide-output{border-left:0;border-top:1px solid var(--border)}
+  .en-flow .en-goal-guide dt{margin-bottom:.65rem}
+}

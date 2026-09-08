@@ -65,6 +65,11 @@ it('distinguishes minimum materials, optional lecture sources, partial exam scop
   expect(container.querySelectorAll('input[type="radio"]')).toHaveLength(3)
   expect(container.textContent).toContain('Review a lecture or lesson.')
   const guide = container.querySelector('.en-goal-guide')!
+  expect(guide.querySelectorAll('.en-output-list li')).toHaveLength(4)
+  expect(guide.querySelector('.en-output-list')?.textContent).toContain('Recall outline')
+  expect([...guide.querySelectorAll('.en-output-list svg')].every(icon => icon.getAttribute('aria-hidden') === 'true')).toBe(true)
+  expect(guide.querySelector('.en-guide-limit')?.closest('details')).toBeNull()
+  expect(guide.querySelector('.en-guide-limit')?.textContent).toContain('Thin or unreadable material')
   expect(guide.textContent).toContain('Readable material for the topic you want help with.')
   const detail = guide.querySelector<HTMLDetailsElement>('details')!
   expect(detail.open).toBe(false)

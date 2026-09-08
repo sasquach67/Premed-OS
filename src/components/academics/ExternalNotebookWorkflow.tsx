@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Check, Copy, Download, FileCode2, Info } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Brain, Check, Copy, Download, FileCode2, FileText, FolderOpen, HelpCircle, Info, ListChecks, MessageSquare, NotebookText, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useStore } from '@/store/store'
 import { composeNotebookPrompt, type PromptValues } from '@/lib/academics/notebook/prompt'
@@ -39,6 +39,21 @@ const GOALS = {
     ideal: 'The prompt, rubric, required sources or methods, and your work so far.',
     stages: ['Understand the task', 'Plan an approach', 'Get a hint', 'Review my attempt', 'Revise my draft'],
   },
+}
+
+const GOAL_PRESENTATION = {
+  review: { icon: BookOpen, material: 'Lesson material', outputs: [
+    { icon: BookOpen, label: 'Study guide' }, { icon: Brain, label: 'Recall outline' },
+    { icon: HelpCircle, label: 'Practice questions' }, { icon: ListChecks, label: 'Covered / missing' },
+  ] },
+  assessment: { icon: Target, material: 'Scope + lesson material', outputs: [
+    { icon: NotebookText, label: 'Study guide / outline' }, { icon: HelpCircle, label: 'Practice questions' },
+    { icon: MessageSquare, label: 'Explained answers' }, { icon: ListChecks, label: 'Covered / missing' },
+  ] },
+  assignment: { icon: FileText, material: 'Assignment task', outputs: [
+    { icon: Target, label: 'Hints or a plan' }, { icon: MessageSquare, label: 'Explanations or feedback' },
+    { icon: ListChecks, label: 'Requirement check' },
+  ] },
 }
 
 const STEPS = [
@@ -153,13 +168,17 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
     {step === 'goal' && <div className="en-stage-content">
       <fieldset>
         <legend className="sr-only">Notebook goal</legend>
-        <div className="en-goals">{(Object.keys(GOALS) as NotebookGoal[]).map(g => <label key={g} className="en-goal-card">
+        <div className="en-goals">{(Object.keys(GOALS) as NotebookGoal[]).map(g => { const GoalIcon = GOAL_PRESENTATION[g].icon; return <label key={g} className="en-goal-card">
           <input aria-label={GOALS[g].title} type="radio" name={`external-goal-${courseId}`} value={g} checked={goal === g} onChange={() => chooseGoal(g)} />
-          <span><b>{GOALS[g].title}</b><span>{GOALS[g].description}</span></span>
-        </label>)}</div>
+          <span className="en-goal-symbol"><GoalIcon aria-hidden="true" /></span>
+          <span className="en-goal-copy"><b>{GOALS[g].title}</b><span>{GOALS[g].description}</span></span>
+        </label> })}</div>
       </fieldset>
       {goal && <section className="en-goal-guide" aria-label={`${goalInfo.title}: what to bring and expect`}>
-        <dl><div><dt>Bring</dt><dd>{goalInfo.bring}</dd></div><div><dt>You will get</dt><dd>{goalInfo.result}</dd></div></dl>
+        <dl>
+          <div className="en-guide-input"><dt><FolderOpen aria-hidden="true" />Bring</dt><dd><strong className="en-material-label">{GOAL_PRESENTATION[goal].material}</strong><p>{goalInfo.bring}</p></dd></div>
+          <div className="en-guide-output"><dt><NotebookText aria-hidden="true" />You'll get</dt><dd><ul className="en-output-list" aria-label={goalInfo.result}>{GOAL_PRESENTATION[goal].outputs.map(({ icon: OutputIcon, label }) => <li key={label}><OutputIcon aria-hidden="true" /><span>{label}</span></li>)}</ul></dd></div>
+        </dl>
         <p className="en-guide-limit"><Info aria-hidden="true" /><span><b>Missing material?</b> {goalInfo.limit}</span></p>
         <details className="en-small-detail"><summary>Materials that help most</summary>
           <p><b>Best for:</b> {goalInfo.bestFor}</p>
@@ -235,7 +254,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
     {step === 'handoff' && <div className="en-stage-content">
       <p className="en-selected-goal">{goalInfo.title}</p>
       <ol className="en-handoff-list">
-        <li><span className="en-task-number" aria-hidden="true">1</span><div><h2>Paste the prompt</h2><p>Open the class project or conversation you want to use in your AI. Paste the full prompt there.</p></div></li>
+        <li><span className="en-task-number" aria-hidden="true">1</span><div><h2>Paste the prompt</h2><p>Open a chat in your AI. A class project is optional. Paste the full prompt there.</p></div></li>
         <li><span className="en-task-number" aria-hidden="true">2</span><div><h2>Attach your materials</h2><p className="en-text">{values.MATERIALS || goalInfo.bring}</p><p className="en-muted">Upload the originals in your AI. An upload, connection or retrieved excerpt does not prove every file was read. Ask what was inspected and what remains unread.</p>{goal === 'review' && <p className="en-muted">Use a recording only if your AI can inspect it. Otherwise, use a readable transcript.</p>}</div></li>
         <li><span className="en-task-number" aria-hidden="true">3</span><div><h2>Get the notebook file</h2><p>Ask for a downloadable <strong>.json file</strong> containing the complete final notebook. If downloads are unavailable, ask for the complete JSON block.</p></div></li>
       </ol>
