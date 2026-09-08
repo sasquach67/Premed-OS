@@ -52,11 +52,12 @@ export function downloadNotebookText(filename: string, text: string, mime = 'app
 type ChangeText = (path: (string | number)[], text: string) => void
 function ContentText({ value, path, label, change, sourceIds, inlineSources = false, tables = false }: { value: string; path: (string | number)[]; label: string; change?: ChangeText; sourceIds?: string[]; inlineSources?: boolean; tables?: boolean }) {
   if (change) return <label className="en-field">{label}<textarea value={value} onChange={event => change(path, event.target.value)} /></label>
-  if (tables) return <>{notebookPromptParts(value).map((part, index) => part.type === 'text' ? <p className="en-text" key={index}>{part.text}</p> : <div className="en-table-scroll nbr-prompt-table" role="region" aria-label="Practice prompt data" tabIndex={0} key={index}><table><thead><tr>{part.columns.map((column, ci) => <th scope="col" style={{ textAlign: part.align[ci] }} key={ci}>{column}</th>)}</tr></thead><tbody>{part.rows.map((row, ri) => <tr key={ri}>{row.map((cell, ci) => <td style={{ textAlign: part.align[ci] }} key={ci}>{cell}</td>)}</tr>)}</tbody></table></div>)}</>
-  if (!sourceIds) return <p className="en-text">{value}</p>
+  const textRole = path.at(-1) === 'prompt' ? 'question' : path.at(-1) === 'answer' ? 'answer' : path.at(-1) === 'rationale' ? 'reasoning' : undefined
+  if (tables) return <>{notebookPromptParts(value).map((part, index) => part.type === 'text' ? <p className="en-text" data-reader-role={textRole} key={index}>{part.text}</p> : <div className="en-table-scroll nbr-prompt-table" role="region" aria-label="Practice prompt data" tabIndex={0} key={index}><table><thead><tr>{part.columns.map((column, ci) => <th scope="col" style={{ textAlign: part.align[ci] }} key={ci}>{column}</th>)}</tr></thead><tbody>{part.rows.map((row, ri) => <tr key={ri}>{row.map((cell, ci) => <td style={{ textAlign: part.align[ci] }} key={ci}>{cell}</td>)}</tr>)}</tbody></table></div>)}</>
+  if (!sourceIds) return <p className="en-text" data-reader-role={textRole}>{value}</p>
   const { body, leading, trailing } = splitNotebookAnnotations(value, sourceIds)
   const annotation = (note: typeof leading[number], index: number) => note.kind === 'citation' && !inlineSources ? null : <div key={index} className={note.kind === 'limit' ? 'nbr-qualification en-text' : 'nbr-prov'}>{note.kind === 'limit' && <span className="sr-only">Qualification: </span>}<span>{note.displayText ?? note.text}</span></div>
-  return <>{leading.map(annotation)}{body.trim() && <p className="en-text">{body}</p>}{trailing.map(annotation)}</>
+  return <>{leading.map(annotation)}{body.trim() && <p className="en-text" data-reader-role={textRole}>{body}</p>}{trailing.map(annotation)}</>
 }
 function EvidenceView({ evidence, pkg }: { evidence: Evidence; pkg: NotebookPackage }) {
   const assetIds = visualAssetReferences(evidence), assets = pkg.version === 3 ? pkg.assets.filter(a => assetIds.includes(a.id)) : []

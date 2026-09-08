@@ -425,3 +425,12 @@ it('labels retained source questions without claiming their answer is a verified
   expect(answer.open).toBe(false); expect(answer.textContent).toContain('Question from supplied course material')
   expect(answer.textContent).not.toContain('Verified source answer')
 })
+it('exposes distinct question, answer and reasoning type roles without changing source text or Reveal boundaries', async () => {
+  const pkg = plainVisualFixture(), entry = pkg.entries[0], before = JSON.stringify(pkg)
+  await act(async () => root.render(<NotebookPackageView pkg={pkg} entryId={entry.id} mode="practice" reader />))
+  const question = container.querySelector('[data-reader-role="question"]')!, answer = container.querySelector('[data-reader-role="answer"]')!, reasoning = container.querySelector('[data-reader-role="reasoning"]')!
+  expect(question).toBeTruthy(); expect(question.closest('.en-answer')).toBeNull()
+  expect(answer.closest<HTMLDetailsElement>('.en-answer')?.open).toBe(false)
+  expect(reasoning.closest('.en-answer')).toBe(answer.closest('.en-answer'))
+  expect(JSON.stringify(pkg)).toBe(before)
+})
