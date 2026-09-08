@@ -1,6 +1,6 @@
 /** Validator for the explicitly supported, bundled notebook schema vocabulary.
  * Unknown keywords fail closed so a future contract cannot silently weaken validation. */
-export type Schema = { [key: string]: unknown; $ref?: string; $defs?: Record<string, Schema>; type?: string | string[]; properties?: Record<string, Schema>; required?: string[]; additionalProperties?: boolean; items?: Schema; oneOf?: Schema[]; allOf?: Schema[]; if?: Schema; then?: Schema; else?: Schema; enum?: unknown[]; const?: unknown; minLength?: number; maxLength?: number; minItems?: number; maxItems?: number; minimum?: number; maximum?: number; uniqueItems?: boolean }
+export type Schema = { [key: string]: unknown; $ref?: string; $defs?: Record<string, Schema>; type?: string | string[]; properties?: Record<string, Schema>; required?: string[]; additionalProperties?: boolean; items?: Schema; oneOf?: Schema[]; allOf?: Schema[]; if?: Schema; then?: Schema; else?: Schema; enum?: unknown[]; const?: unknown; minLength?: number; maxLength?: number; minItems?: number; maxItems?: number; minimum?: number; maximum?: number; uniqueItems?: boolean; pattern?: string }
 export class NotebookValidationError extends Error {
   path: string
   constructor(path: string, message: string) { super(`${path}: ${message}`); this.name = 'NotebookValidationError'; this.path = path }
@@ -8,7 +8,7 @@ export class NotebookValidationError extends Error {
 export function validateSchema(value: unknown, schema: Schema, root = schema, path = '$', depth = 0): void {
   const fail = (message: string): never => { throw new NotebookValidationError(path, message) }
   if (depth > 60) fail('The package is nested too deeply.')
-  const allowed = new Set(['$schema', '$id', '$defs', '$ref', 'title', 'description', 'type', 'properties', 'required', 'additionalProperties', 'items', 'oneOf', 'allOf', 'if', 'then', 'else', 'enum', 'const', 'minLength', 'maxLength', 'minItems', 'maxItems', 'minimum', 'maximum', 'uniqueItems'])
+  const allowed = new Set(['$schema', '$id', '$defs', '$ref', 'title', 'description', 'type', 'properties', 'required', 'additionalProperties', 'items', 'oneOf', 'allOf', 'if', 'then', 'else', 'enum', 'const', 'minLength', 'maxLength', 'minItems', 'maxItems', 'minimum', 'maximum', 'uniqueItems', 'pattern'])
   for (const keyword of Object.keys(schema)) if (!allowed.has(keyword)) fail(`Unsupported schema keyword ${keyword}; update the importer before using this contract.`)
   if (schema.$ref) {
     const key = schema.$ref.replace('#/$defs/', '')
@@ -26,6 +26,8 @@ export function validateSchema(value: unknown, schema: Schema, root = schema, pa
     const length = [...value].length
     if (schema.minLength !== undefined && (length < schema.minLength || (schema.minLength > 0 && !value.trim()))) fail('Provide non-empty text.')
     if (schema.maxLength !== undefined && length > schema.maxLength) fail(`Use at most ${schema.maxLength} characters; no text was truncated.`)
+    // Patterns are trusted bundled schema, never an expression supplied by an import.
+    if (schema.pattern !== undefined && !new RegExp(schema.pattern).test(value)) fail('Text does not match the required format. Asset files must use a PNG or JPEG basename, not a path or URL.')
   }
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) fail('Use a finite number.')
