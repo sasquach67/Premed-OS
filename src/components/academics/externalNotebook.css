@@ -279,7 +279,6 @@
 .nbr-doc .en-coverage [data-status=partial]::before{background:var(--warning)}
 .nbr-doc .en-coverage [data-status=missing]{border-color:var(--destructive)}
 .nbr-doc .en-coverage [data-status=missing]::before{background:var(--destructive)}
-.nbr-doc .nbr-objectives>details{border:1px solid var(--border);border-radius:.65rem;padding:.65rem .8rem;margin:.5rem 0}
 .nbr-doc>.en-muted{display:block;border-top:1px solid var(--border);margin-top:1.5rem;padding-top:1rem;font-size:.75rem}
 .nbr-doc .en-sources{border:0}
 .nbr-doc .en-sources>section{border-top:1px solid var(--border);padding-top:1rem}
@@ -357,3 +356,37 @@
   .nbr .nbr-doc .nbr-section-head{align-items:flex-start;gap:.7rem}
   .nbr .nbr-num{font-size:1.05rem;padding-top:.3rem}
 }
+
+/* Objective order stays visible; understanding and action are separate reading cues. */
+.external-notebook .nbr-objectives{container-type:inline-size}
+.external-notebook .nbr-objective-list{list-style:none;padding:0;margin:0}
+.external-notebook .nbr-objective{padding:1.15rem 0;border-top:1px solid var(--border);min-width:0}
+.external-notebook .nbr-objective-head{display:grid;grid-template-columns:2rem minmax(0,1fr);gap:.65rem;align-items:baseline}
+.external-notebook .nbr-objective-number{font-family:var(--font-display);font-size:1.05rem;color:var(--primary);font-variant-numeric:tabular-nums}
+.external-notebook .nbr-objectives .nbr-objective-title{font-family:var(--font-display);font-size:1.125rem;line-height:1.4;margin:0;font-weight:700}
+.external-notebook .nbr-objective-origin{font-size:.75rem;color:var(--muted-foreground)}
+.external-notebook .nbr-objective-body{min-width:0;margin:.7rem 0 0 2.65rem}
+.external-notebook .nbr-objectives h5{font-size:.75rem;line-height:1.5;font-weight:800;margin:0 0 .25rem}
+.external-notebook .nbr-objectives .en-text{font-size:.9rem;line-height:1.6;margin:.2rem 0}
+.external-notebook .nbr-objective-requirement{font-size:.8125rem;line-height:1.6;color:var(--muted-foreground);margin:0 0 .65rem}
+.external-notebook .nbr-objective-recall{margin-bottom:.8rem}
+.external-notebook .nbr-objective-recall h5{color:var(--muted-foreground)}
+.external-notebook .nbr-objective-recall .en-text{font-style:italic}
+.external-notebook .nbr-objective-columns{display:grid;gap:.75rem}
+.external-notebook .nbr-objective-columns ul{list-style:disc;margin:0;padding-left:1.1rem}
+.external-notebook .nbr-objective-columns li{padding:0;margin:.25rem 0}
+.external-notebook .nbr-objective-beAbleToDo{padding:.65rem .85rem;border-left:2px solid var(--primary);background:color-mix(in srgb,var(--primary) 5%,var(--card));border-radius:0 .35rem .35rem 0}
+.external-notebook .nbr-objective-beAbleToDo h5{color:var(--primary)}
+.external-notebook .nbr-objective-caution{margin-top:.65rem}
+.external-notebook .nbr-objective-caution .en-text,.external-notebook .nbr-objective-limit .en-text{font-size:.8125rem}
+.external-notebook .nbr-objective-practice{display:flex;align-items:center;gap:.15rem .65rem;flex-wrap:wrap;margin:.45rem 0}
+.external-notebook .nbr-objective-practice h5{margin:0}
+.external-notebook .nbr-objective-practice button{min-height:44px;padding:.3rem 0;color:var(--primary);font-size:.8125rem;font-weight:700;text-decoration:underline;text-underline-offset:.2em;cursor:pointer;background:transparent;border:0}
+.external-notebook .nbr-objective-practice button:hover{text-decoration-thickness:2px}
+.external-notebook .nbr-objective-practice button:focus-visible,.external-notebook [data-notebook-practice-id]:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
+.external-notebook [data-notebook-practice-id]{scroll-margin-block:1.5rem}
+.external-notebook .nbr-objective-limit{color:var(--muted-foreground);margin-top:.4rem}
+.external-notebook .nbr-objective .en-evidence{border:0;padding:.3rem 0;font-size:.8125rem}
+.external-notebook .nbr-objective .en-evidence>summary{color:var(--muted-foreground);font-weight:500;min-height:44px;align-content:center}
+@container(min-width:38rem){.external-notebook .nbr-objective-columns{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:1.25rem}}
+@container(max-width:25rem){.external-notebook .nbr-objective-body{margin-left:0}}

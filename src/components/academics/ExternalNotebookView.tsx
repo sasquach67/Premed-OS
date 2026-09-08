@@ -12,6 +12,7 @@ import { notebookPromptParts } from '@/lib/academics/notebook/promptTables'
 import { collectReaderAnnotations, collectReaderEvidence, notebookReaderContents, readerBlocks, readerHeadingId, splitNotebookAnnotations, type NotebookReadingMode } from '@/lib/academics/notebook/readerPresentation'
 import { ReadingContents } from './ReadingContents'
 import { scrollGuideHeadingIntoReadingPane } from './lectureGuideNavigation'
+import { preferredScrollBehavior } from '@/lib/scroll'
 import { NotebookAssetsProvider, NotebookPracticeStimulus, NotebookVisualBlock, NotebookVisualReview, useNotebookPracticeImages } from './NotebookVisuals'
 import { NotebookPortableExports, NotebookUpdateImageFiles } from './NotebookPortableExports'
 import { assertNotebookBackupFits } from '@/lib/academics/notebook/notebookBundle'
@@ -99,7 +100,7 @@ function BlockView({ block, path, change, pkg, progress, onProgress, reader = fa
     const split = splitNotebookAnnotations(block.text, pkg.sources.map(source => source.id))
     if (!split.body.trim() && [...split.leading, ...split.trailing].length > 0 && [...split.leading, ...split.trailing].every(note => note.kind === 'citation')) return null
   }
-  return <div className={`en-block en-block-${block.type}`}>
+  return <div className={`en-block en-block-${block.type}`} data-notebook-practice-id={block.type === 'practice' ? block.id : undefined} tabIndex={block.type === 'practice' ? -1 : undefined}>
     {(block.type === 'figure' || block.type === 'study-diagram') && <NotebookVisualBlock block={block} onChange={change ? changeVisual : undefined} />}
     {block.type === 'paragraph' && text(block.text, 'text', 'Explanation')}
     {block.type === 'gap' && <div className="en-notice"><b>Source gap</b>{text(block.text, 'text', 'Gap')}{text(block.nextStep, 'nextStep', 'Next step')}</div>}
@@ -123,10 +124,35 @@ function ReaderSection({ section, index, entryIndex, mode, reader, headingId, ch
     {reader && blocks.some(block => block.type !== 'practice') && <ReaderSources blocks={blocks} pkg={pkg} scope="section" inlineSources={inlineSources} onInlineSources={() => setInlineSources(previous => !previous)} selectedBlock={selectedBlock} panelRef={panel} />}
   </section>
 }
-function NotebookObjectives({ entry, entryIndex, headingId, pkg, change }: { entry: NotebookEntry; entryIndex: number; headingId?: string; pkg: NotebookPackage; change?: ChangeText }) {
+function NotebookObjectives({ entry, entryIndex, headingId, pkg, change, practiceVisible = true }: { entry: NotebookEntry; entryIndex: number; headingId?: string; pkg: NotebookPackage; change?: ChangeText; practiceVisible?: boolean }) {
   const ei = entryIndex
   const text = (value: string, path: (string | number)[], label: string) => <ContentText value={value} path={path} label={label} change={change} />
-  return <section aria-label="Mastery objectives" className="nbr-objectives"><h3 id={headingId} tabIndex={headingId ? -1 : undefined}>Mastery objectives</h3>{entry.objectives.map((o, oi) => <details key={o.id}><summary>{o.title} / {o.origin}</summary>{change && text(o.title, ['entries', ei, 'objectives', oi, 'title'], 'Objective title')}<p>Requirement: {entry.requirements.find(r => r.id === o.requirementId)?.text}</p><h4>Try recalling first</h4>{o.freeRecallCues.map((cue, i) => <div key={i}>{text(cue, ['entries', ei, 'objectives', oi, 'freeRecallCues', i], 'Recall cue')}</div>)}<details><summary>Reveal understanding, application, and cautions</summary>{(['understand', 'beAbleToDo', 'watchFor'] as const).map(key => <div key={key}><h4>{key === 'understand' ? 'Understand' : key === 'beAbleToDo' ? 'Be able to do' : 'Watch for'}</h4>{o[key].map((item, i) => <div key={i}>{text(item, ['entries', ei, 'objectives', oi, key, i], key)}</div>)}</div>)}{o.evidenceLimit !== null && text(o.evidenceLimit, ['entries', ei, 'objectives', oi, 'evidenceLimit'], 'Evidence limit')}<p>Practice: {o.practiceBlockIds.map(id => entry.sections.flatMap(s => s.blocks).find(b => b.id === id)).map(b => b?.type === 'practice' ? b.prompt : '').join('; ') || 'None linked'}</p><EvidenceView evidence={o} pkg={pkg}/></details></details>)}</section>
+  const practice = entry.sections.flatMap(section => section.blocks).filter(block => block.type === 'practice')
+  function goToPractice(button: HTMLButtonElement, id: string) {
+    // Scope to this entry and compare data values directly: imported IDs need not be CSS selectors.
+    const target = [...(button.closest('article')?.querySelectorAll<HTMLElement>('[data-notebook-practice-id]') ?? [])].find(block => block.dataset.notebookPracticeId === id)
+    if (target) { target.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' }); target.focus({ preventScroll: true }) }
+  }
+  return <section aria-label="Mastery objectives" className="nbr-objectives">
+    <h3 id={headingId} tabIndex={headingId ? -1 : undefined}>Mastery objectives</h3>
+    <ol className="nbr-objective-list">{entry.objectives.map((o, oi) => {
+      const requirement = entry.requirements.find(r => r.id === o.requirementId)?.text
+      const linkedPractice = o.practiceBlockIds.flatMap(id => { const index = practice.findIndex(block => block.id === id); return index < 0 ? [] : [{ block: practice[index], number: index + 1 }] })
+      return <li className="nbr-objective" key={o.id}>
+        <header className="nbr-objective-head"><span className="nbr-objective-number" aria-hidden="true">{String(oi + 1).padStart(2, '0')}</span><div><h4 className="nbr-objective-title">{o.title}</h4><span className="nbr-objective-origin">{o.origin === 'official' ? 'Course objective' : 'Derived study objective'}</span></div></header>
+        <div className="nbr-objective-body">
+          {change && text(o.title, ['entries', ei, 'objectives', oi, 'title'], 'Objective title')}
+          {requirement && requirement !== o.title && <p className="nbr-objective-requirement">Requirement: {requirement}</p>}
+          {o.freeRecallCues.length > 0 && <div className="nbr-objective-recall"><h5>Try recalling first</h5>{o.freeRecallCues.map((cue, i) => <div key={i}>{text(cue, ['entries', ei, 'objectives', oi, 'freeRecallCues', i], 'Recall cue')}</div>)}</div>}
+          <div className="nbr-objective-columns">{(['understand', 'beAbleToDo'] as const).map(key => o[key].length > 0 && <div className={`nbr-objective-${key}`} key={key}><h5>{key === 'understand' ? 'Understand' : 'Be able to do'}</h5><ul>{o[key].map((item, i) => <li key={i}>{text(item, ['entries', ei, 'objectives', oi, key, i], key)}</li>)}</ul></div>)}</div>
+          {o.watchFor.length > 0 && <div className="nbr-objective-caution"><h5>Watch for</h5>{o.watchFor.map((item, i) => <div key={i}>{text(item, ['entries', ei, 'objectives', oi, 'watchFor', i], 'watchFor')}</div>)}</div>}
+          <div className="nbr-objective-practice"><h5>Practice</h5>{linkedPractice.length ? linkedPractice.map(({ block, number }) => practiceVisible ? <button type="button" key={block.id} title={block.prompt} onClick={event => goToPractice(event.currentTarget, block.id)}>Question {number}<span aria-hidden="true"> ↗</span></button> : <span className="en-muted" key={block.id}>Question {number}</span>) : <span className="en-muted">None linked</span>}</div>
+          {o.evidenceLimit !== null && <div className="nbr-objective-limit"><h5>Evidence limit</h5>{text(o.evidenceLimit, ['entries', ei, 'objectives', oi, 'evidenceLimit'], 'Evidence limit')}</div>}
+          <EvidenceView evidence={o} pkg={pkg} />
+        </div>
+      </li>
+    })}</ol>
+  </section>
 }
 function NotebookPackageContent({ pkg, entryId, change, progress, onProgress, mode = 'all', reader = false }: { pkg: NotebookPackage; entryId?: string; change?: ChangeText; progress?: NotebookProgress; onProgress?: (id: string, response: string, complete: boolean) => void; mode?: ReadingMode; reader?: boolean }) {
   const prefix = useId()
@@ -139,7 +165,7 @@ function NotebookPackageContent({ pkg, entryId, change, progress, onProgress, mo
       <details><summary>Request and class preferences</summary>{Object.entries(entry.request).map(([key, value]) => value !== null && <div key={key}><b>{key === 'helpStage' ? 'Help stage' : key === 'assessmentFormat' ? 'Assessment format' : 'Class preferences'}</b>{text(value, ['entries', ei, 'request', key], key)}</div>)}</details></>}
       {reader && (mode === 'all' || mode === 'practice') && entry.objectives.length > 0 && <NotebookObjectives entry={entry} entryIndex={ei} headingId={readerHeadingId(prefix, entry.id, 'objectives')} pkg={pkg} change={change} />}
       {entry.sections.map((section, si) => <ReaderSection key={`${section.id}-${mode}`} section={section} index={si} entryIndex={ei} mode={mode} reader={reader} headingId={readerHeadingId(prefix, entry.id, 'section', section.id)} change={change} pkg={pkg} progress={progress} onProgress={onProgress} />)}
-      {!reader && (mode === 'all' || mode === 'study') && entry.objectives.length > 0 && <NotebookObjectives entry={entry} entryIndex={ei} pkg={pkg} change={change} />}
+      {!reader && (mode === 'all' || mode === 'study') && entry.objectives.length > 0 && <NotebookObjectives entry={entry} entryIndex={ei} pkg={pkg} change={change} practiceVisible={mode === 'all'} />}
       {(!reader || mode === 'coverage' || mode === 'all' || mode === 'study') && entry.limitations.length > 0 && <section className="en-notice"><h3 id={readerHeadingId(prefix, entry.id, 'limits')} tabIndex={-1}>Limits of this entry</h3>{entry.limitations.map((item, i) => <div key={i}>{text(item, ['entries', ei, 'limitations', i], 'Entry limitation')}</div>)}</section>}
       {(mode === 'all' || mode === 'study' || mode === 'coverage') && <section aria-label="Requirement coverage">{reader && entry.requirements.some(r => r.status === 'partial' || r.status === 'missing') && <aside className="nbr-coverage-notice"><p>Some requested material is partly covered or missing.</p><button type="button" onClick={() => { const heading = window.document.getElementById(readerHeadingId(prefix, entry.id, 'coverage')), detail = heading?.closest('details'); if (detail) { detail.open = true; if (heading instanceof HTMLHeadingElement) scrollGuideHeadingIntoReadingPane(heading); detail.querySelector('summary')?.focus() } }}>See coverage and next steps</button></aside>}<details className="nbr-coverage-disclosure" open={mode === 'coverage' ? true : undefined}><summary><h3 id={readerHeadingId(prefix, entry.id, 'coverage')} tabIndex={-1}>What's covered and missing</h3></summary><div className="en-coverage">{(['supported', 'partial', 'missing', 'out-of-scope'] as const).map(status => <span key={status} data-status={status}>{{ supported: 'Covered', partial: 'Partly covered', missing: 'Missing', 'out-of-scope': 'Outside this notebook' }[status]}: {entry.requirements.filter(r => r.status === status).length}</span>)}</div>
         {entry.requirements.map((r, ri) => <details key={r.id} data-requirement-id={r.id} open={r.status !== 'supported'}><summary>{r.text} / {{ supported: 'Covered', partial: 'Partly covered', missing: 'Missing', 'out-of-scope': 'Outside this notebook' }[r.status]}</summary><small>{r.kind} / {r.authority}</small>{change && text(r.text, ['entries', ei, 'requirements', ri, 'text'], 'Requirement wording')}{text(r.basis, ['entries', ei, 'requirements', ri, 'basis'], 'Coverage basis')}{r.nextStep !== null && <div className="nbr-coverage-next"><b>What to do next</b>{text(r.nextStep, ['entries', ei, 'requirements', ri, 'nextStep'], 'Next step')}</div>}<p>Covered in: {r.sectionIds.map(id => entry.sections.find(s => s.id === id)?.title).join(', ') || 'No section'}</p><EvidenceView evidence={r} pkg={pkg} /></details>)}

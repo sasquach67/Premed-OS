@@ -33,6 +33,48 @@ async function choose(goal: 'review' | 'assessment' | 'assignment') { await act(
 async function openFallback() { const detail = container.querySelector<HTMLDetailsElement>('.en-prompt-detail')!; if (!detail.open) await act(async () => detail.querySelector('summary')!.click()); return detail }
 async function renderWorkflow(id = course.id) { await act(async () => root.render(<ExternalNotebookWorkflow key={id} courseId={id} onImported={imported} />)) }
 function nextButton() { return [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Next')! }
+it('shows objective cues without nested disclosures and navigates to practice in the same notebook without revealing answers', async () => {
+  const { package: pkg } = await prepareNotebook(raw)
+  const original = JSON.stringify(pkg)
+  await act(async () => root.render(<><NotebookPackageView pkg={pkg} reader mode="practice" /><NotebookPackageView pkg={pkg} reader mode="practice" /></>))
+  const objectives = container.querySelectorAll<HTMLElement>('[aria-label="Mastery objectives"]')
+  const objective = objectives[1].querySelector('.nbr-objective')!
+  expect(objective.querySelector('.nbr-objective-number')?.textContent).toBe('01')
+  expect(objective.querySelector('.nbr-objective-title')?.textContent).toBe(pkg.entries[0].objectives[0].title)
+  expect(objective.querySelector('.nbr-objective-origin')?.textContent).toBe('Derived study objective')
+  for (const cue of [...pkg.entries[0].objectives[0].freeRecallCues, ...pkg.entries[0].objectives[0].understand, ...pkg.entries[0].objectives[0].beAbleToDo, ...pkg.entries[0].objectives[0].watchFor]) {
+    const rendered = [...objective.querySelectorAll('.en-text')].find(node => node.textContent === cue)
+    expect(rendered, cue).toBeTruthy()
+    expect(rendered?.closest('details')).toBeNull()
+  }
+  expect(objective.querySelector('details details')).toBeNull()
+  expect(objective.querySelector<HTMLDetailsElement>('.en-evidence')?.open).toBe(false)
+  const targetId = pkg.entries[0].objectives[0].practiceBlockIds[0]
+  const target = [...objectives[1].closest('article')!.querySelectorAll<HTMLElement>('[data-notebook-practice-id]')].find(node => node.dataset.notebookPracticeId === targetId)!
+  const scroll = vi.fn(); target.scrollIntoView = scroll
+  const previousMatchMedia = window.matchMedia
+  window.matchMedia = vi.fn().mockReturnValue({ matches: true })
+  try {
+    await act(async () => objective.querySelector<HTMLButtonElement>('.nbr-objective-practice button')!.click())
+    expect(scroll).toHaveBeenCalledWith({ behavior: 'instant', block: 'start' })
+    expect(document.activeElement).toBe(target)
+    expect(target.querySelector<HTMLDetailsElement>('.en-answer')?.open).toBe(false)
+    expect(JSON.stringify(pkg)).toBe(original)
+  } finally { window.matchMedia = previousMatchMedia }
+})
+it('preserves every objective text editor and does not offer dead practice navigation in a study-only preview', async () => {
+  const { package: pkg } = await prepareNotebook(raw)
+  pkg.entries[0].objectives[0].evidenceLimit = 'Only the supplied route example was reviewed.'
+  const change = vi.fn()
+  await act(async () => root.render(<NotebookPackageView pkg={pkg} change={change} />))
+  for (const [label, field] of [['Objective title', 'title'], ['Recall cue', 'freeRecallCues'], ['understand', 'understand'], ['beAbleToDo', 'beAbleToDo'], ['watchFor', 'watchFor'], ['Evidence limit', 'evidenceLimit']]) {
+    await fill(label, `Edited ${field}`)
+    expect(change).toHaveBeenLastCalledWith(['entries', 0, 'objectives', 0, field, ...(['title', 'evidenceLimit'].includes(field) ? [] : [0])], `Edited ${field}`)
+  }
+  await act(async () => root.render(<NotebookPackageView pkg={pkg} mode="study" />))
+  expect(container.querySelector('.nbr-objective-practice button')).toBeNull()
+  expect(container.querySelector('.nbr-objective-practice')?.textContent).toContain('Question 1')
+})
 it('journal new route requires a goal and has noninteractive progress without a direct-import bypass', async () => {
   await act(async () => root.render(<MemoryRouter initialEntries={['/academics/classes/test-notebook/journal/new']}><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<JournalEntryPage />} /></Routes></MemoryRouter>))
   expect(container.textContent).toContain('Choose your goal'); expect(container.querySelectorAll('input[type="radio"]')).toHaveLength(3)
