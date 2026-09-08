@@ -187,7 +187,14 @@ def run(root,out):
         identity=next(line for line in actual.splitlines() if line.startswith('- `EC-IDENTIFY`:'))
         assert prompt_methodology_errors(root,goal,actual.replace(identity,''))
         results.append({'case':'reject-missing-context-identification-'+goal,'expected':'shared intake retains explicit-context priority, actual material inspection and no prior-test inheritance','passed':True})
-    for version in ('beta-2','beta-3','beta-4','beta-5','beta-6','beta-7','beta-8','beta-9','beta-10','beta-11','beta-12'):
+    for goal in ('review','assessment','assignment'):
+        actual=(out/('copy-prompt-'+goal+'.md')).read_text()
+        title_rule=next(line for line in actual.splitlines() if line.startswith('- TITLE → entry.title.'))
+        assert 'Lesson N — Descriptive title' in title_rule and 'Do not double-prefix' in title_rule
+        assert 'preserve the established title and user edits' in title_rule
+        assert prompt_methodology_errors(root,goal,actual.replace(title_rule,''))
+        results.append({'case':'reject-missing-verified-title-rule-'+goal,'expected':'complete shared title rule retained across lesson, broad, multi-lesson and protected-update paths','passed':True})
+    for version in ('beta-2','beta-3','beta-4','beta-5','beta-6','beta-7','beta-8','beta-9','beta-10','beta-11','beta-12','beta-13'):
         snapshot=out/('versions/notebook-instructions-'+version)
         if snapshot.exists():
             receipt=json.loads((snapshot/'SNAPSHOT.json').read_text())
@@ -450,7 +457,7 @@ def run(root,out):
             template=path.read_text()
             assert all(template.count('{{'+token+'}}')==1 for token in TOKENS)
             assert set(re.findall(r'\{\{([A-Z_]+)\}\}',template))==set(TOKENS)
-            assert 'Prompt build: notebook-instructions-beta-13.' in template
+            assert 'Prompt build: notebook-instructions-beta-14.' in template
             values={token:'Sample '+token for token in TOKENS};values['CLASS_PREFERENCES']='Keep "quotes", newlines\n, unicode →, and {{SCOPE}} literal.'
             composed=compose(template,values)
             envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])

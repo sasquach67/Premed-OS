@@ -3,7 +3,7 @@ from pathlib import Path
 import argparse, collections, hashlib, json, re, shutil
 from build_revision_cases import examples, render, TUESDAY, THURSDAY, REMINDER
 
-BUILD='notebook-instructions-beta-13'
+BUILD='notebook-instructions-beta-14'
 NOTICE='Authored synthetic regression packet; no actual coursework, provider/context trial or student rating.'
 SAFEGUARDS={
  'course-target-scope':['EC-TARGET','EC-BASELINE','EC-SCOPE'],
@@ -66,7 +66,7 @@ def build_packet(out, source_root=None):
      ('revision-preservation','EC-BASELINE','Use the latest saved baseline plus Thursday material in the Review revision run.','Keep the student reminder and isolated mapping content/IDs; correct timing answer/objective/coverage and retain old exact quotes. App acceptance/progress remain app-controlled.')]
     records=[{'id':id,'ruleId':rule,'goals':['review','assessment','assignment'],'manualAction':action,'expectedBehavior':behavior} for id,rule,action,behavior in cases]
     (out/'regressions.json').write_text(json.dumps({'promptBuild':BUILD,'executed':False,'ratings':None,'cases':records},indent=2)+'\n')
-    checklist=['# Manual cross-provider checklist',NOTICE,'Release remains paused. Record actual results below; all result cells intentionally start blank. Use the SAME complete beta-13 goal prompt, request values, source files and turn sequence for each provider. The packet is one shared fixture set, not an extra maintained prompt.',
+    checklist=['# Manual cross-provider checklist',NOTICE,'Release remains paused. Record actual results below; all result cells intentionally start blank. Use the SAME complete beta-14 goal prompt, request values, source files and turn sequence for each provider. The packet is one shared fixture set, not an extra maintained prompt.',
       'Provider / exact model / date / interface / enabled tools:','Prompt build and complete ending received:','Actually supplied files and inspected/missing portions:','Actual checkpoint, readable approved draft and final export paths:','| Check | Actual observation / evidence | Pass, fail or not run |','| --- | --- | --- |']
     checklist += [f'| {id}: {behavior} | | |' for id,_,_,behavior in cases]
     checklist += ['| Goal quality: connected review or assessment teaching, usable supported practice, or a useful one-hint assignment result; no filler/unsupported answers | | |','| Separate checks: gates; evidence/citations; factual/learning quality; JSON structure/references; revision/draft preservation | | |','Clarity / depth / usefulness / class fit ratings: leave blank until the actual student judges them.','Context/size result: record what the actual interface accepted and retained. Bytes, estimated tokens and these local checks do not establish provider capacity, enforcement or equal teaching quality.','A filename, folder-enabled Codex read, OCR success or this authored fixture does not count as a provider/context trial.']

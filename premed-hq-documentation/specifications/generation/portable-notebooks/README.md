@@ -24,7 +24,7 @@ python3 -m venv /tmp/notebook-validation
 
 ## Rule selection
 
-- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-13; new output uses instructionsVersion notebook-workflows-draft-3; v2 remains supported as input.
+- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-14; new output uses instructionsVersion notebook-workflows-draft-3; v2 remains supported as input.
 - Every goal also includes applicable global rules from 02: sections 1.1–1.8, clarification/background boundaries, source primacy, cross-source behaviors and thin-source handling.
 - Review includes the full Runtime briefing mirror and Required structure from 03, its Portable review notebook section, the introduction and every Rules row from 11, its Portable objective coverage section, and applicable visual-learning sections from 06. All included fragments are verbatim; see METHODOLOGY-AUDIT.md for the section-level audit and explicit portable differences.
 - Assessment and assignment each include every substantive `NA-` or `NW-` rule verbatim and the corresponding portable section. Persistence/recovery and renderer implementation paragraphs are excluded.
@@ -108,3 +108,7 @@ External v3 Review is objective-led and purpose-tested. Canonical20 explicitly r
 ## Beta13 — reusable class and lesson intake
 
 Request21 and EC-IDENTIFY use explicit student/app context, identify lesson scope from actually accessible material, show a brief class/lesson summary and ask one consequential clarification when necessary. No prior test scope is inherited. A normal generic copy requires no JSON editing. The builder emits `student-copies/copy-prompt-review-general.md` by calling the same `compose(reviewTemplate,{})`; its null defaults do not override known context, and its complete methodology/schema body is identical. This is a delivery of the same Review goal, not an independently maintained fourth prompt. Other methodology, schemas, eleven tokens and new/update composition remain unchanged.
+
+## Beta14 — verified lesson titles
+
+Only the shared TITLE mapping changes student-facing methodology: new verified single-lesson notebooks use `Lesson N — Descriptive title`; broad and multi-lesson scopes stay meaningfully titled without a fabricated singular number. Never infer numbering from chronology/order/prior tests, ask only consequential missing-number clarification, avoid double prefixes and preserve established user-edited update titles unless a correction/scope change is authorized and reviewed. Entry IDs/history and all other intake/learning/schema/composition rules remain unchanged.
