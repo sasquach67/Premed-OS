@@ -24,7 +24,7 @@ python3 -m venv /tmp/notebook-validation
 
 ## Rule selection
 
-- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-7; the unchanged transport instructionsVersion is notebook-workflows-draft-2.
+- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-8; the unchanged transport instructionsVersion is notebook-workflows-draft-2.
 - Every goal also includes applicable global rules from 02: sections 1.1–1.8, clarification/background boundaries, source primacy, cross-source behaviors and thin-source handling.
 - Review includes the full Runtime briefing mirror and Required structure from 03, its Portable review notebook section, the introduction and every Rules row from 11, its Portable objective coverage section, and applicable visual-learning sections from 06. All included fragments are verbatim; see METHODOLOGY-AUDIT.md for the section-level audit and explicit portable differences.
 - Assessment and assignment each include every substantive `NA-` or `NW-` rule verbatim and the corresponding portable section. Persistence/recovery and renderer implementation paragraphs are excluded.
@@ -55,7 +55,7 @@ Canonical 20 retains beta-2 evidence/coverage and beta-3 conversation behavior e
 
 `conversation-examples.json` contains fourteen authored expected scenarios, rendered into EXPECTED-CONVERSATIONS.md. The original nine scenarios cover the confirmation gate and conversation behavior; five beta-5 additions cover topic revision, absent/ambiguous correction context, stale saved baselines, ordinary Plus mixed materials and multi-message upload collection. Actual short hint drafts and a complete readable counterpart of the existing partial assessment fixture make review inspectable. Invalid/truncated repair samples remain in conversation-case-files/, outside valid-import globs. These files are not extra prompts or executed model trials; no ratings are prefilled.
 
-Published beta-2, beta-3, beta-4, beta-5 and beta-6 snapshots retain their original identities and hashes. Their optional preservation checks run when each archive is present (a fresh staging directory without the five historical archives has five fewer checks). Beta-3 app verification does not establish the new beta-4 conversation behavior or asset parity. Coordinator-owned integration and real trials are separate acceptance steps.
+Published beta-2, beta-3, beta-4, beta-5, beta-6 and beta-7 snapshots retain their original identities and hashes. Their optional preservation checks run when each archive is present (a fresh staging directory without the six historical archives has six fewer checks). Beta-3 app verification does not establish the new beta-4 conversation behavior or asset parity. Coordinator-owned integration and real trials are separate acceptance steps.
 
 ## Current beta 5: saved topic revision and ordinary-chat intake
 
@@ -76,3 +76,9 @@ Shared20 and request21 now standardize course/target/scope checks, observable in
 ## Beta 7 — narrow missing-baseline clarification
 
 Only EC-BASELINE changes customer instructions: request the previous notebook JSON, re-export current saved app content when available, and offer explicitly new recovery work from originals if neither saved content nor a usable backup survives. Do not invent prior wording, edits, identity, lineage, approval or progress. Other prompt text changes only its build identifier; three goals, schema, tokens and revision context are unchanged. Beta 6 remains archived; release paused and no provider trials or ratings.
+
+## Beta 8 — one composed update mode
+
+Use `compose(template, values, mode='update')` for the app-owned update journey and default `mode='new'` for creation. The optional mode is a local composer argument, never a twelfth request token. `prompt-modes.json`, embedded exactly as `prompt-composition.json.modes`, owns the heading/intro and precise transformation. Validate the exact leading trusted unfilled template heading; prepend no duplicate prompt. Replace only that leading heading in update mode, insert the short canonical update intro, then perform the existing single-pass JSON input substitution. Do not infer mode from user text or rewrite course/notebook/source titles or token-looking strings after insertion. Preview/copy/download consume one resulting string. There are still only three full base templates; the rule body and schema are identical across new/update mode for the same goal.
+
+Supply the latest saved baseline JSON and new materials separately. All shared conversation/revision/recovery rules remain in the composed prompt, so no prior chat is required. No actual provider/class generation was run; release remains paused.

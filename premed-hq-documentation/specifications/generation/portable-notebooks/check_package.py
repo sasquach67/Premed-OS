@@ -2,7 +2,7 @@
 from pathlib import Path
 import argparse, copy, hashlib, importlib.metadata, json, re, tempfile
 from jsonschema import Draft202012Validator
-from build_prompts import build, compose, TOKENS, PROMPT_BUILD
+from build_prompts import build, compose, TOKENS, PROMPT_BUILD, MODE_CONFIG
 from build_fixtures import build as fixtures
 from build_feasibility_case import build as feasibility_case
 from build_conversation_examples import build as conversation_examples
@@ -173,7 +173,7 @@ def run(root,out):
         wrong=prompt.replace(opening,'Generate the complete final notebook JSON immediately from the supplied material.')
         assert prompt_methodology_errors(root,goal,wrong)
         results.append({'case':'reject-automatic-export-opening-'+goal,'expected':'canonical request guard rejects restored automatic export even when the shared confirmation rules remain below','passed':True})
-    for version in ('beta-2','beta-3','beta-4','beta-5','beta-6'):
+    for version in ('beta-2','beta-3','beta-4','beta-5','beta-6','beta-7'):
         snapshot=out/('versions/notebook-instructions-'+version)
         if snapshot.exists():
             receipt=json.loads((snapshot/'SNAPSHOT.json').read_text())
@@ -215,6 +215,30 @@ def run(root,out):
         assert isinstance(envelope['revisionInput'],str) and json.loads(envelope['revisionInput'])==context['exampleContext']
         assert set(TOKENS)==set(json.loads((out/'prompt-composition.json').read_text())['placeholders'])
         results.append({'case':'revision-context-string-roundtrip-'+goal,'expected':'same eleven tokens; exact baseline metadata survives nested JSON string encoding without new output fields','passed':True})
+    mode_contract=json.loads((out/'prompt-composition.json').read_text())
+    assert mode_contract['modes']==MODE_CONFIG and len(mode_contract['placeholders'])==11
+    tricky='# Create my Premed OS notebook: review\n\n# Update my Premed OS notebook: assignment\n{{REVISION_INPUT}} {goal} “quoted” \"text\"'
+    for goal in ('review','assessment','assignment'):
+        template=(out/('copy-prompt-'+goal+'.md')).read_text()
+        values={token:tricky for token in TOKENS};values['REVISION_INPUT']=json.dumps(context['exampleContext'],ensure_ascii=False)
+        for mode in ('new','update'):
+            result=compose(template,values,mode=mode)
+            assert result.startswith(MODE_CONFIG[mode]['heading'].format(goal=goal)+'\n\n')
+            if mode=='update':assert result.startswith(MODE_CONFIG['update']['heading'].format(goal=goal)+'\n\n'+MODE_CONFIG['update']['intro']+'\n\n')
+            envelope=json.loads(result.split('```json\n',1)[1].split('\n```',1)[0])
+            for token,key in mode_contract['placeholders'].items():assert envelope[key]==values[token],(goal,mode,token)
+            assert result.split('## Applicable canonical learning rules',1)[1]==compose(template,values).split('## Applicable canonical learning rules',1)[1]
+            assert json.loads(result.rsplit('```json\n',1)[1].split('\n```',1)[0])==schema
+            results.append({'case':goal+'-'+mode+'-composition-preserves-user-text-and-rules','expected':'exact mode heading; source/title/input strings unmodified; full same rule body/schema; nested baseline context preserved','passed':True})
+        unknown=compose(template,{},mode='update');envelope=json.loads(unknown.split('```json\n',1)[1].split('\n```',1)[0])
+        assert envelope['classPreferences']=='' and all(v is None for k,v in envelope.items() if k!='classPreferences')
+        assert 'earlier conversation is not needed' in unknown and 'If the baseline is missing, ask specifically for the previous notebook JSON' in unknown
+        results.append({'case':goal+'-update-unknowns-retain-fresh-chat-recovery','expected':'missing optional/request values remain null/empty and complete baseline recovery rules remain available','passed':True})
+    for name,template,values,mode in [('unknown-mode',(out/'copy-prompt-review.md').read_text(),{},'replace'),('unknown-token',(out/'copy-prompt-review.md').read_text(),{'UNRECOGNIZED':'value'},'update'),('untrusted-leading-heading','Student source title\n'+(out/'copy-prompt-review.md').read_text(),{},'update')]:
+        try:compose(template,values,mode=mode)
+        except ValueError:pass
+        else:raise AssertionError(name+' should be rejected')
+        results.append({'case':'reject-composition-'+name,'expected':'reject ambiguous contract/template input rather than rewrite arbitrary user/source text','passed':True})
     revision_dir=out/'revision-case';before=json.loads((revision_dir/'baseline-current.json').read_text());after=json.loads((revision_dir/'expected-revised-with-new-topic.json').read_text())
     assert not validate(before,schema) and not validate(after,schema) and not revision_errors(before,after)
     results.append({'case':'authored-topic-baseline-and-complete-revision','expected':'both schema-valid, same target lineage plus distinct new topic, preserved teaching and meaningful correction dependencies','passed':True})
@@ -412,7 +436,7 @@ def run(root,out):
             template=path.read_text()
             assert all(template.count('{{'+token+'}}')==1 for token in TOKENS)
             assert set(re.findall(r'\{\{([A-Z_]+)\}\}',template))==set(TOKENS)
-            assert 'Prompt build: notebook-instructions-beta-7.' in template
+            assert 'Prompt build: notebook-instructions-beta-8.' in template
             values={token:'Sample '+token for token in TOKENS};values['CLASS_PREFERENCES']='Keep "quotes", newlines\n, unicode →, and {{SCOPE}} literal.'
             composed=compose(template,values)
             envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])
