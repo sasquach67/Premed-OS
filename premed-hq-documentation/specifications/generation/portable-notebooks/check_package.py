@@ -152,13 +152,28 @@ def run(root,out):
         row=next(line for line in canonical_conversation.splitlines() if line.startswith('- `'+rule+'`:'))
         assert row in prompt and prompt_methodology_errors(root,goal,prompt.replace(row,''))
         results.append({'case':'reject-conversation-rule-omission-'+goal+'-'+rule,'expected':'actual prompt assembly guard detects missing shared conversation behavior','passed':True})
+    recovery=json.loads((root/'premed-hq-documentation/specifications/generation/portable-notebooks/conversation-examples.json').read_text())
+    recovery_case=next(c for c in recovery['scenarios'] if c['id']=='topic-newer-saved-baseline')
+    present,lost=recovery_case['baselineRecoveryCases']
+    assert not present['priorChatAvailable'] and not present['baselineAttached'] and present['savedAppContentAvailable']
+    assert present['nextAction']=='request-previous-notebook-json-and-current-app-reexport' and not present['mayInventBaseline'] and not present['mayEmitUpdateWithoutBaseline']
+    results.append({'case':'authored-missing-baseline-requests-app-reexport','expected':'lost chat/download with surviving app content requests exact previous/current JSON before updating; no inferred baseline','passed':True})
+    assert not any(lost[k] for k in ('priorChatAvailable','baselineAttached','savedAppContentAvailable','usableBackupAvailable','mayInventBaseline','mayClaimPreservedPriorEdits','mayReuseUnknownIdentityOrLineage','mayInheritApprovalOrProgress'))
+    assert lost['originalMaterialsAvailable'] and lost['nextAction']=='offer-new-recovery-work-and-establish-new-entry-boundary'
+    results.append({'case':'authored-no-surviving-baseline-is-new-recovery','expected':'originals support explicitly new work, not invented prior edits/identity/lineage/approval/progress','passed':True})
+    recovery_fragments=[('request-reexport','If the baseline is missing, ask specifically for the previous notebook JSON, preferably a new current-content export from the app if it is still saved there.'),('new-recovery','If no saved app content or usable backup survives, explain that the prior notebook cannot be recovered; offer a rebuild from original materials as explicitly new recovery work. Do not invent prior wording, edits, IDs, revision lineage, approval or progress; establish the new-entry boundary before rebuilding.')]
+    for goal in ('review','assessment','assignment'):
+        prompt=(out/('copy-prompt-'+goal+'.md')).read_text()
+        for name,fragment in recovery_fragments:
+            assert fragment in prompt and prompt_methodology_errors(root,goal,prompt.replace(fragment,''))
+            results.append({'case':'reject-baseline-recovery-omission-'+goal+'-'+name,'expected':'actual full-prompt guard rejects loss of explicit baseline recovery branch while schema stays intact','passed':True})
     for goal in ('review','assessment','assignment'):
         prompt=(out/('copy-prompt-'+goal+'.md')).read_text()
         opening=next(line for line in prompt.splitlines() if line.startswith('Prepare actual, readable learning content'))
         wrong=prompt.replace(opening,'Generate the complete final notebook JSON immediately from the supplied material.')
         assert prompt_methodology_errors(root,goal,wrong)
         results.append({'case':'reject-automatic-export-opening-'+goal,'expected':'canonical request guard rejects restored automatic export even when the shared confirmation rules remain below','passed':True})
-    for version in ('beta-2','beta-3','beta-4','beta-5'):
+    for version in ('beta-2','beta-3','beta-4','beta-5','beta-6'):
         snapshot=out/('versions/notebook-instructions-'+version)
         if snapshot.exists():
             receipt=json.loads((snapshot/'SNAPSHOT.json').read_text())
@@ -397,7 +412,7 @@ def run(root,out):
             template=path.read_text()
             assert all(template.count('{{'+token+'}}')==1 for token in TOKENS)
             assert set(re.findall(r'\{\{([A-Z_]+)\}\}',template))==set(TOKENS)
-            assert 'Prompt build: notebook-instructions-beta-6.' in template
+            assert 'Prompt build: notebook-instructions-beta-7.' in template
             values={token:'Sample '+token for token in TOKENS};values['CLASS_PREFERENCES']='Keep "quotes", newlines\n, unicode →, and {{SCOPE}} literal.'
             composed=compose(template,values)
             envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])

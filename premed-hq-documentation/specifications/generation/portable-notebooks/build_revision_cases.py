@@ -169,7 +169,7 @@ Conditional manual cases: (1) remove Tuesday's needed excerpt context: request t
 
 These fixtures check content preservation, evidence and dependency consistency. They do not demonstrate that an external model followed the instructions, establish full canonical pedagogical quality or assign ratings.
 ''')
-    receipt={'promptBuild':'notebook-instructions-beta-6','executed':False,'ratings':None,'notice':NOTICE,'files':{p.name:{'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size} for p in sorted(out.iterdir()) if p.is_file() and p.name!='case-manifest.json'}}
+    receipt={'promptBuild':'notebook-instructions-beta-7','executed':False,'ratings':None,'notice':NOTICE,'files':{p.name:{'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size} for p in sorted(out.iterdir()) if p.is_file() and p.name!='case-manifest.json'}}
     (out/'case-manifest.json').write_text(json.dumps(receipt,indent=2)+'\n');return before,after
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);a=p.parse_args();build(a.output);print('Built authored topic-revision cases; no AI executed.')

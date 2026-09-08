@@ -1,5 +1,5 @@
 {
-  "promptBuild": "notebook-instructions-beta-6",
+  "promptBuild": "notebook-instructions-beta-7",
   "purpose": "Concise external-AI review/confirmation expectation for coordinator-queued integration; not a new app state machine or extra prompt.",
   "shortCopy": "Your AI should show the full readable draft with a brief summary of its actual topics, practice and gaps. Ask for changes, or say “Create the JSON” when you’re happy with that version; equivalent clear approval works too.",
   "expandedCopy": "Use a normal chat with your material; projects are optional. The AI should use known needs, ask only consequential questions and invite optional discussion of the actual content. Substantive edits need an updated summary and accessible revised draft before confirmation. Delivery is not proof you read it or that it is accurate. These are expected AI behaviors, not guarantees.",

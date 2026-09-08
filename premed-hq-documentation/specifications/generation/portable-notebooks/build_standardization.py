@@ -3,7 +3,7 @@ from pathlib import Path
 import argparse, collections, hashlib, json, re, shutil
 from build_revision_cases import examples, render, TUESDAY, THURSDAY, REMINDER
 
-BUILD='notebook-instructions-beta-6'
+BUILD='notebook-instructions-beta-7'
 NOTICE='Authored synthetic regression packet; no actual coursework, provider/context trial or student rating.'
 SAFEGUARDS={
  'course-target-scope':['EC-TARGET','EC-BASELINE','EC-SCOPE'],
@@ -66,12 +66,12 @@ def build_packet(out, source_root=None):
      ('revision-preservation','EC-BASELINE','Use the latest saved baseline plus Thursday material in the Review revision run.','Keep the student reminder and isolated mapping content/IDs; correct timing answer/objective/coverage and retain old exact quotes. App acceptance/progress remain app-controlled.')]
     records=[{'id':id,'ruleId':rule,'goals':['review','assessment','assignment'],'manualAction':action,'expectedBehavior':behavior} for id,rule,action,behavior in cases]
     (out/'regressions.json').write_text(json.dumps({'promptBuild':BUILD,'executed':False,'ratings':None,'cases':records},indent=2)+'\n')
-    checklist=['# Manual cross-provider checklist',NOTICE,'Release remains paused. Record actual results below; all result cells intentionally start blank. Use the SAME complete beta-6 goal prompt, request values, source files and turn sequence for each provider. The packet is one shared fixture set, not an extra maintained prompt.',
+    checklist=['# Manual cross-provider checklist',NOTICE,'Release remains paused. Record actual results below; all result cells intentionally start blank. Use the SAME complete beta-7 goal prompt, request values, source files and turn sequence for each provider. The packet is one shared fixture set, not an extra maintained prompt.',
       'Provider / exact model / date / interface / enabled tools:','Prompt build and complete ending received:','Actually supplied files and inspected/missing portions:','Actual checkpoint, readable approved draft and final export paths:','| Check | Actual observation / evidence | Pass, fail or not run |','| --- | --- | --- |']
     checklist += [f'| {id}: {behavior} | | |' for id,_,_,behavior in cases]
     checklist += ['| Goal quality: connected review or assessment teaching, usable supported practice, or a useful one-hint assignment result; no filler/unsupported answers | | |','| Separate checks: gates; evidence/citations; factual/learning quality; JSON structure/references; revision/draft preservation | | |','Clarity / depth / usefulness / class fit ratings: leave blank until the actual student judges them.','Context/size result: record what the actual interface accepted and retained. Bytes, estimated tokens and these local checks do not establish provider capacity, enforcement or equal teaching quality.','A filename, folder-enabled Codex read, OCR success or this authored fixture does not count as a provider/context trial.']
     (out/'CHECKLIST.md').write_text('\n\n'.join(checklist).replace('|\n\n|','|\n|')+'\n')
-    (out/'README.md').write_text('''# One small manual cross-provider packet — beta 6
+    (out/'README.md').write_text('''# One small manual cross-provider packet — beta 7
 
 '''+NOTICE+'''
 
@@ -144,13 +144,13 @@ def prompt_audit(root,out):
         refs=sorted(set(re.findall(r'[^\s`<>\[\]()]+\.md\b',t)))
         counts=collections.Counter(p.strip() for p in t.split('\n\n') if len(p.strip())>100 and not p.lstrip().startswith('```'))
         duplicate_bytes=sum((n-1)*len(p.encode()) for p,n in counts.items() if n>1)
-        baseline=out/'versions/notebook-instructions-beta-5'/name
-        old=baseline.stat().st_size if baseline.exists() else {'review':97105,'assessment':87642,'assignment':80041}[goal]
-        rows.append({'goal':goal,'bytes':m['bytes'],'words':m['words'],'beta5Bytes':old,'deltaBytes':m['bytes']-old,'deltaPercent':round(100*(m['bytes']-old)/old,2),'componentBytes':m['componentBytes'],'repeatedExactLongParagraphBytes':duplicate_bytes,'mdReferences':refs,'errors':errors})
+        baseline=out/'versions/notebook-instructions-beta-6'/name
+        old=baseline.stat().st_size if baseline.exists() else {'review':93854,'assessment':84399,'assignment':76798}[goal]
+        rows.append({'goal':goal,'bytes':m['bytes'],'words':m['words'],'beta6Bytes':old,'deltaBytes':m['bytes']-old,'deltaPercent':round(100*(m['bytes']-old)/old,2),'componentBytes':m['componentBytes'],'repeatedExactLongParagraphBytes':duplicate_bytes,'mdReferences':refs,'errors':errors})
     report={'promptBuild':BUILD,'release':'paused','canonicalHeadAtBuild':manifest['canonicalHeadAtBuild'],'goals':rows,'safeguards':SAFEGUARDS,'schemaSha256':manifest['schema']['sha256'],'canonicalManifestSha256':digest(out/'canonical-manifest.json'),'promptHashes':{name:value['sha256'] for name,value in manifest['outputs'].items()},'limits':['Static self-contained/dependency checks are not provider context/capacity tests.','Exact paragraph counting does not measure every semantic repetition.','No provider runs, real coursework or ratings.']}
     (out/'STANDARDIZATION-AUDIT.json').write_text(json.dumps(report,indent=2)+'\n')
-    parts=['# Beta-6 standardization audit', 'Release paused. Static instruction readiness is separate from actual provider/context and class testing.','| Goal | Beta 5 bytes | Beta 6 bytes | Delta | Change |','| --- | ---: | ---: | ---: | ---: |']
-    for r in rows:parts.append(f"| {r['goal']} | {r['beta5Bytes']} | {r['bytes']} | {r['deltaBytes']:+} | {r['deltaPercent']:+}% |")
+    parts=['# Beta-7 recovery clarification audit', 'Release paused. Beta 7 adds only the EC-BASELINE missing-file/app-re-export/no-surviving-baseline recovery extension; all other customer prompt wording is unchanged apart from build identifiers. The beta-6 standardization checks below remain in force; no provider/context or class trial was run.','| Goal | Beta 6 bytes | Beta 7 bytes | Delta | Change |','| --- | ---: | ---: | ---: | ---: |']
+    for r in rows:parts.append(f"| {r['goal']} | {r['beta6Bytes']} | {r['bytes']} | {r['deltaBytes']:+} | {r['deltaPercent']:+}% |")
     parts+=['## Component contributions','| Goal | Request | Common learning | Goal learning | External workflow | Complete schema | Assembly | Exact repeated long paragraphs |','| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |']
     for r in rows:
         c=r['componentBytes'];parts.append('| '+r['goal']+' | '+' | '.join(str(c[k]) for k in ('request','commonLearningRules','goalLearningRules','externalWorkflow','schema','assembly'))+' | '+str(r['repeatedExactLongParagraphBytes'])+' |')

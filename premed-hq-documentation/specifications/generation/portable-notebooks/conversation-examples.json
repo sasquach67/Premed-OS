@@ -1,6 +1,6 @@
 {
   "kind": "scripted-expected-conversations",
-  "promptBuild": "notebook-instructions-beta-6",
+  "promptBuild": "notebook-instructions-beta-7",
   "executed": false,
   "ratings": null,
   "notice": "Authored expectations for manual beta, not transcripts of a tested external AI, real course trials, importable notebook JSON, or additional maintained prompts. Use the corresponding complete goal prompt and inspect actual behavior.",
@@ -506,6 +506,41 @@
         "EC-ACCEPTANCE",
         "EC-REVIEW",
         "EC-CONFIRM"
+      ],
+      "variants": [
+        {
+          "student": "I lost the earlier AI chat and cannot find the previous JSON download, but the notebook is still saved in the app.",
+          "expected": "Ask specifically for the previous notebook JSON and tell the student to export current saved content from the app again as notebook-update-baseline.json. The complete update prompt plus this file and new material works in a fresh chat. Do not infer the prior text from the missing chat or ask for all old originals when retained evidence is sufficient."
+        },
+        {
+          "student": "The prior chat, notebook JSON, saved app notebook and usable backups are all gone. I still have the original lesson materials.",
+          "expected": "Explain that the prior notebook cannot be recovered. Offer reconstruction from the originals as explicitly new recovery work and establish that new-entry boundary before rebuilding. Do not claim to preserve or recover absent wording, student edits, IDs, revision lineage, approval or progress. Keep the same selected goal, applicable intake and readable-draft confirmation gates; this is not a same-entry update."
+        }
+      ],
+      "baselineRecoveryCases": [
+        {
+          "id": "missing-download-app-survives",
+          "priorChatAvailable": false,
+          "baselineAttached": false,
+          "savedAppContentAvailable": true,
+          "usableBackupAvailable": false,
+          "nextAction": "request-previous-notebook-json-and-current-app-reexport",
+          "mayInventBaseline": false,
+          "mayEmitUpdateWithoutBaseline": false
+        },
+        {
+          "id": "no-baseline-survives",
+          "priorChatAvailable": false,
+          "baselineAttached": false,
+          "savedAppContentAvailable": false,
+          "usableBackupAvailable": false,
+          "originalMaterialsAvailable": true,
+          "nextAction": "offer-new-recovery-work-and-establish-new-entry-boundary",
+          "mayInventBaseline": false,
+          "mayClaimPreservedPriorEdits": false,
+          "mayReuseUnknownIdentityOrLineage": false,
+          "mayInheritApprovalOrProgress": false
+        }
       ]
     },
     {
