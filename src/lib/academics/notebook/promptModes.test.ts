@@ -17,6 +17,18 @@ it.each(['review', 'assessment', 'assignment'] as const)('composes canonical new
 it('never infers update mode from inserted student text or revision input', () => {
   expect(composeNotebookPrompt('review', values).startsWith('# Create my Premed OS notebook: review')).toBe(true)
 })
+it.each(['review', 'assessment', 'assignment'] as const)('preserves explicit class and lesson context in both %s modes', goal => {
+  const explicit = { ...values, COURSE_CODE: 'COURSE-Q', COURSE_TITLE: 'Student title $& {{SCOPE}}', TERM: 'Requested term', SCOPE: 'The exact user-selected lesson' }
+  for (const mode of ['new', 'update'] as const) {
+    const prompt = composeNotebookPrompt(goal, explicit, mode)
+    const request = JSON.parse(/```json\n([\s\S]*?)\n```/.exec(prompt)![1])
+    expect(request.courseCode).toBe(explicit.COURSE_CODE); expect(request.courseTitle).toBe(explicit.COURSE_TITLE)
+    expect(request.term).toBe(explicit.TERM); expect(request.scope).toBe(explicit.SCOPE)
+  }
+  const unknown = { ...values, COURSE_CODE: null, COURSE_TITLE: null, TERM: null, SCOPE: null }
+  const request = JSON.parse(/```json\n([\s\S]*?)\n```/.exec(composeNotebookPrompt(goal, unknown))![1])
+  expect([request.courseCode, request.courseTitle, request.term, request.scope]).toEqual([null, null, null, null])
+})
 it('rejects unknown modes and changed trusted headings instead of rewriting arbitrary content', () => {
   expect(() => composeNotebookPrompt('review', values, 'unknown' as 'update')).toThrow('Unknown notebook prompt')
   const previous = PROMPT_TEMPLATES.review
