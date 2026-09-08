@@ -21,6 +21,7 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
   const wrongCourse = Boolean(preview && course && notebookDestinationMismatch(preview.package, course))
   const revised = plan.some(item => item.previous && !item.duplicate)
   const duplicates = plan.filter(item => item.duplicate)
+  const blockers = [wrongCourse && !destination ? 'confirm the different class or term' : '', revised && !revisions ? 'confirm saving revised content separately' : ''].filter(Boolean)
   function clearPreview() { attempt.current++; setPreview(null); setError(''); setStatus(''); setDestination(false); setRevisions(false); setBusy(false) }
   async function validate(text = raw) {
     const id = ++attempt.current; setBusy(true); setError(''); setPreview(null); setDestination(false); setRevisions(false)
@@ -69,7 +70,7 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
       {duplicates.length > 0 && <p className="en-notice">{duplicates.length} identical {duplicates.length === 1 ? 'entry is' : 'entries are'} already saved. Existing edits and progress will be kept; no duplicate will be created.</p>}
       {revised && <div className="en-notice"><b>Revised or conflicting content</b><p>Incoming content shares an identity with an earlier entry. Save it separately, including when the revision number is unchanged or older. Your original entry, edits, responses, and progress stay intact.</p><label className="en-check"><input type="checkbox" checked={revisions} onChange={event => setRevisions(event.target.checked)} />Save revised content as separate entries</label></div>}
       <details className="en-import-content" open><summary>Preview notebook content</summary><NotebookPackageView pkg={preview.package} /></details>
-      <div className="en-actions en-save-actions"><Button disabled={busy || (wrongCourse && !destination) || (revised && !revisions)} onClick={() => void save()}>{duplicates.length === plan.length ? 'Open existing saved entry' : `Save editable ${plan.length === 1 ? 'entry' : 'entries'} to ${course.code}`}</Button></div>
+      <div className="en-save-actions">{blockers.length > 0 && <p className="en-save-blocked">Saving stays closed until you {blockers.join(' and ')} above.</p>}<div className="en-actions"><Button disabled={busy || (wrongCourse && !destination) || (revised && !revisions)} onClick={() => void save()}>{duplicates.length === plan.length ? 'Open existing saved entry' : `Save editable ${plan.length === 1 ? 'entry' : 'entries'} to ${course.code}`}</Button></div></div>
     </div>}
   </section>
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Check, Copy, Download } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Copy, Download, FileCode2, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useStore } from '@/store/store'
 import { composeNotebookPrompt, type PromptValues } from '@/lib/academics/notebook/prompt'
@@ -67,6 +67,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
   const classFiles = files.filter(file => file.courseId === courseId)
   const values: PromptValues = { COURSE_CODE: course?.code ?? '', COURSE_TITLE: course?.title ?? '', TERM: term || null, SCOPE: scope.trim() ? `${scope}\nScope authority: ${scopeSource || 'Not supplied; label provisional scope.'}` : null, MATERIALS: [...classFiles.filter(f => selected.includes(f.id)).map(f => `${f.title} (${f.type}; attach the actual original file in the AI conversation)`), materials].filter(Boolean).join('\n'), DEPTH: depth, CLASS_PREFERENCES: preferences, HELP_STAGE: stage, ASSESSMENT_FORMAT: goal === 'assessment' ? format || null : null, USER_REQUEST: request, REVISION_INPUT: null }
   const fullPrompt = goal ? composeNotebookPrompt(goal, values) : ''
+  const promptLines = fullPrompt ? fullPrompt.split('\n').length : 0
   latestPrompt.current = fullPrompt
   const copyReady = hasCurrentPromptAcknowledgment(draft, fullPrompt)
   const step = notebookWorkflowStep(draft, fullPrompt)
@@ -121,7 +122,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
       if (latestPrompt.current === copying) acknowledgePrompt('clipboard')
     } catch {
       setFallbackOpen(true)
-      setMessage('Clipboard unavailable. Copy from the full preview or download it, then acknowledge that you have the prompt.')
+      setMessage('Clipboard unavailable. Select the prompt above and copy it, or download it, then confirm you have it.')
     } finally { setCopyBusy(false) }
   }
   function savePreferences() {
@@ -159,15 +160,15 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
       </fieldset>
       {goal && <section className="en-goal-guide" aria-label={`${goalInfo.title}: what to bring and expect`}>
         <dl><div><dt>Bring</dt><dd>{goalInfo.bring}</dd></div><div><dt>You will get</dt><dd>{goalInfo.result}</dd></div></dl>
-        <details className="en-small-detail"><summary>Helpful materials and limits</summary>
+        <p className="en-guide-limit"><Info aria-hidden="true" /><span><b>Missing material?</b> {goalInfo.limit}</span></p>
+        <details className="en-small-detail"><summary>Materials that help most</summary>
           <p><b>Best for:</b> {goalInfo.bestFor}</p>
           <p><b>Helpful extras:</b> {goalInfo.ideal}</p>
           {goal === 'review' && <p>A transcript or recording can help. Use a recording only if your chosen AI can actually inspect it; otherwise supply a readable transcript.</p>}
-          <p><b>Missing material?</b> {goalInfo.limit}</p>
           {goal === 'assessment' && <p><b>Large packet?</b> Work in smaller batches. Save the source details and what each batch covered, then ask your AI for the final study guide. Premed OS does not combine separate batches.</p>}
         </details>
       </section>}
-      <label className="en-field en-flow-request">Additional instructions for your AI
+      <label className="en-field en-flow-request en-optional">Additional instructions for your AI
         <span className="en-muted block">Optional. Included when you copy the prompt.</span>
         <textarea aria-label="Additional instructions for your AI" rows={2} value={request} onChange={e => setRequest(e.target.value)} placeholder="e.g., explain simply, give examples, focus on a topic..." />
       </label>
@@ -206,21 +207,27 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
     </div>}
 
     {step === 'prompt' && <div className="en-stage-content">
-      <section className="en-stage-panel en-prompt-card">
-        <p className="en-eyebrow">Your prepared prompt</p>
-        <h2>{goalInfo.title}</h2>
-        <p>{course.code} / {course.title}</p>
-        <p className="en-muted">Includes the full instructions, your class details, and the notebook file format.</p>
-        <div className="en-actions"><Button variant={copyReady ? 'outline' : 'default'} disabled={copyBusy} onClick={() => void copyPrompt()}><Copy aria-hidden="true" />{copyBusy ? 'Copying prompt...' : 'Copy full prompt'}</Button>
-          <Button variant="ghost" disabled={copyBusy} onClick={() => goTo('details')}>Edit class details</Button>
-        </div>
-        {copyReady && <p className="en-muted">Prompt ready. Nothing has been pasted into your AI by this app.</p>}
+      <p className="en-selected-goal">{goalInfo.title} / {course.code} / {course.title}</p>
+      <section className="en-code-panel" aria-label="Your prepared prompt">
+        <header className="en-code-head">
+          <p className="en-code-name"><FileCode2 aria-hidden="true" />notebook-{goal}-prompt.md</p>
+          <p className="en-code-meta">{promptLines} lines / {fullPrompt.length.toLocaleString()} characters</p>
+          {copyReady && <p className="en-code-ack"><Check aria-hidden="true" />{draft.acknowledgedBy === 'clipboard' ? 'Copied to your clipboard' : draft.acknowledgedBy === 'download' ? 'You have the downloaded file' : 'You marked this as copied'}</p>}
+          <Button className="en-code-copy" variant={copyReady ? 'outline' : 'default'} disabled={copyBusy} onClick={() => void copyPrompt()}><Copy aria-hidden="true" />{copyBusy ? 'Copying prompt...' : 'Copy full prompt'}</Button>
+        </header>
+        <label className="en-code-body"><span className="sr-only">Full customized prompt</span>
+          <textarea className="en-json" readOnly spellCheck={false} value={fullPrompt} />
+        </label>
+        <footer className="en-code-foot">
+          <p className="en-muted">This is the exact text the copy button sends: the full instructions, your class details, your added instructions, and the notebook file format.</p>
+          <Button variant="link" disabled={copyBusy} onClick={() => goTo('details')}>Edit class details</Button>
+        </footer>
       </section>
-      <details className="en-prompt-detail" open={fallbackOpen} onToggle={event => setFallbackOpen(event.currentTarget.open)}><summary>Preview, download, or copy manually</summary>
-        <p className="en-muted">This is the exact text that the copy button uses.</p>
-        <div className="en-actions"><Button variant="outline" disabled={copyBusy} onClick={() => { try { downloadNotebookText(`notebook-${goal}-prompt.md`, fullPrompt, 'text/markdown'); setDownloadRequested(true); setMessage('Download requested. Confirm below when you have the full prompt file.') } catch { setMessage('Download unavailable. Copy the full text from the preview instead.') } }}><Download aria-hidden="true" />Download full prompt</Button></div>
-        <label className="en-field">Full customized prompt<textarea className="en-json" readOnly value={fullPrompt} /></label>
-        <div className="en-actions"><Button variant="outline" disabled={copyBusy} onClick={() => acknowledgePrompt('manual')}>I copied it manually</Button>{downloadRequested && <Button variant="outline" disabled={copyBusy} onClick={() => acknowledgePrompt('download')}>I have the downloaded prompt</Button>}</div>
+      {copyReady && <p className="en-next-note">Premed OS has not pasted anything into your AI. You paste it there yourself.</p>}
+      <details className="en-prompt-detail" open={fallbackOpen} onToggle={event => setFallbackOpen(event.currentTarget.open)}><summary>Copy did not work? Download it or confirm you copied it manually</summary>
+        <p className="en-muted">Select the text above to copy it by hand, or download the same text as a file. Then tell us which you used so Next can open.</p>
+        <div className="en-actions"><Button variant="outline" disabled={copyBusy} onClick={() => { try { downloadNotebookText(`notebook-${goal}-prompt.md`, fullPrompt, 'text/markdown'); setDownloadRequested(true); setMessage('Download requested. Confirm below when you have the full prompt file.') } catch { setMessage('Download unavailable. Select and copy the full text from the panel above instead.') } }}><Download aria-hidden="true" />Download full prompt</Button>
+          <Button variant="outline" disabled={copyBusy} onClick={() => acknowledgePrompt('manual')}>I copied it manually</Button>{downloadRequested && <Button variant="outline" disabled={copyBusy} onClick={() => acknowledgePrompt('download')}>I have the downloaded prompt</Button>}</div>
       </details>
       <footer className="en-stage-footer"><div className="en-actions"><Button variant={copyReady ? 'default' : 'outline'} disabled={!copyReady || copyBusy} onClick={() => goTo('handoff')}>Next<ArrowRight aria-hidden="true" /></Button><Button variant="ghost" disabled={copyBusy} onClick={() => goTo('goal')}><ArrowLeft aria-hidden="true" />Back to goal</Button></div><p className="en-next-note">Next: paste it into your AI and attach the materials there.</p></footer>
     </div>}
@@ -232,14 +239,26 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
         <li><span className="en-task-number" aria-hidden="true">2</span><div><h2>Attach your materials</h2><p className="en-text">{values.MATERIALS || goalInfo.bring}</p><p className="en-muted">Upload the originals in your AI. An upload, connection or retrieved excerpt does not prove every file was read. Ask what was inspected and what remains unread.</p>{goal === 'review' && <p className="en-muted">Use a recording only if your AI can inspect it. Otherwise, use a readable transcript.</p>}</div></li>
         <li><span className="en-task-number" aria-hidden="true">3</span><div><h2>Get the notebook file</h2><p>Ask for a downloadable <strong>.json file</strong> containing the complete final notebook. If downloads are unavailable, ask for the complete JSON block.</p></div></li>
       </ol>
-      <aside className="en-brief-note"><b>What to expect from your AI</b><p>Your AI should say what it can access and start when it has enough material. If something essential is missing, it should tell you exactly what to upload or answer next.</p></aside>
-      {goal === 'assessment' ? <aside className="en-brief-note"><b>Lots of lessons?</b><p>Work in smaller batches. Save the source details and what each batch covered, then give that saved work to your AI for the final study guide. Premed OS does not combine separate batches.</p><p>Checkpoint files stay outside Premed OS. Import only the final, complete notebook JSON.</p><details className="en-small-detail"><summary>If some lessons are missing</summary><p>{goalInfo.limit}</p><p>A checkpoint is a saved file with source details, what is covered or unfinished, working explanations and the next step. Supply it to your AI when you resume; it does not prove the original sources were read again.</p></details></aside> : <aside className="en-brief-note"><b>Keep the limits visible</b><p>{goalInfo.limit}</p></aside>}
-      <div className="en-actions"><Button variant={draft.jsonReady ? 'outline' : 'default'} aria-pressed={draft.jsonReady} onClick={() => { setDraft(previous => ({ ...previous, jsonReady: true })); setMessage('JSON readiness noted. Click Next to validate and preview it here.') }}>{draft.jsonReady && <Check aria-hidden="true" />}I have my JSON</Button></div>
-      <p className="en-next-note">This is your confirmation. The app cannot check what happened in your AI.</p>
+      <aside className="en-brief-note">
+        <b>What to expect from your AI</b>
+        <p>Your AI should say what it can access and start when it has enough material. If something essential is missing, it should tell you exactly what to upload or answer next.</p>
+        <p>{goalInfo.limit}</p>
+        {goal === 'assessment' && <details className="en-small-detail"><summary>Too much material for one conversation?</summary>
+          <p>Work in smaller batches. Save the source details and what each batch covered, then give that saved work to your AI for the final study guide. Premed OS does not combine separate batches.</p>
+          <p>Checkpoint files stay outside Premed OS. Import only the final, complete notebook JSON. A checkpoint is a saved file with source details, what is covered or unfinished, working explanations and the next step. Supply it to your AI when you resume; it does not prove the original sources were read again.</p>
+        </details>}
+      </aside>
+      <details className="en-small-detail"><summary>Before you leave this page</summary>
+        <p>Your step and inputs are kept per class in this browser tab when storage is available. Closing the tab can lose this draft; keep your downloaded prompt and notebook JSON. Remembered class preferences are saved separately.</p>
+        <p>To come back, open Class notebook and choose Add to notebook. Working checkpoint files stay with your AI; they are not notebook imports. The 8 MiB input limit does not guarantee a save, because browser storage can run out sooner.</p>
+      </details>
+      <div className="en-gate">
+        <div><p className="en-gate-title">Do you have the notebook JSON file?</p><p className="en-muted">This is your confirmation. Premed OS cannot check what happened in your AI.</p></div>
+        <Button variant={draft.jsonReady ? 'outline' : 'default'} aria-pressed={draft.jsonReady} onClick={() => { setDraft(previous => ({ ...previous, jsonReady: true })); setMessage('JSON readiness noted. Click Next to validate and preview it here.') }}>{draft.jsonReady && <Check aria-hidden="true" />}I have my JSON</Button>
+      </div>
       <footer className="en-stage-footer"><div className="en-actions"><Button variant={draft.jsonReady ? 'default' : 'outline'} disabled={!draft.jsonReady} onClick={() => goTo('import')}>Next<ArrowRight aria-hidden="true" /></Button><Button variant="ghost" onClick={() => goTo('prompt')}><ArrowLeft aria-hidden="true" />Back to prompt</Button></div>
-        <p className="en-next-note">Materials go to your AI. The finished notebook JSON goes to Premed OS. Return to Class notebook and choose Add to notebook to resume this draft.</p>
+        <p className="en-next-note">Materials go to your AI. The finished notebook JSON comes back to Premed OS.</p>
       </footer>
-      <details className="en-small-detail"><summary>Before you leave this page</summary><p>Your step and inputs are kept per class in this browser tab when storage is available. Closing the tab can lose this draft; keep your downloaded prompt and notebook JSON. Remembered class preferences are saved separately.</p><p>Working checkpoint files stay with your AI; they are not notebook imports. The 8 MiB input limit does not guarantee a save. Available browser storage can run out sooner, so keep your downloaded copy.</p></details>
     </div>}
 
     {step === 'import' && <div className="en-stage-content"><NotebookImportPanel courseId={courseId} initialRaw={draft.rawJson} onRawChange={rawJson => setDraft(previous => ({ ...previous, rawJson }))} onImported={id => { finished.current = true; clearNotebookWorkflowDraft(courseId); onImported(id) }} /><div className="en-actions"><Button variant="ghost" onClick={() => goTo('handoff')}><ArrowLeft aria-hidden="true" />Back to AI steps</Button></div></div>}

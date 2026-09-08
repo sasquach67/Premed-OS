@@ -161,11 +161,11 @@ it('keeps the copy step and offers the full preview and download when clipboard 
   await act(async () => root.render(<ExternalNotebookWorkflow courseId={course.id} onImported={imported} />))
   await choose('review'); await click('Next'); await click('Copy full prompt')
   expect(container.querySelector('h1')?.textContent).toBe('Copy your prompt')
-  expect(container.querySelector('[role="status"]')?.textContent).toContain('Copy from the full preview or download it')
+  expect(container.querySelector('[role="status"]')?.textContent).toContain('Select the prompt above and copy it, or download it')
   expect(nextButton().disabled).toBe(true)
   const details = await openFallback()
   expect(details.open).toBe(true)
-  const preview = details.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value
+  const preview = container.querySelector<HTMLTextAreaElement>('.en-code-body textarea[readonly]')!.value
   expect(preview.length).toBeGreaterThan(1000)
   expect(clipboard).toHaveBeenCalledWith(preview)
   const download = [...details.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Download full prompt')!

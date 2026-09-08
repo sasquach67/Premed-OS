@@ -97,3 +97,48 @@
   .en-flow .en-stage-footer .en-actions{align-items:stretch;flex-direction:column}
   .en-flow .en-stage-footer .en-actions>button{justify-content:center}
 }
+
+/* Copy stage: the prompt is the payload, so it is visible in a familiar code panel
+   with one copy action in its header. Recovery stays one disclosure with one job. */
+.en-code-panel{border:1px solid var(--border);border-radius:.85rem;background:var(--card);overflow:hidden;margin:0 0 .75rem}
+/* Chrome stays on the card tone: muted-foreground meta text only clears AA there
+   (measured 4.69:1 on card vs 3.94:1 on --muted in the light paper theme). */
+.en-code-head{display:flex;align-items:center;gap:.6rem 1rem;flex-wrap:wrap;padding:.7rem 1rem;border-bottom:1px solid var(--border)}
+.en-flow .en-code-head p,.en-flow .en-code-foot p{margin:0}
+.en-code-name{display:flex;align-items:center;gap:.5rem;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem;font-weight:700;overflow-wrap:anywhere}
+.en-code-name svg{width:1rem;height:1rem;flex:0 0 auto;color:var(--primary)}
+.en-code-meta{font-size:.78rem;color:var(--muted-foreground)}
+.en-code-ack{display:inline-flex;align-items:center;gap:.35rem;font-size:.78rem;font-weight:800;color:var(--primary)}
+.en-code-ack svg{width:.9rem;height:.9rem;flex:0 0 auto}
+.en-code-head .en-code-copy{margin-left:auto;flex:0 0 auto}
+.en-code-body{display:block;margin:0}
+.en-flow .en-code-body textarea{display:block;box-sizing:border-box;width:100%;max-width:100%;height:19rem;min-height:0!important;margin:0;padding:1rem;border:0;border-radius:0;background:var(--background);color:var(--foreground);font-weight:400;line-height:1.6;resize:vertical}
+.en-flow .en-code-body textarea:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+.en-code-foot{display:flex;align-items:baseline;gap:.4rem 1rem;flex-wrap:wrap;padding:.75rem 1rem;border-top:1px solid var(--border)}
+.en-flow .en-code-foot p{flex:1 1 24rem;min-width:0;line-height:1.5}
+.en-flow .en-code-foot button{height:auto;min-height:0;padding:0;font-size:.85rem}
+.en-flow .en-prompt-detail .en-actions{margin:.6rem 0 0}
+
+/* Limits belong on the surface, examples belong in the disclosure. */
+.en-guide-limit{display:flex;align-items:flex-start;gap:.55rem;margin:1rem 0 0;padding-top:.85rem;border-top:1px solid var(--border);font-size:.88rem;line-height:1.55;color:var(--muted-foreground)}
+.en-guide-limit svg{width:1rem;height:1rem;flex:0 0 auto;margin-top:.2rem;color:var(--primary)}
+.en-guide-limit b{color:var(--foreground)}
+.en-flow .en-optional{font-weight:700;color:var(--muted-foreground)}
+.en-flow .en-optional textarea{min-height:3.75rem}
+
+/* The acknowledgment is a gate, so it reads as one and sits beside the step footer. */
+.en-gate{display:flex;align-items:center;justify-content:space-between;gap:.75rem 1.25rem;flex-wrap:wrap;margin:1rem 0 0;padding:1rem 1.25rem;border:1px solid var(--border);border-radius:.85rem;background:var(--card)}
+.en-gate>div{flex:1 1 20rem;min-width:0}
+.en-flow .en-gate p{margin:0;line-height:1.5}
+.en-gate-title{font-size:1rem;font-weight:800}
+.en-import .en-save-blocked{margin:0 0 .7rem;font-size:.85rem;line-height:1.55;color:var(--muted-foreground)}
+.en-import .en-save-actions .en-actions{margin:0}
+
+@media(max-width:480px){
+  .en-code-head{flex-direction:column;align-items:stretch;gap:.5rem}
+  .en-code-head .en-code-copy{margin-left:0;width:100%}
+  .en-flow .en-code-body textarea{height:15rem;padding:.75rem}
+  .en-code-foot{padding:.75rem 1rem}
+  .en-gate{align-items:stretch;padding:1rem}
+  .en-gate>button{width:100%;justify-content:center}
+}
