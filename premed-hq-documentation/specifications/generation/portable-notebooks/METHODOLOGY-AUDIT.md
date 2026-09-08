@@ -1,5 +1,7 @@
 # Instruction beta methodology audit
 
+Current external Review: beta12, v3. The early audit below is historical provenance. Its numerical UMO and repeated SG/VIS presentation requirements are explicitly superseded by the final beta12 section and canonical20 EC-REVIEW-PRECEDENCE; other pathway rules and v2 validation remain unchanged.
+
 Audit baseline: canonical repository commit `6ced43d3876cb05bcb53997ffc0a82c78d366b92`, followed by the recorded portable draft changes. Original audit build: `notebook-instructions-beta-1`; feasibility refinement: `notebook-instructions-beta-2`; conversation refinement: `notebook-instructions-beta-3`; review/confirmation refinement: `notebook-instructions-beta-4`; current topic-revision/intake refinement: `notebook-instructions-beta-5` (see the final sections). Transport remains `premed-os-notebook-package` version 2 and `instructionsVersion=notebook-workflows-draft-2`. The schema and eleven request placeholders are unchanged.
 
 This audit compares the actual assembled prompt text with the substantive canonical learning rules. It does not infer learning quality from successful JSON parsing, and it does not replace a real student trial.
@@ -99,3 +101,7 @@ The portable representation section now distinguishes app-presented structured p
 The original depth, evidence and goal methodology remains. Existing portable rules now require finished teaching rather than repeated audit/process notices, compact shared-dimension tables, useful supported relationship diagrams and figure-specific teaching beside real source images. Shared neutral practice stimuli keep interpretations after Reveal. The source-question rule retains relevant usable supplied course tasks and their exact context/options, keys or honestly authored reasoning, and inventories duplicates/omissions. Original-application no-copy restrictions still govern generated supplements; they do not prohibit the authorized supplied study questions.
 
 No schema bytes or fields changed. The narrow v3 semantic allowance permits source practice origin alongside generated-practice, while v2 retains its prior rule. The practice-origin field describes the source question, not proof that the whole solution is official. Thirty-six semantic cases include both v3 origins, evidence rejection and unchanged v2 behavior. The separate complete BIOL revision preserves originals/manual edits and adds source questions; it is authored review work, not a provider trial or accepted app update.
+
+## Beta12 explicit external Review precedence
+
+All selected legacy methodology remains embedded verbatim as provenance, with its scope explicitly reconciled by shared20 EC-MASTERY-REVIEW, EC-REDUCTION, EC-REVIEW-PRECEDENCE and EC-REVIEW-PRACTICE. Numeric UMO depth/generated-practice/cue rules and SG/VIS display floors do not force padding in v3 Review. Per-objective evidence, useful understanding/action and faithful supplied tasks remain mandatory; optional generated items need a named uncovered skill. Portable sections of03/11 point to this precedence. This does not alter built-in generators, v2 semantics, other goals, schemas or composer modes.

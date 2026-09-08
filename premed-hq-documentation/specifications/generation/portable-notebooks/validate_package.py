@@ -80,9 +80,11 @@ def validate(data,schema):
                 if o['origin']=='official' and (r['authority']!='official' or o['title']!=r['text']):fail('official-wording',o['id'])
                 if r['status']=='partial' and not o['evidenceLimit']:fail('partial-without-limit',o['id'])
             if o['origin']=='derived' and not o['title'].startswith('Study objective:'):fail('derived-label',o['id'])
-            if len(o['freeRecallCues'])>3:fail('recall-count',o['id'])
+            if not (visual and entry['goal']=='review') and len(o['freeRecallCues'])>3:fail('recall-count',o['id'])
             if o['evidenceLimit']:
                 if len(o['evidenceLimit'].split())<8:fail('vague-evidence-limit',o['id'])
+            elif visual and entry['goal']=='review':
+                if not o['beAbleToDo']:fail('mastery-action',o['id'])
             elif len(o['understand'])<5 or len(o['beAbleToDo'])<2 or len(o['watchFor'])<1 or not 1<=len(o['practiceBlockIds'])<=2:fail('ordinary-objective-depth',o['id'])
             if len(o['practiceBlockIds'])!=len(set(o['practiceBlockIds'])):fail('duplicate-reference',o['id'])
             for id in o['practiceBlockIds']:

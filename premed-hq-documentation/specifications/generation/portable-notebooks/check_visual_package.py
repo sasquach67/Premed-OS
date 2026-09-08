@@ -43,6 +43,38 @@ def run(out):
     legacy_schema=json.loads((Path(__file__).parent/'notebook-package.schema.json').read_text())
     assert any(e.startswith('practice-provenance:') for e in validate(legacy,legacy_schema))
     results.append({'case':'v2-practice-origin-behavior-unchanged','passed':True})
+    # V3 Review has substantive minima, not legacy numeric depth or practice quotas.
+    compact=copy.deepcopy(plain);obj=compact['entries'][0]['objectives'][0]
+    obj.update(understand=[obj['understand'][0]],beAbleToDo=[obj['beAbleToDo'][0]],watchFor=[],practiceBlockIds=[],evidenceLimit=None)
+    assert not validate(compact,schema)
+    results.append({'case':'compact-v3-review-without-padding-or-extra-practice','passed':True})
+    wrong=copy.deepcopy(compact);wrong['entries'][0]['objectives'][0]['beAbleToDo']=[]
+    assert any(e.startswith('mastery-action:') for e in validate(wrong,schema))
+    results.append({'case':'reject-unlimited-review-without-action-target','passed':True})
+    wrong=copy.deepcopy(compact);wrong['entries'][0]['objectives'][0]['understand']=[]
+    assert any(e.startswith('schema:') for e in validate(wrong,schema))
+    results.append({'case':'reject-review-without-understanding','passed':True})
+    cues=copy.deepcopy(compact);obj=cues['entries'][0]['objectives'][0];obj['freeRecallCues']=[obj['freeRecallCues'][0]+str(i) for i in range(4)]
+    assert not validate(cues,schema)
+    results.append({'case':'v3-review-no-legacy-cue-count-ceiling','passed':True})
+    legacy_compact=copy.deepcopy(compact);legacy_compact.update(version=2,instructionsVersion='notebook-workflows-draft-2');legacy_compact.pop('assets');legacy_compact.pop('visualReview')
+    assert any(e.startswith('ordinary-objective-depth:') for e in validate(legacy_compact,legacy_schema))
+    results.append({'case':'v2-ordinary-depth-behavior-unchanged','passed':True})
+    many=copy.deepcopy(plain);entry=many['entries'][0];obj=entry['objectives'][0];seed=block(many,obj['practiceBlockIds'][0]);ids=[]
+    for i in range(3):
+        new=copy.deepcopy(seed);new['id']='extra-source-task-'+str(i);new['provenance']='source';entry['sections'][0]['blocks'].append(new);ids.append(new['id'])
+    obj['practiceBlockIds']=ids
+    assert not validate(many,schema)
+    results.append({'case':'v3-review-all-relevant-source-task-links-without-two-item-ceiling','passed':True})
+    reused=copy.deepcopy(plain);entry=reused['entries'][0];obj=entry['objectives'][0];other=entry['objectives'][1]
+    # Same supported task can serve genuinely overlapping objectives; ownership must still close.
+    other['practiceBlockIds']=obj['practiceBlockIds'][:]
+    other['excerptIds']=list(dict.fromkeys(other['excerptIds']+obj['excerptIds']));other['sourceIds']=list(dict.fromkeys(other['sourceIds']+obj['sourceIds']))
+    assert not validate(reused,schema)
+    results.append({'case':'v3-review-shared-source-task-reference-with-closed-evidence','passed':True})
+    wrong=copy.deepcopy(reused);wrong['entries'][0]['objectives'][1]['practiceBlockIds']=['absent-task']
+    assert any(e.startswith('practice-reference:') for e in validate(wrong,schema))
+    results.append({'case':'compact-review-still-rejects-missing-practice-reference','passed':True})
     mutations=[
         ('missing-review','schema',lambda p:p.pop('visualReview')),
         ('missing-source-review','visual-source-inventory',lambda p:p['visualReview'].update(sources=[])),
