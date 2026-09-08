@@ -114,7 +114,7 @@ function ReaderSection({ section, index, entryIndex, mode, reader, headingId, ch
   const [inlineSources, setInlineSources] = useState(false)
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null)
   const panel = useRef<HTMLDetailsElement>(null)
-  const blocks = readerBlocks(section.blocks, mode)
+  const blocks = readerBlocks(section.blocks, mode, reader && !change ? section.purpose : undefined)
   if (!blocks.length) return null
   const title = change ? <ContentText value={section.title} path={['entries', entryIndex, 'sections', index, 'title']} label="Section title" change={change} /> : section.title
   return <section aria-label={section.title} className={`en-section${reader ? ' nbr-section' : ''}`} data-purpose={section.purpose} data-sources={inlineSources ? 'on' : 'off'}>

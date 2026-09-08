@@ -71,7 +71,10 @@ export function collectReaderAnnotations(blocks: NotebookBlock[], pkg: NotebookP
   })
 }
 
-export function readerBlocks(blocks: NotebookBlock[], mode: NotebookReadingMode) {
+export function readerBlocks(blocks: NotebookBlock[], mode: NotebookReadingMode, purpose?: NotebookPackage['entries'][number]['sections'][number]['purpose']) {
+  // Dedicated question setups belong with their questions, not as orphaned
+  // figures/instructions in Study. Mixed teaching sections still filter by type.
+  if (mode === 'study' && purpose === 'practice') return []
   return blocks.filter(block => mode === 'all' || (mode === 'study' ? block.type !== 'practice' : mode === 'practice' && block.type === 'practice'))
 }
 
@@ -99,7 +102,7 @@ export function notebookReaderContents(pkg: NotebookPackage, entryId: string | u
   }
   for (const entry of pkg.entries.filter(entry => !entryId || entry.id === entryId)) {
     if ((mode === 'practice' || mode === 'all') && entry.objectives.length) add(entry.id, 'objectives', 'Mastery objectives')
-    for (const section of entry.sections) if (readerBlocks(section.blocks, mode).length) add(entry.id, 'section', section.title, section.id)
+    for (const section of entry.sections) if (readerBlocks(section.blocks, mode, section.purpose).length) add(entry.id, 'section', section.title, section.id)
     if ((mode === 'coverage' || mode === 'all' || mode === 'study') && entry.limitations.length) add(entry.id, 'limits', 'Limits of this entry')
     if (mode === 'coverage' || mode === 'all' || mode === 'study') add(entry.id, 'coverage', "What's covered and missing")
   }

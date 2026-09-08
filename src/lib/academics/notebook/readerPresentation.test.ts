@@ -96,4 +96,17 @@ describe('reader evidence and navigation boundaries', () => {
     for (const mode of ['study', 'practice'] as const) expect(notebookReaderContents(pkg, entry.id, mode, 'reader').some(item => item.title === 'mapping explanation')).toBe(true)
     expect(notebookReaderContents(pkg, entry.id, 'practice', 'reader')[0].title).toBe('Mastery objectives')
   })
+  it('omits dedicated practice setups from Study and its contents without changing all-content or Practice views', () => {
+    const pkg = revisionFixture(), entry = pkg.entries[0], section = entry.sections[1]
+    section.purpose = 'practice'
+    section.blocks.unshift({ ...entry.sections[0].blocks[0], id: 'dedicated-neutral-setup' })
+    const before = JSON.stringify(pkg)
+    expect(readerBlocks(section.blocks, 'study', section.purpose)).toEqual([])
+    expect(notebookReaderContents(pkg, entry.id, 'study', 'reader').some(item => item.title === section.title)).toBe(false)
+    expect(notebookReaderContents(pkg, entry.id, 'practice', 'reader').some(item => item.title === section.title)).toBe(true)
+    expect(readerBlocks(section.blocks, 'practice', section.purpose).map(block => block.type)).toEqual(['practice'])
+    expect(readerBlocks(section.blocks, 'all', section.purpose)).toEqual(section.blocks)
+    expect(readerBlocks(section.blocks, 'study')).toHaveLength(1)
+    expect(JSON.stringify(pkg)).toBe(before)
+  })
 })

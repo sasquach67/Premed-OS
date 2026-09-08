@@ -14,7 +14,7 @@ import { PROMPT_TEMPLATES } from '@/lib/academics/notebook/prompt'
 import { loadNotebookWorkflowDraft, notebookWorkflowDraftKey, persistNotebookWorkflowDraft } from '@/lib/academics/notebook/workflowDraft'
 import review from '@/lib/academics/notebook/fixtures/fixture-review.json'
 import type { Course } from '@/lib/types'
-import { plainVisualFixture } from '@/lib/academics/notebook/visual.test-fixtures'
+import { plainVisualFixture, visualFixture } from '@/lib/academics/notebook/visual.test-fixtures'
 let root: Root, container: HTMLDivElement
 const imported = vi.fn()
 const course: Course = { id: 'test-notebook', code: review.course.code, title: review.course.title, term: review.course.term ?? 'Fall 2026', credits: 3, grade: '', bcpm: false, status: 'in-progress', inResidence: true, satisfies: [], order: 0 }
@@ -432,5 +432,39 @@ it('exposes distinct question, answer and reasoning type roles without changing 
   expect(question).toBeTruthy(); expect(question.closest('.en-answer')).toBeNull()
   expect(answer.closest<HTMLDetailsElement>('.en-answer')?.open).toBe(false)
   expect(reasoning.closest('.en-answer')).toBe(answer.closest('.en-answer'))
+  expect(JSON.stringify(pkg)).toBe(before)
+})
+it('keeps dedicated course-question figures and tables with Practice while preserving mixed teaching and all-content views', async () => {
+  const pkg = visualFixture(), entry = pkg.entries[0]
+  const practice = entry.sections.flatMap(section => section.blocks).find(block => block.type === 'practice')!
+  const figure = entry.sections.flatMap(section => section.blocks).find(block => block.type === 'figure')!
+  if (practice.type !== 'practice' || figure.type !== 'figure') throw new Error('Expected visual practice fixture')
+  const teaching = entry.sections.find(section => section.purpose !== 'practice' && section.blocks.some(block => block.type !== 'practice'))!
+  const neutralFigure = { ...figure, id: 'dedicated-question-figure', caption: 'Neutral figure for the lecture question' }
+  const evidence = { provenance: 'source' as const, sourceIds: figure.sourceIds, excerptIds: figure.excerptIds, assetIds: [] }
+  const intro = { ...evidence, id: 'dedicated-question-intro', type: 'paragraph' as const, text: 'Try each lecture question using its supplied setup.' }
+  const table = { ...evidence, id: 'dedicated-question-table', type: 'table' as const, columns: ['Lotion', 'Redness'], rows: [['A', '22'], ['B', '4.5']] }
+  const question = { ...practice, id: 'dedicated-course-question', prompt: 'Compare the two lotions using the neutral figure and table.', stimulusBlockIds: [intro.id, neutralFigure.id, table.id] }
+  const mixedQuestion = { ...practice, id: 'mixed-teaching-question', prompt: 'Recall the mixed teaching example.' }
+  teaching.blocks.push(mixedQuestion)
+  entry.sections.push({ ...teaching, id: 'dedicated-course-questions', title: 'Lecture questions', purpose: 'practice', blocks: [intro, neutralFigure, table, question] })
+  const before = JSON.stringify(pkg)
+  await act(async () => root.render(<NotebookPackageView pkg={pkg} entryId={entry.id} mode="study" reader />))
+  expect(container.querySelector('section[aria-label="Lecture questions"]')).toBeNull()
+  expect(container.textContent).not.toContain(intro.text); expect(container.textContent).not.toContain(neutralFigure.caption)
+  expect([...container.querySelectorAll('.nbr-section-head h2')].some(heading => heading.textContent === teaching.title)).toBe(true)
+  expect(container.textContent).not.toContain(mixedQuestion.prompt)
+  await act(async () => root.render(<NotebookPackageView pkg={pkg} entryId={entry.id} mode="practice" reader />))
+  expect(container.textContent).toContain(mixedQuestion.prompt)
+  const item = [...container.querySelectorAll('.en-block-practice')].find(block => block.querySelector('[data-reader-role="question"]')?.textContent === question.prompt)!
+  const stimulus = item.querySelector('.nbr-practice-stimulus')!
+  expect(stimulus.textContent).toContain(intro.text); expect(stimulus.textContent).toContain(neutralFigure.caption)
+  expect(stimulus.querySelector('.nbr-figure')?.getAttribute('data-asset-id')).toBe(figure.assetId)
+  expect([...stimulus.querySelectorAll('tbody td')].map(cell => cell.textContent)).toEqual(['A', '22', 'B', '4.5'])
+  await act(async () => root.render(<NotebookPackageView pkg={pkg} entryId={entry.id} mode="all" />))
+  expect(container.textContent).toContain(intro.text); expect(container.textContent).toContain(neutralFigure.caption); expect(container.textContent).toContain(question.prompt)
+  await act(async () => root.render(<NotebookPackageView pkg={pkg} entryId={entry.id} mode="all" reader change={() => {}} />))
+  expect([...container.querySelectorAll('textarea')].some(input => input.value === intro.text)).toBe(true)
+  expect([...container.querySelectorAll('textarea')].some(input => input.value === question.prompt)).toBe(true)
   expect(JSON.stringify(pkg)).toBe(before)
 })
