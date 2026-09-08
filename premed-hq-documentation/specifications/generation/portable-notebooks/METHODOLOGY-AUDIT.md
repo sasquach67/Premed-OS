@@ -1,6 +1,6 @@
 # Instruction beta methodology audit
 
-Audit baseline: canonical repository commit `6ced43d3876cb05bcb53997ffc0a82c78d366b92`, followed by the recorded portable draft changes. Output build: `notebook-instructions-beta-1`. Transport remains `premed-os-notebook-package` version 2 and `instructionsVersion=notebook-workflows-draft-2`. The schema and eleven request placeholders are unchanged.
+Audit baseline: canonical repository commit `6ced43d3876cb05bcb53997ffc0a82c78d366b92`, followed by the recorded portable draft changes. Original audit build: `notebook-instructions-beta-1`; current feasibility refinement: `notebook-instructions-beta-2` (see the final section). Transport remains `premed-os-notebook-package` version 2 and `instructionsVersion=notebook-workflows-draft-2`. The schema and eleven request placeholders are unchanged.
 
 This audit compares the actual assembled prompt text with the substantive canonical learning rules. It does not infer learning quality from successful JSON parsing, and it does not replace a real student trial.
 
@@ -47,3 +47,7 @@ No schema change was necessary. Inspection of the current app importer establish
 The check suite validates the ten invented packages, rejects malformed references and selected semantic-shape defects, tests source-scope fixture coverage, verifies exact revision preservation, and rebuilds outputs identically. Additional checks compare actual prompt rule units with canonical files; intentional removal of active-recall answer coverage or the instructor-synonym rule is detected even with a valid schema still embedded. Raw JSON duplicate keys and over-limit inputs are rejected.
 
 These checks do not prove excerpt authenticity, entailment, complete material understanding, original question quality, disciplinary fit or student usefulness. The readable synthetic examples were author-reviewed; the coordinator independently identified the omitted format requirement. No real class source was processed by this instruction workflow, no actual trial generated, and no student rating assigned. Five course review trials plus at least one assessment and one assignment still need Andy's ratings and resolved factual/source issues for final acceptance, together with separately verified app behavior.
+
+## Beta 2 feasibility refinement
+
+Build notebook-instructions-beta-2 retains the beta-1 teaching methodology and unchanged schema/eleven request fields. The assessment portable procedure now specifies scope-first intake, actual inspection inventory, manageable evidence batches, stable identities and saveable external checkpoints, explicit resume inputs, missing/partial/unprocessed distinctions, final cross-lesson synthesis and final-only notebook export. A checkpoint is not an app format or a fourth prompt. The shared contract makes the absence of semantic package merging and variable browser-storage capacity explicit; the 8 MiB raw input ceiling is not a save guarantee. FEASIBILITY.md records the source-based judgments and separates instructional feasibility from real trial and app acceptance. Provider-specific caps are deliberately absent.

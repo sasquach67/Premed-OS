@@ -1,0 +1,36 @@
+{
+  "promptBuild": "notebook-instructions-beta-2",
+  "dispatch": "Coordinator queues this guidance after the current Workflow 2 readability turn; check overlap before changing UI. This is student-facing summary data, not a fourth prompt or a schema change.",
+  "shared": {
+    "handoff": "Materials go to your AI. The finished notebook JSON goes to Premed OS.",
+    "recordings": "Use recordings only if your chosen AI can actually inspect them; otherwise supply a readable transcript.",
+    "largePacket": "Work through big packets in smaller batches. Save what was covered and the source details, then ask your AI for the final study guide. Premed OS does not combine separate batches.",
+    "storage": "Keep the downloaded JSON. The 8 MiB input limit does not guarantee a save; available local storage can run out sooner."
+  },
+  "goals": {
+    "review": {
+      "label": "Review class material",
+      "bestFor": "Review a lecture or lesson, catch up, preview, or understand a confusing topic.",
+      "minimumBring": "Readable material for the topic you want help with.",
+      "idealBring": "The lecture itself plus slides, notes and related readings; objectives if available. A transcript or supported recording can help. These are options, not an all-required list.",
+      "youWillReceive": "A study guide, a recall outline (Mastery Map), practice questions, and what is covered or missing.",
+      "limits": "Thin or unreadable material limits the result. Add a readable source or narrow the lesson scope."
+    },
+    "assessment": {
+      "label": "Prepare for an assessment",
+      "bestFor": "Study for a quiz or exam covering one or more lessons.",
+      "minimumBring": "The scope or your named study request, plus readable material for the topics you want to prepare.",
+      "idealBring": "The review sheet, known format, and relevant lectures, readings and notes across the required lessons.",
+      "youWillReceive": "A study guide or outline, practice questions with explained answers, and what is covered or missing.",
+      "limits": "Week 3 alone cannot cover Weeks 1–6. Keep missing lessons visible; save progress after each evidence batch and ask your AI for the final study guide."
+    },
+    "assignment": {
+      "label": "Work on an assignment",
+      "bestFor": "Get help with the task at the stage you choose.",
+      "minimumBring": "The task, your requested help stage and the sources needed for it; include your draft or data when needed.",
+      "idealBring": "The prompt, rubric, required sources or methods, and your work so far.",
+      "youWillReceive": "Hints, a plan, explanations or feedback, plus a check against the task requirements.",
+      "limits": "A hint stays a hint. Missing rubric details, drafts or data stay unknown; split a large task into named stages."
+    }
+  }
+}

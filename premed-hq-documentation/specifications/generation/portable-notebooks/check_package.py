@@ -4,6 +4,7 @@ import argparse, copy, hashlib, importlib.metadata, json, re, tempfile
 from jsonschema import Draft202012Validator
 from build_prompts import build, compose, TOKENS
 from build_fixtures import build as fixtures
+from build_feasibility_case import build as feasibility_case
 from validate_package import validate, load_package_json, MAX_PACKAGE_BYTES
 
 def assessment_fixture_scope_errors(data):
@@ -51,8 +52,21 @@ def prompt_methodology_errors(root,goal,prompt):
         path=root/'premed-hq-documentation/implementation/briefs'/('notebook-'+goal+'-v1.md')
         prefix='NA-' if goal=='assessment' else 'NW-'
         required += [line for line in path.read_text().splitlines() if line.startswith('- `'+prefix)]
+        if goal=='assessment':required.append('## Portable multi-lesson assessment preparation\n'+path.read_text().split('## Portable multi-lesson assessment preparation\n',1)[1])
     for fragment in required:
         if fragment.strip() not in prompt:errors.append('missing-canonical-methodology: '+fragment[:100])
+    return errors
+
+def feasibility_scope_errors(data,case_dir):
+    errors=[];entry=data['entries'][0];ledger={r['id']:r for r in entry['requirements']}
+    statements=[line.strip() for line in (case_dir/'materials/assessment-scope.md').read_text().splitlines() if line.strip() and not line.startswith('#')]
+    if sorted(statements)!=sorted(r['text'] for r in ledger.values()):errors.append('feasibility-scope: preserve every original requirement')
+    expected={'req-week-1':'missing','req-week-2':'partial','req-week-3':'supported','req-week-4':'missing','req-week-5':'missing','req-week-6':'missing','req-cross':'supported','req-format':'supported'}
+    if {id:r['status'] for id,r in ledger.items()}!=expected:errors.append('feasibility-status: missing lessons and unprocessed cases remain explicit')
+    sources={s['id']:s for s in data['sources']}
+    if sources.get('week-2',{}).get('access')!='partial' or 'Sections 2–80 remain unprocessed' not in sources.get('week-2',{}).get('inspected',''):errors.append('feasibility-access: Section 1 is not a whole-file read')
+    if 'partial' not in entry['title'].lower() or 'Partial preparation' not in entry['scope']:errors.append('feasibility-claim: no complete Weeks 1–6 claim')
+    if set(sources)!={'scope','week-2','week-3'}:errors.append('feasibility-inventory: do not invent unsupplied lesson files')
     return errors
 
 def run(root,out):
@@ -81,6 +95,31 @@ def run(root,out):
         omitted=review_prompt.replace(fragment,'')
         assert prompt_methodology_errors(root,'review',omitted)
         results.append({'case':'reject-prompt-omission-'+name,'expected':'methodology check catches omitted substantive rule even when schema stays intact','passed':True})
+    case_dir=out/'feasibility-case';partial=json.loads((case_dir/'expected-partial-notebook.json').read_text())
+    assert not validate(partial,schema);assert not feasibility_scope_errors(partial,case_dir)
+    results.append({'case':'staged-assessment-final-partial-package','expected':'schema-valid complete file with honest incomplete Weeks 1–6 coverage','passed':True})
+    file_map={'scope':'assessment-scope.md','week-2':'week-2-packet.md','week-3':'week-3.md'}
+    for src in partial['sources']:
+        raw=(case_dir/'materials'/file_map[src['id']]).read_text()
+        for excerpt in src['excerpts']:
+            assert excerpt['text'] in raw
+            assert '## '+excerpt['location'] in raw
+    results.append({'case':'staged-assessment-excerpts-match-invented-material','expected':'all exact quotations appear in the actual case input files','passed':True})
+    for n in (1,2):
+        checkpoint=(case_dir/f'expected-checkpoint-{n}.md').read_text()
+        for r in partial['entries'][0]['requirements']:assert r['id'] in checkpoint and r['text'] in checkpoint
+        assert '| req-format | partial |' in checkpoint
+        assert 'NOT notebook JSON' in checkpoint and 'not a notebook revision number' in checkpoint
+        assert 'not-accessed; deliberately unprocessed' in checkpoint if n==1 else 'partial; Section 1 only' in checkpoint
+    results.append({'case':'staged-checkpoint-identities-and-pending-scope','expected':'both work records retain source/requirement identities and unresolved portions without claiming app import or persistence','passed':True})
+    mutations=[('drop-week-6',lambda p:p['entries'][0].update(requirements=[r for r in p['entries'][0]['requirements'] if r['id']!='req-week-6'])),('claim-whole-week-2-read',lambda p:next(s for s in p['sources'] if s['id']=='week-2').update(access='read')),('claim-complete-six-week-prep',lambda p:p['entries'][0].update(title='Complete Weeks 1–6 preparation')),('hide-missing-lesson-as-out-of-scope',lambda p:next(r for r in p['entries'][0]['requirements'] if r['id']=='req-week-6').update(status='out-of-scope'))]
+    for name,change in mutations:
+        wrong=copy.deepcopy(partial);change(wrong);assert not validate(wrong,schema);assert feasibility_scope_errors(wrong,case_dir)
+        results.append({'case':'reject-staged-'+name,'expected':'focused case audit rejects a false coverage/access claim despite structural validity','passed':True})
+    assessment_prompt=(out/'copy-prompt-assessment.md').read_text()
+    checkpoint_rule=next(line for line in assessment_prompt.splitlines() if line.startswith('4. At each batch boundary'))
+    assert prompt_methodology_errors(root,'assessment',assessment_prompt.replace(checkpoint_rule,''))
+    results.append({'case':'reject-prompt-omission-saved-checkpoint-protocol','expected':'canonical assembly guard catches loss of the staged working-file requirement','passed':True})
     base=examples['fixture-review'];r=lambda p:p['entries'][0]['requirements'][0];o=lambda p:p['entries'][0]['objectives'][0];b=lambda p:p['entries'][0]['sections'][0]['blocks'][0]
     cases=[]
     def case(name,code,change,seed=base):cases.append((name,code,change,seed))
@@ -156,13 +195,15 @@ def run(root,out):
         errors=validate(data,schema);assert any(e.startswith(code+':') for e in errors),(target,errors)
         results.append({'case':'reject-cross-entry-'+target,'expected':'rejected: '+code,'passed':True})
     with tempfile.TemporaryDirectory() as tmp:
-        fresh=Path(tmp);build(root,fresh);fixtures(fresh)
+        fresh=Path(tmp);build(root,fresh);fixtures(fresh);feasibility_case(fresh/'feasibility-case')
+        for path in case_dir.rglob('*'):
+            if path.is_file():assert path.read_bytes()==(fresh/'feasibility-case'/path.relative_to(case_dir)).read_bytes()
         for path in out.glob('copy-prompt-*.md'):
             assert path.read_bytes()==(fresh/path.name).read_bytes(),path.name
             template=path.read_text()
             assert all(template.count('{{'+token+'}}')==1 for token in TOKENS)
             assert set(re.findall(r'\{\{([A-Z_]+)\}\}',template))==set(TOKENS)
-            assert 'Prompt build: notebook-instructions-beta-1.' in template
+            assert 'Prompt build: notebook-instructions-beta-2.' in template
             values={token:'Sample '+token for token in TOKENS};values['CLASS_PREFERENCES']='Keep "quotes", newlines\n, unicode →, and {{SCOPE}} literal.'
             composed=compose(template,values)
             envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])
@@ -173,7 +214,7 @@ def run(root,out):
             if path.name in ('validation-report.json',):continue
             if (fresh/path.name).exists():assert path.read_bytes()==(fresh/path.name).read_bytes(),path.name
     results += [{'case':'reproducible-prompts-fixtures-manifest','expected':'identical bytes','passed':True},{'case':'single-pass-json-string-composition','expected':'quotes/newlines/unicode/token-looking input preserved','passed':True},{'case':'embedded-schema-equality','expected':'all three templates use unchanged schema','passed':True}]
-    report={'validator':'jsonschema '+importlib.metadata.version('jsonschema')+' Draft 2020-12 plus validate_package.py','schemaSha256':hashlib.sha256((out/'notebook-package.schema.json').read_bytes()).hexdigest(),'passed':len(results),'failed':0,'results':results,'limits':['No course trial was run and no Andy ratings were assigned.','Cross-reference validation cannot prove source authenticity, exact excerpt accuracy, evidence entailment, complete source coverage, originality, absence of answer leakage, or learning quality.','Fixture content received an author review against its invented passages; that is not an independent pedagogical audit.','App prompt/copy/download byte identity is an integration requirement, not a claim that the app UI was tested here.']}
+    report={'validator':'jsonschema '+importlib.metadata.version('jsonschema')+' Draft 2020-12 plus validate_package.py','schemaSha256':hashlib.sha256((out/'notebook-package.schema.json').read_bytes()).hexdigest(),'passed':len(results),'failed':0,'results':results,'limits':['No course trial was run and no Andy ratings were assigned.','Cross-reference validation cannot prove source authenticity, exact excerpt accuracy, evidence entailment, complete source coverage, originality, absence of answer leakage, or learning quality.','Fixture content received an author review against its invented passages; that is not an independent pedagogical audit.','App prompt/copy/download byte identity is an integration requirement, not a claim that the app UI was tested here.','Staged feasibility outputs and checkpoints are invented expectations. No external AI was run; the forced batch boundary is not a provider capacity benchmark.']}
     (out/'validation-report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({'passed':len(results),'failed':0,'schemaSha256':report['schemaSha256']}))
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--canonical-root',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args();run(a.canonical_root.resolve(),a.output.resolve())

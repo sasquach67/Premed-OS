@@ -9,6 +9,7 @@ Run from the canonical repository root. The output may be any separate directory
 ```sh
 python3 premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py --canonical-root . --output /tmp/notebook-instruction-output
 python3 premed-hq-documentation/specifications/generation/portable-notebooks/build_fixtures.py --output /tmp/notebook-instruction-output
+python3 premed-hq-documentation/specifications/generation/portable-notebooks/build_feasibility_case.py --output /tmp/notebook-instruction-output/feasibility-case
 python3 -m venv /tmp/notebook-validation
 /tmp/notebook-validation/bin/python -m pip install -r premed-hq-documentation/specifications/generation/portable-notebooks/requirements-validation.txt
 /tmp/notebook-validation/bin/python premed-hq-documentation/specifications/generation/portable-notebooks/check_package.py --canonical-root . --output /tmp/notebook-instruction-output
@@ -20,7 +21,7 @@ python3 -m venv /tmp/notebook-validation
 
 ## Rule selection
 
-- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-1; the unchanged transport instructionsVersion is notebook-workflows-draft-2.
+- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-2; the unchanged transport instructionsVersion is notebook-workflows-draft-2.
 - Every goal also includes applicable global rules from 02: sections 1.1–1.8, clarification/background boundaries, source primacy, cross-source behaviors and thin-source handling.
 - Review includes the full Runtime briefing mirror and Required structure from 03, its Portable review notebook section, the introduction and every Rules row from 11, its Portable objective coverage section, and applicable visual-learning sections from 06. All included fragments are verbatim; see METHODOLOGY-AUDIT.md for the section-level audit and explicit portable differences.
 - Assessment and assignment each include every substantive `NA-` or `NW-` rule verbatim and the corresponding portable section. Persistence/recovery and renderer implementation paragraphs are excluded.
@@ -39,7 +40,7 @@ The output package format is `premed-os-notebook-package`, version 2, instructio
 
 ## Review limits and acceptance
 
-The ten example packages use an invented route workshop, not actual course knowledge. They include three goal examples and missing-objective, multi-lesson assessment, stage-limited assignment, gap-only review partial-review, all-unreadable-material and exact-revision edges. Scope-only excerpts do not supply answers; unreadable and not-accessed sources remain in inventory; missing objectives remain in requirements without fake mastery objects. The hint fixture includes a targeted hint and leaves the final deliverable outside scope. Its planning requirement remains partial because the student's choices are still absent.
+The ten general example packages use an invented route workshop, not actual course knowledge. A separate manual feasibility case adds staged checkpoints, a long invented Week 2 packet, missing lessons and a complete partial-preparation JSON; it is an expected behavior case, not an executed AI trial or a capacity benchmark. See FEASIBILITY.md for per-goal inputs, outputs and limits. They include three goal examples and missing-objective, multi-lesson assessment, stage-limited assignment, gap-only review partial-review, all-unreadable-material and exact-revision edges. Scope-only excerpts do not supply answers; unreadable and not-accessed sources remain in inventory; missing objectives remain in requirements without fake mastery objects. The hint fixture includes a targeted hint and leaves the final deliverable outside scope. Its planning requirement remains partial because the student's choices are still absent.
 
 A readable-content author review checked the invented assertions against the printed passages, distinct teaching versus retrieval, scenario-dependent answer/rationale agreement, source role boundaries, and hint-stage limits before the final structural receipt. That review is neither an independent pedagogical audit nor acceptance evidence for Andy's classes. Deterministic checks do not establish that an AI followed these instructions on real material.
 
