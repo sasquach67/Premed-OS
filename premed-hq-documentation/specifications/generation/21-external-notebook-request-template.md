@@ -2,7 +2,7 @@
 
 Prompt build: {{PROMPT_BUILD}}. Transport instructionsVersion: notebook-workflows-draft-2. This is a draft instruction workflow awaiting manual class trials.
 
-Create finished, readable learning content for my request, then preserve it in the exact portable JSON format. The content is the notebook, not instructions for a later generator. Ask for essential missing information only; continue independent supported work. The rules and format below are complete within this prompt.
+Create finished, readable learning content for my request, then preserve it in the exact portable JSON format. The content is the notebook, not instructions for a later generator. Ask for essential missing information only; continue independent supported work. The rules and format below are complete within this prompt. Follow the shared external-conversation contract for the first reply and any necessary follow-up; when the input is usable, continue the requested work without asking for routine approval.
 
 ## Editable request
 

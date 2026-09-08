@@ -10,6 +10,7 @@ Run from the canonical repository root. The output may be any separate directory
 python3 premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py --canonical-root . --output /tmp/notebook-instruction-output
 python3 premed-hq-documentation/specifications/generation/portable-notebooks/build_fixtures.py --output /tmp/notebook-instruction-output
 python3 premed-hq-documentation/specifications/generation/portable-notebooks/build_feasibility_case.py --output /tmp/notebook-instruction-output/feasibility-case
+python3 premed-hq-documentation/specifications/generation/portable-notebooks/build_conversation_examples.py --output /tmp/notebook-instruction-output
 python3 -m venv /tmp/notebook-validation
 /tmp/notebook-validation/bin/python -m pip install -r premed-hq-documentation/specifications/generation/portable-notebooks/requirements-validation.txt
 /tmp/notebook-validation/bin/python premed-hq-documentation/specifications/generation/portable-notebooks/check_package.py --canonical-root . --output /tmp/notebook-instruction-output
@@ -21,7 +22,7 @@ python3 -m venv /tmp/notebook-validation
 
 ## Rule selection
 
-- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-2; the unchanged transport instructionsVersion is notebook-workflows-draft-2.
+- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-3; the unchanged transport instructionsVersion is notebook-workflows-draft-2.
 - Every goal also includes applicable global rules from 02: sections 1.1–1.8, clarification/background boundaries, source primacy, cross-source behaviors and thin-source handling.
 - Review includes the full Runtime briefing mirror and Required structure from 03, its Portable review notebook section, the introduction and every Rules row from 11, its Portable objective coverage section, and applicable visual-learning sections from 06. All included fragments are verbatim; see METHODOLOGY-AUDIT.md for the section-level audit and explicit portable differences.
 - Assessment and assignment each include every substantive `NA-` or `NW-` rule verbatim and the corresponding portable section. Persistence/recovery and renderer implementation paragraphs are excluded.
@@ -45,3 +46,9 @@ The ten general example packages use an invented route workshop, not actual cour
 A readable-content author review checked the invented assertions against the printed passages, distinct teaching versus retrieval, scenario-dependent answer/rationale agreement, source role boundaries, and hint-stage limits before the final structural receipt. That review is neither an independent pedagogical audit nor acceptance evidence for Andy's classes. Deterministic checks do not establish that an AI followed these instructions on real material.
 
 The coordinator owns the manual trial register. Five review trials plus at least one assessment and one assignment need Andy's clarity, depth, usefulness and class-fit ratings of at least 4/5 each, with no unresolved factual or fabricated-source errors, and the separately required app behavior proof. Do not invent ratings or mark this draft approved. Do not modify the coordinator's README or trials register from this workflow.
+
+## External conversation contract — beta 3
+
+Canonical 20 now defines the short first reply and conditional follow-ups for the same three prompts. It preserves beta-2 assessment scope/batches/checkpoints and assignment stage limits while adding explicit input requests, automatic authorized continuation, scope/pause/revision handling and evidence-bound complete-file repair. This is expected external-AI behavior, not an app state machine or a compliance guarantee. The source schema and eleven request fields are unchanged.
+
+`conversation-examples.json` is authored expected behavior, rendered into EXPECTED-CONVERSATIONS.md by build_conversation_examples.py. The five cases cover prompt alone, complete lesson inputs, missing exam lessons and resumption, one-hint support and failed import/truncation repair. The bad JSON and truncated sample are isolated in conversation-case-files/, never a valid-fixture glob. They are not extra maintained prompts, executed model trials or ratings. The versioned published beta-2 snapshot remains immutable; its hash-preservation check runs when that archive is present (a fresh staging directory without the historical archive has one fewer check).

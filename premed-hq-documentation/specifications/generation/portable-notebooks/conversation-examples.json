@@ -1,0 +1,169 @@
+{
+  "kind": "scripted-expected-conversations",
+  "promptBuild": "notebook-instructions-beta-3",
+  "executed": false,
+  "ratings": null,
+  "notice": "Authored expectations for manual beta, not transcripts of a tested external AI, real course trials, importable notebook JSON, or additional maintained prompts. Use the corresponding complete goal prompt and inspect actual behavior.",
+  "scenarios": [
+    {
+      "id": "prompt-alone",
+      "goal": "review",
+      "title": "Prompt alone, without actual course material",
+      "given": [
+        "The student pastes only the complete Review prompt. Course/scope fields are still unfilled; there are no files or meaningful course passages."
+      ],
+      "expectedFirstReply": "You want a study guide and recall outline for class material. I have the notebook instructions, but no actual course material yet. Send the course and lesson/topic name together with a readable passage, transcript, slides or notes; I’ll inspect that material and start the review.",
+      "expectedNext": [
+        "Ask for the missing course/scope and relevant material in one bundle; do not ask for optional term, depth, official objectives or permission to begin.",
+        "Do not treat the prompt/schema or a filename as teaching evidence, and do not invent a finished notebook from them."
+      ],
+      "studentFollowUp": "DEMO 101, Invented Route Workshop. Review labels and route order. Here is the passage: A label names a stop. Renaming a stop changes its label without changing its position in the stored route.",
+      "expectedAfterReply": "The course, scope and a readable passage are now supplied. Continue from that evidence without asking the same questions again. Teach the supported distinction, use a specific evidence limit for a thin mastery outline, and return a complete appropriately limited notebook file if possible.",
+      "necessaryPause": "Only until the missing scope/material is supplied; say that inspection and review follow next.",
+      "mustPreserve": [
+        "Actual goal remains Review.",
+        "No fabricated source access, official objectives or course facts."
+      ],
+      "ruleIds": [
+        "EC-FIRST",
+        "EC-INPUT",
+        "EC-QUESTIONS",
+        "EC-CONTINUE",
+        "EC-EXPORT"
+      ]
+    },
+    {
+      "id": "complete-lesson",
+      "goal": "review",
+      "title": "Complete supplied lesson inputs: proceed in the same turn",
+      "given": [
+        "Course DEMO 101, Invented Route Workshop; scope labels, tags and route order; term unknown. No formal objectives were supplied.",
+        "Readable passage A: A route is an ordered list of stops. A label names one stop. Changing a label does not change route order. Rearranging stops changes the order.",
+        "Readable passage B: A tag groups stops by a shared feature. Two stops may share a tag while retaining different labels.",
+        "These are the entire selected passages for this small invented lesson; their availability does not establish coverage of any larger course."
+      ],
+      "expectedFirstReply": "You want to review labels, tags and route order in DEMO 101. I can read both pasted passages; no formal objectives were supplied. I’ll use those passages to make the study guide, clearly labeled study objectives and supported practice now.",
+      "expectedNext": [
+        "Continue immediately with supported teaching and original self-contained practice; do not wait for a go-ahead after the opening.",
+        "Keep the lecture-style guide and mastery lenses distinct. If these brief passages cannot justify an ordinary depth floor, explain the precise evidence limit rather than padding.",
+        "Preserve term=null and derive only supported study objectives; do not block on optional metadata."
+      ],
+      "studentFollowUp": null,
+      "expectedAfterReply": "Finish with complete notebook JSON and an honest source/check receipt. Do not claim app import, student mastery or a full-course review.",
+      "necessaryPause": null,
+      "mustPreserve": [
+        "All facts and qualifications from both supplied passages.",
+        "Explicit source versus generated-objective/practice status."
+      ],
+      "ruleIds": [
+        "EC-FIRST",
+        "EC-QUESTIONS",
+        "EC-CONTINUE",
+        "EC-EXPORT"
+      ]
+    },
+    {
+      "id": "missing-exam-lesson-resume",
+      "goal": "assessment",
+      "title": "Missing exam lessons, saved work and a resumed batch",
+      "given": [
+        "Use the invented feasibility-case scope covering Weeks 1–6, including format and the Week 2/3 comparison.",
+        "Only the Week 3 teaching passage has been supplied and inspected. Week 2 and Weeks 1/4/5/6 teaching material are not yet available in this conversation.",
+        "The complete scope remains requested; the student has not narrowed it."
+      ],
+      "expectedFirstReply": "You want a study guide and practice for the Weeks 1–6 assessment. I can read the scope and Week 3 passage, but the other required lesson material is missing. I’ll explain the supported Week 3 content, keep the missing requirements visible, and make a working checkpoint; please send the Week 2 material and the other missing lessons so I can continue across the full scope.",
+      "expectedNext": [
+        "Do the available Week 3 work now. Mark missing subject evidence as missing, and the comparison as partial only to the extent that the filter side is actually supported.",
+        "Create a real checkpoint artifact if possible, or supply complete Markdown for the student to save. Report exactly which occurred; never invent a downloadable file link.",
+        "At the necessary boundary, name the next requested material (Week 2, followed by the remaining scope) and what will happen after it arrives. Do not import the checkpoint into Premed OS."
+      ],
+      "studentFollowUp": "Pause here. I have saved the checkpoint. Later: Resume using this attached exact checkpoint and the Week 2 packet; inspect only Section 1 for this batch.",
+      "expectedAfterReply": "On pause, stop new teaching and identify the student-confirmed saved checkpoint and next input. On resume, inspect the actual attached checkpoint and material, retain source/requirement/excerpt IDs and original scope, and continue without another approval question. Week 2 is now partial, not a whole-file read; required later cases and other lessons stay unresolved. Reconcile available evidence before final synthesis and export a complete file honestly labeled partial if the full scope remains unsupported.",
+      "necessaryPause": "Ask for the exact latest checkpoint plus the needed source material if either is unavailable; reopening the chat or naming a file is not sufficient recovery.",
+      "mustPreserve": [
+        "All original Week 1–6 requirements, format and comparison.",
+        "Stable IDs and exact source excerpts/locators across batches.",
+        "Working checkpoint numbers are not notebook revisions; no automatic app merge."
+      ],
+      "ruleIds": [
+        "EC-FIRST",
+        "EC-GAPS",
+        "EC-BATCH",
+        "EC-SCOPE",
+        "EC-PAUSE",
+        "EC-CONTINUE",
+        "EC-EXPORT"
+      ],
+      "variants": [
+        {
+          "student": "The student adds a Week 4 file without changing the stated assessment scope.",
+          "expected": "Inspect the new evidence when possible and update coverage; the new upload does not itself redefine scope."
+        },
+        {
+          "student": "Actually, prepare only Week 3 for now.",
+          "expected": "Briefly state the explicit narrowed scope, retain the original scope/evidence trail and attribute exclusions to the student boundary. Do not claim complete Weeks 1–6 preparation."
+        }
+      ]
+    },
+    {
+      "id": "one-hint-assignment",
+      "goal": "assignment",
+      "title": "One-hint assignment support",
+      "given": [
+        "Course DEMO 101, Invented Route Workshop. The task says: Plan a route with two differently labeled stops sharing one tag, then write the final route description.",
+        "The supplied definition says: A tag groups stops by a shared feature. Two stops may share a tag while retaining different labels.",
+        "The student explicitly requests one hint only, not a final route."
+      ],
+      "expectedFirstReply": "You want one hint for the route task. I can read the task and tag definition, so I’ll use those to give a hint without writing your final route.",
+      "expectedNext": [
+        "A suitable hint: Start by choosing different names for the stops, then think of a feature they could share. A shared tag does not require matching names.",
+        "Stop at the requested help stage; do not supply the names, finished route or an unsolicited replacement submission.",
+        "Package the short hint as workspace content with a proportionate requirement check. The final route remains out of the requested support scope, with that explicit basis."
+      ],
+      "studentFollowUp": null,
+      "expectedAfterReply": "Return only goal-appropriate short support plus the complete notebook file/receipt required by the workflow. Do not add a lecture guide, Mastery Map or a second request for permission to give the already requested hint.",
+      "necessaryPause": null,
+      "mustPreserve": [
+        "The actual one-hint boundary.",
+        "The real task requirements remain visible without claiming student completion or a grade."
+      ],
+      "ruleIds": [
+        "EC-FIRST",
+        "EC-QUESTIONS",
+        "EC-CONTINUE",
+        "EC-REVISION",
+        "EC-EXPORT"
+      ]
+    },
+    {
+      "id": "failed-import-repair",
+      "goal": "assessment",
+      "title": "Failed import repair, with a separate truncation branch",
+      "given": [
+        "The student supplies a complete rejected notebook JSON file and the exact import error: a block refers to source week2, which does not exist.",
+        "The same block cites excerpt ex-week-2, which exists and is owned by source week-2 in that file. The source passage and all teaching content are present.",
+        "This is an unsaved new-entry proposal with revision=1 and baseRevision=null; no prior saved baseline is being revised."
+      ],
+      "expectedFirstReply": "You want the rejected notebook file repaired. I have the complete JSON and the error; the cited excerpt belongs to the existing source week-2. I’ll correct the mismatched reference, preserve the other content and identities, and check the complete file again.",
+      "expectedNext": [
+        "Correct source reference week2 to the existing week-2 only because the complete file and excerpt ownership make the intended reference unambiguous.",
+        "Preserve all entry/source/excerpt/section/block/objective/requirement identities and unrelated text. Keep revision=1 and baseRevision=null for this rejected unsaved proposal.",
+        "Re-parse and validate the whole repaired JSON and cross-references if tools permit; otherwise explicitly disclose unexecuted checks. Return the complete repaired file, not an isolated patch."
+      ],
+      "studentFollowUp": "Truncation variant: the student has only the beginning of a file, ending mid-section, and no complete original is available in the conversation.",
+      "expectedAfterReply": "Say that the missing teaching cannot be reconstructed safely from the prefix. Ask for the complete original export, or the latest actual saved checkpoint plus the needed source material if the original cannot be recovered. State that you will then verify/rebuild a complete proposal. Do not invent missing paragraphs, quotes, IDs or closing content and call it recovered.",
+      "necessaryPause": "Only for a genuinely missing complete payload, error or necessary reconstruction evidence. Do not ask for files/errors already supplied. If the error is storage capacity, explain that reformatting content is not proof of a successful save.",
+      "mustPreserve": [
+        "The intended proposal revision/base, surviving IDs, source evidence and unchanged student content.",
+        "Distinguish syntax/reference repair from truncated content, incompatible representation, input size and storage failure."
+      ],
+      "ruleIds": [
+        "EC-FIRST",
+        "EC-QUESTIONS",
+        "EC-REVISION",
+        "EC-REPAIR",
+        "EC-EXPORT"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Instruction beta methodology audit
 
-Audit baseline: canonical repository commit `6ced43d3876cb05bcb53997ffc0a82c78d366b92`, followed by the recorded portable draft changes. Original audit build: `notebook-instructions-beta-1`; current feasibility refinement: `notebook-instructions-beta-2` (see the final section). Transport remains `premed-os-notebook-package` version 2 and `instructionsVersion=notebook-workflows-draft-2`. The schema and eleven request placeholders are unchanged.
+Audit baseline: canonical repository commit `6ced43d3876cb05bcb53997ffc0a82c78d366b92`, followed by the recorded portable draft changes. Original audit build: `notebook-instructions-beta-1`; feasibility refinement: `notebook-instructions-beta-2`; current conversation refinement: `notebook-instructions-beta-3` (see the final sections). Transport remains `premed-os-notebook-package` version 2 and `instructionsVersion=notebook-workflows-draft-2`. The schema and eleven request placeholders are unchanged.
 
 This audit compares the actual assembled prompt text with the substantive canonical learning rules. It does not infer learning quality from successful JSON parsing, and it does not replace a real student trial.
 
@@ -51,3 +51,11 @@ These checks do not prove excerpt authenticity, entailment, complete material un
 ## Beta 2 feasibility refinement
 
 Build notebook-instructions-beta-2 retains the beta-1 teaching methodology and unchanged schema/eleven request fields. The assessment portable procedure now specifies scope-first intake, actual inspection inventory, manageable evidence batches, stable identities and saveable external checkpoints, explicit resume inputs, missing/partial/unprocessed distinctions, final cross-lesson synthesis and final-only notebook export. A checkpoint is not an app format or a fourth prompt. The shared contract makes the absence of semantic package merging and variable browser-storage capacity explicit; the 8 MiB raw input ceiling is not a save guarantee. FEASIBILITY.md records the source-based judgments and separates instructional feasibility from real trial and app acceptance. Provider-specific caps are deliberately absent.
+
+## Beta 3 conversation refinement: preserved versus added
+
+Preserved without a methodology rewrite: beta-2 scope-first assessment, readable-source inventory, stable evidence batches and saved checkpoints, missing/partial/unprocessed coverage, cross-lesson synthesis, no app semantic merge, and assignment help-stage limits. The complete guide/mastery depth, source boundaries and original three goals remain. Published beta-2 assets retain their own version identity in the immutable archive and Git commit cbd389f.
+
+Added in canonical 20 (EC-FIRST through EC-EXPORT): a brief requested-result/access/next-step opening; a specific material request when only the prompt or filenames are present; only consequential bundled questions; automatic authorized supported work without routine stage approvals; explicit pause/resume and scope-change responses; distinction between revising a saved baseline and repairing a rejected unsaved proposal; and repair that uses complete known evidence rather than inventing truncated teaching. Canonical 21 directs the initial conversation to this shared contract. These rules describe expected external-AI behavior, not software-enforced conversational states.
+
+Five scripted EXPECTED examples and isolated bad-reference/truncated inputs are authored for manual beta. Deterministic checks validate the example structure, rule references, one-field unambiguous repair and preserved version snapshot; they do not establish that a chosen AI follows the contract. Short expectation copy is supplied separately for coordinator-queued app integration. No schema, eleven-token interface, extra goal, provider call, real class trial or rating was introduced.

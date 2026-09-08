@@ -5,6 +5,7 @@ from jsonschema import Draft202012Validator
 from build_prompts import build, compose, TOKENS
 from build_fixtures import build as fixtures
 from build_feasibility_case import build as feasibility_case
+from build_conversation_examples import build as conversation_examples
 from validate_package import validate, load_package_json, MAX_PACKAGE_BYTES
 
 def assessment_fixture_scope_errors(data):
@@ -120,6 +121,40 @@ def run(root,out):
     checkpoint_rule=next(line for line in assessment_prompt.splitlines() if line.startswith('4. At each batch boundary'))
     assert prompt_methodology_errors(root,'assessment',assessment_prompt.replace(checkpoint_rule,''))
     results.append({'case':'reject-prompt-omission-saved-checkpoint-protocol','expected':'canonical assembly guard catches loss of the staged working-file requirement','passed':True})
+    conversations=json.loads((out/'conversation-examples.json').read_text())
+    assert conversations['executed'] is False and conversations['ratings'] is None
+    assert {c['goal'] for c in conversations['scenarios']}=={'review','assessment','assignment'}
+    assert {c['id'] for c in conversations['scenarios']}=={'prompt-alone','complete-lesson','missing-exam-lesson-resume','one-hint-assignment','failed-import-repair'}
+    results.append({'case':'five-expected-conversations-are-not-trial-results','expected':'five authored scenarios across exactly three goals, no execution or ratings','passed':True})
+    canonical_conversation=(root/'premed-hq-documentation/specifications/generation/20-external-notebook-workflow.md').read_text()
+    rule_ids=set(re.findall(r'`(EC-[A-Z]+)`',canonical_conversation))
+    for c in conversations['scenarios']:
+        assert set(c['ruleIds'])<=rule_ids and c['expectedFirstReply'] and c['expectedNext'] and c['mustPreserve']
+        assert 1<=c['expectedFirstReply'].count('.')<=3
+        if c['id'] in ('complete-lesson','one-hint-assignment'):assert c['necessaryPause'] is None
+        results.append({'case':c['id']+'-expected-conversation-contract','expected':'brief opening, next action and preservation boundaries linked to actual canonical rules','passed':True})
+    bad=json.loads((out/'conversation-case-files/rejected-reference.json').read_text());original=json.loads((out/'conversation-case-files/complete-reference-original.json').read_text())
+    assert any(e.startswith('source-reference:') for e in validate(bad,schema))
+    repaired=copy.deepcopy(bad);repaired['entries'][0]['sections'][0]['blocks'][0]['sourceIds']=['week-2']
+    assert repaired==original and not validate(repaired,schema)
+    assert repaired['entries'][0]['revision']==1 and repaired['entries'][0]['baseRevision'] is None
+    results.append({'case':'scripted-reference-repair-preserves-complete-proposal','expected':'one unambiguous reference correction matches complete original, with IDs/text/revision unchanged','passed':True})
+    truncated=(out/'conversation-case-files/truncated-input.txt').read_text()
+    try:load_package_json(truncated)
+    except ValueError:pass
+    else:raise AssertionError('The example prefix must actually be truncated, not a complete notebook.')
+    results.append({'case':'scripted-truncated-input-is-incomplete','expected':'invalid prefix supplied only as a manual no-fabrication repair example','passed':True})
+    for goal,rule in [('review','EC-FIRST'),('assessment','EC-CONTINUE'),('assignment','EC-REPAIR')]:
+        prompt=(out/('copy-prompt-'+goal+'.md')).read_text()
+        row=next(line for line in canonical_conversation.splitlines() if line.startswith('- `'+rule+'`:'))
+        assert row in prompt and prompt_methodology_errors(root,goal,prompt.replace(row,''))
+        results.append({'case':'reject-conversation-rule-omission-'+rule,'expected':'actual prompt assembly guard detects missing shared conversation behavior','passed':True})
+    snapshot=out/'versions/notebook-instructions-beta-2'
+    if snapshot.exists():
+        receipt=json.loads((snapshot/'SNAPSHOT.json').read_text())
+        assert receipt['promptBuild']=='notebook-instructions-beta-2'
+        for name,sha in receipt['sha256'].items():assert hashlib.sha256((snapshot/name).read_bytes()).hexdigest()==sha
+        results.append({'case':'published-beta-2-snapshot-preserved','expected':'all archived published beta-2 file hashes unchanged','passed':True})
     base=examples['fixture-review'];r=lambda p:p['entries'][0]['requirements'][0];o=lambda p:p['entries'][0]['objectives'][0];b=lambda p:p['entries'][0]['sections'][0]['blocks'][0]
     cases=[]
     def case(name,code,change,seed=base):cases.append((name,code,change,seed))
@@ -195,7 +230,10 @@ def run(root,out):
         errors=validate(data,schema);assert any(e.startswith(code+':') for e in errors),(target,errors)
         results.append({'case':'reject-cross-entry-'+target,'expected':'rejected: '+code,'passed':True})
     with tempfile.TemporaryDirectory() as tmp:
-        fresh=Path(tmp);build(root,fresh);fixtures(fresh);feasibility_case(fresh/'feasibility-case')
+        fresh=Path(tmp);build(root,fresh);fixtures(fresh);feasibility_case(fresh/'feasibility-case');conversation_examples(fresh,root/'premed-hq-documentation/specifications/generation/portable-notebooks')
+        for path in (out/'conversation-case-files').iterdir():
+            if path.is_file():assert path.read_bytes()==(fresh/'conversation-case-files'/path.name).read_bytes()
+        assert (out/'EXPECTED-CONVERSATIONS.md').read_bytes()==(fresh/'EXPECTED-CONVERSATIONS.md').read_bytes()
         for path in case_dir.rglob('*'):
             if path.is_file():assert path.read_bytes()==(fresh/'feasibility-case'/path.relative_to(case_dir)).read_bytes()
         for path in out.glob('copy-prompt-*.md'):
@@ -203,7 +241,7 @@ def run(root,out):
             template=path.read_text()
             assert all(template.count('{{'+token+'}}')==1 for token in TOKENS)
             assert set(re.findall(r'\{\{([A-Z_]+)\}\}',template))==set(TOKENS)
-            assert 'Prompt build: notebook-instructions-beta-2.' in template
+            assert 'Prompt build: notebook-instructions-beta-3.' in template
             values={token:'Sample '+token for token in TOKENS};values['CLASS_PREFERENCES']='Keep "quotes", newlines\n, unicode →, and {{SCOPE}} literal.'
             composed=compose(template,values)
             envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])
@@ -214,7 +252,7 @@ def run(root,out):
             if path.name in ('validation-report.json',):continue
             if (fresh/path.name).exists():assert path.read_bytes()==(fresh/path.name).read_bytes(),path.name
     results += [{'case':'reproducible-prompts-fixtures-manifest','expected':'identical bytes','passed':True},{'case':'single-pass-json-string-composition','expected':'quotes/newlines/unicode/token-looking input preserved','passed':True},{'case':'embedded-schema-equality','expected':'all three templates use unchanged schema','passed':True}]
-    report={'validator':'jsonschema '+importlib.metadata.version('jsonschema')+' Draft 2020-12 plus validate_package.py','schemaSha256':hashlib.sha256((out/'notebook-package.schema.json').read_bytes()).hexdigest(),'passed':len(results),'failed':0,'results':results,'limits':['No course trial was run and no Andy ratings were assigned.','Cross-reference validation cannot prove source authenticity, exact excerpt accuracy, evidence entailment, complete source coverage, originality, absence of answer leakage, or learning quality.','Fixture content received an author review against its invented passages; that is not an independent pedagogical audit.','App prompt/copy/download byte identity is an integration requirement, not a claim that the app UI was tested here.','Staged feasibility outputs and checkpoints are invented expectations. No external AI was run; the forced batch boundary is not a provider capacity benchmark.']}
+    report={'validator':'jsonschema '+importlib.metadata.version('jsonschema')+' Draft 2020-12 plus validate_package.py','schemaSha256':hashlib.sha256((out/'notebook-package.schema.json').read_bytes()).hexdigest(),'passed':len(results),'failed':0,'results':results,'limits':['No course trial was run and no Andy ratings were assigned.','Cross-reference validation cannot prove source authenticity, exact excerpt accuracy, evidence entailment, complete source coverage, originality, absence of answer leakage, or learning quality.','Fixture content received an author review against its invented passages; that is not an independent pedagogical audit.','App prompt/copy/download byte identity is an integration requirement, not a claim that the app UI was tested here.','Staged feasibility outputs and checkpoints are invented expectations. No external AI was run; the forced batch boundary is not a provider capacity benchmark.','Conversation examples and their checks validate authored expectations and preserved inputs, not compliance by an external AI or actual student outcomes.']}
     (out/'validation-report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({'passed':len(results),'failed':0,'schemaSha256':report['schemaSha256']}))
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--canonical-root',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args();run(a.canonical_root.resolve(),a.output.resolve())
