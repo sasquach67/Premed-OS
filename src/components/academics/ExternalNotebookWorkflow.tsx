@@ -265,13 +265,13 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision }: { c
     {step === 'handoff' && <div className="en-stage-content">
       <p className="en-selected-goal">{goalInfo.title}</p>
       <ol className="en-handoff-list">
-        <li><span className="en-task-number" aria-hidden="true">1</span><div><h2>Paste the prompt</h2><p>Open a chat in your AI. A class project is optional. Paste the full prompt there.</p></div></li>
+        <li><span className="en-task-number" aria-hidden="true">1</span><div><h2>Paste the prompt</h2><p>Use a normal AI chat with your files or pasted material. A class project is optional. Paste the full prompt there.</p></div></li>
         <li><span className="en-task-number" aria-hidden="true">2</span><div><h2>Attach your materials</h2><p className="en-text">{values.MATERIALS || goalInfo.bring}</p><p className="en-muted">Upload the originals in your AI. An upload, connection or retrieved excerpt does not prove every file was read. Ask what was inspected and what remains unread.</p><p className="en-muted">Use supported individual files, direct images or pasted text. For unclear scans, handwriting or embedded figures, add clear page images or crops and type unclear text or formulas. Keep the full question, options and diagram together. Batch by topic when needed; projects and connections are optional.</p>{goal === 'review' && <p className="en-muted">Use a recording only if your AI can inspect it. Otherwise, use a readable transcript.</p>}</div></li>
-        <li><span className="en-task-number" aria-hidden="true">3</span><div><h2>Review, then get the notebook file</h2><p>Review the readable draft and its source or coverage gaps. Request changes if needed, review any substantive updates, then explicitly confirm that your AI can make the notebook JSON. Ask for a downloadable <strong>.json file</strong> containing the complete approved notebook. If downloads are unavailable, ask for the complete JSON block.</p></div></li>
+        <li><span className="en-task-number" aria-hidden="true">3</span><div><h2>Review, then get the notebook file</h2><p>You can ask relevant questions or request changes to the actual content. Substantive edits need an updated summary and accessible revised draft before confirmation. Ask for a downloadable <strong>.json file</strong> containing the complete approved notebook. If downloads are unavailable, ask for the complete JSON block.</p></div></li>
       </ol>
       <aside className="en-brief-note">
         <b>What to expect from your AI</b>
-        <p>Use a normal AI chat with your files or pasted material. Your AI should prepare the content, show you a readable draft, and wait for your confirmation before making the notebook JSON.</p>
+        <p>Your AI should show the full readable draft with a brief summary of its actual topics, practice and gaps. Ask for changes, or say "Create the JSON" when you are happy with that version; equivalent clear approval works too.</p>
         <p>Lots of files? Send them in batches. Tell your AI when you are done uploading, then review and approve your notebook before downloading JSON. Done uploading ends intake; it is not approval to make JSON.</p>
         <p>{goalInfo.limit}</p>
         {goal === 'assessment' && <details className="en-small-detail"><summary>Too much material for one conversation?</summary>
