@@ -1,6 +1,6 @@
 {
   "kind": "scripted-expected-conversations",
-  "promptBuild": "notebook-instructions-beta-5",
+  "promptBuild": "notebook-instructions-beta-6",
   "executed": false,
   "ratings": null,
   "notice": "Authored expectations for manual beta, not transcripts of a tested external AI, real course trials, importable notebook JSON, or additional maintained prompts. Use the corresponding complete goal prompt and inspect actual behavior.",
@@ -49,7 +49,8 @@
       "expectedNext": [
         "Continue immediately with supported teaching and original self-contained practice; do not wait for a go-ahead after the opening.",
         "Keep the lecture-style guide and mastery lenses distinct. If these brief passages cannot justify an ordinary depth floor, explain the precise evidence limit rather than padding.",
-        "Preserve term=null and derive only supported study objectives; do not block on optional metadata."
+        "Preserve term=null and derive only supported study objectives; do not block on optional metadata.",
+        "Keep the complete actual draft accessible alongside the content-specific companion message; no claim the student read it or that the summary validates accuracy."
       ],
       "studentFollowUp": null,
       "expectedAfterReply": "Present the actual readable guide and mastery/practice content, with source limits and a concise review, then ask whether the student wants changes or wants this content turned into JSON. Stop without an importable JSON file or code block; no post-review confirmation has been given.",
@@ -66,7 +67,8 @@
         "EC-EXPORT",
         "EC-REVIEW",
         "EC-CONFIRM"
-      ]
+      ],
+      "companionReviewMessage": "- Labels name individual stops; tags group stops by a shared feature.\n- Route order changes when stops move; renaming a stop alone leaves the order unchanged.\n- The draft uses supported recall and applications of these distinctions; no formal course objectives or larger-course coverage are claimed.\n\nWant more examples of labels versus tags, more practice distinguishing renaming from reordering, or anything explained differently? If you’re happy with this version, say “Create the JSON.”"
     },
     {
       "id": "missing-exam-lesson-resume",
@@ -127,7 +129,8 @@
       "expectedNext": [
         "A suitable hint: Start by choosing different names for the stops, then think of a feature they could share. A shared tag does not require matching names.",
         "Stop at the requested help stage; do not supply the names, finished route or an unsolicited replacement submission.",
-        "Show the actual short hint and a proportionate requirement check as a readable draft. The final route remains outside the requested support scope, with that explicit basis."
+        "Show the actual short hint and a proportionate requirement check as a readable draft. The final route remains outside the requested support scope, with that explicit basis.",
+        "Keep the complete actual draft accessible alongside the content-specific companion message; no claim the student read it or that the summary validates accuracy."
       ],
       "studentFollowUp": null,
       "expectedAfterReply": "The short hint is the prepared content. Ask whether the student wants a change or wants this hint saved as notebook JSON, and wait. Do not add a lecture guide, Mastery Map, final route, or JSON before post-review confirmation.",
@@ -145,7 +148,8 @@
         "EC-EXPORT",
         "EC-REVIEW",
         "EC-CONFIRM"
-      ]
+      ],
+      "companionReviewMessage": "- The hint separates different stop names from a feature they can share.\n- It stays at one hint and leaves the final route to you.\n\nWant that distinction explained differently? If you’re happy with this version, say “Create the JSON.”"
     },
     {
       "id": "failed-import-repair",
@@ -194,7 +198,8 @@
       "expectedNext": [
         "Give the requested hint immediately, with a concise scope/source/requirement review.",
         "Show actual Draft A below and ask its final question.",
-        "End this turn without a final JSON attachment, download or notebook code block."
+        "End this turn without a final JSON attachment, download or notebook code block.",
+        "Keep the complete actual draft accessible alongside the content-specific companion message; no claim the student read it or that the summary validates accuracy."
       ],
       "studentFollowUp": null,
       "expectedAfterReply": "If the student explicitly confirms Draft A, serialize that same hint and requirement check; if they ask for changes, update the readable draft first and wait again. Silence does not authorize export.",
@@ -217,7 +222,8 @@
         "preparedBeforeReview": true,
         "emitsJsonBeforeConfirmation": false,
         "requiresExplicitConfirmation": true
-      }
+      },
+      "companionReviewMessage": "- One hint focuses on different stop names and a shared feature.\n- Your final names and route are left for you; no complete submission is included.\n\nWant the name-versus-feature distinction explained differently? If you’re happy with this version, say “Create the JSON.”"
     },
     {
       "id": "student-tweaks-then-confirms",
@@ -231,7 +237,8 @@
       "expectedNext": [
         "Show actual Draft B below, with the concrete change and preserved help stage.",
         "The instruction to change and export is not confirmation of the unseen revised content.",
-        "Wait after Draft B; do not reuse implied approval of Draft A."
+        "Wait after Draft B; do not reuse implied approval of Draft A.",
+        "Keep the complete actual draft accessible alongside the content-specific companion message; no claim the student read it or that the summary validates accuracy."
       ],
       "studentFollowUp": null,
       "expectedAfterReply": "After “Looks good, make the JSON,” check and serialize Draft B without silently adding an answer, extra hints or new evidence. If a support issue requires a substantive correction, show the corrected draft and seek fresh confirmation instead.",
@@ -267,8 +274,43 @@
         "preparedBeforeReview": true,
         "emitsJsonBeforeConfirmation": false,
         "requiresExplicitConfirmation": true,
-        "substantiveChangeNeedsNewReview": true
-      }
+        "substantiveChangeNeedsNewReview": true,
+        "deliveryProvesStudentRead": false,
+        "summaryValidatesAccuracy": false
+      },
+      "companionReviewMessage": "- Draft B now defines a label as a name and a tag as a shared feature before the hint.\n- It still supplies one hint, with no finished names or route.\n\nWant the distinction explained differently? If you’re happy with this version, say “Create the JSON.”",
+      "approvalBoundaryVariants": [
+        {
+          "student": "(silence)",
+          "emitsFinalJson": false,
+          "expected": "Wait; delivery alone does not authorize export."
+        },
+        {
+          "student": "Done uploading.",
+          "emitsFinalJson": false,
+          "expected": "End intake only; still wait for approval of the draft."
+        },
+        {
+          "student": "What does shared feature mean?",
+          "emitsFinalJson": false,
+          "expected": "Answer about that concept; the question does not authorize export."
+        },
+        {
+          "student": "Yes, make the name definition clearer.",
+          "emitsFinalJson": false,
+          "expected": "Agreement to one suggested edit requests that change, not export. Show revised actual draft and updated summary, then confirm again."
+        },
+        {
+          "student": "Create the JSON.",
+          "emitsFinalJson": true,
+          "expected": "Serialize the current approved version."
+        },
+        {
+          "student": "I’m happy with this whole version; make the notebook file.",
+          "emitsFinalJson": true,
+          "expected": "Accept this equivalent unambiguous confirmation without demanding exact words."
+        }
+      ]
     },
     {
       "id": "partial-multiweek-approval",
@@ -283,7 +325,8 @@
       "expectedNext": [
         "Show the linked complete readable partial draft, including all eight original requirements and their evidence/processing limits.",
         "Summarize the actual teaching and practice, Week 2 cases still unprocessed, and missing Weeks 1/4/5/6.",
-        "Emphasize the supported comparison without dropping other assessment requirements; ask whether the student wants changes, more material processed, or JSON of this clearly partial draft, then wait."
+        "Emphasize the supported comparison without dropping other assessment requirements; ask whether the student wants changes, more material processed, or JSON of this clearly partial draft, then wait.",
+        "Keep the complete actual draft accessible alongside the content-specific companion message; no claim the student read it or that the summary validates accuracy."
       ],
       "studentFollowUp": null,
       "expectedAfterReply": "If the student confirms this partial draft, preserve its original Weeks 1–6 scope, all eight requirements, exact source/requirement IDs and partial title in the final file. Confirmation cannot turn missing coverage into supported coverage. A later Week 2 evidence update changes the draft and requires another review.",
@@ -318,7 +361,8 @@
         "emitsJsonBeforeConfirmation": false,
         "requiresExplicitConfirmation": true,
         "retainsAllScopeRequirements": true
-      }
+      },
+      "companionReviewMessage": "- The partial draft compares renaming a stop with filtering visible stops; both preserve stored route order.\n- Its application asks for the visible stop, stored route and whether hiding a stop deletes it after a rename and filter.\n- Week 2 Section 1 and Week 3 support this content; other Week 2 cases are unprocessed and Weeks 1, 4, 5 and 6 are missing. The full Weeks 1–6 requested scope remains visible.\n\nWant more examples of renaming versus filtering, more practice distinguishing visibility from storage, or anything explained differently? If you’re happy with this version, say “Create the JSON.”"
     },
     {
       "id": "normal-chat-no-project",
@@ -372,7 +416,8 @@
         "Use the exact baseline and Thursday passages; no project requirement or blanket request for old files.",
         "Consolidate repeated mapping with dated evidence, preserve the student reminder and unchanged mapping practice, correct timing teaching/answer/objective/coverage, and retain Tuesday’s original quote.",
         "Keep missing performance results visible and Chapter 4 distinct; show the actual readable revised draft and concise change review.",
-        "Do not emit final JSON before explicit confirmation; app acceptance and history/progress remain separate."
+        "Do not emit final JSON before explicit confirmation; app acceptance and history/progress remain separate.",
+        "Keep the complete actual draft accessible alongside the content-specific companion message; no claim the student read it or that the summary validates accuracy."
       ],
       "studentFollowUp": null,
       "expectedAfterReply": "After explicit confirmation of the actual draft, serialize the complete Chapter 3 revision 2/base 1 plus the authorized Chapter 4 new entry. Unchanged content is preserved, not regenerated. A valid file does not prove same-entry acceptance, save, history creation or progress transfer.",
@@ -393,7 +438,8 @@
         "EC-REVIEW",
         "EC-CONFIRM"
       ],
-      "readableDraftFile": "revision-case/readable-revised-draft.md"
+      "readableDraftFile": "revision-case/readable-revised-draft.md",
+      "companionReviewMessage": "- Chapter 3 retains the triangle/circle response mapping, your saved reminder and the unchanged mapping question.\n- Thursday explicitly corrects the duration from 100 to 200 milliseconds; timing teaching and its linked question/objective are updated while Tuesday’s exact quote stays intact.\n- The plain-versus-noisy background comparison is introduced, but performance results are missing.\n- Chapter 4 stays a separate limited introduction.\n\nWant more examples of mapping versus timing, more practice on the covered distinction, or anything explained differently? If you’re happy with this version, say “Create the JSON.”"
     },
     {
       "id": "topic-unresolved-correction-context",

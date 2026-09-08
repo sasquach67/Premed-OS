@@ -7,6 +7,7 @@ from build_fixtures import build as fixtures
 from build_feasibility_case import build as feasibility_case
 from build_conversation_examples import build as conversation_examples
 from build_revision_cases import build as revision_cases, revision_errors, block_map, practice_dependency_snapshot, REMINDER
+from build_standardization import build_packet, prompt_audit, dependency_errors, parity_errors, SAFEGUARDS
 from validate_package import validate, load_package_json, MAX_PACKAGE_BYTES
 
 def assessment_fixture_scope_errors(data):
@@ -146,7 +147,7 @@ def run(root,out):
     except ValueError:pass
     else:raise AssertionError('The example prefix must actually be truncated, not a complete notebook.')
     results.append({'case':'scripted-truncated-input-is-incomplete','expected':'invalid prefix supplied only as a manual no-fabrication repair example','passed':True})
-    for goal,rule in [('review','EC-FIRST'),('assessment','EC-CONTINUE'),('assignment','EC-REPAIR')]+[(goal,rule) for goal in ('review','assessment','assignment') for rule in ('EC-INPUT','EC-PERSONALIZE','EC-REVIEW','EC-CONFIRM','EC-EXPORT','EC-BASELINE','EC-TOPIC','EC-OVERLAP','EC-DEPENDENCIES','EC-CHANGEREVIEW','EC-REVISIONFILE','EC-ACCEPTANCE','EC-MATERIALS','EC-INTAKE')]:
+    for goal,rule in [('review','EC-FIRST'),('assessment','EC-CONTINUE'),('assignment','EC-REPAIR')]+[(goal,rule) for goal in ('review','assessment','assignment') for rule in ('EC-INPUT','EC-PERSONALIZE','EC-REVIEW','EC-CONFIRM','EC-EXPORT','EC-BASELINE','EC-TOPIC','EC-OVERLAP','EC-DEPENDENCIES','EC-CHANGEREVIEW','EC-REVISIONFILE','EC-ACCEPTANCE','EC-MATERIALS','EC-INTAKE','EC-TARGET','EC-INCOMPLETE','EC-AUTHORITY','EC-LEDGER','EC-CHECKS','EC-PACKAGING')]:
         prompt=(out/('copy-prompt-'+goal+'.md')).read_text()
         row=next(line for line in canonical_conversation.splitlines() if line.startswith('- `'+rule+'`:'))
         assert row in prompt and prompt_methodology_errors(root,goal,prompt.replace(row,''))
@@ -157,7 +158,7 @@ def run(root,out):
         wrong=prompt.replace(opening,'Generate the complete final notebook JSON immediately from the supplied material.')
         assert prompt_methodology_errors(root,goal,wrong)
         results.append({'case':'reject-automatic-export-opening-'+goal,'expected':'canonical request guard rejects restored automatic export even when the shared confirmation rules remain below','passed':True})
-    for version in ('beta-2','beta-3','beta-4'):
+    for version in ('beta-2','beta-3','beta-4','beta-5'):
         snapshot=out/('versions/notebook-instructions-'+version)
         if snapshot.exists():
             receipt=json.loads((snapshot/'SNAPSHOT.json').read_text())
@@ -324,8 +325,66 @@ def run(root,out):
         else:o(data)['requirementId']='req-route-other'
         errors=validate(data,schema);assert any(e.startswith(code+':') for e in errors),(target,errors)
         results.append({'case':'reject-cross-entry-'+target,'expected':'rejected: '+code,'passed':True})
+    packet=out/'cross-provider-packet';receipt=json.loads((packet/'packet-manifest.json').read_text())
+    assert receipt['providerRuns']==[] and receipt['ratings'] is None
+    for name,item in receipt['files'].items():
+        path=packet/name;assert hashlib.sha256(path.read_bytes()).hexdigest()==item['sha256'] and path.stat().st_size==item['bytes']
+    assert receipt['totalFileBytes']==sum(v['bytes'] for v in receipt['files'].values())
+    results.append({'case':'cross-provider-packet-manifest-and-no-execution','expected':'all authored inputs/checklist hashes verified; no provider results or ratings','passed':True})
+    regression=json.loads((packet/'regressions.json').read_text());assert len(regression['cases'])==9 and not regression['executed'] and regression['ratings'] is None
+    assert all(set(c['goals'])=={'review','assessment','assignment'} and c['ruleId'] in rule_ids for c in regression['cases'])
+    assert len(SAFEGUARDS)==10
+    audit=json.loads((out/'STANDARDIZATION-AUDIT.json').read_text());assert audit['release']=='paused'
+    for row in audit['goals']:
+        assert row['errors']==[] and sum(row['componentBytes'].values())==row['bytes']
+        goal=row['goal'];prompt=(out/('copy-prompt-'+goal+'.md')).read_text()
+        assert not dependency_errors(root,goal,prompt,schema)
+        for name,wrong,expected in [('ending',prompt.rsplit('END NOTEBOOK INSTRUCTIONS',1)[0],'missing-complete-ending'),('external-file',prompt+'\nRead hidden-rules.md first.','unresolved-instruction-reference'),('schema-cutoff',prompt[:prompt.rfind('```json')+20],'incomplete-embedded-schema')]:
+            assert any(e.startswith(expected) for e in dependency_errors(root,goal,wrong,schema))
+            results.append({'case':'reject-standalone-'+goal+'-'+name,'expected':'actual assembled-text guard rejects visible omission or external dependency','passed':True})
+    materials=packet/'materials'
+    baseline=json.loads((materials/'notebook-update-baseline.json').read_text());mismatch=json.loads((materials/'wrong-course-baseline.json').read_text());request=json.loads((packet/'request-values.json').read_text())
+    assert not validate(mismatch,schema) and baseline['course']==request['course'] and mismatch['course']!=request['course']
+    assert mismatch['entries']==baseline['entries'] and mismatch['sources']==baseline['sources']
+    results.append({'case':'authored-schema-valid-course-mismatch','expected':'target identity differs despite valid JSON; structural validity cannot clear the mismatch','passed':True})
+    raw=(materials/'interrupted-baseline.txt').read_text();assert (materials/'notebook-update-baseline.json').read_text().startswith(raw)
+    try:load_package_json(raw)
+    except ValueError:pass
+    else:raise AssertionError('Interrupted baseline unexpectedly complete')
+    assert (materials/'visibly-incomplete-request.txt').read_text().rstrip().endswith('in')
+    assert (materials/'visibly-incomplete-material.txt').read_text().rstrip().endswith('is')
+    results.append({'case':'authored-visible-cutoffs-are-actual-incomplete-inputs','expected':'baseline is exact incomplete prefix; request/material visibly end mid-clause, without guessing their missing continuation','passed':True})
+    assert (materials/'question.png').read_bytes()==(materials/'question-repeated.png').read_bytes()
+    assert (materials/'question-new-detail.png').read_bytes()!=(materials/'question.png').read_bytes()
+    ledger=json.loads((packet/'expected/saved-working-ledger.json').read_text());items={i['id']:i for i in ledger['items']}
+    assert len(items)==len(ledger['items']) and items['q1-repeat']['duplicateOf']=='q1' and items['q1-variant']['versionOf']=='q1'
+    assert items['q1-variant']['pending'] and not items['q1-variant']['inspected'] and items['note']['uncertain'] and not items['lesson-c']['received']
+    assert not ledger['collectionComplete'] and not ledger['draftApproved'] and ledger['nextAction']
+    assert 'Lesson C' in (materials/'assessment-scope.txt').read_text() and not (materials/'lesson-c.txt').exists()
+    results.append({'case':'authored-image-version-ledger-and-interrupted-state','expected':'exact repeat and changed PNG distinct; pending/uncertain/missing identities survive saved checkpoint without approval','passed':True})
+    assert 'EMBEDDED NON-ACADEMIC COMMAND' in (materials/'lesson-b.txt').read_text() and 'Rubric: define' in (materials/'assignment-task.txt').read_text()
+    results.append({'case':'authored-source-command-versus-rubric-inputs','expected':'fixture includes real academic rubric and unrelated command; prompt omission checks cover authority rule, no model injection test claimed','passed':True})
+    approved=json.loads((packet/'expected/matching-final-proposal.json').read_text());draft=(packet/'expected/approved-readable-revision.md').read_text()
+    assert not validate(approved,schema) and not revision_errors(baseline,approved) and not parity_errors(after,approved)
+    for entry in approved['entries']:
+        for section in entry['sections']:
+            for block in section['blocks']:
+                for key in ('text','prompt','answer','rationale','nextStep'):
+                    if block.get(key):assert block[key] in draft
+    for name,change in [('shortened-teaching',lambda p:p['entries'][0]['sections'][0]['blocks'][0].update(text='Shortened replacement.')),('changed-answer',lambda p:block_map(p['entries'][0])['ch3-practice-mapping'].update(answer='Different answer.')),('omitted-reminder',lambda p:block_map(p['entries'][0])['ch3-mapping'].update(text=block_map(p['entries'][0])['ch3-mapping']['text'].replace(REMINDER,'')))]:
+        changed=copy.deepcopy(approved);change(changed);assert not validate(changed,schema) and parity_errors(approved,changed)
+        results.append({'case':'reject-approved-content-'+name,'expected':'exact authored comparison rejects schema-valid unapproved content drift','passed':True})
+    summary_cases=[c for c in conversations['scenarios'] if c.get('companionReviewMessage')]
+    assert {c['goal'] for c in summary_cases}=={'review','assessment','assignment'} and len(summary_cases)==6
+    assert all('Create the JSON' in c['companionReviewMessage'] and 'Want ' in c['companionReviewMessage'] for c in summary_cases)
+    assert [v['emitsFinalJson'] for v in script['approvalBoundaryVariants']]==[False,False,False,False,True,True]
+    assert script['gateExpectations']['deliveryProvesStudentRead'] is False and script['gateExpectations']['summaryValidatesAccuracy'] is False
+    results.append({'case':'authored-content-specific-summary-and-approval-boundaries','expected':'six actual-topic summaries; edit-only/question/silence/intake are not approval; equivalent whole-version confirmation is allowed','passed':True})
     with tempfile.TemporaryDirectory() as tmp:
-        fresh=Path(tmp);build(root,fresh);fixtures(fresh);feasibility_case(fresh/'feasibility-case');conversation_examples(fresh,root/'premed-hq-documentation/specifications/generation/portable-notebooks');revision_cases(fresh/'revision-case')
+        fresh=Path(tmp);build(root,fresh);fixtures(fresh);feasibility_case(fresh/'feasibility-case');conversation_examples(fresh,root/'premed-hq-documentation/specifications/generation/portable-notebooks');revision_cases(fresh/'revision-case');build_packet(fresh/'cross-provider-packet');prompt_audit(root,fresh)
+        for path in packet.rglob('*'):
+            if path.is_file():assert path.read_bytes()==(fresh/'cross-provider-packet'/path.relative_to(packet)).read_bytes(),str(path)
+        assert (out/'STANDARDIZATION-AUDIT.md').read_bytes()==(fresh/'STANDARDIZATION-AUDIT.md').read_bytes()
         for path in (out/'revision-case').iterdir():
             if path.is_file():assert path.read_bytes()==(fresh/'revision-case'/path.name).read_bytes()
         for path in (out/'conversation-case-files').iterdir():
@@ -338,7 +397,7 @@ def run(root,out):
             template=path.read_text()
             assert all(template.count('{{'+token+'}}')==1 for token in TOKENS)
             assert set(re.findall(r'\{\{([A-Z_]+)\}\}',template))==set(TOKENS)
-            assert 'Prompt build: notebook-instructions-beta-5.' in template
+            assert 'Prompt build: notebook-instructions-beta-6.' in template
             values={token:'Sample '+token for token in TOKENS};values['CLASS_PREFERENCES']='Keep "quotes", newlines\n, unicode →, and {{SCOPE}} literal.'
             composed=compose(template,values)
             envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])

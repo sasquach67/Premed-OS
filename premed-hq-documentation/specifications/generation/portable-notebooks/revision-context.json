@@ -1,5 +1,5 @@
 {
-  "promptBuild": "notebook-instructions-beta-5",
+  "promptBuild": "notebook-instructions-beta-6",
   "runtimeToken": "REVISION_INPUT",
   "valueType": "string or null",
   "baselineFile": "notebook-update-baseline.json",

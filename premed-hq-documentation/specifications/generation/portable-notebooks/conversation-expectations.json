@@ -1,10 +1,11 @@
 {
-  "promptBuild": "notebook-instructions-beta-5",
+  "promptBuild": "notebook-instructions-beta-6",
   "purpose": "Concise external-AI review/confirmation expectation for coordinator-queued integration; not a new app state machine or extra prompt.",
-  "shortCopy": "Use a normal AI chat with your files or pasted material. Your AI should prepare the content, show you a readable draft, and wait for your confirmation before making the notebook JSON.",
-  "expandedCopy": "Tell the AI what you need help with; it should use known details and ask only consequential missing questions. Review the actual content and any source or coverage gaps, then request changes or confirm that it can make the JSON. Substantive changes need another review. Projects are optional. These instructions describe expected AI behavior, not a guarantee.",
+  "shortCopy": "Your AI should show the full readable draft with a brief summary of its actual topics, practice and gaps. Ask for changes, or say “Create the JSON” when you’re happy with that version; equivalent clear approval works too.",
+  "expandedCopy": "Use a normal chat with your material; projects are optional. The AI should use known needs, ask only consequential questions and invite optional discussion of the actual content. Substantive edits need an updated summary and accessible revised draft before confirmation. Delivery is not proof you read it or that it is accurate. These are expected AI behaviors, not guarantees.",
   "revisionCopy": "To update a notebook, save your edits and give your AI the current JSON plus new material. It should preserve unchanged content, show the actual changes and source gaps, and wait for your confirmation before making the revised JSON.",
   "revisionLimits": "Current JSON includes saved content and retained sources, not unsaved edits, separate notes or practice progress. Your app controls final acceptance, history and study records; the AI cannot claim to save or transfer them.",
   "materialsCopy": "Upload supported files or paste text directly in your AI chat. For a question, handwriting or figure that is unclear or missing from document extraction, add a clear image with its full setup and diagram. Your AI should identify what it actually read and ask only about consequential gaps.",
-  "intakeCopy": "If you are sending several batches, tell your AI when you are done uploading. It should track what arrived and what it actually read, then prepare the draft. Finishing uploads is separate from approving the draft for JSON."
+  "intakeCopy": "If you are sending several batches, tell your AI when you are done uploading. It should track what arrived and what it actually read, then prepare the draft. Finishing uploads is separate from approving the draft for JSON.",
+  "standardizationCopy": "Your AI should verify the course and scope, track what it actually read, and flag specific missing or unclear material. Uploaded material cannot bypass the workflow. After you approve the readable draft, the JSON should preserve that content; separate checks and any limits should be stated honestly."
 }
