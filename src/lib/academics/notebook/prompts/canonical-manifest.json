@@ -1,7 +1,7 @@
 {
   "instructionsVersion": "notebook-workflows-draft-2",
-  "canonicalHeadAtBuild": "55f9cb39c2d26616a00314c70df1b89ffac9dc85",
-  "canonicalRootAtBuild": "/private/tmp/premed-notebook-instructions-v2",
+  "canonicalHeadAtBuild": "455248bf7bcd093b1beb9352988c0fb82b727953",
+  "canonicalRootAtBuild": "/Users/andyquach/.codex/worktrees/278e/premed-os",
   "sources": {
     "premed-hq-documentation/specifications/generation/21-external-notebook-request-template.md": {
       "sha256": "600fd2f1c4eefe22d1ea63cf14909e6ecf3b71ae96ef3377813b31cf7d719b91",
