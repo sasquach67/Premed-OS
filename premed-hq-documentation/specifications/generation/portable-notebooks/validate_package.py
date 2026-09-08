@@ -5,6 +5,7 @@ import argparse, json
 from collections import defaultdict
 from pathlib import Path
 from jsonschema import Draft202012Validator
+from validate_visual import asset_refs, visual_errors
 
 MAX_PACKAGE_BYTES=8*1024*1024
 
@@ -27,26 +28,31 @@ def validate(data,schema):
         id=item['id']
         if id in seen[kind]:fail('duplicate-id',kind+' '+id)
         seen[kind].add(id)
+    visual=data.get('version')==3
+    assets={a['id']:a for a in data.get('assets',[])}
     sources={};excerpts={};used=set()
     for src in data['sources']:
         identify('source',src);sources[src['id']]=src
         if src['access'] in ('unreadable','not-accessed') and (src['used'] or src['excerpts']):fail('inaccessible-evidence',src['id'])
-        if src['used'] and (not src['inspected'].strip() or not src['excerpts']):fail('uninspected-used',src['id'])
+        if src['used'] and (not src['inspected'].strip() or not (src['excerpts'] or (visual and any(a['sourceId']==src['id'] for a in assets.values())))):fail('uninspected-used',src['id'])
         if src['access'] in ('read','partial') and not src['inspected'].strip():fail('missing-inspected',src['id'])
         if src['access']!='read' and not src['limitations']:fail('missing-access-limit',src['id'])
         for ex in src['excerpts']:
             identify('excerpt',ex);excerpts[ex['id']]=src['id']
     def evidence(item,mandatory=False):
-        sid=item['sourceIds'];eid=item['excerptIds'];label=item['id']
+        sid=item['sourceIds'];eid=item['excerptIds'];label=item['id'];aid=asset_refs(item) if visual else set()
+        if len(item.get('assetIds',[]))!=len(set(item.get('assetIds',[]))):fail('duplicate-reference',label)
+        for id in aid:
+            if id not in assets:fail('asset-reference',label+' -> '+id)
         if len(sid)!=len(set(sid)) or len(eid)!=len(set(eid)):fail('duplicate-reference',label)
-        if mandatory and (not sid or not eid):fail('missing-evidence',label)
+        if mandatory and (not sid or not (eid or aid)):fail('missing-evidence',label)
         for id in sid:
             if id not in sources:fail('source-reference',label+' -> '+id)
             elif not sources[id]['used']:fail('unused-reference',label+' -> '+id)
             used.add(id)
         for id in eid:
             if id not in excerpts:fail('excerpt-reference',label+' -> '+id)
-        owners={excerpts[id] for id in eid if id in excerpts}
+        owners={excerpts[id] for id in eid if id in excerpts}|{assets[id]['sourceId'] for id in aid if id in assets}
         if owners!=set(sid):fail('excerpt-ownership',label)
     for entry in data['entries']:
         identify('entry',entry)
@@ -64,7 +70,7 @@ def validate(data,schema):
             if len(r['sectionIds'])!=len(set(r['sectionIds'])):fail('duplicate-reference',r['id'])
             if any(id not in sections for id in r['sectionIds']):fail('section-reference',r['id'])
             if r['status']=='supported' and not r['sectionIds']:fail('supported-without-content',r['id'])
-            if r['status'] in ('supported','partial') and (not r['excerptIds'] or not r['sectionIds']):fail('coverage-evidence',r['id'])
+            if r['status'] in ('supported','partial') and (not (r['excerptIds'] or (visual and r.get('assetIds'))) or not r['sectionIds']):fail('coverage-evidence',r['id'])
             if r['status']!='supported' and not (r['nextStep'] and r['nextStep'].strip()):fail('missing-next-step',r['id'])
         for o in entry['objectives']:
             identify('objective',o);evidence(o,True);r=requirements.get(o['requirementId'])
@@ -82,7 +88,8 @@ def validate(data,schema):
             for id in o['practiceBlockIds']:
                 b=blocks.get(id)
                 if b is None or b['type']!='practice':fail('practice-reference',o['id']+' -> '+id)
-                elif not set(b['sourceIds'])<=set(o['sourceIds']) or not set(b['excerptIds'])<=set(o['excerptIds']):fail('practice-objective-evidence',o['id'])
+                elif not set(b['sourceIds'])<=set(o['sourceIds']) or not set(b['excerptIds'])<=set(o['excerptIds']) or (visual and not asset_refs(b)<=asset_refs(o)):fail('practice-objective-evidence',o['id'])
+    if visual:errors.extend(visual_errors(data,evidence))
     for id,src in sources.items():
         if src['used'] and id not in used:fail('unreferenced-used',id)
     return errors
