@@ -124,7 +124,7 @@ it('distinguishes minimum materials, optional lecture sources, partial exam scop
   expect(guide.textContent).toContain('not a complete Weeks 1-6 guide')
   expect(guide.textContent).toContain('Premed OS does not combine separate batches')
   await click('Next')
-  expect(container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value).toContain('notebook-instructions-beta-13')
+  expect(container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value).toContain('notebook-instructions-beta-14')
   await openFallback(); await click('I copied it manually'); await click('Next')
   expect(container.textContent).toContain('An upload, connection or retrieved excerpt does not prove every file was read')
   expect(container.textContent).toContain('Checkpoint files stay outside Premed OS')
