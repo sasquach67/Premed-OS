@@ -1,6 +1,14 @@
 import { canonical } from './package'
 import { getPreparedAssetBytes, mergeNotebookAssetBindings, type NotebookAssetReader, type PreparedNotebookAssets } from './visualAssets'
-import type { NotebookAssetBinding } from './visualTypes'
+import type { NotebookAssetBinding, PortableNotebookPackage } from './visualTypes'
+
+type AssetCommitState = { assetLineageId: string; assetBindings: NotebookAssetBinding[] }
+let activeCommit: { state: AssetCommitState; packageKeys: Set<string> } | undefined
+/** Only live during a validated stage's synchronous JSON transaction. */
+export function requireNotebookAssetCommit(pkg: PortableNotebookPackage): AssetCommitState {
+  if (!activeCommit?.packageKeys.has(canonical(pkg))) throw new Error('Validate and stage this notebook with all its image files before saving. Nothing was saved.')
+  return { assetLineageId: activeCommit.state.assetLineageId, assetBindings: activeCommit.state.assetBindings.map(b => ({ ...b })) }
+}
 
 export type NotebookAssetLease = {
   id: string; lineageId: string; createdAt: number
@@ -86,7 +94,10 @@ export async function commitNotebookAssets(options: {
   options.assertFresh()
   // This callback must enforce the complete prospective JSON/asset backup closure,
   // and call notebookTransaction. It must never return a promise.
-  const returned = options.commit({ assetLineageId: lineageId, assetBindings: bindings.map(b => ({ ...b })) })
+  const state = { assetLineageId: lineageId, assetBindings: bindings.map(b => ({ ...b })) }, scope: unknown = JSON.parse(options.prepared.packageKey), previousCommit = activeCommit
+  activeCommit = { state, packageKeys: new Set((Array.isArray(scope) ? scope : [scope]).map(canonical)) }
+  let returned: { committed: true }
+  try { returned = options.commit(state) } finally { activeCommit = previousCommit }
   if (returned?.committed !== true) throw new Error('Notebook JSON commit must return a synchronous commit receipt; keep the stage journal for recovery.')
   try { await repo.finish(lease.id); return { committed: true, journalPending: false, leaseId: lease.id } }
   catch { return { committed: true, journalPending: true, leaseId: lease.id } }

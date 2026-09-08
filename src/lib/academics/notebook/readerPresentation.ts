@@ -5,7 +5,7 @@ export type ReaderAnnotation = { text: string; kind: 'citation' | 'limit' }
 const escapePattern = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /** Only recognized reference syntax may be folded. Free prose is not a locator. */
-export function isRoutineNotebookCitation(span: string, sourceIds: string[]) {
+export function legacyRoutineNotebookCitation(span: string, sourceIds: string[]) {
   let value = span.slice(1, -1).trim()
   let referenced = false
   for (const id of [...sourceIds].sort((a, b) => b.length - a.length)) {
@@ -71,10 +71,12 @@ export function notebookReaderContents(pkg: NotebookPackage, entryId: string | u
   }
   for (const entry of pkg.entries.filter(entry => !entryId || entry.id === entryId)) {
     if ((mode === 'practice' || mode === 'all') && entry.objectives.length) add(entry.id, 'objectives', 'Mastery objectives')
-    if (mode === 'coverage' || mode === 'all') add(entry.id, 'coverage', 'Requirement coverage')
+    if (mode === 'coverage' || mode === 'all' || mode === 'study') add(entry.id, 'coverage', "What's covered and missing")
     for (const section of entry.sections) if (readerBlocks(section.blocks, mode).length) add(entry.id, 'section', section.title, section.id)
-    if ((mode === 'coverage' || mode === 'all') && entry.limitations.length) add(entry.id, 'limits', 'Limits of this entry')
+    if ((mode === 'coverage' || mode === 'all' || mode === 'study') && entry.limitations.length) add(entry.id, 'limits', 'Limits of this entry')
   }
   if (mode === 'sources' || mode === 'all') for (const source of pkg.sources) add('sources', 'source', source.title, source.id)
   return items
 }
+
+export function isRoutineNotebookCitation(...args:Parameters<typeof legacyRoutineNotebookCitation>):boolean { const [span,sourceIds]=args; return legacyRoutineNotebookCitation(span.replace(/^\[(?:Source synthesis|Source and clarification):\s*/i,'['),sourceIds) }

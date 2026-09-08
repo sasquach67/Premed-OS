@@ -6,7 +6,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { JournalEntryPage } from '@/pages/JournalEntryPage'
 import { createInitialDataForMode, STORAGE_KEY, useStore } from '@/store/store'
 import { NotebookImportPanel } from './NotebookImportPanel'
-import { ExternalNotebookView, notebookTransaction } from './ExternalNotebookView'
+import { ExternalNotebookView, NotebookPackageView, notebookTransaction } from './ExternalNotebookView'
 import { ExternalNotebookWorkflow } from './ExternalNotebookWorkflow'
 import { importNotebook, exportNotebook } from '@/lib/academics/notebook/import'
 import { prepareNotebook } from '@/lib/academics/notebook/package'
@@ -54,7 +54,7 @@ it('does not save before preview/explicit save and identifies exact malformed fi
   expect(container.querySelector('[role="alert"]')?.textContent).toContain('$.entries[0].requirements[0].status')
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
   await fill('Paste complete JSON', raw); await click('Validate and preview')
-  expect(container.textContent).toContain(`Save to ${course.code}`); expect(container.textContent).toContain('supported:')
+  expect(container.textContent).toContain(`Save to ${course.code}`); expect(container.textContent).toContain('Covered:')
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
   await click(`Save editable entry to ${course.code}`)
   expect(imported).toHaveBeenCalledTimes(1); expect(useStore.getState().academics.classCenter.lectures).toHaveLength(1)
@@ -82,7 +82,7 @@ it('distinguishes minimum materials, optional lecture sources, partial exam scop
   expect(guide.textContent).toContain('not a complete Weeks 1-6 guide')
   expect(guide.textContent).toContain('Premed OS does not combine separate batches')
   await click('Next')
-  expect(container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value).toContain('notebook-instructions-beta-8')
+  expect(container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value).toContain('notebook-instructions-beta-9')
   await openFallback(); await click('I copied it manually'); await click('Next')
   expect(container.textContent).toContain('An upload, connection or retrieved excerpt does not prove every file was read')
   expect(container.textContent).toContain('Checkpoint files stay outside Premed OS')
@@ -96,7 +96,7 @@ it('distinguishes minimum materials, optional lecture sources, partial exam scop
   expect(container.textContent).toContain('Premed OS cannot check what happened in your AI.')
   expect(nextButton().disabled).toBe(true)
   await click('I have my JSON'); await click('Next')
-  expect(container.textContent).toContain('Complete notebook JSON only, not working checkpoint files')
+  expect(container.textContent).toContain('Working checkpoint files are not final notebooks')
   expect(imported).not.toHaveBeenCalled()
 })
 it('rejects destination removed between validation and save', async () => {
@@ -114,7 +114,9 @@ it('keeps answers behind reveal and persists manual edits/response/notes through
   await click('Practice')
   const answer = container.querySelector<HTMLDetailsElement>('.en-answer')!; expect(answer.open).toBe(false)
   const practice = p.package.entries[0].sections.flatMap(s => s.blocks).find(b => b.type === 'practice')!
-  await fill('Your response', 'My attempted answer')
+  await act(async () => notebookTransaction(state => { state.academics.classCenter.lectures.find(l => l.id === id)!.importedNotebook!.progress[practice.id] = { response: 'My attempted answer', complete: false } }))
+  expect(container.querySelector('.en-block-practice textarea')).toBeNull()
+  expect(container.querySelector('.nbr-earlier-work')?.textContent).toContain('My attempted answer')
   await fill('My notes', 'My independent note'); await click('Save notes')
   await click('Edit entry'); await fill('Entry title', 'My edited notebook'); await click('Save edits')
   const disk = JSON.parse(localStorage.getItem(STORAGE_KEY)!)
@@ -291,8 +293,46 @@ it('preserves response progress even for a valid imported ID matching an object 
   const p = await prepareNotebook(JSON.stringify(fixture)); let id = ''
   useStore.getState().update(state => { [id] = importNotebook(state.academics.classCenter, course, p) })
   function Harness() { const lecture = useStore(s => s.academics.classCenter.lectures.find(l => l.id === id)!); return <ExternalNotebookView lecture={lecture} courseCode={course.code} /> }
-  await act(async () => root.render(<Harness />)); await click('Practice'); await fill('Your response', 'My response stays attached to this exact ID')
+  await act(async () => notebookTransaction(state => { const n = state.academics.classCenter.lectures.find(l => l.id === id)!.importedNotebook!; n.progress = { ...n.progress, ['__proto__']: { response: 'My response stays attached to this exact ID', complete: false } } }))
+  await act(async () => root.render(<Harness />)); await click('Practice')
+  expect(container.querySelector('.en-block-practice textarea')).toBeNull()
+  expect(container.querySelector('.nbr-earlier-work')?.textContent).toContain('My response stays attached to this exact ID')
   const disk = JSON.parse(localStorage.getItem(STORAGE_KEY)!)
   expect(Object.hasOwn(disk.state.academics.classCenter.lectures[0].importedNotebook.progress, '__proto__')).toBe(true)
   expect(disk.state.academics.classCenter.lectures[0].importedNotebook.progress.__proto__.response).toBe('My response stays attached to this exact ID')
+})
+
+it('keeps all 78 requirements in a collapsed disclosure with an honest actionable notice', async () => {
+  const pkg = (await prepareNotebook(raw)).package, entry = pkg.entries[0], base = entry.requirements[0]
+  entry.requirements = Array.from({ length: 78 }, (_, i) => ({ ...base, id: `coverage-${i}`, text: `Requested topic ${i + 1}`, status: (['supported', 'partial', 'missing', 'out-of-scope'] as const)[i % 4], nextStep: i % 4 === 1 || i % 4 === 2 ? 'Add the relevant source and update this notebook.' : null }))
+  await act(async () => root.render(<NotebookPackageView pkg={pkg} entryId={entry.id} reader mode="study" />))
+  const detail = container.querySelector<HTMLDetailsElement>('.nbr-coverage-disclosure')!
+  expect(detail.open).toBe(false); expect(detail.querySelectorAll('[data-requirement-id]')).toHaveLength(78)
+  expect(detail.textContent).toContain('Covered: 20'); expect(detail.textContent).toContain('Partly covered: 20')
+  expect(detail.textContent).toContain('Missing: 19'); expect(detail.textContent).toContain('Outside this notebook: 19')
+  expect(detail.textContent).toContain('Add the relevant source and update this notebook.')
+  expect(container.querySelector('.nbr-coverage-notice')?.textContent).toContain('Some requested material is partly covered or missing.')
+  detail.querySelector('h3')!.scrollIntoView = vi.fn()
+  vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })))
+  await click('See coverage and next steps')
+  expect(detail.open).toBe(true); expect(document.activeElement).toBe(detail.querySelector('summary'))
+  await act(async () => detail.querySelector('summary')!.click()); expect(detail.open).toBe(false)
+})
+it('does not show a deficiency notice for covered or outside-scope material and preserves old coverage navigation', async () => {
+  const pkg = (await prepareNotebook(raw)).package, entry = pkg.entries[0]
+  entry.requirements = entry.requirements.map((r, i) => ({ ...r, status: i % 2 ? 'out-of-scope' : 'supported' }))
+  await act(async () => root.render(<NotebookPackageView pkg={pkg} entryId={entry.id} reader mode="study" />))
+  expect(container.querySelector('.nbr-coverage-notice')).toBeNull()
+  expect(container.querySelector<HTMLDetailsElement>('.nbr-coverage-disclosure')!.open).toBe(false)
+  await act(async () => root.render(<NotebookPackageView pkg={pkg} entryId={entry.id} reader mode="coverage" />))
+  expect(container.querySelector<HTMLDetailsElement>('.nbr-coverage-disclosure')!.open).toBe(true)
+})
+it('has no prominent Coverage mode in the saved notebook navigation', async () => {
+  const prepared = await prepareNotebook(raw); let id = ''
+  useStore.getState().update(state => { [id] = importNotebook(state.academics.classCenter, course, prepared) })
+  const lecture = useStore.getState().academics.classCenter.lectures.find(l => l.id === id)!
+  await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode={course.code} />))
+  const labels = [...container.querySelectorAll('button')].map(button => button.textContent?.trim())
+  expect(labels).toContain('Study guide'); expect(labels).toContain('Practice'); expect(labels).toContain('Sources')
+  expect(labels).not.toContain('Coverage'); expect(container.querySelector<HTMLDetailsElement>('.nbr-coverage-disclosure')!.open).toBe(false)
 })

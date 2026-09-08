@@ -32,9 +32,11 @@ function parseJSON(raw: string): unknown {
   let value: unknown
   try { value = JSON.parse(raw) } catch { throw new Error('Bundle JSON is invalid or incomplete.') }
   rejectDuplicateKeys(raw)
-  function safe(item: unknown) {
+  function safe(item: unknown, recordMap = false) {
     if (!item || typeof item !== 'object') return
-    for (const [key, child] of Object.entries(item)) { if (['__proto__', 'prototype', 'constructor'].includes(key)) throw new Error('Reserved object field in notebook backup.'); safe(child) }
+    // Practice IDs are data keys, and legacy valid IDs can be "constructor".
+    // The records themselves are validated to exactly response/complete below.
+    for (const [key, child] of Object.entries(item)) { if (!recordMap && ['__proto__', 'prototype', 'constructor'].includes(key)) throw new Error('Reserved object field in notebook backup.'); safe(child, key === 'progress') }
   }
   safe(value); return value
 }

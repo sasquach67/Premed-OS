@@ -1,0 +1,64 @@
+.nbr-notebook-details { margin-top: 1rem; color: var(--muted-foreground); font-size: .82rem; }
+.nbr-notebook-details summary { width: fit-content; cursor: pointer; }
+.nbr-notebook-details p { margin: .5rem 0; }
+.nbr-coverage-disclosure { margin: 1rem 0 1.6rem; padding: .85rem 1rem; border: 1px solid var(--border); border-radius: .5rem; }
+.nbr-coverage-disclosure > summary { cursor: pointer; }
+.nbr-coverage-disclosure > summary h3 { display: inline; font-size: .95rem; font-weight: 600; }
+.nbr-coverage-notice { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem 1rem; font-size: .87rem; margin: 1rem 0; }
+.nbr-coverage-notice p { margin: 0; }
+.nbr-coverage-notice button { text-decoration: underline; text-underline-offset: .2em; }
+.nbr-coverage-next { padding: .7rem .9rem; border-left: 2px solid var(--border); }
+.lecture-journal-imported-item { border-bottom: 1px solid var(--border); }
+.lecture-journal-imported-item .imported-notebook-link { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; text-align: left; padding: 1rem; }
+.lecture-journal-imported-item time { display: block; color: var(--muted-foreground); font-size: .78rem; margin-top: .3rem; }
+.lecture-journal-imported-item .imported-notebook-link:focus-visible, .nbr-coverage-notice button:focus-visible, .nbr-coverage-disclosure > summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.nbr .nbr-head-actions { align-content: start; }
+.nbr-figure { margin: 1.7rem 0; min-width: 0; }
+.nbr-figure-open { display: block; width: 100%; padding: .65rem; border: 1px solid var(--border); border-radius: .65rem; background: color-mix(in srgb, var(--card) 94%, var(--foreground) 6%); cursor: zoom-in; text-align: left; }
+.nbr-figure-open img { display: block; max-width: 100%; max-height: 36rem; width: auto; height: auto; margin: auto; object-fit: contain; }
+.nbr-figure-open > span { display: block; margin-top: .6rem; font-size: .75rem; color: var(--muted-foreground); }
+.nbr-figure figcaption, .nbr-diagram figcaption { display: grid; gap: .25rem; margin-top: .75rem; }
+.nbr-figure figcaption small, .nbr-diagram figcaption small { color: var(--muted-foreground); font-size: .75rem; overflow-wrap: anywhere; }
+.nbr-figure-context { font-size: .87rem; margin: .6rem 0; line-height: 1.6; white-space: pre-wrap; }
+.nbr-figure-dialog { max-width: 94vw; width: fit-content; max-height: 92vh; padding: 1rem; border: 1px solid var(--border); border-radius: .65rem; background: var(--background); color: var(--foreground); overflow: auto; }
+.nbr-figure-dialog::backdrop { background: rgb(0 0 0 / .72); }
+.nbr-figure-dialog img { display: block; max-width: none; height: auto; margin-top: .75rem; }
+.nbr-figure-dialog > button { position: sticky; top: 0; display: block; margin-left: auto; border: 1px solid var(--border); padding: .5rem .8rem; background: var(--background); border-radius: .4rem; }
+.nbr-figure-dialog p { max-width: 68ch; }
+.nbr-figure-edit { display: grid; gap: .8rem; padding: 1rem; border: 1px solid var(--border); }
+.nbr-figure-edit label, .nbr-diagram label { display: grid; gap: .35rem; font-size: .8rem; }
+.nbr-figure-edit input, .nbr-figure-edit textarea, .nbr-diagram input, .nbr-diagram textarea { width: 100%; min-width: 0; border: 1px solid var(--border); background: var(--background); color: var(--foreground); padding: .6rem; border-radius: .3rem; }
+.nbr-mental-cue { font-size: .85rem; color: var(--muted-foreground); margin: .7rem 0; }
+.nbr-earlier-work { font-size: .85rem; color: var(--muted-foreground); margin: .8rem 0; }
+.nbr-practice-stimulus:empty { display: none; }
+.nbr-practice-stimulus { min-width: 0; margin: 1rem 0; }
+.nbr-practice-stimulus .en-table-wrap { max-width: 100%; overflow-x: auto; }
+.nbr-practice-stimulus table { border-collapse: collapse; width: 100%; }
+.nbr-practice-stimulus th, .nbr-practice-stimulus td { border: 1px solid var(--border); padding: .65rem; text-align: left; vertical-align: top; }
+.nbr-visual-review { margin: 1.5rem 0; padding: 1rem; border: 1px solid var(--border); border-radius: .5rem; font-size: .88rem; }
+.nbr-visual-review section { margin: 1rem 0; }
+.nbr-diagram { margin: 1.5rem 0; padding: 1rem; border: 1px solid var(--border); border-radius: .65rem; background: color-mix(in srgb, var(--card) 97%, var(--primary) 3%); }
+.nbr-diagram-nodes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr)); gap: .8rem; list-style: none; padding: 0; }
+.nbr-diagram-nodes li { padding: .8rem; border: 1px solid var(--border); border-radius: .4rem; min-width: 0; }
+.nbr-diagram-nodes li > span { display: block; font-size: .7rem; color: var(--muted-foreground); }
+.nbr-diagram-nodes p { margin: .3rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.nbr-diagram-edges > div { padding: .7rem 0; border-top: 1px solid var(--border); white-space: pre-wrap; overflow-wrap: anywhere; }
+.nbr-diagram-scroll { max-width: 100%; max-height: min(72vh, 48rem); overflow: auto; margin: 1rem 0; }
+.nbr-diagram-svg { display: block; min-width: 38rem; max-width: none; }
+.nbr-diagram-svg .diagram-node { fill: var(--card); stroke: var(--border); stroke-width: 1.5; }
+.nbr-diagram-svg .diagram-edge { fill: none; stroke: var(--foreground); stroke-width: 1.5; }
+.nbr-diagram-svg text { fill: var(--foreground); font-family: ui-monospace, monospace; }
+.nbr-diagram-svg .diagram-edge-label { paint-order: stroke; stroke: var(--background); stroke-width: 6px; stroke-linejoin: round; font-size: 12px; }
+.nbr-figure button:focus-visible, .nbr-figure-dialog button:focus-visible, .nbr-diagram-scroll:focus-visible, .nbr-practice-stimulus [tabindex]:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+.nbr-asset-mapping { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.nbr-asset-mapping th, .nbr-asset-mapping td { text-align: left; padding: .65rem; border-bottom: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; }
+.nbr-asset-mapping img { width: 5rem; height: 4rem; object-fit: contain; }
+.nbr-asset-mapping input { max-width: 100%; }
+@media (max-width: 620px) {
+  .nbr-figure-open img { max-height: 25rem; }
+  .nbr .nbr-head-actions { justify-content: flex-start; width: 100%; }
+  .nbr-asset-mapping, .nbr-asset-mapping tbody, .nbr-asset-mapping tr, .nbr-asset-mapping td { display: block; }
+  .nbr-asset-mapping thead { display: none; }
+  .nbr-asset-mapping tr { border-bottom: 1px solid var(--border); padding: .5rem 0; }
+  .nbr-asset-mapping td { border: 0; padding: .3rem 0; }
+}

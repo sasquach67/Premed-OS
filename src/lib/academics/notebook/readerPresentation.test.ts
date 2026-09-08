@@ -3,7 +3,7 @@ import { collectReaderEvidence, isRoutineNotebookCitation, notebookReaderContent
 import { revisionFixture } from './revision.test-fixtures'
 
 describe('conservative notebook annotation presentation', () => {
-  it.each(['[Source: ref-one p.3.]', '[Clarification of ref-one Activities 2-5.]', '[ref-one pp.1-3; ref-two Figure 2.]'])('recognizes explicit source/location syntax: %s', span => {
+  it.each(['[Source: ref-one p.3.]', '[Source synthesis: ref-one p.3.]', '[Source and clarification: ref-one p.3.]', '[Clarification of ref-one Activities 2-5.]', '[ref-one pp.1-3; ref-two Figure 2.]'])('recognizes explicit source/location syntax: %s', span => {
     expect(isRoutineNotebookCitation(span, ['ref-one', 'ref-two'])).toBe(true)
   })
   it.each(['[Source: missing p.3.]', '[Source: ref-one p.3; this proves causation.]', '[Source: ref-one p.3; participants were excluded.]', '[Source: ref-one p.3; NOT RANDOMIZED.]', '[Source: ref-one results discussion.]', '[Replace the conclusion with this statement.]'])('keeps unknown or substantive brackets: %s', span => {

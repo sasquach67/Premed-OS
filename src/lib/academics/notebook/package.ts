@@ -1,3 +1,4 @@
+import { parsePortableNotebook } from './visualPackage'
 import schema from './notebook-package.schema.json'
 import { NotebookValidationError, validateSchema, type Schema } from './schemaValidator'
 import type { Evidence, NotebookPackage, NotebookSource } from './types'
@@ -33,7 +34,7 @@ export function rejectDuplicateKeys(raw: string) {
   }
   visit('$', 0)
 }
-export function parseNotebookPackage(raw: string): NotebookPackage {
+export function parseLegacyNotebookPackage(raw: string): NotebookPackage {
   if (new TextEncoder().encode(raw).length > NOTEBOOK_MAX_BYTES) throw new NotebookValidationError('$', 'Choose a package under 8 MB. Nothing was truncated or saved.')
   const trimmed = raw.trim()
   const json = /^```(?:json)?\s*\n([\s\S]*?)\n```$/i.exec(trimmed)?.[1] ?? raw
@@ -115,3 +116,5 @@ export async function prepareNotebook(raw: string): Promise<PreparedNotebook> {
   }
   return { package: p, raw, fingerprints }
 }
+
+export function parseNotebookPackage(raw: string): NotebookPackage { return parsePortableNotebook(raw) }

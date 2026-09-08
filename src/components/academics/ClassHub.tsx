@@ -1,3 +1,4 @@
+import './notebookVisuals.css'
 import { GenerationReviewNotice } from './GenerationReviewNotice'
 import { ReadingSummaryDialog, ReadingSummaryContent } from './ReadingSummaryDialog'
 import { isPrimaryMaterial } from '@/lib/academics/materialCatalog'
@@ -360,6 +361,11 @@ function Overview({ course, workspace, data, assignments, onTab }: {
           {[...chronologicalLectures].reverse().map((lecture) => {
             const isActive = activeLecture?.id === lecture.id
             const importedEntry = lecture.importedNotebook?.current.entries.find(entry => entry.id === lecture.importedNotebook?.entryId)
+            if (lecture.importedNotebook) {
+              const openImported = () => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/${encodeURIComponent(lecture.id)}`)
+              const date = new Date(lecture.importedNotebook.editedAt ?? lecture.importedNotebook.importedAt)
+              return <div key={lecture.id} className="lecture-journal-imported-item"><LectureRecordMenu lecture={lecture} onOpen={openImported} onOpenFullScreen={openImported} onDeleted={lectureId => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail><button type="button" className="lecture-rail-entry imported-notebook-link" onClick={openImported}><span className="lecture-journal-row-text"><b>{lecture.title}</b><time dateTime={date.toISOString()}>{lecture.importedNotebook.editedAt ? 'Updated' : 'Added'} {date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</time></span><ArrowRight aria-hidden="true" /></button></LectureRecordMenu></div>
+            }
             return <AccordionItem key={lecture.id} value={lecture.id} className="lecture-journal-item">
               <LectureRecordMenu lecture={lecture} onOpen={() => setSelectedLectureId(lecture.id)} onOpenFullScreen={() => openLecture(lecture.id)} onDeleted={(lectureId) => { if (selectedLectureId === lectureId) setSelectedLectureId(undefined) }} rail>
                 <AccordionTrigger className={cn('lecture-rail-entry', isActive && 'is-active')}>

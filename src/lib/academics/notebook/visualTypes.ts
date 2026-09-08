@@ -39,10 +39,11 @@ export type NotebookDiagramEdge = NotebookDiagramNode & {
   to: string
   relation: 'sequence' | 'association' | 'contains' | 'causes' | 'inhibits' | 'other'
 }
-export type NotebookFigureBlock = VisualEvidence & Pick<NotebookBlock, 'id' | 'provenance'> & {
+type VisualBlockIdentity = { id: string; provenance: 'source' | 'clarification' | 'background' | 'generated-practice' | 'student-work' }
+export type NotebookFigureBlock = VisualEvidence & VisualBlockIdentity & {
   type: 'figure'; assetId: string; caption: string | null; alt: string; context: string
 }
-export type NotebookStudyDiagramBlock = VisualEvidence & Pick<NotebookBlock, 'id' | 'provenance'> & {
+export type NotebookStudyDiagramBlock = VisualEvidence & VisualBlockIdentity & {
   type: 'study-diagram'; kind: 'concept-map' | 'flowchart'; title: string
   nodes: NotebookDiagramNode[]; edges: NotebookDiagramEdge[]
 }

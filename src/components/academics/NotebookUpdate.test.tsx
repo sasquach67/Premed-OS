@@ -114,7 +114,7 @@ it('restores a reviewed history version and retains the replaced version', async
 })
 it('keeps the update action visible and the complete guide available throughout the update flow', async () => {
   expect(button('Update this notebook').closest('details')).toBeNull()
-  expect(button('Edit entry').closest('details')?.querySelector('summary')?.textContent).toBe('Entry tools')
+  expect(button('Edit entry').closest('details')).toBeNull()
   await click('Update this notebook')
   const guide = container.querySelector<HTMLDetailsElement>('.en-update-guide')!
   expect(guide.open).toBe(false)

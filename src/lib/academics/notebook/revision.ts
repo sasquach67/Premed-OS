@@ -1,3 +1,4 @@
+import { notebookVisualPracticeKey, projectNotebookEntry } from './visualProjection'
 import { uid } from '@/lib/id'
 import { canonical } from './package'
 import type { ImportedNotebook, NotebookHistoryVersion, NotebookPackage, NotebookProgress, NotebookUpdateSession } from './types'
@@ -6,14 +7,14 @@ export const UPDATE_BASELINE_FILE = 'notebook-update-baseline.json'
 /** Notebook persistence is JSON-only; this also unwraps Immer draft proxies. */
 export function cloneNotebookData<T>(value: T): T { return JSON.parse(JSON.stringify(value)) as T }
 export const UPDATE_BASELINE_DESCRIPTION = 'The attached exact last-saved current-content notebook JSON is the protected baseline. Preserve its unchanged content and IDs; it excludes independent notes, practice progress and unsaved drafts.'
-export function selectedNotebook(pkg: NotebookPackage, entryId: string): NotebookPackage {
+export function legacySelectedNotebook(pkg: NotebookPackage, entryId: string): NotebookPackage {
   const entry = pkg.entries.find(item => item.id === entryId)
   if (!entry) throw new Error('The selected notebook entry is missing.')
   return { ...pkg, entries: [entry] }
 }
 /** Exact canonical content comparison, not a portable revision-number shortcut. */
 export function notebookContentKey(n: ImportedNotebook) { return canonical(selectedNotebook(n.current, n.entryId)) }
-export function notebookStateKey(n: ImportedNotebook) {
+export function legacyNotebookStateKey(n: ImportedNotebook) {
   return canonical({ content: selectedNotebook(n.current, n.entryId), notes: n.notes, progress: n.progress, history: n.history?.map(v => v.id) ?? [], session: n.updateSession?.id ?? null })
 }
 export function createNotebookUpdateSession(n: ImportedNotebook, localId: string, now = Date.now()): NotebookUpdateSession {
@@ -31,7 +32,7 @@ function learningContent(pkg: NotebookPackage, entryId: string) {
   const { title: _title, revision: _revision, baseRevision: _base, ...entry } = selectedNotebook(pkg, entryId).entries[0]
   return { course: pkg.course, sources: pkg.sources, entry }
 }
-export function notebookPracticePolicy(before: NotebookPackage, after: NotebookPackage, entryId: string) {
+export function legacyNotebookPracticePolicy(before: NotebookPackage, after: NotebookPackage, entryId: string) {
   const oldEntry = selectedNotebook(before, entryId).entries[0], newEntry = selectedNotebook(after, entryId).entries[0]
   const previous = oldEntry.sections.flatMap(s => s.blocks).filter(b => b.type === 'practice')
   const next = new Map(newEntry.sections.flatMap(s => s.blocks).map(b => [b.id, b]))
@@ -68,7 +69,7 @@ export function retainedPractice(before: NotebookPackage, after: NotebookPackage
   return retained
 }
 export type NotebookDifference = { kind: string; label: string; status: 'Added' | 'Changed' | 'Removed'; before?: unknown; after?: unknown }
-export function compareNotebooks(before: NotebookPackage, after: NotebookPackage, entryId: string): NotebookDifference[] {
+export function legacyCompareNotebooks(before: NotebookPackage, after: NotebookPackage, entryId: string): NotebookDifference[] {
   const a = selectedNotebook(before, entryId).entries[0], b = selectedNotebook(after, entryId).entries[0]
   const changes: NotebookDifference[] = []
   const diff = (kind: string, previous: { id: string; [key: string]: unknown }[], next: { id: string; [key: string]: unknown }[]) => {
@@ -98,4 +99,19 @@ export function readableDifference(value: unknown): string {
   const labels: Record<string, string> = { prompt: 'Question', answer: 'Answer', rationale: 'Why this answer', text: 'Content', title: 'Title', scope: 'Scope', basis: 'Coverage explanation', inspected: 'Material inspected', limitations: 'Limits', freeRecallCues: 'Recall prompts', beAbleToDo: 'Apply it', watchFor: 'Watch for', sourceIds: 'Source references', excerptIds: 'Excerpt references', practiceBlockIds: 'Linked practice references', requirementId: 'Requirement reference', id: 'Reference ID' }
   const secondary = new Set(['id', 'sourceIds', 'excerptIds', 'practiceBlockIds', 'requirementId', 'sectionId', 'order', 'provenance'])
   return Object.entries(value).sort(([a], [b]) => Number(secondary.has(a)) - Number(secondary.has(b))).map(([key, item]) => `${labels[key] ?? key.replace(/([a-z])([A-Z])/g, '$1 $2')}: ${readableDifference(item)}`).join('\n')
+}
+
+export function selectedNotebook(...args: Parameters<typeof legacySelectedNotebook>): ReturnType<typeof legacySelectedNotebook> { return projectNotebookEntry(args[0], args[1]) }
+export function notebookStateKey(...args: Parameters<typeof legacyNotebookStateKey>): string { const n=args[0]; return canonical({ contentAndRecords: legacyNotebookStateKey(...args), assetLineageId:n.assetLineageId, assetBindings:n.assetBindings }) }
+export function notebookPracticePolicy(...args: Parameters<typeof legacyNotebookPracticePolicy>): ReturnType<typeof legacyNotebookPracticePolicy> {
+ const policy=legacyNotebookPracticePolicy(...args), [before,after,entryId]=args;
+ const extra=before.entries.find(e=>e.id===entryId)?.sections.flatMap(s=>s.blocks).filter(b=>b.type==='practice' && notebookVisualPracticeKey(before,entryId,b.id)!==notebookVisualPracticeKey(after,entryId,b.id)).map(b=>b.id)??[];
+ const affectedIds=[...new Set([...policy.affectedIds,...extra])];
+ return {...policy,affectedIds,explanation:extra.some(id=>!policy.affectedIds.includes(id))?policy.explanation+' Changed figures, neutral stimuli or diagram relationships also start their dependent practice fresh; previous records remain in history.':policy.explanation};
+}
+export function compareNotebooks(...args: Parameters<typeof legacyCompareNotebooks>): ReturnType<typeof legacyCompareNotebooks> {
+ const changes=legacyCompareNotebooks(...args), [before,after]=args;
+ const visual=(p:NotebookPackage)=>p.version===3?{assets:p.assets,visualReview:p.visualReview}:null;
+ if(canonical(visual(before))!==canonical(visual(after)))changes.push({kind:'Source / excerpts',label:'Figures and visual review',status:visual(before)===null?'Added':visual(after)===null?'Removed':'Changed',before:visual(before),after:visual(after)});
+ return changes;
 }

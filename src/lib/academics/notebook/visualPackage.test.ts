@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { expect, it } from 'vitest'
 import legacy from './revision-fixtures/baseline-current.json'
-import { parseNotebookPackage } from './package'
+import { parseLegacyNotebookPackage, parseNotebookPackage } from './package'
 import { parsePortableNotebook } from './visualPackage'
 import { missingPracticeImages, notebookVisualPracticeKey, projectNotebookEntry } from './visualProjection'
 import { plainVisualFixture, visualFixture } from './visual.test-fixtures'
@@ -15,7 +15,8 @@ it('keeps exact v2 parsing and separately accepts frozen v3 text and visual fixt
   expect(parsePortableNotebook(raw)).toEqual(parseNotebookPackage(raw))
   expect(parsePortableNotebook(JSON.stringify(plainVisualFixture())).version).toBe(3)
   expect(parsePortableNotebook(JSON.stringify(visualFixture()))).toEqual(visualFixture())
-  expect(() => parseNotebookPackage(JSON.stringify(visualFixture()))).toThrow()
+  expect(parseNotebookPackage(JSON.stringify(visualFixture()))).toEqual(visualFixture())
+  expect(() => parseLegacyNotebookPackage(JSON.stringify(visualFixture()))).toThrow()
 })
 const mutations: [string, (p: VisualNotebookPackage) => void][] = [
   ['source review missing', p => { p.visualReview.sources = [] }],

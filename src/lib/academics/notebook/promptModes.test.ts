@@ -8,7 +8,7 @@ it.each(['review', 'assessment', 'assignment'] as const)('composes canonical new
   expect(original.startsWith(modes.new.heading.replace('{goal}', goal) + '\n\n')).toBe(true)
   expect(update.startsWith(modes.update.heading.replace('{goal}', goal) + '\n\n' + modes.update.intro + '\n\n')).toBe(true)
   expect(update.slice(update.indexOf(modes.update.intro) + modes.update.intro.length + 2)).toBe(original.slice(original.indexOf('\n\n') + 2))
-  expect(new TextEncoder().encode(update).length - new TextEncoder().encode(original).length).toBe(343)
+  expect(new TextEncoder().encode(update).length - new TextEncoder().encode(original).length).toBe(431)
   const request = JSON.parse(/```json\n([\s\S]*?)\n```/.exec(update)![1])
   expect(request.userRequest).toBe(values.USER_REQUEST)
   expect(request.revisionInput).toBe(values.REVISION_INPUT)

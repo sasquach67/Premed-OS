@@ -1,5 +1,5 @@
 import schema from './notebook-package-v3.schema.json'
-import { NOTEBOOK_MAX_BYTES, parseNotebookPackage, rejectDuplicateKeys } from './package'
+import { NOTEBOOK_MAX_BYTES, parseLegacyNotebookPackage, rejectDuplicateKeys } from './package'
 import { NotebookValidationError, validateSchema, type Schema } from './schemaValidator'
 import type { PortableNotebookPackage, VisualEvidence, VisualNotebookBlock, VisualNotebookPackage } from './visualTypes'
 
@@ -11,7 +11,7 @@ export function parsePortableNotebook(raw: string): PortableNotebookPackage {
   const json = /^```(?:json)?\s*\n([\s\S]*?)\n```$/i.exec(raw.trim())?.[1] ?? raw
   let value: unknown
   try { value = JSON.parse(json) } catch { throw new NotebookValidationError('$', 'Invalid JSON. Supply the complete notebook object.') }
-  if (!value || typeof value !== 'object' || (value as { version?: unknown }).version !== 3) return parseNotebookPackage(raw)
+  if (!value || typeof value !== 'object' || (value as { version?: unknown }).version !== 3) return parseLegacyNotebookPackage(raw)
   rejectDuplicateKeys(json)
   validateSchema(value, schema as unknown as Schema)
   const pkg = value as VisualNotebookPackage
