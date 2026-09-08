@@ -56,3 +56,9 @@ Materials go to the chosen AI; final notebook JSON goes to Premed OS. A recordin
 Instruction feasibility and beta readiness remain separate from app end-to-end and production readiness. No real class trial or rating is prefilled.
 
 Current beta-4 conversation rule: ordinary AI chats with accessible uploads or pasted material are sufficient; projects and folders are optional. Known needs/preferences guide the preparation without removing required depth or scope. The readable draft must be real and accessible before approval, and finalization preserves the approved content. The historical staged example illustrates evidence/coverage structure, not evidence that any AI passed the new confirmation gate.
+
+## Beta-5 update and upload collection
+
+An existing topic can span dated lectures. Update it from the latest saved current-content JSON plus new material, preserve unchanged explanations and student edits, and revise affected teaching/practice/coverage. Retained excerpts may be sufficient; request old originals only for missing necessary evidence or context. The AI shows actual revised content and a change review before explicit finalization confirmation. This is revision mode in the same goal, not a new goal. The app separately controls explicit acceptance, conflicts, history and study records.
+
+If the student announces multiple upload batches, keep collecting with honest received/inspected/gap receipts until an explicit done signal; no premature final draft or repeated final-approval question per batch. All-materials-supplied requests need no extra intake gate. Done uploading does not approve the later draft. Direct files/images/pasted text support the ordinary-chat path conditionally; inspect actual visual readability and preserve full questions, options and diagram context. See ORDINARY-CHAT-MATERIALS.md for dated provider guidance and EXPECTED-CONVERSATIONS.md for authored cases. No capacity or real trial is established here.

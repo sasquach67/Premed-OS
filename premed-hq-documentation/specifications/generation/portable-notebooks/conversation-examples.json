@@ -1,6 +1,6 @@
 {
   "kind": "scripted-expected-conversations",
-  "promptBuild": "notebook-instructions-beta-4",
+  "promptBuild": "notebook-instructions-beta-5",
   "executed": false,
   "ratings": null,
   "notice": "Authored expectations for manual beta, not transcripts of a tested external AI, real course trials, importable notebook JSON, or additional maintained prompts. Use the corresponding complete goal prompt and inspect actual behavior.",
@@ -357,6 +357,343 @@
         "emitsJsonBeforeConfirmation": false,
         "requiresExplicitConfirmation": true
       }
+    },
+    {
+      "id": "topic-tuesday-thursday-update",
+      "goal": "review",
+      "title": "Tuesday/Thursday topic overlap, correction and saved student edit",
+      "given": [
+        "The authored revision-case/baseline-current.json is the exact saved Chapter 3 content, with the student reminder already saved.",
+        "Thursday repeats the task mapping, adds a noisy-background comparison, explicitly corrects Tuesday duration from 100 to 200 milliseconds, and begins a distinct Chapter 4 topic.",
+        "The student authorizes updating Chapter 3 and beginning a separate Chapter 4 entry; no old full transcript is attached, but the needed exact Tuesday excerpts are retained."
+      ],
+      "expectedFirstReply": "You want Chapter 3 updated from the saved notebook and Thursday material, with a separate Chapter 4 introduction. I have the saved content and retained Tuesday excerpts, not fresh access to the old full lecture. I’ll preserve your reminder and unchanged teaching, integrate the affected details and show the actual revised draft before JSON.",
+      "expectedNext": [
+        "Use the exact baseline and Thursday passages; no project requirement or blanket request for old files.",
+        "Consolidate repeated mapping with dated evidence, preserve the student reminder and unchanged mapping practice, correct timing teaching/answer/objective/coverage, and retain Tuesday’s original quote.",
+        "Keep missing performance results visible and Chapter 4 distinct; show the actual readable revised draft and concise change review.",
+        "Do not emit final JSON before explicit confirmation; app acceptance and history/progress remain separate."
+      ],
+      "studentFollowUp": null,
+      "expectedAfterReply": "After explicit confirmation of the actual draft, serialize the complete Chapter 3 revision 2/base 1 plus the authorized Chapter 4 new entry. Unchanged content is preserved, not regenerated. A valid file does not prove same-entry acceptance, save, history creation or progress transfer.",
+      "necessaryPause": "Wait for explicit confirmation after the actual readable draft. If a needed original context is absent, ask only for that specific portion.",
+      "mustPreserve": [
+        "Stable surviving content/evidence IDs, exact old quotes and saved student reminder.",
+        "No inherited correctness/mastery for changed practice; notes/progress are outside current JSON.",
+        "Full supported depth and scope remain in force; these small invented fixtures are not pedagogical acceptance."
+      ],
+      "ruleIds": [
+        "EC-BASELINE",
+        "EC-TOPIC",
+        "EC-OVERLAP",
+        "EC-DEPENDENCIES",
+        "EC-CHANGEREVIEW",
+        "EC-REVISIONFILE",
+        "EC-ACCEPTANCE",
+        "EC-REVIEW",
+        "EC-CONFIRM"
+      ],
+      "readableDraftFile": "revision-case/readable-revised-draft.md"
+    },
+    {
+      "id": "topic-unresolved-correction-context",
+      "goal": "review",
+      "title": "Missing old context and an unresolved later statement",
+      "given": [
+        "The student supplies current JSON and a Thursday statement that another example uses 200 milliseconds.",
+        "The export lacks the Tuesday timing excerpt/context and Thursday does not explicitly correct the same task."
+      ],
+      "expectedFirstReply": "You want the existing topic updated with Thursday’s timing statement. I can read the current notebook and new passage, but the old task context is missing and the passages may describe different examples. I’ll preserve the unresolved distinction and update independent material while requesting the specific Tuesday context.",
+      "expectedNext": [
+        "Ask for the missing Tuesday timing passage and locator, not every old source or an entire project.",
+        "Do not silently replace 100 with 200 based only on lecture date; retain the distinct or conflicting contexts and visible evidence limit.",
+        "Once the actual context resolves the issue, update affected teaching/practice/objectives/coverage and show the resulting readable draft."
+      ],
+      "studentFollowUp": null,
+      "expectedAfterReply": "If the evidence still does not resolve the difference, present both contextualized claims and the unresolved limit in the review. Explicit final confirmation permits only that honest reviewed proposal, not an invented resolution.",
+      "necessaryPause": "Ask for the specific missing context if needed to resolve the update, then wait again for post-draft final confirmation.",
+      "mustPreserve": [
+        "No fabricated reread, quotation, date authority or correction.",
+        "Unchanged supported content and student edits remain intact."
+      ],
+      "ruleIds": [
+        "EC-BASELINE",
+        "EC-TOPIC",
+        "EC-OVERLAP",
+        "EC-DEPENDENCIES",
+        "EC-CHANGEREVIEW",
+        "EC-REVISIONFILE",
+        "EC-ACCEPTANCE",
+        "EC-REVIEW",
+        "EC-CONFIRM"
+      ]
+    },
+    {
+      "id": "topic-newer-saved-baseline",
+      "goal": "review",
+      "title": "Newer saved content makes the original update baseline stale",
+      "given": [
+        "The AI prepared a revision from the exported saved Chapter 3 baseline.",
+        "While it worked, the student saved another content edit in the app; portable revision is still 1.",
+        "The app detects that the saved content fingerprint differs before same-entry acceptance."
+      ],
+      "expectedFirstReply": "The proposed update was based on an earlier saved export. A newer saved edit means the same revision number no longer identifies the exact baseline. Send the latest saved current JSON so I can preserve the new wording and reconcile the proposed changes for another review.",
+      "expectedNext": [
+        "Do not claim the old baseRevision authorizes overwriting newer saved content.",
+        "Inspect the actual newest export, retain new student wording and reconcile only the requested changes, asking a focused question for conflicting edits.",
+        "Show actual reconciled content and changed portions; obtain fresh confirmation before revised JSON."
+      ],
+      "studentFollowUp": null,
+      "expectedAfterReply": "The app separately checks its current baseline and asks for explicit acceptance. A separate-copy fallback, if offered and selected, must disclose that it does not merge newer edits. The AI cannot bypass fingerprint checks or invent app authorization fields.",
+      "necessaryPause": "Wait for the actual latest saved export when absent; after reconciliation, wait for explicit content confirmation.",
+      "mustPreserve": [
+        "Newest saved student edits, stable identities and exact evidence.",
+        "Local fingerprint/history/acceptance stay app-controlled; no extra JSON fields."
+      ],
+      "ruleIds": [
+        "EC-BASELINE",
+        "EC-TOPIC",
+        "EC-OVERLAP",
+        "EC-DEPENDENCIES",
+        "EC-CHANGEREVIEW",
+        "EC-REVISIONFILE",
+        "EC-ACCEPTANCE",
+        "EC-REVIEW",
+        "EC-CONFIRM"
+      ]
+    },
+    {
+      "id": "ordinary-plus-mixed-materials",
+      "goal": "review",
+      "title": "Ordinary Plus chat: digital text, question image, handwriting and an embedded figure gap",
+      "given": [
+        "Manual scenario for an ordinary ChatGPT Plus chat without a project or local-folder access; no actual Plus trial has been run.",
+        "The student directly supplies a digital-text textbook PDF, a screenshot of a question with setup/options, and a handwritten note image. The PDF references an embedded figure that is not available in the inspected text extraction.",
+        "For this authored scenario, the question screenshot is readable but a consequential handwritten symbol/arrow is ambiguous. A folder/ZIP/merged scan is not assumed to provide every needed visual."
+      ],
+      "expectedFirstReply": "You want a review using the textbook, question image and handwritten notes. I see the supplied items but need to check which text and visual regions are actually readable. I’ll start with accessible material, identify consequential gaps and show the prepared content before asking about JSON.",
+      "expectedNext": [
+        "Inspect actual digital text portions and directly uploaded images separately; inventory each file/region honestly without claiming full PDF visual retrieval.",
+        "Retain the entire question setup, every option and relevant diagram. Treat answer choices as candidates, not evidence that one is correct.",
+        "Name the unreadable handwriting symbol/arrow and request a clearer contextual crop or typed clarification together with a direct clear image of the missing figure page.",
+        "Continue independent teaching from readable evidence; retain missing/uncertain regions and requirements through topic batches. OCR or successful attachment alone does not justify complete coverage.",
+        "Show the actual readable draft and a concise scope/access/gap review; wait for explicit confirmation before final JSON."
+      ],
+      "studentFollowUp": "The student supplies a clearer image of the handwriting with its surrounding sentence and a direct image of the complete figure with caption.",
+      "expectedAfterReply": "Inspect these actual new images; resolve only the portions now clear and update affected explanations/practice/coverage with honest visual access. Keep any remaining ambiguity visible, show substantive changes in the readable draft and obtain fresh confirmation. Do not treat a Codex filesystem check or this authored expectation as proof of ordinary Plus success.",
+      "necessaryPause": "Ask precisely for the missing figure page and consequential handwriting clarification; later wait at actual content review for explicit finalization confirmation.",
+      "mustPreserve": [
+        "Full question setup/options/diagram and exact source boundaries.",
+        "No invented handwriting reading, arrow direction, extracted figure or correct answer.",
+        "No mandatory project/folder or permanent provider cap; actual trials and ratings remain Andy’s."
+      ],
+      "ruleIds": [
+        "EC-INPUT",
+        "EC-MATERIALS",
+        "EC-QUESTIONS",
+        "EC-GAPS",
+        "EC-BATCH",
+        "EC-REVIEW",
+        "EC-CONFIRM",
+        "EC-EXPORT"
+      ]
+    },
+    {
+      "id": "announced-fifty-image-intake",
+      "goal": "review",
+      "title": "Announced 50-image intake: three illustrative batches, count mismatch and later approval",
+      "given": [
+        "Hypothetical ordinary-chat manual case: the student says 50 images are coming in batches of 20, 20 and 10. These numbers illustrate the script; they are not provider upload limits or proof the account accepts those batches.",
+        "Images include question setup/options, handwriting and figure context. In the authored second batch, image-37 does not arrive and a consequential handwritten arrow in image-28 is unreadable.",
+        "Received and inspection records below are authored scenario inputs, not logs of a real AI trial."
+      ],
+      "expectedFirstReply": "You plan to send 50 images in several batches for this review. I’ll distinguish what arrives from what I actually inspect and keep missing or unclear regions visible. Send the first supported batch and tell me when uploading is finished; that will precede a separate review of the prepared content before JSON.",
+      "expectedNext": [
+        "Acknowledge batch 1: 20 unique images received, 10 inspected readable, 10 pending; ask for the next announced batch without presenting a final draft.",
+        "Acknowledge batch 2: 39 unique images received in total, 35 inspected including unreadable image-28, and 4 pending. The announced total suggests image-37 is missing; request that file and a contextual clearer crop/typed clarification for image-28 while collection continues.",
+        "Acknowledge batch 3: 49 unique received, 44 inspected including image-28, 5 pending; do not infer done or claim all 50 were received/read.",
+        "Do supported inspection/checkpoint work within actual limits, preserving question roles/full setup/options/diagrams and uncertain handwriting. Wait for the explicit done signal, without repeated draft-approval questions."
+      ],
+      "studentFollowUp": "Done uploading. I cannot supply image-37 or clarify image-28 today; prepare what is supported and keep those gaps visible.",
+      "expectedAfterReply": "Close collection, inspect the five pending images if possible and report actual final coverage (in this authored continuation: 49 received, 48 readable, one unreadable, one never received). Preserve the original 50-image intended scope and the affected requirements as partial/missing; no invented arrow direction or answer. Prepare and show the actual readable draft and ask whether to change it or make JSON. “Done uploading” was not final approval. If the student asks for a substantive comparison change, show the updated actual draft and ask again before final JSON.",
+      "necessaryPause": "Keep collecting until the explicit done signal; later wait separately for explicit approval of the current readable draft. If a required file or saved checkpoint is missing on resume, name the exact needed input.",
+      "mustPreserve": [
+        "Accurate unique received versus inspected/pending/unreadable counts, stable image identities and original scope.",
+        "No invented missing page, handwritten arrow or correct answer from choices.",
+        "No numeric provider cap, unlimited capacity, full inspection claim or JSON before actual draft confirmation."
+      ],
+      "ruleIds": [
+        "EC-FIRST",
+        "EC-INPUT",
+        "EC-INTAKE",
+        "EC-MATERIALS",
+        "EC-CONTINUE",
+        "EC-GAPS",
+        "EC-BATCH",
+        "EC-REVIEW",
+        "EC-CONFIRM",
+        "EC-EXPORT"
+      ],
+      "batchReceipts": [
+        {
+          "batch": 1,
+          "announcedCount": 20,
+          "received": [
+            "image-01",
+            "image-02",
+            "image-03",
+            "image-04",
+            "image-05",
+            "image-06",
+            "image-07",
+            "image-08",
+            "image-09",
+            "image-10",
+            "image-11",
+            "image-12",
+            "image-13",
+            "image-14",
+            "image-15",
+            "image-16",
+            "image-17",
+            "image-18",
+            "image-19",
+            "image-20"
+          ],
+          "inspectedReadable": [
+            "image-01",
+            "image-02",
+            "image-03",
+            "image-04",
+            "image-05",
+            "image-06",
+            "image-07",
+            "image-08",
+            "image-09",
+            "image-10"
+          ],
+          "inspectedUnreadable": [],
+          "expectedReceivedUnique": 20,
+          "expectedInspectedUnique": 10,
+          "expectedPending": 10
+        },
+        {
+          "batch": 2,
+          "announcedCount": 20,
+          "received": [
+            "image-21",
+            "image-22",
+            "image-23",
+            "image-24",
+            "image-25",
+            "image-26",
+            "image-27",
+            "image-28",
+            "image-29",
+            "image-30",
+            "image-31",
+            "image-32",
+            "image-33",
+            "image-34",
+            "image-35",
+            "image-36",
+            "image-38",
+            "image-39",
+            "image-40"
+          ],
+          "inspectedReadable": [
+            "image-11",
+            "image-12",
+            "image-13",
+            "image-14",
+            "image-15",
+            "image-16",
+            "image-17",
+            "image-18",
+            "image-19",
+            "image-20",
+            "image-21",
+            "image-22",
+            "image-23",
+            "image-24",
+            "image-25",
+            "image-26",
+            "image-27",
+            "image-29",
+            "image-30",
+            "image-31",
+            "image-32",
+            "image-33",
+            "image-34",
+            "image-35"
+          ],
+          "inspectedUnreadable": [
+            "image-28"
+          ],
+          "expectedReceivedUnique": 39,
+          "expectedInspectedUnique": 35,
+          "expectedPending": 4
+        },
+        {
+          "batch": 3,
+          "announcedCount": 10,
+          "received": [
+            "image-41",
+            "image-42",
+            "image-43",
+            "image-44",
+            "image-45",
+            "image-46",
+            "image-47",
+            "image-48",
+            "image-49",
+            "image-50"
+          ],
+          "inspectedReadable": [
+            "image-36",
+            "image-38",
+            "image-39",
+            "image-40",
+            "image-41",
+            "image-42",
+            "image-43",
+            "image-44",
+            "image-45"
+          ],
+          "inspectedUnreadable": [],
+          "expectedReceivedUnique": 49,
+          "expectedInspectedUnique": 44,
+          "expectedPending": 5
+        }
+      ],
+      "intakeExpectations": {
+        "announcedTotal": 50,
+        "finalReceivedUnique": 49,
+        "finalReadable": 48,
+        "unreadable": [
+          "image-28"
+        ],
+        "missing": [
+          "image-37"
+        ],
+        "doneUploadingApprovesJson": false,
+        "initialAllSuppliedNeedsExtraIntakeGate": false,
+        "newMaterialInvalidatesMateriallyStaleApproval": true
+      },
+      "variants": [
+        {
+          "student": "Continue.",
+          "expected": "Continue authorized inspection or request the next declared batch; this alone does not end announced collection or approve JSON."
+        },
+        {
+          "student": "These are all the materials; start now.",
+          "expected": "Do not invent an extra collection-complete gate. Inspect supplied evidence and prepare the actual draft, then obtain its separate final confirmation."
+        },
+        {
+          "student": "Here is another image after I approved the draft.",
+          "expected": "Inspect it and update inventory. If it materially changes the content, evidence or gaps, show the updated draft and obtain fresh confirmation before JSON."
+        }
+      ]
     }
   ]
 }

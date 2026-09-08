@@ -6,6 +6,7 @@ from build_prompts import build, compose, TOKENS, PROMPT_BUILD
 from build_fixtures import build as fixtures
 from build_feasibility_case import build as feasibility_case
 from build_conversation_examples import build as conversation_examples
+from build_revision_cases import build as revision_cases, revision_errors, block_map, practice_dependency_snapshot, REMINDER
 from validate_package import validate, load_package_json, MAX_PACKAGE_BYTES
 
 def assessment_fixture_scope_errors(data):
@@ -125,8 +126,8 @@ def run(root,out):
     conversations=json.loads((out/'conversation-examples.json').read_text())
     assert conversations['executed'] is False and conversations['ratings'] is None
     assert {c['goal'] for c in conversations['scenarios']}=={'review','assessment','assignment'}
-    assert {c['id'] for c in conversations['scenarios']}=={'prompt-alone','complete-lesson','missing-exam-lesson-resume','one-hint-assignment','failed-import-repair','complete-inputs-review-gate','student-tweaks-then-confirms','partial-multiweek-approval','normal-chat-no-project'}
-    results.append({'case':'nine-expected-conversations-are-not-trial-results','expected':'nine authored scenarios across exactly three goals, no execution or ratings','passed':True})
+    assert {c['id'] for c in conversations['scenarios']}=={'prompt-alone','complete-lesson','missing-exam-lesson-resume','one-hint-assignment','failed-import-repair','complete-inputs-review-gate','student-tweaks-then-confirms','partial-multiweek-approval','normal-chat-no-project','topic-tuesday-thursday-update','topic-unresolved-correction-context','topic-newer-saved-baseline','ordinary-plus-mixed-materials','announced-fifty-image-intake'}
+    results.append({'case':'fourteen-expected-conversations-are-not-trial-results','expected':'fourteen authored scenarios across exactly three goals, no execution or ratings','passed':True})
     canonical_conversation=(root/'premed-hq-documentation/specifications/generation/20-external-notebook-workflow.md').read_text()
     rule_ids=set(re.findall(r'`(EC-[A-Z]+)`',canonical_conversation))
     for c in conversations['scenarios']:
@@ -145,7 +146,7 @@ def run(root,out):
     except ValueError:pass
     else:raise AssertionError('The example prefix must actually be truncated, not a complete notebook.')
     results.append({'case':'scripted-truncated-input-is-incomplete','expected':'invalid prefix supplied only as a manual no-fabrication repair example','passed':True})
-    for goal,rule in [('review','EC-FIRST'),('assessment','EC-CONTINUE'),('assignment','EC-REPAIR')]+[(goal,rule) for goal in ('review','assessment','assignment') for rule in ('EC-INPUT','EC-PERSONALIZE','EC-REVIEW','EC-CONFIRM','EC-EXPORT')]:
+    for goal,rule in [('review','EC-FIRST'),('assessment','EC-CONTINUE'),('assignment','EC-REPAIR')]+[(goal,rule) for goal in ('review','assessment','assignment') for rule in ('EC-INPUT','EC-PERSONALIZE','EC-REVIEW','EC-CONFIRM','EC-EXPORT','EC-BASELINE','EC-TOPIC','EC-OVERLAP','EC-DEPENDENCIES','EC-CHANGEREVIEW','EC-REVISIONFILE','EC-ACCEPTANCE','EC-MATERIALS','EC-INTAKE')]:
         prompt=(out/('copy-prompt-'+goal+'.md')).read_text()
         row=next(line for line in canonical_conversation.splitlines() if line.startswith('- `'+rule+'`:'))
         assert row in prompt and prompt_methodology_errors(root,goal,prompt.replace(row,''))
@@ -156,7 +157,7 @@ def run(root,out):
         wrong=prompt.replace(opening,'Generate the complete final notebook JSON immediately from the supplied material.')
         assert prompt_methodology_errors(root,goal,wrong)
         results.append({'case':'reject-automatic-export-opening-'+goal,'expected':'canonical request guard rejects restored automatic export even when the shared confirmation rules remain below','passed':True})
-    for version in ('beta-2','beta-3'):
+    for version in ('beta-2','beta-3','beta-4'):
         snapshot=out/('versions/notebook-instructions-'+version)
         if snapshot.exists():
             receipt=json.loads((snapshot/'SNAPSHOT.json').read_text())
@@ -188,6 +189,67 @@ def run(root,out):
         assert source['inspected'] in readable
         for excerpt in source['excerpts']:assert excerpt['text'] in readable
     results.append({'case':'actual-readable-partial-draft-preserves-content-and-scope','expected':'all prepared teaching/practice/answers and eight requirements plus inspected portions/excerpts appear in readable review example','passed':True})
+    context=json.loads((out/'revision-context.json').read_text())
+    assert context['runtimeToken']=='REVISION_INPUT' and context['exampleContext']['baselineFile']=='notebook-update-baseline.json'
+    assert list(context['exampleContext'])==context['contextKeys'] and context['exampleContext']['baseline']==context['baselineSentence']
+    for goal in ('review','assessment','assignment'):
+        value=json.dumps(context['exampleContext'],ensure_ascii=False)
+        composed=compose((out/('copy-prompt-'+goal+'.md')).read_text(),{'REVISION_INPUT':value})
+        envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])
+        assert isinstance(envelope['revisionInput'],str) and json.loads(envelope['revisionInput'])==context['exampleContext']
+        assert set(TOKENS)==set(json.loads((out/'prompt-composition.json').read_text())['placeholders'])
+        results.append({'case':'revision-context-string-roundtrip-'+goal,'expected':'same eleven tokens; exact baseline metadata survives nested JSON string encoding without new output fields','passed':True})
+    revision_dir=out/'revision-case';before=json.loads((revision_dir/'baseline-current.json').read_text());after=json.loads((revision_dir/'expected-revised-with-new-topic.json').read_text())
+    assert not validate(before,schema) and not validate(after,schema) and not revision_errors(before,after)
+    results.append({'case':'authored-topic-baseline-and-complete-revision','expected':'both schema-valid, same target lineage plus distinct new topic, preserved teaching and meaningful correction dependencies','passed':True})
+    mutations=[
+        ('student-edit','saved-student-edit',lambda p:block_map(p['entries'][0])['ch3-mapping'].update(text='A triangle maps left; a circle maps right.')),
+        ('unrelated-rewrite','unchanged-block:ch3-summary',lambda p:block_map(p['entries'][0])['ch3-summary'].update(text='Rewritten summary without authorization.')),
+        ('old-quote-rewritten','original-quotes-preserved',lambda p:p['sources'][0]['excerpts'][1].update(text='The shape is shown for 200 milliseconds.')),
+        ('false-reread','retained-access-honesty',lambda p:p['sources'][0].update(access='read',inspected='I reread the complete original Tuesday file.')),
+        ('missing-date','dated-lecture-provenance',lambda p:p['sources'][0].update(title='Old lecture')),
+        ('timing-answer-stale','dependent-answer',lambda p:block_map(p['entries'][0])['ch3-practice-timing'].update(answer='100 milliseconds.')),
+        ('objective-stale','dependent-objective',lambda p:next(o for o in p['entries'][0]['objectives'] if o['id']=='ch3-obj-task').update(understand=['The task uses a 100-millisecond presentation.'])),
+        ('coverage-stale','dependent-coverage',lambda p:next(r for r in p['entries'][0]['requirements'] if r['id']=='ch3-req-task').update(basis='The duration is 100 milliseconds.')),
+        ('false-result-covered','missing-result-visible',lambda p:next(r for r in p['entries'][0]['requirements'] if r['id']=='ch3-req-comparison').update(status='supported',nextStep=None)),
+        ('invented-result','no-invented-result',lambda p:block_map(p['entries'][0])['ch3-comparison'].update(text='The noisy background lowers accuracy.')),
+        ('duplicate-repetition','no-repeat-duplication',lambda p:p['entries'][0]['sections'][1]['blocks'].append(dict(block_map(p['entries'][0])['ch3-mapping'],id='repeated-mapping'))),
+        ('new-topic-wrong-lineage','new-topic-separate',lambda p:p['entries'][1].update(revision=2,baseRevision=1)),
+    ]
+    for name,code,change in mutations:
+        wrong=copy.deepcopy(after);change(wrong)
+        assert not validate(wrong,schema),(name,validate(wrong,schema))
+        assert code in revision_errors(before,wrong),(name,revision_errors(before,wrong))
+        results.append({'case':'reject-topic-'+name,'expected':'source-specific preservation/correction audit detects '+code+' despite schema validity; not external AI compliance proof','passed':True})
+    mapping_before=practice_dependency_snapshot(before,'ch3-practice-mapping');mapping_after=practice_dependency_snapshot(after,'ch3-practice-mapping')
+    assert mapping_before is not None and mapping_before==mapping_after
+    assert practice_dependency_snapshot(before,'ch3-practice-timing')!=practice_dependency_snapshot(after,'ch3-practice-timing')
+    results.append({'case':'isolated-mapping-versus-corrected-timing-dependencies','expected':'mapping question and linked teaching/objective/requirement/excerpts stay exact; timing answer and dependencies change, without asserting app transfer or mastery','passed':True})
+    ambiguous_before=json.loads((revision_dir/'ambiguous-linked-baseline.json').read_text());ambiguous_after=json.loads((revision_dir/'ambiguous-linked-proposal.json').read_text())
+    assert not validate(ambiguous_before,schema) and not validate(ambiguous_after,schema)
+    assert block_map(ambiguous_before['entries'][0])['ch3-practice-mapping']==block_map(ambiguous_after['entries'][0])['ch3-practice-mapping']
+    assert practice_dependency_snapshot(ambiguous_before,'ch3-practice-mapping')!=practice_dependency_snapshot(ambiguous_after,'ch3-practice-mapping')
+    missing_link=copy.deepcopy(before);missing_link['entries'][0]['objectives']=[o for o in missing_link['entries'][0]['objectives'] if o['id']!='ch3-obj-mapping']
+    assert practice_dependency_snapshot(missing_link,'ch3-practice-mapping') is None
+    results.append({'case':'shared-or-missing-dependency-is-not-unaffected-proof','expected':'same question text does not establish unchanged learning dependencies; broader app handling must be explicit and recoverable','passed':True})
+    topic_draft=(revision_dir/'readable-revised-draft.md').read_text()
+    for entry in after['entries']:
+        for block in block_map(entry).values():
+            for key in ('text','prompt','answer','rationale','nextStep'):
+                if block.get(key):assert block[key] in topic_draft
+        for req in entry['requirements']:assert req['text'] in topic_draft and req['basis'] in topic_draft
+    assert REMINDER in topic_draft
+    results.append({'case':'actual-readable-topic-draft-preserves-all-prepared-content','expected':'complete revised teaching, answers, rationale, scope and student reminder are accessible before scripted confirmation','passed':True})
+    intake=next(c for c in conversations['scenarios'] if c['id']=='announced-fifty-image-intake')
+    received=set();inspected=set();unreadable=set()
+    for receipt in intake['batchReceipts']:
+        received.update(receipt['received']);inspected.update(receipt['inspectedReadable']);inspected.update(receipt['inspectedUnreadable']);unreadable.update(receipt['inspectedUnreadable'])
+        assert inspected<=received
+        assert (len(received),len(inspected),len(received-inspected))==(receipt['expectedReceivedUnique'],receipt['expectedInspectedUnique'],receipt['expectedPending'])
+    assert len(received)==49 and unreadable=={'image-28'} and {'image-'+str(i).zfill(2) for i in range(1,51)}-received=={'image-37'}
+    assert intake['intakeExpectations']['doneUploadingApprovesJson'] is False and intake['intakeExpectations']['initialAllSuppliedNeedsExtraIntakeGate'] is False
+    assert intake['intakeExpectations']['newMaterialInvalidatesMateriallyStaleApproval'] is True
+    results.append({'case':'authored-multibatch-intake-reconciles-counts-and-distinct-gates','expected':'actual authored unique receipts total 49 not 50; received/inspected/unreadable/pending remain distinct and done is not approval; no provider capacity or model trial proof','passed':True})
     base=examples['fixture-review'];r=lambda p:p['entries'][0]['requirements'][0];o=lambda p:p['entries'][0]['objectives'][0];b=lambda p:p['entries'][0]['sections'][0]['blocks'][0]
     cases=[]
     def case(name,code,change,seed=base):cases.append((name,code,change,seed))
@@ -263,7 +325,9 @@ def run(root,out):
         errors=validate(data,schema);assert any(e.startswith(code+':') for e in errors),(target,errors)
         results.append({'case':'reject-cross-entry-'+target,'expected':'rejected: '+code,'passed':True})
     with tempfile.TemporaryDirectory() as tmp:
-        fresh=Path(tmp);build(root,fresh);fixtures(fresh);feasibility_case(fresh/'feasibility-case');conversation_examples(fresh,root/'premed-hq-documentation/specifications/generation/portable-notebooks')
+        fresh=Path(tmp);build(root,fresh);fixtures(fresh);feasibility_case(fresh/'feasibility-case');conversation_examples(fresh,root/'premed-hq-documentation/specifications/generation/portable-notebooks');revision_cases(fresh/'revision-case')
+        for path in (out/'revision-case').iterdir():
+            if path.is_file():assert path.read_bytes()==(fresh/'revision-case'/path.name).read_bytes()
         for path in (out/'conversation-case-files').iterdir():
             if path.is_file():assert path.read_bytes()==(fresh/'conversation-case-files'/path.name).read_bytes()
         assert (out/'EXPECTED-CONVERSATIONS.md').read_bytes()==(fresh/'EXPECTED-CONVERSATIONS.md').read_bytes()
@@ -274,7 +338,7 @@ def run(root,out):
             template=path.read_text()
             assert all(template.count('{{'+token+'}}')==1 for token in TOKENS)
             assert set(re.findall(r'\{\{([A-Z_]+)\}\}',template))==set(TOKENS)
-            assert 'Prompt build: notebook-instructions-beta-4.' in template
+            assert 'Prompt build: notebook-instructions-beta-5.' in template
             values={token:'Sample '+token for token in TOKENS};values['CLASS_PREFERENCES']='Keep "quotes", newlines\n, unicode →, and {{SCOPE}} literal.'
             composed=compose(template,values)
             envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])
