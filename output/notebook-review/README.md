@@ -1,14 +1,26 @@
-# External notebook workflow review
+# Notebook interface preview
 
-This development-only review surface mounts the actual ClassHub, JournalEntryPage,
-notebook workflow, importer, renderer, and persisted store. Its BIOL 103 class and
-materials are invented review data. It does not prove signed-in production behavior.
+[Open the current preview at goal selection](http://127.0.0.1:5189/student-review/output/notebook-review/index.html#/academics/classes/notebook-demo/journal/new).
 
-Open the built review served from the app evidence folder:
-http://127.0.0.1:5189/student-review/output/notebook-review/index.html#/academics/classes/notebook-demo
+This preview shows how the notebook workflow will look in Premed OS, using an
+example BIOL 103 class. It is not your real class workspace.
 
-For source development, run Vite and open:
-http://127.0.0.1:5188/output/notebook-review/index.html#/academics/classes/notebook-demo
+First, choose one of the three goals and click **View full prompt**. You can inspect
+the steps for copying the prepared prompt, using it in your preferred AI chat, and
+bringing JSON back to the app. You do not need to review or import a sample notebook
+before testing the instructions with your own materials in your own AI chat.
+
+This is the one current app-interface preview. The earlier error-state gallery and
+developer routes are secondary references, not additional tasks to complete.
+
+## Development and review context
+
+The preview mounts the actual ClassHub, JournalEntryPage, workflow, importer,
+renderer, and persisted store. It does not prove signed-in production behavior.
+Opening the built review without a route also starts at goal selection.
+
+For source development, run Vite and use the equivalent goal-selection route on
+port 5188 under /output/notebook-review/index.html.
 
 Use a separate port/origin for concurrent reviewers. The app's existing persistence
 writes a whole-store snapshot. Notebook actions reject stale notebook/class snapshots;
