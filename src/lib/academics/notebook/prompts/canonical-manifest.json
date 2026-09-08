@@ -1,7 +1,7 @@
 {
   "instructionsVersion": "notebook-workflows-draft-3",
-  "promptBuild": "notebook-instructions-beta-11",
-  "canonicalHeadAtBuild": "8472c3003aa1dbc5b0bd5949605b63fc5e07e089",
+  "promptBuild": "notebook-instructions-beta-12",
+  "canonicalHeadAtBuild": "3c6e9d6b1072e9049d8bacc00d309fa16f769163",
   "canonicalRootAtBuild": "/private/tmp/premed-notebook-instructions-v2",
   "sources": {
     "premed-hq-documentation/specifications/generation/21-external-notebook-request-template.md": {
@@ -28,24 +28,24 @@
       }
     },
     "premed-hq-documentation/specifications/generation/20-external-notebook-workflow.md": {
-      "sha256": "9d6920b378aa2997f078247ad6cdb42a55049947b9a99e554747fe7002e350ed",
+      "sha256": "c040bb6a2250dfbb7d8f26918bcbe94d696754d902f0a5dc79582640445ff8dd",
       "sections": {
-        "full": "9d6920b378aa2997f078247ad6cdb42a55049947b9a99e554747fe7002e350ed"
+        "full": "c040bb6a2250dfbb7d8f26918bcbe94d696754d902f0a5dc79582640445ff8dd"
       }
     },
     "premed-hq-documentation/specifications/generation/03-study-guide-v1.md": {
-      "sha256": "689b7a49592828f3498641fec8c7b482cf549826ad08edc198690ab61a9d13a2",
+      "sha256": "81f6cd4959fedac02670bfdaec44c80d9349a34f9239f709efcf44ea475ca8a1",
       "sections": {
         "Runtime briefing mirror": "ea0156a12578f169350c7ef7700ed6f28c72d675bda7cc0f01502e6dbe1267e4",
         "2. Required structure": "5807163d77ee486dfedb134e34148704544f71ab99a382fc13182466bb58d9fc",
-        "Portable review notebook": "09a6a8295fac6979500126d6f35bb2bf2eb5315372b074c43f21565120d28350"
+        "Portable review notebook": "691f0f19f047ca078ff82c0fc26b2fea89cf35e8b4251cf5da8d581dc40e000f"
       }
     },
     "premed-hq-documentation/specifications/generation/11-unit-mastery-outline-v1.md": {
-      "sha256": "786c2030e2a9ef8b2a937a2edd5d2937771ac0eb42248fc85c5b35cb0c951692",
+      "sha256": "da27ea11bc29e6d47f06e1d0d89d1a1fd4fe1fa89177f983c605bd3533cf48e1",
       "sections": {
         "Introduction and Rules excluding runtime plumbing": "e74d0a5c0dbd851e6cbbed78d65a5f340daab3a6b5b3cf1845b2edd3a42eadfb",
-        "Portable objective coverage": "b735b31b3a181bcce04fea1f4fa608e7647c9d36029121dee562ef81979ceae1"
+        "Portable objective coverage": "2192cf93eb9ab962432f011cf22fe3b6ba9d6175b32b2d2cdcaf982df6d4686b"
       }
     },
     "premed-hq-documentation/specifications/generation/06-visual-system.md": {
@@ -88,9 +88,9 @@
   "supportingDocuments": {
     "premed-hq-documentation/specifications/generation/portable-notebooks/FEASIBILITY.md": "fca8a940e9b50029801f4d4cab3e2857945990192c0ed96538e778592d5b16ea",
     "premed-hq-documentation/specifications/generation/portable-notebooks/FIXTURE-CORRECTIONS.md": "11d749acb5140fd1a743a9fe0e93231b89c3a858ecb4e1e1fa55696c5e0e5621",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/METHODOLOGY-AUDIT.md": "052047755954ca0ce35bcbc07323ee0d3d49c1ecad9f97543d2ca33c13485617",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/METHODOLOGY-AUDIT.md": "21b823e2cc304b8d0681da9f9f8c324e39be77cb963b0bc1cbd4f0d514b3c265",
     "premed-hq-documentation/specifications/generation/portable-notebooks/ORDINARY-CHAT-MATERIALS.md": "b36020e6361a7a3885294e42dfa137ab7a2ef22958fecdc6181e65de7e03df56",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/README.md": "39652c17d29174a0820f87f0952b227b9d5b9c92a78bc93118229234f4e8fdb7"
+    "premed-hq-documentation/specifications/generation/portable-notebooks/README.md": "1cc52e8fcf3d8125d99a1071a10e7f23a02959ef88eb3bb7b03e9dc7b89073ba"
   },
   "testAssets": {
     "premed-hq-documentation/specifications/generation/portable-notebooks/cross-provider-assets/question-new-detail.png": "03f9199ec4dff474e7cb2df62c119c04140cedf432a38ca79ea3d0b030087846",
@@ -101,52 +101,52 @@
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_conversation_examples.py": "d6faf79be2f68c0637abde02cfc1df7e5789a16ba67fa48c949d68de27324433",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_feasibility_case.py": "61ea50db75f7901d6b7f733d02db1204ea7e8dde7a8165b9715e1d5dff88efcc",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_fixtures.py": "31d262db6aafa9788e30e20be0f2b3d4af3c80eba634990984d25a2d623ff169",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "35b47d5d288814f684b2ff381cfb9f340e57df4d0bd68330ae110238bc290d5d",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "c07fcdba71535e2e12bdde6be1d4e7e964b3e6acc87b1bb93caa946b9b67d666",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_revision_cases.py": "e4450b6ac3f09c69a5ca57b2f1ce31874460d2bee9fa7ce17f026e0185f5a20c",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_schema.py": "86cee42747b37f0dc735f28e21a1aa586f77015454b6fcfd593eb8178684085d",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/build_standardization.py": "0f58e69910afff0b81cb0fbc685db5607ffa099821be09f61fdfd16e649b59b7",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/build_standardization.py": "8a32b89adb826010252c3b7e278891b50102525866b42dbe271f03274b1e871f",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_visual_schema.py": "b58ad0f5bc7b4ce279e2dc99e214536221df5774fb6c5e5e5041e0052fe93d2d",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/check_package.py": "4c423c546ddaffdebf5b2472ef631f4ab432c9c148f3f9d2674edd3fd827098c",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/check_visual_package.py": "1493946298228e44da2c659db5482128bbd85a244b13829d94eb69892625994a",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/validate_package.py": "c37db80728d5cacdd578fbca2639c4e482f44217d736424d6cbd0d62b289b631",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/check_package.py": "e8ea6d8af21a1d991719d75ce930a2bc4a2d531dff6b4228c5055b4dd3d2c25b",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/check_visual_package.py": "6ee87cd5db6cf9dfe2473a6b0a62c886bc9dcabcfad76c6f97048ecb12adf0ff",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/validate_package.py": "8ad428e2706999cab8e5d78f6732576cf92dddecfe9f003d477fcd228742a801",
     "premed-hq-documentation/specifications/generation/portable-notebooks/validate_visual.py": "772012612dd85baf6209b105dc8d1ae72ef377ceab524970acd01fa841900076"
   },
   "outputs": {
     "copy-prompt-review.md": {
-      "sha256": "174f6a41ef842bff06feb1d4f40ff0a203a6800900c6ef784413db67245394ba",
-      "bytes": 113078,
-      "words": 13712,
+      "sha256": "a9fb9bb2a60c9c8aefe0fe17c6cf57aff59711b7b08eb5159c8f005665492332",
+      "bytes": 117315,
+      "words": 14244,
       "componentBytes": {
         "request": 4625,
         "commonLearningRules": 15039,
-        "goalLearningRules": 24980,
-        "externalWorkflow": 50390,
+        "goalLearningRules": 25388,
+        "externalWorkflow": 54219,
         "schema": 17093,
         "assembly": 951
       }
     },
     "copy-prompt-assessment.md": {
-      "sha256": "0e374395db327232da9f2c34809f47fa5c1982a60b6bcf80f2fe3ccdb96cab51",
-      "bytes": 103623,
-      "words": 12044,
+      "sha256": "40dbda8f0d5283fd626c5d247591cccc86a396178cfce3fea1573ed6aac23bbc",
+      "bytes": 107452,
+      "words": 12535,
       "componentBytes": {
         "request": 4633,
         "commonLearningRules": 15039,
         "goalLearningRules": 15509,
-        "externalWorkflow": 50390,
+        "externalWorkflow": 54219,
         "schema": 17093,
         "assembly": 959
       }
     },
     "copy-prompt-assignment.md": {
-      "sha256": "b16fc5ee4a204cfc6dbd0e255d8e13fe5d6681bd85472c452fb95835c299f3bd",
-      "bytes": 96022,
-      "words": 11009,
+      "sha256": "6ee111bd0f2965a77e5d61a8e8a42f90978810f09000384ac697551d35fdeafe",
+      "bytes": 99851,
+      "words": 11500,
       "componentBytes": {
         "request": 4633,
         "commonLearningRules": 15039,
         "goalLearningRules": 7908,
-        "externalWorkflow": 50390,
+        "externalWorkflow": 54219,
         "schema": 17093,
         "assembly": 959
       }
