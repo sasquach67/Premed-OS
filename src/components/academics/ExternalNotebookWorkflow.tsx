@@ -256,11 +256,11 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
       <ol className="en-handoff-list">
         <li><span className="en-task-number" aria-hidden="true">1</span><div><h2>Paste the prompt</h2><p>Open a chat in your AI. A class project is optional. Paste the full prompt there.</p></div></li>
         <li><span className="en-task-number" aria-hidden="true">2</span><div><h2>Attach your materials</h2><p className="en-text">{values.MATERIALS || goalInfo.bring}</p><p className="en-muted">Upload the originals in your AI. An upload, connection or retrieved excerpt does not prove every file was read. Ask what was inspected and what remains unread.</p>{goal === 'review' && <p className="en-muted">Use a recording only if your AI can inspect it. Otherwise, use a readable transcript.</p>}</div></li>
-        <li><span className="en-task-number" aria-hidden="true">3</span><div><h2>Get the notebook file</h2><p>Ask for a downloadable <strong>.json file</strong> containing the complete final notebook. If downloads are unavailable, ask for the complete JSON block.</p></div></li>
+        <li><span className="en-task-number" aria-hidden="true">3</span><div><h2>Review, then get the notebook file</h2><p>Review the readable draft and its source or coverage gaps. Request changes if needed, review any substantive updates, then explicitly confirm that your AI can make the notebook JSON. Ask for a downloadable <strong>.json file</strong> containing the complete approved notebook. If downloads are unavailable, ask for the complete JSON block.</p></div></li>
       </ol>
       <aside className="en-brief-note">
         <b>What to expect from your AI</b>
-        <p>Your AI should say what it can access and start when it has enough material. If something essential is missing, it should tell you exactly what to upload or answer next.</p>
+        <p>Use a normal AI chat with your files or pasted material. Your AI should prepare the content, show you a readable draft, and wait for your confirmation before making the notebook JSON.</p>
         <p>{goalInfo.limit}</p>
         {goal === 'assessment' && <details className="en-small-detail"><summary>Too much material for one conversation?</summary>
           <p>Work in smaller batches. Save the source details and what each batch covered, then give that saved work to your AI for the final study guide. Premed OS does not combine separate batches.</p>

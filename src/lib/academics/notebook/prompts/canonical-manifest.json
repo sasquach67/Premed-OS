@@ -1,13 +1,13 @@
 {
   "instructionsVersion": "notebook-workflows-draft-2",
-  "promptBuild": "notebook-instructions-beta-3",
-  "canonicalHeadAtBuild": "63711fcc2807ed1de0bef3023a631641f1d5b25c",
+  "promptBuild": "notebook-instructions-beta-4",
+  "canonicalHeadAtBuild": "e1b7f0a04fe76813dff7010e7b2c6bae77d54ea9",
   "canonicalRootAtBuild": "/Users/andyquach/.codex/worktrees/278e/premed-os",
   "sources": {
     "premed-hq-documentation/specifications/generation/21-external-notebook-request-template.md": {
-      "sha256": "2d9ee48530d37e839a2c88af1340d7e3ee64ebcf97c00165c30dc53e76a05115",
+      "sha256": "cd338ffcfd99bfe600d9b9787ff2d15c84c6358bffede1756b1f31bc1f99772f",
       "sections": {
-        "full": "2d9ee48530d37e839a2c88af1340d7e3ee64ebcf97c00165c30dc53e76a05115"
+        "full": "cd338ffcfd99bfe600d9b9787ff2d15c84c6358bffede1756b1f31bc1f99772f"
       }
     },
     "premed-hq-documentation/specifications/generation/02-global-rules-and-source-modes.md": {
@@ -28,9 +28,9 @@
       }
     },
     "premed-hq-documentation/specifications/generation/20-external-notebook-workflow.md": {
-      "sha256": "9d05738d0ea85adec66f5bd61ea8561bc13041ebe5604952554bfe79ec7abb98",
+      "sha256": "5901d93fec7e6d93a111a8e965a3f2c35e864b786515528f2701cdf0e46b84f9",
       "sections": {
-        "full": "9d05738d0ea85adec66f5bd61ea8561bc13041ebe5604952554bfe79ec7abb98"
+        "full": "5901d93fec7e6d93a111a8e965a3f2c35e864b786515528f2701cdf0e46b84f9"
       }
     },
     "premed-hq-documentation/specifications/generation/03-study-guide-v1.md": {
@@ -60,10 +60,10 @@
       }
     },
     "premed-hq-documentation/implementation/briefs/notebook-assessment-v1.md": {
-      "sha256": "2815cf48861c3b1d122117682c93b80eeb2ca6318d1a6d2fef52aa66142e3c3e",
+      "sha256": "ddb6506e2022fe5f10907aefd71f77ee05e1403b0c26fa79f56979bc8e7560b2",
       "sections": {
         "All substantive NA- rules": "895cc6629f4ac14c2afac2f404e1e3e93072b10b844a61201c75a88f8653806f",
-        "Portable multi-lesson assessment preparation": "f96843fec49d75ec8c0c95a4c7104bdcf8e0ee7d1463fbd8b29ea57e53233c9b"
+        "Portable multi-lesson assessment preparation": "1637130f49877611d98a494ff91d7011212a4f6b68ed840d5881deff31510d42"
       }
     },
     "premed-hq-documentation/implementation/briefs/notebook-assignment-v1.md": {
@@ -79,37 +79,37 @@
     "sha256": "41d6f3e5adaebb55ee80cb567354fb7698e252dafca1c0009ea15f81910c7b43"
   },
   "supportingData": {
-    "premed-hq-documentation/specifications/generation/portable-notebooks/conversation-examples.json": "24c5d585597c04262f080ac5fd0fc947e2ab2e91ddc0f050b258e5e9b318f94e",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/conversation-expectations.json": "434ebc1deb3db5fbe4d1b5e3d68f171fa35d496d868a645fa89b5904653f6830",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/conversation-examples.json": "c4a2e8018e97f48f798d4e2c4ae18bde97b97892e0f0bae46c33ec166f28fb6c",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/conversation-expectations.json": "ff21ac9b7ac658678f69031548ee6805880b7455761c00a2167110305b8d6c57",
     "premed-hq-documentation/specifications/generation/portable-notebooks/goal-guidance.json": "ad34611bc4206bdca10bc0ac49cd6f2dbaca949a3c15ed461963c5acf8b1499c"
   },
   "supportingDocuments": {
-    "premed-hq-documentation/specifications/generation/portable-notebooks/FEASIBILITY.md": "a67e8ff6fc47dad22c8f2e9cdf4b93f2fe42c11b77633c3ab436eb5c091e1124",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/FEASIBILITY.md": "5d7b5211c38ad61e9270d5e8eed2b355a01cff6e421524443a0939712e4be8b9",
     "premed-hq-documentation/specifications/generation/portable-notebooks/FIXTURE-CORRECTIONS.md": "11d749acb5140fd1a743a9fe0e93231b89c3a858ecb4e1e1fa55696c5e0e5621",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/METHODOLOGY-AUDIT.md": "b431b2419f4ee1fd70eaed885ac5f53e5c09182ecb54df8fe7c84164da645cd4",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/README.md": "3ff11451e2c7495c84344ec84b156c74f9828feb2cb3a8be4a77a205d26f6606"
+    "premed-hq-documentation/specifications/generation/portable-notebooks/METHODOLOGY-AUDIT.md": "c2b18cd9ee427ff3c80de7d98a429db8074a4fc6b97c0187caaed6df524b7010",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/README.md": "59a5928b1881acbc9aa78bb966c1816fe0c7ac5b104b32ecf41672e1e574c1b8"
   },
   "tooling": {
-    "premed-hq-documentation/specifications/generation/portable-notebooks/build_conversation_examples.py": "5ca02d7dbb71cafa7d13e6a60f85cbdc26112b132cb8f42d5720204d46721b84",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/build_conversation_examples.py": "d37730bccd06422349f74ab2da9d346920d48b1fc386e337084e90e4b673c44d",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_feasibility_case.py": "61ea50db75f7901d6b7f733d02db1204ea7e8dde7a8165b9715e1d5dff88efcc",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_fixtures.py": "31d262db6aafa9788e30e20be0f2b3d4af3c80eba634990984d25a2d623ff169",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "5a416751d33b42bfd431c3d6e17697d4e11f13b7d544f6eee6097cceb2532a73",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "e9edfa863071bdb9f1976fedea9d81ecdc9726702d42249bf49283b00db60884",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_schema.py": "86cee42747b37f0dc735f28e21a1aa586f77015454b6fcfd593eb8178684085d",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/check_package.py": "eb003875fee2ab95574f2389c0491dec719ccf51af97a17d2b76c92a4684a154",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/check_package.py": "bf3b8b14143b22c53633a087cf979864a0c783311865684acd45d5554ed79052",
     "premed-hq-documentation/specifications/generation/portable-notebooks/validate_package.py": "5fabfb93f9b1fd7f865d117e086a5783e8804b48a04f6566bcb393879c52f2ae"
   },
   "outputs": {
     "copy-prompt-review.md": {
-      "sha256": "847ac9405044fd0ca62d128b35d11490afd0d382bf1f1f98a08ec62822309740",
-      "bytes": 80321
+      "sha256": "677d665d740cc7a3b4e912d701a761dd7c9a453049ba67711b02712c54c9f6d4",
+      "bytes": 85807
     },
     "copy-prompt-assessment.md": {
-      "sha256": "3ee08482863e85d3d5b679c4668b9db36ac9214d47b997d87ca29768e0f5ca1f",
-      "bytes": 70512
+      "sha256": "59809c05f4d98a931346fa2a3ec9f6a16ca72e40cbedc71244a4190f91fb3cd1",
+      "bytes": 76344
     },
     "copy-prompt-assignment.md": {
-      "sha256": "9b8909ddf77d04dbd3ea05675d57fd2cf48bce9373b05235210dfb0a9671ea28",
-      "bytes": 63257
+      "sha256": "cba92a1903c89f622b29c658ff06aebcf4cff589b5d6c460b00aae6478b94a0e",
+      "bytes": 68743
     }
   },
   "deliberateEdits": [
@@ -122,7 +122,8 @@
     "Class preferences supplied per request; no invented course rules.",
     "Coordinator request template 21 reconciled into canonical JSON request envelope; final 11-token contract supersedes the earlier draft tokens.",
     "Beta 2 makes assessment evidence batches, external saved checkpoints, explicit unprocessed/missing scope and final cross-lesson synthesis actionable; no app checkpoint import or automatic semantic merge.",
-    "Beta 3 adds a shared first-reply and conditional follow-up contract across the same three goals, including necessary input questions, automatic supported continuation, scope/pause/revision and complete-file repair behavior. Expected examples are not executed AI trials or extra prompts."
+    "Beta 3 adds a shared first-reply and conditional follow-up contract across the same three goals, including necessary input questions, automatic supported continuation, scope/pause/revision and complete-file repair behavior. Expected examples are not executed AI trials or extra prompts.",
+    "Beta 4 explicitly supports normal chats without projects, personalizes from known needs, and supersedes automatic final export with accessible actual-content review and explicit confirmation. Substantive changes require renewed review; finalization preserves approved content and evidence."
   ],
   "qualityStatus": "Draft; structural checks and invented fixtures cannot establish learning quality or count as manual course trials."
 }
