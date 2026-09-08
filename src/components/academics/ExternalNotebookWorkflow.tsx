@@ -73,7 +73,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision }: { c
     const loaded = loadNotebookWorkflowDraft(courseId, { preferences: workspace?.externalNotebookPreferences ?? '', term: course?.term ?? '' }, storageId)
     if (revision) {
       const entry = revision.baseline.entries[0]
-      if (!loaded.restored) Object.assign(loaded.draft, { scope: entry.scope, preferences: entry.request.classPreferences, stage: entry.request.helpStage ?? GOALS[entry.goal].stages[0], format: entry.request.assessmentFormat ?? '', term: revision.baseline.course.term ?? '' })
+      if (!loaded.restored) Object.assign(loaded.draft, { scope: entry.scope, preferences: entry.request.classPreferences, stage: entry.request.helpStage ?? '', format: entry.request.assessmentFormat ?? '', term: revision.baseline.course.term ?? '' })
       loaded.draft.goal = entry.goal
     }
     return loaded
@@ -90,7 +90,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision }: { c
   const finished = useRef(false)
   const latestPrompt = useRef('')
   const classFiles = files.filter(file => file.courseId === courseId)
-  const values: PromptValues = { COURSE_CODE: revision?.baseline.course.code ?? course?.code ?? '', COURSE_TITLE: revision?.baseline.course.title ?? course?.title ?? '', TERM: revision ? revision.baseline.course.term : term || null, SCOPE: scope.trim() ? `${scope}\nScope authority: ${scopeSource || 'Not supplied; label provisional scope.'}` : null, MATERIALS: [revision ? `${UPDATE_BASELINE_FILE}: attach this exact saved baseline plus the new material; retained excerpts do not imply complete original files.` : '', ...classFiles.filter(f => selected.includes(f.id)).map(f => `${f.title} (${f.type}; attach the actual original file in the AI conversation)`), materials].filter(Boolean).join('\n'), DEPTH: depth, CLASS_PREFERENCES: preferences, HELP_STAGE: stage, ASSESSMENT_FORMAT: goal === 'assessment' ? format || null : null, USER_REQUEST: request, REVISION_INPUT: revision ? revisionInput(revision) : null }
+  const values: PromptValues = { COURSE_CODE: revision?.baseline.course.code ?? course?.code ?? '', COURSE_TITLE: revision?.baseline.course.title ?? course?.title ?? '', TERM: revision ? revision.baseline.course.term : term || null, SCOPE: scope.trim() ? `${scope}\nScope authority: ${scopeSource || 'Not supplied; label provisional scope.'}` : null, MATERIALS: [revision ? `${UPDATE_BASELINE_FILE}: attach this exact saved baseline plus the new material; retained excerpts do not imply complete original files.` : '', ...classFiles.filter(f => selected.includes(f.id)).map(f => `${f.title} (${f.type}; attach the actual original file in the AI conversation)`), materials].filter(Boolean).join('\n'), DEPTH: depth, CLASS_PREFERENCES: preferences, HELP_STAGE: revision ? stage || null : stage, ASSESSMENT_FORMAT: goal === 'assessment' ? format || null : null, USER_REQUEST: request, REVISION_INPUT: revision ? revisionInput(revision) : null }
   const fullPrompt = goal ? composeNotebookPrompt(goal, values) : ''
   const promptLines = fullPrompt ? fullPrompt.split('\n').length : 0
   latestPrompt.current = fullPrompt
@@ -227,7 +227,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision }: { c
         <label className="en-field">Class preferences<textarea value={preferences} onChange={e => setPreferences(e.target.value)} placeholder="Instructor terminology, explanation style, connections, writing conventions..." /></label>
         <Button variant="outline" onClick={savePreferences}>Remember preferences for this class</Button>
         <label className="en-field">Term (optional)<input value={term} onChange={e => setTerm(e.target.value)} placeholder="Fall 2026" /></label>
-        <label className="en-field">Help stage<select value={stage} onChange={e => setStage(e.target.value)}>{goalInfo.stages.map(s => <option key={s}>{s}</option>)}</select></label>
+        <label className="en-field">Help stage<select value={stage} onChange={e => setStage(e.target.value)}>{revision && <option value="">Not specified</option>}{revision && stage && !goalInfo.stages.includes(stage) && <option value={stage}>{stage}</option>}{goalInfo.stages.map(s => <option key={s}>{s}</option>)}</select></label>
         <label className="en-field">Depth and style<input value={depth} onChange={e => setDepth(e.target.value)} /></label>
       </details>
       <label className="en-field en-flow-request">Additional instructions for your AI<span className="en-muted block">Optional. Included when you copy the prompt.</span><textarea aria-label="Additional instructions for your AI" value={request} onChange={e => setRequest(e.target.value)} /></label>

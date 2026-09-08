@@ -165,3 +165,22 @@ it('resets identical owner mapping question when its declared teaching dependenc
   const policy = notebookPracticePolicy(ownerCase('ambiguous-linked-baseline'), ownerCase('ambiguous-linked-proposal'), 'psych-ch3')
   expect(policy.affectedIds).toContain('ch3-practice-mapping'); expect(policy.affectedIds).toContain('ch3-practice-timing')
 })
+it('recognizes accepted multi-entry proposal provenance after manual edits, later updates and restore', async () => {
+  const s = await setup(), proposal = await prepareNotebook(JSON.stringify(withNewTopic(correctedFixture())))
+  const ids = acceptNotebookUpdate(s.center, s.course, proposal, s.session, true)
+  let target = s.center.lectures.find(l => l.id === s.id)!, n = target.importedNotebook!
+  const edited = structuredClone(n.current); edited.entries[0].title = 'Manual title after accepting revision 2'
+  saveNotebookEdits(target, edited, n.notes)
+  expect(importNotebook(s.center, s.course, proposal)).toEqual(ids)
+  expect(n.current.entries[0].title).toBe('Manual title after accepting revision 2'); expect(n.history).toHaveLength(2)
+  const session = n.updateSession = createNotebookUpdateSession(n, target.id)
+  const third = structuredClone(n.current); third.entries[0].revision = 3; third.entries[0].baseRevision = 2; third.entries[0].title = 'Accepted revision 3'
+  acceptNotebookUpdate(s.center, s.course, await prepareNotebook(JSON.stringify(third)), session, true)
+  target = s.center.lectures.find(l => l.id === s.id)!; n = target.importedNotebook!
+  expect(importNotebook(s.center, s.course, proposal)).toEqual(ids)
+  expect(n.current.entries[0].revision).toBe(3); expect(n.history).toHaveLength(3)
+  restoreNotebookVersion(target, n.history![0].id, notebookStateKey(n))
+  expect(importNotebook(s.center, s.course, proposal)).toEqual(ids)
+  expect(n.current.entries[0].revision).toBe(1); expect(n.history).toHaveLength(4)
+  expect(s.center.lectures).toHaveLength(2)
+})

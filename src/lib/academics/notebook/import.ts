@@ -11,13 +11,22 @@ export function notebookDestinationMismatch(pkg: NotebookPackage, course: { code
     || (pkg.course.term !== null && course.term !== undefined && normalize(pkg.course.term) !== normalize(course.term))
 }
 export function inspectNotebookImport(center: ClassCenterData, courseId: string, prepared: PreparedNotebook) {
+  const acceptedPackages = new Map<string, NotebookPackage | null>()
   return prepared.package.entries.map((entry, index) => {
     const candidates = center.lectures.filter(l => l.courseId === courseId && l.importedNotebook?.entryId === entry.id && normalizedCourseCode(l.importedNotebook.original.course.code) === normalizedCourseCode(prepared.package.course.code))
     const incoming = canonical({ ...prepared.package, entries: [entry] })
     const duplicate = candidates.find(l => {
       const imported = l.importedNotebook!
-      return (imported.fingerprint === prepared.fingerprints[index] && canonical({ ...imported.original, entries: imported.original.entries.filter(e => e.id === imported.entryId) }) === incoming)
-        || canonical({ ...imported.current, entries: imported.current.entries.filter(e => e.id === imported.entryId) }) === incoming
+      if ((imported.fingerprint === prepared.fingerprints[index] && canonical({ ...imported.original, entries: imported.original.entries.filter(e => e.id === imported.entryId) }) === incoming)
+        || canonical({ ...imported.current, entries: imported.current.entries.filter(e => e.id === imported.entryId) }) === incoming) return true
+      // Accepted proposal provenance survives later edits and restores. Recognize
+      // a replay without treating the historical payload as current content.
+      return [...new Set([imported.acceptedRaw, ...(imported.history ?? []).map(v => v.acceptedRaw)])].some(raw => {
+        if (!raw) return false
+        if (!acceptedPackages.has(raw)) { try { acceptedPackages.set(raw, parseNotebookPackage(raw)) } catch { acceptedPackages.set(raw, null) } }
+        const accepted = acceptedPackages.get(raw)
+        return Boolean(accepted?.entries.some(e => e.id === imported.entryId) && canonical({ ...accepted, entries: accepted!.entries.filter(e => e.id === imported.entryId) }) === incoming)
+      })
     })
     const previous = candidates.sort((a, b) => b.createdAt - a.createdAt)[0]
     return { entry, duplicate, previous }

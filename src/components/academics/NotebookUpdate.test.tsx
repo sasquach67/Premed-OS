@@ -48,6 +48,7 @@ it('requires saved edits/notes, uses the same goal and names the real saved base
   const prompt = container.querySelector<HTMLTextAreaElement>('[aria-label="Full customized prompt"]') ?? container.querySelector<HTMLTextAreaElement>('.en-code-body textarea')!
   const request = JSON.parse(/```json\n([\s\S]*?)\n```/.exec(prompt.value)![1])
   expect(JSON.parse(request.revisionInput).entryId).toBe(pkg.entries[0].id)
+  expect(request.helpStage).toBeNull()
   const baseline = container.querySelector<HTMLTextAreaElement>('[aria-label="Saved baseline JSON"]')!.value
   expect(JSON.parse(baseline).entries[0].title).toBe('My saved wording')
   expect(baseline).not.toContain('Protected notes'); expect(baseline).not.toContain('"complete"')
