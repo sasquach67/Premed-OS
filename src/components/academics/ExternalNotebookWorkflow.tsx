@@ -269,8 +269,8 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision }: { c
         <li><span className="en-task-number" aria-hidden="true">2</span><div><h2>Attach your materials</h2><p className="en-text">{values.MATERIALS || goalInfo.bring}</p><p className="en-muted">Upload the originals in your AI. An upload, connection or retrieved excerpt does not prove every file was read. Ask what was inspected and what remains unread.</p><p className="en-muted">Use supported individual files, direct images or pasted text. For unclear scans, handwriting or embedded figures, add clear page images or crops and type unclear text or formulas. Keep the full question, options and diagram together. Batch by topic when needed; projects and connections are optional.</p>{goal === 'review' && <p className="en-muted">Use a recording only if your AI can inspect it. Otherwise, use a readable transcript.</p>}</div></li>
         <li><span className="en-task-number" aria-hidden="true">3</span><div><h2>Review, then get the notebook file</h2><p>You can ask relevant questions or request changes to the actual content. Substantive edits need an updated summary and accessible revised draft before confirmation. Ask for a downloadable <strong>.json file</strong> containing the complete approved notebook. If downloads are unavailable, ask for the complete JSON block.</p></div></li>
       </ol>
-      <aside className="en-brief-note">
-        <b>What to expect from your AI</b>
+      <details className="en-brief-note">
+        <summary>What to expect from your AI</summary>
         <p>Your AI should show the full readable draft with a brief summary of its actual topics, practice and gaps. Ask for changes, or say "Create the JSON" when you are happy with that version; equivalent clear approval works too.</p>
         <p>Lots of files? Send them in batches. Tell your AI when you are done uploading, then review and approve your notebook before downloading JSON. Done uploading ends intake; it is not approval to make JSON.</p>
         <p>{goalInfo.limit}</p>
@@ -278,7 +278,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision }: { c
           <p>Work in smaller batches. Save the source details and what each batch covered, then give that saved work to your AI for the final study guide. Premed OS does not combine separate batches.</p>
           <p>Checkpoint files stay outside Premed OS. Import only the final, complete notebook JSON. A checkpoint is a saved file with source details, what is covered or unfinished, working explanations and the next step. Supply it to your AI when you resume; it does not prove the original sources were read again.</p>
         </details>}
-      </aside>
+      </details>
       <details className="en-small-detail"><summary>Before you leave this page</summary>
         <p>Your step and inputs are kept per class in this browser tab when storage is available. Closing the tab can lose this draft; keep your downloaded prompt and notebook JSON. Remembered class preferences are saved separately.</p>
         <p>To come back, open Class notebook and choose Add to notebook. Working checkpoint files stay with your AI; they are not notebook imports. The 8 MiB input limit does not guarantee a save, because browser storage can run out sooner.</p>
