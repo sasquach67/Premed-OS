@@ -1,14 +1,15 @@
 import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useStore } from '@/store/store'
 import { NOTEBOOK_MAX_BYTES, prepareNotebook, type PreparedNotebook } from '@/lib/academics/notebook/package'
 import { importNotebook, inspectNotebookImport, notebookDestinationMismatch } from '@/lib/academics/notebook/import'
 import { NotebookPackageView, notebookEntryLabel, notebookTransaction } from './ExternalNotebookView'
-export function NotebookImportPanel({ courseId, onImported }: { courseId: string; onImported: (id: string) => void }) {
+export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onRawChange }: { courseId: string; onImported: (id: string) => void; initialRaw?: string; onRawChange?: (raw: string) => void }) {
   const course = useStore(s => s.courses.find(c => c.id === courseId))
   const center = useStore(s => s.academics.classCenter)
-  const [raw, setRaw] = useState('')
+  const [raw, setRawState] = useState(initialRaw)
+  const [restoredInput] = useState(Boolean(initialRaw))
+  function setRaw(text: string) { setRawState(text); onRawChange?.(text) }
   const [preview, setPreview] = useState<PreparedNotebook | null>(null)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')
@@ -55,10 +56,11 @@ export function NotebookImportPanel({ courseId, onImported }: { courseId: string
         setRaw(text); await validate(text)
       } catch (failure) { if (id === attempt.current) { setError((failure as Error).message); setBusy(false) } }
     }} /></label>
-    <details className="en-paste"><summary>Paste JSON instead</summary><label className="en-field">Paste complete JSON<textarea className="en-json" value={raw} disabled={busy} onChange={event => { clearPreview(); setRaw(event.target.value) }} placeholder="Paste the complete notebook package or fenced JSON block" /></label>
+    <details className="en-paste" open={Boolean(initialRaw)}><summary>Paste JSON instead</summary><label className="en-field">Paste complete JSON<textarea className="en-json" value={raw} disabled={busy} onChange={event => { clearPreview(); setRaw(event.target.value) }} placeholder="Paste the complete notebook package or fenced JSON block" /></label>
     <Button disabled={busy || !raw.trim()} onClick={() => void validate()}>{busy ? 'Checking package...' : 'Validate and preview'}</Button></details>
     </details>
     <p className="en-import-limit">Complete notebook JSON only, not working checkpoint files. Up to 8 MiB; browser storage may run out earlier. Keep your downloaded copy.</p>
+    {restoredInput && !preview && <p className="en-import-limit">Your unsaved JSON is kept. Check that it matches the current request, then validate it again before saving.</p>}
     {error && <div className="en-notice en-error" role="alert"><b>Nothing was saved</b><p className="en-text">{error}</p><Button variant="outline" onClick={() => { void navigator.clipboard.writeText(`Repair this notebook package error: ${error}\nPreserve all other content, source text, IDs, and revisions. Return the complete valid JSON package, not a patch.\n\nOriginal JSON:\n${raw}`).then(() => setStatus('Repair request copied.'), () => setStatus('Clipboard unavailable. Select the error and JSON to copy them.')) }}>Copy repair request and JSON</Button></div>}
     <p role="status" aria-live="polite">{status}</p>
     {preview && <div aria-label="Validated notebook preview"><div className="en-import-summary"><h3>Save to {course.code}</h3><p>{course.title} / {course.term}</p><p>{preview.package.entries.length} {preview.package.entries.length === 1 ? 'entry' : 'entries'} / {preview.package.sources.length} supplied sources</p><ul>{plan.map(item => { const oldRevision = item.previous?.importedNotebook?.original.entries.find(e => e.id === item.entry.id)?.revision; return <li key={item.entry.id}>{notebookEntryLabel(item.entry)}{item.duplicate ? ' / Already saved' : oldRevision !== undefined ? item.entry.revision > oldRevision ? ' / Newer revision' : item.entry.revision < oldRevision ? ' / Older revision' : ' / Changed content at the same revision' : ' / New entry'}</li> })}</ul></div>
@@ -70,8 +72,4 @@ export function NotebookImportPanel({ courseId, onImported }: { courseId: string
       <div className="en-actions en-save-actions"><Button disabled={busy || (wrongCourse && !destination) || (revised && !revisions)} onClick={() => void save()}>{duplicates.length === plan.length ? 'Open existing saved entry' : `Save editable ${plan.length === 1 ? 'entry' : 'entries'} to ${course.code}`}</Button></div>
     </div>}
   </section>
-}
-export function NotebookImportDialog({ courseId, onImported }: { courseId: string; onImported: (id: string) => void }) {
-  const [open, setOpen] = useState(false)
-  return <Dialog open={open} onOpenChange={setOpen}><DialogTrigger asChild><Button variant="outline">Import JSON</Button></DialogTrigger><DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-4xl"><DialogHeader><DialogTitle>Import a notebook</DialogTitle><DialogDescription>Bring back a completed notebook from your preferred AI.</DialogDescription></DialogHeader>{open && <NotebookImportPanel courseId={courseId} onImported={id => { setOpen(false); onImported(id) }} />}</DialogContent></Dialog>
 }

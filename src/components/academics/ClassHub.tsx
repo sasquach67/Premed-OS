@@ -1,5 +1,4 @@
 import { GenerationReviewNotice } from './GenerationReviewNotice'
-import { NotebookImportDialog } from './NotebookImportPanel'
 import { ReadingSummaryDialog, ReadingSummaryContent } from './ReadingSummaryDialog'
 import { isPrimaryMaterial } from '@/lib/academics/materialCatalog'
 import { preferredScrollBehavior } from '@/lib/scroll'
@@ -355,7 +354,7 @@ function Overview({ course, workspace, data, assignments, onTab }: {
     </section>
     <div className="overview-approved-columns">
       <section className="lecture-journal" aria-labelledby="lecture-ledger-title">
-        <div className="lecture-journal-heading"><div><h2 id="lecture-ledger-title">Class notebook</h2></div><NotebookImportDialog courseId={course.id} onImported={id => navigate(`/academics/classes/${encodeURIComponent(course.id)}/journal/${encodeURIComponent(id)}`)} /></div>
+        <div className="lecture-journal-heading"><div><h2 id="lecture-ledger-title">Class notebook</h2></div></div>
         <Button variant="outline" className="overview-entry-tile" onClick={startEntry}><Plus aria-hidden="true"/><span><strong>Add to notebook</strong></span><ArrowRight aria-hidden="true"/></Button>
         {lectures.length ? <Accordion type="single" collapsible value={selectedLectureId ?? ''} onValueChange={(value) => selectLecture(value || undefined)} className="lecture-journal-list" aria-label="Notebook entries">
           {[...chronologicalLectures].reverse().map((lecture) => {

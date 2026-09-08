@@ -10,6 +10,8 @@ import { ExternalNotebookView, notebookTransaction } from './ExternalNotebookVie
 import { ExternalNotebookWorkflow } from './ExternalNotebookWorkflow'
 import { importNotebook, exportNotebook } from '@/lib/academics/notebook/import'
 import { prepareNotebook } from '@/lib/academics/notebook/package'
+import { PROMPT_TEMPLATES } from '@/lib/academics/notebook/prompt'
+import { loadNotebookWorkflowDraft, notebookWorkflowDraftKey, persistNotebookWorkflowDraft } from '@/lib/academics/notebook/workflowDraft'
 import review from '@/lib/academics/notebook/fixtures/fixture-review.json'
 import type { Course } from '@/lib/types'
 let root: Root, container: HTMLDivElement
@@ -17,6 +19,7 @@ const imported = vi.fn()
 const course: Course = { id: 'test-notebook', code: review.course.code, title: review.course.title, term: review.course.term ?? 'Fall 2026', credits: 3, grade: '', bcpm: false, status: 'in-progress', inResidence: true, satisfies: [], order: 0 }
 const raw = JSON.stringify(review)
 beforeEach(() => {
+  sessionStorage.clear()
   vi.stubGlobal('crypto', webcrypto); Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true })
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
   const data = createInitialDataForMode(false); data.courses = [course]; useStore.getState().replaceAll(data); imported.mockClear()
@@ -25,10 +28,25 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 async function click(label: string) { const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.trim() === label)!; expect(button, label).toBeTruthy(); await act(async () => button.click()); if (label === 'Validate and preview' || label.startsWith('Save editable')) await vi.waitFor(async () => { await act(async () => {}); expect(container.textContent).not.toContain('Checking package...'); expect(container.querySelector('input[type="file"]')?.hasAttribute('disabled')).not.toBe(true) }, { timeout: 10000, interval: 20 }) }
 async function fill(label: string, text: string) { const el = [...container.querySelectorAll<HTMLLabelElement>('label')].find(l => l.childNodes[0]?.textContent?.trim() === label)?.querySelector('textarea,input') as HTMLTextAreaElement | HTMLInputElement; expect(el, label).toBeTruthy(); await act(async () => { Object.getOwnPropertyDescriptor(el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, 'value')!.set!.call(el, text); el.dispatchEvent(new Event('input', { bubbles: true })) }) }
 async function renderImport() { await act(async () => root.render(<NotebookImportPanel courseId={course.id} onImported={imported} />)) }
-it('journal new route opens the external workflow with three mutually exclusive goals and direct import', async () => {
+async function choose(goal: 'review' | 'assessment' | 'assignment') { await act(async () => container.querySelector<HTMLInputElement>(`input[value="${goal}"]`)!.click()) }
+async function openFallback() { const detail = container.querySelector<HTMLDetailsElement>('.en-prompt-detail')!; if (!detail.open) await act(async () => detail.querySelector('summary')!.click()); return detail }
+async function renderWorkflow(id = course.id) { await act(async () => root.render(<ExternalNotebookWorkflow key={id} courseId={id} onImported={imported} />)) }
+function nextButton() { return [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Next')! }
+it('journal new route requires a goal and has noninteractive progress without a direct-import bypass', async () => {
   await act(async () => root.render(<MemoryRouter initialEntries={['/academics/classes/test-notebook/journal/new']}><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<JournalEntryPage />} /></Routes></MemoryRouter>))
   expect(container.textContent).toContain('Choose your goal'); expect(container.querySelectorAll('input[type="radio"]')).toHaveLength(3)
-  expect(container.textContent).toContain('Already have JSON? Import directly')
+  expect(container.querySelectorAll('input[type="radio"]:checked')).toHaveLength(0)
+  expect(container.textContent).not.toContain('Already have JSON? Import directly')
+  const progress = container.querySelector('[aria-label="Notebook workflow progress"]')!
+  expect(progress.querySelectorAll('li')).toHaveLength(4)
+  expect(progress.querySelectorAll('button,a,[tabindex]')).toHaveLength(0)
+  expect(progress.querySelectorAll('[aria-current="step"]')).toHaveLength(1)
+  expect(nextButton().disabled).toBe(true)
+  await click('Next'); expect(container.querySelector('h1')?.textContent).toBe('Choose your goal')
+  await choose('review'); await click('Next')
+  expect(container.querySelector('h1')?.textContent).toBe('Copy your prompt')
+  expect(nextButton().disabled).toBe(true)
+  expect(progress.querySelectorAll('[data-state="completed"]')).toHaveLength(1)
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
 })
 it('does not save before preview/explicit save and identifies exact malformed field for repair', async () => {
@@ -43,6 +61,7 @@ it('does not save before preview/explicit save and identifies exact malformed fi
 })
 it('distinguishes minimum materials, optional lecture sources, partial exam scope and external checkpoints', async () => {
   await act(async () => root.render(<ExternalNotebookWorkflow courseId={course.id} onImported={imported} />))
+  await choose('review')
   expect(container.querySelectorAll('input[type="radio"]')).toHaveLength(3)
   expect(container.textContent).toContain('Review a lecture or lesson.')
   const guide = container.querySelector('.en-goal-guide')!
@@ -57,13 +76,15 @@ it('distinguishes minimum materials, optional lecture sources, partial exam scop
   expect(guide.textContent).toContain('Week 3 material can support a Week 3 quiz or partial preparation')
   expect(guide.textContent).toContain('not a complete Weeks 1-6 guide')
   expect(guide.textContent).toContain('Premed OS does not combine separate batches')
-  await click('View full prompt')
-  expect(container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value).toContain('notebook-instructions-beta-2')
-  await click('I have copied or downloaded it')
+  await click('Next')
+  expect(container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value).toContain('notebook-instructions-beta-3')
+  await openFallback(); await click('I copied it manually'); await click('Next')
   expect(container.textContent).toContain('An upload, connection or retrieved excerpt does not prove every file was read')
   expect(container.textContent).toContain('Checkpoint files stay outside Premed OS')
   expect(container.textContent).toContain('Import only the final, complete notebook JSON')
-  await click('I have the JSON')
+  expect(container.textContent).toContain('Your AI should say what it can access and start when it has enough material')
+  expect(nextButton().disabled).toBe(true)
+  await click('I have my JSON'); await click('Next')
   expect(container.textContent).toContain('Complete notebook JSON only, not working checkpoint files')
   expect(imported).not.toHaveBeenCalled()
 })
@@ -115,14 +136,16 @@ it('uses one exact prompt for preview, clipboard and download after assessment c
   await fill('Other materials you will attach', 'Exam review sheet and five lesson PDFs')
   const additionalInstructions = 'Keep "quoted wording".\nSecond line: $& literal {{COURSE_CODE}}'
   await fill('Additional instructions for your AI', additionalInstructions)
-  await click('View full prompt')
+  await click('Next')
   const beforeCopy = container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value
   await click('Copy full prompt')
-  expect(container.querySelector('h1')?.textContent).toBe('Use it in your AI')
+  expect(container.querySelector('h1')?.textContent).toBe('Copy your prompt')
+  expect(nextButton().disabled).toBe(false)
   expect(container.textContent).toContain('Full prompt copied.')
+  await click('Next')
+  expect(container.querySelector('h1')?.textContent).toBe('Use it in your AI')
   await click('Back to prompt')
-  const details = container.querySelector<HTMLDetailsElement>('.en-prompt-detail')!
-  await act(async () => details.querySelector('summary')!.click())
+  const details = await openFallback()
   expect(details.open).toBe(true)
   await click('Download full prompt')
   const preview = container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value
@@ -136,19 +159,103 @@ it('keeps the copy step and offers the full preview and download when clipboard 
   const clipboard = vi.fn().mockRejectedValue(new Error('Clipboard unavailable'))
   Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: clipboard } })
   await act(async () => root.render(<ExternalNotebookWorkflow courseId={course.id} onImported={imported} />))
-  await click('View full prompt'); await click('Copy full prompt')
+  await choose('review'); await click('Next'); await click('Copy full prompt')
   expect(container.querySelector('h1')?.textContent).toBe('Copy your prompt')
-  expect(container.querySelector('[role="status"]')?.textContent).toContain('Download the full prompt or select it in the preview below.')
-  const details = container.querySelector<HTMLDetailsElement>('.en-prompt-detail')!
-  await act(async () => details.querySelector('summary')!.click())
+  expect(container.querySelector('[role="status"]')?.textContent).toContain('Copy from the full preview or download it')
+  expect(nextButton().disabled).toBe(true)
+  const details = await openFallback()
   expect(details.open).toBe(true)
   const preview = details.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value
   expect(preview.length).toBeGreaterThan(1000)
   expect(clipboard).toHaveBeenCalledWith(preview)
   const download = [...details.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Download full prompt')!
   expect(download).toBeTruthy(); expect(download.disabled).toBe(false)
+  await click('I copied it manually')
+  expect(container.querySelector('h1')?.textContent).toBe('Copy your prompt')
+  expect(nextButton().disabled).toBe(false)
+  await click('Next'); expect(container.querySelector('h1')?.textContent).toBe('Use it in your AI')
   expect(imported).not.toHaveBeenCalled()
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
+})
+it('keeps a requested download on the copy step until the student acknowledges having it and clicks Next', async () => {
+  Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn(() => 'blob:download-fallback') })
+  Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() })
+  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+  await renderWorkflow(); await choose('review'); await click('Next'); await openFallback()
+  await click('Download full prompt')
+  expect(container.querySelector('h1')?.textContent).toBe('Copy your prompt'); expect(nextButton().disabled).toBe(true)
+  await click('I have the downloaded prompt')
+  expect(container.querySelector('h1')?.textContent).toBe('Copy your prompt'); expect(nextButton().disabled).toBe(false)
+  await click('Next'); expect(container.querySelector('h1')?.textContent).toBe('Use it in your AI')
+})
+it('keeps inputs on Back and invalidates copy and JSON readiness when the goal changes', async () => {
+  await renderWorkflow(); await choose('assessment'); await fill('Additional instructions for your AI', 'Keep my exact request.')
+  await click('Next'); await openFallback(); await click('I copied it manually'); await click('Next')
+  await click('I have my JSON'); await click('Next'); await fill('Paste complete JSON', raw)
+  await click('Back to AI steps'); await click('Back to prompt')
+  expect(nextButton().disabled).toBe(false)
+  await click('Back to goal')
+  expect(container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Additional instructions for your AI"]')!.value).toBe('Keep my exact request.')
+  await choose('assignment'); await click('Next')
+  expect(nextButton().disabled).toBe(true)
+  const saved = JSON.parse(sessionStorage.getItem(notebookWorkflowDraftKey(course.id))!)
+  expect(saved.confirmedPrompt).toBeNull(); expect(saved.jsonReady).toBe(false)
+  expect(saved.rawJson).toBe(raw)
+})
+it('restores the valid import stage and raw JSON in the same class, revalidates before save, and clears the draft after save', async () => {
+  await renderWorkflow(); await choose('review'); await click('Next'); await openFallback(); await click('I copied it manually'); await click('Next')
+  await click('I have my JSON'); await click('Next'); await fill('Paste complete JSON', raw)
+  await act(async () => root.unmount()); root = createRoot(container); await renderWorkflow()
+  expect(container.querySelector('h1')?.textContent).toBe('Import your notebook')
+  expect(container.querySelector<HTMLTextAreaElement>('.en-json')!.value).toBe(raw)
+  expect(container.querySelector('[aria-label="Validated notebook preview"]')).toBeNull()
+  expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
+  await click('Validate and preview'); await click(`Save editable entry to ${course.code}`)
+  expect(imported).toHaveBeenCalledTimes(1)
+  expect(sessionStorage.getItem(notebookWorkflowDraftKey(course.id))).toBeNull()
+})
+it('keeps workflow drafts isolated by class when the actual keyed workflow changes classes', async () => {
+  await renderWorkflow(); await choose('review'); await fill('Additional instructions for your AI', 'Class A request'); await click('Next')
+  const other = { ...course, id: 'other-notebook-class', code: 'DEMO 202' }
+  await act(async () => useStore.getState().update(state => { state.courses.push(other) }))
+  await renderWorkflow(other.id)
+  expect(container.querySelector('h1')?.textContent).toBe('Choose your goal')
+  expect(container.querySelectorAll('input[type="radio"]:checked')).toHaveLength(0)
+  await fill('Additional instructions for your AI', 'Class B request')
+  await renderWorkflow(course.id)
+  expect(container.querySelector('h1')?.textContent).toBe('Copy your prompt')
+  const prompt = container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value
+  expect(prompt).toContain('Class A request'); expect(prompt).not.toContain('Class B request')
+})
+it('returns to Copy when canonical prompt content changes instead of trusting a stale saved acknowledgment', async () => {
+  await renderWorkflow(); await choose('review'); await fill('Additional instructions for your AI', 'Keep this input across an update.')
+  await click('Next'); await openFallback(); await click('I copied it manually'); await click('Next')
+  await act(async () => root.unmount()); root = createRoot(container)
+  const previous = PROMPT_TEMPLATES.review
+  try {
+    PROMPT_TEMPLATES.review += '\nTest-only prompt revision.'
+    await renderWorkflow()
+    expect(container.querySelector('h1')?.textContent).toBe('Copy your prompt')
+    expect(nextButton().disabled).toBe(true)
+    expect(container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value).toContain('Keep this input across an update.')
+    expect(container.textContent).toContain('The prompt has changed')
+  } finally { PROMPT_TEMPLATES.review = previous }
+})
+it('does not trust a stored later stage without the current prompt acknowledgment', async () => {
+  const saved = loadNotebookWorkflowDraft(course.id, { preferences: '', term: course.term }).draft
+  Object.assign(saved, { goal: 'review', goalAccepted: true, step: 'import', jsonReady: true })
+  sessionStorage.setItem(notebookWorkflowDraftKey(course.id), JSON.stringify(saved))
+  await renderWorkflow()
+  expect(container.querySelector('h1')?.textContent).toBe('Copy your prompt')
+  expect(nextButton().disabled).toBe(true)
+  expect(container.querySelector('[aria-label="Import external notebook"]')).toBeNull()
+})
+it('reports session-storage failure and removes an older draft rather than restoring stale completion later', () => {
+  const draft = loadNotebookWorkflowDraft(course.id, { preferences: '', term: course.term }).draft
+  sessionStorage.setItem(notebookWorkflowDraftKey(course.id), JSON.stringify(draft))
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Session quota exceeded') })
+  expect(persistNotebookWorkflowDraft(draft)).toContain('could not be kept for your return')
+  expect(sessionStorage.getItem(notebookWorkflowDraftKey(course.id))).toBeNull()
 })
 it('rejects a stale notebook write after another tab changes persisted content', async () => {
   const p = await prepareNotebook(raw)

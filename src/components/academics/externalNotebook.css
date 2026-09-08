@@ -10,14 +10,16 @@
 .en-flow .en-flow-lead{font-size:1rem;line-height:1.55;color:var(--muted-foreground);max-width:43rem}
 .en-flow .en-return-link{white-space:normal;height:auto;min-height:2.75rem;text-align:left;padding-inline:0;font-size:.8rem;color:var(--primary)}
 .en-flow-nav{margin:1.5rem 0}
-.en-flow-nav ol{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.5rem;list-style:none;padding:0;margin:0}
-.en-flow-nav li{min-width:0}
-.en-flow-nav button{display:flex;align-items:center;gap:.6rem;width:100%;min-height:3.25rem;padding:.6rem .7rem;border:1px solid var(--border);border-radius:.7rem;background:transparent;color:var(--muted-foreground);font-size:.85rem;line-height:1.35;text-align:left;cursor:pointer}
-.en-step-number{display:grid;place-items:center;flex:0 0 1.6rem;width:1.6rem;height:1.6rem;border:1px solid var(--border);border-radius:50%;font-size:.75rem;font-weight:800}
-.en-flow-nav button[aria-current=step]{border-color:var(--primary);background:var(--muted);color:var(--foreground);font-weight:800}
-.en-flow-nav button[aria-current=step] .en-step-number{background:var(--primary);border-color:var(--primary);color:var(--primary-foreground)}
-.en-flow-nav button:hover{background:var(--muted);color:var(--foreground)}
-.en-flow-nav button:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
+.en-flow-nav ol{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;list-style:none;padding:0;margin:0}
+.en-flow-nav li{position:relative;display:flex;flex-direction:column;align-items:center;gap:.65rem;min-width:0;padding:.25rem .3rem;color:var(--muted-foreground);text-align:center;font-size:.85rem;line-height:1.4}
+.en-flow-nav li:not(:last-child)::after{content:'';position:absolute;top:1.2rem;left:50%;width:100%;height:2px;background:var(--border);z-index:0}
+.en-step-number{position:relative;z-index:1;display:grid;place-items:center;width:2rem;height:2rem;border:2px solid var(--border);border-radius:50%;background:var(--background);font-size:.8rem;font-weight:800;box-shadow:0 0 0 .3rem var(--background)}
+.en-step-number svg{width:1rem;height:1rem}
+.en-flow-nav [data-state=completed] .en-step-number{background:var(--primary);border-color:var(--primary);color:var(--primary-foreground)}
+.en-flow-nav li[data-state=completed]::after{background:var(--primary)}
+.en-flow-nav [aria-current=step]{color:var(--foreground);font-weight:800}
+.en-flow-nav [aria-current=step] .en-step-number{border-color:var(--primary);color:var(--primary);box-shadow:0 0 0 .3rem var(--background),0 0 0 .4rem var(--primary)}
+.en-step-label{max-width:100%;overflow-wrap:normal}
 .en-stage-content{min-width:0}
 .en-flow .en-goals{gap:.75rem;margin:0 0 1rem}
 .en-flow .en-goal-card{display:flex;align-items:flex-start;gap:.65rem;min-height:0;padding:1rem;border:1px solid var(--border);border-radius:.85rem;background:var(--card)}
@@ -80,14 +82,13 @@
 @media(max-width:760px){
   .en-flow .en-flow-header{display:block}
   .en-flow .en-return-link{margin-top:.15rem}
-  .en-flow-nav ol{grid-template-columns:repeat(2,minmax(0,1fr))}
   .en-flow .en-goals{grid-template-columns:1fr;gap:.55rem}
   .en-flow .en-goal-card{padding:.85rem 1rem}
   .en-goal-guide dl{gap:1rem}
 }
 @media(max-width:480px){
   .en-flow-nav{margin:1rem 0}
-  .en-flow-nav button{padding:.6rem;gap:.45rem;font-size:.8rem}
+  .en-flow-nav li{padding-inline:.2rem;gap:.55rem;font-size:.72rem}
   .en-goal-guide{padding:1rem}
   .en-goal-guide dl{grid-template-columns:1fr;gap:.85rem}
   .en-flow .en-stage-panel,.en-import .en-import-inputs,.en-import .en-import-summary{padding:1rem}

@@ -25,8 +25,8 @@ function Hub() { const { courseId } = useParams(); const course = useStore(s => 
 function ClassCards() { return <section className="p-8"><h1 className="font-display text-3xl font-bold">Classes</h1><Link to={`/academics/classes/${id}`}><Button className="mt-6">BIOL 103 / How Cells Function / Open class notebook</Button></Link></section> }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><HashRouter><ToastProvider>
   <aside aria-label="About this preview" className="border-b border-border bg-muted/40 px-6 py-4 sm:px-10">
-    <div className="flex flex-wrap items-center justify-between gap-3"><strong>Example-class interface preview</strong><Link className="text-sm font-bold text-primary underline" to={`/academics/classes/${id}/journal/new`}>Start at goal selection</Link></div>
-    <p className="mt-2 text-sm leading-6">See how the notebook workflow will look in Premed OS. First, choose a goal below and click <b>View full prompt</b>.</p>
+    <div className="flex flex-wrap items-center justify-between gap-3"><strong>Example-class interface preview</strong><Link className="text-sm font-bold text-primary underline" to={`/academics/classes/${id}/journal/new`}>Open notebook setup</Link></div>
+    <p className="mt-2 text-sm leading-6">See how the notebook workflow will look in Premed OS. Choose a goal, then follow <b>Back and Next</b>. Returning here resumes this class's draft in this tab.</p>
     <p className="mt-1 text-sm leading-6 text-muted-foreground">This BIOL 103 class is an example, not your class workspace. You do not need to inspect or import a sample notebook to test the instructions in your own AI chat.</p>
   </aside>
   <main className="min-h-screen p-3 sm:p-6"><Routes><Route path="/academics/classes/:courseId" element={<Hub />} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<JournalEntryPage />} /><Route path="/academics/classes/:courseId/lectures/:entryId" element={<JournalEntryPage />} /><Route path="/academics" element={<ClassCards />} /><Route path="*" element={<Navigate to={`/academics/classes/${id}/journal/new`} replace />} /></Routes></main>

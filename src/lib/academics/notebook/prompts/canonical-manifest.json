@@ -1,13 +1,13 @@
 {
   "instructionsVersion": "notebook-workflows-draft-2",
-  "promptBuild": "notebook-instructions-beta-2",
-  "canonicalHeadAtBuild": "b258bddb93598c27d9ddd26ed5edee3be6a55379",
+  "promptBuild": "notebook-instructions-beta-3",
+  "canonicalHeadAtBuild": "63711fcc2807ed1de0bef3023a631641f1d5b25c",
   "canonicalRootAtBuild": "/Users/andyquach/.codex/worktrees/278e/premed-os",
   "sources": {
     "premed-hq-documentation/specifications/generation/21-external-notebook-request-template.md": {
-      "sha256": "809d3cde4b10d879e3458493366071d54de890e4bd8bea3f94772502d22a43ea",
+      "sha256": "2d9ee48530d37e839a2c88af1340d7e3ee64ebcf97c00165c30dc53e76a05115",
       "sections": {
-        "full": "809d3cde4b10d879e3458493366071d54de890e4bd8bea3f94772502d22a43ea"
+        "full": "2d9ee48530d37e839a2c88af1340d7e3ee64ebcf97c00165c30dc53e76a05115"
       }
     },
     "premed-hq-documentation/specifications/generation/02-global-rules-and-source-modes.md": {
@@ -28,9 +28,9 @@
       }
     },
     "premed-hq-documentation/specifications/generation/20-external-notebook-workflow.md": {
-      "sha256": "a5a3bba4ef0ae2540528eefe006832ac6f0eb71e4dcfb1443c6427dba42a03b7",
+      "sha256": "9d05738d0ea85adec66f5bd61ea8561bc13041ebe5604952554bfe79ec7abb98",
       "sections": {
-        "full": "a5a3bba4ef0ae2540528eefe006832ac6f0eb71e4dcfb1443c6427dba42a03b7"
+        "full": "9d05738d0ea85adec66f5bd61ea8561bc13041ebe5604952554bfe79ec7abb98"
       }
     },
     "premed-hq-documentation/specifications/generation/03-study-guide-v1.md": {
@@ -79,34 +79,37 @@
     "sha256": "41d6f3e5adaebb55ee80cb567354fb7698e252dafca1c0009ea15f81910c7b43"
   },
   "supportingData": {
+    "premed-hq-documentation/specifications/generation/portable-notebooks/conversation-examples.json": "24c5d585597c04262f080ac5fd0fc947e2ab2e91ddc0f050b258e5e9b318f94e",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/conversation-expectations.json": "434ebc1deb3db5fbe4d1b5e3d68f171fa35d496d868a645fa89b5904653f6830",
     "premed-hq-documentation/specifications/generation/portable-notebooks/goal-guidance.json": "ad34611bc4206bdca10bc0ac49cd6f2dbaca949a3c15ed461963c5acf8b1499c"
   },
   "supportingDocuments": {
     "premed-hq-documentation/specifications/generation/portable-notebooks/FEASIBILITY.md": "a67e8ff6fc47dad22c8f2e9cdf4b93f2fe42c11b77633c3ab436eb5c091e1124",
     "premed-hq-documentation/specifications/generation/portable-notebooks/FIXTURE-CORRECTIONS.md": "11d749acb5140fd1a743a9fe0e93231b89c3a858ecb4e1e1fa55696c5e0e5621",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/METHODOLOGY-AUDIT.md": "a5eb9ee4f8ad4c80f36ada7fc0f6964f67e4b49bbcb6e4687e245b707b23901b",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/README.md": "94665a449810dcb1860468f26e69d4c1e03fea9deff21ebbf905198a4d10ac68"
+    "premed-hq-documentation/specifications/generation/portable-notebooks/METHODOLOGY-AUDIT.md": "b431b2419f4ee1fd70eaed885ac5f53e5c09182ecb54df8fe7c84164da645cd4",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/README.md": "3ff11451e2c7495c84344ec84b156c74f9828feb2cb3a8be4a77a205d26f6606"
   },
   "tooling": {
+    "premed-hq-documentation/specifications/generation/portable-notebooks/build_conversation_examples.py": "5ca02d7dbb71cafa7d13e6a60f85cbdc26112b132cb8f42d5720204d46721b84",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_feasibility_case.py": "61ea50db75f7901d6b7f733d02db1204ea7e8dde7a8165b9715e1d5dff88efcc",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_fixtures.py": "31d262db6aafa9788e30e20be0f2b3d4af3c80eba634990984d25a2d623ff169",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "e8fce65b2bad96054c6a562c2dbd232778e43222bf066b9789d89e431376a7af",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "5a416751d33b42bfd431c3d6e17697d4e11f13b7d544f6eee6097cceb2532a73",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_schema.py": "86cee42747b37f0dc735f28e21a1aa586f77015454b6fcfd593eb8178684085d",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/check_package.py": "ded310d73d81072179e96aed9680964059cf79c2a7898cc9ff7dc0dd7d5295c7",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/check_package.py": "eb003875fee2ab95574f2389c0491dec719ccf51af97a17d2b76c92a4684a154",
     "premed-hq-documentation/specifications/generation/portable-notebooks/validate_package.py": "5fabfb93f9b1fd7f865d117e086a5783e8804b48a04f6566bcb393879c52f2ae"
   },
   "outputs": {
     "copy-prompt-review.md": {
-      "sha256": "8d62ee5c412b4859342ee1a8b5c43ce3de909e9cdf5587c14d71a84b71027fcb",
-      "bytes": 71008
+      "sha256": "847ac9405044fd0ca62d128b35d11490afd0d382bf1f1f98a08ec62822309740",
+      "bytes": 80321
     },
     "copy-prompt-assessment.md": {
-      "sha256": "f312da4d7a5351893e8fa9733d9ecabdef63100e41850d631bf6438a6cba74b9",
-      "bytes": 61199
+      "sha256": "3ee08482863e85d3d5b679c4668b9db36ac9214d47b997d87ca29768e0f5ca1f",
+      "bytes": 70512
     },
     "copy-prompt-assignment.md": {
-      "sha256": "7deab7ca116bcb989f0d4fe281ca01d6de17d3a60715eba018b48871ae736bf9",
-      "bytes": 53944
+      "sha256": "9b8909ddf77d04dbd3ea05675d57fd2cf48bce9373b05235210dfb0a9671ea28",
+      "bytes": 63257
     }
   },
   "deliberateEdits": [
@@ -118,7 +121,8 @@
     "JSON Schema copied byte-for-byte from coordinator v2; no schema changes.",
     "Class preferences supplied per request; no invented course rules.",
     "Coordinator request template 21 reconciled into canonical JSON request envelope; final 11-token contract supersedes the earlier draft tokens.",
-    "Beta 2 makes assessment evidence batches, external saved checkpoints, explicit unprocessed/missing scope and final cross-lesson synthesis actionable; no app checkpoint import or automatic semantic merge."
+    "Beta 2 makes assessment evidence batches, external saved checkpoints, explicit unprocessed/missing scope and final cross-lesson synthesis actionable; no app checkpoint import or automatic semantic merge.",
+    "Beta 3 adds a shared first-reply and conditional follow-up contract across the same three goals, including necessary input questions, automatic supported continuation, scope/pause/revision and complete-file repair behavior. Expected examples are not executed AI trials or extra prompts."
   ],
   "qualityStatus": "Draft; structural checks and invented fixtures cannot establish learning quality or count as manual course trials."
 }

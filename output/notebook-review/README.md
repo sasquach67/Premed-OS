@@ -1,11 +1,11 @@
 # Notebook interface preview
 
-[Open the current preview at goal selection](http://127.0.0.1:5189/student-review/output/notebook-review/index.html#/academics/classes/notebook-demo/journal/new).
+[Open the current notebook setup preview](http://127.0.0.1:5189/student-review/output/notebook-review/index.html#/academics/classes/notebook-demo/journal/new).
 
 This preview shows how the notebook workflow will look in Premed OS, using an
 example BIOL 103 class. It is not your real class workspace.
 
-First, choose one of the three goals and click **View full prompt**. You can inspect
+First, choose one of the three goals and click **Next**. You can inspect
 the steps for copying the prepared prompt, using it in your preferred AI chat, and
 bringing JSON back to the app. You do not need to review or import a sample notebook
 before testing the instructions with your own materials in your own AI chat.

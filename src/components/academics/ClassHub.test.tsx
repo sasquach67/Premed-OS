@@ -407,7 +407,7 @@ describe('ClassHub approved Overview', () => {
     expect(addToday).toBeTruthy()
     await act(async () => addToday!.click())
     expect(document.body.textContent).toContain('Choose your goal')
-    expect(document.body.textContent).toContain('View full prompt')
+    expect([...document.body.querySelectorAll('button')].some(button => button.textContent?.trim() === 'Next')).toBe(true)
 
   })
 
@@ -600,7 +600,7 @@ describe('ClassHub approved Overview', () => {
     expect(container.querySelector('.lecture-overview-composition')).toBeNull()
     const addLecture = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.classList.contains('overview-entry-tile'))!
     await act(async () => addLecture.click())
-    expect(document.body.textContent).toContain('View full prompt')
+    expect([...document.body.querySelectorAll('button')].some(button => button.textContent?.trim() === 'Next')).toBe(true)
 
   })
 
