@@ -23,14 +23,14 @@ it('groups sources once per teaching section and reveals inline markers only for
   expect(container.querySelectorAll('.nbr-srcpanel')).toHaveLength(2)
   expect(container.querySelectorAll('.en-section>.en-eyebrow')).toHaveLength(0)
   const sections = [...container.querySelectorAll('.en-section')]
-  expect(sections.every(section => section.querySelector<HTMLDivElement>('.nbr-prov')!.hidden)).toBe(true)
+  expect(sections.every(section => section.querySelector('.nbr-prov') === null)).toBe(true)
   const disclosure = sections[0].querySelector<HTMLDetailsElement>('.nbr-srcpanel')!
   expect(disclosure.open).toBe(false)
   const toggle = disclosure.querySelector<HTMLButtonElement>('.nbr-provtoggle')!
   expect(toggle.closest('details')).toBe(disclosure)
   await act(async () => { disclosure.querySelector('summary')!.click(); toggle.click() })
-  expect(sections[0].querySelector<HTMLDivElement>('.nbr-prov')!.hidden).toBe(false)
-  expect(sections[1].querySelector<HTMLDivElement>('.nbr-prov')!.hidden).toBe(true)
+  expect(sections[0].querySelector('.nbr-prov')!.textContent).toContain('[Source: source-mapping p.3.]')
+  expect(sections[1].querySelector('.nbr-prov')).toBeNull()
   await act(async () => sections[0].querySelector<HTMLButtonElement>('.nbr-cite')!.click())
   expect(disclosure.open).toBe(true)
   expect(disclosure.querySelectorAll('[data-highlight=true]')).toHaveLength(1)
@@ -40,13 +40,24 @@ it('groups sources once per teaching section and reveals inline markers only for
 it('keeps unknown brackets, consequential limits and annotation-only notes visible', async () => {
   const pkg = revisionFixture(), block = pkg.entries[0].sections[0].blocks[0]
   if (block.type !== 'paragraph') throw new Error('Fixture changed')
+  block.text = '[An unrecognized bracket note.] Teaching stays visible.'
+  await show(pkg); expect(container.querySelector('.en-block-paragraph>p.en-text')!.textContent).toBe(block.text)
   block.text = '[Source: source-mapping p.3; this is uncertain.] Teaching stays visible.'
-  await show(pkg); expect(container.querySelector('.en-block-paragraph')!.textContent).toContain(block.text)
+  await show(pkg)
+  expect(container.querySelector('.nbr-qualification')!.textContent).toContain('This is uncertain.')
+  expect(container.querySelector('.en-block-paragraph>p.en-text')!.textContent).toBe('Teaching stays visible.')
+  expect(container.querySelector('.nbr-reference-notes')!.textContent).toContain('[Source: source-mapping p.3; this is uncertain.]')
   block.text = '[Evidence limit: source-mapping p.3.] Teaching stays visible.'
-  await show(pkg); expect(container.querySelector<HTMLDivElement>('.nbr-limit')!.hidden).toBe(false)
+  await show(pkg); expect(container.querySelector('.nbr-qualification')!.textContent).toContain('The available source evidence is limited for this point.')
+  expect(container.querySelector('.nbr-reference-notes')!.textContent).toContain('[Evidence limit: source-mapping p.3.]')
   block.text = '[Source: source-mapping p.3.]'
-  await show(pkg); expect(container.querySelector<HTMLDivElement>('.nbr-prov-standalone')!.hidden).toBe(false)
-  expect(container.querySelector('.en-block-paragraph')!.querySelector(':scope>.en-text')).toBeNull()
+  await show(pkg)
+  const section = container.querySelector('.en-section')!
+  expect(section.querySelector('.en-block-paragraph')).toBeNull()
+  expect(section.querySelector('.nbr-reference-notes')!.textContent).toContain(block.text)
+  await act(async () => { section.querySelector<HTMLElement>('.nbr-srcpanel>summary')!.click(); section.querySelector<HTMLButtonElement>('.nbr-provtoggle')!.click() })
+  expect(section.querySelector('.nbr-prov')!.textContent).toBe(block.text)
+  expect(section.querySelector('.en-block-paragraph>p.en-text')).toBeNull()
 })
 it('keeps every practice source panel and answer annotation inside its own closed answer reveal', async () => {
   const pkg = revisionFixture()
@@ -59,11 +70,12 @@ it('keeps every practice source panel and answer annotation inside its own close
   expect(container.querySelectorAll('.en-block-practice')).toHaveLength(2)
   expect(container.querySelectorAll('.nbr-srcpanel')).toHaveLength(0)
   expect(container.querySelectorAll('.nbr-srcpanel-practice')).toHaveLength(2)
-  for (const panel of container.querySelectorAll('.nbr-srcpanel-practice,.en-block-practice .nbr-prov,.en-block-practice .nbr-limit')) expect(panel.closest<HTMLDetailsElement>('.en-answer')!.open).toBe(false)
+  for (const panel of container.querySelectorAll('.nbr-srcpanel-practice,.en-block-practice .nbr-prov,.en-block-practice .nbr-qualification')) expect(panel.closest<HTMLDetailsElement>('.en-answer')!.open).toBe(false)
   const answer = container.querySelector<HTMLDetailsElement>('.en-answer')!
   await act(async () => answer.querySelector('summary')!.click())
   expect(answer.open).toBe(true)
-  expect(answer.querySelector('.nbr-limit')!.textContent).toContain('hypothetical')
+  expect(answer.querySelector('[data-reader-role="reasoning"]')!.textContent).toContain('[The numerical inputs are hypothetical.]')
+  expect(answer.querySelector('.nbr-reference-notes')!.textContent).toContain('[Source: source-mapping p.3.]')
 })
 it('preserves mixed section teaching and practice independently in every goal', async () => {
   for (const goal of ['review', 'assessment', 'assignment'] as const) {
@@ -100,6 +112,6 @@ it('binds the exact raw annotation string to the editor and keeps a default prev
   await show(pkg, 'all', vi.fn())
   expect([...container.querySelectorAll('textarea')].some(field => field.value === block.text)).toBe(true)
   await act(async () => root.render(<NotebookPackageView pkg={pkg} />))
-  expect(container.querySelector('.en-block-paragraph>.en-text')!.textContent).toBe(block.text)
+  expect(container.querySelector('.en-block-paragraph>p.en-text')!.textContent).toBe(block.text)
   expect(JSON.stringify(pkg)).toBe(before)
 })
