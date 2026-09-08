@@ -1,6 +1,6 @@
 {
-  "promptBuild": "notebook-instructions-beta-3",
-  "purpose": "Concise student expectation copy for coordinator-queued app integration after the current beta-2 phase, not an extra maintained prompt or programmatic state machine.",
-  "shortCopy": "Your AI should say what it can access and start when it has enough material. If something essential is missing, it should tell you exactly what to upload or answer next.",
-  "expandedCopy": "For bigger tasks, save the working checkpoint and bring it with the needed sources when resuming. Import only the finished notebook JSON. If a file fails, send the actual file and error; missing content must not be guessed. These are instructions for your chosen AI, not a guarantee of its behavior."
+  "promptBuild": "notebook-instructions-beta-4",
+  "purpose": "Concise external-AI review/confirmation expectation for coordinator-queued integration; not a new app state machine or extra prompt.",
+  "shortCopy": "Use a normal AI chat with your files or pasted material. Your AI should prepare the content, show you a readable draft, and wait for your confirmation before making the notebook JSON.",
+  "expandedCopy": "Tell the AI what you need help with; it should use known details and ask only consequential missing questions. Review the actual content and any source or coverage gaps, then request changes or confirm that it can make the JSON. Substantive changes need another review. Projects are optional. These instructions describe expected AI behavior, not a guarantee."
 }

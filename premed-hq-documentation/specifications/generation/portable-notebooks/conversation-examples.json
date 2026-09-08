@@ -1,6 +1,6 @@
 {
   "kind": "scripted-expected-conversations",
-  "promptBuild": "notebook-instructions-beta-3",
+  "promptBuild": "notebook-instructions-beta-4",
   "executed": false,
   "ratings": null,
   "notice": "Authored expectations for manual beta, not transcripts of a tested external AI, real course trials, importable notebook JSON, or additional maintained prompts. Use the corresponding complete goal prompt and inspect actual behavior.",
@@ -18,24 +18,27 @@
         "Do not treat the prompt/schema or a filename as teaching evidence, and do not invent a finished notebook from them."
       ],
       "studentFollowUp": "DEMO 101, Invented Route Workshop. Review labels and route order. Here is the passage: A label names a stop. Renaming a stop changes its label without changing its position in the stored route.",
-      "expectedAfterReply": "The course, scope and a readable passage are now supplied. Continue from that evidence without asking the same questions again. Teach the supported distinction, use a specific evidence limit for a thin mastery outline, and return a complete appropriately limited notebook file if possible.",
-      "necessaryPause": "Only until the missing scope/material is supplied; say that inspection and review follow next.",
+      "expectedAfterReply": "Continue from the supplied course, scope and readable passage without repeating intake. Teach the supported distinction, preserve the precise evidence limit, then show the actual readable content and its gaps. Ask whether the student wants changes or JSON, and wait; the new passage is not confirmation.",
+      "necessaryPause": "Only until the missing scope/material is supplied; say that inspection and review follow next. Later, pause at the readable draft for explicit finalization confirmation.",
       "mustPreserve": [
         "Actual goal remains Review.",
-        "No fabricated source access, official objectives or course facts."
+        "No fabricated source access, official objectives or course facts.",
+        "No final importable JSON before explicit confirmation of the current actual readable draft."
       ],
       "ruleIds": [
         "EC-FIRST",
         "EC-INPUT",
         "EC-QUESTIONS",
         "EC-CONTINUE",
-        "EC-EXPORT"
+        "EC-EXPORT",
+        "EC-REVIEW",
+        "EC-CONFIRM"
       ]
     },
     {
       "id": "complete-lesson",
       "goal": "review",
-      "title": "Complete supplied lesson inputs: proceed in the same turn",
+      "title": "Complete supplied lesson inputs: prepare now, review before JSON",
       "given": [
         "Course DEMO 101, Invented Route Workshop; scope labels, tags and route order; term unknown. No formal objectives were supplied.",
         "Readable passage A: A route is an ordered list of stops. A label names one stop. Changing a label does not change route order. Rearranging stops changes the order.",
@@ -49,17 +52,20 @@
         "Preserve term=null and derive only supported study objectives; do not block on optional metadata."
       ],
       "studentFollowUp": null,
-      "expectedAfterReply": "Finish with complete notebook JSON and an honest source/check receipt. Do not claim app import, student mastery or a full-course review.",
-      "necessaryPause": null,
+      "expectedAfterReply": "Present the actual readable guide and mastery/practice content, with source limits and a concise review, then ask whether the student wants changes or wants this content turned into JSON. Stop without an importable JSON file or code block; no post-review confirmation has been given.",
+      "necessaryPause": "Wait for explicit confirmation of this actual readable draft before final JSON. No routine approval is needed to prepare it.",
       "mustPreserve": [
         "All facts and qualifications from both supplied passages.",
-        "Explicit source versus generated-objective/practice status."
+        "Explicit source versus generated-objective/practice status.",
+        "No final importable JSON before explicit confirmation of the current actual readable draft."
       ],
       "ruleIds": [
         "EC-FIRST",
         "EC-QUESTIONS",
         "EC-CONTINUE",
-        "EC-EXPORT"
+        "EC-EXPORT",
+        "EC-REVIEW",
+        "EC-CONFIRM"
       ]
     },
     {
@@ -78,12 +84,13 @@
         "At the necessary boundary, name the next requested material (Week 2, followed by the remaining scope) and what will happen after it arrives. Do not import the checkpoint into Premed OS."
       ],
       "studentFollowUp": "Pause here. I have saved the checkpoint. Later: Resume using this attached exact checkpoint and the Week 2 packet; inspect only Section 1 for this batch.",
-      "expectedAfterReply": "On pause, stop new teaching and identify the student-confirmed saved checkpoint and next input. On resume, inspect the actual attached checkpoint and material, retain source/requirement/excerpt IDs and original scope, and continue without another approval question. Week 2 is now partial, not a whole-file read; required later cases and other lessons stay unresolved. Reconcile available evidence before final synthesis and export a complete file honestly labeled partial if the full scope remains unsupported.",
-      "necessaryPause": "Ask for the exact latest checkpoint plus the needed source material if either is unavailable; reopening the chat or naming a file is not sufficient recovery.",
+      "expectedAfterReply": "On pause, stop new teaching and identify the student-confirmed saved checkpoint and next input. On resume, inspect the actual attached checkpoint and material, retain source/requirement/excerpt IDs and original scope, and continue without another approval question. Week 2 is now partial, not a whole-file read; required later cases and other lessons stay unresolved. Reconcile available evidence for a readable synthesized draft with visible partial Weeks 1–6 coverage. Before any final JSON, ask for changes or confirmation of this specific partial draft and wait. Resuming or supplying Week 2 is not final confirmation.",
+      "necessaryPause": "Ask for the exact latest checkpoint plus the needed source material if either is unavailable; reopening the chat or naming a file is not sufficient recovery. Final JSON also waits for review and explicit confirmation of the actual partial draft.",
       "mustPreserve": [
         "All original Week 1–6 requirements, format and comparison.",
         "Stable IDs and exact source excerpts/locators across batches.",
-        "Working checkpoint numbers are not notebook revisions; no automatic app merge."
+        "Working checkpoint numbers are not notebook revisions; no automatic app merge.",
+        "No final importable JSON before explicit confirmation of the current actual readable draft."
       ],
       "ruleIds": [
         "EC-FIRST",
@@ -92,7 +99,9 @@
         "EC-SCOPE",
         "EC-PAUSE",
         "EC-CONTINUE",
-        "EC-EXPORT"
+        "EC-EXPORT",
+        "EC-REVIEW",
+        "EC-CONFIRM"
       ],
       "variants": [
         {
@@ -118,21 +127,24 @@
       "expectedNext": [
         "A suitable hint: Start by choosing different names for the stops, then think of a feature they could share. A shared tag does not require matching names.",
         "Stop at the requested help stage; do not supply the names, finished route or an unsolicited replacement submission.",
-        "Package the short hint as workspace content with a proportionate requirement check. The final route remains out of the requested support scope, with that explicit basis."
+        "Show the actual short hint and a proportionate requirement check as a readable draft. The final route remains outside the requested support scope, with that explicit basis."
       ],
       "studentFollowUp": null,
-      "expectedAfterReply": "Return only goal-appropriate short support plus the complete notebook file/receipt required by the workflow. Do not add a lecture guide, Mastery Map or a second request for permission to give the already requested hint.",
-      "necessaryPause": null,
+      "expectedAfterReply": "The short hint is the prepared content. Ask whether the student wants a change or wants this hint saved as notebook JSON, and wait. Do not add a lecture guide, Mastery Map, final route, or JSON before post-review confirmation.",
+      "necessaryPause": "Wait only for changes or explicit confirmation to serialize the already displayed hint; do not ask permission to give the requested hint.",
       "mustPreserve": [
         "The actual one-hint boundary.",
-        "The real task requirements remain visible without claiming student completion or a grade."
+        "The real task requirements remain visible without claiming student completion or a grade.",
+        "No final importable JSON before explicit confirmation of the current actual readable draft."
       ],
       "ruleIds": [
         "EC-FIRST",
         "EC-QUESTIONS",
         "EC-CONTINUE",
         "EC-REVISION",
-        "EC-EXPORT"
+        "EC-EXPORT",
+        "EC-REVIEW",
+        "EC-CONFIRM"
       ]
     },
     {
@@ -148,22 +160,203 @@
       "expectedNext": [
         "Correct source reference week2 to the existing week-2 only because the complete file and excerpt ownership make the intended reference unambiguous.",
         "Preserve all entry/source/excerpt/section/block/objective/requirement identities and unrelated text. Keep revision=1 and baseRevision=null for this rejected unsaved proposal.",
-        "Re-parse and validate the whole repaired JSON and cross-references if tools permit; otherwise explicitly disclose unexecuted checks. Return the complete repaired file, not an isolated patch."
+        "Re-parse and validate the complete repaired proposal and cross-references if tools permit; disclose unexecuted checks. Show the actual readable content, exact reference correction and preserved scope/revision. Ask whether to produce the repaired JSON and wait; the initial repair request is not post-review confirmation."
       ],
       "studentFollowUp": "Truncation variant: the student has only the beginning of a file, ending mid-section, and no complete original is available in the conversation.",
-      "expectedAfterReply": "Say that the missing teaching cannot be reconstructed safely from the prefix. Ask for the complete original export, or the latest actual saved checkpoint plus the needed source material if the original cannot be recovered. State that you will then verify/rebuild a complete proposal. Do not invent missing paragraphs, quotes, IDs or closing content and call it recovered.",
-      "necessaryPause": "Only for a genuinely missing complete payload, error or necessary reconstruction evidence. Do not ask for files/errors already supplied. If the error is storage capacity, explain that reformatting content is not proof of a successful save.",
+      "expectedAfterReply": "Say that the missing teaching cannot be reconstructed safely from the prefix. Ask for the complete original export, or the latest actual saved checkpoint plus the needed source material if the original cannot be recovered. State that you will then verify/rebuild a complete proposal. Do not invent missing paragraphs, quotes, IDs or closing content and call it recovered. Any evidence-based rebuilt proposal must be shown as an actual readable draft and confirmed before final JSON.",
+      "necessaryPause": "Ask only for truly missing payload/error/evidence. Once the actual repaired readable draft and correction are shown, wait for explicit confirmation before producing the final repaired file. Storage capacity failure is not proof of a save.",
       "mustPreserve": [
         "The intended proposal revision/base, surviving IDs, source evidence and unchanged student content.",
-        "Distinguish syntax/reference repair from truncated content, incompatible representation, input size and storage failure."
+        "Distinguish syntax/reference repair from truncated content, incompatible representation, input size and storage failure.",
+        "No final importable JSON before explicit confirmation of the current actual readable draft."
       ],
       "ruleIds": [
         "EC-FIRST",
         "EC-QUESTIONS",
         "EC-REVISION",
         "EC-REPAIR",
-        "EC-EXPORT"
+        "EC-EXPORT",
+        "EC-REVIEW",
+        "EC-CONFIRM"
       ]
+    },
+    {
+      "id": "complete-inputs-review-gate",
+      "goal": "assignment",
+      "title": "Complete inputs stop at readable review without JSON",
+      "given": [
+        "Course DEMO 101, Invented Route Workshop. The task says: Plan a route with two differently labeled stops sharing one tag, then write the final route description.",
+        "The supplied definition says: A tag groups stops by a shared feature. Two stops may share a tag while retaining different labels.",
+        "The student explicitly requests one hint only, not a final route.",
+        "All material needed for this one-hint stage is readable; the student has not seen or approved a draft yet."
+      ],
+      "expectedFirstReply": "You want one hint for the DEMO 101 route task. I can read the task and supplied tag definition. I’ll prepare the hint and show it for review before making notebook JSON.",
+      "expectedNext": [
+        "Give the requested hint immediately, with a concise scope/source/requirement review.",
+        "Show actual Draft A below and ask its final question.",
+        "End this turn without a final JSON attachment, download or notebook code block."
+      ],
+      "studentFollowUp": null,
+      "expectedAfterReply": "If the student explicitly confirms Draft A, serialize that same hint and requirement check; if they ask for changes, update the readable draft first and wait again. Silence does not authorize export.",
+      "necessaryPause": "Wait at Draft A for changes or explicit confirmation; the initial complete input does not pass the gate.",
+      "mustPreserve": [
+        "One-hint stage, exact supplied evidence, no invented final route.",
+        "Approved wording and full requirement check survive serialization."
+      ],
+      "ruleIds": [
+        "EC-INPUT",
+        "EC-PERSONALIZE",
+        "EC-CONTINUE",
+        "EC-REVIEW",
+        "EC-CONFIRM",
+        "EC-EXPORT"
+      ],
+      "readableDraft": "Draft A — one hint for DEMO 101\n\nScope and stage: one hint for the task requiring two differently labeled stops with one shared tag; no completed route.\n\nHint: Start by choosing different names for the stops, then think of a feature they could share. A shared tag does not require matching names.\n\nMaterial inspected: the supplied task and the full pasted definition, “A tag groups stops by a shared feature. Two stops may share a tag while retaining different labels.”\n\nRequirement check: this supports the requested hint stage. Choosing the actual stops and writing the final route remain the student's work and are outside this support request. The evidence supports this distinction only; no grade or completed assignment is claimed.\n\nWould you like a change, or should I turn this hint into notebook JSON?",
+      "gateExpectations": {
+        "requiresProject": false,
+        "preparedBeforeReview": true,
+        "emitsJsonBeforeConfirmation": false,
+        "requiresExplicitConfirmation": true
+      }
+    },
+    {
+      "id": "student-tweaks-then-confirms",
+      "goal": "assignment",
+      "title": "Student tweaks the actual draft, then confirms the revision",
+      "given": [
+        "Draft A from the complete-inputs case has been shown.",
+        "The student says: Make the name-versus-feature distinction more direct, then export it."
+      ],
+      "expectedFirstReply": "You want the hint to make the name-versus-feature distinction more direct. I have Draft A and its source definition. I’ll revise the hint and show the updated wording for your confirmation before JSON.",
+      "expectedNext": [
+        "Show actual Draft B below, with the concrete change and preserved help stage.",
+        "The instruction to change and export is not confirmation of the unseen revised content.",
+        "Wait after Draft B; do not reuse implied approval of Draft A."
+      ],
+      "studentFollowUp": null,
+      "expectedAfterReply": "After “Looks good, make the JSON,” check and serialize Draft B without silently adding an answer, extra hints or new evidence. If a support issue requires a substantive correction, show the corrected draft and seek fresh confirmation instead.",
+      "necessaryPause": "Wait after every substantive updated draft; only an explicit post-review confirmation releases the final JSON.",
+      "mustPreserve": [
+        "Current approved draft identity is B, not A.",
+        "Preserve course, requested stage, source and content IDs, unrelated edits and correct revision/base semantics."
+      ],
+      "ruleIds": [
+        "EC-INPUT",
+        "EC-PERSONALIZE",
+        "EC-CONTINUE",
+        "EC-REVIEW",
+        "EC-CONFIRM",
+        "EC-EXPORT",
+        "EC-REVISION"
+      ],
+      "readableDraft": "Draft B — revised one hint for DEMO 101\n\nScope and stage: still one hint, with the requested name-versus-feature distinction made more direct.\n\nHint: Think of a label as a stop's name and a tag as a shared feature. Choose different names, then consider what feature both stops could share.\n\nChange from Draft A: the hint now defines the two terms first. It still supplies no finished stop names or route.\n\nMaterial inspected and gaps: the same task and full definition support this wording. Final route choices remain the student's work; no additional material or new source access is claimed.\n\nRequirement check: support stays within one hint; the final route is outside the requested stage.\n\nWould you like another change, or should I make notebook JSON from this revised hint?",
+      "confirmationTurns": [
+        {
+          "student": "Continue.",
+          "expected": "Ask briefly whether that means changes or final JSON from Draft B; no export on this ambiguous reply.",
+          "emitsFinalJson": false
+        },
+        {
+          "student": "Looks good, make the JSON.",
+          "expected": "Serialize current Draft B, validate and disclose actual checks; retain its hint and limits.",
+          "emitsFinalJson": true
+        }
+      ],
+      "gateExpectations": {
+        "requiresProject": false,
+        "preparedBeforeReview": true,
+        "emitsJsonBeforeConfirmation": false,
+        "requiresExplicitConfirmation": true,
+        "substantiveChangeNeedsNewReview": true
+      }
+    },
+    {
+      "id": "partial-multiweek-approval",
+      "goal": "assessment",
+      "title": "Missing multiweek coverage stays visible at approval",
+      "given": [
+        "Use the scope and exact prepared content from feasibility-case/expected-partial-notebook.json as an authored draft example, not proof of a successful AI run.",
+        "Only Week 3 and Week 2 Section 1 support the prepared teaching; the original scope remains Weeks 1–6.",
+        "The student says: Finish what you can; emphasize the comparison."
+      ],
+      "expectedFirstReply": "You want the available Weeks 1–6 preparation with extra emphasis on the comparison. The prepared evidence covers Week 3 and only Week 2 Section 1. I’ll show the actual partial draft and the unresolved requirements before asking whether to make its JSON.",
+      "expectedNext": [
+        "Show the linked complete readable partial draft, including all eight original requirements and their evidence/processing limits.",
+        "Summarize the actual teaching and practice, Week 2 cases still unprocessed, and missing Weeks 1/4/5/6.",
+        "Emphasize the supported comparison without dropping other assessment requirements; ask whether the student wants changes, more material processed, or JSON of this clearly partial draft, then wait."
+      ],
+      "studentFollowUp": null,
+      "expectedAfterReply": "If the student confirms this partial draft, preserve its original Weeks 1–6 scope, all eight requirements, exact source/requirement IDs and partial title in the final file. Confirmation cannot turn missing coverage into supported coverage. A later Week 2 evidence update changes the draft and requires another review.",
+      "necessaryPause": "Wait for explicit approval of the actual partial draft; “finish what you can” and source uploads are not final confirmation.",
+      "mustPreserve": [
+        "Week 2 remains partial; Weeks 1/4/5/6 stay missing.",
+        "All eight original requirements, format, source portions, comparison and honest coverage remain visible.",
+        "Working checkpoints are not imported and approval does not certify mastery."
+      ],
+      "ruleIds": [
+        "EC-INPUT",
+        "EC-PERSONALIZE",
+        "EC-CONTINUE",
+        "EC-REVIEW",
+        "EC-CONFIRM",
+        "EC-EXPORT",
+        "EC-GAPS",
+        "EC-SCOPE",
+        "EC-BATCH"
+      ],
+      "readableDraftFile": "conversation-case-files/readable-partial-draft.md",
+      "confirmationTurns": [
+        {
+          "student": "Yes, make the JSON of this partial draft.",
+          "expected": "Serialize the reviewed partial content and limits without changing the original requested scope or claiming full preparation.",
+          "emitsFinalJson": true
+        }
+      ],
+      "gateExpectations": {
+        "requiresProject": false,
+        "preparedBeforeReview": true,
+        "emitsJsonBeforeConfirmation": false,
+        "requiresExplicitConfirmation": true,
+        "retainsAllScopeRequirements": true
+      }
+    },
+    {
+      "id": "normal-chat-no-project",
+      "goal": "review",
+      "title": "Normal chat without a saved project or folder",
+      "given": [
+        "A new ordinary AI chat has no project, folder or saved course workspace.",
+        "Course DEMO 101, Invented Route Workshop; review route order, labels and tags. The student says labels versus tags are confusing and prefers definitions followed by a comparison.",
+        "The student pastes: A route is an ordered list of stops. A label names one stop. A tag groups stops by a shared feature. Changing a label does not change the route order. Rearranging stops changes the route order. Two stops may share a tag while retaining different labels."
+      ],
+      "expectedFirstReply": "You want to review route order, labels and tags, especially the difference between labels and tags. I can read the pasted passage in this chat. I’ll define the terms, compare their roles and prepare supported recall and practice for your review before JSON.",
+      "expectedNext": [
+        "Start from this usable passage in the normal chat; never require a project or folder.",
+        "Use the stated difficulty and preferred definition/comparison sequence without asking them again.",
+        "Prepare the applicable source-supported guide, recall and mastery content, then make the actual draft accessible with a concise scope/source/gap review; do not substitute a plan for that content."
+      ],
+      "studentFollowUp": null,
+      "expectedAfterReply": "Ask for changes or explicit confirmation of the actual current readable draft. A project is still unnecessary for generating or delivering the approved JSON; if the chat cannot attach files, a complete JSON code block is allowed only after confirmation.",
+      "necessaryPause": "Wait at the final readable-review gate, not at a project-setup or optional metadata step.",
+      "mustPreserve": [
+        "Known course, lesson, stated difficulty and preferences; no invented instructor policy.",
+        "Canonical learning depth remains source-supported; personalization does not replace required sections.",
+        "No source-access claim beyond the actual pasted passage."
+      ],
+      "ruleIds": [
+        "EC-INPUT",
+        "EC-PERSONALIZE",
+        "EC-CONTINUE",
+        "EC-REVIEW",
+        "EC-CONFIRM",
+        "EC-EXPORT"
+      ],
+      "gateExpectations": {
+        "requiresProject": false,
+        "preparedBeforeReview": true,
+        "emitsJsonBeforeConfirmation": false,
+        "requiresExplicitConfirmation": true
+      }
     }
   ]
 }

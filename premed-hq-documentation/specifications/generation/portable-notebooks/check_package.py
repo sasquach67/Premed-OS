@@ -2,7 +2,7 @@
 from pathlib import Path
 import argparse, copy, hashlib, importlib.metadata, json, re, tempfile
 from jsonschema import Draft202012Validator
-from build_prompts import build, compose, TOKENS
+from build_prompts import build, compose, TOKENS, PROMPT_BUILD
 from build_fixtures import build as fixtures
 from build_feasibility_case import build as feasibility_case
 from build_conversation_examples import build as conversation_examples
@@ -41,6 +41,7 @@ def prompt_methodology_errors(root,goal,prompt):
     global_text=(gen/'02-global-rules-and-source-modes.md').read_text()
     required=[line for line in global_text.split('## 1.1 Purpose',1)[1].split('## 1.9 Scope',1)[0].splitlines() if line.startswith('| `G-')]
     required += [(gen/'19-study-source-and-format-contract.md').read_text().strip(),(gen/'20-external-notebook-workflow.md').read_text().strip()]
+    required.append((gen/'21-external-notebook-request-template.md').read_text().replace('{{GOAL_LABEL}}',goal).replace('{{PROMPT_BUILD}}',PROMPT_BUILD).strip())
     if goal=='review':
         guide=(gen/'03-study-guide-v1.md').read_text()
         required += [line for line in guide.split('## Runtime briefing mirror',1)[1].split('\n---',1)[0].splitlines() if line.startswith('| `SG-')]
@@ -124,14 +125,14 @@ def run(root,out):
     conversations=json.loads((out/'conversation-examples.json').read_text())
     assert conversations['executed'] is False and conversations['ratings'] is None
     assert {c['goal'] for c in conversations['scenarios']}=={'review','assessment','assignment'}
-    assert {c['id'] for c in conversations['scenarios']}=={'prompt-alone','complete-lesson','missing-exam-lesson-resume','one-hint-assignment','failed-import-repair'}
-    results.append({'case':'five-expected-conversations-are-not-trial-results','expected':'five authored scenarios across exactly three goals, no execution or ratings','passed':True})
+    assert {c['id'] for c in conversations['scenarios']}=={'prompt-alone','complete-lesson','missing-exam-lesson-resume','one-hint-assignment','failed-import-repair','complete-inputs-review-gate','student-tweaks-then-confirms','partial-multiweek-approval','normal-chat-no-project'}
+    results.append({'case':'nine-expected-conversations-are-not-trial-results','expected':'nine authored scenarios across exactly three goals, no execution or ratings','passed':True})
     canonical_conversation=(root/'premed-hq-documentation/specifications/generation/20-external-notebook-workflow.md').read_text()
     rule_ids=set(re.findall(r'`(EC-[A-Z]+)`',canonical_conversation))
     for c in conversations['scenarios']:
         assert set(c['ruleIds'])<=rule_ids and c['expectedFirstReply'] and c['expectedNext'] and c['mustPreserve']
         assert 1<=c['expectedFirstReply'].count('.')<=3
-        if c['id'] in ('complete-lesson','one-hint-assignment'):assert c['necessaryPause'] is None
+        assert c['necessaryPause'] and {'EC-REVIEW','EC-CONFIRM'}<=set(c['ruleIds'])
         results.append({'case':c['id']+'-expected-conversation-contract','expected':'brief opening, next action and preservation boundaries linked to actual canonical rules','passed':True})
     bad=json.loads((out/'conversation-case-files/rejected-reference.json').read_text());original=json.loads((out/'conversation-case-files/complete-reference-original.json').read_text())
     assert any(e.startswith('source-reference:') for e in validate(bad,schema))
@@ -144,17 +145,49 @@ def run(root,out):
     except ValueError:pass
     else:raise AssertionError('The example prefix must actually be truncated, not a complete notebook.')
     results.append({'case':'scripted-truncated-input-is-incomplete','expected':'invalid prefix supplied only as a manual no-fabrication repair example','passed':True})
-    for goal,rule in [('review','EC-FIRST'),('assessment','EC-CONTINUE'),('assignment','EC-REPAIR')]:
+    for goal,rule in [('review','EC-FIRST'),('assessment','EC-CONTINUE'),('assignment','EC-REPAIR')]+[(goal,rule) for goal in ('review','assessment','assignment') for rule in ('EC-INPUT','EC-PERSONALIZE','EC-REVIEW','EC-CONFIRM','EC-EXPORT')]:
         prompt=(out/('copy-prompt-'+goal+'.md')).read_text()
         row=next(line for line in canonical_conversation.splitlines() if line.startswith('- `'+rule+'`:'))
         assert row in prompt and prompt_methodology_errors(root,goal,prompt.replace(row,''))
-        results.append({'case':'reject-conversation-rule-omission-'+rule,'expected':'actual prompt assembly guard detects missing shared conversation behavior','passed':True})
-    snapshot=out/'versions/notebook-instructions-beta-2'
-    if snapshot.exists():
-        receipt=json.loads((snapshot/'SNAPSHOT.json').read_text())
-        assert receipt['promptBuild']=='notebook-instructions-beta-2'
-        for name,sha in receipt['sha256'].items():assert hashlib.sha256((snapshot/name).read_bytes()).hexdigest()==sha
-        results.append({'case':'published-beta-2-snapshot-preserved','expected':'all archived published beta-2 file hashes unchanged','passed':True})
+        results.append({'case':'reject-conversation-rule-omission-'+goal+'-'+rule,'expected':'actual prompt assembly guard detects missing shared conversation behavior','passed':True})
+    for goal in ('review','assessment','assignment'):
+        prompt=(out/('copy-prompt-'+goal+'.md')).read_text()
+        opening=next(line for line in prompt.splitlines() if line.startswith('Prepare actual, readable learning content'))
+        wrong=prompt.replace(opening,'Generate the complete final notebook JSON immediately from the supplied material.')
+        assert prompt_methodology_errors(root,goal,wrong)
+        results.append({'case':'reject-automatic-export-opening-'+goal,'expected':'canonical request guard rejects restored automatic export even when the shared confirmation rules remain below','passed':True})
+    for version in ('beta-2','beta-3'):
+        snapshot=out/('versions/notebook-instructions-'+version)
+        if snapshot.exists():
+            receipt=json.loads((snapshot/'SNAPSHOT.json').read_text())
+            assert receipt['promptBuild']=='notebook-instructions-'+version
+            for name,sha in receipt['sha256'].items():assert hashlib.sha256((snapshot/name).read_bytes()).hexdigest()==sha
+            results.append({'case':'published-'+version+'-snapshot-preserved','expected':'all archived published version file hashes unchanged','passed':True})
+    for c in conversations['scenarios']:
+        if 'gateExpectations' not in c:continue
+        gate=c['gateExpectations']
+        assert gate['requiresProject'] is False and gate['preparedBeforeReview'] is True
+        assert gate['emitsJsonBeforeConfirmation'] is False and gate['requiresExplicitConfirmation'] is True
+        assert 'EC-INPUT' in c['ruleIds'] and 'EC-PERSONALIZE' in c['ruleIds']
+        results.append({'case':c['id']+'-authored-gate-expectations','expected':'script documents normal-chat preparation and post-draft confirmation; not evidence of actual AI behavior','passed':True})
+    script=next(c for c in conversations['scenarios'] if c['id']=='student-tweaks-then-confirms')
+    assert script['gateExpectations']['substantiveChangeNeedsNewReview'] is True
+    assert [t['emitsFinalJson'] for t in script['confirmationTurns']]==[False,True]
+    assert 'Draft B' in script['readableDraft']
+    results.append({'case':'authored-revised-draft-confirmation-sequence','expected':'revised actual wording and ambiguous versus explicit replies remain inspectable, not simulated model compliance','passed':True})
+    readable=(out/'conversation-case-files/readable-partial-draft.md').read_text()
+    entry=partial['entries'][0]
+    for section in entry['sections']:
+        for block in section['blocks']:
+            for key in ('text','prompt','answer','rationale','nextStep'):
+                if block.get(key):assert block[key] in readable
+    for requirement in entry['requirements']:
+        assert requirement['id']+' — '+requirement['status'] in readable
+        assert requirement['text'] in readable and requirement['basis'] in readable
+    for source in partial['sources']:
+        assert source['inspected'] in readable
+        for excerpt in source['excerpts']:assert excerpt['text'] in readable
+    results.append({'case':'actual-readable-partial-draft-preserves-content-and-scope','expected':'all prepared teaching/practice/answers and eight requirements plus inspected portions/excerpts appear in readable review example','passed':True})
     base=examples['fixture-review'];r=lambda p:p['entries'][0]['requirements'][0];o=lambda p:p['entries'][0]['objectives'][0];b=lambda p:p['entries'][0]['sections'][0]['blocks'][0]
     cases=[]
     def case(name,code,change,seed=base):cases.append((name,code,change,seed))
@@ -241,7 +274,7 @@ def run(root,out):
             template=path.read_text()
             assert all(template.count('{{'+token+'}}')==1 for token in TOKENS)
             assert set(re.findall(r'\{\{([A-Z_]+)\}\}',template))==set(TOKENS)
-            assert 'Prompt build: notebook-instructions-beta-3.' in template
+            assert 'Prompt build: notebook-instructions-beta-4.' in template
             values={token:'Sample '+token for token in TOKENS};values['CLASS_PREFERENCES']='Keep "quotes", newlines\n, unicode →, and {{SCOPE}} literal.'
             composed=compose(template,values)
             envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])
