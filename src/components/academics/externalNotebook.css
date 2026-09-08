@@ -379,12 +379,6 @@
 .external-notebook .nbr-objective-beAbleToDo h5{color:var(--primary)}
 .external-notebook .nbr-objective-caution{margin-top:.65rem}
 .external-notebook .nbr-objective-caution .en-text,.external-notebook .nbr-objective-limit .en-text{font-size:.8125rem}
-.external-notebook .nbr-objective-practice{display:flex;align-items:center;gap:.15rem .65rem;flex-wrap:wrap;margin:.45rem 0}
-.external-notebook .nbr-objective-practice h5{margin:0}
-.external-notebook .nbr-objective-practice button{min-height:44px;padding:.3rem 0;color:var(--primary);font-size:.8125rem;font-weight:700;text-decoration:underline;text-underline-offset:.2em;cursor:pointer;background:transparent;border:0}
-.external-notebook .nbr-objective-practice button:hover{text-decoration-thickness:2px}
-.external-notebook .nbr-objective-practice button:focus-visible,.external-notebook [data-notebook-practice-id]:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
-.external-notebook [data-notebook-practice-id]{scroll-margin-block:1.5rem}
 .external-notebook .nbr-objective-limit{color:var(--muted-foreground);margin-top:.4rem}
 .external-notebook .nbr-objective .en-evidence{border:0;padding:.3rem 0;font-size:.8125rem}
 .external-notebook .nbr-objective .en-evidence>summary{color:var(--muted-foreground);font-weight:500;min-height:44px;align-content:center}
