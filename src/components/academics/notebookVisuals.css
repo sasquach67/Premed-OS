@@ -42,14 +42,24 @@
 .nbr-practice-stimulus th, .nbr-practice-stimulus td { border: 1px solid var(--border); padding: .65rem; text-align: left; vertical-align: top; }
 .nbr-visual-review { margin: 1.5rem 0; padding: 1rem; border: 1px solid var(--border); border-radius: .5rem; font-size: .88rem; }
 .nbr-visual-review section { margin: 1rem 0; }
-.nbr-diagram { margin: 1.5rem 0; padding: 1rem; border: 1px solid var(--border); border-radius: .65rem; background: color-mix(in srgb, var(--card) 97%, var(--primary) 3%); }
+.nbr-diagram { container-type: inline-size; min-width: 0; margin: 1.5rem 0; padding: 1rem; border: 1px solid var(--border); border-radius: .65rem; background: color-mix(in srgb, var(--card) 97%, var(--primary) 3%); }
 .nbr-diagram-nodes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr)); gap: .8rem; list-style: none; padding: 0; }
 .nbr-diagram-nodes li { padding: .8rem; border: 1px solid var(--border); border-radius: .4rem; min-width: 0; }
 .nbr-diagram-nodes li > span { display: block; font-size: .7rem; color: var(--muted-foreground); }
 .nbr-diagram-nodes p { margin: .3rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .nbr-diagram-edges > div { padding: .7rem 0; border-top: 1px solid var(--border); white-space: pre-wrap; overflow-wrap: anywhere; }
 .nbr-diagram-scroll { max-width: 100%; max-height: min(72vh, 48rem); overflow: auto; margin: 1rem 0; }
-.nbr-diagram-svg { display: block; min-width: 38rem; max-width: none; }
+.nbr-diagram-svg { display: block; min-width: 0; max-width: none; }
+.nbr-diagram-mobile-note { display: none; }
+.nbr-diagram-relationships { margin: 1rem 0; }
+.nbr-diagram-relationships ol { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr)); gap: .75rem; list-style: none; padding: 0; }
+.nbr-diagram-relationships li { min-width: 0; padding: .75rem; border: 1px solid var(--border); border-radius: .4rem; font-size: .85rem; }
+.nbr-diagram-relationships p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
+.nbr-diagram-relationships p { margin: .25rem 0; }
+.nbr-diagram-relationships p > span { color: var(--muted-foreground); }
+@container (max-width: 480px) {
+  .nbr-diagram-mobile-note { display: block; font-size: .85rem; }
+}
 .nbr-diagram-svg .diagram-node { fill: var(--card); stroke: var(--border); stroke-width: 1.5; }
 .nbr-diagram-svg .diagram-edge { fill: none; stroke: var(--foreground); stroke-width: 1.5; }
 .nbr-diagram-svg text { fill: var(--foreground); font-family: ui-monospace, monospace; }

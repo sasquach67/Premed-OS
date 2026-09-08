@@ -56,3 +56,18 @@ it('cleans up scroll locks if an open figure is unmounted', async () => {
   await act(async () => root.render(<p>Another view</p>))
   expect(host.style.overflow).toBe('auto'); expect(document.documentElement.style.overflow).not.toBe('hidden')
 })
+it.each([false, true])('wraps Tab focus inside the open dialog (backward: %s)', async shiftKey => {
+  const { opener, modal } = await renderFigure(); await act(async () => opener.click())
+  const close = modal.querySelector<HTMLButtonElement>('button')!, caption = modal.querySelector<HTMLDivElement>('.nbr-figure-description')!
+  const start = shiftKey ? close : caption, end = shiftKey ? caption : close
+  start.focus()
+  const event = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true })
+  await act(async () => start.dispatchEvent(event))
+  expect(event.defaultPrevented).toBe(true); expect(document.activeElement).toBe(end); expect(modal.contains(document.activeElement)).toBe(true)
+})
+it('leaves ordinary forward Tab from the first control to native keyboard navigation', async () => {
+  const { opener, modal } = await renderFigure(); await act(async () => opener.click())
+  const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+  await act(async () => modal.querySelector('button')!.dispatchEvent(event))
+  expect(event.defaultPrevented).toBe(false)
+})
