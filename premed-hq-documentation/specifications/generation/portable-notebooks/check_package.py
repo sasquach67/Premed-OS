@@ -173,7 +173,21 @@ def run(root,out):
         wrong=prompt.replace(opening,'Generate the complete final notebook JSON immediately from the supplied material.')
         assert prompt_methodology_errors(root,goal,wrong)
         results.append({'case':'reject-automatic-export-opening-'+goal,'expected':'canonical request guard rejects restored automatic export even when the shared confirmation rules remain below','passed':True})
-    for version in ('beta-2','beta-3','beta-4','beta-5','beta-6','beta-7','beta-8','beta-9','beta-10','beta-11'):
+    generic=(out/'student-copies/copy-prompt-review-general.md').read_text()
+    template=(out/'copy-prompt-review.md').read_text()
+    assert generic==compose(template,{})
+    assert not re.search(r'\{\{(?:'+'|'.join(TOKENS)+r')\}\}',generic)
+    context=json.loads(generic.split('```json',1)[1].split('```',1)[0])
+    assert len(context)==11 and context['courseCode'] is None and context['courseTitle'] is None and context['scope'] is None and context['revisionInput'] is None
+    assert context['classPreferences']==''
+    assert generic[generic.index('## Applicable canonical learning rules'):]==template[template.index('## Applicable canonical learning rules'):]
+    results.append({'case':'generic-review-delivery-composed-with-no-prefilled-course-or-scope','expected':'same complete canonical body; no raw slots or fourth independent goal','passed':True})
+    for goal in ('review','assessment','assignment'):
+        actual=(out/('copy-prompt-'+goal+'.md')).read_text()
+        identity=next(line for line in actual.splitlines() if line.startswith('- `EC-IDENTIFY`:'))
+        assert prompt_methodology_errors(root,goal,actual.replace(identity,''))
+        results.append({'case':'reject-missing-context-identification-'+goal,'expected':'shared intake retains explicit-context priority, actual material inspection and no prior-test inheritance','passed':True})
+    for version in ('beta-2','beta-3','beta-4','beta-5','beta-6','beta-7','beta-8','beta-9','beta-10','beta-11','beta-12'):
         snapshot=out/('versions/notebook-instructions-'+version)
         if snapshot.exists():
             receipt=json.loads((snapshot/'SNAPSHOT.json').read_text())
@@ -436,7 +450,7 @@ def run(root,out):
             template=path.read_text()
             assert all(template.count('{{'+token+'}}')==1 for token in TOKENS)
             assert set(re.findall(r'\{\{([A-Z_]+)\}\}',template))==set(TOKENS)
-            assert 'Prompt build: notebook-instructions-beta-12.' in template
+            assert 'Prompt build: notebook-instructions-beta-13.' in template
             values={token:'Sample '+token for token in TOKENS};values['CLASS_PREFERENCES']='Keep "quotes", newlines\n, unicode →, and {{SCOPE}} literal.'
             composed=compose(template,values)
             envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])

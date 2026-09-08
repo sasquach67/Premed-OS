@@ -24,7 +24,7 @@ python3 -m venv /tmp/notebook-validation
 
 ## Rule selection
 
-- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-12; new output uses instructionsVersion notebook-workflows-draft-3; v2 remains supported as input.
+- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-13; new output uses instructionsVersion notebook-workflows-draft-3; v2 remains supported as input.
 - Every goal also includes applicable global rules from 02: sections 1.1–1.8, clarification/background boundaries, source primacy, cross-source behaviors and thin-source handling.
 - Review includes the full Runtime briefing mirror and Required structure from 03, its Portable review notebook section, the introduction and every Rules row from 11, its Portable objective coverage section, and applicable visual-learning sections from 06. All included fragments are verbatim; see METHODOLOGY-AUDIT.md for the section-level audit and explicit portable differences.
 - Assessment and assignment each include every substantive `NA-` or `NW-` rule verbatim and the corresponding portable section. Persistence/recovery and renderer implementation paragraphs are excluded.
@@ -104,3 +104,7 @@ The beta10 interim was not synced into the app; sync beta11 once under root coor
 ## Beta 12 — bounded mastery reduction
 
 External v3 Review is objective-led and purpose-tested. Canonical20 explicitly reconciles legacy numeric depth/practice and visual/layout rules; concise substantive understanding, action targets and relevant supplied questions take precedence over quotas. Empty optional Watch-for/practice links do not imply missing evidence. V2 validation, Assessment/Assignment behavior, exact schemas and eleven-token new/update composition remain unchanged. A reduction proposal needs a before/after removal/merge ledger, purpose and coverage review, consistent main-teaching metrics and recoverable original assets/history. No counts establish learning quality.
+
+## Beta13 — reusable class and lesson intake
+
+Request21 and EC-IDENTIFY use explicit student/app context, identify lesson scope from actually accessible material, show a brief class/lesson summary and ask one consequential clarification when necessary. No prior test scope is inherited. A normal generic copy requires no JSON editing. The builder emits `student-copies/copy-prompt-review-general.md` by calling the same `compose(reviewTemplate,{})`; its null defaults do not override known context, and its complete methodology/schema body is identical. This is a delivery of the same Review goal, not an independently maintained fourth prompt. Other methodology, schemas, eleven tokens and new/update composition remain unchanged.
