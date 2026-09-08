@@ -1,12 +1,12 @@
 // @vitest-environment node
 import { webcrypto } from 'node:crypto'
 import { beforeAll, expect, it, vi } from 'vitest'
-import { acceptNotebookUpdate, exportNotebook, importNotebook, inspectNotebookImport, restoreCompleteNotebookBackup, saveNotebookEdits } from './import'
+import { acceptNotebookUpdate, exportNotebook, importNotebook, inspectNotebookImport, restoreCompleteNotebookBackup, restoreNotebookVersion, saveNotebookEdits } from './import'
 import { canonical, prepareNotebook } from './package'
 import { commitNotebookAssets } from './notebookAssetStore'
 import { getPreparedAssetBytes, prepareNotebookAssets } from './visualAssets'
-import { exportNotebookBackupBundle, prepareNotebookBundle } from './notebookBundle'
-import { createNotebookUpdateSession, notebookContentKey } from './revision'
+import { exportNotebookBackupBundle, exportNotebookPackageBundle, prepareNotebookBundle } from './notebookBundle'
+import { createNotebookUpdateSession, notebookContentKey, notebookStateKey } from './revision'
 import { layoutNotebookDiagram } from './notebookDiagram'
 import { parsePortableNotebook } from './visualPackage'
 import { changedPngBlob, headerDecoder, MemoryNotebookAssets, plainVisualFixture, pngBlob, visualFixture } from './visual.test-fixtures'
@@ -15,8 +15,8 @@ import type { NotebookStudyDiagramBlock } from './visualTypes'
 
 beforeAll(() => vi.stubGlobal('crypto', webcrypto))
 const center = () => ({ lectures: [] }) as unknown as ClassCenterData
-async function setup() {
-  const pkg = visualFixture(), prepared = await prepareNotebook(JSON.stringify(pkg)), data = center(), course = { id: 'visual-test', ...pkg.course, term: pkg.course.term ?? undefined }, repo = new MemoryNotebookAssets()
+async function setup(pkg = visualFixture()) {
+  const prepared = await prepareNotebook(JSON.stringify(pkg)), data = center(), course = { id: 'visual-test', ...pkg.course, term: pkg.course.term ?? undefined }, repo = new MemoryNotebookAssets()
   const assets = await prepareNotebookAssets(pkg, [{ name: pkg.assets[0].fileName, blob: pngBlob() }], { decode: headerDecoder })
   let ids: string[] = []
   await commitNotebookAssets({ prepared: assets, repository: repo, lineageId: 'original-lineage', assertFresh: () => undefined, commit: () => { ids = importNotebook(data, course, prepared); return { committed: true } } })
@@ -94,4 +94,49 @@ it('gives parallel schema-valid diagram connections distinct visible label posit
   const layout = layoutNotebookDiagram(diagram)
   expect(new Set(layout.edges.map(e => `${e.labelX},${e.labelY}`)).size).toBe(2)
   expect(layout.edges.every(e => e.path.startsWith('M '))).toBe(true)
+})
+it('keeps removed revision3 images, captions and practice recoverable after a revision4 update and fresh backup restore', async () => {
+  const baseline = visualFixture(); baseline.entries[0].revision = 3; baseline.entries[0].baseRevision = 2
+  const figure = baseline.entries[0].sections.flatMap(section => section.blocks).find(block => block.type === 'figure')!
+  if (figure.type !== 'figure') throw new Error('Expected source figure')
+  figure.caption = 'Manual inquiry caption retained in revision3'
+  const retiring = baseline.entries[0].sections.flatMap(section => section.blocks).find(block => block.type === 'practice' && block.stimulusBlockIds?.length)!, oldQuestionId = retiring.id
+  retiring.id = 'retired-visual-practice'
+  for (const objective of baseline.entries[0].objectives) objective.practiceBlockIds = objective.practiceBlockIds.map(id => id === oldQuestionId ? retiring.id : id)
+  const s = await setup(baseline), n = s.data.lectures[0].importedNotebook!
+  const removed = baseline.entries[0].sections.flatMap(section => section.blocks).find(block => block.type === 'practice' && block.stimulusBlockIds?.length)!
+  n.notes = 'Keep the personal note'; n.progress = { [removed.id]: { response: 'My earlier figure response', complete: true } }
+  const rawBefore = n.originalRaw, currentBefore = canonical(n.current), progressBefore = structuredClone(n.progress)
+  const session = n.updateSession = createNotebookUpdateSession(n, s.ids[0])
+  const next = plainVisualFixture(); next.course = structuredClone(n.current.course)
+  Object.assign(next.entries[0], { id: n.entryId, goal: n.current.entries[0].goal, title: 'Condensed mastery guide', revision: 4, baseRevision: 3 })
+  expect(next.assets).toEqual([])
+  expect(next.entries[0].sections.flatMap(section => section.blocks).some(block => block.id === removed.id)).toBe(false)
+  const prepared = await prepareNotebook(JSON.stringify(next)), images = await prepareNotebookAssets(next, [], { previousBindings: n.assetBindings, reader: s.repo, decode: headerDecoder })
+  await commitNotebookAssets({ prepared: images, repository: s.repo, lineageId: n.assetLineageId, retainedBindings: n.assetBindings, assertFresh: () => undefined, commit: () => { expect(acceptNotebookUpdate(s.data, s.course, prepared, session, true)).toEqual(s.ids); return { committed: true } } })
+  const lecture = s.data.lectures[0], saved = lecture.importedNotebook!, prior = saved.history!.find(version => version.current.entries[0].revision === 3)!
+  expect(saved.current.version === 3 && saved.current.assets).toEqual([])
+  expect(saved.current.entries[0].revision).toBe(4); expect(saved.originalRaw).toBe(rawBefore)
+  expect(saved.notes).toBe('Keep the personal note'); expect(saved.progress[removed.id]).toBeUndefined()
+  expect(canonical(prior.current)).toBe(currentBefore); expect(prior.progress).toEqual(progressBefore)
+  expect(saved.assetBindings).toEqual(s.assets.bindings)
+  const currentBundle = await prepareNotebookBundle(await exportNotebookPackageBundle(exportNotebook(lecture, 'current'), saved.assetBindings!, s.repo, headerDecoder), headerDecoder)
+  expect(currentBundle.kind).toBe('package'); expect(currentBundle.assets.bindings).toEqual([])
+  const restored = await prepareNotebookBundle(await exportNotebookBackupBundle(saved, s.course.id, s.repo, headerDecoder), headerDecoder)
+  if (restored.kind !== 'backup') throw new Error('Expected complete historical backup')
+  expect(restored.assets.bindings).toEqual(s.assets.bindings)
+  const fresh = center(), repo = new MemoryNotebookAssets(), original = await prepareNotebook(restored.notebook.originalRaw)
+  await commitNotebookAssets({ prepared: restored.assets, repository: repo, assertFresh: () => undefined, commit: () => { restoreCompleteNotebookBackup(fresh, s.course, restored.notebook, original, true); return { committed: true } } })
+  const recovered = fresh.lectures[0].importedNotebook!, binding = s.assets.bindings[0], blob = (await repo.read(binding.sha256))!
+  expect(new Uint8Array(await blob.arrayBuffer())).toEqual(new Uint8Array(await pngBlob().arrayBuffer()))
+  expect(recovered.history).toEqual(saved.history); expect(recovered.originalRaw).toBe(rawBefore)
+  repo.bytes.delete(binding.sha256); const beforeMissingBytes = canonical(fresh)
+  await expect(exportNotebookBackupBundle(recovered, s.course.id, repo, headerDecoder)).rejects.toThrow('unavailable')
+  expect(canonical(fresh)).toBe(beforeMissingBytes)
+  repo.bytes.set(binding.sha256, blob)
+  restoreNotebookVersion(fresh.lectures[0], prior.id, notebookStateKey(recovered))
+  const recoveredPrior = fresh.lectures[0].importedNotebook!
+  expect(canonical(recoveredPrior.current)).toBe(currentBefore)
+  expect(recoveredPrior.progress).toEqual(progressBefore); expect(recoveredPrior.notes).toBe('Keep the personal note')
+  expect(JSON.stringify(recoveredPrior.current)).toContain(figure.caption)
 })
