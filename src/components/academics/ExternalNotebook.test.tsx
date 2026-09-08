@@ -27,7 +27,7 @@ async function fill(label: string, text: string) { const el = [...container.quer
 async function renderImport() { await act(async () => root.render(<NotebookImportPanel courseId={course.id} onImported={imported} />)) }
 it('journal new route opens the external workflow with three mutually exclusive goals and direct import', async () => {
   await act(async () => root.render(<MemoryRouter initialEntries={['/academics/classes/test-notebook/journal/new']}><Routes><Route path="/academics/classes/:courseId/journal/:entryId" element={<JournalEntryPage />} /></Routes></MemoryRouter>))
-  expect(container.textContent).toContain('What would you like to do?'); expect(container.querySelectorAll('input[type="radio"]')).toHaveLength(3)
+  expect(container.textContent).toContain('Choose your goal'); expect(container.querySelectorAll('input[type="radio"]')).toHaveLength(3)
   expect(container.textContent).toContain('Already have JSON? Import directly')
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
 })
@@ -36,7 +36,7 @@ it('does not save before preview/explicit save and identifies exact malformed fi
   expect(container.querySelector('[role="alert"]')?.textContent).toContain('$.entries[0].requirements[0].status')
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
   await fill('Paste complete JSON', raw); await click('Validate and preview')
-  expect(container.textContent).toContain('Destination:'); expect(container.textContent).toContain('supported:')
+  expect(container.textContent).toContain(`Save to ${course.code}`); expect(container.textContent).toContain('supported:')
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
   await click(`Save editable entry to ${course.code}`)
   expect(imported).toHaveBeenCalledTimes(1); expect(useStore.getState().academics.classCenter.lectures).toHaveLength(1)
@@ -82,19 +82,47 @@ it('uses one exact prompt for preview, clipboard and download after assessment c
   const clipboard = vi.fn().mockResolvedValue(undefined); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: clipboard } })
   const blobs: Blob[] = []; Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: (blob: Blob) => { blobs.push(blob); return 'blob:fixture' } }); Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() }); vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
   await act(async () => root.render(<ExternalNotebookWorkflow courseId={course.id} onImported={imported} />))
-  await act(async () => container.querySelector<HTMLInputElement>('input[value="assessment"]')!.click()); await click('Customize prompt')
-  expect(container.textContent).toContain('Establish the assessment scope first')
+  await act(async () => container.querySelector<HTMLInputElement>('input[value="assessment"]')!.click()); await click('Customize prompt (optional)')
+  expect(container.textContent).toContain("Start with the instructor's review sheet")
   await fill('Included lessons, readings, and assessment topics', 'Lessons 1-5 and readings A-B')
   await fill('Assessment format (leave blank if unknown)', 'Short answer')
   await fill('Other materials you will attach', 'Exam review sheet and five lesson PDFs')
   const additionalInstructions = 'Keep "quoted wording".\nSecond line: $& literal {{COURSE_CODE}}'
   await fill('Additional instructions for your AI', additionalInstructions)
-  await click('View full prompt'); await click('Copy full prompt'); await click('Download full prompt')
+  await click('View full prompt')
+  const beforeCopy = container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value
+  await click('Copy full prompt')
+  expect(container.querySelector('h1')?.textContent).toBe('Use it in your AI')
+  expect(container.textContent).toContain('Full prompt copied.')
+  await click('Back to prompt')
+  const details = container.querySelector<HTMLDetailsElement>('.en-prompt-detail')!
+  await act(async () => details.querySelector('summary')!.click())
+  expect(details.open).toBe(true)
+  await click('Download full prompt')
   const preview = container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value
+  expect(preview).toBe(beforeCopy)
   expect(clipboard).toHaveBeenCalledWith(preview)
   const downloaded = await new Promise<string>(resolve => { const reader = new FileReader(); reader.onload = () => resolve(reader.result as string); reader.readAsText(blobs[0]) })
   expect(downloaded).toBe(preview); expect(preview).toContain('Lessons 1-5'); expect(preview).toContain('Short answer')
   expect(JSON.parse(/```json\n([\s\S]*?)\n```/.exec(preview)![1]).userRequest).toBe(additionalInstructions)
+})
+it('keeps the copy step and offers the full preview and download when clipboard access fails', async () => {
+  const clipboard = vi.fn().mockRejectedValue(new Error('Clipboard unavailable'))
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: clipboard } })
+  await act(async () => root.render(<ExternalNotebookWorkflow courseId={course.id} onImported={imported} />))
+  await click('View full prompt'); await click('Copy full prompt')
+  expect(container.querySelector('h1')?.textContent).toBe('Copy your prompt')
+  expect(container.querySelector('[role="status"]')?.textContent).toContain('Download the full prompt or select it in the preview below.')
+  const details = container.querySelector<HTMLDetailsElement>('.en-prompt-detail')!
+  await act(async () => details.querySelector('summary')!.click())
+  expect(details.open).toBe(true)
+  const preview = details.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value
+  expect(preview.length).toBeGreaterThan(1000)
+  expect(clipboard).toHaveBeenCalledWith(preview)
+  const download = [...details.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Download full prompt')!
+  expect(download).toBeTruthy(); expect(download.disabled).toBe(false)
+  expect(imported).not.toHaveBeenCalled()
+  expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
 })
 it('rejects a stale notebook write after another tab changes persisted content', async () => {
   const p = await prepareNotebook(raw)
