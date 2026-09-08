@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, BookOpen, Brain, Check, Copy, Download, FileCode2, FileText, FolderOpen, HelpCircle, Info, ListChecks, MessageSquare, NotebookText, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useStore } from '@/store/store'
@@ -94,7 +94,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision, basel
   const values: PromptValues = { COURSE_CODE: revision?.baseline.course.code ?? course?.code ?? '', COURSE_TITLE: revision?.baseline.course.title ?? course?.title ?? '', TERM: revision ? revision.baseline.course.term : term || null, SCOPE: scope.trim() ? `${scope}\nScope authority: ${scopeSource || 'Not supplied; label provisional scope.'}` : null, MATERIALS: [revision ? `${UPDATE_BASELINE_FILE}: attach this exact saved baseline plus the new material; retained excerpts do not imply complete original files.` : '', ...classFiles.filter(f => selected.includes(f.id)).map(f => `${f.title} (${f.type}; attach the actual original file in the AI conversation)`), materials].filter(Boolean).join('\n'), DEPTH: depth, CLASS_PREFERENCES: preferences, HELP_STAGE: revision ? stage || null : stage, ASSESSMENT_FORMAT: goal === 'assessment' ? format || null : null, USER_REQUEST: request, REVISION_INPUT: revision ? revisionInput(revision) : null }
   const fullPrompt = goal ? composeNotebookPrompt(goal, values, revision ? 'update' : 'new') : ''
   const promptLines = fullPrompt ? fullPrompt.split('\n').length : 0
-  latestPrompt.current = fullPrompt
+  useLayoutEffect(() => { latestPrompt.current = fullPrompt }, [fullPrompt])
   const copyReady = hasCurrentPromptAcknowledgment(draft, fullPrompt)
   const baselineBlocked = Boolean(revision && !baselineFresh)
   const requestedStep = notebookWorkflowStep(draft, fullPrompt)

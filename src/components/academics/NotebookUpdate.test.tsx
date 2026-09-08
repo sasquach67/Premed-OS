@@ -29,10 +29,11 @@ async function click(label: string) {
   if (label === 'Validate and preview' || label === 'Accept update to this entry' || label.startsWith('Save editable')) await vi.waitFor(async () => { await act(async () => {}); expect(container.querySelector('input[type="file"]')?.hasAttribute('disabled')).not.toBe(true) }, { timeout: 10000, interval: 20 })
 }
 async function fill(label: string, value: string) {
-  const field = [...container.querySelectorAll('label')].find(l => l.childNodes[0]?.textContent?.trim() === label)?.querySelector('textarea')!
+  const field = [...container.querySelectorAll('label')].find(l => l.childNodes[0]?.textContent?.trim() === label)?.querySelector('textarea')
+  if (!field) throw new Error(`Missing textarea: ${label}`)
   expect(field, label).toBeTruthy(); await act(async () => { Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(field, value); field.dispatchEvent(new Event('input', { bubbles: true })) })
 }
-async function check(text: string) { const box = [...container.querySelectorAll('label')].find(l => l.textContent?.includes(text))?.querySelector<HTMLInputElement>('input[type="checkbox"]')!; expect(box, text).toBeTruthy(); await act(async () => box.click()) }
+async function check(text: string) { const box = [...container.querySelectorAll('label')].find(l => l.textContent?.includes(text))?.querySelector<HTMLInputElement>('input[type="checkbox"]'); if (!box) throw new Error(`Missing checkbox: ${text}`); await act(async () => box.click()) }
 async function toImport() {
   await click('Update this notebook'); await click('Next'); await click('Copy update prompt')
   expect(button('Next').disabled).toBe(true)

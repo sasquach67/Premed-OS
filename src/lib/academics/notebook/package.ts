@@ -11,7 +11,7 @@ export function canonical(value: unknown): string {
 }
 /** Reject duplicate object keys before JSON.parse can silently drop their first values. */
 export function rejectDuplicateKeys(raw: string) {
-  const tokens = raw.match(/"(?:\\.|[^"\\])*"|[{}\[\],:]|true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g) ?? []
+  const tokens = raw.match(/"(?:\\.|[^"\\])*"|[{}[\],:]|true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g) ?? []
   let index = 0
   function visit(path: string, depth: number) {
     if (depth > 60) throw new NotebookValidationError(path, 'The package is nested too deeply.')

@@ -71,7 +71,7 @@ export async function validateNotebookRaster(assetId: string, blob: Blob, expect
   if (header.mimeType !== expectedMime || (blob.type && blob.type !== expectedMime && blob.type !== 'application/octet-stream')) throw new Error(`Image ${assetId} MIME does not match its actual PNG/JPEG bytes.`)
   const typed = new Blob([bytes], { type: header.mimeType })
   let actual: { width: number; height: number }
-  try { actual = await decode(typed) } catch (error) { throw new Error(`Image ${assetId} could not be decoded: ${error instanceof Error ? error.message : 'invalid raster'}`) }
+  try { actual = await decode(typed) } catch (error) { throw new Error(`Image ${assetId} could not be decoded: ${error instanceof Error ? error.message : 'invalid raster'}`, { cause: error }) }
   assertRasterDimensions(actual.width, actual.height)
   if (actual.width !== header.width || actual.height !== header.height) throw new Error(`Image ${assetId} decoded dimensions disagree with its raster header.`)
   const digest = await crypto.subtle.digest('SHA-256', bytes), sha256 = [...new Uint8Array(digest)].map(v => v.toString(16).padStart(2, '0')).join('')

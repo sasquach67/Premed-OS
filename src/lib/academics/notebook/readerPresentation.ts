@@ -50,12 +50,12 @@ export function splitNotebookAnnotations(value: string, sourceIds: string[]) {
     return null
   }
   for (;;) {
-    const lead = /^\s*(\[[^\[\]]{1,1000}\])\s*/.exec(body), note = lead && classify(lead[1])
+    const lead = /^\s*(\[[^[\]]{1,1000}\])\s*/.exec(body), note = lead && classify(lead[1])
     if (!lead || !note) break
     leading.push(note); body = body.slice(lead[0].length)
   }
   for (;;) {
-    const tail = /\s*(\[[^\[\]]{1,1000}\])\s*$/.exec(body), note = tail && classify(tail[1])
+    const tail = /\s*(\[[^[\]]{1,1000}\])\s*$/.exec(body), note = tail && classify(tail[1])
     if (!tail || !note) break
     trailing.unshift(note); body = body.slice(0, -tail[0].length)
   }
