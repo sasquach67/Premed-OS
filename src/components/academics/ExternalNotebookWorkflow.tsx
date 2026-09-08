@@ -58,10 +58,10 @@ const GOAL_PRESENTATION = {
 }
 
 const STEPS = [
-  { id: 'goal', label: 'Choose goal', title: 'Choose your goal', description: 'Pick what you want help with. We will prepare the prompt for your AI.' },
-  { id: 'prompt', label: 'Copy prompt', title: 'Copy your prompt', description: 'Your class details are included. Copy the full prompt, then use it in your AI.' },
-  { id: 'handoff', label: 'Use your AI', title: 'Use it in your AI', description: 'Finish in your preferred AI, then bring the notebook file back here.' },
-  { id: 'import', label: 'Import notebook', title: 'Import your notebook', description: 'Preview the result, check what is missing, then save it to your class.' },
+  { id: 'goal', label: 'Choose goal', title: 'Choose your goal' },
+  { id: 'prompt', label: 'Copy prompt', title: 'Copy your prompt' },
+  { id: 'handoff', label: 'Use your AI', title: 'Use it in your AI' },
+  { id: 'import', label: 'Import notebook', title: 'Import your notebook' },
 ] as const
 
 export function ExternalNotebookWorkflow({ courseId, onImported, revision }: { courseId: string; onImported: (id: string) => void; revision?: NotebookUpdateSession }) {
@@ -107,7 +107,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision }: { c
   if (!course) return <p role="alert">Class not found.</p>
 
   const activeStep = step === 'details' ? 0 : STEPS.findIndex(item => item.id === step)
-  const current = revision && activeStep === 0 ? { ...STEPS[0], title: 'Update with new material', description: 'Keep this topic notebook. Name the new material and what should change; the existing goal stays the same.' } : STEPS[activeStep]
+  const current = revision && activeStep === 0 ? { ...STEPS[0], title: 'Update with new material' } : STEPS[activeStep]
   const goalInfo = GOALS[goal ?? 'review']
   const completed = [draft.goalAccepted, copyReady, copyReady && draft.jsonReady, false]
   function goTo(next: Step) {
@@ -160,7 +160,6 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision }: { c
       <div>
         <p className="en-eyebrow">{course.code} / Class notebook</p>
         <h1 ref={heading} tabIndex={-1}>{step === 'details' ? 'Add class details' : current.title}</h1>
-        <p className="en-flow-lead">{step === 'details' ? 'Optional. Add what you know, or go straight to the full prompt.' : current.description}</p>
       </div>
     </header>
 
