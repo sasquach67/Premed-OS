@@ -87,12 +87,14 @@ it('uses one exact prompt for preview, clipboard and download after assessment c
   await fill('Included lessons, readings, and assessment topics', 'Lessons 1-5 and readings A-B')
   await fill('Assessment format (leave blank if unknown)', 'Short answer')
   await fill('Other materials you will attach', 'Exam review sheet and five lesson PDFs')
-  await fill('Anything specific you want help with?', '$& literal {{COURSE_CODE}}')
+  const additionalInstructions = 'Keep "quoted wording".\nSecond line: $& literal {{COURSE_CODE}}'
+  await fill('Additional instructions for your AI', additionalInstructions)
   await click('View full prompt'); await click('Copy full prompt'); await click('Download full prompt')
   const preview = container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value
   expect(clipboard).toHaveBeenCalledWith(preview)
   const downloaded = await new Promise<string>(resolve => { const reader = new FileReader(); reader.onload = () => resolve(reader.result as string); reader.readAsText(blobs[0]) })
   expect(downloaded).toBe(preview); expect(preview).toContain('Lessons 1-5'); expect(preview).toContain('Short answer')
+  expect(JSON.parse(/```json\n([\s\S]*?)\n```/.exec(preview)![1]).userRequest).toBe(additionalInstructions)
 })
 it('rejects a stale notebook write after another tab changes persisted content', async () => {
   const p = await prepareNotebook(raw)
