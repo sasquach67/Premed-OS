@@ -1,7 +1,7 @@
 import { useId, useRef, useState, type RefObject } from 'react'
 import { Button } from '@/components/ui/button'
-import { STORAGE_KEY, useStore } from '@/store/store'
-import { storageFailure } from '@/store/storageHealth'
+import { useStore } from '@/store/store'
+import { readStoredWorkspace, storageFailure } from '@/store/storageHealth'
 import { exportNotebook, restoreNotebookVersion, saveNotebookEdits } from '@/lib/academics/notebook/import'
 import { createNotebookUpdateSession, notebookContentKey, notebookPracticePolicy, notebookStateKey } from '@/lib/academics/notebook/revision'
 import { ExternalNotebookWorkflow } from './ExternalNotebookWorkflow'
@@ -22,7 +22,9 @@ import './notebookVisuals.css'
 
 export function notebookTransaction(mutator: (state: AppData) => void) {
   const previous = useStore.getState().academics
-  const persisted = localStorage.getItem(STORAGE_KEY)
+  const storageKey = useStore.persist.getOptions().name
+  if (!storageKey) throw new Error('Notebook storage is not ready. No changes were saved.')
+  const persisted = readStoredWorkspace(localStorage, storageKey)
   if (persisted) {
     const saved = JSON.parse(persisted) as { state?: Partial<AppData> }
     const diskEntries = saved.state?.academics?.classCenter?.lectures?.filter(l => l.importedNotebook) ?? []

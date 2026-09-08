@@ -21,7 +21,7 @@ import {
 } from '@/lib/demoMode'
 import { migrateLegacyWorkspaceKeys } from '@/lib/workspaceKeyMigration'
 import { uid } from '@/lib/id'
-import { guardedStorage } from '@/store/storageHealth'
+import { guardedStorage, readStoredWorkspace } from '@/store/storageHealth'
 import { isMutableSeverity } from '@/lib/intelligence/recommendations'
 import { INTELLIGENCE_THRESHOLDS, type Severity } from '@/lib/intelligence/types'
 import { mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
@@ -975,9 +975,10 @@ export const useStore = create<Store>()(
  * destination. It loads that owner's existing cache, or a record-free root.
  */
 function readWorkspaceData(storageKey: string): AppData | null {
+  // A decode failure must not become an empty workspace that overwrites its cache.
+  const raw = readStoredWorkspace(localStorage, storageKey)
+  if (!raw) return null
   try {
-    const raw = localStorage.getItem(storageKey)
-    if (!raw) return null
     const parsed = JSON.parse(raw) as { state?: Partial<AppData>; version?: number }
     if (!parsed?.state || typeof parsed.state !== 'object') return null
     const seeded = { ...createPersonalInitialData(), ...parsed.state } as AppData

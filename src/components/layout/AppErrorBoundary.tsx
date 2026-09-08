@@ -12,6 +12,7 @@
    ============================================================ */
 import { Component, type CSSProperties, type ErrorInfo, type ReactNode } from 'react'
 import { activeStorageKey } from '@/lib/demoMode'
+import { decodeWorkspaceStorage } from '@/store/workspaceStorageCodec'
 
 function rawStorageKey() {
   return activeStorageKey()
@@ -26,12 +27,15 @@ function downloadRawData(): void {
     window.alert('No saved data found in this browser.')
     return
   }
-  const blob = new Blob([raw], { type: 'application/json' })
+  let exported = raw, extension = 'json'
+  try { exported = decodeWorkspaceStorage(raw) } catch { extension = 'txt' }
+  // Even a damaged cache remains downloadable verbatim for recovery.
+  const blob = new Blob([exported], { type: extension === 'json' ? 'application/json' : 'text/plain' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   const stamp = new Date().toISOString().slice(0, 10)
   a.href = url
-  a.download = `premedos-raw-backup-${stamp}.json`
+  a.download = `premedos-raw-backup-${stamp}.${extension}`
   a.click()
   URL.revokeObjectURL(url)
 }
