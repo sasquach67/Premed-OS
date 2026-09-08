@@ -836,7 +836,7 @@ describe('ClassHub approved Overview', () => {
     })
 
     expect(document.body.textContent).toContain('Choose your goal')
-    expect(document.body.querySelector('[aria-label="Notebook workflow progress"]')?.textContent).toContain('Goal')
+    expect(document.body.querySelector('[aria-label="Notebook workflow progress"]')?.textContent).toContain('Choose goal')
     expect(document.body.textContent).toContain('Use your AI')
 
   })
