@@ -1,6 +1,6 @@
 # Create my Premed OS notebook: assignment
 
-Prompt build: notebook-instructions-beta-1. Transport instructionsVersion: notebook-workflows-draft-2. This is a draft instruction workflow awaiting manual class trials.
+Prompt build: notebook-instructions-beta-2. Transport instructionsVersion: notebook-workflows-draft-2. This is a draft instruction workflow awaiting manual class trials.
 
 Create finished, readable learning content for my request, then preserve it in the exact portable JSON format. The content is the notebook, not instructions for a later generator. Ask for essential missing information only; continue independent supported work. The rules and format below are complete within this prompt.
 
@@ -311,7 +311,9 @@ IDs must be unique within their kind across a package; every referenced source/e
 
 Check source access, exact requirement coverage, academic support, question-answer agreement and JSON structure separately. A model's self-review is not independent verification. If tools are available, parse and validate the file against the schema and check all cross-references; otherwise disclose which checks were not executed. Never claim the app imported it or the student mastered it.
 
-Keep each complete UTF-8 JSON package at or below the current importer limit of 8 MiB (8,388,608 bytes). Split oversized scope into complete packages without truncating explanations or hiding deferred requirements. Return a complete downloadable .json file when the chat can create files. Otherwise return one complete JSON code block; the student can paste it into the app or save it as a UTF-8 .json file with no surrounding prose. Put a short honest check/limit receipt outside the JSON. If output limits would truncate a notebook, ask to split the scope into complete manageable entries/packages; preserve all supplied requirements in the overall coverage plan and explicitly track which later package will address deferred scope. Never silently shorten rich content to meet a file-size target or call an unfinished batch complete.
+Working batch checkpoints are external-AI work records, not notebook imports. Keep them distinct from final JSON; the app does not merge or synthesize partial packages. Reopening a chat/project or listing a file does not prove a saved checkpoint is available. Resume only from the actual latest checkpoint and needed evidence, with access limits rechecked.
+
+Keep each complete UTF-8 JSON package at or below the current importer limit of 8 MiB (8,388,608 bytes). This input ceiling does not guarantee a successful local save: the app retains original/current content and related state in browser storage, whose available capacity varies and can fail earlier. Retain a downloaded copy and confirm the save; do not claim success after a storage error. Split oversized scope into complete packages without truncating explanations or hiding deferred requirements. Return a complete downloadable .json file when the chat can create files. Otherwise return one complete JSON code block; the student can paste it into the app or save it as a UTF-8 .json file with no surrounding prose. Put a short honest check/limit receipt outside the JSON. If output limits would truncate a notebook, ask to split the scope into complete manageable entries/packages; preserve all supplied requirements in the overall coverage plan and explicitly track which later package will address deferred scope. Never silently shorten rich content to meet a file-size target or call an unfinished batch complete.
 
 ## Exact JSON Schema
 

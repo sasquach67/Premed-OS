@@ -10,29 +10,32 @@ import { downloadNotebookText, notebookTransaction } from './ExternalNotebookVie
 const GOALS = {
   review: {
     title: 'Review class material',
-    description: 'Understand a lesson and practice recall.',
-    bring: 'Readable lesson material. Add notes, slides, and learning objectives if you have them.',
-    result: 'A study guide, learning goals, practice questions, and a check of what your sources cover.',
-    limit: 'Missing material means gaps in the guide. Add readable sources, or work through unrelated lessons separately.',
-    more: 'Use this to review, catch up, preview a lesson, or understand a confusing concept. Notes or a transcript, slides, readings, and learning objectives help, but you do not need every type of material.',
+    description: 'Review a lecture or lesson.',
+    bring: 'Readable material for the topic you want help with.',
+    result: 'A study guide, a recall outline (Mastery Map), practice questions, and what is covered or missing.',
+    limit: 'Thin or unreadable material limits the result. Add a readable source or narrow the lesson scope.',
+    bestFor: 'Review a lecture or lesson, catch up, preview, or understand a confusing topic.',
+    ideal: 'After a lecture, use the lecture itself plus slides, notes and related readings; learning objectives if available. These are helpful options, not an all-required list.',
     stages: ['Understand and connect', 'Practice recall', 'Revisit weak areas'],
   },
   assessment: {
     title: 'Prepare for an assessment',
-    description: 'Study across the lessons on your exam.',
-    bring: 'A review sheet or topic list, relevant lesson materials, and the exam format if known.',
-    result: 'A study guide, explained practice questions, and a checklist of covered and missing topics.',
-    limit: 'One lesson cannot cover a whole exam. Missing or unreadable lessons must stay marked as gaps.',
-    more: 'Start with the instructor\'s review sheet when available. Include the lectures, notes, and readings for the exam. Practice questions, answer keys, and your attempts can help, but they are not required.',
+    description: 'Study for a quiz or exam.',
+    bring: 'The scope or your named study request, plus readable material for the topics you want to prepare.',
+    result: 'A study guide or outline, practice questions with explained answers, and what is covered or missing.',
+    limit: 'Week 3 material can support a Week 3 quiz or partial preparation, not a complete Weeks 1-6 guide. Add missing lessons or explicitly narrow the scope; keep the gaps visible.',
+    bestFor: 'Study for a quiz or exam covering one or more lessons.',
+    ideal: 'The review sheet, known format, and relevant lectures, readings and notes across the required lessons. Practice questions, answer keys and your attempts are optional.',
     stages: ['Establish scope and coverage', 'Explain difficult topics', 'Practice and identify gaps'],
   },
   assignment: {
     title: 'Work on an assignment',
     description: 'Get help with the stage you are on.',
-    bring: 'The task, the help you want, and relevant sources. Include your draft or data when needed.',
-    result: 'Help for your chosen stage and a check against the assignment requirements.',
-    limit: 'A hint stays a hint. Missing rubric details or data stay unknown; work through large tasks in named stages.',
-    more: 'Bring the assignment instructions and rubric if available, required sources, and any attempt you want reviewed. Tell your AI whether you want a plan, a hint, feedback, or revision help.',
+    bring: 'The task, your requested help stage and the sources needed for it; include your draft or data when needed.',
+    result: 'Hints, a plan, explanations or feedback, plus a check against the task requirements.',
+    limit: 'A hint stays a hint. Missing rubric details, drafts or data stay unknown; split a large task into named stages.',
+    bestFor: 'Get help with the task at the stage you choose.',
+    ideal: 'The prompt, rubric, required sources or methods, and your work so far.',
     stages: ['Understand the task', 'Plan an approach', 'Get a hint', 'Review my attempt', 'Revise my draft'],
   },
 }
@@ -112,7 +115,13 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
       </fieldset>
       <section className="en-goal-guide" aria-label={`${goalInfo.title}: what to bring and expect`}>
         <dl><div><dt>Bring</dt><dd>{goalInfo.bring}</dd></div><div><dt>You will get</dt><dd>{goalInfo.result}</dd></div></dl>
-        <details className="en-small-detail"><summary>When to use this and what may be missing</summary><p>{goalInfo.more}</p><p>{goalInfo.limit}</p></details>
+        <details className="en-small-detail"><summary>Helpful materials and limits</summary>
+          <p><b>Best for:</b> {goalInfo.bestFor}</p>
+          <p><b>Helpful extras:</b> {goalInfo.ideal}</p>
+          {goal === 'review' && <p>A transcript or recording can help. Use a recording only if your chosen AI can actually inspect it; otherwise supply a readable transcript.</p>}
+          <p><b>Missing material?</b> {goalInfo.limit}</p>
+          {goal === 'assessment' && <p><b>Large packet?</b> Work in smaller batches. Save the source details and what each batch covered, then ask your AI for the final study guide. Premed OS does not combine separate batches.</p>}
+        </details>
       </section>
       <label className="en-field en-flow-request">Additional instructions for your AI
         <span className="en-muted block">Optional. Included when you copy the prompt.</span>
@@ -174,14 +183,14 @@ export function ExternalNotebookWorkflow({ courseId, onImported }: { courseId: s
       <p className="en-selected-goal">{goalInfo.title}</p>
       <ol className="en-handoff-list">
         <li><span className="en-task-number" aria-hidden="true">1</span><div><h2>Paste the prompt</h2><p>Open the class project or conversation you want to use in your AI. Paste the full prompt there.</p></div></li>
-        <li><span className="en-task-number" aria-hidden="true">2</span><div><h2>Attach your materials</h2><p className="en-text">{values.MATERIALS || goalInfo.bring}</p><p className="en-muted">Upload the original files there. Ask your AI to confirm what it could actually read.</p></div></li>
-        <li><span className="en-task-number" aria-hidden="true">3</span><div><h2>Get the notebook file</h2><p>Ask for a downloadable <strong>.json file</strong>. If downloads are unavailable, ask for the complete JSON block.</p></div></li>
+        <li><span className="en-task-number" aria-hidden="true">2</span><div><h2>Attach your materials</h2><p className="en-text">{values.MATERIALS || goalInfo.bring}</p><p className="en-muted">Upload the originals in your AI. An upload, connection or retrieved excerpt does not prove every file was read. Ask what was inspected and what remains unread.</p>{goal === 'review' && <p className="en-muted">Use a recording only if your AI can inspect it. Otherwise, use a readable transcript.</p>}</div></li>
+        <li><span className="en-task-number" aria-hidden="true">3</span><div><h2>Get the notebook file</h2><p>Ask for a downloadable <strong>.json file</strong> containing the complete final notebook. If downloads are unavailable, ask for the complete JSON block.</p></div></li>
       </ol>
-      {goal === 'assessment' ? <aside className="en-brief-note"><b>Lots of lessons?</b><p>Work through them in batches and save each batch outside the app. Then ask your AI for one final study guide using the saved work. The app does not merge batches; missing lessons must stay marked.</p></aside> : <aside className="en-brief-note"><b>Keep the limits visible</b><p>{goalInfo.limit}</p></aside>}
+      {goal === 'assessment' ? <aside className="en-brief-note"><b>Lots of lessons?</b><p>Work in smaller batches. Save the source details and what each batch covered, then give that saved work to your AI for the final study guide. Premed OS does not combine separate batches.</p><p>Checkpoint files stay outside Premed OS. Import only the final, complete notebook JSON.</p><details className="en-small-detail"><summary>If some lessons are missing</summary><p>{goalInfo.limit}</p><p>A checkpoint is a saved file with source details, what is covered or unfinished, working explanations and the next step. Supply it to your AI when you resume; it does not prove the original sources were read again.</p></details></aside> : <aside className="en-brief-note"><b>Keep the limits visible</b><p>{goalInfo.limit}</p></aside>}
       <footer className="en-stage-footer"><div className="en-actions"><Button onClick={() => goTo('import')}>I have the JSON<ArrowRight aria-hidden="true" /></Button><Button variant="ghost" onClick={() => goTo('prompt')}><ArrowLeft aria-hidden="true" />Back to prompt</Button></div>
-        <p className="en-next-note">Working elsewhere? Return to Class notebook and choose Import JSON when the file is ready.</p>
+        <p className="en-next-note">Materials go to your AI. The finished notebook JSON goes to Premed OS. Return to Class notebook and choose Import JSON when it is ready.</p>
       </footer>
-      <details className="en-small-detail"><summary>Before you leave this page</summary><p>Keep your downloaded prompt and notebook file. Unsaved prompt details are not kept when you leave; class preferences are kept only if you choose to remember them.</p><p>Import a complete JSON file, up to 8 MiB of raw text. Browser storage may run out earlier, so keep the original download until saving succeeds.</p></details>
+      <details className="en-small-detail"><summary>Before you leave this page</summary><p>Keep your downloaded prompt and notebook JSON. Unsaved prompt details are not kept when you leave; class preferences are kept only if you choose to remember them.</p><p>Working checkpoint files stay with your AI; they are not notebook imports. The 8 MiB input limit does not guarantee a save. Available browser storage can run out sooner, so keep your downloaded copy.</p></details>
     </div>}
 
     {step === 'import' && <div className="en-stage-content"><NotebookImportPanel courseId={courseId} onImported={onImported} /><div className="en-actions"><Button variant="ghost" onClick={() => goTo('goal')}><ArrowLeft aria-hidden="true" />Create a prompt instead</Button></div></div>}

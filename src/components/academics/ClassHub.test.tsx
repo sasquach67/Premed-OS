@@ -406,7 +406,7 @@ describe('ClassHub approved Overview', () => {
       .find((button) => button.classList.contains('overview-entry-tile'))
     expect(addToday).toBeTruthy()
     await act(async () => addToday!.click())
-    expect(document.body.textContent).toContain('What would you like to do?')
+    expect(document.body.textContent).toContain('Choose your goal')
     expect(document.body.textContent).toContain('View full prompt')
 
   })
@@ -835,7 +835,7 @@ describe('ClassHub approved Overview', () => {
       )
     })
 
-    expect(document.body.textContent).toContain('What would you like to do?')
+    expect(document.body.textContent).toContain('Choose your goal')
     expect(document.body.querySelector('[aria-label="Notebook workflow progress"]')?.textContent).toContain('Goal')
     expect(document.body.textContent).toContain('Use your AI')
 
