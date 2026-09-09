@@ -10,6 +10,8 @@ import { ExternalNotebookView, NotebookPackageView, notebookTransaction } from '
 import { ExternalNotebookWorkflow } from './ExternalNotebookWorkflow'
 import { importNotebook, exportNotebook, saveNotebookEdits } from '@/lib/academics/notebook/import'
 import { prepareNotebook } from '@/lib/academics/notebook/package'
+import conversationExpectations from '@/lib/academics/notebook/prompts/conversation-expectations.json'
+import composition from '@/lib/academics/notebook/prompts/prompt-composition.json'
 import { PROMPT_TEMPLATES } from '@/lib/academics/notebook/prompt'
 import { loadNotebookWorkflowDraft, notebookWorkflowDraftKey, persistNotebookWorkflowDraft } from '@/lib/academics/notebook/workflowDraft'
 import review from '@/lib/academics/notebook/fixtures/fixture-review.json'
@@ -41,7 +43,7 @@ it('shows objective cues without practice link rows while preserving mappings, q
   const objectives = container.querySelector<HTMLElement>('[aria-label="Mastery objectives"]')!
   const objective = objectives.querySelector('.nbr-objective')!
   expect(objective.querySelector('.nbr-objective-number')?.textContent).toBe('01')
-  expect(objective.querySelector('.nbr-objective-title')?.textContent).toBe(pkg.entries[0].objectives[0].title)
+  expect(objective.querySelector('.nbr-objective-title')?.textContent).toBe('Distinguish route order, labels and tags.')
   expect(objective.querySelector('.nbr-objective-origin')?.textContent).toBe('Derived study objective')
   for (const cue of [...pkg.entries[0].objectives[0].freeRecallCues, ...pkg.entries[0].objectives[0].understand, ...pkg.entries[0].objectives[0].beAbleToDo, ...pkg.entries[0].objectives[0].watchFor]) {
     const rendered = [...objective.querySelectorAll('.en-text')].find(node => node.textContent === cue)
@@ -124,16 +126,16 @@ it('distinguishes minimum materials, optional lecture sources, partial exam scop
   expect(guide.textContent).toContain('not a complete Weeks 1-6 guide')
   expect(guide.textContent).toContain('Premed OS does not combine separate batches')
   await click('Next')
-  expect(container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value).toContain('notebook-instructions-beta-15')
+  expect(container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value).toContain(composition.promptBuild)
   await openFallback(); await click('I copied it manually'); await click('Next')
   expect(container.textContent).toContain('An upload, connection or retrieved excerpt does not prove every file was read')
   expect(container.textContent).toContain('Checkpoint files stay outside Premed OS')
   expect(container.textContent).toContain('Import only the final, complete notebook JSON')
   expect(container.textContent).toContain('Use a normal AI chat with your files or pasted material.')
-  expect(container.textContent).toContain('show the full readable draft with a brief summary of its actual topics, practice and gaps')
-  expect(container.textContent).toContain('You can ask relevant questions or request changes to the actual content.')
-  expect(container.textContent).toContain('Substantive edits need an updated summary and accessible revised draft before confirmation.')
-  expect(container.textContent).toContain('"Create the JSON" when you are happy with that version; equivalent clear approval works too.')
+  expect(container.querySelector('details.en-brief-note')?.textContent).toContain(conversationExpectations.shortCopy)
+  expect(container.querySelector<HTMLDetailsElement>('details.en-brief-note')?.open).toBe(false)
+  expect(container.textContent).toContain('Ask questions or request changes to the content.')
+  expect(container.textContent).toContain('After changes, review the updated draft and a short account of what changed before approving the JSON.')
   expect(container.textContent).toContain('Done uploading ends intake; it is not approval to make JSON.')
   expect(container.textContent).toContain('Premed OS cannot check what happened in your AI.')
   expect(container.textContent).toContain('download every referenced original PNG/JPEG alongside the JSON, keeping the matching filenames')
