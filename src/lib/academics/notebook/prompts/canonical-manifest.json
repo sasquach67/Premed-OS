@@ -1,7 +1,7 @@
 {
   "instructionsVersion": "notebook-workflows-draft-4",
   "promptBuild": "notebook-instructions-beta-18",
-  "canonicalHeadAtBuild": "a951eea749cc44405a3d3f63b6ef16492b06636c",
+  "canonicalHeadAtBuild": "2d643072a571498e048efd21e9df51b9f0bfc259",
   "canonicalRootAtBuild": "/private/tmp/premed-notebook-instructions-v2",
   "sources": {
     "premed-hq-documentation/specifications/generation/21-external-notebook-request-template.md": {
@@ -42,9 +42,9 @@
       }
     },
     "premed-hq-documentation/specifications/generation/11-unit-mastery-outline-v1.md": {
-      "sha256": "e663fecb9c8445e980e14839a1af24020df3ed7d3b948179b95282f8444185fd",
+      "sha256": "b01c8b2d16c6e1139989ca5cbf9e1ccacaa7d4bcd19131342aa3b2ee58c977d0",
       "sections": {
-        "Introduction and Rules excluding runtime plumbing": "c1cc05d976c897d12df21a87bce57f4e949ef0e9d6597893dac24b81904db4e7",
+        "Introduction and Rules excluding runtime plumbing": "e9b1e43d1aaefa2199fa4d10f0de9c05e9aaa1174f109b42922c59c6a6eb7d9f",
         "Portable objective coverage": "bee267cc52e03ec6f1c2c42ce082fc9f9e501d5be1a61d3a3e274004434974e7"
       }
     },
@@ -117,13 +117,13 @@
   },
   "outputs": {
     "copy-prompt-review.md": {
-      "sha256": "00b69ca84d84b4c067e1d97a6d563ba17c7c870d7b35473917451186efaa4baa",
-      "bytes": 151548,
-      "words": 17400,
+      "sha256": "cfdfb2c8e0245f9f0027494fb80443b09d25e91b98d1b04564c6b4de2a89102f",
+      "bytes": 151893,
+      "words": 17447,
       "componentBytes": {
         "request": 4934,
         "commonLearningRules": 16010,
-        "goalLearningRules": 27856,
+        "goalLearningRules": 28201,
         "externalWorkflow": 72106,
         "schema": 29667,
         "assembly": 975
