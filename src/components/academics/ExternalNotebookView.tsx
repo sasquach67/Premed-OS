@@ -134,8 +134,9 @@ function NotebookObjectives({ entry, entryIndex, headingId, pkg, change }: { ent
     <h3 id={headingId} tabIndex={headingId ? -1 : undefined}>Mastery objectives</h3>
     <ol className="nbr-objective-list">{entry.objectives.map((o, oi) => {
       const requirement = entry.requirements.find(r => r.id === o.requirementId)?.text
+      const heading = !change && o.origin === 'derived' ? o.title.replace(/^Study objective:\s*/, '') || o.title : o.title
       return <li className="nbr-objective" key={o.id}>
-        <header className="nbr-objective-head"><span className="nbr-objective-number" aria-hidden="true">{String(oi + 1).padStart(2, '0')}</span><div><h4 className="nbr-objective-title">{o.title}</h4><span className="nbr-objective-origin">{o.origin === 'official' ? 'Course objective' : 'Derived study objective'}</span></div></header>
+        <header className="nbr-objective-head"><span className="nbr-objective-number" aria-hidden="true">{String(oi + 1).padStart(2, '0')}</span><div><h4 className="nbr-objective-title">{heading}</h4><span className="nbr-objective-origin">{o.origin === 'official' ? 'Course objective' : 'Derived study objective'}</span></div></header>
         <div className="nbr-objective-body">
           {change && text(o.title, ['entries', ei, 'objectives', oi, 'title'], 'Objective title')}
           {requirement && requirement !== o.title && <p className="nbr-objective-requirement">Requirement: {requirement}</p>}
