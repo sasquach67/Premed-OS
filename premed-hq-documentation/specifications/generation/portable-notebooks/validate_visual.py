@@ -1,7 +1,9 @@
 """Closed v3 relationships, not binary resolution or scientific/visual truth."""
 
 def asset_refs(item):
-    return set(item.get('assetIds',[]))|({item['assetId']} if item.get('type')=='figure' else set())
+    direct={item['assetId']} if isinstance(item.get('assetId'),str) else set()
+    nested={s['assetId'] for s in item.get('steps',[]) if isinstance(s,dict) and isinstance(s.get('assetId'),str)} if item.get('type')=='sequence-strip' else set()
+    return set(item.get('assetIds',[]))|direct|nested
 
 def visual_errors(data,evidence):
     errors=[]
@@ -62,7 +64,7 @@ def visual_errors(data,evidence):
                 if len(refs)!=len(set(refs)):fail('stimulus-duplicate',b['id'])
                 for id in refs:
                     target=blocks.get(id)
-                    if not target or target['type'] not in ('paragraph','table','figure','study-diagram'):fail('stimulus-reference',b['id']+' -> '+id)
+                    if not target or target['type'] not in (('paragraph','table','figure','study-diagram','annotated-figure') if data['version']==4 else ('paragraph','table','figure','study-diagram')):fail('stimulus-reference',b['id']+' -> '+id)
             if b['type']=='study-diagram':
                 nodes={n['id']:n for n in b['nodes']};edges={e['id']:e for e in b['edges']}
                 if len(nodes)!=len(b['nodes']) or len(edges)!=len(b['edges']):fail('diagram-duplicate',b['id'])

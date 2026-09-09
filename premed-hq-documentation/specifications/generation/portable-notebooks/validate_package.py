@@ -28,7 +28,7 @@ def validate(data,schema):
         id=item['id']
         if id in seen[kind]:fail('duplicate-id',kind+' '+id)
         seen[kind].add(id)
-    visual=data.get('version')==3
+    visual=data.get('version') in (3,4)
     assets={a['id']:a for a in data.get('assets',[])}
     sources={};excerpts={};used=set()
     for src in data['sources']:
@@ -92,6 +92,9 @@ def validate(data,schema):
                 if b is None or b['type']!='practice':fail('practice-reference',o['id']+' -> '+id)
                 elif not set(b['sourceIds'])<=set(o['sourceIds']) or not set(b['excerptIds'])<=set(o['excerptIds']) or (visual and not asset_refs(b)<=asset_refs(o)):fail('practice-objective-evidence',o['id'])
     if visual:errors.extend(visual_errors(data,evidence))
+    if data.get('version')==4:
+        from validate_v4 import v4_errors
+        errors.extend(v4_errors(data,evidence))
     for id,src in sources.items():
         if src['used'] and id not in used:fail('unreferenced-used',id)
     return errors
