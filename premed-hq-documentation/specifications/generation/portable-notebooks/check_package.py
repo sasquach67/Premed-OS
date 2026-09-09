@@ -173,6 +173,15 @@ def run(root,out):
         wrong=prompt.replace(opening,'Wait for explicit approval of a separate readable draft before emitting final JSON.')
         assert prompt_methodology_errors(root,goal,wrong)
         results.append({'case':'reject-default-draft-gate-opening-'+goal,'expected':'canonical request guard rejects a restored mandatory draft-approval default','passed':True})
+    for goal in ('review','assessment','assignment'):
+        template=(out/('copy-prompt-'+goal+'.md')).read_text()
+        for mode in ('new','update'):
+            actual=compose(template,{},mode=mode)
+            continuation=next(line for line in actual.splitlines() if line.startswith('- `EC-CONTINUE`:'))
+            assert 'complete the content checks and deliver final JSON directly by default' in continuation
+            assert 'Stop at a readable draft only if the student explicitly requested that stage.' in continuation
+            assert 'afterward stop at actual readable review before JSON' not in actual
+            results.append({'case':'continue-direct-delivery-'+goal+'-'+mode,'expected':'continuation after closed intake delivers directly; only an explicit draft request pauses at content','passed':True})
     focused_fragments=[('no-duplicate-mastery-surface','Do not also reproduce its full objective/cue/action rows as a second guide table'),('scenario-identify-explain','For a generated application, supply the necessary scenario'),('emphasized-item-coverage','Check explicit instructor priorities against the actual question set'),('discovery-selection-consistency','If inspected PDF page rasters are retained as discovered candidates, use images-found even when every page is skipped for teaching and assets is empty.')]
     for goal in ('review','assessment','assignment'):
         actual=(out/('copy-prompt-'+goal+'.md')).read_text()
