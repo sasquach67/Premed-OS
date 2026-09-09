@@ -23,6 +23,31 @@ async function show(pkg: NotebookPackage, change?: (path: (string | number)[], v
   await act(async () => root.render(<NotebookPackageView pkg={pkg} reader mode="study" change={change} />))
 }
 
+it('owns narrow branch rails at the sibling group and excludes causal-chain links', async () => {
+  await show(fresh())
+  const group = '.nbr-tree:not(.nbr-tree-causal-chain) .nbr-tree-children'
+  const child = `${group} > li`
+  const rules = [...visualCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+  const declaration = (selector: string) => rules.find(([, candidate]) => candidate.trim() === selector)![2]
+  const narrow = visualCss.slice(visualCss.indexOf('@container (max-width: 560px)'), visualCss.indexOf('@media (max-width: 620px)'))
+  expect(narrow).toContain(`${group} { --nbr-branch-rail: block;`)
+  expect(narrow).toContain('--nbr-branch-icon: none;')
+  expect(declaration('.nbr-tree-children')).toContain('--nbr-branch-rail: none;')
+  expect(declaration('.nbr-tree-children')).toContain('--nbr-branch-icon: block;')
+  expect(declaration(`${child}::before`)).toContain('border-left: 2px solid')
+  expect(declaration(`${child}::before`)).toContain('top: 0; bottom: 0;')
+  expect(declaration(`${child}::after`)).toContain('border-top: 2px solid')
+  expect(declaration(`${child}::after`)).toContain('top: 1.5rem;')
+  expect(declaration(`${child}:last-child::before`)).toContain('bottom: auto; height: 1.5rem;')
+  for (const kind of ['decision-tree', 'hierarchy']) {
+    const children = [...container.querySelectorAll(`.nbr-tree-${kind} .nbr-tree-children > li`)]
+    expect(children.length).toBeGreaterThan(1)
+    expect(children.every(item => item.matches(child))).toBe(true)
+  }
+  for (const item of container.querySelectorAll('.nbr-tree-causal-chain .nbr-tree-children > li')) expect(item.matches(child)).toBe(false)
+  expect(container.querySelector('.nbr-tree-causal-chain [data-relation="inhibits"] svg')).not.toBeNull()
+})
+
 it('keeps cleared nullable inputs blank in the real saved-entry draft across subsequent edits and renders', async () => {
   const pkg = fresh(), raw = JSON.stringify(pkg)
   // This test exercises controlled draft rendering only; image loading and save transactions are separate checks.
