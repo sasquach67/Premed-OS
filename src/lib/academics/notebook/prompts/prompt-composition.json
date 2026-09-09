@@ -1,7 +1,7 @@
 {
   "instructionsVersion": "notebook-workflows-draft-4",
   "formatVersion": 4,
-  "promptBuild": "notebook-instructions-beta-17",
+  "promptBuild": "notebook-instructions-beta-18",
   "delivery": "Exactly three prewritten static goal templates, derived from canonical Markdown during development. Goal selection retrieves the chosen template; placeholder insertion and student notes are local plain-text operations. No AI API generates or rewrites prompts. The student uses the resulting prompt in their preferred AI to generate notebook content.",
   "templates": {
     "review": "copy-prompt-review.md",
