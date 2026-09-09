@@ -5,8 +5,9 @@ import { NOTEBOOK_MAX_BYTES, parseLegacyNotebookPackage, rejectDuplicateKeys } f
 import { NotebookValidationError, validateSchema, type Schema } from './schemaValidator'
 import type { PortableNotebookPackage, VisualEvidence, VisualNotebookBlock, VisualNotebookPackage } from './visualTypes'
 
-export function visualAssetReferences(item: { assetIds?: string[]; type?: string; assetId?: string | null }): string[] {
-  return [...new Set([...(item.assetIds ?? []), ...(typeof item.assetId === 'string' ? [item.assetId] : [])])]
+export function visualAssetReferences(item: { assetIds?: string[]; type?: string; assetId?: string | null; steps?: readonly unknown[] }): string[] {
+  const sequenceImages = item.type === 'sequence-strip' ? (item.steps ?? []).flatMap(step => step && typeof step === 'object' && 'assetId' in step && typeof step.assetId === 'string' ? [step.assetId] : []) : []
+  return [...new Set([...(item.assetIds ?? []), ...(typeof item.assetId === 'string' ? [item.assetId] : []), ...sequenceImages])]
 }
 export function parsePortableNotebook(raw: string): PortableNotebookPackage {
   if (new TextEncoder().encode(raw).length > NOTEBOOK_MAX_BYTES) throw new NotebookValidationError('$', 'JSON exceeds 8 MiB. Split the notebook deliberately; nothing was truncated or saved.')

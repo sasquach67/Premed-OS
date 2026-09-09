@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import fixture from './visual-fixtures/valid-v4-repertoire.json'
-import { parsePortableNotebook } from './visualPackage'
+import { parsePortableNotebook, visualAssetReferences } from './visualPackage'
+import { notebookEntryAssetIds, projectNotebookEntry } from './visualProjection'
 import type { NotebookBlock, NotebookPackage } from './types'
 
 const fresh = () => structuredClone(fixture) as NotebookPackage
@@ -13,6 +14,33 @@ function find<T extends NotebookBlock['type']>(pkg: NotebookPackage, type: T): E
 const parse = (pkg: NotebookPackage) => parsePortableNotebook(JSON.stringify(pkg))
 
 describe('v4 frozen-contract parity regressions', () => {
+  it.each(['step', 'parent', 'both', 'omitted-parent'] as const)('accepts direct sequence image references without redundant %s assetIds', mode => {
+    const pkg = fresh(), strip = find(pkg, 'sequence-strip')
+    if (mode !== 'step') strip.assetIds = []
+    if (mode !== 'parent') for (const step of strip.steps) if (step.assetId) step.assetIds = []
+    if (mode === 'omitted-parent') delete strip.assetIds
+    expect(parse(pkg)).toEqual(pkg)
+    expect(visualAssetReferences(strip)).toContain('source-image')
+    expect([...notebookEntryAssetIds(pkg, pkg.entries[0].id)]).toContain('source-image')
+    const projected = projectNotebookEntry(pkg, pkg.entries[0].id)
+    expect(projected.version !== 2 && projected.assets.map(asset => asset.id)).toContain('source-image')
+  })
+
+  it('still requires the sequence step evidence arrays even when its direct image reference supplies ownership', () => {
+    const pkg = fresh(), step = find(pkg, 'sequence-strip').steps.find(step => step.assetId)!
+    delete step.assetIds
+    expect(() => parse(pkg)).toThrow(/Required field is missing/)
+  })
+
+  it.each(['unknown-image', 'missing-step-owner', 'missing-parent-owner'] as const)('still rejects invalid direct sequence evidence: %s', mutation => {
+    const pkg = fresh(), strip = find(pkg, 'sequence-strip'), step = strip.steps.find(step => step.assetId)!
+    strip.assetIds = []; step.assetIds = []
+    if (mutation === 'unknown-image') step.assetId = 'not-a-retained-image'
+    if (mutation === 'missing-step-owner') step.sourceIds = step.sourceIds.filter(id => id !== 'image')
+    if (mutation === 'missing-parent-owner') strip.sourceIds = strip.sourceIds.filter(id => id !== 'image')
+    expect(() => parse(pkg)).toThrow()
+  })
+
   it.each(['annotated-figure', 'timeline', 'continuum', 'sequence-strip', 'worked-example', 'venn'] as const)('rejects a %s item that reuses its parent block ID', type => {
     const pkg = fresh(), block = find(pkg, type)
     switch (block.type) {

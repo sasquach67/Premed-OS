@@ -93,7 +93,7 @@ export function validateLearningVisual(block: NotebookBlock) {
   }
   if (block.type === 'timeline' || block.type === 'continuum') validateAxis(block, block.axis, block.type === 'timeline' ? block.events : block.points)
   if (block.type === 'sequence-strip') for (const step of block.steps) {
-    if (step.assetId === null ? step.alt !== null : !step.alt?.trim() || !(step.assetIds ?? []).includes(step.assetId)) fail(block, 'Sequence images need their exact evidence asset and alternative text; text-only steps have null image and alt.')
+    if (step.assetId === null ? step.alt !== null : !step.alt?.trim()) fail(block, 'Sequence images need their direct image asset and alternative text; text-only steps have null image and alt.')
   }
   if (block.type === 'venn') {
     if (block.sets.length !== 2 || block.regions.length !== 3) fail(block, 'This Venn contract supports exactly two sets and their three membership regions.')
