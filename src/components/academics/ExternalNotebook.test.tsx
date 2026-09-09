@@ -57,6 +57,12 @@ it('shows objective cues without practice link rows while preserving mappings, q
   expect(objectives.textContent).not.toContain('Question 1')
   const questions = pkg.entries[0].sections.flatMap(section => section.blocks).filter(block => block.type === 'practice')
   expect(container.querySelectorAll('.en-block-practice')).toHaveLength(questions.length)
+  expect([...container.querySelectorAll('.np-number')].map(el => el.textContent)).toEqual(questions.map((_, i) => String(i + 1).padStart(2, '0')))
+  expect(container.querySelectorAll('.np-set-cue')).toHaveLength(1)
+  expect(container.querySelectorAll('.nbr-mental-cue')).toHaveLength(0)
+  expect([...container.querySelectorAll('.np-original .en-text')].map(el => el.textContent)).toEqual(questions.map(q => q.prompt))
+  expect([...container.querySelectorAll('.np-answer h4')].every(el => el.textContent === 'Answer')).toBe(true)
+  expect([...container.querySelectorAll('.np-why h4')].every(el => el.textContent === 'Why')).toBe(true)
   for (const question of questions) expect(container.textContent).toContain(question.prompt)
   expect([...container.querySelectorAll<HTMLDetailsElement>('.en-answer')].every(answer => !answer.open)).toBe(true)
   expect(pkg.entries[0].objectives.map(objective => objective.practiceBlockIds)).toEqual(mappings)
@@ -456,7 +462,7 @@ it('keeps earlier work collapsed after answer and explanation inside the corresp
   const lecture = useStore.getState().academics.classCenter.lectures.find(l => l.id === id)!, before = JSON.stringify(lecture.importedNotebook)
   await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode={course.code} />)); await click('Practice')
   const earlier = [...container.querySelectorAll<HTMLDetailsElement>('.nbr-earlier-work')].find(e => e.textContent?.includes('Earlier response stays private'))!, answer = earlier.closest<HTMLDetailsElement>('.en-answer')!
-  expect(answer).toBeTruthy(); expect(answer.open).toBe(false); expect(earlier.open).toBe(false); expect(answer.lastElementChild).toBe(earlier)
+  expect(answer).toBeTruthy(); expect(answer.open).toBe(false); expect(earlier.open).toBe(false); expect(answer.querySelector('.np-secondary')?.lastElementChild).toBe(earlier)
   await act(async () => answer.querySelector('summary')!.click()); expect(answer.open).toBe(true); expect(earlier.open).toBe(false)
   await act(async () => earlier.querySelector('summary')!.click()); expect(earlier.open).toBe(true)
   expect(JSON.stringify(lecture.importedNotebook)).toBe(before)
@@ -466,7 +472,7 @@ it('labels retained source questions without claiming their answer is a verified
   practice.provenance = 'source'
   await act(async () => root.render(<NotebookPackageView pkg={pkg} entryId={entry.id} mode="practice" reader />))
   const answer = container.querySelector<HTMLDetailsElement>('.en-answer')!
-  expect(answer.open).toBe(false); expect(answer.textContent).toContain('Question from supplied course material')
+  expect(answer.open).toBe(false); expect(answer.closest('.np-card')?.querySelector('.np-origin')?.textContent).toBe('Question from supplied course material')
   expect(answer.textContent).not.toContain('Verified source answer')
 })
 it('exposes distinct question, answer and reasoning type roles without changing source text or Reveal boundaries', async () => {

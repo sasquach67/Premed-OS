@@ -1,3 +1,5 @@
+import { NotebookPracticeCard } from './NotebookPracticeCard'
+import './notebookPractice.css'
 import { GenerationReviewNotice } from './GenerationReviewNotice'
 import { useId, useState } from 'react'
 import { BookOpen, Brain, CheckCircle2, EyeOff } from 'lucide-react'
@@ -77,17 +79,16 @@ function ObjectiveChecklist({ standard, chunks, imported = false }: { standard: 
         </div>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">Original practice built from the selected sources—not an instructor-authored question, exam prediction, or readiness score.</p>
         {standard.examPractice?.length ? standard.examPractice.map((question, index) => (
-          <article key={index} className="mt-4 rounded-xl border border-border p-4">
-            <p className="text-xs font-bold text-primary">Application {index + 1}</p>
-            <p className="mt-2 whitespace-pre-wrap text-base leading-7">{studentText(question.prompt)}</p>
-            <details data-testid={`practice-solution-${standard.id}-${index}`} className="mt-3">
-              <summary className="w-fit cursor-pointer rounded py-2 text-sm font-bold focus-visible:ring-2 focus-visible:ring-ring">Show answer and working</summary>
-              <div className="mt-2 space-y-3 text-sm leading-7">
-                <p><b>Answer: </b>{studentText(question.answer)}</p>
-                <p><b>Working: </b>{studentText(question.rationale)}</p>
-                <SourceDetails ids={question.sourceChunkIds} chunks={chunks} />
-              </div>
-            </details>
+          <article key={index} className="external-notebook mt-4">
+            <div className="en-block-practice en-practice-unit"><NotebookPracticeCard
+              number={index + 1} origin="Generated practice" original={question.prompt}
+              prompt={<p className="en-text" data-reader-role="question">{studentText(question.prompt)}</p>}
+              stimulus={null} hasStimulus={false} missing={[]}
+              answer={<p className="en-text" data-reader-role="answer">{studentText(question.answer)}</p>}
+              rationale={<p className="en-text" data-reader-role="reasoning">{studentText(question.rationale)}</p>}
+              sources={<SourceDetails ids={question.sourceChunkIds} chunks={chunks} />}
+              solutionTestId={`practice-solution-${standard.id}-${index}`}
+            /></div>
           </article>
         )) : standard.evidenceLimit ? (
           <p className="mt-3 text-sm leading-6 text-muted-foreground">No application question was generated because the selected sources do not support a worked solution. Use the supported recall and understanding points above.</p>

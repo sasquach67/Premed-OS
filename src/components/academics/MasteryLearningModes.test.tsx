@@ -82,7 +82,7 @@ describe('mastery learning modes', () => {
     expect(reveal.open).toBe(false)
     expect(reveal.querySelector('summary')?.textContent).toBe('Reveal after trying')
     expect(reveal.querySelector('button[aria-label^="Mastery state for"]')).toBeTruthy()
-    expect(reveal.querySelector('details details summary')?.textContent).toBe('Show answer and working')
+    expect(reveal.querySelector('details details .np-closed-label')?.textContent).toBe('Reveal answer')
     expect(reveal.querySelector('[data-source-chunk-id="chunk-1"]')).toBeTruthy()
     expect(container.querySelector('button[aria-label^="Mastery state for"]')?.closest('[data-testid="recall-reveal-objective-1"]')).toBe(reveal)
 

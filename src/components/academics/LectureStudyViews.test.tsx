@@ -112,7 +112,7 @@ describe('lecture mastery study view', () => {
 
     const solution = container.querySelector<HTMLDetailsElement>('[data-testid="practice-solution-objective-1-0"]')!
     expect(solution.open).toBe(false)
-    expect(solution.querySelector('summary')?.textContent).toBe('Show answer and working')
+    expect(solution.querySelector('.np-closed-label')?.textContent).toBe('Reveal answer')
 
     const objectiveSources = [...container.querySelectorAll<HTMLDetailsElement>('details')].find((details) => details.querySelector('[data-source-chunk-id="source-1"]'))!
     expect(objectiveSources.open).toBe(false)

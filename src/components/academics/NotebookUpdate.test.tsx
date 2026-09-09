@@ -6,6 +6,7 @@ import { createInitialDataForMode, STORAGE_KEY, useStore } from '@/store/store'
 import { ExternalNotebookView, notebookTransaction } from './ExternalNotebookView'
 import { importNotebook, exportNotebook } from '@/lib/academics/notebook/import'
 import { prepareNotebook } from '@/lib/academics/notebook/package'
+import * as notebookAssetStore from '@/lib/academics/notebook/notebookAssetStore'
 import * as notebookBundles from '@/lib/academics/notebook/notebookBundle'
 import { correctedFixture, revisionFixture } from '@/lib/academics/notebook/revision.test-fixtures'
 import type { Course } from '@/lib/types'
@@ -237,6 +238,7 @@ it.each(['current', 'backup'] as const)('suggests the current title for the %s Z
   Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn(() => 'blob:zip-title-test') })
   Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() })
   vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) { names.push(this.download) })
+  vi.spyOn(notebookAssetStore, 'notebookAssetRepository').mockReturnValue({} as ReturnType<typeof notebookAssetStore.notebookAssetRepository>)
   const currentBundle = vi.spyOn(notebookBundles, 'exportNotebookPackageBundle').mockResolvedValue(blob)
   const backupBundle = vi.spyOn(notebookBundles, 'exportNotebookBackupBundle').mockResolvedValue(blob)
   await click('Edit entry'); await fill('Entry title', 'Current: lesson/notes'); await click('Save edits')

@@ -226,6 +226,10 @@
   scrollbar-width: thin;
 }
 
+.lecture-workspace-tabs button {
+  font-weight: 700;
+}
+
 .lecture-workspace-tabs button:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: -2px;
