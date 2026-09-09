@@ -22,6 +22,18 @@ def run(out):
     ann=block(pkg,'label-source-image')['annotations'][0];assert all(ann[k]==inspected['observedTipNormalized'][k] for k in ['x','y']);rec('annotation-uses-actually-inspected-image-point')
     w=block(pkg,'elapsed-worked');byex={x['id']:x['text'] for x in pkg['sources'][0]['excerpts']}
     assert all('15 minutes' not in byex[x] for x in w['problemEvidence']['excerptIds']) and any('15 minutes' in byex[x] for x in w['solutionEvidence']['excerptIds']);rec('authored-worked-setup-excludes-answer-bearing-excerpt')
+    neutral=next(x['id'] for x in pkg['sources'][0]['excerpts'] if x['location']=='Section: Image annotation reference')
+    guidance=next(x['id'] for x in pkg['sources'][0]['excerpts'] if x['location']=='Section: Image answer authoring guidance')
+    def neutral_image_evidence(p):
+        visible=[block(p,'source-question'),block(p,'label-source-image'),*block(p,'label-source-image')['annotations']]
+        texts={x['id']:x['text'] for x in p['sources'][0]['excerpts']}
+        return all(v['excerptIds']==[neutral] and all(term not in texts[neutral].lower() for term in ['left','right','correct response']) for v in visible)
+    assert neutral_image_evidence(pkg) and 'correct response is A. Left' in byex[guidance];rec('authored-initial-question-and-annotation-use-only-neutral-exact-excerpt')
+    for target in ['source-question','label-source-image','annotation']:
+        leaked=copy.deepcopy(pkg);v=block(leaked,'label-source-image')['annotations'][0] if target=='annotation' else block(leaked,target);v['excerptIds'].append(guidance)
+        assert not neutral_image_evidence(leaked);rec('fixture-review-reject-answer-guidance-on-'+target)
+    leaked=copy.deepcopy(pkg);next(x for x in leaked['sources'][0]['excerpts'] if x['id']==neutral)['text']+=' A label saying the correct response is LEFT is solution content.'
+    assert not neutral_image_evidence(leaked);rec('fixture-review-reject-original-answer-bearing-warning')
     for mode,id in [('ordinal','schedule-ordinal'),('numeric','schedule-numeric'),('ordinal','readiness-scale'),('numeric','test-score-scale')]:assert block(pkg,id)['axis']['mode']==mode
     rec('ordinal-and-numeric-positive-fixtures')
     ties=copy.deepcopy(pkg);block(ties,'schedule-numeric')['events'][2]['value']=10;block(ties,'test-score-scale')['points'][2]['value']=5
@@ -47,6 +59,8 @@ def run(out):
         mutate(id+'-null-domain','v4-numeric-axis',lambda p,id=id:block(p,id)['axis'].update(minimum=None))
         mutate(id+'-zero-span','v4-numeric-axis',lambda p,id=id:block(p,id)['axis'].update(minimum=10,maximum=10))
         mutate(id+'-infinite-span','v4-numeric-axis',lambda p,id=id:block(p,id)['axis'].update(minimum=-1e308,maximum=1e308))
+        mutate(id+'-oversized-json-integer-domain','v4-numeric-axis',lambda p,id=id:block(p,id)['axis'].update(maximum=json.loads('1'+'0'*400)))
+        mutate(id+'-oversized-json-integer-value','v4-numeric-value',lambda p,id=id,key=key:block(p,id)[key][-1].update(value=json.loads('1'+'0'*400)))
         mutate(id+'-no-unit','v4-numeric-axis',lambda p,id=id:block(p,id)['axis'].update(unit=None))
         mutate(id+'-null-value','v4-numeric-value',lambda p,id=id,key=key:block(p,id)[key][0].update(value=None))
         mutate(id+'-out-of-domain','v4-numeric-value',lambda p,id=id,key=key:block(p,id)[key][0].update(value=-1))

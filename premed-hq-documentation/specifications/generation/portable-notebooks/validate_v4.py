@@ -9,7 +9,10 @@ NEW_TYPES={'annotated-figure','timeline','venn','sequence-strip','worked-example
 def v4_errors(data,evidence):
     errors=[];assets={x['id']:x for x in data['assets']}
     def fail(code,msg):errors.append(code+': '+msg)
-    def finite(v):return isinstance(v,(int,float)) and not isinstance(v,bool) and math.isfinite(v)
+    def finite(v):
+        if not isinstance(v,(int,float)) or isinstance(v,bool):return False
+        try:return math.isfinite(v)
+        except OverflowError:return False
     def refs(x):return (set(x['sourceIds']),set(x['excerptIds']),asset_refs(x))
     def inside(x,parent):return all(a<=b for a,b in zip(refs(x),refs(parent)))
     def nested(x,parent,label=None):

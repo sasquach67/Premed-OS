@@ -20,7 +20,7 @@ The fictional collection contains Text cards and Image cards. A Text card contai
 
 ## Image annotation reference
 
-The separate authored-classroom-task.png is an unchanged existing UI fixture. It visibly states that a triangle maps to LEFT and a circle maps to RIGHT, and shows an outlined triangle beside four unmarked answer choices. Its printed PSYC 101 course label is fictional fixture context. A neutral label may identify the top corner of the displayed shape. Use the actual inspected point from IMAGE-INSPECTION.json, not guessed image coordinates. A label saying the correct response is LEFT is solution content and must not be shown as a neutral initial question stimulus.
+The separate authored-classroom-task.png is an unchanged existing UI fixture. It displays a written symbol-to-response rule and an outlined shape beside four unmarked answer choices. Its printed PSYC 101 course label is fictional fixture context. A neutral label may identify the top corner of the displayed shape. Use the actual inspected point from IMAGE-INSPECTION.json, not guessed image coordinates.
 
 ## Timeline
 
@@ -45,3 +45,7 @@ The fictional archive's readiness stages are Unsorted, Labeled and Checked, in t
 ## Numeric scale
 
 A separate fictional display test uses an explicitly defined score from 0 to 10 points, with anchors at 0, 5 and 10 and a sample marker at 7. Units are points. This is an invented UI test scale, not a learner score, actual measurement or empirical distribution. A proportional numeric axis can encode these provided test values; it must not add unprovided uncertainty intervals, thresholds or observations.
+
+## Image answer authoring guidance
+
+The displayed shape is a triangle, and the supplied written rule maps a triangle to LEFT. The correct response is A. Left. This paragraph is answer-bearing authoring guidance. It must never be cited as initial question or neutral stimulus evidence. The unchanged image supplies the actual task rule and unmarked options; a label disclosing the chosen response belongs only after reveal.
