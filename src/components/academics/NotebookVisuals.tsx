@@ -1,17 +1,18 @@
-import { createContext, useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { canonical } from '@/lib/academics/notebook/package'
 import { notebookAssetRepository } from '@/lib/academics/notebook/notebookAssetStore'
 import { getPreparedAssetBytes, validateNotebookRaster, type PreparedNotebookAssets } from '@/lib/academics/notebook/visualAssets'
 import { missingPracticeImages } from '@/lib/academics/notebook/visualProjection'
 import { layoutNotebookDiagram } from '@/lib/academics/notebook/notebookDiagram'
 import type { NotebookAssetBinding, NotebookFigureBlock, NotebookStudyDiagramBlock, PortableNotebookPackage, VisualNotebookBlock } from '@/lib/academics/notebook/visualTypes'
+import type { LearningAnnotation, LearningVisualBlock, WorkedExampleBlock } from '@/lib/academics/notebook/learningVisualTypes'
+import { isConstrainedDiagram } from '@/lib/academics/notebook/learningVisuals'
+import { NotebookConstrainedDiagram, NotebookLearningVisual, type LearningTextChange } from './NotebookLearningVisuals'
+import { NotebookImages, type NotebookImageState as ImageState, type NotebookVisualContext as VisualContext } from './NotebookImageContext'
 
-type ImageState = { status: 'loading' | 'ready' | 'missing'; url?: string; error?: string }
-type VisualContext = { pkg?: PortableNotebookPackage; images: Map<string, ImageState>; fail: (id: string) => void }
-const NotebookImages = createContext<VisualContext>({ images: new Map(), fail: () => undefined })
 export function NotebookAssetsProvider({ pkg, bindings, prepared, children }: { pkg: PortableNotebookPackage; bindings?: readonly NotebookAssetBinding[]; prepared?: PreparedNotebookAssets; children: ReactNode }) {
   const inherited = useContext(NotebookImages), [images, setImages] = useState<Map<string, ImageState>>(new Map())
-  const declared = pkg.version === 3 ? pkg.assets : [], bindingKey = canonical(bindings ?? prepared?.bindings ?? []), assetKey = canonical(declared)
+  const declared = pkg.version !== 2 ? pkg.assets : [], bindingKey = canonical(bindings ?? prepared?.bindings ?? []), assetKey = canonical(declared)
   const inherit = bindings === undefined && prepared === undefined && inherited.pkg !== undefined
   useEffect(() => {
     if (inherit) return
@@ -29,7 +30,7 @@ export function NotebookAssetsProvider({ pkg, bindings, prepared, children }: { 
           if (canonical(verified.binding) !== canonical(binding)) throw new Error('The local image does not match its saved byte binding.')
           if (stopped) return
           const url = URL.createObjectURL(verified.blob); urls.push(url)
-          setImages(previous => new Map(previous).set(asset.id, { status: 'ready', url }))
+          setImages(previous => new Map(previous).set(asset.id, { status: 'ready', url, width: binding.width, height: binding.height }))
         } catch (failure) { if (!stopped) setImages(previous => new Map(previous).set(asset.id, { status: 'missing', error: failure instanceof Error ? failure.message : 'Image unavailable.' })) }
       }
     }
@@ -39,10 +40,13 @@ export function NotebookAssetsProvider({ pkg, bindings, prepared, children }: { 
   const context = useMemo<VisualContext>(() => inherit ? { ...inherited, pkg } : { pkg, images, fail: id => setImages(previous => new Map(previous).set(id, { status: 'missing', error: 'This browser could not display the saved image.' })) }, [inherit, inherited, pkg, images])
   return <NotebookImages.Provider value={context}>{children}</NotebookImages.Provider>
 }
-export function NotebookFigure({ block, onChange }: { block: NotebookFigureBlock; onChange?: (block: NotebookFigureBlock) => void }) {
+export function NotebookFigure({ block, onChange, annotations }: { block: NotebookFigureBlock; onChange?: (block: NotebookFigureBlock) => void; annotations?: LearningAnnotation[] }) {
   const { pkg, images, fail } = useContext(NotebookImages), state = images.get(block.assetId), dialog = useRef<HTMLDialogElement>(null)
   const restoreView = useRef<(() => void) | null>(null), [zoomError, setZoomError] = useState('')
-  const asset = pkg?.version === 3 ? pkg.assets.find(a => a.id === block.assetId) : undefined
+  const asset = pkg && pkg.version !== 2 ? pkg.assets.find(a => a.id === block.assetId) : undefined
+  const image = (enlarged = false) => annotations && state?.width && state.height
+    ? <div className="nbr-annotation-frame" style={{ width: enlarged ? state.width : Math.min(state.width, 640), aspectRatio: `${state.width} / ${state.height}` }}><img src={state.url} alt={block.alt} onError={() => fail(block.assetId)} />{annotations.map((point, index) => <span key={point.id} className="nbr-annotation-pin" data-annotation-anchor={point.id} data-x={point.x} data-y={point.y} aria-hidden="true" style={{ left: `${point.x * 100}%`, top: `${point.y * 100}%` }}>{index + 1}</span>)}</div>
+    : <img src={state?.url} alt={block.alt} onError={() => fail(block.assetId)} />
   useEffect(() => () => { restoreView.current?.(); restoreView.current = null }, [])
   function finishZoom() { const restore = restoreView.current; restoreView.current = null; restore?.() }
   function openZoom(opener: HTMLButtonElement) {
@@ -59,7 +63,7 @@ export function NotebookFigure({ block, onChange }: { block: NotebookFigureBlock
     try { dialog.current.showModal() } catch { finishZoom(); setZoomError('This browser could not open the enlarged figure. Your image and notebook are unchanged.') }
   }
   return <figure className="nbr-figure" data-asset-id={block.assetId}>
-    {state?.status === 'ready' ? <button type="button" className="nbr-figure-open" aria-label={`Enlarge figure: ${block.caption ?? block.alt}`} onClick={event => openZoom(event.currentTarget)}><img src={state.url} alt={block.alt} onError={() => fail(block.assetId)} /><span>Enlarge figure</span></button> : <div className="en-notice" role="status"><b>{state?.status === 'loading' ? 'Loading figure' : 'Figure unavailable on this device'}</b><p>{state?.error ?? 'Select and validate this notebook image before saving.'}</p><p>{block.alt}</p></div>}
+    {state?.status === 'ready' ? <button type="button" className="nbr-figure-open" aria-label={`Enlarge figure: ${block.caption ?? block.alt}`} onClick={event => openZoom(event.currentTarget)}>{image()}<span>Enlarge figure</span></button> : <div className="en-notice" role="status"><b>{state?.status === 'loading' ? 'Loading figure' : 'Figure unavailable on this device'}</b><p>{state?.error ?? 'Select and validate this notebook image before saving.'}</p><p>{block.alt}</p></div>}
     {zoomError && <p role="status">{zoomError}</p>}
     <figcaption>{block.caption && <strong>{block.caption}</strong>}{asset && <small>{asset.sourceId} / {asset.location}</small>}</figcaption>
     <p className="nbr-figure-context">{block.context}</p>
@@ -69,7 +73,7 @@ export function NotebookFigure({ block, onChange }: { block: NotebookFigureBlock
       const controls = [...event.currentTarget.querySelectorAll<HTMLElement>('button:not([disabled]), [tabindex="0"]')], first = controls[0], last = controls.at(-1)
       if (event.shiftKey && document.activeElement === first && last) { event.preventDefault(); last.focus({ preventScroll: true }) }
       else if (!event.shiftKey && document.activeElement === last && first) { event.preventDefault(); first.focus({ preventScroll: true }) }
-    }} onClick={event => { const bounds = event.currentTarget.getBoundingClientRect(); if (event.target === event.currentTarget && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) dialog.current?.close() }}><header><strong>Source figure</strong><button type="button" autoFocus onClick={() => dialog.current?.close()}>Close figure</button></header><div className="nbr-figure-stage">{state?.url && <img src={state.url} alt={block.alt} />}</div><div className="nbr-figure-description" tabIndex={0} aria-label="Figure caption and source">{block.caption && <p>{block.caption}</p>}{asset && <small>{asset.sourceId} / {asset.location}</small>}{block.context && <p>{block.context}</p>}</div></dialog>
+    }} onClick={event => { const bounds = event.currentTarget.getBoundingClientRect(); if (event.target === event.currentTarget && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) dialog.current?.close() }}><header><strong>Source figure</strong><button type="button" autoFocus onClick={() => dialog.current?.close()}>Close figure</button></header><div className={`nbr-figure-stage${annotations ? ' nbr-annotated-stage' : ''}`}>{state?.url && image(true)}</div><div className="nbr-figure-description" tabIndex={0} aria-label="Figure caption and source">{block.caption && <p>{block.caption}</p>}{asset && <small>{asset.sourceId} / {asset.location}</small>}{block.context && <p>{block.context}</p>}{annotations && <ol aria-label="Enlarged figure annotations">{annotations.map(point => <li key={point.id}>{point.label}</li>)}</ol>}</div></dialog>
   </figure>
 }
 export function NotebookStudyDiagram({ block, onChange }: { block: NotebookStudyDiagramBlock; onChange?: (block: NotebookStudyDiagramBlock) => void }) {
@@ -88,27 +92,29 @@ export function NotebookAssetThumbnail({ assetId }: { assetId: string }) {
   const { images } = useContext(NotebookImages), state = images.get(assetId)
   return state?.status === 'ready' ? <img src={state.url} alt="Selected source image preview" /> : <span>{state?.status === 'loading' ? 'Loading preview' : 'No validated image'}</span>
 }
-export function NotebookVisualBlock({ block, onChange }: { block: NotebookFigureBlock | NotebookStudyDiagramBlock; onChange?: (block: VisualNotebookBlock) => void }) {
-  return block.type === 'figure' ? <NotebookFigure block={block} onChange={onChange} /> : <NotebookStudyDiagram block={block} onChange={onChange} />
+export function NotebookVisualBlock({ block, onChange, changeText }: { block: NotebookFigureBlock | NotebookStudyDiagramBlock | Exclude<LearningVisualBlock, { type: 'worked-example' }>; onChange?: (block: VisualNotebookBlock) => void; changeText?: LearningTextChange }) {
+  if (block.type === 'figure') return <NotebookFigure block={block} onChange={onChange} />
+  if (block.type === 'study-diagram') return isConstrainedDiagram(block) ? <NotebookConstrainedDiagram block={block} onChange={onChange} /> : <NotebookStudyDiagram block={block} onChange={onChange} />
+  return <NotebookLearningVisual block={block} change={changeText} renderFigure={(figure, annotations) => <NotebookFigure block={figure} annotations={annotations} />} />
 }
 export function useNotebookPracticeImages(block: VisualNotebookBlock) {
   const { pkg, images } = useContext(NotebookImages), entry = pkg?.entries.find(e => e.sections.some(s => s.blocks.some(b => b.id === block.id)))
-  const missing = pkg && entry && block.type === 'practice' ? missingPracticeImages(pkg, entry.id, block.id, new Set([...images].filter(([, state]) => state.status === 'ready').map(([id]) => id))) : []
+  const missing = pkg && entry && (block.type === 'practice' || block.type === 'worked-example') ? missingPracticeImages(pkg, entry.id, block.id, new Set([...images].filter(([, state]) => state.status === 'ready').map(([id]) => id))) : []
   return { pkg, entry, missing }
 }
 /** Only declared neutral bodies, never teaching sections, source panels or answers. */
-export function NotebookPracticeStimulus({ block }: { block: Extract<VisualNotebookBlock, { type: 'practice' }> }) {
+export function NotebookPracticeStimulus({ block }: { block: Extract<VisualNotebookBlock, { type: 'practice' }> | WorkedExampleBlock }) {
   const { entry } = useNotebookPracticeImages(block), blocks = entry?.sections.flatMap(s => s.blocks) as VisualNotebookBlock[] | undefined
   return <div className="nbr-practice-stimulus">{(block.stimulusBlockIds ?? []).map(id => {
     const item = blocks?.find(b => b.id === id)
     if (!item) return <p role="alert" key={id}>Required question setup is missing.</p>
     if (item.type === 'paragraph') return <p className="en-text" key={id}>{item.text}</p>
     if (item.type === 'table') return <div className="en-table-wrap" key={id} tabIndex={0} aria-label="Question data table"><table><thead><tr>{item.columns.map((c, i) => <th key={i}>{c}</th>)}</tr></thead><tbody>{item.rows.map((row, i) => <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>)}</tbody></table></div>
-    if (item.type === 'figure' || item.type === 'study-diagram') return <NotebookVisualBlock key={id} block={item} />
+    if (item.type === 'figure' || item.type === 'study-diagram' || item.type === 'annotated-figure') return <NotebookVisualBlock key={id} block={item} />
     return <p role="alert" key={id}>Unsupported question setup. This item cannot be attempted.</p>
   })}</div>
 }
 export function NotebookVisualReview({ pkg }: { pkg: PortableNotebookPackage }) {
-  if (pkg.version !== 3) return null
+  if (pkg.version === 2) return null
   return <details className="nbr-visual-review"><summary>Image discovery and inspection record</summary><p>This is the author's declared review record. A valid file or successful image upload does not prove the source was visually inspected.</p>{pkg.visualReview.sources.map(source => <section key={source.sourceId}><h4>{pkg.sources.find(s => s.id === source.sourceId)?.title ?? source.sourceId}</h4><p>Discovery: {source.discovery}. Image state: {source.imageState}.</p>{source.inspectedPortions.length > 0 && <p>Inspected: {source.inspectedPortions.join('; ')}</p>}{source.unprocessedPortions.length > 0 && <p>Not processed: {source.unprocessedPortions.join('; ')}</p>}{source.limitations.map((limit, i) => <p key={i}>{limit}</p>)}</section>)}<h4>Selected, skipped and unresolved candidates</h4>{pkg.visualReview.candidates.map(candidate => <details key={candidate.id}><summary>{candidate.sourceId} / {candidate.location}: {candidate.decision}</summary><p>Inspection: {candidate.inspection}</p><p>{candidate.reason}</p>{candidate.nextStep && <p>Next step: {candidate.nextStep}</p>}{candidate.duplicateOf && <p>Duplicate of: {candidate.duplicateOf}</p>}{candidate.changedFrom && <p>Changed from: {candidate.changedFrom}</p>}</details>)}</details>
 }

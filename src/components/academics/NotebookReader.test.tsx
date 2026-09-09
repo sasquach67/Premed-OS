@@ -12,7 +12,7 @@ beforeEach(() => {
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
 })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
-async function show(pkg: NotebookPackage, mode: 'study' | 'practice' | 'sources' | 'all' = 'study', change?: (path: (string | number)[], value: string) => void) {
+async function show(pkg: NotebookPackage, mode: 'study' | 'practice' | 'sources' | 'all' = 'study', change?: (path: (string | number)[], value: string | null) => void) {
   await act(async () => root.render(<NotebookPackageView pkg={pkg} entryId={pkg.entries[0].id} mode={mode} reader={!change} change={change} />))
 }
 it('groups sources once per teaching section and reveals inline markers only for that section', async () => {

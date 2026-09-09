@@ -17,6 +17,7 @@ import { NotebookPortableExports, NotebookUpdateImageFiles } from './NotebookPor
 import { assertNotebookBackupFits } from '@/lib/academics/notebook/notebookBundle'
 import { visualAssetReferences } from '@/lib/academics/notebook/visualPackage'
 import type { NotebookAssetBinding, VisualNotebookBlock } from '@/lib/academics/notebook/visualTypes'
+import { isLearningVisualBlock } from '@/lib/academics/notebook/learningVisualTypes'
 import './externalNotebook.css'
 import './notebookVisuals.css'
 
@@ -51,9 +52,9 @@ export function downloadNotebookText(filename: string, text: string, mime = 'app
   const link = document.createElement('a'); link.href = url; link.download = filename; link.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
-type ChangeText = (path: (string | number)[], text: string) => void
+type ChangeText = (path: (string | number)[], text: string | null) => void
 function ContentText({ value, path, label, change, sourceIds, inlineSources = false, tables = false }: { value: string; path: (string | number)[]; label: string; change?: ChangeText; sourceIds?: string[]; inlineSources?: boolean; tables?: boolean }) {
-  if (change) return <label className="en-field">{label}<textarea value={value} onChange={event => change(path, event.target.value)} /></label>
+  if (change) return <label className="en-field">{label}<textarea value={value} onChange={event => change(path, ['caption', 'timeLabel', 'check'].includes(String(path.at(-1))) && event.target.value === '' ? null : event.target.value)} /></label>
   const textRole = path.at(-1) === 'prompt' ? 'question' : path.at(-1) === 'answer' ? 'answer' : path.at(-1) === 'rationale' ? 'reasoning' : undefined
   if (tables) return <>{notebookPromptParts(value).map((part, index) => part.type === 'text' ? <p className="en-text" data-reader-role={textRole} key={index}>{part.text}</p> : <div className="en-table-scroll nbr-prompt-table" role="region" aria-label="Practice prompt data" tabIndex={0} key={index}><table><thead><tr>{part.columns.map((column, ci) => <th scope="col" style={{ textAlign: part.align[ci] }} key={ci}>{column}</th>)}</tr></thead><tbody>{part.rows.map((row, ri) => <tr key={ri}>{row.map((cell, ci) => <td style={{ textAlign: part.align[ci] }} key={ci}>{cell}</td>)}</tr>)}</tbody></table></div>)}</>
   if (!sourceIds) return <p className="en-text" data-reader-role={textRole}>{value}</p>
@@ -62,7 +63,7 @@ function ContentText({ value, path, label, change, sourceIds, inlineSources = fa
   return <>{leading.map(annotation)}{body.trim() && <p className="en-text" data-reader-role={textRole}>{body}</p>}{trailing.map(annotation)}</>
 }
 function EvidenceView({ evidence, pkg }: { evidence: Evidence; pkg: NotebookPackage }) {
-  const assetIds = visualAssetReferences(evidence), assets = pkg.version === 3 ? pkg.assets.filter(a => assetIds.includes(a.id)) : []
+  const assetIds = visualAssetReferences(evidence), assets = pkg.version !== 2 ? pkg.assets.filter(a => assetIds.includes(a.id)) : []
   if (!evidence.sourceIds.length && !evidence.excerptIds.length) return <small className="en-muted">No linked source evidence</small>
   return <details className="en-evidence"><summary>Source evidence ({evidence.excerptIds.length} excerpts{assets.length ? ` / ${assets.length} images` : ''})</summary>{evidence.sourceIds.map(id => {
     const source = pkg.sources.find(s => s.id === id)!
@@ -102,13 +103,14 @@ function BlockView({ block, path, change, pkg, progress, onProgress, reader = fa
     if (!split.body.trim() && [...split.leading, ...split.trailing].length > 0 && [...split.leading, ...split.trailing].every(note => note.kind === 'citation')) return null
   }
   return <div className={`en-block en-block-${block.type}`}>
-    {(block.type === 'figure' || block.type === 'study-diagram') && <NotebookVisualBlock block={block} onChange={change ? changeVisual : undefined} />}
+    {(block.type === 'figure' || block.type === 'study-diagram' || (isLearningVisualBlock(block) && block.type !== 'worked-example')) && <NotebookVisualBlock block={block} onChange={change ? changeVisual : undefined} changeText={change ? (relative, value) => change([...path, ...relative], value) : undefined} />}
     {block.type === 'paragraph' && text(block.text, 'text', 'Explanation')}
     {block.type === 'gap' && <div className="en-notice"><b>Source gap</b>{text(block.text, 'text', 'Gap')}{text(block.nextStep, 'nextStep', 'Next step')}</div>}
     {(block.type === 'bullets' || block.type === 'steps') && (block.type === 'steps' ? <ol>{block.items.map((item, i) => <li key={i}><ContentText value={item} path={[...path, 'items', i]} label={`Step ${i + 1}`} change={change} /></li>)}</ol> : <ul>{block.items.map((item, i) => <li key={i}><ContentText value={item} path={[...path, 'items', i]} label={`Point ${i + 1}`} change={change} /></li>)}</ul>)}
     {block.type === 'table' && <div className="en-table-scroll" role="region" aria-label="Notebook table" tabIndex={0}><table><thead><tr>{block.columns.map((column, i) => <th key={i}><ContentText value={column} path={[...path, 'columns', i]} label={`Column ${i + 1}`} change={change} /></th>)}</tr></thead><tbody>{block.rows.map((row, ri) => <tr key={ri}>{row.map((cell, ci) => <td key={ci}><ContentText value={cell} path={[...path, 'rows', ri, ci]} label={`Row ${ri + 1}, column ${ci + 1}`} change={change} /></td>)}</tr>)}</tbody></table></div>}
     {block.type === 'practice' && <><b>Try it yourself</b>{text(block.prompt, 'prompt', 'Practice prompt')}<NotebookPracticeStimulus block={block} /><p className="nbr-mental-cue">Answer it in your head first, then reveal.</p>{missing.length > 0 && !change ? <p role="status" className="en-notice">Required images are loading or unavailable: {missing.join(', ')}. Reveal stays closed until they are available. Your saved practice records have not changed.</p> : <details className="en-answer nbr-reveal"><summary>Reveal answer and explanation</summary>{text(block.answer, 'answer', 'Answer')}{text(block.rationale, 'rationale', 'Explanation')}{reader ? <><small className="en-muted">{block.provenance === 'source' ? 'Question from supplied course material' : 'Additional practice question'}</small><ReaderSources blocks={[block]} pkg={pkg} scope="item" inlineSources={practiceSources} onInlineSources={() => setPracticeSources(previous => !previous)} /></> : <EvidenceView evidence={block} pkg={pkg} />}{onProgress && <details className="nbr-earlier-work"><summary>Your earlier work on this item</summary><p className="en-text">{work.response || 'No saved response.'}</p><p>{work.complete ? 'Previously marked explainable without looking.' : 'Not previously marked explainable.'}</p></details>}</details>}</>}
-    {reader ? block.type !== 'practice' && <div className="nbr-block-foot" hidden={!inlineSources}><button type="button" className="nbr-cite" onClick={() => onShowEvidence?.(block.id)}>{block.provenance.replaceAll('-', ' ')} / {block.excerptIds.length} excerpts</button></div> : <><small className="en-muted">{block.provenance.replaceAll('-', ' ')}</small>{block.type !== 'practice' && <EvidenceView evidence={block} pkg={pkg} />}</>}
+    {block.type === 'worked-example' && <section className="nbr-learning-visual nbr-worked-example" aria-label={block.title} data-visual-type="worked-example"><h4>{change ? text(block.title, 'title', 'Worked example title') : block.title}</h4>{text(block.problem, 'problem', 'Worked example problem')}<NotebookPracticeStimulus block={block} />{missing.length && !change ? <p role="status" className="en-notice">Required images are loading or unavailable: {missing.join(', ')}. The worked solution stays closed until its images are available.</p> : <details className="en-answer nbr-reveal"><summary>Reveal worked solution</summary><ol className="nbr-worked-steps">{block.steps.map((step, index) => <li key={step.id}><ContentText value={step.label} path={[...path, 'steps', index, 'label']} label={`Worked step ${index + 1} label`} change={change} /><ContentText value={step.explanation} path={[...path, 'steps', index, 'explanation']} label={`Worked step ${index + 1} explanation`} change={change} /></li>)}</ol><div className="nbr-worked-answer"><b>Answer</b>{text(block.answer, 'answer', 'Worked answer')}{(block.check !== null || change) && <><b>Check</b>{text(block.check ?? '', 'check', 'Worked example check')}</>}</div>{reader ? <ReaderSources blocks={[block]} pkg={pkg} scope="item" inlineSources={practiceSources} onInlineSources={() => setPracticeSources(previous => !previous)} /> : <EvidenceView evidence={block} pkg={pkg} />}</details>}</section>}
+    {reader ? block.type !== 'practice' && block.type !== 'worked-example' && <div className="nbr-block-foot" hidden={!inlineSources}><button type="button" className="nbr-cite" onClick={() => onShowEvidence?.(block.id)}>{block.provenance.replaceAll('-', ' ')} / {block.excerptIds.length} excerpts</button></div> : <><small className="en-muted">{block.provenance.replaceAll('-', ' ')}</small>{block.type !== 'practice' && block.type !== 'worked-example' && <EvidenceView evidence={block} pkg={pkg} />}</>}
   </div>
 }
 type ReadingMode = NotebookReadingMode
@@ -122,7 +124,7 @@ function ReaderSection({ section, index, entryIndex, mode, reader, headingId, ch
   return <section aria-label={section.title} className={`en-section${reader ? ' nbr-section' : ''}`} data-purpose={section.purpose} data-sources={inlineSources ? 'on' : 'off'}>
     {reader ? <header className="nbr-section-head"><span className="nbr-num" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><h2 id={headingId} tabIndex={-1}>{title}</h2></header> : <><p className="en-eyebrow">{section.purpose.replaceAll('-', ' ')}</p><h3>{title}</h3></>}
     <div className={reader ? 'nbr-blocks' : undefined}>{section.blocks.map((block, bi) => blocks.includes(block) && <BlockView key={block.id} block={block} path={['entries', entryIndex, 'sections', index, 'blocks', bi]} change={change} pkg={pkg} progress={progress} onProgress={onProgress} reader={reader} inlineSources={inlineSources} onShowEvidence={id => { setSelectedBlock(id); if (panel.current) { panel.current.open = true; panel.current.querySelector('summary')?.focus() } }} />)}</div>
-    {reader && blocks.some(block => block.type !== 'practice') && <ReaderSources blocks={blocks} pkg={pkg} scope="section" inlineSources={inlineSources} onInlineSources={() => setInlineSources(previous => !previous)} selectedBlock={selectedBlock} panelRef={panel} />}
+    {reader && blocks.some(block => block.type !== 'practice' && block.type !== 'worked-example') && <ReaderSources blocks={blocks} pkg={pkg} scope="section" inlineSources={inlineSources} onInlineSources={() => setInlineSources(previous => !previous)} selectedBlock={selectedBlock} panelRef={panel} />}
   </section>
 }
 function NotebookObjectives({ entry, entryIndex, headingId, pkg, change }: { entry: NotebookEntry; entryIndex: number; headingId?: string; pkg: NotebookPackage; change?: ChangeText }) {
@@ -182,12 +184,12 @@ export function ExternalNotebookView({ lecture, courseCode, onNavigateEntry }: {
   const [restore, setRestore] = useState<{ id: string; state: string } | null>(null)
   const [mode, setMode] = useState<ReadingMode>('study')
   const [message, setMessage] = useState('')
-  function updateText(path: (string | number)[], value: string) {
+  function updateText(path: (string | number)[], value: string | null) {
     setDraft(previous => {
       const next = structuredClone(previous ?? n.current)
       let node: unknown = next
       for (const key of path.slice(0, -1)) node = (node as Record<string | number, unknown>)[key]
-      ;(node as Record<string | number, unknown>)[path.at(-1)!] = path.at(-1) === 'caption' && value === '' ? null : value
+      ;(node as Record<string | number, unknown>)[path.at(-1)!] = ['caption', 'timeLabel', 'check'].includes(String(path.at(-1))) && value === '' ? null : value
       return next
     })
   }
@@ -211,7 +213,7 @@ export function ExternalNotebookView({ lecture, courseCode, onNavigateEntry }: {
         const target = state.academics.classCenter.lectures.find(l => l.id === lecture.id && l.courseId === lecture.courseId)
         if (!target?.importedNotebook || notebookStateKey(target.importedNotebook) !== notebookStateKey(n)) throw new Error('This notebook changed. Reopen its latest saved content before starting an update.')
         if (restart || !target.importedNotebook.updateSession) target.importedNotebook.updateSession = createNotebookUpdateSession(target.importedNotebook, target.id)
-        if (target.importedNotebook.current.version === 3 || target.importedNotebook.assetBindings?.length) assertNotebookBackupFits(target.importedNotebook, target.courseId)
+        if (target.importedNotebook.current.version !== 2 || target.importedNotebook.assetBindings?.length) assertNotebookBackupFits(target.importedNotebook, target.courseId)
       })
       setUpdating(true); setMessage('')
     } catch (error) { setMessage((error as Error).message) }

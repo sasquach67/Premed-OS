@@ -34,7 +34,7 @@ export function NotebookPortableExports({ lecture }: { lecture: LectureRecord })
 }
 export function NotebookUpdateImageFiles({ lecture, revision, disabled }: { lecture: LectureRecord; revision: NotebookUpdateSession; disabled: boolean }) {
   const [busy, setBusy] = useState(false), [message, setMessage] = useState('')
-  if (revision.baseline.version !== 3 || !revision.baseline.assets.length) return null
+  if (revision.baseline.version === 2 || !revision.baseline.assets.length) return null
   async function download() {
     setBusy(true); setMessage('')
     try {
