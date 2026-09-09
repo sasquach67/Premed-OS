@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useStore } from '@/store/store'
 import { exportNotebook } from '@/lib/academics/notebook/import'
+import { notebookExportFilename, notebookPackageFilename } from '@/lib/academics/notebook/downloadFilename'
 import { exportNotebookBackupBundle, exportNotebookPackageBundle } from '@/lib/academics/notebook/notebookBundle'
 import { notebookAssetRepository } from '@/lib/academics/notebook/notebookAssetStore'
 import { notebookContentKey } from '@/lib/academics/notebook/revision'
@@ -25,7 +26,7 @@ export function NotebookPortableExports({ lecture }: { lecture: LectureRecord })
     try {
       const current = latestLecture(lecture.id), n = current.importedNotebook!, repo = notebookAssetRepository()
       const blob = kind === 'backup' ? await exportNotebookBackupBundle(n, current.courseId, repo) : await exportNotebookPackageBundle(exportNotebook(current, 'current'), n.assetBindings ?? [], repo)
-      downloadBlob(kind === 'backup' ? 'notebook-complete-backup.zip' : 'notebook-current-with-images.zip', blob)
+      downloadBlob(notebookExportFilename(n, kind, 'zip'), blob)
       setMessage(kind === 'backup' ? 'Complete backup downloaded with original content, history, notes, practice records and every retained image.' : 'Current notebook and its image files downloaded.')
     } catch (error) { setMessage(error instanceof Error ? error.message : 'The complete export could not be created.') }
     finally { setBusy(false) }
@@ -43,7 +44,7 @@ export function NotebookUpdateImageFiles({ lecture, revision, disabled }: { lect
       const snapshot = canonical(n), raw = JSON.stringify(revision.baseline, null, 2)
       const blob = await exportNotebookPackageBundle(raw, n.assetBindings ?? [], notebookAssetRepository())
       if (canonical(latestLecture(lecture.id).importedNotebook) !== snapshot) throw new Error('The notebook changed while the image bundle was prepared. Restart from its latest saved content.')
-      downloadBlob('notebook-update-baseline-with-images.zip', blob); setMessage('Baseline and existing image mapping downloaded. Give your AI the full update prompt, this notebook JSON and image files, plus the new materials. Unzip first if your AI cannot read the bundle.')
+      downloadBlob(notebookPackageFilename(revision.baseline, undefined, 'zip'), blob); setMessage('Baseline and existing image mapping downloaded. Give your AI the full update prompt, this notebook JSON and image files, plus the new materials. Unzip first if your AI cannot read the bundle.')
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Baseline images could not be exported.') }
     finally { setBusy(false) }
   }

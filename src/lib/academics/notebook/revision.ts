@@ -1,9 +1,10 @@
 import { notebookVisualPracticeKey, projectNotebookEntry } from './visualProjection'
 import { uid } from '@/lib/id'
 import { canonical } from './package'
+import { notebookPackageFilename } from './downloadFilename'
 import type { ImportedNotebook, NotebookHistoryVersion, NotebookPackage, NotebookProgress, NotebookUpdateSession } from './types'
 
-export const UPDATE_BASELINE_FILE = 'notebook-update-baseline.json'
+export function notebookUpdateBaselineFilename(session: NotebookUpdateSession) { return notebookPackageFilename(session.baseline) }
 /** Notebook persistence is JSON-only; this also unwraps Immer draft proxies. */
 export function cloneNotebookData<T>(value: T): T { return JSON.parse(JSON.stringify(value)) as T }
 export const UPDATE_BASELINE_DESCRIPTION = 'The attached exact last-saved current-content notebook JSON is the protected baseline. Preserve its unchanged content and IDs; it excludes independent notes, practice progress and unsaved drafts.'
@@ -22,7 +23,7 @@ export function createNotebookUpdateSession(n: ImportedNotebook, localId: string
 }
 export function revisionInput(session: NotebookUpdateSession) {
   const entry = session.baseline.entries[0]
-  return JSON.stringify({ mode: 'update-existing-entry', baselineFile: UPDATE_BASELINE_FILE, entryId: entry.id, revision: entry.revision, baseline: UPDATE_BASELINE_DESCRIPTION })
+  return JSON.stringify({ mode: 'update-existing-entry', baselineFile: notebookUpdateBaselineFilename(session), entryId: entry.id, revision: entry.revision, baseline: UPDATE_BASELINE_DESCRIPTION })
 }
 export function retainNotebookVersion(n: ImportedNotebook, reason: NotebookHistoryVersion['reason'], now = Date.now()) {
   const version: NotebookHistoryVersion = { id: uid(), savedAt: now, reason, current: cloneNotebookData(n.current), notes: n.notes, progress: cloneNotebookData(n.progress), ...(n.acceptedRaw ? { acceptedRaw: n.acceptedRaw } : {}) }

@@ -143,7 +143,7 @@ it('rejects after-preview restore races including notes and practice changes', a
 it('keeps revision metadata app-local except the existing string revision input', async () => {
   const s = await setup(), input = JSON.parse(revisionInput(s.session))
   expect(input.mode).toBe('update-existing-entry'); expect(input.entryId).toBe('topic-demo'); expect(input.revision).toBe(1)
-  expect(input.baselineFile).toBe('notebook-update-baseline.json'); expect(input.localId).toBeUndefined()
+  expect(input.baselineFile).toBe('Invented classroom task.json'); expect(input.localId).toBeUndefined()
   expect(input.baseline).toContain('excludes independent notes, practice progress and unsaved drafts')
 })
 const ownerCase = (name: string) => structuredClone(({ 'baseline-current': ownerBaseline, 'expected-revised-with-new-topic': ownerProposal, 'ambiguous-linked-baseline': ownerAmbiguousBaseline, 'ambiguous-linked-proposal': ownerAmbiguousProposal } as Record<string, unknown>)[name]) as NotebookPackage
