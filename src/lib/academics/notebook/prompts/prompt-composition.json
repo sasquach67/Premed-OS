@@ -1,15 +1,20 @@
 {
-  "instructionsVersion": "notebook-workflows-draft-3",
-  "formatVersion": 3,
-  "promptBuild": "notebook-instructions-beta-14",
+  "instructionsVersion": "notebook-workflows-draft-4",
+  "formatVersion": 4,
+  "promptBuild": "notebook-instructions-beta-15",
   "delivery": "Exactly three prewritten static goal templates, derived from canonical Markdown during development. Goal selection retrieves the chosen template; placeholder insertion and student notes are local plain-text operations. No AI API generates or rewrites prompts. The student uses the resulting prompt in their preferred AI to generate notebook content.",
   "templates": {
     "review": "copy-prompt-review.md",
     "assessment": "copy-prompt-assessment.md",
     "assignment": "copy-prompt-assignment.md"
   },
-  "outputSchema": "notebook-package-v3.schema.json",
+  "outputSchema": "notebook-package-v4.schema.json",
   "acceptedLegacySchema": "notebook-package.schema.json",
+  "acceptedSchemas": [
+    "notebook-package.schema.json",
+    "notebook-package-v3.schema.json",
+    "notebook-package-v4.schema.json"
+  ],
   "modes": {
     "default": "new",
     "selection": "Pass mode explicitly from the app-owned new/update journey. This composer option is not a request token or output field. Never infer mode from course titles, source text or strings inside student inputs.",

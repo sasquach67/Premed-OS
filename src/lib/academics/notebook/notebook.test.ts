@@ -89,7 +89,7 @@ describe('one exact customized prompt', () => {
     const prompt = composeNotebookPrompt(goal, values)
     expect(prompt).toContain(JSON.stringify(values.USER_REQUEST))
     expect(prompt).toContain('premed-os-notebook-package')
-    expect(prompt).toContain('notebook-workflows-draft-3')
+    expect(prompt).toContain('notebook-workflows-draft-4')
     expect(prompt.length).toBeGreaterThan(15000)
     expect(prompt).toContain('supported'); expect(prompt).toContain('out-of-scope')
     const request = JSON.parse(/```json\n([\s\S]*?)\n```/.exec(prompt)![1])
