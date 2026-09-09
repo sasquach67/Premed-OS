@@ -1,12 +1,20 @@
 import { readFileSync } from 'node:fs'
 import { URL as NodeURL } from 'node:url'
-import { act } from 'react'
+import { act, type ComponentPropsWithoutRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { afterEach, beforeEach, expect, it } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { LectureRecord } from '@/lib/types'
 import type { NotebookPackage } from '@/lib/academics/notebook/types'
 import fixture from '@/lib/academics/notebook/fixtures/fixture-review.json'
 import { ExternalNotebookView } from './ExternalNotebookView'
+
+vi.mock('motion/react', async importOriginal => {
+  const actual = await importOriginal<typeof import('motion/react')>()
+  const React = await import('react'), MotionButton = actual.m.button
+  // Keep the real Motion component; mark its use so native Slot rendering cannot pass accidentally.
+  const TrackedMotionButton = React.forwardRef<HTMLButtonElement, ComponentPropsWithoutRef<typeof MotionButton>>((props, ref) => React.createElement(MotionButton, { ...props, ref, 'data-notebook-test-motion': 'true' }))
+  return { ...actual, m: new Proxy(actual.m, { get(target, property, receiver) { return property === 'button' ? TrackedMotionButton : Reflect.get(target, property, receiver) } }) }
+})
 
 const css = readFileSync(new NodeURL('./externalNotebook.css', import.meta.url), 'utf8')
 let root: Root, container: HTMLDivElement
@@ -24,6 +32,9 @@ it('preserves the three native view buttons, counts, selected state and saved co
   await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode={pkg.course.code} />))
   const nav = container.querySelector<HTMLElement>('nav[aria-label="Notebook reading views"]')!
   const buttons = [...nav.querySelectorAll<HTMLButtonElement>('button')]
+  expect(container.querySelector('.nbr-head [data-notebook-test-motion="true"]')).not.toBeNull()
+  expect(nav.querySelector('[data-notebook-test-motion]')).toBeNull()
+  expect(buttons.every(button => button.type === 'button')).toBe(true)
   expect(buttons.map(button => button.textContent)).toEqual(['Study guide', 'Practice', 'Sources'])
   expect(buttons.map(button => button.getAttribute('data-count'))).toEqual([null, String(pkg.entries[0].sections.flatMap(section => section.blocks).filter(block => block.type === 'practice').length), String(pkg.sources.length)])
   for (const [index, view] of ['study', 'practice', 'sources', 'study'].entries()) {
@@ -46,8 +57,7 @@ it('scopes square, baseline-aligned theme tabs and equal mobile columns to reade
   expect(buttons).toContain('border-radius:0')
   expect(buttons).toContain('align-items:baseline')
   expect(buttons).toContain('transform:none')
-  // (0,4,1) outranks the global glass hover/press guards (0,4,0).
-  expect(rule('.nbr .nbr-views button.interactive-glass:is(:hover,:active)').trim()).toBe('transform:none')
+  expect(css).not.toContain('.nbr .nbr-views button.interactive-glass')
   expect(rule('.nbr-views button[data-count]::after')).toContain('align-self:baseline')
   expect(rule('.nbr .nbr-views button[aria-pressed=true]')).toContain('border-bottom-color:var(--primary)')
   expect(rule('.nbr .nbr-views button[aria-pressed=true]')).toContain('color:color-mix(in srgb,var(--primary) 55%,var(--foreground))')
