@@ -4,7 +4,8 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import fixture from '@/lib/academics/notebook/visual-fixtures/valid-v4-repertoire.json'
 import type { NotebookPackage } from '@/lib/academics/notebook/types'
 import { parsePortableNotebook } from '@/lib/academics/notebook/visualPackage'
-import { NotebookPackageView } from './ExternalNotebookView'
+import { ExternalNotebookView, NotebookPackageView } from './ExternalNotebookView'
+import type { LectureRecord } from '@/lib/types'
 import { readFileSync } from 'node:fs'
 import { URL as NodeURL } from 'node:url'
 
@@ -21,6 +22,37 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 async function show(pkg: NotebookPackage, change?: (path: (string | number)[], value: string | null) => void) {
   await act(async () => root.render(<NotebookPackageView pkg={pkg} reader mode="study" change={change} />))
 }
+
+it('keeps cleared nullable inputs blank in the real saved-entry draft across subsequent edits and renders', async () => {
+  const pkg = fresh(), raw = JSON.stringify(pkg)
+  // This test exercises controlled draft rendering only; image loading and save transactions are separate checks.
+  const lecture = { id: 'nullable-render-demo', courseId: 'nullable-render-class', title: pkg.entries[0].title, importedNotebook: {
+    entryId: pkg.entries[0].id, original: structuredClone(pkg), originalRaw: raw, current: pkg, notes: '', progress: {}, history: [], assetBindings: [],
+  } } as unknown as LectureRecord
+  await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode="DEMO 000" />))
+  const edit = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Edit entry')!
+  await act(async () => edit.click())
+  const field = (label: string) => [...container.querySelectorAll<HTMLLabelElement>('label')].find(node => node.firstChild?.textContent?.trim() === label)?.querySelector<HTMLTextAreaElement>('textarea')
+  const fill = async (label: string, value: string) => {
+    const input = field(label); expect(input, label).toBeTruthy()
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(input, value)
+      input!.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+  }
+  const nullable = ['Figure caption', 'Event 1 time label', 'Worked example check']
+  for (const label of nullable) {
+    expect(field(label)!.value).not.toBe('')
+    await fill(label, '')
+    expect(field(label)!.value, `${label} immediately after clearing`).toBe('')
+  }
+  await fill('Entry title', 'Draft title while nullable fields remain blank')
+  await act(async () => root.render(<ExternalNotebookView lecture={lecture} courseCode="DEMO 000" />))
+  for (const label of nullable) expect(field(label)!.value, `${label} after another edit and render`).toBe('')
+  expect(field('Entry title')!.value).toBe('Draft title while nullable fields remain blank')
+  expect(JSON.stringify(lecture.importedNotebook!.current)).toBe(raw)
+  expect(lecture.importedNotebook!.originalRaw).toBe(raw)
+})
 
 it('isolates native visual lists from ordinary prose rules in both saved reader and import preview', async () => {
   const pkg = fresh(), source = pkg.entries[0].sections[0].blocks[0]
