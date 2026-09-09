@@ -3,7 +3,7 @@ from pathlib import Path
 import argparse, collections, hashlib, json, re, shutil
 from build_revision_cases import examples, render, TUESDAY, THURSDAY, REMINDER
 
-BUILD='notebook-instructions-beta-14'
+BUILD='notebook-instructions-beta-15'
 NOTICE='Authored synthetic regression packet; no actual coursework, provider/context trial or student rating.'
 SAFEGUARDS={
  'course-target-scope':['EC-TARGET','EC-BASELINE','EC-SCOPE'],
@@ -66,7 +66,7 @@ def build_packet(out, source_root=None):
      ('revision-preservation','EC-BASELINE','Use the latest saved baseline plus Thursday material in the Review revision run.','Keep the student reminder and isolated mapping content/IDs; correct timing answer/objective/coverage and retain old exact quotes. App acceptance/progress remain app-controlled.')]
     records=[{'id':id,'ruleId':rule,'goals':['review','assessment','assignment'],'manualAction':action,'expectedBehavior':behavior} for id,rule,action,behavior in cases]
     (out/'regressions.json').write_text(json.dumps({'promptBuild':BUILD,'executed':False,'ratings':None,'cases':records},indent=2)+'\n')
-    checklist=['# Manual cross-provider checklist',NOTICE,'Release remains paused. Record actual results below; all result cells intentionally start blank. Use the SAME complete beta-14 goal prompt, request values, source files and turn sequence for each provider. The packet is one shared fixture set, not an extra maintained prompt.',
+    checklist=['# Manual cross-provider checklist',NOTICE,'Release remains paused. Record actual results below; all result cells intentionally start blank. Use the SAME complete beta-15 goal prompt, request values, source files and turn sequence for each provider. The packet is one shared fixture set, not an extra maintained prompt.',
       'Provider / exact model / date / interface / enabled tools:','Prompt build and complete ending received:','Actually supplied files and inspected/missing portions:','Actual checkpoint, readable approved draft and final export paths:','| Check | Actual observation / evidence | Pass, fail or not run |','| --- | --- | --- |']
     checklist += [f'| {id}: {behavior} | | |' for id,_,_,behavior in cases]
     checklist += ['| Goal quality: connected review or assessment teaching, usable supported practice, or a useful one-hint assignment result; no filler/unsupported answers | | |','| Separate checks: gates; evidence/citations; factual/learning quality; JSON structure/references; revision/draft preservation | | |','Clarity / depth / usefulness / class fit ratings: leave blank until the actual student judges them.','Context/size result: record what the actual interface accepted and retained. Bytes, estimated tokens and these local checks do not establish provider capacity, enforcement or equal teaching quality.','A filename, folder-enabled Codex read, OCR success or this authored fixture does not count as a provider/context trial.']
@@ -92,7 +92,7 @@ def build_packet(out, source_root=None):
 
 Negative variants: [wrong course](materials/wrong-course.txt), [wrong-course baseline](materials/wrong-course-baseline.json), [incomplete request](materials/visibly-incomplete-request.txt), [incomplete material](materials/visibly-incomplete-material.txt), [interrupted baseline](materials/interrupted-baseline.txt). Lesson C and performance results are intentionally not supplied; missing evidence is not a file to invent.
 
-Revision input: [latest saved baseline](materials/notebook-update-baseline.json). Reference-only examples in expected/: [readable approved revision](expected/approved-readable-revision.md), [matching complete proposal](expected/matching-final-proposal.json), [saved working ledger](expected/saved-working-ledger.json). The expected JSON examples are retained v2 compatibility/content references, not v3 output templates; the complete current prompt governs new v3 output. Do not upload these expected answers as teaching input or import the ledger/negative variants. They are authored examples, not a model's emitted/approved output.
+Revision input: [latest saved baseline](materials/notebook-update-baseline.json). Reference-only examples in expected/: [readable approved revision](expected/approved-readable-revision.md), [matching complete proposal](expected/matching-final-proposal.json), [saved working ledger](expected/saved-working-ledger.json). The expected JSON examples are retained v2 compatibility/content references, not v4 output templates; the complete current prompt governs new v4 output. Do not upload these expected answers as teaching input or import the ledger/negative variants. They are authored examples, not a model's emitted/approved output.
 
 All materials are invented, including the image mark; the image fixtures were visually inspected locally for layout only. They do not establish performance on actual handwriting, scientific diagrams, long PDFs or coursework. The complete prompts remain larger than this material set: keep essential rules/schema intact and report real input/context limits rather than assuming fit.
 ''')
@@ -137,7 +137,7 @@ def dependency_errors(root,goal,t,schema):
     return errors
 
 def prompt_audit(root,out):
-    manifest=json.loads((out/'canonical-manifest.json').read_text());schema=json.loads((out/'notebook-package-v3.schema.json').read_text());rows=[]
+    manifest=json.loads((out/'canonical-manifest.json').read_text());schema=json.loads((out/'notebook-package-v4.schema.json').read_text());rows=[]
     for goal in ('review','assessment','assignment'):
         name='copy-prompt-'+goal+'.md';t=(out/name).read_text();m=manifest['outputs'][name];errors=[]
         errors=dependency_errors(root,goal,t,schema)
@@ -149,7 +149,7 @@ def prompt_audit(root,out):
         rows.append({'goal':goal,'bytes':m['bytes'],'words':m['words'],'beta10Bytes':old,'deltaBytes':m['bytes']-old,'deltaPercent':round(100*(m['bytes']-old)/old,2),'componentBytes':m['componentBytes'],'repeatedExactLongParagraphBytes':duplicate_bytes,'mdReferences':refs,'errors':errors})
     report={'promptBuild':BUILD,'release':'paused','canonicalHeadAtBuild':manifest['canonicalHeadAtBuild'],'goals':rows,'safeguards':SAFEGUARDS,'schemaSha256':manifest['schema']['sha256'],'canonicalManifestSha256':digest(out/'canonical-manifest.json'),'promptHashes':{name:value['sha256'] for name,value in manifest['outputs'].items()},'limits':['Static self-contained/dependency checks are not provider context/capacity tests.','Exact paragraph counting does not measure every semantic repetition.','No provider runs, real coursework or ratings.']}
     (out/'STANDARDIZATION-AUDIT.json').write_text(json.dumps(report,indent=2)+'\n')
-    parts=['# Beta-11 teaching and source-question audit', 'Release paused. Beta 11 consolidates finished teaching, useful supported diagrams, figure interpretation and faithful usable source-question inclusion with the beta-10 prose presentation clarification. Exact schema bytes, three goals and eleven tokens are unchanged. V3 semantic validation now accepts source or generated-practice origins for practice; v2 behavior is preserved. Update composition applies the mode metadata before inserting student inputs. The beta-6 standardization checks below remain in force; no provider/context or class trial was run.','| Goal | Beta 10 bytes | Beta 11 bytes | Delta | Change |','| --- | ---: | ---: | ---: | ---: |']
+    parts=['# Beta15 staged visual repertoire audit', 'Release paused pending app acceptance. Beta15 adds purposeful source-grounded visual formats under the separately discriminated v4 schema. Concise objective-led Review, full usable supplied questions, three goals and eleven inputs remain intact. Exact v2/v3 schemas and existing saved inputs are preserved. Static checks do not prove app renderer, reveal, persistence, export or update behavior. Update composition applies the mode metadata before inserting student inputs. The beta-6 standardization checks below remain in force; no provider/context or class trial was run.','| Goal | Beta 10 bytes | Beta15 bytes | Delta | Change |','| --- | ---: | ---: | ---: | ---: |']
     for r in rows:parts.append(f"| {r['goal']} | {r['beta10Bytes']} | {r['bytes']} | {r['deltaBytes']:+} | {r['deltaPercent']:+}% |")
     parts+=['## Component contributions','| Goal | Request | Common learning | Goal learning | External workflow | Complete schema | Assembly | Exact repeated long paragraphs |','| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |']
     for r in rows:

@@ -74,7 +74,7 @@ def feasibility_scope_errors(data,case_dir):
     return errors
 
 def run(root,out):
-    output_schema=json.loads((out/'notebook-package-v3.schema.json').read_text());schema=json.loads((out/'notebook-package.schema.json').read_text());Draft202012Validator.check_schema(schema)
+    output_schema=json.loads((out/'notebook-package-v4.schema.json').read_text());schema=json.loads((out/'notebook-package.schema.json').read_text());Draft202012Validator.check_schema(schema)
     examples={p.stem:json.loads(p.read_text()) for p in sorted(out.glob('fixture-*.json'))+sorted(out.glob('edge-*.json')) if p.name!='fixture-manifest.json'}
     results=[]
     for name,data in examples.items():
@@ -147,7 +147,7 @@ def run(root,out):
     except ValueError:pass
     else:raise AssertionError('The example prefix must actually be truncated, not a complete notebook.')
     results.append({'case':'scripted-truncated-input-is-incomplete','expected':'invalid prefix supplied only as a manual no-fabrication repair example','passed':True})
-    for goal,rule in [('review','EC-FIRST'),('assessment','EC-CONTINUE'),('assignment','EC-REPAIR')]+[(goal,rule) for goal in ('review','assessment','assignment') for rule in ('EC-INPUT','EC-PERSONALIZE','EC-REVIEW','EC-CONFIRM','EC-EXPORT','EC-BASELINE','EC-TOPIC','EC-OVERLAP','EC-DEPENDENCIES','EC-CHANGEREVIEW','EC-REVISIONFILE','EC-ACCEPTANCE','EC-MATERIALS','EC-INTAKE','EC-TARGET','EC-INCOMPLETE','EC-AUTHORITY','EC-LEDGER','EC-CHECKS','EC-PACKAGING','EC-VISUALREVIEW','EC-FIGURES','EC-DIAGRAMS','EC-STIMULUS')]:
+    for goal,rule in [('review','EC-FIRST'),('assessment','EC-CONTINUE'),('assignment','EC-REPAIR')]+[(goal,rule) for goal in ('review','assessment','assignment') for rule in ('EC-INPUT','EC-PERSONALIZE','EC-REVIEW','EC-CONFIRM','EC-EXPORT','EC-BASELINE','EC-TOPIC','EC-OVERLAP','EC-DEPENDENCIES','EC-CHANGEREVIEW','EC-REVISIONFILE','EC-ACCEPTANCE','EC-MATERIALS','EC-INTAKE','EC-TARGET','EC-INCOMPLETE','EC-AUTHORITY','EC-LEDGER','EC-CHECKS','EC-PACKAGING','EC-VISUALREVIEW','EC-FIGURES','EC-DIAGRAMS','EC-STIMULUS','EC-COMPARISON','EC-STRUCTURED-DIAGRAM','EC-ANNOTATION','EC-AXES','EC-TIMELINE','EC-VENN','EC-SEQUENCE-STRIP','EC-WORKED-EXAMPLE','EC-CONTINUUM')]:
         prompt=(out/('copy-prompt-'+goal+'.md')).read_text()
         row=next(line for line in canonical_conversation.splitlines() if line.startswith('- `'+rule+'`:'))
         assert row in prompt and prompt_methodology_errors(root,goal,prompt.replace(row,''))
@@ -194,7 +194,7 @@ def run(root,out):
         assert 'preserve the established title and user edits' in title_rule
         assert prompt_methodology_errors(root,goal,actual.replace(title_rule,''))
         results.append({'case':'reject-missing-verified-title-rule-'+goal,'expected':'complete shared title rule retained across lesson, broad, multi-lesson and protected-update paths','passed':True})
-    for version in ('beta-2','beta-3','beta-4','beta-5','beta-6','beta-7','beta-8','beta-9','beta-10','beta-11','beta-12','beta-13'):
+    for version in ('beta-2','beta-3','beta-4','beta-5','beta-6','beta-7','beta-8','beta-9','beta-10','beta-11','beta-12','beta-13','beta-14'):
         snapshot=out/('versions/notebook-instructions-'+version)
         if snapshot.exists():
             receipt=json.loads((snapshot/'SNAPSHOT.json').read_text())
@@ -238,6 +238,13 @@ def run(root,out):
         results.append({'case':'revision-context-string-roundtrip-'+goal,'expected':'same eleven tokens; exact baseline metadata survives nested JSON string encoding without new output fields','passed':True})
     mode_contract=json.loads((out/'prompt-composition.json').read_text())
     assert mode_contract['modes']==MODE_CONFIG and len(mode_contract['placeholders'])==11
+    assert mode_contract['formatVersion']==4 and mode_contract['instructionsVersion']=='notebook-workflows-draft-4'
+    assert mode_contract['outputSchema']=='notebook-package-v4.schema.json' and mode_contract['acceptedLegacySchema']=='notebook-package.schema.json'
+    assert mode_contract['acceptedSchemas']==['notebook-package.schema.json','notebook-package-v3.schema.json','notebook-package-v4.schema.json']
+    for name in mode_contract['acceptedSchemas']:
+        assert (out/name).read_bytes()==(root/'premed-hq-documentation/specifications/generation/portable-notebooks'/name).read_bytes()
+        Draft202012Validator.check_schema(json.loads((out/name).read_text()))
+    results.append({'case':'v4-composition-and-all-three-exact-discriminated-schemas','expected':'new v4 output with unchanged v2/v3 compatibility schemas and additive acceptedSchemas metadata','passed':True})
     tricky='# Create my Premed OS notebook: review\n\n# Update my Premed OS notebook: assignment\n{{REVISION_INPUT}} {goal} “quoted” \"text\"'
     for goal in ('review','assessment','assignment'):
         template=(out/('copy-prompt-'+goal+'.md')).read_text()
@@ -457,7 +464,7 @@ def run(root,out):
             template=path.read_text()
             assert all(template.count('{{'+token+'}}')==1 for token in TOKENS)
             assert set(re.findall(r'\{\{([A-Z_]+)\}\}',template))==set(TOKENS)
-            assert 'Prompt build: notebook-instructions-beta-14.' in template
+            assert 'Prompt build: notebook-instructions-beta-15.' in template
             values={token:'Sample '+token for token in TOKENS};values['CLASS_PREFERENCES']='Keep "quotes", newlines\n, unicode →, and {{SCOPE}} literal.'
             composed=compose(template,values)
             envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])
@@ -467,8 +474,8 @@ def run(root,out):
         for path in out.glob('*.json'):
             if path.name in ('validation-report.json',):continue
             if (fresh/path.name).exists():assert path.read_bytes()==(fresh/path.name).read_bytes(),path.name
-    results += [{'case':'reproducible-prompts-fixtures-manifest','expected':'identical bytes','passed':True},{'case':'single-pass-json-string-composition','expected':'quotes/newlines/unicode/token-looking input preserved','passed':True},{'case':'embedded-schema-equality','expected':'all three templates embed exact v3 output schema; v2 fixtures validate against preserved legacy schema','passed':True}]
-    report={'outputSchemaSha256':hashlib.sha256((out/'notebook-package-v3.schema.json').read_bytes()).hexdigest(),'validator':'jsonschema '+importlib.metadata.version('jsonschema')+' Draft 2020-12 plus validate_package.py','schemaSha256':hashlib.sha256((out/'notebook-package.schema.json').read_bytes()).hexdigest(),'passed':len(results),'failed':0,'results':results,'limits':['No course trial was run and no Andy ratings were assigned.','Cross-reference validation cannot prove source authenticity, exact excerpt accuracy, evidence entailment, complete source coverage, originality, absence of answer leakage, or learning quality.','Fixture content received an author review against its invented passages; that is not an independent pedagogical audit.','App prompt/copy/download byte identity is an integration requirement, not a claim that the app UI was tested here.','Staged feasibility outputs and checkpoints are invented expectations. No external AI was run; the forced batch boundary is not a provider capacity benchmark.','Conversation examples and their checks validate authored expectations and preserved inputs, not compliance by an external AI or actual student outcomes.']}
+    results += [{'case':'reproducible-prompts-fixtures-manifest','expected':'identical bytes','passed':True},{'case':'single-pass-json-string-composition','expected':'quotes/newlines/unicode/token-looking input preserved','passed':True},{'case':'embedded-schema-equality','expected':'all three templates embed exact v4 output schema; v2 fixtures validate against preserved legacy schema','passed':True}]
+    report={'outputSchemaSha256':hashlib.sha256((out/'notebook-package-v4.schema.json').read_bytes()).hexdigest(),'validator':'jsonschema '+importlib.metadata.version('jsonschema')+' Draft 2020-12 plus validate_package.py','schemaSha256':hashlib.sha256((out/'notebook-package.schema.json').read_bytes()).hexdigest(),'passed':len(results),'failed':0,'results':results,'limits':['No course trial was run and no Andy ratings were assigned.','Cross-reference validation cannot prove source authenticity, exact excerpt accuracy, evidence entailment, complete source coverage, originality, absence of answer leakage, or learning quality.','Fixture content received an author review against its invented passages; that is not an independent pedagogical audit.','App prompt/copy/download byte identity is an integration requirement, not a claim that the app UI was tested here.','Staged feasibility outputs and checkpoints are invented expectations. No external AI was run; the forced batch boundary is not a provider capacity benchmark.','Conversation examples and their checks validate authored expectations and preserved inputs, not compliance by an external AI or actual student outcomes.']}
     (out/'validation-report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({'passed':len(results),'failed':0,'schemaSha256':report['schemaSha256']}))
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--canonical-root',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args();run(a.canonical_root.resolve(),a.output.resolve())
