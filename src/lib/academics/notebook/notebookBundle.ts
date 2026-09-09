@@ -144,7 +144,8 @@ export async function prepareNotebookBundle(blob: Blob, decode?: RasterDecoder):
   if (!rawBytes || !indexBytes) throw new Error('The bundle needs notebook.json and its app-owned bindings.json.')
   const decoder = new TextDecoder('utf-8', { fatal: true }), raw = decoder.decode(rawBytes), data = parseJSON(raw)
   const bindings = parseBindings(parseJSON(decoder.decode(indexBytes))), expected = new Set(['notebook.json', 'bindings.json', ...bindings.map(assetPath)])
-  if (expected.size !== members.size || [...expected].some(name => !members.has(name))) throw new Error('Bundle members do not exactly match the closed asset index. Missing and undeclared images are not accepted.')
+  const missingImages = [...expected].some(name => !members.has(name)), extraFiles = [...members.keys()].some(name => !expected.has(name))
+  if (missingImages || extraFiles) throw new Error(`This ZIP ${missingImages ? 'is missing required images' : ''}${missingImages && extraFiles ? ' and ' : ''}${extraFiles ? 'includes unrecognized extra files' : ''}. Re-export a complete notebook ZIP, or import the notebook JSON together with all of its referenced original PNG/JPEG files.`)
   const bytes = new Map<string, Blob>()
   for (const b of bindings) bytes.set(b.sha256, new Blob([members.get(assetPath(b))!.slice().buffer], { type: b.mimeType }))
   if (object(data, 'Notebook').format === 'premed-os-notebook-backup') {

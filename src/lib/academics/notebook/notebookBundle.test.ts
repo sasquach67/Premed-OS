@@ -51,9 +51,12 @@ it('includes an image retained only by earlier versions and refuses complete exp
 it('rejects missing, extra, altered or ambiguously declared bundle assets atomically', async () => {
   const s = await setup(), complete = await readNotebookZip(await exportNotebookPackageBundle(s.raw, s.prepared.bindings, s.repo, headerDecoder)), image = [...complete.keys()].find(n => n.startsWith('assets/'))!
   const missing = new Map(complete); missing.delete(image)
-  await expect(prepareNotebookBundle(writeNotebookZip(missing), headerDecoder)).rejects.toThrow('closed asset index')
+  const recovery = 'Re-export a complete notebook ZIP, or import the notebook JSON together with all of its referenced original PNG/JPEG files.'
+  await expect(prepareNotebookBundle(writeNotebookZip(missing), headerDecoder)).rejects.toThrow(`This ZIP is missing required images. ${recovery}`)
   const extra = new Map(complete); extra.set(`assets/${'a'.repeat(64)}.png`, new Uint8Array(await pngBlob().arrayBuffer()))
-  await expect(prepareNotebookBundle(writeNotebookZip(extra), headerDecoder)).rejects.toThrow('closed asset index')
+  await expect(prepareNotebookBundle(writeNotebookZip(extra), headerDecoder)).rejects.toThrow(`This ZIP includes unrecognized extra files. ${recovery}`)
+  const missingAndExtra = new Map(extra); missingAndExtra.delete(image)
+  await expect(prepareNotebookBundle(writeNotebookZip(missingAndExtra), headerDecoder)).rejects.toThrow(`This ZIP is missing required images and includes unrecognized extra files. ${recovery}`)
   const changed = new Map(complete), index = JSON.parse(new TextDecoder().decode(changed.get('bindings.json'))); index.bindings[0].width++
   changed.set('bindings.json', new TextEncoder().encode(JSON.stringify(index)))
   await expect(prepareNotebookBundle(writeNotebookZip(changed), headerDecoder)).rejects.toThrow('binding digest')
