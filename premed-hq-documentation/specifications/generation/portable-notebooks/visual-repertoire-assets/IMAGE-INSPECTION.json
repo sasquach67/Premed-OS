@@ -1,0 +1,22 @@
+{
+  "notice": "Existing authored non-empirical UI fixture image; the printed PSYC101 label is fictional test context, not a real class trial. No pixels altered.",
+  "fileName": "authored-classroom-task.png",
+  "sha256": "fcf2dab5036f3ba07db326d2e6a3b8b7db8482f1bc9d189fda1057c40fec7b6e",
+  "bytes": 26904,
+  "width": 1100,
+  "height": 530,
+  "inspection": "Viewed the actual image. It contains a response rule, a black outlined triangle and four unmarked response choices. Pixel inspection is restricted to the visibly identified triangle region.",
+  "method": "Within the observed x80:239,y200:369 triangle region, identify pixels with RGB channels<80. Bounds and top-tip position come from these actual image pixels; no synthetic spatial replacement.",
+  "observedTriangleBoundsPx": {
+    "left": 110,
+    "top": 240,
+    "right": 220,
+    "bottom": 330
+  },
+  "observedTipNormalized": {
+    "x": 0.15,
+    "y": 0.4528301886792453
+  },
+  "possibleNeutralLabel": "Top corner of the displayed shape",
+  "limits": "Pixel/bounds checks do not authenticate empirical data or make any future annotation label factually correct. This source is a deliberately authored UI fixture."
+}
