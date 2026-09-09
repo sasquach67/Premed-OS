@@ -5,6 +5,11 @@ import fixture from '@/lib/academics/notebook/visual-fixtures/valid-v4-repertoir
 import type { NotebookPackage } from '@/lib/academics/notebook/types'
 import { parsePortableNotebook } from '@/lib/academics/notebook/visualPackage'
 import { NotebookPackageView } from './ExternalNotebookView'
+import { readFileSync } from 'node:fs'
+import { URL as NodeURL } from 'node:url'
+
+const readerCss = readFileSync(new NodeURL('./externalNotebook.css', import.meta.url), 'utf8')
+const visualCss = readFileSync(new NodeURL('./notebookLearningVisuals.css', import.meta.url), 'utf8')
 
 let root: Root, container: HTMLDivElement
 const fresh = () => structuredClone(fixture) as NotebookPackage
@@ -16,6 +21,46 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 async function show(pkg: NotebookPackage, change?: (path: (string | number)[], value: string | null) => void) {
   await act(async () => root.render(<NotebookPackageView pkg={pkg} reader mode="study" change={change} />))
 }
+
+it('isolates native visual lists from ordinary prose rules in both saved reader and import preview', async () => {
+  const pkg = fresh(), source = pkg.entries[0].sections[0].blocks[0]
+  pkg.entries[0].sections[0].blocks.push(
+    { id: 'style-prose-bullets', type: 'bullets', provenance: source.provenance, sourceIds: source.sourceIds, excerptIds: source.excerptIds, items: ['Ordinary prose bullet'] },
+    { id: 'style-prose-steps', type: 'steps', provenance: source.provenance, sourceIds: source.sourceIds, excerptIds: source.excerptIds, items: ['Ordinary prose step'] },
+  )
+  const proseRules = [...readerCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(([, selector]) => /\.en-block\s+(ul|ol)\b|\.nbr-doc li.*::marker/.test(selector))
+  expect(proseRules).toHaveLength(4)
+  const selectors = proseRules.flatMap(([, selector]) => selector.trim().split(',').map(part => part.replace('::marker', '').trim()))
+  const required = ['.nbr-tree ul', '.nbr-tree-children', '.nbr-axis-items', '.nbr-annotation-legend', '.nbr-sequence-steps', '.nbr-worked-example .nbr-worked-steps']
+  const visualRules = [...visualCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+  const listRules = required.map(selector => visualRules.find(([, current]) => current.trim() === selector)!)
+  const style = document.createElement('style')
+  // Exercise the actual conflicting rules, without pretending JSDOM evaluates container layout.
+  style.textContent = [...listRules, ...proseRules].map(rule => rule[0]).join('\n')
+  document.head.append(style)
+  try {
+    for (const reader of [true, false]) {
+      await act(async () => root.render(<NotebookPackageView pkg={pkg} reader={reader} mode="study" />))
+      const lists = [...container.querySelectorAll<HTMLElement>('.nbr-learning-visual ul,.nbr-learning-visual ol')]
+      expect(lists.length).toBeGreaterThan(10)
+      for (const list of lists) for (const selector of selectors) expect(list.matches(selector), `${list.className} must not match ${selector}`).toBe(false)
+      for (const item of container.querySelectorAll('.nbr-learning-visual li')) expect(item.matches('.nbr-doc li:not(:where(.nbr-learning-visual *))')).toBe(false)
+      expect(selectors.some(selector => container.querySelector('.en-block-bullets ul')!.matches(selector))).toBe(true)
+      expect(selectors.some(selector => container.querySelector('.en-block-steps ol')!.matches(selector))).toBe(true)
+      for (const list of container.querySelectorAll<HTMLElement>('.nbr-axis-items,.nbr-annotation-legend,.nbr-sequence-steps')) {
+        expect(getComputedStyle(list).display).toBe('grid')
+        expect(getComputedStyle(list).listStyle).toBe('none')
+        expect(getComputedStyle(list).paddingLeft).toBe('0px')
+        expect(getComputedStyle(list).maxWidth).not.toBe('var(--nbr-measure)')
+      }
+      const branch = container.querySelector<HTMLElement>('.nbr-tree-decision-tree .nbr-tree-children')!
+      expect(getComputedStyle(branch).display).toBe('grid')
+      expect(getComputedStyle(branch).listStyle).toBe('none')
+    }
+    expect(visualCss).toContain('@container (max-width: 560px)')
+    expect(visualCss).toContain('.nbr-tree-children { display: block;')
+  } finally { style.remove() }
+})
 
 it('renders the full repertoire as native blocks with readable authored diagram relationships', async () => {
   const pkg = fresh(); await show(pkg)
