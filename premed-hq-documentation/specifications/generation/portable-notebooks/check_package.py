@@ -147,7 +147,7 @@ def run(root,out):
     except ValueError:pass
     else:raise AssertionError('The example prefix must actually be truncated, not a complete notebook.')
     results.append({'case':'scripted-truncated-input-is-incomplete','expected':'invalid prefix supplied only as a manual no-fabrication repair example','passed':True})
-    for goal,rule in [('review','EC-FIRST'),('assessment','EC-CONTINUE'),('assignment','EC-REPAIR')]+[(goal,rule) for goal in ('review','assessment','assignment') for rule in ('EC-INPUT','EC-PERSONALIZE','EC-REVIEW','EC-CONFIRM','EC-EXPORT','EC-BASELINE','EC-TOPIC','EC-OVERLAP','EC-DEPENDENCIES','EC-CHANGEREVIEW','EC-REVISIONFILE','EC-ACCEPTANCE','EC-MATERIALS','EC-INTAKE','EC-TARGET','EC-INCOMPLETE','EC-AUTHORITY','EC-LEDGER','EC-CHECKS','EC-PACKAGING','EC-VISUALREVIEW','EC-FIGURES','EC-DIAGRAMS','EC-STIMULUS','EC-COMPARISON','EC-STRUCTURED-DIAGRAM','EC-ANNOTATION','EC-AXES','EC-TIMELINE','EC-VENN','EC-SEQUENCE-STRIP','EC-WORKED-EXAMPLE','EC-CONTINUUM','EC-ATTRIBUTION','EC-ADMIN-EVIDENCE')]:
+    for goal,rule in [('review','EC-FIRST'),('assessment','EC-CONTINUE'),('assignment','EC-REPAIR')]+[(goal,rule) for goal in ('review','assessment','assignment') for rule in ('EC-INPUT','EC-PERSONALIZE','EC-REVIEW','EC-CONFIRM','EC-EXPORT','EC-BASELINE','EC-TOPIC','EC-OVERLAP','EC-DEPENDENCIES','EC-CHANGEREVIEW','EC-REVISIONFILE','EC-ACCEPTANCE','EC-MATERIALS','EC-INTAKE','EC-TARGET','EC-INCOMPLETE','EC-AUTHORITY','EC-LEDGER','EC-CHECKS','EC-PACKAGING','EC-VISUALREVIEW','EC-FIGURES','EC-DIAGRAMS','EC-STIMULUS','EC-COMPARISON','EC-STRUCTURED-DIAGRAM','EC-ANNOTATION','EC-AXES','EC-TIMELINE','EC-VENN','EC-SEQUENCE-STRIP','EC-WORKED-EXAMPLE','EC-CONTINUUM','EC-ATTRIBUTION','EC-ADMIN-EVIDENCE','EC-LEARNING-LANGUAGE','EC-LEARNING-DEPTH','EC-MASTERY-TASKS','EC-LEARNING-SWEEP')]:
         prompt=(out/('copy-prompt-'+goal+'.md')).read_text()
         row=next(line for line in canonical_conversation.splitlines() if line.startswith('- `'+rule+'`:'))
         assert row in prompt and prompt_methodology_errors(root,goal,prompt.replace(row,''))
@@ -173,7 +173,7 @@ def run(root,out):
         wrong=prompt.replace(opening,'Generate the complete final notebook JSON immediately from the supplied material.')
         assert prompt_methodology_errors(root,goal,wrong)
         results.append({'case':'reject-automatic-export-opening-'+goal,'expected':'canonical request guard rejects restored automatic export even when the shared confirmation rules remain below','passed':True})
-    focused_fragments=[('no-duplicate-mastery-surface','Do not also reproduce its full objective/cue/action rows as a second guide table'),('scenario-identify-explain','For a generated application, prefer a short necessary scenario'),('emphasized-item-coverage','Check explicit instructor priorities against the actual question set'),('discovery-selection-consistency','If inspected PDF page rasters are retained as discovered candidates, use images-found even when every page is skipped for teaching and assets is empty.')]
+    focused_fragments=[('no-duplicate-mastery-surface','Do not also reproduce its full objective/cue/action rows as a second guide table'),('scenario-identify-explain','For a generated application, supply the necessary scenario'),('emphasized-item-coverage','Check explicit instructor priorities against the actual question set'),('discovery-selection-consistency','If inspected PDF page rasters are retained as discovered candidates, use images-found even when every page is skipped for teaching and assets is empty.')]
     for goal in ('review','assessment','assignment'):
         actual=(out/('copy-prompt-'+goal+'.md')).read_text()
         for name,fragment in focused_fragments:
@@ -200,7 +200,7 @@ def run(root,out):
         assert 'preserve the established title and user edits' in title_rule
         assert prompt_methodology_errors(root,goal,actual.replace(title_rule,''))
         results.append({'case':'reject-missing-verified-title-rule-'+goal,'expected':'complete shared title rule retained across lesson, broad, multi-lesson and protected-update paths','passed':True})
-    for version in ('beta-2','beta-3','beta-4','beta-5','beta-6','beta-7','beta-8','beta-9','beta-10','beta-11','beta-12','beta-13','beta-14','beta-15'):
+    for version in ('beta-2','beta-3','beta-4','beta-5','beta-6','beta-7','beta-8','beta-9','beta-10','beta-11','beta-12','beta-13','beta-14','beta-15','beta-16'):
         snapshot=out/('versions/notebook-instructions-'+version)
         if snapshot.exists():
             receipt=json.loads((snapshot/'SNAPSHOT.json').read_text())
@@ -470,7 +470,7 @@ def run(root,out):
             template=path.read_text()
             assert all(template.count('{{'+token+'}}')==1 for token in TOKENS)
             assert set(re.findall(r'\{\{([A-Z_]+)\}\}',template))==set(TOKENS)
-            assert 'Prompt build: notebook-instructions-beta-16.' in template
+            assert 'Prompt build: notebook-instructions-beta-17.' in template
             values={token:'Sample '+token for token in TOKENS};values['CLASS_PREFERENCES']='Keep "quotes", newlines\n, unicode →, and {{SCOPE}} literal.'
             composed=compose(template,values)
             envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])

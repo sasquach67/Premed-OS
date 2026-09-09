@@ -1,6 +1,6 @@
 {
   "kind": "scripted-expected-conversations",
-  "promptBuild": "notebook-instructions-beta-9",
+  "promptBuild": "notebook-instructions-beta-17",
   "executed": false,
   "ratings": null,
   "notice": "Authored expectations for manual beta, not transcripts of a tested external AI, real course trials, importable notebook JSON, or additional maintained prompts. Use the corresponding complete goal prompt and inspect actual behavior.",
@@ -45,10 +45,10 @@
         "Readable passage B: A tag groups stops by a shared feature. Two stops may share a tag while retaining different labels.",
         "These are the entire selected passages for this small invented lesson; their availability does not establish coverage of any larger course."
       ],
-      "expectedFirstReply": "You want to review labels, tags and route order in DEMO 101. I can read both pasted passages; no formal objectives were supplied. I’ll use those passages to make the study guide, clearly labeled study objectives and supported practice now.",
+      "expectedFirstReply": "You want to understand labels, tags and route order in DEMO 101. I can read both pasted passages. I’ll explain how the ideas differ, connect them with examples and give you useful practice.",
       "expectedNext": [
         "Continue immediately with supported teaching and original self-contained practice; do not wait for a go-ahead after the opening.",
-        "Keep the lecture-style guide and mastery lenses distinct. If these brief passages cannot justify an ordinary depth floor, explain the precise evidence limit rather than padding.",
+        "Explain each supported distinction and how the example illustrates it. Keep the Mastery Map focused on what to explain and do; these short sources do not require extra bullets or a repeated guide summary.",
         "Preserve term=null and derive only supported study objectives; do not block on optional metadata.",
         "Keep the complete actual draft accessible alongside the content-specific companion message; no claim the student read it or that the summary validates accuracy."
       ],
@@ -68,7 +68,7 @@
         "EC-REVIEW",
         "EC-CONFIRM"
       ],
-      "companionReviewMessage": "- Labels name individual stops; tags group stops by a shared feature.\n- Route order changes when stops move; renaming a stop alone leaves the order unchanged.\n- The draft uses supported recall and applications of these distinctions; no formal course objectives or larger-course coverage are claimed.\n\nWant more examples of labels versus tags, more practice distinguishing renaming from reordering, or anything explained differently? If you’re happy with this version, say “Create the JSON.”"
+      "companionReviewMessage": "- Labels name individual stops; tags group stops by a shared feature.\n- Route order changes when stops move; renaming a stop alone leaves the order unchanged.\n- Practice asks you to distinguish naming a stop, grouping stops and changing their order.\n\nWant more examples of labels versus tags, more practice distinguishing renaming from reordering, or anything explained differently? If you’re happy with this version, say “Create the JSON.”"
     },
     {
       "id": "missing-exam-lesson-resume",
@@ -362,7 +362,7 @@
         "requiresExplicitConfirmation": true,
         "retainsAllScopeRequirements": true
       },
-      "companionReviewMessage": "- The partial draft compares renaming a stop with filtering visible stops; both preserve stored route order.\n- Its application asks for the visible stop, stored route and whether hiding a stop deletes it after a rename and filter.\n- Week 2 Section 1 and Week 3 support this content; other Week 2 cases are unprocessed and Weeks 1, 4, 5 and 6 are missing. The full Weeks 1–6 requested scope remains visible.\n\nWant more examples of renaming versus filtering, more practice distinguishing visibility from storage, or anything explained differently? If you’re happy with this version, say “Create the JSON.”"
+      "companionReviewMessage": "- The partial draft compares renaming a stop with filtering visible stops; both preserve stored route order.\n- Practice asks which stops remain visible after a rename and filter, what order is still stored, and whether hiding a stop deletes it.\n- Week 2 Section 1 and Week 3 support this content; other Week 2 cases are unprocessed and Weeks 1, 4, 5 and 6 are missing. The full Weeks 1–6 requested scope remains visible.\n\nWant more examples of renaming versus filtering, more practice distinguishing visibility from storage, or anything explained differently? If you’re happy with this version, say “Create the JSON.”"
     },
     {
       "id": "normal-chat-no-project",
@@ -373,7 +373,7 @@
         "Course DEMO 101, Invented Route Workshop; review route order, labels and tags. The student says labels versus tags are confusing and prefers definitions followed by a comparison.",
         "The student pastes: A route is an ordered list of stops. A label names one stop. A tag groups stops by a shared feature. Changing a label does not change the route order. Rearranging stops changes the route order. Two stops may share a tag while retaining different labels."
       ],
-      "expectedFirstReply": "You want to review route order, labels and tags, especially the difference between labels and tags. I can read the pasted passage in this chat. I’ll define the terms, compare their roles and prepare supported recall and practice for your review before JSON.",
+      "expectedFirstReply": "You want to understand how labels and tags differ and how each relates to route order. I can read the pasted passage. I’ll define the terms, explain the comparison and give you practice using it.",
       "expectedNext": [
         "Start from this usable passage in the normal chat; never require a project or folder.",
         "Use the stated difficulty and preferred definition/comparison sequence without asking them again.",
@@ -439,7 +439,7 @@
         "EC-CONFIRM"
       ],
       "readableDraftFile": "revision-case/readable-revised-draft.md",
-      "companionReviewMessage": "- Chapter 3 retains the triangle/circle response mapping, your saved reminder and the unchanged mapping question.\n- Thursday explicitly corrects the duration from 100 to 200 milliseconds; timing teaching and its linked question/objective are updated while Tuesday’s exact quote stays intact.\n- The plain-versus-noisy background comparison is introduced, but performance results are missing.\n- Chapter 4 stays a separate limited introduction.\n\nWant more examples of mapping versus timing, more practice on the covered distinction, or anything explained differently? If you’re happy with this version, say “Create the JSON.”"
+      "companionReviewMessage": "- Chapter 3 retains the triangle/circle response mapping, your saved reminder and the unchanged mapping question.\n- Thursday explicitly corrects the duration from 100 to 200 milliseconds; the timing explanation and practice use the corrected value while Tuesday’s exact quote stays intact.\n- The plain-versus-noisy background comparison is introduced, but performance results are missing.\n- Chapter 4 stays a separate limited introduction.\n\nWant more examples of mapping versus timing, more practice on the covered distinction, or anything explained differently? If you’re happy with this version, say “Create the JSON.”"
     },
     {
       "id": "topic-unresolved-correction-context",

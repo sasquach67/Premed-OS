@@ -24,7 +24,7 @@ python3 -m venv /tmp/notebook-validation
 
 ## Rule selection
 
-- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-16; new output uses instructionsVersion notebook-workflows-draft-4; v2/v3 remain supported as inputs.
+- All of `19-study-source-and-format-contract.md`, `20-external-notebook-workflow.md` and the canonical request envelope in `21-external-notebook-request-template.md` appear in every prompt. The goal-label and prompt-build slots in 21 are fixed at build time; eleven student-input slots remain. The visible prompt build is notebook-instructions-beta-17; new output uses instructionsVersion notebook-workflows-draft-4; v2/v3 remain supported as inputs.
 - Every goal also includes applicable global rules from 02: sections 1.1–1.8, clarification/background boundaries, source primacy, cross-source behaviors and thin-source handling.
 - Review includes the full Runtime briefing mirror and Required structure from 03, its Portable review notebook section, the introduction and every Rules row from 11, its Portable objective coverage section, and applicable visual-learning sections from 06. All included fragments are verbatim; see METHODOLOGY-AUDIT.md for the section-level audit and explicit portable differences.
 - Assessment and assignment each include every substantive `NA-` or `NW-` rule verbatim and the corresponding portable section. Persistence/recovery and renderer implementation paragraphs are excluded.
@@ -120,3 +120,7 @@ New output uses separately discriminated v4/draft4 with the agreed six additiona
 ## Beta16 — focused source and presentation refinements
 
 Shared20 distinguishes source claims from outside clarification and historical interpretations, propagates source uncertainty into answers, prevents unsupported elaboration of fragmented examples, removes duplicate mastery-map prose, prefers concise scenario/identification/reasoning practice for uncovered skills, and separates administrative/request evidence from academic teaching. Visual discovery must agree with actual candidate records independently of selected assets. Exactly three complete prompts, eleven inputs, new/update modes, class/title context and exact v2/v3/v4 schemas remain unchanged. The separate PSYC derivative is authored review work, not a new provider trial.
+
+## Beta17 — plain learning tasks and explanation depth
+
+Shared/global/source/guide/mastery and goal-specific rules now distinguish substantive explanation, concrete learning actions and useful cautions. Whole-content review includes authored titles/headings, all mastery fields, teaching, examples, practice/answers/rationales and conversation guidance. Flashcard authoring §5.3 is selectively reconciled with the retained runtime mirror; no notebook quotas, Anki instructions or new runtime enforcement are inferred. Exact schemas, source checks, required derived-title prefix, eleven inputs and new/update composition remain. The PSYC demonstration is a separate new artifact; originals and prior local notebooks are protected.

@@ -14,6 +14,8 @@ When sources conflict, flag the disagreement with its sources rather than silent
 
 ## Formatting and learning structure
 
+Write about the subject itself: name the process, claim, comparison or task instead of relying on “what she said,” “this point” or an unnamed lecture example. A useful source qualification identifies whose claim it is; it does not replace explaining the claim. Preserve exact official objectives, quotations and supplied question wording, including awkward wording, in their required source records. Plain-language explanation can accompany them without silently rewriting the evidence.
+
 Keep the requested artifact's existing structure. A Study Guide teaches and connects ideas; a Mastery Map organizes recall, understanding, application, and supported cautions. Do not force all artifacts into one generic outline.
 
 Use descriptive headings; connected prose for explanation and reasoning; bullets for parallel facts; numbered steps for sequences; and tables for meaningful comparisons, using the artifact's supported block formats. Keep relevant instructor examples beside their concepts with setup, reasoning, and lesson. Identify supplementary explanation and generated hypothetical practice according to the artifact's provenance fields.

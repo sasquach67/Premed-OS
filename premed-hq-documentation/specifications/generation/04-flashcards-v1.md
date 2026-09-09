@@ -39,6 +39,8 @@ document by `src/lib/generation/artifacts/flashcards.v1.ts`.
 | `FC-28` | For every load-bearing notation, count, table, or diagram relationship, generate an interpretation card that asks what it means and a transfer card that asks why it changes or what follows. A label-only card may support the visual, but never substitutes for understanding it. | invariant |
 | `FC-29` | When a supplied figure encodes spatial, causal, or temporal structure, use visual retrieval where the figure materially improves recall. Pair each visual target with a concise conceptual card explaining the relationship represented; do not use images as decoration. | invariant |
 
+Authoring reconciliation: the existing runtime briefing above is retained as a snapshot of the current compiler. The newer §5.3 authoring ceiling qualifies pairing/reinforcement rules; this documentation sweep does not claim the runtime already enforces those additions. Flashcard packaging and operational Anki instructions remain outside notebook prompt assembly.
+
 ---
 
 ## 1. Objective
@@ -290,7 +292,7 @@ prompts that were perfectly clear *to someone who had just watched the lecture* 
 | `FC-6` | Card must be unambiguous **reviewed alone, shuffled, months later** | invariant |
 | `FC-7` | Prefer active recall over recognition | invariant |
 | `FC-8` | Break complex processes into multiple cards where appropriate | tunable |
-| `FC-9` | Remove `REDUNDANT` cards; permit `USEFUL_REINFORCEMENT` (§5) | invariant |
+| `FC-9` | Remove `REDUNDANT` cards; permit `USEFUL_REINFORCEMENT` up to the §5.3 ceiling (§5) | invariant |
 | `FC-10` | **Do not turn every sentence into a card** | invariant |
 | `FC-11` | Preserve important qualifiers (`G-TERM-3`) | invariant |
 | `FC-12` | Never remove context when removal changes meaning | invariant |
@@ -635,7 +637,7 @@ classify the overlap:
 | Class | Meaning | Action |
 |---|---|---|
 | `COMPLEMENTARY` | Different knowledge, related concept | **Keep** |
-| `USEFUL_REINFORCEMENT` | Same concept, **meaningfully different direction** | **Keep** |
+| `USEFUL_REINFORCEMENT` | Same concept, **meaningfully different direction** | **Keep, up to the §5.3 ceiling** |
 | `REDUNDANT` | Same retrieval target, no new direction | **Remove** |
 
 `USEFUL_REINFORCEMENT` example — same concept, two directions, both worth having:
@@ -658,6 +660,72 @@ normalized tested target → blocking*. **That is too blunt** — it would delet
 and the classification is a **model judgment** in the quality pass. Only `REDUNDANT` is removed.
 Near-identical strings — > 90% overlap on *both* front and back — remain deterministically blocking,
 because that is a duplicate rather than a reinforcement.
+
+### 5.3 The reinforcement ceiling (invariant) — *added Sep 2026, Andy's ruling*
+
+**§5.1 permits `USEFUL_REINFORCEMENT` and never says how much of it.** Any angle testing a
+genuinely different direction on a concept is `Keep`, and the class carries no cardinality bound, so
+one concept accumulates as many individually defensible cards as the source supports an angle for. A
+generated BIOL 103 deck reached four cards on free versus bound ribosomes — where each sits, the
+destinations each serves, whether a bound ribosome can be free later, and what decides which it is.
+None of the four is `REDUNDANT` under §5.1. The cluster is still too many.
+
+**Andy's ruling, Sep 2026:**
+
+> Reiterating an important concept two or three times is helpful. Past that it gets repetitive, and
+> it only adds to the strain of trying to remember a new way to recall content that is the same
+> content in a different way.
+
+**The cost §5.1 never priced.** §5.1 justifies reinforcement entirely as a learning gain —
+recognition in one direction does not imply production in the other — and so treats each further
+direction as free. It is not. Past the third angle the student is no longer learning the concept,
+which they already hold; they are learning *this card's phrasing*, so they can produce whatever that
+phrasing is fishing for. That is new retrieval load carrying no new knowledge. It is the stem-bloat
+failure of §1.2 arriving from the opposite direction: there a single card teaches recognition of
+itself instead of the knowledge, here a cluster of cards does.
+
+| id | Rule | Kind |
+|---|---|---|
+| `FC-34` | **A concept carries at most three tested cards where its salience is `load-bearing`, at most two where `attaching`.** The ceiling counts cards sharing a `conceptId` | invariant |
+| `FC-35` | **`FREE_RECALL` sits outside the ceiling.** The blurt is the concept's synthesis card, so it never competes with `FC-FR-5`. A card is cut for restating a blurt only when its **entire** tested target is one blurt item restated; partial overlap with a blurt item is expected and is not grounds for removal | invariant |
+| `FC-36` | **Over the ceiling, angles are dropped in a fixed order.** Keep, in priority: (1) the definition or mechanism the concept exists to teach, (2) the discrimination against its nearest neighbour on a named axis (§2.6), (3) the transfer or application card. Surplus recognition-direction variants go first — cheapest for a student holding the concept to re-derive, likeliest to be learned as card-phrasing | invariant |
+
+**Two values are Andy's to confirm.** `load-bearing: 3 / attaching: 2` implements *"a maximum of
+two… two or three for an important concept"* by tying the higher allowance to the salience grade the
+card already carries (§2.5). Dropping `attaching` to 1 is the tighter reading and takes a
+25-concept lecture from roughly 58 cards to roughly 41. `FC-35` places the blurt outside the ceiling
+because `FC-FR-5` already mandates exactly one per framework; counting it inside would make those
+two rules fight.
+
+**Interaction with the pairing rules.** `FC-20` (exemplar in both directions) and `FC-28`
+(interpretation card plus transfer card) each emit two cards for one concept. Both fit inside a
+`load-bearing` ceiling of three, and neither may push a concept past it. Where a concept would want
+both pairs, `FC-36` decides which survives. **This makes `FC-20` and `FC-28` conditional where they
+now read as unconditional** — a real change to their status, recorded here rather than left to be
+discovered as a rule conflict.
+
+**`FC-35` was narrowed after its first trial, Sep 2026.** It first read *"does not restate what
+the capped cards test."* Applied to PSYC 101 Chapter 1, whose twelve blurts between them name
+nearly every tested fact in the deck, that wording deleted most of the deck. Overlap with a blurt
+is the normal state of a deck with a blurt spine; only total absorption is a defect.
+
+**A form ceiling was considered and rejected, Sep 2026.** The proposal was that no prompt skeleton
+appear more than three times, prompted by nine cards in that deck reading *"A psychologist studies
+X. Which subfield?"* — nine different `conceptId`s, so `FC-34` does not touch them. The lecture
+source killed it. The instructor states her exam format outright: she will not ask for the subfield
+list *"word for word,"* she will give a research interest and ask which subfield it is. Nine cards
+covering nine subfields in the format she named are **coverage, not repetition**, and the rejected
+rule would have deleted the best-aimed cards in the deck. Repeated form is evidence of a drill, and
+a drill is sometimes exactly right; only per-concept saturation is reliably a defect.
+
+**Emphasis does not lift the ceiling.** §2.5 lets an emphasis signal promote incidental material to
+attaching, so it can win a card. It cannot win a *fourth* card. Where every card on a concept is
+emphasis-backed and the concept is still over its cap, `FC-36` decides, and the surplus goes.
+
+**Why the ceiling is per concept and not per deck.** A global card budget cuts wherever the
+generator happens to stop, which is as likely to drop a lecture's last concept as its fifth angle on
+the first. The ceiling cuts the surplus angle specifically, so coverage is unaffected: every concept
+still appears, and only the concepts that were being circled lose cards.
 
 ---
 
@@ -958,7 +1026,7 @@ rewritten**, never shipped with a warning.
 | 4 | **Context** | Would this make sense shuffled? | deterministic + model |
 | 5 | **Answer length** | Is the tested answer reasonably concise? | deterministic |
 | 6 | **Cueing** | Does the wording accidentally reveal the answer? | model |
-| 7 | **Redundancy** | Is another card testing the same thing? (§5) | deterministic candidates + model class |
+| 7 | **Redundancy** | Is another card testing the same thing, and is this concept already at its §5.3 ceiling? | deterministic candidates + count; model class |
 | 8 | **Source support** | Is the tested target supported by student-supplied material, with any permitted background marked and confined to subordinate Extra copy? | server-side, absolute |
 | 9 | **Explanation** | Would an Extra field materially improve understanding? | model |
 | 10 | **Visual value** | Would a diagram, equation, or table improve learning? | model |
@@ -991,6 +1059,8 @@ Recorded here so the `08` table can be updated in the same pass rather than drif
 | Relational floor | Relational cards < 25% of deck | advisory |
 | Trivia ceiling | > 10% of tested answers are a bare proper noun, year, or institution (§2.5) | advisory → model |
 | Surname-only answer | Tested answer is a surname with no given name (`FC-24`) | advisory |
+| **Concept over ceiling** | More than 3 tested cards share a `conceptId` graded `load-bearing`, or more than 2 graded `attaching`, excluding `FREE_RECALL` (`FC-34`) | blocking |
+| **Complete overlap with a blurt item** | A capped card’s entire tested target merely restates one FREE_RECALL item; partial overlap alone is not grounds for removal (`FC-35`) | advisory → model |
 
 ---
 

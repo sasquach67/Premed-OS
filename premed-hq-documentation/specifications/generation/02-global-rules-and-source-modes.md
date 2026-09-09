@@ -42,6 +42,8 @@ reference tunables, and so the assembler can reject any attempt to touch an inva
 | `G-TERM-2` | When a synonym genuinely aids understanding, give it **alongside** the instructor's term, never instead of it. |
 | `G-TERM-3` | Preserve important qualifiers. "Usually," "in most tissues," "at physiological pH" change meaning and must not be trimmed for concision. |
 
+Plain meaning comes first: retain the course term and explain it in ordinary words, then state what the concept does, why it matters to the topic, or how it differs from a named alternative. Use complete explanatory sentences with a clear subject and verb. Short names, labels, equations and direct identification answers may remain short. Academic precision does not require a glossary-style noun phrase or abstract wording that the student must translate before studying.
+
 ## 1.4 Structure and relationships (tunable unless noted)
 
 | id | Rule | Kind |
