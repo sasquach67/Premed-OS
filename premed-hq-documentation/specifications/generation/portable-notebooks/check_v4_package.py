@@ -59,6 +59,7 @@ def run(out):
         mutate(id+'-null-domain','v4-numeric-axis',lambda p,id=id:block(p,id)['axis'].update(minimum=None))
         mutate(id+'-zero-span','v4-numeric-axis',lambda p,id=id:block(p,id)['axis'].update(minimum=10,maximum=10))
         mutate(id+'-infinite-span','v4-numeric-axis',lambda p,id=id:block(p,id)['axis'].update(minimum=-1e308,maximum=1e308))
+        mutate(id+'-oversized-integer-span','v4-numeric-axis',lambda p,id=id:block(p,id)['axis'].update(minimum=-(10**308),maximum=10**308))
         mutate(id+'-oversized-json-integer-domain','v4-numeric-axis',lambda p,id=id:block(p,id)['axis'].update(maximum=json.loads('1'+'0'*400)))
         mutate(id+'-oversized-json-integer-value','v4-numeric-value',lambda p,id=id,key=key:block(p,id)[key][-1].update(value=json.loads('1'+'0'*400)))
         mutate(id+'-no-unit','v4-numeric-axis',lambda p,id=id:block(p,id)['axis'].update(unit=None))

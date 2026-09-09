@@ -27,7 +27,7 @@ def v4_errors(data,evidence):
         if a['mode']=='ordinal':
             if any(x is not None for x in [a['unit'],a['minimum'],a['maximum']]+values):fail('v4-ordinal-axis',b['id'])
         else:
-            if not isinstance(a['unit'],str) or not a['unit'].strip() or not finite(a['minimum']) or not finite(a['maximum']) or a['minimum']>=a['maximum'] or not math.isfinite(a['maximum']-a['minimum']):
+            if not isinstance(a['unit'],str) or not a['unit'].strip() or not finite(a['minimum']) or not finite(a['maximum']) or a['minimum']>=a['maximum'] or not finite(a['maximum']-a['minimum']):
                 fail('v4-numeric-axis',b['id']);return
             if not all(finite(v) and a['minimum']<=v<=a['maximum'] for v in values):fail('v4-numeric-value',b['id'])
             elif values!=sorted(values):fail('v4-numeric-order',b['id'])
