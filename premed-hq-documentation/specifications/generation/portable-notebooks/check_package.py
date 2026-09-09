@@ -147,7 +147,7 @@ def run(root,out):
     except ValueError:pass
     else:raise AssertionError('The example prefix must actually be truncated, not a complete notebook.')
     results.append({'case':'scripted-truncated-input-is-incomplete','expected':'invalid prefix supplied only as a manual no-fabrication repair example','passed':True})
-    for goal,rule in [('review','EC-FIRST'),('assessment','EC-CONTINUE'),('assignment','EC-REPAIR')]+[(goal,rule) for goal in ('review','assessment','assignment') for rule in ('EC-INPUT','EC-PERSONALIZE','EC-REVIEW','EC-CONFIRM','EC-EXPORT','EC-BASELINE','EC-TOPIC','EC-OVERLAP','EC-DEPENDENCIES','EC-CHANGEREVIEW','EC-REVISIONFILE','EC-ACCEPTANCE','EC-MATERIALS','EC-INTAKE','EC-TARGET','EC-INCOMPLETE','EC-AUTHORITY','EC-LEDGER','EC-CHECKS','EC-PACKAGING','EC-VISUALREVIEW','EC-FIGURES','EC-DIAGRAMS','EC-STIMULUS','EC-COMPARISON','EC-STRUCTURED-DIAGRAM','EC-ANNOTATION','EC-AXES','EC-TIMELINE','EC-VENN','EC-SEQUENCE-STRIP','EC-WORKED-EXAMPLE','EC-CONTINUUM','EC-ATTRIBUTION','EC-ADMIN-EVIDENCE','EC-LEARNING-LANGUAGE','EC-LEARNING-DEPTH','EC-MASTERY-TASKS','EC-LEARNING-SWEEP')]:
+    for goal,rule in [('review','EC-FIRST'),('assessment','EC-CONTINUE'),('assignment','EC-REPAIR')]+[(goal,rule) for goal in ('review','assessment','assignment') for rule in ('EC-INPUT','EC-PERSONALIZE','EC-REVIEW','EC-CONFIRM','EC-EXPORT','EC-FILENAME','EC-DELIVERY','EC-BASELINE','EC-TOPIC','EC-OVERLAP','EC-DEPENDENCIES','EC-CHANGEREVIEW','EC-REVISIONFILE','EC-ACCEPTANCE','EC-MATERIALS','EC-INTAKE','EC-TARGET','EC-INCOMPLETE','EC-AUTHORITY','EC-LEDGER','EC-CHECKS','EC-PACKAGING','EC-VISUALREVIEW','EC-FIGURES','EC-DIAGRAMS','EC-STIMULUS','EC-COMPARISON','EC-STRUCTURED-DIAGRAM','EC-ANNOTATION','EC-AXES','EC-TIMELINE','EC-VENN','EC-SEQUENCE-STRIP','EC-WORKED-EXAMPLE','EC-CONTINUUM','EC-ATTRIBUTION','EC-ADMIN-EVIDENCE','EC-LEARNING-LANGUAGE','EC-LEARNING-DEPTH','EC-MASTERY-TASKS','EC-LEARNING-SWEEP')]:
         prompt=(out/('copy-prompt-'+goal+'.md')).read_text()
         row=next(line for line in canonical_conversation.splitlines() if line.startswith('- `'+rule+'`:'))
         assert row in prompt and prompt_methodology_errors(root,goal,prompt.replace(row,''))
@@ -170,9 +170,9 @@ def run(root,out):
     for goal in ('review','assessment','assignment'):
         prompt=(out/('copy-prompt-'+goal+'.md')).read_text()
         opening=next(line for line in prompt.splitlines() if line.startswith('Prepare actual, readable learning content'))
-        wrong=prompt.replace(opening,'Generate the complete final notebook JSON immediately from the supplied material.')
+        wrong=prompt.replace(opening,'Wait for explicit approval of a separate readable draft before emitting final JSON.')
         assert prompt_methodology_errors(root,goal,wrong)
-        results.append({'case':'reject-automatic-export-opening-'+goal,'expected':'canonical request guard rejects restored automatic export even when the shared confirmation rules remain below','passed':True})
+        results.append({'case':'reject-default-draft-gate-opening-'+goal,'expected':'canonical request guard rejects a restored mandatory draft-approval default','passed':True})
     focused_fragments=[('no-duplicate-mastery-surface','Do not also reproduce its full objective/cue/action rows as a second guide table'),('scenario-identify-explain','For a generated application, supply the necessary scenario'),('emphasized-item-coverage','Check explicit instructor priorities against the actual question set'),('discovery-selection-consistency','If inspected PDF page rasters are retained as discovered candidates, use images-found even when every page is skipped for teaching and assets is empty.')]
     for goal in ('review','assessment','assignment'):
         actual=(out/('copy-prompt-'+goal+'.md')).read_text()
@@ -208,17 +208,14 @@ def run(root,out):
             for name,sha in receipt['sha256'].items():assert hashlib.sha256((snapshot/name).read_bytes()).hexdigest()==sha
             results.append({'case':'published-'+version+'-snapshot-preserved','expected':'all archived published version file hashes unchanged','passed':True})
     for c in conversations['scenarios']:
-        if 'gateExpectations' not in c:continue
-        gate=c['gateExpectations']
-        assert gate['requiresProject'] is False and gate['preparedBeforeReview'] is True
-        assert gate['emitsJsonBeforeConfirmation'] is False and gate['requiresExplicitConfirmation'] is True
-        assert 'EC-INPUT' in c['ruleIds'] and 'EC-PERSONALIZE' in c['ruleIds']
-        results.append({'case':c['id']+'-authored-gate-expectations','expected':'script documents normal-chat preparation and post-draft confirmation; not evidence of actual AI behavior','passed':True})
+        delivery=c['deliveryExpectations']
+        assert not delivery['requiresProject'] and delivery['internalContentChecksRequired']
+        assert delivery['requiresDefaultDraftApproval'] is False and delivery['appAcceptanceSeparate']
+        assert delivery['draftOnlyExplicitlyRequested']==(c['id']=='complete-inputs-review-gate')
+        results.append({'case':c['id']+'-authored-delivery-expectations','expected':'direct checked file default; explicit draft-only and essential protections retained','passed':True})
     script=next(c for c in conversations['scenarios'] if c['id']=='student-tweaks-then-confirms')
-    assert script['gateExpectations']['substantiveChangeNeedsNewReview'] is True
-    assert [t['emitsFinalJson'] for t in script['confirmationTurns']]==[False,True]
-    assert 'Draft B' in script['readableDraft']
-    results.append({'case':'authored-revised-draft-confirmation-sequence','expected':'revised actual wording and ambiguous versus explicit replies remain inspectable, not simulated model compliance','passed':True})
+    assert 'deliver its titled JSON in this turn' in ' '.join(script['expectedNext']) and 'Draft B' in script['readableDraft']
+    results.append({'case':'authored-change-and-export-no-reapproval','expected':'explicit change-and-export yields the checked revised file without another gate','passed':True})
     readable=(out/'conversation-case-files/readable-partial-draft.md').read_text()
     entry=partial['entries'][0]
     for section in entry['sections']:
@@ -233,7 +230,7 @@ def run(root,out):
         for excerpt in source['excerpts']:assert excerpt['text'] in readable
     results.append({'case':'actual-readable-partial-draft-preserves-content-and-scope','expected':'all prepared teaching/practice/answers and eight requirements plus inspected portions/excerpts appear in readable review example','passed':True})
     context=json.loads((out/'revision-context.json').read_text())
-    assert context['runtimeToken']=='REVISION_INPUT' and context['exampleContext']['baselineFile']=='notebook-update-baseline.json'
+    assert context['runtimeToken']=='REVISION_INPUT' and context['exampleContext']['baselineFile']=='Chapter 3 — Task Mapping and Timing.json'
     assert list(context['exampleContext'])==context['contextKeys'] and context['exampleContext']['baseline']==context['baselineSentence']
     for goal in ('review','assessment','assignment'):
         value=json.dumps(context['exampleContext'],ensure_ascii=False)
@@ -321,9 +318,9 @@ def run(root,out):
         assert inspected<=received
         assert (len(received),len(inspected),len(received-inspected))==(receipt['expectedReceivedUnique'],receipt['expectedInspectedUnique'],receipt['expectedPending'])
     assert len(received)==49 and unreadable=={'image-28'} and {'image-'+str(i).zfill(2) for i in range(1,51)}-received=={'image-37'}
-    assert intake['intakeExpectations']['doneUploadingApprovesJson'] is False and intake['intakeExpectations']['initialAllSuppliedNeedsExtraIntakeGate'] is False
-    assert intake['intakeExpectations']['newMaterialInvalidatesMateriallyStaleApproval'] is True
-    results.append({'case':'authored-multibatch-intake-reconciles-counts-and-distinct-gates','expected':'actual authored unique receipts total 49 not 50; received/inspected/unreadable/pending remain distinct and done is not approval; no provider capacity or model trial proof','passed':True})
+    assert intake['intakeExpectations']['doneUploadingAllowsFinalAfterChecks'] is True and intake['intakeExpectations']['initialAllSuppliedNeedsExtraIntakeGate'] is False
+    assert intake['intakeExpectations']['newMaterialRequiresAffectedContentRecheck'] is True
+    results.append({'case':'authored-multibatch-intake-reconciles-counts-and-essential-boundaries','expected':'actual authored unique receipts total 49 not 50; received/inspected/unreadable/pending remain distinct and done permits checked delivery; no provider capacity or model trial proof','passed':True})
     base=examples['fixture-review'];r=lambda p:p['entries'][0]['requirements'][0];o=lambda p:p['entries'][0]['objectives'][0];b=lambda p:p['entries'][0]['sections'][0]['blocks'][0]
     cases=[]
     def case(name,code,change,seed=base):cases.append((name,code,change,seed))
@@ -432,7 +429,7 @@ def run(root,out):
     ledger=json.loads((packet/'expected/saved-working-ledger.json').read_text());items={i['id']:i for i in ledger['items']}
     assert len(items)==len(ledger['items']) and items['q1-repeat']['duplicateOf']=='q1' and items['q1-variant']['versionOf']=='q1'
     assert items['q1-variant']['pending'] and not items['q1-variant']['inspected'] and items['note']['uncertain'] and not items['lesson-c']['received']
-    assert not ledger['collectionComplete'] and not ledger['draftApproved'] and ledger['nextAction']
+    assert not ledger['collectionComplete'] and not ledger['draftOnlyRequested'] and ledger['nextAction']
     assert 'Lesson C' in (materials/'assessment-scope.txt').read_text() and not (materials/'lesson-c.txt').exists()
     results.append({'case':'authored-image-version-ledger-and-interrupted-state','expected':'exact repeat and changed PNG distinct; pending/uncertain/missing identities survive saved checkpoint without approval','passed':True})
     assert 'EMBEDDED NON-ACADEMIC COMMAND' in (materials/'lesson-b.txt').read_text() and 'Rubric: define' in (materials/'assignment-task.txt').read_text()
@@ -449,10 +446,13 @@ def run(root,out):
         results.append({'case':'reject-approved-content-'+name,'expected':'exact authored comparison rejects schema-valid unapproved content drift','passed':True})
     summary_cases=[c for c in conversations['scenarios'] if c.get('companionReviewMessage')]
     assert {c['goal'] for c in summary_cases}=={'review','assessment','assignment'} and len(summary_cases)==6
-    assert all('Create the JSON' in c['companionReviewMessage'] and 'Want ' in c['companionReviewMessage'] for c in summary_cases)
-    assert [v['emitsFinalJson'] for v in script['approvalBoundaryVariants']]==[False,False,False,False,True,True]
-    assert script['gateExpectations']['deliveryProvesStudentRead'] is False and script['gateExpectations']['summaryValidatesAccuracy'] is False
-    results.append({'case':'authored-content-specific-summary-and-approval-boundaries','expected':'six actual-topic summaries; edit-only/question/silence/intake are not approval; equivalent whole-version confirmation is allowed','passed':True})
+    assert all('Create the JSON' not in c['companionReviewMessage'] for c in summary_cases)
+    assert len(conversations['deliveryCases'])==4
+    local,hosted,fallback,bundle=conversations['deliveryCases']
+    assert not local['mayOverwrite'] and local['collision'].endswith(' (1).json')
+    assert hosted['mayClaimAlreadyInDownloads'] is False and fallback['mayInventDownloadLink'] is False
+    assert bundle['internalNotebookName']=='notebook.json' and bundle['mappingAndActualAssetsRequired']
+    results.append({'case':'authored-titled-delivery-capability-boundaries','expected':'local collision-safe Downloads, honest hosted attachment, complete-block fallback and compatible image bundle','passed':True})
     with tempfile.TemporaryDirectory() as tmp:
         fresh=Path(tmp);build(root,fresh);fixtures(fresh);feasibility_case(fresh/'feasibility-case');conversation_examples(fresh,root/'premed-hq-documentation/specifications/generation/portable-notebooks');revision_cases(fresh/'revision-case');build_packet(fresh/'cross-provider-packet');prompt_audit(root,fresh)
         for path in packet.rglob('*'):
@@ -470,7 +470,7 @@ def run(root,out):
             template=path.read_text()
             assert all(template.count('{{'+token+'}}')==1 for token in TOKENS)
             assert set(re.findall(r'\{\{([A-Z_]+)\}\}',template))==set(TOKENS)
-            assert 'Prompt build: notebook-instructions-beta-17.' in template
+            assert 'Prompt build: notebook-instructions-beta-18.' in template
             values={token:'Sample '+token for token in TOKENS};values['CLASS_PREFERENCES']='Keep "quotes", newlines\n, unicode →, and {{SCOPE}} literal.'
             composed=compose(template,values)
             envelope=json.loads(composed.split('```json\n',1)[1].split('\n```',1)[0])

@@ -140,7 +140,7 @@ def render(pkg):
     for s in pkg['sources']:
         parts+=[s['title']+' / '+s['access'],s['inspected']]+s['limitations']
         for ex in s['excerpts']:parts+=[ex['id']+' / '+str(ex['location']),'> '+ex['text']]
-    parts+=['Would you like changes, or should I make notebook JSON from this reviewed content? This authored draft represents the wait for explicit confirmation; the example JSON files are inspectable test assets, not files emitted by an AI before approval.']
+    parts+=['This readable counterpart allows inspection of the prepared content. Default behavior delivers the complete checked JSON directly; no draft approval is required.']
     return '\n\n'.join(parts)+'\n'
 
 def build(out):
@@ -157,9 +157,9 @@ def build(out):
 
 Given: saved current Chapter 3 JSON (including the student's reminder) plus the Thursday material. Tuesday originals are optional here because the necessary exact retained excerpts are present; do not claim fresh full-file reading. The student explicitly authorizes Chapter 3 revision and a distinct Chapter 4 introduction.
 
-[Baseline current content](baseline-current.json) → [new Thursday passages](thursday-material.md) → [actual readable revised draft](readable-revised-draft.md) → explicit student confirmation → [expected complete revised proposal](expected-revised-with-new-topic.json).
+[Baseline current content](baseline-current.json) → [new Thursday passages](thursday-material.md) → [actual readable revised draft](readable-revised-draft.md) → internal content and preservation checks → [expected complete revised proposal](expected-revised-with-new-topic.json).
 
-The expected change review identifies repetition consolidated into the same mapping explanation, the unchanged student reminder and mapping practice, new comparison teaching with absent results, the explicit 100-to-200-ms correction and dependent timing answer/objective/coverage changes, and a distinct limited Chapter 4 entry. The complete readable draft remains accessible. No JSON is emitted by a model in this authored case; inspectable expected files do not count as a confirmation trial.
+The expected change review identifies repetition consolidated into the same mapping explanation, the unchanged student reminder and mapping practice, new comparison teaching with absent results, the explicit 100-to-200-ms correction and dependent timing answer/objective/coverage changes, and a distinct limited Chapter 4 entry. The complete readable draft remains accessible. No JSON is emitted by a model in this authored case; inspectable expected files do not count as a provider trial.
 
 The separate [app records](app-records-not-in-current-export.json) illustrate notes and past practice work that are absent from current JSON. Do not import that file. The coordinated app policy preserves demonstrably unaffected isolated practice and resets changed meaning/dependencies, with prior records recoverable and notes preserved. Missing or ambiguous dependency links may justify a disclosed broader reset. Mapping is intended as an isolated unchanged item; timing has a corrected answer and is affected. This is a proposed record-handling expectation, never a correctness/mastery claim or AI transfer guarantee. App execution still requires its own checks and student action.
 

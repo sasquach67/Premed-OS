@@ -1,8 +1,8 @@
 {
-  "promptBuild": "notebook-instructions-beta-9",
+  "promptBuild": "notebook-instructions-beta-18",
   "runtimeToken": "REVISION_INPUT",
   "valueType": "string or null",
-  "baselineFile": "notebook-update-baseline.json",
+  "baselineFile": "actual title-derived saved JSON filename supplied by the app",
   "baselineSentence": "The attached exact last-saved current-content notebook JSON is the protected baseline. Preserve its unchanged content and IDs; it excludes independent notes, practice progress and unsaved drafts.",
   "contextKeys": [
     "mode",
@@ -13,12 +13,12 @@
   ],
   "exampleContext": {
     "mode": "update-existing-entry",
-    "baselineFile": "notebook-update-baseline.json",
+    "baselineFile": "Chapter 3 — Task Mapping and Timing.json",
     "entryId": "psych-ch3",
     "revision": 1,
     "baseline": "The attached exact last-saved current-content notebook JSON is the protected baseline. Preserve its unchanged content and IDs; it excludes independent notes, practice progress and unsaved drafts."
   },
-  "composition": "Build the context with JSON.stringify into an ordinary string, then pass that string as REVISION_INPUT to the unchanged single-pass composer. The composer JSON-encodes it once into revisionInput. Attach the actual exported baseline separately; metadata does not provide file access. For v3, also supply the actual required raster files and their portable binding index; JSON or a filename alone does not supply image bytes.",
+  "composition": "Build the context with JSON.stringify into an ordinary string, then pass that string as REVISION_INPUT to the unchanged single-pass composer. The composer JSON-encodes it once into revisionInput. Attach the actual exported baseline separately; metadata does not provide file access. For v3/v4, also supply the actual required raster files and their portable binding index; JSON or a filename alone does not supply image bytes. The baselineFile value is the actual attached JSON filename, not a fixed required name. A titled ZIP keeps compatible internal notebook.json, bindings.json and assets/ paths.",
   "ownership": "Local target ID, saved-content fingerprint, history, progress and acceptance are app state, never portable notebook output fields. The AI proposes revised same external entry ID with baseRevision equal to supplied revision and revision plus one. Explicitly authorized genuinely new topic IDs are separate entries; unrelated existing IDs are not update targets.",
   "progressPolicy": "App preserves demonstrably unchanged self-reported practice through exact question/answer/rationale and available referenced excerpt/section/objective/requirement dependency comparison. It resets affected meaning/dependencies; missing or ambiguous linkage can justify a disclosed broader reset. Unrelated appended sources/excerpts/requirements/new topics alone do not erase isolated unchanged work. Prior responses remain recoverable in history and notes are preserved. The AI cannot guarantee transfer, correctness or mastery. Applies to manual edits as well as accepted revisions.",
   "verificationStatus": "Coordinated implementation contract; inspect the app owner acceptance receipt for actual implementation and verification status."

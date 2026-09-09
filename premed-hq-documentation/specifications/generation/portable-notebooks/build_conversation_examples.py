@@ -16,7 +16,7 @@ def build(out, source_root=None):
     (case_dir/'truncated-input.txt').write_text(raw[:cutoff])
     # Readable counterpart of the complete existing invented partial package, without changing it.
     entry=original['entries'][0]
-    readable=['# '+entry['title'], 'Authored readable draft example, not an executed AI trial or finalization approval.', '**Scope:** '+entry['scope'], '**Preferences:** '+entry['request']['classPreferences'], '**Format:** '+entry['request']['assessmentFormat']]
+    readable=['# '+entry['title'], 'Readable counterpart for inspecting authored prepared content; not an executed AI trial or a required draft-first step.', '**Scope:** '+entry['scope'], '**Preferences:** '+entry['request']['classPreferences'], '**Format:** '+entry['request']['assessmentFormat']]
     for section in entry['sections']:
         readable+=['## '+section['title']]
         for block in section['blocks']:
@@ -36,7 +36,7 @@ def build(out, source_root=None):
         readable+=['### '+source['title']+' ('+source['id']+')', 'Access: '+source['access']+'. Inspected: '+source['inspected']]
         readable+=source['limitations']
         for excerpt in source['excerpts']:readable+=[excerpt['id']+' — '+str(excerpt['location']),'> '+excerpt['text']]
-    readable+=['## Limits']+entry['limitations']+['Would you like changes or more material processed, or should I make notebook JSON from this partial draft? Waiting for explicit confirmation; no final JSON is emitted in this scripted review step.']
+    readable+=['## Limits']+entry['limitations']+['The actual partial notebook is the deliverable after checks; this readable counterpart is optional inspection material, not a finalization gate.']
     (case_dir/'readable-partial-draft.md').write_text('\n\n'.join(readable)+'\n')
     parts=['# Expected external-AI conversations — manual beta',data['notice'],f"Prompt build: {data['promptBuild']}. Exactly three maintained goal prompts remain; the examples below show expected replies and decisions, not alternative prompts.", 'Use the corresponding complete goal prompt and the stated invented inputs in your chosen AI only if you want to run a manual test. Record actual replies separately. No ratings, import success or model compliance are prefilled.']
     for c in data['scenarios']:
@@ -45,13 +45,13 @@ def build(out, source_root=None):
         for receipt in c.get('batchReceipts',[]):parts+=['**Authored batch '+str(receipt['batch'])+' receipt**: '+str(receipt['expectedReceivedUnique'])+' unique received, '+str(receipt['expectedInspectedUnique'])+' inspected (including any unreadable attempted item), '+str(receipt['expectedPending'])+' pending. These are scripted expectations, not actual inspection logs.']
         if c.get('readableDraft'):parts+=['**Actual prepared draft in this authored script**\n\n'+c['readableDraft']]
         if c.get('readableDraftFile'):parts+=['**Actual prepared draft**: [read the complete example draft]('+c['readableDraftFile']+').']
-        if c.get('companionReviewMessage'):parts+=['**Companion chat message alongside the full draft**\n\n'+c['companionReviewMessage']]
+        if c.get('companionReviewMessage'):parts+=['**Brief optional delivery note**\n\n'+c['companionReviewMessage']]
         for turn in c.get('confirmationTurns',[])+c.get('approvalBoundaryVariants',[]):parts+=['**Scripted confirmation exchange**\n\nStudent: '+turn['student']+'\n\nExpected: '+turn['expected']+'\n\nFinal JSON emitted at this step: '+('yes, after confirmation' if turn['emitsFinalJson'] else 'no')+'.']
         if c['studentFollowUp']:parts+=['**Student follow-up in this script**\n\n'+c['studentFollowUp']]
         parts+=['**Expected continuation**\n\n'+c['expectedAfterReply'],'**Necessary pause**\n\n'+(c['necessaryPause'] or 'None in this scenario. Continue with the authorized, supported work.'),'**Must preserve**\n\n'+'\n'.join('- '+item for item in c['mustPreserve'])]
         for variant in c.get('variants',[]):parts+=['**Conditional variant**\n\nStudent: '+variant['student']+'\n\nExpected: '+variant['expected']]
         parts+=['Canonical rule references: '+', '.join(c['ruleIds'])+'.']
-    parts+=['## Manual observations to record','Was the first reply brief and truthful about access? Did it prepare supported content when input was sufficient, including in a normal chat without a project? Did the student see the actual readable draft, scope, preferences and source gaps before final JSON? Did the AI wait for explicit post-review confirmation and seek it again after substantive changes? Did serialization preserve the approved content? Were necessary questions specific and bundled? Did it preserve scope, evidence, IDs and the help stage? Were real checkpoint/file creation and unexecuted checks described accurately? Did repair preserve known content and refuse to invent truncated parts? Record actual factual/source failures and use the ordinary beta feedback form; do not turn these scripted expectations into ratings.']
+    parts+=['## Manual observations to record','Did the AI deliver actual checked JSON directly when inputs were sufficient, use a title-derived filename and describe download capability honestly? Did it preserve explicit draft-only requests, announced intake, evidence, help stage and saved edits? Were repairs grounded in actual complete files and checks reported honestly? These cases are authored expectations, not provider results.']
     (out/'EXPECTED-CONVERSATIONS.md').write_text('\n\n'.join(parts)+'\n')
     for name in ('conversation-examples.json','conversation-expectations.json','revision-context.json'):(out/name).write_bytes((source_root/name).read_bytes())
     names=['EXPECTED-CONVERSATIONS.md','conversation-examples.json','conversation-expectations.json','revision-context.json']+[str(p.relative_to(out)) for p in sorted(case_dir.iterdir()) if p.is_file()]
