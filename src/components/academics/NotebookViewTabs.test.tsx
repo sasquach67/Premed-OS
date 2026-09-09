@@ -46,7 +46,8 @@ it('scopes square, baseline-aligned theme tabs and equal mobile columns to reade
   expect(buttons).toContain('border-radius:0')
   expect(buttons).toContain('align-items:baseline')
   expect(buttons).toContain('transform:none')
-  expect(rule('.nbr .nbr-views button:is(:hover,:active)').trim()).toBe('transform:none')
+  // (0,4,1) outranks the global glass hover/press guards (0,4,0).
+  expect(rule('.nbr .nbr-views button.interactive-glass:is(:hover,:active)').trim()).toBe('transform:none')
   expect(rule('.nbr-views button[data-count]::after')).toContain('align-self:baseline')
   expect(rule('.nbr .nbr-views button[aria-pressed=true]')).toContain('border-bottom-color:var(--primary)')
   expect(rule('.nbr .nbr-views button[aria-pressed=true]')).toContain('color:color-mix(in srgb,var(--primary) 55%,var(--foreground))')
