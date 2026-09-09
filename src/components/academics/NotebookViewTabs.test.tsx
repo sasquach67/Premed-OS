@@ -12,7 +12,10 @@ vi.mock('motion/react', async importOriginal => {
   const actual = await importOriginal<typeof import('motion/react')>()
   const React = await import('react'), MotionButton = actual.m.button
   // Keep the real Motion component; mark its use so native Slot rendering cannot pass accidentally.
-  const TrackedMotionButton = React.forwardRef<HTMLButtonElement, ComponentPropsWithoutRef<typeof MotionButton>>((props, ref) => React.createElement(MotionButton, { ...props, ref, 'data-notebook-test-motion': 'true' }))
+  const TrackedMotionButton = React.forwardRef<HTMLButtonElement, ComponentPropsWithoutRef<typeof MotionButton>>((props, ref) => {
+    const markedProps = { ...props, ref, 'data-notebook-test-motion': 'true' }
+    return React.createElement(MotionButton, markedProps)
+  })
   return { ...actual, m: new Proxy(actual.m, { get(target, property, receiver) { return property === 'button' ? TrackedMotionButton : Reflect.get(target, property, receiver) } }) }
 })
 
