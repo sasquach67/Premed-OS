@@ -107,11 +107,11 @@ export function notebookPracticePolicy(...args: Parameters<typeof legacyNotebook
  const policy=legacyNotebookPracticePolicy(...args), [before,after,entryId]=args;
  const extra=before.entries.find(e=>e.id===entryId)?.sections.flatMap(s=>s.blocks).filter(b=>b.type==='practice' && notebookVisualPracticeKey(before,entryId,b.id)!==notebookVisualPracticeKey(after,entryId,b.id)).map(b=>b.id)??[];
  const affectedIds=[...new Set([...policy.affectedIds,...extra])];
- return {...policy,affectedIds,explanation:extra.some(id=>!policy.affectedIds.includes(id))?policy.explanation+' Changed figures, neutral stimuli or diagram relationships also start their dependent practice fresh; previous records remain in history.':policy.explanation};
+ return {...policy,reset:affectedIds.length>0,affectedIds,explanation:extra.some(id=>!policy.affectedIds.includes(id))?`${affectedIds.length} existing practice item(s) start fresh because their content, linked teaching, figures, neutral stimuli or relationships changed. Previous responses and checkmarks remain recoverable in history; unchanged linked items keep their study records.`:policy.explanation};
 }
 export function compareNotebooks(...args: Parameters<typeof legacyCompareNotebooks>): ReturnType<typeof legacyCompareNotebooks> {
  const changes=legacyCompareNotebooks(...args), [before,after]=args;
- const visual=(p:NotebookPackage)=>p.version===3?{assets:p.assets,visualReview:p.visualReview}:null;
+ const visual=(p:NotebookPackage)=>p.version!==2?{assets:p.assets,visualReview:p.visualReview}:null;
  if(canonical(visual(before))!==canonical(visual(after)))changes.push({kind:'Source / excerpts',label:'Figures and visual review',status:visual(before)===null?'Added':visual(after)===null?'Removed':'Changed',before:visual(before),after:visual(after)});
  return changes;
 }

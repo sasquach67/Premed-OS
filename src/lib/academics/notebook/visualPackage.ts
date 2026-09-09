@@ -1,19 +1,21 @@
 import schema from './notebook-package-v3.schema.json'
+import schemaV4 from './notebook-package-v4.schema.json'
+import { learningVisualItems, validateLearningVisual } from './learningVisuals'
 import { NOTEBOOK_MAX_BYTES, parseLegacyNotebookPackage, rejectDuplicateKeys } from './package'
 import { NotebookValidationError, validateSchema, type Schema } from './schemaValidator'
 import type { PortableNotebookPackage, VisualEvidence, VisualNotebookBlock, VisualNotebookPackage } from './visualTypes'
 
-export function visualAssetReferences(item: { assetIds?: string[]; type?: string; assetId?: string }): string[] {
-  return [...new Set([...(item.assetIds ?? []), ...(item.type === 'figure' && item.assetId ? [item.assetId] : [])])]
+export function visualAssetReferences(item: { assetIds?: string[]; type?: string; assetId?: string | null }): string[] {
+  return [...new Set([...(item.assetIds ?? []), ...(typeof item.assetId === 'string' ? [item.assetId] : [])])]
 }
 export function parsePortableNotebook(raw: string): PortableNotebookPackage {
   if (new TextEncoder().encode(raw).length > NOTEBOOK_MAX_BYTES) throw new NotebookValidationError('$', 'JSON exceeds 8 MiB. Split the notebook deliberately; nothing was truncated or saved.')
   const json = /^```(?:json)?\s*\n([\s\S]*?)\n```$/i.exec(raw.trim())?.[1] ?? raw
   let value: unknown
   try { value = JSON.parse(json) } catch { throw new NotebookValidationError('$', 'Invalid JSON. Supply the complete notebook object.') }
-  if (!value || typeof value !== 'object' || (value as { version?: unknown }).version !== 3) return parseLegacyNotebookPackage(raw)
+  if (!value || typeof value !== 'object' || ![3, 4].includes((value as { version: number }).version)) return parseLegacyNotebookPackage(raw)
   rejectDuplicateKeys(json)
-  validateSchema(value, schema as unknown as Schema)
+  validateSchema(value, ((value as { version: number }).version === 4 ? schemaV4 : schema) as unknown as Schema)
   const pkg = value as VisualNotebookPackage
   validateVisualNotebook(pkg)
   return pkg
@@ -34,7 +36,7 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
     if (s.used && !s.excerpts.length && !p.assets.some(a => a.sourceId === s.id)) fail(path, 'A used source needs an inspected text excerpt or selected visual evidence.')
     for (const e of s.excerpts) { if (excerpts.has(e.id)) fail(path, 'Excerpt IDs must be globally unique.'); excerpts.set(e.id, s.id) }
   }
-  function evidence(item: VisualEvidence & { id: string; type?: string; assetId?: string }, mandatory = false) {
+  function evidence(item: VisualEvidence & { id: string; type?: string; assetId?: string | null }, mandatory = false) {
     const path = `$.evidence.${item.id}`, refs = visualAssetReferences(item)
     unique(item.sourceIds, path); unique(item.excerptIds, path); unique(item.assetIds ?? [], path)
     if (mandatory && (!item.sourceIds.length || (!item.excerptIds.length && !refs.length))) fail(path, 'Source-based content needs precise text or visual evidence; otherwise author an explicit gap.')
@@ -97,6 +99,12 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
         for (const id of visualAssetReferences(b)) referenced.add(id)
         if (b.type === 'practice' && (!['source', 'generated-practice'].includes(b.provenance) || !b.sourceIds.length || (!b.excerptIds.length && !visualAssetReferences(b).length))) fail(path, 'Practice requires source or generated-practice provenance and precise evidence.')
         if (b.type === 'table' && b.rows.some(r => r.length !== b.columns.length)) fail(path, 'Table rows must match the column count.')
+        validateLearningVisual(b)
+        if (b.type !== 'study-diagram') for (const item of learningVisualItems(b)) {
+          evidence(item, true)
+          if (item.sourceIds.some(id => !b.sourceIds.includes(id)) || item.excerptIds.some(id => !b.excerptIds.includes(id)) || visualAssetReferences(item).some(id => !visualAssetReferences(b).includes(id))) fail(path, 'Every structured item must fit its visual block evidence envelope.')
+          for (const id of visualAssetReferences(item)) referenced.add(id)
+        }
         if (b.type === 'study-diagram') {
           const nodes = identify(b.nodes, path); identify(b.edges, path)
           for (const item of [...b.nodes, ...b.edges]) {
@@ -108,9 +116,10 @@ export function validateVisualNotebook(p: VisualNotebookPackage) {
         }
       }
     }
-    for (const b of blocks.values()) if (b.type === 'practice') {
+    for (const b of blocks.values()) if (b.type === 'practice' || b.type === 'worked-example') {
       unique(b.stimulusBlockIds ?? [], path)
-      for (const id of b.stimulusBlockIds ?? []) if (!['paragraph', 'table', 'figure', 'study-diagram'].includes(blocks.get(id)?.type ?? '')) fail(path, 'Practice stimuli must reference neutral paragraph, table, figure or study-diagram blocks in the same entry, never a practice block or entire section.')
+      const neutral = p.version === 4 ? ['paragraph', 'table', 'figure', 'study-diagram', 'annotated-figure'] : ['paragraph', 'table', 'figure', 'study-diagram']
+      for (const id of b.stimulusBlockIds ?? []) if (!neutral.includes(blocks.get(id)?.type ?? '')) fail(path, 'Stimuli must reference supported neutral bodies in the same entry, never a practice block, worked solution or entire section.')
     }
     for (const r of e.requirements) {
       global(r.id, requirementIds, path); evidence(r); unique(r.sectionIds, path)

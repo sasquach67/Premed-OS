@@ -18,13 +18,13 @@ export function notebookDestinationMismatch(pkg: NotebookPackage, course: { code
 }
 export function inspectNotebookImport(center: ClassCenterData, courseId: string, prepared: PreparedNotebook) {
   const acceptedPackages = new Map<string, NotebookPackage | null>()
-  const entryKey = (p: NotebookPackage, id: string) => canonical(p.version === 3 ? projectNotebookEntry(p, id) : { ...p, entries: p.entries.filter(e => e.id === id) })
+  const entryKey = (p: NotebookPackage, id: string) => canonical(p.version !== 2 ? projectNotebookEntry(p, id) : { ...p, entries: p.entries.filter(e => e.id === id) })
   return prepared.package.entries.map((entry, index) => {
     const candidates = center.lectures.filter(l => l.courseId === courseId && l.importedNotebook?.entryId === entry.id && normalizedCourseCode(l.importedNotebook.original.course.code) === normalizedCourseCode(prepared.package.course.code))
     const incoming = entryKey(prepared.package, entry.id)
     const duplicate = candidates.find(l => {
       const imported = l.importedNotebook!
-      if (((prepared.package.version === 3 || imported.fingerprint === prepared.fingerprints[index]) && entryKey(imported.original, imported.entryId) === incoming)
+      if (((prepared.package.version !== 2 || imported.fingerprint === prepared.fingerprints[index]) && entryKey(imported.original, imported.entryId) === incoming)
         || entryKey(imported.current, imported.entryId) === incoming) return true
       // Accepted proposal provenance survives later edits and restores. Recognize
       // a replay without treating the historical payload as current content.
@@ -147,7 +147,7 @@ function legacyExportNotebook(lecture: LectureRecord, kind: 'current' | 'origina
 function attachNotebookAssets(n:VisualImportedNotebook, state:ReturnType<typeof requireNotebookAssetCommit>, courseId:string) {
  mergeNotebookAssetBindings(n.assetBindings??[],state.assetBindings);
  if(n.assetLineageId&&n.assetLineageId!==state.assetLineageId)throw new Error('This notebook already has a protected image lineage. Revalidate against its saved image bindings before saving; no content or records changed.');
- const ids=new Set(portableNotebookPackages(n).flatMap(p=>p.version===3?p.assets.map(a=>a.id):[]));
+ const ids=new Set(portableNotebookPackages(n).flatMap(p=>p.version !== 2?p.assets.map(a=>a.id):[]));
  n.assetBindings=state.assetBindings.filter(b=>ids.has(b.assetId)).map(b=>({...b}));
  n.assetLineageId??=state.assetLineageId;
  assertNotebookBackupFits(n,courseId);
@@ -160,14 +160,16 @@ export function importNotebook(...args:Parameters<typeof legacyImportNotebook>):
 }
 export function acceptNotebookUpdate(...args:Parameters<typeof legacyAcceptNotebookUpdate>):ReturnType<typeof legacyAcceptNotebookUpdate> {
  const [center,course,prepared,session]=args,target=center.lectures.find(l=>l.id===session.localId)?.importedNotebook;
- if(prepared.package.version===2){if(target?.current.version===3)throw new Error('An update cannot silently downgrade a visual notebook to v2. Return the complete v3 notebook and its image references.');return legacyAcceptNotebookUpdate(...args)}
+ if(target?.current.version===4 && prepared.package.version!==4)throw new Error('A v4 notebook cannot be downgraded by an update. Restore a retained older version explicitly instead.');
+ if(prepared.package.version===2){if(target && target.current.version !== 2)throw new Error('An update cannot silently downgrade a visual notebook to v2. Return the complete v3 notebook and its image references.');return legacyAcceptNotebookUpdate(...args)}
  const grant=requireNotebookAssetCommit(prepared.package),staged=cloneVisualData(center),[, ...rest]=args,ids=legacyAcceptNotebookUpdate(staged,...rest);
  for(const id of ids){const n=staged.lectures.find(l=>l.id===id)?.importedNotebook;if(n)attachNotebookAssets(n,grant,course.id)}
  center.lectures=staged.lectures;return ids;
 }
 export function saveNotebookEdits(...args:Parameters<typeof legacySaveNotebookEdits>):ReturnType<typeof legacySaveNotebookEdits> {
  const [lecture,next,...rest]=args;
- if(next.version===2&&lecture.importedNotebook?.current.version===3)throw new Error('Editing cannot remove the visual notebook contract. Keep v3 and its retained images.');
+ if(lecture.importedNotebook?.current.version===4 && next.version!==4)throw new Error('Editing cannot remove the v4 visual contract. Restore an older version explicitly instead.');
+ if(next.version===2&&lecture.importedNotebook?.current.version !== 2)throw new Error('Editing cannot remove the visual notebook contract. Keep v3 and its retained images.');
  if(next.version===2&&!lecture.importedNotebook?.assetBindings?.length)return legacySaveNotebookEdits(...args);
  const staged=cloneVisualData(lecture),result=legacySaveNotebookEdits(staged,next,...rest);
  if(staged.importedNotebook)assertNotebookBackupFits(staged.importedNotebook,staged.courseId);
@@ -175,14 +177,14 @@ export function saveNotebookEdits(...args:Parameters<typeof legacySaveNotebookEd
 }
 export function restoreNotebookVersion(...args:Parameters<typeof legacyRestoreNotebookVersion>):ReturnType<typeof legacyRestoreNotebookVersion> {
  const [lecture,...rest]=args,n=lecture.importedNotebook;
- if(!n||!portableNotebookPackages(n).some(p=>p.version===3))return legacyRestoreNotebookVersion(...args);
+ if(!n||!portableNotebookPackages(n).some(p=>p.version !== 2))return legacyRestoreNotebookVersion(...args);
  const staged=cloneVisualData(lecture),result=legacyRestoreNotebookVersion(staged,...rest);
  if(staged.importedNotebook)assertNotebookBackupFits(staged.importedNotebook,staged.courseId);
  Object.assign(lecture,staged);return result;
 }
 export function exportNotebook(...args:Parameters<typeof legacyExportNotebook>):ReturnType<typeof legacyExportNotebook> {
  const [lecture,kind]=args,n=lecture.importedNotebook;
- if(n?.current.version===3&&kind==='current')return JSON.stringify(projectNotebookEntry(n.current,n.entryId),null,2);
+ if(n && n.current.version !== 2&&kind==='current')return JSON.stringify(projectNotebookEntry(n.current,n.entryId),null,2);
  return legacyExportNotebook(...args);
 }
 

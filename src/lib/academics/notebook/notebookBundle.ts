@@ -103,7 +103,7 @@ export function assertNotebookBackupFits(n: PortableImportedNotebook, destinatio
   const envelope = backupEnvelope(n, destinationCourseId), raw = JSON.stringify(envelope)
   validateBackupNotebook(envelope.notebook)
   const bindings = parseBindings({ format: 'premed-os-notebook-asset-index', version: 1, bindings: n.assetBindings ?? [] })
-  const ids = new Set(portableNotebookPackages(n).flatMap(p => p.version === 3 ? p.assets.map(a => a.id) : []))
+  const ids = new Set(portableNotebookPackages(n).flatMap(p => p.version !== 2 ? p.assets.map(a => a.id) : []))
   if (ids.size !== bindings.length || bindings.some(b => !ids.has(b.assetId))) throw new Error('The prospective full backup has missing or unrelated asset bindings. Previous content and history were kept.')
   const indexBytes = encode(JSON.stringify({ format: 'premed-os-notebook-asset-index', version: 1, bindings })).length
   visualLimit(encode(raw).length + indexBytes, limits.jsonBytes, 'Full original/current/history/update backup JSON bytes')
@@ -129,7 +129,7 @@ async function encodeBundle(raw: string, prepared: PreparedNotebookAssets): Prom
   return writeNotebookZip(members)
 }
 export async function exportNotebookPackageBundle(raw: string, bindings: readonly NotebookAssetBinding[], reader: NotebookAssetReader, decode?: RasterDecoder): Promise<Blob> {
-  const pkg = parsePortableNotebook(raw), wanted = new Set(pkg.version === 3 ? pkg.assets.map(a => a.id) : [])
+  const pkg = parsePortableNotebook(raw), wanted = new Set(pkg.version !== 2 ? pkg.assets.map(a => a.id) : [])
   const selected = bindings.filter(b => wanted.has(b.assetId)), prepared = await prepareNotebookAssetClosure([pkg], selected, await collectBytes(selected, reader), decode)
   return encodeBundle(raw, prepared)
 }

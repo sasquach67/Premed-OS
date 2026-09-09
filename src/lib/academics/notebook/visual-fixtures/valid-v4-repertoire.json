@@ -1,0 +1,1160 @@
+{
+  "format": "premed-os-notebook-package",
+  "version": 4,
+  "instructionsVersion": "notebook-workflows-draft-4",
+  "course": {
+    "code": "DEMO 000",
+    "title": "Authored visual-contract fixtures",
+    "term": null
+  },
+  "sources": [
+    {
+      "id": "ref",
+      "title": "Authored visual-contract reference",
+      "role": "other",
+      "access": "read",
+      "inspected": "Complete local authored fixture reference, all named sections. Explicitly fictional/non-empirical UI material, not a course or provider trial.",
+      "limitations": [
+        "Authored UI fixture facts establish only the intended test semantics."
+      ],
+      "used": true,
+      "excerpts": [
+        {
+          "id": "ref-1",
+          "location": "Section: Comparison",
+          "text": "In this fictional archive exercise, a Text card has a written label and a written description; it has no source picture. An Image card has a written label and a supplied source picture; its description names what is visible. Both card types keep the reference ID. Compare the same dimensions: label, representation and reference identity."
+        },
+        {
+          "id": "ref-2",
+          "location": "Section: Decisions",
+          "text": "To route a card, first ask whether its label is readable. A readable label goes to the labeled collection. An unreadable label goes to manual review. Manual review is a terminal state for this diagram; do not invent an automatic successful outcome."
+        },
+        {
+          "id": "ref-3",
+          "location": "Section: Cause and effect",
+          "text": "The fictional archive's access switch controls whether a card can be opened. When the switch is disabled, opening is blocked. When it is enabled, the open action can display the card. This is an explicitly stipulated software rule, not a measured effect. Being labeled happens earlier in the example sequence but does not by itself cause access permission."
+        },
+        {
+          "id": "ref-4",
+          "location": "Section: Hierarchy",
+          "text": "The fictional collection contains Text cards and Image cards. A Text card contains its label and written description. An Image card contains its label and supplied picture. These are containment relationships, not a ranking of importance or evidence quality."
+        },
+        {
+          "id": "ref-5",
+          "location": "Section: Image annotation reference",
+          "text": "The separate authored-classroom-task.png is an unchanged existing UI fixture. It displays a written symbol-to-response rule and an outlined shape beside four unmarked answer choices. Its printed PSYC 101 course label is fictional fixture context. A neutral label may identify the top corner of the displayed shape. Use the actual inspected point from IMAGE-INSPECTION.json, not guessed image coordinates."
+        },
+        {
+          "id": "ref-6",
+          "location": "Section: Timeline",
+          "text": "The fictional scheduled session starts at 09:00 with Collect. At 09:10 it reaches Label. At 09:25 it reaches Check. On a numeric timeline measured in minutes after 09:00, these scheduled positions are 0, 10 and 25. An ordinal timeline may show Collect before Label before Check, but its spacing must not claim equal elapsed intervals. These are illustrative planned times, not empirical observations or proof that one event causes the next."
+        },
+        {
+          "id": "ref-7",
+          "location": "Section: Set overlap",
+          "text": "The fictional set Text-described contains Card A and Card C. The set Image-supported contains Card B and Card C. Therefore Card A belongs only to Text-described, Card B only to Image-supported, and Card C to their overlap. No relative population size, area, probability or prevalence is specified. Use a two-set membership diagram with no quantitative area claim."
+        },
+        {
+          "id": "ref-8",
+          "location": "Section: Sequence strip",
+          "text": "For the authored classroom task, the ordered instructions are: Read the written rule; Inspect the displayed shape; Apply the rule to choose a response. The second step may display the actual unchanged source image. The initial sequence must not disclose the chosen response. These are ordered task actions, not invented intermediate scientific pictures or measured durations."
+        },
+        {
+          "id": "ref-9",
+          "location": "Section: Worked example",
+          "text": "Problem: The fictional schedule reaches Label at 09:10 and Check at 09:25. How many minutes are scheduled between them? The solution identifies the same-hour minute values 10 and 25, subtracts 25 minus 10, and concludes 15 minutes. Reveal all solution steps and the final answer together after the problem. No answer belongs in the collapsed panel title, initial alt text or neutral setup."
+        },
+        {
+          "id": "ref-10",
+          "location": "Section: Ordinal continuum",
+          "text": "The fictional archive's readiness stages are Unsorted, Labeled and Checked, in that order. A folder can be at the Labeled stage. No equal interval, numeric score, scientific threshold or time-to-completion is established by these categories. Labeling a point on this ordinal continuum must not invent one."
+        },
+        {
+          "id": "ref-11",
+          "location": "Section: Numeric scale",
+          "text": "A separate fictional display test uses an explicitly defined score from 0 to 10 points, with anchors at 0, 5 and 10 and a sample marker at 7. Units are points. This is an invented UI test scale, not a learner score, actual measurement or empirical distribution. A proportional numeric axis can encode these provided test values; it must not add unprovided uncertainty intervals, thresholds or observations."
+        },
+        {
+          "id": "ref-12",
+          "location": "Section: Image answer authoring guidance",
+          "text": "The displayed shape is a triangle, and the supplied written rule maps a triangle to LEFT. The correct response is A. Left. This paragraph is answer-bearing authoring guidance. It must never be cited as initial question or neutral stimulus evidence. The unchanged image supplies the actual task rule and unmarked options; a label disclosing the chosen response belongs only after reveal."
+        }
+      ]
+    },
+    {
+      "id": "image",
+      "title": "Authored PSYC101 classroom-task test image",
+      "role": "other",
+      "access": "read",
+      "inspected": "Actual unchanged source PNG viewed and decoded at 1100×530; top triangle anchor independently derived from the visible pixel region. Printed PSYC101 label is fictional fixture context deliberately used as UI reference for DEMO000.",
+      "limitations": [
+        "A labelled synthetic UI source, not student coursework or empirical scientific evidence."
+      ],
+      "used": true,
+      "excerpts": []
+    }
+  ],
+  "entries": [
+    {
+      "id": "visual-repertoire-demo",
+      "revision": 1,
+      "baseRevision": null,
+      "title": "Authored visual repertoire — non-empirical UI fixtures",
+      "goal": "review",
+      "scope": "Contract and renderer demonstration of the agreed visual families; no actual course trial.",
+      "request": {
+        "helpStage": null,
+        "classPreferences": "Use actual supplied fixture meanings and preserve neutral question/reveal boundaries.",
+        "assessmentFormat": null
+      },
+      "sections": [
+        {
+          "id": "fixture-compare",
+          "title": "Compare cards",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "compare-cards",
+              "type": "table",
+              "provenance": "source",
+              "sourceIds": [
+                "ref"
+              ],
+              "excerptIds": [
+                "ref-1"
+              ],
+              "assetIds": [],
+              "columns": [
+                "Dimension",
+                "Text card",
+                "Image card"
+              ],
+              "rows": [
+                [
+                  "Label",
+                  "Written label",
+                  "Written label"
+                ],
+                [
+                  "Representation",
+                  "Written description; no source picture",
+                  "Supplied source picture; description of visible content"
+                ],
+                [
+                  "Reference",
+                  "Retains reference ID",
+                  "Retains reference ID"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fixture-route",
+          "title": "Route cards",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "route-card",
+              "type": "study-diagram",
+              "provenance": "clarification",
+              "sourceIds": [
+                "ref"
+              ],
+              "excerptIds": [
+                "ref-2"
+              ],
+              "assetIds": [],
+              "kind": "decision-tree",
+              "title": "Route a fictional archive card",
+              "nodes": [
+                {
+                  "id": "route-card-n0",
+                  "label": "Is the label readable?",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-2"
+                  ],
+                  "assetIds": []
+                },
+                {
+                  "id": "route-card-n1",
+                  "label": "Labeled collection",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-2"
+                  ],
+                  "assetIds": []
+                },
+                {
+                  "id": "route-card-n2",
+                  "label": "Manual review",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-2"
+                  ],
+                  "assetIds": []
+                }
+              ],
+              "edges": [
+                {
+                  "id": "route-card-e0",
+                  "from": "route-card-n0",
+                  "to": "route-card-n1",
+                  "relation": "other",
+                  "label": "Yes — readable",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-2"
+                  ],
+                  "assetIds": []
+                },
+                {
+                  "id": "route-card-e1",
+                  "from": "route-card-n0",
+                  "to": "route-card-n2",
+                  "relation": "other",
+                  "label": "No — unreadable",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-2"
+                  ],
+                  "assetIds": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fixture-hierarchy",
+          "title": "Collection hierarchy",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "collection-tree",
+              "type": "study-diagram",
+              "provenance": "clarification",
+              "sourceIds": [
+                "ref"
+              ],
+              "excerptIds": [
+                "ref-4"
+              ],
+              "assetIds": [],
+              "kind": "hierarchy",
+              "title": "Fictional collection contents",
+              "nodes": [
+                {
+                  "id": "collection-tree-n0",
+                  "label": "Collection",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-4"
+                  ],
+                  "assetIds": []
+                },
+                {
+                  "id": "collection-tree-n1",
+                  "label": "Text card",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-4"
+                  ],
+                  "assetIds": []
+                },
+                {
+                  "id": "collection-tree-n2",
+                  "label": "Image card",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-4"
+                  ],
+                  "assetIds": []
+                },
+                {
+                  "id": "collection-tree-n3",
+                  "label": "Written description",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-4"
+                  ],
+                  "assetIds": []
+                },
+                {
+                  "id": "collection-tree-n4",
+                  "label": "Supplied picture",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-4"
+                  ],
+                  "assetIds": []
+                }
+              ],
+              "edges": [
+                {
+                  "id": "collection-tree-e0",
+                  "from": "collection-tree-n0",
+                  "to": "collection-tree-n1",
+                  "relation": "contains",
+                  "label": "contains",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-4"
+                  ],
+                  "assetIds": []
+                },
+                {
+                  "id": "collection-tree-e1",
+                  "from": "collection-tree-n0",
+                  "to": "collection-tree-n2",
+                  "relation": "contains",
+                  "label": "contains",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-4"
+                  ],
+                  "assetIds": []
+                },
+                {
+                  "id": "collection-tree-e2",
+                  "from": "collection-tree-n1",
+                  "to": "collection-tree-n3",
+                  "relation": "contains",
+                  "label": "contains",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-4"
+                  ],
+                  "assetIds": []
+                },
+                {
+                  "id": "collection-tree-e3",
+                  "from": "collection-tree-n2",
+                  "to": "collection-tree-n4",
+                  "relation": "contains",
+                  "label": "contains",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-4"
+                  ],
+                  "assetIds": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fixture-causal",
+          "title": "Stipulated access chain",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "access-chain",
+              "type": "study-diagram",
+              "provenance": "clarification",
+              "sourceIds": [
+                "ref"
+              ],
+              "excerptIds": [
+                "ref-3"
+              ],
+              "assetIds": [],
+              "kind": "causal-chain",
+              "title": "Stipulated access rule",
+              "nodes": [
+                {
+                  "id": "access-chain-n0",
+                  "label": "Access switch disabled",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-3"
+                  ],
+                  "assetIds": []
+                },
+                {
+                  "id": "access-chain-n1",
+                  "label": "Opening blocked",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-3"
+                  ],
+                  "assetIds": []
+                },
+                {
+                  "id": "access-chain-n2",
+                  "label": "Card display",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-3"
+                  ],
+                  "assetIds": []
+                }
+              ],
+              "edges": [
+                {
+                  "id": "access-chain-e0",
+                  "from": "access-chain-n0",
+                  "to": "access-chain-n1",
+                  "relation": "causes",
+                  "label": "causes under this stipulated rule",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-3"
+                  ],
+                  "assetIds": []
+                },
+                {
+                  "id": "access-chain-e1",
+                  "from": "access-chain-n1",
+                  "to": "access-chain-n2",
+                  "relation": "inhibits",
+                  "label": "prevents",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-3"
+                  ],
+                  "assetIds": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fixture-annotation",
+          "title": "Supplied-image annotation",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "label-source-image",
+              "type": "annotated-figure",
+              "title": "An actual source-image anchor",
+              "provenance": "clarification",
+              "sourceIds": [
+                "ref",
+                "image"
+              ],
+              "excerptIds": [
+                "ref-5"
+              ],
+              "assetIds": [
+                "source-image"
+              ],
+              "assetId": "source-image",
+              "caption": "Unchanged authored classroom-task fixture",
+              "alt": "An authored classroom rule, an outlined triangle and four unmarked response options.",
+              "context": "Fictional UI test material; use the supplied shape and written rule.",
+              "annotations": [
+                {
+                  "id": "shape-top",
+                  "label": "Top corner of the displayed shape",
+                  "sourceIds": [
+                    "ref",
+                    "image"
+                  ],
+                  "excerptIds": [
+                    "ref-5"
+                  ],
+                  "assetIds": [
+                    "source-image"
+                  ],
+                  "x": 0.15,
+                  "y": 0.4528301886792453,
+                  "positionBasis": "Actual decoded 1100×530 source: top triangle pixels at x165,y240, inspected visually and verified within its pixel bounds. Normalized coordinates are x165/1100,y240/530."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fixture-schedule",
+          "title": "Schedule: order and elapsed time",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "schedule-ordinal",
+              "type": "timeline",
+              "title": "Fictional schedule — ordinal",
+              "provenance": "clarification",
+              "sourceIds": [
+                "ref"
+              ],
+              "excerptIds": [
+                "ref-6"
+              ],
+              "assetIds": [],
+              "orderingBasis": "The authored reference supplies Collect before Label before Check and explicit scheduled times.",
+              "axis": {
+                "mode": "ordinal",
+                "unit": null,
+                "minimum": null,
+                "maximum": null
+              },
+              "events": [
+                {
+                  "id": "time-ordinal-0",
+                  "label": "Collect",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-6"
+                  ],
+                  "assetIds": [],
+                  "detail": "Fictional scheduled stage; no causal claim.",
+                  "timeLabel": "09:00",
+                  "value": null
+                },
+                {
+                  "id": "time-ordinal-1",
+                  "label": "Label",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-6"
+                  ],
+                  "assetIds": [],
+                  "detail": "Fictional scheduled stage; no causal claim.",
+                  "timeLabel": "09:10",
+                  "value": null
+                },
+                {
+                  "id": "time-ordinal-2",
+                  "label": "Check",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-6"
+                  ],
+                  "assetIds": [],
+                  "detail": "Fictional scheduled stage; no causal claim.",
+                  "timeLabel": "09:25",
+                  "value": null
+                }
+              ]
+            },
+            {
+              "id": "schedule-numeric",
+              "type": "timeline",
+              "title": "Fictional schedule — numeric",
+              "provenance": "clarification",
+              "sourceIds": [
+                "ref"
+              ],
+              "excerptIds": [
+                "ref-6"
+              ],
+              "assetIds": [],
+              "orderingBasis": "The authored reference supplies Collect before Label before Check and explicit scheduled times.",
+              "axis": {
+                "mode": "numeric",
+                "unit": "minutes after 09:00",
+                "minimum": 0,
+                "maximum": 25
+              },
+              "events": [
+                {
+                  "id": "time-numeric-0",
+                  "label": "Collect",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-6"
+                  ],
+                  "assetIds": [],
+                  "detail": "Fictional scheduled stage; no causal claim.",
+                  "timeLabel": "09:00",
+                  "value": 0
+                },
+                {
+                  "id": "time-numeric-1",
+                  "label": "Label",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-6"
+                  ],
+                  "assetIds": [],
+                  "detail": "Fictional scheduled stage; no causal claim.",
+                  "timeLabel": "09:10",
+                  "value": 10
+                },
+                {
+                  "id": "time-numeric-2",
+                  "label": "Check",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-6"
+                  ],
+                  "assetIds": [],
+                  "detail": "Fictional scheduled stage; no causal claim.",
+                  "timeLabel": "09:25",
+                  "value": 25
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fixture-membership",
+          "title": "Shared membership",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "card-membership",
+              "type": "venn",
+              "title": "Fictional card membership",
+              "provenance": "clarification",
+              "sourceIds": [
+                "ref"
+              ],
+              "excerptIds": [
+                "ref-7"
+              ],
+              "assetIds": [],
+              "sets": [
+                {
+                  "id": "set-text",
+                  "label": "Text-described",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-7"
+                  ],
+                  "assetIds": []
+                },
+                {
+                  "id": "set-image",
+                  "label": "Image-supported",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-7"
+                  ],
+                  "assetIds": []
+                }
+              ],
+              "regions": [
+                {
+                  "id": "only-text",
+                  "setIds": [
+                    "set-text"
+                  ],
+                  "items": [
+                    {
+                      "id": "member-only-text",
+                      "text": "Card A",
+                      "sourceIds": [
+                        "ref"
+                      ],
+                      "excerptIds": [
+                        "ref-7"
+                      ],
+                      "assetIds": []
+                    }
+                  ]
+                },
+                {
+                  "id": "both",
+                  "setIds": [
+                    "set-text",
+                    "set-image"
+                  ],
+                  "items": [
+                    {
+                      "id": "member-both",
+                      "text": "Card C",
+                      "sourceIds": [
+                        "ref"
+                      ],
+                      "excerptIds": [
+                        "ref-7"
+                      ],
+                      "assetIds": []
+                    }
+                  ]
+                },
+                {
+                  "id": "only-image",
+                  "setIds": [
+                    "set-image"
+                  ],
+                  "items": [
+                    {
+                      "id": "member-only-image",
+                      "text": "Card B",
+                      "sourceIds": [
+                        "ref"
+                      ],
+                      "excerptIds": [
+                        "ref-7"
+                      ],
+                      "assetIds": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fixture-sequence",
+          "title": "Task sequence",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "task-strip",
+              "type": "sequence-strip",
+              "title": "Ordered task actions",
+              "provenance": "clarification",
+              "sourceIds": [
+                "ref",
+                "image"
+              ],
+              "excerptIds": [
+                "ref-8"
+              ],
+              "assetIds": [
+                "source-image"
+              ],
+              "orderingBasis": "The authored instructions explicitly order reading, inspecting and applying.",
+              "steps": [
+                {
+                  "id": "task-step-0",
+                  "label": "Read the written rule",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-8"
+                  ],
+                  "assetIds": [],
+                  "detail": "Identify what each symbol means in this fictional task.",
+                  "assetId": null,
+                  "alt": null
+                },
+                {
+                  "id": "task-step-1",
+                  "label": "Inspect the displayed shape",
+                  "sourceIds": [
+                    "ref",
+                    "image"
+                  ],
+                  "excerptIds": [
+                    "ref-8"
+                  ],
+                  "assetIds": [
+                    "source-image"
+                  ],
+                  "detail": "Use the unchanged supplied image.",
+                  "assetId": "source-image",
+                  "alt": "Unmarked authored source task with its rule and displayed shape."
+                },
+                {
+                  "id": "task-step-2",
+                  "label": "Apply the rule",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-8"
+                  ],
+                  "assetIds": [],
+                  "detail": "Choose the response; the sequence itself does not disclose it.",
+                  "assetId": null,
+                  "alt": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fixture-worked",
+          "title": "Worked timing example",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "elapsed-worked",
+              "type": "worked-example",
+              "title": "Time between two scheduled stages",
+              "provenance": "clarification",
+              "sourceIds": [
+                "ref"
+              ],
+              "excerptIds": [
+                "ref-6",
+                "ref-9"
+              ],
+              "assetIds": [],
+              "problem": "The fictional schedule reaches Label at 09:10 and Check at 09:25. How many minutes are scheduled between them?",
+              "problemEvidence": {
+                "sourceIds": [
+                  "ref"
+                ],
+                "excerptIds": [
+                  "ref-6"
+                ],
+                "assetIds": []
+              },
+              "solutionEvidence": {
+                "sourceIds": [
+                  "ref"
+                ],
+                "excerptIds": [
+                  "ref-6",
+                  "ref-9"
+                ],
+                "assetIds": []
+              },
+              "stimulusBlockIds": [],
+              "steps": [
+                {
+                  "id": "elapsed-step-1",
+                  "label": "Identify the minute values",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-6",
+                    "ref-9"
+                  ],
+                  "assetIds": [],
+                  "explanation": "Both scheduled times are in the 09:00 hour. Label is at minute 10 and Check at minute 25."
+                },
+                {
+                  "id": "elapsed-step-2",
+                  "label": "Subtract in the stated order",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-6",
+                    "ref-9"
+                  ],
+                  "assetIds": [],
+                  "explanation": "25 − 10 = 15 minutes."
+                }
+              ],
+              "answer": "15 minutes.",
+              "check": "The result is positive because Check is later in the same hour. These are fictional scheduled times, not measured observations."
+            }
+          ]
+        },
+        {
+          "id": "fixture-scales",
+          "title": "Readiness and score scales",
+          "purpose": "study-guide",
+          "blocks": [
+            {
+              "id": "readiness-scale",
+              "type": "continuum",
+              "title": "Fictional readiness stages",
+              "provenance": "clarification",
+              "sourceIds": [
+                "ref"
+              ],
+              "excerptIds": [
+                "ref-10"
+              ],
+              "assetIds": [],
+              "orderingBasis": "The reference orders Unsorted, Labeled and Checked without numeric distances.",
+              "axis": {
+                "mode": "ordinal",
+                "unit": null,
+                "minimum": null,
+                "maximum": null
+              },
+              "points": [
+                {
+                  "id": "readiness-0",
+                  "label": "Unsorted",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-10"
+                  ],
+                  "assetIds": [],
+                  "detail": "First named stage.",
+                  "value": null
+                },
+                {
+                  "id": "readiness-1",
+                  "label": "Labeled",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-10"
+                  ],
+                  "assetIds": [],
+                  "detail": "The sample folder is at this stage.",
+                  "value": null
+                },
+                {
+                  "id": "readiness-2",
+                  "label": "Checked",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-10"
+                  ],
+                  "assetIds": [],
+                  "detail": "Later named stage; no interval or duration implied.",
+                  "value": null
+                }
+              ]
+            },
+            {
+              "id": "test-score-scale",
+              "type": "continuum",
+              "title": "An explicitly fictional numeric scale",
+              "provenance": "clarification",
+              "sourceIds": [
+                "ref"
+              ],
+              "excerptIds": [
+                "ref-11"
+              ],
+              "assetIds": [],
+              "orderingBasis": "The authored reference explicitly supplies a 0–10 point domain, 0/5/10 anchors and sample marker 7.",
+              "axis": {
+                "mode": "numeric",
+                "unit": "points",
+                "minimum": 0,
+                "maximum": 10
+              },
+              "points": [
+                {
+                  "id": "numeric-score-0",
+                  "label": "Lower anchor",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-11"
+                  ],
+                  "assetIds": [],
+                  "detail": "Invented UI display test value, not a learner score or empirical measurement.",
+                  "value": 0
+                },
+                {
+                  "id": "numeric-score-1",
+                  "label": "Middle anchor",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-11"
+                  ],
+                  "assetIds": [],
+                  "detail": "Invented UI display test value, not a learner score or empirical measurement.",
+                  "value": 5
+                },
+                {
+                  "id": "numeric-score-2",
+                  "label": "Sample marker",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-11"
+                  ],
+                  "assetIds": [],
+                  "detail": "Invented UI display test value, not a learner score or empirical measurement.",
+                  "value": 7
+                },
+                {
+                  "id": "numeric-score-3",
+                  "label": "Upper anchor",
+                  "sourceIds": [
+                    "ref"
+                  ],
+                  "excerptIds": [
+                    "ref-11"
+                  ],
+                  "assetIds": [],
+                  "detail": "Invented UI display test value, not a learner score or empirical measurement.",
+                  "value": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fixture-practice",
+          "title": "One supplied fixture question",
+          "purpose": "practice",
+          "blocks": [
+            {
+              "id": "source-question",
+              "type": "practice",
+              "provenance": "source",
+              "sourceIds": [
+                "ref",
+                "image"
+              ],
+              "excerptIds": [
+                "ref-5"
+              ],
+              "assetIds": [
+                "source-image"
+              ],
+              "prompt": "Which response follows the displayed shape? A. Left B. Right C. Both D. Not specified",
+              "answer": "A. Left.",
+              "rationale": "The supplied fictional rule maps the displayed triangle to LEFT. The figure has no marked answer.",
+              "stimulusBlockIds": [
+                "label-source-image"
+              ]
+            }
+          ]
+        }
+      ],
+      "objectives": [],
+      "requirements": [
+        {
+          "id": "fixture-requirement",
+          "kind": "student-request",
+          "text": "Display the agreed structured visual families using the supplied fictional reference and actual fixture image.",
+          "authority": "selected-material",
+          "sourceIds": [
+            "ref",
+            "image"
+          ],
+          "excerptIds": [
+            "ref-1",
+            "ref-2",
+            "ref-3",
+            "ref-4",
+            "ref-5",
+            "ref-6",
+            "ref-7",
+            "ref-8",
+            "ref-9",
+            "ref-10",
+            "ref-11",
+            "ref-12"
+          ],
+          "assetIds": [
+            "source-image"
+          ],
+          "status": "supported",
+          "basis": "The authored fixture contains explicit comparison, sequence, causal-rule, chronology, membership, axis and worked-problem facts. This tests UI/contract behavior, not course learning quality.",
+          "sectionIds": [
+            "fixture-compare",
+            "fixture-route",
+            "fixture-hierarchy",
+            "fixture-causal",
+            "fixture-annotation",
+            "fixture-schedule",
+            "fixture-membership",
+            "fixture-sequence",
+            "fixture-worked",
+            "fixture-scales",
+            "fixture-practice"
+          ],
+          "nextStep": null
+        }
+      ],
+      "limitations": [
+        "This deliberately exhaustive family showcase is a UI fixture, not a recommended density or visual quota for a student notebook."
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "source-image",
+      "sourceId": "image",
+      "location": "Actual authored source PNG, full image",
+      "fileName": "authored-classroom-task.png",
+      "mimeType": "image/png",
+      "originalAssetId": null,
+      "alteration": null
+    }
+  ],
+  "visualReview": {
+    "sources": [
+      {
+        "sourceId": "ref",
+        "discovery": "complete",
+        "imageState": "none-found",
+        "inspectedPortions": [
+          "Complete authored text reference."
+        ],
+        "unprocessedPortions": [],
+        "limitations": []
+      },
+      {
+        "sourceId": "image",
+        "discovery": "complete",
+        "imageState": "images-found",
+        "inspectedPortions": [
+          "Full actual1100×530PNG viewed/decoded; observed top triangle pixel anchor."
+        ],
+        "unprocessedPortions": [],
+        "limitations": []
+      }
+    ],
+    "candidates": [
+      {
+        "id": "fixture-image-candidate",
+        "sourceId": "image",
+        "location": "Full authored source PNG",
+        "discovered": true,
+        "inspection": "inspected",
+        "decision": "selected",
+        "assetId": "source-image",
+        "reason": "Actual source image for point annotation, sequence-image closure and neutral question-reveal checks.",
+        "nextStep": null,
+        "duplicateOf": null,
+        "changedFrom": null
+      }
+    ]
+  }
+}

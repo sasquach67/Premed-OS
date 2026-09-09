@@ -91,7 +91,7 @@ export function mergeNotebookAssetBindings(before: readonly NotebookAssetBinding
 }
 export async function prepareNotebookAssets(pkg: PortableNotebookPackage, files: NamedNotebookImage[], options: { mappedFiles?: ReadonlyMap<string, Blob>; previousBindings?: readonly NotebookAssetBinding[]; reader?: NotebookAssetReader; decode?: RasterDecoder } = {}): Promise<PreparedNotebookAssets> {
   const snapshot = parsePortableNotebook(JSON.stringify(pkg)), mappedFiles = new Map(options.mappedFiles)
-  const assets = snapshot.version === 3 ? snapshot.assets : [], names = new Map<string, Blob>(), byId = new Map(assets.map(a => [a.id, a]))
+  const assets = snapshot.version !== 2 ? snapshot.assets : [], names = new Map<string, Blob>(), byId = new Map(assets.map(a => [a.id, a]))
   visualLimit(assets.length, limits.packageAssets, 'Package image count')
   for (const f of files) { if (names.has(f.name)) throw new Error(`Ambiguous duplicate image filename ${f.name}. Map each asset explicitly instead.`); if (!assets.some(a => a.fileName === f.name)) throw new Error(`Image ${f.name} is not declared by this notebook. Nothing was silently ignored.`); names.set(f.name, f.blob) }
   for (const id of mappedFiles.keys()) if (!byId.has(id)) throw new Error(`Mapped image ID ${id} is not declared by this notebook.`)
@@ -120,7 +120,7 @@ export async function prepareNotebookAssets(pkg: PortableNotebookPackage, files:
  * its own 64-image/128-MiB ceiling; the complete union has the larger backup cap. */
 export async function prepareNotebookAssetClosure(packages: PortableNotebookPackage[], bindingIndex: readonly NotebookAssetBinding[], blobs: ReadonlyMap<string, Blob>, decode: RasterDecoder = decodeNotebookRaster): Promise<PreparedNotebookAssets> {
   const snapshots = packages.map(p => parsePortableNotebook(JSON.stringify(p))), assets = new Map<string, NotebookAsset>()
-  for (const p of snapshots) if (p.version === 3) for (const a of p.assets) {
+  for (const p of snapshots) if (p.version !== 2) for (const a of p.assets) {
     if (assets.has(a.id) && assets.get(a.id)!.mimeType !== a.mimeType) throw new Error(`Image ${a.id} changes MIME across notebook history. Use a new image ID.`)
     assets.set(a.id, a)
   }
@@ -138,7 +138,7 @@ export async function prepareNotebookAssetClosure(packages: PortableNotebookPack
     if (actual.mimeType !== asset.mimeType || canonical(actual) !== canonical(expected)) throw new Error(`Image ${id} does not match its app-owned binding digest, MIME, dimensions or byte count.`)
     bindings.push(actual); bytes.set(actual.sha256, result.blob)
   }
-  for (const p of snapshots) if (p.version === 3) {
+  for (const p of snapshots) if (p.version !== 2) {
     const hashes = new Set(p.assets.map(a => index.get(a.id)!.sha256))
     visualLimit([...hashes].reduce((sum, hash) => sum + bytes.get(hash)!.size, 0), limits.packageImageBytes, 'One historical package actual image bytes')
   }

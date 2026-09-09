@@ -44,7 +44,7 @@ export type NotebookFigureBlock = VisualEvidence & VisualBlockIdentity & {
   type: 'figure'; assetId: string; caption: string | null; alt: string; context: string
 }
 export type NotebookStudyDiagramBlock = VisualEvidence & VisualBlockIdentity & {
-  type: 'study-diagram'; kind: 'concept-map' | 'flowchart'; title: string
+  type: 'study-diagram'; kind: 'concept-map' | 'flowchart' | 'decision-tree' | 'hierarchy' | 'causal-chain'; title: string
   nodes: NotebookDiagramNode[]; edges: NotebookDiagramEdge[]
 }
 export type VisualNotebookBlock = (NotebookBlock & { assetIds?: string[]; stimulusBlockIds?: string[] }) | NotebookFigureBlock | NotebookStudyDiagramBlock
@@ -53,9 +53,7 @@ export type VisualNotebookEntry = Omit<NotebookEntry, 'sections' | 'requirements
   requirements: (NotebookEntry['requirements'][number] & VisualEvidence)[]
   objectives: (NotebookEntry['objectives'][number] & VisualEvidence)[]
 }
-export type VisualNotebookPackage = Omit<NotebookPackage, 'version' | 'instructionsVersion' | 'entries'> & {
-  version: 3
-  instructionsVersion: 'notebook-workflows-draft-3'
+export type VisualNotebookPackage = Omit<NotebookPackage, 'version' | 'instructionsVersion' | 'entries'> & ({ version: 3; instructionsVersion: 'notebook-workflows-draft-3' } | { version: 4; instructionsVersion: 'notebook-workflows-draft-4' }) & {
   entries: VisualNotebookEntry[]
   assets: NotebookAsset[]
   visualReview: NotebookVisualReview

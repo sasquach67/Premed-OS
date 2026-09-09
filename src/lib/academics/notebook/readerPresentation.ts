@@ -64,7 +64,7 @@ export function splitNotebookAnnotations(value: string, sourceIds: string[]) {
 
 /** Reference notes follow the same answer boundary as the actual evidence. */
 export function collectReaderAnnotations(blocks: NotebookBlock[], pkg: NotebookPackage, scope: 'section' | 'item') {
-  return blocks.filter(block => scope === 'item' || block.type !== 'practice').flatMap(block => {
+  return blocks.filter(block => scope === 'item' || (block.type !== 'practice' && block.type !== 'worked-example')).flatMap(block => {
     const sourceIds = block.sourceIds.filter(id => pkg.sources.some(source => source.id === id))
     const fields = block.type === 'paragraph' ? [block.text] : block.type === 'practice' ? [block.answer, block.rationale] : []
     return fields.flatMap(value => { const parts = splitNotebookAnnotations(value, pkg.sources.map(source => source.id)); return [...parts.leading, ...parts.trailing].map(note => ({ ...note, blockId: block.id, sourceIds, unlinkedSourceIds: pkg.sources.filter(source => !sourceIds.includes(source.id) && new RegExp(`(?<![\\w-])${escapePattern(source.id)}(?![\\w-])`).test(note.text)).map(source => source.id) })) })
@@ -80,7 +80,7 @@ export function readerBlocks(blocks: NotebookBlock[], mode: NotebookReadingMode,
 
 /** The section boundary must never collect a practice answer's evidence. */
 export function collectReaderEvidence(blocks: NotebookBlock[], pkg: NotebookPackage, scope: 'section' | 'item') {
-  const included = blocks.filter(block => scope === 'item' || block.type !== 'practice')
+  const included = blocks.filter(block => scope === 'item' || (block.type !== 'practice' && block.type !== 'worked-example'))
   return pkg.sources.filter(source => included.some(block => block.sourceIds.includes(source.id))).map(source => ({
     source,
     excerpts: source.excerpts.flatMap(excerpt => {
