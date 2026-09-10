@@ -173,6 +173,41 @@ it('distinguishes minimum materials, optional lecture sources, partial exam scop
   expect(container.textContent).toContain('Working checkpoint files are not final notebooks')
   expect(imported).not.toHaveBeenCalled()
 })
+it.each(['paste', 'upload'])('discloses blank table heading repair from %s and retains the exact original after save and reload', async path => {
+  const p = (await prepareNotebook(raw)).package
+  const table = p.entries[0].sections.flatMap(section => section.blocks).find(block => block.type === 'table')!
+  if (table.type !== 'table') throw new Error('Expected fixture table')
+  table.columns[0] = ' \t'
+  const original = JSON.stringify(p), rows = structuredClone(table.rows)
+  await renderImport()
+  if (path === 'paste') {
+    await fill('Paste complete JSON', original); await click('Validate and preview')
+  } else {
+    const file = new File([original], 'blank-table.json', { type: 'application/json' })
+    Object.defineProperty(file, 'text', { value: async () => original })
+    const input = container.querySelector<HTMLInputElement>('.en-upload input')!
+    Object.defineProperty(input, 'files', { value: [file] })
+    await act(async () => input.dispatchEvent(new Event('change', { bubbles: true })))
+  }
+  expect(container.querySelector('.en-import-adjustments')?.textContent).toContain('Blank table headings adjusted (1)')
+  expect(container.querySelector('.en-import-adjustments')?.textContent).toContain('Column 1')
+  expect(container.querySelector<HTMLTextAreaElement>('.en-json')!.value).toBe(original)
+  expect(container.querySelector('[role="alert"]')).toBeNull()
+  await click(`Save editable entry to ${course.code}`)
+  expect(imported).toHaveBeenCalledTimes(1)
+  const saved = useStore.getState().academics.classCenter.lectures[0]
+  expect(exportNotebook(saved, 'original')).toBe(original)
+  const current = saved.importedNotebook!.current.entries[0].sections.flatMap(section => section.blocks).find(block => block.id === table.id)!
+  expect(current).toMatchObject({ columns: ['Column 1', ...table.columns.slice(1)], rows })
+  const disk = localStorage.getItem(STORAGE_KEY)!
+  await act(async () => root.unmount()); root = createRoot(container)
+  useStore.setState({ academics: createInitialDataForMode(false).academics }); localStorage.setItem(STORAGE_KEY, disk)
+  await act(async () => useStore.persist.rehydrate())
+  const reloaded = useStore.getState().academics.classCenter.lectures.find(lecture => lecture.id === saved.id)!
+  await act(async () => root.render(<ExternalNotebookView lecture={reloaded} courseCode={course.code} />))
+  expect(container.querySelector('.en-import-adjustments')?.textContent).toContain('Blank table headings adjusted (1)')
+  expect(exportNotebook(reloaded, 'original')).toBe(original)
+})
 it('rejects destination removed between validation and save', async () => {
   await renderImport(); await fill('Paste complete JSON', raw); await click('Validate and preview')
   await act(async () => useStore.getState().update(state => { state.courses = [] }))

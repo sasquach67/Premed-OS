@@ -57,7 +57,7 @@ function parseBindings(value: unknown): NotebookAssetBinding[] {
 }
 
 export function portableNotebookPackages(n: PortableImportedNotebook): PortableNotebookPackage[] {
-  return [n.original, n.current, ...(n.history ?? []).map(h => h.current), ...(n.updateSession ? [n.updateSession.baseline] : []), ...[n.originalRaw, n.acceptedRaw, ...(n.history ?? []).map(h => h.acceptedRaw)].filter((raw): raw is string => raw !== undefined).map(parsePortableNotebook)]
+  return [n.original, n.current, ...(n.history ?? []).map(h => h.current), ...(n.updateSession ? [n.updateSession.baseline] : []), ...[n.originalRaw, n.acceptedRaw, ...(n.history ?? []).map(h => h.acceptedRaw)].filter((raw): raw is string => raw !== undefined).map(raw => parsePortableNotebook(raw))]
 }
 /** Validate personal records and every saved/raw version without reconstructing them. */
 function validateBackupNotebook(input: unknown): PortableImportedNotebook {
@@ -82,7 +82,11 @@ function validateBackupNotebook(input: unknown): PortableImportedNotebook {
     text(s.id, 'Update session ID'); text(s.localId, 'Update entry ID'); timestamp(s.createdAt, 'Update created time')
   }
   const n = value as PortableImportedNotebook
-  const packages = portableNotebookPackages(n).map(p => parsePortableNotebook(JSON.stringify(p)))
+  const packages = portableNotebookPackages(n).map(p => {
+    const parsed = parsePortableNotebook(JSON.stringify(p))
+    if (canonical(parsed) !== canonical(p)) throw new Error('Stored notebook content differs from its validated form. Re-export a complete backup; original raw input may retain blank headings, but saved table headings must be non-empty.')
+    return parsed
+  })
   if (canonical(parsePortableNotebook(n.originalRaw)) !== canonical(n.original)) throw new Error('Original JSON bytes do not match the retained original package. Nothing was restored.')
   const originalEntry = n.original.entries.find(e => e.id === n.entryId)
   if (!originalEntry) throw new Error('The original package does not contain this notebook identity.')

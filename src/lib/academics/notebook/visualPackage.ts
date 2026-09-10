@@ -4,18 +4,21 @@ import { learningVisualItems, validateLearningVisual } from './learningVisuals'
 import { NOTEBOOK_MAX_BYTES, parseLegacyNotebookPackage, rejectDuplicateKeys } from './package'
 import { NotebookValidationError, validateSchema, type Schema } from './schemaValidator'
 import type { PortableNotebookPackage, VisualEvidence, VisualNotebookBlock, VisualNotebookPackage } from './visualTypes'
+import { normalizeNotebookTableHeadings, type TableHeadingAdjustment } from './tableHeaders'
 
 export function visualAssetReferences(item: { assetIds?: string[]; type?: string; assetId?: string | null; steps?: readonly unknown[] }): string[] {
   const sequenceImages = item.type === 'sequence-strip' ? (item.steps ?? []).flatMap(step => step && typeof step === 'object' && 'assetId' in step && typeof step.assetId === 'string' ? [step.assetId] : []) : []
   return [...new Set([...(item.assetIds ?? []), ...(typeof item.assetId === 'string' ? [item.assetId] : []), ...sequenceImages])]
 }
-export function parsePortableNotebook(raw: string): PortableNotebookPackage {
+export function parsePortableNotebook(raw: string, adjustments?: TableHeadingAdjustment[]): PortableNotebookPackage {
   if (new TextEncoder().encode(raw).length > NOTEBOOK_MAX_BYTES) throw new NotebookValidationError('$', 'JSON exceeds 8 MiB. Split the notebook deliberately; nothing was truncated or saved.')
   const json = /^```(?:json)?\s*\n([\s\S]*?)\n```$/i.exec(raw.trim())?.[1] ?? raw
   let value: unknown
   try { value = JSON.parse(json) } catch { throw new NotebookValidationError('$', 'Invalid JSON. Supply the complete notebook object.') }
-  if (!value || typeof value !== 'object' || ![3, 4].includes((value as { version: number }).version)) return parseLegacyNotebookPackage(raw)
+  if (!value || typeof value !== 'object' || ![3, 4].includes((value as { version: number }).version)) return parseLegacyNotebookPackage(raw, adjustments)
   rejectDuplicateKeys(json)
+  const changes = normalizeNotebookTableHeadings(value)
+  adjustments?.push(...changes)
   validateSchema(value, ((value as { version: number }).version === 4 ? schemaV4 : schema) as unknown as Schema)
   const pkg = value as VisualNotebookPackage
   validateVisualNotebook(pkg)

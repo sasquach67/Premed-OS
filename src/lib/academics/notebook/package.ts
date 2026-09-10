@@ -2,6 +2,7 @@ import { parsePortableNotebook } from './visualPackage'
 import schema from './notebook-package.schema.json'
 import { NotebookValidationError, validateSchema, type Schema } from './schemaValidator'
 import type { Evidence, NotebookPackage, NotebookSource } from './types'
+import { normalizeNotebookTableHeadings, type TableHeadingAdjustment } from './tableHeaders'
 export const NOTEBOOK_MAX_BYTES = 8 * 1024 * 1024
 export { NotebookValidationError }
 export function canonical(value: unknown): string {
@@ -34,17 +35,19 @@ export function rejectDuplicateKeys(raw: string) {
   }
   visit('$', 0)
 }
-export function parseLegacyNotebookPackage(raw: string): NotebookPackage {
+export function parseLegacyNotebookPackage(raw: string, adjustments?: TableHeadingAdjustment[]): NotebookPackage {
   if (new TextEncoder().encode(raw).length > NOTEBOOK_MAX_BYTES) throw new NotebookValidationError('$', 'Choose a package under 8 MB. Nothing was truncated or saved.')
   const trimmed = raw.trim()
   const json = /^```(?:json)?\s*\n([\s\S]*?)\n```$/i.exec(trimmed)?.[1] ?? raw
   let value: unknown
   try { value = JSON.parse(json) } catch (error) { throw new NotebookValidationError('$', `Invalid JSON. Return the complete JSON object without surrounding commentary. ${error instanceof Error ? error.message : ''}`) }
   rejectDuplicateKeys(json)
+  const changes = normalizeNotebookTableHeadings(value)
+  adjustments?.push(...changes)
   validateSchema(value, schema as unknown as Schema)
   const p = value as NotebookPackage
   validateNotebookSemantics(p)
-  return p // Preserve every character in every supplied content string.
+  return p // Content is exact except explicitly normalized blank table headings; raw is retained.
 }
 export function validateNotebookSemantics(p: NotebookPackage) {
   const fail = (path: string, message: string): never => { throw new NotebookValidationError(path, message) }
@@ -105,16 +108,23 @@ export function validateNotebookSemantics(p: NotebookPackage) {
     })
   })
 }
-export type PreparedNotebook = { package: NotebookPackage; raw: string; fingerprints: string[] }
+export type PreparedNotebook = { package: NotebookPackage; raw: string; fingerprints: string[]; tableHeadingAdjustments?: TableHeadingAdjustment[] }
 export async function prepareNotebook(raw: string): Promise<PreparedNotebook> {
-  const p = parseNotebookPackage(raw)
+  const tableHeadingAdjustments: TableHeadingAdjustment[] = []
+  const p = parseNotebookPackage(raw, tableHeadingAdjustments)
   const fingerprints: string[] = []
   for (const entry of p.entries) {
     const bytes = new TextEncoder().encode(canonical({ ...p, entries: [entry] }))
     const digest = await crypto.subtle.digest('SHA-256', bytes)
     fingerprints.push([...new Uint8Array(digest)].map(v => v.toString(16).padStart(2, '0')).join(''))
   }
-  return { package: p, raw, fingerprints }
+  return { package: p, raw, fingerprints, tableHeadingAdjustments }
 }
 
-export function parseNotebookPackage(raw: string): NotebookPackage { return parsePortableNotebook(raw) }
+export function parseNotebookPackage(raw: string, adjustments?: TableHeadingAdjustment[]): NotebookPackage { return parsePortableNotebook(raw, adjustments) }
+
+/** Reconstruct presentation provenance from the retained input without extending the file contract. */
+export function notebookTableHeadingAdjustments(raw: string): TableHeadingAdjustment[] {
+  const changes: TableHeadingAdjustment[] = []
+  try { parseNotebookPackage(raw, changes); return changes } catch { return [] }
+}
