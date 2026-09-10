@@ -72,6 +72,13 @@ it('shows readable differences and explicit acceptance, preserves independent pr
   await preview()
   expect(container.textContent).toContain('Hypothetical task: how long is the shape shown?')
   expect(container.textContent).toContain('Source / excerpts'); expect(button('Accept update to this entry').disabled).toBe(true)
+  const previewFrame = [...container.querySelectorAll('.en-notebook-preview')].find(node => node.querySelector('h3')?.textContent === 'Preview — not saved yet')!
+  expect(container.querySelector('.en-import-comparison-scroll[tabindex="0"]')).toBeTruthy()
+  const expand = previewFrame.querySelector<HTMLButtonElement>('button[aria-controls]')!
+  await act(async () => expand.click())
+  expect(button('Accept update to this entry').disabled).toBe(true)
+  await act(async () => expand.click())
+  expect(previewFrame.querySelector('[inert]')).toBeTruthy()
   await check('I reviewed the content'); await click('Accept update to this entry')
   expect(lecture().id).toBe(id); expect(lecture().importedNotebook!.current.entries[0].revision).toBe(2)
   expect(lecture().importedNotebook!.progress['question-mapping'].complete).toBe(true)
