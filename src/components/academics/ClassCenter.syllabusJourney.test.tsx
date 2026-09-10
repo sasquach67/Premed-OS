@@ -123,6 +123,10 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
   let root: Root
 
   beforeEach(() => {
+    // Keep August readings overdue and September assignments upcoming in every
+    // timezone; the real calendar must not introduce an extra review dialog.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-09-01T12:00:00Z'))
     vi.mocked(retainLocalSyllabus).mockClear()
     vi.mocked(retainLocalMaterial).mockClear()
     localStorage.removeItem(STORAGE_KEY)
@@ -137,6 +141,7 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     container.remove()
     localStorage.removeItem(STORAGE_KEY)
     useStore.getState().replaceAll(createInitialDataForMode(false))
+    vi.useRealTimers()
   })
 
   async function render(entry: string, onFirstSyllabusClassCreated?: () => void) {
