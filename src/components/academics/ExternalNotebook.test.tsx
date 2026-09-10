@@ -107,41 +107,29 @@ it('does not save before preview/explicit save and identifies exact malformed fi
   expect(container.textContent).toContain(`Save to ${course.code}`); expect(container.textContent).toContain('Covered:')
   const excerpt = container.querySelector('.en-notebook-preview')!
   expect(excerpt.textContent).toContain('Preview — not saved yet')
-  expect(excerpt.textContent).toContain('Preview cut off here')
-  expect(excerpt.querySelector('[inert][aria-hidden="true"]')).toBeTruthy()
+  expect(excerpt.querySelector('.en-notebook-preview-scroll[tabindex="0"]')).toBeTruthy()
+  expect(excerpt.querySelector('.en-notebook-preview-scroll[inert], .en-notebook-preview-scroll[aria-hidden]')).toBeNull()
   expect(container.querySelector('.en-save-actions')?.closest('.en-notebook-preview')).toBeNull()
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
-  // Expanding is optional; all existing validation gates already passed.
+  // The complete preview is available immediately; validation gates already passed.
   await click(`Save editable entry to ${course.code}`)
   expect(imported).toHaveBeenCalledTimes(1); expect(useStore.getState().academics.classCenter.lectures).toHaveLength(1)
 })
-it('expands and collapses the full preview without changing JSON or granting destination approval', async () => {
+it('shows the complete accessible preview without granting destination approval', async () => {
   const differentClass = JSON.stringify({ ...review, course: { ...review.course, code: 'OTHER 101' } })
   await renderImport(); await fill('Paste complete JSON', differentClass); await click('Validate and preview')
-  const excerpt = container.querySelector('.en-notebook-preview')!
-  const body = excerpt.querySelector<HTMLElement>('.en-notebook-preview-scroll')!
-  const toggle = excerpt.querySelector<HTMLButtonElement>('button[aria-controls]')!
+  const frame = container.querySelector('.en-notebook-preview')!
+  const body = frame.querySelector<HTMLElement>('.en-notebook-preview-scroll')!
   const save = container.querySelector<HTMLButtonElement>('.en-save-actions button')!
-  const before = body.textContent
-  expect(save.disabled).toBe(true)
-  expect(toggle.getAttribute('aria-controls')).toBe(body.id)
-  await act(async () => toggle.click())
-  expect(toggle.textContent).toBe('Collapse preview')
-  expect(toggle.getAttribute('aria-expanded')).toBe('true')
+  expect(frame.textContent).not.toMatch(/Expand preview|Collapse preview|Preview cut off here/)
   expect(body.hasAttribute('inert')).toBe(false)
-  expect(body.getAttribute('aria-hidden')).toBe('false')
+  expect(body.hasAttribute('aria-hidden')).toBe(false)
   expect(body.tabIndex).toBe(0)
-  expect(body.textContent).toBe(before)
+  expect(body.getAttribute('aria-labelledby')).toBe(frame.querySelector('h3')!.id)
+  expect(body.textContent).toContain(review.entries[0].title)
   expect(save.disabled).toBe(true)
   const confirmation = [...container.querySelectorAll('label')].find(label => label.textContent?.includes('I want to save this package'))!.querySelector<HTMLInputElement>('input')!
   await act(async () => confirmation.click())
-  expect(save.disabled).toBe(false)
-  body.scrollTop = 500
-  await act(async () => toggle.click())
-  expect(body.scrollTop).toBe(0)
-  expect(body.hasAttribute('inert')).toBe(true)
-  expect(body.tabIndex).toBe(-1)
-  expect(confirmation.checked).toBe(true)
   expect(save.disabled).toBe(false)
   expect(container.querySelector<HTMLTextAreaElement>('.en-json')!.value).toBe(differentClass)
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
