@@ -59,9 +59,16 @@ it('requires saved edits/notes, uses the same goal and names the real saved base
   expect(baseline).not.toContain('Protected notes'); expect(baseline).not.toContain('"complete"')
   expect(lecture().importedNotebook!.notes).toBe('Protected notes')
 })
-it('keeps the baseline/prompt and JSON gates with Back and same-tab reload', async () => {
+it('opens the saved reader after reload and resumes the untouched update draft only on request', async () => {
   await toImport(); await fill('Paste complete JSON', JSON.stringify(correctedFixture()))
+  const savedDraft = JSON.stringify(lecture().importedNotebook!.updateSession)
+  const sessionBefore = JSON.stringify({ ...sessionStorage })
   await act(async () => root.unmount()); root = createRoot(container); await act(async () => root.render(<Harness />))
+  expect(container.querySelector('[aria-label="Saved external notebook"]')).toBeTruthy()
+  expect(container.querySelector('[aria-label="Update saved notebook"]')).toBeNull()
+  expect(JSON.stringify(lecture().importedNotebook!.updateSession)).toBe(savedDraft)
+  expect(JSON.stringify({ ...sessionStorage })).toBe(sessionBefore)
+  await click('Update this notebook')
   expect(container.querySelector('h1')?.textContent).toBe('Import your updated notebook')
   expect(container.querySelector('[aria-label="Validated notebook preview"]')).toBeNull()
   expect(container.querySelector<HTMLTextAreaElement>('.en-json')!.value).toContain('200 milliseconds')

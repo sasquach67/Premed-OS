@@ -195,7 +195,8 @@ export function ExternalNotebookView({ lecture, courseCode, onNavigateEntry }: {
   const [notes, setNotes] = useState(n.notes)
   const [notesBase, setNotesBase] = useState(n.notes)
   const [editBase, setEditBase] = useState(notebookContentKey(n))
-  const [updating, setUpdating] = useState(Boolean(n.updateSession))
+  // A retained draft is available through the explicit update action; it is not the default reader mode.
+  const [updating, setUpdating] = useState(false)
   const [restore, setRestore] = useState<{ id: string; state: string } | null>(null)
   const [mode, setMode] = useState<ReadingMode>('study')
   const [message, setMessage] = useState('')

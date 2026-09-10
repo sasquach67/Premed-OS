@@ -13,13 +13,14 @@
 import { Component, type CSSProperties, type ErrorInfo, type ReactNode } from 'react'
 import { activeStorageKey } from '@/lib/demoMode'
 import { decodeWorkspaceStorage } from '@/store/workspaceStorageCodec'
+import { appRecoveryUrl, isAppLoadError } from '@/lib/appLoadRecovery'
 
 function rawStorageKey() {
   return activeStorageKey()
 }
 
 interface Props { children: ReactNode }
-interface State { error: Error | null; copied?: boolean }
+interface State { error: Error | null; loadError?: Error | null; copied?: boolean }
 
 function downloadRawData(): void {
   const raw = localStorage.getItem(rawStorageKey())
@@ -44,6 +45,16 @@ export class AppErrorBoundary extends Component<Props, State> {
   state: State = { error: null }
   private componentStack = ''
 
+  private handlePreloadError = (event: Event): void => {
+    const error = (event as Event & { payload?: unknown }).payload
+    if (isAppLoadError(error)) this.setState({ loadError: error as Error })
+    // Keep normal rejection semantics so callers can handle their own failure.
+    // Never reload, reset storage, or discard mounted forms from this event.
+  }
+
+  componentDidMount(): void { window.addEventListener('vite:preloadError', this.handlePreloadError) }
+  componentWillUnmount(): void { window.removeEventListener('vite:preloadError', this.handlePreloadError) }
+
   static getDerivedStateFromError(error: Error): State {
     return { error }
   }
@@ -65,7 +76,8 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   render(): ReactNode {
-    if (!this.state.error) return this.props.children
+    if (!this.state.error) return <>{this.props.children}{this.state.loadError && <AppLoadRecovery compact onDismiss={() => this.setState({ loadError: null })} />}</>
+    if (isAppLoadError(this.state.error)) return <AppLoadRecovery />
     const dark = document.documentElement.classList.contains('dark')
     const surface = dark ? '#2b2722' : '#fff'
     const border = dark ? '#3c352d' : '#e5e7eb'
@@ -95,6 +107,27 @@ export class AppErrorBoundary extends Component<Props, State> {
       </div>
     )
   }
+}
+
+function AppLoadRecovery({ compact = false, onDismiss }: { compact?: boolean; onDismiss?: () => void }) {
+  const dark = document.documentElement.classList.contains('dark')
+  return <section role="alert" aria-labelledby="app-load-recovery-title" style={compact
+    ? { position: 'fixed', zIndex: 10000, bottom: 20, right: 20, maxWidth: 520, maxHeight: '80vh', overflow: 'auto', marginLeft: 20 }
+    : { minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 }}>
+    <div style={{ maxWidth: 520, border: '1px solid #8b8278', borderRadius: 12, padding: 24, fontFamily: 'system-ui, sans-serif', background: dark ? '#2b2722' : '#fff', color: dark ? '#ece3d4' : '#1f2937' }}>
+      <h1 id="app-load-recovery-title" style={{ fontSize: 20, marginTop: 0 }}>Part of Premed OS couldn’t load</h1>
+      <p style={{ lineHeight: 1.5 }}>{navigator.onLine === false ? 'You appear to be offline. Reconnect, then open the app again.' : 'This can happen after an app update or a connection problem.'} Your saved data has not been reset.</p>
+      <p style={{ lineHeight: 1.5 }}>Open the current app in a new tab to keep this tab in place. Copy any unsaved work you can still access before reloading this tab.</p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+        <a href={appRecoveryUrl(window.location.href)} target="_blank" rel="noopener" style={{ ...btn('#1d4ed8'), textDecoration: 'none' }}>Open current app in new tab</a>
+        <button style={btn('#374151')} onClick={() => {
+          if (window.confirm('Reload this tab? Unsaved work may be lost. Copy or save it first. Saved notebooks and stored drafts will not be reset.')) window.location.assign(appRecoveryUrl(window.location.href))
+        }}>Reload this tab…</button>
+        <button style={btn('#0f766e')} onClick={downloadRawData}>Export saved data</button>
+        {onDismiss && <button style={btn('#374151')} onClick={onDismiss}>Keep working here</button>}
+      </div>
+    </div>
+  </section>
 }
 
 function btn(bg: string): CSSProperties {

@@ -2,7 +2,7 @@ import { webcrypto } from 'node:crypto'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom'
 import { JournalEntryPage } from '@/pages/JournalEntryPage'
 import { createInitialDataForMode, STORAGE_KEY, useStore } from '@/store/store'
 import { NotebookImportPanel } from './NotebookImportPanel'
@@ -34,6 +34,34 @@ async function choose(goal: 'review' | 'assessment' | 'assignment') { await act(
 async function openFallback() { const detail = container.querySelector<HTMLDetailsElement>('.en-prompt-detail')!; if (!detail.open) await act(async () => detail.querySelector('summary')!.click()); return detail }
 async function renderWorkflow(id = course.id) { await act(async () => root.render(<ExternalNotebookWorkflow key={id} courseId={id} onImported={imported} />)) }
 function nextButton() { return [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Next')! }
+it('reopens the saved reader from normal notebook navigation and reload while retaining an explicit update draft', async () => {
+  let id = ''
+  const prepared = await prepareNotebook(raw)
+  notebookTransaction(state => { [id] = importNotebook(state.academics.classCenter, course, prepared) })
+  const path = `/academics/classes/${course.id}/journal/${id}`
+  const page = <MemoryRouter initialEntries={[path]}><Routes>
+    <Route path="/academics/classes/:courseId/journal/:entryId" element={<JournalEntryPage />} />
+    <Route path="/academics/classes/:courseId" element={<Link to={path}>Open notebook</Link>} />
+  </Routes></MemoryRouter>
+  await act(async () => root.render(page))
+  await click('Update this notebook')
+  await fill('Additional instructions for your AI', 'Keep my unfinished update instructions.')
+  const session = JSON.stringify(useStore.getState().academics.classCenter.lectures.find(item => item.id === id)!.importedNotebook!.updateSession)
+  const draftStorage = JSON.stringify({ ...sessionStorage })
+  await click('Back to Class Notebook')
+  await act(async () => container.querySelector<HTMLAnchorElement>('a')!.click())
+  expect(container.querySelector('[aria-label="Saved external notebook"]')).toBeTruthy()
+  expect(container.querySelector('[aria-label="Update saved notebook"]')).toBeNull()
+  await act(async () => root.unmount()); root = createRoot(container)
+  await act(async () => useStore.persist.rehydrate())
+  await act(async () => root.render(page))
+  expect(container.querySelector('[aria-label="Saved external notebook"]')).toBeTruthy()
+  expect(JSON.stringify(useStore.getState().academics.classCenter.lectures.find(item => item.id === id)!.importedNotebook!.updateSession)).toBe(session)
+  expect(JSON.stringify({ ...sessionStorage })).toBe(draftStorage)
+  await click('Update this notebook')
+  expect(container.querySelector('[aria-label="Update saved notebook"]')).toBeTruthy()
+  expect([...container.querySelectorAll('textarea')].some(field => field.value === 'Keep my unfinished update instructions.')).toBe(true)
+})
 it('shows objective cues without practice link rows while preserving mappings, questions and concealed answers', async () => {
   const { package: pkg } = await prepareNotebook(raw)
   const original = JSON.stringify(pkg)
