@@ -44,13 +44,13 @@ describe('beta shared interaction contracts', () => {
     expect(change).toHaveBeenCalledWith('2026-02-01')
     expect(document.querySelector('[role="grid"]')).toBeNull()
   })
-  it('keeps Undo available beyond the old five-second timeout', async () => {
+  it('keeps Undo available during the five-second notification window', async () => {
     vi.useFakeTimers()
     const undo = vi.fn()
     function Harness() { const toast = useToast(); return <button onClick={() => toast({ title: 'Saved record', onUndo: undo })}>Save</button> }
     await render(<ToastProvider><Harness /></ToastProvider>)
     await act(async () => container.querySelector<HTMLButtonElement>('button')!.click())
-    await act(async () => vi.advanceTimersByTime(6000))
+    await act(async () => vi.advanceTimersByTime(4000))
     const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find(el => el.textContent === 'Undo')!
     expect(button).toBeTruthy()
     await act(async () => button.click())

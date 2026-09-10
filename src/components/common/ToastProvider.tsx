@@ -26,7 +26,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const toast = useCallback((input: ToastInput) => {
     const id = uid()
-    setToasts([{ ...input, id }])
+    setToasts((current) => [...current.slice(-2), { ...input, id }])
     return id
   }, [])
 
@@ -68,7 +68,7 @@ function ToastSurface({ entry, dismiss, children, className }: { entry: ToastEnt
   const [focused, setFocused] = useState(false)
   useEffect(() => {
     if (hovered || focused) return
-    const duration = entry.duration ?? (entry.onUndo || entry.onOpen ? 10_000 : 5000)
+    const duration = entry.duration ?? 5000
     const timer = window.setTimeout(() => dismiss(entry.id), duration)
     return () => window.clearTimeout(timer)
   }, [entry, dismiss, hovered, focused])

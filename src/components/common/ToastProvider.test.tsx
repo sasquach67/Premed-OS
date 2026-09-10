@@ -35,17 +35,18 @@ async function advance(ms: number) {
 }
 
 describe('notification dismissal', () => {
-  it('shows only the newest deletion notice and clears it without undoing the deletions', async () => {
+  it('keeps the newest three deletion notices and clears them after five seconds', async () => {
     const undo = vi.fn()
     await act(async () => {
-      for (const kind of ['Lecture', 'Assignment', 'Task']) notify({ title: `${kind} deleted`, onUndo: undo })
+      for (const kind of ['Old lecture', 'Lecture', 'Assignment', 'Task']) notify({ title: `${kind} deleted`, onUndo: undo })
     })
-    await advance(6000)
-    expect(container.querySelectorAll('[aria-label="Dismiss notification"]')).toHaveLength(1)
+    await advance(4999)
+    expect(container.querySelectorAll('[aria-label="Dismiss notification"]')).toHaveLength(3)
     expect(container.textContent).toContain('Task deleted')
-    expect(container.textContent).not.toContain('Lecture deleted')
-    expect(container.textContent).not.toContain('Assignment deleted')
-    await advance(4000)
+    expect(container.textContent).toContain('Lecture deleted')
+    expect(container.textContent).toContain('Assignment deleted')
+    expect(container.textContent).not.toContain('Old lecture deleted')
+    await advance(1)
     expect(container.querySelectorAll('[aria-label="Dismiss notification"]')).toHaveLength(0)
     expect(undo).not.toHaveBeenCalled()
   })
@@ -58,7 +59,7 @@ describe('notification dismissal', () => {
     expect(container.textContent).not.toContain('Assignment completed')
   })
 
-  it('expires Open notifications and ordinary notices at their respective defaults', async () => {
+  it('expires Open notifications and ordinary notices after five seconds', async () => {
     const open = vi.fn()
     await act(async () => {
       notify({ title: 'Ordinary notice' })
@@ -66,21 +67,21 @@ describe('notification dismissal', () => {
     await advance(5000)
     expect(container.textContent).not.toContain('Ordinary notice')
     await act(async () => notify({ title: 'Saved', onOpen: open }))
-    await advance(9999)
+    await advance(4999)
     expect(container.textContent).toContain('Saved')
     await advance(1)
     expect(container.textContent).not.toContain('Saved')
     expect(open).not.toHaveBeenCalled()
   })
 
-  it('restarts the display window for a newer deletion and Undo restores only that action', async () => {
+  it('expires each notice independently and Undo restores only its own action', async () => {
     const firstUndo = vi.fn()
     const lastUndo = vi.fn()
     await act(async () => notify({ title: 'First task deleted', onUndo: firstUndo }))
-    await advance(6000)
+    await advance(3000)
     await act(async () => notify({ title: 'Last task deleted', onUndo: lastUndo }))
-    expect(vi.getTimerCount()).toBe(1)
-    await advance(6000)
+    expect(vi.getTimerCount()).toBe(2)
+    await advance(2000)
     expect(container.textContent).not.toContain('First task deleted')
     expect(container.textContent).toContain('Last task deleted')
     await act(async () => [...container.querySelectorAll('button')].find(item => item.textContent === 'Undo')!.click())
@@ -98,7 +99,7 @@ describe('notification dismissal', () => {
     await advance(20000)
     expect(container.textContent).toContain('Lecture deleted')
     await act(async () => container.querySelector('button')!.focus())
-    await advance(10000)
+    await advance(5000)
     expect(container.textContent).not.toContain('Lecture deleted')
     expect(undo).not.toHaveBeenCalled()
   })
@@ -110,7 +111,7 @@ describe('notification dismissal', () => {
     await advance(20000)
     expect(container.textContent).toContain('Task deleted')
     await act(async () => surface.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body })))
-    await advance(10000)
+    await advance(5000)
     expect(container.textContent).not.toContain('Task deleted')
   })
 
