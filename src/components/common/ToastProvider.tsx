@@ -67,8 +67,9 @@ function ToastSurface({ entry, dismiss, children, className }: { entry: ToastEnt
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
   useEffect(() => {
-    if (hovered || focused || entry.onUndo || entry.onOpen) return
-    const timer = window.setTimeout(() => dismiss(entry.id), entry.duration ?? 5000)
+    if (hovered || focused) return
+    const duration = entry.duration ?? (entry.onUndo || entry.onOpen ? 10_000 : 5000)
+    const timer = window.setTimeout(() => dismiss(entry.id), duration)
     return () => window.clearTimeout(timer)
   }, [entry, dismiss, hovered, focused])
   return <div className={className} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocusCapture={() => setFocused(true)} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false) }}>{children}</div>

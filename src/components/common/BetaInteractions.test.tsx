@@ -50,7 +50,7 @@ describe('beta shared interaction contracts', () => {
     function Harness() { const toast = useToast(); return <button onClick={() => toast({ title: 'Saved record', onUndo: undo })}>Save</button> }
     await render(<ToastProvider><Harness /></ToastProvider>)
     await act(async () => container.querySelector<HTMLButtonElement>('button')!.click())
-    await act(async () => vi.advanceTimersByTime(60_000))
+    await act(async () => vi.advanceTimersByTime(6000))
     const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find(el => el.textContent === 'Undo')!
     expect(button).toBeTruthy()
     await act(async () => button.click())
