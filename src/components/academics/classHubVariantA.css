@@ -1094,7 +1094,8 @@
 .class-hub .overview-approved .overview-entry-tile strong { font-size: .95rem; line-height: 1.4; }
 .class-hub .overview-approved .overview-entry-tile > svg { width: 1.125rem; height: 1.125rem; }
 .class-hub .overview-approved .lecture-rail-entry { min-height: 4rem; padding: .625rem 1.25rem; gap: .75rem; }
-.class-hub .overview-approved .lecture-journal-row-text > b { font-size: .95rem; color: var(--foreground); }
+.class-hub .overview-approved .lecture-journal-row-text > b { font-size: .95rem; color: var(--foreground); overflow-wrap: anywhere; }
+.class-hub .overview-approved .lecture-journal-row-text > time { display: block; margin-top: 0; font-size: inherit; font-weight: inherit; color: var(--muted-foreground); }
 .class-hub .overview-approved .overview-date-stamp { width: 2.3rem; padding: .2rem 0; }
 .class-hub .overview-approved .overview-date-stamp strong { font-size: 1.1rem; }
 .class-hub .overview-approved .lecture-saved-actions { justify-content: space-between; padding: .625rem 1.25rem; border-top: 1px solid var(--border); }

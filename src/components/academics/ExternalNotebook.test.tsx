@@ -10,7 +10,6 @@ import { ExternalNotebookView, NotebookPackageView, notebookTransaction } from '
 import { ExternalNotebookWorkflow } from './ExternalNotebookWorkflow'
 import { importNotebook, exportNotebook, saveNotebookEdits } from '@/lib/academics/notebook/import'
 import { prepareNotebook } from '@/lib/academics/notebook/package'
-import conversationExpectations from '@/lib/academics/notebook/prompts/conversation-expectations.json'
 import composition from '@/lib/academics/notebook/prompts/prompt-composition.json'
 import { PROMPT_TEMPLATES } from '@/lib/academics/notebook/prompt'
 import { loadNotebookWorkflowDraft, notebookWorkflowDraftKey, persistNotebookWorkflowDraft } from '@/lib/academics/notebook/workflowDraft'
@@ -159,26 +158,18 @@ it('distinguishes minimum materials, optional lecture sources, partial exam scop
   await click('Next')
   expect(container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value).toContain(composition.promptBuild)
   await openFallback(); await click('I copied it manually'); await click('Next')
-  expect(container.textContent).toContain('An upload, connection or retrieved excerpt does not prove every file was read')
-  expect(container.textContent).toContain('Checkpoint files stay outside Premed OS')
-  expect(container.textContent).toContain('Import only the final, complete notebook JSON')
-  expect(container.textContent).toContain('Use a normal AI chat with your files or pasted material.')
-  expect(container.querySelector('details.en-brief-note')?.textContent).toContain(conversationExpectations.shortCopy)
-  expect(container.querySelector<HTMLDetailsElement>('details.en-brief-note')?.open).toBe(false)
-  expect(container.textContent).toContain('create the complete notebook JSON directly after checking the sources and content')
-  expect(container.textContent).toContain('A readable draft or discussion is optional if you ask for it; no separate approval message is required.')
-  expect(container.textContent).toContain('If you say more files are coming, your AI should wait until you say you are done uploading before generating the JSON.')
-  expect(container.textContent).toContain('Browser settings control where downloads are saved; Premed OS cannot force the Downloads folder.')
-  expect(container.textContent).toContain('Premed OS cannot check what happened in your AI.')
-  expect(container.textContent).toContain('download every referenced original PNG/JPEG alongside the JSON, keeping the matching filenames')
-  expect(container.textContent).toContain('Filenames in JSON do not contain the image files')
-  expect(container.textContent).toContain('A text-only notebook needs only its JSON')
-  expect(container.textContent).toContain('ask for the downloadable original again or recover the exact original file')
-  expect(container.textContent).toContain('Do not substitute a different image under the same ID')
-  expect(container.textContent).toContain('record it as unavailable with an actionable next step and revise dependent content')
-  expect(container.textContent).toContain('Do you have the notebook JSON and its referenced images?')
-  expect(nextButton().disabled).toBe(true)
-  await click('I have my notebook files'); await click('Next')
+  const steps = container.querySelector('.en-handoff-list')!
+  expect([...steps.querySelectorAll('h2')].map(node => node.textContent)).toEqual(['Paste the prompt', 'Add your materials', 'Download your notebook'])
+  expect(steps.textContent).toContain('Open your AI chat and paste the full prompt.')
+  expect(steps.textContent).toContain('Include the review sheet or assessment scope.')
+  expect(steps.textContent).toContain('JSON file and any accompanying images')
+  expect(steps.textContent).not.toContain('Checkpoint')
+  const help = container.querySelector<HTMLDetailsElement>('.en-handoff-help')!
+  expect(help.open).toBe(false)
+  expect(help.querySelector('details')).toBeNull()
+  for (const text of ['where evidence is missing', 'Checkpoint files stay outside Premed OS', 'Import only the final, complete notebook JSON', 'If you say more files are coming', 'Use a recording only if your AI can inspect it', 'downloadable original again', 'Do not substitute a different image under the same ID', 'Missing declared images prevent saving', 'Paste JSON instead', 'Closing it can lose the draft']) expect(help.textContent).toContain(text)
+  expect([...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Continue to import')!.disabled).toBe(true)
+  await click('I have my notebook files'); await click('Continue to import')
   expect(container.textContent).toContain('Working checkpoint files are not final notebooks')
   expect(imported).not.toHaveBeenCalled()
 })
@@ -287,7 +278,7 @@ it('keeps a requested download on the copy step until the student acknowledges h
 it('keeps inputs on Back and invalidates copy and JSON readiness when the goal changes', async () => {
   await renderWorkflow(); await choose('assessment'); await fill('Additional instructions for your AI', 'Keep my exact request.')
   await click('Next'); await openFallback(); await click('I copied it manually'); await click('Next')
-  await click('I have my notebook files'); await click('Next'); await fill('Paste complete JSON', raw)
+  await click('I have my notebook files'); await click('Continue to import'); await fill('Paste complete JSON', raw)
   await click('Back to AI steps'); await click('Back to prompt')
   expect(nextButton().disabled).toBe(false)
   await click('Back to goal')
@@ -300,7 +291,7 @@ it('keeps inputs on Back and invalidates copy and JSON readiness when the goal c
 })
 it('restores the valid import stage and raw JSON in the same class, revalidates before save, and clears the draft after save', async () => {
   await renderWorkflow(); await choose('review'); await click('Next'); await openFallback(); await click('I copied it manually'); await click('Next')
-  await click('I have my notebook files'); await click('Next'); await fill('Paste complete JSON', raw)
+  await click('I have my notebook files'); await click('Continue to import'); await fill('Paste complete JSON', raw)
   await act(async () => root.unmount()); root = createRoot(container); await renderWorkflow()
   expect(container.querySelector('h1')?.textContent).toBe('Import your notebook')
   expect(container.querySelector<HTMLTextAreaElement>('.en-json')!.value).toBe(raw)
