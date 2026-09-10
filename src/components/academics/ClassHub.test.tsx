@@ -9,6 +9,8 @@ import { ClassHub, WritingTools } from '@/components/academics/ClassHub'
 import { ToastProvider } from '@/components/common/ToastProvider'
 import { createSeedData } from '@/data/seed'
 import { createDemoData } from '@/data/demoSeed'
+import type { LectureRecord } from '@/lib/types'
+import { revisionFixture } from '@/lib/academics/notebook/revision.test-fixtures'
 import { recurringFeedbackThemes, readingDebt } from '@/lib/academics/writingEvidence'
 import { createInitialDataForMode, CURRENT_STORE_VERSION, snapshotData, STORAGE_KEY, useStore } from '@/store/store'
 
@@ -213,6 +215,35 @@ describe('ClassHub approved Overview', () => {
   afterEach(async () => {
     await act(async () => root.unmount())
     container.remove()
+  })
+
+  it('orders mixed notebook rows by their displayed dates after storage reload without changing records', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find(item => item.type === 'stem')!
+    const course = seed.courses.find(item => item.id === workspace.courseId)!
+    const pkg = revisionFixture()
+    const row = (id: string, occurredOn?: string): LectureRecord => ({ id, courseId: course.id, title: id, inputPath: 'pasted', processingState: 'ready', occurredOn, createdAt: 1, updatedAt: 2, order: 0 })
+    const imported = (id: string, importedAt: number, editedAt?: number): LectureRecord => ({ ...row(id, '2030-01-01'), importedNotebook: { original: pkg, current: pkg, originalRaw: JSON.stringify(pkg), entryId: pkg.entries[0].id, fingerprint: id, importedAt, editedAt, progress: {}, notes: 'Keep this note' } })
+    const rows = [row('undated'), imported('added-Sep8', new Date('2026-09-08T09:00:00').getTime()), row('tie-z', '2026-09-07'), row('native-Sep9', '2026-09-09'), row('tie-a', '2026-09-07'), imported('edited-Sep10', new Date('2026-08-01T09:00:00').getTime(), new Date('2026-09-10T09:00:00').getTime()), imported('missing-import-date', 0)]
+    Object.assign(rows.at(-1)!.importedNotebook!, { importedAt: undefined })
+    rows[3].createdAt = new Date('2026-09-12').getTime()
+    seed.academics.classCenter.lectures = rows
+    useStore.getState().replaceAll(seed)
+    const recordsBefore = JSON.stringify(useStore.getState().academics.classCenter.lectures)
+    const expected = ['edited-Sep10', 'native-Sep9', 'added-Sep8', 'tie-a', 'tie-z', 'missing-import-date', 'undated']
+    for (let pass = 0; pass < 2; pass++) {
+      if (pass) {
+        await act(async () => root.unmount())
+        root = createRoot(container)
+        await act(async () => useStore.persist.rehydrate())
+      }
+      await act(async () => root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={useStore.getState().academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>))
+      expect([...container.querySelectorAll('.lecture-journal-row-text b')].map(item => item.textContent?.replace(/^Lesson \d+ — /, ''))).toEqual(expected)
+      expect(container.querySelectorAll('.lecture-journal-list time')).toHaveLength(2)
+      expect(container.querySelector('.lecture-journal-list time')?.getAttribute('datetime')).toBe(new Date('2026-09-10T09:00:00').toISOString())
+      expect(container.querySelector('.lecture-journal-list')?.textContent?.match(/Date not set/g)).toHaveLength(2)
+      expect(JSON.stringify(useStore.getState().academics.classCenter.lectures)).toBe(recordsBefore)
+    }
   })
 
   it('keeps supporting screenshots out of Materials and its badge without deleting source records', async () => {
