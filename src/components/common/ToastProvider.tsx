@@ -26,7 +26,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const toast = useCallback((input: ToastInput) => {
     const id = uid()
-    setToasts((current) => [...current, { ...input, id }])
+    setToasts([{ ...input, id }])
     return id
   }, [])
 

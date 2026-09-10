@@ -35,13 +35,16 @@ async function advance(ms: number) {
 }
 
 describe('notification dismissal', () => {
-  it('clears stacked lecture, assignment and task deletion notices without undoing the deletions', async () => {
+  it('shows only the newest deletion notice and clears it without undoing the deletions', async () => {
     const undo = vi.fn()
     await act(async () => {
       for (const kind of ['Lecture', 'Assignment', 'Task']) notify({ title: `${kind} deleted`, onUndo: undo })
     })
     await advance(6000)
-    expect(container.querySelectorAll('[aria-label="Dismiss notification"]')).toHaveLength(3)
+    expect(container.querySelectorAll('[aria-label="Dismiss notification"]')).toHaveLength(1)
+    expect(container.textContent).toContain('Task deleted')
+    expect(container.textContent).not.toContain('Lecture deleted')
+    expect(container.textContent).not.toContain('Assignment deleted')
     await advance(4000)
     expect(container.querySelectorAll('[aria-label="Dismiss notification"]')).toHaveLength(0)
     expect(undo).not.toHaveBeenCalled()
@@ -55,18 +58,36 @@ describe('notification dismissal', () => {
     expect(container.textContent).not.toContain('Assignment completed')
   })
 
-  it('expires Open notifications and ordinary notices independently', async () => {
+  it('expires Open notifications and ordinary notices at their respective defaults', async () => {
     const open = vi.fn()
     await act(async () => {
-      notify({ title: 'Saved', onOpen: open })
       notify({ title: 'Ordinary notice' })
     })
     await advance(5000)
     expect(container.textContent).not.toContain('Ordinary notice')
+    await act(async () => notify({ title: 'Saved', onOpen: open }))
+    await advance(9999)
     expect(container.textContent).toContain('Saved')
-    await advance(5000)
+    await advance(1)
     expect(container.textContent).not.toContain('Saved')
     expect(open).not.toHaveBeenCalled()
+  })
+
+  it('restarts the display window for a newer deletion and Undo restores only that action', async () => {
+    const firstUndo = vi.fn()
+    const lastUndo = vi.fn()
+    await act(async () => notify({ title: 'First task deleted', onUndo: firstUndo }))
+    await advance(6000)
+    await act(async () => notify({ title: 'Last task deleted', onUndo: lastUndo }))
+    expect(vi.getTimerCount()).toBe(1)
+    await advance(6000)
+    expect(container.textContent).not.toContain('First task deleted')
+    expect(container.textContent).toContain('Last task deleted')
+    await act(async () => [...container.querySelectorAll('button')].find(item => item.textContent === 'Undo')!.click())
+    expect(lastUndo).toHaveBeenCalledOnce()
+    expect(firstUndo).not.toHaveBeenCalled()
+    expect(container.querySelectorAll('[aria-label="Dismiss notification"]')).toHaveLength(0)
+    expect(vi.getTimerCount()).toBe(0)
   })
 
   it('keeps Undo usable during keyboard focus, then expires after focus leaves', async () => {
