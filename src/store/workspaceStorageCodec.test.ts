@@ -52,6 +52,9 @@ it('keeps legacy plain JSON readable and small writes byte-identical', () => {
   expect(decodeWorkspaceStorage(small)).toBe(small)
   const legacy = WORKSPACE_STORAGE_PREFIX + btoa(strFromU8(gzipSync(strToU8(raw), { level: 1, mtime: 0 }), true))
   expect(decodeWorkspaceStorage(legacy)).toBe(raw)
+  const optedIn = encodeWorkspaceStorage(legacy, { requireChunks: true })
+  expect(optedIn.startsWith(WORKSPACE_CHUNKS_PREFIX)).toBe(true)
+  expect(decodeWorkspaceStorage(optedIn)).toBe(raw)
 })
 
 it('retains literal lone surrogates and exact JSON spelling across chunk boundaries', () => {

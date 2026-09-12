@@ -30,7 +30,9 @@ export function notebookTransaction(mutator: (state: AppData) => void) {
   const previous = useStore.getState().academics
   const storageKey = useStore.persist.getOptions().name
   if (!storageKey) throw new Error('Notebook storage is not ready. No changes were saved.')
-  const persisted = readStoredWorkspace(localStorage, storageKey)
+  let persisted: string | null
+  try { persisted = readStoredWorkspace(localStorage, storageKey) }
+  catch (failure) { throw new WorkspaceSaveError(failure) }
   if (persisted) {
     const saved = JSON.parse(persisted) as { state?: Partial<AppData> }
     const diskEntries = saved.state?.academics?.classCenter?.lectures?.filter(l => l.importedNotebook) ?? []

@@ -13,17 +13,26 @@ import { exportNotebookBackupBundle, prepareNotebookBundle } from '@/lib/academi
 import { headerDecoder } from '@/lib/academics/notebook/visual.test-fixtures'
 import { decodeWorkspaceStorage, WORKSPACE_STORAGE_PREFIX } from '@/store/workspaceStorageCodec'
 import * as workspaceCodec from '@/store/workspaceStorageCodec'
+import type { WorkspaceRecoverySnapshot } from '@/store/workspaceRecoveryRepository'
+import * as workspaceOptimization from '@/store/workspaceOptimization'
 import { MemoryNotebookAssets, visualFixture } from '@/lib/academics/notebook/visual.test-fixtures'
 import { plainNotebookZip } from '@/lib/academics/notebook/notebookFiles.test-fixtures'
 import type { Course } from '@/lib/types'
 const pngBytes = () => new Uint8Array(readFileSync('src/lib/academics/notebook/visual-fixtures/question.png'))
 let repo: MemoryNotebookAssets, root: Root, container: HTMLDivElement
+let recoveryCopies: WorkspaceRecoverySnapshot[] = [], failRecovery = false
+let beforeRecoverySave: ((snapshot: WorkspaceRecoverySnapshot) => Promise<void>) | undefined
 const imported = vi.fn(), pkg = visualFixture()
 const course: Course = { id: 'folder-qa', code: pkg.course.code, title: pkg.course.title, term: pkg.course.term ?? 'Fall 2026', credits: 3, grade: '', bcpm: false, status: 'in-progress', inResidence: true, satisfies: [], order: 0 }
 vi.mock('@/lib/academics/notebook/notebookAssetStore', async importOriginal => {
   const actual = await importOriginal<typeof import('@/lib/academics/notebook/notebookAssetStore')>()
   return { ...actual, notebookAssetRepository: () => repo, commitNotebookAssets: (options: Parameters<typeof actual.commitNotebookAssets>[0]) => actual.commitNotebookAssets({ ...options, repository: repo }) }
 })
+vi.mock('@/store/workspaceRecoveryRepository', () => ({ workspaceRecoveryRepository: () => ({
+  async save(snapshot: WorkspaceRecoverySnapshot) { if (failRecovery) throw new Error('Recovery storage is unavailable. Nothing was changed.'); await beforeRecoverySave?.(snapshot); recoveryCopies.push(structuredClone(snapshot)) },
+  async read(key: string, id: string) { return structuredClone(recoveryCopies.find(copy => copy.workspaceKey === key && copy.id === id) ?? null) },
+  async latest(key: string) { return structuredClone(recoveryCopies.filter(copy => copy.workspaceKey === key).at(-1) ?? null) },
+}) }))
 beforeEach(async () => {
   vi.stubGlobal('crypto', webcrypto); vi.stubGlobal('Blob', NodeBlob); vi.stubGlobal('File', NodeFile)
   vi.stubGlobal('createImageBitmap', async (blob: Blob) => { const v = new DataView(await blob.arrayBuffer()); return { width: v.getUint32(16), height: v.getUint32(20), close() {} } })
@@ -31,6 +40,7 @@ beforeEach(async () => {
   Object.defineProperty(HTMLInputElement.prototype, 'webkitdirectory', { configurable: true, value: false })
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:folder-qa'); vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
   repo = new MemoryNotebookAssets(); imported.mockClear()
+  recoveryCopies = []; failRecovery = false; beforeRecoverySave = undefined
   const data = createInitialDataForMode(false); data.courses = [course]; useStore.getState().replaceAll(data)
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
   await act(async () => root.render(<NotebookImportPanel courseId={course.id} onImported={imported} />))
@@ -121,11 +131,12 @@ it.each([{ name: 'unfinished draft', raw: ' { unfinished draft' }, { name: 'vali
   }
 })
 
-it('tests candidate deduplication under quota pressure while retaining the account, staged images and exact retry', async () => {
+it.each([{ explicitCutover: false, staleEstimate: false }, { explicitCutover: true, staleEstimate: false }, { explicitCutover: true, staleEstimate: true }])('retains the account, images and exact retry under quota pressure ($explicitCutover / stale estimate: $staleEstimate)', async ({ explicitCutover, staleEstimate }) => {
   // Explicit test-only opt-in. Production must not migrate old warm tabs yet.
   const encode = workspaceCodec.encodeWorkspaceStorage
-  vi.spyOn(workspaceCodec, 'encodeWorkspaceStorage').mockImplementation(value => encode(value, { deduplicate: true }))
-  await act(async () => activateAccountWorkspace('folder-pressure-a', snapshotData()))
+  if (!explicitCutover) vi.spyOn(workspaceCodec, 'encodeWorkspaceStorage').mockImplementation(value => encode(value, { deduplicate: true }))
+  const accountId = staleEstimate ? 'folder-pressure-refreshed' : explicitCutover ? 'folder-pressure-cutover' : 'folder-pressure-candidate'
+  await act(async () => activateAccountWorkspace(accountId, snapshotData()))
   const files = [file('Title.json', JSON.stringify(pkg)), file('images/' + pkg.assets[0].fileName, pngBytes())]
   await folder(files)
   await act(async () => container.querySelector<HTMLInputElement>('input[type=checkbox]')!.click())
@@ -139,8 +150,9 @@ it('tests candidate deduplication under quota pressure while retaining the accou
     notebook.acceptedRaw = notebook.originalRaw
     saveNotebookEdits(record, edited, 'Keep my notes')
   }))
-  const prior = structuredClone(useStore.getState().academics)
-  const key = useStore.persist.getOptions().name!, before = localStorage.getItem(key)!
+  let prior = structuredClone(useStore.getState().academics)
+  const key = useStore.persist.getOptions().name!
+  let before = localStorage.getItem(key)!
   const next = visualFixture(); next.entries[0].id = 'new-notebook'; next.entries[0].title = 'New notebook under pressure'
   // Deterministic low-compressibility source text makes the existing gzip cache
   // meaningfully larger; this is synthetic storage data, not teaching content.
@@ -189,12 +201,46 @@ it('tests candidate deduplication under quota pressure while retaining the accou
   // while deduplicated storage must accept this exact same folder on retry.
   const legacyAttempt = WORKSPACE_STORAGE_PREFIX + btoa(strFromU8(gzipSync(strToU8(decodeWorkspaceStorage(rejectedValue)), { level: 1, mtime: 0 }), true))
   const fillKey = 'synthetic-other-application-cache'
-  localStorage.setItem(fillKey, 'x'.repeat(Math.floor((budget - 900_000 - originBytes()) / 2) - fillKey.length))
+  localStorage.setItem(fillKey, 'x'.repeat(Math.floor((budget - 900_000 - originBytes(fillKey, '')) / 2)))
   const usedBefore = originBytes()
   expect(originBytes(key, legacyAttempt)).toBeGreaterThan(budget)
-  expect(originBytes(key, rejectedValue)).toBeLessThan(budget)
+  const optimizedAttempt = encode(decodeWorkspaceStorage(rejectedValue), { requireChunks: true })
+  expect(originBytes(key, optimizedAttempt)).toBeLessThan(budget)
   const otherCache = localStorage.getItem(fillKey)
   fail = 'fixed'
+  if (explicitCutover) {
+    await act(async () => button('Make room for this notebook').click())
+    expect(button('Create recovery copy and make room').disabled).toBe(true)
+    expect(recoveryCopies).toHaveLength(0)
+    if (staleEstimate) {
+      // Another saved change arrives while this same importer keeps its files.
+      await act(async () => useStore.getState().update(state => { state.academics.classCenter.lectures[0].importedNotebook!.notes = 'Newer saved notes while the estimate was open' }))
+      prior = structuredClone(useStore.getState().academics); before = localStorage.getItem(key)!
+      await act(async () => container.querySelector<HTMLInputElement>('.en-storage-recovery input[type=checkbox]')!.click())
+      await act(async () => button('Create recovery copy and make room').click()); await settled()
+      expect(container.textContent).toContain('Saved work changed')
+      expect(button('Make room for this notebook').disabled).toBe(false)
+      expect(container.querySelector<HTMLTextAreaElement>('.en-paste textarea')!.value).toBe(raw)
+      expect(recoveryCopies).toHaveLength(0)
+      await act(async () => button('Make room for this notebook').click())
+      expect(container.querySelector<HTMLInputElement>('.en-storage-recovery input[type=checkbox]')!.checked).toBe(false)
+    }
+    await act(async () => container.querySelector<HTMLInputElement>('.en-storage-recovery input[type=checkbox]')!.click())
+    failRecovery = true
+    await act(async () => button('Create recovery copy and make room').click()); await settled()
+    expect(container.textContent).toContain('Recovery storage is unavailable')
+    expect(localStorage.getItem(key)).toBe(before)
+    expect(container.querySelector<HTMLTextAreaElement>('.en-paste textarea')!.value).toBe(raw)
+    expect(imported).not.toHaveBeenCalled()
+    failRecovery = false
+    await act(async () => button('Create recovery copy and make room').click()); await settled()
+    expect(recoveryCopies).toHaveLength(1)
+    expect(recoveryCopies[0].stored).toBe(before)
+    expect(container.textContent).toContain('Browser storage optimized')
+    expect(useStore.getState().academics).toEqual(prior)
+    expect(container.querySelector<HTMLTextAreaElement>('.en-paste textarea')!.value).toBe(raw)
+    expect(localStorage.getItem(key)!.startsWith(workspaceCodec.WORKSPACE_CHUNKS_PREFIX)).toBe(true)
+  }
   await act(async () => button('Save editable entry to PSYC 101').click()); await settled()
   expect(imported).toHaveBeenCalledTimes(1)
   expect(useStore.getState().academics.classCenter.lectures).toHaveLength(2)
@@ -211,11 +257,51 @@ it('tests candidate deduplication under quota pressure while retaining the accou
   expect(localStorage.getItem(pressureKey)).toBe(otherBefore)
   expect(localStorage.getItem(fillKey)).toBe(otherCache)
   expect(originBytes()).toBeLessThanOrEqual(budget)
-  if (process.env.NOTEBOOK_QUOTA_RECEIPT) writeFileSync(process.env.NOTEBOOK_QUOTA_RECEIPT, JSON.stringify({ synthetic: true, budgetBytes: budget, rawInputCharacters: raw.length, existingStoredCharacters: before.length, legacyAttemptCharacters: legacyAttempt.length, deduplicatedAttemptCharacters: rejectedSize, originBytesBefore: usedBefore, originBytesAfter: originBytes(), savedAndReloaded: true, exactOriginalRaw: true, previousEditsAndHistoryRetained: true, portableRoundTrip: true }, null, 2))
+  if (process.env.NOTEBOOK_QUOTA_RECEIPT) writeFileSync(process.env.NOTEBOOK_QUOTA_RECEIPT, JSON.stringify({ synthetic: true, explicitCutover, budgetBytes: budget, rawInputCharacters: raw.length, existingStoredCharacters: before.length, legacyAttemptCharacters: legacyAttempt.length, deduplicatedAttemptCharacters: optimizedAttempt.length, originBytesBefore: usedBefore, originBytesAfter: originBytes(), savedAndReloaded: true, exactOriginalRaw: true, previousEditsAndHistoryRetained: true, portableRoundTrip: true }, null, 2))
   const importedBeforeSwitch = structuredClone(records.map(record => record.importedNotebook))
   await act(async () => activateGuestWorkspace())
-  await act(async () => activateAccountWorkspace('folder-pressure-a'))
+  await act(async () => activateAccountWorkspace(accountId))
   expect(useStore.getState().academics.classCenter.lectures.map(record => record.importedNotebook)).toEqual(importedBeforeSwitch)
+})
+
+it('keeps a new account recovery usable and ignores an older operation releasing its busy state', async () => {
+  await act(async () => activateAccountWorkspace('recovery-busy-a', snapshotData()))
+  const keyA = useStore.persist.getOptions().name!, beforeA = localStorage.getItem(keyA)!, data = structuredClone(snapshotData())
+  const originalSet = Storage.prototype.setItem
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function(this: Storage, key, value) {
+    if (this === localStorage && key === keyA && value.length > beforeA.length) throw new DOMException('Quota', 'QuotaExceededError')
+    originalSet.call(this, key, value)
+  })
+  await folder([file('Title.json', JSON.stringify(pkg)), file('images/' + pkg.assets[0].fileName, pngBytes())])
+  await act(async () => container.querySelector<HTMLInputElement>('input[type=checkbox]')!.click())
+  await act(async () => button('Save editable entry to PSYC 101').click()); await settled()
+  const pending = new Map<string, () => void>(), finished: string[] = []
+  beforeRecoverySave = snapshot => new Promise(resolve => pending.set(snapshot.workspaceKey, resolve))
+  const commit = workspaceOptimization.commitWorkspaceOptimization
+  vi.spyOn(workspaceOptimization, 'commitWorkspaceOptimization').mockImplementation(async (plan, options) => { try { return await commit(plan, options) } finally { finished.push(plan.owner.key!) } })
+  async function startRecovery() {
+    await act(async () => button('Make room for this notebook').click())
+    expect(container.querySelector<HTMLInputElement>('.en-storage-recovery input[type=checkbox]')!.checked).toBe(false)
+    await act(async () => container.querySelector<HTMLInputElement>('.en-storage-recovery input[type=checkbox]')!.click())
+    await act(async () => button('Create recovery copy and make room').click())
+  }
+  await startRecovery(); await vi.waitFor(() => expect(pending.has(keyA)).toBe(true))
+  await act(async () => activateAccountWorkspace('recovery-busy-b', data))
+  const keyB = useStore.persist.getOptions().name!
+  expect(button('Make room for this notebook').disabled).toBe(false)
+  await startRecovery(); await vi.waitFor(() => expect(pending.has(keyB)).toBe(true))
+  await act(async () => pending.get(keyA)!())
+  await vi.waitFor(async () => { await act(async () => {}); expect(finished).toContain(keyA) })
+  expect(container.querySelector<HTMLInputElement>('[aria-label="Choose notebook folder"]')!.disabled).toBe(true)
+  expect(button('Making room…').disabled).toBe(true)
+  expect(localStorage.getItem(keyA)).toBe(beforeA)
+  expect(imported).not.toHaveBeenCalled()
+  await act(async () => pending.get(keyB)!()); await settled()
+  expect(container.textContent).toContain('Browser storage optimized')
+  expect(localStorage.getItem(keyB)!.startsWith(workspaceCodec.WORKSPACE_CHUNKS_PREFIX)).toBe(true)
+  expect(localStorage.getItem(keyA)).toBe(beforeA)
+  expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
+  expect(imported).not.toHaveBeenCalled()
 })
 
 it.each([false, true])('rejects an account switch after image staging, even with identical IDs (switch back: %s)', async switchBack => {

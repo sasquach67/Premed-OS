@@ -406,3 +406,5 @@
 .en-collection-summary{margin:1rem 0}.en-collection-summary details{margin-top:.65rem}.en-file-path,.en-collection-summary li{overflow-wrap:anywhere}
 .en-image-review>.en-small-detail{margin:.75rem 0}.en-image-problem{border-top:1px solid var(--border);padding:1rem 0}.en-image-problem p{margin:.35rem 0}.en-image-problem .en-field{max-width:36rem}
 .en-matched-images{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));gap:1rem;list-style:none;padding:0}.en-matched-images li{min-width:0}.en-matched-images img{max-height:8rem;object-fit:contain}
+
+.en-storage-recovery{margin-top:1rem;border-top:1px solid var(--border);padding-top:1rem}.en-storage-recovery ol{list-style:decimal;padding-left:1.4rem;display:grid;gap:.65rem}.en-storage-recovery h3{margin-top:0}

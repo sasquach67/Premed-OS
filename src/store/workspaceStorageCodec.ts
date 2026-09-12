@@ -69,21 +69,27 @@ function gzipText(value: string, prefix: string): string {
 }
 
 /** Only the browser-cache encoding changes. The original JSON remains exact. */
-export function encodeWorkspaceStorage(value: string, options: { deduplicate?: boolean } = {}): string {
+export function encodeWorkspaceStorage(value: string, options: { deduplicate?: boolean; requireChunks?: boolean } = {}): string {
   if (value.startsWith(FORMAT_PREFIX)) {
-    decodeWorkspaceStorage(value)
+    const decoded = decodeWorkspaceStorage(value)
+    if (options.requireChunks && !value.startsWith(WORKSPACE_CHUNKS_PREFIX)) return encodeWorkspaceStorage(decoded, { requireChunks: true })
     return value
   }
-  if (value.length < COMPRESS_AT) return value
+  if (!options.requireChunks && value.length < COMPRESS_AT) return value
   JSON.parse(value)
   const bytes = strToU8(value)
   if (bytes.length > MAX_DECODED_BYTES) throw new Error('This workspace exceeds the safe browser-cache size. Existing saved data was kept.')
+  if (options.requireChunks) {
+    const packed = packChunks(value)
+    if (strToU8(packed).length > MAX_DECODED_BYTES) throw new Error('This workspace exceeds the safe optimized-cache size. Existing saved data was kept.')
+    return gzipText(packed, WORKSPACE_CHUNKS_PREFIX)
+  }
   const encoded = gzipText(value, WORKSPACE_STORAGE_PREFIX)
   // JSON-stringifying the chunk envelope also preserves literal unpaired UTF-16
   // surrogates, which a direct UTF-8 gzip conversion cannot represent exactly.
   let best = strFromU8(bytes) === value && encoded.length < value.length ? encoded : value
-  // Candidate capacity format: production writes stay on legacy gzip until an
-  // explicit cutover can retire old tabs and retain a durable recovery snapshot.
+  // Ordinary workspaces remain on compatible gzip. Only the explicit cutover
+  // requests chunks; subsequent writes recognize that namespace's format.
   if (!options.deduplicate) return best
   if (best !== value && best.length < 64 * 1024) return best
   const packed = packChunks(value)
