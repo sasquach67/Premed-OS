@@ -40,7 +40,7 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
   const folderInput = useRef<HTMLInputElement>(null)
   const [folderSupported] = useState(() => typeof document !== 'undefined' && 'webkitdirectory' in document.createElement('input'))
   const [bundleUsed, setBundleUsed] = useState<string[]>([])
-  const [otherOpen, setOtherOpen] = useState(!folderSupported || Boolean(initialRaw))
+  const [otherOpen, setOtherOpen] = useState(false)
   const [bundleFile, setBundleFile] = useState<Blob | null>(null)
   const [backup, setBackup] = useState<Extract<PreparedNotebookBundle, { kind: 'backup' }> | null>(null)
   const [confirmBackup, setConfirmBackup] = useState(false)
@@ -153,7 +153,7 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
   if (!course) return <p role="alert">Destination class not found. Open import from an existing class notebook.</p>
   const unusedImages = imageFiles.filter(file => bundleFile ? !bundleUsed.includes(file.name) : !preview || !imageSelection(preview).matches.some(match => match.file?.blob === file.blob))
   return <section className="external-notebook en-import" aria-label="Import external notebook"><h2 className="en-import-heading">{preview ? 'Review before saving' : 'Upload a notebook folder or ZIP'}</h2>{preview && <p className="en-import-lead">Check the content and source coverage. Nothing is saved to {course.code} yet.</p>}
-    <div className="en-folder-picker">{folderSupported ? <><Button disabled={busy} onClick={() => folderInput.current?.click()}>Choose notebook folder</Button><span>Select the folder containing your notebook JSON and images.</span></> : <p>Folder selection is unavailable in this browser. Choose your notebook ZIP below.</p>}<input ref={node => { folderInput.current = node; node?.setAttribute('webkitdirectory', '') }} type="file" multiple hidden disabled={busy} aria-label="Choose notebook folder" onChange={async event => {
+    <div className="en-folder-picker">{folderSupported ? <><Button disabled={busy} onClick={() => folderInput.current?.click()}>Choose notebook folder</Button><span>Select the folder containing your notebook JSON and images.</span></> : <p>Folder selection is unavailable in this browser. Open Other import options to choose your notebook ZIP.</p>}<input ref={node => { folderInput.current = node; node?.setAttribute('webkitdirectory', '') }} type="file" multiple hidden disabled={busy} aria-label="Choose notebook folder" onChange={async event => {
       const files = [...(event.target.files ?? [])]; event.target.value = ''; if (!files.length) return
       clearPreview(); setRaw('')
       try { await chooseCollection(collectNotebookFolder(files)) } catch (failure) { setError((failure as Error).message); setBusy(false) }

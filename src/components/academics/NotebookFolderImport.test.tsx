@@ -93,6 +93,24 @@ it('offers the ZIP alternative when directory selection is unsupported', async (
   delete (HTMLInputElement.prototype as unknown as Record<string, unknown>).webkitdirectory
   await act(async () => root.render(<NotebookImportPanel key="unsupported-directory" courseId={course.id} onImported={imported} />))
   expect(button('Choose notebook folder')).toBeUndefined()
-  expect(container.textContent).toContain('Choose your notebook ZIP below')
-  expect(container.querySelector<HTMLDetailsElement>('.en-import-inputs')!.open).toBe(true)
+  expect(container.textContent).toContain('Open Other import options to choose your notebook ZIP')
+  expect(container.querySelector<HTMLDetailsElement>('.en-import-inputs')!.open).toBe(false)
+})
+
+it.each([{ name: 'unfinished draft', raw: ' { unfinished draft' }, { name: 'valid notebook', raw: JSON.stringify(pkg) }])('keeps restored $name behind collapsed options on every importer entry without losing it', async ({ raw }) => {
+  for (const key of ['first-entry', 'return-entry']) {
+    await act(async () => root.render(<NotebookImportPanel key={key} courseId={course.id} initialRaw={raw} onImported={imported} />))
+    const options = container.querySelector<HTMLDetailsElement>('.en-import-inputs')!
+    expect(options.open).toBe(false)
+    expect(container.querySelector<HTMLTextAreaElement>('.en-paste textarea')!.value).toBe(raw)
+    await act(async () => options.querySelector('summary')!.click())
+    expect(options.open).toBe(true)
+    expect(container.querySelector<HTMLTextAreaElement>('.en-paste textarea')!.value).toBe(raw)
+    if (raw === JSON.stringify(pkg)) {
+      await act(async () => button('Validate and preview').click()); await settled()
+      expect(container.querySelector('[aria-label="Validated notebook preview"]')).toBeTruthy()
+      expect(options.open).toBe(false)
+      expect(container.querySelector<HTMLTextAreaElement>('.en-paste textarea')!.value).toBe(raw)
+    }
+  }
 })
