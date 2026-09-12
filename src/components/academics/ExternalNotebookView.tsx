@@ -2,7 +2,7 @@ import { NotebookImportAdjustments } from './NotebookImportAdjustments'
 import { useId, useRef, useState, type RefObject } from 'react'
 import { Button } from '@/components/ui/button'
 import { useStore } from '@/store/store'
-import { readStoredWorkspace, storageFailure } from '@/store/storageHealth'
+import { readStoredWorkspace, storageFailure, WorkspaceChangedError, WorkspaceSaveError } from '@/store/storageHealth'
 import { exportNotebook, restoreNotebookVersion, saveNotebookEdits } from '@/lib/academics/notebook/import'
 import { notebookExportFilename } from '@/lib/academics/notebook/downloadFilename'
 import { createNotebookUpdateSession, notebookContentKey, notebookPracticePolicy, notebookStateKey } from '@/lib/academics/notebook/revision'
@@ -43,13 +43,13 @@ export function notebookTransaction(mutator: (state: AppData) => void) {
     })
     const diskClasses = classSnapshot(saved.state?.courses ?? [], saved.state?.academics?.classCenter?.workspaces ?? [])
     const memoryClasses = classSnapshot(useStore.getState().courses, previous.classCenter.workspaces)
-    if (canonical(diskEntries) !== canonical(memoryEntries) || canonical(diskClasses) !== canonical(memoryClasses)) throw new Error('A notebook or class changed in another tab. Reload this page before saving so its newer content and progress are not overwritten. Keep any unsaved text before reloading.')
+    if (canonical(diskEntries) !== canonical(memoryEntries) || canonical(diskClasses) !== canonical(memoryClasses)) throw new WorkspaceChangedError('A notebook or class changed in another tab. Reload this page before saving so its newer content and progress are not overwritten. Keep any unsaved text before reloading.')
   }
   useStore.getState().update(mutator)
   const failure = storageFailure()
   if (failure) {
     useStore.getState().update(state => { state.academics = structuredClone(previous) })
-    throw new Error(`Browser storage could not save this notebook. ${failure} Free space or export your JSON and try again. No saved success was reported.`)
+    throw new WorkspaceSaveError(failure)
   }
 }
 export function downloadNotebookText(filename: string, text: string, mime = 'application/json') {

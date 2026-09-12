@@ -4,6 +4,27 @@ import { decodeWorkspaceStorage, encodeWorkspaceStorage } from './workspaceStora
 const FAILURE_KEY = 'premed_hq_storage_failure'
 let volatileFailure = ''
 const unreadableValues = new WeakMap<Storage, Map<string, string>>()
+const readableValues = new WeakMap<Storage, Map<string, string>>()
+
+function rememberReadable(storage: Storage, name: string, raw: string | null) {
+  const values = readableValues.get(storage) ?? new Map<string, string>()
+  if (raw === null) values.delete(name)
+  else values.set(name, raw)
+  readableValues.set(storage, values)
+  unreadableValues.get(storage)?.delete(name)
+}
+
+/** Distinguish a valid notebook that could not be persisted from invalid input. */
+export class WorkspaceSaveError extends Error {
+  constructor(cause: unknown) {
+    super('Browser storage could not save this notebook. Your previously saved notebooks were kept. Keep your original folder or ZIP, including its images. Export complete backups of saved notebooks before changing browser storage, then retry.', { cause })
+    this.name = 'WorkspaceSaveError'
+  }
+}
+
+export class WorkspaceChangedError extends Error {
+  constructor(message: string) { super(message); this.name = 'WorkspaceChangedError' }
+}
 
 function message(error: unknown) {
   if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' && error.message) return error.message
@@ -31,7 +52,8 @@ export function readStoredWorkspace(storage: Storage, name: string): string | nu
   try {
     raw = storage.getItem(name)
     const decoded = raw === null ? null : decodeWorkspaceStorage(raw)
-    unreadableValues.get(storage)?.delete(name)
+    if (decoded !== null) JSON.parse(decoded)
+    rememberReadable(storage, name, raw)
     return decoded
   } catch (error) {
     if (raw !== null) {
@@ -52,6 +74,7 @@ export function guardedStorage(storage: Storage): StateStorage {
     removeItem: (name) => {
       storage.removeItem(name)
       unreadableValues.get(storage)?.delete(name)
+      readableValues.get(storage)?.delete(name)
     },
     setItem: (name, value) => {
       try {
@@ -60,7 +83,13 @@ export function guardedStorage(storage: Storage): StateStorage {
           if (storage.getItem(name) === blocked) throw new Error('Unreadable saved workspace was kept unchanged. Export it before attempting recovery.')
           readStoredWorkspace(storage, name)
         }
-        storage.setItem(name, encodeWorkspaceStorage(value))
+        // A different tab may publish an unsupported or corrupt encoding after
+        // our last read. Never overwrite it merely because memory is still warm.
+        const current = storage.getItem(name)
+        if (current !== null && readableValues.get(storage)?.get(name) !== current) readStoredWorkspace(storage, name)
+        const encoded = encodeWorkspaceStorage(value)
+        storage.setItem(name, encoded)
+        rememberReadable(storage, name, encoded)
         clearFailure()
       } catch (error) {
         rememberFailure(error)

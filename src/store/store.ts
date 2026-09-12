@@ -1005,6 +1005,12 @@ export function activeAccountWorkspaceId(): string | null {
   return owner.kind === 'account' ? owner.userId : null
 }
 
+let workspaceEpoch = 0
+/** Capture before asynchronous work; identical IDs do not identify an account. */
+export function captureWorkspaceIdentity() {
+  return { key: useStore.persist.getOptions().name, epoch: workspaceEpoch }
+}
+
 function activateWorkspace(owner: WorkspaceOwner, supplied?: AppData) {
   if (DEMO_MODE) return
   const previous = activeWorkspaceOwner()
@@ -1018,6 +1024,7 @@ function activateWorkspace(owner: WorkspaceOwner, supplied?: AppData) {
   // the migration chain.
   const prepared = supplied ? undefined : readWorkspaceData(key) ?? createPersonalInitialData()
   setActiveWorkspaceOwner(owner)
+  if (ownerChanged) workspaceEpoch++
   // Owner is set, so scoped keys now resolve to the destination. A legacy
   // unscoped cache that the previously-open workspace never adopted is
   // adopted here instead; once adopted, this is a no-op.

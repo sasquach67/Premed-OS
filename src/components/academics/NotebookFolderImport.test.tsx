@@ -1,12 +1,18 @@
 import { Blob as NodeBlob, File as NodeFile } from 'node:buffer'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { gzipSync, strFromU8, strToU8 } from 'fflate'
 import { webcrypto } from 'node:crypto'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { NotebookImportPanel } from './NotebookImportPanel'
-import { createInitialDataForMode, useStore } from '@/store/store'
-import { exportNotebook } from '@/lib/academics/notebook/import'
+import { activateAccountWorkspace, activateGuestWorkspace, createInitialDataForMode, snapshotData, useStore } from '@/store/store'
+import { exportNotebook, saveNotebookEdits } from '@/lib/academics/notebook/import'
+import { notebookTransaction } from './ExternalNotebookView'
+import { exportNotebookBackupBundle, prepareNotebookBundle } from '@/lib/academics/notebook/notebookBundle'
+import { headerDecoder } from '@/lib/academics/notebook/visual.test-fixtures'
+import { decodeWorkspaceStorage, WORKSPACE_STORAGE_PREFIX } from '@/store/workspaceStorageCodec'
+import * as workspaceCodec from '@/store/workspaceStorageCodec'
 import { MemoryNotebookAssets, visualFixture } from '@/lib/academics/notebook/visual.test-fixtures'
 import { plainNotebookZip } from '@/lib/academics/notebook/notebookFiles.test-fixtures'
 import type { Course } from '@/lib/types'
@@ -113,4 +119,141 @@ it.each([{ name: 'unfinished draft', raw: ' { unfinished draft' }, { name: 'vali
       expect(container.querySelector<HTMLTextAreaElement>('.en-paste textarea')!.value).toBe(raw)
     }
   }
+})
+
+it('tests candidate deduplication under quota pressure while retaining the account, staged images and exact retry', async () => {
+  // Explicit test-only opt-in. Production must not migrate old warm tabs yet.
+  const encode = workspaceCodec.encodeWorkspaceStorage
+  vi.spyOn(workspaceCodec, 'encodeWorkspaceStorage').mockImplementation(value => encode(value, { deduplicate: true }))
+  await act(async () => activateAccountWorkspace('folder-pressure-a', snapshotData()))
+  const files = [file('Title.json', JSON.stringify(pkg)), file('images/' + pkg.assets[0].fileName, pngBytes())]
+  await folder(files)
+  await act(async () => container.querySelector<HTMLInputElement>('input[type=checkbox]')!.click())
+  await act(async () => button('Save editable entry to PSYC 101').click()); await settled()
+  const old = useStore.getState().academics.classCenter.lectures[0]
+  const edited = structuredClone(old.importedNotebook!.current); edited.entries[0].title = 'Saved manual edit'
+  await act(async () => notebookTransaction(state => {
+    const record = state.academics.classCenter.lectures[0], notebook = record.importedNotebook!
+    const question = notebook.current.entries[0].sections.flatMap(section => section.blocks).find(block => block.type === 'practice')!
+    notebook.progress[question.id] = { response: 'My retained practice answer', complete: true }
+    notebook.acceptedRaw = notebook.originalRaw
+    saveNotebookEdits(record, edited, 'Keep my notes')
+  }))
+  const prior = structuredClone(useStore.getState().academics)
+  const key = useStore.persist.getOptions().name!, before = localStorage.getItem(key)!
+  const next = visualFixture(); next.entries[0].id = 'new-notebook'; next.entries[0].title = 'New notebook under pressure'
+  // Deterministic low-compressibility source text makes the existing gzip cache
+  // meaningfully larger; this is synthetic storage data, not teaching content.
+  let seed = 123456789
+  next.sources[0].excerpts[0].text = Array.from({ length: 160_000 }, () => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return String.fromCharCode(33 + (seed >>> 0) % 90) }).join('')
+  const raw = ' \n' + JSON.stringify(next, null, 2) + '\n'
+  await folder([file('Title.json', raw), files[1]])
+  expect(container.textContent).toContain('1 of 1 images validated')
+  await act(async () => container.querySelector<HTMLInputElement>('input[type=checkbox]')!.click())
+  const originalSet = Storage.prototype.setItem
+  let fail: 'minimal' | 'fixed' = 'minimal', rejectedSize = 0, rejectedCompressed = false, rejectedValue = ''
+  const budget = 5 * 1024 * 1024
+  function originBytes(replacing?: string, value = '') {
+    let total = replacing ? 2 * (replacing.length + value.length) : 0
+    for (let i = 0; i < localStorage.length; i++) { const name = localStorage.key(i)!; if (name !== replacing) total += 2 * (name.length + localStorage.getItem(name)!.length) }
+    return total
+  }
+  const pressureKey = 'hq:app-data:account:folder-pressure-b'
+  localStorage.setItem(pressureKey, JSON.stringify({ notes: 'Other account data stays exact' }))
+  const otherBefore = localStorage.getItem(pressureKey)
+  // Existing-origin pressure: allow the prior durable snapshot, reject growth.
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, name, value) {
+    if (this === localStorage && ((fail === 'minimal' && name === key && value.length > before.length + 128) || (fail === 'fixed' && originBytes(name, value) > budget))) {
+      rejectedSize = value.length
+      rejectedCompressed = value.startsWith('premed-os:workspace:')
+      rejectedValue = value
+      throw new DOMException('Origin quota exceeded', 'QuotaExceededError')
+    }
+    originalSet.call(this, name, value)
+  })
+  imported.mockClear()
+  await act(async () => button('Save editable entry to PSYC 101').click()); await settled()
+  expect(container.textContent).toContain('Browser storage could not save')
+  expect(imported).not.toHaveBeenCalled()
+  expect(useStore.getState().academics).toEqual(prior)
+  expect(localStorage.getItem(key)).toBe(before)
+  expect(localStorage.getItem(pressureKey)).toBe(otherBefore)
+  expect(await repo.journals()).toHaveLength(1)
+  expect(repo.bytes.size).toBe(1)
+  expect(container.querySelector<HTMLTextAreaElement>('.en-paste textarea')!.value).toBe(raw)
+  expect(rejectedSize).toBeGreaterThan(before.length + 128)
+  expect(rejectedCompressed).toBe(true)
+  expect(button('Copy repair request and JSON')).toBeUndefined()
+  expect(container.textContent).toContain('Keep your original folder or ZIP')
+  // A fixed 5 MiB UTF-16 origin budget with 900 kB left: legacy gzip fails,
+  // while deduplicated storage must accept this exact same folder on retry.
+  const legacyAttempt = WORKSPACE_STORAGE_PREFIX + btoa(strFromU8(gzipSync(strToU8(decodeWorkspaceStorage(rejectedValue)), { level: 1, mtime: 0 }), true))
+  const fillKey = 'synthetic-other-application-cache'
+  localStorage.setItem(fillKey, 'x'.repeat(Math.floor((budget - 900_000 - originBytes()) / 2) - fillKey.length))
+  const usedBefore = originBytes()
+  expect(originBytes(key, legacyAttempt)).toBeGreaterThan(budget)
+  expect(originBytes(key, rejectedValue)).toBeLessThan(budget)
+  const otherCache = localStorage.getItem(fillKey)
+  fail = 'fixed'
+  await act(async () => button('Save editable entry to PSYC 101').click()); await settled()
+  expect(imported).toHaveBeenCalledTimes(1)
+  expect(useStore.getState().academics.classCenter.lectures).toHaveLength(2)
+  await act(async () => useStore.persist.rehydrate())
+  const records = useStore.getState().academics.classCenter.lectures
+  expect(records.find(r => r.id === old.id)?.importedNotebook).toEqual(prior.classCenter.lectures[0].importedNotebook)
+  const saved = records.find(r => r.id !== old.id)!
+  expect(exportNotebook(saved, 'original')).toBe(raw)
+  const backup = await prepareNotebookBundle(await exportNotebookBackupBundle(saved.importedNotebook!, course.id, repo, headerDecoder), headerDecoder)
+  expect(backup.kind).toBe('backup')
+  // Device-local lineage IDs are deliberately regenerated on portable restore.
+  const portable = structuredClone(saved.importedNotebook!); delete portable.assetLineageId
+  if (backup.kind === 'backup') expect(backup.notebook).toEqual(portable)
+  expect(localStorage.getItem(pressureKey)).toBe(otherBefore)
+  expect(localStorage.getItem(fillKey)).toBe(otherCache)
+  expect(originBytes()).toBeLessThanOrEqual(budget)
+  if (process.env.NOTEBOOK_QUOTA_RECEIPT) writeFileSync(process.env.NOTEBOOK_QUOTA_RECEIPT, JSON.stringify({ synthetic: true, budgetBytes: budget, rawInputCharacters: raw.length, existingStoredCharacters: before.length, legacyAttemptCharacters: legacyAttempt.length, deduplicatedAttemptCharacters: rejectedSize, originBytesBefore: usedBefore, originBytesAfter: originBytes(), savedAndReloaded: true, exactOriginalRaw: true, previousEditsAndHistoryRetained: true, portableRoundTrip: true }, null, 2))
+  const importedBeforeSwitch = structuredClone(records.map(record => record.importedNotebook))
+  await act(async () => activateGuestWorkspace())
+  await act(async () => activateAccountWorkspace('folder-pressure-a'))
+  expect(useStore.getState().academics.classCenter.lectures.map(record => record.importedNotebook)).toEqual(importedBeforeSwitch)
+})
+
+it.each([false, true])('rejects an account switch after image staging, even with identical IDs (switch back: %s)', async switchBack => {
+  await act(async () => activateAccountWorkspace('folder-stage-a', snapshotData()))
+  const data = structuredClone(snapshotData()), key = useStore.persist.getOptions().name!
+  const before = localStorage.getItem(key)
+  await folder([file('Title.json', JSON.stringify(pkg)), file('images/' + pkg.assets[0].fileName, pngBytes())])
+  await act(async () => container.querySelector<HTMLInputElement>('input[type=checkbox]')!.click())
+  repo.afterStage = () => {
+    activateAccountWorkspace('folder-stage-b', data)
+    if (switchBack) activateAccountWorkspace('folder-stage-a')
+  }
+  await act(async () => button('Save editable entry to PSYC 101').click()); await settled()
+  expect(container.textContent).toContain('The active workspace changed')
+  expect(button('Copy repair request and JSON')).toBeUndefined()
+  expect(imported).not.toHaveBeenCalled()
+  expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
+  expect(JSON.parse(localStorage.getItem(key)!).state.academics).toEqual(JSON.parse(before!).state.academics)
+  expect(await repo.journals()).toHaveLength(1)
+  expect(repo.bytes.size).toBe(1)
+})
+
+it('keeps a committed source-account notebook but suppresses navigation if the account changes during journal cleanup', async () => {
+  await act(async () => activateAccountWorkspace('folder-finish-a', snapshotData()))
+  const empty = structuredClone(snapshotData()), key = useStore.persist.getOptions().name!
+  await folder([file('Title.json', JSON.stringify(pkg)), file('images/' + pkg.assets[0].fileName, pngBytes())])
+  await act(async () => container.querySelector<HTMLInputElement>('input[type=checkbox]')!.click())
+  let finish!: () => void
+  const originalFinish = repo.finish.bind(repo)
+  vi.spyOn(repo, 'finish').mockImplementationOnce(async id => { await new Promise<void>(resolve => { finish = resolve }); await originalFinish(id) })
+  await act(async () => button('Save editable entry to PSYC 101').click())
+  await vi.waitFor(() => expect(finish).toBeTypeOf('function'))
+  const committed = JSON.parse(decodeWorkspaceStorage(localStorage.getItem(key)!)).state.academics.classCenter.lectures
+  expect(committed).toHaveLength(1)
+  await act(async () => activateAccountWorkspace('folder-finish-b', empty))
+  await act(async () => finish()); await settled()
+  expect(imported).not.toHaveBeenCalled()
+  expect(useStore.getState().academics.classCenter.lectures).toHaveLength(0)
+  expect(JSON.parse(decodeWorkspaceStorage(localStorage.getItem(key)!)).state.academics.classCenter.lectures).toEqual(committed)
+  expect(await repo.journals()).toHaveLength(0)
 })

@@ -1,7 +1,8 @@
 import { NotebookImportAdjustments } from './NotebookImportAdjustments'
 import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { useStore } from '@/store/store'
+import { captureWorkspaceIdentity, useStore } from '@/store/store'
+import { WorkspaceChangedError, WorkspaceSaveError } from '@/store/storageHealth'
 import { NOTEBOOK_MAX_BYTES, prepareNotebook, type PreparedNotebook } from '@/lib/academics/notebook/package'
 import { acceptNotebookUpdate, importNotebook, inspectNotebookImport, inspectNotebookUpdate, notebookDestinationMismatch, restoreCompleteNotebookBackup } from '@/lib/academics/notebook/import'
 import { canonical } from '@/lib/academics/notebook/package'
@@ -14,7 +15,7 @@ import { NotebookAssetsProvider, NotebookAssetThumbnail } from './NotebookVisual
 import type { NotebookUpdateSession } from '@/lib/academics/notebook/types'
 import { NotebookComparison } from './NotebookComparison'
 import { NotebookImportPreview } from './NotebookImportPreview'
-import { NotebookPackageView, notebookEntryLabel, notebookTransaction } from './ExternalNotebookView'
+import { downloadNotebookText, NotebookPackageView, notebookEntryLabel, notebookTransaction } from './ExternalNotebookView'
 export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onRawChange, revision }: { courseId: string; onImported: (id: string) => void; initialRaw?: string; onRawChange?: (raw: string) => void; revision?: NotebookUpdateSession }) {
   const course = useStore(s => s.courses.find(c => c.id === courseId))
   const center = useStore(s => s.academics.classCenter)
@@ -22,7 +23,9 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
   const [restoredInput] = useState(Boolean(initialRaw))
   function setRaw(text: string) { setRawState(text); onRawChange?.(text) }
   const [preview, setPreview] = useState<PreparedNotebook | null>(null)
-  const [error, setError] = useState('')
+  const [error, setErrorMessage] = useState('')
+  const [recoveryError, setRecoveryError] = useState<'storage' | 'workspace' | null>(null)
+  function setError(value: string) { setErrorMessage(value); setRecoveryError(null) }
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
   const [destination, setDestination] = useState(false)
@@ -127,27 +130,36 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
     try {
       const snapshot = () => { const state = useStore.getState(); return canonical({ course: state.courses.find(c => c.id === courseId), notebooks: state.academics.classCenter.lectures.filter(l => l.importedNotebook) }) }
       const expected = snapshot()
+      const owner = captureWorkspaceIdentity()
+      const assertFresh = () => {
+        const current = captureWorkspaceIdentity()
+        if (owner.key !== current.key || owner.epoch !== current.epoch) throw new WorkspaceChangedError('The active workspace changed while the notebook was being prepared. Return to the intended account and class, then retry. Nothing was saved to the new workspace.')
+        if (id !== attempt.current || snapshot() !== expected) throw new WorkspaceChangedError('A saved notebook, note, practice record or class changed while images were being prepared. Nothing was overwritten. Reopen the latest entry and compare again.')
+      }
       const validated = await prepareNotebook(raw)
       if (id !== attempt.current) return
       let ids: string[] = []
       const decoded = bundleFile ? await prepareNotebookBundle(bundleFile) : null
       const restored = decoded?.kind === 'backup' ? decoded : null
       const original = restored ? await prepareNotebook(restored.notebook.originalRaw) : null
+      assertFresh()
       const context = bindingContext(validated)
       const selection = imageSelection(validated)
       const imageReview = !decoded && validated.package.version !== 2 ? await reviewNotebookImages(validated.package, selection.selected, { blocked: selection.blocked, previousBindings: context.retainedBindings, reader: notebookAssetRepository() }) : null
       if (imageReview && !imageReview.prepared) throw new Error(imageReview.error || [...imageReview.problems.values()][0] || 'Resolve the remaining images before saving.')
       const resolved = decoded?.assets ?? imageReview?.prepared ?? null
       if (id !== attempt.current) return
-      const commit = () => { notebookTransaction(state => {
+      const commit = () => { assertFresh(); notebookTransaction(state => {
         const currentCourse = state.courses.find(c => c.id === courseId)
         if (!currentCourse) throw new Error('The destination class no longer exists.')
         ids = restored && original ? restoreCompleteNotebookBackup(state.academics.classCenter, currentCourse, restored.notebook, original, confirmBackup, destination) : revision && !separate ? acceptNotebookUpdate(state.academics.classCenter, currentCourse, validated, revision, acceptChanges) : importNotebook(state.academics.classCenter, currentCourse, validated, { confirmDestination: destination, confirmRevisions: revisions })
       }); return { committed: true as const } }
-      if (resolved) await commitNotebookAssets({ prepared: resolved, ...context, assertFresh: () => { if (id !== attempt.current || snapshot() !== expected) throw new Error('A saved notebook, note, practice record or class changed while images were being prepared. Nothing was overwritten. Reopen the latest entry and compare again.') }, commit })
+      if (resolved) await commitNotebookAssets({ prepared: resolved, ...context, assertFresh, commit })
       else commit()
+      const currentOwner = captureWorkspaceIdentity()
+      if (owner.key !== currentOwner.key || owner.epoch !== currentOwner.epoch) return
       setStatus(`Saved in ${course.code}.`); onImported(ids[0])
-    } catch (failure) { if (id === attempt.current) setError((failure as Error).message) }
+    } catch (failure) { if (id === attempt.current) { setError((failure as Error).message); setRecoveryError(failure instanceof WorkspaceSaveError ? 'storage' : failure instanceof WorkspaceChangedError ? 'workspace' : null) } }
     finally { if (id === attempt.current) setBusy(false) }
   }
   if (!course) return <p role="alert">Destination class not found. Open import from an existing class notebook.</p>
@@ -186,7 +198,7 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
     </details>
     <p className="en-import-limit">A notebook folder or ZIP needs the final notebook JSON and any referenced PNG/JPEG images. Raw class materials alone cannot create a notebook. JSON is limited to 8 MiB. Working checkpoint files are not final notebooks.</p>
     {restoredInput && !preview && <p className="en-import-limit">Your unsaved JSON is kept. Check that it matches the current request, then validate it again before saving.</p>}
-    {error && <div className="en-notice en-error" role="alert"><b>Nothing was saved</b><p className="en-text">{error}</p><Button variant="outline" onClick={() => { void navigator.clipboard.writeText(`Repair this notebook package error: ${error}\nPreserve all other content, source text, IDs, and revisions. Return one titled ZIP with the complete corrected notebook JSON and all required actual PNG/JPEG files, preserving filenames and relative paths. If ZIP creation is unavailable, provide a real complete folder or the full downloadable file set and state the limitation. Do not invent missing files or claim the package is complete without its required bytes. No additional draft approval is required; preserve any explicit draft-only request.\n\nOriginal JSON:\n${raw}`).then(() => setStatus('Repair request copied.'), () => setStatus('Clipboard unavailable. Select the error and JSON to copy them.')) }}>Copy repair request and JSON</Button></div>}
+    {error && <div className="en-notice en-error" role="alert"><b>Nothing was saved</b><p className="en-text">{error}</p>{!recoveryError && <Button variant="outline" onClick={() => { void navigator.clipboard.writeText(`Repair this notebook package error: ${error}\nPreserve all other content, source text, IDs, and revisions. Return one titled ZIP with the complete corrected notebook JSON and all required actual PNG/JPEG files, preserving filenames and relative paths. If ZIP creation is unavailable, provide a real complete folder or the full downloadable file set and state the limitation. Do not invent missing files or claim the package is complete without its required bytes. No additional draft approval is required; preserve any explicit draft-only request.\n\nOriginal JSON:\n${raw}`).then(() => setStatus('Repair request copied.'), () => setStatus('Clipboard unavailable. Select the error and JSON to copy them.')) }}>Copy repair request and JSON</Button>}{recoveryError === 'storage' && <><Button variant="outline" onClick={() => downloadNotebookText("unsaved-notebook.json", raw)}>Download unsaved JSON</Button><p>Keep the images with this JSON. You can retry Save below; your selected files are still here.</p></>}</div>}
     <p role="status" aria-live="polite">{status}</p>
     {preview && <div aria-label="Validated notebook preview"><div className="en-import-summary"><h3>{updating ? 'Update the selected entry in' : 'Save to'} {course.code}</h3><p>{course.title} / {course.term}</p><p>{preview.package.entries.length} {preview.package.entries.length === 1 ? 'entry' : 'entries'} / {preview.package.sources.length} supplied sources</p><ul>{plan.map(item => { const oldRevision = item.previous?.importedNotebook?.current.entries.find(e => e.id === item.entry.id)?.revision; return <li key={item.entry.id}>{notebookEntryLabel(item.entry)}{item.duplicate ? ' / Already saved' : oldRevision !== undefined ? item.entry.revision > oldRevision ? ' / Newer revision' : item.entry.revision < oldRevision ? ' / Older revision' : ' / Changed content at the same revision' : ' / New entry'}</li> })}</ul></div>
       <NotebookImportAdjustments raw={backup ? backup.notebook.acceptedRaw ?? backup.notebook.originalRaw : preview.raw} />
