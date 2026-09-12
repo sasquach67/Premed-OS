@@ -211,11 +211,16 @@ it.each(['paste', 'upload'])('discloses blank table heading repair from %s and r
   if (path === 'paste') {
     await fill('Paste complete JSON', original); await click('Validate and preview')
   } else {
+    // A file change starts asynchronous hashing; slow it so this cannot pass
+    // merely because a local machine finished validation before act returned.
+    const digest = crypto.subtle.digest.bind(crypto.subtle)
+    vi.spyOn(crypto.subtle, 'digest').mockImplementation((algorithm, data) => new Promise(resolve => setTimeout(() => resolve(digest(algorithm, data)), 20)))
     const file = new File([original], 'blank-table.json', { type: 'application/json' })
     Object.defineProperty(file, 'text', { value: async () => original })
     const input = container.querySelector<HTMLInputElement>('.en-upload input')!
     Object.defineProperty(input, 'files', { value: [file] })
     await act(async () => input.dispatchEvent(new Event('change', { bubbles: true })))
+    await vi.waitFor(async () => { await act(async () => {}); expect(input.disabled).toBe(false) }, { timeout: 10000 })
   }
   expect(container.querySelector('.en-import-adjustments')?.textContent).toContain('Blank table headings adjusted (1)')
   expect(container.querySelector('.en-import-adjustments')?.textContent).toContain('Column 1')
