@@ -401,3 +401,8 @@
 .external-notebook .nbr-objective .en-evidence>summary{color:var(--muted-foreground);font-weight:500;min-height:44px;align-content:center}
 @container(min-width:38rem){.external-notebook .nbr-objective-columns{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:1.25rem}}
 @container(max-width:25rem){.external-notebook .nbr-objective-body{margin-left:0}}
+
+.en-folder-picker{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin:1rem 0}.en-folder-picker>span{font-size:.9rem;color:var(--muted-foreground)}
+.en-collection-summary{margin:1rem 0}.en-collection-summary details{margin-top:.65rem}.en-file-path,.en-collection-summary li{overflow-wrap:anywhere}
+.en-image-review>.en-small-detail{margin:.75rem 0}.en-image-problem{border-top:1px solid var(--border);padding:1rem 0}.en-image-problem p{margin:.35rem 0}.en-image-problem .en-field{max-width:36rem}
+.en-matched-images{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));gap:1rem;list-style:none;padding:0}.en-matched-images li{min-width:0}.en-matched-images img{max-height:8rem;object-fit:contain}

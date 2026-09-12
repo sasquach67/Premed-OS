@@ -1,10 +1,12 @@
 import { NOTEBOOK_VISUAL_LIMITS as limits, visualLimit } from './visualLimits'
+import { assertNotebookRelativePath } from './notebookFiles'
 
 const encoder = new TextEncoder(), decoder = new TextDecoder('utf-8', { fatal: true })
 const crcTable = new Uint32Array(256)
 for (let i = 0; i < 256; i++) { let value = i; for (let bit = 0; bit < 8; bit++) value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1; crcTable[i] = value }
 export function notebookCrc32(bytes: Uint8Array): number { let crc = 0xffffffff; for (const byte of bytes) crc = crcTable[(crc ^ byte) & 255] ^ (crc >>> 8); return (crc ^ 0xffffffff) >>> 0 }
-function memberLimit(name: string): number {
+function memberLimit(name: string, collection = false): number {
+  if (collection) { assertNotebookRelativePath(name, name.endsWith('/')); return name.endsWith('/') ? 0 : /\.json$/i.test(name) ? limits.jsonBytes : limits.imageBytes }
   if (name === 'notebook.json' || name === 'bindings.json') return limits.jsonBytes
   if (/^assets\/[a-f0-9]{64}\.(png|jpg)$/.test(name)) return limits.imageBytes
   throw new Error(`Unexpected ZIP member ${name}. Use a notebook bundle exported by this app, or import the notebook JSON with its explicitly mapped PNG/JPEG files. Paths, URLs and unrelated members are not accepted.`)
@@ -36,7 +38,7 @@ export function writeNotebookZip(members: Map<string, Uint8Array>): Blob {
 
 type ZipMember = { name: string; method: number; flags: number; crc: number; compressed: number; decoded: number; offset: number; data: number; end: number }
 /** Central directory is bounded before any decompression; streamed output is bounded again. */
-export async function readNotebookZip(blob: Blob): Promise<Map<string, Uint8Array>> {
+export async function readNotebookZip(blob: Blob, options: { collection?: boolean } = {}): Promise<Map<string, Uint8Array>> {
   visualLimit(blob.size, limits.zipInputBytes, 'ZIP input bytes')
   const bytes = new Uint8Array(await blob.arrayBuffer()), view = new DataView(bytes.buffer)
   let end = -1
@@ -56,10 +58,11 @@ export async function readNotebookZip(blob: Blob): Promise<Map<string, Uint8Arra
     requireRange(view, cursor + 46, nameSize + extra + comment)
     const name = decoder.decode(bytes.subarray(cursor + 46, cursor + 46 + nameSize))
     if (names.has(name)) throw new Error(`Ambiguous duplicate ZIP member ${name}.`)
-    names.add(name); visualLimit(decoded, memberLimit(name), `${name} declared decoded bytes`)
-    if (flags & ~0x80e || ![0, 8].includes(method) || view.getUint16(cursor + 34, true) || ((mode & 0xf000) && (mode & 0xf000) !== 0x8000)) throw new Error('Encrypted, linked, directory or unsupported ZIP entries are not accepted.')
+    names.add(name); visualLimit(decoded, memberLimit(name, options.collection), `${name} declared decoded bytes`)
+    const directory = Boolean(options.collection && name.endsWith('/')), fileMode = mode & 0xf000
+    if (flags & ~0x80e || ![0, 8].includes(method) || view.getUint16(cursor + 34, true) || (fileMode && fileMode !== (directory ? 0x4000 : 0x8000))) throw new Error('Encrypted, linked, directory or unsupported ZIP entries are not accepted.')
     if (method === 0 && compressed !== decoded) throw new Error('Stored ZIP member sizes disagree.')
-    total += decoded; if (name.endsWith('.json')) jsonTotal += decoded
+    total += decoded; if (/\.json$/i.test(name)) jsonTotal += decoded
     visualLimit(total, limits.inflatedBytes, 'ZIP declared total decoded bytes'); visualLimit(jsonTotal, limits.jsonBytes, 'Combined notebook and binding JSON bytes')
     requireRange(view, offset, 30)
     if (view.getUint32(offset, true) !== 0x04034b50 || view.getUint16(offset + 6, true) !== flags || view.getUint16(offset + 8, true) !== method) throw new Error('ZIP local and central headers disagree.')
@@ -101,7 +104,7 @@ export async function readNotebookZip(blob: Blob): Promise<Map<string, Uint8Arra
     }
     actualTotal += output.length; visualLimit(actualTotal, limits.inflatedBytes, 'ZIP actual decoded bytes')
     if (output.length !== member.decoded || notebookCrc32(output) !== member.crc) throw new Error(`ZIP member ${member.name} failed its size or checksum check.`)
-    result.set(member.name, output)
+    if (!member.name.endsWith('/')) result.set(member.name, output)
   }
   return result
 }

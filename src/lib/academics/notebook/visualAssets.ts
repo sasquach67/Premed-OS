@@ -89,6 +89,32 @@ export function mergeNotebookAssetBindings(before: readonly NotebookAssetBinding
   visualLimit([...blobs.values()].reduce((sum, n) => sum + n, 0), limits.backupImageBytes, 'Notebook historical image bytes')
   return [...merged.values()]
 }
+export type NotebookImageReview = { prepared: PreparedNotebookAssets | null; ready: string[]; problems: Map<string, string>; error: string }
+/** Inspect every selected image for actionable feedback. Partial results cannot
+ * be passed to storage: only the complete, validated set receives a byte lease. */
+export async function reviewNotebookImages(pkg: PortableNotebookPackage, mappedFiles: ReadonlyMap<string, Blob>, options: { blocked?: ReadonlyMap<string, string>; previousBindings?: readonly NotebookAssetBinding[]; reader?: NotebookAssetReader; decode?: RasterDecoder } = {}): Promise<NotebookImageReview> {
+  const snapshot = parsePortableNotebook(JSON.stringify(pkg)), assets = snapshot.version === 2 ? [] : snapshot.assets
+  const old = new Map((options.previousBindings ?? []).map(b => [b.assetId, b])), bindings: NotebookAssetBinding[] = [], bytes = new Map<string, Blob>(), problems = new Map<string, string>()
+  for (const asset of assets) {
+    try {
+      if (options.blocked?.has(asset.id)) throw new Error(options.blocked.get(asset.id))
+      const previous = old.get(asset.id)
+      const blob = mappedFiles.get(asset.id) ?? (previous && options.reader ? await options.reader.read(previous.sha256) : undefined)
+      if (!blob) throw new Error('Missing file. Add the exact PNG or JPEG named here.')
+      const validated = await validateNotebookRaster(asset.id, blob, asset.mimeType, options.decode)
+      mergeNotebookAssetBindings(previous ? [previous] : [], [validated.binding])
+      bindings.push(validated.binding); bytes.set(validated.binding.sha256, validated.blob)
+    } catch (failure) { problems.set(asset.id, failure instanceof Error ? failure.message : 'Image could not be validated. Select the original file again.') }
+  }
+  const ready = bindings.map(b => b.assetId)
+  let error = ''
+  try { visualLimit([...bytes.values()].reduce((sum, b) => sum + b.size, 0), limits.packageImageBytes, 'Package actual image bytes') }
+  catch (failure) { error = (failure as Error).message }
+  if (problems.size || error) return { prepared: null, ready, problems, error }
+  const prepared = Object.freeze({ packageKey: canonical(snapshot), bindings: Object.freeze(bindings.map(b => Object.freeze(b))) })
+  preparedBytes.set(prepared, bytes)
+  return { prepared, ready, problems, error }
+}
 export async function prepareNotebookAssets(pkg: PortableNotebookPackage, files: NamedNotebookImage[], options: { mappedFiles?: ReadonlyMap<string, Blob>; previousBindings?: readonly NotebookAssetBinding[]; reader?: NotebookAssetReader; decode?: RasterDecoder } = {}): Promise<PreparedNotebookAssets> {
   const snapshot = parsePortableNotebook(JSON.stringify(pkg)), mappedFiles = new Map(options.mappedFiles)
   const assets = snapshot.version !== 2 ? snapshot.assets : [], names = new Map<string, Blob>(), byId = new Map(assets.map(a => [a.id, a]))

@@ -5,7 +5,7 @@ import argparse, hashlib, json, re, subprocess
 GEN = 'premed-hq-documentation/specifications/generation/'
 BRIEFS = 'premed-hq-documentation/implementation/briefs/'
 TOKENS = ['COURSE_CODE','COURSE_TITLE','TERM','SCOPE','MATERIALS','DEPTH','CLASS_PREFERENCES','HELP_STAGE','ASSESSMENT_FORMAT','USER_REQUEST','REVISION_INPUT']
-PROMPT_BUILD = 'notebook-instructions-beta-18'
+PROMPT_BUILD = 'notebook-instructions-beta-19'
 KEYS = ['courseCode','courseTitle','term','scope','materials','depth','classPreferences','helpStage','assessmentFormat','userRequest','revisionInput']
 MODE_CONFIG = json.loads((Path(__file__).parent/'prompt-modes.json').read_text())
 PATTERN = re.compile(r'\{\{('+'|'.join(TOKENS)+r')\}\}')
@@ -85,7 +85,7 @@ The following text is copied reproducibly from the canonical Markdown. Its learn
 {portable}
 ## Exact JSON Schema
 
-After preparing and checking the actual supported content, directly deliver a complete titled file under EC-EXPORT, EC-FILENAME and EC-DELIVERY with format=premed-os-notebook-package, version=4, instructionsVersion=notebook-workflows-draft-4. All entries in this requested output use goal={goal}. Preserve complete substantive content in the schema; do not output this prompt or a generator plan as the notebook. Review the readable teaching, evidence and coverage before declaring the JSON checks complete.
+After preparing and checking the actual supported content, directly deliver one complete titled ZIP containing the JSON and required actual images, with the honest folder/file-set fallbacks under EC-EXPORT, EC-FILENAME and EC-DELIVERY with format=premed-os-notebook-package, version=4, instructionsVersion=notebook-workflows-draft-4. All entries in this requested output use goal={goal}. Preserve complete substantive content in the schema; do not output this prompt or a generator plan as the notebook. Review the readable teaching, evidence and coverage before declaring the JSON checks complete.
 
 ```json
 {schema_text}

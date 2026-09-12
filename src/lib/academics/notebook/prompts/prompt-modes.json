@@ -8,7 +8,7 @@
   },
   "update": {
     "heading": "# Update my Premed OS notebook: {goal}",
-    "intro": "Update the existing notebook identified by revisionInput using its attached latest saved current-content JSON and the new material I supply. This complete prompt works in a fresh AI chat; the earlier conversation is not needed. Use the shared revision and missing-baseline recovery rules below before proposing the complete updated notebook. For a visual notebook, also supply its required existing image files and asset mapping."
+    "intro": "Update the existing notebook identified by revisionInput using its attached latest saved current-content JSON and the new material I supply. This complete prompt works in a fresh AI chat; the earlier conversation is not needed. Use the shared revision and missing-baseline recovery rules below before proposing the complete updated notebook. Deliver the checked updated JSON and all required existing/new actual image files together in one titled ZIP under EC-DELIVERY, with an honest folder or full-file-set fallback when ZIP creation is unavailable. Preserve unaffected content and image identities."
   },
   "algorithm": "Validate mode is new or update and the trusted unfilled template starts with the exact new heading for one of review, assessment or assignment followed by two newlines. In update mode replace that leading heading only with the update heading, two newlines, the update intro and two newlines. Preserve the remainder byte-for-byte. Then insert the same eleven JSON-encoded string/null values in one pass. Never search/replace headings in inserted user text. Preview, clipboard and UTF-8 download all use the resulting one composed string."
 }

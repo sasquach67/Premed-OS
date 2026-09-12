@@ -8,7 +8,7 @@ it.each(['review', 'assessment', 'assignment'] as const)('composes canonical new
   expect(original.startsWith(modes.new.heading.replace('{goal}', goal) + '\n\n')).toBe(true)
   expect(update.startsWith(modes.update.heading.replace('{goal}', goal) + '\n\n' + modes.update.intro + '\n\n')).toBe(true)
   expect(update.slice(update.indexOf(modes.update.intro) + modes.update.intro.length + 2)).toBe(original.slice(original.indexOf('\n\n') + 2))
-  expect(new TextEncoder().encode(update).length - new TextEncoder().encode(original).length).toBe(431)
+  expect(new TextEncoder().encode(update).length - new TextEncoder().encode(original).length).toBe(new TextEncoder().encode(modes.update.heading + '\n\n' + modes.update.intro + '\n\n').length - new TextEncoder().encode(modes.new.heading + '\n\n').length)
   const request = JSON.parse(/```json\n([\s\S]*?)\n```/.exec(update)![1])
   expect(request.userRequest).toBe(values.USER_REQUEST)
   expect(request.revisionInput).toBe(values.REVISION_INPUT)
@@ -33,4 +33,17 @@ it('rejects unknown modes and changed trusted headings instead of rewriting arbi
   expect(() => composeNotebookPrompt('review', values, 'unknown' as 'update')).toThrow('Unknown notebook prompt')
   const previous = PROMPT_TEMPLATES.review
   try { PROMPT_TEMPLATES.review = 'Unexpected heading\n\n' + previous; expect(() => composeNotebookPrompt('review', values, 'update')).toThrow('canonical heading') } finally { PROMPT_TEMPLATES.review = previous }
+})
+
+it.each(['review', 'assessment', 'assignment'] as const)('delivers a complete ZIP by default in new and update %s prompts without adding a draft approval gate', goal => {
+  for (const mode of ['new', 'update'] as const) {
+    const prompt = composeNotebookPrompt(goal, values, mode)
+    expect(prompt).toContain('Default to one real downloadable ZIP')
+    expect(prompt).toContain('A text-only notebook still uses a ZIP containing its JSON')
+    expect(prompt).toContain('Ordinary AI-created ZIPs need no app-owned bindings.json')
+    expect(prompt).toContain('complete downloadable file set together')
+    expect(prompt).toContain('Never claim a ZIP/folder exists without creating it')
+    expect(prompt).toContain('no additional default confirmation is required')
+    expect(prompt).toContain('complete corrected ZIP with the notebook JSON and all required actual image files')
+  }
 })

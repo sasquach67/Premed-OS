@@ -1,6 +1,6 @@
 {
   "kind": "authored-delivery-expectations",
-  "promptBuild": "notebook-instructions-beta-18",
+  "promptBuild": "notebook-instructions-beta-19",
   "executed": false,
   "ratings": null,
   "notice": "Authored direct-delivery and essential-boundary cases, not a required conversation script or executed provider trial.",
@@ -17,12 +17,12 @@
         "Ask once for essential course/scope and readable subject material. Do not treat the prompt, schema or filenames as teaching evidence."
       ],
       "studentFollowUp": "DEMO 101, Invented Route Workshop. Review labels and route order. Here is the passage: A label names a stop. Renaming a stop changes its label without changing its position in the stored route.",
-      "expectedAfterReply": "After the requested source arrives, prepare the supported guide, check it and deliver titled JSON directly with the precise source limit.",
+      "expectedAfterReply": "After the requested source arrives, prepare the supported guide, check it and deliver a titled ZIP containing the JSON and required images directly with the precise source limit.",
       "necessaryPause": "Only missing essential scope or source material.",
       "mustPreserve": [
         "Actual goal remains Review.",
         "No fabricated source access, official objectives or course facts.",
-        "Deliver checked final JSON directly unless a draft-only stage or pause was explicitly requested."
+        "Deliver checked final JSON and required actual images in one titled ZIP directly unless a draft-only stage or pause was explicitly requested."
       ],
       "ruleIds": [
         "EC-FIRST",
@@ -62,7 +62,7 @@
       "mustPreserve": [
         "All facts and qualifications from both supplied passages.",
         "Explicit source versus generated-objective/practice status.",
-        "Deliver checked final JSON directly unless a draft-only stage or pause was explicitly requested."
+        "Deliver checked final JSON and required actual images in one titled ZIP directly unless a draft-only stage or pause was explicitly requested."
       ],
       "ruleIds": [
         "EC-FIRST",
@@ -102,7 +102,7 @@
         "All original Week 1–6 requirements, format and comparison.",
         "Stable IDs and exact source excerpts/locators across batches.",
         "Working checkpoint numbers are not notebook revisions; no automatic app merge.",
-        "Deliver checked final JSON directly unless a draft-only stage or pause was explicitly requested."
+        "Deliver checked final JSON and required actual images in one titled ZIP directly unless a draft-only stage or pause was explicitly requested."
       ],
       "ruleIds": [
         "EC-FIRST",
@@ -148,12 +148,12 @@
         "Keep the final route outside the support scope. Include a proportionate requirement check and serialize only that hint-stage content."
       ],
       "studentFollowUp": null,
-      "expectedAfterReply": "Deliver the titled notebook JSON for the one-hint support; do not add a final route or Mastery Map.",
+      "expectedAfterReply": "Deliver the titled notebook ZIP containing JSON and required images for the one-hint support; do not add a final route or Mastery Map.",
       "necessaryPause": "None; the requested hint stage limits content, not file delivery.",
       "mustPreserve": [
         "The actual one-hint boundary.",
         "The real task requirements remain visible without claiming student completion or a grade.",
-        "Deliver checked final JSON directly unless a draft-only stage or pause was explicitly requested."
+        "Deliver checked final JSON and required actual images in one titled ZIP directly unless a draft-only stage or pause was explicitly requested."
       ],
       "ruleIds": [
         "EC-FIRST",
@@ -193,7 +193,7 @@
       "mustPreserve": [
         "The intended proposal revision/base, surviving IDs, source evidence and unchanged student content.",
         "Distinguish syntax/reference repair from truncated content, incompatible representation, input size and storage failure.",
-        "Deliver checked final JSON directly unless a draft-only stage or pause was explicitly requested."
+        "Deliver checked final JSON and required actual images in one titled ZIP directly unless a draft-only stage or pause was explicitly requested."
       ],
       "ruleIds": [
         "EC-FIRST",
@@ -260,7 +260,7 @@
         "Draft A from the complete-inputs case has been shown.",
         "The student says: Make the name-versus-feature distinction more direct, then export it."
       ],
-      "expectedFirstReply": "You asked for a clearer name-versus-feature distinction and the finished file. I’ll revise the hint, check it and deliver the titled notebook JSON.",
+      "expectedFirstReply": "You asked for a clearer name-versus-feature distinction and the finished file. I’ll revise the hint, check it and deliver the titled notebook ZIP containing JSON and required images.",
       "expectedNext": [
         "Clarify the label/name versus tag/shared-feature distinction while preserving one hint and its evidence.",
         "Check the revised content and deliver its titled JSON in this turn; do not ask the student to approve an unseen Draft B."

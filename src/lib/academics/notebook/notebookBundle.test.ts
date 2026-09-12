@@ -2,6 +2,9 @@
 import { webcrypto } from 'node:crypto'
 import { beforeAll, expect, it, vi } from 'vitest'
 import { assertNotebookBackupFits, exportNotebookBackupBundle, exportNotebookPackageBundle, prepareNotebookBundle } from './notebookBundle'
+import { classifyNotebookJsonFiles, notebookBundleFromFolder, readNotebookImportZip } from './notebookImportFiles'
+import { plainNotebookZip } from './notebookFiles.test-fixtures'
+import { collectNotebookFiles } from './notebookFiles'
 import { readNotebookZip, writeNotebookZip } from './notebookZip'
 import { getPreparedAssetBytes, prepareNotebookAssets } from './visualAssets'
 import { headerDecoder, MemoryNotebookAssets, plainVisualFixture, pngBlob, visualFixture } from './visual.test-fixtures'
@@ -77,4 +80,26 @@ it('preserves v2 originals byte-for-byte inside portable text-only bundles', asy
   const decoded = await prepareNotebookBundle(await exportNotebookPackageBundle(raw, [], new MemoryNotebookAssets(), headerDecoder), headerDecoder)
   if (decoded.kind !== 'package') throw new Error('Expected package')
   expect(decoded.raw).toBe(raw); expect(decoded.package.version).toBe(2); expect(decoded.assets.bindings).toEqual([])
+})
+
+it('recognizes backup ZIPs and extracted folders without flattening personal history into ordinary notebook JSON', async () => {
+  const s = await setup(), zip = await exportNotebookBackupBundle(s.n, 'demo-course', s.repo, headerDecoder)
+  const imported = await readNotebookImportZip(zip, headerDecoder)
+  expect(imported.kind).toBe('bundle'); if (imported.kind !== 'bundle') throw Error('Expected protected bundle')
+  expect(imported.bundle.kind).toBe('backup')
+  const members = await readNotebookZip(zip), collection = await classifyNotebookJsonFiles(collectNotebookFiles([...members].map(([name, bytes]) => ({ name, blob: new Blob([bytes.slice().buffer]) }))))
+  expect(collection.json.map(file => file.name)).toEqual(['notebook.json'])
+  const folder = await notebookBundleFromFolder(collection, 'notebook.json', headerDecoder)
+  expect(folder?.bundle).toEqual(imported.bundle)
+})
+
+it('accounts for extras around an indexed package and requires a choice if a second notebook is present', async () => {
+  const s = await setup(), members = await readNotebookZip(await exportNotebookPackageBundle(s.raw, s.prepared.bindings, s.repo, headerDecoder))
+  const withExtras = [...members, ['Checks.json', new TextEncoder().encode('{}')], ['notes.txt', new TextEncoder().encode('Auxiliary note')]] as [string, Uint8Array][]
+  const imported = await readNotebookImportZip(plainNotebookZip(withExtras), headerDecoder)
+  expect(imported.kind).toBe('bundle'); if (imported.kind !== 'bundle') throw Error('Expected indexed package')
+  expect(imported.collection.other.map(file => file.name)).toEqual(['notes.txt'])
+  expect(imported.bundle.assets.bindings).toEqual(s.prepared.bindings)
+  const multiple = await readNotebookImportZip(plainNotebookZip([...withExtras, ['Another notebook.json', new TextEncoder().encode(s.raw)]]), headerDecoder)
+  expect(multiple.kind).toBe('files')
 })

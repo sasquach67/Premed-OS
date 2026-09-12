@@ -1,11 +1,11 @@
 {
-  "promptBuild": "notebook-instructions-beta-18",
+  "promptBuild": "notebook-instructions-beta-19",
   "dispatch": "Student-facing summaries of the same three complete notebook prompts; no additional workflow or schema.",
   "shared": {
-    "handoff": "Give your AI the materials. It should check the content and deliver the finished titled notebook JSON for Premed OS.",
+    "handoff": "Give your AI the materials. It should check the content and deliver the finished notebook ZIP containing JSON and required actual images for Premed OS.",
     "recordings": "Use recordings only if your chosen AI can actually inspect them; otherwise supply a readable transcript.",
     "largePacket": "Work through big packets in smaller batches. Save what was covered and the source details, then ask your AI for the final study guide. Premed OS does not combine separate batches.",
-    "storage": "Keep the downloaded JSON. The 8 MiB input limit does not guarantee a save; available local storage can run out sooner."
+    "storage": "Keep the complete downloaded ZIP or folder. The 8 MiB input limit does not guarantee a save; available local storage can run out sooner."
   },
   "goals": {
     "review": {
