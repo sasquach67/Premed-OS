@@ -7,6 +7,8 @@ import { Topbar } from './Topbar'
 import { useTheme } from '@/store/useTheme'
 import { useBackup } from '@/store/useBackup'
 import { useCloudSync } from '@/store/useCloudSync'
+import { OutgoingWorkspaceNotice } from './OutgoingWorkspaceNotice'
+import { AccountSyncNotice } from './AccountSyncNotice'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ToastProvider } from '@/components/common/ToastProvider'
 import { ShellActionsProvider } from './ShellActionsProvider'
@@ -136,6 +138,9 @@ export function AppShell() {
         <div className={`flex min-w-0 flex-1 flex-col transition-[padding] duration-200 ${desktopSidebarLocked ? 'lg:pl-[15.625rem]' : 'lg:pl-[4.25rem]'}`}>
           <Topbar onMenu={() => setMobileOpen(true)} onShowDesktopSidebar={toggleDesktopSidebarLock} desktopSidebarHidden={!desktopSidebarVisible} />
           <main ref={mainRef} data-app-scroll-container className="relative flex-1 overflow-y-auto">
+            <OutgoingWorkspaceNotice />
+            <AccountSyncNotice userId={cloud.user?.id} />
+            {cloud.error && !cloud.conflict && <p role="alert" className="m-4 rounded-lg border border-destructive/50 p-4 text-sm">{cloud.error}</p>}
             <div className={/^\/academics\/classes\/[^/]+\/(?:lectures|journal)\/[^/]+$/.test(location.pathname) ? "w-full" : "mx-auto w-full max-w-[84rem] px-4 py-6 md:px-8 md:py-8"}>
               <AnimatePresence mode="wait" initial={false}>
                 <m.div

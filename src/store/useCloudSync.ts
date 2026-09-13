@@ -1,226 +1,220 @@
-/* ============================================================
-   useCloudSync — Supabase login + whole-dashboard cloud sync.
-     • magic-link (passwordless email) auth
-     • on sign-in: reconcile local <-> cloud (new browser pulls the
-       cloud; otherwise newest-wins), then keep pushing on edits
-     • debounced auto-push while signed in (mirrors useBackup)
-   localStorage stays the primary store; Supabase is the synced copy
-   that follows you across devices. Sync metadata lives OUTSIDE the
-   persisted data tree so writing it never triggers another sync.
-   ============================================================ */
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Session, User } from '@supabase/supabase-js'
-import {
-  activateAccountWorkspace,
-  activateGuestWorkspace,
-  activeAccountWorkspaceId,
-  useStore,
-  snapshotData,
-} from '@/store/store'
-import { supabase, isSupabaseConfigured, authRedirectTo, type DashboardRow } from '@/lib/supabase'
-import { hasLocalWork, hasSeenMerge } from '@/lib/publicLayer'
-import type { AppData } from '@/lib/types'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import type { User } from '@supabase/supabase-js'
+import { activateAccountWorkspace, activateGuestWorkspace, activeAccountWorkspaceId, assertDurableWorkspace, captureWorkspaceIdentity, readWorkspaceData, useStore, snapshotData } from './store'
+import { supabase, isSupabaseConfigured, authRedirectTo } from '@/lib/supabase'
 import { dataForRemote } from '@/lib/storyPrivacy'
-import { ACCOUNT_WORKSPACE_READY_EVENT, decideCloudReconcile } from '@/lib/accountWorkspace'
-
+import { accountStorageKey } from '@/lib/demoMode'
+import { hasLocalWork, hasSeenMerge } from '@/lib/publicLayer'
+import { readOutgoingWorkspace } from './workspaceTransitionRecovery'
+import { storageFailure } from './storageHealth'
+import { ACCOUNT_WORKSPACE_READY_EVENT } from '@/lib/accountWorkspace'
 import { syncAcademicOriginals } from '@/lib/academics/sharedMaterialFiles'
+import { allowAccountSync, assertAccountUpload, assertSyncLease, assertSyncSession, captureSyncSession, getAccountConflict, isAccountSyncReady, observeSyncSession, pauseAccountSync, preserveAccountConflict, preserveAccountReplacement, readSyncBaseline, recordSyncBaseline, subscribeAccountConflicts, syncContent, syncDigest, validateRemoteWorkspace } from './accountSyncSafety'
 
 const DEBOUNCE_MS = 4000
-const META_KEY = 'premed_hq_cloud_meta'
-
+const reconciliationJobs = new Map<string, Promise<void>>()
 export type CloudStatus = 'idle' | 'signing-in' | 'syncing' | 'synced' | 'error' | 'offline'
-
-type CloudMeta = { userId?: string; lastSyncAt?: number }
-
-function readMeta(): CloudMeta {
-  try { return JSON.parse(localStorage.getItem(META_KEY) || '{}') } catch { return {} }
-}
-function writeMeta(m: CloudMeta) {
-  try { localStorage.setItem(META_KEY, JSON.stringify(m)) } catch { /* ignore quota */ }
-}
-
-/** Snapshot minus Drive-backup metadata, so a Drive timestamp write
- *  doesn't look like a data change and cause a redundant cloud push. */
-function contentSignature(snapshot = snapshotData()): string {
-  const d = dataForRemote(snapshot) as unknown as Record<string, unknown>
-  const settings = { ...(d.settings as Record<string, unknown>) }
-  delete settings.backup
-  return JSON.stringify({ ...d, settings })
-}
 
 export function useCloudSync() {
   const [user, setUser] = useState<User | null>(null)
   const [status, setStatus] = useState<CloudStatus>(isSupabaseConfigured ? 'idle' : 'offline')
   const [error, setError] = useState('')
-  const [lastSyncAt, setLastSyncAt] = useState<number | undefined>(readMeta().lastSyncAt)
-  const [accountReady, setAccountReady] = useState(false)
+  const [lastSyncAt, setLastSyncAt] = useState<number>()
   const lastSig = useRef('')
-  const pushing = useRef(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const reconciledFor = useRef<string | null>(null)
+  const pushing = useRef(false)
+  const conflict = useSyncExternalStore(subscribeAccountConflicts, () => getAccountConflict(user?.id))
+  const accountReady = useSyncExternalStore(subscribeAccountConflicts, () => isAccountSyncReady(user?.id))
 
-  const markSynced = useCallback((userId: string, snapshot?: AppData) => {
-    lastSig.current = contentSignature(snapshot)
-    const at = Date.now()
-    writeMeta({ userId, lastSyncAt: at })
-    setLastSyncAt(at)
-  }, [])
-
-  const pushNow = useCallback(async function pushCurrentWorkspace() {
-    if (!supabase || !user || !accountReady || activeAccountWorkspaceId() !== user.id) return false
-    if (pushing.current) return false
-    pushing.current = true
-    setStatus('syncing'); setError('')
-    try {
-      const snapshot = snapshotData()
-      await syncAcademicOriginals(snapshot.academics.classCenter.files, user.id)
-      if (activeAccountWorkspaceId() !== user.id) return false
-      const row: DashboardRow = { user_id: user.id, data: dataForRemote(snapshot), updated_at: new Date().toISOString() }
-      const { error: e } = await supabase.from('dashboards').upsert(row, { onConflict: 'user_id' })
-      if (e) throw e
-      markSynced(user.id, snapshot)
-      if (contentSignature() !== lastSig.current) {
-        if (timer.current) clearTimeout(timer.current)
-        timer.current = setTimeout(() => { void pushCurrentWorkspace() }, DEBOUNCE_MS)
-      }
-      setStatus('synced')
-      return true
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Sync failed'); setStatus('error')
-      return false
-    } finally { pushing.current = false }
-  }, [user, accountReady, markSynced])
-
-  const pullNow = useCallback(async () => {
-    if (!supabase || !user) return
-    setStatus('syncing'); setError('')
-    try {
-      const { data, error: e } = await supabase
-        .from('dashboards').select('data, updated_at').eq('user_id', user.id).maybeSingle()
-      if (e) throw e
-      if (data?.data) {
-        activateAccountWorkspace(user.id, data.data as AppData)
-        markSynced(user.id)
-        setAccountReady(true)
-      } else {
-        setAccountReady(false)
-      }
-      setStatus('synced')
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Pull failed'); setStatus('error')
-    }
-  }, [user, markSynced])
-
-  // ---- reconcile once per sign-in: new browser pulls; else newest-wins ----
   const reconcile = useCallback(async (u: User) => {
     if (!supabase) return
-    setStatus('syncing'); setError('')
-    try {
-      const { data, error: e } = await supabase
-        .from('dashboards').select('data, updated_at').eq('user_id', u.id).maybeSingle()
-      if (e) throw e
-      const meta = readMeta()
-      const remoteAt = data?.updated_at ? Date.parse(data.updated_at) : 0
-      const sameLocalOwner = activeAccountWorkspaceId() === u.id
-      const knownAt = sameLocalOwner && meta.userId === u.id ? (meta.lastSyncAt ?? 0) : 0
-      const decision = decideCloudReconcile({ hasRemote: Boolean(data), knownAt, remoteAt })
-
-      if (decision === 'requires-setup') {
-        // A missing account row is not permission to upload whichever local
-        // workspace happens to be open. Setup creates the first clean row.
-        setAccountReady(false)
-        setStatus('idle')
-      } else if (decision === 'pull-remote' && data) {
-        // Fresh browser, or cloud has edits we haven't seen -> take the cloud.
-        activateAccountWorkspace(u.id, data.data as AppData)
-        markSynced(u.id)
-        setAccountReady(true)
-        setStatus('synced')
-      } else {
-        // Local is same-or-newer -> push it up.
-        await pushNowFor(u)
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sync failed'); setStatus('error')
+    const token = captureSyncSession()
+    const jobKey = `${u.id}:${token.generation}`
+    const existing = reconciliationJobs.get(jobKey)
+    if (existing) {
+      setStatus('syncing')
+      await existing
+      try {
+        assertSyncSession(token)
+        if (isAccountSyncReady(u.id)) lastSig.current = syncContent(snapshotData())
+        setStatus(isAccountSyncReady(u.id) ? 'synced' : getAccountConflict(u.id) ? 'error' : 'idle')
+      } catch { /* A later session owns the UI. */ }
+      return
     }
-    // local helper that pushes for a specific user (avoids stale `user` closure)
-    async function pushNowFor(u2: User) {
-      if (activeAccountWorkspaceId() !== u2.id) {
-        throw new Error('The active browser workspace does not belong to this account.')
+    const work = async () => {
+      const owner = captureWorkspaceIdentity()
+      const key = accountStorageKey(u.id)
+      const before = localStorage.getItem(key)
+      const lease = pauseAccountSync(u.id)
+      const open = structuredClone(snapshotData()), openJson = JSON.stringify(open)
+      const openRaw = owner.key ? localStorage.getItem(owner.key) : null
+      const durableOpen = () => {
+        if (openRaw !== null) assertDurableWorkspace(snapshotData(), owner)
+        else if (!useStore.persist.hasHydrated() || storageFailure() || activeAccountWorkspaceId() || hasLocalWork(snapshotData())) throw new Error('The open workspace has unsaved work. Save or export it before changing workspaces.')
       }
-      const snapshot = snapshotData()
-      await syncAcademicOriginals(snapshot.academics.classCenter.files, u2.id)
-      if (activeAccountWorkspaceId() !== u2.id) throw new Error('Your account changed during sync.')
-      const row: DashboardRow = { user_id: u2.id, data: dataForRemote(snapshot), updated_at: new Date().toISOString() }
-      const { error: e2 } = await supabase!.from('dashboards').upsert(row, { onConflict: 'user_id' })
-      if (e2) throw e2
-      markSynced(u2.id, snapshot)
-      setAccountReady(true)
-      setStatus('synced')
-    }
-  }, [markSynced])
-
-  // ---- auth session tracking ----
-  useEffect(() => {
-    if (!supabase) return
-    supabase.auth.getSession().then(({ data }) => applySession(data.session))
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => applySession(session))
-    function applySession(session: Session | null) {
-      const u = session?.user ?? null
-      setUser(u)
-      const activeAccountId = activeAccountWorkspaceId()
-      if (u && activeAccountId && activeAccountId !== u.id) {
-        // A direct provider account switch must never expose Account A's cache
-        // while Account B's routing decision is being made.
-        activateGuestWorkspace()
+      setStatus('syncing'); setError('')
+      const fresh = () => {
+        assertSyncSession(token)
+        if (token.id !== u.id || captureWorkspaceIdentity().epoch !== owner.epoch || captureWorkspaceIdentity().key !== owner.key || localStorage.getItem(key) !== before || JSON.stringify(snapshotData()) !== openJson) throw new Error('Saved work or the active workspace changed during sync. Nothing was replaced; check sync again.')
+        durableOpen()
       }
-      if (u && reconciledFor.current !== u.id) {
-        // 05 §0.2: a signed-out user with work on this device decides what
-        // happens to it BEFORE any reconciliation runs. Reconcile is
-        // newest-wins, which is exactly the "last write wins" the merge
-        // rules forbid — so it waits for the merge screen's answer.
-        if (!hasSeenMerge(u.id) && hasLocalWork(snapshotData())) {
+      try {
+        try { durableOpen() }
+        catch (cause) {
+          await preserveAccountConflict(u.id, before, null, token, 'The open workspace has changes that are not confirmed saved. It was kept open. Download its open-workspace copy before leaving this tab.', { data: open, key: owner.key ?? 'unknown', raw: openRaw })
+          throw cause
+        }
+        let local
+        try { local = readWorkspaceData(key) }
+        catch (cause) {
+          await preserveAccountConflict(u.id, before, null, token, 'The saved device copy could not be loaded safely. Sync and backups are paused. Download its exact cache for recovery.')
+          throw cause
+        }
+        const detached = await readOutgoingWorkspace(key)
+        fresh(); assertSyncLease(lease)
+        if (detached && (!local || JSON.stringify(detached.data) !== JSON.stringify(local))) {
+          await preserveAccountConflict(u.id, before, null, token, 'Unsaved work was kept when this account closed. Download the open-workspace copy to review those edits. Automatic sync and backups remain paused.', detached)
+          fresh()
+          if (local) activateAccountWorkspace(u.id)
+          setStatus('error'); return
+        }
+        // Preserve the existing first-login review of Guest/legacy device work.
+        // A returning account's own cache must still be checked after sign-out.
+        if (!local && !hasSeenMerge(u.id) && hasLocalWork(snapshotData())) { setStatus('idle'); return }
+        const { data: row, error: failure } = await supabase!.from('dashboards').select('data, updated_at').eq('user_id', u.id).maybeSingle()
+        fresh()
+        if (failure) throw failure
+        if (!row?.data) {
+          if (local) { await preserveAccountConflict(u.id, before, null, token); fresh(); activateAccountWorkspace(u.id) }
           setStatus('idle')
           return
         }
-        reconciledFor.current = u.id
-        void reconcile(u)
+        validateRemoteWorkspace(row.data)
+        const remote = row.data
+        const baseline = readSyncBaseline(u.id)
+        const localText = local && syncContent(local)
+        const remoteText = syncContent(remote)
+        const localDigest = localText && await syncDigest(localText)
+        const remoteDigest = await syncDigest(remoteText)
+        fresh()
+        const equal = localText === remoteText
+        const cleanLocal = baseline && localDigest === baseline.digest
+        const remoteUnchanged = baseline && row.updated_at === baseline.updatedAt && remoteDigest === baseline.digest
+        if (local && !equal && !cleanLocal && !remoteUnchanged) {
+          await preserveAccountConflict(u.id, before, remote, token)
+          fresh()
+          // Reopen only the saved local account. This does not choose a sync winner.
+          activateAccountWorkspace(u.id)
+          setStatus('error')
+          return
+        }
+        if (local && !equal && cleanLocal && !remoteUnchanged) {
+          if (!await preserveAccountReplacement(u.id, before!, remote, token)) { setStatus('error'); return }
+        }
+        fresh(); assertSyncLease(lease)
+        if (local && (equal || remoteUnchanged)) activateAccountWorkspace(u.id)
+        else activateAccountWorkspace(u.id, remote)
+        assertDurableWorkspace()
+        assertSyncSession(token)
+        if (!local || equal || cleanLocal) await recordSyncBaseline(u.id, remote, row.updated_at, lease)
+        assertSyncLease(lease)
+        assertDurableWorkspace()
+        allowAccountSync(lease)
+        lastSig.current = remoteText
+        setStatus('synced'); setLastSyncAt(Date.parse(row.updated_at))
+      } catch (cause) {
+        try { assertSyncSession(token) } catch { return }
+        pauseAccountSync(u.id)
+        // A failed cloud read must not hide a readable returning-account cache
+        // behind Guest. Reopen only the unchanged device copy, never a fallback.
+        const current = captureWorkspaceIdentity()
+        if (owner.key === current.key && owner.epoch === current.epoch && localStorage.getItem(key) === before && activeAccountWorkspaceId() !== u.id) {
+          try { fresh(); if (readWorkspaceData(key)) activateAccountWorkspace(u.id) } catch { /* Unreadable bytes stay protected and downloadable. */ }
+        }
+        setError(cause instanceof Error ? cause.message : 'Sync stopped before replacing saved data.'); setStatus('error')
       }
+    }
+    const job = work()
+    reconciliationJobs.set(jobKey, job)
+    try { await job } finally { if (reconciliationJobs.get(jobKey) === job) reconciliationJobs.delete(jobKey) }
+  }, [])
+
+  const pushNow = useCallback(async () => {
+    if (!supabase || !user || pushing.current) return false
+    pushing.current = true
+    const owner = captureWorkspaceIdentity(), snapshot = snapshotData()
+    let token = captureSyncSession()
+    try {
+      token = assertAccountUpload(snapshot, owner)
+      const baseline = readSyncBaseline(user.id)
+      if (!baseline) throw new Error('Check the saved cloud copy before uploading changes.')
+      setStatus('syncing'); setError('')
+      await syncAcademicOriginals(snapshot.academics.classCenter.files, user.id)
+      assertSyncSession(token); assertAccountUpload(snapshot, owner)
+      const updatedAt = new Date().toISOString()
+      // Compare-and-set: a newer cloud version cannot be overwritten by this upload.
+      const { data, error: failure } = await supabase.from('dashboards').update({ data: dataForRemote(snapshot), updated_at: updatedAt }).eq('user_id', user.id).eq('updated_at', baseline.updatedAt).select('updated_at').maybeSingle()
+      assertSyncSession(token)
+      const current = captureWorkspaceIdentity()
+      if (current.key !== owner.key || current.epoch !== owner.epoch) throw new Error('The workspace changed while sync completed. Its metadata was kept.')
+      if (failure) throw failure
+      if (!data) { pauseAccountSync(user.id); await reconcile(user); return false }
+      await recordSyncBaseline(user.id, snapshot, data.updated_at, token)
+      assertSyncSession(token)
+      lastSig.current = syncContent(snapshot)
+      setLastSyncAt(Date.parse(data.updated_at)); setStatus('synced')
+      return true
+    } catch (cause) {
+      try { assertSyncSession(token) } catch { return false }
+      setError(cause instanceof Error ? cause.message : 'Sync failed'); setStatus('error'); return false
+    } finally { pushing.current = false }
+  }, [user, reconcile])
+
+  const pullNow = useCallback(async () => { if (user) await reconcile(user) }, [user, reconcile])
+
+  useEffect(() => {
+    if (!supabase) return
+    let stopped = false, observed = false, lastSession: string | null | undefined
+    function apply(u: User | null) {
+      if (stopped) return
+      const nextId = u?.id ?? null
+      const changed = lastSession !== nextId
+      lastSession = nextId
+      observeSyncSession(u?.id ?? null)
+      setUser(u)
+      if (changed) { setLastSyncAt(undefined); setError(''); lastSig.current = '' }
       if (!u) {
-        reconciledFor.current = null
-        setAccountReady(false)
         setStatus('idle')
         if (activeAccountWorkspaceId()) activateGuestWorkspace()
+      } else if (changed) {
+        if (activeAccountWorkspaceId() && activeAccountWorkspaceId() !== u.id) activateGuestWorkspace()
+        void reconcile(u)
       }
     }
-    return () => sub.subscription.unsubscribe()
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => { observed = true; apply(session?.user ?? null) })
+    void supabase.auth.getSession().then(({ data }) => { if (!observed) apply(data.session?.user ?? null) })
+    return () => { stopped = true; sub.subscription.unsubscribe() }
   }, [reconcile])
 
-  // Setup and merge keep sync locked until their server-first write and local
-  // replacement both succeed. Only that completed boundary emits this event.
   useEffect(() => {
-    function handleAccountReady(event: Event) {
-      const readyFor = (event as CustomEvent<{ userId?: string }>).detail?.userId
-      if (!user || readyFor !== user.id) return
-      reconciledFor.current = user.id
-      markSynced(user.id)
-      setAccountReady(true)
-      setStatus('synced')
+    const ready = (event: Event) => {
+      if (user && (event as CustomEvent<{ userId?: string }>).detail?.userId === user.id) void reconcile(user)
     }
-    window.addEventListener(ACCOUNT_WORKSPACE_READY_EVENT, handleAccountReady)
-    return () => window.removeEventListener(ACCOUNT_WORKSPACE_READY_EVENT, handleAccountReady)
-  }, [user, markSynced])
+    window.addEventListener(ACCOUNT_WORKSPACE_READY_EVENT, ready)
+    return () => window.removeEventListener(ACCOUNT_WORKSPACE_READY_EVENT, ready)
+  }, [user, reconcile])
 
-  // ---- debounced auto-push while signed in ----
   useEffect(() => {
-    if (!supabase || !user || !accountReady) return
-    const unsub = useStore.subscribe(() => {
-      if (contentSignature() === lastSig.current) return
+    if (!user || !accountReady || conflict) return
+    const schedule = () => {
+      if (syncContent(snapshotData()) === lastSig.current) return
       if (timer.current) clearTimeout(timer.current)
       timer.current = setTimeout(() => { void pushNow() }, DEBOUNCE_MS)
-    })
+    }
+    const unsub = useStore.subscribe(schedule)
+    schedule()
     return () => { unsub(); if (timer.current) clearTimeout(timer.current) }
-  }, [user, accountReady, pushNow])
+  }, [user, accountReady, conflict, pushNow])
 
   const signIn = useCallback(async (email: string) => {
     if (!supabase) return
@@ -241,22 +235,16 @@ export function useCloudSync() {
 
   const signOut = useCallback(async () => {
     if (!supabase) return
-    const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' })
-    if (signOutError) throw signOutError
+    const owner = captureWorkspaceIdentity(), token = captureSyncSession()
+    assertDurableWorkspace()
+    const { error: failure } = await supabase.auth.signOut({ scope: 'local' })
+    if (failure) throw failure
+    const current = captureWorkspaceIdentity(), session = captureSyncSession()
+    if ((session.id && session.generation !== token.generation) || (activeAccountWorkspaceId() && (owner.key !== current.key || owner.epoch !== current.epoch))) throw new Error('A different session opened while signing out. Its workspace was kept.')
+    observeSyncSession(null)
     activateGuestWorkspace()
-    setUser(null); setAccountReady(false); setStatus('idle')
+    setUser(null); setStatus('idle')
   }, [])
 
-  return {
-    configured: isSupabaseConfigured,
-    user,
-    status,
-    error,
-    lastSyncAt,
-    accountReady,
-    signIn,
-    signOut,
-    pushNow,
-    pullNow,
-  }
+  return { configured: isSupabaseConfigured, user, status, error, lastSyncAt, accountReady: accountReady && !conflict, conflict, signIn, signOut, pushNow, pullNow }
 }

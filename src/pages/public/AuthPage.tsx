@@ -29,7 +29,7 @@ import { supabase, isSupabaseConfigured, authRedirectTo } from '@/lib/supabase'
 import { useEnterApp } from '@/components/public/useEnterApp'
 import { markEnteredApp } from '@/lib/publicLayer'
 import type { User } from '@supabase/supabase-js'
-import { activateGuestWorkspace } from '@/store/store'
+import { activateGuestWorkspace, activeAccountWorkspaceId, assertDurableWorkspace } from '@/store/store'
 
 type Screen = 'form' | 'sent' | 'recovery' | 'signed-in'
 type Method = 'link' | 'password'
@@ -474,16 +474,21 @@ export function AuthPage() {
           ) : screen === 'signed-in' ? (
             <SignedIn
               email={user?.email ?? ''}
+              error={error}
               onContinue={() => {
                 markEnteredApp()
                 navigate(next)
               }}
               onSignOut={async () => {
                 if (!window.confirm('Sign out of Premed OS? Your account data will stay saved.')) return
-                await supabase?.auth.signOut()
-                activateGuestWorkspace()
-                setUser(null)
-                setScreen('form')
+                try {
+                  if (activeAccountWorkspaceId()) assertDurableWorkspace()
+                  const result = await supabase?.auth.signOut({ scope: 'local' })
+                  if (result?.error) throw new Error(result.error.message)
+                  activateGuestWorkspace()
+                  setUser(null)
+                  setScreen('form')
+                } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not sign out. Your workspace remains open. Please try again.') }
               }}
             />
           ) : screen === 'recovery' ? (
@@ -859,10 +864,12 @@ function PasswordRecovery({
 /* ── Already signed in ──────────────────────────────────────────────────── */
 function SignedIn({
   email,
+  error,
   onContinue,
   onSignOut,
 }: {
   email: string
+  error: string
   onContinue: () => void
   onSignOut: () => void
 }) {
@@ -886,6 +893,7 @@ function SignedIn({
         <button type="button" className="pl-sbtn pl-sbtn-g pl-sbtn-full" onClick={onSignOut}>
           Sign out
         </button>
+        {error && <p role="alert" className="pl-error">{error}</p>}
         <p className="pl-fine">
           Signing out does not delete anything. <b>Your data stays on this device.</b>
         </p>

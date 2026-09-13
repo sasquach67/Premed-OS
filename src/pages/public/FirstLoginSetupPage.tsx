@@ -18,9 +18,10 @@ import {
   shouldReviewLocalWorkspace,
 } from '@/lib/accountWorkspace'
 import { markEnteredApp, markMergeSeen, hasLocalWork, hasSeenMerge } from '@/lib/publicLayer'
-import { supabase, type DashboardRow } from '@/lib/supabase'
-import { dataForRemote } from '@/lib/storyPrivacy'
-import { activateAccountWorkspace, snapshotData } from '@/store/store'
+import { supabase } from '@/lib/supabase'
+import { snapshotData } from '@/store/store'
+import { accountMutationFailure, prepareAccountMutation, type AccountMutation } from '@/store/accountMutationSafety'
+import { AccountSyncNotice } from '@/components/layout/AccountSyncNotice'
 
 type Phase = 'loading' | 'ready' | 'saving' | 'error'
 
@@ -101,7 +102,7 @@ export function FirstLoginSetupPage() {
   }, [navigate])
 
   async function finishSetup() {
-    if (!supabase || !user || !name.trim()) return
+    if (!supabase || !user || !name.trim() || phase === 'saving') return
     setPhase('saving')
     setError('')
     const account = applyFirstLoginSetup({
@@ -109,36 +110,28 @@ export function FirstLoginSetupPage() {
       identity: { email: user.email, metadata: user.user_metadata },
       setup: { name, major, minors: pendingMinors, classYear, track: 'Pre-Med' },
     })
+    let mutation: AccountMutation | undefined
     try {
-      const row: DashboardRow = {
-        user_id: user.id,
-        data: dataForRemote(account),
-        updated_at: new Date().toISOString(),
-      }
-      // Existing but unpersonalized rows keep their account-owned records;
-      // truly new accounts still use insert-only creation.
-      const write = existingAccount
-        ? supabase.from('dashboards').update(row).eq('user_id', user.id)
-        : supabase.from('dashboards').insert(row)
-      const { error: writeError } = await write
-      if (writeError) throw writeError
+      mutation = await prepareAccountMutation(user.id, existingAccount)
+      await mutation.write(account)
 
-      // Provider metadata is display-only; dashboard RLS still owns access.
-      await supabase.auth.updateUser({ data: { ...user.user_metadata, full_name: name.trim() } })
+      // The chosen name is already saved in account.profile. Avoid a separate
+      // current-session provider mutation after the account write.
+      await mutation.check()
       markEnteredApp()
 
       if (shouldReviewLocalWorkspace(hasDeviceWork, hasSeenMerge(user.id))) {
         navigate('/auth/merge?firstLogin=1', { replace: true })
       } else {
-        activateAccountWorkspace(user.id, account)
+        mutation.activate(account)
         markMergeSeen(user.id)
         notifyAccountWorkspaceReady(user.id)
         navigate(FIRST_LOGIN_DESTINATION, { replace: true })
       }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not create your workspace.')
+      setError(accountMutationFailure(caught, mutation))
       setPhase('error')
-    }
+    } finally { mutation?.dispose() }
   }
 
   function addMinor() {
@@ -153,6 +146,7 @@ export function FirstLoginSetupPage() {
 
   return (
     <div className="mx-auto max-w-5xl py-2 sm:py-6">
+      <AccountSyncNotice userId={user?.id} />
       <section className="overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-sm">
         <header
           className="relative overflow-hidden border-b border-border px-6 py-7 sm:px-8 sm:py-8"

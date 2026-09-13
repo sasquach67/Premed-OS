@@ -26,11 +26,12 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { PublicShell } from '@/components/public/PublicShell'
 import { PublicNav } from '@/components/public/PublicNav'
 import { supabase } from '@/lib/supabase'
-import { activateAccountWorkspace, snapshotData } from '@/store/store'
+import { snapshotData } from '@/store/store'
+import { accountMutationFailure, prepareAccountMutation, type AccountMutation } from '@/store/accountMutationSafety'
+import { AccountSyncNotice } from '@/components/layout/AccountSyncNotice'
 import { localCounts, localWorkSince, markMergeSeen } from '@/lib/publicLayer'
 import type { AppData } from '@/lib/types'
-import type { DashboardRow } from '@/lib/supabase'
-import { dataForRemote, mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
+import { mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
 import { destinationAfterFirstLogin, notifyAccountWorkspaceReady } from '@/lib/accountWorkspace'
 
 type Phase = 'loading' | 'review' | 'working' | 'error'
@@ -139,7 +140,7 @@ export function MergePage() {
         ...area,
         here: areaSize(local, area.fields),
         account: areaSize(cloud, area.fields),
-      })).filter((a) => a.here !== a.account && (a.here > 0 || a.account > 0)),
+      })).filter((a) => a.fields.some((field) => JSON.stringify(local[field]) !== JSON.stringify(cloud?.[field]))),
     [local, cloud],
   )
 
@@ -154,10 +155,12 @@ export function MergePage() {
   /** Apply the reviewed merge. Starts from the ACCOUNT's copy and takes
    *  this device's version only for the areas explicitly chosen. */
   const applyReview = useCallback(async () => {
-    if (!supabase || !userId || !cloud) return
+    if (!supabase || !userId || !cloud || phase !== 'review') return
     setPhase('working')
     setError('')
+    let mutation: AccountMutation | undefined
     try {
+      mutation = await prepareAccountMutation(userId, cloud, local)
       const merged = { ...cloud } as unknown as Record<string, unknown>
       for (const area of AREAS) {
         if (!useLocal[area.key]) continue
@@ -166,23 +169,16 @@ export function MergePage() {
         }
       }
       const result = merged as unknown as AppData
-      const remoteResult = dataForRemote(result)
-      const row: DashboardRow = {
-        user_id: userId,
-        data: remoteResult,
-        updated_at: new Date().toISOString(),
-      }
-      const { error: e } = await supabase.from('dashboards').upsert(row, { onConflict: 'user_id' })
-      if (e) throw e
+      await mutation.write(result)
       // Server confirmed — only now does the device's copy change.
-      activateAccountWorkspace(userId, mergeRemotePreservingLocal(result, local))
+      mutation.activate(mergeRemotePreservingLocal(result, local))
       notifyAccountWorkspaceReady(userId)
       finish('/')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'The merge did not finish. Nothing was changed.')
+      setError(accountMutationFailure(err, mutation))
       setPhase('review')
-    }
-  }, [userId, cloud, local, useLocal, finish])
+    } finally { mutation?.dispose() }
+  }, [userId, cloud, local, useLocal, finish, phase])
 
   /** Open the account's own workspace and leave the merge unresolved.
    *
@@ -196,15 +192,23 @@ export function MergePage() {
    *  What it does do is safe, which is why the behaviour is kept: Guest and
    *  legacy work stay untouched in their own namespace, nothing uploads, and
    *  the merge can still be completed later from Settings → Data. */
-  const useAccountWorkspaceForNow = useCallback(() => {
-    if (!userId || !cloud) return
-    activateAccountWorkspace(userId, cloud)
-    notifyAccountWorkspaceReady(userId)
-    finish('/settings?tab=data')
-  }, [userId, cloud, finish])
+  const openAccountWorkspaceForNow = useCallback(async () => {
+    if (!userId || !cloud || phase !== 'review') return
+    setPhase('working'); setError('')
+    let mutation: AccountMutation | undefined
+    try {
+      mutation = await prepareAccountMutation(userId, cloud, local)
+      mutation.activate(cloud)
+      notifyAccountWorkspaceReady(userId)
+      finish('/settings?tab=data')
+    } catch (error) {
+      setError(accountMutationFailure(error, mutation)); setPhase('review')
+    } finally { mutation?.dispose() }
+  }, [userId, cloud, local, finish, phase])
 
   return (
     <PublicShell title="Your data — Premed OS">
+      <AccountSyncNotice userId={userId || undefined} />
       <div className="pl-band">
         <PublicNav />
       </div>
@@ -225,7 +229,7 @@ export function MergePage() {
           <div className="pl-bd" style={{ gap: 15 }}>
             {error ? (
               <p className="pl-alert pl-alert-bad" role="alert">
-                {error} <b>Nothing was deleted.</b>
+                {error}
               </p>
             ) : null}
 
@@ -312,7 +316,7 @@ export function MergePage() {
 
             {/* The safety property, in the panel — never in a tooltip. */}
             <p className="pl-pace">
-              <b>Nothing is deleted either way.</b> This device's copy stays until the upload
+              <b>Recovery copies are checked before applying your choices.</b> This device's copy stays until the upload
               finishes and the server confirms it. Where your account already had data, you get the
               change-by-change review above before anything merges — never an overwrite, and never
               "last write wins."
@@ -329,7 +333,7 @@ export function MergePage() {
               </button>
 
               {/* Names the workspace switch it performs. See the handler. */}
-              <button type="button" className="pl-lk" onClick={useAccountWorkspaceForNow}>
+              <button type="button" className="pl-lk" disabled={phase !== 'review'} onClick={() => void openAccountWorkspaceForNow()}>
                 Use my account workspace and review this later
               </button>
             </div>

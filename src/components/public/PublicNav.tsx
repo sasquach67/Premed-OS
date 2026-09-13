@@ -1,3 +1,4 @@
+import { OutgoingWorkspaceNotice } from '@/components/layout/OutgoingWorkspaceNotice'
 import { preferredScrollBehavior } from '@/lib/scroll'
 /* ============================================================
    PublicNav — three floating islands. ONE component, all public routes.
@@ -33,7 +34,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import { Wordmark } from '@/components/public/Wordmark'
 import { supabase } from '@/lib/supabase'
-import { activateGuestWorkspace } from '@/store/store'
+import { activateGuestWorkspace, activeAccountWorkspaceId, assertDurableWorkspace } from '@/store/store'
 
 interface NavLink {
   label: string
@@ -58,6 +59,7 @@ export function PublicNav() {
      other control was behind the very session someone would be trying to
      leave, so a public page that cannot end a session is a dead end. */
   const [signedIn, setSignedIn] = useState(false)
+  const [signOutError, setSignOutError] = useState('')
   useEffect(() => {
     if (!supabase) return
     let alive = true
@@ -114,14 +116,21 @@ export function PublicNav() {
             <button
               type="button"
               className="pl-navlk"
-              onClick={() => {
+              onClick={async () => {
                 if (!window.confirm('Sign out of Premed OS? Your account data will stay saved.')) return
-                void supabase?.auth.signOut().then(() => activateGuestWorkspace())
+                setSignOutError('')
+                try {
+                  if (activeAccountWorkspaceId()) assertDurableWorkspace()
+                  const result = await supabase?.auth.signOut({ scope: 'local' })
+                  if (result?.error) throw result.error
+                  activateGuestWorkspace()
+                } catch (cause) { setSignOutError(cause instanceof Error ? cause.message : 'Could not sign out. Your workspace remains open. Please try again.') }
               }}
             >
               Sign out
             </button>
           ) : null}
+          {signOutError && <span role="alert" className="text-sm text-destructive">{signOutError}</span>}
 
           <Link to="/auth" className="pl-btn pl-btn-tint">
             Get started
@@ -129,6 +138,7 @@ export function PublicNav() {
           </Link>
         </div>
       </div>
+      <OutgoingWorkspaceNotice />
     </div>
   )
 }

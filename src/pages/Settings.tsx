@@ -6,6 +6,7 @@ import {
   Palette, ExternalLink, CheckCircle2, Trash2, CalendarClock, RefreshCw, Unplug, Wifi, ShieldCheck,
 } from 'lucide-react'
 import { activateGuestWorkspace, useStore } from '@/store/store'
+import { restoreWorkspaceFromSource } from '@/store/accountMutationSafety'
 import { useBackup } from '@/store/useBackup'
 import { useCloudSync } from '@/store/useCloudSync'
 import { useCalendarSync } from '@/hooks/useCalendarSync'
@@ -30,7 +31,6 @@ import { TimeField } from '@/components/common/DateField'
 import { TrashRecovery } from '@/components/common/TrashRecovery'
 import { clearStudySourceSyncCache, studyTools } from '@/lib/intelligence/studyTools'
 import { isDemoMode, setDemoMode } from '@/lib/demoMode'
-import { mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
 import { supabase } from '@/lib/supabase'
 import { useShellActions } from '@/components/layout/shellActions'
 
@@ -39,10 +39,10 @@ export function Settings() {
   const route = ROUTE_MAP.settings
   const settings = useStore((s) => s.settings)
   const update = useStore((s) => s.update)
-  const replaceAll = useStore((s) => s.replaceAll)
   const resetToSeed = useStore((s) => s.resetToSeed)
   const backup = useBackup()
   const fileRef = useRef<HTMLInputElement>(null)
+  const restoring = useRef(false)
   const archiveRef = useRef<HTMLDivElement>(null)
   const [params] = useSearchParams()
   const [msg, setMsg] = useState('')
@@ -61,26 +61,29 @@ export function Settings() {
   }, [archiveRequested])
 
   async function onImport(file: File) {
+    if (restoring.current) return
+    restoring.current = true
     try {
-      const data = await readJsonFile(file)
-      replaceAll(data)
+      await restoreWorkspaceFromSource(() => readJsonFile(file))
       setMsg('Imported successfully.')
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Import failed.')
-    }
+    } finally { restoring.current = false }
   }
 
   async function restoreFromDrive() {
+    if (restoring.current) return
+    restoring.current = true
     try {
-      const data = await backup.restore()
-      if (looksLikeAppData(data)) {
-        replaceAll(mergeRemotePreservingLocal(data as AppData, useStore.getState() as unknown as AppData))
-        setMsg('Restored from Google Drive.')
-      }
-      else setMsg('No backup found on Drive.')
+      await restoreWorkspaceFromSource(async () => {
+        const data = await backup.restore()
+        if (!looksLikeAppData(data)) throw new Error('No valid backup found on Drive.')
+        return data as AppData
+      }, true)
+      setMsg('Restored from Google Drive.')
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Restore failed.')
-    }
+    } finally { restoring.current = false }
   }
 
   async function deleteAiSources() {

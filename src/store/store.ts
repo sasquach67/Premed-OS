@@ -21,10 +21,12 @@ import {
 } from '@/lib/demoMode'
 import { migrateLegacyWorkspaceKeys } from '@/lib/workspaceKeyMigration'
 import { uid } from '@/lib/id'
-import { guardedStorage, readStoredWorkspace } from '@/store/storageHealth'
+import { blockStoredWorkspace, guardedStorage, readStoredWorkspace, storageFailure, WorkspaceChangedError } from '@/store/storageHealth'
 import { isMutableSeverity } from '@/lib/intelligence/recommendations'
 import { INTELLIGENCE_THRESHOLDS, type Severity } from '@/lib/intelligence/types'
 import { mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
+import { clearDriveSession } from '@/lib/googleDrive'
+import { retainOutgoingWorkspace } from './workspaceTransitionRecovery'
 import { clearCalendarSession } from '@/lib/googleCalendar'
 import { migrateAcademicsV4, syncCurrentTermWorkspaces } from '@/store/migrations/academicsV4'
 import { migrateAcademicsV5 } from '@/store/migrations/academicsV5'
@@ -920,6 +922,10 @@ export const useStore = create<Store>()(
       name: STORAGE_KEY,
       version: CURRENT_STORE_VERSION,
       storage: createJSONStorage(() => guardedStorage(localStorage)),
+      onRehydrateStorage: () => {
+        const key = activeStorageKey()
+        return (_state, error) => { if (error) blockStoredWorkspace(localStorage, key, error) }
+      },
       migrate: (persisted) => migrateAll(persisted as AppData) as unknown as Store,
       partialize: (state) =>
         Object.fromEntries(DATA_KEYS.map((k) => [k, state[k]])) as unknown as Store,
@@ -974,13 +980,13 @@ export const useStore = create<Store>()(
  * Supabase row key. Switching never copies the currently-open tree into the
  * destination. It loads that owner's existing cache, or a record-free root.
  */
-function readWorkspaceData(storageKey: string): AppData | null {
+export function readWorkspaceData(storageKey: string): AppData | null {
   // A decode failure must not become an empty workspace that overwrites its cache.
   const raw = readStoredWorkspace(localStorage, storageKey)
   if (!raw) return null
   try {
     const parsed = JSON.parse(raw) as { state?: Partial<AppData>; version?: number }
-    if (!parsed?.state || typeof parsed.state !== 'object') return null
+    if (!parsed?.state || typeof parsed.state !== 'object' || Array.isArray(parsed.state)) throw new Error('Saved workspace is missing its data. Automatic loading is paused.')
     const seeded = { ...createPersonalInitialData(), ...parsed.state } as AppData
     // Respect the version zustand persisted alongside the state, exactly as
     // its own `migrate` option does. This path used to run all of `migrateAll`
@@ -995,8 +1001,9 @@ function readWorkspaceData(storageKey: string): AppData | null {
     const version = typeof parsed.version === 'number' ? parsed.version : undefined
     if (version !== undefined && version >= CURRENT_STORE_VERSION) return seeded
     return migrateAll(seeded)
-  } catch {
-    return null
+  } catch (error) {
+    blockStoredWorkspace(localStorage, storageKey, error)
+    throw error
   }
 }
 
@@ -1011,12 +1018,37 @@ export function captureWorkspaceIdentity() {
   return { key: useStore.persist.getOptions().name, epoch: workspaceEpoch }
 }
 
+/** Remote writes must reflect the current owner's successfully hydrated disk data. */
+export function assertDurableWorkspace(snapshot = snapshotData(), owner = captureWorkspaceIdentity()) {
+  const current = captureWorkspaceIdentity()
+  if (owner.key !== current.key || owner.epoch !== current.epoch || activeStorageKey() !== current.key) throw new WorkspaceChangedError('The active workspace changed. Sync was stopped.')
+  if (!useStore.persist.hasHydrated() || storageFailure()) throw new Error('Sync is paused until this workspace has loaded and saved successfully.')
+  const raw = readStoredWorkspace(localStorage, current.key)
+  if (!raw) throw new Error('Sync is paused because this workspace has no verified saved copy.')
+  const persisted = JSON.parse(raw).state
+  const disk = Object.fromEntries(DATA_KEYS.map(k => [k, persisted[k]]))
+  if (JSON.stringify(disk) !== JSON.stringify(snapshot)) throw new Error('Sync is paused because the open workspace differs from its saved copy.')
+}
+
 function activateWorkspace(owner: WorkspaceOwner, supplied?: AppData) {
   if (DEMO_MODE) return
   const previous = activeWorkspaceOwner()
   const ownerChanged = previous.kind !== owner.kind
     || (previous.kind === 'account' && owner.kind === 'account' && previous.userId !== owner.userId)
-  if (ownerChanged) clearCalendarSession()
+  if (ownerChanged) {
+    const outgoingKey = useStore.persist.getOptions().name
+    // Auth events must hide the outgoing account immediately. If persistence
+    // failed, retain its open data separately before loading Guest/another owner.
+    if (outgoingKey === activeStorageKey() && useStore.persist.hasHydrated()) {
+      try { assertDurableWorkspace() }
+      catch {
+        const raw = outgoingKey ? localStorage.getItem(outgoingKey) : null
+        if (outgoingKey && (raw !== null || storageFailure() || JSON.stringify(snapshotData()) !== JSON.stringify(createPersonalInitialData()))) retainOutgoingWorkspace(outgoingKey, snapshotData(), raw)
+      }
+    }
+    clearCalendarSession()
+    clearDriveSession()
+  }
   const key = workspaceStorageKey(owner)
   // Anything already on this device has passed the version gate in
   // `readWorkspaceData`, and a fresh root is current by construction. Only

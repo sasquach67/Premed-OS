@@ -1,10 +1,12 @@
 import type { StateStorage } from 'zustand/middleware'
 import { decodeWorkspaceStorage, encodeWorkspaceStorage, WORKSPACE_CHUNKS_PREFIX } from './workspaceStorageCodec'
+import { validateAppData } from '@/lib/validateAppData'
 
 const FAILURE_KEY = 'premed_hq_storage_failure'
 let volatileFailure = ''
 const unreadableValues = new WeakMap<Storage, Map<string, string>>()
 const readableValues = new WeakMap<Storage, Map<string, string>>()
+const activationBlockedValues = new WeakMap<Storage, Map<string, string>>()
 
 function rememberReadable(storage: Storage, name: string, raw: string | null) {
   const values = readableValues.get(storage) ?? new Map<string, string>()
@@ -36,6 +38,19 @@ function rememberFailure(error: unknown) {
   try { sessionStorage.setItem(FAILURE_KEY, volatileFailure) } catch { /* volatile state still survives this session */ }
 }
 
+export function blockStoredWorkspace(storage: Storage, name: string, error: unknown) {
+  const raw = storage.getItem(name)
+  if (raw !== null) {
+    const blocked = unreadableValues.get(storage) ?? new Map<string, string>()
+    blocked.set(name, raw)
+    unreadableValues.set(storage, blocked)
+    const activationBlocked = activationBlockedValues.get(storage) ?? new Map<string, string>()
+    activationBlocked.set(name, raw)
+    activationBlockedValues.set(storage, activationBlocked)
+  }
+  rememberFailure(error)
+}
+
 function clearFailure() {
   volatileFailure = ''
   try { sessionStorage.removeItem(FAILURE_KEY) } catch { /* no-op */ }
@@ -51,8 +66,16 @@ export function readStoredWorkspace(storage: Storage, name: string): string | nu
   let raw: string | null = null
   try {
     raw = storage.getItem(name)
+    const activationBlocked = activationBlockedValues.get(storage)?.get(name)
+    if (activationBlocked !== undefined && activationBlocked === raw) throw new Error('This saved workspace could not be loaded safely. Its original bytes are protected until recovery.')
+    if (activationBlocked !== undefined) activationBlockedValues.get(storage)?.delete(name)
     const decoded = raw === null ? null : decodeWorkspaceStorage(raw)
-    if (decoded !== null) JSON.parse(decoded)
+    if (decoded !== null) {
+      const parsed = JSON.parse(decoded)
+      if ((name.startsWith('hq:app-data') || name === 'hq-demo:app-data') && validateAppData(parsed?.state).length) {
+        throw new Error('Saved workspace has an invalid structure. Its original data was kept; automatic loading and sync are paused.')
+      }
+    }
     rememberReadable(storage, name, raw)
     return decoded
   } catch (error) {
@@ -95,6 +118,7 @@ export function guardedStorage(storage: Storage): StateStorage {
       storage.removeItem(name)
       unreadableValues.get(storage)?.delete(name)
       readableValues.get(storage)?.delete(name)
+      activationBlockedValues.get(storage)?.delete(name)
     },
     setItem: (name, value) => {
       try { writeStoredWorkspace(storage, name, value) } catch { /* Failure is recorded; notebook transactions additionally roll back. */ }

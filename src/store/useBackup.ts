@@ -5,8 +5,9 @@
      • exposes status + actions to the UI
    localStorage is always the primary store; Drive is redundancy.
    ============================================================ */
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useStore, snapshotData } from '@/store/store'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useStore, snapshotData, captureWorkspaceIdentity, activeAccountWorkspaceId } from '@/store/store'
+import { assertAccountUpload, assertSyncSession, isAccountSyncReady, subscribeAccountConflicts } from '@/store/accountSyncSafety'
 import * as drive from '@/lib/googleDrive'
 import { dataForRemote } from '@/lib/storyPrivacy'
 
@@ -17,8 +18,8 @@ export type BackupStatus = 'idle' | 'connecting' | 'saving' | 'saved' | 'error' 
 
 /** Snapshot stripped of backup-metadata so writing the timestamp
  *  doesn't itself look like a data change (avoids backup loops). */
-function contentSignature(): string {
-  const d = dataForRemote(snapshotData()) as unknown as Record<string, unknown>
+function contentSignature(snapshot = snapshotData()): string {
+  const d = dataForRemote(snapshot) as unknown as Record<string, unknown>
   const settings = { ...(d.settings as Record<string, unknown>) }
   delete settings.backup
   return JSON.stringify({ ...d, settings })
@@ -33,14 +34,22 @@ export function useBackup() {
   const [error, setError] = useState<string>('')
   const lastSig = useRef<string>('')
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const dailyChecked = useRef(false)
+  const dailyChecked = useRef<string | undefined>(undefined)
+  const renderedOwner = captureWorkspaceIdentity()
+  const syncReady = useSyncExternalStore(subscribeAccountConflicts, () => isAccountSyncReady(activeAccountWorkspaceId() ?? undefined))
 
   const push = useCallback(async () => {
     setStatus('saving')
     setError('')
     try {
-      const id = await drive.uploadBackup(dataForRemote(snapshotData()), backup.driveFileId)
-      lastSig.current = contentSignature()
+      const owner = captureWorkspaceIdentity(), snapshot = snapshotData()
+      if (owner.key !== renderedOwner.key || owner.epoch !== renderedOwner.epoch) throw new Error('The workspace changed. Backup was stopped.')
+      const session = assertAccountUpload(snapshot, owner)
+      const id = await drive.uploadBackup(dataForRemote(snapshot), backup.driveFileId, () => { assertSyncSession(session); assertAccountUpload(snapshot, owner) })
+      assertSyncSession(session)
+      const current = captureWorkspaceIdentity()
+      if (current.key !== owner.key || current.epoch !== owner.epoch) throw new Error('The workspace changed while backup completed. No workspace metadata was changed.')
+      lastSig.current = contentSignature(snapshot)
       update((d) => {
         d.settings.backup.lastBackupAt = Date.now()
         d.settings.backup.driveFileId = id
@@ -51,15 +60,17 @@ export function useBackup() {
       const msg = e instanceof Error ? e.message : 'Backup failed'
       setError(msg)
       setStatus('error')
-      update((d) => { d.settings.backup.lastError = msg })
     }
-  }, [backup.driveFileId, update])
+  }, [backup.driveFileId, update, renderedOwner.key, renderedOwner.epoch])
 
   const connect = useCallback(async () => {
     setStatus('connecting')
     setError('')
     try {
+      const owner = captureWorkspaceIdentity(), snapshot = snapshotData()
+      const session = assertAccountUpload(snapshot, owner)
       await drive.connect(clientId)
+      assertSyncSession(session); assertAccountUpload(snapshot, owner)
       update((d) => { d.settings.backup.enabled = true })
       await push()
     } catch (e) {
@@ -76,8 +87,13 @@ export function useBackup() {
   }, [update])
 
   const backupNow = useCallback(async () => {
-    if (!drive.isConnected()) await drive.connect(clientId)
-    await push()
+    try {
+      const owner = captureWorkspaceIdentity(), snapshot = snapshotData()
+      const session = assertAccountUpload(snapshot, owner)
+      if (!drive.isConnected()) await drive.connect(clientId)
+      assertSyncSession(session); assertAccountUpload(snapshot, owner)
+      await push()
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Backup stopped.'); setStatus('error') }
   }, [clientId, push])
 
   const restore = useCallback(async () => {
@@ -88,20 +104,25 @@ export function useBackup() {
 
   // ---- daily-on-open check: silently re-auth + push if >=24h stale ----
   useEffect(() => {
-    if (dailyChecked.current) return
-    dailyChecked.current = true
+    if (!syncReady) return
+    const ownerKey = `${renderedOwner.key}:${renderedOwner.epoch}`
+    if (dailyChecked.current === ownerKey) return
+    dailyChecked.current = ownerKey
     if (!backup.enabled || !clientId) return
     const stale = !backup.lastBackupAt || Date.now() - backup.lastBackupAt >= DAY_MS
     if (!stale) return
     ;(async () => {
       try {
+        const owner = captureWorkspaceIdentity(), snapshot = snapshotData()
+        const session = assertAccountUpload(snapshot, owner)
         await drive.connectSilent(clientId)
+        assertSyncSession(session); assertAccountUpload(snapshot, owner)
         await push()
       } catch {
         setStatus('offline') // needs a manual reconnect
       }
     })()
-  }, [backup.enabled, backup.lastBackupAt, clientId, push])
+  }, [backup.enabled, backup.lastBackupAt, clientId, push, syncReady, renderedOwner.key, renderedOwner.epoch])
 
   // ---- debounced auto-backup while open ----
   useEffect(() => {

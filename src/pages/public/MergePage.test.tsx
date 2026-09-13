@@ -5,6 +5,7 @@
  * account's cloud copy. These tests pin the two things that made that a bug:
  * what each control is called, and what each one actually does. */
 import { act } from 'react'
+import { webcrypto } from 'node:crypto'
 import { createRoot, type Root } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -33,10 +34,16 @@ const navigated: string[] = []
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
-    auth: { getSession: async () => ({ data: { session: { user: { id: USER_ID } } } }) },
+    auth: {
+      getSession: async () => ({ data: { session: { user: { id: USER_ID } } } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
+    },
     from: () => ({
-      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { data: cloudTree }, error: null }) }) }),
-      upsert: async (row: Record<string, unknown>) => { upserted.push(row); return { error: null } },
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { data: cloudTree, updated_at: '2026-09-12T00:00:00.000Z' }, error: null }) }) }),
+      update: (row: Record<string, unknown>) => {
+        const query = { eq: () => query, select: () => query, maybeSingle: async () => { upserted.push(row); return { data: { user_id: USER_ID }, error: null } } }
+        return query
+      },
     }),
   },
   isSupabaseConfigured: true,
@@ -44,6 +51,14 @@ vi.mock('@/lib/supabase', () => ({
 }))
 
 vi.mock('@/components/public/PublicNav', () => ({ PublicNav: () => null }))
+vi.mock('@/components/layout/AccountSyncNotice', () => ({ AccountSyncNotice: () => null }))
+vi.mock('@/store/workspaceRecoveryRepository', () => {
+  const copies = new Map<string, { workspaceKey: string; id: string; stored: string; sha256: string }>()
+  return { workspaceRecoveryRepository: () => ({
+    save: async (copy: { workspaceKey: string; id: string; stored: string; sha256: string }) => { copies.set(copy.id, copy) },
+    read: async (_key: string, id: string) => copies.get(id) ?? null,
+  }) }
+})
 vi.mock('@/components/public/PublicShell', () => ({
   PublicShell: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
@@ -65,6 +80,7 @@ describe('MergePage exits', () => {
   let root: Root
 
   beforeEach(async () => {
+    vi.stubGlobal('crypto', webcrypto)
     upserted.length = 0
     navigated.length = 0
     localStorage.clear()
@@ -83,6 +99,7 @@ describe('MergePage exits', () => {
     localStorage.clear()
     useStore.persist.setOptions({ name: GUEST_STORAGE_KEY })
     activateGuestWorkspace()
+    vi.unstubAllGlobals()
   })
 
   async function render() {
@@ -103,6 +120,7 @@ describe('MergePage exits', () => {
     await render()
 
     await act(async () => { button(container, 'Use my account workspace')?.click() })
+    await vi.waitFor(async () => { await act(async () => {}); expect(navigated.length).toBeGreaterThan(0) }, { interval: 1 })
 
     expect(upserted).toHaveLength(0)
     expect(activeWorkspaceOwner()).toEqual({ kind: 'account', userId: USER_ID })
@@ -114,6 +132,7 @@ describe('MergePage exits', () => {
     await render()
 
     await act(async () => { button(container, 'Use my account workspace')?.click() })
+    await vi.waitFor(async () => { await act(async () => {}); expect(navigated.length).toBeGreaterThan(0) }, { interval: 1 })
     activateGuestWorkspace()
 
     expect(snapshotData().profile.name).toBe('This device')
@@ -124,6 +143,7 @@ describe('MergePage exits', () => {
     await render()
 
     await act(async () => { button(container, 'Apply and continue')?.click() })
+    await vi.waitFor(async () => { await act(async () => {}); expect(navigated.length).toBeGreaterThan(0) }, { interval: 1 })
 
     expect(upserted).toHaveLength(1)
     expect(upserted[0].user_id).toBe(USER_ID)
@@ -135,6 +155,7 @@ describe('MergePage exits', () => {
     await render()
 
     await act(async () => { button(container, 'Apply and continue')?.click() })
+    await vi.waitFor(async () => { await act(async () => {}); expect(navigated.length).toBeGreaterThan(0) }, { interval: 1 })
 
     // Nothing was toggled to "use this device's", so the account's records win
     // — the choice that cannot lose server-side work.
@@ -146,6 +167,7 @@ describe('MergePage exits', () => {
     await render()
 
     await act(async () => { button(container, 'Apply and continue')?.click() })
+    await vi.waitFor(async () => { await act(async () => {}); expect(navigated.length).toBeGreaterThan(0) }, { interval: 1 })
 
     expect(localStorage.getItem(accountStorageKey(USER_ID))).toBeTruthy()
     const guestBlob = localStorage.getItem(GUEST_STORAGE_KEY)
