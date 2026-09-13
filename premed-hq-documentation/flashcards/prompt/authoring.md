@@ -94,7 +94,7 @@ Keep the supplied serif question/answer design, small action/type labels, five m
 
 Basic fields: Front, Back, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec. Cloze fields: Text, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec. Metadata travels with the note but stays off the recall face. The embedded templates and builder, not prose interpretation, determine the final layout and field order. Versioned model identities keep this format distinct from older exports.
 
-Create cards.json using the exact included schema. Every declared field is required; use its specified empty string, empty array, or null when inapplicable. Choose a stable deckKey for this new deck and stable card IDs. Derive deckName from the actual course and lecture; do not carry over synthetic examples, a fixed university, PSYC Chapter 0, or a stale term.
+Create cards.json using the exact included schema. Every declared field is required; use its specified empty string, empty array, or null when inapplicable. Choose a stable deckKey for this new deck and stable card IDs. Use a simple, descriptive lecture or topic title for deckName, such as "Cell Membranes and Transport". Create exactly one standalone deck. Do not add a university, semester, class hierarchy, or Anki :: nesting. Students can rename the deck or move it under their own parent decks after importing. Do not carry over synthetic examples or stale course titles.
 
 The target ledger and detailed build report are internal verification artifacts. The user-facing deliverable is the .apkg plus a short count/coverage/limitations summary. Do not require an upload back to Premed OS.
 

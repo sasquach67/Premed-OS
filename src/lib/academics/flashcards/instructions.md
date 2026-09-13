@@ -94,7 +94,7 @@ Keep the supplied serif question/answer design, small action/type labels, five m
 
 Basic fields: Front, Back, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec. Cloze fields: Text, Extra, Type, Mindset, premedos_concept_id, premedos_source, premedos_spec. Metadata travels with the note but stays off the recall face. The embedded templates and builder, not prose interpretation, determine the final layout and field order. Versioned model identities keep this format distinct from older exports.
 
-Create cards.json using the exact included schema. Every declared field is required; use its specified empty string, empty array, or null when inapplicable. Choose a stable deckKey for this new deck and stable card IDs. Derive deckName from the actual course and lecture; do not carry over synthetic examples, a fixed university, PSYC Chapter 0, or a stale term.
+Create cards.json using the exact included schema. Every declared field is required; use its specified empty string, empty array, or null when inapplicable. Choose a stable deckKey for this new deck and stable card IDs. Use a simple, descriptive lecture or topic title for deckName, such as "Cell Membranes and Transport". Create exactly one standalone deck. Do not add a university, semester, class hierarchy, or Anki :: nesting. Students can rename the deck or move it under their own parent decks after importing. Do not carry over synthetic examples or stale course titles.
 
 The target ledger and detailed build report are internal verification artifacts. The user-facing deliverable is the .apkg plus a short count/coverage/limitations summary. Do not require an upload back to Premed OS.
 
@@ -698,7 +698,7 @@ def validate(data):
     for key in ['sources', 'targets', 'cards']:
         ids = [r['id'] for r in data[key]]
         require(len(ids) == len(set(ids)), f'Duplicate {key} IDs.')
-    require(all(part.strip() for part in data['deckName'].split('::')), 'Deck hierarchy has an empty segment.')
+    require(data['deckName'].strip() and '::' not in data['deckName'], 'Use one standalone deck title without :: nesting.')
     sources = {s['id']: s for s in data['sources']}
     targets = {t['id']: t for t in data['targets']}
     cards = {c['id']: c for c in data['cards']}
@@ -794,8 +794,7 @@ def build(data, out, input_dir):
     require(out.suffix == '.apkg' and not out.exists(), 'Choose a new .apkg output filename; existing files are never overwritten.')
     require(not out.with_suffix('.build-report.json').exists(), 'Build report already exists; choose a fresh output name.')
     basic, cloze = create_models()
-    parts = data['deckName'].split('::')
-    decks = [genanki.Deck(stable_id('deck:' + '::'.join(parts[:i])), '::'.join(parts[:i])) for i in range(1, len(parts) + 1)]
+    decks = [genanki.Deck(stable_id('deck:' + data['deckName']), data['deckName'])]
     all_media = {}
     manifest = []
     with tempfile.TemporaryDirectory() as temp:
@@ -891,6 +890,7 @@ def verify(apkg, report_path, input_path):
             if len(cids) != report['reviewCards']: failures.append('Review-card count differs, including cloze indices.')
             names = {d.name for d in col.decks.all_names_and_ids()}
             if report['deckName'] not in names: failures.append('Destination deck is missing.')
+            if names - {'Default', report['deckName']}: failures.append('Unexpected extra or parent decks.')
             model_ids = set()
             for nid in nids:
                 note = col.get_note(nid); model_ids.add(note.mid)

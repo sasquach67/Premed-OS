@@ -2,7 +2,7 @@
   "format": "premed-os-anki-build",
   "version": 1,
   "deckKey": "synthetic-prompt-draft-1",
-  "deckName": "Premed OS Draft Test::Synthetic",
+  "deckName": "Synthetic Flashcard Check",
   "journalTitle": "Synthetic prerequisite fixture",
   "scope": "Packaging checks only",
   "sources": [

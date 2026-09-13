@@ -9,6 +9,9 @@ class PromptChecks(unittest.TestCase):
     def setUp(self):self.data=json.loads((BASE/'checks/cards.json').read_text())
     def test_accepts_all_supported_types_and_both_example_directions(self):
         self.assertEqual(validate(self.data),[])
+    def test_rejects_preset_deck_hierarchy(self):
+        self.data['deckName']='University::Semester::Class::Lecture'
+        with self.assertRaisesRegex(ValueError,'standalone deck'):validate(self.data)
     def test_rejects_lost_reverse_direction(self):
         self.data['cards'][6]['exampleDirection']='instance-to-concept'
         with self.assertRaisesRegex(ValueError,'each example direction'):validate(self.data)

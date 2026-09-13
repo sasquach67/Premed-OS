@@ -46,7 +46,7 @@ def validate(data):
     for key in ['sources', 'targets', 'cards']:
         ids = [r['id'] for r in data[key]]
         require(len(ids) == len(set(ids)), f'Duplicate {key} IDs.')
-    require(all(part.strip() for part in data['deckName'].split('::')), 'Deck hierarchy has an empty segment.')
+    require(data['deckName'].strip() and '::' not in data['deckName'], 'Use one standalone deck title without :: nesting.')
     sources = {s['id']: s for s in data['sources']}
     targets = {t['id']: t for t in data['targets']}
     cards = {c['id']: c for c in data['cards']}
@@ -142,8 +142,7 @@ def build(data, out, input_dir):
     require(out.suffix == '.apkg' and not out.exists(), 'Choose a new .apkg output filename; existing files are never overwritten.')
     require(not out.with_suffix('.build-report.json').exists(), 'Build report already exists; choose a fresh output name.')
     basic, cloze = create_models()
-    parts = data['deckName'].split('::')
-    decks = [genanki.Deck(stable_id('deck:' + '::'.join(parts[:i])), '::'.join(parts[:i])) for i in range(1, len(parts) + 1)]
+    decks = [genanki.Deck(stable_id('deck:' + data['deckName']), data['deckName'])]
     all_media = {}
     manifest = []
     with tempfile.TemporaryDirectory() as temp:

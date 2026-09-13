@@ -19,6 +19,7 @@ def verify(apkg, report_path, input_path):
             if len(cids) != report['reviewCards']: failures.append('Review-card count differs, including cloze indices.')
             names = {d.name for d in col.decks.all_names_and_ids()}
             if report['deckName'] not in names: failures.append('Destination deck is missing.')
+            if names - {'Default', report['deckName']}: failures.append('Unexpected extra or parent decks.')
             model_ids = set()
             for nid in nids:
                 note = col.get_note(nid); model_ids.add(note.mid)
