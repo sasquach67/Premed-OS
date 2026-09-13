@@ -8,11 +8,11 @@ The copy includes all five exact pipeline files and current selected Journal con
 
 ## Verification on the implementation branch
 
-- Full application suite: 247 files / 1,872 tests passed.
+- Full application suite: 257 files / 1,930 tests passed on the release branch rebased onto the latest account-data safety update. The release run used two workers after an overloaded unrestricted run hit timeouts; no test expectations or timeouts were weakened.
 - Focused workflow and integration suite: 56 tests passed, including missing/wrong-class/unfinished Journal states, exact embedded content, clipboard fallback, and Journal open/close without modifying notebook or practice state.
 - TypeScript build and Vite production build passed. Vite reports existing large-chunk and mixed-import warnings.
 - Full lint: zero errors, 56 warnings; scoped new modules have no errors or warnings. Existing ClassHub warnings were preserved.
-- Eight isolated Python checks passed. The exact embedded files were extracted into a fresh directory, built a synthetic 12-note/14-card package, and imported it through the real Anki engine.
+- Nine isolated Python checks passed, including rejection of preset deck hierarchies and verification that no extra parent decks are imported. The exact embedded files were extracted into a fresh directory, built a synthetic 12-note/14-card package, and imported it through the real Anki engine.
 - Local browser check: desktop light and narrow dark presentations, no observed horizontal overflow, copy-success feedback, and missing-Journal prerequisite. The visual fixture was invented and did not use student data.
 - Independent subagent review found no blocking issue. Integration tests caught and resolved a duplicate React sibling key when closing the Journal prompt panel.
 
