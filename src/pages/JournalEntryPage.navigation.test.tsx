@@ -10,6 +10,7 @@ import { prepareNotebook } from '@/lib/academics/notebook/package'
 import { revisionFixture } from '@/lib/academics/notebook/revision.test-fixtures'
 import type { Course } from '@/lib/types'
 import { Academics } from './Academics'
+import { ResourceCreationPage } from './ResourceCreationPage'
 import { JournalEntryPage } from './JournalEntryPage'
 import { LecturePage } from './LecturePage'
 
@@ -33,6 +34,7 @@ beforeEach(async () => {
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
   await act(async () => root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}/journal/${id}`]}><ToastProvider><Routes>
     <Route path="/academics" element={<Academics />} /><Route path="/academics/classes/:courseId" element={<Academics />} />
+    <Route path="/academics/classes/:courseId/resources/:resource" element={<ResourceCreationPage />} />
     <Route path="/academics/classes/:courseId/journal/:entryId" element={<JournalEntryPage />} />
     <Route path="/academics/classes/:courseId/lectures/:lectureId" element={<LecturePage />} />
   </Routes><HistoryControls /></ToastProvider></MemoryRouter>))
@@ -72,7 +74,8 @@ it('opens the complete prompt for this saved Journal without changing notebook c
   expect(prompt).toContain('card-styles.css')
   expect(prompt).not.toContain('Protected note')
   expect(prompt).not.toContain('My saved answer')
-  await act(async () => panel.querySelector<HTMLButtonElement>('[aria-label="Close flashcard prompt"]')!.click())
+  expect(container.querySelector('[data-location]')!.textContent).toBe(`/academics/classes/${course.id}/resources/flashcards`)
+  await click('Back to Journal')
   expect(container.querySelector('[aria-label="Flashcard prompt"]')).toBeNull()
   expect(JSON.stringify(notebook())).toBe(retained)
 })

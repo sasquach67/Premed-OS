@@ -4,7 +4,7 @@ import { ReadingSummaryDialog, ReadingSummaryContent } from './ReadingSummaryDia
 import { isPrimaryMaterial } from '@/lib/academics/materialCatalog'
 import { preferredScrollBehavior } from '@/lib/scroll'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, ArrowRight, CalendarDays, MessageSquare, Maximize2, BookOpen, Brain, Check, ChevronDown,
   FileStack, FileText, Filter, FolderOpen, HelpCircle,
@@ -52,7 +52,6 @@ import { TopicConnectField } from '@/components/academics/TopicConnectField'
 import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
 import { SyncOriginalFilesButton } from '@/components/academics/SyncOriginalFilesButton'
 import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialog'
-import { RevisedNotesPanel } from '@/components/academics/RevisedNotesPanel'
 import { ProfessorEvidencePanel } from '@/components/academics/ProfessorEvidencePanel'
 import { LectureCapturePanel } from '@/components/academics/LectureCapturePanel'
 import { LectureRecordMenu } from '@/components/academics/LectureRecordMenu'
@@ -202,7 +201,7 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
   }
 
   function primaryAction() {
-    return <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" className="class-hub-primary-action" aria-label="Create study resources"><FileStack className="size-4" /> Create <span className="class-hub-primary-action-optional">study </span>resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems classType={classType} onChoose={(artifact) => { changeTab('materials'); const next = new URLSearchParams(params); next.set('classTab', 'materials'); next.set('createMaterial', artifact); setParams(next) }} /></DropdownMenuContent></DropdownMenu>
+    return <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" className="class-hub-primary-action" aria-label="Create study resources"><FileStack className="size-4" /> Create <span className="class-hub-primary-action-optional">study </span>resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems classType={classType} onChoose={(artifact) => navigate(`/academics/classes/${encodeURIComponent(course.id)}/resources/${artifact}`)} /></DropdownMenuContent></DropdownMenu>
   }
 
   const counts = {
@@ -746,6 +745,10 @@ function Materials({
   useEffect(() => setArtifact(requestedArtifact), [requestedArtifact])
 
   function openArtifact(nextArtifact: MaterialArtifact) {
+    if (nextArtifact === 'flashcards' || nextArtifact === 'revised-notes') {
+      navigate(`/academics/classes/${encodeURIComponent(courseId)}/resources/${nextArtifact}`)
+      return
+    }
     setArtifact(nextArtifact)
     const next = new URLSearchParams(materialParams)
     next.set('classTab', 'materials')
@@ -781,6 +784,8 @@ function Materials({
   }
 
   if (folderIntakeOpen) return <MaterialFolderIntake course={course} onBack={closeFolderIntake} />
+
+  if (requestedArtifact === 'flashcards' || requestedArtifact === 'revised-notes') return <Navigate replace to={`/academics/classes/${encodeURIComponent(courseId)}/resources/${requestedArtifact}`} />
 
   return (
     // Visual provenance: mockup-lab/01-academics/academics-class-hub.html,
@@ -830,9 +835,7 @@ function Materials({
           </label>
         </div>
       </div>
-      {artifact === 'revised-notes'
-        ? <div className="space-y-2"><div className="flex justify-end"><Button size="sm" variant="ghost" onClick={closeArtifact}>Close revised notes</Button></div><RevisedNotesPanel courseId={courseId} files={sourceFiles} data={data} /></div>
-        : artifact && <MaterialGenerationIntake artifact={artifact} courseId={courseId} courseLabel={course.code} course={{ code: course.code, title: course.title, type: classType }} files={sourceFiles} onClose={closeArtifact} />}
+      {artifact && <MaterialGenerationIntake artifact={artifact} courseId={courseId} courseLabel={course.code} course={{ code: course.code, title: course.title, type: classType }} files={sourceFiles} onClose={closeArtifact} />}
       {writingTools}
       {visible.map((group) => (
         <Card key={group.key} className={cn('class-hub-material-group', groupBy === 'week' && 'is-sequence', group.unassigned && 'is-unplaced')}>

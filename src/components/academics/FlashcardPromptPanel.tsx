@@ -6,11 +6,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { useStore } from '@/store/store'
 import { buildFlashcardPrompt, flashcardNotebookEligibility } from '@/lib/academics/flashcards/prompt'
 
-export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose }: {
+export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose, showHeader = true }: {
   courseId: string
   courseLabel: string
   lectureId?: string
   onClose: () => void
+  showHeader?: boolean
 }) {
   const navigate = useNavigate()
   const lectures = useStore(state => state.academics.classCenter.lectures)
@@ -56,10 +57,10 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
   }
 
   return <section className="space-y-5" aria-label="Flashcard prompt">
-    <header className="flex items-start justify-between gap-4">
+    {showHeader && <header className="flex items-start justify-between gap-4">
       <div><h2 className="font-display text-xl font-bold">Create flashcards</h2><p className="mt-1 text-sm text-muted-foreground">{courseLabel} · From your completed Class Journal</p></div>
       <Button type="button" variant="ghost" size="icon" aria-label="Close flashcard prompt" onClick={onClose}><X className="size-4" /></Button>
-    </header>
+    </header>}
     <p className="text-sm leading-6">Your lecture’s Class Journal must already be made and saved here. The flashcards use its learning targets and the same original materials as its study guide and Mastery Map.</p>
     {lectureId ? <div className="rounded-lg border p-3"><p className="text-xs font-semibold text-muted-foreground">Selected Class Journal</p><p className="mt-1 font-semibold">{lecture?.title ?? 'Journal unavailable'}</p></div> : <label className="block space-y-2 text-sm font-semibold">
       <span>Class Journal</span>

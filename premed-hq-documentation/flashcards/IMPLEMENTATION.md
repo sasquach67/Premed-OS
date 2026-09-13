@@ -17,3 +17,7 @@ The copy includes all five exact pipeline files and current selected Journal con
 - Independent subagent review found no blocking issue. Integration tests caught and resolved a duplicate React sibling key when closing the Journal prompt panel.
 
 A real lecture trial is still required to assess authoring quality and manageable workload. Package verification does not prove educational correctness. Native image occlusion and safe updates to existing Anki decks are outside v1.
+
+## Dedicated resource pages
+
+Flashcards and Revised notes now open `/academics/classes/:courseId/resources/:resource` directly from either class resource menu, using the Notebook page shell and typography. They do not open the new-Notebook goal picker or embed their workflow in Materials. Older `createMaterial` links redirect to the dedicated page. The Journal flashcard action preserves its selected entry with `?journal=...` and returns to that Journal. Revised notes retains its existing baseline/source and generation behavior.
