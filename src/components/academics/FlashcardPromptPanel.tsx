@@ -74,8 +74,8 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
     </div> : <>
       <ol className="list-decimal space-y-3 pl-5 text-sm leading-6">
         <li><strong>Copy the complete prompt.</strong> It includes the card instructions, simple explanations and examples, formatting, and Anki styling.</li>
-        <li><strong>Paste it into the AI conversation that created this Journal,</strong> where the original lecture materials are still accessible. In a new conversation, attach the Journal and the original materials; Journal excerpts alone may not contain everything.</li>
-        <li><strong>Use an AI that can run code and create downloadable files.</strong> It should return a finished <code>.apkg</code> file. Download that file and import it into Anki.</li>
+        <li><strong>Try to find the chat where you uploaded the materials for this Class Notebook.</strong> Paste the complete prompt there. If you cannot find that chat, re-upload the same materials in a new chat and paste the prompt. It includes the selected Journal context; attach the complete Journal too if the AI asks for missing content.</li>
+        <li><strong>Use an AI that can run code and create downloadable files.</strong> Once it has the materials, it will start making the deck. If files are missing or no longer accessible, it will ask you to re-upload them or return to the original chat and paste the prompt there. Download the finished <code>.apkg</code> file and import it into Anki.</li>
       </ol>
       <p className="text-sm text-muted-foreground">Premed OS supplies the prompt and stops here. The finished deck goes directly into Anki.</p>
       <div className="flex flex-wrap gap-2">
