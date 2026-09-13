@@ -8,7 +8,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, ArrowRight, CalendarDays, MessageSquare, Maximize2, BookOpen, Brain, Check, ChevronDown,
   FileStack, FileText, Filter, FolderOpen, HelpCircle,
-  ListChecks, Mail, MoreHorizontal, NotebookText, Plus, Target,
+  Mail, MoreHorizontal, NotebookText, Plus, Target,
 } from 'lucide-react'
 import type {
   AcademicFile, ClassAssignment, ClassCenterData, ClassContact, ClassNote,
@@ -874,14 +874,13 @@ function Materials({
   )
 }
 
-function ResourceMenuItems({ classType, onChoose }: { classType: ClassWorkspaceType; onChoose: (artifact: MaterialArtifact) => void }) {
+function ResourceMenuItems({ onChoose }: { classType: ClassWorkspaceType; onChoose: (artifact: MaterialArtifact) => void }) {
   return <>
-    <DropdownMenuLabel>{classType === 'stem' ? 'Choose a format' : 'Formats for this class'}</DropdownMenuLabel>
-    {classType === 'stem' && <DropdownMenuItem onClick={() => onChoose('flashcards')}><Brain className="size-4" /> Flashcards</DropdownMenuItem>}
-    <DropdownMenuItem onClick={() => onChoose('study-guide')}><BookOpen className="size-4" /> Study guide</DropdownMenuItem>
-    <DropdownMenuItem onClick={() => onChoose('unit-mastery-outline')}><ListChecks className="size-4" /> Mastery Map</DropdownMenuItem>
-    {classType !== 'writing' && <DropdownMenuItem onClick={() => onChoose('unit-question-bank')}><FileText className="size-4" /> {classType === 'stem' ? 'Unit question bank' : 'Practice questions'}</DropdownMenuItem>}
+    <DropdownMenuLabel>Choose a format</DropdownMenuLabel>
+    <DropdownMenuItem onClick={() => onChoose('flashcards')}><Brain className="size-4" /> Flashcards</DropdownMenuItem>
     <DropdownMenuItem onClick={() => onChoose('revised-notes')}><NotebookText className="size-4" /> Revised notes</DropdownMenuItem>
+    <DropdownMenuSeparator />
+    <DropdownMenuLabel className="max-w-64 whitespace-normal text-xs font-normal text-muted-foreground">Study guides, Mastery Maps, and practice questions are included in Class Notebook.</DropdownMenuLabel>
   </>
 }
 

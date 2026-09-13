@@ -57,3 +57,22 @@ it.each(['Update this notebook', 'Edit entry', 'Practice recall', 'Sources'])('o
   await act(async () => container.querySelector<HTMLButtonElement>('.imported-notebook-link')!.click()); study()
   expect(JSON.stringify(notebook())).toBe(retained)
 })
+
+
+it('opens the complete prompt for this saved Journal without changing notebook content or practice', async () => {
+  const retained = JSON.stringify(notebook())
+  await click('Create flashcards')
+  const panel = container.querySelector('[aria-label="Flashcard prompt"]')!
+  expect(panel).toBeTruthy()
+  expect(panel.textContent).toContain(pkg.entries[0].title)
+  expect(panel.querySelector('select')).toBeNull()
+  expect(panel.textContent).toContain('Copy complete prompt')
+  const prompt = panel.querySelector<HTMLTextAreaElement>('textarea')!.value
+  expect(prompt).toContain('build_deck.py')
+  expect(prompt).toContain('card-styles.css')
+  expect(prompt).not.toContain('Protected note')
+  expect(prompt).not.toContain('My saved answer')
+  await act(async () => panel.querySelector<HTMLButtonElement>('[aria-label="Close flashcard prompt"]')!.click())
+  expect(container.querySelector('[aria-label="Flashcard prompt"]')).toBeNull()
+  expect(JSON.stringify(notebook())).toBe(retained)
+})

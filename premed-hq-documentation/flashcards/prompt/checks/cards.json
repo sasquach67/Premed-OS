@@ -1,0 +1,613 @@
+{
+  "format": "premed-os-anki-build",
+  "version": 1,
+  "deckKey": "synthetic-prompt-draft-1",
+  "deckName": "Premed OS Draft Test::Synthetic",
+  "journalTitle": "Synthetic prerequisite fixture",
+  "scope": "Packaging checks only",
+  "sources": [
+    {
+      "id": "synthetic",
+      "title": "Synthetic fixture",
+      "access": "readable",
+      "limitations": ""
+    }
+  ],
+  "targets": [
+    {
+      "id": "plain",
+      "topic": "Synthetic",
+      "statement": "plain",
+      "core": true,
+      "coverage": "tested",
+      "cardIds": [
+        "plain"
+      ],
+      "reason": ""
+    },
+    {
+      "id": "why",
+      "topic": "Synthetic",
+      "statement": "why",
+      "core": true,
+      "coverage": "tested",
+      "cardIds": [
+        "why"
+      ],
+      "reason": ""
+    },
+    {
+      "id": "compare",
+      "topic": "Synthetic",
+      "statement": "compare",
+      "core": true,
+      "coverage": "tested",
+      "cardIds": [
+        "compare"
+      ],
+      "reason": ""
+    },
+    {
+      "id": "process",
+      "topic": "Synthetic",
+      "statement": "process",
+      "core": true,
+      "coverage": "tested",
+      "cardIds": [
+        "process"
+      ],
+      "reason": ""
+    },
+    {
+      "id": "apply",
+      "topic": "Synthetic",
+      "statement": "apply",
+      "core": true,
+      "coverage": "tested",
+      "cardIds": [
+        "apply"
+      ],
+      "reason": ""
+    },
+    {
+      "id": "recognize",
+      "topic": "Synthetic",
+      "statement": "recognize",
+      "core": true,
+      "coverage": "tested",
+      "cardIds": [
+        "recognize"
+      ],
+      "reason": ""
+    },
+    {
+      "id": "produce",
+      "topic": "Synthetic",
+      "statement": "produce",
+      "core": true,
+      "coverage": "tested",
+      "cardIds": [
+        "produce"
+      ],
+      "reason": ""
+    },
+    {
+      "id": "blurt",
+      "topic": "Synthetic",
+      "statement": "blurt",
+      "core": true,
+      "coverage": "tested",
+      "cardIds": [
+        "blurt"
+      ],
+      "reason": ""
+    },
+    {
+      "id": "cloze",
+      "topic": "Synthetic",
+      "statement": "cloze",
+      "core": true,
+      "coverage": "tested",
+      "cardIds": [
+        "cloze"
+      ],
+      "reason": ""
+    },
+    {
+      "id": "definition",
+      "topic": "Synthetic",
+      "statement": "definition",
+      "core": true,
+      "coverage": "tested",
+      "cardIds": [
+        "definition"
+      ],
+      "reason": ""
+    },
+    {
+      "id": "list",
+      "topic": "Synthetic",
+      "statement": "list",
+      "core": true,
+      "coverage": "tested",
+      "cardIds": [
+        "list"
+      ],
+      "reason": ""
+    },
+    {
+      "id": "image",
+      "topic": "Synthetic",
+      "statement": "image",
+      "core": true,
+      "coverage": "tested",
+      "cardIds": [
+        "image"
+      ],
+      "reason": ""
+    }
+  ],
+  "cards": [
+    {
+      "id": "plain",
+      "conceptId": "plain",
+      "targetIds": [
+        "plain"
+      ],
+      "type": "basic",
+      "front": "What label appears on the sample?",
+      "back": "A blue square.",
+      "cloze": "",
+      "clozePattern": null,
+      "listOrdered": null,
+      "recallItems": [],
+      "axis": "",
+      "exampleDirection": null,
+      "examplePairId": "",
+      "explanation": "This explanation is test content for the Extra layout.",
+      "example": {
+        "kind": "illustrative",
+        "text": "A concrete sample demonstrates how the Extra example is displayed.",
+        "source": null
+      },
+      "extraOmissionReason": "",
+      "reinforcementReason": "",
+      "sourceRefs": [
+        {
+          "sourceId": "synthetic",
+          "location": "Synthetic fixture",
+          "excerpt": "Test data for file validation, not student material."
+        }
+      ],
+      "frontImages": [],
+      "extraImages": [],
+      "tags": [
+        "synthetic-fixture"
+      ]
+    },
+    {
+      "id": "why",
+      "conceptId": "why",
+      "targetIds": [
+        "why"
+      ],
+      "type": "conceptual",
+      "front": "Why is the answer separate from Extra?",
+      "back": "The answer states what must be recalled. Extra helps explain it.",
+      "cloze": "",
+      "clozePattern": null,
+      "listOrdered": null,
+      "recallItems": [],
+      "axis": "",
+      "exampleDirection": null,
+      "examplePairId": "",
+      "explanation": "This explanation is test content for the Extra layout.",
+      "example": {
+        "kind": "illustrative",
+        "text": "A concrete sample demonstrates how the Extra example is displayed.",
+        "source": null
+      },
+      "extraOmissionReason": "",
+      "reinforcementReason": "",
+      "sourceRefs": [
+        {
+          "sourceId": "synthetic",
+          "location": "Synthetic fixture",
+          "excerpt": "Test data for file validation, not student material."
+        }
+      ],
+      "frontImages": [],
+      "extraImages": [],
+      "tags": [
+        "synthetic-fixture"
+      ]
+    },
+    {
+      "id": "compare",
+      "conceptId": "compare",
+      "targetIds": [
+        "compare"
+      ],
+      "type": "comparison",
+      "front": "How do the two boxes differ in size?",
+      "back": "The left box is larger than the right box.",
+      "cloze": "",
+      "clozePattern": null,
+      "listOrdered": null,
+      "recallItems": [],
+      "axis": "size",
+      "exampleDirection": null,
+      "examplePairId": "",
+      "explanation": "This explanation is test content for the Extra layout.",
+      "example": {
+        "kind": "illustrative",
+        "text": "A concrete sample demonstrates how the Extra example is displayed.",
+        "source": null
+      },
+      "extraOmissionReason": "",
+      "reinforcementReason": "",
+      "sourceRefs": [
+        {
+          "sourceId": "synthetic",
+          "location": "Synthetic fixture",
+          "excerpt": "Test data for file validation, not student material."
+        }
+      ],
+      "frontImages": [],
+      "extraImages": [],
+      "tags": [
+        "synthetic-fixture"
+      ]
+    },
+    {
+      "id": "process",
+      "conceptId": "process",
+      "targetIds": [
+        "process"
+      ],
+      "type": "process",
+      "front": "What comes after the first step in this sample?",
+      "back": "The second step follows the first.",
+      "cloze": "",
+      "clozePattern": null,
+      "listOrdered": null,
+      "recallItems": [],
+      "axis": "",
+      "exampleDirection": null,
+      "examplePairId": "",
+      "explanation": "This explanation is test content for the Extra layout.",
+      "example": {
+        "kind": "illustrative",
+        "text": "A concrete sample demonstrates how the Extra example is displayed.",
+        "source": null
+      },
+      "extraOmissionReason": "",
+      "reinforcementReason": "",
+      "sourceRefs": [
+        {
+          "sourceId": "synthetic",
+          "location": "Synthetic fixture",
+          "excerpt": "Test data for file validation, not student material."
+        }
+      ],
+      "frontImages": [],
+      "extraImages": [],
+      "tags": [
+        "synthetic-fixture"
+      ]
+    },
+    {
+      "id": "apply",
+      "conceptId": "apply",
+      "targetIds": [
+        "apply"
+      ],
+      "type": "application",
+      "front": "A sample button becomes enabled after a field is filled. What can you do next?",
+      "back": "Press the button.",
+      "cloze": "",
+      "clozePattern": null,
+      "listOrdered": null,
+      "recallItems": [],
+      "axis": "",
+      "exampleDirection": null,
+      "examplePairId": "",
+      "explanation": "This explanation is test content for the Extra layout.",
+      "example": {
+        "kind": "illustrative",
+        "text": "A concrete sample demonstrates how the Extra example is displayed.",
+        "source": null
+      },
+      "extraOmissionReason": "",
+      "reinforcementReason": "",
+      "sourceRefs": [
+        {
+          "sourceId": "synthetic",
+          "location": "Synthetic fixture",
+          "excerpt": "Test data for file validation, not student material."
+        }
+      ],
+      "frontImages": [],
+      "extraImages": [],
+      "tags": [
+        "synthetic-fixture"
+      ]
+    },
+    {
+      "id": "recognize",
+      "conceptId": "paired",
+      "targetIds": [
+        "recognize"
+      ],
+      "type": "exemplar",
+      "front": "A sample contains three sides. Which shape is it?",
+      "back": "A triangle.",
+      "cloze": "",
+      "clozePattern": null,
+      "listOrdered": null,
+      "recallItems": [],
+      "axis": "",
+      "exampleDirection": "instance-to-concept",
+      "examplePairId": "triangle",
+      "explanation": "This explanation is test content for the Extra layout.",
+      "example": {
+        "kind": "illustrative",
+        "text": "A concrete sample demonstrates how the Extra example is displayed.",
+        "source": null
+      },
+      "extraOmissionReason": "",
+      "reinforcementReason": "",
+      "sourceRefs": [
+        {
+          "sourceId": "synthetic",
+          "location": "Synthetic fixture",
+          "excerpt": "Test data for file validation, not student material."
+        }
+      ],
+      "frontImages": [],
+      "extraImages": [],
+      "tags": [
+        "synthetic-fixture"
+      ]
+    },
+    {
+      "id": "produce",
+      "conceptId": "paired",
+      "targetIds": [
+        "produce"
+      ],
+      "type": "exemplar",
+      "front": "Give an example of a triangle-shaped object.",
+      "back": "A triangular paper cutout.",
+      "cloze": "",
+      "clozePattern": null,
+      "listOrdered": null,
+      "recallItems": [],
+      "axis": "",
+      "exampleDirection": "concept-to-instance",
+      "examplePairId": "triangle",
+      "explanation": "This explanation is test content for the Extra layout.",
+      "example": {
+        "kind": "illustrative",
+        "text": "A concrete sample demonstrates how the Extra example is displayed.",
+        "source": null
+      },
+      "extraOmissionReason": "",
+      "reinforcementReason": "Produce the example rather than recognize the concept.",
+      "sourceRefs": [
+        {
+          "sourceId": "synthetic",
+          "location": "Synthetic fixture",
+          "excerpt": "Test data for file validation, not student material."
+        }
+      ],
+      "frontImages": [],
+      "extraImages": [],
+      "tags": [
+        "synthetic-fixture"
+      ]
+    },
+    {
+      "id": "blurt",
+      "conceptId": "blurt",
+      "targetIds": [
+        "blurt"
+      ],
+      "type": "free-recall",
+      "front": "Recall the 3 parts of this sample card.",
+      "back": "",
+      "cloze": "",
+      "clozePattern": null,
+      "listOrdered": null,
+      "recallItems": [
+        "The front asks the question.",
+        "The back gives the required answer.",
+        "Extra explains the idea."
+      ],
+      "axis": "",
+      "exampleDirection": null,
+      "examplePairId": "",
+      "explanation": "This explanation is test content for the Extra layout.",
+      "example": {
+        "kind": "illustrative",
+        "text": "A concrete sample demonstrates how the Extra example is displayed.",
+        "source": null
+      },
+      "extraOmissionReason": "",
+      "reinforcementReason": "",
+      "sourceRefs": [
+        {
+          "sourceId": "synthetic",
+          "location": "Synthetic fixture",
+          "excerpt": "Test data for file validation, not student material."
+        }
+      ],
+      "frontImages": [],
+      "extraImages": [],
+      "tags": [
+        "synthetic-fixture"
+      ]
+    },
+    {
+      "id": "cloze",
+      "conceptId": "cloze",
+      "targetIds": [
+        "cloze"
+      ],
+      "type": "cloze",
+      "front": "",
+      "back": "",
+      "cloze": "The first marker is {{c1::blue}} and the second is {{c2::green}}.",
+      "clozePattern": "independent",
+      "listOrdered": null,
+      "recallItems": [],
+      "axis": "",
+      "exampleDirection": null,
+      "examplePairId": "",
+      "explanation": "This explanation is test content for the Extra layout.",
+      "example": {
+        "kind": "illustrative",
+        "text": "A concrete sample demonstrates how the Extra example is displayed.",
+        "source": null
+      },
+      "extraOmissionReason": "",
+      "reinforcementReason": "",
+      "sourceRefs": [
+        {
+          "sourceId": "synthetic",
+          "location": "Synthetic fixture",
+          "excerpt": "Test data for file validation, not student material."
+        }
+      ],
+      "frontImages": [],
+      "extraImages": [],
+      "tags": [
+        "synthetic-fixture"
+      ]
+    },
+    {
+      "id": "definition",
+      "conceptId": "definition",
+      "targetIds": [
+        "definition"
+      ],
+      "type": "cloze",
+      "front": "",
+      "back": "",
+      "cloze": "A sample is {{c1::an example used to demonstrate something}}.",
+      "clozePattern": "definition",
+      "listOrdered": null,
+      "recallItems": [],
+      "axis": "",
+      "exampleDirection": null,
+      "examplePairId": "",
+      "explanation": "This explanation is test content for the Extra layout.",
+      "example": {
+        "kind": "illustrative",
+        "text": "A concrete sample demonstrates how the Extra example is displayed.",
+        "source": null
+      },
+      "extraOmissionReason": "",
+      "reinforcementReason": "",
+      "sourceRefs": [
+        {
+          "sourceId": "synthetic",
+          "location": "Synthetic fixture",
+          "excerpt": "Test data for file validation, not student material."
+        }
+      ],
+      "frontImages": [],
+      "extraImages": [],
+      "tags": [
+        "synthetic-fixture"
+      ]
+    },
+    {
+      "id": "list",
+      "conceptId": "list",
+      "targetIds": [
+        "list"
+      ],
+      "type": "cloze",
+      "front": "",
+      "back": "",
+      "cloze": "The 2 sample labels, in any order, are {{c1::red}} and {{c2::blue}}.",
+      "clozePattern": "enumerated-list",
+      "listOrdered": false,
+      "recallItems": [],
+      "axis": "",
+      "exampleDirection": null,
+      "examplePairId": "",
+      "explanation": "This explanation is test content for the Extra layout.",
+      "example": {
+        "kind": "illustrative",
+        "text": "A concrete sample demonstrates how the Extra example is displayed.",
+        "source": null
+      },
+      "extraOmissionReason": "",
+      "reinforcementReason": "",
+      "sourceRefs": [
+        {
+          "sourceId": "synthetic",
+          "location": "Synthetic fixture",
+          "excerpt": "Test data for file validation, not student material."
+        }
+      ],
+      "frontImages": [],
+      "extraImages": [],
+      "tags": [
+        "synthetic-fixture"
+      ]
+    },
+    {
+      "id": "image",
+      "conceptId": "image",
+      "targetIds": [
+        "image"
+      ],
+      "type": "basic",
+      "front": "Which marker is shown in the synthetic figure?",
+      "back": "A small placeholder marker.",
+      "cloze": "",
+      "clozePattern": null,
+      "listOrdered": null,
+      "recallItems": [],
+      "axis": "",
+      "exampleDirection": null,
+      "examplePairId": "",
+      "explanation": "This explanation is test content for the Extra layout.",
+      "example": {
+        "kind": "illustrative",
+        "text": "A concrete sample demonstrates how the Extra example is displayed.",
+        "source": null
+      },
+      "extraOmissionReason": "",
+      "reinforcementReason": "",
+      "sourceRefs": [
+        {
+          "sourceId": "synthetic",
+          "location": "Synthetic fixture",
+          "excerpt": "Test data for file validation, not student material."
+        }
+      ],
+      "frontImages": [
+        {
+          "file": "fixture.png",
+          "alt": "Synthetic image for media-package checks",
+          "source": {
+            "sourceId": "synthetic",
+            "location": "Synthetic fixture",
+            "excerpt": "Test data for file validation, not student material."
+          }
+        }
+      ],
+      "extraImages": [],
+      "tags": [
+        "synthetic-fixture"
+      ]
+    }
+  ],
+  "limitations": [
+    "Synthetic data. No lecture content or learning quality was evaluated."
+  ]
+}

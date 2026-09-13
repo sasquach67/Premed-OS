@@ -331,7 +331,7 @@ describe('ClassHub approved Overview', () => {
     expect(document.body.querySelector('a[href="mailto:marco@example.edu"]')).toBeTruthy()
   })
 
-  it('gives Writing classes a source-backed resource menu instead of replacing it with the draft action', async () => {
+  it('offers flashcards for Writing classes without duplicating Notebook resources', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'writing')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -344,13 +344,12 @@ describe('ClassHub approved Overview', () => {
     expect(trigger.textContent).toContain('Create study resources')
     await act(async () => trigger.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 })))
 
-    expect(document.body.textContent).toContain('Study guide')
-    expect(document.body.textContent).toContain('Mastery Map')
-    expect(document.body.textContent).not.toContain('Study outline')
-    expect(document.body.textContent).not.toContain('Unit question bank')
+    const menu = document.body.querySelector('[role=menu]')!
+    expect([...menu.querySelectorAll('[role=menuitem]')].map(item => item.textContent?.trim())).toEqual(['Flashcards', 'Revised notes'])
+    expect(menu.textContent).toContain('included in Class Notebook')
   })
 
-  it('gives General classes study resources suited to objective-led and applied coursework', async () => {
+  it('offers flashcards for General classes without duplicating Notebook resources', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'general')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -363,10 +362,9 @@ describe('ClassHub approved Overview', () => {
     expect(trigger.textContent).toContain('Create study resources')
     await act(async () => trigger.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 })))
 
-    expect(document.body.textContent).toContain('Study guide')
-    expect(document.body.textContent).toContain('Mastery Map')
-    expect(document.body.textContent).toContain('Practice questions')
-    expect(document.body.textContent).not.toContain('Flashcards')
+    const menu = document.body.querySelector('[role=menu]')!
+    expect([...menu.querySelectorAll('[role=menuitem]')].map(item => item.textContent?.trim())).toEqual(['Flashcards', 'Revised notes'])
+    expect(menu.textContent).toContain('included in Class Notebook')
   })
 
   it('opens journal entry creation by default while the bounded journal opens saved lecture evidence on demand', async () => {

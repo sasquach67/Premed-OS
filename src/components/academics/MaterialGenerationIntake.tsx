@@ -4,7 +4,7 @@ import type { AcademicFile, ClassWorkspaceType } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { uid } from '@/lib/id'
 import { generateStudyGuide } from '@/lib/academics/generateStudyGuide'
-import { generateFlashcards } from '@/lib/academics/generateFlashcards'
+import { FlashcardPromptPanel } from './FlashcardPromptPanel'
 import { generateRevisedNotes } from '@/lib/academics/generateRevisedNotes'
 import { generateUnitMasteryOutline } from '@/lib/academics/generateUnitMasteryOutline'
 import { generateUnitQuestionBank } from '@/lib/academics/generateUnitQuestionBank'
@@ -80,6 +80,7 @@ type MaterialGenerationIntakeProps = {
 }
 
 export function MaterialGenerationIntake(props: MaterialGenerationIntakeProps) {
+  if (props.artifact === 'flashcards') return <FlashcardPromptPanel courseId={props.courseId} courseLabel={props.courseLabel} lectureId={props.lectureId} onClose={props.onClose} />
   // Legacy deep links remain valid, but Study Outline is no longer a separate
   // user-facing resource. Route the old request into the unified Mastery Map.
   return <MaterialGenerationIntakeCore {...props} artifact={props.artifact === 'study-outline' ? 'unit-mastery-outline' : props.artifact} />
@@ -184,17 +185,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
     }
 
     try {
-      if (artifact === 'flashcards') {
-        const outcome = await generateFlashcards({ courseId, chunks: generationChunks, label: courseLabel })
-        if (!outcome.ok || !outcome.cards || !outcome.specHash) return failGeneration(outcome.message ?? 'Flashcards could not be generated.')
-        setGenerationPhase('saving')
-        await waitForGenerationProgress()
-        useStore.getState().update((draft) => {
-          const decks = draft.academics.classCenter.generatedFlashcardDecks
-          decks.unshift({ id: uid(), courseId, title: `${courseLabel} flashcards`, sourceChunkIds: generationChunks.map((chunk) => chunk.id), specId: 'flashcards-v1', specHash: outcome.specHash!, cards: outcome.cards!, createdAt: Date.now(), updatedAt: Date.now(), order: decks.length })
-        })
-        toast({ title: 'Flashcards created', description: 'Saved in Materials with the selected-source trace.' })
-      } else if (artifact === 'study-guide' || artifact === 'study-outline') {
+      if (artifact === 'study-guide' || artifact === 'study-outline') {
         const outcome = await generateStudyGuide({ courseId, chunks: generationChunks, label: courseLabel, courseLens, practiceQuestionChunkIds: questionReferenceChunkIds })
         if (!outcome.ok) return failGeneration(outcome.message ?? 'The study material could not be generated.')
         setGenerationPhase('saving')

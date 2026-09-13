@@ -1,0 +1,427 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Journal-based Anki build input \u2014 v1",
+  "$defs": {
+    "source": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "access": {
+          "enum": [
+            "readable",
+            "partial",
+            "unreadable"
+          ]
+        },
+        "limitations": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 3000
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "access",
+        "limitations"
+      ],
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "sourceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "location": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "excerpt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1500
+        }
+      },
+      "required": [
+        "sourceId",
+        "location",
+        "excerpt"
+      ],
+      "additionalProperties": false
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.(png|jpg|jpeg)$"
+        },
+        "alt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "source": {
+          "$ref": "#/$defs/evidence"
+        }
+      },
+      "required": [
+        "file",
+        "alt",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "example": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "source",
+            "illustrative"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 3000
+        },
+        "source": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/evidence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "text",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "card": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "conceptId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "targetIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "maxItems": 20,
+          "minItems": 1
+        },
+        "type": {
+          "enum": [
+            "basic",
+            "conceptual",
+            "comparison",
+            "process",
+            "application",
+            "exemplar",
+            "free-recall",
+            "cloze"
+          ]
+        },
+        "front": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 3000
+        },
+        "back": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 3000
+        },
+        "cloze": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 3000
+        },
+        "clozePattern": {
+          "enum": [
+            null,
+            "single",
+            "definition",
+            "independent",
+            "enumerated-list"
+          ]
+        },
+        "listOrdered": {
+          "enum": [
+            null,
+            true,
+            false
+          ]
+        },
+        "recallItems": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 700
+          },
+          "maxItems": 20,
+          "minItems": 0
+        },
+        "axis": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "exampleDirection": {
+          "enum": [
+            null,
+            "instance-to-concept",
+            "concept-to-instance"
+          ]
+        },
+        "examplePairId": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 120
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 3000
+        },
+        "example": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/example"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "extraOmissionReason": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 800
+        },
+        "reinforcementReason": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 800
+        },
+        "sourceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "maxItems": 10,
+          "minItems": 1
+        },
+        "frontImages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/image"
+          },
+          "maxItems": 5,
+          "minItems": 0
+        },
+        "extraImages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/image"
+          },
+          "maxItems": 5,
+          "minItems": 0
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "maxItems": 20,
+          "minItems": 0
+        }
+      },
+      "required": [
+        "id",
+        "conceptId",
+        "targetIds",
+        "type",
+        "front",
+        "back",
+        "cloze",
+        "clozePattern",
+        "listOrdered",
+        "recallItems",
+        "axis",
+        "exampleDirection",
+        "examplePairId",
+        "explanation",
+        "example",
+        "extraOmissionReason",
+        "reinforcementReason",
+        "sourceRefs",
+        "frontImages",
+        "extraImages",
+        "tags"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "premed-os-anki-build"
+    },
+    "version": {
+      "const": 1
+    },
+    "deckKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "deckName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "journalTitle": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 3000
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source"
+      },
+      "maxItems": 100,
+      "minItems": 1
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "topic": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 3000
+          },
+          "core": {
+            "type": "boolean"
+          },
+          "coverage": {
+            "enum": [
+              "tested",
+              "extra-only",
+              "missing"
+            ]
+          },
+          "cardIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "maxItems": 500,
+            "minItems": 0
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 3000
+          }
+        },
+        "required": [
+          "id",
+          "topic",
+          "statement",
+          "core",
+          "coverage",
+          "cardIds",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 500,
+      "minItems": 1
+    },
+    "cards": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/card"
+      },
+      "maxItems": 500,
+      "minItems": 1
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 3000
+      },
+      "maxItems": 100,
+      "minItems": 0
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "deckKey",
+    "deckName",
+    "journalTitle",
+    "scope",
+    "sources",
+    "targets",
+    "cards",
+    "limitations"
+  ],
+  "additionalProperties": false
+}

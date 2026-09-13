@@ -1,4 +1,5 @@
 import { act } from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AcademicFile, SourceChunk } from '@/lib/types'
@@ -9,10 +10,12 @@ import { MaterialGenerationIntake } from './MaterialGenerationIntake'
 
 const mocks = vi.hoisted(() => ({
   generateStudyGuide: vi.fn(),
+  generateFlashcards: vi.fn(),
   generateUnitQuestionBank: vi.fn(),
   toast: vi.fn(),
 }))
 
+vi.mock('@/lib/academics/generateFlashcards', () => ({ generateFlashcards: mocks.generateFlashcards }))
 vi.mock('@/lib/academics/generateStudyGuide', () => ({ generateStudyGuide: mocks.generateStudyGuide }))
 vi.mock('@/lib/academics/generateUnitQuestionBank', () => ({ generateUnitQuestionBank: mocks.generateUnitQuestionBank }))
 vi.mock('@/components/common/useToast', () => ({ useToast: () => mocks.toast }))
@@ -91,6 +94,18 @@ describe('MaterialGenerationIntake generation reliability', () => {
     return [...container.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.includes('Generate study guide'))!
   }
+
+  it('routes flashcards to the Journal prerequisite without calling generation or changing decks', async () => {
+    const data = createInitialDataForMode(false)
+    useStore.getState().replaceAll(data)
+    const before = JSON.stringify(useStore.getState().academics.classCenter)
+    await act(async () => root.render(<MemoryRouter><MaterialGenerationIntake artifact="flashcards" courseId="course-1" courseLabel="BIO 101" files={[]} onClose={vi.fn()} /></MemoryRouter>))
+    expect(container.querySelector('[aria-label="Flashcard prompt"]')).toBeTruthy()
+    expect(container.textContent).toContain('Class Journal')
+    expect(container.textContent).not.toContain('Add files or folder')
+    expect(mocks.generateFlashcards).not.toHaveBeenCalled()
+    expect(JSON.stringify(useStore.getState().academics.classCenter)).toBe(before)
+  })
 
   it('keeps a 1,123-passage packet attached while generating from a reliable representative pass', async () => {
     mocks.generateStudyGuide.mockResolvedValue({ ok: false, message: 'Captured bounded request.' })
