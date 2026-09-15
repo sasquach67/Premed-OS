@@ -6,7 +6,8 @@ import { dataForRemote } from '@/lib/storyPrivacy'
 import { accountStorageKey } from '@/lib/demoMode'
 import { hasLocalWork, hasSeenMerge } from '@/lib/publicLayer'
 import { readOutgoingWorkspace } from './workspaceTransitionRecovery'
-import { storageFailure } from './storageHealth'
+import { loadDurableWorkspace } from './workspaceBootstrap'
+import { savedWorkspaceRaw, flushWorkspaceStorage, storageFailure } from './storageHealth'
 import { ACCOUNT_WORKSPACE_READY_EVENT } from '@/lib/accountWorkspace'
 import { syncAcademicOriginals } from '@/lib/academics/sharedMaterialFiles'
 import { allowAccountSync, assertAccountUpload, assertSyncLease, assertSyncSession, captureSyncSession, getAccountConflict, isAccountSyncReady, observeSyncSession, pauseAccountSync, preserveAccountConflict, preserveAccountReplacement, readSyncBaseline, recordSyncBaseline, subscribeAccountConflicts, syncContent, syncDigest, validateRemoteWorkspace } from './accountSyncSafety'
@@ -44,10 +45,10 @@ export function useCloudSync() {
     const work = async () => {
       const owner = captureWorkspaceIdentity()
       const key = accountStorageKey(u.id)
-      const before = localStorage.getItem(key)
+      let before: string | null = null
       const lease = pauseAccountSync(u.id)
       const open = structuredClone(snapshotData()), openJson = JSON.stringify(open)
-      const openRaw = owner.key ? localStorage.getItem(owner.key) : null
+      const openRaw = owner.key ? savedWorkspaceRaw(owner.key) : null
       const durableOpen = () => {
         if (openRaw !== null) assertDurableWorkspace(snapshotData(), owner)
         else if (!useStore.persist.hasHydrated() || storageFailure() || activeAccountWorkspaceId() || hasLocalWork(snapshotData())) throw new Error('The open workspace has unsaved work. Save or export it before changing workspaces.')
@@ -55,10 +56,14 @@ export function useCloudSync() {
       setStatus('syncing'); setError('')
       const fresh = () => {
         assertSyncSession(token)
-        if (token.id !== u.id || captureWorkspaceIdentity().epoch !== owner.epoch || captureWorkspaceIdentity().key !== owner.key || localStorage.getItem(key) !== before || JSON.stringify(snapshotData()) !== openJson) throw new Error('Saved work or the active workspace changed during sync. Nothing was replaced; check sync again.')
+        if (token.id !== u.id || captureWorkspaceIdentity().epoch !== owner.epoch || captureWorkspaceIdentity().key !== owner.key || savedWorkspaceRaw(key) !== before || JSON.stringify(snapshotData()) !== openJson) throw new Error('Saved work or the active workspace changed during sync. Nothing was replaced; check sync again.')
         durableOpen()
       }
       try {
+        await loadDurableWorkspace(key)
+        await flushWorkspaceStorage(owner.key)
+        assertSyncSession(token)
+        before = savedWorkspaceRaw(key)
         try { durableOpen() }
         catch (cause) {
           await preserveAccountConflict(u.id, before, null, token, 'The open workspace has changes that are not confirmed saved. It was kept open. Download its open-workspace copy before leaving this tab.', { data: open, key: owner.key ?? 'unknown', raw: openRaw })
@@ -114,6 +119,7 @@ export function useCloudSync() {
         fresh(); assertSyncLease(lease)
         if (local && (equal || remoteUnchanged)) activateAccountWorkspace(u.id)
         else activateAccountWorkspace(u.id, remote)
+        await flushWorkspaceStorage(key)
         assertDurableWorkspace()
         assertSyncSession(token)
         if (!local || equal || cleanLocal) await recordSyncBaseline(u.id, remote, row.updated_at, lease)
@@ -128,9 +134,11 @@ export function useCloudSync() {
         // A failed cloud read must not hide a readable returning-account cache
         // behind Guest. Reopen only the unchanged device copy, never a fallback.
         const current = captureWorkspaceIdentity()
-        if (owner.key === current.key && owner.epoch === current.epoch && localStorage.getItem(key) === before && activeAccountWorkspaceId() !== u.id) {
-          try { fresh(); if (readWorkspaceData(key)) activateAccountWorkspace(u.id) } catch { /* Unreadable bytes stay protected and downloadable. */ }
-        }
+        try {
+          if (owner.key === current.key && owner.epoch === current.epoch && savedWorkspaceRaw(key) === before && activeAccountWorkspaceId() !== u.id) {
+            fresh(); if (readWorkspaceData(key)) activateAccountWorkspace(u.id)
+          }
+        } catch { /* A target that failed to load stays protected; report the original failure below. */ }
         setError(cause instanceof Error ? cause.message : 'Sync stopped before replacing saved data.'); setStatus('error')
       }
     }
@@ -145,11 +153,13 @@ export function useCloudSync() {
     const owner = captureWorkspaceIdentity(), snapshot = snapshotData()
     let token = captureSyncSession()
     try {
+      await flushWorkspaceStorage(owner.key)
       token = assertAccountUpload(snapshot, owner)
       const baseline = readSyncBaseline(user.id)
       if (!baseline) throw new Error('Check the saved cloud copy before uploading changes.')
       setStatus('syncing'); setError('')
       await syncAcademicOriginals(snapshot.academics.classCenter.files, user.id)
+      await flushWorkspaceStorage(owner.key)
       assertSyncSession(token); assertAccountUpload(snapshot, owner)
       const updatedAt = new Date().toISOString()
       // Compare-and-set: a newer cloud version cannot be overwritten by this upload.
@@ -235,8 +245,9 @@ export function useCloudSync() {
 
   const signOut = useCallback(async () => {
     if (!supabase) return
-    const owner = captureWorkspaceIdentity(), token = captureSyncSession()
-    assertDurableWorkspace()
+    const owner = captureWorkspaceIdentity(), token = captureSyncSession(), before = snapshotData()
+    await flushWorkspaceStorage(owner.key)
+    assertDurableWorkspace(before, owner)
     const { error: failure } = await supabase.auth.signOut({ scope: 'local' })
     if (failure) throw failure
     const current = captureWorkspaceIdentity(), session = captureSyncSession()

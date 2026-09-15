@@ -5,6 +5,7 @@
      • immer = ergonomic nested updates
    The Google Drive backup module subscribes to this store.
    ============================================================ */
+import { assertWorkspaceEditable, adoptDurableWorkspace, workspacePersistence } from './workspacePersistence'
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
@@ -21,7 +22,7 @@ import {
 } from '@/lib/demoMode'
 import { migrateLegacyWorkspaceKeys } from '@/lib/workspaceKeyMigration'
 import { uid } from '@/lib/id'
-import { blockStoredWorkspace, guardedStorage, readStoredWorkspace, storageFailure, WorkspaceChangedError } from '@/store/storageHealth'
+import { blockStoredWorkspace, guardedStorage, readStoredWorkspace, savedWorkspaceRaw, storageFailure, WorkspaceChangedError } from '@/store/storageHealth'
 import { isMutableSeverity } from '@/lib/intelligence/recommendations'
 import { INTELLIGENCE_THRESHOLDS, type Severity } from '@/lib/intelligence/types'
 import { mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
@@ -82,7 +83,7 @@ const DEMO_MODE = isDemoMode()
 
 // One-time, non-destructive namespace upgrade. Never inspect the real or
 // legacy namespace while demo mode is active.
-if (!DEMO_MODE && typeof localStorage !== 'undefined' && !localStorage.getItem(REAL_STORAGE_KEY)) {
+if (!workspacePersistence() && !DEMO_MODE && typeof localStorage !== 'undefined' && !localStorage.getItem(REAL_STORAGE_KEY)) {
   const legacy = localStorage.getItem(LEGACY_STORAGE_KEY)
   if (legacy) guardedStorage(localStorage).setItem(REAL_STORAGE_KEY, legacy)
 }
@@ -653,7 +654,9 @@ function pushRecovery(
 
 export const useStore = create<Store>()(
   persist(
-    immer((set) => ({
+    immer((persistSet) => {
+      const set = new Proxy(persistSet, { apply(target, receiver, args) { assertWorkspaceEditable(); return Reflect.apply(target, receiver, args) } })
+      return ({
       ...migrateAll(createInitialData()),
 
       update: (mutator) => set((s) => {
@@ -917,7 +920,7 @@ export const useStore = create<Store>()(
       adoptPreparedWorkspace: (data) => set(() => ({ ...data })),
 
       resetToSeed: () => set(() => ({ ...createResetData() })),
-    })),
+    }) }),
     {
       name: STORAGE_KEY,
       version: CURRENT_STORE_VERSION,
@@ -1022,6 +1025,7 @@ export function captureWorkspaceIdentity() {
 export function assertDurableWorkspace(snapshot = snapshotData(), owner = captureWorkspaceIdentity()) {
   const current = captureWorkspaceIdentity()
   if (owner.key !== current.key || owner.epoch !== current.epoch || activeStorageKey() !== current.key) throw new WorkspaceChangedError('The active workspace changed. Sync was stopped.')
+  if (workspacePersistence()?.status(current.key!).phase !== undefined && workspacePersistence()?.status(current.key!).phase !== 'ready') throw new Error('Workspace changes are still saving or need recovery. Sync is paused.')
   if (!useStore.persist.hasHydrated() || storageFailure()) throw new Error('Sync is paused until this workspace has loaded and saved successfully.')
   const raw = readStoredWorkspace(localStorage, current.key)
   if (!raw) throw new Error('Sync is paused because this workspace has no verified saved copy.')
@@ -1042,7 +1046,7 @@ function activateWorkspace(owner: WorkspaceOwner, supplied?: AppData) {
     if (outgoingKey === activeStorageKey() && useStore.persist.hasHydrated()) {
       try { assertDurableWorkspace() }
       catch {
-        const raw = outgoingKey ? localStorage.getItem(outgoingKey) : null
+        const raw = outgoingKey ? savedWorkspaceRaw(outgoingKey) : null
         if (outgoingKey && (raw !== null || storageFailure() || JSON.stringify(snapshotData()) !== JSON.stringify(createPersonalInitialData()))) retainOutgoingWorkspace(outgoingKey, snapshotData(), raw)
       }
     }
@@ -1064,8 +1068,10 @@ function activateWorkspace(owner: WorkspaceOwner, supplied?: AppData) {
   useStore.persist.setOptions({ name: key })
   // The write happens only after the destination namespace is selected, so
   // Account A can never be written into Account B or Guest by a switch.
-  if (prepared) useStore.getState().adoptPreparedWorkspace(prepared)
-  else useStore.getState().replaceAll(supplied as AppData)
+  adoptDurableWorkspace(() => {
+    if (prepared) useStore.getState().adoptPreparedWorkspace(prepared)
+    else useStore.getState().replaceAll(supplied as AppData)
+  })
 }
 
 export function activateAccountWorkspace(userId: string, supplied?: AppData) {

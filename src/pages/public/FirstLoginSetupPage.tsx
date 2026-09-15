@@ -123,7 +123,7 @@ export function FirstLoginSetupPage() {
       if (shouldReviewLocalWorkspace(hasDeviceWork, hasSeenMerge(user.id))) {
         navigate('/auth/merge?firstLogin=1', { replace: true })
       } else {
-        mutation.activate(account)
+        await mutation.activate(account)
         markMergeSeen(user.id)
         notifyAccountWorkspaceReady(user.id)
         navigate(FIRST_LOGIN_DESTINATION, { replace: true })

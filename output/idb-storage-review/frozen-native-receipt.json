@@ -1,0 +1,26 @@
+{
+  "syntheticOnly": true,
+  "owner": "synthetic-idb-qa",
+  "noteCharacters": 7020000,
+  "localStorageCharacters": 63,
+  "phase": {
+    "phase": "ready",
+    "pending": 0,
+    "error": ""
+  },
+  "revision": "d7aaa987-6316-4df8-9adf-646757df3fef",
+  "notebookTitle": "Synthetic edited visual notebook",
+  "historyCount": 1,
+  "progress": {
+    "syntheticPractice": {
+      "response": "Synthetic saved answer",
+      "complete": true
+    }
+  },
+  "sources": 1,
+  "notes": "Synthetic saved notes",
+  "imageBytes": 26904,
+  "imageHash": "fcf2dab5036f3ba07db326d2e6a3b8b7db8482f1bc9d189fda1057c40fec7b6e",
+  "journals": [],
+  "originalCopies": 1
+}

@@ -1,0 +1,11 @@
+{
+  "syntheticOnly": true,
+  "fullMainBootstrap": true,
+  "correctClass": "qa-class",
+  "manualEditAfterReload": "Synthetic full-app saved edit",
+  "historyCount": 2,
+  "sourceCount": 1,
+  "imageBytes": 26904,
+  "imageHashVerified": true,
+  "zipIntegrityVerified": true
+}

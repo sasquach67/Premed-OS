@@ -1,9 +1,10 @@
+import { flushWorkspaceStorage } from './storageHealth'
 /* ============================================================
    useBackup — orchestrates the Google Drive safety layer:
      • debounced auto-backup while open (on data change)
      • daily-on-open check (>=24h since last backup -> push)
      • exposes status + actions to the UI
-   localStorage is always the primary store; Drive is redundancy.
+   The acknowledged workspace repository is primary; Drive is redundancy.
    ============================================================ */
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useStore, snapshotData, captureWorkspaceIdentity, activeAccountWorkspaceId } from '@/store/store'
@@ -44,8 +45,9 @@ export function useBackup() {
     try {
       const owner = captureWorkspaceIdentity(), snapshot = snapshotData()
       if (owner.key !== renderedOwner.key || owner.epoch !== renderedOwner.epoch) throw new Error('The workspace changed. Backup was stopped.')
+      await flushWorkspaceStorage(owner.key)
       const session = assertAccountUpload(snapshot, owner)
-      const id = await drive.uploadBackup(dataForRemote(snapshot), backup.driveFileId, () => { assertSyncSession(session); assertAccountUpload(snapshot, owner) })
+      const id = await drive.uploadBackup(dataForRemote(snapshot), backup.driveFileId, async () => { await flushWorkspaceStorage(owner.key); assertSyncSession(session); assertAccountUpload(snapshot, owner) })
       assertSyncSession(session)
       const current = captureWorkspaceIdentity()
       if (current.key !== owner.key || current.epoch !== owner.epoch) throw new Error('The workspace changed while backup completed. No workspace metadata was changed.')
@@ -55,6 +57,10 @@ export function useBackup() {
         d.settings.backup.driveFileId = id
         d.settings.backup.lastError = undefined
       })
+      await flushWorkspaceStorage(owner.key)
+      assertSyncSession(session)
+      const savedOwner = captureWorkspaceIdentity()
+      if (savedOwner.key !== owner.key || savedOwner.epoch !== owner.epoch) throw new Error('The workspace changed while saving backup metadata.')
       setStatus('saved')
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Backup failed'
@@ -68,6 +74,7 @@ export function useBackup() {
     setError('')
     try {
       const owner = captureWorkspaceIdentity(), snapshot = snapshotData()
+      await flushWorkspaceStorage(owner.key)
       const session = assertAccountUpload(snapshot, owner)
       await drive.connect(clientId)
       assertSyncSession(session); assertAccountUpload(snapshot, owner)
@@ -89,6 +96,7 @@ export function useBackup() {
   const backupNow = useCallback(async () => {
     try {
       const owner = captureWorkspaceIdentity(), snapshot = snapshotData()
+      await flushWorkspaceStorage(owner.key)
       const session = assertAccountUpload(snapshot, owner)
       if (!drive.isConnected()) await drive.connect(clientId)
       assertSyncSession(session); assertAccountUpload(snapshot, owner)
@@ -114,6 +122,7 @@ export function useBackup() {
     ;(async () => {
       try {
         const owner = captureWorkspaceIdentity(), snapshot = snapshotData()
+        await flushWorkspaceStorage(owner.key)
         const session = assertAccountUpload(snapshot, owner)
         await drive.connectSilent(clientId)
         assertSyncSession(session); assertAccountUpload(snapshot, owner)

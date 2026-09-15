@@ -1,3 +1,5 @@
+import { workspacePersistence } from './workspacePersistence'
+import { activeStorageKey } from '@/lib/demoMode'
 import type { StateStorage } from 'zustand/middleware'
 import { decodeWorkspaceStorage, encodeWorkspaceStorage, WORKSPACE_CHUNKS_PREFIX } from './workspaceStorageCodec'
 import { validateAppData } from '@/lib/validateAppData'
@@ -39,6 +41,7 @@ function rememberFailure(error: unknown) {
 }
 
 export function blockStoredWorkspace(storage: Storage, name: string, error: unknown) {
+  if (storage === localStorage) workspacePersistence()?.block(name, error)
   const raw = storage.getItem(name)
   if (raw !== null) {
     const blocked = unreadableValues.get(storage) ?? new Map<string, string>()
@@ -56,7 +59,18 @@ function clearFailure() {
   try { sessionStorage.removeItem(FAILURE_KEY) } catch { /* no-op */ }
 }
 
+export function savedWorkspaceRaw(name: string | undefined, storage: Storage = localStorage): string | null {
+  if (!name) return null
+  const persistence = storage === localStorage ? workspacePersistence() : undefined
+  return persistence ? persistence.read(name) : storage.getItem(name)
+}
+export async function flushWorkspaceStorage(name: string | undefined = activeStorageKey()) {
+  if (!name) throw new Error('No active workspace is loaded.')
+  await workspacePersistence()?.flush(name)
+}
 export function storageFailure(): string {
+  const persistence = workspacePersistence()
+  if (persistence) return persistence.status(activeStorageKey()).error
   if (volatileFailure) return volatileFailure
   try { return sessionStorage.getItem(FAILURE_KEY) ?? '' } catch { return '' }
 }
@@ -65,7 +79,7 @@ export function storageFailure(): string {
 export function readStoredWorkspace(storage: Storage, name: string): string | null {
   let raw: string | null = null
   try {
-    raw = storage.getItem(name)
+    raw = savedWorkspaceRaw(name, storage)
     const activationBlocked = activationBlockedValues.get(storage)?.get(name)
     if (activationBlocked !== undefined && activationBlocked === raw) throw new Error('This saved workspace could not be loaded safely. Its original bytes are protected until recovery.')
     if (activationBlocked !== undefined) activationBlockedValues.get(storage)?.delete(name)
@@ -91,6 +105,11 @@ export function readStoredWorkspace(storage: Storage, name: string): string | nu
 
 /** A throwing, synchronous durable boundary for the explicit storage cutover. */
 export function writeStoredWorkspace(storage: Storage, name: string, value: string) {
+  const persistence = storage === localStorage ? workspacePersistence() : undefined
+  if (persistence) {
+    void persistence.write(name, value).catch(rememberFailure)
+    return
+  }
   try {
     const blocked = unreadableValues.get(storage)?.get(name)
     if (blocked !== undefined) {
@@ -115,6 +134,7 @@ export function guardedStorage(storage: Storage): StateStorage {
   return {
     getItem: (name) => readStoredWorkspace(storage, name),
     removeItem: (name) => {
+      if (workspacePersistence() && storage === localStorage) throw new Error('Use the verified workspace reset flow; persistent data cannot be cleared here.')
       storage.removeItem(name)
       unreadableValues.get(storage)?.delete(name)
       readableValues.get(storage)?.delete(name)

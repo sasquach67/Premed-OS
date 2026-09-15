@@ -15,6 +15,19 @@ import type { NotebookStudyDiagramBlock } from './visualTypes'
 
 beforeAll(() => vi.stubGlobal('crypto', webcrypto))
 const center = () => ({ lectures: [] }) as unknown as ClassCenterData
+it('keeps the image journal until metadata acknowledges its durable commit, including failures', async () => {
+  const pkg = visualFixture(), repo = new MemoryNotebookAssets()
+  const assets = await prepareNotebookAssets(pkg, [{ name: pkg.assets[0].fileName, blob: pngBlob() }], { decode: headerDecoder })
+  let reject!: (error: Error) => void
+  const durable = new Promise<void>((_resolve, fail) => { reject = fail })
+  const saving = commitNotebookAssets({ prepared: assets, repository: repo, assertFresh() {}, commit: () => ({ committed: true, durable }) })
+  const rejected = expect(saving).rejects.toThrow('Metadata transaction aborted')
+  await vi.waitFor(async () => expect(await repo.journals()).toHaveLength(1))
+  expect(repo.bytes.size).toBeGreaterThan(0)
+  reject(new Error('Metadata transaction aborted')); await rejected
+  expect(await repo.journals()).toHaveLength(1)
+  expect(repo.bytes.size).toBeGreaterThan(0)
+})
 async function setup(pkg = visualFixture()) {
   const prepared = await prepareNotebook(JSON.stringify(pkg)), data = center(), course = { id: 'visual-test', ...pkg.course, term: pkg.course.term ?? undefined }, repo = new MemoryNotebookAssets()
   const assets = await prepareNotebookAssets(pkg, [{ name: pkg.assets[0].fileName, blob: pngBlob() }], { decode: headerDecoder })

@@ -155,8 +155,8 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision, basel
       setMessage('Clipboard unavailable. Select the prompt above and copy it, or download it, then confirm you have it.')
     } finally { setCopyBusy(false) }
   }
-  function savePreferences() {
-    try { notebookTransaction(state => { const target = state.academics.classCenter.workspaces.find(w => w.courseId === courseId); if (!target) throw new Error('Open the class notebook once to initialize its preferences.'); target.externalNotebookPreferences = preferences }); setMessage('Class preferences saved for future prompts.') } catch (error) { setMessage((error as Error).message) }
+  async function savePreferences() {
+    try { await notebookTransaction(state => { const target = state.academics.classCenter.workspaces.find(w => w.courseId === courseId); if (!target) throw new Error('Open the class notebook once to initialize its preferences.'); target.externalNotebookPreferences = preferences }); setMessage('Class preferences saved for future prompts.') } catch (error) { setMessage((error as Error).message) }
   }
 
   return <section className="external-notebook en-flow" aria-label="External AI notebook workflow">

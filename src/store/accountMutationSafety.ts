@@ -5,7 +5,9 @@ import { ACCOUNT_STORAGE_PREFIX, accountStorageKey } from '@/lib/demoMode'
 import { supabase, type DashboardRow } from '@/lib/supabase'
 import { dataForRemote, mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
 import { activateAccountWorkspace, assertDurableWorkspace, captureWorkspaceIdentity, readWorkspaceData, snapshotData, useStore } from './store'
-import { storageFailure, WorkspaceChangedError } from './storageHealth'
+import { loadDurableWorkspace } from './workspaceBootstrap'
+import { workspacePersistence } from './workspacePersistence'
+import { savedWorkspaceRaw, flushWorkspaceStorage, storageFailure, WorkspaceChangedError } from './storageHealth'
 import { assertSyncSession, captureSyncSession, getAccountConflict, observeSyncSession, pauseAccountSync, preserveAccountConflict, syncContent, syncDigest, validateRemoteWorkspace } from './accountSyncSafety'
 import { workspaceRecoveryRepository } from './workspaceRecoveryRepository'
 
@@ -17,7 +19,8 @@ async function beginMutation(expectedUserId?: string) {
   const captured = captureWorkspaceIdentity()
   if (!captured.key) throw new Error('Open the intended workspace before changing its saved data.')
   const owner = { ...captured, key: captured.key }, before = structuredClone(snapshotData())
-  const beforeRaw = localStorage.getItem(owner.key), beforeJson = JSON.stringify(before)
+  await flushWorkspaceStorage(owner.key)
+  const beforeRaw = savedWorkspaceRaw(owner.key), beforeJson = JSON.stringify(before)
   if (beforeRaw !== null) assertDurableWorkspace(before, owner)
   else if (owner.key.startsWith(ACCOUNT_STORAGE_PREFIX) || !useStore.persist.hasHydrated() || storageFailure()) {
     throw new Error('This workspace has no verified saved copy. Import and account changes are paused.')
@@ -44,11 +47,12 @@ async function beginMutation(expectedUserId?: string) {
       const current = captureWorkspaceIdentity(), session = captureSyncSession()
       if (closed || transitions || owner.key !== current.key || owner.epoch !== current.epoch
         || session.id !== token.id || session.generation !== token.generation
-        || localStorage.getItem(owner.key) !== beforeRaw || JSON.stringify(snapshotData()) !== beforeJson) throw changed()
+        || savedWorkspaceRaw(owner.key) !== beforeRaw || JSON.stringify(snapshotData()) !== beforeJson) throw changed()
       if (userId) assertSyncSession(token)
       if (getAccountConflict(userId)) throw new Error(conflictMessage)
     }
     const check = async () => {
+      await flushWorkspaceStorage(owner.key)
       assertFresh()
       if (client) {
         const latest = await client.auth.getSession()
@@ -86,8 +90,10 @@ export async function prepareAccountMutation(userId: string, reviewedRemote: App
   const mutation = await beginMutation(userId)
   try {
     if (reviewedLocal && JSON.stringify(reviewedLocal) !== JSON.stringify(mutation.before)) throw changed()
-    const key = accountStorageKey(userId), targetRaw = localStorage.getItem(key), cached = readWorkspaceData(key)
-    const assertTarget = () => { if (localStorage.getItem(key) !== targetRaw) throw changed() }
+    const key = accountStorageKey(userId)
+    await loadDurableWorkspace(key)
+    const targetRaw = savedWorkspaceRaw(key), cached = readWorkspaceData(key)
+    const assertTarget = () => { if (savedWorkspaceRaw(key) !== targetRaw) throw changed() }
     const { data: row, error } = await client.from('dashboards').select('data, updated_at').eq('user_id', userId).maybeSingle()
     if (error) throw error
     await mutation.check(); assertTarget()
@@ -111,10 +117,10 @@ export async function prepareAccountMutation(userId: string, reviewedRemote: App
     return {
       get serverSaved() { return serverSaved },
       pause() { pauseAccountSync(userId) },
-      async check() { await mutation.check(); assertTarget() },
+      async check() { await mutation.check(); await flushWorkspaceStorage(key); assertTarget() },
       async write(data: AppData) {
         validateRemoteWorkspace(data)
-        await mutation.check(); assertTarget()
+        await mutation.check(); await flushWorkspaceStorage(key); assertTarget()
         pauseAccountSync(userId)
         const next: DashboardRow = { user_id: userId, data: dataForRemote(data), updated_at: new Date().toISOString() }
         if (remote) {
@@ -134,6 +140,8 @@ export async function prepareAccountMutation(userId: string, reviewedRemote: App
         pauseAccountSync(userId)
         try {
           activateAccountWorkspace(userId, data)
+          const activatedOwner = captureWorkspaceIdentity()
+          if (workspacePersistence()) return flushWorkspaceStorage(accountStorageKey(userId)).then(() => { assertSyncSession(mutation.token); assertDurableWorkspace(snapshotData(), activatedOwner) }).catch(error => { pauseAccountSync(userId); throw error })
           assertDurableWorkspace(snapshotData(), captureWorkspaceIdentity())
         } catch (error) { pauseAccountSync(userId); throw error }
       },
@@ -165,12 +173,12 @@ export async function restoreWorkspaceFromSource(load: () => Promise<AppData>, k
     mutation.assertFresh()
     if (mutation.userId) pauseAccountSync(mutation.userId)
     useStore.getState().replaceAll(data)
-    try { assertDurableWorkspace(snapshotData(), mutation.owner) }
+    try { await flushWorkspaceStorage(mutation.owner.key); assertDurableWorkspace(snapshotData(), mutation.owner) }
     catch (error) {
       if (mutation.userId) pauseAccountSync(mutation.userId)
       // Do not overwrite a different disk snapshot while reporting a failed save.
       const owner = captureWorkspaceIdentity()
-      if (owner.key === mutation.owner.key && owner.epoch === mutation.owner.epoch && localStorage.getItem(owner.key) === mutation.beforeRaw) {
+      if (owner.key === mutation.owner.key && owner.epoch === mutation.owner.epoch && savedWorkspaceRaw(owner.key) === mutation.beforeRaw) {
         useStore.getState().adoptPreparedWorkspace(mutation.before)
       }
       throw new Error('The restore could not be confirmed as saved. The prior workspace recovery copy was kept. Automatic sync must remain paused until storage is healthy.', { cause: error })

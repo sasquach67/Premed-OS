@@ -1,3 +1,5 @@
+import { workspacePersistence } from '@/store/workspacePersistence'
+import { commitWorkspaceMutation } from '@/store/workspaceTransaction'
 import { NotebookImportAdjustments } from './NotebookImportAdjustments'
 import { useId, useRef, useState, type RefObject } from 'react'
 import { Button } from '@/components/ui/button'
@@ -27,6 +29,7 @@ import './notebookVisuals.css'
 import './notebookPractice.css'
 
 export function notebookTransaction(mutator: (state: AppData) => void) {
+  if (workspacePersistence()) return commitWorkspaceMutation(mutator)
   const previous = useStore.getState().academics
   const storageKey = useStore.persist.getOptions().name
   if (!storageKey) throw new Error('Notebook storage is not ready. No changes were saved.')
@@ -211,24 +214,24 @@ export function ExternalNotebookView({ lecture, courseCode, onNavigateEntry }: {
       return next
     })
   }
-  function progress(id: string, response: string, complete: boolean) {
+  async function progress(id: string, response: string, complete: boolean) {
     try {
-      notebookTransaction(state => { const target = state.academics.classCenter.lectures.find(l => l.id === lecture.id && l.courseId === lecture.courseId); if (!target?.importedNotebook) throw new Error('Entry no longer exists.'); target.importedNotebook.progress = { ...target.importedNotebook.progress, [id]: { response, complete } }; target.updatedAt = Date.now() })
+      await notebookTransaction(state => { const target = state.academics.classCenter.lectures.find(l => l.id === lecture.id && l.courseId === lecture.courseId); if (!target?.importedNotebook) throw new Error('Entry no longer exists.'); target.importedNotebook.progress = { ...target.importedNotebook.progress, [id]: { response, complete } }; target.updatedAt = Date.now() })
       setMessage('Response and progress saved.')
     } catch (error) { setMessage((error as Error).message) }
   }
-  function save() {
+  async function save() {
     try {
       const policy = notebookPracticePolicy(n.current, draft ?? n.current, n.entryId)
-      notebookTransaction(state => { const target = state.academics.classCenter.lectures.find(l => l.id === lecture.id && l.courseId === lecture.courseId); if (!target) throw new Error('Entry no longer exists.'); saveNotebookEdits(target, draft ?? n.current, notes, Date.now(), { content: draft ? editBase : notebookContentKey(n), notes: notesBase }) })
+      await notebookTransaction(state => { const target = state.academics.classCenter.lectures.find(l => l.id === lecture.id && l.courseId === lecture.courseId); if (!target) throw new Error('Entry no longer exists.'); saveNotebookEdits(target, draft ?? n.current, notes, Date.now(), { content: draft ? editBase : notebookContentKey(n), notes: notesBase }) })
       if (draft) setMode('study')
       setDraft(null); setNotesBase(notes); setMessage(`Edits saved. Original import retained. ${policy.explanation}`)
     } catch (error) { setMessage((error as Error).message) }
   }
-  function startUpdate(restart = false) {
+  async function startUpdate(restart = false) {
     if (draft || notes !== n.notes) { setMessage('Save your edits and notes, or cancel the unsaved changes, before starting an update. Only saved content is exported.'); return }
     try {
-      notebookTransaction(state => {
+      await notebookTransaction(state => {
         const target = state.academics.classCenter.lectures.find(l => l.id === lecture.id && l.courseId === lecture.courseId)
         if (!target?.importedNotebook || notebookStateKey(target.importedNotebook) !== notebookStateKey(n)) throw new Error('This notebook changed. Reopen its latest saved content before starting an update.')
         if (restart || !target.importedNotebook.updateSession) target.importedNotebook.updateSession = createNotebookUpdateSession(target.importedNotebook, target.id)
@@ -237,11 +240,11 @@ export function ExternalNotebookView({ lecture, courseCode, onNavigateEntry }: {
       setUpdating(true); setMessage('')
     } catch (error) { setMessage((error as Error).message) }
   }
-  function restoreVersion() {
+  async function restoreVersion() {
     if (!restore) return
     if (draft || notes !== n.notes) { setMessage('Save or cancel unsaved edits and notes before restoring.'); return }
     try {
-      notebookTransaction(state => {
+      await notebookTransaction(state => {
         const target = state.academics.classCenter.lectures.find(l => l.id === lecture.id && l.courseId === lecture.courseId)
         if (!target) throw new Error('Entry no longer exists.')
         restoreNotebookVersion(target, restore.id, restore.state)

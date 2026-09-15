@@ -36,7 +36,7 @@ export function createNotebookAssetRepository(factory: IDBFactory = indexedDB): 
   async function transaction<T>(stores: string[], mode: IDBTransactionMode, run: (tx: IDBTransaction, setResult: (value: T) => void, fail: (error: Error) => void) => void): Promise<T> {
     const db = await open()
     return new Promise<T>((resolve, reject) => {
-      const tx = db.transaction(stores, mode); let value: T, failure: Error | undefined
+      const tx = db.transaction(stores, mode, mode === 'readwrite' ? { durability: 'strict' } : undefined); let value: T, failure: Error | undefined
       tx.oncomplete = () => resolve(value)
       tx.onabort = () => reject(failure ?? (tx.error?.name === 'QuotaExceededError' ? new Error('Local image storage is full. Your previous notebook was kept. Export a complete backup before freeing browser storage, or choose smaller source images.') : tx.error ?? new Error('Image storage transaction aborted. Your previous notebook was kept.')))
       tx.onerror = () => { /* The abort handler reports one transaction-level result. */ }
@@ -80,7 +80,7 @@ export async function commitNotebookAssets(options: {
   retainedBindings?: readonly NotebookAssetBinding[]
   repository?: NotebookAssetRepository
   assertFresh: () => void
-  commit: (state: { assetLineageId: string; assetBindings: NotebookAssetBinding[] }) => { committed: true }
+  commit: (state: { assetLineageId: string; assetBindings: NotebookAssetBinding[] }) => { committed: true; durable?: Promise<void> | void }
 }): Promise<{ committed: true; journalPending: boolean; leaseId: string }> {
   const repo = options.repository ?? notebookAssetRepository(), bytes = getPreparedAssetBytes(options.prepared)
   const bindings = mergeNotebookAssetBindings(options.retainedBindings ?? [], options.prepared.bindings), lineageId = options.lineageId ?? crypto.randomUUID()
@@ -93,12 +93,14 @@ export async function commitNotebookAssets(options: {
   await repo.stage(lease, bytes)
   options.assertFresh()
   // This callback must enforce the complete prospective JSON/asset backup closure,
-  // and call notebookTransaction. It must never return a promise.
+  // and compute its mutation synchronously. The optional durable promise
+  // acknowledges IndexedDB metadata after this scoped asset check has closed.
   const state = { assetLineageId: lineageId, assetBindings: bindings.map(b => ({ ...b })) }, scope: unknown = JSON.parse(options.prepared.packageKey), previousCommit = activeCommit
   activeCommit = { state, packageKeys: new Set((Array.isArray(scope) ? scope : [scope]).map(canonical)) }
-  let returned: { committed: true }
+  let returned: { committed: true; durable?: Promise<void> | void }
   try { returned = options.commit(state) } finally { activeCommit = previousCommit }
   if (returned?.committed !== true) throw new Error('Notebook JSON commit must return a synchronous commit receipt; keep the stage journal for recovery.')
+  await returned.durable
   try { await repo.finish(lease.id); return { committed: true, journalPending: false, leaseId: lease.id } }
   catch { return { committed: true, journalPending: true, leaseId: lease.id } }
 }

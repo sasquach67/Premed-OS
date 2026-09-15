@@ -1,3 +1,4 @@
+import { flushWorkspaceStorage } from '@/store/storageHealth'
 import { OutgoingWorkspaceNotice } from '@/components/layout/OutgoingWorkspaceNotice'
 import { preferredScrollBehavior } from '@/lib/scroll'
 /* ============================================================
@@ -34,7 +35,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import { Wordmark } from '@/components/public/Wordmark'
 import { supabase } from '@/lib/supabase'
-import { activateGuestWorkspace, activeAccountWorkspaceId, assertDurableWorkspace } from '@/store/store'
+import { activateGuestWorkspace, activeAccountWorkspaceId, assertDurableWorkspace, captureWorkspaceIdentity, snapshotData } from '@/store/store'
 
 interface NavLink {
   label: string
@@ -120,7 +121,7 @@ export function PublicNav() {
                 if (!window.confirm('Sign out of Premed OS? Your account data will stay saved.')) return
                 setSignOutError('')
                 try {
-                  if (activeAccountWorkspaceId()) assertDurableWorkspace()
+                  if (activeAccountWorkspaceId()) { const owner = captureWorkspaceIdentity(), before = snapshotData(); await flushWorkspaceStorage(owner.key); assertDurableWorkspace(before, owner) }
                   const result = await supabase?.auth.signOut({ scope: 'local' })
                   if (result?.error) throw result.error
                   activateGuestWorkspace()

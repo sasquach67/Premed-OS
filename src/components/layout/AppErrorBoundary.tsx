@@ -1,3 +1,6 @@
+import { workspacePersistence } from '@/store/workspacePersistence'
+import { downloadWorkspaceRecovery } from '@/store/workspaceRecoveryExport'
+import { savedWorkspaceRaw } from '@/store/storageHealth'
 /* ============================================================
    AppErrorBoundary — the app's crash airbag.
 
@@ -23,7 +26,8 @@ interface Props { children: ReactNode }
 interface State { error: Error | null; loadError?: Error | null; copied?: boolean }
 
 function downloadRawData(): void {
-  const raw = localStorage.getItem(rawStorageKey())
+  if (workspacePersistence()) { void downloadWorkspaceRecovery().catch(() => window.alert('The recovery download could not start. Keep this tab open and do not clear browser storage.')); return }
+  const raw = savedWorkspaceRaw(rawStorageKey())
   if (!raw) {
     window.alert('No saved data found in this browser.')
     return

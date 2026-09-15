@@ -131,14 +131,14 @@ async function findBackupFile(credentials: ReturnType<typeof captureCredentials>
 }
 
 /** Create or update the single backup file. Returns its Drive file id. */
-export function uploadBackup(data: unknown, existingId: string | undefined, beforeWrite: () => void): Promise<string> {
+export function uploadBackup(data: unknown, existingId: string | undefined, beforeWrite: () => void | Promise<void>): Promise<string> {
   const credentials = captureCredentials()
   const serialized = JSON.stringify(data)
   const run = async () => {
-    const check = () => { assertCredentials(credentials); beforeWrite() }
-    check()
+    const check = async () => { assertCredentials(credentials); await beforeWrite(); assertCredentials(credentials) }
+    await check()
     const fileId = existingId || (await findBackupFile(credentials)) || null
-    check()
+    await check()
 
     const metadata = fileId
       ? { name: BACKUP_FILENAME }
@@ -157,7 +157,7 @@ export function uploadBackup(data: unknown, existingId: string | undefined, befo
       ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart&fields=id`
       : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id`
 
-    check()
+    await check()
     const res = await fetch(url, {
       method,
       headers: {

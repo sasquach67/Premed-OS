@@ -150,13 +150,13 @@ export function NotebookImportPanel({ courseId, onImported, initialRaw = '', onR
       if (imageReview && !imageReview.prepared) throw new Error(imageReview.error || [...imageReview.problems.values()][0] || 'Resolve the remaining images before saving.')
       const resolved = decoded?.assets ?? imageReview?.prepared ?? null
       if (id !== attempt.current) return
-      const commit = () => { assertFresh(); notebookTransaction(state => {
+      const commit = () => { assertFresh(); const durable = notebookTransaction(state => {
         const currentCourse = state.courses.find(c => c.id === courseId)
         if (!currentCourse) throw new Error('The destination class no longer exists.')
         ids = restored && original ? restoreCompleteNotebookBackup(state.academics.classCenter, currentCourse, restored.notebook, original, confirmBackup, destination) : revision && !separate ? acceptNotebookUpdate(state.academics.classCenter, currentCourse, validated, revision, acceptChanges) : importNotebook(state.academics.classCenter, currentCourse, validated, { confirmDestination: destination, confirmRevisions: revisions })
-      }); return { committed: true as const } }
+      }); return { committed: true as const, durable } }
       if (resolved) await commitNotebookAssets({ prepared: resolved, ...context, assertFresh, commit })
-      else commit()
+      else await commit().durable
       const currentOwner = captureWorkspaceIdentity()
       if (owner.key !== currentOwner.key || owner.epoch !== currentOwner.epoch) return
       setStatus(`Saved in ${course.code}.`); onImported(ids[0])

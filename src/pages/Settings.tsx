@@ -5,7 +5,8 @@ import {
   Archive as ArchiveIcon, Cloud, CloudOff, Download, Upload, RotateCcw, Check, AlertCircle,
   Palette, ExternalLink, CheckCircle2, Trash2, CalendarClock, RefreshCw, Unplug, Wifi, ShieldCheck,
 } from 'lucide-react'
-import { activateGuestWorkspace, useStore } from '@/store/store'
+import { activateGuestWorkspace, assertDurableWorkspace, captureWorkspaceIdentity, snapshotData, useStore } from '@/store/store'
+import { flushWorkspaceStorage } from '@/store/storageHealth'
 import { restoreWorkspaceFromSource } from '@/store/accountMutationSafety'
 import { useBackup } from '@/store/useBackup'
 import { useCloudSync } from '@/store/useCloudSync'
@@ -446,14 +447,16 @@ function AccountSecuritySection({ onMessage }: { onMessage: (msg: string) => voi
   async function signOutEverywhere() {
     if (!(await confirm({ title: 'Sign out on every device?', description: 'Your account data stays saved.', confirmLabel: 'Sign out everywhere' }))) return
     setBusy('signout')
-    const { error } = await client.auth.signOut({ scope: 'global' })
-    setBusy(null)
-    if (error) {
-      onMessage('Could not sign out every device. Try again in a moment.')
-      return
-    }
-    activateGuestWorkspace()
-    navigate('/landing', { replace: true })
+    try {
+      const owner = captureWorkspaceIdentity(), before = snapshotData()
+      await flushWorkspaceStorage(owner.key)
+      assertDurableWorkspace(before, owner)
+      const { error } = await client.auth.signOut({ scope: 'global' })
+      if (error) throw error
+      activateGuestWorkspace()
+      navigate('/landing', { replace: true })
+    } catch (error) { onMessage(error instanceof Error ? error.message : 'Could not sign out every device. Try again in a moment.') }
+    finally { setBusy(null) }
   }
 
   async function deleteAccount() {
@@ -463,15 +466,17 @@ function AccountSecuritySection({ onMessage }: { onMessage: (msg: string) => voi
     const confirmation = window.prompt('Your local export has started. Type DELETE to permanently delete your cloud account. Your local workspace will stay on this device.')
     if (confirmation !== 'DELETE') return
     setBusy('delete')
-    const { error } = await client.functions.invoke('account-delete', { body: { confirmation } })
-    setBusy(null)
-    if (error) {
-      onMessage('The account was not deleted. Your local workspace is still safe on this device.')
-      return
-    }
-    await client.auth.signOut({ scope: 'local' })
-    activateGuestWorkspace()
-    navigate('/auth', { replace: true })
+    try {
+      const owner = captureWorkspaceIdentity(), before = snapshotData()
+      await flushWorkspaceStorage(owner.key)
+      assertDurableWorkspace(before, owner)
+      const { error } = await client.functions.invoke('account-delete', { body: { confirmation } })
+      if (error) throw error
+      await client.auth.signOut({ scope: 'local' })
+      activateGuestWorkspace()
+      navigate('/auth', { replace: true })
+    } catch (error) { onMessage(error instanceof Error ? error.message : 'Account deletion did not complete. Keep this tab open and check your saved workspace before retrying.') }
+    finally { setBusy(null) }
   }
 
   return (

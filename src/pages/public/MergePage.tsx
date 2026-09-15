@@ -171,7 +171,7 @@ export function MergePage() {
       const result = merged as unknown as AppData
       await mutation.write(result)
       // Server confirmed — only now does the device's copy change.
-      mutation.activate(mergeRemotePreservingLocal(result, local))
+      await mutation.activate(mergeRemotePreservingLocal(result, local))
       notifyAccountWorkspaceReady(userId)
       finish('/')
     } catch (err) {
@@ -198,7 +198,7 @@ export function MergePage() {
     let mutation: AccountMutation | undefined
     try {
       mutation = await prepareAccountMutation(userId, cloud, local)
-      mutation.activate(cloud)
+      await mutation.activate(cloud)
       notifyAccountWorkspaceReady(userId)
       finish('/settings?tab=data')
     } catch (error) {

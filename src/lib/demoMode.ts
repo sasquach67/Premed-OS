@@ -48,6 +48,9 @@ export function setDemoMode(active: boolean) {
 export function clearUnstampedDemoNamespace() {
   if (typeof localStorage === 'undefined') return
   if (localStorage.getItem(DEMO_STAMP_KEY) === DEMO_STAMP_VALUE) return
+  // The pointer may have committed before startup could stamp the demo.
+  // Removing it would strand the verified snapshot and its recovery original.
+  if (localStorage.getItem(DEMO_STORAGE_KEY)?.startsWith('premed-os:workspace:idb:v1:')) return
   localStorage.removeItem(DEMO_STORAGE_KEY)
 }
 

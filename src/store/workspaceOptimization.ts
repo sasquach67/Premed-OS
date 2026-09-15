@@ -1,3 +1,4 @@
+import { workspacePersistence } from './workspacePersistence'
 import { captureWorkspaceIdentity } from './store'
 import { readStoredWorkspace, WorkspaceChangedError, writeStoredWorkspace } from './storageHealth'
 import { decodeWorkspaceStorage, encodeWorkspaceStorage, WORKSPACE_CHUNKS_PREFIX } from './workspaceStorageCodec'
@@ -31,6 +32,7 @@ async function verifySnapshot(snapshot: WorkspaceRecoverySnapshot | null, worksp
 
 /** Read-only estimate. Consent and the durable backup happen in commit below. */
 export function prepareWorkspaceOptimization(storage: Storage = localStorage): WorkspaceOptimizationPlan {
+  if (workspacePersistence()) throw new Error('This workspace already uses IndexedDB. Keep your complete notebook backup and review the reported storage error; localStorage compression is no longer needed.')
   const owner = captureWorkspaceIdentity()
   if (!owner.key) throw new Error('Open an existing class workspace before making room.')
   const before = storage.getItem(owner.key), decoded = readStoredWorkspace(storage, owner.key)

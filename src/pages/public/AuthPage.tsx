@@ -1,3 +1,4 @@
+import { flushWorkspaceStorage } from '@/store/storageHealth'
 /* ============================================================
    AuthPage — sign in / create an account (05 §2).
 
@@ -29,7 +30,7 @@ import { supabase, isSupabaseConfigured, authRedirectTo } from '@/lib/supabase'
 import { useEnterApp } from '@/components/public/useEnterApp'
 import { markEnteredApp } from '@/lib/publicLayer'
 import type { User } from '@supabase/supabase-js'
-import { activateGuestWorkspace, activeAccountWorkspaceId, assertDurableWorkspace } from '@/store/store'
+import { activateGuestWorkspace, activeAccountWorkspaceId, assertDurableWorkspace, captureWorkspaceIdentity, snapshotData } from '@/store/store'
 
 type Screen = 'form' | 'sent' | 'recovery' | 'signed-in'
 type Method = 'link' | 'password'
@@ -482,7 +483,7 @@ export function AuthPage() {
               onSignOut={async () => {
                 if (!window.confirm('Sign out of Premed OS? Your account data will stay saved.')) return
                 try {
-                  if (activeAccountWorkspaceId()) assertDurableWorkspace()
+                  if (activeAccountWorkspaceId()) { const owner = captureWorkspaceIdentity(), before = snapshotData(); await flushWorkspaceStorage(owner.key); assertDurableWorkspace(before, owner) }
                   const result = await supabase?.auth.signOut({ scope: 'local' })
                   if (result?.error) throw new Error(result.error.message)
                   activateGuestWorkspace()
