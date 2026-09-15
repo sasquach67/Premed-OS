@@ -1,3 +1,7 @@
+# Direct teaching default — beta20
+
+External notebooks use course material to establish relevance and expectations, then use established subject knowledge to explain and resolve ordinary errors. EC-TEACH-DIRECTLY through EC-KNOWLEDGE-PRECEDENCE in canonical 20 govern all three goals and both new/update modes. Teach the answer first; keep material correction notes secondary. Preserve exact evidence, genuine uncertainty, missing essential stimuli and explicit source-only or assignment constraints. These rules supersede conflicting source-mode wording in the included legacy methodology. Existing notebooks change only through an explicit content update.
+
 # Current default: direct final notebook delivery — beta18
 
 Across Review, Assessment and Assignment, in new and update mode, prepare/check the content and deliver the actual titled JSON directly. Draft-first discussion is optional only when explicitly requested. Any older version narrative below describes history and does not reinstate a confirmation gate. Essential missing inputs, announced upload batches, source integrity and app update acceptance remain protected. Final filenames use actual notebook titles; local authorized agents resolve Downloads and avoid collisions, while hosted chats provide real attachments without claiming a browser destination. ZIP internals remain compatible.

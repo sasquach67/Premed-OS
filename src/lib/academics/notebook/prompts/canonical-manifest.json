@@ -1,13 +1,13 @@
 {
   "instructionsVersion": "notebook-workflows-draft-4",
-  "promptBuild": "notebook-instructions-beta-19",
-  "canonicalHeadAtBuild": "ff99edf5f762361769913acc4e47f1b2f114e317",
-  "canonicalRootAtBuild": "/private/tmp/premed-class-journal-main",
+  "promptBuild": "notebook-instructions-beta-20",
+  "canonicalHeadAtBuild": "fba369421c571c4a01ac3974a12310dd06dd5648",
+  "canonicalRootAtBuild": "/Users/andyquach/.codex/worktrees/notebook-teaching-clarity/premed-os",
   "sources": {
     "premed-hq-documentation/specifications/generation/21-external-notebook-request-template.md": {
-      "sha256": "cdd098930bca2c1c69bb9a9f31a249a3afb3c631bbbb38afd6ea189f3750628f",
+      "sha256": "e1a92020c13a039e26d74a91ac2a968f211abdc9f2491ba1bdd0716a1fabd2c8",
       "sections": {
-        "full": "cdd098930bca2c1c69bb9a9f31a249a3afb3c631bbbb38afd6ea189f3750628f"
+        "full": "e1a92020c13a039e26d74a91ac2a968f211abdc9f2491ba1bdd0716a1fabd2c8"
       }
     },
     "premed-hq-documentation/specifications/generation/02-global-rules-and-source-modes.md": {
@@ -28,9 +28,9 @@
       }
     },
     "premed-hq-documentation/specifications/generation/20-external-notebook-workflow.md": {
-      "sha256": "54ef968f07092646ba241fc0f691c647122698ab9210623fa7362b767ec3469f",
+      "sha256": "6b56a21612bf2444e8ed22208d067bd53c44df7cb53b37138135fbe9e1d6ddb7",
       "sections": {
-        "full": "54ef968f07092646ba241fc0f691c647122698ab9210623fa7362b767ec3469f"
+        "full": "6b56a21612bf2444e8ed22208d067bd53c44df7cb53b37138135fbe9e1d6ddb7"
       }
     },
     "premed-hq-documentation/specifications/generation/03-study-guide-v1.md": {
@@ -90,7 +90,7 @@
     "premed-hq-documentation/specifications/generation/portable-notebooks/FIXTURE-CORRECTIONS.md": "11d749acb5140fd1a743a9fe0e93231b89c3a858ecb4e1e1fa55696c5e0e5621",
     "premed-hq-documentation/specifications/generation/portable-notebooks/METHODOLOGY-AUDIT.md": "21b823e2cc304b8d0681da9f9f8c324e39be77cb963b0bc1cbd4f0d514b3c265",
     "premed-hq-documentation/specifications/generation/portable-notebooks/ORDINARY-CHAT-MATERIALS.md": "b36020e6361a7a3885294e42dfa137ab7a2ef22958fecdc6181e65de7e03df56",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/README.md": "8ec2ad82d0c649a31b5c5282d28a4fcd9a78e2239f8cca6ffb1c51a60966851a"
+    "premed-hq-documentation/specifications/generation/portable-notebooks/README.md": "2c2cbf878b0dec80ebf0c3b1152de16e2e3e2f82e115a111d0e0d24e6272072d"
   },
   "testAssets": {
     "premed-hq-documentation/specifications/generation/portable-notebooks/cross-provider-assets/question-new-detail.png": "03f9199ec4dff474e7cb2df62c119c04140cedf432a38ca79ea3d0b030087846",
@@ -101,7 +101,7 @@
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_conversation_examples.py": "bc0c36b25bb604056a5e2342957887aed7be86987271e86fe2cee6aeb667cb81",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_feasibility_case.py": "61ea50db75f7901d6b7f733d02db1204ea7e8dde7a8165b9715e1d5dff88efcc",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_fixtures.py": "31d262db6aafa9788e30e20be0f2b3d4af3c80eba634990984d25a2d623ff169",
-    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "c456d781e6ccfb2ec47e00a7a426084b860ab9534244e3c8ed2418183f991694",
+    "premed-hq-documentation/specifications/generation/portable-notebooks/build_prompts.py": "372369a91363418a94a72ea78323556efa566aaac34e32574b363784069b175d",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_revision_cases.py": "1532a4cec4e1333b3c63c877cc34d8913e0c034a0c220aa090d020532ce201a1",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_schema.py": "86cee42747b37f0dc735f28e21a1aa586f77015454b6fcfd593eb8178684085d",
     "premed-hq-documentation/specifications/generation/portable-notebooks/build_standardization.py": "0f3ed0fc58dca570a0b775ce543f85c574cc527aa7ccc5ae129b973f9ad60f92",
@@ -117,40 +117,40 @@
   },
   "outputs": {
     "copy-prompt-review.md": {
-      "sha256": "4a0b44b2bf8d2258b0b1d3cbb82110ef3e62085c7ed2a397f48d000a2c18e8b1",
-      "bytes": 154104,
-      "words": 17762,
+      "sha256": "83084526b4d9c0e1dcab263d6b0a19296521b0b6adb10d56da05a93b9033a40a",
+      "bytes": 158068,
+      "words": 18310,
       "componentBytes": {
-        "request": 5442,
+        "request": 5710,
         "commonLearningRules": 16010,
         "goalLearningRules": 28201,
-        "externalWorkflow": 73718,
+        "externalWorkflow": 77414,
         "schema": 29667,
         "assembly": 1066
       }
     },
     "copy-prompt-assessment.md": {
-      "sha256": "ac034a46f778043b228b9b336604dbc2b9fe1c81aad4b424acb01d305c7a4ffb",
-      "bytes": 141966,
-      "words": 15694,
+      "sha256": "e7c328a9dbdf338f647be6205b3dc84bea9dd1f191f7f2bcdd63ea9578b5ee4c",
+      "bytes": 145930,
+      "words": 16242,
       "componentBytes": {
-        "request": 5450,
+        "request": 5718,
         "commonLearningRules": 16010,
         "goalLearningRules": 16047,
-        "externalWorkflow": 73718,
+        "externalWorkflow": 77414,
         "schema": 29667,
         "assembly": 1074
       }
     },
     "copy-prompt-assignment.md": {
-      "sha256": "7c2f4265ad4018a10ccfb773b32cf997b34aa0f367a20228ba4ba96fbfa21872",
-      "bytes": 134309,
-      "words": 14657,
+      "sha256": "59920e1e5f108edd9bdccf90635210fcd9b5931cca5e41a0893439e8ffdfdbf7",
+      "bytes": 138273,
+      "words": 15205,
       "componentBytes": {
-        "request": 5450,
+        "request": 5718,
         "commonLearningRules": 16010,
         "goalLearningRules": 8390,
-        "externalWorkflow": 73718,
+        "externalWorkflow": 77414,
         "schema": 29667,
         "assembly": 1074
       }
@@ -176,5 +176,6 @@
     "Beta 9 emits agreed v3 with real source figure assets, persisted visualReview, closed neutral practice stimuli and safe evidence-labelled study diagrams. Preserves exact v2 input compatibility and all three goals/new-update composition. JSON metadata is separate from actual local asset binding and complete visual backups."
   ],
   "visualRepertoireIncrement": "Beta15 embeds the frozen v4 schema and purposeful new visual rules. Old schemas, eleven request fields, three goal templates and new/update composition remain supported. App renderer/reveal/save/export/update acceptance is required separately.",
+  "teachingKnowledgeIncrement": "Beta20 teaches directly with established knowledge, resolves ordinary source errors, adds original examples and keeps material corrections secondary; exact evidence, scope and explicit source-only constraints remain intact.",
   "qualityStatus": "Draft; structural checks and invented fixtures cannot establish learning quality or count as manual course trials."
 }
