@@ -288,3 +288,19 @@ it.each(['Save edits', 'Cancel edits'])('returns to Study guide after %s without
   if (action === 'Save edits') expect(lecture().importedNotebook!.history!.at(-1)!.current).toEqual(before.current)
   else expect(lecture().importedNotebook!.history).toEqual(before.history)
 })
+
+it('reopens an existing update draft without requiring another workspace write', async () => {
+  await click('Update this notebook')
+  const draft = JSON.stringify(lecture().importedNotebook!.updateSession)
+  await click('Back to saved entry')
+  const set = Storage.prototype.setItem
+  const writes: string[] = []
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function(this: Storage, key, value) {
+    if (this === localStorage) { writes.push(key); throw new DOMException('Storage temporarily unavailable', 'UnknownError') }
+    return set.call(this, key, value)
+  })
+  await click('Update this notebook')
+  expect(container.querySelector('[aria-label="Update saved notebook"]')).toBeTruthy()
+  expect(writes).toEqual([])
+  expect(JSON.stringify(lecture().importedNotebook!.updateSession)).toBe(draft)
+})

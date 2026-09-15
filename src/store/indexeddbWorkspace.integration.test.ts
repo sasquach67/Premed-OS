@@ -74,7 +74,7 @@ it('keeps large acknowledged edits and account ownership through a cold reload',
 it('does not publish a notebook edit or acknowledge success when IndexedDB rejects the commit', async () => {
   const s = await boot(), before = JSON.stringify(s.snapshotData())
   vi.spyOn(s.persistence.repository, 'commit').mockRejectedValueOnce(new DOMException('Synthetic quota', 'QuotaExceededError'))
-  await expect(s.commit(d => { d.notes.example = 'Must not appear saved' })).rejects.toThrow('could not save')
+  await expect(s.commit(d => { d.notes.example = 'Must not appear saved' })).rejects.toThrow('Synthetic quota')
   expect(JSON.stringify(s.snapshotData())).toBe(before)
   expect(s.persistence.status(key).phase).toBe('error')
   expect(JSON.parse((await s.persistence.repository.read(key))!.raw).state.notes.example).toBe('Existing note')
@@ -126,4 +126,27 @@ it('retains notebooks, sources, notes, progress, history and actual staged image
   const bytes = await freshAssets.read(hash)
   expect(bytes?.size).toBe(image?.size)
   expect(await bytes?.arrayBuffer()).toEqual(await image?.arrayBuffer())
+})
+
+it('starts a notebook update in the same durable workspace without losing any saved content', async () => {
+  const path = process.env.NOTEBOOK_UPDATE_WORKSPACE
+  const baseline = path ? JSON.parse(readFileSync(path, 'utf8')) : null
+  if (baseline) localStorage.setItem(key, (await import('./workspaceStorageCodec')).encodeWorkspaceStorage(JSON.stringify({ state: baseline, version: 50 })))
+  const s = await boot()
+  if (!baseline) {
+    const { revisionFixture } = await import('@/lib/academics/notebook/revision.test-fixtures')
+    const { prepareNotebook } = await import('@/lib/academics/notebook/package')
+    const { importNotebook } = await import('@/lib/academics/notebook/import')
+    const prepared = await prepareNotebook(JSON.stringify(revisionFixture()))
+    await s.commit(d => { importNotebook(d.academics.classCenter, d.courses[0], prepared, { confirmDestination: true }) })
+  }
+  const { createNotebookUpdateSession } = await import('@/lib/academics/notebook/revision')
+  const before = structuredClone(s.snapshotData())
+  const target = before.academics.classCenter.lectures.find(l => l.importedNotebook)!
+  await s.commit(d => {
+    const n = d.academics.classCenter.lectures.find(l => l.id === target.id)!.importedNotebook!
+    n.updateSession = createNotebookUpdateSession(n, target.id)
+  })
+  expect(s.snapshotData().academics.classCenter.lectures.find(l => l.id === target.id)!.importedNotebook!.updateSession).toBeTruthy()
+  expect(JSON.parse((await s.persistence.repository.read(key))!.raw).state).toEqual(s.snapshotData())
 })

@@ -230,6 +230,9 @@ export function ExternalNotebookView({ lecture, courseCode, onNavigateEntry }: {
   }
   async function startUpdate(restart = false) {
     if (draft || notes !== n.notes) { setMessage('Save your edits and notes, or cancel the unsaved changes, before starting an update. Only saved content is exported.'); return }
+    // Reopening an existing draft is navigation. The import/acceptance step
+    // still verifies the saved baseline and acknowledges its durable commit.
+    if (!restart && n.updateSession) { setUpdating(true); setMessage(''); return }
     try {
       await notebookTransaction(state => {
         const target = state.academics.classCenter.lectures.find(l => l.id === lecture.id && l.courseId === lecture.courseId)

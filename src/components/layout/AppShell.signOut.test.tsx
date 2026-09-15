@@ -8,16 +8,18 @@ import { AppShell } from './AppShell'
 
 const cloud = vi.hoisted(() => ({
   signOut: vi.fn(async () => undefined),
+  conflict: { message: 'Review account copies', saved: true },
 }))
 
 vi.mock('@/store/useCloudSync', () => ({
-  useCloudSync: () => ({ user: { id: 'student-1' }, signOut: cloud.signOut }),
+  useCloudSync: () => ({ user: { id: 'student-1' }, signOut: cloud.signOut, conflict: cloud.conflict }),
 }))
 vi.mock('@/store/useTheme', () => ({ useTheme: () => undefined }))
 vi.mock('@/store/useBackup', () => ({ useBackup: () => undefined }))
 vi.mock('./Sidebar', () => ({
   Sidebar: ({ onSignOut }: { onSignOut?: () => void }) => <button type="button" onClick={onSignOut}>Sign out</button>,
 }))
+vi.mock('./AccountSyncNotice', () => ({ AccountSyncNotice: () => <aside>Account copies need review</aside> }))
 vi.mock('./Topbar', () => ({ Topbar: () => null }))
 vi.mock('./QuickAddDialog', () => ({ QuickAddDialog: () => null }))
 vi.mock('./HelpFeedbackLauncher', () => ({ HelpFeedbackLauncher: () => null }))
@@ -44,13 +46,14 @@ describe('AppShell sign out', () => {
     container.remove()
   })
 
-  async function render() {
+  async function render(path = '/academics') {
     await act(async () => {
       root.render(
-        <MemoryRouter initialEntries={['/academics']}>
+        <MemoryRouter initialEntries={[path]}>
           <Routes>
             <Route element={<AppShell />}>
               <Route path="academics" element={<div>Inside app</div>} />
+              <Route path="settings" element={<div>Account settings</div>} />
             </Route>
             <Route path="landing" element={<div>Public landing</div>} />
           </Routes>
@@ -59,6 +62,16 @@ describe('AppShell sign out', () => {
       )
     })
   }
+
+  it('keeps account recovery details off the notebook and other normal pages', async () => {
+    await render()
+    expect(document.body.textContent).not.toContain('Account copies need review')
+  })
+
+  it('keeps the recovery downloads available in account settings', async () => {
+    await render('/settings')
+    expect(document.body.textContent).toContain('Account copies need review')
+  })
 
   it('asks before signing out, allows cancel, and redirects after confirmation', async () => {
     await render()

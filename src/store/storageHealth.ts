@@ -21,7 +21,7 @@ function rememberReadable(storage: Storage, name: string, raw: string | null) {
 /** Distinguish a valid notebook that could not be persisted from invalid input. */
 export class WorkspaceSaveError extends Error {
   constructor(cause: unknown) {
-    super('Browser storage could not save this notebook. Your previously saved notebooks were kept. Keep your original folder or ZIP, including its images. Export complete backups of saved notebooks before changing browser storage, then retry.', { cause })
+    super(`Browser storage could not save this notebook. ${message(cause)} Your previously saved notebooks were kept. Keep your original folder or ZIP, including its images, and keep this tab open.`, { cause })
     this.name = 'WorkspaceSaveError'
   }
 }

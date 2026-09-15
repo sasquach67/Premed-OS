@@ -107,7 +107,7 @@ export function AppShell() {
           <Sidebar
             collapsible
             desktopExpanded={desktopSidebarVisible}
-            signedIn={Boolean(cloud.user)}
+            signedIn={Boolean(cloud.user)} accountNeedsReview={Boolean(cloud.conflict)}
             desktopLocked={desktopSidebarLocked}
             onNavigate={keepDesktopSidebarVisibleOnNavigate}
             onToggleDesktopLock={toggleDesktopSidebarLock}
@@ -121,7 +121,7 @@ export function AppShell() {
           <m.div className="fixed inset-0 z-40 lg:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={MOTION_TRANSITION.micro}>
             <m.div className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]" onClick={() => setMobileOpen(false)} />
             <m.div className="absolute inset-y-0 left-0" initial={{ x: -16 }} animate={{ x: 0 }} exit={{ x: -16 }} transition={MOTION_TRANSITION.standard}>
-              <Sidebar onNavigate={() => setMobileOpen(false)} signedIn={Boolean(cloud.user)} onSignOut={requestSignOut} />
+              <Sidebar onNavigate={() => setMobileOpen(false)} signedIn={Boolean(cloud.user)} accountNeedsReview={Boolean(cloud.conflict)} onSignOut={requestSignOut} />
               <button
                 onClick={() => setMobileOpen(false)}
                 className="absolute right-3 top-3 rounded-md p-1 text-muted-foreground hover:bg-muted"
@@ -139,7 +139,7 @@ export function AppShell() {
           <Topbar onMenu={() => setMobileOpen(true)} onShowDesktopSidebar={toggleDesktopSidebarLock} desktopSidebarHidden={!desktopSidebarVisible} />
           <main ref={mainRef} data-app-scroll-container className="relative flex-1 overflow-y-auto">
             <OutgoingWorkspaceNotice />
-            <AccountSyncNotice userId={cloud.user?.id} />
+            {location.pathname === '/settings' && <AccountSyncNotice userId={cloud.user?.id} />}
             {cloud.error && !cloud.conflict && <p role="alert" className="m-4 rounded-lg border border-destructive/50 p-4 text-sm">{cloud.error}</p>}
             <div className={/^\/academics\/classes\/[^/]+\/(?:lectures|journal)\/[^/]+$/.test(location.pathname) ? "w-full" : "mx-auto w-full max-w-[84rem] px-4 py-6 md:px-8 md:py-8"}>
               <AnimatePresence mode="wait" initial={false}>

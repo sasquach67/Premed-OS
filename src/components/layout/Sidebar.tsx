@@ -16,6 +16,7 @@ type SidebarProps = {
   onNavigate?: () => void
   collapsible?: boolean
   onSignOut?: () => void
+  accountNeedsReview?: boolean
   signedIn?: boolean
   desktopLocked?: boolean
   desktopExpanded?: boolean
@@ -28,7 +29,7 @@ export function Sidebar(props: SidebarProps) {
   return props.collapsible ? <DesktopSidebar {...props} /> : <MobileSidebar {...props} />
 }
 
-function DesktopSidebar({ onNavigate, onSignOut, signedIn = false, desktopLocked = false, desktopExpanded = false, onToggleDesktopLock }: SidebarProps) {
+function DesktopSidebar({ onNavigate, onSignOut, signedIn = false, accountNeedsReview = false, desktopLocked = false, desktopExpanded = false, onToggleDesktopLock }: SidebarProps) {
   const profile = useStore((s) => s.profile)
   const touchRoute = useStore((s) => s.touchRoute)
   const location = useLocation()
@@ -63,13 +64,15 @@ function DesktopSidebar({ onNavigate, onSignOut, signedIn = false, desktopLocked
       <footer className="sidebar-static-account">
         <DropdownMenu open={accountOpen} onOpenChange={setAccountOpen}>
           <DropdownMenuTrigger asChild>
-            <button type="button" className="sidebar-static-account-button focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring" aria-label="Open account menu">
+            <button type="button" className="sidebar-static-account-button relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring" aria-label={accountNeedsReview ? "Open account menu, sync paused" : "Open account menu"}>
               <Avatar className="size-10 shrink-0 border-[3px] border-card shadow-sm"><AvatarFallback className="bg-primary text-xs font-extrabold text-primary-foreground">{profile.name.slice(0, 1)}</AvatarFallback></Avatar>
+              {accountNeedsReview && <span className="absolute right-0 top-0 size-2.5 rounded-full border-2 border-card bg-warning" aria-hidden="true" />}
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="right" align="end" sideOffset={8} className="w-64">
             <DropdownMenuItem asChild><Link to="/profile" onClick={onNavigate}><UserRound className="size-4" /> Profile & CV</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/settings" onClick={onNavigate}><Settings className="size-4" /> Settings</Link></DropdownMenuItem>
+            {accountNeedsReview && <DropdownMenuItem asChild><Link to="/settings" onClick={onNavigate}><ShieldCheck className="size-4 text-warning" /> Sync paused · Review copies</Link></DropdownMenuItem>}
             {isFounder && <DropdownMenuItem asChild><Link to="/founder" onClick={onNavigate}><ShieldCheck className="size-4" /> Founder control</Link></DropdownMenuItem>}
             <DropdownMenuItem asChild><Link to="/upgrade" onClick={onNavigate}><Crown className="size-4" /> Upgrade plan</Link></DropdownMenuItem>
             <DropdownMenuItem onSelect={() => { setPatchNotesOpen(true); setPatchNotesSeen(true); localStorage.setItem('premed_hq_patch_notes_seen', 'foundation-l5-shell') }}><BookOpenText className="size-4" /> Patch Notes {!patchNotesSeen && <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-extrabold text-primary">New</span>}</DropdownMenuItem>
@@ -91,7 +94,7 @@ function DesktopNavItem({ route, locationPath, onNavigate, onRoute }: { route: R
   return <li><Link to={to} aria-current={active ? 'page' : undefined} onClick={() => { onRoute(route.id); onNavigate?.() }} className={cn('sidebar-static-row group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring', active && 'sidebar-static-row-active')}><span className="sidebar-static-icon"><route.icon className={cn('size-5', active ? 'text-sidebar-primary' : 'text-muted-foreground group-hover:text-sidebar-primary')} /></span><span className="sidebar-static-label flex items-center gap-1"><span className="truncate">{route.label}</span>{!isRouteAvailable(`/${route.id}`) && <span className="shrink-0 text-[10px] font-semibold text-muted-foreground"> Soon</span>}</span></Link></li>
 }
 
-function MobileSidebar({ onNavigate, signedIn = false }: SidebarProps) {
+function MobileSidebar({ onNavigate, signedIn = false, accountNeedsReview = false }: SidebarProps) {
   const profile = useStore((s) => s.profile)
   const touchRoute = useStore((s) => s.touchRoute)
   const location = useLocation()
@@ -101,6 +104,7 @@ function MobileSidebar({ onNavigate, signedIn = false }: SidebarProps) {
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
         {NAV_GROUPS.map(({ group, items }) => <div key={group} className="mb-4"><p className="mb-1 px-2 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">{group}</p>{items.map((route) => <MobileItem key={route.id} route={route} locationPath={location.pathname} onNavigate={onNavigate} onRoute={touchRoute} />)}</div>)}
       </div>
+      {accountNeedsReview && <Link to="/settings" onClick={onNavigate} className="mx-3 mb-2 rounded-lg border border-warning/30 px-3 py-2 text-xs font-semibold text-warning">Sync paused · Review account copies</Link>}
       <div className="border-t border-sidebar-border p-3"><button type="button" className="flex w-full items-center gap-2 rounded-xl bg-sidebar-accent/45 p-2 text-left" onClick={onNavigate}><Avatar><AvatarFallback className="bg-primary text-xs font-bold text-primary-foreground">{profile.name.slice(0, 1)}</AvatarFallback></Avatar><span className="min-w-0"><span className="block truncate font-display text-sm font-bold">{profile.name}</span><span className="block truncate text-[11px] text-muted-foreground">{signedIn ? profile.email : 'Local profile'}</span></span></button></div>
     </nav>
   )
