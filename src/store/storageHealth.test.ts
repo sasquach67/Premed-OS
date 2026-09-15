@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { guardedStorage, storageFailure } from '@/store/storageHealth'
+import { guardedStorage, storageFailure, WorkspaceSaveError } from '@/store/storageHealth'
 import { createSeedData } from '@/data/seed'
 import { systemFeed } from '@/components/layout/attention'
 
@@ -38,4 +38,13 @@ describe('guarded persistence storage', () => {
     guardedStorage(storage).setItem('data', '{}')
     expect(storageFailure()).toBe('')
   })
+})
+
+it('shows the underlying save failure for both database errors and legacy storage messages', () => {
+  for (const cause of [new Error('Another tab changed this workspace.'), 'Another tab changed this workspace.']) {
+    const error = new WorkspaceSaveError(cause)
+    expect(error.message).toContain('Another tab changed this workspace.')
+    expect(error.message).toContain('previously saved notebooks were kept')
+    expect(error.cause).toBe(cause)
+  }
 })
