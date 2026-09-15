@@ -1,5 +1,6 @@
 import { decodeWorkspaceStorage } from './workspaceStorageCodec'
 import { validateAppData } from '@/lib/validateAppData'
+import { CURRENT_STORE_VERSION, OLDEST_SUPPORTED_STORE_VERSION } from './workspaceVersion'
 import { createWorkspaceRepository, verifyWorkspaceRecord, WorkspaceConflictError, type WorkspaceRecord, type WorkspaceRepository } from './workspaceRepository'
 
 export const WORKSPACE_IDB_PREFIX = 'premed-os:workspace:idb:v1:'
@@ -9,6 +10,8 @@ const ready: PersistenceStatus = { phase: 'ready', pending: 0, error: '' }
 function validate(raw: string) {
   let parsed: unknown
   try { parsed = JSON.parse(raw) } catch { throw new Error('The saved workspace is not readable JSON. Its original bytes were kept.') }
+  const version = (parsed as { version?: unknown })?.version
+  if (version !== undefined && (!Number.isSafeInteger(version) || (version as number) < OLDEST_SUPPORTED_STORE_VERSION || (version as number) > CURRENT_STORE_VERSION)) throw new Error('This workspace uses an unsupported or newer app version. Update Premed OS before opening it; the saved data was kept.')
   if (validateAppData((parsed as { state?: unknown })?.state).length) throw new Error('The saved workspace has an invalid structure. Its original bytes were kept.')
 }
 export function workspacePointer(record: WorkspaceRecord) { return WORKSPACE_IDB_PREFIX + record.migrationId }

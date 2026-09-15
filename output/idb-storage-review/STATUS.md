@@ -1,6 +1,6 @@
 # Local IndexedDB milestone — September 14, 2026
 
-Branch: `codex/indexeddb-workspace`, based on released `b803549`. Not deployed. The broader workflow and cloud-image/complete-backup work remain unfinished.
+Branch: `codex/indexeddb-workspace`, based on released `b803549`. Local milestone committed as b155f04. Cloud images and complete backups implemented; release verification is recorded below. The broader class-quality trials remain unfinished.
 
 ## Automated verification
 
@@ -19,6 +19,16 @@ Frozen build at `http://127.0.0.1:5274/output/idb-storage-review/index.html`, co
 
 The earlier live-development fixture lost synthetic visible state during hot module replacement while persistence modules were being edited. Its `native-receipt.json` is pre-HMR evidence only. The fixture lacked main's hydration gate; it now refuses to adopt defaults after failed hydration. `blockStoredWorkspace` also blocks the persistence coordinator. The final checks use frozen compiled assets, without HMR.
 
-## Remaining scope
+## Cloud/complete-backup milestone — release candidate
 
-Cloud currently syncs workspace JSON and academic original files; notebook image bytes are not yet included. Drive currently backs up JSON only. Those references do not constitute complete cross-device image recovery. Cloud images and a versioned complete backup format require implementation, verification and a separate readiness statement. No production deployment or user class-quality validation is claimed here.
+- 266 test files / 1,977 tests passed, including Drive candidate discovery, selecting earlier verified backups, account changes, image upload/readback integrity, large complete ZIPs, and actual IndexedDB restore transaction abort after put success.
+- Subsequent removal of an unused hook dependency: 2 files / 7 backup/sync tests passed and the hook linted cleanly. Integrity-error wording was made actionable and affected archive/restore tests rerun.
+- Production TypeScript/build passed. Full lint had zero errors; its one newly introduced hook warning was removed (56 pre-existing warnings remain). Production dependency audit: zero vulnerabilities. Retained-release asset tests: 4 passed.
+- Full compiled app, synthetic Guest only: exported a complete ZIP with an original notebook PNG and attached text file, imported it at a fresh origin, reloaded, rendered the image in the correct class, edited its title, reloaded again, and exported the edited workspace. Current/source/history/notes/progress content and both binary hashes were preserved; attached files received fresh local addresses. Evidence: `complete-backup-native-check.json`.
+- Damaged ZIP rejected in Settings with an integrity error before replacement. No real account data or real cloud files were changed by QA.
+- Live Supabase metadata rechecked: `academic-originals` private, 52,428,800-byte limit, authenticated CRUD restricted to `auth.uid()` as the first path folder. No policy or bucket changes required. Synthetic policy probe rolled back; no actual file upload/download was performed against Supabase or Drive.
+- Independent read-only Planning review found no additional release blocker; its archive/Drive focused run passed 2 files / 6 tests.
+
+## Explicit limits
+
+Authenticated cross-device cloud/Drive binary round trips have not been exercised with a real account. Browser storage can still be evicted or cleared; independent complete backups remain necessary. Very old clients predating existing workspace guards cannot be retroactively fenced by this frontend change. Boot-time recovery exports preserve raw metadata copies and are diagnostic recovery files, not complete ZIP backups; unresolved storage conflicts keep editing and sync paused. Student class trials and learning-quality ratings remain separate from this storage release.

@@ -18,6 +18,22 @@ const raw = (note: string) => { const state = createPersonalInitialData(); state
 const seed = () => raw('')
 let factory: IDBFactory, legacy: LegacyStorage, repo: WorkspaceRepository
 beforeEach(() => { factory = new IDBFactory(); legacy = new LegacyStorage(); repo = createWorkspaceRepository(factory) })
+it('refuses a future schema before replacing its legacy value or seeding defaults', async () => {
+  const future = JSON.stringify({ ...JSON.parse(raw('future content')), version: 999 })
+  legacy.setItem(key, future)
+  const disk = createWorkspacePersistence(repo, legacy)
+  await expect(disk.load(key, seed)).rejects.toThrow('newer app version')
+  expect(legacy.getItem(key)).toBe(future)
+  expect(await repo.read(key)).toBeNull()
+})
+it('blocks later autosaves after a hydration error is recorded', async () => {
+  const original = raw('saved'); legacy.setItem(key, original)
+  const disk = createWorkspacePersistence(repo, legacy)
+  await disk.load(key, seed)
+  disk.block(key, new Error('Hydration failed'))
+  await expect(disk.write(key, raw('defaults'))).rejects.toThrow('Hydration failed')
+  expect((await repo.read(key))!.raw).toBe(original)
+})
 
 it('rejects an actual transaction abort even after its put request succeeds', async () => {
   const original = raw('original'); legacy.setItem(key, original)

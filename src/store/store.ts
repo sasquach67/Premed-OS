@@ -93,10 +93,8 @@ if (!workspacePersistence() && !DEMO_MODE && typeof localStorage !== 'undefined'
 if (DEMO_MODE) clearUnstampedDemoNamespace()
 
 export const STORAGE_KEY = activeStorageKey()
-/** Version 0 is the oldest local-first root shape this migration chain accepts. */
-export const OLDEST_SUPPORTED_STORE_VERSION = 0
-/** Matches the newest migration in `migrateAll`: `migrateNotebookV50`. */
-export const CURRENT_STORE_VERSION = 50
+export { OLDEST_SUPPORTED_STORE_VERSION, CURRENT_STORE_VERSION } from './workspaceVersion'
+import { CURRENT_STORE_VERSION } from './workspaceVersion'
 
 function createInitialData() {
   const initial = createInitialDataForMode(DEMO_MODE)

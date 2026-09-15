@@ -3,13 +3,13 @@ import { createRoot, type Root } from 'react-dom/client'
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createPersonalInitialData } from '@/data/personalInitialData'
-const wire = vi.hoisted(() => ({ row: null as unknown, writes: vi.fn(), drive: vi.fn(async (_data: unknown, _id: unknown, check: () => Promise<void>) => { await check(); return 'synthetic-backup' }) }))
+const wire = vi.hoisted(() => ({ row: null as unknown, writes: vi.fn(), drive: vi.fn(async (_data: unknown, check: () => Promise<void>) => { await check(); return 'synthetic-backup' }) }))
 vi.mock('@/lib/supabase', () => ({ isSupabaseConfigured: true, authRedirectTo: 'http://localhost/', supabase: {
   auth: { getSession: async () => ({ data: { session: { user: { id: 'synthetic-sync', email: 'synthetic@example.invalid' } } } }), onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) },
   from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: wire.row, error: null }) }) }), update: (value: unknown) => ({ eq: () => ({ eq: () => ({ select: () => ({ maybeSingle: async () => { wire.writes(value); return { data: { updated_at: '2026-09-14T00:00:00Z' }, error: null } } }) }) }) }) }),
 } }))
 vi.mock('@/lib/academics/sharedMaterialFiles', () => ({ syncAcademicOriginals: async () => ({ uploaded: 0, available: 0, missing: 0 }) }))
-vi.mock('@/lib/googleDrive', () => ({ uploadBackup: wire.drive, isConnected: () => true, clearDriveSession() {}, connect: async () => undefined, connectSilent: async () => undefined, disconnect() {} }))
+vi.mock('@/lib/googleDrive', () => ({ uploadCompleteBackup: wire.drive, isConnected: () => true, clearDriveSession() {}, connect: async () => undefined, connectSilent: async () => undefined, disconnect() {} }))
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 const key = 'hq:app-data:account:synthetic-sync'
 let root: Root, cloud: ReturnType<typeof import('./useCloudSync').useCloudSync>, backup: ReturnType<typeof import('./useBackup').useBackup>
@@ -57,7 +57,7 @@ it('acknowledges Drive only after its local backup receipt is durable', async ()
   expect(backup.status).toBe('saved')
   const disk = (await import('./workspacePersistence')).workspacePersistence()!
   const saved = JSON.parse((await disk.repository.read(key))!.raw).state
-  expect(saved.settings.backup.driveFileId).toBe('synthetic-backup')
+  expect(saved.settings.backup.completeDriveFileId).toBe('synthetic-backup')
   expect(saved.settings.backup.lastBackupAt).toBeGreaterThan(0)
   expect(disk.status(key).phase).toBe('ready')
 })

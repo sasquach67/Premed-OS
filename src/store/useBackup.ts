@@ -1,7 +1,7 @@
 import { flushWorkspaceStorage } from './storageHealth'
 /* ============================================================
    useBackup — orchestrates the Google Drive safety layer:
-     • debounced auto-backup while open (on data change)
+     • daily auto-backup while open (debounced after data changes)
      • daily-on-open check (>=24h since last backup -> push)
      • exposes status + actions to the UI
    The acknowledged workspace repository is primary; Drive is redundancy.
@@ -11,6 +11,7 @@ import { useStore, snapshotData, captureWorkspaceIdentity, activeAccountWorkspac
 import { assertAccountUpload, assertSyncSession, isAccountSyncReady, subscribeAccountConflicts } from '@/store/accountSyncSafety'
 import * as drive from '@/lib/googleDrive'
 import { dataForRemote } from '@/lib/storyPrivacy'
+import { createWorkspaceBackup } from '@/lib/workspaceBackup'
 
 const DEBOUNCE_MS = 5000
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -47,14 +48,17 @@ export function useBackup() {
       if (owner.key !== renderedOwner.key || owner.epoch !== renderedOwner.epoch) throw new Error('The workspace changed. Backup was stopped.')
       await flushWorkspaceStorage(owner.key)
       const session = assertAccountUpload(snapshot, owner)
-      const id = await drive.uploadBackup(dataForRemote(snapshot), backup.driveFileId, async () => { await flushWorkspaceStorage(owner.key); assertSyncSession(session); assertAccountUpload(snapshot, owner) })
+      const complete = await createWorkspaceBackup(dataForRemote(snapshot))
+      assertSyncSession(session); assertAccountUpload(snapshot, owner)
+      const id = await drive.uploadCompleteBackup(complete, async () => { await flushWorkspaceStorage(owner.key); assertSyncSession(session); assertAccountUpload(snapshot, owner) }, owner.key!)
       assertSyncSession(session)
       const current = captureWorkspaceIdentity()
       if (current.key !== owner.key || current.epoch !== owner.epoch) throw new Error('The workspace changed while backup completed. No workspace metadata was changed.')
       lastSig.current = contentSignature(snapshot)
       update((d) => {
         d.settings.backup.lastBackupAt = Date.now()
-        d.settings.backup.driveFileId = id
+        d.settings.backup.completeDriveFileId = id
+        d.settings.backup.lastBackupFormat = 'workspace-v1'
         d.settings.backup.lastError = undefined
       })
       await flushWorkspaceStorage(owner.key)
@@ -67,7 +71,7 @@ export function useBackup() {
       setError(msg)
       setStatus('error')
     }
-  }, [backup.driveFileId, update, renderedOwner.key, renderedOwner.epoch])
+  }, [update, renderedOwner.key, renderedOwner.epoch])
 
   const connect = useCallback(async () => {
     setStatus('connecting')
@@ -104,10 +108,21 @@ export function useBackup() {
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Backup stopped.'); setStatus('error') }
   }, [clientId, push])
 
-  const restore = useCallback(async () => {
+  const restore = useCallback(async (selectedId?: string) => {
+    const owner = captureWorkspaceIdentity()
     if (!drive.isConnected()) await drive.connect(clientId)
-    const data = await drive.downloadBackup()
+    const data = await drive.downloadLatestBackup(owner.key!, selectedId)
+    const current = captureWorkspaceIdentity()
+    if (current.key !== owner.key || current.epoch !== owner.epoch) throw new Error('The account changed while downloading its backup.')
     return data // caller decides whether to replaceAll
+  }, [clientId])
+  const restorePoints = useCallback(async () => {
+    const owner = captureWorkspaceIdentity()
+    if (!drive.isConnected()) await drive.connect(clientId)
+    const points = await drive.listCompleteBackups(owner.key!)
+    const current = captureWorkspaceIdentity()
+    if (current.key !== owner.key || current.epoch !== owner.epoch) throw new Error('The account changed while loading restore points.')
+    return points
   }, [clientId])
 
   // ---- daily-on-open check: silently re-auth + push if >=24h stale ----
@@ -133,11 +148,14 @@ export function useBackup() {
     })()
   }, [backup.enabled, backup.lastBackupAt, clientId, push, syncReady, renderedOwner.key, renderedOwner.epoch])
 
-  // ---- debounced auto-backup while open ----
+  // Complete immutable archives include binary originals. Keep automatic
+  // snapshots daily; the manual action can capture additional restore points.
   useEffect(() => {
     if (!backup.enabled) return
     const unsub = useStore.subscribe(() => {
       if (!drive.isConnected()) return
+      const savedAt = useStore.getState().settings.backup.lastBackupAt
+      if (savedAt && Date.now() - savedAt < DAY_MS) return
       if (contentSignature() === lastSig.current) return
       if (timer.current) clearTimeout(timer.current)
       timer.current = setTimeout(() => { void push() }, DEBOUNCE_MS)
@@ -161,5 +179,6 @@ export function useBackup() {
     disconnect,
     backupNow,
     restore,
+    restorePoints,
   }
 }

@@ -1,0 +1,25 @@
+{
+  "syntheticOnly": true,
+  "sourceOrigin": "http://127.0.0.1:5280",
+  "freshRestoreOrigin": "http://127.0.0.1:5281",
+  "exports": [
+    "/Users/andyquach/Downloads/premedos-complete-workspace-2026-09-15.zip",
+    "/Users/andyquach/Downloads/premedos-complete-workspace-2026-09-15 (1).zip",
+    "/Users/andyquach/Downloads/premedos-complete-workspace-2026-09-15 (2).zip"
+  ],
+  "freshOriginRestoreAndReload": true,
+  "imageRenderedAfterReload": true,
+  "manualEditSurvivesReloadAndExport": true,
+  "currentSourceHistoryNotesProgressPreserved": true,
+  "imageAndAttachedOriginalHashesPreserved": true,
+  "restoredFilesUseNewAddresses": true,
+  "courseId": "qa-class",
+  "imageBytes": 26904,
+  "attachedOriginalBytes": 32,
+  "editedTitle": "Synthetic restored notebook \u2014 manual edit",
+  "historyCount": 2,
+  "invalidArchiveRejectedWithActionableGuidance": true,
+  "postRejectionExportMatchesPriorSavedMembersExactly": true,
+  "postRejectionExport": "/Users/andyquach/Downloads/premedos-complete-workspace-2026-09-15 (3).zip",
+  "finalCompiledSettingsBackupPickerAndDailyCopyVisible": true
+}

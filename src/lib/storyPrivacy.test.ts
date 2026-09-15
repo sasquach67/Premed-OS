@@ -3,6 +3,17 @@ import { createSeedData } from '@/data/seed'
 import { dataForRemote, mergeRemotePreservingLocal } from '@/lib/storyPrivacy'
 
 describe('Story Bank local-only privacy', () => {
+  it('keeps private story attachments out of remote trash/history while preserving them during restore', () => {
+    const local = createSeedData(), record = { id: 'private-file', localOnly: true, attachment: { blobRef: 'idb://overview/capture/private-file' }, deletedAt: 1 }
+    local.trash = [{ id: 'trash-private', collection: 'stories', record, deletedAt: 1 }]
+    local.meta.recoveryStack = [{ id: 'recovery-private', at: 1, label: 'Removed private file', collection: 'stories', before: [record], after: [] }]
+    const remote = dataForRemote(local)
+    expect(JSON.stringify(remote)).not.toContain('idb://overview/capture/private-file')
+    expect(local.trash).toHaveLength(1)
+    const restored = mergeRemotePreservingLocal(remote, local)
+    expect(restored.trash).toEqual(local.trash)
+    expect(restored.meta.recoveryStack).toEqual(local.meta.recoveryStack)
+  })
   it('removes local-only entries from remote payloads without mutating local data', () => {
     const data = createSeedData()
     data.stories = [

@@ -6,9 +6,10 @@ import { initializeDurableWorkspaces } from '../../src/store/workspaceBootstrap'
 import { workspacePersistence } from '../../src/store/workspacePersistence'
 import questionUrl from '../../src/lib/academics/notebook/visual-fixtures/question.png?url'
 
-if (location.hostname !== '127.0.0.1' || !['5273', '5274'].includes(location.port)) throw new Error('Synthetic-only fixture; wrong origin.')
-const key = 'hq:app-data:account:synthetic-idb-qa'
-localStorage.setItem('hq:workspace-owner', 'account:synthetic-idb-qa')
+if (location.hostname !== '127.0.0.1' || !['5273', '5274', '5280'].includes(location.port)) throw new Error('Synthetic-only fixture; wrong origin.')
+const guest = location.port === '5280'
+const key = guest ? 'hq:app-data:guest' : 'hq:app-data:account:synthetic-idb-qa'
+localStorage.setItem('hq:workspace-owner', guest ? 'guest' : 'account:synthetic-idb-qa')
 if (!localStorage.getItem(key)) {
   const data = createPersonalInitialData()
   data.notes.example = 'Original synthetic note'
@@ -46,8 +47,11 @@ function QA() {
     const assets = await prepareNotebookAssets(prepared.package, [{ name: prepared.package.assets[0].fileName, blob }])
     await commitNotebookAssets({ prepared: assets, assertFresh() {}, commit: () => ({ committed: true, durable: commitWorkspaceMutation(d => { importNotebook(d.academics.classCenter, d.courses[0], prepared, { confirmDestination: true }) }) }) })
     const edited = structuredClone(snapshotData().academics.classCenter.lectures[0].importedNotebook!.current)
+    const { retainLocalBlob } = await import('../../src/lib/localBlobStore')
+    await retainLocalBlob('idb://academics/source/synthetic-original', new Blob(['Synthetic attached original file'], { type: 'text/plain' }))
     edited.entries[0].title = 'Synthetic edited visual notebook'
     await commitWorkspaceMutation(d => {
+      if (!d.academics.classCenter.files.some(file => file.id === 'synthetic-original')) d.academics.classCenter.files.push({ id: 'synthetic-original', courseId: 'qa-class', sourceType: 'upload', owner: 'course', createdAt: 1, updatedAt: 1, order: 0, title: 'Synthetic original', fileName: 'original.txt', mimeType: 'text/plain', type: 'other', blobRef: 'idb://academics/source/synthetic-original', linkedTopicIds: [] })
       const entry = d.academics.classCenter.lectures[0]
       entry.importedNotebook!.progress.syntheticPractice = { response: 'Synthetic saved answer', complete: true }
       saveNotebookEdits(entry, edited, 'Synthetic saved notes')

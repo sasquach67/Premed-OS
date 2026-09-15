@@ -2007,6 +2007,8 @@ export interface BackupMeta {
   googleClientId: string
   lastBackupAt?: number   // epoch ms
   driveFileId?: string
+  completeDriveFileId?: string
+  lastBackupFormat?: 'workspace-v1'
   lastError?: string
 }
 

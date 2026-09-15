@@ -10,6 +10,8 @@ import { loadDurableWorkspace } from './workspaceBootstrap'
 import { savedWorkspaceRaw, flushWorkspaceStorage, storageFailure } from './storageHealth'
 import { ACCOUNT_WORKSPACE_READY_EVENT } from '@/lib/accountWorkspace'
 import { syncAcademicOriginals } from '@/lib/academics/sharedMaterialFiles'
+import { syncNotebookImages } from '@/lib/academics/notebook/sharedNotebookAssets'
+import { notebookAssetRepository } from '@/lib/academics/notebook/notebookAssetStore'
 import { allowAccountSync, assertAccountUpload, assertSyncLease, assertSyncSession, captureSyncSession, getAccountConflict, isAccountSyncReady, observeSyncSession, pauseAccountSync, preserveAccountConflict, preserveAccountReplacement, readSyncBaseline, recordSyncBaseline, subscribeAccountConflicts, syncContent, syncDigest, validateRemoteWorkspace } from './accountSyncSafety'
 
 const DEBOUNCE_MS = 4000
@@ -122,6 +124,8 @@ export function useCloudSync() {
         await flushWorkspaceStorage(key)
         assertDurableWorkspace()
         assertSyncSession(token)
+        const hydrated = snapshotData(), hydratedOwner = captureWorkspaceIdentity()
+        await syncNotebookImages(hydrated, u.id, notebookAssetRepository(), () => { assertSyncLease(lease); assertDurableWorkspace(hydrated, hydratedOwner) })
         if (!local || equal || cleanLocal) await recordSyncBaseline(u.id, remote, row.updated_at, lease)
         assertSyncLease(lease)
         assertDurableWorkspace()
@@ -159,6 +163,7 @@ export function useCloudSync() {
       if (!baseline) throw new Error('Check the saved cloud copy before uploading changes.')
       setStatus('syncing'); setError('')
       await syncAcademicOriginals(snapshot.academics.classCenter.files, user.id)
+      await syncNotebookImages(snapshot, user.id, notebookAssetRepository(), () => { assertSyncSession(token); assertAccountUpload(snapshot, owner) })
       await flushWorkspaceStorage(owner.key)
       assertSyncSession(token); assertAccountUpload(snapshot, owner)
       const updatedAt = new Date().toISOString()

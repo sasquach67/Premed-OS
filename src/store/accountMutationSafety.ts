@@ -10,6 +10,8 @@ import { workspacePersistence } from './workspacePersistence'
 import { savedWorkspaceRaw, flushWorkspaceStorage, storageFailure, WorkspaceChangedError } from './storageHealth'
 import { assertSyncSession, captureSyncSession, getAccountConflict, observeSyncSession, pauseAccountSync, preserveAccountConflict, syncContent, syncDigest, validateRemoteWorkspace } from './accountSyncSafety'
 import { workspaceRecoveryRepository } from './workspaceRecoveryRepository'
+import { syncNotebookImages } from '@/lib/academics/notebook/sharedNotebookAssets'
+import { notebookAssetRepository } from '@/lib/academics/notebook/notebookAssetStore'
 
 const changed = () => new WorkspaceChangedError('The account or saved workspace changed. Nothing else was replaced. Reopen this review before continuing.')
 const conflictMessage = 'Account copies need review. Sync is paused; download the preserved copies before choosing what to restore.'
@@ -122,6 +124,7 @@ export async function prepareAccountMutation(userId: string, reviewedRemote: App
         validateRemoteWorkspace(data)
         await mutation.check(); await flushWorkspaceStorage(key); assertTarget()
         pauseAccountSync(userId)
+        await syncNotebookImages(dataForRemote(data), userId, notebookAssetRepository(), async () => { await mutation.check(); assertTarget() })
         const next: DashboardRow = { user_id: userId, data: dataForRemote(data), updated_at: new Date().toISOString() }
         if (remote) {
           // Compare the reviewed revision at the server write boundary.

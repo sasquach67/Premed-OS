@@ -8,6 +8,9 @@ import {
 import { activateGuestWorkspace, assertDurableWorkspace, captureWorkspaceIdentity, snapshotData, useStore } from '@/store/store'
 import { flushWorkspaceStorage } from '@/store/storageHealth'
 import { restoreWorkspaceFromSource } from '@/store/accountMutationSafety'
+import { restoreCompleteWorkspace } from '@/store/restoreCompleteWorkspace'
+import { createWorkspaceBackup, prepareWorkspaceBackup } from '@/lib/workspaceBackup'
+import type { CompleteBackupPoint } from '@/lib/googleDrive'
 import { useBackup } from '@/store/useBackup'
 import { useCloudSync } from '@/store/useCloudSync'
 import { useCalendarSync } from '@/hooks/useCalendarSync'
@@ -17,7 +20,6 @@ import { exportJson, readJsonFile, looksLikeAppData } from '@/lib/dataIo'
 import { resetPublicMeta, hasPreExistingData } from '@/lib/publicLayer'
 import { fmtDate, fmtTimeAgo } from '@/lib/date'
 import { VISUAL_THEMES } from '@/lib/themeAssets'
-import type { AppData } from '@/lib/types'
 import { PageHeader } from '@/components/common/PageHeader'
 import { WeeklyCapacityCard } from '@/components/common/WeeklyCapacityCard'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -48,6 +50,9 @@ export function Settings() {
   const [params] = useSearchParams()
   const [msg, setMsg] = useState('')
   const [deletingAiSources, setDeletingAiSources] = useState(false)
+  const [exportingBackup, setExportingBackup] = useState(false)
+  const [restoreChoices, setRestoreChoices] = useState<CompleteBackupPoint[] | null>(null)
+  const [restoreChoice, setRestoreChoice] = useState('')
   const archiveRequested = params.get('tab') === 'archive'
   const origin = window.location.origin
   const isFileOrigin = window.location.protocol === 'file:'
@@ -65,7 +70,8 @@ export function Settings() {
     if (restoring.current) return
     restoring.current = true
     try {
-      await restoreWorkspaceFromSource(() => readJsonFile(file))
+      if (file.name.toLowerCase().endsWith('.zip')) await restoreCompleteWorkspace(() => prepareWorkspaceBackup(file))
+      else await restoreWorkspaceFromSource(() => readJsonFile(file))
       setMsg('Imported successfully.')
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Import failed.')
@@ -76,15 +82,44 @@ export function Settings() {
     if (restoring.current) return
     restoring.current = true
     try {
-      await restoreWorkspaceFromSource(async () => {
-        const data = await backup.restore()
-        if (!looksLikeAppData(data)) throw new Error('No valid backup found on Drive.')
-        return data as AppData
-      }, true)
+      const owner = captureWorkspaceIdentity(), before = JSON.stringify(snapshotData())
+      const input = await backup.restore(restoreChoice || undefined)
+      const current = captureWorkspaceIdentity()
+      if (owner.key !== current.key || owner.epoch !== current.epoch || JSON.stringify(snapshotData()) !== before) throw new Error('Your workspace changed while the backup downloaded. Reopen Restore in the intended workspace.')
+      if (!input) throw new Error('No backup found on Drive.')
+      if (input.kind === 'complete') await restoreCompleteWorkspace(() => prepareWorkspaceBackup(input.blob), true)
+      else {
+        if (!looksLikeAppData(input.data)) throw new Error('No valid legacy JSON backup found on Drive.')
+        const data = input.data
+        if (!(await confirm({ title: 'Restore a JSON-only backup?', description: 'This older backup contains records but no image or original-file bytes. The current workspace will be preserved for recovery before restoration.', confirmLabel: 'Restore records' }))) return
+        if (owner.key !== captureWorkspaceIdentity().key || owner.epoch !== captureWorkspaceIdentity().epoch || JSON.stringify(snapshotData()) !== before) throw new Error('Your workspace changed during review. Open Restore again.')
+        await restoreWorkspaceFromSource(async () => data, true)
+      }
       setMsg('Restored from Google Drive.')
+      setRestoreChoices(null)
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Restore failed.')
     } finally { restoring.current = false }
+  }
+  async function chooseDriveBackup() {
+    try {
+      const points = await backup.restorePoints()
+      setRestoreChoices(points); setRestoreChoice(points[0]?.id ?? 'legacy')
+    } catch (error) { setMsg(error instanceof Error ? error.message : 'Could not load restore points.') }
+  }
+
+  async function exportComplete() {
+    if (exportingBackup) return
+    setExportingBackup(true)
+    try {
+      const owner = captureWorkspaceIdentity(), blob = await createWorkspaceBackup(snapshotData())
+      const current = captureWorkspaceIdentity()
+      if (owner.key !== current.key || owner.epoch !== current.epoch) throw new Error('The workspace changed. Reopen Export in its original account.')
+      const url = URL.createObjectURL(blob), link = document.createElement('a')
+      link.href = url; link.download = `premedos-complete-workspace-${new Date().toISOString().slice(0, 10)}.zip`; link.click(); URL.revokeObjectURL(url)
+      setMsg('Complete workspace backup downloaded with notebook history, practice records, images and attached original files.')
+    } catch (error) { setMsg(error instanceof Error ? error.message : 'Complete backup failed. Your workspace was kept.') }
+    finally { setExportingBackup(false) }
   }
 
   async function deleteAiSources() {
@@ -141,11 +176,12 @@ export function Settings() {
         <Card>
           <CardHeader><CardTitle>Local data</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">Everything autosaves to this browser instantly. Export a JSON copy for safekeeping, or import one to restore.</p>
+            <p className="text-sm text-muted-foreground">Changes save to this browser. A complete backup includes your records, notebook history, images and attached files. JSON-only exports contain records and source references, without file bytes.</p>
             <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => void exportComplete()} disabled={exportingBackup}><Download className="size-4" /> {exportingBackup ? 'Preparing backup…' : 'Export complete backup'}</Button>
               <Button variant="outline" onClick={exportJson}><Download className="size-4" /> Export JSON</Button>
-              <Button variant="outline" onClick={() => fileRef.current?.click()}><Upload className="size-4" /> Import JSON</Button>
-              <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) onImport(f) }} />
+              <Button variant="outline" onClick={() => fileRef.current?.click()}><Upload className="size-4" /> Import backup</Button>
+              <input ref={fileRef} type="file" accept="application/json,application/zip,.json,.zip" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) onImport(f) }} />
             </div>
           </CardContent>
         </Card>
@@ -218,9 +254,11 @@ export function Settings() {
                 ? <Button variant="outline" onClick={backup.disconnect}>Disconnect</Button>
                 : <Button onClick={backup.connect} disabled={!backup.configured}><Cloud className="size-4" /> Connect Drive</Button>}
               <Button variant="outline" onClick={backup.backupNow} disabled={!backup.configured}>Back up now</Button>
-              <Button variant="ghost" onClick={restoreFromDrive} disabled={!backup.configured}>Restore</Button>
+              <Button variant="ghost" onClick={() => void chooseDriveBackup()} disabled={!backup.configured}>Choose backup to restore</Button>
             </div>
+            {restoreChoices && <div className="space-y-2 rounded-xl border border-border p-3"><Label htmlFor="drive-restore-point">Restore point (100 most recent verified snapshots)</Label><select id="drive-restore-point" className="w-full rounded-md border border-border bg-card p-2" value={restoreChoice} onChange={event => setRestoreChoice(event.target.value)}>{restoreChoices.map(point => <option key={point.id} value={point.id}>{new Date(point.createdTime).toLocaleString()} — complete backup</option>)}<option value="legacy">Older JSON-only backup — no image files</option></select><div className="flex gap-2"><Button variant="outline" onClick={() => void restoreFromDrive()}>Restore selected backup</Button><Button variant="ghost" onClick={() => setRestoreChoices(null)}>Cancel</Button></div></div>}
             <p className="text-xs text-muted-foreground">
+              Drive creates at most one automatic complete snapshot per day while the app is open. Use Back up now for another restore point. Backups include attached files and notebook images; stories marked local-only stay on this device. Earlier complete snapshots and the older JSON backup are retained.
               {backup.lastBackupAt ? <>Last backed up {fmtTimeAgo(backup.lastBackupAt)}.</> : 'Not backed up to Drive yet.'}
               {backup.error && <span className="ml-1 inline-flex items-center gap-1 text-destructive"><AlertCircle className="size-3" /> {backup.error}</span>}
             </p>

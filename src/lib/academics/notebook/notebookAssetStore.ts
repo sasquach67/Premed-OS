@@ -21,11 +21,11 @@ export interface NotebookAssetRepository extends NotebookAssetReader {
 }
 const DB_NAME = 'premed-os-notebook-assets-v1'
 /** Dedicated local-only database. No academics/cloud fallback, URL or blob-key resolution. */
-export function createNotebookAssetRepository(factory: IDBFactory = indexedDB): NotebookAssetRepository {
+export function createNotebookAssetRepository(factory?: IDBFactory): NotebookAssetRepository {
   let opening: Promise<IDBDatabase> | undefined
   function open() {
     if (!opening) opening = new Promise<IDBDatabase>((resolve, reject) => {
-      const request = factory.open(DB_NAME, 1)
+      const request = (factory ?? indexedDB).open(DB_NAME, 1)
       request.onupgradeneeded = () => { for (const name of ['blobs', 'bindings', 'journal']) if (!request.result.objectStoreNames.contains(name)) request.result.createObjectStore(name) }
       request.onerror = () => { opening = undefined; reject(request.error ?? new Error('Local image storage could not be opened.')) }
       request.onblocked = () => { opening = undefined; reject(new Error('Another tab is blocking local image storage. Close that tab and retry; your notebook has not changed.')) }
@@ -68,7 +68,25 @@ export function createNotebookAssetRepository(factory: IDBFactory = indexedDB): 
   }
 }
 let defaultRepository: NotebookAssetRepository | undefined
-export function notebookAssetRepository(): NotebookAssetRepository { return defaultRepository ??= createNotebookAssetRepository() }
+export function notebookAssetRepository(): NotebookAssetRepository {
+  if (defaultRepository) return defaultRepository
+  const local = createNotebookAssetRepository()
+  defaultRepository = {
+    ...local,
+    async read(hash) {
+      const existing = await local.read(hash)
+      if (existing) return existing
+      const { readSharedNotebookImage } = await import('./sharedNotebookAssets')
+      // Cache only verified content-addressed bytes. A cache failure must not
+      // prevent viewing the authenticated original that just downloaded.
+      return readSharedNotebookImage(hash, async blob => {
+        const id = crypto.randomUUID()
+        try { await local.stage({ id, lineageId: `cloud-cache:${id}`, bindings: [], hashes: [hash], createdAt: Date.now() }, new Map([[hash, blob]])); await local.finish(id) } catch { /* The cloud original is still readable. */ }
+      })
+    },
+  }
+  return defaultRepository
+}
 
 /** Stage first, recheck freshness, then make one synchronous app-owned JSON transaction.
  * Failed or interrupted leases are retained, never guessed safe to delete. Thus an
