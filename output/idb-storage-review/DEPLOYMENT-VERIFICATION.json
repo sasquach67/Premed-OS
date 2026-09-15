@@ -1,0 +1,36 @@
+{
+  "release": "fba369421c571c4a01ac3974a12310dd06dd5648",
+  "url": "https://premedos.app/",
+  "workflow": "https://github.com/sasquach67/Premed-OS/actions/runs/34925931071",
+  "currentHtmlBootstrap": [
+    "assets/index-BbwcyA_F.js"
+  ],
+  "verifiedAssets": [
+    "assets/Settings-gINkqWjL.js",
+    "assets/index-BbwcyA_F.js",
+    "assets/sharedNotebookAssets-MQV72GgB.js",
+    "assets/store-B5pIBkwj.js"
+  ],
+  "bundleMarkers": {
+    "premed-os-workspaces-v1": true,
+    "premed-os-workspace-backup": true,
+    "notebook-assets/": true,
+    "Choose backup to restore": true
+  },
+  "retainedPriorRelease": "b803549d5ebf10b5ffcf89f2ba7dae870db75d23",
+  "verifiedRetainedAsset": "assets/index-CzQZCqSg.js",
+  "retainedReleaseCount": 10,
+  "actualAccountMigrationTested": false,
+  "authenticatedBinaryRoundTripTested": false,
+  "preExistingHostingSecurityHeaders": "CSP, HSTS, Referrer-Policy, Permissions-Policy and X-Content-Type-Options absent before this deployment; separate hosting limitation",
+  "ciBuild": "success",
+  "ciDeploy": "success",
+  "ciTestFilesPassed": 266,
+  "ciTestsPassed": 1977,
+  "ciLintErrors": 0,
+  "ciExistingLintWarnings": 56,
+  "ciProductionAuditVulnerabilities": 0,
+  "ciDevelopmentAuditVulnerabilities": 4,
+  "retainedAssets": 629,
+  "olderAssetsRetained": 460
+}

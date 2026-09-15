@@ -32,3 +32,9 @@ The earlier live-development fixture lost synthetic visible state during hot mod
 ## Explicit limits
 
 Authenticated cross-device cloud/Drive binary round trips have not been exercised with a real account. Browser storage can still be evicted or cleared; independent complete backups remain necessary. Very old clients predating existing workspace guards cannot be retroactively fenced by this frontend change. Boot-time recovery exports preserve raw metadata copies and are diagnostic recovery files, not complete ZIP backups; unresolved storage conflicts keep editing and sync paused. Student class trials and learning-quality ratings remain separate from this storage release.
+
+## Production release verified
+
+Release `fba369421c571c4a01ac3974a12310dd06dd5648` is live at https://premedos.app/. GitHub Actions run 34925931071 completed build and deploy successfully: 266 files / 1,977 tests, zero lint errors (56 existing warnings), zero production dependency vulnerabilities. The public manifest matches this exact commit. Current HTML/bootstrap, Settings, store and image-sync asset hashes were checked, as was a retained bootstrap from b803549. The release retains 10 releases / 629 assets (460 carried forward). See `DEPLOYMENT-VERIFICATION.json`.
+
+The production security-header checker remains failing for the five missing custom headers (CSP, HSTS, Referrer-Policy, Permissions-Policy, X-Content-Type-Options). This was checked before deployment against b803549 and is a pre-existing hosting limitation; this release does not claim that gate passed. The complete dependency audit reports four development vulnerabilities; the production-only audit is clean.
