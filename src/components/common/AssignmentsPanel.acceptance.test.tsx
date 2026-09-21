@@ -339,11 +339,13 @@ describe('Daily Assignments public interaction contract', () => {
     await act(async () => nextWindow.click())
     expect(container.querySelector('.calendar-window-caption')?.textContent).not.toBe(beforeWindow)
 
-    const inMonthDay = [...container.querySelectorAll<HTMLButtonElement>('button[data-day]')]
-      .find((button) => button.querySelector('span')?.textContent?.trim() === '15')!
-    expect(inMonthDay).toBeTruthy()
-    await act(async () => inMonthDay.click())
-    expect(container.querySelector('aside')?.textContent).toContain('15')
+    // A rolling four-week window does not always include the 15th.
+    const visibleDay = container.querySelector<HTMLButtonElement>('button[role="gridcell"][aria-selected="false"]')!
+    expect(visibleDay).toBeTruthy()
+    const selectedLabel = new Date(visibleDay.dataset.day!).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
+    await act(async () => visibleDay.click())
+    expect(visibleDay.getAttribute('aria-selected')).toBe('true')
+    expect(container.querySelector('aside > p')?.textContent).toBe(selectedLabel)
   })
 
   it('opens Weekly cards on click globally and Enter inside a fixed class scope', async () => {
