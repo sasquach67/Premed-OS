@@ -283,7 +283,7 @@ it('automatically retries a temporary cloud save failure without another edit or
   expect(cloud.status).toBe('synced')
 })
 
-it('stops an automatic save retry if another operation pauses the account', async () => {
+it.each([false, true])('stops a save retry after another pause, even if it resumes (%s)', async resume => {
   const id = account(); activateAccountWorkspace(id, workspace('base'))
   wire.rows.set(id, { data: snapshotData(), updated_at: older })
   await render(); await session(id)
@@ -293,7 +293,8 @@ it('stops an automatic save retry if another operation pauses the account', asyn
     const saving = cloud.pushNow()
     await vi.advanceTimersByTimeAsync(1)
     expect(wire.attempts).toHaveBeenCalledTimes(1)
-    pauseAccountSync(id)
+    const newerLease = pauseAccountSync(id)
+    if (resume) allowAccountSync(newerLease)
     await vi.advanceTimersByTimeAsync(3000)
     expect(await saving).toBe(false)
   })

@@ -172,7 +172,7 @@ export function useCloudSync() {
       assertSyncSession(token); assertAccountUpload(snapshot, owner)
       const updatedAt = new Date().toISOString()
       // Compare-and-set: a newer cloud version cannot be overwritten by this upload.
-      const { data, error: failure } = await cloudRequest(() => supabase!.from('dashboards').update({ data: dataForRemote(snapshot), updated_at: updatedAt }).eq('user_id', user.id).eq('updated_at', baseline.updatedAt).select('updated_at').maybeSingle(), () => { assertSyncSession(token); assertAccountUpload(snapshot, owner) })
+      const { data, error: failure } = await cloudRequest(() => supabase!.from('dashboards').update({ data: dataForRemote(snapshot), updated_at: updatedAt }).eq('user_id', user.id).eq('updated_at', baseline.updatedAt).select('updated_at').maybeSingle(), () => { assertSyncLease(token); assertAccountUpload(snapshot, owner) })
       assertSyncSession(token)
       const current = captureWorkspaceIdentity()
       if (current.key !== owner.key || current.epoch !== owner.epoch) throw new Error('The workspace changed while sync completed. Its metadata was kept.')
