@@ -1,6 +1,6 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it } from 'vitest'
 import { createSeedData } from '@/data/seed'
 import { createInitialDataForMode, CURRENT_STORE_VERSION, snapshotData, STORAGE_KEY, useStore } from '@/store/store'
 import { buildLectureGuideProposal } from '@/lib/academics/guideContract'
@@ -12,10 +12,9 @@ import { useStudentGuide } from './UsingStudentGuide'
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true })
 let root: Root, container: HTMLDivElement, courseId: string
-const showDetails = vi.fn()
 function Harness() {
   const data = useStore(s => s.academics.classCenter)
-  return <StudentGuide courseId={courseId} data={data} onClassDetails={showDetails} />
+  return <StudentGuide courseId={courseId} data={data} />
 }
 async function fill(selector: string, value: string) {
   const field = container.querySelector<HTMLInputElement | HTMLTextAreaElement>(selector)!
@@ -68,7 +67,7 @@ it('adds a whole-class headline with one input and preserves existing notes and 
   expect(reloaded.lectures).toEqual(before.academics.classCenter.lectures)
   expect(reloaded.generatedFlashcardDecks).toEqual(before.academics.classCenter.generatedFlashcardDecks)
 })
-it('reviews rough notes before activation and retains full text when moving back to Class details', async () => {
+it('reviews rough notes before activation and retains full text when moving back as reference only', async () => {
   const raw = 'Explain how the anthropologist knows. Avoid memorizing minor details.'
   await fill('[aria-label="Rough Guide notes"]', raw)
   await click('Review headlines')
@@ -80,7 +79,7 @@ it('reviews rough notes before activation and retains full text when moving back
   expect(saved.studentGuidance?.originalText).toBe(raw)
   expect(matchingGuideNotes(useStore.getState().academics.classCenter.notes, { courseId })).toHaveLength(1)
   expect(container.querySelector('article details')?.hasAttribute('open')).toBe(false)
-  await click(`Move ${saved.title} to Class details`)
+  await click(`Keep ${saved.title} as reference only`)
   const retained = useStore.getState().academics.classCenter.notes.find(n => n.id === saved.id)!
   expect(retained.content).toContain(raw)
   expect(retained.studentGuidance).toBeUndefined()
@@ -138,4 +137,20 @@ it('visibly adjusts one shared selection for a generation without changing saved
   await act(async () => container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click())
   expect(container.querySelector('output')?.textContent).toBe('[]')
   expect(matchingGuideNotes(useStore.getState().academics.classCenter.notes, { courseId })).toHaveLength(1)
+})
+
+it('reviews and imports guidance and reference notes together without activating references', async () => {
+  const raw = JSON.stringify({ format: 'premed-os-guide', version: 1, id: 'fixture', courseId, entries: [
+    { key: 'direction', headline: 'Design controls.', details: 'Source: course objectives.', group: 'emphasis', scope: { kind: 'course' } },
+    { key: 'hours', headline: 'Wednesday office hours.', details: 'Source: instructor page.', group: 'reference' },
+  ] })
+  await fill('[aria-label="Compiled Guide"]', raw)
+  await click('Review Guide import')
+  expect(matchingGuideNotes(useStore.getState().academics.classCenter.notes, { courseId })).toEqual([])
+  await click('Add reviewed entries to Guide')
+  const notes = useStore.getState().academics.classCenter.notes
+  expect(notes.find(note => note.title === 'Wednesday office hours.')?.studentGuidance).toBeUndefined()
+  expect(notes.find(note => note.title === 'Wednesday office hours.')?.content).toBe('Source: instructor page.')
+  expect(matchingGuideNotes(notes, { courseId }).map(note => note.title)).toEqual(['Design controls.'])
+  expect(container.textContent).toContain('Added 2 entries to your Guide.')
 })

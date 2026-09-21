@@ -18,7 +18,7 @@ function changeField(field: HTMLInputElement | HTMLTextAreaElement, value: strin
   field.dispatchEvent(new Event('input', { bubbles: true }))
 }
 
-describe('ClassHub preserved Class details contract', () => {
+describe('ClassHub unified Guide contract', () => {
   let container: HTMLDivElement
   let root: Root
   let courseId: string
@@ -54,9 +54,17 @@ describe('ClassHub preserved Class details contract', () => {
     })
   }
 
+  it('opens legacy details links on one Guide with both study direction and reference information', () => {
+    const tabs = [...container.querySelectorAll('[role="tab"]')]
+    expect(tabs.some(tab => tab.textContent === 'Class details')).toBe(false)
+    expect(tabs.find(tab => tab.textContent?.startsWith('Guide'))?.getAttribute('aria-selected')).toBe('true')
+    expect(container.textContent).toContain('How to approach this class')
+    expect(container.textContent).toContain('Dates, support & course information')
+  })
+
   it('creates a visible Guide item only after Save and preserves Cancel', async () => {
     const original = useStore.getState().academics.classCenter.notes.length
-    const open = () => [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('New class detail'))!.click()
+    const open = () => [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('New reference note'))!.click()
     await act(async () => open())
     expect(useStore.getState().academics.classCenter.notes).toHaveLength(original)
     await act(async () => [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find((button) => button.textContent === 'Cancel')!.click())

@@ -870,7 +870,7 @@ describe('ClassHub approved Overview', () => {
 
   })
 
-  it('keeps the topic-focused Class details notice outside the New class detail action', async () => {
+  it('keeps the topic-focused Class details notice outside the New reference note action', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -888,7 +888,7 @@ describe('ClassHub approved Overview', () => {
     })
 
     const newItem = [...container.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'New class detail')
+      .find((button) => button.textContent?.trim() === 'New reference note')
     const showAll = [...container.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.trim() === 'Show all Guide items')
     expect(newItem).toBeTruthy()

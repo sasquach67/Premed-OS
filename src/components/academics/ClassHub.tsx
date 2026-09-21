@@ -76,7 +76,7 @@ import {
 } from '@/lib/academics/guideContract'
 import './classHubVariantA.css'
 
-type HubTab = 'overview' | 'materials' | 'topics' | 'assignments' | 'guide' | 'details'
+type HubTab = 'overview' | 'materials' | 'topics' | 'assignments' | 'guide'
 
 function isMaterialArtifact(value: string | null): value is MaterialArtifact {
   return value === 'flashcards' || value === 'study-guide' || value === 'study-outline' || value === 'revised-notes' || value === 'unit-mastery-outline' || value === 'unit-question-bank'
@@ -133,13 +133,13 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const requestedTab = params.get('classTab')
-  // Preserve old deep links while separating saved class details from active guidance.
-  const canonicalRequestedTab = requestedTab === 'notes' ? 'details' : requestedTab === 'readings' ? 'materials' : requestedTab
+  // Keep old notes and details links on the single Guide surface.
+  const canonicalRequestedTab = (requestedTab === 'notes' || requestedTab === 'details') ? 'guide' : requestedTab === 'readings' ? 'materials' : requestedTab
   const classType: ClassWorkspaceType = workspace.type ?? (course.bcpm ? 'stem' : 'general')
   const courseColor = classHubColor(workspace.color)
   // A class has one stable shell. Writing-specific tools live inside
   // Materials rather than replacing the syllabus-led Topics surface.
-  const availableTabs: HubTab[] = ['overview', 'materials', 'topics', 'assignments', 'guide', 'details']
+  const availableTabs: HubTab[] = ['overview', 'materials', 'topics', 'assignments', 'guide']
   const initialTab = isHubTab(canonicalRequestedTab) && availableTabs.includes(canonicalRequestedTab) ? canonicalRequestedTab : 'overview'
   const [tab, setTab] = useState<HubTab>(initialTab)
   useEffect(() => {
@@ -283,8 +283,7 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
             <HubTabTrigger value="materials" label="Materials" count={counts.materials} />
             <HubTabTrigger value="topics" label="Topics" count={counts.topics} />
             <HubTabTrigger value="assignments" label="Assignments" count={counts.assignments} />
-            <HubTabTrigger value="guide" label="Guide" count={courseGuideNotes.filter(note => note.studentGuidance).length} />
-            <HubTabTrigger value="details" label="Class details" />
+            <HubTabTrigger value="guide" label="Guide" count={courseGuideNotes.length} />
           </TabsList>
         </section>
 
@@ -293,20 +292,19 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
         <TabsContent value="topics" className="class-hub-tab"><Topics
           courseId={course.id} data={data} topics={courseTopics} assignments={courseAssignments}
           onOpenNotes={(topicId) => {
-            // Class details filters to this topic, so the menu item lands on
+            // Guide reference notes filter to this topic, so the menu item lands on
             // something rather than on an unfiltered list.
             setParams((current) => {
               const next = new URLSearchParams(current)
-              next.set('classTab', 'details')
+              next.set('classTab', 'guide')
               next.set('noteTopic', topicId)
               return next
             }, { replace: true })
-            changeTab('details')
+            changeTab('guide')
           }}
         /></TabsContent>
         <TabsContent value="assignments" className="class-hub-tab"><Assignments courseId={course.id} assignments={courseAssignments} categories={data.gradeCategories.filter((item) => item.courseId === course.id)} focusWhatIf={params.get('whatIf') === '1'} /></TabsContent>
-        <TabsContent value="guide" className="class-hub-tab"><StudentGuide key={course.id} courseId={course.id} data={data} onClassDetails={() => changeTab('details')} /></TabsContent>
-        <TabsContent value="details" className="class-hub-tab"><ClassDetails courseId={course.id} workspace={workspace} notes={courseNotes} topics={courseTopics} assignments={courseAssignments} contacts={courseContacts} data={data} onOpenMaterials={() => changeTab('materials')} topicFilter={params.get('noteTopic') ?? undefined} /></TabsContent>
+        <TabsContent value="guide" className="class-hub-tab"><StudentGuide key={course.id} courseId={course.id} data={data} /><GuideReference courseId={course.id} workspace={workspace} notes={courseNotes} topics={courseTopics} assignments={courseAssignments} contacts={courseContacts} data={data} onOpenMaterials={() => changeTab('materials')} topicFilter={params.get('noteTopic') ?? undefined} /></TabsContent>
       </Tabs>
     </div>
   )
@@ -1039,7 +1037,7 @@ function Assignments({ courseId, assignments, categories, focusWhatIf = false }:
   )
 }
 
-function ClassDetails({ courseId, workspace, notes, topics, assignments, contacts, data, onOpenMaterials, topicFilter }: {
+function GuideReference({ courseId, workspace, notes, topics, assignments, contacts, data, onOpenMaterials, topicFilter }: {
   courseId: string
   workspace: ClassWorkspace
   notes: ClassNote[]
@@ -1081,11 +1079,11 @@ function ClassDetails({ courseId, workspace, notes, topics, assignments, contact
   ]
   const topicNotes = topics.map((topic) => ({ topic, notes: guideNotes.filter((note) => note.topicIds.includes(topic.id)) })).filter((item) => item.notes.length)
   return (
-    <div className={cn('grid gap-4', topicNotes.length > 0 && 'xl:grid-cols-[minmax(0,1fr)_300px]')}>
+    <div className={cn('mt-8 grid gap-4 border-t border-border pt-6', topicNotes.length > 0 && 'xl:grid-cols-[minmax(0,1fr)_300px]')}>
       <div className="space-y-4">
-        <SectionToolbar title="Class details" detail="Policies, contacts, and earlier notes. These records stay intact and do not automatically steer generation." action={<Button onClick={() => { setNewTitle(''); setNewContent(''); setNewKind('other'); setCreateOpen(true) }}><Plus className="size-4" /> New class detail</Button>} />
+        <SectionToolbar title="Dates, support & course information" detail="Keep schedules, contacts, policies, and other useful notes here in your Guide." action={<Button onClick={() => { setNewTitle(''); setNewContent(''); setNewKind('other'); setCreateOpen(true) }}><Plus className="size-4" /> New reference note</Button>} />
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogContent><DialogHeader><DialogTitle>New class detail</DialogTitle><DialogDescription>Keep a policy, administrative note, or question for this class.</DialogDescription></DialogHeader>
+          <DialogContent><DialogHeader><DialogTitle>New reference note</DialogTitle><DialogDescription>Keep a policy, administrative note, or question for this class.</DialogDescription></DialogHeader>
             <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); saveItem() }}>
               <label className="block text-sm font-bold">Title<Input autoFocus value={newTitle} onChange={(event) => setNewTitle(event.target.value)} required /></label>
               <label className="block text-sm font-bold">Kind<select className="mt-1 min-h-11 w-full rounded-lg border border-border bg-background px-3" value={newKind} onChange={(event) => setNewKind(event.target.value as ClassNote['type'])}><option value="other">Class context</option><option value="exam-review">Exam intel</option><option value="question-log">Question to ask</option></select></label>
@@ -1141,7 +1139,7 @@ function ClassDetails({ courseId, workspace, notes, topics, assignments, contact
             </CardContent>
           </Card>
         ))}
-        {!scoped.length && <p className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">No earlier class notes. Add a class detail above.</p>}
+        {!scoped.length && <p className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">No earlier class notes. Add a reference note above.</p>}
         <GuideSuggestions courseId={courseId} data={data} onOpenMaterials={onOpenMaterials} />
         <Collapsible title="Course lens and professor evidence">
           <CourseLensPanel workspace={workspace} data={data} />
@@ -1161,7 +1159,7 @@ function ClassDetails({ courseId, workspace, notes, topics, assignments, contact
 
 /**
  * Interpretive courses sometimes need a durable, attributable course frame.
- * This legacy frame remains editable in Class details because it describes how the course reads
+ * This legacy frame remains editable in the Guide because it describes how the course reads
  * material; it never becomes a generic material note or a Topic substitute.
  */
 function CourseLensPanel({ workspace, data }: { workspace: ClassWorkspace; data: ClassCenterData }) {
@@ -1267,7 +1265,7 @@ function GuideSuggestions({ courseId, data, onOpenMaterials }: { courseId: strin
     <Card className="class-hub-panel">
       <CardHeader className="class-hub-panel-header">
         <CardTitle>Suggested additions</CardTitle>
-        <p className="mt-1 text-sm text-muted-foreground">Confirmed syllabus facts for Class details. Saving these preserves the record without activating generation guidance.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Syllabus facts for your Guide. These stay as reference notes alongside your study guidance.</p>
       </CardHeader>
       <CardContent className="class-hub-panel-content space-y-3">
         {proposals.map((proposal) => {
@@ -1979,7 +1977,7 @@ function ordered<T extends { order: number }>(items: T[]) {
 }
 
 function isHubTab(value: string | null): value is HubTab {
-  return value === 'overview' || value === 'materials' || value === 'topics' || value === 'assignments' || value === 'guide' || value === 'details'
+  return value === 'overview' || value === 'materials' || value === 'topics' || value === 'assignments' || value === 'guide'
 }
 
 function isoToday() {
