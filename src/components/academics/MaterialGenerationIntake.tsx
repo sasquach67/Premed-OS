@@ -1,3 +1,4 @@
+import { useStudentGuide } from './UsingStudentGuide'
 import { useMemo, useRef, useState } from 'react'
 import { Check, FileText, FolderOpen, Sparkles, X } from 'lucide-react'
 import type { AcademicFile, ClassWorkspaceType } from '@/lib/types'
@@ -120,6 +121,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
     : selectedFileIds, [artifact, lensAvailable, lensSourceFileIds, selectedFileIds, useCourseLens])
   const selectedChunks = selectedMaterialChunks(choices, effectiveSelectedFileIds)
   const selected = ready.filter((choice) => effectiveSelectedFileIds.includes(choice.file.id))
+  const guide = useStudentGuide({ courseId, lessonIds: [lectureId, ...selected.map(choice => choice.file.lectureId)].filter((id): id is string => Boolean(id)) })
   const selectedVisualFileCount = Math.min(
     MAX_QUESTION_BANK_VISUAL_SOURCES,
     selected.filter((choice) => isQuestionBankVisualFile(choice.file)).length,
@@ -186,7 +188,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
 
     try {
       if (artifact === 'study-guide' || artifact === 'study-outline') {
-        const outcome = await generateStudyGuide({ courseId, chunks: generationChunks, label: courseLabel, courseLens, practiceQuestionChunkIds: questionReferenceChunkIds })
+        const outcome = await generateStudyGuide({ guideDirections: guide.directions, courseId, chunks: generationChunks, label: courseLabel, courseLens, practiceQuestionChunkIds: questionReferenceChunkIds })
         if (!outcome.ok) return failGeneration(outcome.message ?? 'The study material could not be generated.')
         setGenerationPhase('saving')
         await waitForGenerationProgress()
@@ -200,7 +202,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
         })
         toast({ title: artifact === 'study-outline' ? 'Study outline created' : 'Study guide generated', description: outcome.courseLens ? 'Saved with its selected-source and Course lens traces.' : 'Saved with its selected-source trace.' })
       } else if (artifact === 'unit-mastery-outline') {
-        const outcome = await generateUnitMasteryOutline({ courseId, chunks: generationChunks, unit: selectedUnit, label: courseLabel, scope: masteryScope, practiceQuestionChunkIds: questionReferenceChunkIds })
+        const outcome = await generateUnitMasteryOutline({ guideDirections: guide.directions, courseId, chunks: generationChunks, unit: selectedUnit, label: courseLabel, scope: masteryScope, practiceQuestionChunkIds: questionReferenceChunkIds })
         if (!outcome.ok || !outcome.artifact) return failGeneration(outcome.message ?? 'The Mastery Map could not be generated.')
         setGenerationPhase('saving')
         await waitForGenerationProgress()
@@ -210,7 +212,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
         })
         toast({ title: 'Mastery Map created', description: 'Saved in Materials with its selected-source trace.' })
       } else if (artifact === 'unit-question-bank') {
-        const outcome = await generateUnitQuestionBank({ courseId, chunks: generationChunks, unit: selectedUnit, label: courseLabel, course: course ?? { code: courseLabel, title: courseLabel }, currentUnitPercent, practiceQuestionChunkIds: questionReferenceChunkIds, masteryStandardIds: matchingMasteryOutline?.standards.map((standard) => standard.id), visualFiles: selected.map((choice) => choice.file) })
+        const outcome = await generateUnitQuestionBank({ guideDirections: guide.directions, courseId, chunks: generationChunks, unit: selectedUnit, label: courseLabel, course: course ?? { code: courseLabel, title: courseLabel }, currentUnitPercent, practiceQuestionChunkIds: questionReferenceChunkIds, masteryStandardIds: matchingMasteryOutline?.standards.map((standard) => standard.id), visualFiles: selected.map((choice) => choice.file) })
         if (!outcome.ok || !outcome.artifact) return failGeneration(outcome.message ?? 'The question bank could not be generated.')
         setGenerationPhase('saving')
         await waitForGenerationProgress()
@@ -262,6 +264,7 @@ function MaterialGenerationIntakeCore({ artifact, courseId, courseLabel, files, 
           <Button size="icon" variant="ghost" aria-label="Close material selection" disabled={busy} onClick={onClose}><X className="size-4" /></Button>
         </div>
 
+        {artifact !== 'revised-notes' && guide.preview}
         {(artifact === 'study-guide' || artifact === 'study-outline') && lens && <section className="mt-4 rounded-2xl border border-border bg-muted/30 p-3.5" aria-label="Course lens for this output">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">How this class reads material</p><p className="mt-1 font-display text-sm font-extrabold">Course lens</p><p className="mt-1 max-w-3xl text-sm font-semibold text-muted-foreground">{lens.text}</p><p className="mt-2 text-xs font-semibold text-muted-foreground">Sourceable from: {lensSourceFileIds.map((id) => choices.find((choice) => choice.file.id === id)?.file.title ?? 'Unavailable material').join(' · ')}</p></div><Button size="sm" variant={useCourseLens ? 'default' : 'outline'} aria-pressed={useCourseLens} disabled={!lensAvailable} onClick={() => setUseCourseLens((current) => !current)}>{useCourseLens ? 'Course lens included' : 'Include course lens'}</Button></div>
           {!lensAvailable && <p className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300">Its supporting material is not ready in this output. Review the lens in Guide before using it.</p>}

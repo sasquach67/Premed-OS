@@ -1,3 +1,4 @@
+import { useStudentGuide } from './UsingStudentGuide'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Copy, Download, NotebookText, X } from 'lucide-react'
@@ -23,7 +24,8 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
   const selection = lectureId ?? (chosenId || classLectures.find(lecture => flashcardNotebookEligibility(lecture).eligible)?.id)
   const lecture = classLectures.find(item => item.id === selection)
   const eligibility = lecture ? flashcardNotebookEligibility(lecture) : { eligible: false, reason: lectureId ? 'This lecture’s Class Journal is unavailable in this class.' : 'Create and save a completed Class Journal for this lecture first.' }
-  const prompt = lecture && eligibility.eligible ? buildFlashcardPrompt({ courseLabel, lecture }) : ''
+  const guide = useStudentGuide({ courseId, lessonIds: lecture ? [lecture.id] : [] })
+  const prompt = lecture && eligibility.eligible ? buildFlashcardPrompt({ courseLabel, lecture, guideDirections: guide.directions }) : ''
   const currentFeedback = feedback?.prompt === prompt ? feedback : undefined
 
   async function copyPrompt() {
@@ -69,6 +71,7 @@ export function FlashcardPromptPanel({ courseId, courseLabel, lectureId, onClose
         {classLectures.map(item => { const result = flashcardNotebookEligibility(item); return <option key={item.id} value={item.id} disabled={!result.eligible}>{item.title}{result.eligible ? '' : ` — ${result.reason}`}</option> })}
       </select>
     </label>}
+    {eligibility.eligible && guide.preview}
     {!eligibility.eligible ? <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
       <p role="status" className="text-sm">{eligibility.reason}</p>
       <Button variant="outline" onClick={() => { onClose(); navigate(`/academics/classes/${encodeURIComponent(courseId)}/journal/new`) }}><NotebookText className="size-4" />Create or import Class Journal</Button>

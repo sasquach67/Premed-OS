@@ -67,7 +67,7 @@ it('opens a read-only complete fallback when clipboard access fails', async () =
   seed([journal('ready')]); writeText.mockRejectedValue(new Error('Denied')); await render()
   await click('Copy complete prompt')
   expect(container.textContent).toContain('Clipboard access was unavailable')
-  expect(container.querySelector('details')?.open).toBe(true)
+  expect(container.querySelector('textarea')?.closest('details')?.open).toBe(true)
   const textarea = container.querySelector('textarea')!
   expect(textarea.readOnly).toBe(true)
   expect(textarea.value).toBe(writeText.mock.calls[0][0])

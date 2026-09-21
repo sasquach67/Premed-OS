@@ -11,6 +11,8 @@ export interface NotebookWorkflowDraft {
   goal: NotebookGoal | null
   goalAccepted: boolean
   preferences: string
+  guideTarget?: string
+  excludedGuideIds?: string[]
   scope: string
   scopeSource: string
   materials: string
@@ -47,6 +49,8 @@ export function loadNotebookWorkflowDraft(courseId: string, defaults: { preferen
     draft.goal = ['review', 'assessment', 'assignment'].includes(value.goal) ? value.goal : null
     draft.step = steps.includes(value.step) ? value.step : 'goal'
     draft.selected = Array.isArray(value.selected) ? value.selected.filter((id: unknown): id is string => typeof id === 'string') : []
+    draft.guideTarget = typeof value.guideTarget === 'string' ? value.guideTarget : ''
+    draft.excludedGuideIds = Array.isArray(value.excludedGuideIds) ? value.excludedGuideIds.filter((id: unknown): id is string => typeof id === 'string') : []
     draft.goalAccepted = value.goalAccepted === true && draft.goal !== null
     draft.confirmedPrompt = typeof value.confirmedPrompt === 'string' ? value.confirmedPrompt : null
     draft.acknowledgedBy = ['clipboard', 'manual', 'download'].includes(value.acknowledgedBy) ? value.acknowledgedBy : null

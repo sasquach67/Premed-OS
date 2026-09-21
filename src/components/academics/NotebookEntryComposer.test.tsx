@@ -219,7 +219,7 @@ it('keeps Create unavailable until readable materials are selected', async () =>
   await render()
   expect(container.querySelector<HTMLButtonElement>('[aria-label="Go to create"]')?.disabled).toBe(true)
   await click('Go to materials')
-  expect(container.querySelector<HTMLDetailsElement>('details')?.open).toBe(true)
+  expect(container.querySelector<HTMLDetailsElement>('details[aria-label="Upload suggestions"]')?.open).toBe(true)
   expect(container.textContent).toContain('Lecture transcript, slides, or your notes')
   await click('Go to goal')
   expect(container.querySelector<HTMLButtonElement>('[aria-label="Go to create"]')?.disabled).toBe(true)

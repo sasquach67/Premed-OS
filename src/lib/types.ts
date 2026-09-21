@@ -498,6 +498,13 @@ export interface ClassNote {
   /** Guide records retain the exact reviewed evidence that supported them. */
   guideProposalId?: ID
   guideSourceRefs?: GuideSourceReference[]
+  /** Only explicitly saved student guidance influences future generation. Legacy notes remain inactive. */
+  studentGuidance?: {
+    group: 'approach' | 'emphasis' | 'expectations'
+    scope: { kind: 'course' } | { kind: 'lesson' | 'assessment'; id: ID }
+    origin: 'manual' | 'paste' | 'transcript' | 'legacy'
+    originalText?: string
+  }
   createdAt: number
   updatedAt: number
   order: number

@@ -1,3 +1,4 @@
+import { studentGuideInstruction, type GuideDirection } from './studentGuide'
 import { journalStudyInstruction } from './journalStudyIntent'
 import { lectureSourcePriorityInstruction } from './lectureSourcePriority'
 /**
@@ -134,13 +135,15 @@ export function conciseStudyGuideTitle(artifact: Pick<StudyGuideArtifact, 'secti
   return words.length > 56 ? `${words.slice(0, 55).trimEnd()}…` : words
 }
 
-export async function generateStudyGuide({ courseId, chunks, label, courseLens, practiceQuestionChunkIds = [], primarySourceChunkIds = [], personalNoteChunkIds = [], studyIntent, notebookGoal, notebookRequest }: {
+export async function generateStudyGuide({ courseId, chunks, label, courseLens, guideDirections = [], practiceQuestionChunkIds = [], primarySourceChunkIds = [], personalNoteChunkIds = [], studyIntent, notebookGoal, notebookRequest }: {
   courseId: string
   topicId?: string
   chunks: SourceChunk[]
   /** What the student pointed at — used for the artifact's title. */
   label: string
-  /** Optional, reviewed course context; its sources must already be selected. */
+  /** Explicitly selected student direction; never a substitute for evidence. */
+  guideDirections?: readonly GuideDirection[]
+  /** Optional legacy course lens; its sources must already be selected. */
   courseLens?: CourseLensGenerationContext
   /** Selected passages containing supplied question examples. */
   practiceQuestionChunkIds?: readonly string[]
@@ -197,6 +200,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
       sourcePriority,
       journalInstruction,
       notebookInstruction,
+      studentGuideInstruction(guideDirections, notebookGoal === 'assessment' ? 'assessment' : 'notebook'),
       ...(isReview ? [
       `Topic: ${label}. Action: generate one canonical study guide from the attached sources. Begin with AT A GLANCE, then preserve the full source-supported teaching depth in the detailed sections without repeating the opening.`,
       'AI lecture naming: include a section with id "title" and title "TITLE", containing one cited text block with a concise 3–6 word title describing the central topic across the lecture. Do not echo the upload filename, lesson number, auto-generated transcript label, or "Study Guide". This title becomes the completed lecture name. Keep AT A GLANCE as the opening teaching section after this title metadata.',
@@ -223,6 +227,7 @@ export async function generateStudyGuide({ courseId, chunks, label, courseLens, 
 
       `Topic: ${label}.`,
       notebookInstruction,
+      studentGuideInstruction(guideDirections, notebookGoal === 'assessment' ? 'assessment' : 'notebook'),
       isReview ? 'Return one complete Study Guide: AT A GLANCE is its opening layer, not a separate brief and not a substitute for the full explanation.' : '',
       courseLens ? 'Apply the supplied Course lens only within its selected evidence trace.' : '',
       questionReferenceIds.length ? 'Use the marked question passages as source-backed explanatory examples, without copying their assessment wording.' : '',

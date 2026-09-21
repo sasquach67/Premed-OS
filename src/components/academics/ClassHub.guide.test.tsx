@@ -18,7 +18,7 @@ function changeField(field: HTMLInputElement | HTMLTextAreaElement, value: strin
   field.dispatchEvent(new Event('input', { bubbles: true }))
 }
 
-describe('ClassHub Guide contract', () => {
+describe('ClassHub preserved Class details contract', () => {
   let container: HTMLDivElement
   let root: Root
   let courseId: string
@@ -49,14 +49,14 @@ describe('ClassHub Guide contract', () => {
     const course = state.courses.find((item) => item.id === courseId)!
     const workspace = state.academics.classCenter.workspaces.find((item) => item.courseId === courseId)!
     await act(async () => {
-      root.render(<MemoryRouter initialEntries={['/academics?classTab=guide']}><ToastProvider><ClassHub course={course} workspace={workspace} data={state.academics.classCenter} persons={state.persons} /></ToastProvider></MemoryRouter>)
+      root.render(<MemoryRouter initialEntries={['/academics?classTab=details']}><ToastProvider><ClassHub course={course} workspace={workspace} data={state.academics.classCenter} persons={state.persons} /></ToastProvider></MemoryRouter>)
       await Promise.resolve()
     })
   }
 
   it('creates a visible Guide item only after Save and preserves Cancel', async () => {
     const original = useStore.getState().academics.classCenter.notes.length
-    const open = () => [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('New Guide item'))!.click()
+    const open = () => [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('New class detail'))!.click()
     await act(async () => open())
     expect(useStore.getState().academics.classCenter.notes).toHaveLength(original)
     await act(async () => [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find((button) => button.textContent === 'Cancel')!.click())
@@ -76,7 +76,7 @@ describe('ClassHub Guide contract', () => {
     expect(container.textContent).toContain('Suggested additions')
     expect(container.textContent).toContain('Midterm 1 covers Weeks 1–4')
 
-    const add = [...container.querySelectorAll('button')].find((button) => button.textContent?.includes('Add to Guide')) as HTMLButtonElement
+    const add = [...container.querySelectorAll('button')].find((button) => button.textContent?.includes('Save class detail')) as HTMLButtonElement
     await act(async () => add.click())
     const accepted = useStore.getState().academics.classCenter.guideProposals.find((item) => item.id === proposals[0].id)
     expect(accepted).toEqual(expect.objectContaining({ status: 'accepted', acceptedNoteId: expect.any(String) }))
@@ -103,7 +103,7 @@ describe('ClassHub Guide contract', () => {
   it('edits saved Guide wording with cancel/save semantics and survives persisted hydration', async () => {
     await render()
     const proposal = useStore.getState().academics.classCenter.guideProposals.find((item) => item.courseId === courseId)!
-    const add = [...container.querySelectorAll('button')].find((button) => button.textContent?.includes('Add to Guide')) as HTMLButtonElement
+    const add = [...container.querySelectorAll('button')].find((button) => button.textContent?.includes('Save class detail')) as HTMLButtonElement
     await act(async () => add.click())
     await render()
 
@@ -142,7 +142,7 @@ describe('ClassHub Guide contract', () => {
   it('confirms deletion, clears dependent links, and returns a reviewed source to suggestions', async () => {
     await render()
     const proposal = useStore.getState().academics.classCenter.guideProposals.find((item) => item.courseId === courseId)!
-    const add = [...container.querySelectorAll('button')].find((button) => button.textContent?.includes('Add to Guide')) as HTMLButtonElement
+    const add = [...container.querySelectorAll('button')].find((button) => button.textContent?.includes('Save class detail')) as HTMLButtonElement
     await act(async () => add.click())
     const accepted = useStore.getState().academics.classCenter.notes.find((item) => item.guideProposalId === proposal.id)!
     const topicId = useStore.getState().academics.classCenter.topics.find((item) => item.courseId === courseId)!.id
@@ -156,7 +156,7 @@ describe('ClassHub Guide contract', () => {
     const remove = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.getAttribute('aria-label') === `Delete ${accepted.title}`)!
     await act(async () => remove.click())
     expect(document.body.textContent).toContain('The reviewed syllabus or lecture source returns to Suggested additions')
-    await act(async () => ([...document.body.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Delete Guide item')!).click())
+    await act(async () => ([...document.body.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Delete class detail')!).click())
 
     const center = useStore.getState().academics.classCenter
     expect(center.notes.some((item) => item.id === accepted.id)).toBe(false)

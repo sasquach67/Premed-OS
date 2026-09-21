@@ -1,3 +1,5 @@
+import { useStudentGuide } from './UsingStudentGuide'
+import { preferencesWithGuide, withoutGuideSnapshot } from '@/lib/academics/studentGuide'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, BookOpen, Brain, Check, Copy, Download, FileCode2, FileText, FolderOpen, HelpCircle, Info, ListChecks, MessageSquare, NotebookText, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -74,7 +76,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision, basel
     const loaded = loadNotebookWorkflowDraft(courseId, { preferences: workspace?.externalNotebookPreferences ?? '', term: course?.term ?? '' }, storageId)
     if (revision) {
       const entry = revision.baseline.entries[0]
-      if (!loaded.restored) Object.assign(loaded.draft, { scope: entry.scope, preferences: entry.request.classPreferences, stage: entry.request.helpStage ?? '', format: entry.request.assessmentFormat ?? '', term: revision.baseline.course.term ?? '' })
+      if (!loaded.restored) Object.assign(loaded.draft, { scope: entry.scope, preferences: withoutGuideSnapshot(entry.request.classPreferences), stage: entry.request.helpStage ?? '', format: entry.request.assessmentFormat ?? '', term: revision.baseline.course.term ?? '' })
       loaded.draft.goal = entry.goal
     }
     return loaded
@@ -91,7 +93,8 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision, basel
   const finished = useRef(false)
   const latestPrompt = useRef('')
   const classFiles = files.filter(file => file.courseId === courseId)
-  const values: PromptValues = { COURSE_CODE: revision?.baseline.course.code ?? course?.code ?? '', COURSE_TITLE: revision?.baseline.course.title ?? course?.title ?? '', TERM: revision ? revision.baseline.course.term : term || null, SCOPE: scope.trim() ? `${scope}\nScope authority: ${scopeSource || 'Not supplied; label provisional scope.'}` : null, MATERIALS: [revision ? `${notebookUpdateBaselineFilename(revision)}: attach this exact saved baseline plus the new material; retained excerpts do not imply complete original files.` : '', ...classFiles.filter(f => selected.includes(f.id)).map(f => `${f.title} (${f.type}; attach the actual original file in the AI conversation)`), materials].filter(Boolean).join('\n'), DEPTH: depth, CLASS_PREFERENCES: preferences, HELP_STAGE: revision ? stage || null : stage, ASSESSMENT_FORMAT: goal === 'assessment' ? format || null : null, USER_REQUEST: request, REVISION_INPUT: revision ? revisionInput(revision) : null }
+  const guideSelection = useStudentGuide({ courseId, lessonIds: classFiles.filter(file => selected.includes(file.id)).map(file => file.lectureId).filter((id): id is string => Boolean(id)), choice: { target: draft.guideTarget ?? '', excludedIds: draft.excludedGuideIds ?? [] }, onChange: choice => setDraft(previous => ({ ...previous, guideTarget: choice.target, excludedGuideIds: choice.excludedIds, confirmedPrompt: null, acknowledgedBy: null, jsonReady: false })) })
+  const values: PromptValues = { COURSE_CODE: revision?.baseline.course.code ?? course?.code ?? '', COURSE_TITLE: revision?.baseline.course.title ?? course?.title ?? '', TERM: revision ? revision.baseline.course.term : term || null, SCOPE: scope.trim() ? `${scope}\nScope authority: ${scopeSource || 'Not supplied; label provisional scope.'}` : null, MATERIALS: [revision ? `${notebookUpdateBaselineFilename(revision)}: attach this exact saved baseline plus the new material; retained excerpts do not imply complete original files.` : '', ...classFiles.filter(f => selected.includes(f.id)).map(f => `${f.title} (${f.type}; attach the actual original file in the AI conversation)`), materials].filter(Boolean).join('\n'), DEPTH: depth, CLASS_PREFERENCES: preferencesWithGuide(preferences, guideSelection.directions, goal === 'assessment' ? 'assessment' : 'notebook'), HELP_STAGE: revision ? stage || null : stage, ASSESSMENT_FORMAT: goal === 'assessment' ? format || null : null, USER_REQUEST: request, REVISION_INPUT: revision ? revisionInput(revision) : null }
   const fullPrompt = goal ? composeNotebookPrompt(goal, values, revision ? 'update' : 'new') : ''
   const promptLines = fullPrompt ? fullPrompt.split('\n').length : 0
   useLayoutEffect(() => { latestPrompt.current = fullPrompt }, [fullPrompt])
@@ -181,6 +184,7 @@ export function ExternalNotebookWorkflow({ courseId, onImported, revision, basel
     {revision && <NotebookUpdateGuide />}
     {baselineBlocked && <div className="en-notice" role="alert"><p>Saved content changed after the baseline for this update. Restart from the latest saved entry before copying a prompt, downloading current JSON, or continuing the AI handoff.</p><p>Keep any unfinished prompt or proposal first. Restarting preserves saved content, notes, progress and history, but requires fresh prompt, baseline and JSON confirmations. A pending proposal can still be reviewed; it cannot replace newer content without reconciliation.</p>{draft.rawJson.trim() && step !== 'import' && <Button variant="outline" onClick={() => setDraft(previous => ({ ...previous, step: 'import' }))}>Review pending proposal</Button>}</div>}
 
+    {goal && ['goal', 'details', 'prompt'].includes(step) && guideSelection.preview}
     {step === 'goal' && <div className="en-stage-content">
       {revision ? <p className="en-selected-goal">Updating {revision.baseline.entries[0].title} / {goalInfo.title}</p> : <fieldset>
         <legend className="sr-only">Notebook goal</legend>

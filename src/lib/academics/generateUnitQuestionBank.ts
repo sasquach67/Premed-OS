@@ -1,3 +1,4 @@
+import { studentGuideInstruction, type GuideDirection } from './studentGuide'
 import { assembleGenerationRequest } from '@/lib/generation'
 import { assertGenerationAllowed, GenerationNotAllowedError, generatedTitle } from '@/lib/academics/generationPolicy'
 import { prepareGenerationSources } from '@/lib/academics/syncGenerationSources'
@@ -42,6 +43,7 @@ function failureFor(code: string): GenerateFailure {
 export async function generateUnitQuestionBank({
   courseId, chunks, unit, label, course,
   currentUnitPercent,
+  guideDirections = [],
   privateAssessmentPhrases = [],
   practiceQuestionChunkIds = [],
   masteryStandardIds = [],
@@ -52,6 +54,7 @@ export async function generateUnitQuestionBank({
   unit: string
   label: string
   course: { code?: string; title?: string; type?: string }
+  guideDirections?: readonly GuideDirection[]
   currentUnitPercent?: number
   privateAssessmentPhrases?: string[]
   /** Selected passages whose assessment patterns should shape this bank. */
@@ -90,6 +93,7 @@ export async function generateUnitQuestionBank({
   const assembled = assembleGenerationRequest({
     specId: 'unit-question-bank-v1', chunkIds: prepared.chunkIds, controls: { source_mode: 'SOURCE_ONLY' },
     request: [
+      studentGuideInstruction(guideDirections, 'assessment'),
       `Unit: ${unit}. Topic label: ${label}. Course style: ${blueprint.courseStyle}.`,
       `Target mix: ${current}% current-unit and ${integration}% prior-unit integration.`,
       `Blueprint: ${blueprint.instruction}`,
@@ -102,6 +106,7 @@ export async function generateUnitQuestionBank({
     action: 'generate', courseId, topicId: prepared.scopeId, chunkIds: assembled.chunkIds,
     specId: assembled.specId, specHash: assembled.specHash, systemPrompt: assembled.systemPrompt,
     request: [
+      studentGuideInstruction(guideDirections, 'assessment'),
       `Unit: ${unit}. Build the source-grounded unit question bank.`,
       questionReferenceIds.length ? 'Use the marked question passages as assessment-pattern evidence without copying them.' : '',
       visualPreparation.sources.length

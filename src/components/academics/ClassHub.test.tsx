@@ -870,7 +870,7 @@ describe('ClassHub approved Overview', () => {
 
   })
 
-  it('keeps the topic-focused Guide notice outside the New Guide item action', async () => {
+  it('keeps the topic-focused Class details notice outside the New class detail action', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -879,7 +879,7 @@ describe('ClassHub approved Overview', () => {
 
     await act(async () => {
       root.render(
-        <MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=guide&noteTopic=${topic.id}`]}>
+        <MemoryRouter initialEntries={[`/academics/classes/${course.id}?classTab=details&noteTopic=${topic.id}`]}>
           <ToastProvider>
             <ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />
           </ToastProvider>
@@ -888,7 +888,7 @@ describe('ClassHub approved Overview', () => {
     })
 
     const newItem = [...container.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'New Guide item')
+      .find((button) => button.textContent?.trim() === 'New class detail')
     const showAll = [...container.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.trim() === 'Show all Guide items')
     expect(newItem).toBeTruthy()
@@ -1087,7 +1087,7 @@ describe('ClassHub approved Overview', () => {
     expect(container.textContent).not.toMatch(/Week of Sep/)
   })
 
-  it('keeps generated study work in Materials and operational course context in Guide', async () => {
+  it('keeps generated study work in Materials and operational course context in Class details', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -1110,7 +1110,7 @@ describe('ClassHub approved Overview', () => {
 
     await act(async () => {
       root.render(
-        <MemoryRouter key="guide-boundary" initialEntries={[`/academics/classes/${course.id}?classTab=guide`]}>
+        <MemoryRouter key="guide-boundary" initialEntries={[`/academics/classes/${course.id}?classTab=details`]}>
           <ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider>
         <Routes><Route path="/academics/classes/:courseId/lectures/:lectureId" element={<ToastProvider><LecturePage /></ToastProvider>} /><Route path="/academics/classes/:courseId/journal/:entryId" element={<ToastProvider><JournalEntryPage /></ToastProvider>} /><Route path="*" element={null} /></Routes></MemoryRouter>,
       )

@@ -602,3 +602,22 @@ it('keeps dedicated course-question figures and tables with Practice while prese
   expect([...container.querySelectorAll('textarea')].some(input => input.value === question.prompt)).toBe(true)
   expect(JSON.stringify(pkg)).toBe(before)
 })
+
+it('uses current Guide directions in the handoff, allows exclusions, and refreshes after later edits', async () => {
+  useStore.getState().update(state => state.academics.classCenter.notes.push({ id: 'guide-context', courseId: course.id, title: 'Interpret healing through cultural and social context.', content: '', kind: 'about-class', type: 'other', topicIds: [], linkedFileIds: [], syncStatus: 'local-only', createdAt: 1, updatedAt: 1, order: 0, studentGuidance: { group: 'approach', scope: { kind: 'course' }, origin: 'manual' } }))
+  await renderWorkflow(); await choose('review')
+  const preview = container.querySelector<HTMLElement>('[aria-label="Using your Guide"]')!
+  expect(preview.textContent).toContain('Interpret healing through cultural and social context.')
+  await click('Next')
+  await openFallback()
+  const prompt = () => container.querySelector<HTMLTextAreaElement>('textarea[readonly]')!.value
+  expect(prompt()).toContain('Interpret healing through cultural and social context.')
+  await act(async () => container.querySelector<HTMLInputElement>('[aria-label="Using your Guide"] input[type="checkbox"]')!.click())
+  await openFallback()
+  expect(prompt()).not.toContain('Interpret healing through cultural and social context.')
+  await act(async () => container.querySelector<HTMLInputElement>('[aria-label="Using your Guide"] input[type="checkbox"]')!.click())
+  await act(async () => useStore.getState().update(state => { state.academics.classCenter.notes.find(n => n.id === 'guide-context')!.title = 'Explain how the anthropologist knows.' }))
+  await openFallback()
+  expect(prompt()).not.toContain('Interpret healing through cultural and social context.')
+  expect(prompt()).toContain('Explain how the anthropologist knows.')
+})

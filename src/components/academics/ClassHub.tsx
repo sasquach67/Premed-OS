@@ -1,5 +1,6 @@
 import { activeStorageKey } from '@/lib/demoMode'
 import { FolderMaterials } from '@/components/academics/FolderMaterials'
+import { StudentGuide } from './StudentGuide'
 import './notebookVisuals.css'
 import { GenerationReviewNotice } from './GenerationReviewNotice'
 import { ReadingSummaryDialog, ReadingSummaryContent } from './ReadingSummaryDialog'
@@ -75,7 +76,7 @@ import {
 } from '@/lib/academics/guideContract'
 import './classHubVariantA.css'
 
-type HubTab = 'overview' | 'materials' | 'topics' | 'assignments' | 'guide'
+type HubTab = 'overview' | 'materials' | 'topics' | 'assignments' | 'guide' | 'details'
 
 function isMaterialArtifact(value: string | null): value is MaterialArtifact {
   return value === 'flashcards' || value === 'study-guide' || value === 'study-outline' || value === 'revised-notes' || value === 'unit-mastery-outline' || value === 'unit-question-bank'
@@ -132,13 +133,13 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const requestedTab = params.get('classTab')
-  // Preserve old deep links while keeping the public shell at five tabs.
-  const canonicalRequestedTab = requestedTab === 'notes' ? 'guide' : requestedTab === 'readings' ? 'materials' : requestedTab
+  // Preserve old deep links while separating saved class details from active guidance.
+  const canonicalRequestedTab = requestedTab === 'notes' ? 'details' : requestedTab === 'readings' ? 'materials' : requestedTab
   const classType: ClassWorkspaceType = workspace.type ?? (course.bcpm ? 'stem' : 'general')
   const courseColor = classHubColor(workspace.color)
-  // A class has one stable five-tab shell. Writing-specific tools live inside
+  // A class has one stable shell. Writing-specific tools live inside
   // Materials rather than replacing the syllabus-led Topics surface.
-  const availableTabs: HubTab[] = ['overview', 'materials', 'topics', 'assignments', 'guide']
+  const availableTabs: HubTab[] = ['overview', 'materials', 'topics', 'assignments', 'guide', 'details']
   const initialTab = isHubTab(canonicalRequestedTab) && availableTabs.includes(canonicalRequestedTab) ? canonicalRequestedTab : 'overview'
   const [tab, setTab] = useState<HubTab>(initialTab)
   useEffect(() => {
@@ -282,7 +283,8 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
             <HubTabTrigger value="materials" label="Materials" count={counts.materials} />
             <HubTabTrigger value="topics" label="Topics" count={counts.topics} />
             <HubTabTrigger value="assignments" label="Assignments" count={counts.assignments} />
-            <HubTabTrigger value="guide" label="Guide" count={counts.notes} />
+            <HubTabTrigger value="guide" label="Guide" count={courseGuideNotes.filter(note => note.studentGuidance).length} />
+            <HubTabTrigger value="details" label="Class details" />
           </TabsList>
         </section>
 
@@ -291,19 +293,20 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
         <TabsContent value="topics" className="class-hub-tab"><Topics
           courseId={course.id} data={data} topics={courseTopics} assignments={courseAssignments}
           onOpenNotes={(topicId) => {
-            // The Guide tab filters to this topic, so the menu item lands on
+            // Class details filters to this topic, so the menu item lands on
             // something rather than on an unfiltered list.
             setParams((current) => {
               const next = new URLSearchParams(current)
-              next.set('classTab', 'guide')
+              next.set('classTab', 'details')
               next.set('noteTopic', topicId)
               return next
             }, { replace: true })
-            changeTab('guide')
+            changeTab('details')
           }}
         /></TabsContent>
         <TabsContent value="assignments" className="class-hub-tab"><Assignments courseId={course.id} assignments={courseAssignments} categories={data.gradeCategories.filter((item) => item.courseId === course.id)} focusWhatIf={params.get('whatIf') === '1'} /></TabsContent>
-        <TabsContent value="guide" className="class-hub-tab"><Guide courseId={course.id} workspace={workspace} notes={courseNotes} topics={courseTopics} assignments={courseAssignments} contacts={courseContacts} data={data} onOpenMaterials={() => changeTab('materials')} topicFilter={params.get('noteTopic') ?? undefined} /></TabsContent>
+        <TabsContent value="guide" className="class-hub-tab"><StudentGuide key={course.id} courseId={course.id} data={data} onClassDetails={() => changeTab('details')} /></TabsContent>
+        <TabsContent value="details" className="class-hub-tab"><ClassDetails courseId={course.id} workspace={workspace} notes={courseNotes} topics={courseTopics} assignments={courseAssignments} contacts={courseContacts} data={data} onOpenMaterials={() => changeTab('materials')} topicFilter={params.get('noteTopic') ?? undefined} /></TabsContent>
       </Tabs>
     </div>
   )
@@ -1036,7 +1039,7 @@ function Assignments({ courseId, assignments, categories, focusWhatIf = false }:
   )
 }
 
-function Guide({ courseId, workspace, notes, topics, assignments, contacts, data, onOpenMaterials, topicFilter }: {
+function ClassDetails({ courseId, workspace, notes, topics, assignments, contacts, data, onOpenMaterials, topicFilter }: {
   courseId: string
   workspace: ClassWorkspace
   notes: ClassNote[]
@@ -1061,7 +1064,7 @@ function Guide({ courseId, workspace, notes, topics, assignments, contacts, data
     })
     setCreateOpen(false)
   }
-  const guideNotes = notes.filter(isGuideNote)
+  const guideNotes = notes.filter(note => isGuideNote(note) && !note.studentGuidance)
   const scoped = topicFilter ? guideNotes.filter((item) => item.topicIds.includes(topicFilter)) : guideNotes
   const focus = topicFilter ? topics.find((item) => item.id === topicFilter) : undefined
   const [, setParams] = useSearchParams()
@@ -1080,9 +1083,9 @@ function Guide({ courseId, workspace, notes, topics, assignments, contacts, data
   return (
     <div className={cn('grid gap-4', topicNotes.length > 0 && 'xl:grid-cols-[minmax(0,1fr)_300px]')}>
       <div className="space-y-4">
-        <SectionToolbar title="Guide" detail="Exam intel, questions, priming, and class context. Material notes remain in Materials." action={<Button onClick={() => { setNewTitle(''); setNewContent(''); setNewKind('other'); setCreateOpen(true) }}><Plus className="size-4" /> New Guide item</Button>} />
+        <SectionToolbar title="Class details" detail="Policies, contacts, and earlier notes. These records stay intact and do not automatically steer generation." action={<Button onClick={() => { setNewTitle(''); setNewContent(''); setNewKind('other'); setCreateOpen(true) }}><Plus className="size-4" /> New class detail</Button>} />
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogContent><DialogHeader><DialogTitle>New Guide item</DialogTitle><DialogDescription>Save class advice, exam guidance, or a question to ask.</DialogDescription></DialogHeader>
+          <DialogContent><DialogHeader><DialogTitle>New class detail</DialogTitle><DialogDescription>Keep a policy, administrative note, or question for this class.</DialogDescription></DialogHeader>
             <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); saveItem() }}>
               <label className="block text-sm font-bold">Title<Input autoFocus value={newTitle} onChange={(event) => setNewTitle(event.target.value)} required /></label>
               <label className="block text-sm font-bold">Kind<select className="mt-1 min-h-11 w-full rounded-lg border border-border bg-background px-3" value={newKind} onChange={(event) => setNewKind(event.target.value as ClassNote['type'])}><option value="other">Class context</option><option value="exam-review">Exam intel</option><option value="question-log">Question to ask</option></select></label>
@@ -1138,7 +1141,7 @@ function Guide({ courseId, workspace, notes, topics, assignments, contacts, data
             </CardContent>
           </Card>
         ))}
-        {!scoped.length && <p className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">No Guide items yet. Add class advice or a question above.</p>}
+        {!scoped.length && <p className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">No earlier class notes. Add a class detail above.</p>}
         <GuideSuggestions courseId={courseId} data={data} onOpenMaterials={onOpenMaterials} />
         <Collapsible title="Course lens and professor evidence">
           <CourseLensPanel workspace={workspace} data={data} />
@@ -1158,7 +1161,7 @@ function Guide({ courseId, workspace, notes, topics, assignments, contacts, data
 
 /**
  * Interpretive courses sometimes need a durable, attributable course frame.
- * This stays in Guide because it is context ABOUT how the course reads
+ * This legacy frame remains editable in Class details because it describes how the course reads
  * material; it never becomes a generic material note or a Topic substitute.
  */
 function CourseLensPanel({ workspace, data }: { workspace: ClassWorkspace; data: ClassCenterData }) {
@@ -1213,7 +1216,7 @@ function GuideSuggestions({ courseId, data, onOpenMaterials }: { courseId: strin
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draftTitle, setDraftTitle] = useState('')
   const [draftText, setDraftText] = useState('')
-  const proposals = guideProposalsForCourse(data, courseId, 'pending')
+  const proposals = guideProposalsForCourse(data, courseId, 'pending').filter(proposal => proposal.source.sourceKind === 'syllabus')
 
   if (!proposals.length) return null
 
@@ -1264,7 +1267,7 @@ function GuideSuggestions({ courseId, data, onOpenMaterials }: { courseId: strin
     <Card className="class-hub-panel">
       <CardHeader className="class-hub-panel-header">
         <CardTitle>Suggested additions</CardTitle>
-        <p className="mt-1 text-sm text-muted-foreground">Confirmed syllabus facts and exact saved lecture passages. Nothing enters Guide until you review it.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Confirmed syllabus facts for Class details. Saving these preserves the record without activating generation guidance.</p>
       </CardHeader>
       <CardContent className="class-hub-panel-content space-y-3">
         {proposals.map((proposal) => {
@@ -1274,7 +1277,7 @@ function GuideSuggestions({ courseId, data, onOpenMaterials }: { courseId: strin
           return <article key={proposal.id} className="rounded-xl border border-border bg-muted p-3">
             <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-extrabold uppercase tracking-[0.1em] text-primary">{proposal.source.sourceLabel}{proposal.source.sourceLocation ? ` · ${proposal.source.sourceLocation}` : ''}</p><blockquote className="mt-2 font-display text-base font-extrabold">“{proposal.source.sourcePassage || 'Source passage unavailable'}”</blockquote></div><Badge variant={valid ? 'outline' : 'warning'}>{valid ? 'Pending' : 'Source unavailable'}</Badge></div>
             {editing ? <div className="mt-3 space-y-2"><Input value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} aria-label="Guide suggestion title" /><Textarea value={draftText} onChange={(event) => setDraftText(event.target.value)} aria-label="Guide suggestion text" /><div className="flex gap-2"><Button size="sm" onClick={() => saveDraft(proposal.id)}>Save draft</Button><Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button></div></div> : <><p className="mt-2 font-display text-sm font-extrabold">{proposal.draftTitle || 'Untitled suggestion'}</p><p className="mt-1 text-sm font-semibold text-muted-foreground">{proposal.draftText || 'No draft text is available.'}</p></>}
-            {!editing && <div className="mt-3 flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => startEditing(proposal)}>Review / edit</Button><Button size="sm" onClick={() => accept(proposal.id)} disabled={!valid || !proposal.draftTitle.trim() || !proposal.draftText.trim()}>Add to Guide</Button><Button size="sm" variant="outline" onClick={() => void playSource(proposal.id)}>{playingId === proposal.id ? 'Playing…' : lecture?.audioBlobRef ? 'Listen locally' : 'Open source'}</Button><Button size="sm" variant="ghost" onClick={() => dismiss(proposal.id)}>Dismiss</Button></div>}
+            {!editing && <div className="mt-3 flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => startEditing(proposal)}>Review / edit</Button><Button size="sm" onClick={() => accept(proposal.id)} disabled={!valid || !proposal.draftTitle.trim() || !proposal.draftText.trim()}>Save class detail</Button><Button size="sm" variant="outline" onClick={() => void playSource(proposal.id)}>{playingId === proposal.id ? 'Playing…' : lecture?.audioBlobRef ? 'Listen locally' : 'Open source'}</Button><Button size="sm" variant="ghost" onClick={() => dismiss(proposal.id)}>Dismiss</Button></div>}
           </article>
         })}
       </CardContent>
@@ -1554,13 +1557,13 @@ function NoteRow({ note }: { note: ClassNote }) {
         <div className="flex flex-wrap justify-end gap-2"><Button size="sm" variant="ghost" onClick={cancel}>Cancel</Button><Button size="sm" disabled={!title.trim()} onClick={save}>Save changes</Button></div>
       </div> : <div className="flex items-start gap-3">
         <NotebookText className="mt-0.5 size-4 shrink-0 text-primary" />
-        <div className="min-w-0 flex-1"><p className="font-extrabold">{note.title}</p><p className="text-sm text-muted-foreground">{note.content || 'No note text yet.'}</p><p className="mt-1 text-xs text-muted-foreground">{note.unit || 'Unit not mapped'} · {note.date || 'Date not set'}{sourceCount ? ` · ${sourceCount} reviewed ${sourceCount === 1 ? 'source' : 'sources'}` : ''}</p></div>
+        <div className="min-w-0 flex-1"><p className="font-extrabold">{note.title}</p><details className="mt-2 text-sm text-muted-foreground"><summary className="cursor-pointer">View saved details</summary><p className="mt-2 whitespace-pre-wrap">{note.content || 'No note text yet.'}</p></details><p className="mt-1 text-xs text-muted-foreground">{[note.unit, note.date].filter(Boolean).join(' · ')}{sourceCount ? ` · ${sourceCount} reviewed ${sourceCount === 1 ? 'source' : 'sources'}` : ''}</p></div>
         <div className="flex shrink-0 gap-1"><Button size="sm" variant="ghost" aria-label={`Edit ${note.title}`} onClick={() => setEditing(true)}>Edit</Button><Button size="sm" variant="ghost" aria-label={`Delete ${note.title}`} className="text-destructive hover:text-destructive" onClick={() => setDeleting(true)}>Delete</Button></div>
       </div>}
       <AlertDialog open={deleting} onOpenChange={setDeleting}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Delete this Guide item?</AlertDialogTitle><AlertDialogDescription>{sourceCount ? 'This removes your saved Guide wording and its links. The reviewed syllabus or lecture source returns to Suggested additions, where you can use it again.' : 'This removes the saved item and clears its topic, review, and practice-exam links.'}</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Keep item</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={remove}>Delete Guide item</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel>Keep item</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={remove}>Delete class detail</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
@@ -1976,7 +1979,7 @@ function ordered<T extends { order: number }>(items: T[]) {
 }
 
 function isHubTab(value: string | null): value is HubTab {
-  return value === 'overview' || value === 'materials' || value === 'topics' || value === 'assignments' || value === 'guide'
+  return value === 'overview' || value === 'materials' || value === 'topics' || value === 'assignments' || value === 'guide' || value === 'details'
 }
 
 function isoToday() {
