@@ -112,3 +112,19 @@ export async function preserveAccountReplacement(id: string, localRaw: string, r
 export function validateRemoteWorkspace(data: unknown): asserts data is AppData {
   if (validateAppData(data).length) throw new Error('The cloud copy has an invalid structure. Nothing was replaced and sync is paused.')
 }
+
+/** Complete only the exact, explicitly reviewed conflict after durable application and cloud verification. */
+export async function finishAccountConflictReview(id: string, reviewed: AccountConflict, token: ReturnType<typeof captureSyncSession>, remote: AppData, updatedAt: string, applied: AppData) {
+  assertSyncLease(token)
+  if (token.id !== id || getAccountConflict(id) !== reviewed) throw new Error('The account review changed. Sync remains paused.')
+  const owner = captureWorkspaceIdentity(), snapshot = snapshotData(), text = JSON.stringify(applied)
+  if (JSON.stringify(snapshot) !== text) throw new Error('The workspace changed after your choice.')
+  if (owner.key !== accountStorageKey(id)) throw new Error('The active account changed.')
+  assertDurableWorkspace(snapshot, owner)
+  await recordSyncBaseline(id, remote, updatedAt, token)
+  assertSyncLease(token)
+  if (getAccountConflict(id) !== reviewed || JSON.stringify(snapshotData()) !== text) throw new Error('The workspace changed while completing review.')
+  assertDurableWorkspace(snapshotData(), owner)
+  conflicts.delete(id)
+  allowAccountSync(token)
+}

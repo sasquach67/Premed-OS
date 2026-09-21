@@ -6,8 +6,8 @@ import type { WorkspaceRecoverySnapshot } from './workspaceRecoveryRepository'
 import { accountStorageKey } from '@/lib/demoMode'
 import { ACCOUNT_WORKSPACE_READY_EVENT } from '@/lib/accountWorkspace'
 import { activateAccountWorkspace, activateGuestWorkspace, CURRENT_STORE_VERSION, snapshotData, useStore } from './store'
-import { allowAccountSync, getAccountConflict, isAccountSyncReady, observeSyncSession } from './accountSyncSafety'
-import { accountMutationFailure, prepareAccountMutation, restoreWorkspaceFromSource } from './accountMutationSafety'
+import { allowAccountSync, getAccountConflict, isAccountSyncReady, observeSyncSession, preserveAccountConflict, pauseAccountSync } from './accountSyncSafety'
+import { accountMutationFailure, prepareAccountMutation, restoreWorkspaceFromSource, prepareAccountConflictResolution } from './accountMutationSafety'
 
 const fake = vi.hoisted(() => ({
   userId: null as string | null,
@@ -40,7 +40,7 @@ vi.mock('@/lib/supabase', () => ({
           maybeSingle: async () => {
             if (filters.updated_at !== fake.revision) return { data: null, error: null }
             fake.beforeWrite?.()
-            fake.writes.push(row); fake.remote = row.data; fake.revision = row.updated_at
+            fake.writes.push(row); fake.remote = row.data; fake.revision = row.updated_at.replace('Z', '+00:00')
             return { data: { user_id: row.user_id }, error: null }
           },
         }
@@ -49,7 +49,7 @@ vi.mock('@/lib/supabase', () => ({
       insert: async (row: { user_id: string; data: AppData; updated_at: string }) => {
         if (fake.remote) return { error: new Error('Account already exists') }
         fake.beforeWrite?.()
-        fake.writes.push(row); fake.remote = row.data; fake.revision = row.updated_at
+        fake.writes.push(row); fake.remote = row.data; fake.revision = row.updated_at.replace('Z', '+00:00')
         return { error: null }
       },
     }),
@@ -248,4 +248,88 @@ it('Settings restore does not report success when local persistence rejects the 
   expect(snapshotData()).toEqual(previous)
   expect(fake.writes).toHaveLength(0)
   expect(isAccountSyncReady(fake.userId!)).toBe(false)
+})
+
+async function pausedReview() {
+  const id = fake.userId!
+  activateAccountWorkspace(id, data('Device with newer work'))
+  const token = observeSyncSession(id)
+  await preserveAccountConflict(id, localStorage.getItem(accountStorageKey(id)), fake.remote, token)
+  return prepareAccountConflictResolution(id, getAccountConflict(id)!)
+}
+it('offers a reviewed way out of a conflict and resumes only after device choice is saved', async () => {
+  const review = await pausedReview()
+  expect(isAccountSyncReady(fake.userId!)).toBe(false)
+  expect(fake.writes).toHaveLength(0)
+  await review.apply('device')
+  expect(fake.remote?.profile.name).toBe('Device with newer work')
+  expect(snapshotData().profile.name).toBe('Device with newer work')
+  expect(getAccountConflict(fake.userId!)).toBeUndefined()
+  expect(isAccountSyncReady(fake.userId!)).toBe(true)
+  expect(fake.snapshots.size).toBeGreaterThanOrEqual(4)
+  review.dispose()
+})
+it('uses a reviewed cloud choice without uploading the device copy', async () => {
+  const review = await pausedReview()
+  await review.apply('cloud')
+  expect(fake.writes).toHaveLength(0)
+  expect(snapshotData().profile.name).toBe('Reviewed cloud')
+  expect(isAccountSyncReady(fake.userId!)).toBe(true)
+  review.dispose()
+})
+it.each(['device', 'cloud'] as const)('rejects stale cloud review for %s choice', async choice => {
+  const review = await pausedReview()
+  fake.revision = '2026-09-22T00:00:00.000Z'
+  await expect(review.apply(choice)).rejects.toThrow('changed')
+  expect(fake.writes).toHaveLength(0)
+  expect(snapshotData().profile.name).toBe('Device with newer work')
+  expect(isAccountSyncReady(fake.userId!)).toBe(false)
+  review.dispose()
+})
+it('rejects edits or a new session after the conflict comparison opened', async () => {
+  const review = await pausedReview()
+  useStore.getState().update(draft => { draft.profile.name = 'Edited after review' })
+  await expect(review.apply('cloud')).rejects.toThrow('changed')
+  expect(fake.writes).toHaveLength(0)
+  expect(snapshotData().profile.name).toBe('Edited after review')
+  review.dispose()
+})
+it('never replaces either copy when recovery verification fails', async () => {
+  fake.failArchive = true
+  await expect(pausedReview()).rejects.toThrow()
+  expect(fake.writes).toHaveLength(0)
+  expect(isAccountSyncReady(fake.userId!)).toBe(false)
+})
+
+it('keeps review paused when a sign-out or a newer pause supersedes it', async () => {
+  const review = await pausedReview()
+  pauseAccountSync(fake.userId!)
+  await expect(review.apply('device')).rejects.toThrow('paused')
+  expect(fake.writes).toHaveLength(0)
+  review.dispose()
+  const fresh = await prepareAccountConflictResolution(fake.userId!, getAccountConflict(fake.userId!)!)
+  const id = fake.userId!
+  setAuth(null); setAuth(id)
+  await expect(fresh.apply('cloud')).rejects.toThrow()
+  expect(fake.writes).toHaveLength(0)
+  fresh.dispose()
+})
+it('reports server success but does not touch a different active account after a session switch', async () => {
+  const review = await pausedReview()
+  fake.beforeWrite = () => { setAuth('another-user'); activateGuestWorkspace() }
+  await expect(review.apply('device')).rejects.toThrow('cloud accepted')
+  expect(fake.writes).toHaveLength(1)
+  expect(snapshotData().profile.name).toBe('Guest copy')
+  review.dispose()
+})
+it('can reopen a comparison with fresh cloud data without treating the old review as approval', async () => {
+  const old = await pausedReview()
+  old.dispose()
+  fake.remote = data('New cloud content')
+  fake.revision = '2026-09-23T00:00:00.000Z'
+  const fresh = await prepareAccountConflictResolution(fake.userId!, getAccountConflict(fake.userId!)!)
+  expect(fresh.cloud.profile.name).toBe('New cloud content')
+  expect(fake.writes).toHaveLength(0)
+  expect(isAccountSyncReady(fake.userId!)).toBe(false)
+  fresh.dispose()
 })

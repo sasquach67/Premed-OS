@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { AccountConflictReview } from './AccountConflictReview'
 import { captureSyncSession, assertSyncSession, getAccountConflict, subscribeAccountConflicts } from '@/store/accountSyncSafety'
 import { decodeWorkspaceStorage } from '@/store/workspaceStorageCodec'
 
@@ -30,6 +31,7 @@ export function AccountSyncNotice({ userId }: { userId?: string }) {
       {portableLocal && <button type="button" className="underline" onClick={() => download('local')}>Download device account JSON</button>}
       {conflict.remote && <button type="button" className="underline" onClick={() => download('cloud')}>Download cloud account JSON</button>}
     </div>
-    <p className="mt-2 text-muted-foreground">Review the copies before importing a version. Sync remains paused; downloading does not restore or replace any data.</p>
+    <p className="mt-2 text-muted-foreground">Compare the copies below before choosing which to use. Downloading alone does not restore or replace any data.</p>
+    <AccountConflictReview key={userId} userId={userId} conflict={conflict} />
   </aside>
 }
