@@ -1,3 +1,5 @@
+import { activeStorageKey } from '@/lib/demoMode'
+import { FolderMaterials } from '@/components/academics/FolderMaterials'
 import './notebookVisuals.css'
 import { GenerationReviewNotice } from './GenerationReviewNotice'
 import { ReadingSummaryDialog, ReadingSummaryContent } from './ReadingSummaryDialog'
@@ -204,8 +206,9 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
     return <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" className="class-hub-primary-action" aria-label="Create study resources"><FileStack className="size-4" /> Create <span className="class-hub-primary-action-optional">study </span>resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems classType={classType} onChoose={(artifact) => navigate(`/academics/classes/${encodeURIComponent(course.id)}/resources/${artifact}`)} /></DropdownMenuContent></DropdownMenu>
   }
 
+  const connectedFileCount = workspace.materialFolder?.items.filter(item => item.kind === 'file' && !item.trashed).length ?? 0
   const counts = {
-    materials: libraryFiles.length + courseMaterialNotes.length,
+    materials: libraryFiles.length + courseMaterialNotes.length + connectedFileCount,
     topics: courseTopics.length,
     readings: courseReadings.length,
     assignments: courseAssignments.filter((item) => !isComplete(item)).length,
@@ -250,7 +253,7 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
                   { id: 'grade', label: 'Grade', value: stats.grade, cadence: 'variable' },
                   ...(classType === 'stem' ? [
                     { id: 'topics', label: 'Topics', value: String(courseTopics.length), cadence: 'variable' as const },
-                    { id: 'materials', label: 'Materials', value: String(libraryFiles.length), cadence: 'variable' as const },
+                    { id: 'materials', label: 'Materials', value: String(libraryFiles.length + connectedFileCount), cadence: 'variable' as const },
                     { id: 'next-exam', label: 'Next exam', value: stats.examCountdown, cadence: 'variable' as const },
                   ] : classType === 'writing' ? [
                     { id: 'next-due', label: 'Next due', value: stats.nextDue, cadence: 'variable' as const },
@@ -787,6 +790,8 @@ function Materials({
 
   if (requestedArtifact === 'flashcards' || requestedArtifact === 'revised-notes') return <Navigate replace to={`/academics/classes/${encodeURIComponent(courseId)}/resources/${requestedArtifact}`} />
 
+  if (materialParams.get('materialView') === 'folder' || (workspace.materialFolder && materialParams.get('materialView') !== 'legacy')) return <FolderMaterials key={`${activeStorageKey()}:${courseId}:${workspace.materialFolder?.id ?? "new"}`} courseId={courseId} courseLabel={course.code} onBack={() => { const next = new URLSearchParams(materialParams); next.set('materialView', 'legacy'); setMaterialParams(next, { replace: true }) }} />
+
   return (
     // Visual provenance: mockup-lab/01-academics/academics-class-hub.html,
     // approved Variant A, view=materials.
@@ -794,7 +799,7 @@ function Materials({
       <SectionToolbar
         title="Materials"
         detail={`${primaryFiles.length + materialNotes.length} ${(primaryFiles.length + materialNotes.length) === 1 ? 'item' : 'items'} in this course library`}
-        action={<div className="class-hub-material-add"><SyncOriginalFilesButton files={primaryFiles} /><MaterialIntakeDialog courseId={courseId} trigger={<Button size="sm"><Plus className="size-4" /> Add material</Button>} /></div>}
+        action={<div className="class-hub-material-add"><Button variant="outline" size="sm" onClick={() => { const next = new URLSearchParams(materialParams); next.set('materialView', 'folder'); setMaterialParams(next, { replace: true }) }}><FolderOpen className="size-4" />Folder pilot</Button><SyncOriginalFilesButton files={primaryFiles} /><MaterialIntakeDialog courseId={courseId} trigger={<Button size="sm"><Plus className="size-4" /> Add material</Button>} /></div>}
       />
       {supportingCount > 0 && <Button type="button" variant="ghost" size="sm" aria-pressed={showSupportingImages} onClick={() => setShowSupportingImages(value => !value)}>
         {showSupportingImages ? 'Hide supporting images' : `Show supporting images (${supportingCount})`}

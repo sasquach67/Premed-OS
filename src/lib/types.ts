@@ -1,3 +1,4 @@
+import type { FolderLibrary } from './academics/materialFolder/model'
 import type { StudyGuideArtifact } from '@/lib/generation/schemas/studyGuide.v1'
 
 /* ============================================================
@@ -279,6 +280,8 @@ export interface SyllabusScheduleEntry {
 /** Operational extension for one canonical Course. It exists only for the
  * profile's current term and never repeats course code/title/term. */
 export interface ClassWorkspace {
+  /** Optional connected-folder pilot catalog. Contains no local handles or file bytes. */
+  materialFolder?: FolderLibrary
   /** Student-owned preferences used in externally generated notebook prompts. */
   externalNotebookPreferences?: string
   /** Student-owned Overview focus and reading shortcut; absent for older workspaces. */
