@@ -81,3 +81,12 @@ describe('flashcard prompt handoff', () => {
     expect(buildFlashcardPrompt({ courseLabel: 'Demo', lecture: record })).toContain('Its ID alone does not supply its contents')
   })
 })
+
+it('includes selected student direction in the flashcard handoff without changing saved Journal content', () => {
+  const record = lecture(), before = JSON.stringify(record)
+  const prompt = buildFlashcardPrompt({ courseLabel: 'ANTH 147', lecture: record, guideDirections: [{ id: 'guide', title: 'Explain why a visible laboratory matters within Amish values.', content: '', studentGuidance: { group: 'approach', scope: { kind: 'course' }, origin: 'manual' } }] })
+  expect(prompt).toContain('Explain why a visible laboratory matters within Amish values.')
+  expect(prompt).toContain('not factual evidence')
+  expect(prompt).toContain('not flashcard structure')
+  expect(JSON.stringify(record)).toBe(before)
+})

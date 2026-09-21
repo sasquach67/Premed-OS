@@ -67,7 +67,7 @@ it('opens the complete prompt for this saved Journal without changing notebook c
   const panel = container.querySelector('[aria-label="Flashcard prompt"]')!
   expect(panel).toBeTruthy()
   expect(panel.textContent).toContain(pkg.entries[0].title)
-  expect(panel.querySelector('select')).toBeNull()
+  expect([...panel.querySelectorAll('select')].every(select => select.closest('[aria-label="Using your Guide"]'))).toBe(true)
   expect(panel.textContent).toContain('Copy complete prompt')
   const prompt = panel.querySelector<HTMLTextAreaElement>('textarea')!.value
   expect(prompt).toContain('build_deck.py')

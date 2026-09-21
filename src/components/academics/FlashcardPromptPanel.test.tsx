@@ -81,3 +81,14 @@ it('clears the old copy acknowledgment when a different Journal is selected', as
   await click('Copy complete prompt')
   expect(writeText).toHaveBeenLastCalledWith(expect.stringContaining('Complete prompt for second'))
 })
+
+it('shows matching Guide directions and sends adjusted selection to the handoff builder', async () => {
+  seed([journal('ready')])
+  useStore.getState().update(state => state.academics.classCenter.notes.push({ id: 'guide', courseId: 'course', title: 'Explain how the anthropologist knows.', content: '', type: 'other', kind: 'about-class', topicIds: [], linkedFileIds: [], syncStatus: 'local-only', createdAt: 1, updatedAt: 1, order: 0, studentGuidance: { group: 'approach', scope: { kind: 'course' }, origin: 'manual' } }))
+  await render('ready')
+  const preview = container.querySelector('[aria-label="Using your Guide"]')!
+  expect(preview.textContent).toContain('Explain how the anthropologist knows.')
+  expect(buildFlashcardPrompt).toHaveBeenLastCalledWith(expect.objectContaining({ guideDirections: [expect.objectContaining({ id: 'guide' })] }))
+  await act(async () => preview.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click())
+  expect(buildFlashcardPrompt).toHaveBeenLastCalledWith(expect.objectContaining({ guideDirections: [] }))
+})
