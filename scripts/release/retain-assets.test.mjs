@@ -69,3 +69,26 @@ test('retains exactly the most recent 30 releases and deduplicates shared assets
   assert.equal(saved.releases[0].id, 'newest')
   assert.equal(saved.releases.at(-1).id, 'old-28')
 }))
+
+test('retries a transient CDN failure and still retains the exact previous assets', () => fixture(async ({ dist, fetcher }) => {
+  let attempts = 0
+  const delays = []
+  const flaky = async url => {
+    if (new URL(url).pathname === '/assets/Academics-abcdef.js' && ++attempts === 1) return new Response('temporary', { status: 503 })
+    return fetcher(url)
+  }
+  const result = await retainAssets({ dist, base: 'https://example.test', releaseId: 'retry', fetcher: flaky, sleep: async ms => delays.push(ms) })
+  assert.equal(result.retained, 3)
+  assert.equal(attempts, 2)
+  assert.deepEqual(delays, [2000])
+  assert.equal(await readFile(join(dist, 'assets/Academics-abcdef.js'), 'utf8'), 'export const page = "old compatible page"')
+}))
+
+test('fails closed after bounded CDN retries and never publishes a partial manifest', () => fixture(async ({ dist, fetcher }) => {
+  let attempts = 0
+  const flaky = async url => new URL(url).pathname === '/assets/Academics-abcdef.js'
+    ? (++attempts, new Response('temporary', { status: 503 })) : fetcher(url)
+  await assert.rejects(retainAssets({ dist, base: 'https://example.test', releaseId: 'retry', fetcher: flaky, sleep: async () => {} }), /HTTP 503/)
+  assert.equal(attempts, 4)
+  await assert.rejects(readFile(join(dist, 'release-assets.json')), /ENOENT/)
+}))

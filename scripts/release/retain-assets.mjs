@@ -34,11 +34,23 @@ async function eachBatch(items, fn) {
 }
 
 /** Carry exact hashed files forward; never replace current HTML or current assets. */
-export async function retainAssets({ dist, base, releaseId, fetcher = fetch }) {
+export async function retainAssets({ dist, base, releaseId, fetcher = fetch, sleep = ms => new Promise(resolve => setTimeout(resolve, ms)) }) {
   const origin = new URL(base).origin
   const cached = new Map()
+  const fetchResponse = async path => {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const response = await fetcher(new URL(path, `${origin}/`), { redirect: 'error', signal: AbortSignal.timeout(30000), cache: 'no-store' })
+        if (attempt === 3 || !(response.status === 408 || response.status === 429 || response.status >= 500)) return response
+        await response.body?.cancel()
+      } catch (error) {
+        if (attempt === 3 || !(error instanceof TypeError || error?.name === 'TimeoutError')) throw error
+      }
+      await sleep(2000 * 2 ** attempt)
+    }
+  }
   const request = async (path, allowMissing = false) => {
-    const response = await fetcher(new URL(path, `${origin}/`), { redirect: 'error', signal: AbortSignal.timeout(30000), cache: 'no-store' })
+    const response = await fetchResponse(path)
     if (allowMissing && response.status === 404) return null
     if (!response.ok) throw new Error(`Cannot retain ${path}: HTTP ${response.status}. Retry deployment; do not publish without the prior assets.`)
     if (path.startsWith('assets/') && response.headers.get('content-type')?.includes('text/html')) throw new Error(`Expected an asset, received HTML: ${path}`)
