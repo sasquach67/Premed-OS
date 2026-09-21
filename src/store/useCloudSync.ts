@@ -14,6 +14,8 @@ import { syncNotebookImages } from '@/lib/academics/notebook/sharedNotebookAsset
 import { notebookAssetRepository } from '@/lib/academics/notebook/notebookAssetStore'
 import { allowAccountSync, assertAccountUpload, assertSyncLease, assertSyncSession, captureSyncSession, getAccountConflict, isAccountSyncReady, observeSyncSession, pauseAccountSync, preserveAccountConflict, preserveAccountReplacement, readSyncBaseline, recordSyncBaseline, subscribeAccountConflicts, syncContent, syncDigest, validateRemoteWorkspace } from './accountSyncSafety'
 
+import { cloudRequest, CloudRequestError } from './cloudRequest'
+
 const DEBOUNCE_MS = 4000
 const reconciliationJobs = new Map<string, Promise<void>>()
 export type CloudStatus = 'idle' | 'signing-in' | 'syncing' | 'synced' | 'error' | 'offline'
@@ -26,6 +28,7 @@ export function useCloudSync() {
   const lastSig = useRef('')
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pushing = useRef(false)
+  const retryAfterReconnect = useRef(false)
   const conflict = useSyncExternalStore(subscribeAccountConflicts, () => getAccountConflict(user?.id))
   const accountReady = useSyncExternalStore(subscribeAccountConflicts, () => isAccountSyncReady(user?.id))
 
@@ -55,7 +58,7 @@ export function useCloudSync() {
         if (openRaw !== null) assertDurableWorkspace(snapshotData(), owner)
         else if (!useStore.persist.hasHydrated() || storageFailure() || activeAccountWorkspaceId() || hasLocalWork(snapshotData())) throw new Error('The open workspace has unsaved work. Save or export it before changing workspaces.')
       }
-      setStatus('syncing'); setError('')
+      setStatus('syncing'); setError(''); retryAfterReconnect.current = false
       const fresh = () => {
         assertSyncSession(token)
         if (token.id !== u.id || captureWorkspaceIdentity().epoch !== owner.epoch || captureWorkspaceIdentity().key !== owner.key || savedWorkspaceRaw(key) !== before || JSON.stringify(snapshotData()) !== openJson) throw new Error('Saved work or the active workspace changed during sync. Nothing was replaced; check sync again.')
@@ -88,7 +91,7 @@ export function useCloudSync() {
         // Preserve the existing first-login review of Guest/legacy device work.
         // A returning account's own cache must still be checked after sign-out.
         if (!local && !hasSeenMerge(u.id) && hasLocalWork(snapshotData())) { setStatus('idle'); return }
-        const { data: row, error: failure } = await supabase!.from('dashboards').select('data, updated_at').eq('user_id', u.id).maybeSingle()
+        const { data: row, error: failure } = await cloudRequest(() => supabase!.from('dashboards').select('data, updated_at').eq('user_id', u.id).maybeSingle(), () => { fresh(); assertSyncLease(lease) })
         fresh()
         if (failure) throw failure
         if (!row?.data) {
@@ -143,6 +146,7 @@ export function useCloudSync() {
             fresh(); if (readWorkspaceData(key)) activateAccountWorkspace(u.id)
           }
         } catch { /* A target that failed to load stays protected; report the original failure below. */ }
+        retryAfterReconnect.current = cause instanceof CloudRequestError && cause.retryable
         setError(cause instanceof Error ? cause.message : 'Sync stopped before replacing saved data.'); setStatus('error')
       }
     }
@@ -161,14 +165,14 @@ export function useCloudSync() {
       token = assertAccountUpload(snapshot, owner)
       const baseline = readSyncBaseline(user.id)
       if (!baseline) throw new Error('Check the saved cloud copy before uploading changes.')
-      setStatus('syncing'); setError('')
+      setStatus('syncing'); setError(''); retryAfterReconnect.current = false
       await syncAcademicOriginals(snapshot.academics.classCenter.files, user.id)
       await syncNotebookImages(snapshot, user.id, notebookAssetRepository(), () => { assertSyncSession(token); assertAccountUpload(snapshot, owner) })
       await flushWorkspaceStorage(owner.key)
       assertSyncSession(token); assertAccountUpload(snapshot, owner)
       const updatedAt = new Date().toISOString()
       // Compare-and-set: a newer cloud version cannot be overwritten by this upload.
-      const { data, error: failure } = await supabase.from('dashboards').update({ data: dataForRemote(snapshot), updated_at: updatedAt }).eq('user_id', user.id).eq('updated_at', baseline.updatedAt).select('updated_at').maybeSingle()
+      const { data, error: failure } = await cloudRequest(() => supabase!.from('dashboards').update({ data: dataForRemote(snapshot), updated_at: updatedAt }).eq('user_id', user.id).eq('updated_at', baseline.updatedAt).select('updated_at').maybeSingle(), () => { assertSyncSession(token); assertAccountUpload(snapshot, owner) })
       assertSyncSession(token)
       const current = captureWorkspaceIdentity()
       if (current.key !== owner.key || current.epoch !== owner.epoch) throw new Error('The workspace changed while sync completed. Its metadata was kept.')
@@ -181,6 +185,7 @@ export function useCloudSync() {
       return true
     } catch (cause) {
       try { assertSyncSession(token) } catch { return false }
+      retryAfterReconnect.current = cause instanceof CloudRequestError && cause.retryable
       setError(cause instanceof Error ? cause.message : 'Sync failed'); setStatus('error'); return false
     } finally { pushing.current = false }
   }, [user, reconcile])
@@ -197,7 +202,7 @@ export function useCloudSync() {
       lastSession = nextId
       observeSyncSession(u?.id ?? null)
       setUser(u)
-      if (changed) { setLastSyncAt(undefined); setError(''); lastSig.current = '' }
+      if (changed) { retryAfterReconnect.current = false; setLastSyncAt(undefined); setError(''); lastSig.current = '' }
       if (!u) {
         setStatus('idle')
         if (activeAccountWorkspaceId()) activateGuestWorkspace()
@@ -230,6 +235,21 @@ export function useCloudSync() {
     schedule()
     return () => { unsub(); if (timer.current) clearTimeout(timer.current) }
   }, [user, accountReady, conflict, pushNow])
+
+  useEffect(() => {
+    if (!user || conflict || status !== 'error' || !retryAfterReconnect.current) return
+    const token = captureSyncSession()
+    const resume = () => {
+      try { assertSyncSession(token); assertSyncLease(token) } catch { return }
+      if (getAccountConflict(user.id) || !retryAfterReconnect.current || navigator.onLine === false) return
+      retryAfterReconnect.current = false
+      // Re-read the cloud after an uncertain response before trying another write.
+      void reconcile(user)
+    }
+    const retry = setTimeout(resume, 60_000)
+    window.addEventListener('online', resume)
+    return () => { clearTimeout(retry); window.removeEventListener('online', resume) }
+  }, [user, conflict, status, reconcile])
 
   const signIn = useCallback(async (email: string) => {
     if (!supabase) return

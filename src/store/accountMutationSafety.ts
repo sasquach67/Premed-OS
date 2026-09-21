@@ -12,6 +12,7 @@ import { assertSyncSession, captureSyncSession, getAccountConflict, observeSyncS
 import { workspaceRecoveryRepository } from './workspaceRecoveryRepository'
 import { syncNotebookImages } from '@/lib/academics/notebook/sharedNotebookAssets'
 import { notebookAssetRepository } from '@/lib/academics/notebook/notebookAssetStore'
+import { cloudRequest } from './cloudRequest'
 
 const changed = () => new WorkspaceChangedError('The account or saved workspace changed. Nothing else was replaced. Reopen this review before continuing.')
 const conflictMessage = 'Account copies need review. Sync is paused; download the preserved copies before choosing what to restore.'
@@ -208,7 +209,7 @@ export async function prepareAccountConflictResolution(userId: string, conflict:
   try {
     if (mutation.owner.key !== accountStorageKey(userId)) throw changed()
     const readRemote = async () => {
-      const result = await client.from('dashboards').select('data, updated_at').eq('user_id', userId).maybeSingle()
+      const result = await cloudRequest(() => client.from('dashboards').select('data, updated_at').eq('user_id', userId).maybeSingle(), mutation.check)
       await mutation.check()
       if (result.error) throw result.error
       if (!result.data?.data || !result.data.updated_at) throw new Error('The cloud copy changed. Reopen the comparison.')
@@ -237,8 +238,8 @@ export async function prepareAccountConflictResolution(userId: string, conflict:
           await mutation.check()
           if (choice === 'device') {
             const updatedAt = new Date().toISOString()
-            const saved = await client.from('dashboards').update({ data: dataForRemote(chosen), updated_at: updatedAt })
-              .eq('user_id', userId).eq('updated_at', remote.updatedAt).select('user_id').maybeSingle()
+            const saved = await cloudRequest(() => client.from('dashboards').update({ data: dataForRemote(chosen), updated_at: updatedAt })
+              .eq('user_id', userId).eq('updated_at', remote.updatedAt).select('user_id').maybeSingle(), mutation.check)
             if (saved.error) throw saved.error
             if (!saved.data) throw new Error('The cloud copy changed before saving. Reopen the comparison.')
             serverSaved = true

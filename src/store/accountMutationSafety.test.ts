@@ -17,6 +17,7 @@ const fake = vi.hoisted(() => ({
   listeners: new Set<(event: string, session: { user: { id: string } } | null) => void>(),
   snapshots: new Map<string, WorkspaceRecoverySnapshot>(),
   failArchive: false,
+  transientWrites: 0,
   corruptRead: false,
   afterArchive: undefined as (() => void) | undefined,
   beforeWrite: undefined as (() => void) | undefined,
@@ -38,6 +39,7 @@ vi.mock('@/lib/supabase', () => ({
           eq: (key: string, value: string) => { filters[key] = value; return query },
           select: () => query,
           maybeSingle: async () => {
+            if (fake.transientWrites > 0) { fake.transientWrites--; return { data: null, status: 500, error: { message: 'Temporary server failure' } } }
             if (filters.updated_at !== fake.revision) return { data: null, error: null }
             fake.beforeWrite?.()
             fake.writes.push(row); fake.remote = row.data; fake.revision = row.updated_at.replace('Z', '+00:00')
@@ -89,14 +91,14 @@ beforeEach(async () => {
   fake.remote = data('Reviewed cloud')
   fake.revision = '2026-09-12T00:00:00.000Z'
   fake.writes.length = 0; fake.snapshots.clear(); fake.listeners.clear()
-  fake.failArchive = false; fake.corruptRead = false
+  fake.failArchive = false; fake.corruptRead = false; fake.transientWrites = 0
   fake.afterArchive = undefined; fake.beforeWrite = undefined
   observeSyncSession(null)
   activateGuestWorkspace()
   useStore.getState().replaceAll(data('Guest copy'))
   await useStore.persist.rehydrate()
 })
-afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); fake.listeners.clear() })
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); fake.listeners.clear() })
 
 it('preserves divergent cached account and cloud before rejecting a public-page write', async () => {
   const id = fake.userId!, local = data('Newer account data')
@@ -332,4 +334,18 @@ it('can reopen a comparison with fresh cloud data without treating the old revie
   expect(fake.writes).toHaveLength(0)
   expect(isAccountSyncReady(fake.userId!)).toBe(false)
   fresh.dispose()
+})
+
+
+it('retries the already approved device choice after a temporary server rejection', async () => {
+  const review = await pausedReview()
+  fake.transientWrites = 1
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  const applying = review.apply('device')
+  await vi.advanceTimersByTimeAsync(3000)
+  await applying
+  expect(fake.writes).toHaveLength(1)
+  expect(fake.remote?.profile.name).toBe('Device with newer work')
+  expect(getAccountConflict(fake.userId!)).toBeUndefined()
+  expect(isAccountSyncReady(fake.userId!)).toBe(true)
 })

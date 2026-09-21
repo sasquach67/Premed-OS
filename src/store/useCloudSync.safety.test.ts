@@ -2,7 +2,7 @@ import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
-const wire = vi.hoisted(() => ({ listeners: new Set<(event: string, session: unknown) => void>(), rows: new Map<string, unknown>(), pending: new Map<string, Promise<unknown>>(), snapshots: new Map<string, unknown>(), writes: vi.fn(), archiveFails: false }))
+const wire = vi.hoisted(() => ({ listeners: new Set<(event: string, session: unknown) => void>(), rows: new Map<string, unknown>(), pending: new Map<string, Promise<unknown>>(), snapshots: new Map<string, unknown>(), writes: vi.fn(), archiveFails: false, failures: [] as Array<{ status: number; error: { message: string } }>, attempts: vi.fn() }))
 vi.mock('@/lib/supabase', () => ({
   isSupabaseConfigured: true, authRedirectTo: 'http://localhost/#/auth',
   supabase: {
@@ -10,6 +10,9 @@ vi.mock('@/lib/supabase', () => ({
     from: () => ({
       select: () => ({ eq: (_: string, id: string) => ({ maybeSingle: async () => ({ data: await (wire.pending.get(id) ?? wire.rows.get(id)), error: null }) }) }),
       update: (value: unknown) => ({ eq: (_: string, id: string) => ({ eq: (_: string, at: string) => ({ select: () => ({ maybeSingle: async () => {
+        wire.attempts()
+        const failed = wire.failures.shift()
+        if (failed) return { data: null, ...failed }
         const row = wire.rows.get(id) as { updated_at: string } | undefined
         if (row?.updated_at !== at) return { data: null, error: null }
         wire.writes(value); wire.rows.set(id, value); return { data: value, error: null }
@@ -44,11 +47,11 @@ async function session(id: string | null, settle = true) {
   if (settle) await vi.waitFor(async () => { await act(async () => {}); expect(cloud.status).not.toBe('syncing') }, { interval: 1 })
 }
 beforeEach(() => {
-  localStorage.clear(); wire.rows.clear(); wire.pending.clear(); wire.snapshots.clear(); wire.writes.mockClear(); wire.archiveFails = false
+  localStorage.clear(); wire.rows.clear(); wire.pending.clear(); wire.snapshots.clear(); wire.writes.mockClear(); wire.archiveFails = false; wire.failures = []; wire.attempts.mockClear()
   observeSyncSession(null); useStore.persist.setOptions({ name: 'hq:app-data:guest' }); activateGuestWorkspace()
   root = createRoot(document.createElement('div'))
 })
-afterEach(async () => { await act(async () => root.unmount()) })
+afterEach(async () => { await act(async () => root.unmount()); vi.useRealTimers() })
 
 it('pauses every mounted coordinator for divergence and preserves both copies before any write', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('local newer')); const raw = localStorage.getItem(accountStorageKey(id))
@@ -259,4 +262,82 @@ it('hides a signed-out account while retaining its unsaved edits for that owner'
   expect(getAccountConflict(id)?.open?.data.notes.example).toBe('retained signed-out edit')
   expect(isAccountSyncReady(id)).toBe(false)
   expect(wire.writes).not.toHaveBeenCalled()
+})
+
+
+it('automatically retries a temporary cloud save failure without another edit or click', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('base'))
+  wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  await render(); await session(id)
+  await act(async () => useStore.getState().update(d => { d.notes.example = 'latest edit' }))
+  wire.failures.push({ status: 500, error: { message: 'Temporary server failure' } })
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  await act(async () => {
+    const saving = cloud.pushNow()
+    await vi.advanceTimersByTimeAsync(3000)
+    expect(await saving).toBe(true)
+  })
+  expect(wire.attempts).toHaveBeenCalledTimes(2)
+  expect(wire.writes).toHaveBeenCalledTimes(1)
+  expect((wire.rows.get(id) as { data: ReturnType<typeof snapshotData> }).data.notes.example).toBe('latest edit')
+  expect(cloud.status).toBe('synced')
+})
+
+it('stops an automatic save retry if another operation pauses the account', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('base'))
+  wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  await render(); await session(id)
+  wire.failures.push({ status: 500, error: { message: 'Temporary' } })
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  await act(async () => {
+    const saving = cloud.pushNow()
+    await vi.advanceTimersByTimeAsync(1)
+    expect(wire.attempts).toHaveBeenCalledTimes(1)
+    pauseAccountSync(id)
+    await vi.advanceTimersByTimeAsync(3000)
+    expect(await saving).toBe(false)
+  })
+  expect(wire.attempts).toHaveBeenCalledTimes(1)
+  expect(wire.writes).not.toHaveBeenCalled()
+})
+
+it('asks for review if the cloud changes while an automatic retry is waiting', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('base')); const base = snapshotData()
+  wire.rows.set(id, { data: base, updated_at: older })
+  await render(); await session(id)
+  await act(async () => useStore.getState().update(d => { d.notes.example = 'local edit' }))
+  wire.failures.push({ status: 500, error: { message: 'Temporary' } })
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  await act(async () => {
+    const saving = cloud.pushNow()
+    await vi.advanceTimersByTimeAsync(1)
+    wire.rows.set(id, { data: { ...base, notes: { ...base.notes, example: 'other device edit' } }, updated_at: newer })
+    await vi.advanceTimersByTimeAsync(3000)
+    expect(await saving).toBe(false)
+  })
+  expect(getAccountConflict(id)?.saved).toBe(true)
+  await act(async () => { window.dispatchEvent(new Event('online')); await vi.advanceTimersByTimeAsync(120_000) })
+  expect(wire.writes).not.toHaveBeenCalled()
+  expect(snapshotData().notes.example).toBe('local edit')
+})
+
+it('resumes automatically when the connection returns after bounded retries', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('base'))
+  wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  await render(); await session(id)
+  await act(async () => useStore.getState().update(d => { d.notes.example = 'offline edit' }))
+  wire.failures.push(...Array.from({ length: 4 }, () => ({ status: 503, error: { message: 'Unavailable' } })))
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  await act(async () => {
+    const saving = cloud.pushNow()
+    await vi.advanceTimersByTimeAsync(15_000)
+    expect(await saving).toBe(false)
+  })
+  expect(cloud.status).toBe('error')
+  expect(wire.writes).not.toHaveBeenCalled()
+  await act(async () => { window.dispatchEvent(new Event('online')) })
+  await vi.waitFor(async () => { await act(async () => {}); expect(cloud.status).toBe('synced') }, { interval: 1 })
+  await act(async () => { await vi.advanceTimersByTimeAsync(5000) })
+  expect(wire.writes).toHaveBeenCalledTimes(1)
+  expect((wire.rows.get(id) as { data: ReturnType<typeof snapshotData> }).data.notes.example).toBe('offline edit')
 })
