@@ -1,5 +1,5 @@
 import { captureWorkspaceIdentity, useStore } from '@/store/store'
-import { captureSyncSession, assertSyncLease, isAccountSyncReady } from '@/store/accountSyncSafety'
+import { captureSyncSession, assertSyncLease, isAccountSyncReady, getAccountConflict } from '@/store/accountSyncSafety'
 import { activeStorageKey, activeWorkspaceOwner } from '@/lib/demoMode'
 import { commitWorkspaceMutation } from '@/store/workspaceTransaction'
 import { type FolderLibrary } from './model'
@@ -13,7 +13,9 @@ export function captureFolderFence(write = false): Fence {
     if (key !== activeStorageKey() || owner.key !== current.key || owner.epoch !== current.epoch) throw new Error('Your workspace changed. Folder work stopped.')
     if (account.kind === 'account') {
       assertSyncLease(session)
-      if (write && !isAccountSyncReady(account.userId)) throw new Error('Resolve the account sync notice before changing files. Originals have been kept.')
+      if (write && !isAccountSyncReady(account.userId)) throw new Error(getAccountConflict(account.userId)
+        ? 'Resolve the account sync notice before changing files. Originals have been kept.'
+        : 'Account sync has not finished checking. Open Settings to check its progress or retry, then connect the folder again. Originals have been kept.')
     }
   }
   check()

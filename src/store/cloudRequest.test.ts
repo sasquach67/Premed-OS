@@ -41,3 +41,19 @@ it('recovers from fetch failures but never retries a failed freshness guard', as
   await expect(cloudRequest(request, guard)).rejects.toThrow('Guard failure')
   expect(request).toHaveBeenCalledTimes(2)
 })
+
+it('retries SDK-wrapped network errors and keeps exhausted storage error details', async () => {
+  vi.useFakeTimers()
+  const originalError = new TypeError('Failed to fetch')
+  const error = { name: 'StorageUnknownError', message: 'Network request failed', originalError }
+  const request = vi.fn().mockResolvedValue({ error })
+  const failed = expect(cloudRequest(request, () => {})).rejects.toMatchObject({ retryable: true, cause: error })
+  await vi.advanceTimersByTimeAsync(14000); await failed
+  expect(request).toHaveBeenCalledTimes(4)
+})
+it('uses an explicit HTTP denial over a nested network-looking message', async () => {
+  const error = { status: 403, statusCode: 'AccessDenied', message: 'Network access denied', originalError: new TypeError('Failed to fetch') }
+  const request = vi.fn().mockResolvedValue({ error })
+  await expect(cloudRequest(request, () => {})).rejects.toMatchObject({ retryable: false, status: 403, cause: error })
+  expect(request).toHaveBeenCalledTimes(1)
+})

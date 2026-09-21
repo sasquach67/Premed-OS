@@ -1,12 +1,14 @@
+import { Blob as NodeBlob } from 'node:buffer'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
-const wire = vi.hoisted(() => ({ listeners: new Set<(event: string, session: unknown) => void>(), rows: new Map<string, unknown>(), pending: new Map<string, Promise<unknown>>(), snapshots: new Map<string, unknown>(), writes: vi.fn(), archiveFails: false, failures: [] as Array<{ status: number; error: { message: string } }>, attempts: vi.fn() }))
+const wire = vi.hoisted(() => ({ listeners: new Set<(event: string, session: unknown) => void>(), rows: new Map<string, unknown>(), pending: new Map<string, Promise<unknown>>(), snapshots: new Map<string, unknown>(), writes: vi.fn(), archiveFails: false, failures: [] as Array<{ status: number; error: { message: string } }>, attempts: vi.fn(), imageDownload: vi.fn() }))
 vi.mock('@/lib/supabase', () => ({
   isSupabaseConfigured: true, authRedirectTo: 'http://localhost/#/auth',
   supabase: {
     auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange: (cb: (event: string, session: unknown) => void) => { wire.listeners.add(cb); return { data: { subscription: { unsubscribe: () => wire.listeners.delete(cb) } } } } },
+    storage: { from: () => ({ download: wire.imageDownload }) },
     from: () => ({
       select: () => ({ eq: (_: string, id: string) => ({ maybeSingle: async () => ({ data: await (wire.pending.get(id) ?? wire.rows.get(id)), error: null }) }) }),
       update: (value: unknown) => ({ eq: (_: string, id: string) => ({ eq: (_: string, at: string) => ({ select: () => ({ maybeSingle: async () => {
@@ -20,7 +22,8 @@ vi.mock('@/lib/supabase', () => ({
     }),
   },
 }))
-vi.mock('@/lib/academics/sharedMaterialFiles', () => ({ syncAcademicOriginals: vi.fn(async () => undefined) }))
+vi.mock('@/lib/academics/notebook/notebookAssetStore', () => ({ notebookAssetRepository: () => ({ read: async () => undefined }) }))
+vi.mock('@/lib/academics/sharedMaterialFiles', () => ({ MATERIAL_BUCKET: 'academic-originals', syncAcademicOriginals: vi.fn(async () => undefined) }))
 vi.mock('./workspaceRecoveryRepository', () => ({ workspaceRecoveryRepository: () => ({
   latest: async () => null,
   save: async (snapshot: { workspaceKey: string; id: string }) => { if (wire.archiveFails) throw new Error('Synthetic archive quota'); wire.snapshots.set(snapshot.workspaceKey + snapshot.id, snapshot) },
@@ -32,6 +35,9 @@ import { accountStorageKey, activeWorkspaceOwner } from '@/lib/demoMode'
 import { activateAccountWorkspace, activateGuestWorkspace, snapshotData, useStore } from './store'
 import { getAccountConflict, allowAccountSync, pauseAccountSync, observeSyncSession, readSyncBaseline, recordSyncBaseline, isAccountSyncReady } from './accountSyncSafety'
 import { useCloudSync } from './useCloudSync'
+import { visualFixture } from '@/lib/academics/notebook/visual.test-fixtures'
+import { binaryDigest } from '@/lib/workspaceAssets'
+import { captureFolderFence } from '@/lib/academics/materialFolder/controller'
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 let root: Root, cloud: ReturnType<typeof useCloudSync>, counter = 0
@@ -47,17 +53,19 @@ async function session(id: string | null, settle = true) {
   if (settle) await vi.waitFor(async () => { await act(async () => {}); expect(cloud.status).not.toBe('syncing') }, { interval: 1 })
 }
 beforeEach(() => {
+  vi.stubGlobal('Blob', NodeBlob); wire.imageDownload.mockReset()
   localStorage.clear(); wire.rows.clear(); wire.pending.clear(); wire.snapshots.clear(); wire.writes.mockClear(); wire.archiveFails = false; wire.failures = []; wire.attempts.mockClear()
   observeSyncSession(null); useStore.persist.setOptions({ name: 'hq:app-data:guest' }); activateGuestWorkspace()
   root = createRoot(document.createElement('div'))
 })
-afterEach(async () => { await act(async () => root.unmount()); vi.useRealTimers() })
+afterEach(async () => { await act(async () => root.unmount()); vi.useRealTimers(); vi.unstubAllGlobals() })
 
 it('pauses every mounted coordinator for divergence and preserves both copies before any write', async () => {
   const id = account(); activateAccountWorkspace(id, workspace('local newer')); const raw = localStorage.getItem(accountStorageKey(id))
   wire.rows.set(id, { data: workspace('remote older'), updated_at: older })
   await render(3); await session(id)
   expect(getAccountConflict(id)?.saved).toBe(true)
+  expect(() => captureFolderFence(true)).toThrow('Resolve the account sync notice')
   expect(wire.snapshots.size).toBe(2)
   expect(snapshotData().notes.example).toBe('local newer')
   expect(localStorage.getItem(accountStorageKey(id))).toBe(raw)
@@ -341,4 +349,40 @@ it('resumes automatically when the connection returns after bounded retries', as
   await act(async () => { await vi.advanceTimersByTimeAsync(5000) })
   expect(wire.writes).toHaveBeenCalledTimes(1)
   expect((wire.rows.get(id) as { data: ReturnType<typeof snapshotData> }).data.notes.example).toBe('offline edit')
+})
+
+async function imageWorkspace() {
+  const data = workspace('with image'), pkg = visualFixture(), blob = new Blob(['Synthetic image bytes'], { type: 'image/png' }), hash = await binaryDigest(blob)
+  data.academics.classCenter.lectures.push({ id: 'image-lecture', courseId: 'example', title: pkg.entries[0].title, inputPath: 'materials', processingState: 'ready', workspaceState: 'complete', createdAt: 1, updatedAt: 1, order: 0,
+    importedNotebook: { original: pkg, current: pkg, originalRaw: JSON.stringify(pkg), entryId: pkg.entries[0].id, fingerprint: 'synthetic', importedAt: 1, progress: {}, notes: '', assetBindings: [{ assetId: pkg.assets[0].id, sha256: hash, byteLength: blob.size, mimeType: 'image/png', width: 1, height: 1 }] } })
+  return { data, blob }
+}
+it.each([503, 403])('only retries a retryable image failure in the background (%s)', async status => {
+  const id = account(), f = await imageWorkspace()
+  activateAccountWorkspace(id, f.data); wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  wire.imageDownload.mockResolvedValue({ error: { status, statusCode: status === 503 ? 'SlowDown' : 'AccessDenied', message: 'Image request failed' } })
+  await render()
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  await session(id, false)
+  await vi.waitFor(() => expect(wire.imageDownload).toHaveBeenCalled(), { interval: 1 })
+  await act(async () => { await vi.advanceTimersByTimeAsync(15000) })
+  expect(cloud.status).toBe('error'); expect(cloud.error).toContain(`HTTP ${status}`)
+  expect(isAccountSyncReady(id)).toBe(false); expect(getAccountConflict(id)).toBeUndefined()
+  expect(readSyncBaseline(id)).toBeNull(); expect(wire.writes).not.toHaveBeenCalled()
+  expect(() => captureFolderFence(true)).toThrow('Account sync has not finished checking')
+  const attempts = wire.imageDownload.mock.calls.length
+  expect(attempts).toBe(status === 503 ? 4 : 1)
+  wire.imageDownload.mockResolvedValue({ data: f.blob, error: null })
+  await act(async () => { await vi.advanceTimersByTimeAsync(60000) })
+  if (status === 503) {
+    await vi.waitFor(async () => { await act(async () => {}); expect(cloud.status).toBe('synced') }, { interval: 1 })
+    expect(cloud.status).toBe('synced'); expect(isAccountSyncReady(id)).toBe(true)
+    expect(readSyncBaseline(id)?.updatedAt).toBe(older)
+    expect(() => captureFolderFence(true)).not.toThrow()
+    expect(wire.imageDownload).toHaveBeenCalledTimes(attempts + 1)
+  } else {
+    expect(cloud.status).toBe('error'); expect(isAccountSyncReady(id)).toBe(false)
+    expect(wire.imageDownload).toHaveBeenCalledTimes(attempts)
+  }
+  expect(wire.writes).not.toHaveBeenCalled()
 })
