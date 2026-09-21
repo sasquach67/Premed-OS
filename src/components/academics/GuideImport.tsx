@@ -27,7 +27,14 @@ export function GuideImport({ courseId, data }: { courseId: string; data: ClassC
   }
   return <details className="mb-5 rounded-xl border border-border p-4">
     <summary className="cursor-pointer text-sm font-semibold">Import a compiled Guide</summary>
-    <p className="my-3 text-sm text-muted-foreground">Paste a Guide export to review its study guidance and reference notes together. Your existing notes stay saved.</p>
+    <p className="my-3 text-sm text-muted-foreground">Open or paste a compiled Guide to review its study guidance and reference notes together. Your existing notes stay saved.</p>
+    <label className="mb-3 block text-sm font-semibold">Open Guide file<input type="file" accept=".json,application/json" className="mt-2 block max-w-full text-sm" onChange={event => {
+      const file = event.target.files?.[0]
+      if (!file) return
+      setEntries([]); setRaw(''); setMessage('')
+      if (file.size > 500_000) { setMessage('This Guide is too large. Import a smaller collection.'); return }
+      void file.text().then(text => { setRaw(text); setMessage('Guide file opened. Review it before adding entries.') }).catch(() => setMessage('Could not open this Guide file.'))
+    }} /></label>
     <Textarea aria-label="Compiled Guide" value={raw} onChange={event => { setRaw(event.target.value); setEntries([]); setMessage('') }} />
     <Button className="mt-3" variant="outline" disabled={!raw.trim()} onClick={review}>Review Guide import</Button>
     {!!entries.length && <section aria-label="Guide import preview" className="mt-4 space-y-3">
