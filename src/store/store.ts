@@ -1019,17 +1019,39 @@ export function captureWorkspaceIdentity() {
   return { key: useStore.persist.getOptions().name, epoch: workspaceEpoch }
 }
 
+/** Cheap ownership/storage checks shared by full validation and a captured batch. */
+function assertWorkspacePersistenceReady(owner: ReturnType<typeof captureWorkspaceIdentity>) {
+  const current = captureWorkspaceIdentity()
+  if (!current.key || owner.key !== current.key || owner.epoch !== current.epoch || activeStorageKey() !== current.key) throw new WorkspaceChangedError('The active workspace changed. Sync was stopped.')
+  const phase = workspacePersistence()?.status(current.key).phase
+  if (phase !== undefined && phase !== 'ready') throw new Error('Workspace changes are still saving or need recovery. Sync is paused.')
+  if (!useStore.persist.hasHydrated() || storageFailure()) throw new Error('Sync is paused until this workspace has loaded and saved successfully.')
+  return current.key
+}
+
 /** Remote writes must reflect the current owner's successfully hydrated disk data. */
 export function assertDurableWorkspace(snapshot = snapshotData(), owner = captureWorkspaceIdentity()) {
-  const current = captureWorkspaceIdentity()
-  if (owner.key !== current.key || owner.epoch !== current.epoch || activeStorageKey() !== current.key) throw new WorkspaceChangedError('The active workspace changed. Sync was stopped.')
-  if (workspacePersistence()?.status(current.key!).phase !== undefined && workspacePersistence()?.status(current.key!).phase !== 'ready') throw new Error('Workspace changes are still saving or need recovery. Sync is paused.')
-  if (!useStore.persist.hasHydrated() || storageFailure()) throw new Error('Sync is paused until this workspace has loaded and saved successfully.')
-  const raw = readStoredWorkspace(localStorage, current.key)
+  const key = assertWorkspacePersistenceReady(owner)
+  const raw = readStoredWorkspace(localStorage, key)
   if (!raw) throw new Error('Sync is paused because this workspace has no verified saved copy.')
   const persisted = JSON.parse(raw).state
   const disk = Object.fromEntries(DATA_KEYS.map(k => [k, persisted[k]]))
   if (JSON.stringify(disk) !== JSON.stringify(snapshot)) throw new Error('Sync is paused because the open workspace differs from its saved copy.')
+}
+
+/** Validate once, then fence every await against immutable store references and
+ * acknowledged disk bytes. The caller must fully validate again before commit.
+ * This keeps attachment checks from parsing the entire workspace per image. */
+export function captureDurableWorkspaceCheck(snapshot = snapshotData(), owner = captureWorkspaceIdentity()) {
+  assertDurableWorkspace(snapshot, owner)
+  const captured = snapshotData(), raw = savedWorkspaceRaw(owner.key)
+  return () => {
+    assertWorkspacePersistenceReady(owner)
+    const current = useStore.getState()
+    if (DATA_KEYS.some(key => captured[key] !== current[key]) || savedWorkspaceRaw(owner.key) !== raw) {
+      throw new WorkspaceChangedError('Saved work changed during sync. Nothing was replaced; check sync again.')
+    }
+  }
 }
 
 function activateWorkspace(owner: WorkspaceOwner, supplied?: AppData) {

@@ -37,9 +37,10 @@ const transport: NotebookCloudTransport = {
 }
 
 /** Bytes are content-addressed and verified after upload. Metadata cannot claim a missing image was synced. */
-export async function syncNotebookImages(data: AppData, owner: string, reader: NotebookAssetReader, assertFresh: () => void | Promise<void>, remote: NotebookCloudTransport = transport) {
+export async function syncNotebookImages(data: AppData, owner: string, reader: NotebookAssetReader, assertFresh: () => void | Promise<void>, remote: NotebookCloudTransport = transport, onProgress?: (verified: number, total: number) => void) {
   const images = workspaceAssets(data).images
   let verified = 0
+  onProgress?.(0, images.size)
   for (const [hash, binding] of images) {
     await assertFresh()
     const local = await reader.read(hash)
@@ -55,6 +56,7 @@ export async function syncNotebookImages(data: AppData, owner: string, reader: N
     }
     if (!cloud || cloud.size !== binding.byteLength || await binaryDigest(cloud) !== hash) throw new Error(`The cloud copy of notebook image ${binding.assetId} could not be verified. Sync is paused; keep your complete backup.`)
     await assertFresh(); verified++
+    onProgress?.(verified, images.size)
   }
   return { verified }
 }

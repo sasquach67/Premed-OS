@@ -61,3 +61,21 @@ it('acknowledges Drive only after its local backup receipt is durable', async ()
   expect(saved.settings.backup.lastBackupAt).toBeGreaterThan(0)
   expect(disk.status(key).phase).toBe('ready')
 })
+
+it('invalidates a captured image-batch check as soon as an IDB write is queued', async () => {
+  const { useStore, captureDurableWorkspaceCheck } = await import('./store')
+  const disk = (await import('./workspacePersistence')).workspacePersistence()!
+  const check = captureDurableWorkspaceCheck()
+  expect(check).not.toThrow()
+  const original = disk.repository.commit.bind(disk.repository)
+  let release!: () => void
+  const gate = new Promise<void>(resolve => { release = resolve })
+  vi.spyOn(disk.repository, 'commit').mockImplementation(async (...args) => { await gate; return original(...args) })
+  try {
+    await act(async () => useStore.getState().update(d => { d.notes.example = 'Queued image-batch edit' }))
+    expect(check).toThrow('still saving')
+  } finally {
+    await act(async () => { release(); await disk.flush(key) })
+  }
+  expect(check).toThrow('Saved work changed')
+})

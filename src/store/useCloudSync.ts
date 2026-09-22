@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { activateAccountWorkspace, activateGuestWorkspace, activeAccountWorkspaceId, assertDurableWorkspace, captureWorkspaceIdentity, readWorkspaceData, useStore, snapshotData } from './store'
+import { activateAccountWorkspace, activateGuestWorkspace, activeAccountWorkspaceId, assertDurableWorkspace, captureDurableWorkspaceCheck, captureWorkspaceIdentity, readWorkspaceData, useStore, snapshotData } from './store'
 import { supabase, isSupabaseConfigured, authRedirectTo } from '@/lib/supabase'
 import { dataForRemote } from '@/lib/storyPrivacy'
 import { accountStorageKey } from '@/lib/demoMode'
@@ -24,6 +24,7 @@ export function useCloudSync() {
   const [user, setUser] = useState<User | null>(null)
   const [status, setStatus] = useState<CloudStatus>(isSupabaseConfigured ? 'idle' : 'offline')
   const [error, setError] = useState('')
+  const [progress, setProgress] = useState('')
   const [lastSyncAt, setLastSyncAt] = useState<number>()
   const lastSig = useRef('')
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -66,7 +67,7 @@ export function useCloudSync() {
         if (openRaw !== null) assertDurableWorkspace(snapshotData(), owner)
         else if (!useStore.persist.hasHydrated() || storageFailure() || activeAccountWorkspaceId() || hasLocalWork(snapshotData())) throw new Error('The open workspace has unsaved work. Save or export it before changing workspaces.')
       }
-      setStatus('syncing'); setError(''); retryAfterReconnect.current = false
+      setStatus('syncing'); setError(''); setProgress('Checking your saved account…'); retryAfterReconnect.current = false
       const fresh = () => {
         assertSyncSession(token)
         if (token.id !== u.id || captureWorkspaceIdentity().epoch !== owner.epoch || captureWorkspaceIdentity().key !== owner.key || savedWorkspaceRaw(key) !== before || JSON.stringify(snapshotData()) !== openJson) throw new Error('Saved work or the active workspace changed during sync. Nothing was replaced; check sync again.')
@@ -136,13 +137,16 @@ export function useCloudSync() {
         assertDurableWorkspace()
         assertSyncSession(token)
         const hydrated = snapshotData(), hydratedOwner = captureWorkspaceIdentity()
-        await syncNotebookImages(hydrated, u.id, notebookAssetRepository(), () => { assertSyncLease(lease); assertDurableWorkspace(hydrated, hydratedOwner) })
+        const checkImages = captureDurableWorkspaceCheck(hydrated, hydratedOwner)
+        await syncNotebookImages(hydrated, u.id, notebookAssetRepository(), () => { assertSyncLease(lease); checkImages() }, undefined, (verified, total) => {
+          setProgress(total ? `Checking notebook images (${verified} of ${total})…` : 'Finishing account check…')
+        })
         if (!local || equal || cleanLocal) await recordSyncBaseline(u.id, remote, row.updated_at, lease)
         assertSyncLease(lease)
         assertDurableWorkspace()
         allowAccountSync(lease)
         lastSig.current = remoteText
-        setStatus('synced'); setLastSyncAt(Date.parse(row.updated_at))
+        setStatus('synced'); setProgress(''); setLastSyncAt(Date.parse(row.updated_at))
       } catch (cause) {
         try { assertSyncSession(token) } catch { return }
         pauseAccountSync(u.id)
@@ -290,5 +294,5 @@ export function useCloudSync() {
     setUser(null); setStatus('idle')
   }, [])
 
-  return { configured: isSupabaseConfigured, user, status, error, lastSyncAt, accountReady: accountReady && !conflict, conflict, signIn, signOut, pushNow, pullNow }
+  return { configured: isSupabaseConfigured, user, status, error, progress: status === 'syncing' ? progress : '', lastSyncAt, accountReady: accountReady && !conflict, conflict, signIn, signOut, pushNow, pullNow }
 }

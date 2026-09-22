@@ -38,6 +38,7 @@ import { useCloudSync } from './useCloudSync'
 import { AccountCloudContext, useAccountCloud } from './AccountCloudContext'
 import { visualFixture } from '@/lib/academics/notebook/visual.test-fixtures'
 import { binaryDigest } from '@/lib/workspaceAssets'
+import * as storageHealth from './storageHealth'
 import { captureFolderFence } from '@/lib/academics/materialFolder/controller'
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -352,8 +353,8 @@ it('resumes automatically when the connection returns after bounded retries', as
   expect((wire.rows.get(id) as { data: ReturnType<typeof snapshotData> }).data.notes.example).toBe('offline edit')
 })
 
-async function imageWorkspace() {
-  const data = workspace('with image'), pkg = visualFixture(), blob = new Blob(['Synthetic image bytes'], { type: 'image/png' }), hash = await binaryDigest(blob)
+async function imageWorkspace(suffix = '') {
+  const data = workspace('with image'), pkg = visualFixture(), blob = new Blob(['Synthetic image bytes' + suffix], { type: 'image/png' }), hash = await binaryDigest(blob)
   data.academics.classCenter.lectures.push({ id: 'image-lecture', courseId: 'example', title: pkg.entries[0].title, inputPath: 'materials', processingState: 'ready', workspaceState: 'complete', createdAt: 1, updatedAt: 1, order: 0,
     importedNotebook: { original: pkg, current: pkg, originalRaw: JSON.stringify(pkg), entryId: pkg.entries[0].id, fingerprint: 'synthetic', importedAt: 1, progress: {}, notes: '', assetBindings: [{ assetId: pkg.assets[0].id, sha256: hash, byteLength: blob.size, mimeType: 'image/png', width: 1, height: 1 }] } })
   return { data, blob }
@@ -428,4 +429,53 @@ it('keeps folder connection ready across Settings observer mounts and navigation
   await act(async () => pauseAccountSync(id))
   expect(observed?.accountReady).toBe(false)
   expect(() => captureFolderFence(true)).toThrow('Account sync has not finished checking')
+})
+
+it('checks workspace durability once per image batch instead of revalidating the whole notebook tree for every image', async () => {
+  const id = account(), data = workspace('image batch')
+  const images = new Map<string, Blob>()
+  for (let n = 0; n < 20; n++) {
+    const f = await imageWorkspace(String(n))
+    const lecture = f.data.academics.classCenter.lectures[0]
+    lecture.id = `image-${n}`
+    data.academics.classCenter.lectures.push(lecture)
+    images.set(lecture.importedNotebook!.assetBindings![0].sha256, f.blob)
+  }
+  activateAccountWorkspace(id, data); wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  wire.imageDownload.mockImplementation(async (path: string) => ({ data: images.get(path.split('/').at(-1)!), error: null }))
+  const reads = vi.spyOn(storageHealth, 'readStoredWorkspace')
+  try {
+    await render(); await session(id, false)
+    await vi.waitFor(async () => { await act(async () => {}); expect(cloud.status).not.toBe('syncing') }, { timeout: 5000, interval: 1 })
+    expect(cloud.status).toBe('synced')
+    expect(wire.imageDownload).toHaveBeenCalledTimes(20)
+    expect(() => captureFolderFence(true)).not.toThrow()
+    expect(reads.mock.calls.length).toBeLessThan(20)
+  } finally { reads.mockRestore() }
+})
+
+it.each(['memory', 'disk', 'account', 'pause'])('stops image verification if %s changes during a download', async change => {
+  const id = account(), f = await imageWorkspace()
+  activateAccountWorkspace(id, f.data); wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  let release!: (value: unknown) => void
+  wire.imageDownload.mockImplementation(() => new Promise(resolve => { release = resolve }))
+  await render(); await session(id, false)
+  await vi.waitFor(async () => { await act(async () => {}); expect(wire.imageDownload).toHaveBeenCalled() }, { interval: 1 })
+  expect(cloud.progress).toBe('Checking notebook images (0 of 1)…')
+  await act(async () => {
+    if (change === 'memory') useStore.getState().update(d => { d.notes.example = 'new edit while checking' })
+    if (change === 'disk') {
+      const raw = JSON.parse(localStorage.getItem(accountStorageKey(id))!)
+      raw.state.notes.example = 'another tab edit'
+      localStorage.setItem(accountStorageKey(id), JSON.stringify(raw))
+    }
+    if (change === 'account') activateGuestWorkspace()
+    if (change === 'pause') pauseAccountSync(id)
+    release({ data: f.blob, error: null })
+  })
+  await vi.waitFor(async () => { await act(async () => {}); expect(cloud.status).toBe('error') }, { interval: 1 })
+  expect(isAccountSyncReady(id)).toBe(false)
+  expect(readSyncBaseline(id)).toBeNull()
+  expect(wire.writes).not.toHaveBeenCalled()
+  if (change === 'memory') expect(snapshotData().notes.example).toBe('new edit while checking')
 })

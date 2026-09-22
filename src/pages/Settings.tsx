@@ -415,7 +415,7 @@ function CloudSyncSection({ onMessage }: { onMessage: (msg: string) => void }) {
                 <p className="text-sm font-semibold break-words">{cloud.user.email}</p>
                 <p className="text-xs text-muted-foreground">
                   {cloud.conflict ? 'Sync paused — compare the account copies above.'
-                    : cloud.status === 'syncing' ? 'Syncing…'
+                    : cloud.status === 'syncing' ? (cloud.progress || 'Syncing…')
                     : cloud.lastSyncAt ? `Synced ${fmtTimeAgo(cloud.lastSyncAt)}.`
                     : 'Connected — first sync pending.'}
                   {cloud.error && <span className="ml-1 inline-flex items-center gap-1 text-destructive"><AlertCircle className="size-3" /> {cloud.error}</span>}
