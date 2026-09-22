@@ -6,6 +6,7 @@
    The anon key is public/client-safe; Row Level Security protects data.
    ============================================================ */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { createDashboardFetch } from './dashboardTransport'
 
 const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim()
 const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim()
@@ -26,6 +27,7 @@ export const authRedirectTo =
 
 export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(url!, anonKey!, {
+      global: { fetch: createDashboardFetch(url!) },
       auth: {
         persistSession: true,
         autoRefreshToken: true,
