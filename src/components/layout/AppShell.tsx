@@ -7,6 +7,7 @@ import { Topbar } from './Topbar'
 import { useTheme } from '@/store/useTheme'
 import { useBackup } from '@/store/useBackup'
 import { useCloudSync } from '@/store/useCloudSync'
+import { AccountCloudContext } from '@/store/AccountCloudContext'
 import { OutgoingWorkspaceNotice } from './OutgoingWorkspaceNotice'
 import { AccountSyncNotice } from './AccountSyncNotice'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -93,6 +94,7 @@ export function AppShell() {
   }, [toggleDesktopSidebarLock])
 
   return (
+    <AccountCloudContext.Provider value={cloud}>
     <TooltipProvider delayDuration={200}>
       <ToastProvider>
       <ShellActionsProvider onRequestSignOut={requestSignOut} onToggleSidebar={toggleDesktopSidebarLock}>
@@ -192,5 +194,6 @@ export function AppShell() {
       </ShellActionsProvider>
       </ToastProvider>
     </TooltipProvider>
+    </AccountCloudContext.Provider>
   )
 }

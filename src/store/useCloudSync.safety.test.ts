@@ -1,13 +1,13 @@
 import { Blob as NodeBlob } from 'node:buffer'
-import { act, createElement } from 'react'
+import { act, createElement, useEffect } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
-const wire = vi.hoisted(() => ({ listeners: new Set<(event: string, session: unknown) => void>(), rows: new Map<string, unknown>(), pending: new Map<string, Promise<unknown>>(), snapshots: new Map<string, unknown>(), writes: vi.fn(), archiveFails: false, failures: [] as Array<{ status: number; error: { message: string } }>, attempts: vi.fn(), imageDownload: vi.fn() }))
+const wire = vi.hoisted(() => ({ sessionUser: null as string | null, listeners: new Set<(event: string, session: unknown) => void>(), rows: new Map<string, unknown>(), pending: new Map<string, Promise<unknown>>(), snapshots: new Map<string, unknown>(), writes: vi.fn(), archiveFails: false, failures: [] as Array<{ status: number; error: { message: string } }>, attempts: vi.fn(), imageDownload: vi.fn() }))
 vi.mock('@/lib/supabase', () => ({
   isSupabaseConfigured: true, authRedirectTo: 'http://localhost/#/auth',
   supabase: {
-    auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange: (cb: (event: string, session: unknown) => void) => { wire.listeners.add(cb); return { data: { subscription: { unsubscribe: () => wire.listeners.delete(cb) } } } } },
+    auth: { getSession: async () => ({ data: { session: wire.sessionUser ? { user: { id: wire.sessionUser } } : null } }), onAuthStateChange: (cb: (event: string, session: unknown) => void) => { wire.listeners.add(cb); return { data: { subscription: { unsubscribe: () => wire.listeners.delete(cb) } } } } },
     storage: { from: () => ({ download: wire.imageDownload }) },
     from: () => ({
       select: () => ({ eq: (_: string, id: string) => ({ maybeSingle: async () => ({ data: await (wire.pending.get(id) ?? wire.rows.get(id)), error: null }) }) }),
@@ -35,6 +35,7 @@ import { accountStorageKey, activeWorkspaceOwner } from '@/lib/demoMode'
 import { activateAccountWorkspace, activateGuestWorkspace, snapshotData, useStore } from './store'
 import { getAccountConflict, allowAccountSync, pauseAccountSync, observeSyncSession, readSyncBaseline, recordSyncBaseline, isAccountSyncReady } from './accountSyncSafety'
 import { useCloudSync } from './useCloudSync'
+import { AccountCloudContext, useAccountCloud } from './AccountCloudContext'
 import { visualFixture } from '@/lib/academics/notebook/visual.test-fixtures'
 import { binaryDigest } from '@/lib/workspaceAssets'
 import { captureFolderFence } from '@/lib/academics/materialFolder/controller'
@@ -44,8 +45,8 @@ let root: Root, cloud: ReturnType<typeof useCloudSync>, counter = 0
 const older = '2026-09-10T12:00:00Z', newer = '2026-09-11T12:00:00Z'
 function workspace(note: string) { const d = createPersonalInitialData(); d.profile.name = 'Synthetic'; d.profile.email = 'synthetic@example.invalid'; d.notes.example = note; return d }
 function account() { return `synthetic-safety-${++counter}` }
+function Probe() { const value = useCloudSync(); useEffect(() => { cloud = value }, [value]); return null }
 async function render(count = 1) {
-  function Probe() { cloud = useCloudSync(); return null }
   await act(async () => root.render(createElement('div', null, Array.from({ length: count }, (_, key) => createElement(Probe, { key })))))
 }
 async function session(id: string | null, settle = true) {
@@ -54,7 +55,7 @@ async function session(id: string | null, settle = true) {
 }
 beforeEach(() => {
   vi.stubGlobal('Blob', NodeBlob); wire.imageDownload.mockReset()
-  localStorage.clear(); wire.rows.clear(); wire.pending.clear(); wire.snapshots.clear(); wire.writes.mockClear(); wire.archiveFails = false; wire.failures = []; wire.attempts.mockClear()
+  localStorage.clear(); wire.sessionUser = null; wire.rows.clear(); wire.pending.clear(); wire.snapshots.clear(); wire.writes.mockClear(); wire.archiveFails = false; wire.failures = []; wire.attempts.mockClear()
   observeSyncSession(null); useStore.persist.setOptions({ name: 'hq:app-data:guest' }); activateGuestWorkspace()
   root = createRoot(document.createElement('div'))
 })
@@ -397,4 +398,34 @@ it('keeps the current review stable when another sync check runs during a confli
   expect(wire.snapshots.size).toBe(copies)
   expect(wire.writes).not.toHaveBeenCalled()
   expect(cloud.status).toBe('error')
+})
+
+
+it('keeps folder connection ready across Settings observer mounts and navigation', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('verified device'))
+  const row = { data: snapshotData(), updated_at: older }
+  wire.rows.set(id, row)
+  let observed: ReturnType<typeof useAccountCloud> | undefined
+  function SettingsObserver() { const value = useAccountCloud(); useEffect(() => { observed = value }, [value]); return null }
+  function Shell({ settings }: { settings: boolean }) {
+    const value = useCloudSync()
+    useEffect(() => { cloud = value }, [value])
+    return createElement(AccountCloudContext.Provider, { value }, settings
+      ? createElement('div', null, createElement(SettingsObserver), createElement(SettingsObserver)) : null)
+  }
+  await act(async () => root.render(createElement(Shell, { settings: false })))
+  await session(id)
+  expect(() => captureFolderFence(true)).not.toThrow()
+  // A slow cloud read would keep a newly started controller paused indefinitely.
+  // Settings must share the already verified shell controller instead.
+  wire.pending.set(id, new Promise(() => {})); wire.sessionUser = id
+  for (const settings of [true, false, true]) {
+    await act(async () => root.render(createElement(Shell, { settings })))
+    expect(() => captureFolderFence(true)).not.toThrow()
+    expect(wire.listeners.size).toBe(1)
+    if (settings) expect(observed).toBe(cloud)
+  }
+  await act(async () => pauseAccountSync(id))
+  expect(observed?.accountReady).toBe(false)
+  expect(() => captureFolderFence(true)).toThrow('Account sync has not finished checking')
 })

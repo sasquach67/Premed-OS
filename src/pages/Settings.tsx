@@ -12,7 +12,7 @@ import { restoreCompleteWorkspace } from '@/store/restoreCompleteWorkspace'
 import { createWorkspaceBackup, prepareWorkspaceBackup } from '@/lib/workspaceBackup'
 import type { CompleteBackupPoint } from '@/lib/googleDrive'
 import { useBackup } from '@/store/useBackup'
-import { useCloudSync } from '@/store/useCloudSync'
+import { useAccountCloud } from '@/store/AccountCloudContext'
 import { useCalendarSync } from '@/hooks/useCalendarSync'
 import { calendarIntegrationVisible } from '@/lib/calendarAccess'
 import { ROUTE_MAP } from '@/app/routes'
@@ -369,7 +369,7 @@ function BackupCheck({ ok, label, detail }: { ok: boolean; label: string; detail
 
 function CloudSyncSection({ onMessage }: { onMessage: (msg: string) => void }) {
   const { requestSignOut } = useShellActions()
-  const cloud = useCloudSync()
+  const cloud = useAccountCloud()
   const [email, setEmail] = useState('')
 
   if (!cloud.configured) {
@@ -450,7 +450,7 @@ function CloudSyncSection({ onMessage }: { onMessage: (msg: string) => void }) {
 
 function AccountSecuritySection({ onMessage }: { onMessage: (msg: string) => void }) {
   const confirm = useConfirm()
-  const cloud = useCloudSync()
+  const cloud = useAccountCloud()
   const navigate = useNavigate()
   const [newEmail, setNewEmail] = useState('')
   const [busy, setBusy] = useState<'email' | 'signout' | 'delete' | null>(null)

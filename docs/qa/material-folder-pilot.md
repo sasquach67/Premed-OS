@@ -35,3 +35,9 @@ The pilot is opt-in at Class Center → class → Materials → Folder pilot. Ex
 ## Rollback
 
 Use Previously added materials to return to the existing app workflow. No migration or deletion of existing app materials occurs. Keep the trial folder and its .premedos recovery metadata until testing is complete. A code rollback leaves the optional metadata field unused; file contents remain in Finder.
+
+## September 22 sync-readiness regression
+
+Reproduced the exact “Account sync has not finished checking” folder error by mounting another sync controller after initial account verification. Settings mounted two controllers in addition to the shell; visiting it restarted reconciliation and attachment verification. The shell now owns the only production controller. Settings and the folder pilot observe its state through AccountCloudContext. Folder connection displays pending readiness and becomes available automatically; actual conflicts and session fences still block writes.
+
+Regression coverage mounts and unmounts two Settings observers with a deferred cloud read, verifies the folder write fence remains available and only one auth subscription exists, then verifies a real sync pause still blocks it. A UI test covers pending-to-ready connection controls. These automated checks do not constitute the user's folder trial or an authenticated folder upload/download test.
