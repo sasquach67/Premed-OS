@@ -386,3 +386,15 @@ it.each([503, 403])('only retries a retryable image failure in the background (%
   }
   expect(wire.writes).not.toHaveBeenCalled()
 })
+it('keeps the current review stable when another sync check runs during a conflict', async () => {
+  const id = account(); activateAccountWorkspace(id, workspace('device edit'))
+  wire.rows.set(id, { data: workspace('cloud edit'), updated_at: older })
+  await render(); await session(id)
+  const conflict = getAccountConflict(id), copies = wire.snapshots.size
+  expect(conflict?.saved).toBe(true)
+  await act(async () => { await cloud.pullNow() })
+  expect(getAccountConflict(id)).toBe(conflict)
+  expect(wire.snapshots.size).toBe(copies)
+  expect(wire.writes).not.toHaveBeenCalled()
+  expect(cloud.status).toBe('error')
+})

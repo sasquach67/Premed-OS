@@ -36,3 +36,21 @@ it('compares records by ID and bounds the rendered differences without treating 
   expect(compareAccountCopies(device, cloud)).toHaveLength(60)
   expect(compareAccountCopies(cloud, structuredClone(cloud))).toEqual([])
 })
+it('allows a fresh comparison when a conflict changes during an unfinished check', async () => {
+  const first = { localRaw: '{}', remote: createPersonalInitialData(), saved: true, message: '' }
+  const second = { ...first, message: 'Updated saved copies' }
+  let resolve!: (review: unknown) => void
+  const abandoned = { device: createPersonalInitialData(), cloud: createPersonalInitialData(), updatedAt: '', dispose: vi.fn(), apply: vi.fn() }
+  mock.prepare.mockImplementationOnce(() => new Promise(r => { resolve = r }))
+  await act(async () => root.render(<AccountConflictReview userId="synthetic" conflict={first} />))
+  await act(async () => button('Compare copies and resume sync').click())
+  expect(button('Checking saved copies…').disabled).toBe(true)
+  await act(async () => root.render(<AccountConflictReview userId="synthetic" conflict={second} />))
+  expect(button('Compare copies and resume sync')?.disabled).toBe(false)
+  await act(async () => button('Compare copies and resume sync').click())
+  expect(container.textContent).toContain('Device only')
+  await act(async () => resolve(abandoned))
+  expect(abandoned.dispose).toHaveBeenCalledTimes(1)
+  expect(container.textContent).toContain('Device only')
+  expect(mock.apply).not.toHaveBeenCalled()
+})

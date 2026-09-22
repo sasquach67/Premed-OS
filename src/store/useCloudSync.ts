@@ -34,6 +34,14 @@ export function useCloudSync() {
 
   const reconcile = useCallback(async (u: User) => {
     if (!supabase) return
+    // An existing two-copy review owns recovery. Another hook or pull must not
+    // replace it mid-comparison; the review itself rechecks the latest cloud copy.
+    const pendingReview = getAccountConflict(u.id)
+    if (pendingReview?.saved && pendingReview.localRaw && pendingReview.remote && !pendingReview.open) {
+      retryAfterReconnect.current = false
+      setStatus('error')
+      return
+    }
     const token = captureSyncSession()
     const jobKey = `${u.id}:${token.generation}`
     const existing = reconciliationJobs.get(jobKey)

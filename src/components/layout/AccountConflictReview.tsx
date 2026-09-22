@@ -16,8 +16,11 @@ type Review = Awaited<ReturnType<typeof prepareAccountConflictResolution>>
 export function AccountConflictReview({ userId, conflict }: { userId: string; conflict: AccountConflict }) {
   const [prepared, setPrepared] = useState<{ review: Review; conflict: AccountConflict }>()
   const review = prepared?.conflict === conflict ? prepared.review : undefined
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
+  const [busyFor, setBusyFor] = useState<AccountConflict>()
+  const busy = busyFor === conflict
+  const [failure, setFailure] = useState<{ conflict: AccountConflict; message: string }>()
+  const error = failure?.conflict === conflict ? failure.message : ''
+  const setError = (message: string) => setFailure({ conflict, message })
   const [choice, setChoice] = useState<'device' | 'cloud'>()
   const [confirmed, setConfirmed] = useState(false)
   const held = useRef<Review | undefined>(undefined)
@@ -25,21 +28,22 @@ export function AccountConflictReview({ userId, conflict }: { userId: string; co
   useEffect(() => () => { generation.current++; held.current?.dispose(); held.current = undefined }, [userId, conflict])
   async function open() {
     const current = ++generation.current
-    setBusy(true); setError(''); setChoice(undefined); setConfirmed(false)
+    setBusyFor(conflict); setError(''); setChoice(undefined); setConfirmed(false)
     held.current?.dispose(); held.current = undefined; setPrepared(undefined)
     try {
       const next = await prepareAccountConflictResolution(userId, conflict)
       if (current !== generation.current) { next.dispose(); return }
       held.current = next; setPrepared({ review: next, conflict })
     } catch (cause) { if (current === generation.current) setError(cause instanceof Error ? cause.message : 'Could not compare account copies.') }
-    finally { if (current === generation.current) setBusy(false) }
+    finally { if (current === generation.current) setBusyFor(undefined) }
   }
   async function apply() {
     if (!review || !choice || !confirmed || busy) return
-    setBusy(true); setError('')
+    const current = ++generation.current
+    setBusyFor(conflict); setError('')
     try { await review.apply(choice) }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'The choice could not be saved.'); setConfirmed(false); held.current = undefined; setPrepared(undefined) }
-    finally { setBusy(false) }
+    catch (cause) { if (current === generation.current) { setError(cause instanceof Error ? cause.message : 'The choice could not be saved.'); setConfirmed(false); held.current = undefined; setPrepared(undefined) } }
+    finally { if (current === generation.current) setBusyFor(undefined) }
   }
   const differences = review ? compareAccountCopies(review.device, review.cloud) : []
   return <div className="mt-4 space-y-3 border-t border-border pt-3">
