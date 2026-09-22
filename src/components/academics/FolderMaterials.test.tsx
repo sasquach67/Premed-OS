@@ -4,18 +4,22 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { FolderMaterials } from './FolderMaterials'
 import type { FolderLibrary } from '@/lib/academics/materialFolder/model'
-const mocks = vi.hoisted(() => ({ cloud: { user: null as null | { id: string }, accountReady: false, status: 'idle', conflict: undefined }, library: undefined as FolderLibrary | undefined, download: vi.fn(), sync: vi.fn() }))
+const mocks = vi.hoisted(() => ({ cloud: { user: null as null | { id: string }, accountReady: false, status: 'idle', conflict: undefined, error: '', pullNow: vi.fn() }, library: undefined as FolderLibrary | undefined, download: vi.fn(), sync: vi.fn(), loadHandle: vi.fn(), fence: vi.fn(), lock: vi.fn() }))
 vi.mock('@/store/AccountCloudContext', () => ({ useAccountCloud: () => mocks.cloud }))
 vi.mock('@/store/store', () => ({ useStore: (select: (s: unknown) => unknown) => select({ academics: { classCenter: { workspaces: [{ courseId: 'test', materialFolder: mocks.library }] } } }) }))
-vi.mock('@/lib/academics/materialFolder/controller', () => ({ captureFolderFence: () => () => {}, readFolderLibrary: () => mocks.library, saveFolderLibrary: vi.fn(), withFolderLock: vi.fn() }))
-vi.mock('@/lib/academics/materialFolder/storage', () => ({ deviceId: () => 'other-device', loadFolderHandle: vi.fn(), saveFolderHandle: vi.fn(), cacheUsage: async () => 0, clearPreviewCache: vi.fn(), cloudBudgetUsed: () => 0, downloadFolderFile: mocks.download, syncFolderFile: mocks.sync }))
+vi.mock('@/lib/academics/materialFolder/controller', () => ({ captureFolderFence: mocks.fence, readFolderLibrary: () => mocks.library, saveFolderLibrary: vi.fn(), withFolderLock: mocks.lock }))
+vi.mock('@/lib/academics/materialFolder/storage', () => ({ deviceId: () => 'other-device', loadFolderHandle: mocks.loadHandle, saveFolderHandle: vi.fn(), cacheUsage: async () => 0, clearPreviewCache: vi.fn(), cloudBudgetUsed: () => 0, downloadFolderFile: mocks.download, syncFolderFile: mocks.sync }))
 vi.mock('./FolderPdfPreview', () => ({ FolderPdfPreview: ({ name }: { name: string }) => <div data-testid="pdf-preview">{name}</div> }))
 let root: Root, container: HTMLDivElement
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview'); vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
-  mocks.cloud = { user: null, accountReady: false, status: 'idle', conflict: undefined }
-  mocks.download.mockReset(); mocks.sync.mockReset()
+  mocks.cloud = { user: null, accountReady: false, status: 'idle', conflict: undefined, error: '', pullNow: vi.fn() }
+  mocks.download.mockReset(); mocks.sync.mockReset(); mocks.loadHandle.mockReset(); mocks.lock.mockReset()
+  mocks.fence.mockReset().mockImplementation((write = false) => {
+    const check = () => { if (write && mocks.cloud.user && !mocks.cloud.accountReady) throw new Error('Account sync has not finished checking. Open Settings to check its progress or retry, then connect the folder again. Originals have been kept.') }
+    check(); return check
+  })
   mocks.library = { id: 'library', label: 'Lesson 1', writerDevice: 'source-device', updatedAt: 0, cloudObjects: {}, items: Array.from({ length: 120 }, (_, n) => ({ id: String(n), path: `Reading ${n + 1}.pdf`, kind: 'file', category: 'Reading', size: 1, modified: 0, cloudHash: 'a'.repeat(64) })) }
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
 })
@@ -50,7 +54,7 @@ it('shows an actionable fallback when linking is unsupported without hiding lega
 
 it('waits visibly for shared account readiness and enables folder connection when it finishes', async () => {
   mocks.library = undefined
-  mocks.cloud = { user: { id: 'account' }, accountReady: false, status: 'syncing', conflict: undefined }
+  mocks.cloud = { user: { id: 'account' }, accountReady: false, status: 'syncing', conflict: undefined, error: '', pullNow: vi.fn() }
   await render()
   expect(button('Checking account sync…').disabled).toBe(true)
   expect(container.querySelector('[role="status"]')?.textContent).toContain('available automatically')
@@ -58,4 +62,36 @@ it('waits visibly for shared account readiness and enables folder connection whe
   await render()
   expect(button('Connect trial folder').disabled).toBe(false)
   expect(container.querySelector('[role="status"]')).toBeNull()
+})
+
+it('defers a connected folder refresh until account checking finishes, including window focus', async () => {
+  mocks.library!.writerDevice = 'other-device'
+  mocks.loadHandle.mockResolvedValue({ queryPermission: async () => 'granted', getDirectoryHandle: async () => { throw new DOMException('', 'NotFoundError') } })
+  mocks.cloud = { user: { id: 'account' }, accountReady: false, status: 'syncing', conflict: undefined, error: '', pullNow: vi.fn() }
+  await render()
+  await act(async () => { window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')) })
+  expect(container.querySelector('[role="alert"]')).toBeNull()
+  expect(mocks.fence.mock.calls.filter(([write]) => write)).toHaveLength(0)
+  expect(button('Refresh').disabled).toBe(true)
+  expect(button('Save account copies').disabled).toBe(true)
+  expect(button('New folder').disabled).toBe(true)
+  mocks.cloud = { ...mocks.cloud, accountReady: true, status: 'synced' }
+  await render()
+  expect(button('Refresh').disabled).toBe(false)
+  expect(button('Save account copies').disabled).toBe(false)
+  expect(mocks.lock).toHaveBeenCalledTimes(1)
+  expect(container.querySelector('[role="alert"]')).toBeNull()
+})
+
+it('shows the actual account failure and retries checking without touching folder files', async () => {
+  mocks.library!.writerDevice = 'other-device'
+  mocks.loadHandle.mockResolvedValue({ queryPermission: async () => 'granted' })
+  mocks.cloud = { user: { id: 'account' }, accountReady: false, status: 'error', conflict: undefined, error: 'The cloud request timed out.', pullNow: vi.fn() }
+  await render()
+  expect(container.textContent).toContain('The cloud request timed out.')
+  expect(button('Save account copies').disabled).toBe(true)
+  await act(async () => button('Retry account check').click())
+  expect(mocks.cloud.pullNow).toHaveBeenCalledTimes(1)
+  expect(mocks.lock).not.toHaveBeenCalled()
+  expect(mocks.sync).not.toHaveBeenCalled()
 })
