@@ -6,7 +6,7 @@ import { FolderMaterials } from './FolderMaterials'
 import { scanFolder } from '@/lib/academics/materialFolder/filesystem'
 import { MemoryDirectory } from '@/lib/academics/materialFolder/testing/memoryFilesystem'
 import type { FolderLibrary } from '@/lib/academics/materialFolder/model'
-const mocks = vi.hoisted(() => ({ cloud: { user: null as null | { id: string }, accountReady: false, status: 'idle', conflict: undefined, error: '', pullNow: vi.fn() }, library: undefined as FolderLibrary | undefined, download: vi.fn(), sync: vi.fn(), loadHandle: vi.fn(), fence: vi.fn(), lock: vi.fn(), save: vi.fn() }))
+const mocks = vi.hoisted(() => ({ cloud: { user: null as null | { id: string }, accountReady: false, status: 'idle', conflict: undefined, error: '', pullNow: vi.fn() }, library: undefined as FolderLibrary | undefined, download: vi.fn(), sync: vi.fn(), loadHandle: vi.fn(), fence: vi.fn(), lock: vi.fn(), save: vi.fn(), back: vi.fn() }))
 vi.mock('@/store/AccountCloudContext', () => ({ useAccountCloud: () => mocks.cloud }))
 vi.mock('@/store/store', () => ({ useStore: (select: (s: unknown) => unknown) => select({ academics: { classCenter: { workspaces: [{ courseId: 'test', materialFolder: mocks.library }] } } }) }))
 vi.mock('@/lib/academics/materialFolder/controller', () => ({ captureFolderFence: mocks.fence, readFolderLibrary: () => mocks.library, saveFolderLibrary: mocks.save, withFolderLock: mocks.lock }))
@@ -17,7 +17,7 @@ beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview'); vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
   mocks.cloud = { user: null, accountReady: false, status: 'idle', conflict: undefined, error: '', pullNow: vi.fn() }
-  mocks.download.mockReset(); mocks.sync.mockReset(); mocks.loadHandle.mockReset(); mocks.lock.mockReset(); mocks.save.mockReset()
+  mocks.download.mockReset(); mocks.sync.mockReset(); mocks.loadHandle.mockReset(); mocks.lock.mockReset(); mocks.save.mockReset(); mocks.back.mockReset()
   mocks.fence.mockReset().mockImplementation((write = false) => {
     const check = () => { if (write && mocks.cloud.user && !mocks.cloud.accountReady) throw new Error('Account sync has not finished checking. Open Settings to check its progress or retry, then connect the folder again. Originals have been kept.') }
     check(); return check
@@ -26,8 +26,21 @@ beforeEach(() => {
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
 })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
-async function render() { await act(async () => root.render(<MemoryRouter><FolderMaterials courseId="test" courseLabel="BIOL 103" onBack={() => {}} /></MemoryRouter>)) }
+async function render() { await act(async () => root.render(<MemoryRouter><FolderMaterials courseId="test" courseLabel="BIOL 103" onBack={mocks.back} /></MemoryRouter>)) }
 function button(name: string) { return [...document.querySelectorAll('button')].find(b => b.textContent?.trim() === name)! }
+function labeledButton(name: string) { return document.querySelector<HTMLButtonElement>(`button[aria-label="${name}"]`)! }
+function menuItem(name: string) { return [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(item => item.textContent?.trim() === name)! }
+async function openMenu(trigger: HTMLButtonElement) {
+  await act(async () => { trigger.focus(); trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })) })
+}
+async function connectedFiles() {
+  const disk = new MemoryDirectory('Trial')
+  disk.file('First.pdf'); disk.file('Second.pdf')
+  mocks.library!.writerDevice = 'other-device'; mocks.library!.items = await scanFolder(disk)
+  mocks.loadHandle.mockResolvedValue(disk)
+  mocks.lock.mockImplementation(async (_id, work) => work())
+  return disk
+}
 it('renders only 50 rows at once and never downloads file contents while browsing', async () => {
   await render()
   expect(container.querySelectorAll('.mf-row')).toHaveLength(50)
@@ -51,7 +64,11 @@ it('shows an actionable fallback when linking is unsupported without hiding lega
   mocks.library = undefined; await render()
   await act(async () => button('Connect trial folder').click())
   expect(container.textContent).toContain('desktop Chrome or Edge')
-  expect(button('Previously added materials')).toBeTruthy()
+  expect(menuItem('Previously added materials')).toBeUndefined()
+  await openMenu(button('More options'))
+  expect(menuItem('Previously added materials')).toBeTruthy()
+  await act(async () => menuItem('Previously added materials').click())
+  expect(mocks.back).toHaveBeenCalledTimes(1)
 })
 
 it('waits visibly for shared account readiness and enables folder connection when it finishes', async () => {
@@ -170,4 +187,62 @@ it('only permits stopping read-only scanning, not an in-flight catalog commit', 
   expect(button('Refresh').disabled).toBe(true)
   await act(async () => finish())
   expect(button('Refresh').disabled).toBe(false)
+})
+
+
+it('opens a row action menu and targets that file without replacing the existing selection', async () => {
+  await connectedFiles(); await render()
+  const first = container.querySelector<HTMLInputElement>('input[aria-label="Select First.pdf"]')!
+  const second = container.querySelector<HTMLInputElement>('input[aria-label="Select Second.pdf"]')!
+  await act(async () => first.click())
+  await openMenu(labeledButton('Actions for Second.pdf'))
+  expect(menuItem('Rename')).toBeTruthy()
+  await act(async () => menuItem('Rename').click())
+  const nameInput = document.querySelector<HTMLInputElement>('input[aria-label="Name"]')!
+  expect(nameInput.value).toBe('Second.pdf')
+  expect(document.activeElement).toBe(nameInput)
+  expect(first.checked).toBe(true)
+  expect(second.checked).toBe(false)
+  expect(container.textContent).toContain('1 selected')
+  expect(mocks.save).not.toHaveBeenCalled()
+})
+
+it('replaces normal file controls with selection actions and restores them when cleared', async () => {
+  await connectedFiles(); await render()
+  expect(container.querySelector('input[placeholder="Search files…"]')).not.toBeNull()
+  expect(button('New folder')).toBeTruthy()
+  await act(async () => container.querySelector<HTMLInputElement>('input[aria-label="Select First.pdf"]')!.click())
+  expect(container.querySelector('input[placeholder="Search files…"]')).toBeNull()
+  expect(button('New folder')).toBeUndefined()
+  for (const name of ['Rename', 'Move', 'Delete', 'Set type']) expect(button(name)).toBeTruthy()
+  await act(async () => labeledButton('Clear selection').click())
+  expect(container.querySelector('input[placeholder="Search files…"]')).not.toBeNull()
+  expect(button('New folder')).toBeTruthy()
+  expect(button('Rename')).toBeUndefined()
+  expect(container.querySelector<HTMLInputElement>('input[aria-label="Select First.pdf"]')!.checked).toBe(false)
+})
+
+it('keeps storage details inside its popover until requested', async () => {
+  await render()
+  expect(document.body.textContent).not.toContain('Upload budget')
+  expect(document.body.textContent).not.toContain('Preview cache')
+  await act(async () => button('Storage').click())
+  expect(document.body.textContent).toContain('Upload budget')
+  expect(document.body.textContent).toContain('Preview cache')
+  expect(button('Clear preview cache')).toBeTruthy()
+})
+
+it('opens Trash and legacy materials through More options', async () => {
+  await connectedFiles(); await render()
+  expect(menuItem('Trash')).toBeUndefined()
+  await openMenu(button('More options'))
+  await act(async () => menuItem('Trash').click())
+  expect(container.textContent).toContain('Trash')
+  expect(container.querySelector('.mf-row')).toBeNull()
+  await act(async () => button('Back to files').click())
+  expect(container.querySelectorAll('.mf-row')).toHaveLength(2)
+  await openMenu(button('More options'))
+  await act(async () => menuItem('Previously added materials').click())
+  expect(mocks.back).toHaveBeenCalledTimes(1)
+  expect(mocks.save).not.toHaveBeenCalled()
 })
