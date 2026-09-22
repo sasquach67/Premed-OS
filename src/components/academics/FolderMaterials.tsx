@@ -7,8 +7,9 @@ import { useStore } from '@/store/store'
 import { useAccountCloud } from '@/store/AccountCloudContext'
 import { Link } from 'react-router-dom'
 import { captureFolderFence, readFolderLibrary, saveFolderLibrary, withFolderLock } from '@/lib/academics/materialFolder/controller'
+import { readFolderCatalog, sameFolderItems } from '@/lib/academics/materialFolder/catalog'
 import { bindFolder, createFolder } from '@/lib/academics/materialFolder/filesystem'
-import { cancelMove, finishMove, folderPicker, getFile, moveEntries, operations, permission, remapItems, scanFolder, sha256, type DirectoryHandle, type MoveOperation } from '@/lib/academics/materialFolder/filesystem'
+import { cancelMove, finishMove, folderPicker, getFile, moveEntries, operations, permission, type DirectoryHandle, type MoveOperation } from '@/lib/academics/materialFolder/filesystem'
 import { CACHE_BYTES, MAX_FILE_BYTES, PAGE_SIZE, fileName, folderPath, formatBytes, immediateItems, joinPath, packageRoot, validateName, type FolderItem, type FolderLibrary } from '@/lib/academics/materialFolder/model'
 import { cacheUsage, clearPreviewCache, cloudBudgetUsed, deviceId, downloadFolderFile, loadFolderHandle, saveFolderHandle, syncFolderFile } from '@/lib/academics/materialFolder/storage'
 import { FolderPdfPreview } from './FolderPdfPreview'
@@ -32,8 +33,10 @@ export function FolderMaterials({ courseId, courseLabel, onBack }: { courseId: s
   const [preview, setPreview] = useState<Preview | null>(null), [cached, setCached] = useState(0)
   const working = useRef(false), previewEpoch = useRef(0), mounted = useRef(true), refreshRef = useRef<() => void>(() => {})
   const [thisDevice] = useState(deviceId)
+  const [scanning, setScanning] = useState(false)
+  const scanController = useRef<AbortController | null>(null)
   const canManage = Boolean(root && library?.writerDevice === thisDevice && !syncPending)
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; scanController.current?.abort() } }, [])
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview.url) }, [preview])
   useEffect(() => {
     let alive = true
@@ -82,24 +85,21 @@ export function FolderMaterials({ courseId, courseLabel, onBack }: { courseId: s
   async function updateCatalog(handle: DirectoryHandle, fence: () => void, initial?: FolderLibrary) {
     const before = initial ?? readFolderLibrary(courseId)
     if (!before) throw new Error('Connect a class folder first.')
-    const log = await operations(handle)
+    const controller = new AbortController()
+    scanController.current = controller; setScanning(true)
+    let result: Awaited<ReturnType<typeof readFolderCatalog>>
+    try {
+      result = await readFolderCatalog(handle, before, fence, { signal: controller.signal, onProgress: progress => { if (mounted.current) setBusy(progress) } })
+    } finally {
+      if (scanController.current === controller) scanController.current = null
+      if (mounted.current) setScanning(false)
+    }
+    const { log, items, appliedOperations } = result
     fence()
-    let previous = before.items
-    const applied = new Set(before.appliedOperations ?? [])
-    for (const op of [...log].sort((a, b) => a.at - b.at)) if (op.phase === 'done' && !applied.has(op.id)) { previous = remapItems(previous, op)
-      if (op.kind !== 'trash') for (const file of op.files) {
-        const original = previous.find(item => item.path === file.to)
-        if (!original) continue
-        try {
-          const copied = await getFile(handle, file.to)
-          if (await sha256(copied) === file.hash) previous = previous.map(item => item.id === original.id ? { ...item, modified: copied.lastModified, size: copied.size, hash: file.hash, cloudHash: item.cloudHash === file.hash ? item.cloudHash : undefined } : item)
-        } catch { /* A later external change remains missing or unsynced after scanning. */ }
-        fence()
-      }
-      applied.add(op.id) }
-    const items = await scanFolder(handle, previous, fence)
-    fence()
-    if (initial || JSON.stringify(items) !== JSON.stringify(before.items) || applied.size !== (before.appliedOperations?.length ?? 0)) await saveFolderLibrary(courseId, { ...before, items, appliedOperations: [...applied], updatedAt: Date.now() }, fence)
+    if (initial || !sameFolderItems(items, before.items) || appliedOperations.length !== (before.appliedOperations?.length ?? 0)) {
+      setBusy('Saving file list…')
+      await saveFolderLibrary(courseId, { ...before, items, appliedOperations, updatedAt: Date.now() }, fence)
+    }
     setJournal(log); setReadable(true)
   }
   async function refresh(interactive: boolean) {
@@ -269,14 +269,14 @@ export function FolderMaterials({ courseId, courseLabel, onBack }: { courseId: s
         {path && !query && <button className="mf-up" onClick={() => changePath(folderPath(path))}><ArrowLeft size={14} />Up one folder</button>}
         {!rows.length && <p className="mf-empty">{query || category ? 'No matching files.' : 'This folder is empty.'}</p>}
         {rows.slice(visiblePage * PAGE_SIZE, (visiblePage + 1) * PAGE_SIZE).map(item => <div className={`mf-row ${selection.includes(item.id) ? 'is-selected' : ''}`} key={item.id} draggable={canManage && !busy && !item.missing && !packageRoot(allItems, item.path)} onDragStart={e => { e.dataTransfer.setData('application/x-premed-material', item.id); e.dataTransfer.effectAllowed = 'move' }} onDragOver={e => { if (canManage && item.kind === 'directory' && !packageRoot(allItems, item.path) && e.dataTransfer.types.includes('application/x-premed-material')) e.preventDefault() }} onDrop={e => { if (!canManage || item.kind !== 'directory') return; e.preventDefault(); const dragged = active.find(i => i.id === e.dataTransfer.getData('application/x-premed-material')); if (dragged) { begin('move', selection.includes(dragged.id) ? selected : [dragged]); setValue(item.path) } }}>
-          <div className="mf-name-cell"><input type="checkbox" aria-label={`Select ${fileName(item.path)}`} checked={selection.includes(item.id)} onChange={e => setSelection(current => e.target.checked ? [...current, item.id] : current.filter(id => id !== item.id))} />{item.kind === 'directory' ? <Folder size={18} /> : <FileText size={18} />}<button className="mf-name" onClick={() => void open(item)} disabled={Boolean(busy)}>{fileName(item.path)}{query && <small>{folderPath(item.path)}</small>}</button></div>
+          <div className="mf-name-cell"><input type="checkbox" aria-label={`Select ${fileName(item.path)}`} checked={selection.includes(item.id)} onChange={e => setSelection(current => e.target.checked ? [...current, item.id] : current.filter(id => id !== item.id))} />{item.kind === 'directory' ? <Folder size={18} /> : <FileText size={18} />}<button className="mf-name" onClick={() => void open(item)} disabled={Boolean(busy) && item.kind !== 'directory'}>{fileName(item.path)}{query && <small>{folderPath(item.path)}</small>}</button></div>
           <span className="mf-type" title={item.categoryConfirmed ? "Your material type" : "Suggested from the file name and folder; use Set type to change it"}>{item.kind === 'directory' ? 'Folder' : item.category}</span><span className="mf-availability">{item.kind === 'directory' ? '' : item.cloudHash ? item.missing ? 'Account copy · local missing' : 'Account copy saved' : item.missing ? 'Missing from folder' : 'Local only'}</span><span className="mf-size">{item.kind === 'directory' ? '—' : formatBytes(item.size)}</span>
           <Button variant="ghost" size="sm" aria-label={`Actions for ${fileName(item.path)}`} disabled={!canManage || Boolean(busy)} onClick={() => setSelection([item.id])}><MoreHorizontal size={16} /></Button>
         </div>)}
         <footer className="mf-pagination"><span>{rows.length} {rows.length === 1 ? 'item' : 'items'}</span>{rows.length > PAGE_SIZE && <><Button size="sm" variant="ghost" disabled={!visiblePage} onClick={() => setPage(visiblePage - 1)}>Previous</Button><span>{visiblePage + 1} / {Math.ceil(rows.length / PAGE_SIZE)}</span><Button size="sm" variant="ghost" disabled={(visiblePage + 1) * PAGE_SIZE >= rows.length} onClick={() => setPage(visiblePage + 1)}>Next</Button></>}</footer>
       </div>}
     </>}
-    {busy && <p role="status" className="mf-status">{busy}</p>}{error && !(cloud.accountReady && error.startsWith('Account sync has not finished checking.')) && <p role="alert" className="mf-alert">{error}</p>}{notice && <p role="status" className="mf-status">{notice}</p>}
+    {busy && <p role="status" className="mf-status">{busy}{scanning && <Button size="sm" variant="outline" onClick={() => scanController.current?.abort()}>Stop scan</Button>}</p>}{error && !(cloud.accountReady && error.startsWith('Account sync has not finished checking.')) && <p role="alert" className="mf-alert">{error}</p>}{notice && <p role="status" className="mf-status">{notice}</p>}
     <Dialog open={Boolean(edit)} onOpenChange={open => { if (!open && !busy) setEdit(null) }}><DialogContent><DialogHeader><DialogTitle>{edit && ({ rename: 'Rename', move: 'Move to folder', trash: 'Move to Trash', create: 'New folder', category: 'Material type' })[edit.kind]}</DialogTitle><DialogDescription>{edit?.kind === 'trash' ? 'Files move into recoverable Trash inside the connected folder. Saved notebook content stays intact.' : edit?.kind === 'category' ? 'Choose or write a type. Your choice is kept when the folder refreshes; files are not moved.' : 'This changes the actual connected folder. Existing files will not be overwritten.'}</DialogDescription></DialogHeader><form onSubmit={e => { e.preventDefault(); void mutate().catch(e => setError(message(e))) }}>
       {edit?.kind === 'move' ? <select aria-label="Destination folder" value={value} onChange={e => setValue(e.target.value)}><option value="">{library?.label}</option>{dirs.filter(d => !edit.items.some(i => d.path === i.path || d.path.startsWith(i.path + '/'))).map(d => <option key={d.id} value={d.path}>{d.path}</option>)}</select> : edit?.kind !== 'trash' ? <Input aria-label={edit?.kind === 'category' ? 'Material type' : 'Name'} value={value} onChange={e => setValue(e.target.value)} autoFocus list={edit?.kind === 'category' ? 'mf-types' : undefined} /> : <p>{edit.items.length} selected {edit.items.length === 1 ? 'item' : 'items'}</p>}
       {error && !(cloud.accountReady && error.startsWith('Account sync has not finished checking.')) && <p role="alert" className="mf-alert">{error}</p>}

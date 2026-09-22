@@ -39,20 +39,23 @@ export async function sha256(file: Blob) {
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await file.arrayBuffer())), b => b.toString(16).padStart(2, '0')).join('')
 }
 /** Reads metadata only, never document contents. Failure leaves the previous catalog untouched. */
-export async function scanFolder(root: DirectoryHandle, previous: FolderItem[] = [], fence: Fence = () => {}) {
+export async function scanFolder(root: DirectoryHandle, previous: FolderItem[] = [], fence: Fence = () => {}, onProgress?: (count: number, path: string) => void) {
   const found: FolderItem[] = [], previousByPath = new Map(previous.map(item => [item.path, item]))
   async function visit(dir: DirectoryHandle, prefix: string, depth: number) {
     if (depth > 20) throw new Error('This folder is too deeply nested for the pilot. Choose a lesson folder.')
+    onProgress?.(found.length, prefix)
     for await (const handle of dir.values()) {
       fence()
       if (excluded(handle.name)) continue
       const path = joinPath(prefix, handle.name), old = previousByPath.get(path)
       validatePath(path)
       if (found.length >= MAX_ITEMS) throw new Error('Choose a smaller folder for the pilot (up to 5,000 items).')
+      onProgress?.(found.length, path)
       const file = handle.kind === 'file' ? await handle.getFile() : null
       fence()
       const unchanged = old && old.kind === handle.kind && old.size === (file?.size ?? 0) && old.modified === (file?.lastModified ?? 0)
       found.push({ id: old?.id ?? crypto.randomUUID(), path, kind: handle.kind, size: file?.size ?? 0, modified: file?.lastModified ?? 0, category: old?.categoryConfirmed ? old.category : detectCategory(path), categoryConfirmed: old?.categoryConfirmed, ...(unchanged ? { hash: old.hash, cloudHash: old.cloudHash, cloudSize: old.cloudSize } : {}) })
+      onProgress?.(found.length, path)
       if (handle.kind === 'directory') await visit(handle, path, depth + 1)
     }
   }

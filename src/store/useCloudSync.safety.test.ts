@@ -479,3 +479,55 @@ it.each(['memory', 'disk', 'account', 'pause'])('stops image verification if %s 
   expect(wire.writes).not.toHaveBeenCalled()
   if (change === 'memory') expect(snapshotData().notes.example).toBe('new edit while checking')
 })
+
+it('does not revalidate the entire workspace per image when pushing an ordinary metadata edit', async () => {
+  const id = account(), data = workspace('image push batch'), images = new Map<string, Blob>()
+  for (let n = 0; n < 20; n++) {
+    const f = await imageWorkspace(String(n)), lecture = f.data.academics.classCenter.lectures[0]
+    lecture.id = `push-image-${n}`; data.academics.classCenter.lectures.push(lecture)
+    images.set(lecture.importedNotebook!.assetBindings![0].sha256, f.blob)
+  }
+  activateAccountWorkspace(id, data); wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  wire.imageDownload.mockImplementation(async (path: string) => ({ data: images.get(path.split('/').at(-1)!), error: null }))
+  await render(); await session(id, false)
+  await vi.waitFor(async () => { await act(async () => {}); expect(cloud.status).toBe('synced') }, { timeout: 5000, interval: 1 })
+  await act(async () => useStore.getState().update(d => { d.notes.example = 'ordinary metadata edit' }))
+  wire.imageDownload.mockClear()
+  const reads = vi.spyOn(storageHealth, 'readStoredWorkspace')
+  try {
+    await act(async () => { expect(await cloud.pushNow()).toBe(true) })
+    expect(wire.imageDownload).toHaveBeenCalledTimes(20)
+    expect(wire.writes).toHaveBeenCalledTimes(1)
+    expect(reads.mock.calls.length).toBeLessThan(20)
+    expect(cloud.status).toBe('synced')
+  } finally { reads.mockRestore() }
+})
+
+it.each(['memory', 'disk', 'account', 'pause'])('does not push stale metadata when %s changes during an image download', async change => {
+  const id = account(), f = await imageWorkspace()
+  activateAccountWorkspace(id, f.data); wire.rows.set(id, { data: snapshotData(), updated_at: older })
+  wire.imageDownload.mockResolvedValue({ data: f.blob, error: null })
+  await render(); await session(id)
+  await act(async () => useStore.getState().update(d => { d.notes.example = 'metadata ready to push' }))
+  let release!: (value: unknown) => void
+  wire.imageDownload.mockImplementation(() => new Promise(resolve => { release = resolve }))
+  let saving!: Promise<boolean>
+  await act(async () => { saving = cloud.pushNow() })
+  await vi.waitFor(() => expect(release).toBeTypeOf('function'), { interval: 1 })
+  await act(async () => {
+    if (change === 'memory') useStore.getState().update(d => { d.notes.example = 'newer edit during push' })
+    if (change === 'disk') {
+      const raw = JSON.parse(localStorage.getItem(accountStorageKey(id))!)
+      raw.state.notes.example = 'another tab edit during push'
+      localStorage.setItem(accountStorageKey(id), JSON.stringify(raw))
+    }
+    if (change === 'account') activateGuestWorkspace()
+    if (change === 'pause') pauseAccountSync(id)
+    release({ data: f.blob, error: null })
+    expect(await saving).toBe(false)
+  })
+  expect(wire.writes).not.toHaveBeenCalled()
+  expect(readSyncBaseline(id)?.updatedAt).toBe(older)
+  if (change === 'memory') expect(snapshotData().notes.example).toBe('newer edit during push')
+  if (change === 'pause') expect(isAccountSyncReady(id)).toBe(false)
+})

@@ -179,7 +179,15 @@ export function useCloudSync() {
       if (!baseline) throw new Error('Check the saved cloud copy before uploading changes.')
       setStatus('syncing'); setError(''); retryAfterReconnect.current = false
       await syncAcademicOriginals(snapshot.academics.classCenter.files, user.id)
-      await syncNotebookImages(snapshot, user.id, notebookAssetRepository(), () => { assertSyncSession(token); assertAccountUpload(snapshot, owner) })
+      // Verify the saved snapshot once for the batch. Every image await still
+      // checks account ownership, sync pause/conflict state, and durable data.
+      const checkImages = captureDurableWorkspaceCheck(snapshot, owner)
+      const imageFence = () => {
+        assertSyncLease(token)
+        if (!isAccountSyncReady(user.id)) throw new Error('Account sync and backups are paused until the saved copies have been checked.')
+        checkImages()
+      }
+      await syncNotebookImages(snapshot, user.id, notebookAssetRepository(), imageFence)
       await flushWorkspaceStorage(owner.key)
       assertSyncSession(token); assertAccountUpload(snapshot, owner)
       const updatedAt = new Date().toISOString()

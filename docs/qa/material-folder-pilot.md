@@ -51,3 +51,9 @@ Reconciliation now fully validates before the image batch, captures the immutabl
 ## September 22 connected-folder readiness
 
 A restored folder immediately refreshed its catalog on mount or window focus even while account reconciliation was pending. The resulting write fence raised the exact “Account sync has not finished checking” error; connected-folder action buttons also remained enabled. A UI regression reproduces that message with a remembered handle and a pending account check. The page now defers automatic refresh, disables connected-folder mutations while pending, and refreshes automatically when readiness returns. Failed checks show their actual error and a retry action, while genuine conflicts continue to require review. This change does not resolve or bypass account conflicts and does not constitute an authenticated folder upload test.
+
+## September 22 connected-folder refresh stalls
+
+A regression using actual folder scanning and a stalled browser file read reproduced a permanently busy refresh. Read-only catalog preparation now reports its current path/count, can be stopped, and rejects after 30 seconds without progress. Late read results cannot save a partial catalog; a deferred-read regression checks this. Cancellation ends before durable catalog saving begins. Folder navigation remains available during scans.
+
+An unchanged catalog with reordered JSON keys or enumeration order also falsely triggered a full workspace save. The UI regression fails with the former raw-JSON comparison and passes with value-based item comparison. Ordinary autosync then amplified these unnecessary writes: a 20-image metadata push caused 103 full workspace validations. Push now uses the same captured durability checks as initial reconciliation, with full validation before remote writes and mid-download mutation/pause tests. These are automated reproductions; the user's exact live stalled browser read has not been observed.
