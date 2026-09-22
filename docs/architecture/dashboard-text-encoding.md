@@ -13,3 +13,11 @@ The extra JSON string layer preserves otherwise unsupported characters as litera
 Raw SQL/administrative readers must recognize this envelope. Do not cast its inner JSON text to JSONB, which would recreate the original Unicode error. Decode it with a JSON parser outside PostgreSQL. Ordinary dashboard rows remain compatible with existing readers; older app releases cannot read encoded rows and must be refreshed before continuing.
 
 Verification includes an actual Supabase SDK write/read test, unchanged legacy rows, unrelated endpoint passthrough, and unchanged error/empty responses. Account recovery still requires its existing verified backups, explicit choice, and compare-and-set confirmation.
+
+Workspaces whose serialized JSON is at least 1 MiB use a compressed envelope instead:
+
+```json
+{"format":"premed-os-dashboard-gzip-v1","gzip":"<base64 of gzip-compressed JSON.stringify(workspace)>"}
+```
+
+Compression uses the browser's asynchronous Compression Streams API. This reduces large repetitive notebook payloads before JSONB parsing and TOAST storage, avoiding the observed eight-second database write timeout. Reads support both envelope versions and legacy unwrapped rows. Decompression is bounded to 256 MiB and fails closed on invalid data. No database timeout or access policy is relaxed.

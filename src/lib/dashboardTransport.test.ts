@@ -30,6 +30,20 @@ describe('dashboard JSONB transport', () => {
     expect(invalid(stored)).toBe(false)
   })
 
+  it('compresses large workspace writes and restores their exact content', async () => {
+    const data = { courses: [], source: 'repeated source evidence\u0000'.repeat(80_000) }
+    const fetcher = createDashboardFetch(url, async input => {
+      const request = input as Request
+      const text = await request.text()
+      expect(text.length).toBeLessThan(50_000)
+      const row = JSON.parse(text)
+      expect(invalid(row)).toBe(false)
+      return Response.json(row)
+    })
+    const response = await fetcher(`${url}/rest/v1/dashboards`, { method: 'PATCH', body: JSON.stringify({ data }) })
+    expect((await response.json()).data).toEqual(data)
+  })
+
   it('leaves ordinary dashboard data and other endpoints unchanged', async () => {
     const data = { courses: [], source: 'normal 🧬 text', literal: String.raw`\u0000` }
     const transport = vi.fn<typeof fetch>(async (input, init) => {
