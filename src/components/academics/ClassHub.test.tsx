@@ -418,7 +418,7 @@ describe('ClassHub approved Overview', () => {
 
 
     expect(container.textContent).not.toContain('Class Plan')
-    expect([...container.querySelectorAll<HTMLButtonElement>('button')].some((button) => button.textContent?.trim().startsWith('Topics'))).toBe(true)
+    expect([...container.querySelectorAll<HTMLButtonElement>('button')].some((button) => button.textContent?.trim().startsWith('Topics'))).toBe(false)
 
     const savedLecture = container.querySelector('button.lecture-rail-entry') as HTMLButtonElement
     expect(savedLecture.getAttribute('aria-expanded')).toBe('false')
@@ -761,7 +761,7 @@ describe('ClassHub approved Overview', () => {
     expect(container.textContent).toContain('Study Guide')
   })
 
-  it('keeps Topics syllabus-led and groups scheduled standards by week before unit', async () => {
+  it('redirects retired Topics links to Materials and preserves legacy records', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -771,6 +771,7 @@ describe('ClassHub approved Overview', () => {
     topics[1].scheduledFor = '2026-09-01'
     topics[1].unit = 'Earlier unit label'
     useStore.getState().replaceAll(seed)
+    const savedFiles = structuredClone(useStore.getState().academics.classCenter.files)
 
     await act(async () => {
       root.render(
@@ -783,11 +784,11 @@ describe('ClassHub approved Overview', () => {
     })
 
     const text = container.textContent ?? ''
-    expect(text).toContain('Syllabus standards, ordered by scheduled week.')
-    expect(text).toContain('Import / refresh syllabus')
-    expect(text).toContain('Week of Aug 31')
-    expect(text).toContain('Week of Sep 7')
-    expect(text.indexOf('Week of Aug 31')).toBeLessThan(text.indexOf('Week of Sep 7'))
+    expect(container.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toMatch(/^Materials/)
+    expect([...container.querySelectorAll('[role="tab"]')].map(tab => tab.textContent)).not.toContain('Topics')
+    expect(text).not.toContain('Syllabus standards, ordered by scheduled week.')
+    expect(useStore.getState().academics.classCenter.topics).toEqual(seed.academics.classCenter.topics)
+    expect(useStore.getState().academics.classCenter.files).toEqual(savedFiles)
     expect(text).not.toContain('Covered a topic today')
     expect([...container.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Add topic')).toBe(false)
   })
@@ -870,7 +871,7 @@ describe('ClassHub approved Overview', () => {
 
   })
 
-  it('keeps the topic-focused Class details notice outside the New reference note action', async () => {
+  it('ignores retired topic filters so old Guide links keep all reference notes accessible', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find((item) => item.type === 'stem')!
     const course = seed.courses.find((item) => item.id === workspace.courseId)!
@@ -892,9 +893,12 @@ describe('ClassHub approved Overview', () => {
     const showAll = [...container.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.trim() === 'Show all Guide items')
     expect(newItem).toBeTruthy()
-    expect(showAll).toBeTruthy()
+    expect(showAll).toBeUndefined()
     expect(newItem!.querySelector('button')).toBeNull()
-    expect(container.textContent).toContain(`Showing Guide items linked to ${topic.title}`)
+    expect(container.textContent).not.toContain('Showing Guide items linked to')
+    for (const note of seed.academics.classCenter.notes.filter(note => note.courseId === course.id && note.kind === 'about-class' && note.type !== 'study-guide' && !note.studentGuidance)) {
+      expect(container.textContent).toContain(note.title)
+    }
   })
 
   it('groups Materials by explicit course week and lets the student place uncertain work without hiding generated resources', async () => {

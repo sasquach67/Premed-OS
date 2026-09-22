@@ -14,6 +14,14 @@ describe('class full mock data contract', () => {
     expect(fullMockDormantReasons({ dueDate: undefined } as any, [], [])).toEqual(['exam-date', 'exam-scope', 'study-material'])
   })
 
+  it('uses explicit same-course source files, never legacy topic scope', () => {
+    const exam = { courseId: 'c', dueDate: '2026-10-01', linkedFileIds: ['file'], examStudyFileIds: ['file'], coveredTopicIds: ['legacy'] } as Parameters<typeof fullMockDormantReasons>[0]
+    const chunk = { courseId: 'c', fileId: 'file' } as Parameters<typeof fullMockDormantReasons>[2][number]
+    expect(fullMockDormantReasons(exam, [], [chunk])).toEqual([])
+    expect(fullMockDormantReasons({ ...exam, examStudyFileIds: undefined }, [], [chunk])).toEqual(['exam-scope', 'study-material'])
+    expect(fullMockDormantReasons(exam, [], [{ ...chunk, courseId: 'other' }])).toEqual(['study-material'])
+  })
+
   it('persists an attempt without manufacturing a score and ends idempotently', () => {
     const started = startGeneratedMock({ id: 'a', courseId: 'c', examAssignmentId: 'e', topicIds: ['t'], sourceChunkIds: ['chunk'], specId: 'class-full-mock-v1', specHash: 'h', questions: [{ id: 'q', prompt: 'Explain it.', sourceChunkId: 'chunk', order: 0 }], startedAt: 1, now: 2 })
     expect(started).not.toHaveProperty('score')

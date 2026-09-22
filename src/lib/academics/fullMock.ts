@@ -3,12 +3,12 @@ import type { ClassAssignment, GeneratedMockAttempt, GeneratedMockQuestion, Sour
 export type FullMockDormantReason = 'exam-date' | 'exam-scope' | 'study-material'
 
 /** The eligibility contract: no generic fallback questions. */
-export function fullMockDormantReasons(exam: ClassAssignment, topics: Topic[], chunks: SourceChunk[]): FullMockDormantReason[] {
+export function fullMockDormantReasons(exam: ClassAssignment, _topics: Topic[], chunks: SourceChunk[]): FullMockDormantReason[] {
   const reasons: FullMockDormantReason[] = []
   if (!exam.dueDate) reasons.push('exam-date')
-  const topicIds = exam.coveredTopicIds ?? []
-  if (!topicIds.length || !topics.some((topic) => topicIds.includes(topic.id))) reasons.push('exam-scope')
-  if (!chunks.length) reasons.push('study-material')
+  const fileIds = new Set(exam.examStudyFileIds ?? [])
+  if (!fileIds.size) reasons.push('exam-scope')
+  if (!chunks.some((chunk) => chunk.courseId === exam.courseId && fileIds.has(chunk.fileId))) reasons.push('study-material')
   return reasons
 }
 

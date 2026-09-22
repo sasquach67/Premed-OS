@@ -52,7 +52,7 @@ export interface GenerationRequest {
   artifact: string
   /** Academics only: generation is always for ONE class. */
   courseId?: string
-  /** Ids of student-supplied materials/topics or the student's own missed
+  /** Ids of student-supplied materials or the student's own missed
    *  questions. Empty means "invented from thin air", which is refused in
    *  both Academics and MCAT. */
   groundedIn?: readonly string[]
@@ -102,7 +102,7 @@ export function assertGenerationAllowed(request: GenerationRequest): void {
   if (!request.groundedIn?.length) {
     const sourceDescription = scope === 'mcat'
       ? "the student's own missed questions or supplied study material"
-      : "this class's own materials (syllabus, slides, readings, notes, or topics)"
+      : "this class's own materials (syllabus, slides, readings, or notes)"
     throw new GenerationNotAllowedError(scope, artifact,
       `Generated work must derive from ${sourceDescription}; select what it should be built from.`)
   }

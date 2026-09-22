@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createStudyToolsClient } from './studyTools'
-import { generateWithSourceRecovery } from '../academics/syncGenerationSources'
+import { CLASS_MATERIAL_SCOPE, generateWithSourceRecovery } from '../academics/syncGenerationSources'
 import type { SourceChunk } from '../types'
 
 const request = { action: 'generate' as const, courseId: 'course-1', topicId: 'topic-1', chunkIds: ['chunk-1'], specId: 'study-guide-v1', specHash: 'hash', systemPrompt: 'spec', request: 'Generate a guide.' }
@@ -33,7 +33,7 @@ it('restores an incomplete server mirror once, then uses the exact selected sour
   expect(result.ok).toBe(true)
   expect(attempts).toBe(2)
   expect(invoke.mock.calls.filter(([, options]) => options.body.action === 'sync-sources')).toHaveLength(1)
-  expect(invoke.mock.lastCall?.[1].body).toMatchObject({ chunkIds: ['chunk-1'], topicId: 'topic-1' })
+  expect(invoke.mock.lastCall?.[1].body).toMatchObject({ chunkIds: ['chunk-1'], topicId: CLASS_MATERIAL_SCOPE })
 })
 
 it('does not retry an unknown 422 as though source material were missing', async () => {

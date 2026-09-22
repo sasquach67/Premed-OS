@@ -234,7 +234,7 @@ export function createStudyToolsClient(client: FunctionClient | null = supabase)
         if (serverError?.code === 'no-sources' || serverError?.code === 'source-sync-incomplete') {
           return { ok: false, code: 'no-sources', message: serverError.code === 'source-sync-incomplete'
             ? 'Some selected material is missing from the server copy. Restore the complete selection before generating.'
-            : 'No synced source material is available for this topic.' }
+            : 'No synced source material is available for this study scope.' }
         }
         if (serverError?.code === 'no-verified-citations') {
           return { ok: false, code: 'citation-not-carried', message: 'The generated artifact did not include any verifiable source citations. Rebuild it with source references from the supplied material. Nothing was saved.' }

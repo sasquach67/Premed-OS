@@ -174,7 +174,7 @@ function appendReviewFacts(
       'study-record',
       'review-event',
       `${course.code} review history`,
-      `${rows.length} saved review ${rows.length === 1 ? 'event' : 'events'} across ${new Set(rows.map((row) => topicsById.get(row.topicId)?.id)).size} topic${new Set(rows.map((row) => topicsById.get(row.topicId)?.id)).size === 1 ? '' : 's'}.`,
+      `${rows.length} saved review ${rows.length === 1 ? 'event' : 'events'}.`,
     ))
   }
 }

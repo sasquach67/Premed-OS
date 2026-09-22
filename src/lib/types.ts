@@ -528,6 +528,8 @@ export interface ClassAssignment {
   weight?: number
   linkedTopicIds: ID[]
   linkedFileIds: ID[]
+  /** Explicitly chosen exam study evidence; separate from source/provenance links. */
+  examStudyFileIds?: ID[]
   notes?: string
   coveredTopicIds?: ID[]
   /** When graded work came back. Absent means unknown — never inferred. */

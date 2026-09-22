@@ -63,23 +63,14 @@ export function buildExamPrepPlan(input: BuildExamPrepPlanInput): ExamPrepBuildR
   const dormant: ExamPrepDormantReason[] = []
   if (!input.exam.dueDate) return { plan: null, dormant: ['exam-date'] }
 
-  const scopeIds = new Set(input.exam.coveredTopicIds ?? [])
+  // Only explicit assessment-material selection defines scope. Legacy topic
+  // relationships remain historical data and never select new study work.
+  const scopeIds = new Set(input.exam.examStudyFileIds ?? [])
   if (!scopeIds.size) dormant.push('exam-scope')
-
-  const scopeTopics = input.topics.filter((topic) => scopeIds.has(topic.id))
-  const linkedFiles = input.files.filter((file) => file.linkedTopicIds.some((id) => scopeIds.has(id)))
-  const linkedAssignments = input.assignments.filter((assignment) =>
-    assignment.id !== input.exam.id
-      && assignment.status !== 'graded'
-      && assignment.status !== 'dropped'
-      && assignment.linkedTopicIds.some((id) => scopeIds.has(id)),
-  )
-
-  if (!scopeTopics.length && !linkedFiles.length && !linkedAssignments.length) dormant.push('study-material')
+  const linkedFiles = input.files.filter((file) => file.courseId === input.courseId && scopeIds.has(file.id))
+  if (!linkedFiles.length) dormant.push('study-material')
 
   const sources: Array<Omit<ExamPrepPlanItem, 'id' | 'plannedDate' | 'order' | 'state' | 'createdAt' | 'updatedAt'>> = [
-    ...scopeTopics.map((topic) => ({ owner: 'topic' as const, topicId: topic.id })),
-    ...linkedAssignments.map((assignment) => ({ owner: 'assignment' as const, assignmentId: assignment.id })),
     ...linkedFiles.map((file) => ({ owner: 'file' as const, fileId: file.id })),
   ]
   const dates = plannedDates(input.exam.dueDate, isoDate(now), sources.length, input.intensity)

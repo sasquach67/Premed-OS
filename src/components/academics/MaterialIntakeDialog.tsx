@@ -142,10 +142,9 @@ function PendingFileBatch({ items, folderName, onRemove }: {
 }
 
 /** One local intake surface for files, clipboard screenshots, and exact pasted text. */
-export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [], trigger, initialOpen = false, onAdded, minimumTextCharacters = MIN_PASTED_EXCERPT_CHARACTERS }: {
+export function MaterialIntakeDialog({ courseId, lectureId, trigger, initialOpen = false, onAdded, minimumTextCharacters = MIN_PASTED_EXCERPT_CHARACTERS }: {
   courseId: string
   lectureId?: string
-  linkedTopicIds?: string[]
   trigger: ReactElement
   initialOpen?: boolean
   minimumTextCharacters?: number
@@ -264,7 +263,7 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
     }
     const excerpt = canSaveText ? buildPastedExcerpt({
       minimumCharacters: minimumTextCharacters,
-      courseId, lectureId, linkedTopicIds, text, title, sourceLabel, sectionLabel,
+      courseId, lectureId, linkedTopicIds: [], text, title, sourceLabel, sectionLabel,
       order: center.files.filter((file) => file.courseId === courseId).length + retained.length,
     }) : undefined
     const now = Date.now()
@@ -285,7 +284,7 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
         records.unshift({
         id, courseId, lectureId, title: file.name.replace(/\.[^.]+$/, '') || file.name,
         type: materialType, sourceType: 'upload', owner: 'mine', url: '', blobRef, fileName: relativeMaterialPath(file), mimeType: file.type,
-        notes: '', linkedTopicIds,
+        notes: '', linkedTopicIds: [],
         processingStatus: segments.length ? 'ready' : 'failed',
         processingError: segments.length ? undefined : extractionError || (extracted?.scanDetected ? 'On-device OCR could not recover readable text. Try a clearer scan or paste the relevant passage.' : 'No readable text was found. Try another file or paste the relevant passage.'),
         sourceCoverage: {
@@ -302,9 +301,8 @@ export function MaterialIntakeDialog({ courseId, lectureId, linkedTopicIds = [],
           id: uid(), fileId: id, courseId, content: segment.text,
           characterStart: segment.start, characterEnd: segment.end,
           sourcePosition: { index, label: 'pageNumber' in segment ? `Page ${segment.pageNumber}${segment.label ? ` · ${segment.label}` : ''}` : segment.label },
-          assignmentMethod: linkedTopicIds.length === 1 ? 'manual' as const : 'pending' as const,
-          assignmentConfirmed: linkedTopicIds.length === 1,
-          topicId: linkedTopicIds.length === 1 ? linkedTopicIds[0] : undefined,
+          assignmentMethod: 'pending' as const,
+          assignmentConfirmed: false,
           coveredByKeyPoint: false, createdAt: now, updatedAt: now, order: index,
         })))
       })

@@ -19,7 +19,7 @@ const course: Course = {
 }
 const exam: ClassAssignment = {
   id: 'exam', courseId: course.id, title: 'Exam 2', type: 'exam', dueDate: '2099-10-14',
-  status: 'not-started', linkedTopicIds: ['topic'], linkedFileIds: ['file'], coveredTopicIds: ['topic'],
+  status: 'not-started', linkedTopicIds: ['topic'], linkedFileIds: ['file'], examStudyFileIds: ['file'], coveredTopicIds: ['topic'],
   createdAt: 1, updatedAt: 1, order: 0,
 }
 
@@ -71,7 +71,7 @@ describe('Exam Prep capacity and focused attempt paths', () => {
   async function render() {
     function Harness() {
       const data = useStore((state) => state.academics.classCenter)
-      return <ExamPrepMode course={course} data={data} exam={exam} onExit={onExit} onOpenTab={onOpenTab} />
+      return <ExamPrepMode course={course} data={data} exam={data.assignments.find((item) => item.id === exam.id)!} onExit={onExit} onOpenTab={onOpenTab} />
     }
     await act(async () => root.render(<ToastProvider><Harness /></ToastProvider>))
   }
@@ -123,6 +123,40 @@ describe('Exam Prep capacity and focused attempt paths', () => {
     expect(container.textContent).toContain('practice set')
   })
 
+  it('does not select syllabus provenance as exam study material', async () => {
+    useStore.getState().update((draft) => {
+      draft.academics.classCenter.assignments[0].examStudyFileIds = undefined
+    })
+    await render()
+    expect(useStore.getState().academics.classCenter.assignments[0].linkedFileIds).toEqual(['file'])
+    expect(container.querySelector<HTMLInputElement>('input[aria-label="Include Lecture 16 slides for Exam 2"]')?.checked).toBe(false)
+    expect(button(container, 'Start full mock')).toBeUndefined()
+    expect(button(container, 'Create exam plan')).toBeUndefined()
+    const choice = container.querySelector<HTMLInputElement>('input[aria-label="Include Lecture 16 slides for Exam 2"]')!
+    await act(async () => choice.click())
+    expect(useStore.getState().academics.classCenter.assignments[0].examStudyFileIds).toEqual(['file'])
+    expect(useStore.getState().academics.classCenter.assignments[0].linkedFileIds).toEqual(['file'])
+    expect(button(container, 'Start full mock')).toBeTruthy()
+  })
+
+  it('uses selected files without requiring topic records or widening the exam scope', async () => {
+    useStore.getState().update((draft) => {
+      draft.academics.classCenter.topics = []
+      draft.academics.classCenter.files.push({ id: 'other-file', courseId: course.id, sourceType: 'upload', title: 'Unselected lecture', type: 'lecture-slides', linkedTopicIds: [], owner: 'course', createdAt: 1, updatedAt: 1, order: 1 })
+      draft.academics.classCenter.sourceChunks.push({ id: 'other-chunk', fileId: 'other-file', courseId: course.id, content: 'Outside selected scope', coveredByKeyPoint: false, createdAt: 1, updatedAt: 1, order: 1 })
+    })
+    await render()
+    expect(container.textContent).not.toContain('Open topics')
+    generateFullMockMock.mockResolvedValueOnce({ ok: false, message: 'No save in this test.' })
+    await act(async () => button(container, 'Start full mock')?.click())
+    expect(generateFullMockMock.mock.calls[0][0].chunks.map((chunk: { id: string }) => chunk.id)).toEqual(['chunk'])
+    const selected = container.querySelector<HTMLInputElement>('input[aria-label="Include Lecture 16 slides for Exam 2"]')!
+    await act(async () => selected.click())
+    expect(useStore.getState().academics.classCenter.assignments[0].examStudyFileIds).toEqual([])
+    expect(button(container, 'Start full mock')).toBeUndefined()
+    expect(useStore.getState().academics.classCenter.files).toHaveLength(2)
+  })
+
   it('restores the current question, keeps elapsed time factual, and produces actionable autopsy evidence', async () => {
     useStore.getState().update((draft) => {
       draft.academics.classCenter.generatedMockAttempts.push({
@@ -151,9 +185,9 @@ describe('Exam Prep capacity and focused attempt paths', () => {
     await act(async () => button(container, 'End attempt')?.click())
     expect(useStore.getState().academics.classCenter.generatedMockAttempts[0].endedAt).toEqual(expect.any(Number))
     expect(container.textContent).toContain('Post-mock autopsy')
-    expect(container.textContent).toContain('Aldol condensation')
+    expect(container.textContent).toContain('Question evidence')
     expect(container.textContent).toContain('Lecture 16 slides')
-    expect(button(container, 'Review topic')).toBeTruthy()
+    expect(button(container, 'Review topic')).toBeUndefined()
     expect(button(container, 'Open source')).toBeTruthy()
   })
 })

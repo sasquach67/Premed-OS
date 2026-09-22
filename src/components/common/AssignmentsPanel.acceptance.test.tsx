@@ -86,6 +86,26 @@ describe('Daily Assignments public interaction contract', () => {
     })
   }
 
+  it('shows exams without legacy topic readiness while retaining their stored links', async () => {
+    const seeded = createDemoData()
+    const courseId = seeded.courses[0].id
+    const exam = {
+      ...assignment('exam-with-legacy-topic', courseId, 'Biology exam', dateOffset(1)),
+      type: 'exam' as const,
+      linkedTopicIds: ['legacy-topic'],
+      coveredTopicIds: ['legacy-topic'],
+    }
+    seeded.academics.classCenter.assignments = [exam]
+    useStore.getState().replaceAll(seeded)
+    await render({ scopedCourseId: courseId })
+
+    expect(container.textContent).toContain('Biology exam')
+    expect(container.textContent).not.toMatch(/topics ready|Exam scope not recorded/i)
+    expect(useStore.getState().academics.classCenter.assignments[0]).toMatchObject({
+      linkedTopicIds: ['legacy-topic'], coveredTopicIds: ['legacy-topic'],
+    })
+  })
+
   it('moves calendar focus with arrow keys and prefills the selected date', async () => {
     const seeded = createDemoData()
     seeded.academics.classCenter.assignments = []

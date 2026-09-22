@@ -18,8 +18,8 @@ function chunk(overrides: Partial<SourceChunk> = {}): SourceChunk {
 }
 
 describe('generation source preparation', () => {
-  it('keeps a single topic as the retrieval scope', () => {
-    expect(sourceScopeForGeneration([chunk({ topicId: 'topic-1' }), chunk({ id: 'chunk-2', topicId: 'topic-1' })])).toBe('topic-1')
+  it('ignores legacy topic links when choosing a retrieval scope', () => {
+    expect(sourceScopeForGeneration([chunk({ topicId: 'topic-1' }), chunk({ id: 'chunk-2', topicId: 'topic-1' })])).toBe(CLASS_MATERIAL_SCOPE)
   })
 
   it('uses a class-material scope for unassigned or mixed course material', () => {

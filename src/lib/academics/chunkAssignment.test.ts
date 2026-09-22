@@ -51,51 +51,16 @@ describe('three-tier chunk assignment', () => {
     ).toBe('t2')
   })
 
-  it('tier 3 — creates a topic scoped to the document, never a shared bucket', () => {
+  it('does not create topics or assignments for imported source passages', () => {
     const topics = [topic('t1', 'Synaptic transmission')]
-    const files = [file('f1', 'Guest lecture — glial modulation'), file('f2', 'Errata sheet')]
-    const chunks = [
-      chunk('k1', 'f1', 'Nothing here resembles any known topic whatsoever.'),
-      chunk('k2', 'f1', 'Also unrelated prose about unrelated matters entirely.'),
-      chunk('k3', 'f2', 'Different document, equally unrelated content here.'),
-    ]
-
-    const out = assignPendingChunks({ sourceChunks: chunks, topics, files })
-
-    // One new topic per document — two documents, two topics.
-    expect(out.createdTopicIds).toHaveLength(2)
-    const [k1, k2, k3] = out.chunks
-    expect(k1.topicId).toBe(k2.topicId)          // same document, same topic
-    expect(k3.topicId).not.toBe(k1.topicId)      // different document, different topic
-    expect(k1.assignmentMethod).toBe('document-topic')
-    // Provisional, not presented as settled.
-    expect(k1.assignmentConfirmed).toBe(false)
-    // The topic is named after its document.
-    expect(out.topics.find((t) => t.id === k1.topicId)?.title).toBe('Guest lecture — glial modulation')
-  })
-
-  it('never creates a semester-wide misc bucket', () => {
-    const topics = [topic('t1', 'Synaptic transmission')]
-    const files = Array.from({ length: 5 }, (_, i) => file(`f${i}`, `Document ${i}`))
-    const chunks = files.flatMap((f, i) => [
-      chunk(`a${i}`, f.id, 'Wholly unrelated filler prose number one.'),
-      chunk(`b${i}`, f.id, 'Wholly unrelated filler prose number two.'),
-    ])
-
-    const out = assignPendingChunks({ sourceChunks: chunks, topics, files })
-
-    // No catch-all naming.
-    for (const created of out.createdTopicIds) {
-      const title = out.topics.find((t) => t.id === created)?.title ?? ''
-      expect(title).not.toMatch(/misc|unsorted|unassigned|other|general/i)
-    }
-    // The decisive check: no created topic collects chunks from more than one
-    // document. A semester bucket would show up here as a topic spanning files.
-    for (const created of out.createdTopicIds) {
-      const sourceFiles = new Set(out.chunks.filter((c) => c.topicId === created).map((c) => c.fileId))
-      expect(sourceFiles.size).toBe(1)
-    }
-    expect(out.createdTopicIds).toHaveLength(files.length)
+    const files = [file('f1', 'Lecture 1', ['t1']), file('f2', 'Reading')]
+    const chunks = [chunk('k1', 'f1', 'Synaptic transmission across the cleft.'), chunk('k2', 'f2', 'Unrelated content.')]
+    const before = structuredClone({ topics, files, sourceChunks: chunks })
+    const out = assignPendingChunks(before)
+    expect(out.createdTopicIds).toEqual([])
+    expect(out.chunks).toEqual(chunks)
+    expect(out.topics).toEqual(topics)
+    expect(before).toEqual({ topics, files, sourceChunks: chunks })
   })
 
   it('leaves already-assigned chunks alone and never writes to input', () => {

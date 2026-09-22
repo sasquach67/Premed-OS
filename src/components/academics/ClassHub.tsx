@@ -9,9 +9,8 @@ import { preferredScrollBehavior } from '@/lib/scroll'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  ArrowLeft, ArrowRight, CalendarDays, MessageSquare, Maximize2, BookOpen, Brain, Check, ChevronDown,
-  FileStack, FileText, Filter, FolderOpen, HelpCircle,
-  Mail, MoreHorizontal, NotebookText, Plus, Target,
+  ArrowLeft, ArrowRight, CalendarDays, MessageSquare, Maximize2, BookOpen, Brain, Check, ChevronDown, FileStack,
+  FileText, FolderOpen, HelpCircle, Mail, MoreHorizontal, NotebookText, Plus,
 } from 'lucide-react'
 import type {
   AcademicFile, ClassAssignment, ClassCenterData, ClassContact, ClassNote,
@@ -20,7 +19,6 @@ import type {
 import { useStore } from '@/store/store'
 import { uid } from '@/lib/id'
 import { fmtDeadline, fmtEventDate } from '@/lib/date'
-import { calculateCourseCoverage } from '@/lib/academics/coverage'
 import { calculateCourseScenario } from '@/lib/academics/gradeLedger'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/components/common/useToast'
@@ -30,9 +28,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger,
-} from '@/components/ui/context-menu'
+
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -50,8 +46,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import { StatStrip } from '@/components/common/StatStrip'
 import { ExamPrepMode } from '@/components/academics/ExamPrepMode'
-import { AssignmentLinkField } from '@/components/academics/TopicLinkFields'
-import { TopicConnectField } from '@/components/academics/TopicConnectField'
 import { MaterialCatalog } from '@/components/academics/MaterialCatalog'
 import { SyncOriginalFilesButton } from '@/components/academics/SyncOriginalFilesButton'
 import { MaterialIntakeDialog } from '@/components/academics/MaterialIntakeDialog'
@@ -76,7 +70,7 @@ import {
 } from '@/lib/academics/guideContract'
 import './classHubVariantA.css'
 
-type HubTab = 'overview' | 'materials' | 'topics' | 'assignments' | 'guide'
+type HubTab = 'overview' | 'materials' | 'assignments' | 'guide'
 
 function isMaterialArtifact(value: string | null): value is MaterialArtifact {
   return value === 'flashcards' || value === 'study-guide' || value === 'study-outline' || value === 'revised-notes' || value === 'unit-mastery-outline' || value === 'unit-question-bank'
@@ -134,18 +128,19 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
   const [params, setParams] = useSearchParams()
   const requestedTab = params.get('classTab')
   // Keep old notes and details links on the single Guide surface.
-  const canonicalRequestedTab = (requestedTab === 'notes' || requestedTab === 'details') ? 'guide' : requestedTab === 'readings' ? 'materials' : requestedTab
+  const canonicalRequestedTab = (requestedTab === 'notes' || requestedTab === 'details') ? 'guide' : (requestedTab === 'readings' || requestedTab === 'topics') ? 'materials' : requestedTab
   const classType: ClassWorkspaceType = workspace.type ?? (course.bcpm ? 'stem' : 'general')
   const courseColor = classHubColor(workspace.color)
   // A class has one stable shell. Writing-specific tools live inside
-  // Materials rather than replacing the syllabus-led Topics surface.
-  const availableTabs: HubTab[] = ['overview', 'materials', 'topics', 'assignments', 'guide']
+  // Materials alongside the common class tools.
+  const availableTabs: HubTab[] = ['overview', 'materials', 'assignments', 'guide']
   const initialTab = isHubTab(canonicalRequestedTab) && availableTabs.includes(canonicalRequestedTab) ? canonicalRequestedTab : 'overview'
   const [tab, setTab] = useState<HubTab>(initialTab)
   useEffect(() => {
     const nextTab = isHubTab(canonicalRequestedTab) && availableTabs.includes(canonicalRequestedTab) ? canonicalRequestedTab : 'overview'
     setTab((current) => current === nextTab ? current : nextTab)
   }, [canonicalRequestedTab])
+  // Read old topic placement only to keep existing materials in their saved week/unit.
   const courseTopics = ordered(data.topics.filter((item) => item.courseId === course.id))
   const courseFiles = ordered(data.files.filter((item) => item.courseId === course.id))
   const libraryFiles = courseFiles.filter(isPrimaryMaterial)
@@ -210,7 +205,6 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
   const connectedFileCount = workspace.materialFolder?.items.filter(item => item.kind === 'file' && !item.trashed).length ?? 0
   const counts = {
     materials: libraryFiles.length + courseMaterialNotes.length + connectedFileCount,
-    topics: courseTopics.length,
     readings: courseReadings.length,
     assignments: courseAssignments.filter((item) => !isComplete(item)).length,
     notes: courseGuideNotes.length,
@@ -253,7 +247,6 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
                 metrics={[
                   { id: 'grade', label: 'Grade', value: stats.grade, cadence: 'variable' },
                   ...(classType === 'stem' ? [
-                    { id: 'topics', label: 'Topics', value: String(courseTopics.length), cadence: 'variable' as const },
                     { id: 'materials', label: 'Materials', value: String(libraryFiles.length + connectedFileCount), cadence: 'variable' as const },
                     { id: 'next-exam', label: 'Next exam', value: stats.examCountdown, cadence: 'variable' as const },
                   ] : classType === 'writing' ? [
@@ -281,37 +274,22 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
           <TabsList className="class-hub-tabs h-auto w-full justify-start overflow-x-auto rounded-none border-0 bg-transparent p-0">
             <HubTabTrigger value="overview" label="Overview" />
             <HubTabTrigger value="materials" label="Materials" count={counts.materials} />
-            <HubTabTrigger value="topics" label="Topics" count={counts.topics} />
             <HubTabTrigger value="assignments" label="Assignments" count={counts.assignments} />
             <HubTabTrigger value="guide" label="Guide" count={courseGuideNotes.length} />
           </TabsList>
         </section>
 
-        <TabsContent value="overview" className="class-hub-tab"><Overview course={course} workspace={workspace} data={data} topics={courseTopics} assignments={courseAssignments} notes={courseNotes} onTab={changeTab} onOpenExamPrep={openExamPrep} /></TabsContent>
+        <TabsContent value="overview" className="class-hub-tab"><Overview course={course} workspace={workspace} data={data} assignments={courseAssignments} notes={courseNotes} onTab={changeTab} onOpenExamPrep={openExamPrep} /></TabsContent>
         <TabsContent value="materials" className="class-hub-tab"><Materials course={course} workspace={workspace} classType={classType} data={data} files={courseFiles} topics={courseTopics} notes={courseNotes} writingTools={classType === 'writing' ? <WritingTools courseId={course.id} readingListState={readingListState} drafts={courseDrafts} readings={courseReadings} feedback={courseFeedback} assignments={courseAssignments} /> : undefined} /></TabsContent>
-        <TabsContent value="topics" className="class-hub-tab"><Topics
-          courseId={course.id} data={data} topics={courseTopics} assignments={courseAssignments}
-          onOpenNotes={(topicId) => {
-            // Guide reference notes filter to this topic, so the menu item lands on
-            // something rather than on an unfiltered list.
-            setParams((current) => {
-              const next = new URLSearchParams(current)
-              next.set('classTab', 'guide')
-              next.set('noteTopic', topicId)
-              return next
-            }, { replace: true })
-            changeTab('guide')
-          }}
-        /></TabsContent>
         <TabsContent value="assignments" className="class-hub-tab"><Assignments courseId={course.id} assignments={courseAssignments} categories={data.gradeCategories.filter((item) => item.courseId === course.id)} focusWhatIf={params.get('whatIf') === '1'} /></TabsContent>
-        <TabsContent value="guide" className="class-hub-tab"><StudentGuide key={course.id} courseId={course.id} data={data} /><GuideReference courseId={course.id} workspace={workspace} notes={courseNotes} topics={courseTopics} assignments={courseAssignments} contacts={courseContacts} data={data} onOpenMaterials={() => changeTab('materials')} topicFilter={params.get('noteTopic') ?? undefined} /></TabsContent>
+        <TabsContent value="guide" className="class-hub-tab"><StudentGuide key={course.id} courseId={course.id} data={data} /><GuideReference courseId={course.id} workspace={workspace} notes={courseNotes} assignments={courseAssignments} contacts={courseContacts} data={data} onOpenMaterials={() => changeTab('materials')} /></TabsContent>
       </Tabs>
     </div>
   )
 }
 
 function Overview({ course, workspace, data, assignments, onTab }: {
-  course: Course; workspace: ClassWorkspace; data: ClassCenterData; topics: Topic[]; assignments: ClassAssignment[]; notes: ClassNote[]; onTab: (tab: string) => void; onOpenExamPrep: (examId: string) => void
+  course: Course; workspace: ClassWorkspace; data: ClassCenterData; assignments: ClassAssignment[]; notes: ClassNote[]; onTab: (tab: string) => void; onOpenExamPrep: (examId: string) => void
 }) {
   const [overviewParams] = useSearchParams()
   const navigate = useNavigate()
@@ -623,104 +601,6 @@ function fmtFeedbackDate(notes: FeedbackNote[]) {
   return latest ? new Date(latest).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'date not recorded'
 }
 
-function CoverageLedger({
-  courseId,
-  data,
-  topics,
-  onOpenMaterials,
-}: {
-  courseId: string
-  data: ClassCenterData
-  topics: Topic[]
-  onOpenMaterials: () => void
-}) {
-  const update = useStore((state) => state.update)
-  const [selections, setSelections] = useState<Record<string, string>>({})
-  const coverage = useMemo(() => calculateCourseCoverage(courseId, data), [courseId, data])
-
-  function confirmAssignment(chunkId: string) {
-    const proposed = data.sourceChunks.find((chunk) => chunk.id === chunkId)
-    const topicId = selections[chunkId] || (proposed?.assignmentConfirmed === false ? proposed.topicId : undefined)
-    if (!topicId) return
-    update((draft) => {
-      const chunk = draft.academics.classCenter.sourceChunks.find((item) => item.id === chunkId)
-      if (!chunk || chunk.courseId !== courseId) return
-      chunk.topicId = topicId
-      chunk.assignmentMethod = 'manual'
-      chunk.assignmentConfirmed = true
-      chunk.updatedAt = Date.now()
-    })
-  }
-
-  if (!coverage.totalChunks) {
-    return (
-      <div className="rounded-2xl border border-dashed border-border bg-muted p-5">
-        <p className="font-extrabold">{coverage.unprocessedFiles.length ? 'Materials are waiting to be processed' : 'No source material yet'}</p>
-        <p className="mt-1 text-sm font-semibold text-muted-foreground">
-          {coverage.unprocessedFiles.length
-            ? `${coverage.unprocessedFiles.length} file${coverage.unprocessedFiles.length === 1 ? '' : 's'} remain visible here; none have been silently dropped.`
-            : 'Add a syllabus, lecture deck, or note to begin the coverage ledger.'}
-        </p>
-        <Button size="sm" className="mt-3" onClick={onOpenMaterials}>Open materials</Button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_repeat(3,minmax(8rem,.42fr))]">
-        <div className="class-hub-metric rounded-2xl p-4">
-          <div className="flex items-center justify-between gap-3 text-sm font-extrabold"><span>Confirmed</span><span className="tabular-nums">{coverage.mappedPercent}%</span></div>
-          <Progress className="mt-3" value={coverage.mappedPercent} />
-          <p className="mt-2 text-xs font-semibold text-muted-foreground">{coverage.mappedChunks} of {coverage.totalChunks} chunks have a student-confirmed topic label.</p>
-        </div>
-        <CoverageMetric label="Unassigned" value={coverage.unassigned.length} tone={coverage.unassigned.length ? 'warning' : 'neutral'} />
-        <CoverageMetric label="Uncovered" value={coverage.uncovered.length} tone={coverage.uncovered.length ? 'warning' : 'neutral'} />
-        <CoverageMetric label="Never reviewed" value={coverage.neverReviewed.length} tone={coverage.neverReviewed.length ? 'warning' : 'neutral'} />
-      </div>
-
-      {coverage.unassigned.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-muted-foreground">Needs a confirmed topic</p>
-          {coverage.unassigned.map(({ chunk, file }) => (
-            <div key={chunk.id} className="grid gap-2 rounded-xl border border-amber-500/25 bg-amber-500/7 p-3 md:grid-cols-[minmax(0,1fr)_14rem_auto] md:items-center">
-              <div className="min-w-0">
-                <p className="truncate font-bold">{file?.title || 'Source file unavailable'}</p>
-                <p className="truncate text-xs font-semibold text-muted-foreground">{chunk.content}</p>
-              </div>
-              <Select value={selections[chunk.id] || (chunk.assignmentConfirmed === false ? chunk.topicId : undefined)} onValueChange={(value) => setSelections((current) => ({ ...current, [chunk.id]: value }))}>
-                <SelectTrigger aria-label={`Topic for ${file?.title || 'source chunk'}`}><SelectValue placeholder="Choose topic…" /></SelectTrigger>
-                <SelectContent>{topics.map((topic) => <SelectItem key={topic.id} value={topic.id}>{topic.title}</SelectItem>)}</SelectContent>
-              </Select>
-              <Button size="sm" disabled={!selections[chunk.id] && !(chunk.assignmentConfirmed === false && chunk.topicId)} onClick={() => confirmAssignment(chunk.id)}>Confirm</Button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {coverage.uncovered.length > 0 && (
-        <p className="rounded-xl border border-dashed border-amber-500/35 bg-amber-500/7 p-3 text-sm font-semibold">
-          {coverage.uncovered.length} chunk{coverage.uncovered.length === 1 ? '' : 's'} {coverage.uncovered.length === 1 ? 'is' : 'are'} not claimed by any key point. The source records stay visible until extraction is reviewed.
-        </p>
-      )}
-      {coverage.neverReviewed.length > 0 && (
-        <p className="text-sm font-semibold text-muted-foreground">
-          Not yet reviewed: <strong className="text-foreground">{coverage.neverReviewed.map((point) => point.text).join(' · ')}</strong>
-        </p>
-      )}
-    </div>
-  )
-}
-
-function CoverageMetric({ label, value, tone }: { label: string; value: number; tone: 'warning' | 'neutral' }) {
-  return (
-    <div className={cn('class-hub-metric rounded-2xl p-4', tone === 'warning' && 'border-amber-500/25 bg-amber-500/7')}>
-      <p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-1 font-display text-3xl font-extrabold tabular-nums">{value}</p>
-    </div>
-  )
-}
-
 function Materials({
   course, workspace, classType, data, files: sourceFiles, topics, notes, writingTools,
 }: { course: Course; workspace: ClassWorkspace; classType: ClassWorkspaceType; data: ClassCenterData; files: AcademicFile[]; topics: Topic[]; notes: ClassNote[]; writingTools?: React.ReactNode }) {
@@ -869,7 +749,7 @@ function Materials({
           <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline"><FileStack className="size-4" /> Create study resources <ChevronDown className="size-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><ResourceMenuItems classType={classType} onChoose={openArtifact} /><DropdownMenuSeparator /><DropdownMenuItem onClick={openFolderIntake}><FolderOpen className="size-4" /> Connect a notes folder</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
         </div>
         <div className="mt-3 space-y-3">
-          <MaterialCatalog files={files} topics={topics} />
+          <MaterialCatalog files={files} />
           <AssessmentCatalog courseId={courseId} data={data} files={sourceFiles} />
           <GeneratedFlashcardDecks courseId={courseId} data={data} />
           <GeneratedMasteryOutlines courseId={courseId} data={data} />
@@ -909,7 +789,7 @@ function GeneratedMasteryOutlines({ courseId, data }: { courseId: string; data: 
   return <section className="rounded-2xl border border-border bg-card p-4" aria-label="Generated Mastery Maps">
     <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border pb-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-primary">Generated resource</p><h3 className="mt-1 font-display text-lg font-extrabold">Mastery Maps</h3></div><Badge variant="outline">{outlines.length} {outlines.length === 1 ? 'scope' : 'scopes'}</Badge></div>
     <div className="mt-3 space-y-2">{outlines.map((outline) => <details key={outline.id} className="class-hub-record-row rounded-[13px] p-3"><summary className="cursor-pointer list-none font-display text-sm font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{outline.title}<span className="ml-2 font-sans text-xs font-bold text-muted-foreground">{outline.unit} · {outline.standards.length} standards</span></summary><div className="mt-3 space-y-3 border-t border-border pt-3"><GenerationReviewNotice status={outline.generationAuditStatus} />{outline.standards.map((standard) => <div key={standard.id} className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4"><div><p className="font-display font-extrabold">{standard.title}</p>{standard.evidenceLimit && <p className="mt-2 text-xs text-muted-foreground">Source limitation: {standard.evidenceLimit}</p>}<p className="mt-1 text-xs font-bold uppercase tracking-wide text-primary">Free recall</p><p className="text-muted-foreground">{(standard.freeRecallCues?.length ? standard.freeRecallCues : [standard.title]).join(' ')}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Understand</p><p className="text-muted-foreground">{standard.understand.join(' ') || 'Not stated'}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Be able to do</p><p className="text-muted-foreground">{standard.beAbleToDo.join(' ') || 'Not stated'}</p></div><div><p className="text-xs font-bold uppercase tracking-wide text-primary">Watch for</p><p className="text-muted-foreground">{standard.watchFor.join(' ') || 'Not stated'}</p></div></div>)}</div></details>)}</div>
-    <p className="mt-3 text-xs font-semibold text-muted-foreground">Syllabus standards remain the Topic contract; lecture concepts only provide supporting evidence.</p>
+    <p className="mt-3 text-xs font-semibold text-muted-foreground">Use the learning objectives and supporting course materials to review this outline.</p>
   </section>
 }
 
@@ -957,64 +837,6 @@ function QuestionStimulusVisual({ stimulus }: { stimulus: GeneratedQuestionStimu
   return <p className="rounded-lg bg-muted/45 p-3 text-sm">{stimulus.context}</p>
 }
 
-function Topics({
-  courseId, data, topics, assignments, onOpenNotes,
-}: {
-  courseId: string
-  data: ClassCenterData
-  topics: Topic[]
-  assignments: ClassAssignment[]
-  onOpenNotes: (topicId: string) => void
-}) {
-  const navigate = useNavigate()
-  const [filter, setFilter] = useState<'all' | 'with-materials' | 'needs-material' | 'exam-scope'>('all')
-  const examTopicIds = new Set(assignments.filter((item) => item.type === 'exam' && !isComplete(item)).flatMap((item) => item.coveredTopicIds ?? []))
-  const visibleTopics = topics.filter((item) => {
-    const hasMaterial = Boolean((item.linkedFileIds?.length ?? 0) || item.sourceNoteIds.length)
-    if (filter === 'with-materials') return hasMaterial
-    if (filter === 'needs-material') return !hasMaterial
-    if (filter === 'exam-scope') return examTopicIds.has(item.id)
-    return true
-  })
-  const weeks = groupTopicsByWeek(visibleTopics)
-  return (
-    // Visual provenance: mockup-lab/01-academics/academics-class-hub.html,
-    // approved Variant A, view=topics; Andy's ruled week-primary ordering.
-    <div className="class-hub-topics space-y-3">
-      <SectionToolbar
-        title="Topics"
-        detail="Syllabus standards, ordered by scheduled week."
-        action={<Button size="sm" variant="outline" onClick={() => navigate(`/academics?mode=daily&tab=class-center&importFor=${courseId}`)}><FileText className="size-4" /> Import / refresh syllabus</Button>}
-      />
-      <div className="class-hub-topic-filters">
-        <Button size="sm" variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}><Filter className="size-4" /> All</Button>
-        <Button size="sm" variant={filter === 'with-materials' ? 'default' : 'outline'} onClick={() => setFilter('with-materials')}>With materials</Button>
-        <Button size="sm" variant={filter === 'needs-material' ? 'default' : 'outline'} onClick={() => setFilter('needs-material')}>Needs material</Button>
-        <Button size="sm" variant={filter === 'exam-scope' ? 'default' : 'outline'} disabled={!examTopicIds.size} onClick={() => setFilter('exam-scope')}>In exam scope</Button>
-      </div>
-      {weeks.map((week) => {
-        const linked = week.topics.filter((item) => (item.linkedFileIds?.length ?? 0) || item.sourceNoteIds.length).length
-        const inScope = week.topics.some((item) => examTopicIds.has(item.id))
-        return (
-          <Card key={week.key} className="class-hub-topic-week">
-            <CardHeader className="class-hub-panel-header">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div><p className="class-hub-topic-eyebrow">Syllabus order</p><CardTitle>{week.label}</CardTitle><p className="mt-1 text-xs font-bold text-muted-foreground">{week.units.length ? week.units.join(' · ') : 'Unit not named'} · {linked}/{week.topics.length} with material</p></div>
-                {inScope && <Badge variant="warning">Upcoming exam scope</Badge>}
-              </div>
-              <Progress value={week.topics.length ? (linked / week.topics.length) * 100 : 0} aria-label={`${linked} of ${week.topics.length} topics have linked material`} />
-            </CardHeader>
-            <CardContent className="class-hub-panel-content space-y-2">
-              {week.topics.map((topic) => <TopicRow key={topic.id} topic={topic} data={data} onOpenNotes={onOpenNotes} />)}
-            </CardContent>
-          </Card>
-        )
-      })}
-      {!weeks.length && <EmptyState icon={Target} title="No topics in this view" detail={topics.length ? 'Choose another status filter.' : 'Import the syllabus to create learning standards and objectives.'} />}
-    </div>
-  )
-}
-
 function Assignments({ courseId, assignments, categories, focusWhatIf = false }: { courseId: string; assignments: ClassAssignment[]; categories: GradeCategory[]; focusWhatIf?: boolean }) {
   const whatIfRef = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -1037,17 +859,14 @@ function Assignments({ courseId, assignments, categories, focusWhatIf = false }:
   )
 }
 
-function GuideReference({ courseId, workspace, notes, topics, assignments, contacts, data, onOpenMaterials, topicFilter }: {
+function GuideReference({ courseId, workspace, notes, assignments, contacts, data, onOpenMaterials }: {
   courseId: string
   workspace: ClassWorkspace
   notes: ClassNote[]
-  topics: Topic[]
   assignments: ClassAssignment[]
   contacts: ClassContact[]
   data: ClassCenterData
   onOpenMaterials: () => void
-  /** Set when arriving from a topic's menu, so the tab lands on that topic. */
-  topicFilter?: string
 }) {
   const [createOpen, setCreateOpen] = useState(false)
   const [newTitle, setNewTitle] = useState('')
@@ -1058,28 +877,24 @@ function GuideReference({ courseId, workspace, notes, topics, assignments, conta
     const now = Date.now()
     useStore.getState().update((draft) => {
       const notes = draft.academics.classCenter.notes
-      notes.unshift({ id: uid(), courseId, title: newTitle.trim(), content: newContent.trim(), type: newKind, kind: 'about-class', date: isoToday(), unit: '', topicIds: topicFilter ? [topicFilter] : [], syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: notes.length })
+      notes.unshift({ id: uid(), courseId, title: newTitle.trim(), content: newContent.trim(), type: newKind, kind: 'about-class', date: isoToday(), unit: '', topicIds: [], syncStatus: 'local-only', linkedFileIds: [], createdAt: now, updatedAt: now, order: notes.length })
     })
     setCreateOpen(false)
   }
   const guideNotes = notes.filter(note => isGuideNote(note) && !note.studentGuidance)
-  const scoped = topicFilter ? guideNotes.filter((item) => item.topicIds.includes(topicFilter)) : guideNotes
-  const focus = topicFilter ? topics.find((item) => item.id === topicFilter) : undefined
-  const [, setParams] = useSearchParams()
   useEffect(() => {
     const known = new Set(data.guideProposals.map((item) => `${item.source.sourceRecordKind}:${item.source.sourceRecordId}`))
     if (!buildSyllabusGuideProposals(data, courseId).some((item) => !known.has(`${item.source.sourceRecordKind}:${item.source.sourceRecordId}`))) return
     useStore.getState().update((draft) => { ensureSyllabusGuideProposals(draft.academics.classCenter, courseId) })
   }, [courseId, data])
   const sections = [
-    { key: 'exam', title: 'Exam intel', notes: scoped.filter((item) => item.type === 'exam-review') },
-    { key: 'questions', title: 'Questions to ask', notes: scoped.filter((item) => item.type === 'question-log') },
-    { key: 'priming', title: 'Priming rollup', notes: scoped.filter((item) => item.type === 'reading' && item.title.startsWith('Prime:')) },
-    { key: 'context', title: 'Course support & requirements', notes: scoped.filter((item) => !['exam-review', 'question-log'].includes(item.type) && !(item.type === 'reading' && item.title.startsWith('Prime:'))) },
+    { key: 'exam', title: 'Exam intel', notes: guideNotes.filter((item) => item.type === 'exam-review') },
+    { key: 'questions', title: 'Questions to ask', notes: guideNotes.filter((item) => item.type === 'question-log') },
+    { key: 'priming', title: 'Priming rollup', notes: guideNotes.filter((item) => item.type === 'reading' && item.title.startsWith('Prime:')) },
+    { key: 'context', title: 'Course support & requirements', notes: guideNotes.filter((item) => !['exam-review', 'question-log'].includes(item.type) && !(item.type === 'reading' && item.title.startsWith('Prime:'))) },
   ]
-  const topicNotes = topics.map((topic) => ({ topic, notes: guideNotes.filter((note) => note.topicIds.includes(topic.id)) })).filter((item) => item.notes.length)
   return (
-    <div className={cn('mt-8 grid gap-4 border-t border-border pt-6', topicNotes.length > 0 && 'xl:grid-cols-[minmax(0,1fr)_300px]')}>
+    <div className="mt-8 border-t border-border pt-6">
       <div className="space-y-4">
         <SectionToolbar title="Dates, support & course information" detail="Keep schedules, contacts, policies, and other useful notes here in your Guide." action={<Button onClick={() => { setNewTitle(''); setNewContent(''); setNewKind('other'); setCreateOpen(true) }}><Plus className="size-4" /> New reference note</Button>} />
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -1092,25 +907,6 @@ function GuideReference({ courseId, workspace, notes, topics, assignments, conta
             </form>
           </DialogContent>
         </Dialog>
-        {focus && (
-          <div className="flex items-center gap-2 rounded-xl border border-border bg-muted px-3 py-2">
-            <p className="text-xs font-bold">
-              Showing Guide items linked to <b className="font-display">{focus.title}</b>
-              {!scoped.length && ' — there are none yet.'}
-            </p>
-            <Button
-              size="sm" variant="ghost" className="ml-auto"
-              onClick={() => setParams((current) => {
-                const next = new URLSearchParams(current)
-                next.delete('noteTopic')
-                return next
-              }, { replace: true })}
-            >
-              Show all Guide items
-            </Button>
-          </div>
-        )}
-
         {contacts.length > 0 && (
           <Card className="class-hub-panel">
             <CardHeader className="class-hub-panel-header"><CardTitle>People &amp; office hours</CardTitle></CardHeader>
@@ -1139,20 +935,14 @@ function GuideReference({ courseId, workspace, notes, topics, assignments, conta
             </CardContent>
           </Card>
         ))}
-        {!scoped.length && <p className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">No earlier class notes. Add a reference note above.</p>}
+        {!guideNotes.length && <p className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">No earlier class notes. Add a reference note above.</p>}
         <GuideSuggestions courseId={courseId} data={data} onOpenMaterials={onOpenMaterials} />
         <Collapsible title="Course lens and professor evidence">
           <CourseLensPanel workspace={workspace} data={data} />
           <ProfessorEvidencePanel courseId={courseId} data={data} assignments={assignments} contacts={contacts} />
         </Collapsible>
       </div>
-      {topicNotes.length > 0 && <aside className="space-y-3 xl:sticky xl:top-20 xl:self-start">
-        <h2 className="font-display text-xl font-extrabold">Linked class context</h2>
-        {topicNotes.map(({ topic, notes: linked }) => (
-          <Card key={topic.id} className="class-hub-panel"><CardContent className="class-hub-panel-content p-4"><p className="font-extrabold">{topic.title}</p><p className="mt-1 text-sm text-muted-foreground">{linked.map((note) => note.title).join(' · ')}</p></CardContent></Card>
-        ))}
-        {!topicNotes.length && <EmptyState icon={NotebookText} title="No linked Guide items" detail="Link a class-context item to a syllabus topic to build this rail." />}
-      </aside>}
+
     </div>
   )
 }
@@ -1345,34 +1135,6 @@ function WhatIf({ assignments, categories }: { assignments: ClassAssignment[]; c
   )
 }
 
-function TopicRow({ topic, data, onOpenNotes }: {
-  topic: Topic
-  data: ClassCenterData
-  /** Opens the linked operational context without starting a review session. */
-  onOpenNotes: (topicId: string) => void
-}) {
-  const noteCount = data.notes.filter((note) => note.topicIds.includes(topic.id)).length
-  const linkedFileCount = topic.linkedFileIds?.length ?? 0
-  return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <div className="grid gap-3 rounded-xl border border-border bg-muted p-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center">
-          <div><p className="font-extrabold">{topic.title}</p><p className="text-xs text-muted-foreground">{topic.unit || 'Syllabus objective'} · {linkedFileCount} {linkedFileCount === 1 ? 'material' : 'materials'} · {noteCount} {noteCount === 1 ? 'Guide item' : 'Guide items'}</p></div>
-          <Badge className={cn('justify-self-start', linkedFileCount || noteCount ? 'bg-sky-500/12 text-sky-700 dark:text-sky-200' : 'bg-muted text-muted-foreground')}>{linkedFileCount || noteCount ? 'Evidence linked' : 'Needs material'}</Badge>
-          <div className="flex items-center gap-1.5">
-            <Button size="sm" variant="outline" onClick={() => onOpenNotes(topic.id)}><NotebookText className="size-4" /> Open Guide</Button>
-          </div>
-          {/* The same link record, written from the topic side. */}
-          <AssignmentLinkField topic={topic} />
-          {/* §6.6 Connect — the topic graph, authored one relation at a time. */}
-          <TopicConnectField topic={topic} />
-        </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent><ContextMenuItem onSelect={() => onOpenNotes(topic.id)}><NotebookText className="size-4" /> Open Guide</ContextMenuItem></ContextMenuContent>
-    </ContextMenu>
-  )
-}
-
 function FileRow({ file, data, courseLabel, ownership, courseWeek, onWeekChange, onReimport }: { file: AcademicFile; data: ClassCenterData; courseLabel: string; ownership: 'course' | 'mine' | 'generated'; courseWeek?: number; onWeekChange: (week?: number | 'general') => void; onReimport?: () => void }) {
   const [opening, setOpening] = useState(false)
   const [reading, setReading] = useState(false)
@@ -1560,7 +1322,7 @@ function NoteRow({ note }: { note: ClassNote }) {
       </div>}
       <AlertDialog open={deleting} onOpenChange={setDeleting}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete this Guide item?</AlertDialogTitle><AlertDialogDescription>{sourceCount ? 'This removes your saved Guide wording and its links. The reviewed syllabus or lecture source returns to Suggested additions, where you can use it again.' : 'This removes the saved item and clears its topic, review, and practice-exam links.'}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete this Guide item?</AlertDialogTitle><AlertDialogDescription>{sourceCount ? 'This removes your saved Guide wording and its links. The reviewed syllabus or lecture source returns to Suggested additions, where you can use it again.' : 'This removes the saved item and clears its review and practice-exam links.'}</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Keep item</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={remove}>Delete class detail</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -1661,7 +1423,6 @@ function CategoryBar({ item }: { item: CategoryStat }) {
   return <div><div className="mb-1 flex justify-between gap-3 text-sm font-bold"><span>{item.name}</span><span className="tabular-nums text-muted-foreground">{item.average == null ? 'Not graded' : `${formatNumber(item.average)}%`} · {formatNumber(item.weight)}% wt</span></div>{item.average != null && <Progress value={item.average} />}</div>
 }
 
-
 function hubStats(course: Course, assignments: ClassAssignment[]) {
   const exam = assignments.filter((item) => item.type === 'exam' && !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))[0]
   const next = assignments.filter((item) => !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))[0]
@@ -1704,29 +1465,6 @@ function groupAssignments(assignments: ClassAssignment[]) {
     map.set(key, [...(map.get(key) ?? []), item])
   }
   return [...map.entries()]
-}
-
-function groupTopicsByWeek(topics: Topic[]) {
-  const map = new Map<string, { key: string; label: string; sort: string; topics: Topic[]; units: string[] }>()
-  for (const topic of [...topics].sort((a, b) => a.order - b.order)) {
-    const week = scheduledWeek(topic.scheduledFor)
-    const group = map.get(week.key) ?? { ...week, topics: [], units: [] }
-    group.topics.push(topic)
-    const unit = topic.unit?.trim()
-    if (unit && !group.units.includes(unit)) group.units.push(unit)
-    map.set(week.key, group)
-  }
-  return [...map.values()].sort((a, b) => a.sort.localeCompare(b.sort))
-}
-
-function scheduledWeek(scheduledFor?: string) {
-  if (!scheduledFor) return { key: 'unmapped', label: 'Schedule not mapped', sort: '9999-99-99' }
-  const date = new Date(`${scheduledFor}T00:00:00Z`)
-  if (Number.isNaN(date.getTime())) return { key: 'unmapped', label: 'Schedule not mapped', sort: '9999-99-99' }
-  const day = date.getUTCDay()
-  date.setUTCDate(date.getUTCDate() - (day === 0 ? 6 : day - 1))
-  const key = date.toISOString().slice(0, 10)
-  return { key, label: `Week of ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' })}`, sort: key }
 }
 
 type MaterialGroupBy = 'week' | 'unit' | 'category'
@@ -1928,11 +1666,11 @@ function materialGroupDetail(group: MaterialGroup, groupBy: MaterialGroupBy) {
   if (group.unassigned) return 'Choose a week or keep it in General materials'
   if (group.key === 'general') return 'Class-wide resources · no week needed'
   if (groupBy === 'category') return `${group.files.length + group.notes.length} ${group.files.length + group.notes.length === 1 ? 'material' : 'materials'}`
-  if (groupBy === 'unit') return group.topicCount ? `${group.topicCount} linked syllabus ${group.topicCount === 1 ? 'objective' : 'objectives'}` : 'Placed by you'
+  if (groupBy === 'unit') return 'Course materials'
   if (group.placementSource === 'span') return 'Linked across more than one explicit syllabus week'
   if (group.placementSource === 'manual') return 'Placed by you'
   if (group.placementSource === 'mixed') return 'Placed by you and the syllabus'
-  return `Placed from ${group.topicCount} linked syllabus ${group.topicCount === 1 ? 'objective' : 'objectives'}`
+  return 'Saved course placement'
 }
 
 function setMaterialFileWeek(fileId: string, courseWeek?: number | 'general') {
@@ -1977,7 +1715,7 @@ function ordered<T extends { order: number }>(items: T[]) {
 }
 
 function isHubTab(value: string | null): value is HubTab {
-  return value === 'overview' || value === 'materials' || value === 'topics' || value === 'assignments' || value === 'guide'
+  return value === 'overview' || value === 'materials' || value === 'assignments' || value === 'guide'
 }
 
 function isoToday() {
@@ -1995,6 +1733,5 @@ function formatNumber(value: number) {
 // These remain the app-native renderers for follow-on Materials/Assignments
 // briefs. Keeping their typed contracts live prevents those tab implementations
 // from drifting while the approved Overview no longer renders them.
-void CoverageLedger
 void CategoryBar
 void categoryStats

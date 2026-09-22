@@ -330,29 +330,6 @@ function unscheduledPrereqRule(data: AppData): Recommendation[] {
   }]
 }
 
-function coveredNeedsMaterialRule(data: AppData): Recommendation[] {
-  const covered = new Set(data.academics.classCenter.assignments.flatMap((assignment) => assignment.coveredTopicIds ?? []))
-  return data.academics.classCenter.topics.flatMap((topic) => {
-    if (!covered.has(topic.id)) return []
-    if ((topic.linkedFileIds?.length ?? 0) || topic.sourceNoteIds.length) return []
-    const course = data.courses.find((item) => item.id === topic.courseId)
-    const cause = `${topic.unit || topic.title} is in the recorded course scope without linked material`
-    return [{
-      id: `academics-covered-needs-material:${topic.id}`,
-      ruleId: 'academics-covered-needs-material',
-      title: 'Course topic needs material',
-      severity: 'important' as const,
-      rank: rank(3, 2),
-      why: `${cause}. Attach the relevant lecture or course evidence before generating study work.`,
-      cause,
-      route: `/academics/classes/${topic.courseId}?classTab=materials`,
-      actionLabel: 'Add material',
-      entityId: topic.id,
-      entityLabel: `${course?.code ?? 'Class'} · ${topic.title}`,
-    }]
-  })
-}
-
 function noSyllabusRule(data: AppData): Recommendation[] {
   const center = data.academics.classCenter
   return center.workspaces.flatMap((workspace) => {
@@ -395,7 +372,6 @@ export function academicsNextActions(
   return [
     ...unscheduledPrereqRule(data),
     ...noSyllabusRule(data),
-    ...coveredNeedsMaterialRule(data),
   ]
     .sort((a, b) => b.rank - a.rank)
     .filter((rec) => !state[rec.id])

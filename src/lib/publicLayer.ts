@@ -159,12 +159,6 @@ export function localCounts(data: AppData): LocalCount[] {
     { key: 'profile', label: 'Profile details', value: hasProfileDetails ? 1 : 0, tint: 'var(--cat-gpa)' },
     { key: 'classes', label: 'Classes', value: data.courses.length, tint: 'var(--cat-gpa)' },
     {
-      key: 'topics',
-      label: 'Topics, with review history',
-      value: center?.topics?.length ?? 0,
-      tint: 'var(--cat-gpa)',
-    },
-    {
       key: 'hours',
       label: 'Logged hours',
       value: Math.round(loggedHours),

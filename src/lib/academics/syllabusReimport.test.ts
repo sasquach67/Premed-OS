@@ -4,10 +4,9 @@ import type { SyllabusItem } from '@/lib/academics/syllabusParser'
 
 const item = (kind: 'standards' | 'deadlines' | 'exams', label: string, value?: string) => ({ id: label, kind, label, value, confidence: 'high' as const, evidence: { quote: label, location: 'line 1' } })
 describe('syllabusReimportDiff', () => {
-  it('matches by identity so an inserted standard does not change later standards', () => {
+  it('does not create reimport actions for retired topic records or learning objective text', () => {
     const rows = syllabusReimportDiff({ topics: [{ id: 'one', courseId: 'c', title: 'Explain reactions', unit: '', status: 'not-started', confidence: 3, sourceNoteIds: [], linkedNoteIds: [], linkedAssignmentIds: [], linkedFileIds: [], fsrs: {} as never, createdAt: 1, updatedAt: 1, order: 0 }, { id: 'three', courseId: 'c', title: 'Evaluate mechanisms', unit: '', status: 'not-started', confidence: 3, sourceNoteIds: [], linkedNoteIds: [], linkedAssignmentIds: [], linkedFileIds: [], fsrs: {} as never, createdAt: 1, updatedAt: 1, order: 1 }], assignments: [], categories: [] }, [item('standards', 'Explain reactions'), item('standards', 'Compare products'), item('standards', 'Evaluate mechanisms')])
-    expect(rows.filter((row) => row.status === 'unchanged')).toHaveLength(2)
-    expect(rows.filter((row) => row.status === 'added')).toHaveLength(1)
+    expect(rows).toEqual([])
   })
 
   it('defaults new entries to accept while keeping changed and removed records', () => {
@@ -16,7 +15,7 @@ describe('syllabusReimportDiff', () => {
       assignments: [],
       categories: [{ id: 'quiz', courseId: 'c', name: 'Quizzes', weight: 20, createdAt: 1, updatedAt: 1, order: 0 }, { id: 'exam', courseId: 'c', name: 'Exam', weight: 80, createdAt: 1, updatedAt: 1, order: 1 }],
     }
-    const rows = syllabusReimportDiff(current, [item('standards', 'Explain reactions'), item('standards', 'Compare products'), { ...item('standards', 'unused'), kind: 'weights' as const, label: 'Quizzes', value: '25%' }])
+    const rows = syllabusReimportDiff(current, [item('standards', 'Explain reactions'), item('exams', 'Exam 2', '2026-10-01'), { ...item('standards', 'unused'), kind: 'weights' as const, label: 'Quizzes', value: '25%' }])
     expect(rows.find((row) => row.status === 'added')?.defaultAction).toBe('accept')
     expect(rows.find((row) => row.status === 'changed')?.defaultAction).toBe('keep')
     expect(rows.find((row) => row.status === 'removed')?.defaultAction).toBe('keep')
@@ -35,7 +34,6 @@ describe('syllabusReimportDiff', () => {
     ]
     const rows = syllabusReimportDiff(current, proposal)
     expect(rows).toEqual(expect.arrayContaining([
-      expect.objectContaining({ kind: 'topic', key: 'explain membrane transport', status: 'changed', defaultAction: 'keep' }),
       expect.objectContaining({ kind: 'assignment', key: 'midterm exam|2026-10-14', status: 'changed', defaultAction: 'keep' }),
       expect.objectContaining({ kind: 'category', key: 'quizzes', status: 'changed', defaultAction: 'keep' }),
     ]))
@@ -97,7 +95,7 @@ describe('re-importing the same syllabus', () => {
     const rows = syllabusReimportDiff(current, proposal)
     const unchanged = rows.filter((row) => row.status === 'unchanged').map((row) => row.key)
     expect(unchanged).toContain('problem set 1|2026-09-08')
-    expect(unchanged).toContain('explain structure and bonding')
+    expect(rows.some((row) => row.kind === 'topic')).toBe(false)
   })
 
   it('defaults to keeping what the student already confirmed', () => {

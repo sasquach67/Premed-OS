@@ -14,7 +14,6 @@ export const syllabusScheduleSourceKey = (label: string | undefined, week?: stri
 /** Identity-based only: an inserted unit cannot make following records look changed. */
 export function syllabusReimportDiff(current: { topics: Topic[]; assignments: ClassAssignment[]; categories: GradeCategory[]; readings?: AssignedReading[]; schedule?: SyllabusScheduleEntry[] }, proposal: SyllabusItem[]): ReimportRow[] {
   const rows: ReimportRow[] = []
-  const proposedTopics = proposal.filter((item) => item.kind === 'standards')
   const proposedAssignments = proposal.filter((item) => item.kind === 'exams' || item.kind === 'deadlines')
   const proposedCategories = proposal.filter((item) => item.kind === 'weights')
   const proposedReadings = proposal.filter((item) => item.kind === 'readings')
@@ -30,7 +29,6 @@ export function syllabusReimportDiff(current: { topics: Topic[]; assignments: Cl
     }
     for (const [key, item] of old) if (!next.has(key)) rows.push({ key, kind, status: 'removed', current: valueOfCurrent(item), defaultAction: 'keep' })
   }
-  compare('topic', current.topics, proposedTopics, (item) => item.syllabusSourceKey ?? syllabusTopicSourceKey(item.title), (item) => item.title, (item) => syllabusTopicSourceKey(item.label), (item) => item.label)
   compare('assignment', current.assignments.filter((item) => !item.syllabusSourceKey?.startsWith('reading-calendar:')), proposedAssignments, (item) => item.syllabusSourceKey ?? syllabusAssignmentSourceKey(item.title, item.dueDate), (item) => `${item.title} · ${item.dueDate ?? 'no date'}`, (item) => syllabusAssignmentSourceKey(item.label, item.value), (item) => `${item.label} · ${item.value ?? 'no date'}`)
   compare('category', current.categories, proposedCategories, (item) => item.syllabusSourceKey ?? syllabusCategorySourceKey(item.name), (item) => `${item.name} · ${item.weight}%`, (item) => syllabusCategorySourceKey(item.label), (item) => `${item.label} · ${item.value ?? '0%'}`)
   compare('reading', current.readings ?? [], proposedReadings, (item) => item.syllabusSourceKey ?? syllabusReadingSourceKey(item.title, item.week, item.dueForDiscussion), (item) => `${item.week} · ${item.title} · ${item.dueForDiscussion ?? 'no date'}`, (item) => syllabusReadingSourceKey(item.label, item.context, item.value), (item) => `${item.context ?? 'Unscheduled'} · ${item.label} · ${item.value ?? 'no date'}`)

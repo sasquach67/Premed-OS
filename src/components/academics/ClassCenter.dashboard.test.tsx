@@ -494,7 +494,8 @@ describe('Daily Class Center persisted dashboard boundary', () => {
     useStore.getState().replaceAll(createDemoData())
     await render()
 
-    expect(container.textContent).toContain('Topic coverage')
+    expect(container.textContent).not.toContain('Topic coverage')
+    expect(container.textContent).not.toMatch(/topics ready|topics due|recorded topics/i)
     expect(container.textContent).toContain('Lecture journal')
     expect(container.textContent).toContain('Recent study work')
     expect(container.textContent).toContain('Class materials')

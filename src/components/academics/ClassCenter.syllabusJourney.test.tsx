@@ -188,8 +188,10 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     expect(course).toMatchObject({ code: 'CHEM 262', title: 'Organic Chemistry II' })
     expect(center.workspaces.filter((item) => item.courseId === course.id)).toHaveLength(1)
     expect(center.workspaces.find((item) => item.courseId === course.id)?.syllabusSchedule).toHaveLength(2)
-    expect(center.topics.filter((item) => item.courseId === course.id)).toHaveLength(2)
-    expect(center.topics.filter((item) => item.courseId === course.id).every((item) => item.syllabusSourceKey && item.linkedFileIds?.length === 1)).toBe(true)
+    expect(center.topics.filter((item) => item.courseId === course.id)).toHaveLength(0)
+    expect(center.sourceChunks.filter((item) => item.courseId === course.id && item.id.includes('-standards-')).map((item) => item.content)).toEqual(expect.arrayContaining([
+      expect.stringContaining('Explain aromatic substitution'), expect.stringContaining('Distinguish stereochemical relationships'),
+    ]))
     expect(center.assignments.filter((item) => item.courseId === course.id)).toEqual(expect.arrayContaining([
       expect.objectContaining({ title: 'Midterm Exam', dueDate: '2026-10-14', type: 'exam' }),
       expect.objectContaining({ title: 'Problem set 1', dueDate: '2026-09-09' }),
@@ -205,8 +207,8 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     // A student correction is part of the same ownership boundary: hydration
     // must not revive the parsed label over a later student-owned edit.
     useStore.getState().update((draft) => {
-      const topic = draft.academics.classCenter.topics.find((item) => item.courseId === course.id)
-      if (topic) topic.title = 'Aromatic substitution — student wording'
+      const assignment = draft.academics.classCenter.assignments.find((item) => item.courseId === course.id)
+      if (assignment) assignment.title = 'Midterm — student wording'
     })
     const expected = snapshotData()
 
@@ -224,14 +226,9 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
       plannerTermId: course.plannerTermId ?? 'planner-term-fall-2026',
     })))
     expect(hydrated.academics.classCenter.workspaces.filter((item) => item.courseId === course.id)).toEqual(expected.academics.classCenter.workspaces.filter((item) => item.courseId === course.id))
-    const topicFieldsOwnedByImport = (item: typeof hydrated.academics.classCenter.topics[number]) => ({
-      id: item.id, courseId: item.courseId, title: item.title, unit: item.unit,
-      status: item.status, confidence: item.confidence, sourceNoteIds: item.sourceNoteIds,
-      linkedFileIds: item.linkedFileIds, order: item.order,
-    })
-    // Hydration may add empty linkage arrays to a legacy record shape, but it
-    // cannot alter any field this import or a later student correction owns.
-    expect(hydrated.academics.classCenter.topics.filter((item) => item.courseId === course.id).map(topicFieldsOwnedByImport)).toEqual(expected.academics.classCenter.topics.filter((item) => item.courseId === course.id).map(topicFieldsOwnedByImport))
+    expect(hydrated.academics.classCenter.topics).toEqual(expected.academics.classCenter.topics)
+    // Hydration may add derived character ranges; source passages and identities stay exact.
+    expect(hydrated.academics.classCenter.sourceChunks).toEqual(expected.academics.classCenter.sourceChunks.map((chunk) => expect.objectContaining(chunk)))
     expect(hydrated.academics.classCenter.assignments.filter((item) => item.courseId === course.id)).toEqual(expected.academics.classCenter.assignments.filter((item) => item.courseId === course.id))
     expect(hydrated.academics.classCenter.gradeCategories.filter((item) => item.courseId === course.id)).toEqual(expected.academics.classCenter.gradeCategories.filter((item) => item.courseId === course.id))
     const fileFieldsOwnedByImport = (item: typeof hydrated.academics.classCenter.files[number]) => ({
@@ -261,7 +258,8 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     const course = snapshotData().courses.find((item) => item.code === 'ANTH 147')
     expect(course).toBeTruthy()
     const courseId = course!.id
-    expect(center.topics.filter((item) => item.courseId === courseId).map((item) => item.title)).toHaveLength(3)
+    expect(center.topics.filter((item) => item.courseId === courseId)).toHaveLength(0)
+    expect(center.sourceChunks.filter((item) => item.courseId === courseId && item.id.includes('-standards-'))).toHaveLength(3)
     expect(center.topics.some((item) => /Story of Rosario|Symbols, Political Economy/i.test(item.title))).toBe(false)
     expect(center.assignedReadings.filter((item) => item.courseId === courseId)).toEqual(expect.arrayContaining([
       expect.objectContaining({ week: 'Introduction', title: expect.stringContaining('Story of Rosario'), dueForDiscussion: '2026-08-19', status: 'read' }),
@@ -385,12 +383,13 @@ describe('syllabus setup journey persistence (§4.1-M)', () => {
     const syllabusFile = center.files.find((item) => item.courseId === courseId && item.type === 'syllabus')
     expect(syllabusFile).toBeTruthy()
 
-    const topics = center.topics.filter((item) => item.courseId === courseId)
-    expect(topics.map((item) => item.title)).toEqual([
-      'define both the science and the practice of psychology',
-      'explain how biological and social contexts shape behavior',
+    expect(center.topics.filter((item) => item.courseId === courseId)).toHaveLength(0)
+    const standards = center.sourceChunks.filter((item) => item.courseId === courseId && item.id.includes('-standards-'))
+    expect(standards.map((item) => item.content)).toEqual([
+      expect.stringContaining('define both the science and the practice of psychology'),
+      expect.stringContaining('explain how biological and social contexts shape behavior'),
     ])
-    expect(topics.every((item) => item.basis === 'syllabus-standard' && item.linkedFileIds?.includes(syllabusFile!.id))).toBe(true)
+    expect(standards.every((item) => item.fileId === syllabusFile!.id)).toBe(true)
 
     const workspace = center.workspaces.find((item) => item.courseId === courseId)
     expect(workspace?.syllabusSchedule).toEqual(expect.arrayContaining([
@@ -484,7 +483,8 @@ Week 1: Aromatic substitution and reaction energy diagrams.`)
     const scheduleFile = saved.files.find((file) => file.fileName === 'CHEM262-schedule.txt')
     expect(overviewFile).toBeTruthy()
     expect(scheduleFile).toBeTruthy()
-    expect(saved.topics.find((topic) => topic.title.includes('aromatic substitution'))?.linkedFileIds).toEqual([overviewFile?.id])
+    expect(saved.topics).toHaveLength(0)
+    expect(saved.sourceChunks.find((chunk) => chunk.id.includes('-standards-') && chunk.content.includes('aromatic substitution'))?.fileId).toBe(overviewFile?.id)
     expect(saved.assignments.find((assignment) => assignment.title.includes('Midterm Exam'))?.linkedFileIds).toEqual([scheduleFile?.id])
     expect(retainLocalSyllabus).toHaveBeenCalledTimes(2)
   })
@@ -505,9 +505,11 @@ Week 1: Aromatic substitution and reaction energy diagrams.`)
     await act(async () => removeButtons[0].click())
     await act(async () => button(document.body, 'Add reviewed syllabus to CHEM 262').click())
 
-    const saved = snapshotData().academics.classCenter.topics.filter((item) => item.courseId === snapshotData().courses[0].id)
-    expect(saved).toHaveLength(1)
-    expect(saved[0].title).toContain('Distinguish stereochemical relationships')
+    const saved = snapshotData().academics.classCenter
+    const standards = saved.sourceChunks.filter((item) => item.id.includes('-standards-'))
+    expect(standards).toHaveLength(1)
+    expect(standards[0].content).toContain('Distinguish stereochemical relationships')
+    expect(saved.topics).toHaveLength(0)
   })
 
   it('creates a class once, then scopes the Add-class import fast path to that same class', async () => {
@@ -535,7 +537,8 @@ Week 1: Aromatic substitution and reaction energy diagrams.`)
     const applied = snapshotData()
     expect(applied.courses).toHaveLength(1)
     expect(applied.academics.classCenter.workspaces.filter((item) => item.courseId === course.id)).toHaveLength(1)
-    expect(applied.academics.classCenter.topics.filter((item) => item.courseId === course.id)).toHaveLength(2)
+    expect(applied.academics.classCenter.topics.filter((item) => item.courseId === course.id)).toHaveLength(0)
+    expect(applied.academics.classCenter.sourceChunks.filter((item) => item.courseId === course.id && item.id.includes('-standards-'))).toHaveLength(2)
   })
 
   it('treats a second scoped import as a data-backed diff and never creates a duplicate course or workspace', async () => {
@@ -558,18 +561,17 @@ Week 1: Aromatic substitution and reaction energy diagrams.`)
     expect(container.textContent).toContain('Add a syllabus to CHEM 262')
     await readPastedSyllabus('reimport')
     expect(container.textContent).toContain('Re-import · CHEM 262')
-    expect(container.textContent).toContain('items are unchanged and are not listed again')
+    expect(container.textContent).not.toContain('Explain aromatic substitution.')
+    expect(container.textContent).not.toContain('Distinguish stereochemical relationships.')
     await act(async () => button(container, 'Apply accepted changes').click())
 
     const after = snapshotData()
     expect(after.courses).toHaveLength(1)
     expect(after.academics.classCenter.workspaces).toHaveLength(1)
     expect(after.courses[0].id).toBe('chem-262')
-    // The pre-existing learning standard survives unchanged; the other standard
-    // is added by its default Accept decision. This is identity-based, not positional.
-    expect(after.academics.classCenter.topics.filter((item) => item.courseId === 'chem-262').map((item) => item.title)).toEqual(expect.arrayContaining([
-      'Explain aromatic substitution.', 'Distinguish stereochemical relationships.',
-    ]))
+    // Legacy records survive verbatim, while new standards are retained only as evidence.
+    expect(after.academics.classCenter.topics).toEqual(initial.academics.classCenter.topics)
+    expect(after.academics.classCenter.sourceChunks.filter((item) => item.id.includes('-standards-'))).toHaveLength(2)
   })
 
   it('attaches a first scoped import to its existing class and fills only blank logistics fields', async () => {
@@ -655,8 +657,8 @@ Week 1: Aromatic substitution and reaction energy diagrams.`)
     const after = snapshotData().academics.classCenter
     const topics = after.topics.filter((item) => item.courseId === 'chem-262')
     const assignments = after.assignments.filter((item) => item.courseId === 'chem-262')
-    expect(topics).toHaveLength(2)
-    expect(topics).toContainEqual(expect.objectContaining({ id: 'topic-standard-1', title: 'Aromatic substitution — my wording', syllabusSourceKey: 'explain aromatic substitution.' }))
+    expect(topics).toEqual(initial.academics.classCenter.topics)
+    expect(after.sourceChunks.filter((item) => item.id.includes('-standards-'))).toHaveLength(2)
     expect(assignments).toHaveLength(2)
     expect(assignments).toContainEqual(expect.objectContaining({ id: 'assignment-midterm', title: 'The first big exam', syllabusSourceKey: 'midterm exam|2026-10-14' }))
   })

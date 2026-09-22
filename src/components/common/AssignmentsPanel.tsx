@@ -79,7 +79,6 @@ import type {
   ClassAssignmentType,
   Course,
   ListViewState,
-  Topic,
 } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { classCardTaskSummary } from '@/lib/academics/classCardSummary'
@@ -332,7 +331,6 @@ export function AssignmentsPanel({
 }) {
   const assignments = useStore((store) => store.academics.classCenter.assignments)
   const courses = useStore((store) => store.courses)
-  const topics = useStore((store) => store.academics.classCenter.topics)
   const preference = useStore((store) => store.settings.listPreferences[LIST_ID])
   const update = useStore((store) => store.update)
   const toast = useToast()
@@ -600,7 +598,6 @@ export function AssignmentsPanel({
             <AgendaView
               assignments={filtered}
               courses={courses}
-              topics={topics}
               showCourseLabel={!scopedCourseId}
               collapsed={collapsed}
               expandedBuckets={expandedBuckets}
@@ -684,7 +681,6 @@ export function AssignmentsPanel({
 function AgendaView({
   assignments,
   courses,
-  topics,
   showCourseLabel,
   collapsed,
   expandedBuckets,
@@ -700,7 +696,6 @@ function AgendaView({
 }: {
   assignments: ClassAssignment[]
   courses: Course[]
-  topics: Topic[]
   showCourseLabel: boolean
   collapsed: Set<string>
   expandedBuckets: Set<BucketId>
@@ -785,7 +780,6 @@ function AgendaView({
                           key={assignment.id}
                           assignment={assignment}
                           courses={courses}
-                          topics={topics}
                           showCourseLabel={showCourseLabel}
                           onComplete={onComplete}
                           onEdit={onEdit}
@@ -825,7 +819,6 @@ function AgendaView({
 function AssignmentRow({
   assignment,
   courses,
-  topics,
   showCourseLabel,
   onComplete,
   onEdit,
@@ -835,7 +828,6 @@ function AssignmentRow({
 }: {
   assignment: ClassAssignment
   courses: Course[]
-  topics: Topic[]
   showCourseLabel: boolean
   onComplete: (assignment: ClassAssignment, checked: boolean) => void
   onEdit: (assignment: ClassAssignment) => void
@@ -851,8 +843,6 @@ function AssignmentRow({
     ? { label: fmtEventDate(assignment.dueDate), variant: examDays != null && examDays <= 6 ? 'warning' as const : 'muted' as const }
     : relativeDue(assignment.dueDate)
   const color = courseColor(assignment.courseId, courses)
-  const covered = assignment.coveredTopicIds ?? assignment.linkedTopicIds
-  const ready = topics.filter((topic) => covered.includes(topic.id) && topic.status === 'ready').length
 
   function requestCompletion(checked: boolean) {
     if (checked && !complete) {
@@ -962,7 +952,6 @@ function AssignmentRow({
                 </Badge>
               )}
               <Badge variant="muted" className="capitalize">{assignment.type}</Badge>
-              {assignment.type === 'exam' && <Badge variant="outline">{covered.length ? `${ready} of ${covered.length} topics ready` : 'Exam scope not recorded'}</Badge>}
               {assignment.weight != null && <Badge variant="outline">{assignment.weight}%</Badge>}
               {assignment.pointsPossible != null && <Badge variant="outline">{assignment.pointsPossible} pts</Badge>}
             </div>

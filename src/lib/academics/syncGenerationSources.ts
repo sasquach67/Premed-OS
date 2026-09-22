@@ -156,11 +156,9 @@ interface GenerationSourceTools {
   generate(request: GenerateRequest): Promise<StudyToolResponse<GeneratedStudyToolArtifact>>
 }
 
-export function sourceScopeForGeneration(chunks: readonly SourceChunk[]): string {
-  const topicIds = [...new Set(chunks.map((chunk) => chunk.topicId).filter((id): id is string => Boolean(id)))]
-  return topicIds.length === 1 && chunks.every((chunk) => chunk.topicId === topicIds[0])
-    ? topicIds[0]
-    : CLASS_MATERIAL_SCOPE
+/** Legacy topic links are retained in storage but no longer control retrieval. */
+export function sourceScopeForGeneration(_chunks: readonly SourceChunk[]): string {
+  return CLASS_MATERIAL_SCOPE
 }
 
 export function generationSourceInputs(chunks: readonly SourceChunk[]): StudySourceInput[] {

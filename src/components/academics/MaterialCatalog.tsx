@@ -1,25 +1,10 @@
-/**
- * The material shelf (§4.1 materials extensions · Resource catalog).
- *
- * Drawing:   mockup-lab/01-academics/academics-materials-extensions.html
- * Decisions: academics-materials-extensions.md — a shelf, not a sixth tab:
- *            unit spine at left, compact tiles at centre, one restrained
- *            empty rail at right. Hierarchy is unit → material → provenance.
- * Model:     lib/academics/materialCatalog.ts.
- *
- * ⚠️ The two views this drawing also contains — Calendar review and
- * source-selected generation — are NOT built. Calendar needs an OAuth client
- * only Andy can create; generation has no engine yet (`study-tools` has no
- * generate action). Offering either as a shell would advertise something the
- * app cannot do. See `T1-academics-build-7.md` §1f.
- */
-import { useState } from 'react'
+/** Course materials with visible source provenance, independent of legacy topic links. */
 import { FileText, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  PROVENANCE_LABEL, catalogEntries, catalogUnits, type Provenance,
+  PROVENANCE_LABEL, catalogEntries, type Provenance,
 } from '@/lib/academics/materialCatalog'
-import type { AcademicFile, Topic } from '@/lib/types'
+import type { AcademicFile } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 
 const CARD = 'rounded-2xl border border-border bg-card shadow-[0_10px_26px_-14px_rgba(0,0,0,0.55)]'
@@ -33,15 +18,11 @@ const BADGE: Record<Provenance, string> = {
   unknown: 'border-dashed border-amber-500/50 bg-amber-500/8',
 }
 
-export function MaterialCatalog({ files, topics, onAdd }: {
+export function MaterialCatalog({ files, onAdd }: {
   files: AcademicFile[]
-  topics: Topic[]
   onAdd?: () => void
 }) {
-  const units = catalogUnits(files, topics)
-  const [selected, setSelected] = useState<string | undefined>()
-  const unit = selected && units.some((row) => row.unit === selected) ? selected : units[0]?.unit
-  const entries = catalogEntries(files, topics, unit)
+  const entries = catalogEntries(files, [])
 
   if (!files.length) {
     return (
@@ -57,37 +38,11 @@ export function MaterialCatalog({ files, topics, onAdd }: {
   }
 
   return (
-    <div className={cn('grid gap-3', onAdd ? 'lg:grid-cols-[13rem_minmax(0,1fr)_15rem]' : 'lg:grid-cols-[13rem_minmax(0,1fr)]')}>
-      <aside className={cn(CARD, 'h-fit p-3.5')}>
-        <p className={EYEBROW}>Course shelf</p>
-        <h3 className="mt-0.5 font-display text-sm font-extrabold">By unit</h3>
-        <p className="mt-1 text-[11px] font-bold text-muted-foreground">
-          Material is filed to the work it can support.
-        </p>
-        <div className="mt-2.5 space-y-1.5">
-          {units.map((row) => (
-            <button
-              key={row.unit} type="button" onClick={() => setSelected(row.unit)}
-              className={cn(
-                'flex w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors duration-150 ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none',
-                row.unit === unit
-                  ? 'border-[color-mix(in_srgb,var(--cat-gpa)_44%,var(--border))] bg-[color-mix(in_srgb,var(--cat-gpa)_10%,transparent)]'
-                  : 'border-border bg-muted hover:border-[color-mix(in_srgb,var(--cat-gpa)_45%,var(--border))]',
-              )}
-            >
-              <span className="min-w-0 truncate font-display text-xs font-extrabold">{row.unit}</span>
-              <span className="text-[10.5px] font-bold text-muted-foreground">
-                {row.count} {row.count === 1 ? 'material' : 'materials'}
-              </span>
-            </button>
-          ))}
-        </div>
-      </aside>
-
+    <div className={cn('grid gap-3', onAdd && 'lg:grid-cols-[minmax(0,1fr)_15rem]')}>
       <article className={cn(CARD, 'p-4')}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className={EYEBROW}>{unit} · selected</p>
+            <p className={EYEBROW}>Course shelf</p>
             <h3 className="mt-0.5 font-display text-base font-extrabold">Material, with its provenance</h3>
             <p className="mt-0.5 text-xs font-bold text-muted-foreground">
               Only material you added is here. Origin is visible before anything becomes part of a study plan.

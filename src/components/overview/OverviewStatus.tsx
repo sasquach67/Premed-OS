@@ -63,23 +63,13 @@ export function WhereIStand() {
   const examDays = daysUntil(state.mcat.targetDate)
   const mcatGoal = state.mcat.goalScore ?? state.goals.mcatTarget
 
-  /* Class-level state reaches Overview instead of stopping at Academics:
-     what's due, what's shaky, what's open, and what is still unfiled. */
   const center = state.academics.classCenter
-  const nowMs = Date.now()
-  const dueTopics = (center.topics ?? []).filter((topic) =>
-    topic.status !== 'ready' && (topic.fsrs?.due ?? Infinity) <= nowMs).length
-  const weakTopics = (center.weakAreas ?? []).filter((area) => area.status === 'active').length
   const openAssignments = (center.assignments ?? []).filter((assignment) =>
     assignment.status !== 'graded' && assignment.status !== 'submitted' && assignment.status !== 'dropped').length
-  const coverageGaps = (center.sourceChunks ?? []).filter((chunk) => !chunk.topicId).length
-    + (center.files ?? []).filter((file) => file.processingStatus === 'pending').length
-
+  const pendingFiles = (center.files ?? []).filter((file) => file.processingStatus === 'pending').length
   const classSignals = [
-    dueTopics ? `${dueTopics} due` : '',
-    weakTopics ? `${weakTopics} review notes` : '',
     openAssignments ? `${openAssignments} open` : '',
-    coverageGaps ? `${coverageGaps} unfiled` : '',
+    pendingFiles ? `${pendingFiles} unfiled` : '',
   ].filter(Boolean)
 
   const hourRow = (
