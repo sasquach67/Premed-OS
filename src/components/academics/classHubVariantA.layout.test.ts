@@ -11,8 +11,10 @@ describe('Class Hub banner responsive contract', () => {
     expect(classHubCss).toMatch(/\.class-hub-course-code \{ white-space: nowrap; \}/)
   })
 
-  it('bounds variable metric tracks so a long deadline cannot starve the identity column', () => {
-    expect(classHubCss).toMatch(/\.class-hub-banner-actions \.glass-surface \{[\s\S]*?grid-auto-columns:\s*minmax\(76px, 110px\);/)
+  it('bounds the metric strip while allowing every label and value to wrap', () => {
+    expect(classHubCss).toMatch(/\.class-hub-banner-actions \.glass-surface \{[^}]*max-width:\s*100%;[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);/)
+    expect(classHubCss).toMatch(/\.class-hub-banner-actions \.glass-surface p \{[^}]*white-space:\s*normal;[^}]*overflow:\s*visible;/)
+    expect(classHubCss).not.toMatch(/\.class-hub-banner-actions \.glass-surface \{\s*display:\s*none;/)
   })
 
   it('gives long course titles a second line and compacts the resource action before the rail stacks', () => {
