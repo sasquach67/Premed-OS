@@ -9,7 +9,7 @@ import { ClassHub, WritingTools } from '@/components/academics/ClassHub'
 import { ToastProvider } from '@/components/common/ToastProvider'
 import { createSeedData } from '@/data/seed'
 import { createDemoData } from '@/data/demoSeed'
-import type { LectureRecord } from '@/lib/types'
+import type { LectureRecord, ClassAssignment, AssignedReading } from '@/lib/types'
 import { revisionFixture } from '@/lib/academics/notebook/revision.test-fixtures'
 import { recurringFeedbackThemes, readingDebt } from '@/lib/academics/writingEvidence'
 import { createInitialDataForMode, CURRENT_STORE_VERSION, snapshotData, STORAGE_KEY, useStore } from '@/store/store'
@@ -215,6 +215,33 @@ describe('ClassHub approved Overview', () => {
   afterEach(async () => {
     await act(async () => root.unmount())
     container.remove()
+  })
+
+  it.each(['stem', 'writing', 'general'] as const)('shows actionable header metrics for %s classes using unfinished work in the next seven days', async type => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-09-23T12:00:00'))
+    try {
+      const seed = structuredClone(createSeedData())
+      const workspace = seed.academics.classCenter.workspaces.find(item => item.type === 'stem')!
+      workspace.type = type
+      const course = seed.courses.find(item => item.id === workspace.courseId)!
+      course.grade = 'A-'
+      const assignment = (id: string, dueDate?: string, status: ClassAssignment['status'] = 'not-started', type: ClassAssignment['type'] = 'homework'): ClassAssignment => ({ id, courseId: course.id, title: id, dueDate, status, type, linkedTopicIds: [], linkedFileIds: [], createdAt: 1, updatedAt: 1, order: 0 })
+      seed.academics.classCenter.assignments = [
+        assignment('past exam', '2026-09-22', 'not-started', 'exam'),
+        assignment('next exam', '2026-10-22', 'not-started', 'exam'),
+        assignment('today', '2026-09-23'), assignment('six days', '2026-09-29', 'in-progress'),
+        assignment('seven days', '2026-09-30'), assignment('overdue', '2026-09-22'),
+        assignment('submitted', '2026-09-24', 'submitted'), assignment('graded', '2026-09-24', 'graded'),
+        assignment('dropped', '2026-09-24', 'dropped'), assignment('no date'),
+      ]
+      const reading = (id: string, dueForDiscussion?: string, status: AssignedReading['status'] = 'not-started'): AssignedReading => ({ id, courseId: course.id, title: id, week: '', dueForDiscussion, status, createdAt: 1, updatedAt: 1, order: 0 })
+      seed.academics.classCenter.assignedReadings = [reading('today', '2026-09-23'), reading('skimmed', '2026-09-29', 'skimmed'), reading('finished', '2026-09-24', 'read'), reading('later', '2026-09-30'), reading('past', '2026-09-22'), reading('undated')]
+      useStore.getState().replaceAll(seed)
+      await act(async () => root.render(<MemoryRouter><ToastProvider><ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} /></ToastProvider></MemoryRouter>))
+      const metrics = [...container.querySelectorAll('[aria-label="Current metrics"] > div')].map(item => [...item.querySelectorAll('p')].map(p => p.textContent))
+      expect(metrics).toEqual([['Grade', 'A-'], ['Next exam', 'In 29 days'], ['Due this week', '4']])
+    } finally { vi.useRealTimers() }
   })
 
   it('continues directly into the saved imported notebook instead of selecting its catalog row', async () => {

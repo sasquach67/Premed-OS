@@ -19,7 +19,7 @@ import type {
 } from '@/lib/types'
 import { useStore } from '@/store/store'
 import { uid } from '@/lib/id'
-import { fmtDeadline, fmtEventDate } from '@/lib/date'
+import { daysUntil, fmtDeadline, fmtEventDate } from '@/lib/date'
 import { calculateCourseScenario } from '@/lib/academics/gradeLedger'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/components/common/useToast'
@@ -154,8 +154,7 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
   const courseReadings = ordered(data.assignedReadings.filter((item) => item.courseId === course.id))
   const courseFeedback = ordered(data.feedbackNotes.filter((item) => item.courseId === course.id))
   const readingListState = workspace.readingListState ?? 'unknown'
-  const readingsBehind = readingDebt(courseReadings, readingListState, isoToday())
-  const stats = hubStats(course, courseAssignments)
+  const stats = hubStats(course, courseAssignments, courseReadings)
   const requestedExamPrepId = params.get('examPrep')
   const requestedExamPrep = requestedExamPrepId
     ? courseAssignments.find((item) => item.id === requestedExamPrepId && item.type === 'exam')
@@ -247,17 +246,8 @@ export function ClassHub({ course, workspace, data }: ClassHubProps) {
                 variant="banner"
                 metrics={[
                   { id: 'grade', label: 'Grade', value: stats.grade, cadence: 'variable' },
-                  ...(classType === 'stem' ? [
-                    { id: 'materials', label: 'Materials', value: String(libraryFiles.length + connectedFileCount), cadence: 'variable' as const },
-                    { id: 'next-exam', label: 'Next exam', value: stats.examCountdown, cadence: 'variable' as const },
-                  ] : classType === 'writing' ? [
-                    { id: 'next-due', label: 'Next due', value: stats.nextDue, cadence: 'variable' as const },
-                    { id: 'draft-stage', label: 'Draft stage', value: currentDraftStage(courseDrafts), cadence: 'variable' as const },
-                    { id: 'readings', label: readingListState === 'complete' ? 'Readings behind' : 'Reading list', value: readingListState === 'complete' ? String(readingsBehind) : 'Not complete', cadence: 'variable' as const },
-                  ] : [
-                    { id: 'next-deadline', label: 'Next deadline', value: stats.nextDue, cadence: 'variable' as const },
-                    { id: 'credits', label: 'Credits', value: String(course.credits), cadence: 'variable' as const },
-                  ]),
+                  { id: 'next-exam', label: 'Next exam', value: stats.examCountdown, cadence: 'variable' },
+                  { id: 'due-this-week', label: 'Due this week', value: String(stats.dueThisWeek), cadence: 'variable' },
                 ]}
               />
               {primaryAction()}
@@ -1424,20 +1414,20 @@ function CategoryBar({ item }: { item: CategoryStat }) {
   return <div><div className="mb-1 flex justify-between gap-3 text-sm font-bold"><span>{item.name}</span><span className="tabular-nums text-muted-foreground">{item.average == null ? 'Not graded' : `${formatNumber(item.average)}%`} · {formatNumber(item.weight)}% wt</span></div>{item.average != null && <Progress value={item.average} />}</div>
 }
 
-function hubStats(course: Course, assignments: ClassAssignment[]) {
-  const exam = assignments.filter((item) => item.type === 'exam' && !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))[0]
-  const next = assignments.filter((item) => !isComplete(item) && item.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))[0]
+function hubStats(course: Course, assignments: ClassAssignment[], readings: AssignedReading[]) {
+  const pending = assignments.filter(item => !isComplete(item) && item.status !== 'dropped')
+  const exam = pending.filter(item => item.type === 'exam' && (daysUntil(item.dueDate) ?? -1) >= 0)
+    .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))[0]
+  const dueSoon = (date?: string) => {
+    const days = daysUntil(date)
+    return days !== null && days >= 0 && days < 7
+  }
   return {
     grade: course.grade || (coursePercent(assignments) == null ? '—' : `${formatNumber(coursePercent(assignments)!)}%`),
-    nextDue: next ? assignmentDateLabel(next) : '—',
-    // Banner metrics are short by design (04 §0c "6d"), so the empty case is a
-    // dash rather than a sentence that has to truncate inside the strip.
     examCountdown: exam ? assignmentDateLabel(exam) : '—',
+    dueThisWeek: pending.filter(item => dueSoon(item.dueDate)).length
+      + readings.filter(item => item.status !== 'read' && dueSoon(item.dueForDiscussion)).length,
   }
-}
-
-function currentDraftStage(drafts: PaperDraft[]) {
-  return titleCase(drafts.find((item) => item.stage !== 'submitted')?.stage ?? '—')
 }
 
 function coursePercent(assignments: ClassAssignment[]) {
