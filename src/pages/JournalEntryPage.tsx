@@ -1,3 +1,4 @@
+import { useRememberOpenedNotebook } from '@/hooks/useRememberOpenedNotebook'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useState } from 'react'
 import { ArrowLeft, Brain } from 'lucide-react'
@@ -9,6 +10,7 @@ import { ExternalNotebookWorkflow } from '@/components/academics/ExternalNoteboo
 export function JournalEntryPage() {
   const [builtIn, setBuiltIn] = useState(false)
   const { courseId, entryId } = useParams()
+  useRememberOpenedNotebook(courseId, entryId)
   const navigate = useNavigate()
   const course = useStore(state => state.courses.find(item => item.id === courseId))
   const data = useStore(state => state.academics.classCenter)

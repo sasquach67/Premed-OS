@@ -79,3 +79,14 @@ it('opens the complete prompt for this saved Journal without changing notebook c
   expect(container.querySelector('[aria-label="Flashcard prompt"]')).toBeNull()
   expect(JSON.stringify(notebook())).toBe(retained)
 })
+
+it('continues reading the last opened notebook from the class overview in Study guide mode', async () => {
+  await click('Practice recall')
+  const retained = JSON.stringify(notebook())
+  await click('Back to Class Notebook')
+  expect(container.querySelector('.overview-reading')?.textContent).toContain(pkg.entries[0].title)
+  await click('Continue reading')
+  expect(container.querySelector('[data-location]')!.textContent).toBe(`/academics/classes/${course.id}/journal/${id}`)
+  study()
+  expect(JSON.stringify(notebook())).toBe(retained)
+})

@@ -1,3 +1,4 @@
+import { useRememberOpenedNotebook } from '@/hooks/useRememberOpenedNotebook'
 import { useLayoutEffect, useRef } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '@/store/store'
@@ -7,6 +8,7 @@ import './LecturePage.css'
 /** A lecture owns a route, not a modal. Reading and navigation have separate scroll owners. */
 export function LecturePage() {
   const { courseId, lectureId } = useParams()
+  useRememberOpenedNotebook(courseId, lectureId)
   const navigate = useNavigate()
   const course = useStore((s) => s.courses.find((item) => item.id === courseId))
   const data = useStore((s) => s.academics.classCenter)

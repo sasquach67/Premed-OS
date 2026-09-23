@@ -217,6 +217,45 @@ describe('ClassHub approved Overview', () => {
     container.remove()
   })
 
+  it('continues directly into the saved imported notebook instead of selecting its catalog row', async () => {
+    const seed = structuredClone(createSeedData())
+    const workspace = seed.academics.classCenter.workspaces.find(item => item.type === 'stem')!
+    const course = seed.courses.find(item => item.id === workspace.courseId)!
+    const pkg = revisionFixture()
+    const id = 'continue-imported'
+    seed.academics.classCenter.lectures.push({
+      id, courseId: course.id, title: pkg.entries[0].title, inputPath: 'pasted',
+      processingState: 'ready', workspaceState: 'complete', createdAt: now, updatedAt: now, order: 0,
+      importedNotebook: { original: pkg, current: pkg, originalRaw: JSON.stringify(pkg), entryId: pkg.entries[0].id, fingerprint: id, importedAt: now, progress: {}, notes: '' },
+    })
+    workspace.lastOpenedLectureId = id
+    useStore.getState().replaceAll(seed)
+    await act(async () => root.render(
+      <MemoryRouter initialEntries={[`/academics/classes/${course.id}`]}><ToastProvider><Routes>
+        <Route path="/academics/classes/:courseId" element={<ClassHub course={course} workspace={workspace} data={seed.academics.classCenter} persons={seed.persons} />} />
+        <Route path="/academics/classes/:courseId/journal/:entryId" element={<JournalEntryPage />} />
+      </Routes></ToastProvider></MemoryRouter>,
+    ))
+    await act(async () => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Continue reading'))!.click())
+    expect(container.querySelector('.notebook-entry-page')).toBeTruthy()
+    expect(container.textContent).toContain(pkg.entries[0].title)
+    expect(container.querySelector('.class-hub-overview')).toBeNull()
+  })
+
+  it.each(['journal', 'lectures'])('remembers the notebook opened through the %s reader route', async (route) => {
+    const seed = createDemoData(new Date('2026-09-02T12:00:00-04:00').getTime())
+    const course = seed.courses.find(item => item.id === 'demo-course-biol103-current')!
+    const lecture = seed.academics.classCenter.lectures.find(item => item.courseId === course.id && item.workspaceState === 'complete')!
+    const workspace = seed.academics.classCenter.workspaces.find(item => item.courseId === course.id)!
+    workspace.lastOpenedLectureId = 'previous-entry'
+    useStore.getState().replaceAll(seed)
+    await act(async () => root.render(<MemoryRouter initialEntries={[`/academics/classes/${course.id}/${route}/${lecture.id}`]}><ToastProvider><Routes>
+      <Route path="/academics/classes/:courseId/journal/:entryId" element={<JournalEntryPage />} />
+      <Route path="/academics/classes/:courseId/lectures/:lectureId" element={<LecturePage />} />
+    </Routes></ToastProvider></MemoryRouter>))
+    expect(useStore.getState().academics.classCenter.workspaces.find(item => item.courseId === course.id)?.lastOpenedLectureId).toBe(lecture.id)
+  })
+
   it('orders mixed notebook rows by their displayed dates after storage reload without changing records', async () => {
     const seed = structuredClone(createSeedData())
     const workspace = seed.academics.classCenter.workspaces.find(item => item.type === 'stem')!
